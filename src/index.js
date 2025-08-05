@@ -1,8 +1,30 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import './index.css';
 import App from './App';
-import reportWebVitals from './reportWebVitals';
+import './index.css';
+
+// Suppress ResizeObserver loop error (Monaco Editor/Chrome bug)
+if (typeof window !== "undefined") {
+  const observerErr = "ResizeObserver loop completed with undelivered notifications.";
+  window.addEventListener("error", (e) => {
+    if (e.message === observerErr) {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      return false;
+    }
+  });
+
+  window.addEventListener("unhandledrejection", (e) => {
+    if (
+      e.reason &&
+      e.reason.message &&
+      e.reason.message.includes("ResizeObserver loop completed with undelivered notifications")
+    ) {
+      e.preventDefault();
+      return false;
+    }
+  });
+}
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
@@ -10,8 +32,3 @@ root.render(
     <App />
   </React.StrictMode>
 );
-
-// If you want to start measuring performance in your app, pass a function
-// to log results (for example: reportWebVitals(console.log))
-// or send to an analytics endpoint. Learn more: https://bit.ly/CRA-vitals
-reportWebVitals();
