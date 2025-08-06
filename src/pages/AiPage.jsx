@@ -637,7 +637,8 @@ useEffect(() => {
   };
   try {
     const jwt = getJWT();
-    const res = await fetch("/api/scripts", {
+    const res = await fetch("https://nexusrbx-backend-production.up.railway.app/api/scripts", {
+    
       method: "POST",
       headers: {
         "Content-Type": "application/json",
