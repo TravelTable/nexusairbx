@@ -262,30 +262,35 @@ export default function NexusRBXAIPageContainer() {
   } = useTokens(user);
 
   // --- Saved Scripts, Folders, Tags ---
-  useEffect(() => {
-    if (!user) return;
-    const fetchScripts = async () => {
-      try {
-        const res = await fetch(`/api/scripts/${user.uid}`);
-        if (!res.ok) throw new Error("Failed to fetch scripts");
-        const scripts = await res.json();
-        const folderSet = new Set();
-        const tagSet = new Set();
-        scripts.forEach((data) => {
-          if (data.folder) folderSet.add(data.folder);
-          if (Array.isArray(data.tags)) data.tags.forEach(t => tagSet.add(t));
-        });
-        setSavedScripts(scripts);
-        setFolders(["all", ...Array.from(folderSet)]);
-        setTags(["all", ...Array.from(tagSet)]);
-      } catch (err) {
-        setSavedScripts([]);
-      }
-    };
-    fetchScripts();
-    // Only fetch on user change
-    // eslint-disable-next-line
-  }, [user]);
+useEffect(() => {
+  if (!user) return;
+  const fetchScripts = async () => {
+    try {
+      const jwt = getJWT();
+      const res = await fetch(`/api/scripts`, {
+        headers: {
+          "Authorization": `Bearer ${jwt}`
+        }
+      });
+      if (!res.ok) throw new Error("Failed to fetch scripts");
+      const scripts = await res.json();
+      const folderSet = new Set();
+      const tagSet = new Set();
+      scripts.forEach((data) => {
+        if (data.folder) folderSet.add(data.folder);
+        if (Array.isArray(data.tags)) data.tags.forEach(t => tagSet.add(t));
+      });
+      setSavedScripts(scripts);
+      setFolders(["all", ...Array.from(folderSet)]);
+      setTags(["all", ...Array.from(tagSet)]);
+    } catch (err) {
+      setSavedScripts([]);
+    }
+  };
+  fetchScripts();
+  // Only fetch on user change
+  // eslint-disable-next-line
+}, [user]);
 
   // --- Prompt Templates ---
   useEffect(() => {
@@ -589,122 +594,139 @@ export default function NexusRBXAIPageContainer() {
 
   // --- Save Script (with folder/tag/version support) ---
   const handleSaveScript = async (title, code, baseScript = null, folder = null, tagsArr = []) => {
-    if (!user || !code) return;
+  if (!user || !code) return;
 
-    let baseTitle = title || `Script ${savedScripts.length + 1}`;
-    let version = 1;
+  let baseTitle = title || `Script ${savedScripts.length + 1}`;
+  let version = 1;
 
-    // If editing an existing script, increment version in title
-    if (baseScript) {
-      const titleMatch = baseScript.title.match(/(.+?)(?: v(\d+))?$/i);
-      if (titleMatch) {
-        baseTitle = titleMatch[1].trim();
-        version = titleMatch[2] ? parseInt(titleMatch[2], 10) + 1 : 2;
-      }
+  // If editing an existing script, increment version in title
+  if (baseScript) {
+    const titleMatch = baseScript.title.match(/(.+?)(?: v(\d+))?$/i);
+    if (titleMatch) {
+      baseTitle = titleMatch[1].trim();
+      version = titleMatch[2] ? parseInt(titleMatch[2], 10) + 1 : 2;
     }
+  }
 
-    // Prompt for folder and tags if not provided
-    let finalFolder = folder;
-    let finalTags = tagsArr;
+  // Prompt for folder and tags if not provided
+  let finalFolder = folder;
+  let finalTags = tagsArr;
 
-    if (!folder) {
-      finalFolder = window.prompt("Enter folder name for this script (optional):", "");
-      if (finalFolder === null) finalFolder = ""; // Cancel = blank
+  if (!folder) {
+    finalFolder = window.prompt("Enter folder name for this script (optional):", "");
+    if (finalFolder === null) finalFolder = ""; // Cancel = blank
+  }
+  if (!tagsArr || tagsArr.length === 0) {
+    const tagStr = window.prompt("Enter tags for this script (comma separated, optional):", "");
+    if (tagStr !== null && tagStr.trim() !== "") {
+      finalTags = tagStr.split(",").map(t => t.trim()).filter(Boolean);
+    } else {
+      finalTags = [];
     }
-    if (!tagsArr || tagsArr.length === 0) {
-      const tagStr = window.prompt("Enter tags for this script (comma separated, optional):", "");
-      if (tagStr !== null && tagStr.trim() !== "") {
-        finalTags = tagStr.split(",").map(t => t.trim()).filter(Boolean);
-      } else {
-        finalTags = [];
-      }
-    }
+  }
 
-    const newScript = {
-      title: baseScript ? `${baseTitle} v${version}` : baseTitle,
-      description: "",
-      code: code,
-      language: "lua",
-      createdAt: new Date().toISOString(),
-      uid: user.uid,
-      baseScriptId: baseScript ? baseScript.id : null,
-      version: version,
-      folder: finalFolder || null,
-      tags: finalTags || []
-    };
-    try {
-      const res = await fetch("/api/scripts", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newScript)
-      });
-      if (!res.ok) throw new Error("Failed to save script");
-      const saved = await res.json();
-      setSavedScripts((prev) => [saved, ...prev]);
-      alert("Script saved!");
-    } catch (err) {
-      setSavedScripts((prev) => [{ ...newScript, id: Date.now() }, ...prev]);
-      alert("Script saved locally (offline mode).");
-    }
+  const newScript = {
+    title: baseScript ? `${baseTitle} v${version}` : baseTitle,
+    description: "",
+    code: code,
+    language: "lua",
+    baseScriptId: baseScript ? baseScript.id : null,
+    version: version,
+    folder: finalFolder || null,
+    tags: finalTags || []
   };
+  try {
+    const jwt = getJWT();
+    const res = await fetch("/api/scripts", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${jwt}`
+      },
+      body: JSON.stringify(newScript)
+    });
+    if (!res.ok) throw new Error("Failed to save script");
+    const saved = await res.json();
+    setSavedScripts((prev) => [saved, ...prev]);
+    alert("Script saved!");
+  } catch (err) {
+    setSavedScripts((prev) => [{ ...newScript, id: Date.now() }, ...prev]);
+    alert("Script saved locally (offline mode).");
+  }
+};
 
   // --- Update Script Title ---
-  const handleUpdateScriptTitle = async (scriptId, newTitle) => {
-    setSavedScripts((prev) =>
-      prev.map((script) => (script.id === scriptId ? { ...script, title: newTitle } : script))
-    );
-    if (!user) return;
-    try {
-      await fetch(`/api/scripts/${scriptId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: newTitle })
-      });
-    } catch (err) {}
-  };
-
+const handleUpdateScriptTitle = async (scriptId, newTitle) => {
+  setSavedScripts((prev) =>
+    prev.map((script) => (script.id === scriptId ? { ...script, title: newTitle } : script))
+  );
+  if (!user) return;
+  try {
+    const jwt = getJWT();
+    await fetch(`/api/scripts/${scriptId}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${jwt}`
+      },
+      body: JSON.stringify({ title: newTitle })
+    });
+  } catch (err) {}
+};
   // --- Delete Script ---
-  const handleDeleteScript = async (scriptId) => {
-    setSavedScripts((prev) => prev.filter((script) => script.id !== scriptId));
-    if (!user) return;
-    try {
-      await fetch(`/api/scripts/${scriptId}`, {
-        method: "DELETE"
-      });
-    } catch (err) {}
-  };
+const handleDeleteScript = async (scriptId) => {
+  setSavedScripts((prev) => prev.filter((script) => script.id !== scriptId));
+  if (!user) return;
+  try {
+    const jwt = getJWT();
+    await fetch(`/api/scripts/${scriptId}`, {
+      method: "DELETE",
+      headers: {
+        "Authorization": `Bearer ${jwt}`
+      }
+    });
+  } catch (err) {}
+};
 
   // --- Favorite/Unfavorite Script ---
-  const handleFavoriteScript = async (scriptId, favorite) => {
-    setSavedScripts((prev) =>
-      prev.map((script) =>
-        script.id === scriptId ? { ...script, favorite } : script
-      )
-    );
-    try {
-      await fetch(`/api/scripts/${scriptId}/favorite`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ favorite })
-      });
-    } catch (err) {}
-  };
+const handleFavoriteScript = async (scriptId, favorite) => {
+  setSavedScripts((prev) =>
+    prev.map((script) =>
+      script.id === scriptId ? { ...script, favorite } : script
+    )
+  );
+  try {
+    const jwt = getJWT();
+    await fetch(`/api/scripts/${scriptId}/favorite`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${jwt}`
+      },
+      body: JSON.stringify({ favorite })
+    });
+  } catch (err) {}
+};
 
   // --- Tag Script ---
-  const handleTagScript = async (scriptId, tags) => {
-    setSavedScripts((prev) =>
-      prev.map((script) =>
-        script.id === scriptId ? { ...script, tags } : script
-      )
-    );
-    try {
-      await fetch(`/api/scripts/${scriptId}/tags`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tags })
-      });
-    } catch (err) {}
-  };
+const handleTagScript = async (scriptId, tags) => {
+  setSavedScripts((prev) =>
+    prev.map((script) =>
+      script.id === scriptId ? { ...script, tags } : script
+    )
+  );
+  try {
+    const jwt = getJWT();
+    await fetch(`/api/scripts/${scriptId}/tags`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${jwt}`
+      },
+      body: JSON.stringify({ tags })
+    });
+  } catch (err) {}
+};
 
   // --- Clear Chat ---
   const handleClearChat = () => {
@@ -798,20 +820,25 @@ export default function NexusRBXAIPageContainer() {
   };
 
   // --- Script Version History Modal ---
-  const openVersionHistory = async (script) => {
-    if (!script) return;
-    setVersionModalScript(script);
+const openVersionHistory = async (script) => {
+  if (!script) return;
+  setVersionModalScript(script);
+  setVersionModalVersions([]);
+  setShowVersionModal(true);
+  try {
+    const jwt = getJWT();
+    const res = await fetch(`/api/scripts/${script.baseScriptId}/versions`, {
+      headers: {
+        "Authorization": `Bearer ${jwt}`
+      }
+    });
+    if (!res.ok) throw new Error("Failed to fetch versions");
+    const versions = await res.json();
+    setVersionModalVersions(versions.sort((a, b) => (b.version || 1) - (a.version || 1)));
+  } catch (err) {
     setVersionModalVersions([]);
-    setShowVersionModal(true);
-    try {
-      const res = await fetch(`/api/scripts/${script.baseScriptId}/versions`);
-      if (!res.ok) throw new Error("Failed to fetch versions");
-      const versions = await res.json();
-      setVersionModalVersions(versions.sort((a, b) => (b.version || 1) - (a.version || 1)));
-    } catch (err) {
-      setVersionModalVersions([]);
-    }
-  };
+  }
+};
 
   // --- Copy to Roblox Studio Modal ---
   const openStudioModal = (code) => {
