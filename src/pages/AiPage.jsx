@@ -3,23 +3,16 @@ import { useNavigate } from "react-router-dom";
 import {
   Send, Loader, Menu, Crown, Sparkles, Code, Star, X, Download, Plus, History, Check, Trash2, Folder, Tag, Search, Circle
 } from "lucide-react";
-import MonacoEditor from "react-monaco-editor";
 import { auth, db } from "./firebase";
 import { onAuthStateChanged, signInAnonymously } from "firebase/auth";
 import { doc, getDoc, setDoc } from "firebase/firestore";
-import { motion } from "framer-motion";
-import { Light as SyntaxHighlighter } from "react-syntax-highlighter";
-import lua from "react-syntax-highlighter/dist/esm/languages/hljs/lua";
-import { atomOneDark } from "react-syntax-highlighter/dist/esm/styles/hljs";
 import SidebarContent from "../components/SidebarContent";
 import RightSidebar from "../components/RightSidebar";
 import Modal from "../components/Modal";
 import FeedbackModal from "../components/FeedbackModal";
-import SimpleCodeDrawer from "../components/CodeDrawer"; // <-- Use your drawer here!
+import SimpleCodeDrawer from "../components/CodeDrawer";
 import WelcomeCard from "../components/WelcomeCard";
 import TokenBar from "../components/TokenBar";
-
-SyntaxHighlighter.registerLanguage("lua", lua);
 
 // --- Token System Constants ---
 const TOKEN_LIMIT = 4;
@@ -27,12 +20,6 @@ const TOKEN_REFRESH_HOURS = 48; // 2 days
 
 // --- Developer Email for Infinite Tokens ---
 const DEVELOPER_EMAIL = "jackt1263@gmail.com"; // CHANGE THIS TO YOUR DEV EMAIL
-
-function extractTitleFromCode(code) {
-  if (!code) return "Roblox Lua Script";
-  const match = code.match(/--\s*(.+)/);
-  return match && match[1] ? match[1].trim() : "Roblox Lua Script";
-}
 
 const modelOptions = [
   { value: "nexus-3", label: "Nexus-3 (Legacy, Default)" },
@@ -54,37 +41,6 @@ const defaultSettings = {
   creativity: 0.7,
   codeStyle: "optimized"
 };
-
-function SubscribeButtonInline({ userPlan = "free", className = "" }) {
-  return (
-    <a
-      href="/subscribe"
-      className={`relative group flex items-center justify-center px-8 py-3 rounded-xl font-bold transition-all duration-300 shadow-lg ${className} ${
-        userPlan === "free"
-          ? "bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-white hover:shadow-xl hover:shadow-[#9b5de5]/20"
-          : "bg-gray-800 text-white hover:bg-gray-700"
-      }`}
-      style={{
-        minWidth: 200,
-        maxWidth: 320,
-        height: "56px",
-        fontSize: "1.25rem",
-        letterSpacing: "0.03em"
-      }}
-      aria-label="Upgrade"
-    >
-      <div
-        className={`absolute inset-0 rounded-xl bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] opacity-0 blur-xl transition-opacity duration-500 ${
-          userPlan === "free" ? "group-hover:opacity-30" : ""
-        }`}
-      ></div>
-      <div className="relative flex items-center">
-        <Crown className="h-6 w-6 mr-3" />
-        {userPlan === "free" ? <>Upgrade</> : <>{userPlan === "pro" ? "Pro" : "Team"} Plan</>}
-      </div>
-    </a>
-  );
-}
 
 // --- Token System ---
 function getTokenDocRef(uid) {
@@ -216,27 +172,31 @@ function useTokens(user) {
   };
 }
 
+// --- JWT Auth Helpers ---
+function getJWT() {
+  return localStorage.getItem("jwt_token");
+}
+function setJWT(token) {
+  localStorage.setItem("jwt_token", token);
+}
+function removeJWT() {
+  localStorage.removeItem("jwt_token");
+}
+
 // --- Main Container Component ---
 export default function NexusRBXAIPageContainer() {
   const navigate = useNavigate();
 
+  // --- State for script sessions (each script = one prompt/response group) ---
+  const [scriptSessions, setScriptSessions] = useState([]); // [{id, prompt, sections, status}]
   const [prompt, setPrompt] = useState("");
   const [promptCharCount, setPromptCharCount] = useState(0);
   const [promptError, setPromptError] = useState("");
-  const [messages, setMessages] = useState([
-    {
-      id: 1,
-      role: "system",
-      content:
-        "Welcome to NexusRBX AI! Describe the Roblox mod you want to create, and I'll generate the code for you."
-    }
-  ]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [activeTab, setActiveTab] = useState("chat");
   const [copiedIndex, setCopiedIndex] = useState(null);
   const [savedScripts, setSavedScripts] = useState([]);
   const [user, setUser] = useState(null);
-  const [luaPreviewTheme] = useState("dark");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [rightSidebarOpen] = useState(false);
   const [settings, setSettings] = useState(defaultSettings);
@@ -277,56 +237,6 @@ export default function NexusRBXAIPageContainer() {
   const [codeDrawer, setCodeDrawer] = useState({ open: false, code: "", title: "", version: null, liveGenerating: false, liveContent: "" });
   const [promptSuggestionLoading, setPromptSuggestionLoading] = useState(false);
 
-  // --- Chat Animation Fix: Only animate new messages ---
-  const lastMessageIdRef = useRef(messages.length > 0 ? messages[messages.length - 1].id : null);
-
-  // --- Prompt Char Count & Error ---
-  useEffect(() => {
-    setPromptCharCount(prompt.length);
-    if (prompt.length > 800) {
-      setPromptError("Prompt too long (max 800 characters).");
-    } else {
-      setPromptError("");
-    }
-    // Autocomplete logic
-    if (prompt.length > 1) {
-      const allPrompts = [
-        ...promptTemplates,
-        ...userPromptTemplates,
-        ...promptHistory
-      ];
-      const filtered = allPrompts
-        .filter(p => p.toLowerCase().startsWith(prompt.toLowerCase()) && p.toLowerCase() !== prompt.toLowerCase())
-        .slice(0, 5);
-      setPromptAutocomplete(filtered);
-    } else {
-      setPromptAutocomplete([]);
-    }
-  }, [prompt, promptTemplates, userPromptTemplates, promptHistory]);
-
-useEffect(() => {
-  // Close the code drawer as soon as a new generation starts
-  if (isGenerating) {
-    setCodeDrawer({ open: false, code: "", title: "", version: null, liveGenerating: false, liveContent: "" });
-  }
-}, [isGenerating]);
-
-useEffect(() => {
-  // Open the code drawer when new code is ready
-  const latest = [...messages].reverse().find(
-    (msg) => msg.role === "assistant" && msg.code && typeof msg.code === "string" && msg.code.trim().length > 0
-  );
-  if (latest) {
-    setCodeDrawer({
-      open: true,
-      code: latest.code,
-      title: extractTitleFromCode(latest.code),
-      version: latest.version,
-      liveGenerating: false,
-      liveContent: ""
-    });
-  }
-}, [messages]);
   // --- Auth ---
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
@@ -410,162 +320,202 @@ useEffect(() => {
       .catch(() => setPromptSuggestionLoading(false));
   }, []);
 
-  // --- AI Response Generation (Streaming for both conversation and code) ---
-const generateAIResponse = async (userPrompt, userSettings, previousScript = null, conversation = []) => {
-  let modelVersion = userSettings.modelVersion;
-  if (!["nexus-4", "nexus-3", "nexus-2"].includes(modelVersion)) {
-    modelVersion = "nexus-3";
-  }
+  // --- Prompt Char Count & Error ---
+  useEffect(() => {
+    setPromptCharCount(prompt.length);
+    if (prompt.length > 800) {
+      setPromptError("Prompt too long (max 800 characters).");
+    } else {
+      setPromptError("");
+    }
+    // Autocomplete logic
+    if (prompt.length > 1) {
+      const allPrompts = [
+        ...promptTemplates,
+        ...userPromptTemplates,
+        ...promptHistory
+      ];
+      const filtered = allPrompts
+        .filter(p => p.toLowerCase().startsWith(prompt.toLowerCase()) && p.toLowerCase() !== prompt.toLowerCase())
+        .slice(0, 5);
+      setPromptAutocomplete(filtered);
+    } else {
+      setPromptAutocomplete([]);
+    }
+  }, [prompt, promptTemplates, userPromptTemplates, promptHistory]);
 
-  // Detect if user is ready to generate code (start/generate)
-  const lowerPrompt = userPrompt.trim().toLowerCase();
-  const isReadyToStart =
-    lowerPrompt === "start" ||
-    lowerPrompt === "generate" ||
-    lowerPrompt === "generate code" ||
-    lowerPrompt === "start code" ||
-    lowerPrompt === "yes, start" ||
-    lowerPrompt === "yes, generate";
-
-  // --- Streaming for both conversation and code ---
-  return new Promise(async (resolve, reject) => {
-    let content = "";
-    let code = "";
-    let title = "";
-    let codeStarted = false;
-    let codeEnded = false;
-    let language = "lua";
-    let version = 1;
-    try {
-      const response = await fetch("https://nexusrbx-backend-production.up.railway.app/api/generate", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          prompt: userPrompt,
-          modelVersion: modelVersion,
-          creativity: userSettings.creativity,
-          codeStyle: userSettings.codeStyle,
-          previousScript: previousScript,
-          conversation: conversation
-        })
-      });
-      if (!response.body) {
-        reject(new Error("Streaming not supported."));
+  // --- SSE Streaming AI Response (per script session) ---
+  const generateAIResponse = async (userPrompt, userSettings, conversation = []) => {
+    return new Promise(async (resolve, reject) => {
+      let jwt = getJWT();
+      if (!jwt) {
+        reject(new Error("Not authenticated."));
         return;
       }
-      // --- Open the code drawer for live generation ---
-      setCodeDrawer((prev) => ({
-        ...prev,
-        open: true,
-        code: "",
-        title: "",
-        version: null,
-        liveGenerating: true,
-        liveContent: ""
-      }));
+      let sessionId = Date.now() + Math.floor(Math.random() * 10000);
+      let newSession = {
+        id: sessionId,
+        prompt: userPrompt,
+        sections: {},
+        status: "generating"
+      };
+      setScriptSessions(prev => [...prev, newSession]);
+      let sessionIndex = null;
 
-      const reader = response.body.getReader();
-      let decoder = new TextDecoder();
-      let done = false;
-      while (!done) {
-        const { value, done: doneReading } = await reader.read();
-        if (doneReading) break;
-        const chunk = decoder.decode(value, { stream: true });
-        // Parse SSE lines
-        const lines = chunk.split("\n\n");
-        for (let line of lines) {
-          if (line.startsWith("data:")) {
-            try {
-              const data = JSON.parse(line.replace(/^data:\s*/, ""));
-              if (data.done) {
-                setCodeDrawer((prev) => ({
-                  ...prev,
-                  open: true,
-                  code: code || "",
-                  title: title || "",
-                  version: version,
-                  liveGenerating: false,
-                  liveContent: ""
-                }));
-                resolve({
-                  id: Date.now(),
-                  role: "assistant",
-                  content: content,
-                  code: code || null,
-                  title: title,
-                  language: language,
-                  version: version
-                });
-              } else if (data.content) {
-                // Conversational phase
-                content += data.content;
-                setMessages((prev) =>
-                  prev.map((msg, idx) =>
-                    idx === prev.length - 1
-                      ? { ...msg, content: content }
-                      : msg
-                  )
-                );
-                setCodeDrawer((prev) => ({
-                  ...prev,
-                  open: true,
-                  liveGenerating: true,
-                  liveContent: content
-                }));
-              } else if (data.title) {
-                // Title for code block
-                title = data.title;
-                setMessages((prev) =>
-                  prev.map((msg, idx) =>
-                    idx === prev.length - 1
-                      ? { ...msg, title: title }
-                      : msg
-                  )
-                );
-                setCodeDrawer((prev) => ({
-                  ...prev,
-                  open: true,
-                  title: title
-                }));
-              } else if (data.code !== undefined) {
-                // Code streaming phase
-                if (!codeStarted) {
-                  codeStarted = true;
-                  code = "";
+      // Open SSE connection
+      try {
+        const response = await fetch("/api/generate", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${jwt}`
+          },
+          body: JSON.stringify({
+            prompt: userPrompt,
+            modelVersion: userSettings.modelVersion,
+            creativity: userSettings.creativity,
+            codeStyle: userSettings.codeStyle,
+            conversation: conversation
+          })
+        });
+
+        if (!response.body) {
+          reject(new Error("Streaming not supported."));
+          return;
+        }
+
+        const reader = response.body.getReader();
+        let decoder = new TextDecoder();
+        let done = false;
+        let currentSections = {};
+        let codeStarted = false;
+        let codeLive = "";
+        let codeTitle = "";
+        let codeVersion = null;
+
+        // For code drawer: open only when code section starts
+        let codeDrawerOpened = false;
+
+        while (!done) {
+          const { value, done: doneReading } = await reader.read();
+          if (doneReading) break;
+          const chunk = decoder.decode(value, { stream: true });
+          // Parse SSE lines
+          const lines = chunk.split("\n\n");
+          for (let line of lines) {
+            if (line.startsWith("data:")) {
+              try {
+                const data = JSON.parse(line.replace(/^data:\s*/, ""));
+                if (data.section) {
+                  // Find session index
+                  if (sessionIndex === null) {
+                    sessionIndex = scriptSessions.length;
+                  }
+                  // Update section in session
+                  currentSections = { ...currentSections, [data.section]: data.content };
+                  // If version is present, store it
+                  if (data.version) {
+                    currentSections.version = data.version;
+                  }
+                  // If title is present, store it for code drawer
+                  if (data.section === "title") {
+                    codeTitle = data.content;
+                  }
+                  // If code section, stream code live
+                  if (data.section === "code") {
+                    codeStarted = true;
+                    codeLive = data.content;
+                    codeVersion = data.version || currentSections.version || 1;
+                    // Open code drawer if not already open
+                    if (!codeDrawerOpened) {
+                      setCodeDrawer({
+                        open: true,
+                        code: "",
+                        title: codeTitle,
+                        version: codeVersion,
+                        liveGenerating: true,
+                        liveContent: codeLive
+                      });
+                      codeDrawerOpened = true;
+                    } else {
+                      setCodeDrawer(prev => ({
+                        ...prev,
+                        open: true,
+                        title: codeTitle,
+                        version: codeVersion,
+                        liveGenerating: true,
+                        liveContent: codeLive
+                      }));
+                    }
+                  }
+                  // Update session in state
+                  setScriptSessions(prev => {
+                    let updated = [...prev];
+                    let idx = updated.findIndex(s => s.id === sessionId);
+                    if (idx !== -1) {
+                      updated[idx] = {
+                        ...updated[idx],
+                        sections: { ...currentSections },
+                        status: "generating"
+                      };
+                    }
+                    return updated;
+                  });
                 }
-                if (data.code) {
-                  code += data.code;
-                  setMessages((prev) =>
-                    prev.map((msg, idx) =>
-                      idx === prev.length - 1
-                        ? { ...msg, code: code }
-                        : msg
-                    )
-                  );
-                  setCodeDrawer((prev) => ({
-                    ...prev,
-                    open: true,
-                    liveGenerating: true,
-                    liveContent: code
-                  }));
+                // Handle end of stream
+                if (data === "[DONE]") {
+                  done = true;
+                  break;
                 }
-              }
-            } catch {}
+              } catch {}
+            }
           }
         }
+        // Finalize session
+        setScriptSessions(prev => {
+          let updated = [...prev];
+          let idx = updated.findIndex(s => s.id === sessionId);
+          if (idx !== -1) {
+            updated[idx] = {
+              ...updated[idx],
+              sections: { ...currentSections },
+              status: "done"
+            };
+          }
+          return updated;
+        });
+        // Finalize code drawer
+        setCodeDrawer(prev => ({
+          ...prev,
+          open: true,
+          code: codeLive,
+          title: codeTitle,
+          version: codeVersion,
+          liveGenerating: false,
+          liveContent: ""
+        }));
+        resolve();
+      } catch (err) {
+        setScriptSessions(prev => {
+          let updated = [...prev];
+          let idx = updated.findIndex(s => s.id === sessionId);
+          if (idx !== -1) {
+            updated[idx] = {
+              ...updated[idx],
+              status: "error"
+            };
+          }
+          return updated;
+        });
+        setCodeDrawer(prev => ({
+          ...prev,
+          liveGenerating: false,
+          liveContent: ""
+        }));
+        reject(new Error("Streaming error. Please try again."));
       }
-    } catch (err) {
-      setCodeDrawer((prev) => ({
-        ...prev,
-        liveGenerating: false,
-        liveContent: ""
-      }));
-      reject(new Error("Streaming error. Please try again."));
-    }
-  });
-};
+    });
+  };
 
   // --- Chat Submission ---
   const handlePromptChange = (e) => {
@@ -607,88 +557,35 @@ const generateAIResponse = async (userPrompt, userSettings, previousScript = nul
       return;
     }
 
-    // --- Conversational Memory: last 10 messages (excluding system) ---
-    const conversation = messages
-      .filter(m => m.role === "user" || m.role === "assistant")
-      .slice(-10)
-      .map(m => ({
-        role: m.role,
-        content: m.code ? m.code : m.content
-      }));
-
-    const userMessage = {
-      id: Date.now(),
-      role: "user",
-      content: prompt
-    };
-    const assistantId = Date.now() + 1;
-
-    setMessages((prev) => [
-      ...prev,
-      userMessage,
-      {
-        id: assistantId,
-        role: "assistant",
-        content: "",
-        code: null,
-        language: "lua"
-      }
-    ]);
     setPrompt("");
     setIsGenerating(true);
 
-    // Find the last assistant message with code (the previous script)
-    const lastAssistantMsg = [...messages].reverse().find(
-      (msg) => msg.role === "assistant" && msg.code && typeof msg.code === "string" && msg.code.trim().length > 0
-    );
-    const previousScript = lastAssistantMsg ? lastAssistantMsg.code : null;
+    // Conversational memory: last 10 script sessions
+    const conversation = scriptSessions
+      .slice(-10)
+      .map(s => ({
+        role: "assistant",
+        content: s.sections.code || s.sections.title || ""
+      }));
 
     try {
       await generateAIResponse(
-        userMessage.content,
+        prompt,
         settings,
-        previousScript,
         conversation
-      ).then((finalResponse) => {
-        setMessages((prev) =>
-          prev.map((msg) =>
-            msg.id === assistantId
-              ? { ...msg, ...finalResponse }
-              : msg
-          )
-        );
-      });
-    } catch (err) {
-      setMessages((prev) =>
-        prev.map((msg) =>
-          msg.id === assistantId
-            ? {
-                ...msg,
-                content:
-                  err.message ||
-                  "Failed to generate script. Please try again.",
-                error: true
-              }
-            : msg
-        )
       );
+    } catch (err) {
+      // Error already handled in generateAIResponse
     } finally {
       setIsGenerating(false);
     }
   };
 
-  // --- Chat Animation Fix: Only animate new messages ---
-  useEffect(() => {
-    if (messages.length > 0) {
-      lastMessageIdRef.current = messages[messages.length - 1].id;
-    }
-  }, [messages]);
-
-  // --- Scroll to bottom on new message ---
+  // --- Scroll to bottom on new script session ---
   const messagesEndRef = useRef(null);
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, isGenerating]);
+  }, [scriptSessions, isGenerating]);
 
   // --- Save Script (with folder/tag/version support) ---
   const handleSaveScript = async (title, code, baseScript = null, folder = null, tagsArr = []) => {
@@ -811,14 +708,7 @@ const generateAIResponse = async (userPrompt, userSettings, previousScript = nul
 
   // --- Clear Chat ---
   const handleClearChat = () => {
-    setMessages([
-      {
-        id: 1,
-        role: "system",
-        content:
-          "Welcome to NexusRBX AI! Describe the Roblox mod you want to create, and I'll generate the code for you."
-      }
-    ]);
+    setScriptSessions([]);
     setPrompt("");
   };
 
@@ -1051,7 +941,7 @@ const generateAIResponse = async (userPrompt, userSettings, previousScript = nul
         <section className="flex-grow flex flex-col md:w-2/3 h-full relative z-10">
           <div className="flex-grow overflow-y-auto px-2 md:px-4 py-6 flex flex-col items-center">
             <div className="w-full max-w-2xl mx-auto space-y-6">
-              {messages.length === 1 && messages[0].role === "system" && !isGenerating ? (
+              {scriptSessions.length === 0 && !isGenerating ? (
                 <WelcomeCard
                   setPrompt={setPrompt}
                   promptTemplates={promptTemplates}
@@ -1061,77 +951,72 @@ const generateAIResponse = async (userPrompt, userSettings, previousScript = nul
                   promptSuggestionLoading={promptSuggestionLoading}
                 />
               ) : (
-                messages.map((message, index) => (
-                  <motion.div
-                    key={message.id}
-                    initial={lastMessageIdRef.current === message.id ? { opacity: 0, y: 24 } : false}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.24 }}
-                    className={`flex ${
-                      message.role === "user"
-                        ? "justify-end"
-                        : "justify-start"
-                    }`}
-                  >
-<div
-  className={`max-w-[85%] rounded-lg p-0 shadow-none transition-colors`}
-  tabIndex={0}
-  aria-label={`Chat message from ${message.role}`}
->
-{message.role === "assistant" && message.code ? (
-  <div className="flex items-center gap-2 mb-2">
-    <button
-      className="flex items-center justify-between w-full px-4 py-3 rounded-xl border border-[#9b5de5] bg-gray-100/70 hover:bg-gray-200/80 transition-all font-mono text-gray-700 shadow-sm"
-      style={{
-        fontSize: "1rem",
-        letterSpacing: "0.02em",
-        minWidth: 0,
-        outline: "none",
-      }}
-      onClick={() =>
-        setCodeDrawer({
-          open: true,
-          code: message.code,
-          title: extractTitleFromCode(message.code),
-          version: message.version,
-        })
-      }
-      aria-label="View script code"
-    >
-      <span className="truncate text-left flex-1">{extractTitleFromCode(message.code)}</span>
-      <span className="ml-4 text-xs text-gray-500 font-bold">
-        {message.version ? `v${message.version}` : ""}
-      </span>
-    </button>
-    {Array.isArray(savedScripts) && savedScripts.some(s => s.code === message.code && s.favorite) && (
-      <Star className="h-4 w-4 text-[#fbbf24]" fill="#fbbf24" />
-    )}
-  </div>
-) : (
-  <p className="text-gray-200">{message.content}</p>
-)}
+                scriptSessions.map((session, idx) => (
+                  <div key={session.id} className="mb-6">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="font-bold text-lg text-[#00f5d4]">
+                        {session.sections.title
+                          ? session.sections.title.replace(/\s*v\d+$/i, "")
+                          : `Script ${idx + 1}`}
+                      </span>
+                      {session.sections.version && (
+                        <span className="ml-2 text-xs text-gray-400 font-bold">
+                          v{session.sections.version}
+                        </span>
+                      )}
+                      {session.status === "generating" && (
+                        <Loader className="h-4 w-4 text-[#9b5de5] animate-spin ml-2" />
+                      )}
                     </div>
-                  </motion.div>
+                    <div className="bg-gray-900/60 rounded-lg p-4 border border-gray-800">
+                      {session.sections.controlExplanation && (
+                        <div className="mb-3">
+                          <div className="font-bold text-[#9b5de5] mb-1">Controls Explanation</div>
+                          <div className="text-gray-200 whitespace-pre-line text-sm">
+                            {session.sections.controlExplanation}
+                          </div>
+                        </div>
+                      )}
+                      {session.sections.features && (
+                        <div className="mb-3">
+                          <div className="font-bold text-[#00f5d4] mb-1">Features</div>
+                          <div className="text-gray-200 whitespace-pre-line text-sm">
+                            {session.sections.features}
+                          </div>
+                        </div>
+                      )}
+                      {session.sections.controls && (
+                        <div className="mb-3">
+                          <div className="font-bold text-[#9b5de5] mb-1">Controls</div>
+                          <div className="text-gray-200 whitespace-pre-line text-sm">
+                            {session.sections.controls}
+                          </div>
+                        </div>
+                      )}
+                      {session.sections.howItShouldAct && (
+                        <div className="mb-3">
+                          <div className="font-bold text-[#00f5d4] mb-1">How It Should Act</div>
+                          <div className="text-gray-200 whitespace-pre-line text-sm">
+                            {session.sections.howItShouldAct}
+                          </div>
+                        </div>
+                      )}
+                      {/* Code is only shown in the code drawer */}
+                      {session.status === "error" && (
+                        <div className="text-red-400 text-sm mt-2">
+                          Error generating script. Please try again.
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 ))
               )}
-{isGenerating && (
-  <motion.div
-    key="generating"
-    initial={{ opacity: 0, y: 24 }}
-    animate={{ opacity: 1, y: 0 }}
-    transition={{ duration: 0.24 }}
-    className="flex justify-start"
-  >
-    <div className="max-w-[85%] rounded-lg p-0 shadow-none">
-      <div className="flex items-center space-x-2">
-        <Loader className="h-4 w-4 text-[#9b5de5] animate-spin" />
-        <p className="text-gray-400">
-          NexusRBX is generating...
-        </p>
-      </div>
-    </div>
-  </motion.div>
-)}
+              {isGenerating && (
+                <div className="flex items-center text-gray-400 text-sm mt-2">
+                  <Loader className="h-4 w-4 animate-spin mr-2" />
+                  NexusRBX is generating...
+                </div>
+              )}
               <div ref={messagesEndRef} />
             </div>
           </div>
@@ -1244,7 +1129,7 @@ const generateAIResponse = async (userPrompt, userSettings, previousScript = nul
             modelOptions={modelOptions}
             creativityOptions={creativityOptions}
             codeStyleOptions={codeStyleOptions}
-            messages={messages}
+            messages={scriptSessions}
             setPrompt={setPrompt}
             userPromptTemplates={userPromptTemplates}
             setUserPromptTemplates={setUserPromptTemplates}
@@ -1297,13 +1182,9 @@ const generateAIResponse = async (userPrompt, userSettings, previousScript = nul
                       {new Date(ver.createdAt).toLocaleString()}
                     </span>
                   </div>
-                  <SyntaxHighlighter
-                    language="lua"
-                    style={atomOneDark}
-                    customStyle={{ fontSize: "0.9rem", borderRadius: 6 }}
-                  >
-                    {ver.code}
-                  </SyntaxHighlighter>
+                  <pre className="bg-gray-950 mt-2 p-2 rounded text-xs text-gray-300 overflow-x-auto">
+                    <code>{ver.code}</code>
+                  </pre>
                   <button
                     className="mt-2 px-3 py-1 rounded bg-[#9b5de5]/20 hover:bg-[#9b5de5]/40 text-[#9b5de5] text-xs font-bold"
                     onClick={() => {
@@ -1330,13 +1211,9 @@ const generateAIResponse = async (userPrompt, userSettings, previousScript = nul
               <li>Paste the code below into the script editor.</li>
             </ol>
           </div>
-          <SyntaxHighlighter
-            language="lua"
-            style={atomOneDark}
-            customStyle={{ fontSize: "1rem", borderRadius: 6 }}
-          >
-            {studioModalCode}
-          </SyntaxHighlighter>
+          <pre className="bg-gray-950 mt-2 p-2 rounded text-xs text-gray-300 overflow-x-auto">
+            <code>{studioModalCode}</code>
+          </pre>
           <button
             className="mt-4 w-full py-2 rounded bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-white font-bold"
             onClick={() => {
@@ -1397,17 +1274,18 @@ const generateAIResponse = async (userPrompt, userSettings, previousScript = nul
         </Modal>
       )}
       {/* --- Code Drawer Integration --- */}
-{codeDrawer.open && (
-  <SimpleCodeDrawer
-    open={codeDrawer.open}
-    code={codeDrawer.code}
-    title={codeDrawer.title}
-    liveGenerating={codeDrawer.liveGenerating}
-    liveContent={codeDrawer.liveContent}
-    onClose={() => setCodeDrawer({ open: false, code: "", title: "", version: null, liveGenerating: false, liveContent: "" })}
-    onSaveScript={(newTitle, code) => handleSaveScript(newTitle, code)}
-  />
-)}
+      {codeDrawer.open && (
+        <SimpleCodeDrawer
+          open={codeDrawer.open}
+          code={codeDrawer.code}
+          title={codeDrawer.title}
+          liveGenerating={codeDrawer.liveGenerating}
+          liveContent={codeDrawer.liveContent}
+          version={codeDrawer.version}
+          onClose={() => setCodeDrawer({ open: false, code: "", title: "", version: null, liveGenerating: false, liveContent: "" })}
+          onSaveScript={(newTitle, code) => handleSaveScript(newTitle, code)}
+        />
+      )}
       {/* Footer */}
       <footer className="border-t border-gray-800 py-4 px-4 bg-black/40 text-center text-sm text-gray-500">
         <div className="max-w-6xl mx-auto">
