@@ -369,20 +369,20 @@ useEffect(() => {
 
       // Open SSE connection
       try {
-        const response = await fetch("/api/generate", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${jwt}`
-          },
-          body: JSON.stringify({
-            prompt: userPrompt,
-            modelVersion: userSettings.modelVersion,
-            creativity: userSettings.creativity,
-            codeStyle: userSettings.codeStyle,
-            conversation: conversation
-          })
-        });
+const response = await fetch("https://nexusrbx-backend-production.up.railway.app/api/generate", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    "Authorization": `Bearer ${jwt}`
+  },
+  body: JSON.stringify({
+    prompt: userPrompt,
+    modelVersion: userSettings.modelVersion,
+    creativity: userSettings.creativity,
+    codeStyle: userSettings.codeStyle,
+    conversation: conversation
+  })
+});
 
         if (!response.body) {
           reject(new Error("Streaming not supported."));
