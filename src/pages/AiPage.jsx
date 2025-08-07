@@ -350,177 +350,183 @@ useEffect(() => {
   }, [prompt, promptTemplates, userPromptTemplates, promptHistory]);
 
   // --- SSE Streaming AI Response (per script session) ---
-  const generateAIResponse = async (userPrompt, userSettings, conversation = []) => {
-    return new Promise(async (resolve, reject) => {
-      let jwt = getJWT();
-      if (!jwt) {
-        reject(new Error("Not authenticated."));
+const generateAIResponse = async (userPrompt, userSettings, conversation = []) => {
+  return new Promise(async (resolve, reject) => {
+    let jwt = getJWT();
+    if (!jwt) {
+      reject(new Error("Not authenticated."));
+      return;
+    }
+    let sessionId = Date.now() + Math.floor(Math.random() * 10000);
+    let newSession = {
+      id: sessionId,
+      prompt: userPrompt,
+      sections: {},
+      status: "generating"
+    };
+    setScriptSessions(prev => [...prev, newSession]);
+    let sessionIndex = null;
+
+    // Open SSE connection
+    try {
+      const response = await fetch("https://nexusrbx-backend-production.up.railway.app/api/generate", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${jwt}`
+        },
+        body: JSON.stringify({
+          prompt: userPrompt,
+          modelVersion: userSettings.modelVersion,
+          creativity: userSettings.creativity,
+          codeStyle: userSettings.codeStyle,
+          conversation: conversation
+        })
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        reject(new Error("API error: " + errorText));
         return;
       }
-      let sessionId = Date.now() + Math.floor(Math.random() * 10000);
-      let newSession = {
-        id: sessionId,
-        prompt: userPrompt,
-        sections: {},
-        status: "generating"
-      };
-      setScriptSessions(prev => [...prev, newSession]);
-      let sessionIndex = null;
 
-      // Open SSE connection
-      try {
-const response = await fetch("https://nexusrbx-backend-production.up.railway.app/api/generate", {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json",
-    "Authorization": `Bearer ${jwt}`
-  },
-  body: JSON.stringify({
-    prompt: userPrompt,
-    modelVersion: userSettings.modelVersion,
-    creativity: userSettings.creativity,
-    codeStyle: userSettings.codeStyle,
-    conversation: conversation
-  })
-});
-
-        if (!response.body) {
-          reject(new Error("Streaming not supported."));
-          return;
-        }
-
-        const reader = response.body.getReader();
-        let decoder = new TextDecoder();
-        let done = false;
-        let currentSections = {};
-        let codeStarted = false;
-        let codeLive = "";
-        let codeTitle = "";
-        let codeVersion = null;
-
-        // For code drawer: open only when code section starts
-        let codeDrawerOpened = false;
-
-        while (!done) {
-          const { value, done: doneReading } = await reader.read();
-          if (doneReading) break;
-          const chunk = decoder.decode(value, { stream: true });
-          // Parse SSE lines
-          const lines = chunk.split("\n\n");
-          for (let line of lines) {
-            if (line.startsWith("data:")) {
-              try {
-                const data = JSON.parse(line.replace(/^data:\s*/, ""));
-                if (data.section) {
-                  // Find session index
-                  if (sessionIndex === null) {
-                    sessionIndex = scriptSessions.length;
-                  }
-                  // Update section in session
-                  currentSections = { ...currentSections, [data.section]: data.content };
-                  // If version is present, store it
-                  if (data.version) {
-                    currentSections.version = data.version;
-                  }
-                  // If title is present, store it for code drawer
-                  if (data.section === "title") {
-                    codeTitle = data.content;
-                  }
-                  // If code section, stream code live
-                  if (data.section === "code") {
-                    codeStarted = true;
-                    codeLive = data.content;
-                    codeVersion = data.version || currentSections.version || 1;
-                    // Open code drawer if not already open
-                    if (!codeDrawerOpened) {
-                      setCodeDrawer({
-                        open: true,
-                        code: "",
-                        title: codeTitle,
-                        version: codeVersion,
-                        liveGenerating: true,
-                        liveContent: codeLive
-                      });
-                      codeDrawerOpened = true;
-                    } else {
-                      setCodeDrawer(prev => ({
-                        ...prev,
-                        open: true,
-                        title: codeTitle,
-                        version: codeVersion,
-                        liveGenerating: true,
-                        liveContent: codeLive
-                      }));
-                    }
-                  }
-                  // Update session in state
-                  setScriptSessions(prev => {
-                    let updated = [...prev];
-                    let idx = updated.findIndex(s => s.id === sessionId);
-                    if (idx !== -1) {
-                      updated[idx] = {
-                        ...updated[idx],
-                        sections: { ...currentSections },
-                        status: "generating"
-                      };
-                    }
-                    return updated;
-                  });
-                }
-                // Handle end of stream
-                if (data === "[DONE]") {
-                  done = true;
-                  break;
-                }
-              } catch {}
-            }
-          }
-        }
-        // Finalize session
-        setScriptSessions(prev => {
-          let updated = [...prev];
-          let idx = updated.findIndex(s => s.id === sessionId);
-          if (idx !== -1) {
-            updated[idx] = {
-              ...updated[idx],
-              sections: { ...currentSections },
-              status: "done"
-            };
-          }
-          return updated;
-        });
-        // Finalize code drawer
-        setCodeDrawer(prev => ({
-          ...prev,
-          open: true,
-          code: codeLive,
-          title: codeTitle,
-          version: codeVersion,
-          liveGenerating: false,
-          liveContent: ""
-        }));
-        resolve();
-      } catch (err) {
-        setScriptSessions(prev => {
-          let updated = [...prev];
-          let idx = updated.findIndex(s => s.id === sessionId);
-          if (idx !== -1) {
-            updated[idx] = {
-              ...updated[idx],
-              status: "error"
-            };
-          }
-          return updated;
-        });
-        setCodeDrawer(prev => ({
-          ...prev,
-          liveGenerating: false,
-          liveContent: ""
-        }));
-        reject(new Error("Streaming error. Please try again."));
+      if (!response.body) {
+        reject(new Error("Streaming not supported."));
+        return;
       }
-    });
-  };
+
+      const reader = response.body.getReader();
+      let decoder = new TextDecoder();
+      let done = false;
+      let currentSections = {};
+      let codeStarted = false;
+      let codeLive = "";
+      let codeTitle = "";
+      let codeVersion = null;
+
+      // For code drawer: open only when code section starts
+      let codeDrawerOpened = false;
+
+      while (!done) {
+        const { value, done: doneReading } = await reader.read();
+        if (doneReading) break;
+        const chunk = decoder.decode(value, { stream: true });
+        // Parse SSE lines
+        const lines = chunk.split("\n\n");
+        for (let line of lines) {
+          if (line.startsWith("data:")) {
+            try {
+              const data = JSON.parse(line.replace(/^data:\s*/, ""));
+              if (data.section) {
+                // Find session index
+                if (sessionIndex === null) {
+                  sessionIndex = scriptSessions.length;
+                }
+                // Update section in session
+                currentSections = { ...currentSections, [data.section]: data.content };
+                // If version is present, store it
+                if (data.version) {
+                  currentSections.version = data.version;
+                }
+                // If title is present, store it for code drawer
+                if (data.section === "title") {
+                  codeTitle = data.content;
+                }
+                // If code section, stream code live
+                if (data.section === "code") {
+                  codeStarted = true;
+                  codeLive = data.content;
+                  codeVersion = data.version || currentSections.version || 1;
+                  // Open code drawer if not already open
+                  if (!codeDrawerOpened) {
+                    setCodeDrawer({
+                      open: true,
+                      code: "",
+                      title: codeTitle,
+                      version: codeVersion,
+                      liveGenerating: true,
+                      liveContent: codeLive
+                    });
+                    codeDrawerOpened = true;
+                  } else {
+                    setCodeDrawer(prev => ({
+                      ...prev,
+                      open: true,
+                      title: codeTitle,
+                      version: codeVersion,
+                      liveGenerating: true,
+                      liveContent: codeLive
+                    }));
+                  }
+                }
+                // Update session in state
+                setScriptSessions(prev => {
+                  let updated = [...prev];
+                  let idx = updated.findIndex(s => s.id === sessionId);
+                  if (idx !== -1) {
+                    updated[idx] = {
+                      ...updated[idx],
+                      sections: { ...currentSections },
+                      status: "generating"
+                    };
+                  }
+                  return updated;
+                });
+              }
+              // Handle end of stream
+              if (data === "[DONE]") {
+                done = true;
+                break;
+              }
+            } catch {}
+          }
+        }
+      }
+      // Finalize session
+      setScriptSessions(prev => {
+        let updated = [...prev];
+        let idx = updated.findIndex(s => s.id === sessionId);
+        if (idx !== -1) {
+          updated[idx] = {
+            ...updated[idx],
+            sections: { ...currentSections },
+            status: "done"
+          };
+        }
+        return updated;
+      });
+      // Finalize code drawer
+      setCodeDrawer(prev => ({
+        ...prev,
+        open: true,
+        code: codeLive,
+        title: codeTitle,
+        version: codeVersion,
+        liveGenerating: false,
+        liveContent: ""
+      }));
+      resolve();
+    } catch (err) {
+      setScriptSessions(prev => {
+        let updated = [...prev];
+        let idx = updated.findIndex(s => s.id === sessionId);
+        if (idx !== -1) {
+          updated[idx] = {
+            ...updated[idx],
+            status: "error"
+          };
+        }
+        return updated;
+      });
+      setCodeDrawer(prev => ({
+        ...prev,
+        liveGenerating: false,
+        liveContent: ""
+      }));
+      reject(new Error("Streaming error. Please try again."));
+    }
+  });
+};
 
   // --- Chat Submission ---
   const handlePromptChange = (e) => {
