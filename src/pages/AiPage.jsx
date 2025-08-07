@@ -13,6 +13,7 @@ import FeedbackModal from "../components/FeedbackModal";
 import SimpleCodeDrawer from "../components/CodeDrawer";
 import WelcomeCard from "../components/WelcomeCard";
 import TokenBar from "../components/TokenBar";
+import { getAuth } from "firebase/auth";
 
 // --- Token System Constants ---
 const TOKEN_LIMIT = 4;
@@ -174,15 +175,13 @@ function useTokens(user) {
   };
 }
 
-// --- JWT Auth Helpers ---
-function getJWT() {
-  return localStorage.getItem("jwt_token");
-}
-function setJWT(token) {
-  localStorage.setItem("jwt_token", token);
-}
-function removeJWT() {
-  localStorage.removeItem("jwt_token");
+// --- Firebase ID Token Helper ---
+async function getFirebaseIdToken() {
+  const user = getAuth().currentUser;
+  if (user) {
+    return await user.getIdToken();
+  }
+  return null;
 }
 
 // --- Main Container Component ---
@@ -268,10 +267,10 @@ export default function NexusRBXAIPageContainer() {
     if (!user) return;
     const fetchScripts = async () => {
       try {
-        const jwt = getJWT();
+        const idToken = await getFirebaseIdToken();
         const res = await fetch(`${API_BASE}/api/scripts`, {
           headers: {
-            "Authorization": `Bearer ${jwt}`
+            "Authorization": `Bearer ${idToken}`
           }
         });
         if (!res.ok) throw new Error("Failed to fetch scripts");
@@ -352,10 +351,20 @@ export default function NexusRBXAIPageContainer() {
   }, [prompt, promptTemplates, userPromptTemplates, promptHistory]);
 
   // --- SSE Streaming AI Response (per script session) ---
+  // --- Enhanced: Progress Bar and Tab Animation during Code Generation ---
+  const [codeGenProgress, setCodeGenProgress] = useState(0);
+  const [tabAnimInterval, setTabAnimInterval] = useState(null);
+  const [tabAnimFrame, setTabAnimFrame] = useState(0);
+  const tabAnimFrames = [
+    "⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"
+  ];
+  const originalTitle = useRef(document.title);
+
+  // --- NEW: Buffer code and only open code drawer after code is fully generated ---
   const generateAIResponse = async (userPrompt, userSettings, conversation = []) => {
     return new Promise(async (resolve, reject) => {
-      let jwt = getJWT();
-      if (!jwt) {
+      let idToken = await getFirebaseIdToken();
+      if (!idToken) {
         reject(new Error("Not authenticated."));
         return;
       }
@@ -369,30 +378,60 @@ export default function NexusRBXAIPageContainer() {
       setScriptSessions(prev => [...prev, newSession]);
       let sessionIndex = null;
 
-      // Open SSE connection
+      // --- Start tab animation ---
+      if (!tabAnimInterval) {
+        originalTitle.current = document.title;
+        setTabAnimFrame(0);
+        const interval = setInterval(() => {
+          setTabAnimFrame(prev => {
+            const next = (prev + 1) % tabAnimFrames.length;
+            document.title = `${tabAnimFrames[next]} Generating Code... | NexusRBX`;
+            return next;
+          });
+        }, 120);
+        setTabAnimInterval(interval);
+      }
+
+      // --- Progress bar state ---
+      setCodeGenProgress(0);
+
       try {
-        const response = await fetch(`${API_BASE}/api/generate`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${jwt}`
-          },
-          body: JSON.stringify({
-            prompt: userPrompt,
-            modelVersion: userSettings.modelVersion,
-            creativity: userSettings.creativity,
-            codeStyle: userSettings.codeStyle,
-            conversation: conversation
-          })
-        });
+const response = await fetch(`${API_BASE}/api/generate`, {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    "Authorization": `Bearer ${idToken}`
+  },
+  body: JSON.stringify({
+    prompt: userPrompt,
+    modelVersion: userSettings.modelVersion,
+    creativity: userSettings.creativity,
+    codeStyle: userSettings.codeStyle,
+    conversation: conversation
+  }),
+  credentials: "include"
+});
 
         if (!response.ok) {
           const errorText = await response.text();
+          // --- Stop tab animation on error ---
+          if (tabAnimInterval) {
+            clearInterval(tabAnimInterval);
+            setTabAnimInterval(null);
+            document.title = originalTitle.current;
+          }
+          setCodeGenProgress(0);
           reject(new Error("API error: " + errorText));
           return;
         }
 
         if (!response.body) {
+          if (tabAnimInterval) {
+            clearInterval(tabAnimInterval);
+            setTabAnimInterval(null);
+            document.title = originalTitle.current;
+          }
+          setCodeGenProgress(0);
           reject(new Error("Streaming not supported."));
           return;
         }
@@ -401,13 +440,12 @@ export default function NexusRBXAIPageContainer() {
         let decoder = new TextDecoder();
         let done = false;
         let currentSections = {};
-        let codeStarted = false;
-        let codeLive = "";
         let codeTitle = "";
         let codeVersion = null;
-
-        // For code drawer: open only when code section starts
-        let codeDrawerOpened = false;
+        let codeBuffer = ""; // Buffer for code section
+        let codeSectionStarted = false;
+        let codeLengthEstimate = 8000; // fallback estimate
+        let codeReceived = 0;
 
         while (!done) {
           const { value, done: doneReading } = await reader.read();
@@ -434,32 +472,20 @@ export default function NexusRBXAIPageContainer() {
                   if (data.section === "title") {
                     codeTitle = data.content;
                   }
-                  // If code section, stream code live
+                  // If code section, buffer code
                   if (data.section === "code") {
-                    codeStarted = true;
-                    codeLive = data.content;
-                    codeVersion = data.version || currentSections.version || 1;
-                    // Open code drawer if not already open
-                    if (!codeDrawerOpened) {
-                      setCodeDrawer({
-                        open: true,
-                        code: "",
-                        title: codeTitle,
-                        version: codeVersion,
-                        liveGenerating: true,
-                        liveContent: codeLive
-                      });
-                      codeDrawerOpened = true;
-                    } else {
-                      setCodeDrawer(prev => ({
-                        ...prev,
-                        open: true,
-                        title: codeTitle,
-                        version: codeVersion,
-                        liveGenerating: true,
-                        liveContent: codeLive
-                      }));
+                    codeSectionStarted = true;
+                    if (typeof data.content === "string") {
+                      codeBuffer = data.content;
+                      codeReceived = data.content.length;
+                      // Estimate code length if possible
+                      if (data.content.length > codeLengthEstimate) {
+                        codeLengthEstimate = data.content.length + 1000;
+                      }
+                      let progress = Math.min(100, Math.floor((codeReceived / codeLengthEstimate) * 100));
+                      setCodeGenProgress(progress);
                     }
+                    codeVersion = data.version || currentSections.version || 1;
                   }
                   // Update session in state
                   setScriptSessions(prev => {
@@ -497,16 +523,22 @@ export default function NexusRBXAIPageContainer() {
           }
           return updated;
         });
-        // Finalize code drawer
-        setCodeDrawer(prev => ({
-          ...prev,
+        // --- Only open code drawer now, after code is fully generated ---
+        setCodeDrawer({
           open: true,
-          code: codeLive,
+          code: codeBuffer,
           title: codeTitle,
           version: codeVersion,
           liveGenerating: false,
           liveContent: ""
-        }));
+        });
+        setCodeGenProgress(100);
+        // --- Stop tab animation ---
+        if (tabAnimInterval) {
+          clearInterval(tabAnimInterval);
+          setTabAnimInterval(null);
+          document.title = originalTitle.current;
+        }
         resolve();
       } catch (err) {
         setScriptSessions(prev => {
@@ -525,6 +557,13 @@ export default function NexusRBXAIPageContainer() {
           liveGenerating: false,
           liveContent: ""
         }));
+        setCodeGenProgress(0);
+        // --- Stop tab animation on error ---
+        if (tabAnimInterval) {
+          clearInterval(tabAnimInterval);
+          setTabAnimInterval(null);
+          document.title = originalTitle.current;
+        }
         reject(new Error("Streaming error. Please try again."));
       }
     });
@@ -644,12 +683,12 @@ export default function NexusRBXAIPageContainer() {
       tags: finalTags || []
     };
     try {
-      const jwt = getJWT();
+      const idToken = await getFirebaseIdToken();
       const res = await fetch(`${API_BASE}/api/scripts`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${jwt}`
+          "Authorization": `Bearer ${idToken}`
         },
         body: JSON.stringify(newScript)
       });
@@ -670,12 +709,12 @@ export default function NexusRBXAIPageContainer() {
     );
     if (!user) return;
     try {
-      const jwt = getJWT();
+      const idToken = await getFirebaseIdToken();
       await fetch(`${API_BASE}/api/scripts/${scriptId}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${jwt}`
+          "Authorization": `Bearer ${idToken}`
         },
         body: JSON.stringify({ title: newTitle })
       });
@@ -687,11 +726,11 @@ export default function NexusRBXAIPageContainer() {
     setSavedScripts((prev) => prev.filter((script) => script.id !== scriptId));
     if (!user) return;
     try {
-      const jwt = getJWT();
+      const idToken = await getFirebaseIdToken();
       await fetch(`${API_BASE}/api/scripts/${scriptId}`, {
         method: "DELETE",
         headers: {
-          "Authorization": `Bearer ${jwt}`
+          "Authorization": `Bearer ${idToken}`
         }
       });
     } catch (err) {}
@@ -705,12 +744,12 @@ export default function NexusRBXAIPageContainer() {
       )
     );
     try {
-      const jwt = getJWT();
+      const idToken = await getFirebaseIdToken();
       await fetch(`${API_BASE}/api/scripts/${scriptId}/favorite`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${jwt}`
+          "Authorization": `Bearer ${idToken}`
         },
         body: JSON.stringify({ favorite })
       });
@@ -725,12 +764,12 @@ export default function NexusRBXAIPageContainer() {
       )
     );
     try {
-      const jwt = getJWT();
+      const idToken = await getFirebaseIdToken();
       await fetch(`${API_BASE}/api/scripts/${scriptId}/tags`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${jwt}`
+          "Authorization": `Bearer ${idToken}`
         },
         body: JSON.stringify({ tags })
       });
@@ -835,10 +874,10 @@ export default function NexusRBXAIPageContainer() {
     setVersionModalVersions([]);
     setShowVersionModal(true);
     try {
-      const jwt = getJWT();
+      const idToken = await getFirebaseIdToken();
       const res = await fetch(`${API_BASE}/api/scripts/${script.baseScriptId}/versions`, {
         headers: {
-          "Authorization": `Bearer ${jwt}`
+          "Authorization": `Bearer ${idToken}`
         }
       });
       if (!res.ok) throw new Error("Failed to fetch versions");
@@ -1318,6 +1357,7 @@ export default function NexusRBXAIPageContainer() {
           liveGenerating={codeDrawer.liveGenerating}
           liveContent={codeDrawer.liveContent}
           version={codeDrawer.version}
+          codeGenProgress={codeGenProgress}
           onClose={() => setCodeDrawer({ open: false, code: "", title: "", version: null, liveGenerating: false, liveContent: "" })}
           onSaveScript={(newTitle, code) => handleSaveScript(newTitle, code)}
         />

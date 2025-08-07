@@ -10,9 +10,9 @@ import {
   Loader,
   ArrowRight,
   CheckCircle,
-  Chrome,
   Check
 } from "lucide-react";
+import { FcGoogle } from "react-icons/fc";
 import { auth } from "../firebase";
 import {
   signInWithEmailAndPassword,
@@ -22,6 +22,7 @@ import {
   signOut,
   onAuthStateChanged
 } from "firebase/auth";
+
 
 // Container Component
 export default function NexusRBXSignInPageContainer() {
@@ -273,14 +274,14 @@ function NexusRBXSignInPage({
             {/* Social Sign In Options */}
             <div className="p-6 border-b border-gray-800">
               <div className="grid grid-cols-2 gap-4">
-                <button
-                  onClick={handleGoogleSignIn}
-                  disabled={formStatus.status === "submitting"}
-                  className="flex items-center justify-center py-2 px-4 bg-gray-800 hover:bg-gray-700 rounded-lg border border-gray-700 transition-colors duration-300"
-                >
-                  <Chrome className="h-5 w-5 mr-2 text-[#ea4335]" />
-                  <span>Google</span>
-                </button>
+<button
+  onClick={handleGoogleSignIn}
+  disabled={formStatus.status === "submitting"}
+  className="flex items-center justify-center py-2 px-4 bg-gray-800 hover:bg-gray-700 rounded-lg border border-gray-700 transition-colors duration-300"
+>
+  <FcGoogle className="h-5 w-5 mr-2" />
+  <span>Google</span>
+</button>
 
                 <button
                   onClick={handleGithubSignIn}

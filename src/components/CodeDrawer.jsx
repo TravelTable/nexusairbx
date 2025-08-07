@@ -20,10 +20,7 @@ export default function SimpleCodeDrawer({
   code = "",
   title = "Script Code",
   onClose,
-  onSaveScript, // function: (newTitle, code) => void
-  liveGenerating = false,
-  liveContent = "",
-  onLiveOpen // optional: callback when drawer opens for live gen
+  onSaveScript // function: (newTitle, code) => void
 }) {
   // Responsive drawer width (updates on resize)
   const [drawerWidth, setDrawerWidth] = React.useState(getDrawerWidth());
@@ -38,15 +35,15 @@ export default function SimpleCodeDrawer({
     return () => window.removeEventListener("resize", handleResize);
   }, [open]);
 
-// Editable title state
-const [editTitle, setEditTitle] = useState(title || "Script Code");
-const [isEditing, setIsEditing] = useState(false);
-const inputRef = useRef(null);
+  // Editable title state
+  const [editTitle, setEditTitle] = useState(title || "Script Code");
+  const [isEditing, setIsEditing] = useState(false);
+  const inputRef = useRef(null);
 
-// Keep editTitle in sync with prop title
-useEffect(() => {
-  setEditTitle(title || "Script Code");
-}, [title]);
+  // Keep editTitle in sync with prop title
+  useEffect(() => {
+    setEditTitle(title || "Script Code");
+  }, [title]);
 
   // Focus input when editing
   useEffect(() => {
@@ -55,13 +52,6 @@ useEffect(() => {
       inputRef.current.select();
     }
   }, [isEditing]);
-
-  // Open callback for live gen
-  useEffect(() => {
-    if (open && typeof onLiveOpen === "function") {
-      onLiveOpen();
-    }
-  }, [open, onLiveOpen]);
 
   // Download helpers
   const downloadFile = (ext) => {
@@ -92,13 +82,12 @@ useEffect(() => {
     }
   };
 
-// Only show the drawer if open
-if (!open) return null;
+  // Only show the drawer if open
+  if (!open) return null;
 
-// Live code logic
-const displayCode = liveGenerating
-  ? (liveContent && liveContent.trim() !== "" ? liveContent : "-- Generating code... --")
-  : (code && code.trim() !== "" ? code : "-- No code to display --");
+  // Code display logic
+  const displayCode = code && code.trim() !== "" ? code : "-- No code to display --";
+
   return (
     <AnimatePresence>
       <motion.div
@@ -161,31 +150,24 @@ const displayCode = liveGenerating
         </div>
         {/* Code Viewer */}
         <div className="flex-1 overflow-auto p-0">
-<div className="relative">
-  <SyntaxHighlighter
-    language="lua"
-    style={atomOneDark}
-    customStyle={{
-      background: "#181825",
-      margin: 0,
-      borderRadius: 0,
-      fontSize: "1rem",
-      minHeight: "100%",
-      padding: "1.5rem 1.25rem"
-    }}
-    showLineNumbers
-    wrapLongLines
-  >
-    {displayCode}
-  </SyntaxHighlighter>
-  {liveGenerating && (
-    <div className="absolute bottom-4 left-0 w-full flex justify-center pointer-events-none">
-      <span className="bg-[#181825] text-[#00f5d4] px-4 py-2 rounded-lg font-mono text-sm animate-pulse border border-[#00f5d4] shadow-lg">
-        Generating code live...
-      </span>
-    </div>
-  )}
-</div>
+          <div className="relative">
+            <SyntaxHighlighter
+              language="lua"
+              style={atomOneDark}
+              customStyle={{
+                background: "#181825",
+                margin: 0,
+                borderRadius: 0,
+                fontSize: "1rem",
+                minHeight: "100%",
+                padding: "1.5rem 1.25rem"
+              }}
+              showLineNumbers
+              wrapLongLines
+            >
+              {displayCode}
+            </SyntaxHighlighter>
+          </div>
         </div>
         {/* Bottom Buttons */}
         <div className="flex flex-wrap items-center gap-3 justify-end p-4 border-t border-gray-800 bg-[#161622]">
