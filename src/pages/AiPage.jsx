@@ -21,6 +21,8 @@ const TOKEN_REFRESH_HOURS = 48; // 2 days
 // --- Developer Email for Infinite Tokens ---
 const DEVELOPER_EMAIL = "jackt1263@gmail.com"; // CHANGE THIS TO YOUR DEV EMAIL
 
+const API_BASE = "https://nexusrbx-backend-production.up.railway.app";
+
 const modelOptions = [
   { value: "nexus-3", label: "Nexus-3 (Legacy, Default)" },
   { value: "nexus-4", label: "Nexus-4 (Fast, Accurate)" },
@@ -262,39 +264,39 @@ export default function NexusRBXAIPageContainer() {
   } = useTokens(user);
 
   // --- Saved Scripts, Folders, Tags ---
-useEffect(() => {
-  if (!user) return;
-  const fetchScripts = async () => {
-    try {
-      const jwt = getJWT();
-      const res = await fetch(`/api/scripts`, {
-        headers: {
-          "Authorization": `Bearer ${jwt}`
-        }
-      });
-      if (!res.ok) throw new Error("Failed to fetch scripts");
-      const scripts = await res.json();
-      const folderSet = new Set();
-      const tagSet = new Set();
-      scripts.forEach((data) => {
-        if (data.folder) folderSet.add(data.folder);
-        if (Array.isArray(data.tags)) data.tags.forEach(t => tagSet.add(t));
-      });
-      setSavedScripts(scripts);
-      setFolders(["all", ...Array.from(folderSet)]);
-      setTags(["all", ...Array.from(tagSet)]);
-    } catch (err) {
-      setSavedScripts([]);
-    }
-  };
-  fetchScripts();
-  // Only fetch on user change
-  // eslint-disable-next-line
-}, [user]);
+  useEffect(() => {
+    if (!user) return;
+    const fetchScripts = async () => {
+      try {
+        const jwt = getJWT();
+        const res = await fetch(`${API_BASE}/api/scripts`, {
+          headers: {
+            "Authorization": `Bearer ${jwt}`
+          }
+        });
+        if (!res.ok) throw new Error("Failed to fetch scripts");
+        const scripts = await res.json();
+        const folderSet = new Set();
+        const tagSet = new Set();
+        scripts.forEach((data) => {
+          if (data.folder) folderSet.add(data.folder);
+          if (Array.isArray(data.tags)) data.tags.forEach(t => tagSet.add(t));
+        });
+        setSavedScripts(scripts);
+        setFolders(["all", ...Array.from(folderSet)]);
+        setTags(["all", ...Array.from(tagSet)]);
+      } catch (err) {
+        setSavedScripts([]);
+      }
+    };
+    fetchScripts();
+    // Only fetch on user change
+    // eslint-disable-next-line
+  }, [user]);
 
   // --- Prompt Templates ---
   useEffect(() => {
-    fetch("https://nexusrbx-backend-production.up.railway.app/api/prompt-templates")
+    fetch(`${API_BASE}/api/prompt-templates`)
       .then(res => res.json())
       .then(data => setPromptTemplates(data.templates || []))
       .catch(() => setPromptTemplates([]));
@@ -316,7 +318,7 @@ useEffect(() => {
   // --- Trending Prompt Suggestions (from backend) ---
   useEffect(() => {
     setPromptSuggestionLoading(true);
-    fetch("https://nexusrbx-backend-production.up.railway.app/api/prompt-templates")
+    fetch(`${API_BASE}/api/prompt-templates`)
       .then(res => res.json())
       .then(data => {
         setPromptSuggestions(data.templates || []);
@@ -350,183 +352,183 @@ useEffect(() => {
   }, [prompt, promptTemplates, userPromptTemplates, promptHistory]);
 
   // --- SSE Streaming AI Response (per script session) ---
-const generateAIResponse = async (userPrompt, userSettings, conversation = []) => {
-  return new Promise(async (resolve, reject) => {
-    let jwt = getJWT();
-    if (!jwt) {
-      reject(new Error("Not authenticated."));
-      return;
-    }
-    let sessionId = Date.now() + Math.floor(Math.random() * 10000);
-    let newSession = {
-      id: sessionId,
-      prompt: userPrompt,
-      sections: {},
-      status: "generating"
-    };
-    setScriptSessions(prev => [...prev, newSession]);
-    let sessionIndex = null;
-
-    // Open SSE connection
-    try {
-      const response = await fetch("https://nexusrbx-backend-production.up.railway.app/api/generate", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${jwt}`
-        },
-        body: JSON.stringify({
-          prompt: userPrompt,
-          modelVersion: userSettings.modelVersion,
-          creativity: userSettings.creativity,
-          codeStyle: userSettings.codeStyle,
-          conversation: conversation
-        })
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        reject(new Error("API error: " + errorText));
+  const generateAIResponse = async (userPrompt, userSettings, conversation = []) => {
+    return new Promise(async (resolve, reject) => {
+      let jwt = getJWT();
+      if (!jwt) {
+        reject(new Error("Not authenticated."));
         return;
       }
+      let sessionId = Date.now() + Math.floor(Math.random() * 10000);
+      let newSession = {
+        id: sessionId,
+        prompt: userPrompt,
+        sections: {},
+        status: "generating"
+      };
+      setScriptSessions(prev => [...prev, newSession]);
+      let sessionIndex = null;
 
-      if (!response.body) {
-        reject(new Error("Streaming not supported."));
-        return;
-      }
+      // Open SSE connection
+      try {
+        const response = await fetch(`${API_BASE}/api/generate`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${jwt}`
+          },
+          body: JSON.stringify({
+            prompt: userPrompt,
+            modelVersion: userSettings.modelVersion,
+            creativity: userSettings.creativity,
+            codeStyle: userSettings.codeStyle,
+            conversation: conversation
+          })
+        });
 
-      const reader = response.body.getReader();
-      let decoder = new TextDecoder();
-      let done = false;
-      let currentSections = {};
-      let codeStarted = false;
-      let codeLive = "";
-      let codeTitle = "";
-      let codeVersion = null;
+        if (!response.ok) {
+          const errorText = await response.text();
+          reject(new Error("API error: " + errorText));
+          return;
+        }
 
-      // For code drawer: open only when code section starts
-      let codeDrawerOpened = false;
+        if (!response.body) {
+          reject(new Error("Streaming not supported."));
+          return;
+        }
 
-      while (!done) {
-        const { value, done: doneReading } = await reader.read();
-        if (doneReading) break;
-        const chunk = decoder.decode(value, { stream: true });
-        // Parse SSE lines
-        const lines = chunk.split("\n\n");
-        for (let line of lines) {
-          if (line.startsWith("data:")) {
-            try {
-              const data = JSON.parse(line.replace(/^data:\s*/, ""));
-              if (data.section) {
-                // Find session index
-                if (sessionIndex === null) {
-                  sessionIndex = scriptSessions.length;
-                }
-                // Update section in session
-                currentSections = { ...currentSections, [data.section]: data.content };
-                // If version is present, store it
-                if (data.version) {
-                  currentSections.version = data.version;
-                }
-                // If title is present, store it for code drawer
-                if (data.section === "title") {
-                  codeTitle = data.content;
-                }
-                // If code section, stream code live
-                if (data.section === "code") {
-                  codeStarted = true;
-                  codeLive = data.content;
-                  codeVersion = data.version || currentSections.version || 1;
-                  // Open code drawer if not already open
-                  if (!codeDrawerOpened) {
-                    setCodeDrawer({
-                      open: true,
-                      code: "",
-                      title: codeTitle,
-                      version: codeVersion,
-                      liveGenerating: true,
-                      liveContent: codeLive
-                    });
-                    codeDrawerOpened = true;
-                  } else {
-                    setCodeDrawer(prev => ({
-                      ...prev,
-                      open: true,
-                      title: codeTitle,
-                      version: codeVersion,
-                      liveGenerating: true,
-                      liveContent: codeLive
-                    }));
+        const reader = response.body.getReader();
+        let decoder = new TextDecoder();
+        let done = false;
+        let currentSections = {};
+        let codeStarted = false;
+        let codeLive = "";
+        let codeTitle = "";
+        let codeVersion = null;
+
+        // For code drawer: open only when code section starts
+        let codeDrawerOpened = false;
+
+        while (!done) {
+          const { value, done: doneReading } = await reader.read();
+          if (doneReading) break;
+          const chunk = decoder.decode(value, { stream: true });
+          // Parse SSE lines
+          const lines = chunk.split("\n\n");
+          for (let line of lines) {
+            if (line.startsWith("data:")) {
+              try {
+                const data = JSON.parse(line.replace(/^data:\s*/, ""));
+                if (data.section) {
+                  // Find session index
+                  if (sessionIndex === null) {
+                    sessionIndex = scriptSessions.length;
                   }
-                }
-                // Update session in state
-                setScriptSessions(prev => {
-                  let updated = [...prev];
-                  let idx = updated.findIndex(s => s.id === sessionId);
-                  if (idx !== -1) {
-                    updated[idx] = {
-                      ...updated[idx],
-                      sections: { ...currentSections },
-                      status: "generating"
-                    };
+                  // Update section in session
+                  currentSections = { ...currentSections, [data.section]: data.content };
+                  // If version is present, store it
+                  if (data.version) {
+                    currentSections.version = data.version;
                   }
-                  return updated;
-                });
-              }
-              // Handle end of stream
-              if (data === "[DONE]") {
-                done = true;
-                break;
-              }
-            } catch {}
+                  // If title is present, store it for code drawer
+                  if (data.section === "title") {
+                    codeTitle = data.content;
+                  }
+                  // If code section, stream code live
+                  if (data.section === "code") {
+                    codeStarted = true;
+                    codeLive = data.content;
+                    codeVersion = data.version || currentSections.version || 1;
+                    // Open code drawer if not already open
+                    if (!codeDrawerOpened) {
+                      setCodeDrawer({
+                        open: true,
+                        code: "",
+                        title: codeTitle,
+                        version: codeVersion,
+                        liveGenerating: true,
+                        liveContent: codeLive
+                      });
+                      codeDrawerOpened = true;
+                    } else {
+                      setCodeDrawer(prev => ({
+                        ...prev,
+                        open: true,
+                        title: codeTitle,
+                        version: codeVersion,
+                        liveGenerating: true,
+                        liveContent: codeLive
+                      }));
+                    }
+                  }
+                  // Update session in state
+                  setScriptSessions(prev => {
+                    let updated = [...prev];
+                    let idx = updated.findIndex(s => s.id === sessionId);
+                    if (idx !== -1) {
+                      updated[idx] = {
+                        ...updated[idx],
+                        sections: { ...currentSections },
+                        status: "generating"
+                      };
+                    }
+                    return updated;
+                  });
+                }
+                // Handle end of stream
+                if (data === "[DONE]") {
+                  done = true;
+                  break;
+                }
+              } catch {}
+            }
           }
         }
+        // Finalize session
+        setScriptSessions(prev => {
+          let updated = [...prev];
+          let idx = updated.findIndex(s => s.id === sessionId);
+          if (idx !== -1) {
+            updated[idx] = {
+              ...updated[idx],
+              sections: { ...currentSections },
+              status: "done"
+            };
+          }
+          return updated;
+        });
+        // Finalize code drawer
+        setCodeDrawer(prev => ({
+          ...prev,
+          open: true,
+          code: codeLive,
+          title: codeTitle,
+          version: codeVersion,
+          liveGenerating: false,
+          liveContent: ""
+        }));
+        resolve();
+      } catch (err) {
+        setScriptSessions(prev => {
+          let updated = [...prev];
+          let idx = updated.findIndex(s => s.id === sessionId);
+          if (idx !== -1) {
+            updated[idx] = {
+              ...updated[idx],
+              status: "error"
+            };
+          }
+          return updated;
+        });
+        setCodeDrawer(prev => ({
+          ...prev,
+          liveGenerating: false,
+          liveContent: ""
+        }));
+        reject(new Error("Streaming error. Please try again."));
       }
-      // Finalize session
-      setScriptSessions(prev => {
-        let updated = [...prev];
-        let idx = updated.findIndex(s => s.id === sessionId);
-        if (idx !== -1) {
-          updated[idx] = {
-            ...updated[idx],
-            sections: { ...currentSections },
-            status: "done"
-          };
-        }
-        return updated;
-      });
-      // Finalize code drawer
-      setCodeDrawer(prev => ({
-        ...prev,
-        open: true,
-        code: codeLive,
-        title: codeTitle,
-        version: codeVersion,
-        liveGenerating: false,
-        liveContent: ""
-      }));
-      resolve();
-    } catch (err) {
-      setScriptSessions(prev => {
-        let updated = [...prev];
-        let idx = updated.findIndex(s => s.id === sessionId);
-        if (idx !== -1) {
-          updated[idx] = {
-            ...updated[idx],
-            status: "error"
-          };
-        }
-        return updated;
-      });
-      setCodeDrawer(prev => ({
-        ...prev,
-        liveGenerating: false,
-        liveContent: ""
-      }));
-      reject(new Error("Streaming error. Please try again."));
-    }
-  });
-};
+    });
+  };
 
   // --- Chat Submission ---
   const handlePromptChange = (e) => {
@@ -600,140 +602,140 @@ const generateAIResponse = async (userPrompt, userSettings, conversation = []) =
 
   // --- Save Script (with folder/tag/version support) ---
   const handleSaveScript = async (title, code, baseScript = null, folder = null, tagsArr = []) => {
-  if (!user || !code) return;
+    if (!user || !code) return;
 
-  let baseTitle = title || `Script ${savedScripts.length + 1}`;
-  let version = 1;
+    let baseTitle = title || `Script ${savedScripts.length + 1}`;
+    let version = 1;
 
-  // If editing an existing script, increment version in title
-  if (baseScript) {
-    const titleMatch = baseScript.title.match(/(.+?)(?: v(\d+))?$/i);
-    if (titleMatch) {
-      baseTitle = titleMatch[1].trim();
-      version = titleMatch[2] ? parseInt(titleMatch[2], 10) + 1 : 2;
+    // If editing an existing script, increment version in title
+    if (baseScript) {
+      const titleMatch = baseScript.title.match(/(.+?)(?: v(\d+))?$/i);
+      if (titleMatch) {
+        baseTitle = titleMatch[1].trim();
+        version = titleMatch[2] ? parseInt(titleMatch[2], 10) + 1 : 2;
+      }
     }
-  }
 
-  // Prompt for folder and tags if not provided
-  let finalFolder = folder;
-  let finalTags = tagsArr;
+    // Prompt for folder and tags if not provided
+    let finalFolder = folder;
+    let finalTags = tagsArr;
 
-  if (!folder) {
-    finalFolder = window.prompt("Enter folder name for this script (optional):", "");
-    if (finalFolder === null) finalFolder = ""; // Cancel = blank
-  }
-  if (!tagsArr || tagsArr.length === 0) {
-    const tagStr = window.prompt("Enter tags for this script (comma separated, optional):", "");
-    if (tagStr !== null && tagStr.trim() !== "") {
-      finalTags = tagStr.split(",").map(t => t.trim()).filter(Boolean);
-    } else {
-      finalTags = [];
+    if (!folder) {
+      finalFolder = window.prompt("Enter folder name for this script (optional):", "");
+      if (finalFolder === null) finalFolder = ""; // Cancel = blank
     }
-  }
+    if (!tagsArr || tagsArr.length === 0) {
+      const tagStr = window.prompt("Enter tags for this script (comma separated, optional):", "");
+      if (tagStr !== null && tagStr.trim() !== "") {
+        finalTags = tagStr.split(",").map(t => t.trim()).filter(Boolean);
+      } else {
+        finalTags = [];
+      }
+    }
 
-  const newScript = {
-    title: baseScript ? `${baseTitle} v${version}` : baseTitle,
-    description: "",
-    code: code,
-    language: "lua",
-    baseScriptId: baseScript ? baseScript.id : null,
-    version: version,
-    folder: finalFolder || null,
-    tags: finalTags || []
+    const newScript = {
+      title: baseScript ? `${baseTitle} v${version}` : baseTitle,
+      description: "",
+      code: code,
+      language: "lua",
+      baseScriptId: baseScript ? baseScript.id : null,
+      version: version,
+      folder: finalFolder || null,
+      tags: finalTags || []
+    };
+    try {
+      const jwt = getJWT();
+      const res = await fetch(`${API_BASE}/api/scripts`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${jwt}`
+        },
+        body: JSON.stringify(newScript)
+      });
+      if (!res.ok) throw new Error("Failed to save script");
+      const saved = await res.json();
+      setSavedScripts((prev) => [saved, ...prev]);
+      alert("Script saved!");
+    } catch (err) {
+      setSavedScripts((prev) => [{ ...newScript, id: Date.now() }, ...prev]);
+      alert("Script saved locally (offline mode).");
+    }
   };
-  try {
-    const jwt = getJWT();
-    const res = await fetch("https://nexusrbx-backend-production.up.railway.app/api/scripts", {
-    
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${jwt}`
-      },
-      body: JSON.stringify(newScript)
-    });
-    if (!res.ok) throw new Error("Failed to save script");
-    const saved = await res.json();
-    setSavedScripts((prev) => [saved, ...prev]);
-    alert("Script saved!");
-  } catch (err) {
-    setSavedScripts((prev) => [{ ...newScript, id: Date.now() }, ...prev]);
-    alert("Script saved locally (offline mode).");
-  }
-};
 
   // --- Update Script Title ---
-const handleUpdateScriptTitle = async (scriptId, newTitle) => {
-  setSavedScripts((prev) =>
-    prev.map((script) => (script.id === scriptId ? { ...script, title: newTitle } : script))
-  );
-  if (!user) return;
-  try {
-    const jwt = getJWT();
-    await fetch(`/api/scripts/${scriptId}`, {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${jwt}`
-      },
-      body: JSON.stringify({ title: newTitle })
-    });
-  } catch (err) {}
-};
+  const handleUpdateScriptTitle = async (scriptId, newTitle) => {
+    setSavedScripts((prev) =>
+      prev.map((script) => (script.id === scriptId ? { ...script, title: newTitle } : script))
+    );
+    if (!user) return;
+    try {
+      const jwt = getJWT();
+      await fetch(`${API_BASE}/api/scripts/${scriptId}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${jwt}`
+        },
+        body: JSON.stringify({ title: newTitle })
+      });
+    } catch (err) {}
+  };
+
   // --- Delete Script ---
-const handleDeleteScript = async (scriptId) => {
-  setSavedScripts((prev) => prev.filter((script) => script.id !== scriptId));
-  if (!user) return;
-  try {
-    const jwt = getJWT();
-    await fetch(`/api/scripts/${scriptId}`, {
-      method: "DELETE",
-      headers: {
-        "Authorization": `Bearer ${jwt}`
-      }
-    });
-  } catch (err) {}
-};
+  const handleDeleteScript = async (scriptId) => {
+    setSavedScripts((prev) => prev.filter((script) => script.id !== scriptId));
+    if (!user) return;
+    try {
+      const jwt = getJWT();
+      await fetch(`${API_BASE}/api/scripts/${scriptId}`, {
+        method: "DELETE",
+        headers: {
+          "Authorization": `Bearer ${jwt}`
+        }
+      });
+    } catch (err) {}
+  };
 
   // --- Favorite/Unfavorite Script ---
-const handleFavoriteScript = async (scriptId, favorite) => {
-  setSavedScripts((prev) =>
-    prev.map((script) =>
-      script.id === scriptId ? { ...script, favorite } : script
-    )
-  );
-  try {
-    const jwt = getJWT();
-    await fetch(`/api/scripts/${scriptId}/favorite`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${jwt}`
-      },
-      body: JSON.stringify({ favorite })
-    });
-  } catch (err) {}
-};
+  const handleFavoriteScript = async (scriptId, favorite) => {
+    setSavedScripts((prev) =>
+      prev.map((script) =>
+        script.id === scriptId ? { ...script, favorite } : script
+      )
+    );
+    try {
+      const jwt = getJWT();
+      await fetch(`${API_BASE}/api/scripts/${scriptId}/favorite`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${jwt}`
+        },
+        body: JSON.stringify({ favorite })
+      });
+    } catch (err) {}
+  };
 
   // --- Tag Script ---
-const handleTagScript = async (scriptId, tags) => {
-  setSavedScripts((prev) =>
-    prev.map((script) =>
-      script.id === scriptId ? { ...script, tags } : script
-    )
-  );
-  try {
-    const jwt = getJWT();
-    await fetch(`/api/scripts/${scriptId}/tags`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${jwt}`
-      },
-      body: JSON.stringify({ tags })
-    });
-  } catch (err) {}
-};
+  const handleTagScript = async (scriptId, tags) => {
+    setSavedScripts((prev) =>
+      prev.map((script) =>
+        script.id === scriptId ? { ...script, tags } : script
+      )
+    );
+    try {
+      const jwt = getJWT();
+      await fetch(`${API_BASE}/api/scripts/${scriptId}/tags`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${jwt}`
+        },
+        body: JSON.stringify({ tags })
+      });
+    } catch (err) {}
+  };
 
   // --- Clear Chat ---
   const handleClearChat = () => {
@@ -753,7 +755,7 @@ const handleTagScript = async (scriptId, tags) => {
     setShowImprovedModal(true);
     setImprovedScriptContent("Improving script...");
     try {
-      const res = await fetch("https://nexusrbx-backend-production.up.railway.app/api/improve", {
+      const res = await fetch(`${API_BASE}/api/improve`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ script: code })
@@ -769,7 +771,7 @@ const handleTagScript = async (scriptId, tags) => {
     setShowExplainModal(true);
     setExplainContent("Explaining script...");
     try {
-      const res = await fetch("https://nexusrbx-backend-production.up.railway.app/api/explain", {
+      const res = await fetch(`${API_BASE}/api/explain`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ script: code })
@@ -785,7 +787,7 @@ const handleTagScript = async (scriptId, tags) => {
     setShowLintModal(true);
     setLintContent("Linting script...");
     try {
-      const res = await fetch("https://nexusrbx-backend-production.up.railway.app/api/lint", {
+      const res = await fetch(`${API_BASE}/api/lint`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ script: code })
@@ -814,7 +816,7 @@ const handleTagScript = async (scriptId, tags) => {
     setShowFeedbackModal(false);
     setFeedbackMsgId(null);
     try {
-      await fetch("https://nexusrbx-backend-production.up.railway.app/api/feedback", {
+      await fetch(`${API_BASE}/api/feedback`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -827,25 +829,25 @@ const handleTagScript = async (scriptId, tags) => {
   };
 
   // --- Script Version History Modal ---
-const openVersionHistory = async (script) => {
-  if (!script) return;
-  setVersionModalScript(script);
-  setVersionModalVersions([]);
-  setShowVersionModal(true);
-  try {
-    const jwt = getJWT();
-    const res = await fetch(`/api/scripts/${script.baseScriptId}/versions`, {
-      headers: {
-        "Authorization": `Bearer ${jwt}`
-      }
-    });
-    if (!res.ok) throw new Error("Failed to fetch versions");
-    const versions = await res.json();
-    setVersionModalVersions(versions.sort((a, b) => (b.version || 1) - (a.version || 1)));
-  } catch (err) {
+  const openVersionHistory = async (script) => {
+    if (!script) return;
+    setVersionModalScript(script);
     setVersionModalVersions([]);
-  }
-};
+    setShowVersionModal(true);
+    try {
+      const jwt = getJWT();
+      const res = await fetch(`${API_BASE}/api/scripts/${script.baseScriptId}/versions`, {
+        headers: {
+          "Authorization": `Bearer ${jwt}`
+        }
+      });
+      if (!res.ok) throw new Error("Failed to fetch versions");
+      const versions = await res.json();
+      setVersionModalVersions(versions.sort((a, b) => (b.version || 1) - (a.version || 1)));
+    } catch (err) {
+      setVersionModalVersions([]);
+    }
+  };
 
   // --- Copy to Roblox Studio Modal ---
   const openStudioModal = (code) => {
