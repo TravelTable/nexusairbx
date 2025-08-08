@@ -255,6 +255,14 @@ export default function NexusRBXAIPageContainer() {
   const [codeReady, setCodeReady] = useState(false);
   const [scriptSaved, setScriptSaved] = useState(false);
 
+  // --- Ref for scrolling to bottom ---
+  const messagesEndRef = useRef(null);
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [scriptSessions, isGenerating, isCodeLoading]);
+
   // --- Auth ---
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
@@ -592,7 +600,108 @@ export default function NexusRBXAIPageContainer() {
     }
   };
 
-  // ... rest of your component logic remains unchanged ...
+  // --- Prompt input change ---
+  const handlePromptChange = (e) => {
+    setPrompt(e.target.value);
+  };
+
+  // --- Prompt autocomplete selection ---
+  const handlePromptAutocomplete = (sugg) => {
+    setPrompt(sugg);
+    setPromptAutocomplete([]);
+  };
+
+  // --- Submit prompt ---
+  const handleSubmit = async (e) => {
+    if (e) e.preventDefault();
+    if (
+      isGenerating ||
+      !prompt.trim() ||
+      tokens === 0 ||
+      tokens === null ||
+      tokens === undefined ||
+      tokensLoading ||
+      prompt.length > 800
+    ) {
+      return;
+    }
+    setIsGenerating(true);
+    try {
+      // Consume a token
+      const ok = await consumeToken();
+      if (!ok) {
+        setPromptError("You have no tokens left.");
+        setIsGenerating(false);
+        return;
+      }
+      // Add to prompt history
+      setPromptHistory((prev) => {
+        const updated = [prompt, ...prev.filter((p) => p !== prompt)];
+        return updated.slice(0, 20);
+      });
+      await generateAIResponse(prompt, settings, []);
+      setPrompt("");
+    } catch (err) {
+      setPromptError("Failed to generate script. Please try again.");
+    }
+    setIsGenerating(false);
+  };
+
+  // --- Save script to backend ---
+  const handleSaveScript = async (title, code) => {
+    if (!user) return;
+    try {
+      const jwt = await getJWT();
+      const res = await fetch(`${API_BASE}/api/scripts`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${jwt}`
+        },
+        body: JSON.stringify({
+          title,
+          code,
+          folder: selectedFolder !== "all" ? selectedFolder : null,
+          tags: selectedTag !== "all" ? [selectedTag] : [],
+        })
+      });
+      if (res.ok) {
+        // Optionally refresh saved scripts
+        const scripts = await res.json();
+        setSavedScripts(scripts);
+      }
+    } catch (err) {}
+  };
+
+  // --- Add folder ---
+  const handleAddFolder = () => {
+    if (!newFolderName.trim()) return;
+    setFolders((prev) => [...prev, newFolderName.trim()]);
+    setNewFolderName("");
+    setShowAddFolderModal(false);
+  };
+
+  // --- Add tag ---
+  const handleAddTag = () => {
+    if (!newTagName.trim()) return;
+    setTags((prev) => [...prev, newTagName.trim()]);
+    setNewTagName("");
+    setShowAddTagModal(false);
+  };
+
+  // --- Add prompt template ---
+  const handleAddPromptTemplate = () => {
+    if (!newPromptTemplate.trim()) return;
+    setUserPromptTemplates((prev) => [...prev, newPromptTemplate.trim()]);
+    setNewPromptTemplate("");
+    setShowPromptTemplateModal(false);
+  };
+
+  // --- Submit feedback ---
+  const submitFeedback = (feedback) => {
+    // Implement feedback submission logic here (e.g., send to backend)
+    setShowFeedbackModal(false);
+  };
 
   // --- Main Layout ---
   return (
