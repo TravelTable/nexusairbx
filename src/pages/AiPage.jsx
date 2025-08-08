@@ -21,7 +21,7 @@ const TOKEN_REFRESH_HOURS = 48; // 2 days
 // --- Developer Email for Infinite Tokens ---
 const DEVELOPER_EMAIL = "jackt1263@gmail.com"; // CHANGE THIS TO YOUR DEV EMAIL
 
-const API_BASE = "https://nexusrbx-backend-production.up.railway.app";
+const API_BASE = process.env.REACT_APP_API_BASE || "https://nexusrbx-backend-production.up.railway.app";
 
 const modelOptions = [
   { value: "nexus-3", label: "Nexus-3 (Legacy, Default)" },
@@ -175,8 +175,12 @@ function useTokens(user) {
 }
 
 // --- JWT Auth Helpers ---
-function getJWT() {
-  return localStorage.getItem("jwt_token");
+async function getJWT() {
+  const user = auth.currentUser;
+  if (user) {
+    return await user.getIdToken();
+  }
+  return null;
 }
 function setJWT(token) {
   localStorage.setItem("jwt_token", token);
@@ -241,12 +245,19 @@ export default function NexusRBXAIPageContainer() {
 
   // --- Auth ---
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
         setUser(firebaseUser);
+        // Always refresh JWT on login
+        const token = await firebaseUser.getIdToken();
+        setJWT(token);
       } else {
         signInAnonymously(auth)
-          .then((res) => setUser(res.user))
+          .then(async (res) => {
+            setUser(res.user);
+            const token = await res.user.getIdToken();
+            setJWT(token);
+          })
           .catch(() => setUser(null));
       }
     });
@@ -268,7 +279,7 @@ export default function NexusRBXAIPageContainer() {
     if (!user) return;
     const fetchScripts = async () => {
       try {
-        const jwt = getJWT();
+        const jwt = await getJWT();
         const res = await fetch(`${API_BASE}/api/scripts`, {
           headers: {
             "Authorization": `Bearer ${jwt}`
@@ -354,7 +365,7 @@ export default function NexusRBXAIPageContainer() {
   // --- SSE Streaming AI Response (per script session) ---
   const generateAIResponse = async (userPrompt, userSettings, conversation = []) => {
     return new Promise(async (resolve, reject) => {
-      let jwt = getJWT();
+      let jwt = await getJWT();
       if (!jwt) {
         reject(new Error("Not authenticated."));
         return;
@@ -588,7 +599,7 @@ export default function NexusRBXAIPageContainer() {
         conversation
       );
     } catch (err) {
-      // Error already handled in generateAIResponse
+      alert(err.message || "An error occurred while generating the script.");
     } finally {
       setIsGenerating(false);
     }
@@ -644,7 +655,7 @@ export default function NexusRBXAIPageContainer() {
       tags: finalTags || []
     };
     try {
-      const jwt = getJWT();
+      const jwt = await getJWT();
       const res = await fetch(`${API_BASE}/api/scripts`, {
         method: "POST",
         headers: {
@@ -670,7 +681,7 @@ export default function NexusRBXAIPageContainer() {
     );
     if (!user) return;
     try {
-      const jwt = getJWT();
+      const jwt = await getJWT();
       await fetch(`${API_BASE}/api/scripts/${scriptId}`, {
         method: "PATCH",
         headers: {
@@ -687,7 +698,7 @@ export default function NexusRBXAIPageContainer() {
     setSavedScripts((prev) => prev.filter((script) => script.id !== scriptId));
     if (!user) return;
     try {
-      const jwt = getJWT();
+      const jwt = await getJWT();
       await fetch(`${API_BASE}/api/scripts/${scriptId}`, {
         method: "DELETE",
         headers: {
@@ -705,7 +716,7 @@ export default function NexusRBXAIPageContainer() {
       )
     );
     try {
-      const jwt = getJWT();
+      const jwt = await getJWT();
       await fetch(`${API_BASE}/api/scripts/${scriptId}/favorite`, {
         method: "POST",
         headers: {
@@ -725,7 +736,7 @@ export default function NexusRBXAIPageContainer() {
       )
     );
     try {
-      const jwt = getJWT();
+      const jwt = await getJWT();
       await fetch(`${API_BASE}/api/scripts/${scriptId}/tags`, {
         method: "POST",
         headers: {
@@ -755,9 +766,10 @@ export default function NexusRBXAIPageContainer() {
     setShowImprovedModal(true);
     setImprovedScriptContent("Improving script...");
     try {
+      const jwt = await getJWT();
       const res = await fetch(`${API_BASE}/api/improve`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${jwt}` },
         body: JSON.stringify({ script: code })
       });
       const data = await res.json();
@@ -771,9 +783,10 @@ export default function NexusRBXAIPageContainer() {
     setShowExplainModal(true);
     setExplainContent("Explaining script...");
     try {
+      const jwt = await getJWT();
       const res = await fetch(`${API_BASE}/api/explain`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${jwt}` },
         body: JSON.stringify({ script: code })
       });
       const data = await res.json();
@@ -787,9 +800,10 @@ export default function NexusRBXAIPageContainer() {
     setShowLintModal(true);
     setLintContent("Linting script...");
     try {
+      const jwt = await getJWT();
       const res = await fetch(`${API_BASE}/api/lint`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${jwt}` },
         body: JSON.stringify({ script: code })
       });
       const data = await res.json();
@@ -816,9 +830,10 @@ export default function NexusRBXAIPageContainer() {
     setShowFeedbackModal(false);
     setFeedbackMsgId(null);
     try {
+      const jwt = await getJWT();
       await fetch(`${API_BASE}/api/feedback`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${jwt}` },
         body: JSON.stringify({
           scriptId: feedbackMsgId,
           rating,
@@ -835,7 +850,7 @@ export default function NexusRBXAIPageContainer() {
     setVersionModalVersions([]);
     setShowVersionModal(true);
     try {
-      const jwt = getJWT();
+      const jwt = await getJWT();
       const res = await fetch(`${API_BASE}/api/scripts/${script.baseScriptId}/versions`, {
         headers: {
           "Authorization": `Bearer ${jwt}`
