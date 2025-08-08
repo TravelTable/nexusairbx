@@ -11,6 +11,7 @@ import { FileCode, Save, Check } from "lucide-react";
  * - onSave: function (called when Save is clicked)
  * - codeReady: boolean (true when code is ready)
  * - estimatedLines: number (optional)
+ * - saved: boolean (true if script is saved)
  */
 export default function ScriptLoadingBarContainer({
   filename = "Script.lua",
@@ -36,9 +37,16 @@ export default function ScriptLoadingBarContainer({
         if (progressRef.current > 70) increment = 2.5;
         else if (progressRef.current > 40) increment = 1.2;
         progressRef.current = Math.min(progressRef.current + increment, 98);
-        // Force update by triggering a re-render
-        document.getElementById("script-progress-bar")?.style.setProperty("width", `${progressRef.current}%`);
-        document.getElementById("script-progress-label")?.innerText = `${Math.round(progressRef.current)}%`;
+        // Update progress bar width
+        const bar = document.getElementById("script-progress-bar");
+        if (bar) {
+          bar.style.setProperty("width", `${progressRef.current}%`);
+        }
+        // Update progress label
+        const label = document.getElementById("script-progress-label");
+        if (label) {
+          label.innerText = `${Math.round(progressRef.current)}%`;
+        }
       }, 80);
     }
     if (codeReady) {
@@ -46,8 +54,14 @@ export default function ScriptLoadingBarContainer({
       if (intervalRef.current) clearInterval(intervalRef.current);
       progressRef.current = 100;
       setTimeout(() => {
-        document.getElementById("script-progress-bar")?.style.setProperty("width", `100%`);
-        document.getElementById("script-progress-label")?.innerText = `100%`;
+        const bar = document.getElementById("script-progress-bar");
+        if (bar) {
+          bar.style.setProperty("width", `100%`);
+        }
+        const label = document.getElementById("script-progress-label");
+        if (label) {
+          label.innerText = `100%`;
+        }
       }, 100);
     }
     return () => {
