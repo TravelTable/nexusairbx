@@ -1,15 +1,13 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  Send, Loader, Menu, Crown, Sparkles, Code, Star, X, Download, Plus, History, Check, Trash2, Folder, Tag, Search, Circle
+  Send, Loader, Menu
 } from "lucide-react";
 import { auth, db } from "./firebase";
 import { onAuthStateChanged, signInAnonymously } from "firebase/auth";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import SidebarContent from "../components/SidebarContent";
 import RightSidebar from "../components/RightSidebar";
-import Modal from "../components/Modal";
-import FeedbackModal from "../components/FeedbackModal";
 import SimpleCodeDrawer from "../components/CodeDrawer";
 import WelcomeCard from "../components/WelcomeCard";
 import TokenBar from "../components/TokenBar";
@@ -190,78 +188,80 @@ function removeJWT() {
   localStorage.removeItem("jwt_token");
 }
 
+// --- Typewriter Effect Component ---
+function Typewriter({ text, onDone, speed = 18, className = "" }) {
+  const [displayed, setDisplayed] = useState("");
+  const idx = useRef(0);
+  useEffect(() => {
+    setDisplayed("");
+    idx.current = 0;
+    if (!text) return;
+    let cancelled = false;
+    function tick() {
+      if (cancelled) return;
+      if (idx.current < text.length) {
+        setDisplayed((prev) => prev + text[idx.current]);
+        idx.current += 1;
+        setTimeout(tick, speed);
+      } else if (onDone) {
+        onDone();
+      }
+    }
+    tick();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line
+  }, [text]);
+  return (
+    <span className={className} aria-live="polite" style={{ whiteSpace: "pre-line" }}>
+      {displayed}
+      <span className="opacity-60 animate-pulse">|</span>
+    </span>
+  );
+}
+
+// --- Thinking Dots Animation ---
+function ThinkingDots({ className = "" }) {
+  const [dots, setDots] = useState("");
+  useEffect(() => {
+    let i = 0;
+    const interval = setInterval(() => {
+      setDots(".".repeat((i % 3) + 1));
+      i++;
+    }, 500);
+    return () => clearInterval(interval);
+  }, []);
+  return (
+    <span className={className} aria-live="polite">
+      Thinking{dots}
+    </span>
+  );
+}
+
+
 // --- Main Container Component ---
 export default function NexusRBXAIPageContainer() {
   const navigate = useNavigate();
 
   // --- State for script sessions (each script = one prompt/response group) ---
-  const [scriptSessions, setScriptSessions] = useState([]); // [{id, prompt, sections, status}]
+  const [scriptSessions, setScriptSessions] = useState([]); // [{id, prompt, sections, status, typewriterDone}]
   const [prompt, setPrompt] = useState("");
   const [promptCharCount, setPromptCharCount] = useState(0);
   const [promptError, setPromptError] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [activeTab, setActiveTab] = useState("chat");
-  const [copiedIndex, setCopiedIndex] = useState(null);
-  const [savedScripts, setSavedScripts] = useState([]);
   const [user, setUser] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [rightSidebarOpen] = useState(false);
   const [settings, setSettings] = useState(defaultSettings);
-  const [promptTemplates, setPromptTemplates] = useState([]);
-  const [userPromptTemplates, setUserPromptTemplates] = useState([]);
   const [promptAutocomplete, setPromptAutocomplete] = useState([]);
   const [promptHistory, setPromptHistory] = useState([]);
-  const [promptSearch, setPromptSearch] = useState("");
-  const [feedbackState, setFeedbackState] = useState({});
-  const [lintState, setLintState] = useState({});
-  const [explainState, setExplainState] = useState({});
-  const [improveState, setImproveState] = useState({});
-  const [showImprovedModal, setShowImprovedModal] = useState(false);
-  const [improvedScriptContent, setImprovedScriptContent] = useState("");
-  const [showExplainModal, setShowExplainModal] = useState(false);
-  const [explainContent, setExplainContent] = useState("");
-  const [showLintModal, setShowLintModal] = useState(false);
-  const [lintContent, setLintContent] = useState("");
-  const [showFeedbackModal, setShowFeedbackModal] = useState(false);
-  const [feedbackMsgId, setFeedbackMsgId] = useState(null);
-  const [folders, setFolders] = useState([]);
-  const [selectedFolder, setSelectedFolder] = useState("all");
-  const [tags, setTags] = useState([]);
-  const [selectedTag, setSelectedTag] = useState("all");
-  const [scriptVersionHistory, setScriptVersionHistory] = useState({});
-  const [showVersionModal, setShowVersionModal] = useState(false);
-  const [versionModalScript, setVersionModalScript] = useState(null);
-  const [versionModalVersions, setVersionModalVersions] = useState([]);
-  const [showStudioModal, setShowStudioModal] = useState(false);
-  const [studioModalCode, setStudioModalCode] = useState("");
-  const [showAddFolderModal, setShowAddFolderModal] = useState(false);
-  const [newFolderName, setNewFolderName] = useState("");
-  const [showAddTagModal, setShowAddTagModal] = useState(false);
-  const [newTagName, setNewTagName] = useState("");
-  const [showPromptTemplateModal, setShowPromptTemplateModal] = useState(false);
-  const [newPromptTemplate, setNewPromptTemplate] = useState("");
-  const [promptSuggestions, setPromptSuggestions] = useState([]);
   const [codeDrawer, setCodeDrawer] = useState({ open: false, code: "", title: "", version: null, liveGenerating: false, liveContent: "" });
-  const [promptSuggestionLoading, setPromptSuggestionLoading] = useState(false);
 
   // --- Loading bar and code loading state ---
   const [isCodeLoading, setIsCodeLoading] = useState(false);
-  const [loadingBarMeta, setLoadingBarMeta] = useState({
-    filename: "Script.lua",
-    version: "v1.0",
-    language: "lua",
-    estimatedLines: null,
-  });
   const [codeReady, setCodeReady] = useState(false);
-  const [scriptSaved, setScriptSaved] = useState(false);
-
-  // --- Ref for scrolling to bottom ---
-  const messagesEndRef = useRef(null);
-  useEffect(() => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
-    }
-  }, [scriptSessions, isGenerating, isCodeLoading]);
+  const [codeLoadingSessionId, setCodeLoadingSessionId] = useState(null);
 
   // --- Auth ---
   useEffect(() => {
@@ -290,73 +290,8 @@ export default function NexusRBXAIPageContainer() {
     loading: tokensLoading,
     refreshCountdown,
     consumeToken,
-    lastRefresh,
     isDev,
   } = useTokens(user);
-
-  // --- Saved Scripts, Folders, Tags ---
-  useEffect(() => {
-    if (!user) return;
-    const fetchScripts = async () => {
-      try {
-        const jwt = await getJWT();
-        const res = await fetch(`${API_BASE}/api/scripts`, {
-          headers: {
-            "Authorization": `Bearer ${jwt}`
-          }
-        });
-        if (!res.ok) throw new Error("Failed to fetch scripts");
-        const scripts = await res.json();
-        const folderSet = new Set();
-        const tagSet = new Set();
-        scripts.forEach((data) => {
-          if (data.folder) folderSet.add(data.folder);
-          if (Array.isArray(data.tags)) data.tags.forEach(t => tagSet.add(t));
-        });
-        setSavedScripts(scripts);
-        setFolders(["all", ...Array.from(folderSet)]);
-        setTags(["all", ...Array.from(tagSet)]);
-      } catch (err) {
-        setSavedScripts([]);
-      }
-    };
-    fetchScripts();
-    // Only fetch on user change
-    // eslint-disable-next-line
-  }, [user]);
-
-  // --- Prompt Templates ---
-  useEffect(() => {
-    fetch(`${API_BASE}/api/prompt-templates`)
-      .then(res => res.json())
-      .then(data => setPromptTemplates(data.templates || []))
-      .catch(() => setPromptTemplates([]));
-  }, []);
-
-  // --- User Prompt Templates (localStorage) ---
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem("userPromptTemplates");
-      if (stored) setUserPromptTemplates(JSON.parse(stored));
-    } catch {}
-  }, []);
-  useEffect(() => {
-    try {
-      localStorage.setItem("userPromptTemplates", JSON.stringify(userPromptTemplates));
-    } catch {}
-  }, [userPromptTemplates]);
-
-  // --- Trending Prompt Suggestions (from backend) ---
-  useEffect(() => {
-    setPromptSuggestionLoading(true);
-    fetch(`${API_BASE}/api/prompt-templates`)
-      .then(res => res.json())
-      .then(data => {
-        setPromptSuggestions(data.templates || []);
-        setPromptSuggestionLoading(false);
-      })
-      .catch(() => setPromptSuggestionLoading(false));
-  }, []);
 
   // --- Prompt Char Count & Error ---
   useEffect(() => {
@@ -369,8 +304,6 @@ export default function NexusRBXAIPageContainer() {
     // Autocomplete logic
     if (prompt.length > 1) {
       const allPrompts = [
-        ...promptTemplates,
-        ...userPromptTemplates,
         ...promptHistory
       ];
       const filtered = allPrompts
@@ -380,9 +313,15 @@ export default function NexusRBXAIPageContainer() {
     } else {
       setPromptAutocomplete([]);
     }
-  }, [prompt, promptTemplates, userPromptTemplates, promptHistory]);
+  }, [prompt, promptHistory]);
 
-  // --- SSE Streaming AI Response (two-phase) ---
+  // --- Ref for scrolling to bottom ---
+  const messagesEndRef = useRef(null);
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [scriptSessions, isGenerating, isCodeLoading]);
+
+  // --- AI Response (two-phase, explanation then code) ---
   const generateAIResponse = async (userPrompt, userSettings, conversation = []) => {
     return new Promise(async (resolve, reject) => {
       let jwt = await getJWT();
@@ -395,17 +334,28 @@ export default function NexusRBXAIPageContainer() {
         id: sessionId,
         prompt: userPrompt,
         sections: {},
-        status: "generating"
+        status: "thinking",
+        typewriterDone: false
       };
       setScriptSessions(prev => [...prev, newSession]);
-      let sessionIndex = null;
       let currentSections = {};
 
-      // PHASE 1: Stream explanation sections
+      // PHASE 1: Generate explanation (using /api/generate-explanation)
       try {
-        setCodeReady(false);
-        setScriptSaved(false);
-        const response = await fetch(`${API_BASE}/api/generate`, {
+        // Show "Thinking..." while waiting for explanation
+        setScriptSessions(prev => {
+          const updated = [...prev];
+          const idx = updated.findIndex(s => s.id === sessionId);
+          if (idx !== -1) {
+            updated[idx] = {
+              ...updated[idx],
+              status: "thinking"
+            };
+          }
+          return updated;
+        });
+
+        const response = await fetch(`${API_BASE}/api/generate-explanation`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -413,9 +363,6 @@ export default function NexusRBXAIPageContainer() {
           },
           body: JSON.stringify({
             prompt: userPrompt,
-            modelVersion: userSettings.modelVersion,
-            creativity: userSettings.creativity,
-            codeStyle: userSettings.codeStyle,
             conversation: conversation
           })
         });
@@ -426,145 +373,43 @@ export default function NexusRBXAIPageContainer() {
           return;
         }
 
-        if (!response.body) {
-          reject(new Error("Streaming not supported."));
-          return;
-        }
+        const data = await response.json();
+        const explanationBuffer = data.explanation || "";
 
-        const reader = response.body.getReader();
-        let decoder = new TextDecoder();
-        let done = false;
-        let explanationBuffer = "";
+        // --- Parse sections ---
+        const titleMatch = explanationBuffer.match(/^\s*1\.\s*\*\*Title\*\*\s*—\s*(.+?)\n/);
+        const controlExplanationMatch = explanationBuffer.match(/\*\*Control Explanation Section\*\*\s*—\s*([\s\S]+?)\n\*\*Features\*\*/);
+        const featuresMatch = explanationBuffer.match(/\*\*Features\*\*\s*—\s*([\s\S]+?)\n\*\*Controls\*\*/);
+        const controlsMatch = explanationBuffer.match(/\*\*Controls\*\*\s*—\s*([\s\S]+?)\n\*\*How It Should Act\*\*/);
+        const howItShouldActMatch = explanationBuffer.match(/\*\*How It Should Act\*\*\s*—\s*([\s\S]+)$/);
 
-        while (!done) {
-          const { value, done: doneReading } = await reader.read();
-          if (doneReading) break;
-          const chunk = decoder.decode(value, { stream: true });
-          // Parse SSE lines
-          const lines = chunk.split("\n\n");
-          for (let line of lines) {
-            if (line.startsWith("data:")) {
-              try {
-                const data = JSON.parse(line.replace(/^data:\s*/, ""));
-                // Detect end of explanation
-                if (data.section === "explanation_done") {
-                  done = true;
-                  break;
-                }
-                // Buffer explanation text
-                if (typeof data.content === "string") {
-                  explanationBuffer += data.content;
-                  // Try to parse out sections (very simple parser)
-                  const titleMatch = explanationBuffer.match(/^\s*1\.\s*\*\*Title\*\*\s*—\s*(.+?)\n/);
-                  const controlExplanationMatch = explanationBuffer.match(/\*\*Control Explanation Section\*\*\s*—\s*([\s\S]+?)\n\*\*Features\*\*/);
-                  const featuresMatch = explanationBuffer.match(/\*\*Features\*\*\s*—\s*([\s\S]+?)\n\*\*Controls\*\*/);
-                  const controlsMatch = explanationBuffer.match(/\*\*Controls\*\*\s*—\s*([\s\S]+?)\n\*\*How It Should Act\*\*/);
-                  const howItShouldActMatch = explanationBuffer.match(/\*\*How It Should Act\*\*\s*—\s*([\s\S]+)$/);
+        currentSections = {
+          ...(currentSections || {}),
+          ...(titleMatch ? { title: titleMatch[1].trim() } : {}),
+          ...(controlExplanationMatch ? { controlExplanation: controlExplanationMatch[1].trim() } : {}),
+          ...(featuresMatch ? { features: featuresMatch[1].trim() } : {}),
+          ...(controlsMatch ? { controls: controlsMatch[1].trim() } : {}),
+          ...(howItShouldActMatch ? { howItShouldAct: howItShouldActMatch[1].trim() } : {}),
+        };
 
-                  currentSections = {
-                    ...(currentSections || {}),
-                    ...(titleMatch ? { title: titleMatch[1].trim() } : {}),
-                    ...(controlExplanationMatch ? { controlExplanation: controlExplanationMatch[1].trim() } : {}),
-                    ...(featuresMatch ? { features: featuresMatch[1].trim() } : {}),
-                    ...(controlsMatch ? { controls: controlsMatch[1].trim() } : {}),
-                    ...(howItShouldActMatch ? { howItShouldAct: howItShouldActMatch[1].trim() } : {}),
-                  };
-
-                  // Update loading bar meta as soon as we have a title
-                  if (titleMatch) {
-                    setLoadingBarMeta(meta => ({
-                      ...meta,
-                      filename: titleMatch[1].trim().replace(/[^\w\d]/g, "_") + ".lua",
-                    }));
-                  }
-
-                  // Find session index
-                  if (sessionIndex === null) {
-                    sessionIndex = scriptSessions.length;
-                  }
-                  // Update session in state
-                  setScriptSessions(prev => {
-                    let updated = [...prev];
-                    let idx = updated.findIndex(s => s.id === sessionId);
-                    if (idx !== -1) {
-                      updated[idx] = {
-                        ...updated[idx],
-                        sections: { ...currentSections },
-                        status: "generating"
-                      };
-                    }
-                    return updated;
-                  });
-                }
-              } catch {}
-            }
-          }
-        }
-
-        // PHASE 2: Fetch code block (not streamed)
-        setIsCodeLoading(true);
-        setCodeReady(false);
-        const codeRes = await fetch(`${API_BASE}/api/generate-code`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${jwt}`
-          },
-          body: JSON.stringify({
-            prompt: userPrompt,
-            modelVersion: userSettings.modelVersion,
-            creativity: userSettings.creativity,
-            codeStyle: userSettings.codeStyle,
-            conversation: conversation
-          })
-        });
-
-        if (!codeRes.ok) {
-          setIsCodeLoading(false);
-          throw new Error("Failed to generate code block");
-        }
-        const codeData = await codeRes.json();
-        const codeBlock = codeData.code || "";
-
-        // Parse out code (strip markdown)
-        let code = codeBlock;
-        const codeMatch = codeBlock.match(/```lua\s*([\s\S]*?)```/i);
-        if (codeMatch) code = codeMatch[1].trim();
-
-        // Finalize session
+        // Set status to "typewriting" to trigger typewriter effect
         setScriptSessions(prev => {
-          let updated = [...prev];
-          let idx = updated.findIndex(s => s.id === sessionId);
+          const updated = [...prev];
+          const idx = updated.findIndex(s => s.id === sessionId);
           if (idx !== -1) {
             updated[idx] = {
               ...updated[idx],
-              sections: { ...currentSections, code },
-              status: "done"
+              sections: { ...currentSections },
+              status: "typewriting",
+              explanationText: explanationBuffer,
+              typewriterDone: false
             };
           }
           return updated;
         });
 
-        setIsCodeLoading(false);
-        setCodeReady(true);
-
-        // Open code drawer
-        setTimeout(() => {
-          setCodeDrawer(prev => ({
-            ...prev,
-            open: true,
-            code: code,
-            title: currentSections.title || "Script Code",
-            version: null,
-            liveGenerating: false,
-            liveContent: ""
-          }));
-        }, 400); // Give a short delay for the bar to fill
-
-        resolve();
+        resolve({ sessionId, explanationBuffer, currentSections });
       } catch (err) {
-        setIsCodeLoading(false);
-        setCodeReady(false);
         setScriptSessions(prev => {
           let updated = [...prev];
           let idx = updated.findIndex(s => s.id === sessionId);
@@ -586,32 +431,123 @@ export default function NexusRBXAIPageContainer() {
     });
   };
 
-  // --- Save Script from loading bar ---
-  const handleSaveFromLoadingBar = () => {
-    // Find the latest session with code
-    const lastSession = scriptSessions[scriptSessions.length - 1];
-    if (lastSession && lastSession.sections && lastSession.sections.code) {
-      handleSaveScript(
-        loadingBarMeta.filename.replace(/\.lua$/i, ""),
-        lastSession.sections.code
-      );
-      setScriptSaved(true);
-      setTimeout(() => setScriptSaved(false), 2000);
-    }
-  };
+  // --- After typewriter effect, generate code and show loading bar ---
+  useEffect(() => {
+    // Find the latest session that is typewriterDone but not yet "done" and not already loading code
+    const session = scriptSessions.find(
+      (s) => s.status === "typewriting" && s.typewriterDone === true && !s.sections.code
+    );
+    if (!session) return;
+    const sessionId = session.id;
+    const userPrompt = session.prompt;
+    const conversation = scriptSessions
+      .slice(-10)
+      .map(s => ({
+        role: "assistant",
+        content: s.sections.code || s.sections.title || ""
+      }));
+    const explanationBuffer = session.explanationText;
 
-  // --- Prompt input change ---
+    // Show loading bar for this session
+    setCodeLoadingSessionId(sessionId);
+    setIsCodeLoading(true);
+    setCodeReady(false);
+
+    let cancelled = false;
+    async function fetchCode() {
+      try {
+        let jwt = await getJWT();
+        const codeRes = await fetch(`${API_BASE}/api/generate-code`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${jwt}`
+          },
+          body: JSON.stringify({
+            prompt: userPrompt,
+            conversation: conversation,
+            explanation: explanationBuffer
+          })
+        });
+
+        if (!codeRes.ok) {
+          setIsCodeLoading(false);
+          throw new Error("Failed to generate code block");
+        }
+        const codeData = await codeRes.json();
+        const codeBlock = codeData.code || "";
+
+        // Parse out code (strip markdown)
+        let code = codeBlock;
+        const codeMatch = codeBlock.match(/```lua\s*([\s\S]*?)```/i);
+        if (codeMatch) code = codeMatch[1].trim();
+
+        setScriptSessions(prev => {
+          const updated = [...prev];
+          const idx = updated.findIndex(s => s.id === sessionId);
+          if (idx !== -1) {
+            updated[idx] = {
+              ...updated[idx],
+              sections: { ...updated[idx].sections, code },
+              status: "done"
+            };
+          }
+          return updated;
+        });
+
+        setIsCodeLoading(false);
+        setCodeReady(true);
+
+        // Open code drawer
+        setTimeout(() => {
+          setCodeDrawer(prev => ({
+            ...prev,
+            open: true,
+            code: code,
+            title: session.sections.title || "Script Code",
+            version: null,
+            liveGenerating: false,
+            liveContent: ""
+          }));
+        }, 400); // Give a short delay for the bar to fill
+      } catch (err) {
+        setIsCodeLoading(false);
+        setCodeReady(false);
+        setScriptSessions(prev => {
+          let updated = [...prev];
+          let idx = updated.findIndex(s => s.id === sessionId);
+          if (idx !== -1) {
+            updated[idx] = {
+              ...updated[idx],
+              status: "error"
+            };
+          }
+          return updated;
+        });
+        setCodeDrawer(prev => ({
+          ...prev,
+          liveGenerating: false,
+          liveContent: ""
+        }));
+      }
+    }
+    fetchCode();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line
+  }, [scriptSessions]);
+
+  // --- Chat Submission ---
   const handlePromptChange = (e) => {
     setPrompt(e.target.value);
   };
 
-  // --- Prompt autocomplete selection ---
-  const handlePromptAutocomplete = (sugg) => {
-    setPrompt(sugg);
+  const handlePromptAutocomplete = (suggestion) => {
+    setPrompt(suggestion);
     setPromptAutocomplete([]);
   };
 
-  // --- Submit prompt ---
   const handleSubmit = async (e) => {
     if (e) e.preventDefault();
     if (
@@ -623,6 +559,10 @@ export default function NexusRBXAIPageContainer() {
       tokensLoading ||
       prompt.length > 800
     ) {
+      return;
+    }
+    if (!user) {
+      alert("Sign in to generate scripts and use tokens.");
       return;
     }
     setIsGenerating(true);
@@ -639,7 +579,14 @@ export default function NexusRBXAIPageContainer() {
         const updated = [prompt, ...prev.filter((p) => p !== prompt)];
         return updated.slice(0, 20);
       });
-      await generateAIResponse(prompt, settings, []);
+      // Conversational memory: last 10 script sessions
+      const conversation = scriptSessions
+        .slice(-10)
+        .map(s => ({
+          role: "assistant",
+          content: s.sections.code || s.sections.title || ""
+        }));
+      await generateAIResponse(prompt, settings, conversation);
       setPrompt("");
     } catch (err) {
       setPromptError("Failed to generate script. Please try again.");
@@ -647,60 +594,10 @@ export default function NexusRBXAIPageContainer() {
     setIsGenerating(false);
   };
 
-  // --- Save script to backend ---
-  const handleSaveScript = async (title, code) => {
-    if (!user) return;
-    try {
-      const jwt = await getJWT();
-      const res = await fetch(`${API_BASE}/api/scripts`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${jwt}`
-        },
-        body: JSON.stringify({
-          title,
-          code,
-          folder: selectedFolder !== "all" ? selectedFolder : null,
-          tags: selectedTag !== "all" ? [selectedTag] : [],
-        })
-      });
-      if (res.ok) {
-        // Optionally refresh saved scripts
-        const scripts = await res.json();
-        setSavedScripts(scripts);
-      }
-    } catch (err) {}
-  };
-
-  // --- Add folder ---
-  const handleAddFolder = () => {
-    if (!newFolderName.trim()) return;
-    setFolders((prev) => [...prev, newFolderName.trim()]);
-    setNewFolderName("");
-    setShowAddFolderModal(false);
-  };
-
-  // --- Add tag ---
-  const handleAddTag = () => {
-    if (!newTagName.trim()) return;
-    setTags((prev) => [...prev, newTagName.trim()]);
-    setNewTagName("");
-    setShowAddTagModal(false);
-  };
-
-  // --- Add prompt template ---
-  const handleAddPromptTemplate = () => {
-    if (!newPromptTemplate.trim()) return;
-    setUserPromptTemplates((prev) => [...prev, newPromptTemplate.trim()]);
-    setNewPromptTemplate("");
-    setShowPromptTemplateModal(false);
-  };
-
-  // --- Submit feedback ---
-  const submitFeedback = (feedback) => {
-    // Implement feedback submission logic here (e.g., send to backend)
-    setShowFeedbackModal(false);
+  // --- Clear Chat ---
+  const handleClearChat = () => {
+    setScriptSessions([]);
+    setPrompt("");
   };
 
   // --- Main Layout ---
@@ -713,7 +610,79 @@ export default function NexusRBXAIPageContainer() {
       }}
     >
       {/* Header */}
-      {/* ... header code ... */}
+      <header className="border-b border-gray-800 bg-black/30 backdrop-blur-md sticky top-0 z-50">
+        <div className="container mx-auto px-4 py-4 flex items-center">
+          <div className="flex-1 flex items-center">
+            <div
+              className="text-2xl font-bold bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-transparent bg-clip-text cursor-pointer"
+              onClick={() => navigate("/")}
+              tabIndex={0}
+              aria-label="Go to home"
+            >
+              NexusRBX
+            </div>
+            <nav className="hidden md:flex space-x-8 ml-10">
+              <a
+                href="/"
+                className="text-gray-300 hover:text-white transition-colors duration-300"
+              >
+                Home
+              </a>
+              <a
+                href="/ai"
+                className="text-white border-b-2 border-[#9b5de5] transition-colors duration-300"
+              >
+                AI Console
+              </a>
+              <a
+                href="/docs"
+                className="text-gray-300 hover:text-white transition-colors duration-300"
+              >
+                Docs
+              </a>
+              <a
+                href="#"
+                className="text-gray-300 hover:text-white transition-colors duration-300"
+              >
+                Discord
+              </a>
+            </nav>
+          </div>
+          {/* Hamburger for mobile */}
+          <button
+            className="md:hidden text-gray-300 ml-2 p-2 rounded hover:bg-gray-800 transition-colors"
+            onClick={() => setSidebarOpen(true)}
+            aria-label="Open sidebar"
+          >
+            <Menu className="h-6 w-6" />
+          </button>
+        </div>
+      </header>
+
+      {/* Sidebar (desktop) */}
+      <aside
+        className="hidden md:flex w-80 bg-gray-900 border-r border-gray-800 flex-col sticky top-[64px] left-0 z-30 h-[calc(100vh-64px)]"
+        style={{
+          minHeight: "calc(100vh - 64px)",
+          maxHeight: "calc(100vh - 64px)"
+        }}
+      >
+        <SidebarContent
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          handleClearChat={handleClearChat}
+          setPrompt={setPrompt}
+          savedScripts={[]} // No scripts
+          handleUpdateScriptTitle={() => {}}
+          handleDeleteScript={() => {}}
+          folders={[]} setFolders={() => {}} selectedFolder={"all"} setSelectedFolder={() => {}}
+          tags={[]} setTags={() => {}} selectedTag={"all"} setSelectedTag={() => {}}
+          openVersionHistory={() => {}} setShowAddFolderModal={() => {}} setShowAddTagModal={() => {}}
+          promptSearch={""} setPromptSearch={() => {}}
+        />
+      </aside>
+
+      {/* Main Content */}
       <main className="flex-grow flex flex-col md:flex-row relative">
         {/* Main chat area */}
         <section className="flex-grow flex flex-col md:w-2/3 h-full relative z-10">
@@ -722,11 +691,10 @@ export default function NexusRBXAIPageContainer() {
               {scriptSessions.length === 0 && !isGenerating ? (
                 <WelcomeCard
                   setPrompt={setPrompt}
-                  promptTemplates={promptTemplates}
-                  userPromptTemplates={userPromptTemplates}
-                  setShowPromptTemplateModal={setShowPromptTemplateModal}
-                  promptSuggestions={promptSuggestions}
-                  promptSuggestionLoading={promptSuggestionLoading}
+                  promptTemplates={[]} // No templates
+                  userPromptTemplates={[]} // No user templates
+                  setShowPromptTemplateModal={() => {}}
+                  promptSuggestions={[]} promptSuggestionLoading={false}
                 />
               ) : (
                 scriptSessions.map((session, idx) => (
@@ -742,71 +710,119 @@ export default function NexusRBXAIPageContainer() {
                           v{session.sections.version}
                         </span>
                       )}
-                      {session.status === "generating" && (
+                      {session.status === "thinking" && (
                         <Loader className="h-4 w-4 text-[#9b5de5] animate-spin ml-2" />
                       )}
                     </div>
                     <div className="bg-gray-900/60 rounded-lg p-4 border border-gray-800">
-                      {session.sections.controlExplanation && (
-                        <div className="mb-3">
-                          <div className="font-bold text-[#9b5de5] mb-1">Controls Explanation</div>
-                          <div className="text-gray-200 whitespace-pre-line text-sm">
-                            {session.sections.controlExplanation}
-                          </div>
+                      {session.status === "thinking" && (
+                        <div className="text-gray-400 text-sm flex items-center gap-2">
+                          <ThinkingDots className="text-[#9b5de5] font-mono" />
                         </div>
                       )}
-                      {session.sections.features && (
-                        <div className="mb-3">
-                          <div className="font-bold text-[#00f5d4] mb-1">Features</div>
-                          <div className="text-gray-200 whitespace-pre-line text-sm">
-                            {session.sections.features}
-                          </div>
+                      {session.status === "typewriting" && (
+                        <div>
+                          <Typewriter
+                            text={session.explanationText}
+                            speed={14}
+                            className="text-gray-200 text-sm whitespace-pre-line"
+                            onDone={() => {
+                              setScriptSessions(prev => {
+                                const updated = [...prev];
+                                const idx = updated.findIndex(s => s.id === session.id);
+                                if (idx !== -1) {
+                                  updated[idx] = {
+                                    ...updated[idx],
+                                    typewriterDone: true
+                                  };
+                                }
+                                return updated;
+                              });
+                            }}
+                          />
                         </div>
                       )}
-                      {session.sections.controls && (
-                        <div className="mb-3">
-                          <div className="font-bold text-[#9b5de5] mb-1">Controls</div>
-                          <div className="text-gray-200 whitespace-pre-line text-sm">
-                            {session.sections.controls}
-                          </div>
-                        </div>
+                      {session.status === "done" && (
+                        <>
+                          {session.sections.controlExplanation && (
+                            <div className="mb-3">
+                              <div className="font-bold text-[#9b5de5] mb-1">Controls Explanation</div>
+                              <div className="text-gray-200 whitespace-pre-line text-sm">
+                                {session.sections.controlExplanation}
+                              </div>
+                            </div>
+                          )}
+                          {session.sections.features && (
+                            <div className="mb-3">
+                              <div className="font-bold text-[#00f5d4] mb-1">Features</div>
+                              <div className="text-gray-200 whitespace-pre-line text-sm">
+                                {session.sections.features}
+                              </div>
+                            </div>
+                          )}
+                          {session.sections.controls && (
+                            <div className="mb-3">
+                              <div className="font-bold text-[#9b5de5] mb-1">Controls</div>
+                              <div className="text-gray-200 whitespace-pre-line text-sm">
+                                {session.sections.controls}
+                              </div>
+                            </div>
+                          )}
+                          {session.sections.howItShouldAct && (
+                            <div className="mb-3">
+                              <div className="font-bold text-[#00f5d4] mb-1">How It Should Act</div>
+                              <div className="text-gray-200 whitespace-pre-line text-sm">
+                                {session.sections.howItShouldAct}
+                              </div>
+                            </div>
+                          )}
+                        </>
                       )}
-                      {session.sections.howItShouldAct && (
-                        <div className="mb-3">
-                          <div className="font-bold text-[#00f5d4] mb-1">How It Should Act</div>
-                          <div className="text-gray-200 whitespace-pre-line text-sm">
-                            {session.sections.howItShouldAct}
-                          </div>
-                        </div>
-                      )}
-                      {/* Code is only shown in the code drawer */}
                       {session.status === "error" && (
                         <div className="text-red-400 text-sm mt-2">
                           Error generating script. Please try again.
                         </div>
                       )}
                     </div>
+                    {/* Code Loading Bar appears under the chat tab when code is being generated for this session */}
+{codeLoadingSessionId === session.id && (isCodeLoading || codeReady) && (
+  <ScriptLoadingBarContainer
+    filename={
+      session.sections?.title
+        ? `${session.sections.title.replace(/\s*v\d+$/i, "").replace(/\s+/g, "_") || "Script"}.lua`
+        : "Script.lua"
+    }
+    version={session.sections?.version ? `v${session.sections.version}` : "v1.0"}
+    language="lua"
+    loading={isCodeLoading}
+    codeReady={codeReady}
+    estimatedLines={
+      session.sections?.code
+        ? session.sections.code.split("\n").length
+        : null
+    }
+    onSave={() => {
+      if (session.sections?.code) {
+        const blob = new Blob([session.sections.code], { type: "text/plain" });
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download =
+          (session.sections?.title
+            ? `${session.sections.title.replace(/\s*v\d+$/i, "").replace(/\s+/g, "_") || "Script"}.lua`
+            : "Script.lua");
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => {
+          document.body.removeChild(a);
+          URL.revokeObjectURL(a.href);
+        }, 100);
+      }
+    }}
+    saved={false}
+  />
+)}
                   </div>
                 ))
-              )}
-              {/* Loading Bar appears here */}
-              {isCodeLoading && (
-                <ScriptLoadingBarContainer
-                  filename={loadingBarMeta.filename}
-                  version={loadingBarMeta.version}
-                  language={loadingBarMeta.language}
-                  loading={isCodeLoading}
-                  codeReady={codeReady}
-                  onSave={handleSaveFromLoadingBar}
-                  saved={scriptSaved}
-                  estimatedLines={loadingBarMeta.estimatedLines}
-                />
-              )}
-              {isGenerating && (
-                <div className="flex items-center text-gray-400 text-sm mt-2">
-                  <Loader className="h-4 w-4 animate-spin mr-2" />
-                  NexusRBX is generating...
-                </div>
               )}
               <div ref={messagesEndRef} />
             </div>
@@ -922,148 +938,12 @@ export default function NexusRBXAIPageContainer() {
             codeStyleOptions={codeStyleOptions}
             messages={scriptSessions}
             setPrompt={setPrompt}
-            userPromptTemplates={userPromptTemplates}
-            setUserPromptTemplates={setUserPromptTemplates}
-            setShowPromptTemplateModal={setShowPromptTemplateModal}
-            promptSuggestions={promptSuggestions}
-            promptSuggestionLoading={promptSuggestionLoading}
+            userPromptTemplates={[]} setUserPromptTemplates={() => {}}
+            setShowPromptTemplateModal={() => {}}
+            promptSuggestions={[]} promptSuggestionLoading={false}
           />
         </aside>
       </main>
-      {/* Modals */}
-      {showImprovedModal && (
-        <Modal onClose={() => setShowImprovedModal(false)} title="Improved Script">
-          <pre className="bg-gray-950 mt-2 p-2 rounded text-xs text-gray-300 overflow-x-auto">
-            <code>{improvedScriptContent}</code>
-          </pre>
-        </Modal>
-      )}
-      {showExplainModal && (
-        <Modal onClose={() => setShowExplainModal(false)} title="Code Explanation">
-          <div className="text-gray-200 text-sm whitespace-pre-line">{explainContent}</div>
-        </Modal>
-      )}
-      {showLintModal && (
-        <Modal onClose={() => setShowLintModal(false)} title="Lint Results">
-          <div className="text-gray-200 text-sm whitespace-pre-line">{lintContent}</div>
-        </Modal>
-      )}
-      {showFeedbackModal && (
-        <FeedbackModal
-          onClose={() => setShowFeedbackModal(false)}
-          onSubmit={submitFeedback}
-        />
-      )}
-      {showVersionModal && (
-        <Modal onClose={() => setShowVersionModal(false)} title="Script Version History">
-          <div className="space-y-4">
-            {versionModalVersions.length === 0 ? (
-              <div className="text-gray-400 text-center py-6">
-                <Loader className="h-6 w-6 animate-spin mx-auto mb-2" />
-                Loading versions...
-              </div>
-            ) : (
-              versionModalVersions.map((ver, idx) => (
-                <div key={ver.id} className="border-b border-gray-700 pb-2 mb-2">
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold text-[#00f5d4]">
-                      {ver.title} {ver.version ? `v${ver.version}` : ""}
-                    </span>
-                    <span className="text-xs text-gray-400">
-                      {new Date(ver.createdAt).toLocaleString()}
-                    </span>
-                  </div>
-                  <pre className="bg-gray-950 mt-2 p-2 rounded text-xs text-gray-300 overflow-x-auto">
-                    <code>{ver.code}</code>
-                  </pre>
-                  <button
-                    className="mt-2 px-3 py-1 rounded bg-[#9b5de5]/20 hover:bg-[#9b5de5]/40 text-[#9b5de5] text-xs font-bold"
-                    onClick={() => {
-                      setPrompt(ver.code);
-                      setShowVersionModal(false);
-                    }}
-                  >
-                    Restore this version
-                  </button>
-                </div>
-              ))
-            )}
-          </div>
-        </Modal>
-      )}
-      {showStudioModal && (
-        <Modal onClose={() => setShowStudioModal(false)} title="Copy to Roblox Studio">
-          <div className="mb-2 text-gray-200 text-sm">
-            <b>How to use in Roblox Studio:</b>
-            <ol className="list-decimal ml-5 mt-2 mb-2">
-              <li>Open Roblox Studio and your game.</li>
-              <li>Press <b>View &gt; Explorer</b> and <b>View &gt; Properties</b>.</li>
-              <li>Right-click <b>StarterPlayer &gt; StarterPlayerScripts</b> and select <b>Insert Object &gt; LocalScript</b>.</li>
-              <li>Paste the code below into the script editor.</li>
-            </ol>
-          </div>
-          <pre className="bg-gray-950 mt-2 p-2 rounded text-xs text-gray-300 overflow-x-auto">
-            <code>{studioModalCode}</code>
-          </pre>
-          <button
-            className="mt-4 w-full py-2 rounded bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-white font-bold"
-            onClick={() => {
-              navigator.clipboard.writeText(studioModalCode);
-              setShowStudioModal(false);
-            }}
-          >
-            Copy Code to Clipboard
-          </button>
-        </Modal>
-      )}
-      {showAddFolderModal && (
-        <Modal onClose={() => setShowAddFolderModal(false)} title="Add Folder">
-          <input
-            className="w-full rounded-lg bg-gray-800 border border-gray-700 px-3 py-2 mb-4 text-white"
-            value={newFolderName}
-            onChange={e => setNewFolderName(e.target.value)}
-            placeholder="Folder name"
-          />
-          <button
-            className="w-full py-3 rounded-lg font-bold bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-white"
-            onClick={handleAddFolder}
-          >
-            Add Folder
-          </button>
-        </Modal>
-      )}
-      {showAddTagModal && (
-        <Modal onClose={() => setShowAddTagModal(false)} title="Add Tag">
-          <input
-            className="w-full rounded-lg bg-gray-800 border border-gray-700 px-3 py-2 mb-4 text-white"
-            value={newTagName}
-            onChange={e => setNewTagName(e.target.value)}
-            placeholder="Tag name"
-          />
-          <button
-            className="w-full py-3 rounded-lg font-bold bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-white"
-            onClick={handleAddTag}
-          >
-            Add Tag
-          </button>
-        </Modal>
-      )}
-      {showPromptTemplateModal && (
-        <Modal onClose={() => setShowPromptTemplateModal(false)} title="Add Prompt Template">
-          <input
-            className="w-full rounded-lg bg-gray-800 border border-gray-700 px-3 py-2 mb-4 text-white"
-            value={newPromptTemplate}
-            onChange={e => setNewPromptTemplate(e.target.value)}
-            placeholder="Prompt template"
-          />
-          <button
-            className="w-full py-3 rounded-lg font-bold bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-white"
-            onClick={handleAddPromptTemplate}
-          >
-            Add Template
-          </button>
-        </Modal>
-      )}
       {/* --- Code Drawer Integration --- */}
       {codeDrawer.open && (
         <SimpleCodeDrawer
@@ -1074,7 +954,6 @@ export default function NexusRBXAIPageContainer() {
           liveContent={codeDrawer.liveContent}
           version={codeDrawer.version}
           onClose={() => setCodeDrawer({ open: false, code: "", title: "", version: null, liveGenerating: false, liveContent: "" })}
-          onSaveScript={(newTitle, code) => handleSaveScript(newTitle, code)}
         />
       )}
       {/* Footer */}
