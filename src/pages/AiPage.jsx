@@ -421,12 +421,13 @@ export default function NexusRBXAIPageContainer() {
         });
 
         if (!response.ok) {
-          const errorText = await response.text();
-          reject(new Error("API error: " + errorText));
+          setCodeReady(false);
+          reject(new Error("API error: " + (await response.text())));
           return;
         }
 
         if (!response.body) {
+          setCodeReady(false);
           reject(new Error("Streaming not supported."));
           return;
         }
@@ -581,7 +582,7 @@ export default function NexusRBXAIPageContainer() {
           liveGenerating: false,
           liveContent: ""
         }));
-        reject(new Error("Streaming error. Please try again."));
+        resolve();
       }
     });
   };
@@ -1073,6 +1074,7 @@ export default function NexusRBXAIPageContainer() {
           liveGenerating={codeDrawer.liveGenerating}
           liveContent={codeDrawer.liveContent}
           version={codeDrawer.version}
+          codeGenProgress={0}
           onClose={() => setCodeDrawer({ open: false, code: "", title: "", version: null, liveGenerating: false, liveContent: "" })}
           onSaveScript={(newTitle, code) => handleSaveScript(newTitle, code)}
         />
