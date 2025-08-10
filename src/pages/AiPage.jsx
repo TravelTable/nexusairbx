@@ -216,6 +216,62 @@ function useTypewriterEffect(text, speed = 18) {
   return displayed;
 }
 
+// --- SessionExplanation Component for Typewriter Effect ---
+function SessionExplanation({ session }) {
+  const ceType = useTypewriterEffect(session.explanationSections?.controlExplanation || "", 12);
+  const featuresType = useTypewriterEffect(session.explanationSections?.features || "", 12);
+  const controlsType = useTypewriterEffect(session.explanationSections?.controls || "", 12);
+  const howType = useTypewriterEffect(session.explanationSections?.howItShouldAct || "", 12);
+
+  return (
+    <div className="bg-gray-900/60 rounded-lg p-4 border border-gray-800">
+      {session.explanationLoading && (
+        <div className="flex items-center text-gray-400 text-sm mb-2">
+          <Loader className="h-4 w-4 animate-spin mr-2" />
+          Generating explanation...
+        </div>
+      )}
+      {session.explanationSections?.controlExplanation && (
+        <div className="mb-3">
+          <div className="font-bold text-[#9b5de5] mb-1">Controls Explanation</div>
+          <div className="text-gray-200 whitespace-pre-line text-sm">
+            {ceType}
+          </div>
+        </div>
+      )}
+      {session.explanationSections?.features && (
+        <div className="mb-3">
+          <div className="font-bold text-[#00f5d4] mb-1">Features</div>
+          <div className="text-gray-200 whitespace-pre-line text-sm">
+            {featuresType}
+          </div>
+        </div>
+      )}
+      {session.explanationSections?.controls && (
+        <div className="mb-3">
+          <div className="font-bold text-[#9b5de5] mb-1">Controls</div>
+          <div className="text-gray-200 whitespace-pre-line text-sm">
+            {controlsType}
+          </div>
+        </div>
+      )}
+      {session.explanationSections?.howItShouldAct && (
+        <div className="mb-3">
+          <div className="font-bold text-[#00f5d4] mb-1">How It Should Act</div>
+          <div className="text-gray-200 whitespace-pre-line text-sm">
+            {howType}
+          </div>
+        </div>
+      )}
+      {session.status === "error" && (
+        <div className="text-red-400 text-sm mt-2">
+          Error generating script. Please try again.
+        </div>
+      )}
+    </div>
+  );
+}
+
 // --- Main Container Component ---
 export default function NexusRBXAIPageContainer() {
   const navigate = useNavigate();
@@ -798,85 +854,33 @@ export default function NexusRBXAIPageContainer() {
                   promptSuggestionLoading={promptSuggestionLoading}
                 />
               ) : (
-                scriptSessions.map((session, idx) => {
-                  // Typewriter effects for each section
-                  const ceType = useTypewriterEffect(session.explanationSections?.controlExplanation || "", 12);
-                  const featuresType = useTypewriterEffect(session.explanationSections?.features || "", 12);
-                  const controlsType = useTypewriterEffect(session.explanationSections?.controls || "", 12);
-                  const howType = useTypewriterEffect(session.explanationSections?.howItShouldAct || "", 12);
-
-                  return (
-                    <div key={session.id} className="mb-6">
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="font-bold text-lg text-[#00f5d4]">
-                          {session.titleLoading ? (
-                            <span className="flex items-center">
-                              <Loader className="h-4 w-4 animate-spin mr-2" />
-                              Generating title...
-                            </span>
-                          ) : session.sections.title && session.sections.title.trim() ? (
-                            session.sections.title.replace(/\s*v\d+$/i, "")
-                          ) : (
-                            `Script ${idx + 1}`
-                          )}
-                        </span>
-                        {session.sections.version && (
-                          <span className="ml-2 text-xs text-gray-400 font-bold">
-                            v{session.sections.version}
-                          </span>
-                        )}
-                        {session.status === "generating" && (
-                          <Loader className="h-4 w-4 text-[#9b5de5] animate-spin ml-2" />
-                        )}
-                      </div>
-                      <div className="bg-gray-900/60 rounded-lg p-4 border border-gray-800">
-                        {session.explanationLoading && (
-                          <div className="flex items-center text-gray-400 text-sm mb-2">
+                scriptSessions.map((session, idx) => (
+                  <div key={session.id} className="mb-6">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="font-bold text-lg text-[#00f5d4]">
+                        {session.titleLoading ? (
+                          <span className="flex items-center">
                             <Loader className="h-4 w-4 animate-spin mr-2" />
-                            Generating explanation...
-                          </div>
+                            Generating title...
+                          </span>
+                        ) : session.sections.title && session.sections.title.trim() ? (
+                          session.sections.title.replace(/\s*v\d+$/i, "")
+                        ) : (
+                          `Script ${idx + 1}`
                         )}
-                        {session.explanationSections?.controlExplanation && (
-                          <div className="mb-3">
-                            <div className="font-bold text-[#9b5de5] mb-1">Controls Explanation</div>
-                            <div className="text-gray-200 whitespace-pre-line text-sm">
-                              {ceType}
-                            </div>
-                          </div>
-                        )}
-                        {session.explanationSections?.features && (
-                          <div className="mb-3">
-                            <div className="font-bold text-[#00f5d4] mb-1">Features</div>
-                            <div className="text-gray-200 whitespace-pre-line text-sm">
-                              {featuresType}
-                            </div>
-                          </div>
-                        )}
-                        {session.explanationSections?.controls && (
-                          <div className="mb-3">
-                            <div className="font-bold text-[#9b5de5] mb-1">Controls</div>
-                            <div className="text-gray-200 whitespace-pre-line text-sm">
-                              {controlsType}
-                            </div>
-                          </div>
-                        )}
-                        {session.explanationSections?.howItShouldAct && (
-                          <div className="mb-3">
-                            <div className="font-bold text-[#00f5d4] mb-1">How It Should Act</div>
-                            <div className="text-gray-200 whitespace-pre-line text-sm">
-                              {howType}
-                            </div>
-                          </div>
-                        )}
-                        {session.status === "error" && (
-                          <div className="text-red-400 text-sm mt-2">
-                            Error generating script. Please try again.
-                          </div>
-                        )}
-                      </div>
+                      </span>
+                      {session.sections.version && (
+                        <span className="ml-2 text-xs text-gray-400 font-bold">
+                          v{session.sections.version}
+                        </span>
+                      )}
+                      {session.status === "generating" && (
+                        <Loader className="h-4 w-4 text-[#9b5de5] animate-spin ml-2" />
+                      )}
                     </div>
-                  );
-                })
+                    <SessionExplanation session={session} />
+                  </div>
+                ))
               )}
               {/* Loading Bar appears here */}
               {isCodeLoading && (
