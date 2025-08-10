@@ -190,12 +190,38 @@ function removeJWT() {
   localStorage.removeItem("jwt_token");
 }
 
+// --- Typewriter Effect Hook ---
+function useTypewriterEffect(text, speed = 18) {
+  const [displayed, setDisplayed] = useState("");
+  useEffect(() => {
+    if (!text) {
+      setDisplayed("");
+      return;
+    }
+    let i = 0;
+    setDisplayed("");
+    const interval = setInterval(() => {
+      setDisplayed((prev) => {
+        if (i >= text.length) {
+          clearInterval(interval);
+          return text;
+        }
+        const next = text.slice(0, i + 1);
+        i++;
+        return next;
+      });
+    }, speed);
+    return () => clearInterval(interval);
+  }, [text, speed]);
+  return displayed;
+}
+
 // --- Main Container Component ---
 export default function NexusRBXAIPageContainer() {
   const navigate = useNavigate();
 
   // --- State for script sessions (each script = one prompt/response group) ---
-  const [scriptSessions, setScriptSessions] = useState([]); // [{id, prompt, sections, status, titleLoading}]
+  const [scriptSessions, setScriptSessions] = useState([]); // [{id, prompt, sections, status, titleLoading, explanationLoading}]
   const [prompt, setPrompt] = useState("");
   const [promptCharCount, setPromptCharCount] = useState(0);
   const [promptError, setPromptError] = useState("");
@@ -406,14 +432,58 @@ export default function NexusRBXAIPageContainer() {
     }
   };
 
-  // --- SSE Streaming AI Response (two-phase) ---
+  // --- Generate Explanation (NEW, non-streamed) ---
+  const generateExplanation = async (userPrompt, conversation = [], model = "gpt-4.1-2025-04-14") => {
+    try {
+      const jwt = await getJWT();
+      const res = await fetch(`${API_BASE}/api/generate-explanation`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${jwt}`
+        },
+        body: JSON.stringify({
+          prompt: userPrompt,
+          conversation: conversation,
+          model: model
+        })
+      });
+      if (!res.ok) throw new Error("Failed to generate explanation");
+      const data = await res.json();
+      return data; // { title, explanation }
+    } catch (err) {
+      return { title: "", explanation: "" };
+    }
+  };
+
+  // --- Generate Code (NEW, non-streamed) ---
+  const generateCode = async (userPrompt, conversation = [], explanation = "", model = "gpt-4.1-2025-04-14") => {
+    try {
+      const jwt = await getJWT();
+      const res = await fetch(`${API_BASE}/api/generate-code`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${jwt}`
+        },
+        body: JSON.stringify({
+          prompt: userPrompt,
+          conversation: conversation,
+          explanation: explanation,
+          model: model
+        })
+      });
+      if (!res.ok) throw new Error("Failed to generate code");
+      const data = await res.json();
+      return data.code || "";
+    } catch (err) {
+      return "";
+    }
+  };
+
+  // --- SSE Streaming AI Response (now non-streamed, typewriter effect for explanation) ---
   const generateAIResponse = async (userPrompt, userSettings, conversation = []) => {
     return new Promise(async (resolve, reject) => {
-      let jwt = await getJWT();
-      if (!jwt) {
-        reject(new Error("Not authenticated."));
-        return;
-      }
       let sessionId = Date.now() + Math.floor(Math.random() * 10000);
 
       // --- 1. Add session with loading title spinner ---
@@ -422,11 +492,17 @@ export default function NexusRBXAIPageContainer() {
         prompt: userPrompt,
         sections: {},
         status: "generating",
-        titleLoading: true
+        titleLoading: true,
+        explanationLoading: true,
+        explanationSections: {
+          controlExplanation: "",
+          features: "",
+          controls: "",
+          howItShouldAct: ""
+        }
       };
       setScriptSessions(prev => [...prev, newSession]);
       let sessionIndex = null;
-      let currentSections = {};
 
       // --- 2. Generate Title (before explanation/code) ---
       let title = "";
@@ -464,181 +540,104 @@ export default function NexusRBXAIPageContainer() {
         }));
       }
 
-      // PHASE 1: Stream explanation sections
-      try {
-        setCodeReady(false);
-        setScriptSaved(false);
-        const response = await fetch(`${API_BASE}/api/generate`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${jwt}`
-          },
-          body: JSON.stringify({
-            prompt: userPrompt,
-            modelVersion: userSettings.modelVersion,
-            creativity: userSettings.creativity,
-            codeStyle: userSettings.codeStyle,
-            conversation: conversation
-          })
-        });
-
-        if (!response.ok) {
-          setCodeReady(false);
-          reject(new Error("API error: " + (await response.text())));
-          return;
-        }
-
-        if (!response.body) {
-          setCodeReady(false);
-          reject(new Error("Streaming not supported."));
-          return;
-        }
-
-        const reader = response.body.getReader();
-        let decoder = new TextDecoder();
-        let done = false;
-        let explanationBuffer = "";
-
-        while (!done) {
-          const { value, done: doneReading } = await reader.read();
-          if (doneReading) break;
-          const chunk = decoder.decode(value, { stream: true });
-          // Parse SSE lines
-          const lines = chunk.split("\n\n");
-          for (let line of lines) {
-            if (line.startsWith("data:")) {
-              try {
-                const data = JSON.parse(line.replace(/^data:\s*/, ""));
-                // Detect end of explanation
-                if (data.section === "explanation_done") {
-                  done = true;
-                  break;
-                }
-                // Buffer explanation text
-                if (typeof data.content === "string") {
-                  explanationBuffer += data.content;
-                  // Try to parse out sections (very simple parser)
-                  const titleMatch = explanationBuffer.match(/^\s*1\.\s*\*\*Title\*\*\s*—\s*(.+?)\n/);
-                  const controlExplanationMatch = explanationBuffer.match(/\*\*Control Explanation Section\*\*\s*—\s*([\s\S]+?)\n\*\*Features\*\*/);
-                  const featuresMatch = explanationBuffer.match(/\*\*Features\*\*\s*—\s*([\s\S]+?)\n\*\*Controls\*\*/);
-                  const controlsMatch = explanationBuffer.match(/\*\*Controls\*\*\s*—\s*([\s\S]+?)\n\*\*How It Should Act\*\*/);
-                  const howItShouldActMatch = explanationBuffer.match(/\*\*How It Should Act\*\*\s*—\s*([\s\S]+)$/);
-
-                  currentSections = {
-                    ...(currentSections || {}),
-                    ...(titleMatch ? { title: titleMatch[1].trim() } : {}),
-                    ...(controlExplanationMatch ? { controlExplanation: controlExplanationMatch[1].trim() } : {}),
-                    ...(featuresMatch ? { features: featuresMatch[1].trim() } : {}),
-                    ...(controlsMatch ? { controls: controlsMatch[1].trim() } : {}),
-                    ...(howItShouldActMatch ? { howItShouldAct: howItShouldActMatch[1].trim() } : {}),
-                  };
-
-                  // Find session index
-                  if (sessionIndex === null) {
-                    sessionIndex = scriptSessions.length;
-                  }
-                  // Update session in state
-                  setScriptSessions(prev => {
-                    let updated = [...prev];
-                    let idx = updated.findIndex(s => s.id === sessionId);
-                    if (idx !== -1) {
-                      updated[idx] = {
-                        ...updated[idx],
-                        sections: { ...updated[idx].sections, ...currentSections },
-                        status: "generating"
-                      };
-                    }
-                    return updated;
-                  });
-                }
-              } catch {}
-            }
+      // --- 3. Generate Explanation (non-streamed, typewriter effect) ---
+      setScriptSessions(prev => {
+        return prev.map((s, idx) => {
+          if (s.id === sessionId) {
+            return {
+              ...s,
+              explanationLoading: true
+            };
           }
-        }
-
-        // PHASE 2: Fetch code block (not streamed)
-        setIsCodeLoading(true);
-        setCodeReady(false);
-        const codeRes = await fetch(`${API_BASE}/api/generate-code`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${jwt}`
-          },
-          body: JSON.stringify({
-            prompt: userPrompt,
-            modelVersion: userSettings.modelVersion,
-            creativity: userSettings.creativity,
-            codeStyle: userSettings.codeStyle,
-            conversation: conversation
-          })
+          return s;
         });
+      });
+      let explanationObj = { title: "", explanation: "" };
+      try {
+        explanationObj = await generateExplanation(userPrompt, conversation, userSettings.modelVersion);
+      } catch {
+        explanationObj = { title: "", explanation: "" };
+      }
 
-        if (!codeRes.ok) {
-          setIsCodeLoading(false);
-          throw new Error("Failed to generate code block");
-        }
-        const codeData = await codeRes.json();
-        const codeBlock = codeData.code || "";
+      // Parse explanationObj.explanation into sections
+      // The explanation is a string with sections delimited as in the backend output
+      // 2. **Control Explanation Section** — ...
+      // 3. **Features** — ...
+      // 4. **Controls** — ...
+      // 5. **How It Should Act** — ...
+      let controlExplanation = "";
+      let features = "";
+      let controls = "";
+      let howItShouldAct = "";
+      if (explanationObj && explanationObj.explanation) {
+        const ceMatch = explanationObj.explanation.match(/\*\*Control Explanation Section\*\*\s*—\s*([\s\S]+?)\n\*\*Features\*\*/);
+        const featuresMatch = explanationObj.explanation.match(/\*\*Features\*\*\s*—\s*([\s\S]+?)\n\*\*Controls\*\*/);
+        const controlsMatch = explanationObj.explanation.match(/\*\*Controls\*\*\s*—\s*([\s\S]+?)\n\*\*How It Should Act\*\*/);
+        const howItShouldActMatch = explanationObj.explanation.match(/\*\*How It Should Act\*\*\s*—\s*([\s\S]+)$/);
 
-        // Parse out code (strip markdown)
-        let code = codeBlock;
-        const codeMatch = codeBlock.match(/```lua\s*([\s\S]*?)```/i);
-        if (codeMatch) code = codeMatch[1].trim();
+        controlExplanation = ceMatch ? ceMatch[1].trim() : "";
+        features = featuresMatch ? featuresMatch[1].trim() : "";
+        controls = controlsMatch ? controlsMatch[1].trim() : "";
+        howItShouldAct = howItShouldActMatch ? howItShouldActMatch[1].trim() : "";
+      }
 
-        // Finalize session
-        setScriptSessions(prev => {
-          let updated = [...prev];
-          let idx = updated.findIndex(s => s.id === sessionId);
-          if (idx !== -1) {
-            updated[idx] = {
-              ...updated[idx],
-              sections: { ...updated[idx].sections, ...currentSections, code },
+      // Set explanation sections in session, and mark explanationLoading false
+      setScriptSessions(prev => {
+        return prev.map((s, idx) => {
+          if (s.id === sessionId) {
+            return {
+              ...s,
+              explanationLoading: false,
+              explanationSections: {
+                controlExplanation,
+                features,
+                controls,
+                howItShouldAct
+              }
+            };
+          }
+          return s;
+        });
+      });
+
+      // --- 4. Generate Code (non-streamed) ---
+      setIsCodeLoading(true);
+      setCodeReady(false);
+      let code = "";
+      try {
+        code = await generateCode(userPrompt, conversation, explanationObj.explanation, userSettings.modelVersion);
+      } catch {
+        code = "";
+      }
+      setScriptSessions(prev => {
+        return prev.map((s, idx) => {
+          if (s.id === sessionId) {
+            return {
+              ...s,
+              sections: { ...s.sections, code },
               status: "done"
             };
           }
-          return updated;
+          return s;
         });
+      });
+      setIsCodeLoading(false);
+      setCodeReady(true);
 
-        setIsCodeLoading(false);
-        setCodeReady(true);
-
-        // Open code drawer
-        setTimeout(() => {
-          setCodeDrawer(prev => ({
-            ...prev,
-            open: true,
-            code: code,
-            title: currentSections.title || title || "Script Code",
-            version: null,
-            liveGenerating: false,
-            liveContent: ""
-          }));
-        }, 400); // Give a short delay for the bar to fill
-
-        resolve();
-      } catch (err) {
-        setIsCodeLoading(false);
-        setCodeReady(false);
-        setScriptSessions(prev => {
-          let updated = [...prev];
-          let idx = updated.findIndex(s => s.id === sessionId);
-          if (idx !== -1) {
-            updated[idx] = {
-              ...updated[idx],
-              status: "error"
-            };
-          }
-          return updated;
-        });
+      // Open code drawer
+      setTimeout(() => {
         setCodeDrawer(prev => ({
           ...prev,
+          open: true,
+          code: code,
+          title: title || "Script Code",
+          version: null,
           liveGenerating: false,
           liveContent: ""
         }));
-        resolve();
-      }
+      }, 400);
+
+      resolve();
     });
   };
 
@@ -785,72 +784,85 @@ export default function NexusRBXAIPageContainer() {
                   promptSuggestionLoading={promptSuggestionLoading}
                 />
               ) : (
-                scriptSessions.map((session, idx) => (
-                  <div key={session.id} className="mb-6">
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="font-bold text-lg text-[#00f5d4]">
-                        {session.titleLoading ? (
-                          <span className="flex items-center">
-                            <Loader className="h-4 w-4 animate-spin mr-2" />
-                            Generating title...
-                          </span>
-                        ) : session.sections.title && session.sections.title.trim() ? (
-                          session.sections.title.replace(/\s*v\d+$/i, "")
-                        ) : (
-                          `Script ${idx + 1}`
-                        )}
-                      </span>
-                      {session.sections.version && (
-                        <span className="ml-2 text-xs text-gray-400 font-bold">
-                          v{session.sections.version}
+                scriptSessions.map((session, idx) => {
+                  // Typewriter effects for each section
+                  const ceType = useTypewriterEffect(session.explanationSections?.controlExplanation || "", 12);
+                  const featuresType = useTypewriterEffect(session.explanationSections?.features || "", 12);
+                  const controlsType = useTypewriterEffect(session.explanationSections?.controls || "", 12);
+                  const howType = useTypewriterEffect(session.explanationSections?.howItShouldAct || "", 12);
+
+                  return (
+                    <div key={session.id} className="mb-6">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="font-bold text-lg text-[#00f5d4]">
+                          {session.titleLoading ? (
+                            <span className="flex items-center">
+                              <Loader className="h-4 w-4 animate-spin mr-2" />
+                              Generating title...
+                            </span>
+                          ) : session.sections.title && session.sections.title.trim() ? (
+                            session.sections.title.replace(/\s*v\d+$/i, "")
+                          ) : (
+                            `Script ${idx + 1}`
+                          )}
                         </span>
-                      )}
-                      {session.status === "generating" && (
-                        <Loader className="h-4 w-4 text-[#9b5de5] animate-spin ml-2" />
-                      )}
+                        {session.sections.version && (
+                          <span className="ml-2 text-xs text-gray-400 font-bold">
+                            v{session.sections.version}
+                          </span>
+                        )}
+                        {session.status === "generating" && (
+                          <Loader className="h-4 w-4 text-[#9b5de5] animate-spin ml-2" />
+                        )}
+                      </div>
+                      <div className="bg-gray-900/60 rounded-lg p-4 border border-gray-800">
+                        {session.explanationLoading && (
+                          <div className="flex items-center text-gray-400 text-sm mb-2">
+                            <Loader className="h-4 w-4 animate-spin mr-2" />
+                            Generating explanation...
+                          </div>
+                        )}
+                        {session.explanationSections?.controlExplanation && (
+                          <div className="mb-3">
+                            <div className="font-bold text-[#9b5de5] mb-1">Controls Explanation</div>
+                            <div className="text-gray-200 whitespace-pre-line text-sm">
+                              {ceType}
+                            </div>
+                          </div>
+                        )}
+                        {session.explanationSections?.features && (
+                          <div className="mb-3">
+                            <div className="font-bold text-[#00f5d4] mb-1">Features</div>
+                            <div className="text-gray-200 whitespace-pre-line text-sm">
+                              {featuresType}
+                            </div>
+                          </div>
+                        )}
+                        {session.explanationSections?.controls && (
+                          <div className="mb-3">
+                            <div className="font-bold text-[#9b5de5] mb-1">Controls</div>
+                            <div className="text-gray-200 whitespace-pre-line text-sm">
+                              {controlsType}
+                            </div>
+                          </div>
+                        )}
+                        {session.explanationSections?.howItShouldAct && (
+                          <div className="mb-3">
+                            <div className="font-bold text-[#00f5d4] mb-1">How It Should Act</div>
+                            <div className="text-gray-200 whitespace-pre-line text-sm">
+                              {howType}
+                            </div>
+                          </div>
+                        )}
+                        {session.status === "error" && (
+                          <div className="text-red-400 text-sm mt-2">
+                            Error generating script. Please try again.
+                          </div>
+                        )}
+                      </div>
                     </div>
-                    <div className="bg-gray-900/60 rounded-lg p-4 border border-gray-800">
-                      {session.sections.controlExplanation && (
-                        <div className="mb-3">
-                          <div className="font-bold text-[#9b5de5] mb-1">Controls Explanation</div>
-                          <div className="text-gray-200 whitespace-pre-line text-sm">
-                            {session.sections.controlExplanation}
-                          </div>
-                        </div>
-                      )}
-                      {session.sections.features && (
-                        <div className="mb-3">
-                          <div className="font-bold text-[#00f5d4] mb-1">Features</div>
-                          <div className="text-gray-200 whitespace-pre-line text-sm">
-                            {session.sections.features}
-                          </div>
-                        </div>
-                      )}
-                      {session.sections.controls && (
-                        <div className="mb-3">
-                          <div className="font-bold text-[#9b5de5] mb-1">Controls</div>
-                          <div className="text-gray-200 whitespace-pre-line text-sm">
-                            {session.sections.controls}
-                          </div>
-                        </div>
-                      )}
-                      {session.sections.howItShouldAct && (
-                        <div className="mb-3">
-                          <div className="font-bold text-[#00f5d4] mb-1">How It Should Act</div>
-                          <div className="text-gray-200 whitespace-pre-line text-sm">
-                            {session.sections.howItShouldAct}
-                          </div>
-                        </div>
-                      )}
-                      {/* Code is only shown in the code drawer */}
-                      {session.status === "error" && (
-                        <div className="text-red-400 text-sm mt-2">
-                          Error generating script. Please try again.
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ))
+                  );
+                })
               )}
               {/* Loading Bar appears here */}
               {isCodeLoading && (
