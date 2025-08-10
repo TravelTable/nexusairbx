@@ -25,9 +25,7 @@ const DEVELOPER_EMAIL = "jackt1263@gmail.com"; // CHANGE THIS TO YOUR DEV EMAIL
 const API_BASE = process.env.REACT_APP_API_BASE || "https://nexusrbx-backend-production.up.railway.app";
 
 const modelOptions = [
-  { value: "nexus-4", label: "Nexus-4 (Fast, Accurate, Default)" },
-  { value: "nexus-3", label: "Nexus-3 (Legacy)" },
-  { value: "nexus-2", label: "Nexus-2 (GPT-3.5 Turbo)" }
+  { value: "gpt-4.1", label: "GPT-4.1 (Default)" }
 ];
 const creativityOptions = [
   { value: 0.3, label: "Low (Precise)" },
@@ -40,7 +38,7 @@ const codeStyleOptions = [
 ];
 
 const defaultSettings = {
-  modelVersion: "nexus-4",
+  modelVersion: "gpt-4.1",
   creativity: 0.7,
   codeStyle: "optimized"
 };
@@ -489,7 +487,7 @@ export default function NexusRBXAIPageContainer() {
   };
 
   // --- Generate Explanation (NEW, non-streamed) ---
-  const generateExplanation = async (userPrompt, conversation = [], model = "nexus-4") => {
+  const generateExplanation = async (userPrompt, conversation = [], model = "gpt-4.1") => {
     try {
       const jwt = await getJWT();
       const res = await fetch(`${API_BASE}/api/generate-explanation`, {
@@ -513,7 +511,7 @@ export default function NexusRBXAIPageContainer() {
   };
 
   // --- Generate Code (NEW, non-streamed) ---
-  const generateCode = async (userPrompt, conversation = [], explanation = "", model = "nexus-4") => {
+  const generateCode = async (userPrompt, conversation = [], explanation = "", model = "gpt-4.1") => {
     try {
       const jwt = await getJWT();
       const res = await fetch(`${API_BASE}/api/generate-code`, {
@@ -594,7 +592,7 @@ export default function NexusRBXAIPageContainer() {
         );
       }
 
-      // 3. Generate Explanation
+      // 3. Generate Explanation (wait for it to finish before code)
       let explanationObj = { title: "", explanation: "" };
       try {
         setScriptSessions(prev =>
@@ -605,7 +603,7 @@ export default function NexusRBXAIPageContainer() {
         explanationObj = await generateExplanation(
           userPrompt,
           conversation,
-          userSettings.modelVersion
+          "gpt-4.1"
         );
 
         // Parse explanationObj.explanation into sections
@@ -657,7 +655,7 @@ export default function NexusRBXAIPageContainer() {
         );
       }
 
-      // 4. Generate Code
+      // 4. Generate Code (only after explanation is finished)
       setIsCodeLoading(true);
       setCodeReady(false);
       let code = "";
@@ -666,7 +664,7 @@ export default function NexusRBXAIPageContainer() {
           userPrompt,
           conversation,
           explanationObj.explanation,
-          userSettings.modelVersion
+          "gpt-4.1"
         );
         setScriptSessions(prev =>
           prev.map(s =>
