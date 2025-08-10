@@ -481,12 +481,12 @@ export default function NexusRBXAIPageContainer() {
     }
   };
 
-  // --- SSE Streaming AI Response (now non-streamed, typewriter effect for explanation) ---
+  // --- AI Response Generation: Title -> Explanation -> Code ---
   const generateAIResponse = async (userPrompt, userSettings, conversation = []) => {
     return new Promise(async (resolve, reject) => {
       let sessionId = Date.now() + Math.floor(Math.random() * 10000);
 
-      // --- 1. Add session with loading title spinner ---
+      // 1. Add session with loading spinners for title and explanation
       let newSession = {
         id: sessionId,
         prompt: userPrompt,
@@ -502,125 +502,139 @@ export default function NexusRBXAIPageContainer() {
         }
       };
       setScriptSessions(prev => [...prev, newSession]);
-      let sessionIndex = null;
 
-      // --- 2. Generate Title (before explanation/code) ---
+      // 2. Generate Title
       let title = "";
-      setScriptSessions(prev => {
-        // Add session with loading spinner for title
-        return prev.map((s, idx) => {
-          if (s.id === sessionId) {
-            return { ...s, sections: { ...s.sections }, titleLoading: true };
-          }
-          return s;
-        });
-      });
       try {
+        setScriptSessions(prev =>
+          prev.map(s =>
+            s.id === sessionId ? { ...s, titleLoading: true } : s
+          )
+        );
         title = await generateTitle(userPrompt, conversation);
+        setScriptSessions(prev =>
+          prev.map(s =>
+            s.id === sessionId
+              ? {
+                  ...s,
+                  sections: { ...s.sections, title },
+                  titleLoading: false
+                }
+              : s
+          )
+        );
+        // Update loading bar meta as soon as we have a title
+        if (title) {
+          setLoadingBarMeta(meta => ({
+            ...meta,
+            filename: title.replace(/[^\w\d]/g, "_") + ".lua"
+          }));
+        }
       } catch {
-        title = "";
-      }
-      setScriptSessions(prev => {
-        return prev.map((s, idx) => {
-          if (s.id === sessionId) {
-            return {
-              ...s,
-              sections: { ...s.sections, title: title },
-              titleLoading: false
-            };
-          }
-          return s;
-        });
-      });
-      // Update loading bar meta as soon as we have a title
-      if (title) {
-        setLoadingBarMeta(meta => ({
-          ...meta,
-          filename: title.replace(/[^\w\d]/g, "_") + ".lua",
-        }));
+        setScriptSessions(prev =>
+          prev.map(s =>
+            s.id === sessionId ? { ...s, titleLoading: false } : s
+          )
+        );
       }
 
-      // --- 3. Generate Explanation (non-streamed, typewriter effect) ---
-      setScriptSessions(prev => {
-        return prev.map((s, idx) => {
-          if (s.id === sessionId) {
-            return {
-              ...s,
-              explanationLoading: true
-            };
-          }
-          return s;
-        });
-      });
+      // 3. Generate Explanation
       let explanationObj = { title: "", explanation: "" };
       try {
-        explanationObj = await generateExplanation(userPrompt, conversation, userSettings.modelVersion);
+        setScriptSessions(prev =>
+          prev.map(s =>
+            s.id === sessionId ? { ...s, explanationLoading: true } : s
+          )
+        );
+        explanationObj = await generateExplanation(
+          userPrompt,
+          conversation,
+          userSettings.modelVersion
+        );
+
+        // Parse explanationObj.explanation into sections
+        let controlExplanation = "";
+        let features = "";
+        let controls = "";
+        let howItShouldAct = "";
+        if (explanationObj && explanationObj.explanation) {
+          const ceMatch = explanationObj.explanation.match(
+            /\*\*Control Explanation Section\*\*\s*—\s*([\s\S]+?)\n\*\*Features\*\*/
+          );
+          const featuresMatch = explanationObj.explanation.match(
+            /\*\*Features\*\*\s*—\s*([\s\S]+?)\n\*\*Controls\*\*/
+          );
+          const controlsMatch = explanationObj.explanation.match(
+            /\*\*Controls\*\*\s*—\s*([\s\S]+?)\n\*\*How It Should Act\*\*/
+          );
+          const howItShouldActMatch = explanationObj.explanation.match(
+            /\*\*How It Should Act\*\*\s*—\s*([\s\S]+)$/
+          );
+
+          controlExplanation = ceMatch ? ceMatch[1].trim() : "";
+          features = featuresMatch ? featuresMatch[1].trim() : "";
+          controls = controlsMatch ? controlsMatch[1].trim() : "";
+          howItShouldAct = howItShouldActMatch ? howItShouldActMatch[1].trim() : "";
+        }
+
+        setScriptSessions(prev =>
+          prev.map(s =>
+            s.id === sessionId
+              ? {
+                  ...s,
+                  explanationLoading: false,
+                  explanationSections: {
+                    controlExplanation,
+                    features,
+                    controls,
+                    howItShouldAct
+                  }
+                }
+              : s
+          )
+        );
       } catch {
-        explanationObj = { title: "", explanation: "" };
+        setScriptSessions(prev =>
+          prev.map(s =>
+            s.id === sessionId ? { ...s, explanationLoading: false } : s
+          )
+        );
       }
 
-      // Parse explanationObj.explanation into sections
-      // The explanation is a string with sections delimited as in the backend output
-      // 2. **Control Explanation Section** — ...
-      // 3. **Features** — ...
-      // 4. **Controls** — ...
-      // 5. **How It Should Act** — ...
-      let controlExplanation = "";
-      let features = "";
-      let controls = "";
-      let howItShouldAct = "";
-      if (explanationObj && explanationObj.explanation) {
-        const ceMatch = explanationObj.explanation.match(/\*\*Control Explanation Section\*\*\s*—\s*([\s\S]+?)\n\*\*Features\*\*/);
-        const featuresMatch = explanationObj.explanation.match(/\*\*Features\*\*\s*—\s*([\s\S]+?)\n\*\*Controls\*\*/);
-        const controlsMatch = explanationObj.explanation.match(/\*\*Controls\*\*\s*—\s*([\s\S]+?)\n\*\*How It Should Act\*\*/);
-        const howItShouldActMatch = explanationObj.explanation.match(/\*\*How It Should Act\*\*\s*—\s*([\s\S]+)$/);
-
-        controlExplanation = ceMatch ? ceMatch[1].trim() : "";
-        features = featuresMatch ? featuresMatch[1].trim() : "";
-        controls = controlsMatch ? controlsMatch[1].trim() : "";
-        howItShouldAct = howItShouldActMatch ? howItShouldActMatch[1].trim() : "";
-      }
-
-      // Set explanation sections in session, and mark explanationLoading false
-      setScriptSessions(prev => {
-        return prev.map((s, idx) => {
-          if (s.id === sessionId) {
-            return {
-              ...s,
-              explanationLoading: false,
-              explanationSections: {
-                controlExplanation,
-                features,
-                controls,
-                howItShouldAct
-              }
-            };
-          }
-          return s;
-        });
-      });
-
-      // --- 4. Generate Code (non-streamed) ---
+      // 4. Generate Code
       setIsCodeLoading(true);
       setCodeReady(false);
       let code = "";
       try {
-        code = await generateCode(userPrompt, conversation, explanationObj.explanation, userSettings.modelVersion);
+        code = await generateCode(
+          userPrompt,
+          conversation,
+          explanationObj.explanation,
+          userSettings.modelVersion
+        );
+        setScriptSessions(prev =>
+          prev.map(s =>
+            s.id === sessionId
+              ? {
+                  ...s,
+                  sections: { ...s.sections, code },
+                  status: "done"
+                }
+              : s
+          )
+        );
       } catch {
-        code = "";
+        setScriptSessions(prev =>
+          prev.map(s =>
+            s.id === sessionId
+              ? {
+                  ...s,
+                  status: "error"
+                }
+              : s
+          )
+        );
       }
-      setScriptSessions(prev => {
-        return prev.map((s, idx) => {
-          if (s.id === sessionId) {
-            return {
-              ...s,
-              sections: { ...s.sections, code },
-              status: "done"
-            };
-          }
-          return s;
-        });
-      });
       setIsCodeLoading(false);
       setCodeReady(true);
 
