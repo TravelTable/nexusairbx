@@ -195,7 +195,7 @@ export default function NexusRBXAIPageContainer() {
   const navigate = useNavigate();
 
   // --- State for script sessions (each script = one prompt/response group) ---
-  const [scriptSessions, setScriptSessions] = useState([]); // [{id, prompt, sections, status}]
+  const [scriptSessions, setScriptSessions] = useState([]); // [{id, prompt, sections, status, titleLoading}]
   const [prompt, setPrompt] = useState("");
   const [promptCharCount, setPromptCharCount] = useState(0);
   const [promptError, setPromptError] = useState("");
@@ -382,6 +382,30 @@ export default function NexusRBXAIPageContainer() {
     }
   }, [prompt, promptTemplates, userPromptTemplates, promptHistory]);
 
+  // --- Generate Title (NEW) ---
+  const generateTitle = async (userPrompt, conversation = []) => {
+    try {
+      const jwt = await getJWT();
+      const res = await fetch(`${API_BASE}/api/generate-title-advanced`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${jwt}`
+        },
+        body: JSON.stringify({
+          prompt: userPrompt,
+          conversation: conversation,
+          isNewScript: true
+        })
+      });
+      if (!res.ok) throw new Error("Failed to generate title");
+      const data = await res.json();
+      return data.title || "";
+    } catch (err) {
+      return "";
+    }
+  };
+
   // --- SSE Streaming AI Response (two-phase) ---
   const generateAIResponse = async (userPrompt, userSettings, conversation = []) => {
     return new Promise(async (resolve, reject) => {
@@ -391,15 +415,54 @@ export default function NexusRBXAIPageContainer() {
         return;
       }
       let sessionId = Date.now() + Math.floor(Math.random() * 10000);
+
+      // --- 1. Add session with loading title spinner ---
       let newSession = {
         id: sessionId,
         prompt: userPrompt,
         sections: {},
-        status: "generating"
+        status: "generating",
+        titleLoading: true
       };
       setScriptSessions(prev => [...prev, newSession]);
       let sessionIndex = null;
       let currentSections = {};
+
+      // --- 2. Generate Title (before explanation/code) ---
+      let title = "";
+      setScriptSessions(prev => {
+        // Add session with loading spinner for title
+        return prev.map((s, idx) => {
+          if (s.id === sessionId) {
+            return { ...s, sections: { ...s.sections }, titleLoading: true };
+          }
+          return s;
+        });
+      });
+      try {
+        title = await generateTitle(userPrompt, conversation);
+      } catch {
+        title = "";
+      }
+      setScriptSessions(prev => {
+        return prev.map((s, idx) => {
+          if (s.id === sessionId) {
+            return {
+              ...s,
+              sections: { ...s.sections, title: title },
+              titleLoading: false
+            };
+          }
+          return s;
+        });
+      });
+      // Update loading bar meta as soon as we have a title
+      if (title) {
+        setLoadingBarMeta(meta => ({
+          ...meta,
+          filename: title.replace(/[^\w\d]/g, "_") + ".lua",
+        }));
+      }
 
       // PHASE 1: Stream explanation sections
       try {
@@ -471,14 +534,6 @@ export default function NexusRBXAIPageContainer() {
                     ...(howItShouldActMatch ? { howItShouldAct: howItShouldActMatch[1].trim() } : {}),
                   };
 
-                  // Update loading bar meta as soon as we have a title
-                  if (titleMatch) {
-                    setLoadingBarMeta(meta => ({
-                      ...meta,
-                      filename: titleMatch[1].trim().replace(/[^\w\d]/g, "_") + ".lua",
-                    }));
-                  }
-
                   // Find session index
                   if (sessionIndex === null) {
                     sessionIndex = scriptSessions.length;
@@ -490,7 +545,7 @@ export default function NexusRBXAIPageContainer() {
                     if (idx !== -1) {
                       updated[idx] = {
                         ...updated[idx],
-                        sections: { ...currentSections },
+                        sections: { ...updated[idx].sections, ...currentSections },
                         status: "generating"
                       };
                     }
@@ -539,7 +594,7 @@ export default function NexusRBXAIPageContainer() {
           if (idx !== -1) {
             updated[idx] = {
               ...updated[idx],
-              sections: { ...currentSections, code },
+              sections: { ...updated[idx].sections, ...currentSections, code },
               status: "done"
             };
           }
@@ -555,7 +610,7 @@ export default function NexusRBXAIPageContainer() {
             ...prev,
             open: true,
             code: code,
-            title: currentSections.title || "Script Code",
+            title: currentSections.title || title || "Script Code",
             version: null,
             liveGenerating: false,
             liveContent: ""
@@ -734,9 +789,16 @@ export default function NexusRBXAIPageContainer() {
                   <div key={session.id} className="mb-6">
                     <div className="flex items-center gap-2 mb-2">
                       <span className="font-bold text-lg text-[#00f5d4]">
-                        {session.sections.title
-                          ? session.sections.title.replace(/\s*v\d+$/i, "")
-                          : `Script ${idx + 1}`}
+                        {session.titleLoading ? (
+                          <span className="flex items-center">
+                            <Loader className="h-4 w-4 animate-spin mr-2" />
+                            Generating title...
+                          </span>
+                        ) : session.sections.title && session.sections.title.trim() ? (
+                          session.sections.title.replace(/\s*v\d+$/i, "")
+                        ) : (
+                          `Script ${idx + 1}`
+                        )}
                       </span>
                       {session.sections.version && (
                         <span className="ml-2 text-xs text-gray-400 font-bold">
