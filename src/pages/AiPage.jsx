@@ -25,8 +25,8 @@ const DEVELOPER_EMAIL = "jackt1263@gmail.com"; // CHANGE THIS TO YOUR DEV EMAIL
 const API_BASE = process.env.REACT_APP_API_BASE || "https://nexusrbx-backend-production.up.railway.app";
 
 const modelOptions = [
-  { value: "nexus-3", label: "Nexus-3 (Legacy, Default)" },
-  { value: "nexus-4", label: "Nexus-4 (Fast, Accurate)" },
+  { value: "nexus-4", label: "Nexus-4 (Fast, Accurate, Default)" },
+  { value: "nexus-3", label: "Nexus-3 (Legacy)" },
   { value: "nexus-2", label: "Nexus-2 (GPT-3.5 Turbo)" }
 ];
 const creativityOptions = [
@@ -40,7 +40,7 @@ const codeStyleOptions = [
 ];
 
 const defaultSettings = {
-  modelVersion: "nexus-3",
+  modelVersion: "nexus-4",
   creativity: 0.7,
   codeStyle: "optimized"
 };
@@ -489,7 +489,7 @@ export default function NexusRBXAIPageContainer() {
   };
 
   // --- Generate Explanation (NEW, non-streamed) ---
-  const generateExplanation = async (userPrompt, conversation = [], model = "gpt-4.1-2025-04-14") => {
+  const generateExplanation = async (userPrompt, conversation = [], model = "nexus-4") => {
     try {
       const jwt = await getJWT();
       const res = await fetch(`${API_BASE}/api/generate-explanation`, {
@@ -513,7 +513,7 @@ export default function NexusRBXAIPageContainer() {
   };
 
   // --- Generate Code (NEW, non-streamed) ---
-  const generateCode = async (userPrompt, conversation = [], explanation = "", model = "gpt-4.1-2025-04-14") => {
+  const generateCode = async (userPrompt, conversation = [], explanation = "", model = "nexus-4") => {
     try {
       const jwt = await getJWT();
       const res = await fetch(`${API_BASE}/api/generate-code`, {
