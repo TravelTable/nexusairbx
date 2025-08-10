@@ -4,14 +4,15 @@ import { FileCode, Save, Check } from "lucide-react";
 /**
  * ScriptLoadingBarContainer
  * Props:
- * - filename: string (required)
- * - version: string (optional)
+ * - filename: string (required) - now always passed as the sanitized script title from parent
+ * - version: string (optional, e.g. "v1", "v2", etc.)
  * - language: string (default: "lua")
  * - loading: boolean (true while code is being fetched)
  * - onSave: function (called when Save is clicked)
  * - codeReady: boolean (true when code is ready)
  * - estimatedLines: number (optional)
  * - saved: boolean (true if script is saved)
+ * - onView: function (called when View is clicked, should open the drawer for this script)
  */
 export default function ScriptLoadingBarContainer({
   filename = "Script.lua",
@@ -22,6 +23,7 @@ export default function ScriptLoadingBarContainer({
   codeReady = false,
   estimatedLines = null,
   saved = false,
+  onView, // handler for View button
 }) {
   const progressRef = useRef(0);
   const intervalRef = useRef(null);
@@ -81,7 +83,9 @@ export default function ScriptLoadingBarContainer({
               </div>
               <div>
                 <div className="flex items-center">
-                  <span className="font-medium text-white">{filename}</span>
+                  <span className="font-medium text-white">
+                    {filename || "Script.lua"}
+                  </span>
                   {version && (
                     <span className="ml-2 text-xs text-gray-300 border-l border-gray-600 pl-2">
                       {version}
@@ -109,33 +113,56 @@ export default function ScriptLoadingBarContainer({
                 </div>
               </div>
             </div>
-            {/* Save Button */}
-            <div className={`relative group ${!codeReady ? 'opacity-50 cursor-not-allowed' : ''}`}>
-              <div className={`absolute inset-0 rounded-md bg-gradient-to-r from-purple-600 via-blue-500 to-cyan-400 
-                opacity-0 group-hover:opacity-100 blur-sm transition-opacity duration-300 
-                ${!codeReady ? 'hidden' : ''}`}>
+            {/* View and Save Buttons */}
+            <div className="flex items-center gap-2">
+              {/* View Button */}
+              <div className={`relative group ${!codeReady ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                <div className={`absolute inset-0 rounded-md bg-gradient-to-r from-purple-600 via-blue-500 to-cyan-400 
+                  opacity-0 group-hover:opacity-100 blur-sm transition-opacity duration-300 
+                  ${!codeReady ? 'hidden' : ''}`}>
+                </div>
+                <button
+                  onClick={codeReady && typeof onView === "function" ? onView : undefined}
+                  disabled={!codeReady}
+                  className={`relative flex items-center px-4 py-1.5 rounded-md text-sm bg-black text-white
+                    border border-transparent group-hover:border-transparent transition-all duration-300
+                    ${codeReady ? 'group-hover:shadow-[0_0_15px_rgba(168,85,247,0.5)]' : ''}`}
+                  title={codeReady ? "View script" : "Wait for script to complete"}
+                  aria-disabled={!codeReady}
+                  style={{ marginRight: "0.5rem" }}
+                >
+                  <FileCode className="w-4 h-4 mr-1.5" />
+                  <span>View</span>
+                </button>
               </div>
-              <button
-                onClick={onSave}
-                disabled={!codeReady}
-                className={`relative flex items-center px-4 py-1.5 rounded-md text-sm bg-black text-white
-                  border border-transparent group-hover:border-transparent transition-all duration-300
-                  ${codeReady ? 'group-hover:shadow-[0_0_15px_rgba(168,85,247,0.5)]' : ''}`}
-                title={codeReady ? "Save script" : "Wait for script to complete"}
-                aria-disabled={!codeReady}
-              >
-                {saved ? (
-                  <>
-                    <Check className="w-4 h-4 mr-1.5" />
-                    <span>Saved</span>
-                  </>
-                ) : (
-                  <>
-                    <Save className="w-4 h-4 mr-1.5" />
-                    <span>Save</span>
-                  </>
-                )}
-              </button>
+              {/* Save Button */}
+              <div className={`relative group ${!codeReady ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                <div className={`absolute inset-0 rounded-md bg-gradient-to-r from-purple-600 via-blue-500 to-cyan-400 
+                  opacity-0 group-hover:opacity-100 blur-sm transition-opacity duration-300 
+                  ${!codeReady ? 'hidden' : ''}`}>
+                </div>
+                <button
+                  onClick={onSave}
+                  disabled={!codeReady}
+                  className={`relative flex items-center px-4 py-1.5 rounded-md text-sm bg-black text-white
+                    border border-transparent group-hover:border-transparent transition-all duration-300
+                    ${codeReady ? 'group-hover:shadow-[0_0_15px_rgba(168,85,247,0.5)]' : ''}`}
+                  title={codeReady ? "Save script" : "Wait for script to complete"}
+                  aria-disabled={!codeReady}
+                >
+                  {saved ? (
+                    <>
+                      <Check className="w-4 h-4 mr-1.5" />
+                      <span>Saved</span>
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-4 h-4 mr-1.5" />
+                      <span>Save</span>
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
           </div>
           {/* Progress Bar */}

@@ -15,10 +15,27 @@ function getDrawerWidth() {
   return "33vw";
 }
 
+// Helper: Sanitize filename from title
+function sanitizeFilename(title, ext = "lua") {
+  if (!title) return `Script.${ext}`;
+  // Remove emojis and special chars, replace spaces with underscores, keep alphanum, dash, underscore
+  return (
+    title
+      .replace(/[\u{1F600}-\u{1F6FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, "") // remove emojis
+      .replace(/[^a-zA-Z0-9 _-]/g, "") // remove special chars except space, _, -
+      .replace(/\s+/g, "_") // spaces to underscores
+      .replace(/_+/g, "_") // collapse multiple underscores
+      .replace(/^_+|_+$/g, "") // trim underscores
+      .slice(0, 40) // limit length
+      + `.${ext}`
+  );
+}
+
 export default function SimpleCodeDrawer({
   open,
   code = "",
   title = "Script Code",
+  version = null, // version prop (e.g. "v1", "v2")
   onClose,
   onSaveScript, // function: (newTitle, code) => void
   liveGenerating = false,
@@ -38,15 +55,15 @@ export default function SimpleCodeDrawer({
     return () => window.removeEventListener("resize", handleResize);
   }, [open]);
 
-// Editable title state
-const [editTitle, setEditTitle] = useState(title || "Script Code");
-const [isEditing, setIsEditing] = useState(false);
-const inputRef = useRef(null);
+  // Editable title state
+  const [editTitle, setEditTitle] = useState(title || "Script Code");
+  const [isEditing, setIsEditing] = useState(false);
+  const inputRef = useRef(null);
 
-// Keep editTitle in sync with prop title
-useEffect(() => {
-  setEditTitle(title || "Script Code");
-}, [title]);
+  // Keep editTitle in sync with prop title
+  useEffect(() => {
+    setEditTitle(title || "Script Code");
+  }, [title]);
 
   // Focus input when editing
   useEffect(() => {
@@ -69,7 +86,7 @@ useEffect(() => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `${editTitle.replace(/\s+/g, "_")}.${ext}`;
+    a.download = sanitizeFilename(editTitle, ext);
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -92,13 +109,14 @@ useEffect(() => {
     }
   };
 
-// Only show the drawer if open
-if (!open) return null;
+  // Only show the drawer if open
+  if (!open) return null;
 
-// Live code logic
-const displayCode = liveGenerating
-  ? (liveContent && liveContent.trim() !== "" ? liveContent : "-- Generating code... --")
-  : (code && code.trim() !== "" ? code : "-- No code to display --");
+  // Live code logic
+  const displayCode = liveGenerating
+    ? (liveContent && liveContent.trim() !== "" ? liveContent : "-- Generating code... --")
+    : (code && code.trim() !== "" ? code : "-- No code to display --");
+
   return (
     <AnimatePresence>
       <motion.div
@@ -119,7 +137,7 @@ const displayCode = liveGenerating
       >
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-800 bg-[#181825]">
-          <div className="flex-1 min-w-0">
+          <div className="flex-1 min-w-0 flex items-center gap-2">
             {isEditing ? (
               <input
                 ref={inputRef}
@@ -150,6 +168,11 @@ const displayCode = liveGenerating
                 {editTitle}
               </span>
             )}
+            {version && (
+              <span className="ml-2 text-xs text-gray-300 border-l border-gray-600 pl-2 font-mono">
+                {version}
+              </span>
+            )}
           </div>
           <button
             className="p-2 rounded hover:bg-gray-800 transition-colors ml-2"
@@ -161,31 +184,31 @@ const displayCode = liveGenerating
         </div>
         {/* Code Viewer */}
         <div className="flex-1 overflow-auto p-0">
-<div className="relative">
-  <SyntaxHighlighter
-    language="lua"
-    style={atomOneDark}
-    customStyle={{
-      background: "#181825",
-      margin: 0,
-      borderRadius: 0,
-      fontSize: "1rem",
-      minHeight: "100%",
-      padding: "1.5rem 1.25rem"
-    }}
-    showLineNumbers
-    wrapLongLines
-  >
-    {displayCode}
-  </SyntaxHighlighter>
-  {liveGenerating && (
-    <div className="absolute bottom-4 left-0 w-full flex justify-center pointer-events-none">
-      <span className="bg-[#181825] text-[#00f5d4] px-4 py-2 rounded-lg font-mono text-sm animate-pulse border border-[#00f5d4] shadow-lg">
-        Generating code live...
-      </span>
-    </div>
-  )}
-</div>
+          <div className="relative">
+            <SyntaxHighlighter
+              language="lua"
+              style={atomOneDark}
+              customStyle={{
+                background: "#181825",
+                margin: 0,
+                borderRadius: 0,
+                fontSize: "1rem",
+                minHeight: "100%",
+                padding: "1.5rem 1.25rem"
+              }}
+              showLineNumbers
+              wrapLongLines
+            >
+              {displayCode}
+            </SyntaxHighlighter>
+            {liveGenerating && (
+              <div className="absolute bottom-4 left-0 w-full flex justify-center pointer-events-none">
+                <span className="bg-[#181825] text-[#00f5d4] px-4 py-2 rounded-lg font-mono text-sm animate-pulse border border-[#00f5d4] shadow-lg">
+                  Generating code live...
+                </span>
+              </div>
+            )}
+          </div>
         </div>
         {/* Bottom Buttons */}
         <div className="flex flex-wrap items-center gap-3 justify-end p-4 border-t border-gray-800 bg-[#161622]">

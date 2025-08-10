@@ -239,13 +239,38 @@ function ThinkingDots({ className = "" }) {
   );
 }
 
+// --- Helper: Detect update/modify intent in prompt ---
+function isUpdatePrompt(prompt) {
+  if (!prompt) return false;
+  const updateKeywords = [
+    "update", "modify", "add", "change", "improve", "edit", "enhance", "upgrade", "make it", "can you", "could you"
+  ];
+  const lowerPrompt = prompt.toLowerCase();
+  return updateKeywords.some(word => lowerPrompt.startsWith(word) || lowerPrompt.includes(` ${word} `));
+}
+
+// --- Helper: Sanitize filename from title ---
+function sanitizeFilename(title) {
+  if (!title) return "Script.lua";
+  // Remove emojis and special chars, replace spaces with underscores, keep alphanum, dash, underscore
+  return (
+    title
+      .replace(/[\u{1F600}-\u{1F6FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, "") // remove emojis
+      .replace(/[^a-zA-Z0-9 _-]/g, "") // remove special chars except space, _, -
+      .replace(/\s+/g, "_") // spaces to underscores
+      .replace(/_+/g, "_") // collapse multiple underscores
+      .replace(/^_+|_+$/g, "") // trim underscores
+      .slice(0, 40) // limit length
+      + ".lua"
+  );
+}
 
 // --- Main Container Component ---
 export default function NexusRBXAIPageContainer() {
   const navigate = useNavigate();
 
   // --- State for script sessions (each script = one prompt/response group) ---
-  const [scriptSessions, setScriptSessions] = useState([]); // [{id, prompt, sections, status, typewriterDone}]
+  const [scriptSessions, setScriptSessions] = useState([]); // [{id, prompt, sections, status, typewriterDone, version}]
   const [prompt, setPrompt] = useState("");
   const [promptCharCount, setPromptCharCount] = useState(0);
   const [promptError, setPromptError] = useState("");
@@ -329,20 +354,31 @@ export default function NexusRBXAIPageContainer() {
         reject(new Error("Not authenticated."));
         return;
       }
+
+      // --- Versioning logic ---
+      let version = 1;
+      let titleForUpdate = null;
+      if (isUpdatePrompt(userPrompt) && scriptSessions.length > 0) {
+        // If updating, use last script's title and increment version
+        const lastSession = scriptSessions[scriptSessions.length - 1];
+        titleForUpdate = lastSession.sections?.title || null;
+        version = (lastSession.version || lastSession.sections?.version || 1) + 1;
+      }
+
       let sessionId = Date.now() + Math.floor(Math.random() * 10000);
       let newSession = {
         id: sessionId,
         prompt: userPrompt,
         sections: {},
         status: "thinking",
-        typewriterDone: false
+        typewriterDone: false,
+        version: version
       };
       setScriptSessions(prev => [...prev, newSession]);
       let currentSections = {};
 
       // PHASE 1: Generate explanation (using /api/generate-explanation)
       try {
-        // Show "Thinking..." while waiting for explanation
         setScriptSessions(prev => {
           const updated = [...prev];
           const idx = updated.findIndex(s => s.id === sessionId);
@@ -377,22 +413,24 @@ export default function NexusRBXAIPageContainer() {
         const explanationBuffer = data.explanation || "";
 
         // --- Parse sections ---
-        const titleMatch = explanationBuffer.match(/^\s*1\.\s*\*\*Title\*\*\s*—\s*(.+?)\n/);
         const controlExplanationMatch = explanationBuffer.match(/\*\*Control Explanation Section\*\*\s*—\s*([\s\S]+?)\n\*\*Features\*\*/);
         const featuresMatch = explanationBuffer.match(/\*\*Features\*\*\s*—\s*([\s\S]+?)\n\*\*Controls\*\*/);
         const controlsMatch = explanationBuffer.match(/\*\*Controls\*\*\s*—\s*([\s\S]+?)\n\*\*How It Should Act\*\*/);
         const howItShouldActMatch = explanationBuffer.match(/\*\*How It Should Act\*\*\s*—\s*([\s\S]+)$/);
 
+        // Use title from backend if not updating, otherwise use previous title
+        const title = titleForUpdate || data.title || "";
+
         currentSections = {
           ...(currentSections || {}),
-          ...(titleMatch ? { title: titleMatch[1].trim() } : {}),
+          ...(title ? { title: title } : {}),
           ...(controlExplanationMatch ? { controlExplanation: controlExplanationMatch[1].trim() } : {}),
           ...(featuresMatch ? { features: featuresMatch[1].trim() } : {}),
           ...(controlsMatch ? { controls: controlsMatch[1].trim() } : {}),
           ...(howItShouldActMatch ? { howItShouldAct: howItShouldActMatch[1].trim() } : {}),
+          version: version
         };
 
-        // Set status to "typewriting" to trigger typewriter effect
         setScriptSessions(prev => {
           const updated = [...prev];
           const idx = updated.findIndex(s => s.id === sessionId);
@@ -402,7 +440,8 @@ export default function NexusRBXAIPageContainer() {
               sections: { ...currentSections },
               status: "typewriting",
               explanationText: explanationBuffer,
-              typewriterDone: false
+              typewriterDone: false,
+              version: version
             };
           }
           return updated;
@@ -505,7 +544,7 @@ export default function NexusRBXAIPageContainer() {
             open: true,
             code: code,
             title: session.sections.title || "Script Code",
-            version: null,
+            version: session.sections.version ? `v${session.sections.version}` : "v1",
             liveGenerating: false,
             liveContent: ""
           }));
@@ -600,6 +639,18 @@ export default function NexusRBXAIPageContainer() {
     setPrompt("");
   };
 
+  // --- Handler for opening code drawer from ScriptLoadingBarContainer ---
+  const handleViewScript = (session) => {
+    setCodeDrawer({
+      open: true,
+      code: session.sections.code || "",
+      title: session.sections.title || "Script Code",
+      version: session.sections.version ? `v${session.sections.version}` : "v1",
+      liveGenerating: false,
+      liveContent: ""
+    });
+  };
+
   // --- Main Layout ---
   return (
     <div
@@ -687,96 +738,116 @@ export default function NexusRBXAIPageContainer() {
         {/* Main chat area */}
         <section className="flex-grow flex flex-col md:w-2/3 h-full relative z-10">
           <div className="flex-grow overflow-y-auto px-2 md:px-4 py-6 flex flex-col items-center">
-            <div className="w-full max-w-2xl mx-auto space-y-6">
-              {scriptSessions.length === 0 && !isGenerating ? (
-                <WelcomeCard
-                  setPrompt={setPrompt}
-                  promptTemplates={[]} // No templates
-                  userPromptTemplates={[]} // No user templates
-                  setShowPromptTemplateModal={() => {}}
-                  promptSuggestions={[]} promptSuggestionLoading={false}
-                />
-              ) : (
-                scriptSessions.map((session, idx) => (
-                  <div key={session.id} className="mb-6">
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="font-bold text-lg text-[#00f5d4]">
-                        {session.sections.title
-                          ? session.sections.title.replace(/\s*v\d+$/i, "")
-                          : `Script ${idx + 1}`}
-                      </span>
-                      {session.sections.version && (
-                        <span className="ml-2 text-xs text-gray-400 font-bold">
-                          v{session.sections.version}
-                        </span>
-                      )}
-                      {session.status === "thinking" && (
-                        <Loader className="h-4 w-4 text-[#9b5de5] animate-spin ml-2" />
-                      )}
-                    </div>
+  {/* --- Script Title Above All Scripts --- */}
+  {scriptSessions.length > 0 && scriptSessions[0].sections.title && (
+    <div className="w-full flex justify-center mb-8">
+      <span className="font-bold text-2xl text-[#00f5d4] text-center">
+        {scriptSessions[0].sections.title}
+      </span>
+      {scriptSessions[0].sections.version && (
+        <span className="ml-3 text-base text-gray-400 font-bold self-end pb-1">
+          v{scriptSessions[0].sections.version}
+        </span>
+      )}
+    </div>
+  )}
+  <div className="w-full max-w-2xl mx-auto space-y-6">
+    {scriptSessions.length === 0 && !isGenerating ? (
+      <WelcomeCard
+        setPrompt={setPrompt}
+        promptTemplates={[]} // No templates
+        userPromptTemplates={[]} // No user templates
+        setShowPromptTemplateModal={() => {}}
+        promptSuggestions={[]} promptSuggestionLoading={false}
+      />
+    ) : (
+      scriptSessions.map((session, idx) => (
+        <div key={session.id} className="mb-6">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="font-bold text-lg text-[#00f5d4]">
+              {/* Use the script title from backend, fallback to Script N */}
+              {session.sections.title
+                ? session.sections.title
+                : `Script ${idx + 1}`}
+            </span>
+            {session.sections.version && (
+              <span className="ml-2 text-xs text-gray-400 font-bold">
+                v{session.sections.version}
+              </span>
+            )}
+            {session.status === "thinking" && (
+              <Loader className="h-4 w-4 text-[#9b5de5] animate-spin ml-2" />
+            )}
+          </div>
                     <div className="bg-gray-900/60 rounded-lg p-4 border border-gray-800">
                       {session.status === "thinking" && (
                         <div className="text-gray-400 text-sm flex items-center gap-2">
                           <ThinkingDots className="text-[#9b5de5] font-mono" />
                         </div>
                       )}
-                      {session.status === "typewriting" && (
+                      {(session.status === "typewriting" || session.status === "done") && (
                         <div>
-                          <Typewriter
-                            text={session.explanationText}
-                            speed={14}
-                            className="text-gray-200 text-sm whitespace-pre-line"
-                            onDone={() => {
-                              setScriptSessions(prev => {
-                                const updated = [...prev];
-                                const idx = updated.findIndex(s => s.id === session.id);
-                                if (idx !== -1) {
-                                  updated[idx] = {
-                                    ...updated[idx],
-                                    typewriterDone: true
-                                  };
-                                }
-                                return updated;
-                              });
-                            }}
-                          />
+                          <div className="text-gray-200 text-sm whitespace-pre-line mb-3">
+                            {session.status === "typewriting" ? (
+                              <Typewriter
+                                text={session.explanationText}
+                                speed={14}
+                                className="text-gray-200 text-sm whitespace-pre-line"
+                                onDone={() => {
+                                  setScriptSessions(prev => {
+                                    const updated = [...prev];
+                                    const idx = updated.findIndex(s => s.id === session.id);
+                                    if (idx !== -1) {
+                                      updated[idx] = {
+                                        ...updated[idx],
+                                        typewriterDone: true
+                                      };
+                                    }
+                                    return updated;
+                                  });
+                                }}
+                              />
+                            ) : (
+                              session.explanationText
+                            )}
+                          </div>
+                          {session.status === "done" && (
+                            <>
+                              {session.sections.controlExplanation && (
+                                <div className="mb-3">
+                                  <div className="font-bold text-[#9b5de5] mb-1">Controls Explanation</div>
+                                  <div className="text-gray-200 whitespace-pre-line text-sm">
+                                    {session.sections.controlExplanation}
+                                  </div>
+                                </div>
+                              )}
+                              {session.sections.features && (
+                                <div className="mb-3">
+                                  <div className="font-bold text-[#00f5d4] mb-1">Features</div>
+                                  <div className="text-gray-200 whitespace-pre-line text-sm">
+                                    {session.sections.features}
+                                  </div>
+                                </div>
+                              )}
+                              {session.sections.controls && (
+                                <div className="mb-3">
+                                  <div className="font-bold text-[#9b5de5] mb-1">Controls</div>
+                                  <div className="text-gray-200 whitespace-pre-line text-sm">
+                                    {session.sections.controls}
+                                  </div>
+                                </div>
+                              )}
+                              {session.sections.howItShouldAct && (
+                                <div className="mb-3">
+                                  <div className="font-bold text-[#00f5d4] mb-1">How It Should Act</div>
+                                  <div className="text-gray-200 whitespace-pre-line text-sm">
+                                    {session.sections.howItShouldAct}
+                                  </div>
+                                </div>
+                              )}
+                            </>
+                          )}
                         </div>
-                      )}
-                      {session.status === "done" && (
-                        <>
-                          {session.sections.controlExplanation && (
-                            <div className="mb-3">
-                              <div className="font-bold text-[#9b5de5] mb-1">Controls Explanation</div>
-                              <div className="text-gray-200 whitespace-pre-line text-sm">
-                                {session.sections.controlExplanation}
-                              </div>
-                            </div>
-                          )}
-                          {session.sections.features && (
-                            <div className="mb-3">
-                              <div className="font-bold text-[#00f5d4] mb-1">Features</div>
-                              <div className="text-gray-200 whitespace-pre-line text-sm">
-                                {session.sections.features}
-                              </div>
-                            </div>
-                          )}
-                          {session.sections.controls && (
-                            <div className="mb-3">
-                              <div className="font-bold text-[#9b5de5] mb-1">Controls</div>
-                              <div className="text-gray-200 whitespace-pre-line text-sm">
-                                {session.sections.controls}
-                              </div>
-                            </div>
-                          )}
-                          {session.sections.howItShouldAct && (
-                            <div className="mb-3">
-                              <div className="font-bold text-[#00f5d4] mb-1">How It Should Act</div>
-                              <div className="text-gray-200 whitespace-pre-line text-sm">
-                                {session.sections.howItShouldAct}
-                              </div>
-                            </div>
-                          )}
-                        </>
                       )}
                       {session.status === "error" && (
                         <div className="text-red-400 text-sm mt-2">
@@ -785,42 +856,43 @@ export default function NexusRBXAIPageContainer() {
                       )}
                     </div>
                     {/* Code Loading Bar appears under the chat tab when code is being generated for this session */}
-{codeLoadingSessionId === session.id && (isCodeLoading || codeReady) && (
-  <ScriptLoadingBarContainer
-    filename={
-      session.sections?.title
-        ? `${session.sections.title.replace(/\s*v\d+$/i, "").replace(/\s+/g, "_") || "Script"}.lua`
-        : "Script.lua"
-    }
-    version={session.sections?.version ? `v${session.sections.version}` : "v1.0"}
-    language="lua"
-    loading={isCodeLoading}
-    codeReady={codeReady}
-    estimatedLines={
-      session.sections?.code
-        ? session.sections.code.split("\n").length
-        : null
-    }
-    onSave={() => {
-      if (session.sections?.code) {
-        const blob = new Blob([session.sections.code], { type: "text/plain" });
-        const a = document.createElement("a");
-        a.href = URL.createObjectURL(blob);
-        a.download =
-          (session.sections?.title
-            ? `${session.sections.title.replace(/\s*v\d+$/i, "").replace(/\s+/g, "_") || "Script"}.lua`
-            : "Script.lua");
-        document.body.appendChild(a);
-        a.click();
-        setTimeout(() => {
-          document.body.removeChild(a);
-          URL.revokeObjectURL(a.href);
-        }, 100);
-      }
-    }}
-    saved={false}
-  />
-)}
+                    {codeLoadingSessionId === session.id && (isCodeLoading || codeReady) && (
+                      <ScriptLoadingBarContainer
+                        filename={
+                          session.sections?.title
+                            ? sanitizeFilename(session.sections.title)
+                            : "Script.lua"
+                        }
+                        version={session.sections?.version ? `v${session.sections.version}` : "v1"}
+                        language="lua"
+                        loading={isCodeLoading}
+                        codeReady={codeReady}
+                        estimatedLines={
+                          session.sections?.code
+                            ? session.sections.code.split("\n").length
+                            : null
+                        }
+                        onSave={() => {
+                          if (session.sections?.code) {
+                            const blob = new Blob([session.sections.code], { type: "text/plain" });
+                            const a = document.createElement("a");
+                            a.href = URL.createObjectURL(blob);
+                            a.download =
+                              session.sections?.title
+                                ? sanitizeFilename(session.sections.title)
+                                : "Script.lua";
+                            document.body.appendChild(a);
+                            a.click();
+                            setTimeout(() => {
+                              document.body.removeChild(a);
+                              URL.revokeObjectURL(a.href);
+                            }, 100);
+                          }
+                        }}
+                        saved={false}
+                        onView={() => handleViewScript(session)}
+                      />
+                    )}
                   </div>
                 ))
               )}
