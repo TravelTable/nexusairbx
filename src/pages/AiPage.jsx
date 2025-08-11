@@ -1,13 +1,9 @@
-
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  Send, Loader, Menu, Crown, Sparkles, Code, Star, X, Download, Plus, History, Check, Trash2, Folder, Tag, Search, Circle
-} from "lucide-react";
+import { Send, Loader } from "lucide-react";
 import { auth, db } from "./firebase";
 import { onAuthStateChanged, signInAnonymously } from "firebase/auth";
 import { doc, getDoc, setDoc } from "firebase/firestore";
-import SidebarContent from "../components/SidebarContent";
 import RightSidebar from "../components/RightSidebar";
 import Modal from "../components/Modal";
 import FeedbackModal from "../components/FeedbackModal";
@@ -185,9 +181,6 @@ async function getJWT() {
 function setJWT(token) {
   localStorage.setItem("jwt_token", token);
 }
-function removeJWT() {
-  localStorage.removeItem("jwt_token");
-}
 
 // --- Typewriter Effect Hook ---
 function useTypewriterEffect(text, speed = 18) {
@@ -281,22 +274,22 @@ export default function NexusRBXAIPageContainer() {
   const [promptCharCount, setPromptCharCount] = useState(0);
   const [promptError, setPromptError] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
-  const [activeTab, setActiveTab] = useState("chat");
-  const [copiedIndex, setCopiedIndex] = useState(null);
+  const [activeTab] = useState("chat");
+  const [copiedIndex] = useState(null);
   const [savedScripts, setSavedScripts] = useState([]);
   const [user, setUser] = useState(null);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarOpen] = useState(false);
   const [rightSidebarOpen] = useState(false);
   const [settings, setSettings] = useState(defaultSettings);
   const [promptTemplates, setPromptTemplates] = useState([]);
   const [userPromptTemplates, setUserPromptTemplates] = useState([]);
   const [promptAutocomplete, setPromptAutocomplete] = useState([]);
   const [promptHistory, setPromptHistory] = useState([]);
-  const [promptSearch, setPromptSearch] = useState("");
-  const [feedbackState, setFeedbackState] = useState({});
-  const [lintState, setLintState] = useState({});
-  const [explainState, setExplainState] = useState({});
-  const [improveState, setImproveState] = useState({});
+  const [promptSearch] = useState("");
+  const [feedbackState] = useState({});
+  const [lintState] = useState({});
+  const [explainState] = useState({});
+  const [improveState] = useState({});
   const [showImprovedModal, setShowImprovedModal] = useState(false);
   const [improvedScriptContent, setImprovedScriptContent] = useState("");
   const [showExplainModal, setShowExplainModal] = useState(false);
@@ -304,12 +297,12 @@ export default function NexusRBXAIPageContainer() {
   const [showLintModal, setShowLintModal] = useState(false);
   const [lintContent, setLintContent] = useState("");
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
-  const [feedbackMsgId, setFeedbackMsgId] = useState(null);
+  const [feedbackMsgId] = useState(null);
   const [folders, setFolders] = useState([]);
   const [selectedFolder, setSelectedFolder] = useState("all");
   const [tags, setTags] = useState([]);
   const [selectedTag, setSelectedTag] = useState("all");
-  const [scriptVersionHistory, setScriptVersionHistory] = useState({});
+  const [scriptVersionHistory] = useState({});
   const [showVersionModal, setShowVersionModal] = useState(false);
   const [versionModalScript, setVersionModalScript] = useState(null);
   const [versionModalVersions, setVersionModalVersions] = useState([]);
