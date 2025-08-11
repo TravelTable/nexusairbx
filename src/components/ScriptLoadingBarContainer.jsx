@@ -72,18 +72,18 @@ export default function ScriptLoadingBarContainer({
   }, [loading, codeReady]);
 
   return (
-    <div className="max-w-3xl mx-auto my-4 w-full">
+    <div className="max-w-3xl mx-auto my-4 w-full px-2 sm:px-4">
       <div className="bg-gray-900 bg-opacity-80 backdrop-blur-sm rounded-lg overflow-hidden border border-gray-700 shadow-lg">
         <div className="relative">
           {/* Header Content */}
-          <div className="flex items-center justify-between px-4 py-3 z-10 relative">
-            <div className="flex items-center">
-              <div className="bg-gray-800 bg-opacity-70 p-1.5 rounded-md mr-3 border border-gray-700">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between px-3 sm:px-4 py-3 z-10 relative gap-3 sm:gap-0">
+            <div className="flex items-center w-full sm:w-auto">
+              <div className="bg-gray-800 bg-opacity-70 p-1.5 rounded-md mr-3 border border-gray-700 flex-shrink-0">
                 <FileCode className="w-5 h-5 text-white" />
               </div>
-              <div>
-                <div className="flex items-center">
-                  <span className="font-medium text-white">
+              <div className="min-w-0">
+                <div className="flex items-center flex-wrap">
+                  <span className="font-medium text-white truncate max-w-[120px] sm:max-w-none">
                     {filename || "Script.lua"}
                   </span>
                   {version && (
@@ -92,7 +92,7 @@ export default function ScriptLoadingBarContainer({
                     </span>
                   )}
                 </div>
-                <div className="text-xs text-gray-300 mt-0.5 flex items-center">
+                <div className="text-xs text-gray-300 mt-0.5 flex items-center flex-wrap">
                   <span>
                     {codeReady
                       ? `${language.toUpperCase()} script generated`
@@ -114,9 +114,9 @@ export default function ScriptLoadingBarContainer({
               </div>
             </div>
             {/* View and Save Buttons */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
               {/* View Button */}
-              <div className={`relative group ${!codeReady ? 'opacity-50 cursor-not-allowed' : ''}`}>
+              <div className={`relative group flex-1 sm:flex-none ${!codeReady ? 'opacity-50 cursor-not-allowed' : ''}`}>
                 <div className={`absolute inset-0 rounded-md bg-gradient-to-r from-purple-600 via-blue-500 to-cyan-400 
                   opacity-0 group-hover:opacity-100 blur-sm transition-opacity duration-300 
                   ${!codeReady ? 'hidden' : ''}`}>
@@ -124,7 +124,7 @@ export default function ScriptLoadingBarContainer({
                 <button
                   onClick={codeReady && typeof onView === "function" ? onView : undefined}
                   disabled={!codeReady}
-                  className={`relative flex items-center px-4 py-1.5 rounded-md text-sm bg-black text-white
+                  className={`relative flex items-center justify-center w-full sm:w-auto px-4 py-1.5 rounded-md text-sm bg-black text-white
                     border border-transparent group-hover:border-transparent transition-all duration-300
                     ${codeReady ? 'group-hover:shadow-[0_0_15px_rgba(168,85,247,0.5)]' : ''}`}
                   title={codeReady ? "View script" : "Wait for script to complete"}
@@ -136,7 +136,7 @@ export default function ScriptLoadingBarContainer({
                 </button>
               </div>
               {/* Save Button */}
-              <div className={`relative group ${!codeReady ? 'opacity-50 cursor-not-allowed' : ''}`}>
+              <div className={`relative group flex-1 sm:flex-none ${!codeReady ? 'opacity-50 cursor-not-allowed' : ''}`}>
                 <div className={`absolute inset-0 rounded-md bg-gradient-to-r from-purple-600 via-blue-500 to-cyan-400 
                   opacity-0 group-hover:opacity-100 blur-sm transition-opacity duration-300 
                   ${!codeReady ? 'hidden' : ''}`}>
@@ -144,7 +144,7 @@ export default function ScriptLoadingBarContainer({
                 <button
                   onClick={onSave}
                   disabled={!codeReady}
-                  className={`relative flex items-center px-4 py-1.5 rounded-md text-sm bg-black text-white
+                  className={`relative flex items-center justify-center w-full sm:w-auto px-4 py-1.5 rounded-md text-sm bg-black text-white
                     border border-transparent group-hover:border-transparent transition-all duration-300
                     ${codeReady ? 'group-hover:shadow-[0_0_15px_rgba(168,85,247,0.5)]' : ''}`}
                   title={codeReady ? "Save script" : "Wait for script to complete"}
@@ -179,7 +179,7 @@ export default function ScriptLoadingBarContainer({
           </div>
         </div>
       </div>
-      {/* CSS for animated gradient border */}
+      {/* Responsive and animated gradient border CSS */}
       <style jsx>{`
         @keyframes borderAnimation {
           0% { background-position: 0% 50%; }
@@ -189,6 +189,40 @@ export default function ScriptLoadingBarContainer({
         .group:hover .bg-gradient-to-r {
           animation: borderAnimation 3s ease infinite;
           background-size: 200% 200%;
+        }
+        @media (max-width: 640px) {
+          .max-w-3xl {
+            max-width: 100vw !important;
+          }
+          .rounded-lg {
+            border-radius: 1rem !important;
+          }
+          .px-3, .sm\\:px-4 {
+            padding-left: 0.75rem !important;
+            padding-right: 0.75rem !important;
+          }
+          .py-3 {
+            padding-top: 0.75rem !important;
+            padding-bottom: 0.75rem !important;
+          }
+          .flex-row {
+            flex-direction: column !important;
+          }
+          .items-center {
+            align-items: flex-start !important;
+          }
+          .gap-2 {
+            gap: 0.5rem !important;
+          }
+          .mr-3 {
+            margin-right: 0.75rem !important;
+          }
+          .w-full {
+            width: 100% !important;
+          }
+          .justify-end {
+            justify-content: flex-end !important;
+          }
         }
       `}</style>
     </div>
