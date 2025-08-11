@@ -392,7 +392,8 @@ export default function NexusRBXAIPageContainer() {
       setText(text.slice(0, idx + 1));
       idx++;
       if (idx < text.length) {
-        timeoutId = setTimeout(type, 18 + Math.random() * 30);
+        // Make the typewriter much faster (e.g., 5-10ms per char)
+        timeoutId = setTimeout(type, 5 + Math.random() * 10);
       } else if (doneCallback) {
         doneCallback();
       }
