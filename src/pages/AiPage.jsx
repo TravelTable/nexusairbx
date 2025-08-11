@@ -1,12 +1,27 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  Send, Loader, Menu
+  Send,
+  Loader,
+  Menu,
+  Settings,
+  X,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { auth, db } from "./firebase";
 import { onAuthStateChanged, signInAnonymously } from "firebase/auth";
 import {
-  doc, getDoc, setDoc, collection, addDoc, updateDoc, deleteDoc, onSnapshot, query, orderBy
+  doc,
+  getDoc,
+  setDoc,
+  collection,
+  addDoc,
+  updateDoc,
+  deleteDoc,
+  onSnapshot,
+  query,
+  orderBy,
 } from "firebase/firestore";
 import SidebarContent from "../components/SidebarContent";
 import RightSidebar from "../components/RightSidebar";
@@ -32,22 +47,22 @@ const DEVELOPER_EMAIL = "jackt1263@gmail.com"; // CHANGE THIS TO YOUR DEV EMAIL
 const modelOptions = [
   { value: "nexus-3", label: "Nexus-3 (Legacy, Default)" },
   { value: "nexus-4", label: "Nexus-4 (Fast, Accurate)" },
-  { value: "nexus-2", label: "Nexus-2 (GPT-3.5 Turbo)" }
+  { value: "nexus-2", label: "Nexus-2 (GPT-3.5 Turbo)" },
 ];
 const creativityOptions = [
   { value: 0.3, label: "Low (Precise)" },
   { value: 0.7, label: "Medium (Balanced)" },
-  { value: 1.0, label: "High (Creative)" }
+  { value: 1.0, label: "High (Creative)" },
 ];
 const codeStyleOptions = [
   { value: "optimized", label: "Optimized" },
-  { value: "readable", label: "Readable" }
+  { value: "readable", label: "Readable" },
 ];
 
 const defaultSettings = {
   modelVersion: "nexus-3",
   creativity: 0.7,
-  codeStyle: "optimized"
+  codeStyle: "optimized",
 };
 
 // --- Token System ---
@@ -208,7 +223,7 @@ export default function NexusRBXAIPageContainer() {
   const [selectedVersion, setSelectedVersion] = useState(null);
 
   // --- UI State ---
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false); // legacy, not used for mobile
   const [activeTab, setActiveTab] = useState("chat"); // chat | saved | chats
   const [prompt, setPrompt] = useState("");
   const [promptCharCount, setPromptCharCount] = useState(0);
@@ -249,6 +264,10 @@ export default function NexusRBXAIPageContainer() {
   const [promptSuggestions, setPromptSuggestions] = useState([]);
   const [promptSuggestionLoading, setPromptSuggestionLoading] = useState(false);
 
+  // --- Mobile Sidebar State ---
+  const [mobileLeftSidebarOpen, setMobileLeftSidebarOpen] = useState(false);
+  const [mobileRightSidebarOpen, setMobileRightSidebarOpen] = useState(false);
+
   // --- Auth ---
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
@@ -283,7 +302,7 @@ export default function NexusRBXAIPageContainer() {
     const q = query(getChatsCollectionRef(user.uid), orderBy("updatedAt", "desc"));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const chatList = [];
-      snapshot.forEach(doc => {
+      snapshot.forEach((doc) => {
         chatList.push({ id: doc.id, ...doc.data() });
       });
       setChats(chatList);
@@ -308,7 +327,7 @@ export default function NexusRBXAIPageContainer() {
     const q = query(getScriptsCollectionRef(user.uid, currentChatId), orderBy("createdAt", "asc"));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const scriptList = [];
-      snapshot.forEach(doc => {
+      snapshot.forEach((doc) => {
         scriptList.push({ id: doc.id, ...doc.data() });
       });
       setScripts(scriptList);
@@ -330,10 +349,14 @@ export default function NexusRBXAIPageContainer() {
       const allPrompts = [
         ...promptTemplates,
         ...userPromptTemplates,
-        ...promptHistory
+        ...promptHistory,
       ];
       const filtered = allPrompts
-        .filter(p => p.toLowerCase().startsWith(prompt.toLowerCase()) && p.toLowerCase() !== prompt.toLowerCase())
+        .filter(
+          (p) =>
+            p.toLowerCase().startsWith(prompt.toLowerCase()) &&
+            p.toLowerCase() !== prompt.toLowerCase()
+        )
         .slice(0, 5);
       setPromptAutocomplete(filtered);
     } else {
@@ -394,9 +417,9 @@ export default function NexusRBXAIPageContainer() {
     // Conversational memory: last 10 scripts in this chat
     const conversation = scripts
       .slice(-10)
-      .map(s => ({
+      .map((s) => ({
         role: "assistant",
-        content: s.sections?.code || s.sections?.title || ""
+        content: s.sections?.code || s.sections?.title || "",
       }));
 
     let idToken;
@@ -424,20 +447,25 @@ export default function NexusRBXAIPageContainer() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${idToken}`
+          Authorization: `Bearer ${idToken}`,
         },
         body: JSON.stringify({
           prompt,
           conversation,
           model: "gpt-4.1-2025-04-14",
           isNewScript: true,
-          previousTitle: ""
-        })
+          previousTitle: "",
+        }),
       });
 
       if (!titleRes.ok) {
         const text = await titleRes.text();
-        throw new Error(`Failed to generate title: ${titleRes.status} ${titleRes.statusText} - ${text.slice(0, 200)}`);
+        throw new Error(
+          `Failed to generate title: ${titleRes.status} ${titleRes.statusText} - ${text.slice(
+            0,
+            200
+          )}`
+        );
       }
       let titleData;
       try {
@@ -454,51 +482,69 @@ export default function NexusRBXAIPageContainer() {
         const chatDoc = await addDoc(getChatsCollectionRef(user.uid), {
           title: scriptTitle,
           createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
+          updatedAt: new Date().toISOString(),
         });
         newChatId = chatDoc.id;
         setCurrentChatId(chatDoc.id);
       }
 
       // --- Typewriter for Title ---
-      await new Promise(resolve => runTypewriter(scriptTitle, setTypewriterTitle, resolve));
+      await new Promise((resolve) =>
+        runTypewriter(scriptTitle, setTypewriterTitle, resolve)
+      );
 
       // --- 2. Generate Explanation ---
       setGenerationStep("explanation");
-      const explanationRes = await fetch(`${BACKEND_URL}/api/generate-explanation`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${idToken}`
-        },
-        body: JSON.stringify({
-          prompt,
-          conversation,
-          model: "gpt-4.1-2025-04-14"
-        })
-      });
+      const explanationRes = await fetch(
+        `${BACKEND_URL}/api/generate-explanation`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${idToken}`,
+          },
+          body: JSON.stringify({
+            prompt,
+            conversation,
+            model: "gpt-4.1-2025-04-14",
+          }),
+        }
+      );
 
       if (!explanationRes.ok) {
         const text = await explanationRes.text();
-        throw new Error(`Failed to generate explanation: ${explanationRes.status} ${explanationRes.statusText} - ${text.slice(0, 200)}`);
+        throw new Error(
+          `Failed to generate explanation: ${explanationRes.status} ${explanationRes.statusText} - ${text.slice(
+            0,
+            200
+          )}`
+        );
       }
       try {
         explanationObj = await explanationRes.json();
       } catch (err) {
         const text = await explanationRes.text();
-        throw new Error(`Explanation API did not return JSON: ${text.slice(0, 200)}`);
+        throw new Error(
+          `Explanation API did not return JSON: ${text.slice(0, 200)}`
+        );
       }
       explanation = explanationObj.explanation || "";
       if (!explanation) throw new Error("Failed to generate explanation");
 
       // --- Typewriter for Explanation ---
-      await new Promise(resolve => runTypewriter(explanation, setTypewriterExplanation, resolve));
+      await new Promise((resolve) =>
+        runTypewriter(explanation, setTypewriterExplanation, resolve)
+      );
 
       // --- 3. Show Loading Bar for Code Generation ---
       setGenerationStep("code");
       setLoadingBarVisible(true);
       setLoadingBarData({
-        filename: scriptTitle.replace(/[^a-zA-Z0-9_\- ]/g, "").replace(/\s+/g, "_").slice(0, 40) + ".lua",
+        filename:
+          scriptTitle
+            .replace(/[^a-zA-Z0-9_\- ]/g, "")
+            .replace(/\s+/g, "_")
+            .slice(0, 40) + ".lua",
         version: "v1",
         language: "lua",
         loading: true,
@@ -514,19 +560,24 @@ export default function NexusRBXAIPageContainer() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${idToken}`
+          Authorization: `Bearer ${idToken}`,
         },
         body: JSON.stringify({
           prompt,
           conversation,
           explanation,
-          model: "gpt-4.1-2025-04-14"
-        })
+          model: "gpt-4.1-2025-04-14",
+        }),
       });
 
       if (!codeRes.ok) {
         const text = await codeRes.text();
-        throw new Error(`Failed to generate code: ${codeRes.status} ${codeRes.statusText} - ${text.slice(0, 200)}`);
+        throw new Error(
+          `Failed to generate code: ${codeRes.status} ${codeRes.statusText} - ${text.slice(
+            0,
+            200
+          )}`
+        );
       }
       let codeData;
       try {
@@ -542,40 +593,47 @@ export default function NexusRBXAIPageContainer() {
       setGenerationStep("saving");
       // Use the new chat id if we just created one, otherwise use currentChatId
       const chatIdToUse = newChatId || currentChatId;
-      const scriptDocRef = await addDoc(getScriptsCollectionRef(user.uid, chatIdToUse), {
-        prompt,
-        sections: {
-          title: scriptTitle,
-          ...explanationObj,
-          code,
-          version: 1
-        },
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        versions: [
-          {
-            version: 1,
+      const scriptDocRef = await addDoc(
+        getScriptsCollectionRef(user.uid, chatIdToUse),
+        {
+          prompt,
+          sections: {
+            title: scriptTitle,
+            ...explanationObj,
             code,
-            createdAt: new Date().toISOString(),
-            title: scriptTitle
-          }
-        ]
-      });
+            version: 1,
+          },
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          versions: [
+            {
+              version: 1,
+              code,
+              createdAt: new Date().toISOString(),
+              title: scriptTitle,
+            },
+          ],
+        }
+      );
       baseScriptId = scriptDocRef.id;
       version = 1;
 
       // --- 6. Update Chat updatedAt ---
       await updateDoc(getChatDocRef(user.uid, chatIdToUse), {
-        updatedAt: new Date().toISOString()
+        updatedAt: new Date().toISOString(),
       });
 
       // --- 7. Fetch Version History ---
-      const scriptDoc = await getDoc(getScriptDocRef(user.uid, chatIdToUse, baseScriptId));
+      const scriptDoc = await getDoc(
+        getScriptDocRef(user.uid, chatIdToUse, baseScriptId)
+      );
       let versions = [];
       if (scriptDoc.exists()) {
         versions = scriptDoc.data().versions || [];
       }
-      setVersionHistory(versions.sort((a, b) => (b.version || 1) - (a.version || 1)));
+      setVersionHistory(
+        versions.sort((a, b) => (b.version || 1) - (a.version || 1))
+      );
       setCurrentScript({
         id: baseScriptId,
         title: scriptTitle,
@@ -583,15 +641,19 @@ export default function NexusRBXAIPageContainer() {
       });
       setSelectedVersion(versions[0]);
 
-      setLoadingBarData(prev => ({
+      setLoadingBarData((prev) => ({
         ...prev,
         loading: false,
         codeReady: true,
         saved: true,
         version: `v${version}`,
-        filename: scriptTitle.replace(/[^a-zA-Z0-9_\- ]/g, "").replace(/\s+/g, "_").slice(0, 40) + ".lua",
+        filename:
+          scriptTitle
+            .replace(/[^a-zA-Z0-9_\- ]/g, "")
+            .replace(/\s+/g, "_")
+            .slice(0, 40) + ".lua",
         onSave: () => {},
-        onView: () => {}
+        onView: () => {},
       }));
       setLoadingBarVisible(false);
       setGenerationStep("done");
@@ -626,7 +688,7 @@ export default function NexusRBXAIPageContainer() {
       version,
       code,
       createdAt: new Date().toISOString(),
-      title: newTitle
+      title: newTitle,
     };
     versions.unshift(newVersion);
     await updateDoc(scriptDocRef, {
@@ -634,12 +696,12 @@ export default function NexusRBXAIPageContainer() {
       updatedAt: new Date().toISOString(),
       "sections.code": code,
       "sections.title": newTitle,
-      "sections.version": version
+      "sections.version": version,
     });
     setVersionHistory(versions);
-    setCurrentScript(cs => ({
+    setCurrentScript((cs) => ({
       ...cs,
-      versions
+      versions,
     }));
     alert("Script saved as new version!");
   };
@@ -647,9 +709,9 @@ export default function NexusRBXAIPageContainer() {
   // --- Sidebar Version Click Handler ---
   const handleVersionView = (versionObj) => {
     setSelectedVersion(versionObj);
-    setCurrentScript(cs => ({
+    setCurrentScript((cs) => ({
       ...cs,
-      title: versionObj.title
+      title: versionObj.title,
     }));
   };
 
@@ -659,7 +721,11 @@ export default function NexusRBXAIPageContainer() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     // Sanitize filename
-    const filename = (versionObj.title || "Script").replace(/[^a-zA-Z0-9_\- ]/g, "").replace(/\s+/g, "_").slice(0, 40) + ".lua";
+    const filename =
+      (versionObj.title || "Script")
+        .replace(/[^a-zA-Z0-9_\- ]/g, "")
+        .replace(/\s+/g, "_")
+        .slice(0, 40) + ".lua";
     a.href = url;
     a.download = filename;
     document.body.appendChild(a);
@@ -674,7 +740,7 @@ export default function NexusRBXAIPageContainer() {
     const chatDoc = await addDoc(getChatsCollectionRef(user.uid), {
       title,
       createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      updatedAt: new Date().toISOString(),
     });
     setCurrentChatId(chatDoc.id);
   };
@@ -682,14 +748,16 @@ export default function NexusRBXAIPageContainer() {
     if (!user) return;
     await updateDoc(getChatDocRef(user.uid, chatId), {
       title: newTitle,
-      updatedAt: new Date().toISOString()
+      updatedAt: new Date().toISOString(),
     });
   };
   const handleDeleteChat = async (chatId) => {
     if (!user) return;
     await deleteDoc(getChatDocRef(user.uid, chatId));
     if (currentChatId === chatId) {
-      setCurrentChatId(chats.length > 1 ? chats.find(c => c.id !== chatId)?.id : null);
+      setCurrentChatId(
+        chats.length > 1 ? chats.find((c) => c.id !== chatId)?.id : null
+      );
     }
   };
 
@@ -697,7 +765,13 @@ export default function NexusRBXAIPageContainer() {
   const messagesEndRef = useRef(null);
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [scripts, isGenerating]);
+  }, [scripts, isGenerating, loadingBarVisible]);
+
+  // --- Mobile Sidebar Overlay Logic ---
+  const closeAllMobileSidebars = () => {
+    setMobileLeftSidebarOpen(false);
+    setMobileRightSidebarOpen(false);
+  };
 
   // --- Main Layout ---
   return (
@@ -705,12 +779,23 @@ export default function NexusRBXAIPageContainer() {
       className="min-h-screen bg-[#0D0D0D] text-white font-sans flex flex-col relative"
       style={{
         backgroundImage:
-          "radial-gradient(ellipse at 60% 0%, rgba(155,93,229,0.08) 0%, rgba(0,0,0,0) 70%), radial-gradient(ellipse at 0% 100%, rgba(0,245,212,0.06) 0%, rgba(0,0,0,0) 80%)"
+          "radial-gradient(ellipse at 60% 0%, rgba(155,93,229,0.08) 0%, rgba(0,0,0,0) 70%), radial-gradient(ellipse at 0% 100%, rgba(0,245,212,0.06) 0%, rgba(0,0,0,0) 80%)",
       }}
     >
       {/* Header */}
       <header className="border-b border-gray-800 bg-black/30 backdrop-blur-md sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 flex items-center">
+          {/* Hamburger for mobile */}
+          <button
+            className="md:hidden text-gray-300 mr-2 p-2 rounded hover:bg-gray-800 transition-colors"
+            onClick={() => {
+              setMobileLeftSidebarOpen(true);
+              setMobileRightSidebarOpen(false);
+            }}
+            aria-label="Open sidebar"
+          >
+            <Menu className="h-6 w-6" />
+          </button>
           <div className="flex-1 flex items-center">
             <div
               className="text-2xl font-bold bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-transparent bg-clip-text cursor-pointer"
@@ -747,30 +832,147 @@ export default function NexusRBXAIPageContainer() {
               </a>
             </nav>
           </div>
-          {/* Hamburger for mobile */}
+          {/* Settings icon for mobile */}
           <button
             className="md:hidden text-gray-300 ml-2 p-2 rounded hover:bg-gray-800 transition-colors"
-            onClick={() => setSidebarOpen(true)}
-            aria-label="Open sidebar"
+            onClick={() => {
+              setMobileRightSidebarOpen(true);
+              setMobileLeftSidebarOpen(false);
+            }}
+            aria-label="Open settings"
           >
-            <Menu className="h-6 w-6" />
+            <Settings className="h-6 w-6" />
           </button>
         </div>
       </header>
+
+      {/* --- Mobile Left Sidebar --- */}
+      <div
+        className={`fixed inset-0 z-[100] md:hidden transition-all duration-300 ${
+          mobileLeftSidebarOpen ? "pointer-events-auto" : "pointer-events-none"
+        }`}
+        aria-modal={mobileLeftSidebarOpen}
+        style={{ display: mobileLeftSidebarOpen ? "block" : "none" }}
+      >
+        {/* Overlay */}
+        <div
+          className={`fixed inset-0 bg-black/60 transition-opacity duration-300 ${
+            mobileLeftSidebarOpen ? "opacity-100" : "opacity-0"
+          }`}
+          onClick={closeAllMobileSidebars}
+        />
+        {/* Sidebar */}
+        <aside
+          className={`fixed top-0 left-0 h-full bg-gray-900 border-r border-gray-800 w-[80vw] max-w-xs z-[101] shadow-2xl transition-transform duration-300 ${
+            mobileLeftSidebarOpen
+              ? "translate-x-0"
+              : "-translate-x-full"
+          }`}
+        >
+          <div className="flex items-center justify-between px-4 py-4 border-b border-gray-800">
+            <span className="font-bold text-lg bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-transparent bg-clip-text">
+              Menu
+            </span>
+            <button
+              className="p-2 rounded hover:bg-gray-800 transition-colors"
+              onClick={closeAllMobileSidebars}
+              aria-label="Close sidebar"
+            >
+              <ChevronLeft className="h-6 w-6" />
+            </button>
+          </div>
+          <SidebarContent
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+            handleClearChat={() => {
+              setScripts([]);
+              setCurrentScript(null);
+              setVersionHistory([]);
+              setSelectedVersion(null);
+            }}
+            setPrompt={setPrompt}
+            chats={chats}
+            currentChatId={currentChatId}
+            setCurrentChatId={setCurrentChatId}
+            handleCreateChat={handleCreateChat}
+            handleRenameChat={handleRenameChat}
+            handleDeleteChat={handleDeleteChat}
+            scripts={scripts}
+            currentScript={currentScript}
+            versionHistory={versionHistory}
+            onVersionView={handleVersionView}
+            onVersionDownload={handleVersionDownload}
+            promptSearch={promptSearch}
+            setPromptSearch={setPromptSearch}
+            isMobile
+          />
+        </aside>
+      </div>
+
+      {/* --- Mobile Right Sidebar --- */}
+      <div
+        className={`fixed inset-0 z-[100] md:hidden transition-all duration-300 ${
+          mobileRightSidebarOpen ? "pointer-events-auto" : "pointer-events-none"
+        }`}
+        aria-modal={mobileRightSidebarOpen}
+        style={{ display: mobileRightSidebarOpen ? "block" : "none" }}
+      >
+        {/* Overlay */}
+        <div
+          className={`fixed inset-0 bg-black/60 transition-opacity duration-300 ${
+            mobileRightSidebarOpen ? "opacity-100" : "opacity-0"
+          }`}
+          onClick={closeAllMobileSidebars}
+        />
+        {/* Sidebar */}
+        <aside
+          className={`fixed top-0 right-0 h-full bg-gray-900 border-l border-gray-800 w-[80vw] max-w-xs z-[101] shadow-2xl transition-transform duration-300 ${
+            mobileRightSidebarOpen
+              ? "translate-x-0"
+              : "translate-x-full"
+          }`}
+        >
+          <div className="flex items-center justify-between px-4 py-4 border-b border-gray-800">
+            <span className="font-bold text-lg bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-transparent bg-clip-text">
+              Settings
+            </span>
+            <button
+              className="p-2 rounded hover:bg-gray-800 transition-colors"
+              onClick={closeAllMobileSidebars}
+              aria-label="Close settings"
+            >
+              <ChevronRight className="h-6 w-6" />
+            </button>
+          </div>
+          <RightSidebar
+            settings={settings}
+            setSettings={setSettings}
+            modelOptions={modelOptions}
+            creativityOptions={creativityOptions}
+            codeStyleOptions={codeStyleOptions}
+            messages={scripts}
+            setPrompt={setPrompt}
+            userPromptTemplates={userPromptTemplates}
+            setUserPromptTemplates={setUserPromptTemplates}
+            promptSuggestions={promptSuggestions}
+            promptSuggestionLoading={promptSuggestionLoading}
+            isMobile
+          />
+        </aside>
+      </div>
 
       {/* Sidebar (desktop) */}
       <aside
         className="hidden md:flex w-80 bg-gray-900 border-r border-gray-800 flex-col sticky top-[64px] left-0 z-30 h-[calc(100vh-64px)]"
         style={{
           minHeight: "calc(100vh - 64px)",
-          maxHeight: "calc(100vh - 64px)"
+          maxHeight: "calc(100vh - 64px)",
         }}
       >
         <SidebarContent
           activeTab={activeTab}
           setActiveTab={setActiveTab}
           handleClearChat={() => {
-            // Clear scripts for current chat
             setScripts([]);
             setCurrentScript(null);
             setVersionHistory([]);
@@ -804,7 +1006,7 @@ export default function NexusRBXAIPageContainer() {
                 <div className="mb-4 text-center">
                   <TypewriterText
                     text={typewriterTitle}
-                    className="text-3xl font-bold bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-transparent bg-clip-text"
+                    className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-transparent bg-clip-text"
                     instant
                   />
                 </div>
@@ -812,7 +1014,9 @@ export default function NexusRBXAIPageContainer() {
               {/* Show Explanation after Title */}
               {typewriterExplanation && (
                 <div className="mb-4">
-                  <div className="font-bold text-[#9b5de5] mb-1 text-lg">Explanation</div>
+                  <div className="font-bold text-[#9b5de5] mb-1 text-lg">
+                    Explanation
+                  </div>
                   <TypewriterText
                     text={typewriterExplanation}
                     className="text-gray-200 whitespace-pre-line text-base"
@@ -830,52 +1034,68 @@ export default function NexusRBXAIPageContainer() {
                   promptSuggestionLoading={promptSuggestionLoading}
                 />
               ) : (
-                scripts.map((session, idx) => (
-                  <div key={session.id} className="mb-6">
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="font-bold text-lg text-[#00f5d4]">
-                        {session.sections?.title
-                          ? session.sections.title.replace(/\s*v\d+$/i, "")
-                          : `Script ${idx + 1}`}
-                      </span>
-                      {session.sections?.version && (
-                        <span className="ml-2 text-xs text-gray-400 font-bold">
-                          v{session.sections.version}
-                        </span>
+                scripts.map((session, idx) => {
+                  // Only render if there is actual content
+                  const hasContent =
+                    session.sections?.title ||
+                    session.sections?.explanation ||
+                    session.sections?.features ||
+                    session.sections?.controls ||
+                    session.sections?.howItShouldAct ||
+                    session.sections?.code;
+                  if (!hasContent) return null;
+                  return (
+                    <div key={session.id} className="mb-6">
+                      {/* Only show the generated script title, no "Script 1" or box */}
+                      {session.sections?.title && (
+                        <div className="mb-2 text-center">
+                          <span className="text-2xl font-bold bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-transparent bg-clip-text">
+                            {session.sections.title.replace(/\s*v\d+$/i, "")}
+                          </span>
+                          {session.sections?.version && (
+                            <span className="ml-2 text-xs text-gray-400 font-bold align-top">
+                              {/* v{session.sections.version} */}
+                            </span>
+                          )}
+                        </div>
                       )}
-                      {session.status === "generating" && (
-                        <Loader className="h-4 w-4 text-[#9b5de5] animate-spin ml-2" />
-                      )}
-                    </div>
-                    <div className="bg-gray-900/60 rounded-lg p-4 border border-gray-800">
-                      {session.sections?.controlExplanation && (
-                        <div className="mb-3">
-                          <div className="font-bold text-[#9b5de5] mb-1">Controls Explanation</div>
-                          <div className="text-gray-200 whitespace-pre-line text-sm">
-                            {session.sections.controlExplanation}
+                      {/* Explanation and other sections as plain text */}
+                      {session.sections?.explanation && (
+                        <div className="mb-2">
+                          <div className="font-bold text-[#9b5de5] mb-1">
+                            Explanation
+                          </div>
+                          <div className="text-gray-200 whitespace-pre-line text-base">
+                            {session.sections.explanation}
                           </div>
                         </div>
                       )}
                       {session.sections?.features && (
-                        <div className="mb-3">
-                          <div className="font-bold text-[#00f5d4] mb-1">Features</div>
-                          <div className="text-gray-200 whitespace-pre-line text-sm">
+                        <div className="mb-2">
+                          <div className="font-bold text-[#00f5d4] mb-1">
+                            Features
+                          </div>
+                          <div className="text-gray-200 whitespace-pre-line text-base">
                             {session.sections.features}
                           </div>
                         </div>
                       )}
                       {session.sections?.controls && (
-                        <div className="mb-3">
-                          <div className="font-bold text-[#9b5de5] mb-1">Controls</div>
-                          <div className="text-gray-200 whitespace-pre-line text-sm">
+                        <div className="mb-2">
+                          <div className="font-bold text-[#9b5de5] mb-1">
+                            Controls
+                          </div>
+                          <div className="text-gray-200 whitespace-pre-line text-base">
                             {session.sections.controls}
                           </div>
                         </div>
                       )}
                       {session.sections?.howItShouldAct && (
-                        <div className="mb-3">
-                          <div className="font-bold text-[#00f5d4] mb-1">How It Should Act</div>
-                          <div className="text-gray-200 whitespace-pre-line text-sm">
+                        <div className="mb-2">
+                          <div className="font-bold text-[#00f5d4] mb-1">
+                            How It Should Act
+                          </div>
+                          <div className="text-gray-200 whitespace-pre-line text-base">
                             {session.sections.howItShouldAct}
                           </div>
                         </div>
@@ -887,13 +1107,29 @@ export default function NexusRBXAIPageContainer() {
                         </div>
                       )}
                     </div>
-                  </div>
-                ))
+                  );
+                })
               )}
+              {/* Loading bar appears just below the latest script output */}
               {isGenerating && (
                 <div className="flex items-center text-gray-400 text-sm mt-2">
                   <Loader className="h-4 w-4 animate-spin mr-2" />
                   NexusRBX is generating...
+                </div>
+              )}
+              {loadingBarVisible && (
+                <div className="mt-4">
+                  <ScriptLoadingBarContainer
+                    filename={loadingBarData.filename}
+                    version={loadingBarData.version}
+                    language={loadingBarData.language}
+                    loading={loadingBarData.loading}
+                    codeReady={loadingBarData.codeReady}
+                    estimatedLines={loadingBarData.estimatedLines}
+                    saved={loadingBarData.saved}
+                    onSave={loadingBarData.onSave}
+                    onView={loadingBarData.onView}
+                  />
                 </div>
               )}
               <div ref={messagesEndRef} />
@@ -909,9 +1145,11 @@ export default function NexusRBXAIPageContainer() {
               <div className="relative">
                 <textarea
                   value={typeof prompt === "string" ? prompt : ""}
-                  onChange={e => setPrompt(e.target.value)}
+                  onChange={(e) => setPrompt(e.target.value)}
                   placeholder="Describe the Roblox mod you want to create..."
-                  className={`w-full rounded-lg bg-gray-900/60 border border-gray-700 focus:border-[#9b5de5] focus:outline-none focus:ring-2 focus:ring-[#9b5de5]/50 transition-all duration-300 py-3 px-4 pr-14 resize-none shadow-lg ${promptError ? "border-red-500" : ""}`}
+                  className={`w-full rounded-lg bg-gray-900/60 border border-gray-700 focus:border-[#9b5de5] focus:outline-none focus:ring-2 focus:ring-[#9b5de5]/50 transition-all duration-300 py-3 px-4 pr-14 resize-none shadow-lg ${
+                    promptError ? "border-red-500" : ""
+                  }`}
                   rows="3"
                   disabled={isGenerating}
                   maxLength={800}
@@ -973,7 +1211,12 @@ export default function NexusRBXAIPageContainer() {
                 </button>
               </div>
               <div className="flex justify-between items-center mt-2 text-xs text-gray-500">
-                <TokenBar tokens={tokens} tokensLoading={tokensLoading} refreshCountdown={refreshCountdown} isDev={isDev} />
+                <TokenBar
+                  tokens={tokens}
+                  tokensLoading={tokensLoading}
+                  refreshCountdown={refreshCountdown}
+                  isDev={isDev}
+                />
                 <div>
                   <span className={promptCharCount > 800 ? "text-red-400" : ""}>
                     {promptCharCount}/800
@@ -1002,7 +1245,7 @@ export default function NexusRBXAIPageContainer() {
           className="hidden md:flex w-80 bg-gray-900 border-l border-gray-800 flex-col fixed right-0 top-[64px] z-30 h-[calc(100vh-64px)]"
           style={{
             minHeight: "calc(100vh - 64px)",
-            maxHeight: "calc(100vh - 64px)"
+            maxHeight: "calc(100vh - 64px)",
           }}
         >
           <RightSidebar
@@ -1020,20 +1263,6 @@ export default function NexusRBXAIPageContainer() {
           />
         </aside>
       </main>
-      {/* Loading Bar */}
-      {loadingBarVisible && (
-        <ScriptLoadingBarContainer
-          filename={loadingBarData.filename}
-          version={loadingBarData.version}
-          language={loadingBarData.language}
-          loading={loadingBarData.loading}
-          codeReady={loadingBarData.codeReady}
-          estimatedLines={loadingBarData.estimatedLines}
-          saved={loadingBarData.saved}
-          onSave={loadingBarData.onSave}
-          onView={loadingBarData.onView}
-        />
-      )}
       {/* --- Code Drawer Integration --- */}
       {selectedVersion && (
         <SimpleCodeDrawer
