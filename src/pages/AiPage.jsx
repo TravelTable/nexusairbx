@@ -292,6 +292,29 @@ export default function NexusRBXAIPageContainer() {
     isDev,
   } = useTokens(user);
 
+  // --- Always create a new chat on AI page load ---
+  useEffect(() => {
+    if (!user) return;
+    let unsub = null;
+    let created = false;
+    const createFreshChat = async () => {
+      // Create a new chat and set as current
+      const chatDoc = await addDoc(getChatsCollectionRef(user.uid), {
+        title: "New Chat",
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      });
+      setCurrentChatId(chatDoc.id);
+      created = true;
+    };
+    createFreshChat();
+    // Don't auto-select any previous chat
+    return () => {
+      if (unsub) unsub();
+    };
+    // eslint-disable-next-line
+  }, [user]);
+
   // --- Load Chats from Firestore ---
   useEffect(() => {
     if (!user) {
@@ -306,10 +329,7 @@ export default function NexusRBXAIPageContainer() {
         chatList.push({ id: doc.id, ...doc.data() });
       });
       setChats(chatList);
-      // Auto-select first chat if none selected
-      if (!currentChatId && chatList.length > 0) {
-        setCurrentChatId(chatList[0].id);
-      }
+      // DO NOT auto-select first chat if none selected (fresh chat logic above)
     });
     return () => unsubscribe();
     // eslint-disable-next-line
@@ -1044,6 +1064,12 @@ export default function NexusRBXAIPageContainer() {
                     session.sections?.howItShouldAct ||
                     session.sections?.code;
                   if (!hasContent) return null;
+
+                  // For every version of this script, render a ScriptLoadingBarContainer
+                  const versions = Array.isArray(session.versions)
+                    ? session.versions
+                    : [];
+
                   return (
                     <div key={session.id} className="mb-6">
                       {/* Only show the generated script title, no "Script 1" or box */}
@@ -1106,6 +1132,30 @@ export default function NexusRBXAIPageContainer() {
                           Error generating script. Please try again.
                         </div>
                       )}
+                      {/* Render ScriptLoadingBarContainer for every version */}
+                      {versions.map((versionObj, vIdx) => {
+                        const filename =
+                          (versionObj.title || "Script")
+                            .replace(/[^a-zA-Z0-9_\- ]/g, "")
+                            .replace(/\s+/g, "_")
+                            .slice(0, 40) + ".lua";
+                        return (
+                          <div key={versionObj.version || vIdx} className="mt-4">
+                            <ScriptLoadingBarContainer
+                              filename={filename}
+                              version={`v${versionObj.version || vIdx + 1}`}
+                              language="lua"
+                              loading={false}
+                              codeReady={true}
+                              estimatedLines={null}
+                              saved={true}
+                              onSave={() => handleSaveScript(versionObj.title, versionObj.code)}
+                              onView={() => handleVersionView(versionObj)}
+                              onDownload={() => handleVersionDownload(versionObj)}
+                            />
+                          </div>
+                        );
+                      })}
                     </div>
                   );
                 })
