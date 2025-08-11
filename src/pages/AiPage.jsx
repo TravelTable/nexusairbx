@@ -298,9 +298,9 @@ export default function NexusRBXAIPageContainer() {
     let unsub = null;
     let created = false;
     const createFreshChat = async () => {
-      // Create a new chat and set as current
+      // Create a new chat and set as current, but leave the title as empty string for now
       const chatDoc = await addDoc(getChatsCollectionRef(user.uid), {
-        title: "New Chat",
+        title: "",
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       });
@@ -322,7 +322,7 @@ export default function NexusRBXAIPageContainer() {
       setCurrentChatId(null);
       return;
     }
-    const q = query(getChatsCollectionRef(user.uid), orderBy("updatedAt", "desc"));
+    const q = query(getChatsCollectionRef(user.uid), orderBy("createdAt", "asc"));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const chatList = [];
       snapshot.forEach((doc) => {
@@ -506,6 +506,19 @@ export default function NexusRBXAIPageContainer() {
         });
         newChatId = chatDoc.id;
         setCurrentChatId(chatDoc.id);
+      } else {
+        // If the current chat exists and its title is empty or "New Chat", update it to the script title
+        const chatDocRef = getChatDocRef(user.uid, currentChatId);
+        const chatDocSnap = await getDoc(chatDocRef);
+        if (chatDocSnap.exists()) {
+          const chatData = chatDocSnap.data();
+          if (!chatData.title || chatData.title === "" || chatData.title === "New Chat") {
+            await updateDoc(chatDocRef, {
+              title: scriptTitle,
+              updatedAt: new Date().toISOString(),
+            });
+          }
+        }
       }
 
       // --- Typewriter for Title ---
@@ -1044,7 +1057,7 @@ export default function NexusRBXAIPageContainer() {
                   />
                 </div>
               )}
-              {/* Script history for current chat */}
+                      {/* Script history for current chat */}
               {scripts.length === 0 && !isGenerating ? (
                 <WelcomeCard
                   setPrompt={setPrompt}
@@ -1072,17 +1085,12 @@ export default function NexusRBXAIPageContainer() {
 
                   return (
                     <div key={session.id} className="mb-6">
-                      {/* Only show the generated script title, no "Script 1" or box */}
+                      {/* Show the generated script title, no "Script 1" or box */}
                       {session.sections?.title && (
                         <div className="mb-2 text-center">
                           <span className="text-2xl font-bold bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-transparent bg-clip-text">
                             {session.sections.title.replace(/\s*v\d+$/i, "")}
                           </span>
-                          {session.sections?.version && (
-                            <span className="ml-2 text-xs text-gray-400 font-bold align-top">
-                              {/* v{session.sections.version} */}
-                            </span>
-                          )}
                         </div>
                       )}
                       {/* Explanation and other sections as plain text */}
@@ -1126,7 +1134,6 @@ export default function NexusRBXAIPageContainer() {
                           </div>
                         </div>
                       )}
-                      {/* Code is only shown in the code drawer */}
                       {session.status === "error" && (
                         <div className="text-red-400 text-sm mt-2">
                           Error generating script. Please try again.
