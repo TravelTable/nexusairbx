@@ -1,49 +1,38 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Copy, Download, Save } from "lucide-react";
 import { Light as SyntaxHighlighter } from "react-syntax-highlighter";
 import lua from "react-syntax-highlighter/dist/esm/languages/hljs/lua";
 import { atomOneDark } from "react-syntax-highlighter/dist/esm/styles/hljs";
 
-// Register lua highlighting if not already
+// Register lua highlighting
 SyntaxHighlighter.registerLanguage("lua", lua);
 
-// Helper for responsive drawer width
-function getDrawerWidth() {
-  if (typeof window === "undefined") return "33vw";
-  if (window.innerWidth < 768) return "100vw";
-  return "33vw";
-}
-
-// Helper: Sanitize filename from title
-function sanitizeFilename(title, ext = "lua") {
-  if (!title) return `Script.${ext}`;
-  // Remove emojis and special chars, replace spaces with underscores, keep alphanum, dash, underscore
-  return (
-    title
-      .replace(/[\u{1F600}-\u{1F6FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, "") // remove emojis
-      .replace(/[^a-zA-Z0-9 _-]/g, "") // remove special chars except space, _, -
-      .replace(/\s+/g, "_") // spaces to underscores
-      .replace(/_+/g, "_") // collapse multiple underscores
-      .replace(/^_+|_+$/g, "") // trim underscores
-      .slice(0, 40) // limit length
-      + `.${ext}`
-  );
-}
-
-export default function SimpleCodeDrawer({
+// Container component for business logic
+export default function CodeDrawerContainer({
   open,
   code = "",
   title = "Script Code",
-  version = null, // version prop (e.g. "v1", "v2")
+  version = null,
   onClose,
-  onSaveScript, // function: (newTitle, code) => void
+  onSaveScript,
   liveGenerating = false,
   liveContent = "",
-  onLiveOpen // optional: callback when drawer opens for live gen
+  onLiveOpen
 }) {
-  // Responsive drawer width (updates on resize)
-  const [drawerWidth, setDrawerWidth] = React.useState(getDrawerWidth());
+  // Responsive drawer width calculation
+  const getDrawerWidth = useCallback(() => {
+    if (typeof window === "undefined") return "33vw";
+    return window.innerWidth < 768 ? "100vw" : "33vw";
+  }, []);
+
+  const [drawerWidth, setDrawerWidth] = useState(getDrawerWidth());
+  const [editTitle, setEditTitle] = useState(title || "Script Code");
+  const [isEditing, setIsEditing] = useState(false);
+  const [copySuccess, setCopySuccess] = useState(false);
+  const inputRef = useRef(null);
+
+  // Handle window resize
   useEffect(() => {
     function handleResize() {
       setDrawerWidth(getDrawerWidth());
@@ -53,14 +42,9 @@ export default function SimpleCodeDrawer({
       setDrawerWidth(getDrawerWidth());
     }
     return () => window.removeEventListener("resize", handleResize);
-  }, [open]);
+  }, [open, getDrawerWidth]);
 
-  // Editable title state
-  const [editTitle, setEditTitle] = useState(title || "Script Code");
-  const [isEditing, setIsEditing] = useState(false);
-  const inputRef = useRef(null);
-
-  // Keep editTitle in sync with prop title
+  // Sync title with props
   useEffect(() => {
     setEditTitle(title || "Script Code");
   }, [title]);
@@ -73,15 +57,38 @@ export default function SimpleCodeDrawer({
     }
   }, [isEditing]);
 
-  // Open callback for live gen
+  // Call onLiveOpen when drawer opens
   useEffect(() => {
     if (open && typeof onLiveOpen === "function") {
       onLiveOpen();
     }
   }, [open, onLiveOpen]);
 
-  // Download helpers
-  const downloadFile = (ext) => {
+  // Reset copy success message
+  useEffect(() => {
+    if (copySuccess) {
+      const timer = setTimeout(() => setCopySuccess(false), 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [copySuccess]);
+
+  // Sanitize filename from title
+  const sanitizeFilename = useCallback((title, ext = "lua") => {
+    if (!title) return `Script.${ext}`;
+    return (
+      title
+        .replace(/[\u{1F600}-\u{1F6FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, "")
+        .replace(/[^a-zA-Z0-9 _-]/g, "")
+        .replace(/\s+/g, "_")
+        .replace(/_+/g, "_")
+        .replace(/^_+|_+$/g, "")
+        .slice(0, 40)
+        + `.${ext}`
+    );
+  }, []);
+
+  // Download file handler
+  const downloadFile = useCallback((ext) => {
     const blob = new Blob([code], { type: "text/plain" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -91,31 +98,86 @@ export default function SimpleCodeDrawer({
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-  };
+  }, [code, editTitle, sanitizeFilename]);
 
-  // Animations
+  // Copy to clipboard handler
+  const handleCopy = useCallback(() => {
+    const displayCode = liveGenerating && liveContent ? liveContent : code;
+    navigator.clipboard.writeText(displayCode);
+    setCopySuccess(true);
+  }, [code, liveGenerating, liveContent]);
+
+  // Save script handler
+  const handleSaveScript = useCallback(() => {
+    if (typeof onSaveScript === "function") {
+      onSaveScript(editTitle, code);
+    } else {
+      alert("Script saved!\n\nTitle: " + editTitle);
+    }
+  }, [onSaveScript, editTitle, code]);
+
+  // Title editing handlers
+  const startEditing = useCallback(() => setIsEditing(true), []);
+  const stopEditing = useCallback(() => setIsEditing(false), []);
+  const handleTitleChange = useCallback((e) => setEditTitle(e.target.value), []);
+  const handleTitleKeyDown = useCallback((e) => {
+    if (e.key === "Enter" || e.key === "Escape") {
+      stopEditing();
+    }
+  }, [stopEditing]);
+
+  // Determine display code
+  const displayCode = liveGenerating
+    ? (liveContent && liveContent.trim() !== "" ? liveContent : "-- Generating code... --")
+    : (code && code.trim() !== "" ? code : "-- No code to display --");
+
+  if (!open) return null;
+
+  return (
+    <CodeDrawerUI
+      drawerWidth={drawerWidth}
+      editTitle={editTitle}
+      isEditing={isEditing}
+      inputRef={inputRef}
+      version={version}
+      displayCode={displayCode}
+      liveGenerating={liveGenerating}
+      copySuccess={copySuccess}
+      onClose={onClose}
+      onTitleChange={handleTitleChange}
+      onTitleKeyDown={handleTitleKeyDown}
+      onStartEditing={startEditing}
+      onStopEditing={stopEditing}
+      onCopy={handleCopy}
+      onDownload={downloadFile}
+      onSaveScript={handleSaveScript}
+    />
+  );
+}
+
+// UI component for presentation
+function CodeDrawerUI({
+  drawerWidth,
+  editTitle,
+  isEditing,
+  inputRef,
+  version,
+  displayCode,
+  liveGenerating,
+  copySuccess,
+  onClose,
+  onTitleChange,
+  onTitleKeyDown,
+  onStartEditing,
+  onStopEditing,
+  onCopy,
+  onDownload,
+  onSaveScript
+}) {
   const drawerVariants = {
     hidden: { x: "100%" },
     visible: { x: 0 }
   };
-
-  // Save script handler
-  const handleSaveScript = () => {
-    if (typeof onSaveScript === "function") {
-      onSaveScript(editTitle, code);
-    } else {
-      // fallback: show alert
-      alert("Script saved!\n\nTitle: " + editTitle);
-    }
-  };
-
-  // Only show the drawer if open
-  if (!open) return null;
-
-  // Live code logic
-  const displayCode = liveGenerating
-    ? (liveContent && liveContent.trim() !== "" ? liveContent : "-- Generating code... --")
-    : (code && code.trim() !== "" ? code : "-- No code to display --");
 
   return (
     <AnimatePresence>
@@ -136,37 +198,28 @@ export default function SimpleCodeDrawer({
         transition={{ type: "spring", stiffness: 350, damping: 35 }}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-800 bg-[#181825]">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-800 bg-[#181825] sticky top-0 z-10">
           <div className="flex-1 min-w-0 flex items-center gap-2">
             {isEditing ? (
               <input
                 ref={inputRef}
-                className="w-full bg-transparent border-b border-[#00f5d4] text-white font-bold text-lg outline-none px-1 py-0"
+                className="w-full bg-transparent border-b border-[#00f5d4] text-white font-bold text-lg outline-none px-1 py-0 transition-all focus:border-[#9b5de5]"
                 value={editTitle}
                 maxLength={80}
-                onChange={e => setEditTitle(e.target.value)}
-                onBlur={() => setIsEditing(false)}
-                onKeyDown={e => {
-                  if (e.key === "Enter" || e.key === "Escape") {
-                    setIsEditing(false);
-                  }
-                }}
+                onChange={onTitleChange}
+                onBlur={onStopEditing}
+                onKeyDown={onTitleKeyDown}
                 aria-label="Edit script title"
               />
             ) : (
-              <span
-                className="font-bold text-lg text-white truncate cursor-pointer"
-                title={editTitle}
-                tabIndex={0}
-                onClick={() => setIsEditing(true)}
-                onKeyDown={e => {
-                  if (e.key === "Enter" || e.key === " ") setIsEditing(true);
-                }}
+              <button
+                className="font-bold text-lg text-white truncate text-left hover:text-[#00f5d4] transition-colors focus:outline-none focus:text-[#00f5d4]"
+                title={`${editTitle} (click to edit)`}
+                onClick={onStartEditing}
                 aria-label="Edit script title"
-                style={{ outline: "none" }}
               >
                 {editTitle}
-              </span>
+              </button>
             )}
             {version && (
               <span className="ml-2 text-xs text-gray-300 border-l border-gray-600 pl-2 font-mono">
@@ -175,79 +228,88 @@ export default function SimpleCodeDrawer({
             )}
           </div>
           <button
-            className="p-2 rounded hover:bg-gray-800 transition-colors ml-2"
+            className="p-2 rounded-full hover:bg-gray-800 transition-colors ml-2 focus:outline-none focus:ring-2 focus:ring-[#00f5d4]"
             onClick={onClose}
             aria-label="Close drawer"
           >
             <X className="h-6 w-6 text-white" />
           </button>
         </div>
+
         {/* Code Viewer */}
-        <div className="flex-1 overflow-auto p-0">
-          <div className="relative">
-            <SyntaxHighlighter
-              language="lua"
-              style={atomOneDark}
-              customStyle={{
-                background: "#181825",
-                margin: 0,
-                borderRadius: 0,
-                fontSize: "1rem",
-                minHeight: "100%",
-                padding: "1.5rem 1.25rem"
-              }}
-              showLineNumbers
-              wrapLongLines
-            >
-              {displayCode}
-            </SyntaxHighlighter>
-            {liveGenerating && (
-              <div className="absolute bottom-4 left-0 w-full flex justify-center pointer-events-none">
-                <span className="bg-[#181825] text-[#00f5d4] px-4 py-2 rounded-lg font-mono text-sm animate-pulse border border-[#00f5d4] shadow-lg">
-                  Generating code live...
-                </span>
-              </div>
-            )}
-          </div>
-        </div>
-        {/* Bottom Buttons */}
-        <div className="flex flex-wrap items-center gap-3 justify-end p-4 border-t border-gray-800 bg-[#161622]">
-          <button
-            className="flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-white bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] shadow hover:scale-105 transition-transform"
-            onClick={() => {
-              navigator.clipboard.writeText(displayCode);
+        <div className="flex-1 overflow-auto relative">
+          <SyntaxHighlighter
+            language="lua"
+            style={atomOneDark}
+            customStyle={{
+              background: "#181825",
+              margin: 0,
+              borderRadius: 0,
+              fontSize: "1rem",
+              minHeight: "100%",
+              padding: "1.5rem 1.25rem"
             }}
+            showLineNumbers
+            wrapLongLines
+          >
+            {displayCode}
+          </SyntaxHighlighter>
+          
+          {liveGenerating && (
+            <div className="absolute bottom-4 left-0 w-full flex justify-center pointer-events-none">
+              <span className="bg-[#181825] text-[#00f5d4] px-4 py-2 rounded-lg font-mono text-sm animate-pulse border border-[#00f5d4] shadow-lg">
+                Generating code live...
+              </span>
+            </div>
+          )}
+        </div>
+
+        {/* Bottom Buttons */}
+        <div className="flex flex-wrap items-center gap-3 justify-end p-4 border-t border-gray-800 bg-[#161622] sticky bottom-0 z-10">
+          <button
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-white ${
+              copySuccess 
+                ? "bg-green-600" 
+                : "bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] hover:scale-105"
+            } shadow transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-[#00f5d4]`}
+            onClick={onCopy}
             aria-label="Copy code"
           >
             <Copy className="h-5 w-5" />
-            Copy
+            {copySuccess ? "Copied!" : "Copy"}
           </button>
+          
+          <div className="flex items-center gap-2">
+            <button
+              className="flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-white bg-gray-800 hover:bg-gray-700 transition-colors focus:outline-none focus:ring-2 focus:ring-[#00f5d4]"
+              onClick={() => onDownload("lua")}
+              aria-label="Download as .lua"
+            >
+              <Download className="h-5 w-5" />
+              .lua
+            </button>
+            
+            <button
+              className="flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-white bg-gray-800 hover:bg-gray-700 transition-colors focus:outline-none focus:ring-2 focus:ring-[#00f5d4]"
+              onClick={() => onDownload("txt")}
+              aria-label="Download as .txt"
+            >
+              <Download className="h-5 w-5" />
+              .txt
+            </button>
+          </div>
+          
           <button
-            className="flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-white bg-gray-800 hover:bg-gray-700 transition-colors"
-            onClick={() => downloadFile("lua")}
-            aria-label="Download as .lua"
-          >
-            <Download className="h-5 w-5" />
-            .lua
-          </button>
-          <button
-            className="flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-white bg-gray-800 hover:bg-gray-700 transition-colors"
-            onClick={() => downloadFile("txt")}
-            aria-label="Download as .txt"
-          >
-            <Download className="h-5 w-5" />
-            .txt
-          </button>
-          <button
-            className="flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-white bg-[#00f5d4] hover:bg-[#9b5de5] transition-colors"
-            onClick={handleSaveScript}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-white bg-[#00f5d4] hover:bg-[#9b5de5] transition-colors focus:outline-none focus:ring-2 focus:ring-white"
+            onClick={onSaveScript}
             aria-label="Save script"
           >
             <Save className="h-5 w-5" />
             Save Script
           </button>
+          
           <button
-            className="flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-white bg-gray-700 hover:bg-gray-600 transition-colors ml-2"
+            className="flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-white bg-gray-700 hover:bg-gray-600 transition-colors focus:outline-none focus:ring-2 focus:ring-[#00f5d4]"
             onClick={onClose}
             aria-label="Close"
           >
