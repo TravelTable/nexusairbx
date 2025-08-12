@@ -1068,106 +1068,105 @@ export default function NexusRBXAIPageContainer() {
                   promptSuggestionLoading={promptSuggestionLoading}
                 />
               ) : (
-                scripts.map((session, idx) => {
-                  // Only render if there is actual content
-                  const hasContent =
-                    session.sections?.title ||
-                    session.sections?.explanation ||
-                    session.sections?.features ||
-                    session.sections?.controls ||
-                    session.sections?.howItShouldAct ||
-                    session.sections?.code;
-                  if (!hasContent) return null;
+[...scripts].map((session, idx) => {
+  // Only render if there is actual content
+  const hasContent =
+    session.sections?.title ||
+    session.sections?.explanation ||
+    session.sections?.features ||
+    session.sections?.controls ||
+    session.sections?.howItShouldAct ||
+    session.sections?.code;
+  if (!hasContent) return null;
 
-                  // For every version of this script, render a ScriptLoadingBarContainer
-                  const versions = Array.isArray(session.versions)
-                    ? session.versions
-                    : [];
+  // For every version of this script, render a ScriptLoadingBarContainer
+  const versions = Array.isArray(session.versions)
+    ? session.versions
+    : [];
 
-                  return (
-                    <div key={session.id} className="mb-6">
-                      {/* Show the generated script title, no "Script 1" or box */}
-                      {session.sections?.title && (
-                        <div className="mb-2 text-center">
-                          <span className="text-2xl font-bold bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-transparent bg-clip-text">
-                            {session.sections.title.replace(/\s*v\d+$/i, "")}
-                          </span>
-                        </div>
-                      )}
-                      {/* Explanation and other sections as plain text */}
-                      {session.sections?.explanation && (
-                        <div className="mb-2">
-                          <div className="font-bold text-[#9b5de5] mb-1">
-                            Explanation
-                          </div>
-                          <div className="text-gray-200 whitespace-pre-line text-base">
-                            {session.sections.explanation}
-                          </div>
-                        </div>
-                      )}
-                      {session.sections?.features && (
-                        <div className="mb-2">
-                          <div className="font-bold text-[#00f5d4] mb-1">
-                            Features
-                          </div>
-                          <div className="text-gray-200 whitespace-pre-line text-base">
-                            {session.sections.features}
-                          </div>
-                        </div>
-                      )}
-                      {session.sections?.controls && (
-                        <div className="mb-2">
-                          <div className="font-bold text-[#9b5de5] mb-1">
-                            Controls
-                          </div>
-                          <div className="text-gray-200 whitespace-pre-line text-base">
-                            {session.sections.controls}
-                          </div>
-                        </div>
-                      )}
-                      {session.sections?.howItShouldAct && (
-                        <div className="mb-2">
-                          <div className="font-bold text-[#00f5d4] mb-1">
-                            How It Should Act
-                          </div>
-                          <div className="text-gray-200 whitespace-pre-line text-base">
-                            {session.sections.howItShouldAct}
-                          </div>
-                        </div>
-                      )}
-                      {session.status === "error" && (
-                        <div className="text-red-400 text-sm mt-2">
-                          Error generating script. Please try again.
-                        </div>
-                      )}
-                      {/* Render ScriptLoadingBarContainer for every version */}
-                      {versions.map((versionObj, vIdx) => {
-                        const filename =
-                          (versionObj.title || "Script")
-                            .replace(/[^a-zA-Z0-9_\- ]/g, "")
-                            .replace(/\s+/g, "_")
-                            .slice(0, 40) + ".lua";
-                        return (
-                          <div key={versionObj.version || vIdx} className="mt-4">
-                            <ScriptLoadingBarContainer
-                              filename={filename}
-                              version={`v${versionObj.version || vIdx + 1}`}
-                              language="lua"
-                              loading={false}
-                              codeReady={true}
-                              estimatedLines={null}
-                              saved={true}
-                              onSave={() => handleSaveScript(versionObj.title, versionObj.code)}
-                              onView={() => handleVersionView(versionObj)}
-                              onDownload={() => handleVersionDownload(versionObj)}
-                            />
-                          </div>
-                        );
-                      })}
-                    </div>
-                  );
-                })
-              )}
+  return (
+    <div key={session.id} className="mb-6">
+      {/* Show the generated script title, no "Script 1" or box */}
+      {session.sections?.title && (
+        <div className="mb-2 text-center">
+          <span className="text-2xl font-bold bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-transparent bg-clip-text">
+            {session.sections.title.replace(/\s*v\d+$/i, "")}
+          </span>
+        </div>
+      )}
+      {/* Explanation and other sections as plain text */}
+      {session.sections?.explanation && (
+        <div className="mb-2">
+          <div className="font-bold text-[#9b5de5] mb-1">
+            Explanation
+          </div>
+          <div className="text-gray-200 whitespace-pre-line text-base">
+            {session.sections.explanation}
+          </div>
+        </div>
+      )}
+      {session.sections?.features && (
+        <div className="mb-2">
+          <div className="font-bold text-[#00f5d4] mb-1">
+            Features
+          </div>
+          <div className="text-gray-200 whitespace-pre-line text-base">
+            {session.sections.features}
+          </div>
+        </div>
+      )}
+      {session.sections?.controls && (
+        <div className="mb-2">
+          <div className="font-bold text-[#9b5de5] mb-1">
+            Controls
+          </div>
+          <div className="text-gray-200 whitespace-pre-line text-base">
+            {session.sections.controls}
+          </div>
+        </div>
+      )}
+      {session.sections?.howItShouldAct && (
+        <div className="mb-2">
+          <div className="font-bold text-[#00f5d4] mb-1">
+            How It Should Act
+          </div>
+          <div className="text-gray-200 whitespace-pre-line text-base">
+            {session.sections.howItShouldAct}
+          </div>
+        </div>
+      )}
+      {session.status === "error" && (
+        <div className="text-red-400 text-sm mt-2">
+          Error generating script. Please try again.
+        </div>
+      )}
+      {/* Render ScriptLoadingBarContainer for every version */}
+      {versions.map((versionObj, vIdx) => {
+        const filename =
+          (versionObj.title || "Script")
+            .replace(/[^a-zA-Z0-9_\- ]/g, "")
+            .replace(/\s+/g, "_")
+            .slice(0, 40) + ".lua";
+        return (
+          <div key={versionObj.version || vIdx} className="mt-4">
+            <ScriptLoadingBarContainer
+              filename={filename}
+              version={`v${versionObj.version || vIdx + 1}`}
+              language="lua"
+              loading={false}
+              codeReady={true}
+              estimatedLines={null}
+              saved={true}
+              onSave={() => handleSaveScript(versionObj.title, versionObj.code)}
+              onView={() => handleVersionView(versionObj)}
+              onDownload={() => handleVersionDownload(versionObj)}
+            />
+          </div>
+        );
+      })}
+    </div>
+  );
+})
               {/* Loading bar appears just below the latest script output */}
               {isGenerating && (
                 <div className="flex items-center text-gray-400 text-sm mt-2">
