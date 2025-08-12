@@ -233,7 +233,7 @@ export default function ScriptLoadingBarContainer({
         </div>
       </div>
       {/* Responsive and animated gradient border CSS */}
-      <style jsx>{`
+      <style>{`
         @keyframes borderAnimation {
           0% { background-position: 0% 50%; }
           50% { background-position: 100% 50%; }
