@@ -38,93 +38,72 @@ export default function ScriptLoadingBarContainer({
     }
   }, [loading, codeReady]);
 
-  // Progress animation logic with delays at 30%, 60%, 90%
-  useEffect(() => {
-    let cancelled = false;
-    let timeouts = [];
+// Progress animation logic: slow, smooth, linear, no jumps or delays
+useEffect(() => {
+  let cancelled = false;
+  let interval = null;
 
-    const animateProgress = async () => {
-      // Helper to animate to a target percent with optional delay
-      const goTo = (target, duration = 600, delay = 0) =>
-        new Promise((resolve) => {
-          if (cancelled) return resolve();
-          setTimeout(() => {
-            if (cancelled) return resolve();
-            const start = progress;
-            const diff = target - start;
-            const steps = Math.max(1, Math.floor(duration / 30));
-            let step = 0;
-            const stepFn = () => {
-              if (cancelled) return resolve();
-              step++;
-              const next =
-                step >= steps
-                  ? target
-                  : start + (diff * step) / steps;
-              setProgress(next);
-              setProgressLabel(`${Math.round(next)}%`);
-              if (step < steps) {
-                timeouts.push(setTimeout(stepFn, 30));
-              } else {
-                resolve();
-              }
-            };
-            stepFn();
-          }, delay);
-        });
+  if (loading && !codeReady) {
+    setProgress(0);
+    setProgressLabel("0%");
+    // Progress increases very slowly, e.g., 0.2% every 200ms (about 95 seconds to reach 95%)
+    interval = setInterval(() => {
+      setProgress((prev) => {
+        if (cancelled) return prev;
+        if (prev >= 95) return 95;
+        const next = Math.min(prev + 0.2, 95);
+        setProgressLabel(`${Math.round(next)}%`);
+        return next;
+      });
+    }, 200);
+  }
 
-      // Animate to 30%
-      await goTo(30, 700);
-      // Pause at 30%
-      await goTo(30, 0, 400);
-
-      // Animate to 60%
-      await goTo(60, 900);
-      // Pause at 60%
-      await goTo(60, 0, 500);
-
-      // Animate to 90%
-      await goTo(90, 1200);
-      // Pause at 90%
-      await goTo(90, 0, 600);
-
-      // Wait for codeReady, or slowly approach 98%
-      let waitTime = 0;
-      while (!codeReady && !cancelled && waitTime < 10000) {
-        await goTo(Math.min(98, progress + 1), 200);
-        waitTime += 200;
+  // When codeReady, animate to 100% smoothly
+  if (codeReady) {
+    if (interval) clearInterval(interval);
+    let start = progress;
+    let diff = 100 - start;
+    let steps = Math.max(1, Math.floor(400 / 30));
+    let step = 0;
+    const stepFn = () => {
+      if (cancelled) return;
+      step++;
+      const next =
+        step >= steps
+          ? 100
+          : start + (diff * step) / steps;
+      setProgress(next);
+      setProgressLabel(`${Math.round(next)}%`);
+      if (step < steps) {
+        setTimeout(stepFn, 30);
       }
     };
+    stepFn();
+  }
 
-    if (loading && !codeReady) {
-      animateProgress();
-    }
-
-    // When codeReady, animate to 100% immediately
-    if (codeReady) {
-      setProgress(100);
-      setProgressLabel("100%");
-    }
-
-    return () => {
-      cancelled = true;
-      timeouts.forEach((t) => clearTimeout(t));
-    };
-    // eslint-disable-next-line
-  }, [loading, codeReady]);
+  return () => {
+    cancelled = true;
+    if (interval) clearInterval(interval);
+  };
+  // eslint-disable-next-line
+}, [loading, codeReady]);
 
   // When parent updates saved prop, sync internal state
   useEffect(() => {
     setInternalSaved(saved);
   }, [saved]);
 
-  // Save handler
-  const handleSave = () => {
-    if (!internalSaved && typeof onSave === "function") {
-      onSave();
-      setInternalSaved(true);
+// Save handler
+const handleSave = async () => {
+  if (!internalSaved && typeof onSave === "function") {
+    try {
+      const result = await onSave();
+      if (result !== false) setInternalSaved(true);
+    } catch (e) {
+      // Optionally handle error UI here
     }
-  };
+  }
+};
 
   return (
     <div className="max-w-3xl mx-auto my-4 w-full px-2 sm:px-4">
@@ -138,33 +117,43 @@ export default function ScriptLoadingBarContainer({
               </div>
               <div className="min-w-0">
                 <div className="flex items-center flex-wrap">
-                  <span className="font-medium text-white truncate max-w-[120px] sm:max-w-none">
-                    {filename || "Script.lua"}
-                  </span>
+<span
+  className="font-medium text-white truncate max-w-[160px] sm:max-w-none"
+  title={filename ? filename.replace(/\.lua$/i, "") : "Script"}
+>
+  {(filename && filename.replace(/\.lua$/i, "").length > 28)
+    ? filename.replace(/\.lua$/i, "").slice(0, 25) + "..."
+    : (filename ? filename.replace(/\.lua$/i, "") : "Script")}
+</span>
                   {version && (
                     <span className="ml-2 text-xs text-gray-300 border-l border-gray-600 pl-2">
                       {version}
                     </span>
                   )}
                 </div>
-                <div className="text-xs text-gray-300 mt-0.5 flex items-center flex-wrap">
-                  <span>
-                    {codeReady
-                      ? `${language.toUpperCase()} script generated`
-                      : `Generating ${language.toUpperCase()} script...`}
-                  </span>
-                  <span
-                    className="ml-2 font-semibold"
-                    aria-live="polite"
-                  >
-                    {progressLabel}
-                  </span>
-                  {estimatedLines && (
-                    <span className="ml-2 text-gray-400">
-                      • ~{estimatedLines} lines
-                    </span>
-                  )}
-                </div>
+<div className="text-xs text-gray-300 mt-0.5 flex items-center flex-wrap">
+  <span>
+    {codeReady
+      ? `${language.toUpperCase()} script generated`
+      : `Generating ${language.toUpperCase()} script...`}
+  </span>
+  <span
+    className="ml-2 font-semibold"
+    aria-live="polite"
+  >
+    {progressLabel}
+  </span>
+  {estimatedLines && (
+    <span className="ml-2 text-gray-400">
+      • ~{estimatedLines} lines
+    </span>
+  )}
+  {!codeReady && (
+    <span className="ml-2 text-yellow-400">
+      This may take a few minutes depending on script complexity...
+    </span>
+  )}
+</div>
               </div>
             </div>
             {/* View and Save Buttons */}

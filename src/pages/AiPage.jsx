@@ -7,6 +7,8 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
+  Copy,
+  Download,
 } from "lucide-react";
 import { auth, db } from "./firebase";
 import { onAuthStateChanged, signInAnonymously } from "firebase/auth";
@@ -30,8 +32,8 @@ import SimpleCodeDrawer from "../components/CodeDrawer";
 import ScriptLoadingBarContainer from "../components/ScriptLoadingBarContainer";
 import WelcomeCard from "../components/WelcomeCard";
 import TokenBar from "../components/TokenBar";
-import TypewriterText from "../components/TypewriterText";
 import CelebrationAnimation from "../components/CelebrationAnimation";
+import PersistentTypewriterExplanation from "../components/PersistentTypewriterExplanation";
 
 // --- Backend API URL ---
 const BACKEND_URL = "https://nexusrbx-backend-production.up.railway.app";
@@ -208,6 +210,73 @@ function getScriptDocRef(uid, chatId, scriptId) {
   return doc(db, "users", uid, "chats", chatId, "scripts", scriptId);
 }
 
+// --- Typewriter Effect for Explanation Only ---
+function useTypewriterWords(text, speed = 40, enabled = true) {
+  const [displayed, setDisplayed] = useState("");
+  const words = text ? text.split(" ") : [];
+  const indexRef = useRef(0);
+  const timeoutRef = useRef(null);
+
+  useEffect(() => {
+    if (!enabled) {
+      setDisplayed(text || "");
+      return;
+    }
+    setDisplayed("");
+    indexRef.current = 0;
+    if (!text) return;
+
+    function type() {
+      if (indexRef.current < words.length) {
+        setDisplayed((prev) =>
+          prev
+            ? prev + " " + words[indexRef.current]
+            : words[indexRef.current]
+        );
+        indexRef.current += 1;
+        timeoutRef.current = setTimeout(type, speed);
+      }
+    }
+    type();
+
+    return () => {
+      clearTimeout(timeoutRef.current);
+    };
+  }, [text, speed, enabled]);
+
+  return displayed;
+}
+
+// --- Gravatar Helper ---
+function getGravatarUrl(email, size = 40) {
+  if (!email) return null;
+  // Simple synchronous hash for demo (not real MD5)
+  function fallbackMd5(str) {
+    let hash = 0,
+      i,
+      chr;
+    if (str.length === 0) return hash;
+    for (i = 0; i < str.length; i++) {
+      chr = str.charCodeAt(i);
+      hash = (hash << 5) - hash + chr;
+      hash |= 0;
+    }
+    return Math.abs(hash).toString(16);
+  }
+  const hash = fallbackMd5(email.trim().toLowerCase());
+  return `https://www.gravatar.com/avatar/${hash}?d=identicon&s=${size}`;
+}
+
+// --- User Initials Helper ---
+function getUserInitials(email) {
+  if (!email) return "U";
+  const parts = email.split("@")[0].split(/[._]/);
+  return parts
+    .map((p) => p[0]?.toUpperCase())
+    .join("")
+    .slice(0, 2);
+}
+
 // --- Main Container Component ---
 export default function NexusRBXAIPageContainer() {
   const navigate = useNavigate();
@@ -229,8 +298,6 @@ export default function NexusRBXAIPageContainer() {
   const [promptError, setPromptError] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationStep, setGenerationStep] = useState("idle"); // idle | title | explanation | code | done
-  const [typewriterTitle, setTypewriterTitle] = useState("");
-  const [typewriterExplanation, setTypewriterExplanation] = useState("");
   const [showCelebration, setShowCelebration] = useState(false);
 
   // --- Loading Bar ---
@@ -266,6 +333,9 @@ export default function NexusRBXAIPageContainer() {
   // --- Mobile Sidebar State ---
   const [mobileLeftSidebarOpen, setMobileLeftSidebarOpen] = useState(false);
   const [mobileRightSidebarOpen, setMobileRightSidebarOpen] = useState(false);
+
+  // --- Typewriter Animation State ---
+  const [animatedScriptIds, setAnimatedScriptIds] = useState({}); // { [scriptId]: true }
 
   // --- Auth ---
   useEffect(() => {
@@ -383,11 +453,17 @@ export default function NexusRBXAIPageContainer() {
     }
   }, [prompt, promptTemplates, userPromptTemplates, promptHistory]);
 
-  // --- Typewriter Effect for Title and Explanation (latest only) ---
-  const [typewriterActive, setTypewriterActive] = useState(false);
-  const [typewriterTitleText, setTypewriterTitleText] = useState("");
-  const [typewriterExplanationText, setTypewriterExplanationText] = useState("");
-  const [latestScriptId, setLatestScriptId] = useState(null);
+  // --- Scroll to bottom on new script or loading bar ---
+  const messagesEndRef = useRef(null);
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [scripts, isGenerating, loadingBarVisible]);
+
+  // --- Mobile Sidebar Overlay Logic ---
+  const closeAllMobileSidebars = () => {
+    setMobileLeftSidebarOpen(false);
+    setMobileRightSidebarOpen(false);
+  };
 
   // --- Main Generation Flow ---
   const handleSubmit = async (e) => {
@@ -417,13 +493,7 @@ export default function NexusRBXAIPageContainer() {
     setPrompt("");
     setIsGenerating(true);
     setGenerationStep("title");
-    setTypewriterTitle("");
-    setTypewriterExplanation("");
     setShowCelebration(false);
-    setTypewriterActive(false);
-    setTypewriterTitleText("");
-    setTypewriterExplanationText("");
-    setLatestScriptId(null);
 
     // Conversational memory: last 10 scripts in this chat
     const conversation = scripts
@@ -550,26 +620,68 @@ export default function NexusRBXAIPageContainer() {
       explanation = explanationObj.explanation || "";
       if (!explanation) throw new Error("Failed to generate explanation");
 
-      // --- 3. Show Loading Bar for Code Generation ---
-      setGenerationStep("code");
-      setLoadingBarVisible(true);
-      setLoadingBarData({
-        filename:
-          scriptTitle
-            .replace(/[^a-zA-Z0-9_\- ]/g, "")
-            .replace(/\s+/g, "_")
-            .slice(0, 40) + ".lua",
-        version: "v1",
-        language: "lua",
-        loading: true,
-        codeReady: false,
-        estimatedLines: null,
-        saved: false,
-        onSave: null,
-        onView: null,
+      // --- 3. Save Script with title and explanation (no code yet) ---
+      // Use the new chat id if we just created one, otherwise use currentChatId
+      const chatIdToUse = newChatId || currentChatId;
+      const scriptDocRef = await addDoc(
+        getScriptsCollectionRef(user.uid, chatIdToUse),
+        {
+          prompt,
+          sections: {
+            title: scriptTitle,
+            ...explanationObj,
+            code: "",
+            version: 1,
+          },
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          versions: [],
+          saved: false, // Start as unsaved
+          status: "generating",
+        }
+      );
+      baseScriptId = scriptDocRef.id;
+      version = 1;
+
+      // --- 4. Update Chat updatedAt ---
+      await updateDoc(getChatDocRef(user.uid, chatIdToUse), {
+        updatedAt: new Date().toISOString(),
       });
 
-      // --- 4. Generate Code ---
+      // --- 5. Wait for typewriter effect to finish before generating code ---
+      setAnimatedScriptIds((prev) => ({
+        ...prev,
+        [baseScriptId]: true,
+      }));
+
+      // Wait for the typewriter effect to finish (based on word count and speed)
+      const wordsCount = (explanationObj.explanation || "").split(" ").length;
+      const typewriterSpeed = 30; // ms per word (should match PersistentTypewriterExplanation)
+      const typewriterDuration = wordsCount * typewriterSpeed + 500; // add a small buffer
+
+      await new Promise((resolve) => setTimeout(resolve, typewriterDuration));
+
+      // --- 6. Show Loading Bar for Code Generation ---
+      setGenerationStep("code");
+      setLoadingBarVisible(true);
+const generatedFilename =
+  (scriptTitle
+    ? scriptTitle.replace(/[^a-zA-Z0-9_\- ]/g, "").replace(/\s+/g, "_").slice(0, 40)
+    : "Script") + ".lua";
+
+setLoadingBarData({
+  filename: generatedFilename,
+  version: "v1",
+  language: "lua",
+  loading: true,
+  codeReady: false,
+  estimatedLines: null,
+  saved: false,
+  onSave: () => {},
+  onView: () => {},
+});
+
+      // --- 7. Generate Code ---
       const codeRes = await fetch(`${BACKEND_URL}/api/generate-code`, {
         method: "POST",
         headers: {
@@ -603,84 +715,99 @@ export default function NexusRBXAIPageContainer() {
       code = codeData.code || "";
       if (!code) throw new Error("Failed to generate code");
 
-      // --- 5. Save Script (as v1) in Firestore ---
-      setGenerationStep("saving");
-      // Use the new chat id if we just created one, otherwise use currentChatId
-      const chatIdToUse = newChatId || currentChatId;
-      const scriptDocRef = await addDoc(
-        getScriptsCollectionRef(user.uid, chatIdToUse),
+// --- 7. Save Script (as v1) in backend with code and explanation ---
+setGenerationStep("saving");
+let scriptApiId = null;
+try {
+  const scriptRes = await fetch(`${BACKEND_URL}/api/scripts`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${idToken}`,
+    },
+    body: JSON.stringify({
+      title: scriptTitle,
+      code,
+      explanation,
+    }),
+  });
+  if (!scriptRes.ok) {
+    const text = await scriptRes.text();
+    throw new Error(
+      `Failed to save script to backend: ${scriptRes.status} ${scriptRes.statusText} - ${text.slice(0, 200)}`
+    );
+  }
+  const scriptData = await scriptRes.json();
+  scriptApiId = scriptData.scriptId;
+  version = scriptData.version || 1;
+} catch (err) {
+  // fallback to Firestore if backend fails
+  await updateDoc(
+    getScriptDocRef(user.uid, chatIdToUse, baseScriptId),
+    {
+      "sections.code": code,
+      "sections.version": 1,
+      versions: [
         {
-          prompt,
-          sections: {
-            title: scriptTitle,
-            ...explanationObj,
-            code,
-            version: 1,
-          },
+          version: 1,
+          code,
           createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          versions: [
-            {
-              version: 1,
-              code,
-              createdAt: new Date().toISOString(),
-              title: scriptTitle,
-            },
-          ],
-          saved: false, // Start as unsaved
-        }
-      );
-      baseScriptId = scriptDocRef.id;
-      version = 1;
+          title: scriptTitle,
+        },
+      ],
+      updatedAt: new Date().toISOString(),
+      status: "done",
+    }
+  );
+}
 
-      // --- 6. Update Chat updatedAt ---
-      await updateDoc(getChatDocRef(user.uid, chatIdToUse), {
-        updatedAt: new Date().toISOString(),
-      });
+// --- 8. Fetch Version History from backend ---
+let versions = [];
+let scriptApiIdToUse = scriptApiId; // from above
+try {
+  const versionsRes = await fetch(`${BACKEND_URL}/api/scripts/${scriptApiIdToUse}/versions`, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${idToken}`,
+    },
+  });
+  if (versionsRes.ok) {
+    const versionsData = await versionsRes.json();
+    versions = versionsData.versions || [];
+  }
+} catch (err) {
+  // fallback: keep empty
+}
+setVersionHistory(
+  versions.sort((a, b) => (b.version || 1) - (a.version || 1))
+);
+setCurrentScript({
+  apiId: scriptApiIdToUse,
+  title: scriptTitle,
+  versions,
+});
+setSelectedVersion(versions[0]);
 
-      // --- 7. Fetch Version History ---
-      const scriptDoc = await getDoc(
-        getScriptDocRef(user.uid, chatIdToUse, baseScriptId)
-      );
-      let versions = [];
-      if (scriptDoc.exists()) {
-        versions = scriptDoc.data().versions || [];
-      }
-      setVersionHistory(
-        versions.sort((a, b) => (b.version || 1) - (a.version || 1))
-      );
-      setCurrentScript({
-        id: baseScriptId,
-        title: scriptTitle,
-        versions,
-      });
-      setSelectedVersion(versions[0]);
-
-      setLoadingBarData((prev) => ({
-        ...prev,
-        loading: false,
-        codeReady: true,
-        saved: false, // Start as unsaved
-        version: `v${version}`,
-        filename:
-          scriptTitle
-            .replace(/[^a-zA-Z0-9_\- ]/g, "")
-            .replace(/\s+/g, "_")
-            .slice(0, 40) + ".lua",
-        onSave: () => {},
-        onView: () => {},
-      }));
+setLoadingBarData((prev) => ({
+  ...prev,
+  loading: false,
+  codeReady: true,
+  saved: false, // Start as unsaved
+  version: `v${version}`,
+  filename: generatedFilename,
+  onSave: () => {},
+  onView: () => {},
+}));
       setLoadingBarVisible(false);
       setGenerationStep("done");
       setShowCelebration(true);
 
-      // --- 8. Typewriter effect for latest message only ---
-      setTypewriterActive(true);
-      setTypewriterTitleText(scriptTitle);
-      setTypewriterExplanationText(explanation);
-      setLatestScriptId(baseScriptId);
+      // Mark this script as animated for typewriter effect
+      setAnimatedScriptIds((prev) => ({
+        ...prev,
+        [baseScriptId]: true,
+      }));
 
-      // --- 9. Reset typewriter for next prompt ---
       setTimeout(() => setShowCelebration(false), 3000);
     } catch (err) {
       setIsGenerating(false);
@@ -695,24 +822,55 @@ export default function NexusRBXAIPageContainer() {
   };
 
   // --- Save Script (just mark as saved, not new version) ---
-  const handleSaveScript = async (newTitle, code) => {
-    if (!user || !code || !currentChatId || !currentScript) return;
-    let baseScriptId = currentScript.id;
-    let scriptDocRef = getScriptDocRef(user.uid, currentChatId, baseScriptId);
-    await updateDoc(scriptDocRef, {
-      saved: true,
-      updatedAt: new Date().toISOString(),
-      "sections.title": newTitle,
-      "sections.code": code,
+const handleSaveScript = async (newTitle, code) => {
+  if (!user || !code || !currentScript || !currentScript.apiId) return false;
+  let scriptApiId = currentScript.apiId;
+  let idToken = await user.getIdToken();
+  try {
+    // Add new version to backend
+    const res = await fetch(`${BACKEND_URL}/api/scripts/${scriptApiId}/versions`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${idToken}`,
+      },
+      body: JSON.stringify({
+        code,
+        explanation: "", // Optionally pass explanation
+      }),
     });
-    // No new version is created
+    if (!res.ok) {
+      alert("Failed to save version to backend.");
+      return false;
+    }
+    // Refresh version history after saving
+    const versionsRes = await fetch(`${BACKEND_URL}/api/scripts/${scriptApiId}/versions`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${idToken}`,
+      },
+    });
+    let versions = [];
+    if (versionsRes.ok) {
+      const versionsData = await versionsRes.json();
+      versions = versionsData.versions || [];
+    }
     setCurrentScript((cs) => ({
       ...cs,
       saved: true,
       title: newTitle,
+      versions,
     }));
-    alert("Script saved!");
-  };
+    setVersionHistory(
+      versions.sort((a, b) => (b.version || 1) - (a.version || 1))
+    );
+    alert("Script version saved!");
+    return true;
+  } catch (err) {
+    alert("Failed to save version to backend.");
+    return false;
+  }
+};
 
   // --- Sidebar Version Click Handler ---
   const handleVersionView = (versionObj) => {
@@ -769,17 +927,38 @@ export default function NexusRBXAIPageContainer() {
     }
   };
 
-  // --- Scroll to bottom on new script or typewriter effect ---
-  const messagesEndRef = useRef(null);
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [scripts, isGenerating, loadingBarVisible, typewriterActive, typewriterTitleText, typewriterExplanationText]);
+  // --- AI Avatar (NexusRBX Logo) ---
+const NexusRBXAvatar = () => (
+  <div className="flex-shrink-0 w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-lg overflow-hidden">
+    <img
+      src="/logo.png" // or /logo.jpg
+      alt="NexusRBX"
+      className="w-8 h-8 object-contain"
+      style={{ filter: "drop-shadow(0 0 2px #9b5de5)" }}
+    />
+  </div>
+);
 
-  // --- Mobile Sidebar Overlay Logic ---
-  const closeAllMobileSidebars = () => {
-    setMobileLeftSidebarOpen(false);
-    setMobileRightSidebarOpen(false);
+  // --- User Avatar ---
+  const UserAvatar = ({ email }) => {
+    const gravatarUrl = getGravatarUrl(email);
+    if (gravatarUrl) {
+      return (
+        <img
+          src={gravatarUrl}
+          alt="User"
+          className="w-10 h-10 rounded-full border-2 border-[#9b5de5] shadow-lg object-cover"
+        />
+      );
+    }
+    return (
+      <div className="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center text-lg font-bold text-white border-2 border-[#9b5de5] shadow-lg">
+        {getUserInitials(email)}
+      </div>
+    );
   };
+
+
 
   // --- Main Layout ---
   return (
@@ -1010,7 +1189,6 @@ export default function NexusRBXAIPageContainer() {
           <div className="flex-grow overflow-y-auto px-2 md:px-4 py-6 flex flex-col items-center">
             <div className="w-full max-w-2xl mx-auto space-y-6">
               {/* Show Title at Top */}
-              {/* Only show typewriter for latest message */}
               {scripts.length === 0 && !isGenerating ? (
                 <WelcomeCard
                   setPrompt={setPrompt}
@@ -1021,8 +1199,8 @@ export default function NexusRBXAIPageContainer() {
                 />
               ) : (
                 <>
-                  {/* Render all previous scripts as static, latest as typewriter */}
-                  {scripts.slice(0, -1).map((session, idx) => {
+                  {/* Render all scripts as chat bubbles/cards */}
+                  {scripts.map((session, idx) => {
                     // Only render if there is actual content
                     const hasContent =
                       session.sections?.title ||
@@ -1038,224 +1216,194 @@ export default function NexusRBXAIPageContainer() {
                       ? session.versions
                       : [];
 
+                    // Typewriter effect only for the latest script (the last in the array)
+                    const isLatest = idx === scripts.length - 1;
+                    const animateThisScript =
+                      !!animatedScriptIds[session.id] && isLatest;
+
+                    // --- User Prompt Bubble (right-aligned) ---
                     return (
-                      <div key={session.id} className="mb-6">
-                        {/* Show the generated script title, no "Script 1" or box */}
-                        {session.sections?.title && (
-                          <div className="mb-2 text-center">
-                            <span className="text-2xl font-bold bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-transparent bg-clip-text">
-                              {session.sections.title.replace(/\s*v\d+$/i, "")}
-                            </span>
-                          </div>
-                        )}
-                        {/* Explanation and other sections as plain text */}
-                        {session.sections?.explanation && (
-                          <div className="mb-2">
-                            <div className="font-bold text-[#9b5de5] mb-1">
-                              Explanation
-                            </div>
-                            <div className="text-gray-200 whitespace-pre-line text-base">
-                              {session.sections.explanation}
+                      <div key={session.id} className="space-y-2">
+                        {/* User Prompt Bubble */}
+                        {session.prompt && (
+                          <div className="flex justify-end items-end mb-1">
+                            <div className="flex flex-row-reverse items-end gap-2 w-full max-w-2xl">
+                              <UserAvatar email={user?.email} />
+                              <div className="bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-white px-4 py-2 rounded-2xl rounded-br-sm shadow-lg max-w-[75%] text-right break-words text-base font-medium animate-fade-in">
+                                {session.prompt}
+                              </div>
                             </div>
                           </div>
                         )}
-                        {session.sections?.features && (
-                          <div className="mb-2">
-                            <div className="font-bold text-[#00f5d4] mb-1">
-                              Features
-                            </div>
-                            <div className="text-gray-200 whitespace-pre-line text-base">
-                              {session.sections.features}
+
+                        {/* AI Response Card (left-aligned) */}
+                        <div className="flex items-start gap-2 w-full max-w-2xl animate-fade-in">
+                          <NexusRBXAvatar />
+                          <div className="flex-1 bg-gray-900/80 border border-gray-800 rounded-2xl rounded-tl-sm shadow-lg px-5 py-4 mb-2">
+                            {/* Title */}
+                            {session.sections?.title && (
+                              <div className="mb-1 flex items-center gap-2">
+                                <span className="text-xl font-bold bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-transparent bg-clip-text">
+                                  {session.sections.title.replace(/\s*v\d+$/i, "")}
+                                </span>
+                                {versions.length > 0 && (
+                                  <span className="ml-2 px-2 py-0.5 rounded bg-[#9b5de5]/20 text-[#9b5de5] text-xs font-semibold">
+                                    v{versions[0].version || 1}
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                            {/* Explanation */}
+                            {session.sections?.explanation && (
+                              <div className="mb-2">
+                                <div className="font-bold text-[#9b5de5] mb-1">
+                                  Explanation
+                                </div>
+                                <div className="text-gray-200 whitespace-pre-line text-base">
+                                  <PersistentTypewriterExplanation
+                                    text={session.sections.explanation}
+                                    speed={30}
+                                    scriptId={session.id}
+                                    className=""
+                                    as="div"
+                                  />
+                                </div>
+                              </div>
+                            )}
+                            {/* Features/Controls/How It Should Act */}
+                            {session.sections?.features && (
+                              <div className="mb-2">
+                                <div className="font-bold text-[#00f5d4] mb-1">
+                                  Features
+                                </div>
+                                <div className="text-gray-200 whitespace-pre-line text-base">
+                                  {session.sections.features}
+                                </div>
+                              </div>
+                            )}
+                            {session.sections?.controls && (
+                              <div className="mb-2">
+                                <div className="font-bold text-[#9b5de5] mb-1">
+                                  Controls
+                                </div>
+                                <div className="text-gray-200 whitespace-pre-line text-base">
+                                  {session.sections.controls}
+                                </div>
+                              </div>
+                            )}
+                            {session.sections?.howItShouldAct && (
+                              <div className="mb-2">
+                                <div className="font-bold text-[#00f5d4] mb-1">
+                                  How It Should Act
+                                </div>
+                                <div className="text-gray-200 whitespace-pre-line text-base">
+                                  {session.sections.howItShouldAct}
+                                </div>
+                              </div>
+                            )}
+                            {/* Error */}
+                            {session.status === "error" && (
+                              <div className="text-red-400 text-sm mt-2">
+                                Error generating script. Please try again.
+                              </div>
+                            )}
+                            {/* Code Block */}
+                            {session.sections?.code && (
+                              <div className="mb-2 mt-3">
+                                <ScriptLoadingBarContainer
+  filename={
+    (session.sections?.title
+      ? session.sections.title.replace(/[^a-zA-Z0-9_\- ]/g, "").replace(/\s+/g, "_").slice(0, 40)
+      : "Script") + ".lua"
+  }
+  version={
+    versions[0]?.version
+      ? `v${versions[0].version}`
+      : "v1"
+  }
+  language="lua"
+  loading={false}
+  codeReady={true}
+  estimatedLines={
+    session.sections.code
+      ? session.sections.code.split("\n").length
+      : null
+  }
+  saved={session.saved}
+  onSave={() =>
+    handleSaveScript(
+      session.sections.title,
+      session.sections.code
+    )
+  }
+  onView={() =>
+    handleVersionView(
+      versions[0] || {
+        title: session.sections.title,
+        code: session.sections.code,
+        version: 1,
+      }
+    )
+  }
+/>
+                              </div>
+                            )}
+                            {/* Version Controls */}
+                            {versions.length > 1 && (
+                              <div className="flex gap-2 mt-2">
+                                {versions.map((versionObj, vIdx) => (
+                                  <button
+                                    key={versionObj.version || vIdx}
+                                    className={`px-2 py-1 rounded text-xs font-semibold border ${
+                                      selectedVersion &&
+                                      selectedVersion.version ===
+                                        versionObj.version
+                                        ? "bg-[#9b5de5] text-white border-[#9b5de5]"
+                                        : "bg-gray-800 text-[#9b5de5] border-[#9b5de5]/40"
+                                    }`}
+                                    onClick={() => handleVersionView(versionObj)}
+                                    type="button"
+                                  >
+                                    v{versionObj.version || vIdx + 1}
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                            {/* Timestamp */}
+                            <div className="text-xs text-gray-500 mt-2 text-right">
+                              {session.updatedAt
+                                ? new Date(session.updatedAt).toLocaleString()
+                                : ""}
                             </div>
                           </div>
-                        )}
-                        {session.sections?.controls && (
-                          <div className="mb-2">
-                            <div className="font-bold text-[#9b5de5] mb-1">
-                              Controls
-                            </div>
-                            <div className="text-gray-200 whitespace-pre-line text-base">
-                              {session.sections.controls}
-                            </div>
-                          </div>
-                        )}
-                        {session.sections?.howItShouldAct && (
-                          <div className="mb-2">
-                            <div className="font-bold text-[#00f5d4] mb-1">
-                              How It Should Act
-                            </div>
-                            <div className="text-gray-200 whitespace-pre-line text-base">
-                              {session.sections.howItShouldAct}
-                            </div>
-                          </div>
-                        )}
-                        {session.status === "error" && (
-                          <div className="text-red-400 text-sm mt-2">
-                            Error generating script. Please try again.
-                          </div>
-                        )}
-                        {/* Render ScriptLoadingBarContainer for every version */}
-                        {versions.map((versionObj, vIdx) => {
-                          const filename =
-                            (versionObj.title || "Script")
-                              .replace(/[^a-zA-Z0-9_\- ]/g, "")
-                              .replace(/\s+/g, "_")
-                              .slice(0, 40) + ".lua";
-                          return (
-                            <div key={versionObj.version || vIdx} className="mt-4">
-                              <ScriptLoadingBarContainer
-                                filename={filename}
-                                version={`v${versionObj.version || vIdx + 1}`}
-                                language="lua"
-                                loading={false}
-                                codeReady={true}
-                                estimatedLines={null}
-                                saved={session.saved || false}
-                                onSave={() => handleSaveScript(versionObj.title, versionObj.code)}
-                                onView={() => handleVersionView(versionObj)}
-                                onDownload={() => handleVersionDownload(versionObj)}
-                              />
-                            </div>
-                          );
-                        })}
+                        </div>
                       </div>
                     );
                   })}
-
-                  {/* Latest script with typewriter effect */}
-                  {scripts.length > 0 && (() => {
-                    const session = scripts[scripts.length - 1];
-                    const isLatest = session.id === latestScriptId && typewriterActive;
-                    const versions = Array.isArray(session.versions)
-                      ? session.versions
-                      : [];
-                    // --- Show title above explanation and code, and start generating explanation only after title is done ---
-                    return (
-                      <div key={session.id} className="mb-6">
-                        {/* Title */}
-                        {session.sections?.title && (
-                          <div className="mb-2 text-center">
-                            {isLatest ? (
-                              <TypewriterText
-                                text={typewriterTitleText}
-                                className="text-2xl font-bold bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-transparent bg-clip-text"
-                                instant={false}
-                                onDone={() => {
-                                  // When title finishes, explanation will start typewriting (handled by TypewriterText in explanation below)
-                                }}
-                              />
-                            ) : (
-                              <span className="text-2xl font-bold bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-transparent bg-clip-text">
-                                {session.sections.title.replace(/\s*v\d+$/i, "")}
-                              </span>
-                            )}
-                          </div>
-                        )}
-                        {/* Explanation */}
-                        {session.sections?.explanation && (
-                          <div className="mb-2">
-                            <div className="font-bold text-[#9b5de5] mb-1">
-                              Explanation
-                            </div>
-                            {isLatest ? (
-                              <TypewriterText
-                                text={typewriterExplanationText}
-                                className="text-gray-200 whitespace-pre-line text-base"
-                                instant={false}
-                                onDone={() => {}}
-                              />
-                            ) : (
-                              <div className="text-gray-200 whitespace-pre-line text-base">
-                                {session.sections.explanation}
-                              </div>
-                            )}
-                          </div>
-                        )}
-                        {session.sections?.features && (
-                          <div className="mb-2">
-                            <div className="font-bold text-[#00f5d4] mb-1">
-                              Features
-                            </div>
-                            <div className="text-gray-200 whitespace-pre-line text-base">
-                              {session.sections.features}
-                            </div>
-                          </div>
-                        )}
-                        {session.sections?.controls && (
-                          <div className="mb-2">
-                            <div className="font-bold text-[#9b5de5] mb-1">
-                              Controls
-                            </div>
-                            <div className="text-gray-200 whitespace-pre-line text-base">
-                              {session.sections.controls}
-                            </div>
-                          </div>
-                        )}
-                        {session.sections?.howItShouldAct && (
-                          <div className="mb-2">
-                            <div className="font-bold text-[#00f5d4] mb-1">
-                              How It Should Act
-                            </div>
-                            <div className="text-gray-200 whitespace-pre-line text-base">
-                              {session.sections.howItShouldAct}
-                            </div>
-                          </div>
-                        )}
-                        {session.status === "error" && (
-                          <div className="text-red-400 text-sm mt-2">
-                            Error generating script. Please try again.
-                          </div>
-                        )}
-                        {/* Render ScriptLoadingBarContainer for every version */}
-                        {versions.map((versionObj, vIdx) => {
-                          const filename =
-                            (versionObj.title || "Script")
-                              .replace(/[^a-zA-Z0-9_\- ]/g, "")
-                              .replace(/\s+/g, "_")
-                              .slice(0, 40) + ".lua";
-                          return (
-                            <div key={versionObj.version || vIdx} className="mt-4">
-                              <ScriptLoadingBarContainer
-                                filename={filename}
-                                version={`v${versionObj.version || vIdx + 1}`}
-                                language="lua"
-                                loading={false}
-                                codeReady={true}
-                                estimatedLines={null}
-                                saved={session.saved || false}
-                                onSave={() => handleSaveScript(versionObj.title, versionObj.code)}
-                                onView={() => handleVersionView(versionObj)}
-                                onDownload={() => handleVersionDownload(versionObj)}
-                              />
-                            </div>
-                          );
-                        })}
-                      </div>
-                    );
-                  })()}
                 </>
               )}
               {/* Loading bar appears just below the latest script output */}
               {isGenerating && (
-                <div className="flex items-center text-gray-400 text-sm mt-2">
-                  <Loader className="h-4 w-4 animate-spin mr-2" />
-                  {generationStep === "title" && (
-                    <span>Generating script title...</span>
-                  )}
-                  {generationStep === "explanation" && (
-                    <span>Generating explanation...</span>
-                  )}
-                  {generationStep === "code" && (
-                    <span>Generating code...</span>
-                  )}
-                  {generationStep !== "title" &&
-                    generationStep !== "explanation" &&
-                    generationStep !== "code" && (
-                      <span>NexusRBX is generating...</span>
-                    )}
+                <div className="flex items-center text-gray-400 text-sm mt-2 animate-fade-in">
+                  <span className="mr-2">
+                    <span className="inline-block w-8 h-8 rounded-full bg-gradient-to-br from-[#9b5de5] to-[#00f5d4] flex items-center justify-center shadow-lg overflow-hidden animate-pulse">
+                      <img
+                        src="/logo.svg"
+                        alt="NexusRBX"
+                        className="w-6 h-6 object-contain"
+                        style={{ filter: "drop-shadow(0 0 2px #9b5de5)" }}
+                      />
+                    </span>
+                  </span>
+                  <span>
+                    NexusRBX is typing...
+                    {generationStep === "title" && " (Generating script title...)"}
+                    {generationStep === "explanation" && " (Generating explanation...)"}
+                    {generationStep === "code" && " (Generating code...)"}
+                  </span>
                 </div>
               )}
-              {loadingBarVisible && (
+              {loadingBarVisible && generationStep === "code" && (
                 <div className="mt-4">
                   <ScriptLoadingBarContainer
                     filename={loadingBarData.filename}
@@ -1267,6 +1415,7 @@ export default function NexusRBXAIPageContainer() {
                     saved={loadingBarData.saved}
                     onSave={loadingBarData.onSave}
                     onView={loadingBarData.onView}
+                    showGradientTitle={false}
                   />
                 </div>
               )}
@@ -1281,24 +1430,18 @@ export default function NexusRBXAIPageContainer() {
               autoComplete="off"
             >
               <div className="relative">
-                <textarea
-                  value={typeof prompt === "string" ? prompt : ""}
-                  onChange={(e) => setPrompt(e.target.value)}
-                  placeholder="Describe the Roblox mod you want to create..."
-                  className={`w-full rounded-lg bg-gray-900/60 border border-gray-700 focus:border-[#9b5de5] focus:outline-none focus:ring-2 focus:ring-[#9b5de5]/50 transition-all duration-300 py-3 px-4 pr-14 resize-none shadow-lg ${
-                    promptError ? "border-red-500" : ""
-                  }`}
-                  rows="3"
-                  disabled={isGenerating}
-                  maxLength={800}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && !e.shiftKey) {
-                      e.preventDefault();
-                      handleSubmit(e);
-                    }
-                  }}
-                  aria-label="Prompt input"
-                ></textarea>
+              <textarea
+  value={typeof prompt === "string" ? prompt : ""}
+  onChange={(e) => setPrompt(e.target.value)}
+  placeholder="Describe the Roblox mod you want to create..."
+  className={`w-full rounded-lg bg-gray-900/60 border border-gray-700 focus:border-[#9b5de5] focus:outline-none focus:ring-2 focus:ring-[#9b5de5]/50 transition-all duration-300 py-3 px-4 pr-14 resize-none shadow-lg ${
+    promptError ? "border-red-500" : ""
+  }`}
+  rows="3"
+  disabled={isGenerating}
+  maxLength={800}
+  aria-label="Prompt input"
+></textarea>
 
                 {/* Prompt Autocomplete Dropdown */}
                 {promptAutocomplete.length > 0 && (
@@ -1404,14 +1547,19 @@ export default function NexusRBXAIPageContainer() {
       </main>
       {/* --- Code Drawer Integration --- */}
       {selectedVersion && (
-        <SimpleCodeDrawer
-          open={!!selectedVersion}
-          code={selectedVersion.code}
-          title={selectedVersion.title}
-          version={selectedVersion.version ? `v${selectedVersion.version}` : ""}
-          onClose={() => setSelectedVersion(null)}
-          onSaveScript={handleSaveScript}
-        />
+<SimpleCodeDrawer
+  open={!!selectedVersion}
+  code={selectedVersion.code}
+  title={selectedVersion.title}
+  filename={
+    (selectedVersion.title
+      ? selectedVersion.title.replace(/[^a-zA-Z0-9_\- ]/g, "").replace(/\s+/g, "_").slice(0, 40)
+      : "Script") + ".lua"
+  }
+  version={selectedVersion.version ? `v${selectedVersion.version}` : ""}
+  onClose={() => setSelectedVersion(null)}
+  onSaveScript={handleSaveScript}
+/>
       )}
       {/* Celebration Animation */}
       {showCelebration && <CelebrationAnimation />}
@@ -1421,6 +1569,32 @@ export default function NexusRBXAIPageContainer() {
           NexusRBX AI Console • &copy; 2023 NexusRBX. All rights reserved.
         </div>
       </footer>
+      {/* Blinking cursor animation & fade-in */}
+      <style>
+        {`
+          @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+          }
+          .animate-blink {
+            animation: blink 1s step-end infinite;
+          }
+          @keyframes fade-in {
+            from { opacity: 0; transform: translateY(16px);}
+            to { opacity: 1; transform: translateY(0);}
+          }
+          .animate-fade-in {
+            animation: fade-in 0.5s cubic-bezier(.4,0,.2,1) both;
+          }
+          .animate-pulse {
+            animation: pulse 1.2s cubic-bezier(.4,0,.6,1) infinite;
+          }
+          @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+          }
+        `}
+      </style>
     </div>
   );
 }

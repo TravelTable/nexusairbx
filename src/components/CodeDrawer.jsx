@@ -13,6 +13,7 @@ export default function CodeDrawerContainer({
   open,
   code = "",
   title = "Script Code",
+  filename = null,
   version = null,
   onClose,
   onSaveScript,
@@ -72,11 +73,11 @@ export default function CodeDrawerContainer({
     }
   }, [copySuccess]);
 
-  // Sanitize filename from title
-  const sanitizeFilename = useCallback((title, ext = "lua") => {
-    if (!title) return `Script.${ext}`;
+  // Sanitize filename from title or filename prop
+  const sanitizeFilename = useCallback((input, ext = "lua") => {
+    if (!input) return `Script.${ext}`;
     return (
-      title
+      input
         .replace(/[\u{1F600}-\u{1F6FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, "")
         .replace(/[^a-zA-Z0-9 _-]/g, "")
         .replace(/\s+/g, "_")
@@ -93,12 +94,12 @@ export default function CodeDrawerContainer({
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = sanitizeFilename(editTitle, ext);
+    a.download = sanitizeFilename(filename || editTitle, ext);
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-  }, [code, editTitle, sanitizeFilename]);
+  }, [code, editTitle, filename, sanitizeFilename]);
 
   // Copy to clipboard handler
   const handleCopy = useCallback(() => {
@@ -107,14 +108,17 @@ export default function CodeDrawerContainer({
     setCopySuccess(true);
   }, [code, liveGenerating, liveContent]);
 
-  // Save script handler
-  const handleSaveScript = useCallback(() => {
-    if (typeof onSaveScript === "function") {
-      onSaveScript(editTitle, code);
-    } else {
-      alert("Script saved!\n\nTitle: " + editTitle);
+// Save script handler (async, supports backend versioning)
+const handleSaveScript = useCallback(async () => {
+  if (typeof onSaveScript === "function") {
+    const result = await onSaveScript(editTitle, code);
+    if (result !== false) {
+      // Optionally show a "Saved!" toast or UI here
     }
-  }, [onSaveScript, editTitle, code]);
+  } else {
+    alert("Script saved!\n\nTitle: " + editTitle);
+  }
+}, [onSaveScript, editTitle, code]);
 
   // Title editing handlers
   const startEditing = useCallback(() => setIsEditing(true), []);
@@ -151,6 +155,7 @@ export default function CodeDrawerContainer({
       onCopy={handleCopy}
       onDownload={downloadFile}
       onSaveScript={handleSaveScript}
+      filename={filename}
     />
   );
 }
@@ -172,7 +177,8 @@ function CodeDrawerUI({
   onStopEditing,
   onCopy,
   onDownload,
-  onSaveScript
+  onSaveScript,
+  filename
 }) {
   const drawerVariants = {
     hidden: { x: "100%" },
@@ -220,6 +226,14 @@ function CodeDrawerUI({
               >
                 {editTitle}
               </button>
+            )}
+            {filename && (
+              <span
+                className="ml-2 text-xs text-gray-400 truncate max-w-[140px]"
+                title={filename}
+              >
+                {(filename.length > 24) ? filename.slice(0, 21) + "..." : filename}
+              </span>
             )}
             {version && (
               <span className="ml-2 text-xs text-gray-300 border-l border-gray-600 pl-2 font-mono">
