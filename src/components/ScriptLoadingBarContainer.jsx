@@ -1,10 +1,10 @@
-import { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { FileCode, Save, Check } from "lucide-react";
 
 /**
  * ScriptLoadingBarContainer
  * Props:
- * - filename: string (required) - now always passed as the sanitized script title from parent
+ * - filename: string (required)
  * - version: string (optional, e.g. "v1", "v2", etc.)
  * - language: string (default: "lua")
  * - loading: boolean (true while code is being fetched)
@@ -25,51 +25,106 @@ export default function ScriptLoadingBarContainer({
   saved = false,
   onView, // handler for View button
 }) {
-  const progressRef = useRef(0);
-  const intervalRef = useRef(null);
+  const [progress, setProgress] = useState(0);
+  const [progressLabel, setProgressLabel] = useState("0%");
+  const [internalSaved, setInternalSaved] = useState(saved);
 
-  // Progress state is managed via ref for smooth animation
+  // Reset progress and saved state when loading starts
   useEffect(() => {
     if (loading && !codeReady) {
-      progressRef.current = 0;
-      if (intervalRef.current) clearInterval(intervalRef.current);
-      intervalRef.current = setInterval(() => {
-        // Accelerate progress as it nears completion
-        let increment = 0.5;
-        if (progressRef.current > 70) increment = 2.5;
-        else if (progressRef.current > 40) increment = 1.2;
-        progressRef.current = Math.min(progressRef.current + increment, 98);
-        // Update progress bar width
-        const bar = document.getElementById("script-progress-bar");
-        if (bar) {
-          bar.style.setProperty("width", `${progressRef.current}%`);
-        }
-        // Update progress label
-        const label = document.getElementById("script-progress-label");
-        if (label) {
-          label.innerText = `${Math.round(progressRef.current)}%`;
-        }
-      }, 80);
+      setProgress(0);
+      setProgressLabel("0%");
+      setInternalSaved(false);
     }
-    if (codeReady) {
-      // Instantly fill to 100%
-      if (intervalRef.current) clearInterval(intervalRef.current);
-      progressRef.current = 100;
-      setTimeout(() => {
-        const bar = document.getElementById("script-progress-bar");
-        if (bar) {
-          bar.style.setProperty("width", `100%`);
-        }
-        const label = document.getElementById("script-progress-label");
-        if (label) {
-          label.innerText = `100%`;
-        }
-      }, 100);
-    }
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-    };
   }, [loading, codeReady]);
+
+  // Progress animation logic with delays at 30%, 60%, 90%
+  useEffect(() => {
+    let cancelled = false;
+    let timeouts = [];
+
+    const animateProgress = async () => {
+      // Helper to animate to a target percent with optional delay
+      const goTo = (target, duration = 600, delay = 0) =>
+        new Promise((resolve) => {
+          if (cancelled) return resolve();
+          setTimeout(() => {
+            if (cancelled) return resolve();
+            const start = progress;
+            const diff = target - start;
+            const steps = Math.max(1, Math.floor(duration / 30));
+            let step = 0;
+            const stepFn = () => {
+              if (cancelled) return resolve();
+              step++;
+              const next =
+                step >= steps
+                  ? target
+                  : start + (diff * step) / steps;
+              setProgress(next);
+              setProgressLabel(`${Math.round(next)}%`);
+              if (step < steps) {
+                timeouts.push(setTimeout(stepFn, 30));
+              } else {
+                resolve();
+              }
+            };
+            stepFn();
+          }, delay);
+        });
+
+      // Animate to 30%
+      await goTo(30, 700);
+      // Pause at 30%
+      await goTo(30, 0, 400);
+
+      // Animate to 60%
+      await goTo(60, 900);
+      // Pause at 60%
+      await goTo(60, 0, 500);
+
+      // Animate to 90%
+      await goTo(90, 1200);
+      // Pause at 90%
+      await goTo(90, 0, 600);
+
+      // Wait for codeReady, or slowly approach 98%
+      let waitTime = 0;
+      while (!codeReady && !cancelled && waitTime < 10000) {
+        await goTo(Math.min(98, progress + 1), 200);
+        waitTime += 200;
+      }
+    };
+
+    if (loading && !codeReady) {
+      animateProgress();
+    }
+
+    // When codeReady, animate to 100% immediately
+    if (codeReady) {
+      setProgress(100);
+      setProgressLabel("100%");
+    }
+
+    return () => {
+      cancelled = true;
+      timeouts.forEach((t) => clearTimeout(t));
+    };
+    // eslint-disable-next-line
+  }, [loading, codeReady]);
+
+  // When parent updates saved prop, sync internal state
+  useEffect(() => {
+    setInternalSaved(saved);
+  }, [saved]);
+
+  // Save handler
+  const handleSave = () => {
+    if (!internalSaved && typeof onSave === "function") {
+      onSave();
+      setInternalSaved(true);
+    }
+  };
 
   return (
     <div className="max-w-3xl mx-auto my-4 w-full px-2 sm:px-4">
@@ -99,11 +154,10 @@ export default function ScriptLoadingBarContainer({
                       : `Generating ${language.toUpperCase()} script...`}
                   </span>
                   <span
-                    id="script-progress-label"
                     className="ml-2 font-semibold"
                     aria-live="polite"
                   >
-                    {codeReady ? "100%" : "0%"}
+                    {progressLabel}
                   </span>
                   {estimatedLines && (
                     <span className="ml-2 text-gray-400">
@@ -142,15 +196,15 @@ export default function ScriptLoadingBarContainer({
                   ${!codeReady ? 'hidden' : ''}`}>
                 </div>
                 <button
-                  onClick={onSave}
-                  disabled={!codeReady}
+                  onClick={handleSave}
+                  disabled={!codeReady || internalSaved}
                   className={`relative flex items-center justify-center w-full sm:w-auto px-4 py-1.5 rounded-md text-sm bg-black text-white
                     border border-transparent group-hover:border-transparent transition-all duration-300
-                    ${codeReady ? 'group-hover:shadow-[0_0_15px_rgba(168,85,247,0.5)]' : ''}`}
-                  title={codeReady ? "Save script" : "Wait for script to complete"}
-                  aria-disabled={!codeReady}
+                    ${codeReady && !internalSaved ? 'group-hover:shadow-[0_0_15px_rgba(168,85,247,0.5)]' : ''}`}
+                  title={codeReady ? (internalSaved ? "Already saved" : "Save script") : "Wait for script to complete"}
+                  aria-disabled={!codeReady || internalSaved}
                 >
-                  {saved ? (
+                  {internalSaved ? (
                     <>
                       <Check className="w-4 h-4 mr-1.5" />
                       <span>Saved</span>
@@ -168,10 +222,9 @@ export default function ScriptLoadingBarContainer({
           {/* Progress Bar */}
           <div className="absolute bottom-0 left-0 h-1 bg-gray-800 w-full overflow-hidden">
             <div
-              id="script-progress-bar"
               className="h-full bg-gradient-to-r from-purple-600 via-blue-500 to-cyan-400 transition-all duration-300 ease-out"
-              style={{ width: codeReady ? "100%" : "0%" }}
-              aria-valuenow={codeReady ? 100 : 0}
+              style={{ width: `${progress}%` }}
+              aria-valuenow={progress}
               aria-valuemin={0}
               aria-valuemax={100}
               role="progressbar"
