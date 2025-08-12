@@ -123,7 +123,20 @@ export default function SidebarContent({
                         }}
                       />
                     ) : (
-                      <span className="font-semibold text-white truncate">{chat.title}</span>
+                      <span
+  className="font-semibold text-white truncate"
+  style={{
+    maxWidth: "140px",
+    display: "inline-block",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    verticalAlign: "bottom",
+    whiteSpace: "nowrap",
+  }}
+  title={chat.title}
+>
+  {chat.title}
+</span>
                     )}
                     <div className="text-xs text-gray-400">
                       {chat.updatedAt && (
