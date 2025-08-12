@@ -1277,6 +1277,7 @@ export default function NexusRBXAIPageContainer() {
                   maxLength={800}
                   onKeyDown={(e) => {
                     if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
                       handleSubmit(e);
                     }
                   }}
