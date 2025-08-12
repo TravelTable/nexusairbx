@@ -1129,6 +1129,7 @@ export default function NexusRBXAIPageContainer() {
                     const versions = Array.isArray(session.versions)
                       ? session.versions
                       : [];
+                    // --- Show title above explanation and code, and start generating explanation only after title is done ---
                     return (
                       <div key={session.id} className="mb-6">
                         {/* Title */}
@@ -1139,7 +1140,9 @@ export default function NexusRBXAIPageContainer() {
                                 text={typewriterTitleText}
                                 className="text-2xl font-bold bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-transparent bg-clip-text"
                                 instant={false}
-                                onDone={() => {}}
+                                onDone={() => {
+                                  // When title finishes, explanation will start typewriting (handled by TypewriterText in explanation below)
+                                }}
                               />
                             ) : (
                               <span className="text-2xl font-bold bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-transparent bg-clip-text">
@@ -1236,7 +1239,20 @@ export default function NexusRBXAIPageContainer() {
               {isGenerating && (
                 <div className="flex items-center text-gray-400 text-sm mt-2">
                   <Loader className="h-4 w-4 animate-spin mr-2" />
-                  NexusRBX is generating...
+                  {generationStep === "title" && (
+                    <span>Generating script title...</span>
+                  )}
+                  {generationStep === "explanation" && (
+                    <span>Generating explanation...</span>
+                  )}
+                  {generationStep === "code" && (
+                    <span>Generating code...</span>
+                  )}
+                  {generationStep !== "title" &&
+                    generationStep !== "explanation" &&
+                    generationStep !== "code" && (
+                      <span>NexusRBX is generating...</span>
+                    )}
                 </div>
               )}
               {loadingBarVisible && (
