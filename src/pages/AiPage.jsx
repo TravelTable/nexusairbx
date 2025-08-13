@@ -1467,7 +1467,7 @@ const NexusRBXAvatar = () => (
                   </span>
                 </div>
               )}
-{loadingBarVisible && generationStep === "code" && (
+{loadingBarVisible && generationStep === "code" && animatedScriptIds[currentScript?.apiId] && (
   <div className="mt-4">
     <ScriptLoadingBarContainer
       filename={loadingBarData.filename}
@@ -1484,7 +1484,7 @@ const NexusRBXAvatar = () => (
   </div>
 )}
 {/* Persist the loading bar after code is ready */}
-{!loadingBarVisible && loadingBarData.codeReady && (
+{!loadingBarVisible && loadingBarData.codeReady && animatedScriptIds[currentScript?.apiId] && (
   <div className="mt-4">
     <ScriptLoadingBarContainer
       filename={loadingBarData.filename}
