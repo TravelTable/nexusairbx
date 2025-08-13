@@ -384,46 +384,79 @@ export default function NexusRBXAIPageContainer() {
     // eslint-disable-next-line
   }, [user]);
 
-  // --- Load Chats from Firestore ---
-  useEffect(() => {
-    if (!user) {
-      setChats([]);
-      setCurrentChatId(null);
-      return;
-    }
-    const q = query(getChatsCollectionRef(user.uid), orderBy("createdAt", "asc"));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const chatList = [];
-      snapshot.forEach((doc) => {
-        chatList.push({ id: doc.id, ...doc.data() });
+// --- Load Scripts from Backend ---
+useEffect(() => {
+  if (!user) {
+    setChats([]);
+    setCurrentChatId(null);
+    return;
+  }
+  user.getIdToken().then((idToken) => {
+    fetch(`${BACKEND_URL}/api/scripts`, {
+      headers: {
+        Authorization: `Bearer ${idToken}`,
+      },
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (Array.isArray(data.scripts)) {
+          setChats(data.scripts.map(script => ({
+            id: script.id,
+            title: script.title,
+            createdAt: script.createdAt,
+            updatedAt: script.updatedAt,
+            latestVersion: script.latestVersion,
+          })));
+        }
       });
-      setChats(chatList);
-      // DO NOT auto-select first chat if none selected (fresh chat logic above)
-    });
-    return () => unsubscribe();
-    // eslint-disable-next-line
-  }, [user]);
+  });
+}, [user]);
 
-  // --- Load Scripts for Current Chat ---
-  useEffect(() => {
-    if (!user || !currentChatId) {
-      setScripts([]);
-      setCurrentScript(null);
-      setVersionHistory([]);
-      setSelectedVersion(null);
-      return;
-    }
-    const q = query(getScriptsCollectionRef(user.uid, currentChatId), orderBy("createdAt", "asc"));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const scriptList = [];
-      snapshot.forEach((doc) => {
-        scriptList.push({ id: doc.id, ...doc.data() });
+// --- Load Versions for Current Script from Backend ---
+useEffect(() => {
+  if (!user || !currentChatId) {
+    setScripts([]);
+    setCurrentScript(null);
+    setVersionHistory([]);
+    setSelectedVersion(null);
+    return;
+  }
+  user.getIdToken().then((idToken) => {
+    fetch(`${BACKEND_URL}/api/scripts/${currentChatId}/versions`, {
+      headers: {
+        Authorization: `Bearer ${idToken}`,
+      },
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (Array.isArray(data.versions)) {
+          setScripts([
+            {
+              id: currentChatId,
+              title: chats.find(c => c.id === currentChatId)?.title || "",
+              versions: data.versions,
+              sections: {
+                title: data.versions[0]?.title || "",
+                code: data.versions[0]?.code || "",
+                explanation: data.versions[0]?.explanation || "",
+                version: data.versions[0]?.version || 1,
+              },
+              updatedAt: data.versions[0]?.createdAt || "",
+              saved: true,
+              status: "done",
+            },
+          ]);
+          setCurrentScript({
+            apiId: currentChatId,
+            title: data.versions[0]?.title || "",
+            versions: data.versions,
+          });
+          setVersionHistory(data.versions);
+          setSelectedVersion(data.versions[0]);
+        }
       });
-      setScripts(scriptList);
-    });
-    return () => unsubscribe();
-    // eslint-disable-next-line
-  }, [user, currentChatId]);
+  });
+}, [user, currentChatId, chats]);
 
   // --- Prompt Char Count & Error ---
   useEffect(() => {
@@ -740,25 +773,10 @@ try {
   const scriptData = await scriptRes.json();
   scriptApiId = scriptData.scriptId;
   version = scriptData.version || 1;
+  setCurrentChatId(scriptApiId); // Set the new script as current chat
 } catch (err) {
-  // fallback to Firestore if backend fails
-  await updateDoc(
-    getScriptDocRef(user.uid, chatIdToUse, baseScriptId),
-    {
-      "sections.code": code,
-      "sections.version": 1,
-      versions: [
-        {
-          version: 1,
-          code,
-          createdAt: new Date().toISOString(),
-          title: scriptTitle,
-        },
-      ],
-      updatedAt: new Date().toISOString(),
-      status: "done",
-    }
-  );
+  alert("Failed to save script to backend.");
+  return;
 }
 
 // --- 8. Fetch Version History from backend ---
@@ -821,8 +839,8 @@ setLoadingBarData((prev) => ({
     }
   };
 
-  // --- Save Script (just mark as saved, not new version) ---
-const handleSaveScript = async (newTitle, code) => {
+  // --- Save Script (add new version to backend) ---
+const handleSaveScript = async (newTitle, code, explanation = "") => {
   if (!user || !code || !currentScript || !currentScript.apiId) return false;
   let scriptApiId = currentScript.apiId;
   let idToken = await user.getIdToken();
@@ -836,7 +854,7 @@ const handleSaveScript = async (newTitle, code) => {
       },
       body: JSON.stringify({
         code,
-        explanation: "", // Optionally pass explanation
+        explanation,
       }),
     });
     if (!res.ok) {
@@ -861,9 +879,7 @@ const handleSaveScript = async (newTitle, code) => {
       title: newTitle,
       versions,
     }));
-    setVersionHistory(
-      versions.sort((a, b) => (b.version || 1) - (a.version || 1))
-    );
+    setVersionHistory(versions);
     alert("Script version saved!");
     return true;
   } catch (err) {
@@ -872,14 +888,45 @@ const handleSaveScript = async (newTitle, code) => {
   }
 };
 
-  // --- Sidebar Version Click Handler ---
-  const handleVersionView = (versionObj) => {
+// --- Sidebar Version Click Handler ---
+const handleVersionView = async (versionObj) => {
+  if (!user || !currentScript || !currentScript.apiId || !versionObj?.id) {
     setSelectedVersion(versionObj);
     setCurrentScript((cs) => ({
       ...cs,
       title: versionObj.title,
     }));
-  };
+    return;
+  }
+  let idToken = await user.getIdToken();
+  try {
+    const res = await fetch(`${BACKEND_URL}/api/scripts/${currentScript.apiId}/versions/${versionObj.id}`, {
+      headers: {
+        Authorization: `Bearer ${idToken}`,
+      },
+    });
+    if (res.ok) {
+      const data = await res.json();
+      setSelectedVersion(data);
+      setCurrentScript((cs) => ({
+        ...cs,
+        title: data.title || versionObj.title,
+      }));
+    } else {
+      setSelectedVersion(versionObj);
+      setCurrentScript((cs) => ({
+        ...cs,
+        title: versionObj.title,
+      }));
+    }
+  } catch {
+    setSelectedVersion(versionObj);
+    setCurrentScript((cs) => ({
+      ...cs,
+      title: versionObj.title,
+    }));
+  }
+};
 
   // --- Download Handler for Version ---
   const handleVersionDownload = (versionObj) => {
@@ -900,16 +947,27 @@ const handleSaveScript = async (newTitle, code) => {
     URL.revokeObjectURL(url);
   };
 
-  // --- Chat Management ---
-  const handleCreateChat = async (title = "New Chat") => {
-    if (!user) return;
-    const chatDoc = await addDoc(getChatsCollectionRef(user.uid), {
+// --- Script Management ---
+const handleCreateChat = async (title = "New Script") => {
+  if (!user) return;
+  let idToken = await user.getIdToken();
+  const res = await fetch(`${BACKEND_URL}/api/scripts`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${idToken}`,
+    },
+    body: JSON.stringify({
       title,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    });
-    setCurrentChatId(chatDoc.id);
-  };
+      code: "-- New script",
+      explanation: "",
+    }),
+  });
+  if (res.ok) {
+    const data = await res.json();
+    setCurrentChatId(data.scriptId);
+  }
+};
   const handleRenameChat = async (chatId, newTitle) => {
     if (!user) return;
     await updateDoc(getChatDocRef(user.uid, chatId), {
@@ -917,15 +975,21 @@ const handleSaveScript = async (newTitle, code) => {
       updatedAt: new Date().toISOString(),
     });
   };
-  const handleDeleteChat = async (chatId) => {
-    if (!user) return;
-    await deleteDoc(getChatDocRef(user.uid, chatId));
-    if (currentChatId === chatId) {
-      setCurrentChatId(
-        chats.length > 1 ? chats.find((c) => c.id !== chatId)?.id : null
-      );
-    }
-  };
+const handleDeleteChat = async (chatId) => {
+  if (!user) return;
+  let idToken = await user.getIdToken();
+  await fetch(`${BACKEND_URL}/api/scripts/${chatId}`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${idToken}`,
+    },
+  });
+  if (currentChatId === chatId) {
+    setCurrentChatId(
+      chats.length > 1 ? chats.find((c) => c.id !== chatId)?.id : null
+    );
+  }
+};
 
   // --- AI Avatar (NexusRBX Logo) ---
 const NexusRBXAvatar = () => (
@@ -1403,22 +1467,39 @@ const NexusRBXAvatar = () => (
                   </span>
                 </div>
               )}
-              {loadingBarVisible && generationStep === "code" && (
-                <div className="mt-4">
-                  <ScriptLoadingBarContainer
-                    filename={loadingBarData.filename}
-                    version={loadingBarData.version}
-                    language={loadingBarData.language}
-                    loading={loadingBarData.loading}
-                    codeReady={loadingBarData.codeReady}
-                    estimatedLines={loadingBarData.estimatedLines}
-                    saved={loadingBarData.saved}
-                    onSave={loadingBarData.onSave}
-                    onView={loadingBarData.onView}
-                    showGradientTitle={false}
-                  />
-                </div>
-              )}
+{loadingBarVisible && generationStep === "code" && (
+  <div className="mt-4">
+    <ScriptLoadingBarContainer
+      filename={loadingBarData.filename}
+      version={loadingBarData.version}
+      language={loadingBarData.language}
+      loading={loadingBarData.loading}
+      codeReady={loadingBarData.codeReady}
+      estimatedLines={loadingBarData.estimatedLines}
+      saved={loadingBarData.saved}
+      onSave={loadingBarData.onSave}
+      onView={loadingBarData.onView}
+      showGradientTitle={false}
+    />
+  </div>
+)}
+{/* Persist the loading bar after code is ready */}
+{!loadingBarVisible && loadingBarData.codeReady && (
+  <div className="mt-4">
+    <ScriptLoadingBarContainer
+      filename={loadingBarData.filename}
+      version={loadingBarData.version}
+      language={loadingBarData.language}
+      loading={false}
+      codeReady={true}
+      estimatedLines={loadingBarData.estimatedLines}
+      saved={loadingBarData.saved}
+      onSave={loadingBarData.onSave}
+      onView={loadingBarData.onView}
+      showGradientTitle={false}
+    />
+  </div>
+)}
               <div ref={messagesEndRef} />
             </div>
           </div>
