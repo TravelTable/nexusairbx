@@ -7,23 +7,9 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
-  Copy,
-  Download,
 } from "lucide-react";
-import { auth, db } from "./firebase";
+import { auth } from "./firebase";
 import { onAuthStateChanged, signInAnonymously } from "firebase/auth";
-import {
-  doc,
-  getDoc,
-  setDoc,
-  collection,
-  addDoc,
-  updateDoc,
-  deleteDoc,
-  onSnapshot,
-  query,
-  orderBy,
-} from "firebase/firestore";
 import SidebarContent from "../components/SidebarContent";
 import RightSidebar from "../components/RightSidebar";
 import Modal from "../components/Modal";
@@ -33,10 +19,10 @@ import ScriptLoadingBarContainer from "../components/ScriptLoadingBarContainer";
 import WelcomeCard from "../components/WelcomeCard";
 import TokenBar from "../components/TokenBar";
 import CelebrationAnimation from "../components/CelebrationAnimation";
-import PersistentTypewriterExplanation from "../components/PersistentTypewriterExplanation";
+import TypewriterEffect from "../components/TypewriterEffect";
 
 // --- Backend API URL ---
-const BACKEND_URL = "https://nexusrbx-backend-production.up.railway.app";
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || "https://nexusrbx-backend-production.up.railway.app";
 
 // --- Token System Constants ---
 const TOKEN_LIMIT = 4;
@@ -66,191 +52,9 @@ const defaultSettings = {
   codeStyle: "optimized",
 };
 
-// --- Token System ---
-function getTokenDocRef(uid) {
-  return doc(db, "userTokens", uid);
-}
-
-async function getUserTokens(uid) {
-  const tokenDoc = await getDoc(getTokenDocRef(uid));
-  if (!tokenDoc.exists()) {
-    return null;
-  }
-  return tokenDoc.data();
-}
-
-async function setUserTokens(uid, tokens, lastRefresh) {
-  await setDoc(getTokenDocRef(uid), {
-    tokens,
-    lastRefresh,
-  });
-}
-
-function getNextRefreshDate(lastRefresh) {
-  const date = new Date(lastRefresh);
-  date.setHours(date.getHours() + TOKEN_REFRESH_HOURS);
-  return date;
-}
-
-function useTokens(user) {
-  const [tokens, setTokens] = useState(null);
-  const [lastRefresh, setLastRefresh] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [refreshCountdown, setRefreshCountdown] = useState(null);
-
-  // --- Infinite tokens for developer email ---
-  const isDev =
-    user &&
-    user.email &&
-    user.email.toLowerCase() === DEVELOPER_EMAIL.toLowerCase();
-
-  useEffect(() => {
-    if (!user) {
-      setTokens(null);
-      setLastRefresh(null);
-      setRefreshCountdown(null);
-      return;
-    }
-    if (isDev) {
-      setTokens(Infinity);
-      setLastRefresh(new Date().toISOString());
-      setLoading(false);
-      setRefreshCountdown(null);
-      return;
-    }
-    setLoading(true);
-    getUserTokens(user.uid)
-      .then((data) => {
-        if (!data) {
-          const now = new Date().toISOString();
-          setUserTokens(user.uid, TOKEN_LIMIT, now).then(() => {
-            setTokens(TOKEN_LIMIT);
-            setLastRefresh(now);
-            setLoading(false);
-          });
-        } else {
-          setTokens(data.tokens);
-          setLastRefresh(data.lastRefresh);
-          setLoading(false);
-        }
-      })
-      .catch(() => {
-        setTokens(TOKEN_LIMIT);
-        setLastRefresh(new Date().toISOString());
-        setLoading(false);
-      });
-    // eslint-disable-next-line
-  }, [user, isDev]);
-
-  useEffect(() => {
-    if (!user || !lastRefresh || isDev) return;
-    const interval = setInterval(() => {
-      const now = new Date();
-      const refreshDate = getNextRefreshDate(lastRefresh);
-      if (now >= refreshDate) {
-        setUserTokens(user.uid, TOKEN_LIMIT, now.toISOString()).then(() => {
-          setTokens(TOKEN_LIMIT);
-          setLastRefresh(now.toISOString());
-        });
-      } else {
-        const diff = refreshDate - now;
-        if (diff > 0) {
-          const hours = Math.floor(diff / (1000 * 60 * 60));
-          const mins = Math.floor((diff / (1000 * 60)) % 60);
-          setRefreshCountdown({ hours, mins });
-        }
-      }
-    }, 1000 * 60);
-    return () => clearInterval(interval);
-  }, [user, lastRefresh, isDev]);
-
-  useEffect(() => {
-    if (!user || !lastRefresh || isDev) return;
-    const now = new Date();
-    const refreshDate = getNextRefreshDate(lastRefresh);
-    if (now >= refreshDate) {
-      setUserTokens(user.uid, TOKEN_LIMIT, now.toISOString()).then(() => {
-        setTokens(TOKEN_LIMIT);
-        setLastRefresh(now.toISOString());
-      });
-    }
-  }, [user, lastRefresh, isDev]);
-
-  const consumeToken = async () => {
-    if (!user || tokens === null) return false;
-    if (isDev) return true;
-    if (tokens <= 0) return false;
-    const newTokens = tokens - 1;
-    await setUserTokens(user.uid, newTokens, lastRefresh);
-    setTokens(newTokens);
-    return true;
-  };
-
-  return {
-    tokens,
-    loading,
-    refreshCountdown,
-    consumeToken,
-    lastRefresh,
-    isDev,
-  };
-}
-
-// --- Firestore Chat Helpers ---
-function getChatsCollectionRef(uid) {
-  return collection(db, "users", uid, "chats");
-}
-function getChatDocRef(uid, chatId) {
-  return doc(db, "users", uid, "chats", chatId);
-}
-function getScriptsCollectionRef(uid, chatId) {
-  return collection(db, "users", uid, "chats", chatId, "scripts");
-}
-function getScriptDocRef(uid, chatId, scriptId) {
-  return doc(db, "users", uid, "chats", chatId, "scripts", scriptId);
-}
-
-// --- Typewriter Effect for Explanation Only ---
-function useTypewriterWords(text, speed = 40, enabled = true) {
-  const [displayed, setDisplayed] = useState("");
-  const words = text ? text.split(" ") : [];
-  const indexRef = useRef(0);
-  const timeoutRef = useRef(null);
-
-  useEffect(() => {
-    if (!enabled) {
-      setDisplayed(text || "");
-      return;
-    }
-    setDisplayed("");
-    indexRef.current = 0;
-    if (!text) return;
-
-    function type() {
-      if (indexRef.current < words.length) {
-        setDisplayed((prev) =>
-          prev
-            ? prev + " " + words[indexRef.current]
-            : words[indexRef.current]
-        );
-        indexRef.current += 1;
-        timeoutRef.current = setTimeout(type, speed);
-      }
-    }
-    type();
-
-    return () => {
-      clearTimeout(timeoutRef.current);
-    };
-  }, [text, speed, enabled]);
-
-  return displayed;
-}
-
 // --- Gravatar Helper ---
 function getGravatarUrl(email, size = 40) {
   if (!email) return null;
-  // Simple synchronous hash for demo (not real MD5)
   function fallbackMd5(str) {
     let hash = 0,
       i,
@@ -281,18 +85,16 @@ function getUserInitials(email) {
 export default function NexusRBXAIPageContainer() {
   const navigate = useNavigate();
 
-  // --- State for multi-chat ---
+  // --- State for scripts and versions ---
   const [user, setUser] = useState(null);
-  const [chats, setChats] = useState([]); // [{id, title, createdAt, updatedAt}]
-  const [currentChatId, setCurrentChatId] = useState(null);
-  const [scripts, setScripts] = useState([]); // [{id, prompt, sections, status, versions: []}]
+  const [scripts, setScripts] = useState([]); // [{id, title, createdAt, updatedAt, latestVersion}]
+  const [currentScriptId, setCurrentScriptId] = useState(null);
   const [currentScript, setCurrentScript] = useState(null); // {id, title, versions: [...]}
   const [versionHistory, setVersionHistory] = useState([]); // [{version, code, createdAt, id}]
   const [selectedVersion, setSelectedVersion] = useState(null);
 
   // --- UI State ---
-  const [sidebarOpen, setSidebarOpen] = useState(false); // legacy, not used for mobile
-  const [activeTab, setActiveTab] = useState("chat"); // chat | saved | chats
+  const [activeTab, setActiveTab] = useState("scripts"); // scripts | history | saved
   const [prompt, setPrompt] = useState("");
   const [promptCharCount, setPromptCharCount] = useState(0);
   const [promptError, setPromptError] = useState("");
@@ -321,12 +123,6 @@ export default function NexusRBXAIPageContainer() {
   const [promptAutocomplete, setPromptAutocomplete] = useState([]);
   const [promptHistory, setPromptHistory] = useState([]);
   const [promptSearch, setPromptSearch] = useState("");
-  const [folders, setFolders] = useState([]);
-  const [selectedFolder, setSelectedFolder] = useState("all");
-  const [tags, setTags] = useState([]);
-  const [selectedTag, setSelectedTag] = useState("all");
-  const [showAddFolderModal, setShowAddFolderModal] = useState(false);
-  const [showAddTagModal, setShowAddTagModal] = useState(false);
   const [promptSuggestions, setPromptSuggestions] = useState([]);
   const [promptSuggestionLoading, setPromptSuggestionLoading] = useState(false);
 
@@ -351,112 +147,68 @@ export default function NexusRBXAIPageContainer() {
     return () => unsubscribe();
   }, []);
 
-  // --- Tokens ---
-  const {
-    tokens,
-    loading: tokensLoading,
-    refreshCountdown,
-    consumeToken,
-    lastRefresh,
-    isDev,
-  } = useTokens(user);
-
-  // --- Always create a new chat on AI page load ---
+  // --- Load Scripts from Backend ---
   useEffect(() => {
-    if (!user) return;
-    let unsub = null;
-    let created = false;
-    const createFreshChat = async () => {
-      // Create a new chat and set as current, but leave the title as empty string for now
-      const chatDoc = await addDoc(getChatsCollectionRef(user.uid), {
-        title: "",
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      });
-      setCurrentChatId(chatDoc.id);
-      created = true;
-    };
-    createFreshChat();
-    // Don't auto-select any previous chat
-    return () => {
-      if (unsub) unsub();
-    };
+    if (!user) {
+      setScripts([]);
+      setCurrentScriptId(null);
+      return;
+    }
+    user.getIdToken().then((idToken) => {
+      fetch(`${BACKEND_URL}/api/scripts`, {
+        headers: {
+          Authorization: `Bearer ${idToken}`,
+        },
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          if (Array.isArray(data.scripts)) {
+            setScripts(data.scripts.map(script => ({
+              id: script.id,
+              title: script.title,
+              createdAt: script.createdAt,
+              updatedAt: script.updatedAt,
+              latestVersion: script.latestVersion,
+            })));
+            if (data.scripts.length > 0 && !currentScriptId) {
+              setCurrentScriptId(data.scripts[0].id);
+            }
+          }
+        });
+    });
     // eslint-disable-next-line
   }, [user]);
 
-// --- Load Scripts from Backend ---
-useEffect(() => {
-  if (!user) {
-    setChats([]);
-    setCurrentChatId(null);
-    return;
-  }
-  user.getIdToken().then((idToken) => {
-    fetch(`${BACKEND_URL}/api/scripts`, {
-      headers: {
-        Authorization: `Bearer ${idToken}`,
-      },
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        if (Array.isArray(data.scripts)) {
-          setChats(data.scripts.map(script => ({
-            id: script.id,
-            title: script.title,
-            createdAt: script.createdAt,
-            updatedAt: script.updatedAt,
-            latestVersion: script.latestVersion,
-          })));
-        }
-      });
-  });
-}, [user]);
-
-// --- Load Versions for Current Script from Backend ---
-useEffect(() => {
-  if (!user || !currentChatId) {
-    setScripts([]);
-    setCurrentScript(null);
-    setVersionHistory([]);
-    setSelectedVersion(null);
-    return;
-  }
-  user.getIdToken().then((idToken) => {
-    fetch(`${BACKEND_URL}/api/scripts/${currentChatId}/versions`, {
-      headers: {
-        Authorization: `Bearer ${idToken}`,
-      },
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        if (Array.isArray(data.versions)) {
-          setScripts([
-            {
-              id: currentChatId,
-              title: chats.find(c => c.id === currentChatId)?.title || "",
-              versions: data.versions,
-              sections: {
-                title: data.versions[0]?.title || "",
-                code: data.versions[0]?.code || "",
-                explanation: data.versions[0]?.explanation || "",
-                version: data.versions[0]?.version || 1,
-              },
-              updatedAt: data.versions[0]?.createdAt || "",
-              saved: true,
-              status: "done",
-            },
-          ]);
-          setCurrentScript({
-            apiId: currentChatId,
-            title: data.versions[0]?.title || "",
-            versions: data.versions,
-          });
-          setVersionHistory(data.versions);
-          setSelectedVersion(data.versions[0]);
-        }
-      });
-  });
-}, [user, currentChatId, chats]);
+  // --- Load Versions for Current Script from Backend ---
+  useEffect(() => {
+    if (!user || !currentScriptId) {
+      setCurrentScript(null);
+      setVersionHistory([]);
+      setSelectedVersion(null);
+      return;
+    }
+    user.getIdToken().then((idToken) => {
+      fetch(`${BACKEND_URL}/api/scripts/${currentScriptId}/versions`, {
+        headers: {
+          Authorization: `Bearer ${idToken}`,
+        },
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          if (Array.isArray(data.versions)) {
+            const sortedVersions = data.versions.sort((a, b) => (b.version || 1) - (a.version || 1));
+            setCurrentScript({
+              id: currentScriptId,
+              title: scripts.find(c => c.id === currentScriptId)?.title || "",
+              versions: sortedVersions,
+            });
+            setVersionHistory(sortedVersions);
+            setSelectedVersion(sortedVersions[0]);
+          }
+        });
+    });
+    // eslint-disable-next-line
+  }, [user, currentScriptId, scripts]);
 
   // --- Prompt Char Count & Error ---
   useEffect(() => {
@@ -490,7 +242,7 @@ useEffect(() => {
   const messagesEndRef = useRef(null);
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [scripts, isGenerating, loadingBarVisible]);
+  }, [currentScript, isGenerating, loadingBarVisible]);
 
   // --- Mobile Sidebar Overlay Logic ---
   const closeAllMobileSidebars = () => {
@@ -507,19 +259,7 @@ useEffect(() => {
       return;
     }
     if (!user) {
-      alert("Sign in to generate scripts and use tokens.");
-      return;
-    }
-    if (tokensLoading) {
-      alert("Loading your tokens. Please wait...");
-      return;
-    }
-    if (tokens === null || tokens === undefined) {
-      alert("Unable to load your tokens. Please try again.");
-      return;
-    }
-    if (!isDev && tokens <= 0) {
-      alert("You have 0 tokens left. Please wait for your tokens to refresh in 2 days.");
+      alert("Sign in to generate scripts.");
       return;
     }
 
@@ -527,14 +267,6 @@ useEffect(() => {
     setIsGenerating(true);
     setGenerationStep("title");
     setShowCelebration(false);
-
-    // Conversational memory: last 10 scripts in this chat
-    const conversation = scripts
-      .slice(-10)
-      .map((s) => ({
-        role: "assistant",
-        content: s.sections?.code || s.sections?.title || "",
-      }));
 
     let idToken;
     try {
@@ -551,8 +283,7 @@ useEffect(() => {
     let explanationObj = {};
     let code = "";
     let version = 1;
-    let baseScriptId = null;
-    let newChatId = null;
+    let scriptApiId = null;
 
     try {
       // --- 1. Generate Title ---
@@ -565,7 +296,7 @@ useEffect(() => {
         },
         body: JSON.stringify({
           prompt,
-          conversation,
+          conversation: [],
           model: "gpt-4.1-2025-04-14",
           isNewScript: true,
           previousTitle: "",
@@ -591,30 +322,6 @@ useEffect(() => {
       scriptTitle = titleData.title || "Script";
       if (!scriptTitle) throw new Error("Failed to generate title");
 
-      // --- If no current chat, create one with the script title as chat name ---
-      if (!currentChatId) {
-        const chatDoc = await addDoc(getChatsCollectionRef(user.uid), {
-          title: scriptTitle,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        });
-        newChatId = chatDoc.id;
-        setCurrentChatId(chatDoc.id);
-      } else {
-        // If the current chat exists and its title is empty or "New Chat", update it to the script title
-        const chatDocRef = getChatDocRef(user.uid, currentChatId);
-        const chatDocSnap = await getDoc(chatDocRef);
-        if (chatDocSnap.exists()) {
-          const chatData = chatDocSnap.data();
-          if (!chatData.title || chatData.title === "" || chatData.title === "New Chat") {
-            await updateDoc(chatDocRef, {
-              title: scriptTitle,
-              updatedAt: new Date().toISOString(),
-            });
-          }
-        }
-      }
-
       // --- 2. Generate Explanation ---
       setGenerationStep("explanation");
       const explanationRes = await fetch(
@@ -627,7 +334,7 @@ useEffect(() => {
           },
           body: JSON.stringify({
             prompt,
-            conversation,
+            conversation: [],
             model: "gpt-4.1-2025-04-14",
           }),
         }
@@ -653,84 +360,84 @@ useEffect(() => {
       explanation = explanationObj.explanation || "";
       if (!explanation) throw new Error("Failed to generate explanation");
 
-      // --- 3. Save Script with title and explanation (no code yet) ---
-      // Use the new chat id if we just created one, otherwise use currentChatId
-      const chatIdToUse = newChatId || currentChatId;
-      const scriptDocRef = await addDoc(
-        getScriptsCollectionRef(user.uid, chatIdToUse),
-        {
-          prompt,
-          sections: {
+      // --- 3. Show explanation immediately, then wait, then start code generation ---
+      setAnimatedScriptIds((prev) => ({
+        ...prev,
+        temp: true,
+      }));
+
+      setCurrentScript({
+        id: "temp",
+        title: scriptTitle,
+        versions: [
+          {
             title: scriptTitle,
-            ...explanationObj,
+            explanation: explanation,
             code: "",
             version: 1,
+            temp: true,
           },
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          versions: [],
-          saved: false, // Start as unsaved
-          status: "generating",
-        }
-      );
-      baseScriptId = scriptDocRef.id;
-      version = 1;
-
-      // --- 4. Update Chat updatedAt ---
-      await updateDoc(getChatDocRef(user.uid, chatIdToUse), {
-        updatedAt: new Date().toISOString(),
+        ],
+      });
+      setVersionHistory([
+        {
+          title: scriptTitle,
+          explanation: explanation,
+          code: "",
+          version: 1,
+          temp: true,
+        },
+      ]);
+      setSelectedVersion({
+        title: scriptTitle,
+        explanation: explanation,
+        code: "",
+        version: 1,
+        temp: true,
       });
 
-// --- 5. Wait for typewriter effect to finish before generating code ---
-setAnimatedScriptIds((prev) => ({
-  ...prev,
-  [baseScriptId]: true,
-}));
+      // Wait for the typewriter effect to finish (based on word count and speed)
+      const wordsCount = (explanationObj.explanation || "").split(" ").length;
+      const typewriterSpeed = 30; // ms per word
+      const typewriterDuration = wordsCount * typewriterSpeed + 500;
 
-// Wait for the typewriter effect to finish (based on word count and speed)
-const wordsCount = (explanationObj.explanation || "").split(" ").length;
-const typewriterSpeed = 30; // ms per word (should match PersistentTypewriterExplanation)
-const typewriterDuration = wordsCount * typewriterSpeed + 500; // add a small buffer
+      await new Promise((resolve) => setTimeout(resolve, typewriterDuration));
+      await new Promise((resolve) => setTimeout(resolve, 3000));
 
-await new Promise((resolve) => setTimeout(resolve, typewriterDuration));
+      // --- 4. Show Loading Bar for Code Generation (before calling API) ---
+      setGenerationStep("code");
+      setLoadingBarVisible(true);
+      const generatedFilename =
+        (scriptTitle
+          ? scriptTitle.replace(/[^a-zA-Z0-9_\- ]/g, "").replace(/\s+/g, "_").slice(0, 40)
+          : "Script") + ".lua";
 
-// --- 5.5. Wait an additional 3 seconds before code generation ---
-await new Promise((resolve) => setTimeout(resolve, 3000));
+      setLoadingBarData({
+        filename: generatedFilename,
+        version: "v1",
+        language: "lua",
+        loading: true,
+        codeReady: false,
+        estimatedLines: null,
+        saved: false,
+        onSave: () => {},
+        onView: () => {},
+      });
 
-// --- 6. Show Loading Bar for Code Generation (before calling API) ---
-setGenerationStep("code");
-setLoadingBarVisible(true);
-const generatedFilename =
-  (scriptTitle
-    ? scriptTitle.replace(/[^a-zA-Z0-9_\- ]/g, "").replace(/\s+/g, "_").slice(0, 40)
-    : "Script") + ".lua";
-
-setLoadingBarData({
-  filename: generatedFilename,
-  version: "v1",
-  language: "lua",
-  loading: true,
-  codeReady: false,
-  estimatedLines: null,
-  saved: false,
-  onSave: () => {},
-  onView: () => {},
-});
-
-// --- 7. Generate Code ---
-const codeRes = await fetch(`${BACKEND_URL}/api/generate-code`, {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json",
-    Authorization: `Bearer ${idToken}`,
-  },
-  body: JSON.stringify({
-    prompt,
-    conversation,
-    explanation,
-    model: "gpt-4.1-2025-04-14",
-  }),
-});
+      // --- 5. Generate Code ---
+      const codeRes = await fetch(`${BACKEND_URL}/api/generate-code`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${idToken}`,
+        },
+        body: JSON.stringify({
+          prompt,
+          conversation: [],
+          explanation,
+          model: "gpt-4.1-2025-04-14",
+        }),
+      });
 
       if (!codeRes.ok) {
         const text = await codeRes.text();
@@ -751,82 +458,75 @@ const codeRes = await fetch(`${BACKEND_URL}/api/generate-code`, {
       code = codeData.code || "";
       if (!code) throw new Error("Failed to generate code");
 
-// --- 7. Save Script (as v1) in backend with code and explanation ---
-setGenerationStep("saving");
-let scriptApiId = null;
-try {
-  const scriptRes = await fetch(`${BACKEND_URL}/api/scripts`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${idToken}`,
-    },
-    body: JSON.stringify({
-      title: scriptTitle,
-      code,
-      explanation,
-    }),
-  });
-  if (!scriptRes.ok) {
-    const text = await scriptRes.text();
-    throw new Error(
-      `Failed to save script to backend: ${scriptRes.status} ${scriptRes.statusText} - ${text.slice(0, 200)}`
-    );
-  }
-  const scriptData = await scriptRes.json();
-  scriptApiId = scriptData.scriptId;
-  version = scriptData.version || 1;
-  setCurrentChatId(scriptApiId); // Set the new script as current chat
-} catch (err) {
-  alert("Failed to save script to backend.");
-  return;
-}
+      // --- 6. Save Script (as v1) in backend with code and explanation ---
+      setGenerationStep("saving");
+      let scriptRes = await fetch(`${BACKEND_URL}/api/scripts`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${idToken}`,
+        },
+        body: JSON.stringify({
+          title: scriptTitle,
+          code,
+          explanation,
+        }),
+      });
+      if (!scriptRes.ok) {
+        const text = await scriptRes.text();
+        throw new Error(
+          `Failed to save script to backend: ${scriptRes.status} ${scriptRes.statusText} - ${text.slice(0, 200)}`
+        );
+      }
+      const scriptData = await scriptRes.json();
+      scriptApiId = scriptData.scriptId;
+      version = scriptData.version || 1;
+      setCurrentScriptId(scriptApiId);
 
-// --- 8. Fetch Version History from backend ---
-let versions = [];
-let scriptApiIdToUse = scriptApiId; // from above
-try {
-  const versionsRes = await fetch(`${BACKEND_URL}/api/scripts/${scriptApiIdToUse}/versions`, {
-    method: "GET",
-    headers: {
-      Authorization: `Bearer ${idToken}`,
-    },
-  });
-  if (versionsRes.ok) {
-    const versionsData = await versionsRes.json();
-    versions = versionsData.versions || [];
-  }
-} catch (err) {
-  // fallback: keep empty
-}
-setVersionHistory(
-  versions.sort((a, b) => (b.version || 1) - (a.version || 1))
-);
-setCurrentScript({
-  apiId: scriptApiIdToUse,
-  title: scriptTitle,
-  versions,
-});
-setSelectedVersion(versions[0]);
+      // --- 7. Fetch Version History from backend ---
+      let versions = [];
+      let scriptApiIdToUse = scriptApiId;
+      try {
+        const versionsRes = await fetch(`${BACKEND_URL}/api/scripts/${scriptApiIdToUse}/versions`, {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${idToken}`,
+          },
+        });
+        if (versionsRes.ok) {
+          const versionsData = await versionsRes.json();
+          versions = versionsData.versions || [];
+        }
+      } catch (err) {
+        // fallback: keep empty
+      }
+      setVersionHistory(
+        versions.sort((a, b) => (b.version || 1) - (a.version || 1))
+      );
+      setCurrentScript({
+        id: scriptApiIdToUse,
+        title: scriptTitle,
+        versions,
+      });
+      setSelectedVersion(versions[0]);
 
-setLoadingBarData((prev) => ({
-  ...prev,
-  loading: false,
-  codeReady: true,
-  saved: false, // Start as unsaved
-  version: `v${version}`,
-  filename: generatedFilename,
-  onSave: () => {},
-  onView: () => {},
-}));
+      setLoadingBarData((prev) => ({
+        ...prev,
+        loading: false,
+        codeReady: true,
+        saved: false,
+        version: `v${version}`,
+        filename: generatedFilename,
+        onSave: () => {},
+        onView: () => {},
+      }));
       setLoadingBarVisible(false);
       setGenerationStep("done");
       setShowCelebration(true);
 
-      // Mark this script as animated for typewriter effect
       setAnimatedScriptIds((prev) => ({
         ...prev,
-        [baseScriptId]: true,
+        [scriptApiIdToUse]: true,
       }));
 
       setTimeout(() => setShowCelebration(false), 3000);
@@ -843,100 +543,99 @@ setLoadingBarData((prev) => ({
   };
 
   // --- Save Script (add new version to backend) ---
-const handleSaveScript = async (newTitle, code, explanation = "") => {
-  if (!user || !code || !currentScript || !currentScript.apiId) return false;
-  let scriptApiId = currentScript.apiId;
-  let idToken = await user.getIdToken();
-  try {
-    // Add new version to backend
-    const res = await fetch(`${BACKEND_URL}/api/scripts/${scriptApiId}/versions`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${idToken}`,
-      },
-      body: JSON.stringify({
-        code,
-        explanation,
-      }),
-    });
-    if (!res.ok) {
+  const handleSaveScript = async (newTitle, code, explanation = "") => {
+    if (!user || !code || !currentScript || !currentScript.id) return false;
+    let scriptApiId = currentScript.id;
+    let idToken = await user.getIdToken();
+    try {
+      // Add new version to backend
+      const res = await fetch(`${BACKEND_URL}/api/scripts/${scriptApiId}/versions`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${idToken}`,
+        },
+        body: JSON.stringify({
+          code,
+          explanation,
+        }),
+      });
+      if (!res.ok) {
+        alert("Failed to save version to backend.");
+        return false;
+      }
+      // Refresh version history after saving
+      const versionsRes = await fetch(`${BACKEND_URL}/api/scripts/${scriptApiId}/versions`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${idToken}`,
+        },
+      });
+      let versions = [];
+      if (versionsRes.ok) {
+        const versionsData = await versionsRes.json();
+        versions = versionsData.versions || [];
+      }
+      setCurrentScript((cs) => ({
+        ...cs,
+        saved: true,
+        title: newTitle,
+        versions,
+      }));
+      setVersionHistory(versions);
+      alert("Script version saved!");
+      return true;
+    } catch (err) {
       alert("Failed to save version to backend.");
       return false;
     }
-    // Refresh version history after saving
-    const versionsRes = await fetch(`${BACKEND_URL}/api/scripts/${scriptApiId}/versions`, {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${idToken}`,
-      },
-    });
-    let versions = [];
-    if (versionsRes.ok) {
-      const versionsData = await versionsRes.json();
-      versions = versionsData.versions || [];
-    }
-    setCurrentScript((cs) => ({
-      ...cs,
-      saved: true,
-      title: newTitle,
-      versions,
-    }));
-    setVersionHistory(versions);
-    alert("Script version saved!");
-    return true;
-  } catch (err) {
-    alert("Failed to save version to backend.");
-    return false;
-  }
-};
+  };
 
-// --- Sidebar Version Click Handler ---
-const handleVersionView = async (versionObj) => {
-  if (!user || !currentScript || !currentScript.apiId || !versionObj?.id) {
-    setSelectedVersion(versionObj);
-    setCurrentScript((cs) => ({
-      ...cs,
-      title: versionObj.title,
-    }));
-    return;
-  }
-  let idToken = await user.getIdToken();
-  try {
-    const res = await fetch(`${BACKEND_URL}/api/scripts/${currentScript.apiId}/versions/${versionObj.id}`, {
-      headers: {
-        Authorization: `Bearer ${idToken}`,
-      },
-    });
-    if (res.ok) {
-      const data = await res.json();
-      setSelectedVersion(data);
+  // --- Sidebar Version Click Handler ---
+  const handleVersionView = async (versionObj) => {
+    if (!user || !currentScript || !currentScript.id || !versionObj?.id) {
+      setSelectedVersion(versionObj);
       setCurrentScript((cs) => ({
         ...cs,
-        title: data.title || versionObj.title,
+        title: versionObj.title,
       }));
-    } else {
+      return;
+    }
+    let idToken = await user.getIdToken();
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/scripts/${currentScript.id}/versions/${versionObj.id}`, {
+        headers: {
+          Authorization: `Bearer ${idToken}`,
+        },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setSelectedVersion(data);
+        setCurrentScript((cs) => ({
+          ...cs,
+          title: data.title || versionObj.title,
+        }));
+      } else {
+        setSelectedVersion(versionObj);
+        setCurrentScript((cs) => ({
+          ...cs,
+          title: versionObj.title,
+        }));
+      }
+    } catch {
       setSelectedVersion(versionObj);
       setCurrentScript((cs) => ({
         ...cs,
         title: versionObj.title,
       }));
     }
-  } catch {
-    setSelectedVersion(versionObj);
-    setCurrentScript((cs) => ({
-      ...cs,
-      title: versionObj.title,
-    }));
-  }
-};
+  };
 
   // --- Download Handler for Version ---
   const handleVersionDownload = (versionObj) => {
     const blob = new Blob([versionObj.code], { type: "text/plain" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    // Sanitize filename
     const filename =
       (versionObj.title || "Script")
         .replace(/[^a-zA-Z0-9_\- ]/g, "")
@@ -950,61 +649,65 @@ const handleVersionView = async (versionObj) => {
     URL.revokeObjectURL(url);
   };
 
-// --- Script Management ---
-const handleCreateChat = async (title = "New Script") => {
-  if (!user) return;
-  let idToken = await user.getIdToken();
-  const res = await fetch(`${BACKEND_URL}/api/scripts`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${idToken}`,
-    },
-    body: JSON.stringify({
-      title,
-      code: "-- New script",
-      explanation: "",
-    }),
-  });
-  if (res.ok) {
-    const data = await res.json();
-    setCurrentChatId(data.scriptId);
-  }
-};
-  const handleRenameChat = async (chatId, newTitle) => {
+  // --- Script Management ---
+  const handleCreateScript = async (title = "New Script") => {
     if (!user) return;
-    await updateDoc(getChatDocRef(user.uid, chatId), {
-      title: newTitle,
-      updatedAt: new Date().toISOString(),
+    let idToken = await user.getIdToken();
+    const res = await fetch(`${BACKEND_URL}/api/scripts`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${idToken}`,
+      },
+      body: JSON.stringify({
+        title,
+        code: "-- New script",
+        explanation: "",
+      }),
     });
+    if (res.ok) {
+      const data = await res.json();
+      setCurrentScriptId(data.scriptId);
+      // Optionally refetch scripts here
+    }
   };
-const handleDeleteChat = async (chatId) => {
-  if (!user) return;
-  let idToken = await user.getIdToken();
-  await fetch(`${BACKEND_URL}/api/scripts/${chatId}`, {
-    method: "DELETE",
-    headers: {
-      Authorization: `Bearer ${idToken}`,
-    },
-  });
-  if (currentChatId === chatId) {
-    setCurrentChatId(
-      chats.length > 1 ? chats.find((c) => c.id !== chatId)?.id : null
-    );
-  }
-};
+
+  const handleRenameScript = async (scriptId, newTitle) => {
+    // Not implemented in backend; would require a PATCH endpoint
+    alert("Renaming scripts is not yet supported.");
+  };
+
+  const handleDeleteScript = async (scriptId) => {
+    if (!user) return;
+    let idToken = await user.getIdToken();
+
+    await fetch(`${BACKEND_URL}/api/scripts/${scriptId}`, {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${idToken}`,
+      },
+    });
+
+    setScripts((prev) => prev.filter((c) => c.id !== scriptId));
+
+    if (currentScriptId === scriptId) {
+      setCurrentScriptId(
+        scripts.length > 1 ? scripts.find((c) => c.id !== scriptId)?.id : null
+      );
+    }
+  };
 
   // --- AI Avatar (NexusRBX Logo) ---
-const NexusRBXAvatar = () => (
-  <div className="flex-shrink-0 w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-lg overflow-hidden">
-    <img
-      src="/logo.png" // or /logo.jpg
-      alt="NexusRBX"
-      className="w-8 h-8 object-contain"
-      style={{ filter: "drop-shadow(0 0 2px #9b5de5)" }}
-    />
-  </div>
-);
+  const NexusRBXAvatar = () => (
+    <div className="flex-shrink-0 w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-lg overflow-hidden">
+      <img
+        src="/logo.png"
+        alt="NexusRBX"
+        className="w-8 h-8 object-contain"
+        style={{ filter: "drop-shadow(0 0 2px #9b5de5)" }}
+      />
+    </div>
+  );
 
   // --- User Avatar ---
   const UserAvatar = ({ email }) => {
@@ -1024,8 +727,6 @@ const NexusRBXAvatar = () => (
       </div>
     );
   };
-
-
 
   // --- Main Layout ---
   return (
@@ -1139,19 +840,17 @@ const NexusRBXAvatar = () => (
             activeTab={activeTab}
             setActiveTab={setActiveTab}
             handleClearChat={() => {
-              setScripts([]);
               setCurrentScript(null);
               setVersionHistory([]);
               setSelectedVersion(null);
             }}
             setPrompt={setPrompt}
-            chats={chats}
-            currentChatId={currentChatId}
-            setCurrentChatId={setCurrentChatId}
-            handleCreateChat={handleCreateChat}
-            handleRenameChat={handleRenameChat}
-            handleDeleteChat={handleDeleteChat}
             scripts={scripts}
+            currentScriptId={currentScriptId}
+            setCurrentScriptId={setCurrentScriptId}
+            handleCreateScript={handleCreateScript}
+            handleRenameScript={handleRenameScript}
+            handleDeleteScript={handleDeleteScript}
             currentScript={currentScript}
             versionHistory={versionHistory}
             onVersionView={handleVersionView}
@@ -1204,7 +903,7 @@ const NexusRBXAvatar = () => (
             modelOptions={modelOptions}
             creativityOptions={creativityOptions}
             codeStyleOptions={codeStyleOptions}
-            messages={scripts}
+            messages={currentScript ? currentScript.versions : []}
             setPrompt={setPrompt}
             userPromptTemplates={userPromptTemplates}
             setUserPromptTemplates={setUserPromptTemplates}
@@ -1227,19 +926,17 @@ const NexusRBXAvatar = () => (
           activeTab={activeTab}
           setActiveTab={setActiveTab}
           handleClearChat={() => {
-            setScripts([]);
             setCurrentScript(null);
             setVersionHistory([]);
             setSelectedVersion(null);
           }}
           setPrompt={setPrompt}
-          chats={chats}
-          currentChatId={currentChatId}
-          setCurrentChatId={setCurrentChatId}
-          handleCreateChat={handleCreateChat}
-          handleRenameChat={handleRenameChat}
-          handleDeleteChat={handleDeleteChat}
           scripts={scripts}
+          currentScriptId={currentScriptId}
+          setCurrentScriptId={setCurrentScriptId}
+          handleCreateScript={handleCreateScript}
+          handleRenameScript={handleRenameScript}
+          handleDeleteScript={handleDeleteScript}
           currentScript={currentScript}
           versionHistory={versionHistory}
           onVersionView={handleVersionView}
@@ -1256,7 +953,7 @@ const NexusRBXAvatar = () => (
           <div className="flex-grow overflow-y-auto px-2 md:px-4 py-6 flex flex-col items-center">
             <div className="w-full max-w-2xl mx-auto space-y-6">
               {/* Show Title at Top */}
-              {scripts.length === 0 && !isGenerating ? (
+              {!currentScript && !isGenerating ? (
                 <WelcomeCard
                   setPrompt={setPrompt}
                   promptTemplates={promptTemplates}
@@ -1266,187 +963,120 @@ const NexusRBXAvatar = () => (
                 />
               ) : (
                 <>
-                  {/* Render all scripts as chat bubbles/cards */}
-{scripts.map((session, idx) => {
-  // Only render if there is actual content
-  const hasContent =
-    session.sections?.title ||
-    session.sections?.explanation ||
-    session.sections?.features ||
-    session.sections?.controls ||
-    session.sections?.howItShouldAct ||
-    session.sections?.code;
-  if (!hasContent) return null;
+                  {/* Render all versions as chat bubbles/cards */}
+                  {currentScript && currentScript.versions.map((version, idx) => {
+                    const isLatest = idx === 0;
+                    const animateThisScript =
+                      !!animatedScriptIds[currentScript.id] && isLatest;
 
-  // For every version of this script, render a ScriptLoadingBarContainer
-  const versions = Array.isArray(session.versions)
-    ? session.versions
-    : [];
+                    return (
+                      <div key={version.id || idx} className="space-y-2">
+                        {/* User Prompt Bubble */}
+                        {prompt && isLatest && (
+                          <div className="flex justify-end items-end mb-1">
+                            <div className="flex flex-row-reverse items-end gap-2 w-full max-w-2xl">
+                              <UserAvatar email={user?.email} />
+                              <div className="bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-white px-4 py-2 rounded-2xl rounded-br-sm shadow-lg max-w-[75%] text-right break-words text-base font-medium animate-fade-in">
+                                {prompt}
+                              </div>
+                            </div>
+                          </div>
+                        )}
 
-  // Typewriter effect only for the latest script (the last in the array)
-  const isLatest = idx === scripts.length - 1;
-  const animateThisScript =
-    !!animatedScriptIds[session.id] && isLatest;
-
-  // --- User Prompt Bubble (right-aligned) ---
-  return (
-    <div key={session.id} className="space-y-2">
-      {/* User Prompt Bubble */}
-      {session.prompt && (
-        <div className="flex justify-end items-end mb-1">
-          <div className="flex flex-row-reverse items-end gap-2 w-full max-w-2xl">
-            <UserAvatar email={user?.email} />
-            <div className="bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-white px-4 py-2 rounded-2xl rounded-br-sm shadow-lg max-w-[75%] text-right break-words text-base font-medium animate-fade-in">
-              {session.prompt}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* AI Response Card (left-aligned) */}
-      <div className="flex items-start gap-2 w-full max-w-2xl animate-fade-in">
-        <NexusRBXAvatar />
-        <div className="flex-1 bg-gray-900/80 border border-gray-800 rounded-2xl rounded-tl-sm shadow-lg px-5 py-4 mb-2">
-          {/* Title */}
-          {session.sections?.title && (
-            <div className="mb-1 flex items-center gap-2">
-              <span className="text-xl font-bold bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-transparent bg-clip-text">
-                {session.sections.title.replace(/\s*v\d+$/i, "")}
-              </span>
-              {versions.length > 0 && (
-                <span className="ml-2 px-2 py-0.5 rounded bg-[#9b5de5]/20 text-[#9b5de5] text-xs font-semibold">
-                  v{versions[0].version || 1}
-                </span>
-              )}
-            </div>
-          )}
-          {/* Explanation */}
-          {session.sections?.explanation && (
-            <div className="mb-2">
-              <div className="font-bold text-[#9b5de5] mb-1">
-                Explanation
-              </div>
-              <div className="text-gray-200 whitespace-pre-line text-base">
-                <PersistentTypewriterExplanation
-                  text={session.sections.explanation}
-                  speed={30}
-                  scriptId={session.id}
-                  className=""
-                  as="div"
-                />
-              </div>
-            </div>
-          )}
-          {/* Features/Controls/How It Should Act */}
-          {session.sections?.features && (
-            <div className="mb-2">
-              <div className="font-bold text-[#00f5d4] mb-1">
-                Features
-              </div>
-              <div className="text-gray-200 whitespace-pre-line text-base">
-                {session.sections.features}
-              </div>
-            </div>
-          )}
-          {session.sections?.controls && (
-            <div className="mb-2">
-              <div className="font-bold text-[#9b5de5] mb-1">
-                Controls
-              </div>
-              <div className="text-gray-200 whitespace-pre-line text-base">
-                {session.sections.controls}
-              </div>
-            </div>
-          )}
-          {session.sections?.howItShouldAct && (
-            <div className="mb-2">
-              <div className="font-bold text-[#00f5d4] mb-1">
-                How It Should Act
-              </div>
-              <div className="text-gray-200 whitespace-pre-line text-base">
-                {session.sections.howItShouldAct}
-              </div>
-            </div>
-          )}
-          {/* Error */}
-          {session.status === "error" && (
-            <div className="text-red-400 text-sm mt-2">
-              Error generating script. Please try again.
-            </div>
-          )}
-          {/* Code Block - only show if typewriter effect is finished for this script */}
-          {session.sections?.code && animatedScriptIds[session.id] && (
-            <div className="mb-2 mt-3">
-              <ScriptLoadingBarContainer
-filename={
-  (session.sections?.title
-    ? session.sections.title.replace(/[^a-zA-Z0-9_\- ]/g, "").replace(/\s+/g, "_").slice(0, 40)
-    : "Script") + ".lua"
-}
-version={
-  versions[0]?.version
-    ? `v${versions[0].version}`
-    : "v1"
-}
-language="lua"
-loading={false}
-codeReady={true}
-estimatedLines={
-  session.sections.code
-    ? session.sections.code.split("\n").length
-    : null
-}
-saved={session.saved}
-onSave={() =>
-  handleSaveScript(
-    session.sections.title,
-    session.sections.code
-  )
-}
-onView={() =>
-  handleVersionView(
-    versions[0] || {
-      title: session.sections.title,
-      code: session.sections.code,
-      version: 1,
-    }
-  )
-}
-/>
-            </div>
-          )}
-          {/* Version Controls */}
-          {versions.length > 1 && (
-            <div className="flex gap-2 mt-2">
-              {versions.map((versionObj, vIdx) => (
-                <button
-                  key={versionObj.version || vIdx}
-                  className={`px-2 py-1 rounded text-xs font-semibold border ${
-                    selectedVersion &&
-                    selectedVersion.version ===
-                      versionObj.version
-                      ? "bg-[#9b5de5] text-white border-[#9b5de5]"
-                      : "bg-gray-800 text-[#9b5de5] border-[#9b5de5]/40"
-                  }`}
-                  onClick={() => handleVersionView(versionObj)}
-                  type="button"
-                >
-                  v{versionObj.version || vIdx + 1}
-                </button>
-              ))}
-            </div>
-          )}
-          {/* Timestamp */}
-          <div className="text-xs text-gray-500 mt-2 text-right">
-            {session.updatedAt
-              ? new Date(session.updatedAt).toLocaleString()
-              : ""}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-})}
+                        {/* AI Response Card (left-aligned) */}
+                        <div className="flex items-start gap-2 w-full max-w-2xl animate-fade-in">
+                          <NexusRBXAvatar />
+                          <div className="flex-1 bg-gray-900/80 border border-gray-800 rounded-2xl rounded-tl-sm shadow-lg px-5 py-4 mb-2">
+                            {/* Title */}
+                            {version.title && (
+                              <div className="mb-1 flex items-center gap-2">
+                                <span className="text-xl font-bold bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-transparent bg-clip-text">
+                                  {version.title.replace(/\s*v\d+$/i, "")}
+                                </span>
+                                {version.version && (
+                                  <span className="ml-2 px-2 py-0.5 rounded bg-[#9b5de5]/20 text-[#9b5de5] text-xs font-semibold">
+                                    v{version.version}
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                            {/* Explanation */}
+                            {version.explanation && (
+                              <div className="mb-2">
+                                <div className="font-bold text-[#9b5de5] mb-1">
+                                  Explanation
+                                </div>
+                                <div className="text-gray-200 whitespace-pre-line text-base">
+                                  {version.typewriterDone ? (
+                                    <div>{version.explanation}</div>
+                                  ) : (
+                                    <TypewriterEffect
+                                      text={version.explanation}
+                                      speed={30}
+                                      className=""
+                                      as="div"
+                                      onDone={() => {
+                                        setVersionHistory((prev) =>
+                                          prev.map((v, i) =>
+                                            i === idx
+                                              ? { ...v, typewriterDone: true }
+                                              : v
+                                          )
+                                        );
+                                      }}
+                                    />
+                                  )}
+                                </div>
+                              </div>
+                            )}
+                            {/* Code Block */}
+                            {animatedScriptIds[currentScript.id] && (
+                              <div className="mb-2 mt-3">
+                                <ScriptLoadingBarContainer
+                                  filename={
+                                    (version.title
+                                      ? version.title.replace(/[^a-zA-Z0-9_\- ]/g, "").replace(/\s+/g, "_").slice(0, 40)
+                                      : "Script") + ".lua"
+                                  }
+                                  version={
+                                    version.version
+                                      ? `v${version.version}`
+                                      : "v1"
+                                  }
+                                  language="lua"
+                                  loading={!!isGenerating}
+                                  codeReady={!!version.code}
+                                  estimatedLines={
+                                    version.code
+                                      ? version.code.split("\n").length
+                                      : null
+                                  }
+                                  saved={false}
+                                  onSave={() =>
+                                    handleSaveScript(
+                                      version.title,
+                                      version.code
+                                    )
+                                  }
+                                  onView={() =>
+                                    handleVersionView(
+                                      version
+                                    )
+                                  }
+                                />
+                              </div>
+                            )}
+                            {/* Timestamp */}
+                            <div className="text-xs text-gray-500 mt-2 text-right">
+                              {version.createdAt
+                                ? new Date(version.createdAt).toLocaleString()
+                                : ""}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </>
               )}
               {/* Loading bar appears just below the latest script output */}
@@ -1470,39 +1100,6 @@ onView={() =>
                   </span>
                 </div>
               )}
-{loadingBarVisible && generationStep === "code" && animatedScriptIds[currentScript?.apiId] && (
-  <div className="mt-4">
-    <ScriptLoadingBarContainer
-      filename={loadingBarData.filename}
-      version={loadingBarData.version}
-      language={loadingBarData.language}
-      loading={loadingBarData.loading}
-      codeReady={loadingBarData.codeReady}
-      estimatedLines={loadingBarData.estimatedLines}
-      saved={loadingBarData.saved}
-      onSave={loadingBarData.onSave}
-      onView={loadingBarData.onView}
-      showGradientTitle={false}
-    />
-  </div>
-)}
-{/* Persist the loading bar after code is ready */}
-{!loadingBarVisible && loadingBarData.codeReady && animatedScriptIds[currentScript?.apiId] && (
-  <div className="mt-4">
-    <ScriptLoadingBarContainer
-      filename={loadingBarData.filename}
-      version={loadingBarData.version}
-      language={loadingBarData.language}
-      loading={false}
-      codeReady={true}
-      estimatedLines={loadingBarData.estimatedLines}
-      saved={loadingBarData.saved}
-      onSave={loadingBarData.onSave}
-      onView={loadingBarData.onView}
-      showGradientTitle={false}
-    />
-  </div>
-)}
               <div ref={messagesEndRef} />
             </div>
           </div>
@@ -1514,18 +1111,18 @@ onView={() =>
               autoComplete="off"
             >
               <div className="relative">
-              <textarea
-  value={typeof prompt === "string" ? prompt : ""}
-  onChange={(e) => setPrompt(e.target.value)}
-  placeholder="Describe the Roblox mod you want to create..."
-  className={`w-full rounded-lg bg-gray-900/60 border border-gray-700 focus:border-[#9b5de5] focus:outline-none focus:ring-2 focus:ring-[#9b5de5]/50 transition-all duration-300 py-3 px-4 pr-14 resize-none shadow-lg ${
-    promptError ? "border-red-500" : ""
-  }`}
-  rows="3"
-  disabled={isGenerating}
-  maxLength={800}
-  aria-label="Prompt input"
-></textarea>
+                <textarea
+                  value={typeof prompt === "string" ? prompt : ""}
+                  onChange={(e) => setPrompt(e.target.value)}
+                  placeholder="Describe the Roblox mod you want to create..."
+                  className={`w-full rounded-lg bg-gray-900/60 border border-gray-700 focus:border-[#9b5de5] focus:outline-none focus:ring-2 focus:ring-[#9b5de5]/50 transition-all duration-300 py-3 px-4 pr-14 resize-none shadow-lg ${
+                    promptError ? "border-red-500" : ""
+                  }`}
+                  rows="3"
+                  disabled={isGenerating}
+                  maxLength={800}
+                  aria-label="Prompt input"
+                ></textarea>
 
                 {/* Prompt Autocomplete Dropdown */}
                 {promptAutocomplete.length > 0 && (
@@ -1550,19 +1147,11 @@ onView={() =>
                   disabled={
                     isGenerating ||
                     !(typeof prompt === "string" && prompt.trim()) ||
-                    tokens === 0 ||
-                    tokens === null ||
-                    tokens === undefined ||
-                    tokensLoading ||
                     prompt.length > 800
                   }
                   className={`absolute right-3 bottom-3 p-3 rounded-full shadow-lg transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-[#9b5de5] ${
                     isGenerating ||
                     !(typeof prompt === "string" && prompt.trim()) ||
-                    tokens === 0 ||
-                    tokens === null ||
-                    tokens === undefined ||
-                    tokensLoading ||
                     prompt.length > 800
                       ? "bg-gray-700 text-gray-400 cursor-not-allowed"
                       : "bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-white hover:shadow-xl hover:scale-110"
@@ -1577,12 +1166,6 @@ onView={() =>
                 </button>
               </div>
               <div className="flex justify-between items-center mt-2 text-xs text-gray-500">
-                <TokenBar
-                  tokens={tokens}
-                  tokensLoading={tokensLoading}
-                  refreshCountdown={refreshCountdown}
-                  isDev={isDev}
-                />
                 <div>
                   <span className={promptCharCount > 800 ? "text-red-400" : ""}>
                     {promptCharCount}/800
@@ -1595,12 +1178,7 @@ onView={() =>
               )}
               {!user && (
                 <div className="mt-2 text-xs text-red-400">
-                  Sign in to use tokens and generate scripts.
-                </div>
-              )}
-              {tokens !== null && tokens <= 0 && (
-                <div className="mt-2 text-xs text-yellow-400">
-                  You have 0 tokens left. Tokens refresh every 2 days.
+                  Sign in to generate scripts.
                 </div>
               )}
             </form>
@@ -1620,7 +1198,7 @@ onView={() =>
             modelOptions={modelOptions}
             creativityOptions={creativityOptions}
             codeStyleOptions={codeStyleOptions}
-            messages={scripts}
+            messages={currentScript ? currentScript.versions : []}
             setPrompt={setPrompt}
             userPromptTemplates={userPromptTemplates}
             setUserPromptTemplates={setUserPromptTemplates}
@@ -1631,19 +1209,19 @@ onView={() =>
       </main>
       {/* --- Code Drawer Integration --- */}
       {selectedVersion && (
-<SimpleCodeDrawer
-  open={!!selectedVersion}
-  code={selectedVersion.code}
-  title={selectedVersion.title}
-  filename={
-    (selectedVersion.title
-      ? selectedVersion.title.replace(/[^a-zA-Z0-9_\- ]/g, "").replace(/\s+/g, "_").slice(0, 40)
-      : "Script") + ".lua"
-  }
-  version={selectedVersion.version ? `v${selectedVersion.version}` : ""}
-  onClose={() => setSelectedVersion(null)}
-  onSaveScript={handleSaveScript}
-/>
+        <SimpleCodeDrawer
+          open={!!selectedVersion}
+          code={selectedVersion.code}
+          title={selectedVersion.title}
+          filename={
+            (selectedVersion.title
+              ? selectedVersion.title.replace(/[^a-zA-Z0-9_\- ]/g, "").replace(/\s+/g, "_").slice(0, 40)
+              : "Script") + ".lua"
+          }
+          version={selectedVersion.version ? `v${selectedVersion.version}` : ""}
+          onClose={() => setSelectedVersion(null)}
+          onSaveScript={handleSaveScript}
+        />
       )}
       {/* Celebration Animation */}
       {showCelebration && <CelebrationAnimation />}

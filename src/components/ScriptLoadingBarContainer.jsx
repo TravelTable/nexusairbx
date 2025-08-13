@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { FileCode, Save, Check } from "lucide-react";
 
 /**
@@ -38,72 +38,72 @@ export default function ScriptLoadingBarContainer({
     }
   }, [loading, codeReady]);
 
-// Progress animation logic: slow, smooth, linear, no jumps or delays
-useEffect(() => {
-  let cancelled = false;
-  let interval = null;
+  // Progress animation logic: slow, smooth, linear, no jumps or delays
+  useEffect(() => {
+    let cancelled = false;
+    let interval = null;
 
-  if (loading && !codeReady) {
-    setProgress(0);
-    setProgressLabel("0%");
-    // Progress increases very slowly, e.g., 0.2% every 200ms (about 95 seconds to reach 95%)
-    interval = setInterval(() => {
-      setProgress((prev) => {
-        if (cancelled) return prev;
-        if (prev >= 95) return 95;
-        const next = Math.min(prev + 0.2, 95);
+    if (loading && !codeReady) {
+      setProgress(0);
+      setProgressLabel("0%");
+      // Progress increases very slowly, e.g., 0.2% every 200ms (about 95 seconds to reach 95%)
+      interval = setInterval(() => {
+        setProgress((prev) => {
+          if (cancelled) return prev;
+          if (prev >= 95) return 95;
+          const next = Math.min(prev + 0.2, 95);
+          setProgressLabel(`${Math.round(next)}%`);
+          return next;
+        });
+      }, 200);
+    }
+
+    // When codeReady, animate to 100% smoothly
+    if (codeReady) {
+      if (interval) clearInterval(interval);
+      let start = progress;
+      let diff = 100 - start;
+      let steps = Math.max(1, Math.floor(400 / 30));
+      let step = 0;
+      const stepFn = () => {
+        if (cancelled) return;
+        step++;
+        const next =
+          step >= steps
+            ? 100
+            : start + (diff * step) / steps;
+        setProgress(next);
         setProgressLabel(`${Math.round(next)}%`);
-        return next;
-      });
-    }, 200);
-  }
+        if (step < steps) {
+          setTimeout(stepFn, 30);
+        }
+      };
+      stepFn();
+    }
 
-  // When codeReady, animate to 100% smoothly
-  if (codeReady) {
-    if (interval) clearInterval(interval);
-    let start = progress;
-    let diff = 100 - start;
-    let steps = Math.max(1, Math.floor(400 / 30));
-    let step = 0;
-    const stepFn = () => {
-      if (cancelled) return;
-      step++;
-      const next =
-        step >= steps
-          ? 100
-          : start + (diff * step) / steps;
-      setProgress(next);
-      setProgressLabel(`${Math.round(next)}%`);
-      if (step < steps) {
-        setTimeout(stepFn, 30);
-      }
+    return () => {
+      cancelled = true;
+      if (interval) clearInterval(interval);
     };
-    stepFn();
-  }
-
-  return () => {
-    cancelled = true;
-    if (interval) clearInterval(interval);
-  };
-  // eslint-disable-next-line
-}, [loading, codeReady]);
+    // eslint-disable-next-line
+  }, [loading, codeReady]);
 
   // When parent updates saved prop, sync internal state
   useEffect(() => {
     setInternalSaved(saved);
   }, [saved]);
 
-// Save handler
-const handleSave = async () => {
-  if (!internalSaved && typeof onSave === "function") {
-    try {
-      const result = await onSave();
-      if (result !== false) setInternalSaved(true);
-    } catch (e) {
-      // Optionally handle error UI here
+  // Save handler
+  const handleSave = async () => {
+    if (!internalSaved && typeof onSave === "function") {
+      try {
+        const result = await onSave();
+        if (result !== false) setInternalSaved(true);
+      } catch (e) {
+        // Optionally handle error UI here
+      }
     }
-  }
-};
+  };
 
   return (
     <div className="max-w-3xl mx-auto my-4 w-full px-2 sm:px-4">
@@ -117,43 +117,43 @@ const handleSave = async () => {
               </div>
               <div className="min-w-0">
                 <div className="flex items-center flex-wrap">
-<span
-  className="font-medium text-white truncate max-w-[160px] sm:max-w-none"
-  title={filename ? filename.replace(/\.lua$/i, "") : "Script"}
->
-  {(filename && filename.replace(/\.lua$/i, "").length > 28)
-    ? filename.replace(/\.lua$/i, "").slice(0, 25) + "..."
-    : (filename ? filename.replace(/\.lua$/i, "") : "Script")}
-</span>
-{version && (
-  <span className="ml-2 text-xs text-gray-300 border-l border-gray-600 pl-2" title={`Script Version: ${version}`}>
-    {typeof version === "string" ? version : `v${version}`}
-  </span>
-)}
+                  <span
+                    className="font-medium text-white truncate max-w-[160px] sm:max-w-none"
+                    title={filename ? filename.replace(/\.lua$/i, "") : "Script"}
+                  >
+                    {(filename && filename.replace(/\.lua$/i, "").length > 28)
+                      ? filename.replace(/\.lua$/i, "").slice(0, 25) + "..."
+                      : (filename ? filename.replace(/\.lua$/i, "") : "Script")}
+                  </span>
+                  {version && (
+                    <span className="ml-2 text-xs text-gray-300 border-l border-gray-600 pl-2" title={`Script Version: ${version}`}>
+                      {typeof version === "string" ? version : `v${version}`}
+                    </span>
+                  )}
                 </div>
-<div className="text-xs text-gray-300 mt-0.5 flex items-center flex-wrap">
-  <span>
-    {codeReady
-      ? `${language.toUpperCase()} script generated`
-      : `Generating ${language.toUpperCase()} script...`}
-  </span>
-  <span
-    className="ml-2 font-semibold"
-    aria-live="polite"
-  >
-    {progressLabel}
-  </span>
-  {estimatedLines && (
-    <span className="ml-2 text-gray-400">
-      • ~{estimatedLines} lines
-    </span>
-  )}
-  {!codeReady && (
-    <span className="ml-2 text-yellow-400">
-      This may take a few minutes depending on script complexity...
-    </span>
-  )}
-</div>
+                <div className="text-xs text-gray-300 mt-0.5 flex items-center flex-wrap">
+                  <span>
+                    {codeReady
+                      ? `${language.toUpperCase()} script generated`
+                      : `Generating ${language.toUpperCase()} script...`}
+                  </span>
+                  <span
+                    className="ml-2 font-semibold"
+                    aria-live="polite"
+                  >
+                    {progressLabel}
+                  </span>
+                  {estimatedLines && (
+                    <span className="ml-2 text-gray-400">
+                      • ~{estimatedLines} lines
+                    </span>
+                  )}
+                  {!codeReady && (
+                    <span className="ml-2 text-yellow-400">
+                      This may take a few minutes depending on script complexity...
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
             {/* View and Save Buttons */}
