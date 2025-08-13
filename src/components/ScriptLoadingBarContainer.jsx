@@ -16,6 +16,7 @@ import { FileCode, Save, Check } from "lucide-react";
  */
 export default function ScriptLoadingBarContainer({
   filename = "Script.lua",
+  displayName = "",
   version = "v1.0",
   language = "lua",
   loading = false,
@@ -105,6 +106,13 @@ export default function ScriptLoadingBarContainer({
     }
   };
 
+  // View handler
+  const handleView = () => {
+    if (typeof onView === "function" && codeReady) {
+      onView();
+    }
+  };
+
   return (
     <div className="max-w-3xl mx-auto my-4 w-full px-2 sm:px-4">
       <div className="bg-gray-900 bg-opacity-80 backdrop-blur-sm rounded-lg overflow-hidden border border-gray-700 shadow-lg">
@@ -117,14 +125,14 @@ export default function ScriptLoadingBarContainer({
               </div>
               <div className="min-w-0">
                 <div className="flex items-center flex-wrap">
-                  <span
-                    className="font-medium text-white truncate max-w-[160px] sm:max-w-none"
-                    title={filename ? filename.replace(/\.lua$/i, "") : "Script"}
-                  >
-                    {(filename && filename.replace(/\.lua$/i, "").length > 28)
-                      ? filename.replace(/\.lua$/i, "").slice(0, 25) + "..."
-                      : (filename ? filename.replace(/\.lua$/i, "") : "Script")}
-                  </span>
+<span
+  className="font-medium text-white truncate max-w-[160px] sm:max-w-none"
+  title={displayName ? displayName : (filename ? filename.replace(/\.lua$/i, "") : "Script")}
+>
+  {(displayName && displayName.length > 28)
+    ? displayName.slice(0, 25) + "..."
+    : (displayName ? displayName : (filename ? filename.replace(/\.lua$/i, "") : "Script"))}
+</span>
                   {version && (
                     <span className="ml-2 text-xs text-gray-300 border-l border-gray-600 pl-2" title={`Script Version: ${version}`}>
                       {typeof version === "string" ? version : `v${version}`}
@@ -165,7 +173,7 @@ export default function ScriptLoadingBarContainer({
                   ${!codeReady ? 'hidden' : ''}`}>
                 </div>
                 <button
-                  onClick={codeReady && typeof onView === "function" ? onView : undefined}
+                  onClick={handleView}
                   disabled={!codeReady}
                   className={`relative flex items-center justify-center w-full sm:w-auto px-4 py-1.5 rounded-md text-sm bg-black text-white
                     border border-transparent group-hover:border-transparent transition-all duration-300

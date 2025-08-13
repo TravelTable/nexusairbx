@@ -58,6 +58,18 @@ export default function SidebarContent({
     );
   }
 
+  // --- New Script Logic: clear selection and start a new script ---
+  const handleNewScript = () => {
+    setCurrentScriptId(null); // Clear selection
+    setShowAddScriptModal(true);
+  };
+
+  // --- Script Selection Logic: select script and load its version history ---
+  const handleScriptSelect = (scriptId) => {
+    setCurrentScriptId(scriptId);
+    // Version history loading should be handled in parent/main context when currentScriptId changes
+  };
+
   return (
     <>
       <div className="flex border-b border-gray-800">
@@ -85,7 +97,7 @@ export default function SidebarContent({
               <button
                 className="p-1 rounded hover:bg-gray-800 transition"
                 title="New Script"
-                onClick={() => setShowAddScriptModal(true)}
+                onClick={handleNewScript}
               >
                 <Plus className="h-5 w-5 text-[#9b5de5]" />
               </button>
@@ -109,7 +121,7 @@ export default function SidebarContent({
                   className={`flex items-center justify-between px-3 py-2 rounded-lg border ${currentScriptId === script.id ? "border-[#00f5d4] bg-gray-800/60" : "border-gray-700 bg-gray-900/40"} transition-colors`}
                   tabIndex={0}
                   aria-selected={currentScriptId === script.id}
-                  onClick={() => setCurrentScriptId(script.id)}
+                  onClick={() => handleScriptSelect(script.id)}
                   style={{ cursor: "pointer" }}
                 >
                   <div className="flex-1 min-w-0">
@@ -214,6 +226,7 @@ export default function SidebarContent({
                       handleCreateScript(newScriptTitle || "New Script");
                       setShowAddScriptModal(false);
                       setNewScriptTitle("");
+                      setCurrentScriptId(null); // Ensure selection is cleared for new script
                     }}
                   >
                     Create
@@ -242,6 +255,9 @@ export default function SidebarContent({
                     onClick={() => {
                       handleDeleteScript(deleteScriptId);
                       setDeleteScriptId(null);
+                      if (currentScriptId === deleteScriptId) {
+                        setCurrentScriptId(null); // Clear selection if deleted
+                      }
                     }}
                   >
                     Delete
