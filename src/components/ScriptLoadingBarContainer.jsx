@@ -125,11 +125,11 @@ const handleSave = async () => {
     ? filename.replace(/\.lua$/i, "").slice(0, 25) + "..."
     : (filename ? filename.replace(/\.lua$/i, "") : "Script")}
 </span>
-                  {version && (
-                    <span className="ml-2 text-xs text-gray-300 border-l border-gray-600 pl-2">
-                      {version}
-                    </span>
-                  )}
+{version && (
+  <span className="ml-2 text-xs text-gray-300 border-l border-gray-600 pl-2" title={`Script Version: ${version}`}>
+    {typeof version === "string" ? version : `v${version}`}
+  </span>
+)}
                 </div>
 <div className="text-xs text-gray-300 mt-0.5 flex items-center flex-wrap">
   <span>
