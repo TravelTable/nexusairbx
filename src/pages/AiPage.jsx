@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Send,
@@ -19,6 +19,10 @@ import ScriptLoadingBarContainer from "../components/ScriptLoadingBarContainer";
 import WelcomeCard from "../components/WelcomeCard";
 import TokenBar from "../components/TokenBar";
 import CelebrationAnimation from "../components/CelebrationAnimation";
+
+// --- In-memory throttle/backoff for versions polling ---
+let lastVersionsFetch = 0;
+let versionsBackoff = 0;
 
 // --- Backend API URL ---
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || "https://nexusrbx-backend-production.up.railway.app";
@@ -128,6 +132,67 @@ function useDebounce(value, delay) {
   return debounced;
 }
 
+// --- Safe Timestamp Helper ---
+const toLocalTime = (ts) => {
+  if (!ts) return "";
+  let date;
+  if (typeof ts === "number") date = new Date(ts);
+  else if (typeof ts === "string") {
+    const parsed = Date.parse(ts);
+    if (!isNaN(parsed)) date = new Date(parsed);
+    else return "";
+  } else if (ts?.seconds) date = new Date(ts.seconds * 1000);
+  else return "";
+  if (!date || isNaN(date.getTime())) return "";
+  return date.toLocaleString();
+};
+
+// --- Safe Filename Helper ---
+const safeFile = (title) =>
+  (title || "Script").replace(/[^a-zA-Z0-9_\- ]/g, "").replace(/\s+/g, "_").slice(0, 40) + ".lua";
+
+// --- Stable Hash Helper ---
+function hash(str) {
+  let h = 0, i, chr;
+  if (!str) return "0";
+  for (i = 0; i < str.length; i++) {
+    chr = str.charCodeAt(i);
+    h = (h << 5) - h + chr;
+    h |= 0;
+  }
+  return Math.abs(h).toString(16);
+}
+
+// --- Outline → Explanation Helper ---
+function outlineToExplanationText(outline = []) {
+  if (!Array.isArray(outline)) return "";
+  return outline
+    .map(sec => {
+      const heading = sec?.heading ? `## ${sec.heading}` : "";
+      const bullets = (sec?.bulletPoints || [])
+        .map(b => `• ${b}`)
+        .join("\n");
+      return [heading, bullets].filter(Boolean).join("\n");
+    })
+    .join("\n\n");
+}
+
+// --- Polling Utility ---
+async function pollJob(user, jobId, onTick, { intervalMs = 1200, maxMs = 120000, signal } = {}) {
+  const started = Date.now();
+  let status = "running";
+  while (Date.now() - started < maxMs) {
+    if (signal?.aborted) throw new Error("Aborted");
+    const res = await authedFetch(user, `${BACKEND_URL}/api/jobs/${jobId}`, { method: "GET", signal });
+    const data = await res.json().catch(() => ({}));
+    if (onTick) onTick(data);
+    status = data.status;
+    if (status === "succeeded" || status === "failed") return data;
+    await new Promise(r => setTimeout(r, intervalMs));
+  }
+  return { status: "failed", error: "Timeout" };
+}
+
 // --- Main Container Component ---
 export default function NexusRBXAIPageContainer() {
   const navigate = useNavigate();
@@ -148,7 +213,7 @@ export default function NexusRBXAIPageContainer() {
   const [promptError, setPromptError] = useState("");
   const [errorMsg, setErrorMsg] = useState(""); // Inline error
   const [isGenerating, setIsGenerating] = useState(false);
-  const [generationStep, setGenerationStep] = useState("idle"); // idle | title | explanation | code | done
+  const [generationStep, setGenerationStep] = useState("idle"); // idle | title | explanation | code | done | preparing | calling model | post-processing | polishing | finalizing
   const [showCelebration, setShowCelebration] = useState(false);
 
   // --- Loading Bar ---
@@ -163,6 +228,8 @@ export default function NexusRBXAIPageContainer() {
     saved: false,
     onSave: null,
     onView: null,
+    stage: "",
+    eta: null,
   });
 
   // --- Settings, tokens, etc. ---
@@ -182,89 +249,136 @@ export default function NexusRBXAIPageContainer() {
   // --- Typewriter Animation State ---
   const [animatedScriptIds, setAnimatedScriptIds] = useState({}); // { [scriptId]: true }
 
-  // --- Token Bar State ---
-  const [tokensLeft, setTokensLeft] = useState(TOKEN_LIMIT);
-  const [tokenRefreshTime, setTokenRefreshTime] = useState(null);
+// --- Token Bar State ---
+const [tokensLeft, setTokensLeft] = useState(TOKEN_LIMIT);
+const [tokenRefreshTime, setTokenRefreshTime] = useState(null);
 
-  // --- Prompt Input Ref for focus ---
-  const promptInputRef = useRef(null);
+// --- Prompt Input Ref for focus ---
+const promptInputRef = useRef(null);
 
-  // --- Auth ---
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      if (firebaseUser) {
-        setUser(firebaseUser);
-      } else {
-        signInAnonymously(auth)
-          .then((res) => setUser(res.user))
-          .catch(() => setUser(null));
-      }
-    });
-    return () => unsubscribe();
-  }, []);
+// --- Polling ETA ---
+const pollingTimesRef = useRef([]);
 
-  // --- Load Scripts from Backend ---
-  useEffect(() => {
-    if (!user) {
-      setScripts([]);
-      setCurrentScriptId(null);
-      return;
+// --- Local Persistence for chat/sidebar ---
+useEffect(() => {
+  if (currentScript) {
+    localStorage.setItem("nexusrbx:currentScript", JSON.stringify(currentScript));
+  }
+}, [currentScript]);
+useEffect(() => {
+  if (versionHistory) {
+    localStorage.setItem("nexusrbx:versionHistory", JSON.stringify(versionHistory));
+  }
+}, [versionHistory]);
+useEffect(() => {
+  if (lastUserPrompt) {
+    localStorage.setItem("nexusrbx:lastUserPrompt", lastUserPrompt);
+  }
+}, [lastUserPrompt]);
+useEffect(() => {
+  if (scripts) {
+    localStorage.setItem("nexusrbx:scripts", JSON.stringify(scripts));
+  }
+}, [scripts]);
+useEffect(() => {
+  const cachedScript = localStorage.getItem("nexusrbx:currentScript");
+  if (cachedScript) setCurrentScript(JSON.parse(cachedScript));
+  const cachedVersions = localStorage.getItem("nexusrbx:versionHistory");
+  if (cachedVersions) setVersionHistory(JSON.parse(cachedVersions));
+  const cachedPrompt = localStorage.getItem("nexusrbx:lastUserPrompt");
+  if (cachedPrompt) setLastUserPrompt(cachedPrompt);
+  const cachedScripts = localStorage.getItem("nexusrbx:scripts");
+  if (cachedScripts) setScripts(JSON.parse(cachedScripts));
+}, []);
+
+// --- Auth ---
+const [authReady, setAuthReady] = useState(false);
+useEffect(() => {
+  const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+    setAuthReady(true);
+    if (firebaseUser) {
+      setUser(firebaseUser);
+    } else {
+      signInAnonymously(auth)
+        .then((res) => setUser(res.user))
+        .catch(() => setUser(null));
     }
-    user.getIdToken().then((idToken) => {
-      fetch(`${BACKEND_URL}/api/scripts`, {
-        headers: {
-          Authorization: `Bearer ${idToken}`,
-        },
-      })
-        .then((res) => res.json())
-        .then((data) => {
-          if (Array.isArray(data.scripts)) {
-            setScripts(data.scripts.map(script => ({
-              id: script.id,
-              title: script.title,
-              createdAt: script.createdAt,
-              updatedAt: script.updatedAt,
-              latestVersion: script.latestVersion,
-            })));
-            if (data.scripts.length > 0 && !currentScriptId) {
-              setCurrentScriptId(data.scripts[0].id);
-            }
-          }
-        });
-    });
-    // eslint-disable-next-line
-  }, [user]);
+  });
+  return () => unsubscribe();
+}, []);
+
+// --- Load Last Project (no /api/scripts backend route yet) ---
+useEffect(() => {
+  if (!user) {
+    // keep local cache visible; do not clear scripts
+    return;
+  }
+  // Try to restore last projectId from localStorage and fetch versions for it
+  const lastProjectId = localStorage.getItem("nexusrbx:lastProjectId");
+  if (lastProjectId) {
+    setCurrentScriptId(lastProjectId);
+  } else {
+    // No projects to list (backend has no list endpoint yet)
+    setScripts([]);
+  }
+  // eslint-disable-next-line
+}, [user]);
 
   // --- Load Versions for Current Script from Backend ---
-  useEffect(() => {
-    if (!user || !currentScriptId) {
-      setCurrentScript(null);
-      setVersionHistory([]);
-      setSelectedVersion(null);
-      return;
-    }
-    user.getIdToken().then((idToken) => {
-      fetch(`${BACKEND_URL}/api/scripts/${currentScriptId}/versions`, {
-        headers: {
-          Authorization: `Bearer ${idToken}`,
-        },
+useEffect(() => {
+  if (!authReady) return; // wait until auth resolves
+  if (!user || !currentScriptId) return; // don't clear; keep what we have
+
+  const now = Date.now();
+  if (now - lastVersionsFetch < 10000 + versionsBackoff) return;
+  lastVersionsFetch = now;
+
+  user.getIdToken().then((idToken) => {
+    fetch(`${BACKEND_URL}/api/projects/${currentScriptId}/versions`, {
+      headers: {
+        Authorization: `Bearer ${idToken}`,
+      },
+    })
+      .then((res) => {
+        if (res.status === 429) {
+          versionsBackoff = Math.min((versionsBackoff || 0) * 2 + 5000, 60000);
+          setErrorMsg("Temporarily showing cached draft (429).");
+          return null;
+        } else {
+          versionsBackoff = 0;
+        }
+        if (!res.ok) {
+          setErrorMsg("Temporarily showing cached draft (error).");
+          return null;
+        }
+        return res.json();
       })
-        .then((res) => res.json())
-        .then((data) => {
-          if (Array.isArray(data.versions)) {
-            const sortedVersions = data.versions.sort((a, b) => (b.version || 1) - (a.version || 1));
-            setCurrentScript({
-              id: currentScriptId,
-              title: scripts.find(c => c.id === currentScriptId)?.title || "",
-              versions: sortedVersions,
-            });
-            setVersionHistory(sortedVersions);
-            setSelectedVersion(sortedVersions[0]);
-          }
-        });
-    });
-    // eslint-disable-next-line
-  }, [user, currentScriptId, scripts]);
+      .then((data) => {
+        if (data && Array.isArray(data.versions)) {
+          // Normalize timestamps
+          const sortedVersions = data.versions
+            .map((v) => ({
+              ...v,
+              createdAt:
+                typeof v.createdAt === "number"
+                  ? v.createdAt
+                  : Date.parse(v.createdAt) || Date.now(),
+            }))
+            .sort((a, b) => (b.version || 1) - (a.version || 1));
+          setCurrentScript({
+            id: currentScriptId,
+            title: sortedVersions[0]?.title || "",
+            versions: sortedVersions,
+          });
+          setVersionHistory(sortedVersions);
+          setSelectedVersion((sv) =>
+            sv ? sortedVersions.find((v) => v.id === sv.id) || sortedVersions[0] : sortedVersions[0]
+          );
+        }
+      });
+  });
+  // eslint-disable-next-line
+}, [user, currentScriptId, authReady]);
 
   // --- Prompt Char Count & Error ---
   useEffect(() => {
@@ -331,7 +445,11 @@ export default function NexusRBXAIPageContainer() {
       return;
     }
 
-    setLastUserPrompt(prompt);
+    // --- Sanitize and clamp prompt ---
+    const cleaned = prompt.trim().replace(/\s+/g, " ");
+    if (!cleaned) return;
+
+    setLastUserPrompt(cleaned);
     setPrompt("");
     setIsGenerating(true);
     setGenerationStep("title");
@@ -353,30 +471,24 @@ export default function NexusRBXAIPageContainer() {
     let code = "";
     let version = 1;
     let scriptApiId = null;
+    // --- AbortController for polling ---
+    const abortController = new AbortController();
 
     try {
       // --- 1. Generate Title ---
       setGenerationStep("title");
 
-      // If updating an existing script, pass previous title and set isNewScript = false
-      let isNewScript = !currentScriptId;
-      let previousTitle = currentScript?.title || "";
-
-      const titleRes = await authedFetch(user, `${BACKEND_URL}/api/generate-title-advanced`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          prompt,
-          conversation: [],
-          model: resolveModel(settings.modelVersion),
-          isNewScript,
-          previousTitle,
-          temperature: settings.creativity,
-          codeStyle: settings.codeStyle,
-        }),
-      });
+  let titleRes;
+  titleRes = await authedFetch(user, `${BACKEND_URL}/api/generate-title-advanced`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      prompt: cleaned,
+      conversation: [],
+      isNewScript: !currentScriptId,
+      previousTitle: ""
+    }),
+  });
 
       if (!titleRes.ok) {
         const text = await titleRes.text();
@@ -392,118 +504,141 @@ export default function NexusRBXAIPageContainer() {
         titleData = await titleRes.json();
       } catch (err) {
         const text = await titleRes.text();
-        throw new Error(`Title API did not return JSON: ${text.slice(0, 200)}`);
+        setIsGenerating(false);
+        setGenerationStep("idle");
+        setErrorMsg("Failed to parse title response. Please try again.");
+        return;
       }
-      scriptTitle = titleData.title || previousTitle || "Script";
+      scriptTitle = titleData.title || "Script";
       if (!scriptTitle) throw new Error("Failed to generate title");
 
-      // --- 2. Generate Explanation ---
+      // Ensure we have a projectId before generating artifact
+      let projectIdToUse = currentScriptId;
+      if (!projectIdToUse) {
+        const createProjectRes = await authedFetch(user, `${BACKEND_URL}/api/projects`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ title: scriptTitle }),
+        });
+        if (!createProjectRes.ok) {
+          const text = await createProjectRes.text();
+          throw new Error(`Failed to create project: ${createProjectRes.status} ${createProjectRes.statusText} - ${text.slice(0,200)}`);
+        }
+        const created = await createProjectRes.json();
+        projectIdToUse = created.projectId;
+        setCurrentScriptId(projectIdToUse);
+        localStorage.setItem("nexusrbx:lastProjectId", projectIdToUse);
+      }
+
+      // --- 2. Generate Outline (use as explanation text) ---
       setGenerationStep("explanation");
 
-      // If updating, pass previous code/explanation as context
       let conversation = [];
-      if (!isNewScript && versionHistory.length > 0) {
+      if (versionHistory.length > 0) {
         const prevVersion = versionHistory[0];
         conversation = [
-          {
-            role: "assistant",
-            content: prevVersion.explanation || "",
-          },
-          {
-            role: "assistant",
-            content: prevVersion.code || "",
-          },
+          { role: "assistant", content: prevVersion.explanation || "" },
+          { role: "assistant", content: prevVersion.code || "" },
         ];
       }
 
-      const explanationRes = await authedFetch(
-        user,
-        `${BACKEND_URL}/api/generate-explanation`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            prompt,
-            conversation,
-            model: resolveModel(settings.modelVersion),
-            temperature: settings.creativity,
-            codeStyle: settings.codeStyle,
-          }),
-        }
-      );
-
-      if (!explanationRes.ok) {
-        const text = await explanationRes.text();
-        throw new Error(
-          `Failed to generate explanation: ${explanationRes.status} ${explanationRes.statusText} - ${text.slice(
-            0,
-            200
-          )}`
-        );
-      }
+      let outlineRes;
       try {
-        explanationObj = await explanationRes.json();
+        outlineRes = await authedFetch(user, `${BACKEND_URL}/api/generate/outline`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            projectId: projectIdToUse,
+            prompt: cleaned,
+            conversation,
+            settings: {
+              model: resolveModel(settings.modelVersion),
+              temperature: settings.creativity,
+              codeStyle: settings.codeStyle,
+            },
+          }),
+        });
       } catch (err) {
-        const text = await explanationRes.text();
-        throw new Error(
-          `Explanation API did not return JSON: ${text.slice(0, 200)}`
-        );
+        setIsGenerating(false);
+        setGenerationStep("idle");
+        setErrorMsg("Network error during outline generation.");
+        return;
       }
-      explanation = explanationObj.explanation || "";
-      if (!explanation) throw new Error("Failed to generate explanation");
+
+      if (!outlineRes.ok) {
+        const text = await outlineRes.text();
+        throw new Error(`Failed to generate outline: ${outlineRes.status} ${outlineRes.statusText} - ${text.slice(0,200)}`);
+      }
+
+      let outlineData;
+      try {
+        outlineData = await outlineRes.json();
+      } catch (err) {
+        setIsGenerating(false);
+        setGenerationStep("idle");
+        setErrorMsg("Failed to parse outline response. Please try again.");
+        return;
+      }
+
+      const outline = Array.isArray(outlineData.outline) ? outlineData.outline : [];
+      explanationObj = { outline };
+      explanation = outlineToExplanationText(outline);
+      if (!explanation) throw new Error("Failed to generate outline/explanation");
 
       // --- 3. Show explanation immediately, then wait, then start code generation ---
+      const tempId = `temp-${Date.now()}`;
       setAnimatedScriptIds((prev) => ({
         ...prev,
-        temp: true,
+        [tempId]: true,
       }));
 
       setCurrentScript({
-        id: "temp",
+        id: tempId,
         title: scriptTitle,
         versions: [
           {
+            id: tempId,
             title: scriptTitle,
             explanation: explanation,
             code: "",
             version: 1,
             temp: true,
+            createdAt: new Date().toISOString(),
           },
         ],
       });
       setVersionHistory([
         {
+          id: tempId,
           title: scriptTitle,
           explanation: explanation,
           code: "",
           version: 1,
           temp: true,
+          createdAt: new Date().toISOString(),
         },
       ]);
       setSelectedVersion({
+        id: tempId,
         title: scriptTitle,
         explanation: explanation,
         code: "",
         version: 1,
         temp: true,
+        createdAt: new Date().toISOString(),
       });
 
       // Wait for a short moment before starting code generation
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
       // --- 4. Show Loading Bar for Code Generation (before calling API) ---
-      setGenerationStep("code");
+      setGenerationStep("preparing");
       setLoadingBarVisible(true);
-      const generatedFilename =
-        (scriptTitle
-          ? scriptTitle.replace(/[^a-zA-Z0-9_\- ]/g, "").replace(/\s+/g, "_").slice(0, 40)
-          : "Script") + ".lua";
+      const generatedFilename = safeFile(scriptTitle);
 
       setLoadingBarData({
         filename: generatedFilename,
-        version: isNewScript ? "v1" : `v${(versionHistory[0]?.version || 1) + 1}`,
+        version: `v1`,
         language: "lua",
         loading: true,
         codeReady: false,
@@ -511,97 +646,128 @@ export default function NexusRBXAIPageContainer() {
         saved: false,
         onSave: () => {},
         onView: () => {},
+        stage: "Preparing",
+        eta: null,
       });
 
-      // --- 5. Generate Code ---
-      let codeConversation = conversation;
-      const codeRes = await authedFetch(user, `${BACKEND_URL}/api/generate-code`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          prompt,
-          conversation: codeConversation,
-          explanation,
-          model: resolveModel(settings.modelVersion),
-          temperature: settings.creativity,
-          codeStyle: settings.codeStyle,
-        }),
-      });
-
-      if (!codeRes.ok) {
-        const text = await codeRes.text();
-        throw new Error(
-          `Failed to generate code: ${codeRes.status} ${codeRes.statusText} - ${text.slice(
-            0,
-            200
-          )}`
-        );
-      }
-      let codeData;
+      // --- 5. Generate Code via Job Flow ---
+      let artifactStart;
       try {
-        codeData = await codeRes.json();
+        artifactStart = await authedFetch(user, `${BACKEND_URL}/api/generate/artifact`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Idempotency-Key": window.crypto?.randomUUID?.() || Math.random().toString(36).slice(2, 26),
+          },
+          body: JSON.stringify({
+            projectId: projectIdToUse,
+            prompt: cleaned,
+            pipelineId: window.crypto?.randomUUID?.() || Math.random().toString(36).slice(2, 26),
+            outline: explanationObj?.outline || [{ heading: "Plan", bulletPoints: [] }],
+            settings: {
+              model: resolveModel(settings.modelVersion),
+              temperature: settings.creativity,
+              codeStyle: settings.codeStyle,
+            },
+          }),
+        });
       } catch (err) {
-        const text = await codeRes.text();
-        throw new Error(`Code API did not return JSON: ${text.slice(0, 200)}`);
+        setIsGenerating(false);
+        setGenerationStep("idle");
+        setLoadingBarVisible(false);
+        setErrorMsg("Network error during code generation.");
+        return;
       }
-      code = codeData.code || "";
-      if (!code) throw new Error("Failed to generate code");
-
-      // --- 6. Save Script (as v1 or as new version) in backend with code and explanation ---
-      setGenerationStep("saving");
-      let scriptRes, scriptApiIdToUse, newVersion;
-      if (isNewScript) {
-        // Create new script
-        scriptRes = await authedFetch(user, `${BACKEND_URL}/api/scripts`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            title: scriptTitle,
-            code,
-            explanation,
-          }),
-        });
-        if (!scriptRes.ok) {
-          const text = await scriptRes.text();
-          throw new Error(
-            `Failed to save script to backend: ${scriptRes.status} ${scriptRes.statusText} - ${text.slice(0, 200)}`
-          );
-        }
-        const scriptData = await scriptRes.json();
-        scriptApiIdToUse = scriptData.scriptId;
-        newVersion = scriptData.version || 1;
-        setCurrentScriptId(scriptApiIdToUse);
-      } else {
-        // Add new version to existing script
-        scriptApiIdToUse = currentScriptId;
-        scriptRes = await authedFetch(user, `${BACKEND_URL}/api/scripts/${scriptApiIdToUse}/versions`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            code,
-            explanation,
-          }),
-        });
-        if (!scriptRes.ok) {
-          const text = await scriptRes.text();
-          throw new Error(
-            `Failed to save script version to backend: ${scriptRes.status} ${scriptRes.statusText} - ${text.slice(0, 200)}`
-          );
-        }
-        const scriptData = await scriptRes.json();
-        newVersion = scriptData.version;
+      let jobId, pipelineId;
+      try {
+        const jobStartData = await artifactStart.json();
+        jobId = jobStartData.jobId;
+        pipelineId = jobStartData.pipelineId;
+      } catch (err) {
+        setIsGenerating(false);
+        setGenerationStep("idle");
+        setLoadingBarVisible(false);
+        setErrorMsg("Failed to start code generation job.");
+        return;
       }
 
-      // --- 7. Fetch Version History from backend ---
+      // --- Poll job status ---
+      pollingTimesRef.current = [];
+      let lastStage = "";
+      let jobResult;
+      try {
+        jobResult = await pollJob(
+          user,
+          jobId,
+          (tick) => {
+            // Map backend stage to UI step
+            let stage = tick.stage || "";
+            let mappedStep = "preparing";
+            if (/prepar/i.test(stage)) mappedStep = "preparing";
+            else if (/call/i.test(stage)) mappedStep = "calling model";
+            else if (/post/i.test(stage)) mappedStep = "post-processing";
+            else if (/polish/i.test(stage)) mappedStep = "polishing";
+            else if (/final/i.test(stage)) mappedStep = "finalizing";
+            setGenerationStep(mappedStep);
+
+            // Progress/ETA
+            if (tick.stage !== lastStage) {
+              pollingTimesRef.current.push(Date.now());
+              if (pollingTimesRef.current.length > 5)
+                pollingTimesRef.current.shift();
+              lastStage = tick.stage;
+            }
+            let eta = null;
+            if (pollingTimesRef.current.length > 1) {
+              const diffs = [];
+              for (let i = 1; i < pollingTimesRef.current.length; ++i) {
+                diffs.push(
+                  pollingTimesRef.current[i] - pollingTimesRef.current[i - 1]
+                );
+              }
+              const avg = diffs.reduce((a, b) => a + b, 0) / diffs.length;
+              eta = Math.round(avg / 1000);
+            }
+            setLoadingBarData((prev) => ({
+              ...prev,
+              estimatedLines: undefined,
+              stage: stage,
+              eta,
+            }));
+          },
+          { intervalMs: 1200, maxMs: 120000, signal: abortController.signal }
+        );
+      } catch (err) {
+        setIsGenerating(false);
+        setGenerationStep("idle");
+        setLoadingBarVisible(false);
+        setErrorMsg("Job polling aborted or failed.");
+        return;
+      }
+
+      if (jobResult.status !== "succeeded") {
+        setIsGenerating(false);
+        setGenerationStep("idle");
+        setLoadingBarVisible(false);
+        setErrorMsg(jobResult.error || "Generation failed");
+        return;
+      }
+      const { code: generatedCode, warnings, versionId } = jobResult.result;
+      code = generatedCode || "";
+      if (!code) {
+        setIsGenerating(false);
+        setGenerationStep("idle");
+        setLoadingBarVisible(false);
+        setErrorMsg("Failed to generate code");
+        return;
+      }
+
+      // --- 6. Fetch Version History from backend (artifact job already saved) ---
+      setGenerationStep("saving"); // UI consistency
+
       let versions = [];
       try {
-        const versionsRes = await authedFetch(user, `${BACKEND_URL}/api/scripts/${scriptApiIdToUse}/versions`, {
+        const versionsRes = await authedFetch(user, `${BACKEND_URL}/api/projects/${projectIdToUse}/versions`, {
           method: "GET",
         });
         if (versionsRes.ok) {
@@ -609,39 +775,35 @@ export default function NexusRBXAIPageContainer() {
           versions = versionsData.versions || [];
         }
       } catch (err) {
-        // fallback: keep empty
+        // keep empty
       }
+
       // Keep versions DESC (latest first)
-      setVersionHistory(
-        versions.sort((a, b) => (b.version || 1) - (a.version || 1))
-      );
+      const sorted = versions.sort((a, b) => (b.version || 1) - (a.version || 1));
+      setVersionHistory(sorted);
       setCurrentScript({
-        id: scriptApiIdToUse,
+        id: projectIdToUse,
         title: scriptTitle,
-        versions,
+        versions: sorted,
       });
-      setSelectedVersion(versions[0]);
+      setSelectedVersion(sorted[0]);
 
       setLoadingBarData((prev) => ({
         ...prev,
         loading: false,
         codeReady: true,
-        saved: false,
-        version: `v${newVersion}`,
-        filename: generatedFilename,
+        saved: true,
+        version: sorted[0]?.version ? `v${sorted[0].version}` : `v1`,
+        filename: safeFile(scriptTitle),
         onSave: () => {},
         onView: () => {},
       }));
-      setTimeout(() => setLoadingBarVisible(false), 1500); // Fade out after 1.5s
+      setTimeout(() => setLoadingBarVisible(false), 1500);
       setGenerationStep("done");
       setShowCelebration(true);
-
-      setAnimatedScriptIds((prev) => ({
-        ...prev,
-        [scriptApiIdToUse]: true,
-      }));
-
+      setAnimatedScriptIds((prev) => ({ ...prev, [projectIdToUse]: true }));
       setTimeout(() => setShowCelebration(false), 3000);
+      setTimeout(() => setErrorMsg(`Saved ${sorted[0]?.version ? `v${sorted[0].version}` : "v1"}`), 500);
     } catch (err) {
       setIsGenerating(false);
       setGenerationStep("idle");
@@ -651,90 +813,24 @@ export default function NexusRBXAIPageContainer() {
       setIsGenerating(false);
       setGenerationStep("idle");
     }
+    // Abort polling if unmount
+    return () => abortController.abort();
   };
 
-  // --- Save Script (add new version to backend) ---
+  // --- Save Script (manual save disabled) ---
   const handleSaveScript = async (newTitle, code, explanation = "") => {
-    setErrorMsg("");
-    if (!user || !code || !currentScript || !currentScript.id) return false;
-    let scriptApiId = currentScript.id;
-    let idToken = await user.getIdToken();
-    try {
-      // Add new version to backend
-      const res = await authedFetch(user, `${BACKEND_URL}/api/scripts/${scriptApiId}/versions`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          code,
-          explanation,
-        }),
-      });
-      if (!res.ok) {
-        setErrorMsg("Failed to save version to backend.");
-        return false;
-      }
-      // Refresh version history after saving
-      const versionsRes = await authedFetch(user, `${BACKEND_URL}/api/scripts/${scriptApiId}/versions`, {
-        method: "GET",
-      });
-      let versions = [];
-      if (versionsRes.ok) {
-        const versionsData = await versionsRes.json();
-        versions = versionsData.versions || [];
-      }
-      setCurrentScript((cs) => ({
-        ...cs,
-        saved: true,
-        title: newTitle,
-        versions,
-      }));
-      setVersionHistory(versions);
-      setErrorMsg("Script version saved!");
-      return true;
-    } catch (err) {
-      setErrorMsg("Failed to save version to backend.");
-      return false;
-    }
+    setErrorMsg("Manual save is not supported yet (artifact job writes versions).");
+    return false;
   };
 
-  // --- Sidebar Version Click Handler ---
+  // --- Sidebar Version Click Handler (no single-version GET) ---
   const handleVersionView = async (versionObj) => {
     setErrorMsg("");
-    if (!user || !currentScript || !currentScript.id || !versionObj?.id) {
-      setSelectedVersion(versionObj);
-      setCurrentScript((cs) => ({
-        ...cs,
-        title: versionObj.title,
-      }));
-      return;
-    }
-    try {
-      const res = await authedFetch(user, `${BACKEND_URL}/api/scripts/${currentScript.id}/versions/${versionObj.id}`, {
-        method: "GET",
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setSelectedVersion(data);
-        setCurrentScript((cs) => ({
-          ...cs,
-          title: data.title || versionObj.title,
-        }));
-      } else {
-        setSelectedVersion(versionObj);
-        setCurrentScript((cs) => ({
-          ...cs,
-          title: versionObj.title,
-        }));
-      }
-    } catch {
-      setSelectedVersion(versionObj);
-      setCurrentScript((cs) => ({
-        ...cs,
-        title: versionObj.title,
-      }));
-    }
+setSelectedVersion(versionObj);
+setCurrentScript((cs) => ({
+  ...cs,
+  title: versionObj?.title || cs?.title || "",
+}));
   };
 
   // --- Download Handler for Version ---
@@ -742,11 +838,7 @@ export default function NexusRBXAIPageContainer() {
     const blob = new Blob([versionObj.code], { type: "text/plain" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    const filename =
-      (versionObj.title || "Script")
-        .replace(/[^a-zA-Z0-9_\- ]/g, "")
-        .replace(/\s+/g, "_")
-        .slice(0, 40) + ".lua";
+    const filename = safeFile(versionObj.title);
     a.href = url;
     a.download = filename;
     document.body.appendChild(a);
@@ -756,46 +848,29 @@ export default function NexusRBXAIPageContainer() {
   };
 
   // --- Script Management ---
-  const handleCreateScript = async (title = "New Script") => {
-    setErrorMsg("");
-    if (!user) return;
-    await authedFetch(user, `${BACKEND_URL}/api/scripts`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        title,
-        code: "-- New script",
-        explanation: "",
-      }),
-    }).then(async (res) => {
-      if (res.ok) {
-        const data = await res.json();
-        setCurrentScriptId(data.scriptId);
-        // Optionally refetch scripts here
-      }
-    });
-  };
+const handleCreateScript = async (title = "New Script") => {
+  setErrorMsg("");
+  if (!user) return;
+  const res = await authedFetch(user, `${BACKEND_URL}/api/projects`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ title }),
+  });
+  if (res.ok) {
+    const data = await res.json();
+    setCurrentScriptId(data.projectId);
+    localStorage.setItem("nexusrbx:lastProjectId", data.projectId);
+  } else {
+    setErrorMsg("Failed to create project.");
+  }
+};
 
   const handleRenameScript = async (scriptId, newTitle) => {
-    setErrorMsg("Renaming scripts is not yet supported.");
+    setErrorMsg("Renaming projects is not supported yet.");
   };
 
   const handleDeleteScript = async (scriptId) => {
-    setErrorMsg("");
-    if (!user) return;
-    await authedFetch(user, `${BACKEND_URL}/api/scripts/${scriptId}`, {
-      method: "DELETE",
-    });
-
-    setScripts((prev) => prev.filter((c) => c.id !== scriptId));
-
-    if (currentScriptId === scriptId) {
-      setCurrentScriptId(
-        scripts.length > 1 ? scripts.find((c) => c.id !== scriptId)?.id : null
-      );
-    }
+    setErrorMsg("Deleting projects is not supported yet.");
   };
 
   // --- AI Avatar (NexusRBX Logo) ---
@@ -838,8 +913,8 @@ export default function NexusRBXAIPageContainer() {
       return;
     }
     // For dev email, infinite tokens
-    if (user.email === DEVELOPER_EMAIL) {
-      setTokensLeft(Infinity);
+    if (!!user?.email && user.email.toLowerCase() === DEVELOPER_EMAIL) {
+      setTokensLeft(null); // null = unlimited
       setTokenRefreshTime(null);
       return;
     }
@@ -969,11 +1044,12 @@ export default function NexusRBXAIPageContainer() {
           <SidebarContent
             activeTab={activeTab}
             setActiveTab={setActiveTab}
-            handleClearChat={() => {
-              setCurrentScript(null);
-              setVersionHistory([]);
-              setSelectedVersion(null);
-            }}
+handleClearChat={() => {
+  if (!window.confirm('Clear this chat?')) return;
+  setCurrentScript(null);
+  setVersionHistory([]);
+  setSelectedVersion(null);
+}}
             setPrompt={setPrompt}
             scripts={scripts}
             currentScriptId={currentScriptId}
@@ -1052,28 +1128,29 @@ export default function NexusRBXAIPageContainer() {
           maxHeight: "calc(100vh - 64px)",
         }}
       >
-        <SidebarContent
-          activeTab={activeTab}
-          setActiveTab={setActiveTab}
-          handleClearChat={() => {
-            setCurrentScript(null);
-            setVersionHistory([]);
-            setSelectedVersion(null);
-          }}
-          setPrompt={setPrompt}
-          scripts={scripts}
-          currentScriptId={currentScriptId}
-          setCurrentScriptId={setCurrentScriptId}
-          handleCreateScript={handleCreateScript}
-          handleRenameScript={handleRenameScript}
-          handleDeleteScript={handleDeleteScript}
-          currentScript={currentScript}
-          versionHistory={versionHistory}
-          onVersionView={handleVersionView}
-          onVersionDownload={handleVersionDownload}
-          promptSearch={promptSearch}
-          setPromptSearch={setPromptSearch}
-        />
+<SidebarContent
+  activeTab={activeTab}
+  setActiveTab={setActiveTab}
+  handleClearChat={() => {
+    if (!window.confirm('Clear this chat?')) return;
+    setCurrentScript(null);
+    setVersionHistory([]);
+    setSelectedVersion(null);
+  }}
+  setPrompt={setPrompt}
+  scripts={scripts}
+  currentScriptId={currentScriptId}
+  setCurrentScriptId={setCurrentScriptId}
+  handleCreateScript={handleCreateScript}
+  handleRenameScript={handleRenameScript}
+  handleDeleteScript={handleDeleteScript}
+  currentScript={currentScript}
+  versionHistory={versionHistory}
+  onVersionView={handleVersionView}
+  onVersionDownload={handleVersionDownload}
+  promptSearch={promptSearch}
+  setPromptSearch={setPromptSearch}
+/>
       </aside>
 
       {/* Main Content */}
@@ -1102,7 +1179,7 @@ export default function NexusRBXAIPageContainer() {
                         !!animatedScriptIds[currentScript.id] && isLatest;
 
                       return (
-                        <div key={version.id || idx} className="space-y-2">
+                        <div key={version.id || `${currentScript?.id || 'temp'}-v${version.version || 1}`} className="space-y-2">
                           {/* User Prompt Bubble */}
                           {lastUserPrompt && isLatest && (
                             <div className="flex justify-end items-end mb-1">
@@ -1152,12 +1229,7 @@ export default function NexusRBXAIPageContainer() {
                               {animatedScriptIds[currentScript.id] && (
                                 <div className="mb-2 mt-3">
                                   <ScriptLoadingBarContainer
-                                    filename={
-                                      (version.title && typeof version.title === "string"
-                                        ? version.title
-                                        : currentScript?.title || "Script"
-                                      ).replace(/[^a-zA-Z0-9_\- ]/g, "").replace(/\s+/g, "_").slice(0, 40) + ".lua"
-                                    }
+                                    filename={safeFile(version.title || currentScript?.title)}
                                     displayName={version.title || currentScript?.title || "Script"}
                                     version={
                                       version.version
@@ -1165,14 +1237,14 @@ export default function NexusRBXAIPageContainer() {
                                         : "v1"
                                     }
                                     language="lua"
-                                    loading={!!isGenerating}
+                                    loading={!!isGenerating || loadingBarVisible}
                                     codeReady={!!version.code}
                                     estimatedLines={
                                       version.code
                                         ? version.code.split("\n").length
                                         : null
                                     }
-                                    saved={false}
+                                    saved={loadingBarData.saved}
                                     onSave={() =>
                                       handleSaveScript(
                                         version.title,
@@ -1184,14 +1256,14 @@ export default function NexusRBXAIPageContainer() {
                                         version
                                       )
                                     }
+                                    stage={loadingBarData.stage}
+                                    eta={loadingBarData.eta}
                                   />
                                 </div>
                               )}
                               {/* Timestamp */}
                               <div className="text-xs text-gray-500 mt-2 text-right">
-                                {version.createdAt
-                                  ? new Date(version.createdAt).toLocaleString()
-                                  : ""}
+                                {toLocalTime(version.createdAt)}
                               </div>
                             </div>
                           </div>
@@ -1201,7 +1273,7 @@ export default function NexusRBXAIPageContainer() {
                 </>
               )}
               {/* Loading bar appears just below the latest script output */}
-              {isGenerating && (
+              {(isGenerating || loadingBarVisible) && (
                 <div className="flex items-center text-gray-400 text-sm mt-2 animate-fade-in">
                   <span className="mr-2">
                     <span className="inline-block w-8 h-8 rounded-full bg-gradient-to-br from-[#9b5de5] to-[#00f5d4] flex items-center justify-center shadow-lg overflow-hidden animate-pulse">
@@ -1217,6 +1289,14 @@ export default function NexusRBXAIPageContainer() {
                     NexusRBX is typing...
                     {generationStep === "title" && " (Generating script title...)"}
                     {generationStep === "explanation" && " (Generating explanation...)"}
+                    {["preparing", "calling model", "post-processing", "polishing", "finalizing"].includes(generationStep) && (
+                      <>
+                        {" ("}
+                        {loadingBarData.stage || generationStep.charAt(0).toUpperCase() + generationStep.slice(1)}
+                        {loadingBarData.eta ? `, ETA: ${loadingBarData.eta}s` : ""}
+                        {")"}
+                      </>
+                    )}
                     {generationStep === "code" && " (Generating code...)"}
                   </span>
                 </div>
@@ -1232,7 +1312,7 @@ export default function NexusRBXAIPageContainer() {
                 tokensLeft={tokensLeft}
                 tokenLimit={TOKEN_LIMIT}
                 refreshTime={tokenRefreshTime}
-                isDev={user?.email === DEVELOPER_EMAIL}
+                isDev={!!user?.email && user.email.toLowerCase() === DEVELOPER_EMAIL}
               />
             </div>
             <form
@@ -1348,11 +1428,7 @@ export default function NexusRBXAIPageContainer() {
           open={!!selectedVersion}
           code={selectedVersion.code}
           title={selectedVersion.title}
-          filename={
-            (selectedVersion.title
-              ? selectedVersion.title.replace(/[^a-zA-Z0-9_\- ]/g, "").replace(/\s+/g, "_").slice(0, 40)
-              : "Script") + ".lua"
-          }
+          filename={safeFile(selectedVersion.title)}
           version={selectedVersion.version ? `v${selectedVersion.version}` : ""}
           onClose={() => setSelectedVersion(null)}
           onSaveScript={handleSaveScript}
@@ -1360,6 +1436,11 @@ export default function NexusRBXAIPageContainer() {
       )}
       {/* Celebration Animation */}
       {showCelebration && <CelebrationAnimation />}
+      {errorMsg && (
+  <div className="fixed bottom-20 left-1/2 transform -translate-x-1/2 bg-red-700 text-white px-6 py-3 rounded-lg shadow-lg z-[200] animate-fade-in">
+    {errorMsg}
+  </div>
+)}
       {/* Footer */}
       <footer className="border-t border-gray-800 py-4 px-4 bg-black/40 text-center text-sm text-gray-500">
         <div className="max-w-6xl mx-auto">

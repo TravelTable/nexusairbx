@@ -1,10 +1,11 @@
-import React, { useEffect, useState } from "react";
-import { FileCode, Save, Check } from "lucide-react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
+import { FileCode, Save, Check, X } from "lucide-react";
 
 /**
  * ScriptLoadingBarContainer
  * Props:
  * - filename: string (required)
+ * - displayName: string (optional)
  * - version: string (optional, e.g. "v1", "v2", etc.)
  * - language: string (default: "lua")
  * - loading: boolean (true while code is being fetched)
@@ -13,6 +14,10 @@ import { FileCode, Save, Check } from "lucide-react";
  * - estimatedLines: number (optional)
  * - saved: boolean (true if script is saved)
  * - onView: function (called when View is clicked, should open the drawer for this script)
+ * - jobProgress: number (0..1, optional, backend-driven progress)
+ * - jobStage: string (optional, e.g. "Preparing", "Calling model", etc.)
+ * - etaSeconds: number (optional, estimated seconds remaining)
+ * - onCancel: function (optional, called when Cancel is clicked)
  */
 export default function ScriptLoadingBarContainer({
   filename = "Script.lua",
@@ -24,18 +29,25 @@ export default function ScriptLoadingBarContainer({
   codeReady = false,
   estimatedLines = null,
   saved = false,
-  onView, // handler for View button
+  onView,
+  jobProgress = null,
+  jobStage = null,
+  etaSeconds = null,
+  onCancel = null,
 }) {
   const [progress, setProgress] = useState(0);
   const [progressLabel, setProgressLabel] = useState("0%");
   const [internalSaved, setInternalSaved] = useState(saved);
   const [saving, setSaving] = useState(false);
 
-  // Helper for pretty display name, language-aware, consistent truncation
-  const prettyName = (() => {
-    const base = displayName || (filename || "Script").replace(new RegExp(`\\.${language}\\b`, "i"), "");
-    return base.length > 28 ? base.slice(0, 25) + "…" : base;
-  })();
+  // Memoized pretty name, language-proof extension stripping
+  const prettyName = useMemo(() => {
+    const base = (displayName || filename || "Script");
+    const ext = language ? `.${language}` : "";
+    const lowerBase = base.toLowerCase();
+    const noExt = lowerBase.endsWith(ext) ? base.slice(0, -ext.length) : base;
+    return noExt.length > 28 ? noExt.slice(0, 25) + "…" : noExt;
+  }, [displayName, filename, language]);
 
   // Reset progress and saved state when loading starts
   useEffect(() => {
@@ -46,12 +58,25 @@ export default function ScriptLoadingBarContainer({
     }
   }, [loading, codeReady]);
 
-  // Progress animation logic: buttery-smooth, no race conditions, no stale state
+  // Clamp and guard progress
+  const clampProgress = (val, max = 100) =>
+    Math.min(max, Math.max(0, +val.toFixed(1)));
+
+  // Progress animation logic: backend-driven or faux timer
   useEffect(() => {
     let rafId = null;
     let intervalId = null;
     let cancelled = false;
 
+    // If backend progress is provided, use it
+    if (typeof jobProgress === "number" && !isNaN(jobProgress)) {
+      const pct = clampProgress(jobProgress * 100, 100);
+      setProgress(pct);
+      setProgressLabel(`${Math.round(pct)}%`);
+      return () => {};
+    }
+
+    // Otherwise, use faux timer
     const tickTo100 = (durationMs = 400) => {
       const start = performance.now();
       const startVal = progress;
@@ -60,9 +85,10 @@ export default function ScriptLoadingBarContainer({
       const step = (t) => {
         if (cancelled) return;
         const elapsed = t - start;
-        const pct = elapsed >= durationMs
-          ? 100
-          : startVal + (delta * (elapsed / durationMs));
+        const pct =
+          elapsed >= durationMs
+            ? 100
+            : clampProgress(startVal + delta * (elapsed / durationMs), 100);
         setProgress(pct);
         setProgressLabel(`${Math.round(pct)}%`);
         if (pct < 100) rafId = requestAnimationFrame(step);
@@ -71,16 +97,17 @@ export default function ScriptLoadingBarContainer({
     };
 
     if (loading && !codeReady) {
-      // Slow linear climb to 95%
       setProgress((p) => (p > 0 && p < 95 ? p : 0));
       setProgressLabel("0%");
       intervalId = setInterval(() => {
         setProgress((prev) => {
           if (cancelled) return prev;
-          const next = Math.min(prev + 0.2, 95);
-          if (next !== prev) setProgressLabel(`${Math.round(next)}%`);
+          const next = clampProgress(prev + 0.2, 95);
           return next;
         });
+        setProgressLabel((p) =>
+          `${clampProgress(Number(p.replace("%", "")), 100)}%`
+        );
       }, 200);
     }
 
@@ -95,15 +122,20 @@ export default function ScriptLoadingBarContainer({
       if (rafId) cancelAnimationFrame(rafId);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loading, codeReady]); // deliberately not depending on `progress`
+  }, [loading, codeReady, jobProgress]);
 
   // When parent updates saved prop, sync internal state
   useEffect(() => {
     setInternalSaved(saved);
   }, [saved]);
 
-  // Save handler with saving guard
-  const handleSave = async () => {
+  // Reset internalSaved when loading flips true
+  useEffect(() => {
+    if (loading && !codeReady) setInternalSaved(false);
+  }, [loading, codeReady]);
+
+  // Save handler with saving guard, useCallback for perf
+  const handleSave = useCallback(async () => {
     if (saving || internalSaved || typeof onSave !== "function") return;
     try {
       setSaving(true);
@@ -112,17 +144,44 @@ export default function ScriptLoadingBarContainer({
     } finally {
       setSaving(false);
     }
-  };
+  }, [saving, internalSaved, onSave]);
 
-  // View handler
-  const handleView = () => {
+  // View handler, useCallback for perf
+  const handleView = useCallback(() => {
     if (typeof onView === "function" && codeReady) {
       onView();
     }
-  };
+  }, [onView, codeReady]);
+
+  // Cancel handler, useCallback for perf
+  const handleCancel = useCallback(() => {
+    if (typeof onCancel === "function" && loading && !codeReady) {
+      onCancel();
+    }
+  }, [onCancel, loading, codeReady]);
+
+  // Compose progress percent for display and bar
+  const pct = useMemo(() => {
+    if (typeof jobProgress === "number" && !isNaN(jobProgress)) {
+      return clampProgress(jobProgress * 100, 100);
+    }
+    return clampProgress(progress, 100);
+  }, [jobProgress, progress]);
+
+  // Compose progress label
+  const progressLabelDisplay = useMemo(
+    () => `${Math.round(pct)}%`,
+    [pct]
+  );
+
+  // Compose stage label
+  const stageLabel = jobStage || (codeReady ? "Finalizing" : "Generating");
 
   return (
-    <div className="sbc max-w-3xl mx-auto my-4 w-full px-2 sm:px-4">
+    <div
+      className="sbc max-w-3xl mx-auto my-4 w-full px-2 sm:px-4"
+      aria-busy={loading}
+    >
       <div className="bg-gray-900 bg-opacity-80 backdrop-blur-sm rounded-lg overflow-hidden border border-gray-700 shadow-lg">
         <div className="relative">
           {/* Header Content */}
@@ -151,10 +210,16 @@ export default function ScriptLoadingBarContainer({
                       ? `${language.toUpperCase()} script generated`
                       : `Generating ${language.toUpperCase()} script...`}
                   </span>
-                  <span className="ml-2 font-semibold">{progressLabel}</span>
-                  {estimatedLines && (
+                  <span className="ml-2 font-semibold">{progressLabelDisplay}</span>
+                  <span className="ml-2 text-gray-400">• {stageLabel}</span>
+                  {estimatedLines != null && (
                     <span className="ml-2 text-gray-400">
                       • ~{estimatedLines} lines
+                    </span>
+                  )}
+                  {etaSeconds != null && !codeReady && (
+                    <span className="ml-2 text-gray-400">
+                      • ~{Math.ceil(etaSeconds)}s
                     </span>
                   )}
                   {!codeReady && (
@@ -165,7 +230,7 @@ export default function ScriptLoadingBarContainer({
                 </div>
               </div>
             </div>
-            {/* View and Save Buttons */}
+            {/* View, Save, Cancel Buttons */}
             <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
               {/* View Button */}
               <div className={`relative group flex-1 sm:flex-none ${!codeReady ? 'opacity-50 cursor-not-allowed' : ''}`}>
@@ -201,7 +266,8 @@ export default function ScriptLoadingBarContainer({
                   aria-disabled={!codeReady || internalSaved || saving}
                   className={`relative flex items-center justify-center w-full sm:w-auto px-4 py-1.5 rounded-md text-sm bg-black text-white
                     border border-transparent group-hover:border-transparent transition-all duration-300
-                    ${codeReady && !internalSaved && !saving ? 'group-hover:shadow-[0_0_15px_rgba(168,85,247,0.5)]' : ''}`}
+                    ${codeReady && !internalSaved && !saving ? 'group-hover:shadow-[0_0_15px_rgba(168,85,247,0.5)]' : ''}
+                    ${saving ? 'cursor-wait opacity-80' : ''}`}
                   title={codeReady ? (internalSaved ? "Already saved" : "Save script") : "Wait for script to complete"}
                 >
                   {internalSaved ? (
@@ -222,34 +288,47 @@ export default function ScriptLoadingBarContainer({
                   )}
                 </button>
               </div>
+              {/* Cancel Button */}
+              {typeof onCancel === "function" && loading && !codeReady && (
+                <div className="relative group flex-1 sm:flex-none">
+                  <button
+                    type="button"
+                    onClick={handleCancel}
+                    className="relative flex items-center justify-center w-full sm:w-auto px-4 py-1.5 rounded-md text-sm bg-transparent text-gray-300 border border-gray-600 hover:bg-gray-800 hover:text-white transition-all duration-200"
+                    title="Cancel script generation"
+                  >
+                    <X className="w-4 h-4 mr-1.5" />
+                    <span>Cancel</span>
+                  </button>
+                </div>
+              )}
             </div>
           </div>
           {/* Progress Bar */}
           <div
             className="absolute bottom-0 left-0 h-1 bg-gray-800 w-full overflow-hidden"
-            aria-hidden="true"
+            role="progressbar"
+            aria-valuenow={Math.round(pct)}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-label="Script generation progress"
           >
             <div
               className="h-full bg-gradient-to-r from-purple-600 via-blue-500 to-cyan-400 transition-all duration-300 ease-out"
-              style={{ width: `${progress}%` }}
-              aria-label="Script generation progress"
-              aria-valuenow={Math.round(progress)}
-              aria-valuemin={0}
-              aria-valuemax={100}
-              role="progressbar"
+              style={{ width: `${pct}%` }}
             ></div>
           </div>
         </div>
       </div>
       {/* Responsive and animated gradient border CSS, scoped to .sbc */}
       <style>{`
-        .sbc @keyframes borderAnimation {
+        @keyframes sbcBorderAnimation {
           0% { background-position: 0% 50%; }
           50% { background-position: 100% 50%; }
           100% { background-position: 0% 50%; }
         }
         .sbc .group:hover .bg-gradient-to-r {
-          animation: borderAnimation 3s ease infinite;
+          animation: sbcBorderAnimation 3s ease infinite;
           background-size: 200% 200%;
         }
         @media (max-width: 640px) {
