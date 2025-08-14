@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Send,
@@ -19,7 +19,6 @@ import ScriptLoadingBarContainer from "../components/ScriptLoadingBarContainer";
 import WelcomeCard from "../components/WelcomeCard";
 import TokenBar from "../components/TokenBar";
 import CelebrationAnimation from "../components/CelebrationAnimation";
-// import TypewriterEffect from "../components/TypewriterEffect";
 
 // --- Backend API URL ---
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || "https://nexusrbx-backend-production.up.railway.app";
@@ -81,6 +80,54 @@ function getUserInitials(email) {
     .slice(0, 2);
 }
 
+// --- Model Resolver ---
+const resolveModel = (mv) => {
+  switch (mv) {
+    case "nexus-4":
+      return "gpt-4.1-2025-04-14";
+    case "nexus-2":
+      return "gpt-3.5-turbo";
+    case "nexus-3":
+    default:
+      return "gpt-4.1-2025-04-14";
+  }
+};
+
+// --- Auth Retry Helper ---
+async function authedFetch(user, url, init = {}, retry = true) {
+  let idToken = await user.getIdToken();
+  let res = await fetch(url, {
+    ...init,
+    headers: {
+      ...(init.headers || {}),
+      Authorization: `Bearer ${idToken}`,
+    },
+  });
+  if (res.status === 401 && retry) {
+    // Try to refresh token and retry once
+    await user.getIdToken(true);
+    idToken = await user.getIdToken();
+    res = await fetch(url, {
+      ...init,
+      headers: {
+        ...(init.headers || {}),
+        Authorization: `Bearer ${idToken}`,
+      },
+    });
+  }
+  return res;
+}
+
+// --- Debounce Helper ---
+function useDebounce(value, delay) {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    const handler = setTimeout(() => setDebounced(value), delay);
+    return () => clearTimeout(handler);
+  }, [value, delay]);
+  return debounced;
+}
+
 // --- Main Container Component ---
 export default function NexusRBXAIPageContainer() {
   const navigate = useNavigate();
@@ -96,8 +143,10 @@ export default function NexusRBXAIPageContainer() {
   // --- UI State ---
   const [activeTab, setActiveTab] = useState("scripts"); // scripts | history | saved
   const [prompt, setPrompt] = useState("");
+  const [lastUserPrompt, setLastUserPrompt] = useState(""); // For chat bubble
   const [promptCharCount, setPromptCharCount] = useState(0);
   const [promptError, setPromptError] = useState("");
+  const [errorMsg, setErrorMsg] = useState(""); // Inline error
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationStep, setGenerationStep] = useState("idle"); // idle | title | explanation | code | done
   const [showCelebration, setShowCelebration] = useState(false);
@@ -132,6 +181,13 @@ export default function NexusRBXAIPageContainer() {
 
   // --- Typewriter Animation State ---
   const [animatedScriptIds, setAnimatedScriptIds] = useState({}); // { [scriptId]: true }
+
+  // --- Token Bar State ---
+  const [tokensLeft, setTokensLeft] = useState(TOKEN_LIMIT);
+  const [tokenRefreshTime, setTokenRefreshTime] = useState(null);
+
+  // --- Prompt Input Ref for focus ---
+  const promptInputRef = useRef(null);
 
   // --- Auth ---
   useEffect(() => {
@@ -218,8 +274,14 @@ export default function NexusRBXAIPageContainer() {
     } else {
       setPromptError("");
     }
-    // Autocomplete logic
-    if (prompt.length > 1) {
+  }, [prompt]);
+
+  // --- Debounced Prompt for Autocomplete ---
+  const debouncedPrompt = useDebounce(prompt, 150);
+
+  // --- Autocomplete logic (debounced) ---
+  useEffect(() => {
+    if (debouncedPrompt.length > 1) {
       const allPrompts = [
         ...promptTemplates,
         ...userPromptTemplates,
@@ -228,15 +290,15 @@ export default function NexusRBXAIPageContainer() {
       const filtered = allPrompts
         .filter(
           (p) =>
-            p.toLowerCase().startsWith(prompt.toLowerCase()) &&
-            p.toLowerCase() !== prompt.toLowerCase()
+            p.toLowerCase().startsWith(debouncedPrompt.toLowerCase()) &&
+            p.toLowerCase() !== debouncedPrompt.toLowerCase()
         )
         .slice(0, 5);
       setPromptAutocomplete(filtered);
     } else {
       setPromptAutocomplete([]);
     }
-  }, [prompt, promptTemplates, userPromptTemplates, promptHistory]);
+  }, [debouncedPrompt, promptTemplates, userPromptTemplates, promptHistory]);
 
   // --- Scroll to bottom on new script or loading bar ---
   const messagesEndRef = useRef(null);
@@ -250,19 +312,26 @@ export default function NexusRBXAIPageContainer() {
     setMobileRightSidebarOpen(false);
   };
 
+  // --- Focus textarea on mount ---
+  useEffect(() => {
+    promptInputRef.current?.focus();
+  }, []);
+
   // --- Main Generation Flow (Handles both new script and new version) ---
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setErrorMsg("");
     if (typeof prompt !== "string" || !prompt.trim() || isGenerating) return;
     if (prompt.length > 800) {
       setPromptError("Prompt too long (max 800 characters).");
       return;
     }
     if (!user) {
-      alert("Sign in to generate scripts.");
+      setErrorMsg("Sign in to generate scripts.");
       return;
     }
 
+    setLastUserPrompt(prompt);
     setPrompt("");
     setIsGenerating(true);
     setGenerationStep("title");
@@ -274,7 +343,7 @@ export default function NexusRBXAIPageContainer() {
     } catch {
       setIsGenerating(false);
       setGenerationStep("idle");
-      alert("Not authenticated.");
+      setErrorMsg("Not authenticated.");
       return;
     }
 
@@ -293,18 +362,19 @@ export default function NexusRBXAIPageContainer() {
       let isNewScript = !currentScriptId;
       let previousTitle = currentScript?.title || "";
 
-      const titleRes = await fetch(`${BACKEND_URL}/api/generate-title-advanced`, {
+      const titleRes = await authedFetch(user, `${BACKEND_URL}/api/generate-title-advanced`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${idToken}`,
         },
         body: JSON.stringify({
           prompt,
           conversation: [],
-          model: "gpt-4.1-2025-04-14",
+          model: resolveModel(settings.modelVersion),
           isNewScript,
           previousTitle,
+          temperature: settings.creativity,
+          codeStyle: settings.codeStyle,
         }),
       });
 
@@ -346,18 +416,20 @@ export default function NexusRBXAIPageContainer() {
         ];
       }
 
-      const explanationRes = await fetch(
+      const explanationRes = await authedFetch(
+        user,
         `${BACKEND_URL}/api/generate-explanation`,
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${idToken}`,
           },
           body: JSON.stringify({
             prompt,
             conversation,
-            model: "gpt-4.1-2025-04-14",
+            model: resolveModel(settings.modelVersion),
+            temperature: settings.creativity,
+            codeStyle: settings.codeStyle,
           }),
         }
       );
@@ -418,8 +490,8 @@ export default function NexusRBXAIPageContainer() {
         temp: true,
       });
 
-// Wait for a short moment before starting code generation
-await new Promise((resolve) => setTimeout(resolve, 1000));
+      // Wait for a short moment before starting code generation
+      await new Promise((resolve) => setTimeout(resolve, 1000));
 
       // --- 4. Show Loading Bar for Code Generation (before calling API) ---
       setGenerationStep("code");
@@ -443,17 +515,18 @@ await new Promise((resolve) => setTimeout(resolve, 1000));
 
       // --- 5. Generate Code ---
       let codeConversation = conversation;
-      const codeRes = await fetch(`${BACKEND_URL}/api/generate-code`, {
+      const codeRes = await authedFetch(user, `${BACKEND_URL}/api/generate-code`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${idToken}`,
         },
         body: JSON.stringify({
           prompt,
           conversation: codeConversation,
           explanation,
-          model: "gpt-4.1-2025-04-14",
+          model: resolveModel(settings.modelVersion),
+          temperature: settings.creativity,
+          codeStyle: settings.codeStyle,
         }),
       });
 
@@ -481,11 +554,10 @@ await new Promise((resolve) => setTimeout(resolve, 1000));
       let scriptRes, scriptApiIdToUse, newVersion;
       if (isNewScript) {
         // Create new script
-        scriptRes = await fetch(`${BACKEND_URL}/api/scripts`, {
+        scriptRes = await authedFetch(user, `${BACKEND_URL}/api/scripts`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${idToken}`,
           },
           body: JSON.stringify({
             title: scriptTitle,
@@ -506,11 +578,10 @@ await new Promise((resolve) => setTimeout(resolve, 1000));
       } else {
         // Add new version to existing script
         scriptApiIdToUse = currentScriptId;
-        scriptRes = await fetch(`${BACKEND_URL}/api/scripts/${scriptApiIdToUse}/versions`, {
+        scriptRes = await authedFetch(user, `${BACKEND_URL}/api/scripts/${scriptApiIdToUse}/versions`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${idToken}`,
           },
           body: JSON.stringify({
             code,
@@ -530,11 +601,8 @@ await new Promise((resolve) => setTimeout(resolve, 1000));
       // --- 7. Fetch Version History from backend ---
       let versions = [];
       try {
-        const versionsRes = await fetch(`${BACKEND_URL}/api/scripts/${scriptApiIdToUse}/versions`, {
+        const versionsRes = await authedFetch(user, `${BACKEND_URL}/api/scripts/${scriptApiIdToUse}/versions`, {
           method: "GET",
-          headers: {
-            Authorization: `Bearer ${idToken}`,
-          },
         });
         if (versionsRes.ok) {
           const versionsData = await versionsRes.json();
@@ -543,6 +611,7 @@ await new Promise((resolve) => setTimeout(resolve, 1000));
       } catch (err) {
         // fallback: keep empty
       }
+      // Keep versions DESC (latest first)
       setVersionHistory(
         versions.sort((a, b) => (b.version || 1) - (a.version || 1))
       );
@@ -563,7 +632,7 @@ await new Promise((resolve) => setTimeout(resolve, 1000));
         onSave: () => {},
         onView: () => {},
       }));
-      setLoadingBarVisible(false);
+      setTimeout(() => setLoadingBarVisible(false), 1500); // Fade out after 1.5s
       setGenerationStep("done");
       setShowCelebration(true);
 
@@ -577,26 +646,25 @@ await new Promise((resolve) => setTimeout(resolve, 1000));
       setIsGenerating(false);
       setGenerationStep("idle");
       setLoadingBarVisible(false);
-      alert("Error during script generation: " + (err.message || err));
+      setErrorMsg("Error during script generation: " + (err.message || err));
     } finally {
       setIsGenerating(false);
-      setLoadingBarVisible(false);
       setGenerationStep("idle");
     }
   };
 
   // --- Save Script (add new version to backend) ---
   const handleSaveScript = async (newTitle, code, explanation = "") => {
+    setErrorMsg("");
     if (!user || !code || !currentScript || !currentScript.id) return false;
     let scriptApiId = currentScript.id;
     let idToken = await user.getIdToken();
     try {
       // Add new version to backend
-      const res = await fetch(`${BACKEND_URL}/api/scripts/${scriptApiId}/versions`, {
+      const res = await authedFetch(user, `${BACKEND_URL}/api/scripts/${scriptApiId}/versions`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${idToken}`,
         },
         body: JSON.stringify({
           code,
@@ -604,15 +672,12 @@ await new Promise((resolve) => setTimeout(resolve, 1000));
         }),
       });
       if (!res.ok) {
-        alert("Failed to save version to backend.");
+        setErrorMsg("Failed to save version to backend.");
         return false;
       }
       // Refresh version history after saving
-      const versionsRes = await fetch(`${BACKEND_URL}/api/scripts/${scriptApiId}/versions`, {
+      const versionsRes = await authedFetch(user, `${BACKEND_URL}/api/scripts/${scriptApiId}/versions`, {
         method: "GET",
-        headers: {
-          Authorization: `Bearer ${idToken}`,
-        },
       });
       let versions = [];
       if (versionsRes.ok) {
@@ -626,16 +691,17 @@ await new Promise((resolve) => setTimeout(resolve, 1000));
         versions,
       }));
       setVersionHistory(versions);
-      alert("Script version saved!");
+      setErrorMsg("Script version saved!");
       return true;
     } catch (err) {
-      alert("Failed to save version to backend.");
+      setErrorMsg("Failed to save version to backend.");
       return false;
     }
   };
 
   // --- Sidebar Version Click Handler ---
   const handleVersionView = async (versionObj) => {
+    setErrorMsg("");
     if (!user || !currentScript || !currentScript.id || !versionObj?.id) {
       setSelectedVersion(versionObj);
       setCurrentScript((cs) => ({
@@ -644,12 +710,9 @@ await new Promise((resolve) => setTimeout(resolve, 1000));
       }));
       return;
     }
-    let idToken = await user.getIdToken();
     try {
-      const res = await fetch(`${BACKEND_URL}/api/scripts/${currentScript.id}/versions/${versionObj.id}`, {
-        headers: {
-          Authorization: `Bearer ${idToken}`,
-        },
+      const res = await authedFetch(user, `${BACKEND_URL}/api/scripts/${currentScript.id}/versions/${versionObj.id}`, {
+        method: "GET",
       });
       if (res.ok) {
         const data = await res.json();
@@ -694,41 +757,36 @@ await new Promise((resolve) => setTimeout(resolve, 1000));
 
   // --- Script Management ---
   const handleCreateScript = async (title = "New Script") => {
+    setErrorMsg("");
     if (!user) return;
-    let idToken = await user.getIdToken();
-    const res = await fetch(`${BACKEND_URL}/api/scripts`, {
+    await authedFetch(user, `${BACKEND_URL}/api/scripts`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${idToken}`,
       },
       body: JSON.stringify({
         title,
         code: "-- New script",
         explanation: "",
       }),
+    }).then(async (res) => {
+      if (res.ok) {
+        const data = await res.json();
+        setCurrentScriptId(data.scriptId);
+        // Optionally refetch scripts here
+      }
     });
-    if (res.ok) {
-      const data = await res.json();
-      setCurrentScriptId(data.scriptId);
-      // Optionally refetch scripts here
-    }
   };
 
   const handleRenameScript = async (scriptId, newTitle) => {
-    // Not implemented in backend; would require a PATCH endpoint
-    alert("Renaming scripts is not yet supported.");
+    setErrorMsg("Renaming scripts is not yet supported.");
   };
 
   const handleDeleteScript = async (scriptId) => {
+    setErrorMsg("");
     if (!user) return;
-    let idToken = await user.getIdToken();
-
-    await fetch(`${BACKEND_URL}/api/scripts/${scriptId}`, {
+    await authedFetch(user, `${BACKEND_URL}/api/scripts/${scriptId}`, {
       method: "DELETE",
-      headers: {
-        Authorization: `Bearer ${idToken}`,
-      },
     });
 
     setScripts((prev) => prev.filter((c) => c.id !== scriptId));
@@ -769,6 +827,35 @@ await new Promise((resolve) => setTimeout(resolve, 1000));
         {getUserInitials(email)}
       </div>
     );
+  };
+
+  // --- Token Bar Logic (simulate tokens for now) ---
+  useEffect(() => {
+    // Simulate token system for demo
+    if (!user) {
+      setTokensLeft(TOKEN_LIMIT);
+      setTokenRefreshTime(null);
+      return;
+    }
+    // For dev email, infinite tokens
+    if (user.email === DEVELOPER_EMAIL) {
+      setTokensLeft(Infinity);
+      setTokenRefreshTime(null);
+      return;
+    }
+    // Otherwise, simulate tokens
+    setTokensLeft(TOKEN_LIMIT - 0); // TODO: Replace with real backend logic
+    setTokenRefreshTime(
+      new Date(Date.now() + TOKEN_REFRESH_HOURS * 60 * 60 * 1000)
+    );
+  }, [user]);
+
+  // --- Keyboard UX for textarea ---
+  const handlePromptKeyDown = (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSubmit(e);
+    }
   };
 
   // --- Main Layout ---
@@ -1007,103 +1094,110 @@ await new Promise((resolve) => setTimeout(resolve, 1000));
               ) : (
                 <>
                   {/* Render all versions as chat bubbles/cards */}
-{currentScript && currentScript.versions.slice().reverse().map((version, idx, arr) => {
-  const isLatest = idx === arr.length - 1;
-  const animateThisScript =
-    !!animatedScriptIds[currentScript.id] && isLatest;
+                  {currentScript &&
+                    currentScript.versions.map((version, idx, arr) => {
+                      // Keep DESC order (latest first)
+                      const isLatest = idx === 0;
+                      const animateThisScript =
+                        !!animatedScriptIds[currentScript.id] && isLatest;
 
-  return (
-    <div key={version.id || idx} className="space-y-2">
-                        {/* User Prompt Bubble */}
-                        {prompt && isLatest && (
-                          <div className="flex justify-end items-end mb-1">
-                            <div className="flex flex-row-reverse items-end gap-2 w-full max-w-2xl">
-                              <UserAvatar email={user?.email} />
-                              <div className="bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-white px-4 py-2 rounded-2xl rounded-br-sm shadow-lg max-w-[75%] text-right break-words text-base font-medium animate-fade-in">
-                                {prompt}
+                      return (
+                        <div key={version.id || idx} className="space-y-2">
+                          {/* User Prompt Bubble */}
+                          {lastUserPrompt && isLatest && (
+                            <div className="flex justify-end items-end mb-1">
+                              <div className="flex flex-row-reverse items-end gap-2 w-full max-w-2xl">
+                                <UserAvatar email={user?.email} />
+                                <div className="bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-white px-4 py-2 rounded-2xl rounded-br-sm shadow-lg max-w-[75%] text-right break-words text-base font-medium animate-fade-in">
+                                  {lastUserPrompt}
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        )}
+                          )}
 
-                        {/* AI Response Card (left-aligned) */}
-                        <div className="flex items-start gap-2 w-full max-w-2xl animate-fade-in">
-                          <NexusRBXAvatar />
-                          <div className="flex-1 bg-gray-900/80 border border-gray-800 rounded-2xl rounded-tl-sm shadow-lg px-5 py-4 mb-2">
-                            {/* Title */}
-                            {version.title && (
-                              <div className="mb-1 flex items-center gap-2">
-                                <span className="text-xl font-bold bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-transparent bg-clip-text">
-                                  {version.title.replace(/\s*v\d+$/i, "")}
-                                </span>
-                                {version.version && (
-                                  <span className="ml-2 px-2 py-0.5 rounded bg-[#9b5de5]/20 text-[#9b5de5] text-xs font-semibold">
-                                    v{version.version}
+                          {/* AI Response Card (left-aligned) */}
+                          <div className="flex items-start gap-2 w-full max-w-2xl animate-fade-in">
+                            <NexusRBXAvatar />
+                            <div className="flex-1 bg-gray-900/80 border border-gray-800 rounded-2xl rounded-tl-sm shadow-lg px-5 py-4 mb-2">
+                              {/* Title */}
+                              {version.title && (
+                                <div className="mb-1 flex items-center gap-2">
+                                  <span className="text-xl font-bold bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-transparent bg-clip-text">
+                                    {version.title.replace(/\s*v\d+$/i, "")}
                                   </span>
-                                )}
-                              </div>
-                            )}
-                            {/* Explanation */}
-                            {version.explanation && (
-                              <div className="mb-2">
-                                <div className="font-bold text-[#9b5de5] mb-1">
-                                  Explanation
+                                  {version.version && (
+                                    <span className="ml-2 px-2 py-0.5 rounded bg-[#9b5de5]/20 text-[#9b5de5] text-xs font-semibold">
+                                      v{version.version}
+                                    </span>
+                                  )}
+                                  {isLatest && (
+                                    <span className="ml-2 px-2 py-0.5 rounded bg-[#00f5d4]/20 text-[#00f5d4] text-xs font-semibold">
+                                      Latest
+                                    </span>
+                                  )}
                                 </div>
-                                <div className="text-gray-200 whitespace-pre-line text-base">
-<div>{version.explanation}</div>
+                              )}
+                              {/* Explanation */}
+                              {version.explanation && (
+                                <div className="mb-2">
+                                  <div className="font-bold text-[#9b5de5] mb-1">
+                                    Explanation
+                                  </div>
+                                  <div className="text-gray-200 whitespace-pre-line text-base">
+                                    <div>{version.explanation}</div>
+                                  </div>
                                 </div>
+                              )}
+                              {/* Code Block */}
+                              {animatedScriptIds[currentScript.id] && (
+                                <div className="mb-2 mt-3">
+                                  <ScriptLoadingBarContainer
+                                    filename={
+                                      (version.title && typeof version.title === "string"
+                                        ? version.title
+                                        : currentScript?.title || "Script"
+                                      ).replace(/[^a-zA-Z0-9_\- ]/g, "").replace(/\s+/g, "_").slice(0, 40) + ".lua"
+                                    }
+                                    displayName={version.title || currentScript?.title || "Script"}
+                                    version={
+                                      version.version
+                                        ? `v${version.version}`
+                                        : "v1"
+                                    }
+                                    language="lua"
+                                    loading={!!isGenerating}
+                                    codeReady={!!version.code}
+                                    estimatedLines={
+                                      version.code
+                                        ? version.code.split("\n").length
+                                        : null
+                                    }
+                                    saved={false}
+                                    onSave={() =>
+                                      handleSaveScript(
+                                        version.title,
+                                        version.code
+                                      )
+                                    }
+                                    onView={() =>
+                                      handleVersionView(
+                                        version
+                                      )
+                                    }
+                                  />
+                                </div>
+                              )}
+                              {/* Timestamp */}
+                              <div className="text-xs text-gray-500 mt-2 text-right">
+                                {version.createdAt
+                                  ? new Date(version.createdAt).toLocaleString()
+                                  : ""}
                               </div>
-                            )}
-                            {/* Code Block */}
-                            {animatedScriptIds[currentScript.id] && (
-                              <div className="mb-2 mt-3">
-<ScriptLoadingBarContainer
-  filename={
-    (version.title && typeof version.title === "string"
-      ? version.title
-      : currentScript?.title || "Script"
-    ).replace(/[^a-zA-Z0-9_\- ]/g, "").replace(/\s+/g, "_").slice(0, 40) + ".lua"
-  }
-  displayName={version.title || currentScript?.title || "Script"}
-  version={
-    version.version
-      ? `v${version.version}`
-      : "v1"
-  }
-  language="lua"
-  loading={!!isGenerating}
-  codeReady={!!version.code}
-  estimatedLines={
-    version.code
-      ? version.code.split("\n").length
-      : null
-  }
-  saved={false}
-  onSave={() =>
-    handleSaveScript(
-      version.title,
-      version.code
-    )
-  }
-  onView={() =>
-    handleVersionView(
-      version
-    )
-  }
-/>
-                              </div>
-                            )}
-                            {/* Timestamp */}
-                            <div className="text-xs text-gray-500 mt-2 text-right">
-                              {version.createdAt
-                                ? new Date(version.createdAt).toLocaleString()
-                                : ""}
                             </div>
                           </div>
                         </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
                 </>
               )}
               {/* Loading bar appears just below the latest script output */}
@@ -1119,7 +1213,7 @@ await new Promise((resolve) => setTimeout(resolve, 1000));
                       />
                     </span>
                   </span>
-                  <span>
+                  <span aria-live="polite">
                     NexusRBX is typing...
                     {generationStep === "title" && " (Generating script title...)"}
                     {generationStep === "explanation" && " (Generating explanation...)"}
@@ -1131,7 +1225,16 @@ await new Promise((resolve) => setTimeout(resolve, 1000));
             </div>
           </div>
           {/* Input Area */}
-          <div className="border-t border-gray-800 bg-black/30 px-2 md:px-4 py-4 flex justify-center shadow-inner">
+          <div className="border-t border-gray-800 bg-black/30 px-2 md:px-4 py-4 flex flex-col items-center shadow-inner">
+            {/* Token Bar */}
+            <div className="w-full max-w-2xl mx-auto mb-2">
+              <TokenBar
+                tokensLeft={tokensLeft}
+                tokenLimit={TOKEN_LIMIT}
+                refreshTime={tokenRefreshTime}
+                isDev={user?.email === DEVELOPER_EMAIL}
+              />
+            </div>
             <form
               onSubmit={handleSubmit}
               className="w-full max-w-2xl mx-auto"
@@ -1139,8 +1242,10 @@ await new Promise((resolve) => setTimeout(resolve, 1000));
             >
               <div className="relative">
                 <textarea
+                  ref={promptInputRef}
                   value={typeof prompt === "string" ? prompt : ""}
                   onChange={(e) => setPrompt(e.target.value)}
+                  onKeyDown={handlePromptKeyDown}
                   placeholder="Describe the Roblox mod you want to create..."
                   className={`w-full rounded-lg bg-gray-900/60 border border-gray-700 focus:border-[#9b5de5] focus:outline-none focus:ring-2 focus:ring-[#9b5de5]/50 transition-all duration-300 py-3 px-4 pr-14 resize-none shadow-lg ${
                     promptError ? "border-red-500" : ""
@@ -1202,6 +1307,9 @@ await new Promise((resolve) => setTimeout(resolve, 1000));
               </div>
               {promptError && (
                 <div className="mt-2 text-xs text-red-400">{promptError}</div>
+              )}
+              {errorMsg && (
+                <div className="mt-2 text-xs text-red-400">{errorMsg}</div>
               )}
               {!user && (
                 <div className="mt-2 text-xs text-red-400">
