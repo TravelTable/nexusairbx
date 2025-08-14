@@ -25,13 +25,16 @@ const rtf = new Intl.RelativeTimeFormat(undefined, { numeric: "auto" });
 const fromNow = (ts) => {
   if (!ts) return "—";
   const d = +new Date(ts);
-  const diff = d - Date.now();
+  if (!isFinite(d)) return "—";
+  const now = Date.now();
+  const diff = d - now;
   const mins = Math.round(diff / 60000);
-  if (Math.abs(mins) < 60) return rtf.format(mins, "minute");
+  if (isFinite(mins) && Math.abs(mins) < 60) return rtf.format(mins, "minute");
   const hrs = Math.round(diff / 3600000);
-  if (Math.abs(hrs) < 24) return rtf.format(hrs, "hour");
+  if (isFinite(hrs) && Math.abs(hrs) < 24) return rtf.format(hrs, "hour");
   const days = Math.round(diff / 86400000);
-  return rtf.format(days, "day");
+  if (isFinite(days)) return rtf.format(days, "day");
+  return "—";
 };
 
 export default function SidebarContent({
