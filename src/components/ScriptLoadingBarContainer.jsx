@@ -29,6 +29,13 @@ export default function ScriptLoadingBarContainer({
   const [progress, setProgress] = useState(0);
   const [progressLabel, setProgressLabel] = useState("0%");
   const [internalSaved, setInternalSaved] = useState(saved);
+  const [saving, setSaving] = useState(false);
+
+  // Helper for pretty display name, language-aware, consistent truncation
+  const prettyName = (() => {
+    const base = displayName || (filename || "Script").replace(new RegExp(`\\.${language}\\b`, "i"), "");
+    return base.length > 28 ? base.slice(0, 25) + "…" : base;
+  })();
 
   // Reset progress and saved state when loading starts
   useEffect(() => {
@@ -39,70 +46,71 @@ export default function ScriptLoadingBarContainer({
     }
   }, [loading, codeReady]);
 
-  // Progress animation logic: slow, smooth, linear, no jumps or delays
+  // Progress animation logic: buttery-smooth, no race conditions, no stale state
   useEffect(() => {
+    let rafId = null;
+    let intervalId = null;
     let cancelled = false;
-    let interval = null;
+
+    const tickTo100 = (durationMs = 400) => {
+      const start = performance.now();
+      const startVal = progress;
+      const delta = 100 - startVal;
+
+      const step = (t) => {
+        if (cancelled) return;
+        const elapsed = t - start;
+        const pct = elapsed >= durationMs
+          ? 100
+          : startVal + (delta * (elapsed / durationMs));
+        setProgress(pct);
+        setProgressLabel(`${Math.round(pct)}%`);
+        if (pct < 100) rafId = requestAnimationFrame(step);
+      };
+      rafId = requestAnimationFrame(step);
+    };
 
     if (loading && !codeReady) {
-      setProgress(0);
+      // Slow linear climb to 95%
+      setProgress((p) => (p > 0 && p < 95 ? p : 0));
       setProgressLabel("0%");
-      // Progress increases very slowly, e.g., 0.2% every 200ms (about 95 seconds to reach 95%)
-      interval = setInterval(() => {
+      intervalId = setInterval(() => {
         setProgress((prev) => {
           if (cancelled) return prev;
-          if (prev >= 95) return 95;
           const next = Math.min(prev + 0.2, 95);
-          setProgressLabel(`${Math.round(next)}%`);
+          if (next !== prev) setProgressLabel(`${Math.round(next)}%`);
           return next;
         });
       }, 200);
     }
 
-    // When codeReady, animate to 100% smoothly
     if (codeReady) {
-      if (interval) clearInterval(interval);
-      let start = progress;
-      let diff = 100 - start;
-      let steps = Math.max(1, Math.floor(400 / 30));
-      let step = 0;
-      const stepFn = () => {
-        if (cancelled) return;
-        step++;
-        const next =
-          step >= steps
-            ? 100
-            : start + (diff * step) / steps;
-        setProgress(next);
-        setProgressLabel(`${Math.round(next)}%`);
-        if (step < steps) {
-          setTimeout(stepFn, 30);
-        }
-      };
-      stepFn();
+      if (intervalId) clearInterval(intervalId);
+      tickTo100(450);
     }
 
     return () => {
       cancelled = true;
-      if (interval) clearInterval(interval);
+      if (intervalId) clearInterval(intervalId);
+      if (rafId) cancelAnimationFrame(rafId);
     };
-    // eslint-disable-next-line
-  }, [loading, codeReady]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, codeReady]); // deliberately not depending on `progress`
 
   // When parent updates saved prop, sync internal state
   useEffect(() => {
     setInternalSaved(saved);
   }, [saved]);
 
-  // Save handler
+  // Save handler with saving guard
   const handleSave = async () => {
-    if (!internalSaved && typeof onSave === "function") {
-      try {
-        const result = await onSave();
-        if (result !== false) setInternalSaved(true);
-      } catch (e) {
-        // Optionally handle error UI here
-      }
+    if (saving || internalSaved || typeof onSave !== "function") return;
+    try {
+      setSaving(true);
+      const result = await onSave();
+      if (result !== false) setInternalSaved(true);
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -114,7 +122,7 @@ export default function ScriptLoadingBarContainer({
   };
 
   return (
-    <div className="max-w-3xl mx-auto my-4 w-full px-2 sm:px-4">
+    <div className="sbc max-w-3xl mx-auto my-4 w-full px-2 sm:px-4">
       <div className="bg-gray-900 bg-opacity-80 backdrop-blur-sm rounded-lg overflow-hidden border border-gray-700 shadow-lg">
         <div className="relative">
           {/* Header Content */}
@@ -125,32 +133,25 @@ export default function ScriptLoadingBarContainer({
               </div>
               <div className="min-w-0">
                 <div className="flex items-center flex-wrap">
-<span
-  className="font-medium text-white truncate max-w-[160px] sm:max-w-none"
-  title={displayName ? displayName : (filename ? filename.replace(/\.lua$/i, "") : "Script")}
->
-  {(displayName && displayName.length > 28)
-    ? displayName.slice(0, 25) + "..."
-    : (displayName ? displayName : (filename ? filename.replace(/\.lua$/i, "") : "Script"))}
-</span>
+                  <span
+                    className="font-medium text-white truncate max-w-[160px] sm:max-w-none"
+                    title={prettyName}
+                  >
+                    {prettyName}
+                  </span>
                   {version && (
                     <span className="ml-2 text-xs text-gray-300 border-l border-gray-600 pl-2" title={`Script Version: ${version}`}>
                       {typeof version === "string" ? version : `v${version}`}
                     </span>
                   )}
                 </div>
-                <div className="text-xs text-gray-300 mt-0.5 flex items-center flex-wrap">
+                <div className="text-xs text-gray-300 mt-0.5 flex items-center flex-wrap" aria-live="polite">
                   <span>
                     {codeReady
                       ? `${language.toUpperCase()} script generated`
                       : `Generating ${language.toUpperCase()} script...`}
                   </span>
-                  <span
-                    className="ml-2 font-semibold"
-                    aria-live="polite"
-                  >
-                    {progressLabel}
-                  </span>
+                  <span className="ml-2 font-semibold">{progressLabel}</span>
                   {estimatedLines && (
                     <span className="ml-2 text-gray-400">
                       • ~{estimatedLines} lines
@@ -173,13 +174,14 @@ export default function ScriptLoadingBarContainer({
                   ${!codeReady ? 'hidden' : ''}`}>
                 </div>
                 <button
+                  type="button"
                   onClick={handleView}
                   disabled={!codeReady}
+                  aria-disabled={!codeReady}
                   className={`relative flex items-center justify-center w-full sm:w-auto px-4 py-1.5 rounded-md text-sm bg-black text-white
                     border border-transparent group-hover:border-transparent transition-all duration-300
                     ${codeReady ? 'group-hover:shadow-[0_0_15px_rgba(168,85,247,0.5)]' : ''}`}
                   title={codeReady ? "View script" : "Wait for script to complete"}
-                  aria-disabled={!codeReady}
                   style={{ marginRight: "0.5rem" }}
                 >
                   <FileCode className="w-4 h-4 mr-1.5" />
@@ -193,18 +195,24 @@ export default function ScriptLoadingBarContainer({
                   ${!codeReady ? 'hidden' : ''}`}>
                 </div>
                 <button
+                  type="button"
                   onClick={handleSave}
-                  disabled={!codeReady || internalSaved}
+                  disabled={!codeReady || internalSaved || saving}
+                  aria-disabled={!codeReady || internalSaved || saving}
                   className={`relative flex items-center justify-center w-full sm:w-auto px-4 py-1.5 rounded-md text-sm bg-black text-white
                     border border-transparent group-hover:border-transparent transition-all duration-300
-                    ${codeReady && !internalSaved ? 'group-hover:shadow-[0_0_15px_rgba(168,85,247,0.5)]' : ''}`}
+                    ${codeReady && !internalSaved && !saving ? 'group-hover:shadow-[0_0_15px_rgba(168,85,247,0.5)]' : ''}`}
                   title={codeReady ? (internalSaved ? "Already saved" : "Save script") : "Wait for script to complete"}
-                  aria-disabled={!codeReady || internalSaved}
                 >
                   {internalSaved ? (
                     <>
                       <Check className="w-4 h-4 mr-1.5" />
                       <span>Saved</span>
+                    </>
+                  ) : saving ? (
+                    <>
+                      <Save className="w-4 h-4 mr-1.5 animate-pulse" />
+                      <span>Saving…</span>
                     </>
                   ) : (
                     <>
@@ -217,11 +225,15 @@ export default function ScriptLoadingBarContainer({
             </div>
           </div>
           {/* Progress Bar */}
-          <div className="absolute bottom-0 left-0 h-1 bg-gray-800 w-full overflow-hidden">
+          <div
+            className="absolute bottom-0 left-0 h-1 bg-gray-800 w-full overflow-hidden"
+            aria-hidden="true"
+          >
             <div
               className="h-full bg-gradient-to-r from-purple-600 via-blue-500 to-cyan-400 transition-all duration-300 ease-out"
               style={{ width: `${progress}%` }}
-              aria-valuenow={progress}
+              aria-label="Script generation progress"
+              aria-valuenow={Math.round(progress)}
               aria-valuemin={0}
               aria-valuemax={100}
               role="progressbar"
@@ -229,48 +241,48 @@ export default function ScriptLoadingBarContainer({
           </div>
         </div>
       </div>
-      {/* Responsive and animated gradient border CSS */}
+      {/* Responsive and animated gradient border CSS, scoped to .sbc */}
       <style>{`
-        @keyframes borderAnimation {
+        .sbc @keyframes borderAnimation {
           0% { background-position: 0% 50%; }
           50% { background-position: 100% 50%; }
           100% { background-position: 0% 50%; }
         }
-        .group:hover .bg-gradient-to-r {
+        .sbc .group:hover .bg-gradient-to-r {
           animation: borderAnimation 3s ease infinite;
           background-size: 200% 200%;
         }
         @media (max-width: 640px) {
-          .max-w-3xl {
+          .sbc .max-w-3xl {
             max-width: 100vw !important;
           }
-          .rounded-lg {
+          .sbc .rounded-lg {
             border-radius: 1rem !important;
           }
-          .px-3, .sm\\:px-4 {
+          .sbc .px-3, .sbc .sm\\:px-4 {
             padding-left: 0.75rem !important;
             padding-right: 0.75rem !important;
           }
-          .py-3 {
+          .sbc .py-3 {
             padding-top: 0.75rem !important;
             padding-bottom: 0.75rem !important;
           }
-          .flex-row {
+          .sbc .flex-row {
             flex-direction: column !important;
           }
-          .items-center {
+          .sbc .items-center {
             align-items: flex-start !important;
           }
-          .gap-2 {
+          .sbc .gap-2 {
             gap: 0.5rem !important;
           }
-          .mr-3 {
+          .sbc .mr-3 {
             margin-right: 0.75rem !important;
           }
-          .w-full {
+          .sbc .w-full {
             width: 100% !important;
           }
-          .justify-end {
+          .sbc .justify-end {
             justify-content: flex-end !important;
           }
         }
