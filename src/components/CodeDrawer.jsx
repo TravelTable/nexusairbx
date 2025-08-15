@@ -13,7 +13,10 @@ import lua from "react-syntax-highlighter/dist/esm/languages/hljs/lua";
 import { atomOneDark } from "react-syntax-highlighter/dist/esm/styles/hljs";
 
 // Register lua highlighting
-SyntaxHighlighter.registerLanguage("lua", lua);
+// Move this registration OUTSIDE of any component/function, at the top level
+if (!SyntaxHighlighter.supportedLanguages || !SyntaxHighlighter.supportedLanguages.includes("lua")) {
+  SyntaxHighlighter.registerLanguage("lua", lua);
+}
 
 const FONT_SIZE_KEY = "codeDrawerFontSize";
 
@@ -775,32 +778,42 @@ function CodeDrawerUI({
           tabIndex={0}
         >
           <div id="code-drawer-codeblock">
-            <SyntaxHighlighter
-              language="lua"
-              style={atomOneDark}
-              customStyle={{
-                background: "#181825",
-                margin: 0,
-                borderRadius: 0,
-                fontSize: `${fontSize}px`,
-                minHeight: "100%",
-                padding: "1.5rem 1.25rem",
-                outline: "none",
-              }}
-              showLineNumbers
-              wrapLongLines
-              lineProps={lineNumber => lineProps(lineNumber)}
-              useInlineStyles={true}
-              PreTag="pre"
-              CodeTag="code"
-              // dangerouslySetInnerHTML for search highlighting
-              {...(searchTerm && searchMatches.length > 0
-                ? {
-                    children: undefined,
-                    dangerouslySetInnerHTML: { __html: highlightedCode },
-                  }
-                : { children: displayCode })}
-            />
+ <SyntaxHighlighter
+  language="lua"
+  style={atomOneDark}
+  customStyle={{
+    background: "#181825",
+    margin: 0,
+    borderRadius: 0,
+    fontSize: `${fontSize}px`,
+    minHeight: "100%",
+    padding: "1.5rem 1.25rem",
+    outline: "none",
+  }}
+  showLineNumbers
+  wrapLongLines
+  lineProps={lineNumber => lineProps(lineNumber)}
+  useInlineStyles={true}
+  PreTag="pre"
+  CodeTag="code"
+>
+  {(!searchTerm || searchMatches.length === 0) ? displayCode : null}
+</SyntaxHighlighter>
+{(searchTerm && searchMatches.length > 0) && (
+  <div
+    style={{
+      position: "absolute",
+      top: 0,
+      left: 0,
+      width: "100%",
+      height: "100%",
+      pointerEvents: "none",
+      zIndex: 2,
+      background: "transparent",
+    }}
+    dangerouslySetInnerHTML={{ __html: `<pre style="background:transparent;border:none;box-shadow:none;margin:0;padding:1.5rem 1.25rem;font-size:${fontSize}px;line-height:1.5;white-space:pre-wrap;word-break:break-word;">${highlightedCode}</pre>` }}
+  />
+)}
           </div>
         </div>
         {/* Bottom Buttons */}
