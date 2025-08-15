@@ -4,6 +4,7 @@ import React, {
   useState,
   useCallback,
   useMemo,
+  forwardRef,
 } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Copy, Download, Save, Search, Minus, Plus, ArrowRight } from "lucide-react";
@@ -383,6 +384,26 @@ export default function CodeDrawerContainer({
   );
 }
 
+// SecondaryButton needs to be forwardRef to support ref={closeBtnRef}
+const SecondaryButton = forwardRef(function SecondaryButton(
+  { children, onClick, icon: Icon, className = "", "aria-label": ariaLabel },
+  ref
+) {
+  return (
+    <button
+      type="button"
+      ref={ref}
+      className={`flex items-center gap-2 px-4 py-1.5 rounded-md font-bold text-white border border-gray-600 bg-transparent hover:bg-gray-800 text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-[#00f5d4] ${className}`}
+      onClick={onClick}
+      aria-label={ariaLabel}
+      tabIndex={0}
+    >
+      {Icon && <Icon className="h-5 w-5" />}
+      {children}
+    </button>
+  );
+});
+
 // UI component for presentation
 function CodeDrawerUI({
   drawerWidth,
@@ -501,22 +522,6 @@ function CodeDrawerUI({
           {children}
         </button>
       </span>
-    );
-  }
-
-  // Secondary button (for Close)
-  function SecondaryButton({ children, onClick, icon: Icon, className = "", "aria-label": ariaLabel }) {
-    return (
-      <button
-        type="button"
-        className={`flex items-center gap-2 px-4 py-1.5 rounded-md font-bold text-white border border-gray-600 bg-transparent hover:bg-gray-800 text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-[#00f5d4] ${className}`}
-        onClick={onClick}
-        aria-label={ariaLabel}
-        tabIndex={0}
-      >
-        {Icon && <Icon className="h-5 w-5" />}
-        {children}
-      </button>
     );
   }
 
@@ -845,7 +850,73 @@ function CodeDrawerUI({
             </span>
           )}
         </div>
+        {/* Scoped CSS for glow and highlights */}
+        <style>{`
+          .code-drawer-glow {
+            animation: code-drawer-glow-anim 2.5s linear infinite;
+          }
+          @keyframes code-drawer-glow-anim {
+            0% { filter: blur(8px) brightness(1.1); }
+            50% { filter: blur(12px) brightness(1.3); }
+            100% { filter: blur(8px) brightness(1.1); }
+          }
+          .code-drawer-search-highlight {
+            background: #9b5de5;
+            color: #fff;
+            border-radius: 2px;
+            padding: 0 2px;
+          }
+          .code-drawer-search-highlight-active {
+            background: #00f5d4;
+            color: #181825;
+          }
+          .code-drawer-goto-highlight {
+            animation: code-drawer-goto-flash 1.2s;
+          }
+          @keyframes code-drawer-goto-flash {
+            0% { background: rgba(0,245,212,0.35);}
+            100% { background: transparent;}
+          }
+        `}</style>
       </motion.div>
     </AnimatePresence>
+  );
+}
+
+// Button kit: black base + animated glow
+function GlowButton({
+  children,
+  onClick,
+  icon: Icon,
+  className = "",
+  glowColor = "from-[#9b5de5] to-[#00f5d4]",
+  disabled = false,
+  "aria-label": ariaLabel,
+  locked = false,
+}) {
+  return (
+    <span className="relative group inline-flex">
+      <span
+        className={`absolute inset-0 rounded-md bg-gradient-to-r ${glowColor} blur-sm opacity-0 group-hover:opacity-100 group-focus:opacity-100 transition-opacity duration-200 pointer-events-none code-drawer-glow${
+          locked ? " opacity-0" : ""
+        }`}
+        aria-hidden="true"
+      />
+      <button
+        type="button"
+        className={`relative z-10 flex items-center gap-2 px-4 py-1.5 rounded-md font-bold text-white bg-black border border-transparent text-sm shadow transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#00f5d4] ${
+          locked
+            ? "pointer-events-none bg-green-600 border-green-600 shadow-none"
+            : "hover:shadow-lg hover:scale-[1.03] active:scale-100"
+        } ${className}`}
+        onClick={onClick}
+        aria-label={ariaLabel}
+        disabled={disabled}
+        tabIndex={0}
+      >
+        {Icon && <Icon className="h-5 w-5" />}
+        {children}
+      </button>
+    </span>
   );
 }
