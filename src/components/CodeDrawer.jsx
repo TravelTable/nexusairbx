@@ -1,12 +1,20 @@
-import React, { useEffect, useRef, useState, useCallback } from "react";
+import React, {
+  useEffect,
+  useRef,
+  useState,
+  useCallback,
+  useMemo,
+} from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Copy, Download, Save } from "lucide-react";
+import { X, Copy, Download, Save, Search, Minus, Plus, ArrowRight } from "lucide-react";
 import { Light as SyntaxHighlighter } from "react-syntax-highlighter";
 import lua from "react-syntax-highlighter/dist/esm/languages/hljs/lua";
 import { atomOneDark } from "react-syntax-highlighter/dist/esm/styles/hljs";
 
 // Register lua highlighting
 SyntaxHighlighter.registerLanguage("lua", lua);
+
+const FONT_SIZE_KEY = "codeDrawerFontSize";
 
 // Container component for business logic
 export default function CodeDrawerContainer({
@@ -19,7 +27,7 @@ export default function CodeDrawerContainer({
   onSaveScript,
   liveGenerating = false,
   liveContent = "",
-  onLiveOpen
+  onLiveOpen,
 }) {
   // Responsive drawer width calculation
   const getDrawerWidth = useCallback(() => {
@@ -31,18 +39,43 @@ export default function CodeDrawerContainer({
   const [editTitle, setEditTitle] = useState(title || "Script Code");
   const [isEditing, setIsEditing] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
-  const inputRef = useRef(null);
+  const [fontSize, setFontSize] = useState(() => {
+    const stored = localStorage.getItem(FONT_SIZE_KEY);
+    return stored ? Number(stored) : 16;
+  });
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [searchIndex, setSearchIndex] = useState(0);
+  const [searchMatches, setSearchMatches] = useState([]);
+  const [gotoLine, setGotoLine] = useState("");
+  const [highlightLine, setHighlightLine] = useState(null);
 
-  // Handle window resize
+  const inputRef = useRef(null);
+  const closeBtnRef = useRef(null);
+  const drawerRef = useRef(null);
+  const openerRef = useRef(null);
+
+  // Focus trap refs
+  const focusableRefs = useRef([]);
+
+  // Handle window resize (throttled)
   useEffect(() => {
+    let frame;
     function handleResize() {
-      setDrawerWidth(getDrawerWidth());
+      if (frame) return;
+      frame = window.requestAnimationFrame(() => {
+        setDrawerWidth(getDrawerWidth());
+        frame = null;
+      });
     }
     if (open) {
       window.addEventListener("resize", handleResize);
       setDrawerWidth(getDrawerWidth());
     }
-    return () => window.removeEventListener("resize", handleResize);
+    return () => {
+      window.removeEventListener("resize", handleResize);
+      if (frame) window.cancelAnimationFrame(frame);
+    };
   }, [open, getDrawerWidth]);
 
   // Sync title with props
@@ -57,6 +90,74 @@ export default function CodeDrawerContainer({
       inputRef.current.select();
     }
   }, [isEditing]);
+
+  // Focus management: focus close or title input on open, restore on close
+  useEffect(() => {
+    if (open) {
+      openerRef.current = document.activeElement;
+      setTimeout(() => {
+        if (isEditing && inputRef.current) {
+          inputRef.current.focus();
+        } else if (closeBtnRef.current) {
+          closeBtnRef.current.focus();
+        }
+      }, 0);
+    } else if (openerRef.current) {
+      openerRef.current.focus();
+    }
+    // eslint-disable-next-line
+  }, [open]);
+
+  // Keyboard shortcuts and focus trap
+  useEffect(() => {
+    if (!open) return;
+    function handleKeyDown(e) {
+      // Focus trap
+      if (e.key === "Tab") {
+        const focusables = focusableRefs.current.filter(Boolean);
+        if (focusables.length === 0) return;
+        const idx = focusables.indexOf(document.activeElement);
+        if (e.shiftKey) {
+          if (idx <= 0) {
+            e.preventDefault();
+            focusables[focusables.length - 1].focus();
+          }
+        } else {
+          if (idx === focusables.length - 1) {
+            e.preventDefault();
+            focusables[0].focus();
+          }
+        }
+      }
+      // Shortcuts
+      if (e.key === "Escape") {
+        e.preventDefault();
+        onClose();
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") {
+        e.preventDefault();
+        handleSaveScript();
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "c") {
+        e.preventDefault();
+        handleCopy();
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "f") {
+        e.preventDefault();
+        setSearchOpen((v) => !v);
+        setTimeout(() => {
+          const el = document.getElementById("code-drawer-search-input");
+          if (el) el.focus();
+        }, 0);
+      }
+    }
+    const node = drawerRef.current;
+    if (node) node.addEventListener("keydown", handleKeyDown);
+    return () => {
+      if (node) node.removeEventListener("keydown", handleKeyDown);
+    };
+    // eslint-disable-next-line
+  }, [open, handleCopy, handleSaveScript, onClose]);
 
   // Call onLiveOpen when drawer opens
   useEffect(() => {
@@ -78,62 +179,169 @@ export default function CodeDrawerContainer({
     if (!input) return `Script.${ext}`;
     return (
       input
-        .replace(/[\u{1F600}-\u{1F6FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, "")
+        .replace(
+          /[\u{1F600}-\u{1F6FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu,
+          ""
+        )
         .replace(/[^a-zA-Z0-9 _-]/g, "")
         .replace(/\s+/g, "_")
         .replace(/_+/g, "_")
         .replace(/^_+|_+$/g, "")
-        .slice(0, 40)
-        + `.${ext}`
+        .slice(0, 40) +
+      `.${ext}`
     );
   }, []);
 
   // Download file handler
-  const downloadFile = useCallback((ext) => {
-    const blob = new Blob([code], { type: "text/plain" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = sanitizeFilename(filename || editTitle, ext);
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  }, [code, editTitle, filename, sanitizeFilename]);
+  const downloadFile = useCallback(
+    (ext) => {
+      const blob = new Blob([code], { type: "text/plain" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = sanitizeFilename(filename || editTitle, ext);
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    },
+    [code, editTitle, filename, sanitizeFilename]
+  );
 
-  // Copy to clipboard handler
+  // Copy to clipboard handler (with fallback)
   const handleCopy = useCallback(() => {
-    const displayCode = liveGenerating && liveContent ? liveContent : code;
-    navigator.clipboard.writeText(displayCode);
-    setCopySuccess(true);
+    const displayCode =
+      liveGenerating && liveContent ? liveContent : code;
+    function fallbackCopy(text) {
+      const textarea = document.createElement("textarea");
+      textarea.value = text;
+      textarea.setAttribute("readonly", "");
+      textarea.style.position = "absolute";
+      textarea.style.left = "-9999px";
+      document.body.appendChild(textarea);
+      textarea.select();
+      try {
+        document.execCommand("copy");
+      } catch (err) {}
+      document.body.removeChild(textarea);
+    }
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard
+        .writeText(displayCode)
+        .then(() => setCopySuccess(true))
+        .catch(() => {
+          fallbackCopy(displayCode);
+          setCopySuccess(true);
+        });
+    } else {
+      fallbackCopy(displayCode);
+      setCopySuccess(true);
+    }
   }, [code, liveGenerating, liveContent]);
 
-// Save script handler (async, supports backend versioning)
-const handleSaveScript = useCallback(async () => {
-  if (typeof onSaveScript === "function") {
-    const result = await onSaveScript(editTitle, code);
-    if (result !== false) {
-      // Optionally show a "Saved!" toast or UI here
+  // Save script handler (async, supports backend versioning)
+  const handleSaveScript = useCallback(async () => {
+    if (typeof onSaveScript === "function") {
+      const result = await onSaveScript(editTitle, code);
+      if (result !== false) {
+        // Optionally show a "Saved!" toast or UI here
+      }
+    } else {
+      alert("Script saved!\n\nTitle: " + editTitle);
     }
-  } else {
-    alert("Script saved!\n\nTitle: " + editTitle);
-  }
-}, [onSaveScript, editTitle, code]);
+  }, [onSaveScript, editTitle, code]);
 
   // Title editing handlers
   const startEditing = useCallback(() => setIsEditing(true), []);
   const stopEditing = useCallback(() => setIsEditing(false), []);
-  const handleTitleChange = useCallback((e) => setEditTitle(e.target.value), []);
-  const handleTitleKeyDown = useCallback((e) => {
-    if (e.key === "Enter" || e.key === "Escape") {
-      stopEditing();
-    }
-  }, [stopEditing]);
+  const handleTitleChange = useCallback(
+    (e) => setEditTitle(e.target.value),
+    []
+  );
+  const handleTitleKeyDown = useCallback(
+    (e) => {
+      if (e.key === "Enter" || e.key === "Escape") {
+        stopEditing();
+      }
+    },
+    [stopEditing]
+  );
 
-  // Determine display code
-  const displayCode = liveGenerating
-    ? (liveContent && liveContent.trim() !== "" ? liveContent : "-- Generating code... --")
-    : (code && code.trim() !== "" ? code : "-- No code to display --");
+  // Font size controls
+  const handleFontSize = useCallback(
+    (delta) => {
+      setFontSize((prev) => {
+        let next = Math.max(12, Math.min(28, prev + delta));
+        localStorage.setItem(FONT_SIZE_KEY, next);
+        return next;
+      });
+    },
+    []
+  );
+
+  // Determine display code (memoized)
+  const displayCode = useMemo(() => {
+    if (liveGenerating) {
+      return liveContent && liveContent.trim() !== ""
+        ? liveContent
+        : "-- Generating code... --";
+    }
+    return code && code.trim() !== "" ? code : "-- No code to display --";
+  }, [code, liveGenerating, liveContent]);
+
+  // Search logic
+  useEffect(() => {
+    if (!searchTerm) {
+      setSearchMatches([]);
+      setSearchIndex(0);
+      return;
+    }
+    const regex = new RegExp(searchTerm, "gi");
+    const matches = [];
+    let match;
+    while ((match = regex.exec(displayCode))) {
+      matches.push({ start: match.index, end: regex.lastIndex });
+      if (match.index === regex.lastIndex) regex.lastIndex++;
+    }
+    setSearchMatches(matches);
+    setSearchIndex(0);
+  }, [searchTerm, displayCode]);
+
+  // Go-to-line logic
+  const handleGotoLine = useCallback(
+    (e) => {
+      e.preventDefault();
+      const line = parseInt(gotoLine, 10);
+      if (!isNaN(line) && line > 0) {
+        setHighlightLine(line);
+        setTimeout(() => setHighlightLine(null), 1200);
+        // Scroll to line
+        const codeBlock = document.getElementById("code-drawer-codeblock");
+        if (codeBlock) {
+          const lines = codeBlock.querySelectorAll("pre > code > span");
+          if (lines[line - 1]) {
+            lines[line - 1].scrollIntoView({
+              behavior: "smooth",
+              block: "center",
+            });
+          }
+        }
+      }
+    },
+    [gotoLine]
+  );
+
+  // Focusable elements for focus trap
+  useEffect(() => {
+    if (!open) return;
+    const drawer = drawerRef.current;
+    if (!drawer) return;
+    focusableRefs.current = Array.from(
+      drawer.querySelectorAll(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      )
+    );
+  }, [open, isEditing, searchOpen]);
 
   if (!open) return null;
 
@@ -143,6 +351,7 @@ const handleSaveScript = useCallback(async () => {
       editTitle={editTitle}
       isEditing={isEditing}
       inputRef={inputRef}
+      closeBtnRef={closeBtnRef}
       version={version}
       displayCode={displayCode}
       liveGenerating={liveGenerating}
@@ -156,6 +365,20 @@ const handleSaveScript = useCallback(async () => {
       onDownload={downloadFile}
       onSaveScript={handleSaveScript}
       filename={filename}
+      fontSize={fontSize}
+      onFontSize={handleFontSize}
+      searchOpen={searchOpen}
+      setSearchOpen={setSearchOpen}
+      searchTerm={searchTerm}
+      setSearchTerm={setSearchTerm}
+      searchIndex={searchIndex}
+      setSearchIndex={setSearchIndex}
+      searchMatches={searchMatches}
+      gotoLine={gotoLine}
+      setGotoLine={setGotoLine}
+      onGotoLine={handleGotoLine}
+      highlightLine={highlightLine}
+      drawerRef={drawerRef}
     />
   );
 }
@@ -166,6 +389,7 @@ function CodeDrawerUI({
   editTitle,
   isEditing,
   inputRef,
+  closeBtnRef,
   version,
   displayCode,
   liveGenerating,
@@ -178,31 +402,198 @@ function CodeDrawerUI({
   onCopy,
   onDownload,
   onSaveScript,
-  filename
+  filename,
+  fontSize,
+  onFontSize,
+  searchOpen,
+  setSearchOpen,
+  searchTerm,
+  setSearchTerm,
+  searchIndex,
+  setSearchIndex,
+  searchMatches,
+  gotoLine,
+  setGotoLine,
+  onGotoLine,
+  highlightLine,
+  drawerRef,
 }) {
   const drawerVariants = {
     hidden: { x: "100%" },
-    visible: { x: 0 }
+    visible: { x: 0 },
   };
+
+  // Highlight search matches in code
+  const highlightedCode = useMemo(() => {
+    if (!searchTerm || searchMatches.length === 0) return displayCode;
+    let lastIndex = 0;
+    let result = [];
+    searchMatches.forEach((m, i) => {
+      result.push(displayCode.slice(lastIndex, m.start));
+      result.push(
+        `<mark class="code-drawer-search-highlight${
+          i === searchIndex ? " code-drawer-search-highlight-active" : ""
+        }">${displayCode.slice(m.start, m.end)}</mark>`
+      );
+      lastIndex = m.end;
+    });
+    result.push(displayCode.slice(lastIndex));
+    return result.join("");
+  }, [displayCode, searchTerm, searchMatches, searchIndex]);
+
+  // Line highlighting for go-to-line
+  function lineProps(lineNumber) {
+    if (highlightLine === lineNumber) {
+      return {
+        style: {
+          background: "rgba(0,245,212,0.18)",
+          transition: "background 0.3s",
+        },
+        className: "code-drawer-goto-highlight",
+      };
+    }
+    return {};
+  }
+
+  // Live status badge (pulse dot + label)
+  function LiveStatus() {
+    if (!liveGenerating) return null;
+    return (
+      <span className="flex items-center gap-1 ml-2">
+        <span className="inline-block w-2 h-2 rounded-full bg-[#00f5d4] animate-pulse" />
+        <span className="text-xs text-[#00f5d4] font-mono">Generating...</span>
+      </span>
+    );
+  }
+
+  // Button kit: black base + animated glow
+  function GlowButton({
+    children,
+    onClick,
+    icon: Icon,
+    className = "",
+    glowColor = "from-[#9b5de5] to-[#00f5d4]",
+    disabled = false,
+    "aria-label": ariaLabel,
+    locked = false,
+  }) {
+    return (
+      <span className="relative group inline-flex">
+        <span
+          className={`absolute inset-0 rounded-md bg-gradient-to-r ${glowColor} blur-sm opacity-0 group-hover:opacity-100 group-focus:opacity-100 transition-opacity duration-200 pointer-events-none code-drawer-glow${
+            locked ? " opacity-0" : ""
+          }`}
+          aria-hidden="true"
+        />
+        <button
+          type="button"
+          className={`relative z-10 flex items-center gap-2 px-4 py-1.5 rounded-md font-bold text-white bg-black border border-transparent text-sm shadow transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#00f5d4] ${
+            locked
+              ? "pointer-events-none bg-green-600 border-green-600 shadow-none"
+              : "hover:shadow-lg hover:scale-[1.03] active:scale-100"
+          } ${className}`}
+          onClick={onClick}
+          aria-label={ariaLabel}
+          disabled={disabled}
+          tabIndex={0}
+        >
+          {Icon && <Icon className="h-5 w-5" />}
+          {children}
+        </button>
+      </span>
+    );
+  }
+
+  // Secondary button (for Close)
+  function SecondaryButton({ children, onClick, icon: Icon, className = "", "aria-label": ariaLabel }) {
+    return (
+      <button
+        type="button"
+        className={`flex items-center gap-2 px-4 py-1.5 rounded-md font-bold text-white border border-gray-600 bg-transparent hover:bg-gray-800 text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-[#00f5d4] ${className}`}
+        onClick={onClick}
+        aria-label={ariaLabel}
+        tabIndex={0}
+      >
+        {Icon && <Icon className="h-5 w-5" />}
+        {children}
+      </button>
+    );
+  }
+
+  // Search navigation
+  function handleSearchNav(dir) {
+    if (!searchMatches.length) return;
+    setSearchIndex((prev) => {
+      let next = prev + dir;
+      if (next < 0) next = searchMatches.length - 1;
+      if (next >= searchMatches.length) next = 0;
+      return next;
+    });
+  }
+
+  // Search input clear
+  function handleSearchClear() {
+    setSearchTerm("");
+    setSearchOpen(false);
+    setSearchIndex(0);
+  }
+
+  // ARIA
+  const ariaLabelledBy = "drawer-title";
+  const ariaDescribedBy = "drawer-body";
 
   return (
     <AnimatePresence>
       <motion.div
         key="drawer"
-        className="fixed right-0 top-0 z-[120] h-full flex flex-col bg-[#181825] border-l border-[#9b5de5] shadow-2xl"
+        ref={drawerRef}
+        className="fixed right-0 top-0 z-[120] h-full flex flex-col bg-[#181825] border-l border-[#9b5de5] shadow-2xl code-drawer-root"
         style={{
           width: drawerWidth,
           minWidth: 280,
           maxWidth: "100vw",
           maxHeight: "100vh",
-          pointerEvents: "auto"
+          pointerEvents: "auto",
         }}
         initial="hidden"
         animate="visible"
         exit="hidden"
         variants={drawerVariants}
         transition={{ type: "spring", stiffness: 350, damping: 35 }}
+        tabIndex={-1}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={ariaLabelledBy}
+        aria-describedby={ariaDescribedBy}
       >
+        {/* Scoped CSS for glow and highlights */}
+        <style>{`
+          .code-drawer-glow {
+            animation: code-drawer-glow-anim 2.5s linear infinite;
+          }
+          @keyframes code-drawer-glow-anim {
+            0% { filter: blur(8px) brightness(1.1); }
+            50% { filter: blur(12px) brightness(1.3); }
+            100% { filter: blur(8px) brightness(1.1); }
+          }
+          .code-drawer-search-highlight {
+            background: #9b5de5;
+            color: #fff;
+            border-radius: 2px;
+            padding: 0 2px;
+          }
+          .code-drawer-search-highlight-active {
+            background: #00f5d4;
+            color: #181825;
+          }
+          .code-drawer-goto-highlight {
+            animation: code-drawer-goto-flash 1.2s;
+          }
+          @keyframes code-drawer-goto-flash {
+            0% { background: rgba(0,245,212,0.35);}
+            100% { background: transparent;}
+          }
+        `}</style>
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-800 bg-[#181825] sticky top-0 z-10">
           <div className="flex-1 min-w-0 flex items-center gap-2">
@@ -216,6 +607,7 @@ function CodeDrawerUI({
                 onBlur={onStopEditing}
                 onKeyDown={onTitleKeyDown}
                 aria-label="Edit script title"
+                tabIndex={0}
               />
             ) : (
               <button
@@ -223,8 +615,9 @@ function CodeDrawerUI({
                 title={`${editTitle} (click to edit)`}
                 onClick={onStartEditing}
                 aria-label="Edit script title"
+                tabIndex={0}
               >
-                {editTitle}
+                <span id={ariaLabelledBy}>{editTitle}</span>
               </button>
             )}
             {filename && (
@@ -232,7 +625,9 @@ function CodeDrawerUI({
                 className="ml-2 text-xs text-gray-400 truncate max-w-[140px]"
                 title={filename}
               >
-                {(filename.length > 24) ? filename.slice(0, 21) + "..." : filename}
+                {filename.length > 24
+                  ? filename.slice(0, 21) + "..."
+                  : filename}
               </span>
             )}
             {version && (
@@ -240,96 +635,215 @@ function CodeDrawerUI({
                 {version}
               </span>
             )}
+            <LiveStatus />
           </div>
-          <button
-            className="p-2 rounded-full hover:bg-gray-800 transition-colors ml-2 focus:outline-none focus:ring-2 focus:ring-[#00f5d4]"
-            onClick={onClose}
-            aria-label="Close drawer"
-          >
-            <X className="h-6 w-6 text-white" />
-          </button>
+          {/* Header controls: Search, Font size, Go-to-line */}
+          <div className="flex items-center gap-2 ml-2">
+            {/* Search */}
+            <button
+              className="p-2 rounded-full hover:bg-gray-800 transition-colors focus:outline-none focus:ring-2 focus:ring-[#00f5d4]"
+              onClick={() => {
+                setSearchOpen((v) => !v);
+                setTimeout(() => {
+                  const el = document.getElementById("code-drawer-search-input");
+                  if (el) el.focus();
+                }, 0);
+              }}
+              aria-label="Search in code"
+              tabIndex={0}
+            >
+              <Search className="h-5 w-5 text-white" />
+            </button>
+            {/* Font size */}
+            <button
+              className="p-2 rounded-full hover:bg-gray-800 transition-colors focus:outline-none focus:ring-2 focus:ring-[#00f5d4]"
+              onClick={() => onFontSize(-2)}
+              aria-label="Decrease font size"
+              tabIndex={0}
+            >
+              <Minus className="h-5 w-5 text-white" />
+            </button>
+            <span className="text-xs text-gray-400 font-mono w-6 text-center select-none">
+              {fontSize}
+            </span>
+            <button
+              className="p-2 rounded-full hover:bg-gray-800 transition-colors focus:outline-none focus:ring-2 focus:ring-[#00f5d4]"
+              onClick={() => onFontSize(2)}
+              aria-label="Increase font size"
+              tabIndex={0}
+            >
+              <Plus className="h-5 w-5 text-white" />
+            </button>
+            {/* Go-to-line */}
+            <form
+              className="flex items-center gap-1 ml-2"
+              onSubmit={onGotoLine}
+              autoComplete="off"
+            >
+              <span className="text-xs text-gray-400 font-mono">:</span>
+              <input
+                type="number"
+                min={1}
+                max={9999}
+                value={gotoLine}
+                onChange={(e) => setGotoLine(e.target.value)}
+                className="w-10 bg-transparent border-b border-gray-600 text-white text-xs px-1 py-0 outline-none focus:border-[#00f5d4] transition-all"
+                placeholder="#"
+                aria-label="Go to line"
+                tabIndex={0}
+              />
+              <button
+                type="submit"
+                className="p-1 rounded hover:bg-gray-800 transition-colors"
+                aria-label="Go to line"
+                tabIndex={0}
+              >
+                <ArrowRight className="h-4 w-4 text-white" />
+              </button>
+            </form>
+            {/* Close */}
+            <SecondaryButton
+              ref={closeBtnRef}
+              onClick={onClose}
+              icon={X}
+              aria-label="Close drawer"
+              className="ml-2"
+            >
+              Close
+            </SecondaryButton>
+          </div>
         </div>
-
+        {/* Search bar */}
+        {searchOpen && (
+          <div className="flex items-center gap-2 px-5 py-2 bg-[#181825] border-b border-gray-800">
+            <input
+              id="code-drawer-search-input"
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="flex-1 bg-transparent border-b border-[#00f5d4] text-white text-sm px-2 py-1 outline-none focus:border-[#9b5de5] transition-all"
+              placeholder="Search in code…"
+              aria-label="Search in code"
+              tabIndex={0}
+            />
+            <span className="text-xs text-gray-400 font-mono">
+              {searchMatches.length > 0
+                ? `${searchIndex + 1}/${searchMatches.length}`
+                : ""}
+            </span>
+            <button
+              className="p-1 rounded hover:bg-gray-800 transition-colors"
+              onClick={() => handleSearchNav(-1)}
+              aria-label="Previous match"
+              tabIndex={0}
+              disabled={searchMatches.length === 0}
+            >
+              <svg width="16" height="16" fill="none" viewBox="0 0 16 16">
+                <path d="M10 12L6 8l4-4" stroke="#fff" strokeWidth="2" strokeLinecap="round" />
+              </svg>
+            </button>
+            <button
+              className="p-1 rounded hover:bg-gray-800 transition-colors"
+              onClick={() => handleSearchNav(1)}
+              aria-label="Next match"
+              tabIndex={0}
+              disabled={searchMatches.length === 0}
+            >
+              <svg width="16" height="16" fill="none" viewBox="0 0 16 16">
+                <path d="M6 4l4 4-4 4" stroke="#fff" strokeWidth="2" strokeLinecap="round" />
+              </svg>
+            </button>
+            <button
+              className="p-1 rounded hover:bg-gray-800 transition-colors"
+              onClick={handleSearchClear}
+              aria-label="Clear search"
+              tabIndex={0}
+            >
+              <X className="h-4 w-4 text-white" />
+            </button>
+          </div>
+        )}
         {/* Code Viewer */}
-        <div className="flex-1 overflow-auto relative">
-          <SyntaxHighlighter
-            language="lua"
-            style={atomOneDark}
-            customStyle={{
-              background: "#181825",
-              margin: 0,
-              borderRadius: 0,
-              fontSize: "1rem",
-              minHeight: "100%",
-              padding: "1.5rem 1.25rem"
-            }}
-            showLineNumbers
-            wrapLongLines
-          >
-            {displayCode}
-          </SyntaxHighlighter>
-          
-          {liveGenerating && (
-            <div className="absolute bottom-4 left-0 w-full flex justify-center pointer-events-none">
-              <span className="bg-[#181825] text-[#00f5d4] px-4 py-2 rounded-lg font-mono text-sm animate-pulse border border-[#00f5d4] shadow-lg">
-                Generating code live...
-              </span>
-            </div>
-          )}
-        </div>
-
-        {/* Bottom Buttons */}
-        <div className="flex flex-wrap items-center gap-3 justify-end p-4 border-t border-gray-800 bg-[#161622] sticky bottom-0 z-10">
-          <button
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-white ${
-              copySuccess 
-                ? "bg-green-600" 
-                : "bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] hover:scale-105"
-            } shadow transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-[#00f5d4]`}
-            onClick={onCopy}
-            aria-label="Copy code"
-          >
-            <Copy className="h-5 w-5" />
-            {copySuccess ? "Copied!" : "Copy"}
-          </button>
-          
-          <div className="flex items-center gap-2">
-            <button
-              className="flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-white bg-gray-800 hover:bg-gray-700 transition-colors focus:outline-none focus:ring-2 focus:ring-[#00f5d4]"
-              onClick={() => onDownload("lua")}
-              aria-label="Download as .lua"
-            >
-              <Download className="h-5 w-5" />
-              .lua
-            </button>
-            
-            <button
-              className="flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-white bg-gray-800 hover:bg-gray-700 transition-colors focus:outline-none focus:ring-2 focus:ring-[#00f5d4]"
-              onClick={() => onDownload("txt")}
-              aria-label="Download as .txt"
-            >
-              <Download className="h-5 w-5" />
-              .txt
-            </button>
+        <div
+          className="flex-1 overflow-auto relative"
+          id={ariaDescribedBy}
+          tabIndex={0}
+        >
+          <div id="code-drawer-codeblock">
+            <SyntaxHighlighter
+              language="lua"
+              style={atomOneDark}
+              customStyle={{
+                background: "#181825",
+                margin: 0,
+                borderRadius: 0,
+                fontSize: `${fontSize}px`,
+                minHeight: "100%",
+                padding: "1.5rem 1.25rem",
+                outline: "none",
+              }}
+              showLineNumbers
+              wrapLongLines
+              lineProps={lineNumber => lineProps(lineNumber)}
+              useInlineStyles={true}
+              PreTag="pre"
+              CodeTag="code"
+              // dangerouslySetInnerHTML for search highlighting
+              {...(searchTerm && searchMatches.length > 0
+                ? {
+                    children: undefined,
+                    dangerouslySetInnerHTML: { __html: highlightedCode },
+                  }
+                : { children: displayCode })}
+            />
           </div>
-          
-          <button
-            className="flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-white bg-[#00f5d4] hover:bg-[#9b5de5] transition-colors focus:outline-none focus:ring-2 focus:ring-white"
-            onClick={onSaveScript}
-            aria-label="Save script"
+        </div>
+        {/* Bottom Buttons */}
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3 justify-end p-4 border-t border-gray-800 bg-[#161622] sticky bottom-0 z-10">
+          <GlowButton
+            onClick={onCopy}
+            icon={Copy}
+            aria-label="Copy code"
+            locked={copySuccess}
           >
-            <Save className="h-5 w-5" />
+            {copySuccess ? "Copied!" : "Copy"}
+          </GlowButton>
+          <GlowButton
+            onClick={() => onDownload("lua")}
+            icon={Download}
+            aria-label="Download as .lua"
+          >
+            .lua
+          </GlowButton>
+          <GlowButton
+            onClick={() => onDownload("txt")}
+            icon={Download}
+            aria-label="Download as .txt"
+          >
+            .txt
+          </GlowButton>
+          <GlowButton
+            onClick={onSaveScript}
+            icon={Save}
+            aria-label="Save script"
+            glowColor="from-[#00f5d4] to-[#9b5de5]"
+          >
             Save Script
-          </button>
-          
-          <button
-            className="flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-white bg-gray-700 hover:bg-gray-600 transition-colors focus:outline-none focus:ring-2 focus:ring-[#00f5d4]"
+          </GlowButton>
+          <SecondaryButton
             onClick={onClose}
+            icon={X}
             aria-label="Close"
           >
-            <X className="h-5 w-5" />
             Close
-          </button>
+          </SecondaryButton>
+          {/* Live status badge in bottom bar */}
+          {liveGenerating && (
+            <span className="flex items-center gap-1 ml-4">
+              <span className="inline-block w-2 h-2 rounded-full bg-[#00f5d4] animate-pulse" />
+              <span className="text-xs text-[#00f5d4] font-mono">Generating code live…</span>
+            </span>
+          )}
         </div>
       </motion.div>
     </AnimatePresence>
