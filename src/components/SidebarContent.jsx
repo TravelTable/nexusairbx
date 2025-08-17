@@ -773,7 +773,6 @@ const handleToggleSaveScript = useCallback(async (script) => {
     <MessageCircle className="h-4 w-4 text-[#00f5d4]" />
     <span className="font-bold text-[#00f5d4]">Version History</span>
   </div>
-
   {currentScriptId && (
     <button
       className="p-1 rounded hover:bg-gray-800 transition"
@@ -800,46 +799,67 @@ const handleToggleSaveScript = useCallback(async (script) => {
                 </div>
               )}
               <div className="space-y-2">
-                {(versionHistory ?? []).map((ver, vIdx) => (
-                  <div
-                    key={keyFor(ver, vIdx)}
-                    className="flex items-center justify-between px-3 py-2 border-b border-gray-800 last:border-b-0 hover:bg-gray-800 transition-colors rounded"
-                  >
-                    <div className="flex flex-col flex-1 min-w-0">
-                      <span className="font-semibold text-[#00f5d4] truncate block max-w-[12rem] md:max-w-[16rem]" title={ver.title || "Untitled"}>
-                        {ver.title || "Untitled"}
-                      </span>
-                      <span className="text-xs text-gray-400" title={ver.createdAt ? toJsDate(ver.createdAt)?.toLocaleString() : undefined}>
-                        {ver.version ? `v${ver.version}` : ""}
-                        {ver.createdAt ? ` • ${fromNow(ver.createdAt)}` : ""}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-1 ml-2">
-                      <button
-                        className="p-1 rounded hover:bg-gray-700"
-                        title="View"
-                        aria-label="View version"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          memoOnVersionView(ver);
-                        }}
-                      >
-                        <Eye className="h-4 w-4 text-[#00f5d4]" />
-                      </button>
-                      <button
-                        className="p-1 rounded hover:bg-gray-700"
-                        title="Download"
-                        aria-label="Download version"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          memoOnVersionDownload(ver);
-                        }}
-                      >
-                        <Download className="h-4 w-4 text-gray-400" />
-                      </button>
-                    </div>
-                  </div>
-                ))}
+                {(versionHistory ?? []).map((ver, vIdx) => {
+  const isSaved = savedIdSet.has(ver.id);
+  return (
+    <div
+      key={keyFor(ver, vIdx)}
+      className="flex items-center justify-between px-3 py-2 border-b border-gray-800 last:border-b-0 hover:bg-gray-800 transition-colors rounded"
+    >
+      <div className="flex flex-col flex-1 min-w-0">
+        <span className="font-semibold text-[#00f5d4] truncate block max-w-[12rem] md:max-w-[16rem]" title={ver.title || "Untitled"}>
+          {ver.title || "Untitled"}
+        </span>
+        <span className="text-xs text-gray-400" title={ver.createdAt ? toJsDate(ver.createdAt)?.toLocaleString() : undefined}>
+          {ver.version ? `v${ver.version}` : ""}
+          {ver.createdAt ? ` • ${fromNow(ver.createdAt)}` : ""}
+        </span>
+      </div>
+      <div className="flex items-center gap-1 ml-2">
+        <button
+          className="p-1 rounded hover:bg-gray-700"
+          title={isSaved ? "Unsave script" : "Save script"}
+          aria-label={isSaved ? "Unsave script" : "Save script"}
+          onClick={(e) => {
+            e.stopPropagation();
+            handleToggleSaveScript({
+              id: ver.id,
+              title: ver.title || "Untitled",
+            });
+          }}
+        >
+          {isSaved ? (
+            <BookmarkCheck className="h-4 w-4 text-[#00f5d4]" />
+          ) : (
+            <Bookmark className="h-4 w-4 text-gray-400" />
+          )}
+        </button>
+        <button
+          className="p-1 rounded hover:bg-gray-700"
+          title="View"
+          aria-label="View version"
+          onClick={(e) => {
+            e.stopPropagation();
+            memoOnVersionView(ver);
+          }}
+        >
+          <Eye className="h-4 w-4 text-[#00f5d4]" />
+        </button>
+        <button
+          className="p-1 rounded hover:bg-gray-700"
+          title="Download"
+          aria-label="Download version"
+          onClick={(e) => {
+            e.stopPropagation();
+            memoOnVersionDownload(ver);
+          }}
+        >
+          <Download className="h-4 w-4 text-gray-400" />
+        </button>
+      </div>
+    </div>
+  );
+})}
               </div>
             </div>
           </div>
@@ -962,49 +982,49 @@ const handleToggleSaveScript = useCallback(async (script) => {
                       </span>
                     </div>
                   </div>
-                  <div className="flex items-center gap-1 ml-2">
-                    {renamingChatId === chat.id ? (
-                      <button
-                        className="p-1 rounded hover:bg-gray-700"
-                        title="Save"
-                        tabIndex={-1}
-                        aria-label="Save chat name"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleRenameChatCommit(chat.id, renameChatTitle);
-                          setRenamingChatId(null);
-                        }}
-                      >
-                        <Check className="h-4 w-4 text-green-400" />
-                      </button>
-                    ) : (
-                      <button
-                        className="p-1 rounded hover:bg-gray-700"
-                        title="Rename"
-                        tabIndex={-1}
-                        aria-label="Rename chat"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setRenamingChatId(chat.id);
-                          setRenameChatTitle(chat.title || "");
-                        }}
-                      >
-                        <Edit className="h-4 w-4 text-gray-400" />
-                      </button>
-                    )}
-                    <button
-                      className="p-1 rounded hover:bg-gray-700"
-                      title="Delete"
-                      tabIndex={-1}
-                      aria-label="Delete chat"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setDeleteChatId(chat.id);
-                      }}
-                    >
-                      <Trash2 className="h-4 w-4 text-gray-400" />
-                    </button>
-                  </div>
+<div className="flex items-center gap-1 ml-2">
+  {renamingChatId === chat.id ? (
+    <button
+      className="p-1 rounded hover:bg-gray-700"
+      title="Save"
+      tabIndex={-1}
+      aria-label="Save chat name"
+      onClick={(e) => {
+        e.stopPropagation();
+        handleRenameChatCommit(chat.id, renameChatTitle);
+        setRenamingChatId(null);
+      }}
+    >
+      <Check className="h-4 w-4 text-green-400" />
+    </button>
+  ) : (
+    <button
+      className="p-1 rounded hover:bg-gray-700"
+      title="Rename"
+      tabIndex={-1}
+      aria-label="Rename chat"
+      onClick={(e) => {
+        e.stopPropagation();
+        setRenamingChatId(chat.id);
+        setRenameChatTitle(chat.title || "");
+      }}
+    >
+      <Edit className="h-4 w-4 text-gray-400" />
+    </button>
+  )}
+  <button
+    className="p-1 rounded hover:bg-gray-700"
+    title="Delete"
+    tabIndex={-1}
+    aria-label="Delete chat"
+    onClick={(e) => {
+      e.stopPropagation();
+      setDeleteChatId(chat.id);
+    }}
+  >
+    <Trash2 className="h-4 w-4 text-gray-400" />
+  </button>
+</div>
                 </button>
               ))}
             </div>
@@ -1059,49 +1079,98 @@ const handleToggleSaveScript = useCallback(async (script) => {
               />
             </div>
 
-            <div className="space-y-2">
-              {(filteredSavedScripts ?? []).map((row) => (
-                <button
-                  type="button"
-                  key={row.id}
-                  className="w-full flex items-center justify-between px-3 py-2 rounded-lg border border-gray-700 bg-gray-900/40 transition-colors text-left group"
-                  onClick={() => {
-                    if (row.scriptId) handleScriptSelect(row.scriptId);
-                  }}
-                  title="Open saved script"
-                >
-                  <div className="flex-1 min-w-0">
-                    <span
-                      className="font-semibold text-white truncate block max-w-[12rem] md:max-w-[16rem]"
-                      title={row.title || "Untitled"}
-                    >
-                      {row.title || "Untitled"}
-                    </span>
-                    <div className="text-xs text-gray-400">
-                      {row.updatedAt && (
-                        <span title={toJsDate(row.updatedAt)?.toLocaleString?.()}>
-                          Saved {fromNow(row.updatedAt)}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-1 ml-2">
-                    <button
-                      className="p-1 rounded hover:bg-gray-700"
-                      title="Unsave"
-                      tabIndex={-1}
-                      aria-label="Unsave script"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleUnsaveBySavedId(row.id);
-                      }}
-                    >
-                      <Bookmark className="h-4 w-4 text-[#00f5d4]" />
-                    </button>
-                  </div>
-                </button>
-              ))}
-            </div>
+<div className="space-y-2">
+  {(filteredSavedScripts ?? []).map((row) => (
+    <button
+      type="button"
+      key={row.id}
+      className="w-full flex items-center justify-between px-3 py-2 rounded-lg border border-gray-700 bg-gray-900/40 transition-colors text-left group"
+      onClick={async () => {
+        if (row.scriptId) {
+          // Try to get the latest code for this scriptId from versionHistory or backend
+          let code = "";
+          let title = row.title || "Untitled";
+          let version = "";
+          // Try to find in versionHistory first (if available)
+          if (typeof window !== "undefined" && window.nexusVersionHistory && Array.isArray(window.nexusVersionHistory)) {
+            const found = window.nexusVersionHistory.find(v => v.id === row.scriptId || v.projectId === row.scriptId);
+            if (found) {
+              code = found.code || "";
+              title = found.title || title;
+              version = found.version ? `v${found.version}` : "";
+            }
+          }
+          // If not found, fetch from backend
+          if (!code && typeof fetch !== "undefined") {
+            try {
+              const user = window.nexusCurrentUser;
+              let idToken = "";
+              if (user && user.getIdToken) {
+                idToken = await user.getIdToken();
+              }
+              const res = await fetch(
+                `${process.env.REACT_APP_BACKEND_URL || "https://nexusrbx-backend-production.up.railway.app"}/api/projects/${row.scriptId}/versions`,
+                {
+                  headers: idToken ? { Authorization: `Bearer ${idToken}` } : {},
+                }
+              );
+              if (res.ok) {
+                const data = await res.json();
+                if (Array.isArray(data.versions) && data.versions.length > 0) {
+                  const latest = data.versions[0];
+                  code = latest.code || "";
+                  title = latest.title || title;
+                  version = latest.version ? `v${latest.version}` : "";
+                }
+              }
+            } catch {}
+          }
+          window.dispatchEvent(
+            new CustomEvent("nexus:openCodeDrawer", {
+              detail: {
+                scriptId: row.scriptId,
+                code,
+                title,
+                version,
+              },
+            })
+          );
+        }
+      }}
+      title="Open saved script"
+    >
+      <div className="flex-1 min-w-0">
+        <span
+          className="font-semibold text-white truncate block max-w-[12rem] md:max-w-[16rem]"
+          title={row.title || "Untitled"}
+        >
+          {row.title || "Untitled"}
+        </span>
+        <div className="text-xs text-gray-400">
+          {row.updatedAt && (
+            <span title={toJsDate(row.updatedAt)?.toLocaleString?.()}>
+              Saved {fromNow(row.updatedAt)}
+            </span>
+          )}
+        </div>
+      </div>
+      <div className="flex items-center gap-1 ml-2">
+        <button
+          className="p-1 rounded hover:bg-gray-700"
+          title="Unsave"
+          tabIndex={-1}
+          aria-label="Unsave script"
+          onClick={(e) => {
+            e.stopPropagation();
+            handleUnsaveBySavedId(row.id);
+          }}
+        >
+          <Bookmark className="h-4 w-4 text-[#00f5d4]" />
+        </button>
+      </div>
+    </button>
+  ))}
+</div>
           </div>
         )}
       </div>

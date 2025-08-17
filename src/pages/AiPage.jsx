@@ -699,6 +699,37 @@ export default function NexusRBXAIPageContainer() {
     );
   }, [user]);
 
+  useEffect(() => {
+  function onOpenCodeDrawer(e) {
+    const scriptId = e?.detail?.scriptId;
+    const code = e?.detail?.code;
+    const title = e?.detail?.title;
+    const version = e?.detail?.version;
+    if (!scriptId) return;
+    // If code is provided (from saved tab), open drawer immediately
+    if (code) {
+    setSelectedVersion({
+      id: scriptId,
+      code,
+      title: title || "Script",
+      version: version || "",
+      explanation: "",
+      createdAt: new Date().toISOString(),
+    });
+      return;
+    }
+    // If already loaded, open the latest version
+    if (scriptId === currentScriptId && versionHistory.length > 0) {
+      setSelectedVersion(versionHistory[0]);
+    } else {
+      setCurrentScriptId(scriptId);
+      // When versionHistory loads, the code drawer will open automatically
+    }
+  }
+  window.addEventListener("nexus:openCodeDrawer", onOpenCodeDrawer);
+  return () => window.removeEventListener("nexus:openCodeDrawer", onOpenCodeDrawer);
+}, [currentScriptId, versionHistory]);
+
   // --- Main Generation Flow (Handles both new script and new version) ---
 const handleSubmit = async (e) => {
   e.preventDefault();
@@ -1580,62 +1611,107 @@ const handleSubmit = async (e) => {
       </main>
       {/* --- Code Drawer Integration --- */}
       {selectedVersion && (
-        <SimpleCodeDrawer
-          open={!!selectedVersion}
-          code={selectedVersion.code}
-          title={selectedVersion.title}
-          filename={safeFile(selectedVersion.title)}
-          version={selectedVersion.version ? `v${selectedVersion.version}` : ""}
-          onClose={() => setSelectedVersion(null)}
-          onSaveScript={async (newTitle, code, explanation = "") => {
-            try {
-              if (!user || !currentScriptId || !code) return false;
-              const res = await authedFetch(user, `${BACKEND_URL}/api/projects/${currentScriptId}/versions`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  code,
-                  explanation,
-                  title: newTitle || (currentScript?.title || "Script"),
-                }),
-              });
-              if (!res.ok) {
-                const t = await res.text();
-                setErrorMsg(`Save failed: ${res.status} ${res.statusText} - ${t.slice(0,120)}`);
-                return false;
-              }
-              // refresh versions immediately (bypass throttle)
-              lastVersionsFetchRef.current = 0;
-              versionsBackoffRef.current = 0;
-              setSuccessMsg("Saved new version");
+<SimpleCodeDrawer
+  open={!!selectedVersion}
+  code={selectedVersion.code}
+  title={selectedVersion.title}
+  filename={safeFile(selectedVersion.title)}
+  version={selectedVersion.version ? `v${selectedVersion.version}` : ""}
+  onClose={() => setSelectedVersion(null)}
+  onSaveScript={async (newTitle, code, explanation = "") => {
+    try {
+      if (!user || !code) return false;
 
-              // Optional: when saving a new version from the code drawer, log a tiny assistant message
-              try {
-                const db = getFirestore();
-                const authUser = auth.currentUser;
-                if (authUser && currentChatId) {
-                  const chatRef = doc(db, "users", authUser.uid, "chats", currentChatId);
-                  const msgRef = doc(collection(chatRef, "messages"));
-                  await setDoc(msgRef, {
-                    role: "assistant",
-                    content: "Saved a new version.",
-                    createdAt: serverTimestamp(),
-                  });
-                  await updateDoc(chatRef, {
-                    lastMessage: "Saved a new version.",
-                    updatedAt: serverTimestamp(),
-                  });
-                }
-              } catch {}
+      // Try to determine the script/project ID
+      let scriptId = currentScriptId;
+      // If not available, try to use selectedVersion.id as scriptId
+      if (!scriptId && selectedVersion?.id) {
+        scriptId = selectedVersion.id;
+      }
 
-              return true;
-            } catch (e) {
-              setErrorMsg(`Save error: ${e.message || e}`);
-              return false;
-            }
-          }}
-          onLiveOpen={() => {}}
-        />
+      // If still not available, create a new project
+      if (!scriptId) {
+        const resCreate = await authedFetch(user, `${BACKEND_URL}/api/projects`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ title: newTitle || "Script" }),
+        });
+        if (!resCreate.ok) {
+          setErrorMsg("Failed to create new script for saving.");
+          return false;
+        }
+        const data = await resCreate.json();
+        scriptId = data.projectId;
+        setCurrentScriptId(scriptId);
+      }
+
+      // Save the new version
+      const res = await authedFetch(user, `${BACKEND_URL}/api/projects/${scriptId}/versions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          code,
+          explanation,
+          title: newTitle || (currentScript?.title || "Script"),
+        }),
+      });
+      if (!res.ok) {
+        const t = await res.text();
+        setErrorMsg(`Save failed: ${res.status} ${res.statusText} - ${t.slice(0,120)}`);
+        return false;
+      }
+      // refresh versions immediately (bypass throttle)
+      lastVersionsFetchRef.current = 0;
+      versionsBackoffRef.current = 0;
+      setSuccessMsg("Saved new version");
+
+      // Immediately update versionHistory and selectedVersion with the new version
+      try {
+        const versionsRes = await authedFetch(user, `${BACKEND_URL}/api/projects/${scriptId}/versions`, { method: "GET" });
+        if (versionsRes.ok) {
+          const versionsData = await versionsRes.json();
+          const versions = Array.isArray(versionsData.versions) ? versionsData.versions : [];
+          const sorted = versions
+            .map(v => ({
+              ...v,
+              createdAt: typeof v.createdAt === "number"
+                ? v.createdAt
+                : Date.parse(v.createdAt) || Date.now(),
+            }))
+            .sort((a, b) => (b.version || 1) - (a.version || 1));
+          setVersionHistory(sorted);
+          setCurrentScript({ id: scriptId, title: newTitle || (currentScript?.title || "Script"), versions: sorted });
+          setSelectedVersion(sorted[0]);
+        }
+      } catch {}
+
+      // Optional: when saving a new version from the code drawer, log a tiny assistant message
+      try {
+        const db = getFirestore();
+        const authUser = auth.currentUser;
+        if (authUser && currentChatId) {
+          const chatRef = doc(db, "users", authUser.uid, "chats", currentChatId);
+          const msgRef = doc(collection(chatRef, "messages"));
+          await setDoc(msgRef, {
+            role: "assistant",
+            content: "Saved a new version.",
+            createdAt: serverTimestamp(),
+          });
+          await updateDoc(chatRef, {
+            lastMessage: "Saved a new version.",
+            updatedAt: serverTimestamp(),
+          });
+        }
+      } catch {}
+
+      return true;
+    } catch (e) {
+      setErrorMsg(`Save error: ${e.message || e}`);
+      return false;
+    }
+  }}
+  onLiveOpen={() => {}}
+/>
       )}
       {/* Celebration Animation */}
       {showCelebration && <CelebrationAnimation />}

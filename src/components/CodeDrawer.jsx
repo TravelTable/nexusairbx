@@ -262,16 +262,27 @@ const handleCopy = useCallback(() => {
 }, [code, liveGenerating, liveContent]);
 
   // Save script handler (async, supports backend versioning)
-  const handleSaveScript = useCallback(async () => {
-    if (typeof onSaveScript === "function") {
+  const [saveSuccess, setSaveSuccess] = useState(false);
+const [saveError, setSaveError] = useState("");
+
+const handleSaveScript = useCallback(async () => {
+  setSaveError("");
+  if (typeof onSaveScript === "function") {
+    try {
       const result = await onSaveScript(editTitle, code);
       if (result !== false) {
-        // Optionally show a "Saved!" toast or UI here
+        setSaveSuccess(true);
+        setTimeout(() => setSaveSuccess(false), 2000);
+      } else {
+        setSaveError("Failed to save script.");
       }
-    } else {
-      alert("Script saved!\n\nTitle: " + editTitle);
+    } catch (e) {
+      setSaveError("Save error: " + (e?.message || e));
     }
-  }, [onSaveScript, editTitle, code]);
+  } else {
+    alert("Script saved!\n\nTitle: " + editTitle);
+  }
+}, [onSaveScript, editTitle, code]);
 
   // Keep handler refs updated for use in keyboard shortcut effect
   useEffect(() => { copyHandlerRef.current = handleCopy; }, [handleCopy]);
@@ -405,6 +416,8 @@ const handleCopy = useCallback(() => {
       onGotoLine={handleGotoLine}
       highlightLine={highlightLine}
       drawerRef={drawerRef}
+      saveSuccess={saveSuccess}
+      saveError={saveError}
     />
   );
 }
@@ -463,6 +476,8 @@ function CodeDrawerUI({
   onGotoLine,
   highlightLine,
   drawerRef,
+  saveSuccess = false,
+  saveError = "",
 }) {
   const drawerVariants = {
     hidden: { x: "100%" },
@@ -840,14 +855,14 @@ function CodeDrawerUI({
         </div>
         {/* Bottom Buttons */}
         <div className="flex flex-wrap items-center gap-2 sm:gap-3 justify-end p-4 border-t border-gray-800 bg-[#161622] sticky bottom-0 z-10">
-<GlowButton
-  onClick={onCopy}
-  icon={Copy}
-  aria-label="Copy code"
-  locked={copySuccess}
->
-  {copySuccess ? "Copied!" : "Copy"}
-</GlowButton>
+          <GlowButton
+            onClick={onCopy}
+            icon={Copy}
+            aria-label="Copy code"
+            locked={copySuccess}
+          >
+            {copySuccess ? "Copied!" : "Copy"}
+          </GlowButton>
           <GlowButton
             onClick={() => onDownload("lua")}
             icon={Download}
@@ -867,8 +882,9 @@ function CodeDrawerUI({
             icon={Save}
             aria-label="Save script"
             glowColor="from-[#00f5d4] to-[#9b5de5]"
+            locked={saveSuccess}
           >
-            Save Script
+            {saveSuccess ? "Saved!" : "Save Script"}
           </GlowButton>
           <SecondaryButton
             onClick={onClose}
@@ -877,6 +893,9 @@ function CodeDrawerUI({
           >
             Close
           </SecondaryButton>
+          {saveError && (
+            <span className="ml-4 text-xs text-red-400">{saveError}</span>
+          )}
           {/* Live status badge in bottom bar */}
           {liveGenerating && (
             <span className="flex items-center gap-1 ml-4">

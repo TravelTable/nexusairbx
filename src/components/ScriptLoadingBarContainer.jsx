@@ -124,14 +124,24 @@ if (loading && !codeReady) {
   useEffect(() => {
     if (loading && !codeReady) setInternalSaved(false);
   }, [loading, codeReady]);
-
   // Save handler with saving guard, useCallback for perf
+  const [saveSuccess, setSaveSuccess] = useState(false);
+  const [saveError, setSaveError] = useState("");
   const handleSave = useCallback(async () => {
+    setSaveError("");
     if (saving || internalSaved || typeof onSave !== "function") return;
     try {
       setSaving(true);
       const result = await onSave();
-      if (result !== false) setInternalSaved(true);
+      if (result !== false) {
+        setInternalSaved(true);
+        setSaveSuccess(true);
+        setTimeout(() => setSaveSuccess(false), 2000);
+      } else {
+        setSaveError("Failed to save script.");
+      }
+    } catch (e) {
+      setSaveError("Save error: " + (e?.message || e));
     } finally {
       setSaving(false);
     }
@@ -247,7 +257,7 @@ return (
                 </button>
               </div>
               {/* Save Button */}
-              <div className={`relative group flex-1 sm:flex-none ${!codeReady ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                <div className={`relative group flex-1 sm:flex-none ${!codeReady ? 'opacity-50 cursor-not-allowed' : ''}`}>
                 <div className={`absolute inset-0 rounded-md bg-gradient-to-r from-purple-600 via-blue-500 to-cyan-400 
                   opacity-0 group-hover:opacity-100 blur-sm transition-opacity duration-300 
                   ${!codeReady ? 'hidden' : ''}`}>
@@ -263,7 +273,12 @@ return (
                     ${saving ? 'cursor-wait opacity-80' : ''}`}
                   title={codeReady ? (internalSaved ? "Already saved" : "Save script") : "Wait for script to complete"}
                 >
-                  {internalSaved ? (
+                  {saveSuccess ? (
+                    <>
+                      <Check className="w-4 h-4 mr-1.5" />
+                      <span>Saved!</span>
+                    </>
+                  ) : internalSaved ? (
                     <>
                       <Check className="w-4 h-4 mr-1.5" />
                       <span>Saved</span>
@@ -280,6 +295,9 @@ return (
                     </>
                   )}
                 </button>
+                {saveError && (
+                  <span className="ml-2 text-xs text-red-400">{saveError}</span>
+                )}
               </div>
               {/* Cancel Button */}
               {typeof onCancel === "function" && loading && !codeReady && (
