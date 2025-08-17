@@ -2,6 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 import './index.css';
+import { initAnalytics } from './firebase'; // ← add this
 
 // Suppress ResizeObserver loop error (Monaco Editor/Chrome bug)
 if (typeof window !== "undefined") {
@@ -32,3 +33,7 @@ root.render(
     <App />
   </React.StrictMode>
 );
+
+// Fire-and-forget analytics AFTER mount.
+// In dev it no-ops; in prod it loads the chunk with a neutral name and won’t crash if blocked.
+initAnalytics();

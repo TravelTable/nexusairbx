@@ -20,9 +20,21 @@ import WelcomeCard from "../components/WelcomeCard";
 import TokenBar from "../components/TokenBar";
 import CelebrationAnimation from "../components/CelebrationAnimation";
 
-// --- In-memory throttle/backoff for versions polling ---
-let lastVersionsFetch = 0;
-let versionsBackoff = 0;
+// --- Firestore Imports ---
+import {
+  getFirestore,
+  doc,
+  collection,
+  query,
+  orderBy,
+  limitToLast,
+  onSnapshot,
+  serverTimestamp,
+  writeBatch,
+  setDoc,
+  updateDoc,
+  deleteDoc,
+} from "firebase/firestore";
 
 // --- Backend API URL ---
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || "https://nexusrbx-backend-production.up.railway.app";
@@ -193,25 +205,33 @@ async function pollJob(user, jobId, onTick, { intervalMs = 1200, maxMs = 120000,
   return { status: "failed", error: "Timeout" };
 }
 
-// --- Main Container Component ---
 export default function NexusRBXAIPageContainer() {
   const navigate = useNavigate();
 
   // --- State for scripts and versions ---
   const [user, setUser] = useState(null);
-  const [scripts, setScripts] = useState([]); // [{id, title, createdAt, updatedAt, latestVersion}]
+  const [scripts, setScripts] = useState([]); // (reserved for future /list route)
   const [currentScriptId, setCurrentScriptId] = useState(null);
-  const [currentScript, setCurrentScript] = useState(null); // {id, title, versions: [...]}
-  const [versionHistory, setVersionHistory] = useState([]); // [{version, code, createdAt, id}]
+  const [currentScript, setCurrentScript] = useState(null); // { id, title }
+  const [versionHistory, setVersionHistory] = useState([]); // authoritative versions from backend (DESC)
   const [selectedVersion, setSelectedVersion] = useState(null);
 
-  // --- UI State ---
-  const [activeTab, setActiveTab] = useState("scripts"); // scripts | history | saved
+  // Chat timeline: ordered messages
+  // { id, role: 'user'|'assistant', content, createdAt, versionId?, versionNumber?, code?, explanation? }
+  const [messages, setMessages] = useState([]);
+
+  // --- Chat state + listener refs ---
+  const [currentChatId, setCurrentChatId] = useState(null);
+  const [currentChatMeta, setCurrentChatMeta] = useState(null);
+  const messagesUnsubRef = useRef(null);
+  const chatUnsubRef = useRef(null);
+
+  const [activeTab, setActiveTab] = useState("scripts");
   const [prompt, setPrompt] = useState("");
-  const [lastUserPrompt, setLastUserPrompt] = useState(""); // For chat bubble
   const [promptCharCount, setPromptCharCount] = useState(0);
   const [promptError, setPromptError] = useState("");
   const [errorMsg, setErrorMsg] = useState(""); // Inline error
+  const [successMsg, setSuccessMsg] = useState(""); // Inline success toast
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationStep, setGenerationStep] = useState("idle"); // idle | title | explanation | code | done | preparing | calling model | post-processing | polishing | finalizing
   const [showCelebration, setShowCelebration] = useState(false);
@@ -249,136 +269,207 @@ export default function NexusRBXAIPageContainer() {
   // --- Typewriter Animation State ---
   const [animatedScriptIds, setAnimatedScriptIds] = useState({}); // { [scriptId]: true }
 
-// --- Token Bar State ---
-const [tokensLeft, setTokensLeft] = useState(TOKEN_LIMIT);
-const [tokenRefreshTime, setTokenRefreshTime] = useState(null);
+  // --- Token Bar State ---
+  const [tokensLeft, setTokensLeft] = useState(TOKEN_LIMIT);
+  const [tokenRefreshTime, setTokenRefreshTime] = useState(null);
 
-// --- Prompt Input Ref for focus ---
-const promptInputRef = useRef(null);
+  // --- Prompt Input Ref for focus ---
+  const promptInputRef = useRef(null);
 
-// --- Polling ETA ---
-const pollingTimesRef = useRef([]);
+  // --- Polling ETA ---
+  const pollingTimesRef = useRef([]);
 
-// --- Local Persistence for chat/sidebar ---
-useEffect(() => {
-  if (currentScript) {
-    localStorage.setItem("nexusrbx:currentScript", JSON.stringify(currentScript));
-  }
-}, [currentScript]);
-useEffect(() => {
-  if (versionHistory) {
-    localStorage.setItem("nexusrbx:versionHistory", JSON.stringify(versionHistory));
-  }
-}, [versionHistory]);
-useEffect(() => {
-  if (lastUserPrompt) {
-    localStorage.setItem("nexusrbx:lastUserPrompt", lastUserPrompt);
-  }
-}, [lastUserPrompt]);
-useEffect(() => {
-  if (scripts) {
-    localStorage.setItem("nexusrbx:scripts", JSON.stringify(scripts));
-  }
-}, [scripts]);
-useEffect(() => {
-  const cachedScript = localStorage.getItem("nexusrbx:currentScript");
-  if (cachedScript) setCurrentScript(JSON.parse(cachedScript));
-  const cachedVersions = localStorage.getItem("nexusrbx:versionHistory");
-  if (cachedVersions) setVersionHistory(JSON.parse(cachedVersions));
-  const cachedPrompt = localStorage.getItem("nexusrbx:lastUserPrompt");
-  if (cachedPrompt) setLastUserPrompt(cachedPrompt);
-  const cachedScripts = localStorage.getItem("nexusrbx:scripts");
-  if (cachedScripts) setScripts(JSON.parse(cachedScripts));
-}, []);
+  // --- Abort management for job polling ---
+  const jobAbortRef = useRef(null);
 
-// --- Auth ---
-const [authReady, setAuthReady] = useState(false);
-useEffect(() => {
-  const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-    setAuthReady(true);
-    if (firebaseUser) {
-      setUser(firebaseUser);
-    } else {
-      signInAnonymously(auth)
-        .then((res) => setUser(res.user))
-        .catch(() => setUser(null));
-    }
-  });
-  return () => unsubscribe();
-}, []);
+  // --- Versions polling refs (HMR-safe, jittered backoff, ETag) ---
+  const lastVersionsFetchRef = useRef(0);
+  const versionsBackoffRef = useRef(0);
+  const versionsEtagRef = useRef(null);
 
-// --- Load Last Project (no /api/scripts backend route yet) ---
-useEffect(() => {
-  if (!user) {
-    // keep local cache visible; do not clear scripts
-    return;
-  }
-  // Try to restore last projectId from localStorage and fetch versions for it
-  const lastProjectId = localStorage.getItem("nexusrbx:lastProjectId");
-  if (lastProjectId) {
-    setCurrentScriptId(lastProjectId);
-  } else {
-    // No projects to list (backend has no list endpoint yet)
-    setScripts([]);
-  }
-  // eslint-disable-next-line
-}, [user]);
+  // --- Local Persistence for chat/sidebar ---
+  useEffect(() => {
+    if (currentScript) localStorage.setItem("nexusrbx:currentScript", JSON.stringify(currentScript));
+  }, [currentScript]);
+
+  useEffect(() => {
+    localStorage.setItem("nexusrbx:versionHistory", JSON.stringify(versionHistory || []));
+  }, [versionHistory]);
+
+  useEffect(() => {
+    localStorage.setItem(`nexusrbx:messages:${currentScriptId || "none"}`, JSON.stringify(messages || []));
+  }, [messages, currentScriptId]);
+
+  useEffect(() => {
+    const cachedScript = localStorage.getItem("nexusrbx:currentScript");
+    if (cachedScript) setCurrentScript(JSON.parse(cachedScript));
+    const cachedVersions = localStorage.getItem("nexusrbx:versionHistory");
+    if (cachedVersions) setVersionHistory(JSON.parse(cachedVersions));
+    const cachedScripts = localStorage.getItem("nexusrbx:scripts");
+    if (cachedScripts) setScripts(JSON.parse(cachedScripts));
+    // No auto-restore of project/chat here
+  }, []);
+
+  // --- Auth ---
+  const [authReady, setAuthReady] = useState(false);
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      setAuthReady(true);
+      if (firebaseUser) {
+        setUser(firebaseUser);
+      } else {
+        signInAnonymously(auth)
+          .then((res) => setUser(res.user))
+          .catch(() => setUser(null));
+      }
+    });
+    return () => unsubscribe();
+  }, []);
+
+  // --- Fresh draft on load (no auto-restore) ---
+  useEffect(() => {
+    if (!user) return;
+    setCurrentScriptId(null);
+    setMessages([]);
+    setCurrentChatId(null);
+    setCurrentChatMeta(null);
+  }, [user]);
+
+  // --- Listen for SidebarContent’s open-chat event and start-draft event ---
+  const openChatById = React.useCallback((chatId) => {
+    const db = getFirestore();
+    const authUser = auth.currentUser;
+    if (!authUser || !chatId) return;
+
+    // clean previous listeners
+    if (messagesUnsubRef.current) { try { messagesUnsubRef.current(); } catch {} messagesUnsubRef.current = null; }
+    if (chatUnsubRef.current) { try { chatUnsubRef.current(); } catch {} chatUnsubRef.current = null; }
+
+    setCurrentChatId(chatId);
+
+    // chat meta
+    const chatDocRef = doc(db, "users", authUser.uid, "chats", chatId);
+    chatUnsubRef.current = onSnapshot(chatDocRef, (snap) => {
+      const data = snap.exists() ? { id: snap.id, ...snap.data() } : null;
+      setCurrentChatMeta(data || null);
+      if (data?.projectId) {
+        setCurrentScriptId(data.projectId);
+      }
+    });
+
+    // messages (last 200, oldest→newest)
+    const msgsRef = collection(db, "users", authUser.uid, "chats", chatId, "messages");
+    const qMsgs = query(msgsRef, orderBy("createdAt", "asc"), limitToLast(200));
+    messagesUnsubRef.current = onSnapshot(qMsgs, (snap) => {
+      const arr = [];
+      snap.forEach((d) => arr.push({ id: d.id, ...d.data() }));
+      // Deduplicate by clientId if present (fallback to Firestore doc id)
+      const seen = new Set();
+      const unique = arr.filter((m) => {
+        const key = m.clientId || m.id;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+      setMessages(unique);
+    });
+  }, [setCurrentScriptId, setMessages]);
+
+  // Listen for sidebar events: open chat and start draft
+  useEffect(() => {
+    const onOpenChat = (e) => {
+      const id = e?.detail?.id;
+      if (id) openChatById(id);
+    };
+    const onStartDraft = () => {
+      // Reset to draft state (no Firestore chat yet)
+      setCurrentChatId(null);
+      setCurrentChatMeta(null);
+      setCurrentScriptId(null);
+      setCurrentScript(null);
+      setVersionHistory([]);
+      setMessages([]);
+      setSelectedVersion(null);
+    };
+    window.addEventListener("nexus:openChat", onOpenChat);
+    window.addEventListener("nexus:startDraft", onStartDraft);
+    return () => {
+      window.removeEventListener("nexus:openChat", onOpenChat);
+      window.removeEventListener("nexus:startDraft", onStartDraft);
+    };
+  }, [openChatById]);
 
   // --- Load Versions for Current Script from Backend ---
-useEffect(() => {
-  if (!authReady) return; // wait until auth resolves
-  if (!user || !currentScriptId) return; // don't clear; keep what we have
+  useEffect(() => {
+    if (!authReady) return; // wait until auth resolves
+    if (!user || !currentScriptId) return; // don't clear; keep what we have
 
-  const now = Date.now();
-  if (now - lastVersionsFetch < 10000 + versionsBackoff) return;
-  lastVersionsFetch = now;
+    const now = Date.now();
+    const delay = 10000 + (versionsBackoffRef.current || 0);
+    if (now - lastVersionsFetchRef.current < delay) return;
+    lastVersionsFetchRef.current = now;
 
-  user.getIdToken().then((idToken) => {
-    fetch(`${BACKEND_URL}/api/projects/${currentScriptId}/versions`, {
-      headers: {
-        Authorization: `Bearer ${idToken}`,
-      },
-    })
-      .then((res) => {
-        if (res.status === 429) {
-          versionsBackoff = Math.min((versionsBackoff || 0) * 2 + 5000, 60000);
-          setErrorMsg("Temporarily showing cached draft (429).");
-          return null;
-        } else {
-          versionsBackoff = 0;
-        }
-        if (!res.ok) {
-          setErrorMsg("Temporarily showing cached draft (error).");
-          return null;
-        }
-        return res.json();
-      })
-      .then((data) => {
-        if (data && Array.isArray(data.versions)) {
-          // Normalize timestamps
-          const sortedVersions = data.versions
-            .map((v) => ({
-              ...v,
-              createdAt:
-                typeof v.createdAt === "number"
-                  ? v.createdAt
-                  : Date.parse(v.createdAt) || Date.now(),
-            }))
-            .sort((a, b) => (b.version || 1) - (a.version || 1));
-          setCurrentScript({
+    user.getIdToken().then((idToken) => {
+      const headers = { Authorization: `Bearer ${idToken}` };
+      if (versionsEtagRef.current) headers["If-None-Match"] = versionsEtagRef.current;
+
+      fetch(`${BACKEND_URL}/api/projects/${currentScriptId}/versions`, { headers })
+        .then((res) => {
+          if (res.status === 304) {
+            // nothing new; collapse backoff
+            versionsBackoffRef.current = 0;
+            return { versions: null, etag: versionsEtagRef.current };
+          }
+          if (res.status === 429) {
+            const base = Math.min((versionsBackoffRef.current || 0) * 2 + 5000, 60000);
+            const jitter = Math.floor(Math.random() * 2000);
+            versionsBackoffRef.current = base + jitter;
+            const ra = res.headers.get("Retry-After");
+            if (ra) setErrorMsg(`Rate limited. Try again in ~${ra}s.`);
+            else setErrorMsg("Temporarily showing cached draft (429).");
+            return null;
+          }
+          versionsBackoffRef.current = 0;
+          if (!res.ok) {
+            setErrorMsg("Temporarily showing cached draft (error).");
+            return null;
+          }
+          const etag = res.headers.get("ETag");
+          return res.json().then(data => ({ ...data, etag }));
+        })
+        .then((data) => {
+          if (!data) return;
+          if (data.versions === null) return; // 304, keep what we have
+          if (!Array.isArray(data.versions)) return;
+
+          if (data.etag) versionsEtagRef.current = data.etag;
+
+          const normalized = data.versions.map((v) => ({
+            ...v,
+            createdAt:
+              typeof v.createdAt === "number"
+                ? v.createdAt
+                : Date.parse(v.createdAt) || Date.now(),
+          }));
+          if (normalized.length === 0) return;
+
+          const sortedVersions = normalized.sort((a, b) => (b.version || 1) - (a.version || 1));
+
+          setCurrentScript((cs) => ({
             id: currentScriptId,
-            title: sortedVersions[0]?.title || "",
+            title: sortedVersions[0]?.title || cs?.title || "",
             versions: sortedVersions,
-          });
+          }));
           setVersionHistory(sortedVersions);
           setSelectedVersion((sv) =>
-            sv ? sortedVersions.find((v) => v.id === sv.id) || sortedVersions[0] : sortedVersions[0]
+            sv
+              ? sortedVersions.find((v) => v.id === sv.id) || sortedVersions[0]
+              : sortedVersions[0]
           );
-        }
-      });
-  });
-  // eslint-disable-next-line
-}, [user, currentScriptId, authReady]);
+        });
+    });
+    // eslint-disable-next-line
+  }, [user, currentScriptId, authReady]);
 
   // --- Prompt Char Count & Error ---
   useEffect(() => {
@@ -418,7 +509,7 @@ useEffect(() => {
   const messagesEndRef = useRef(null);
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [currentScript, isGenerating, loadingBarVisible]);
+  }, [messages, isGenerating, loadingBarVisible]);
 
   // --- Mobile Sidebar Overlay Logic ---
   const closeAllMobileSidebars = () => {
@@ -431,406 +522,53 @@ useEffect(() => {
     promptInputRef.current?.focus();
   }, []);
 
-  // --- Main Generation Flow (Handles both new script and new version) ---
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setErrorMsg("");
-    if (typeof prompt !== "string" || !prompt.trim() || isGenerating) return;
-    if (prompt.length > 800) {
-      setPromptError("Prompt too long (max 800 characters).");
-      return;
-    }
-    if (!user) {
-      setErrorMsg("Sign in to generate scripts.");
-      return;
-    }
+  // --- Cleanup job polling on unmount ---
+  useEffect(() => {
+    return () => {
+      if (jobAbortRef.current) {
+        try { jobAbortRef.current.abort(); } catch {}
+      }
+    };
+  }, []);
 
-    // --- Sanitize and clamp prompt ---
-    const cleaned = prompt.trim().replace(/\s+/g, " ");
-    if (!cleaned) return;
+  async function createChatWithTitleAndFirstMessage({ user, title, firstMessage, clientId }) {
+  const db = getFirestore();
+  const authUser = auth.currentUser;
+  if (!authUser) throw new Error("Not authenticated");
 
-    setLastUserPrompt(cleaned);
-    setPrompt("");
-    setIsGenerating(true);
-    setGenerationStep("title");
-    setShowCelebration(false);
+  const chatRef = doc(collection(db, "users", authUser.uid, "chats"));
+  const msgRef = doc(collection(chatRef, "messages"));
+  const now = serverTimestamp();
 
-    let idToken;
-    try {
-      idToken = await user.getIdToken();
-    } catch {
-      setIsGenerating(false);
-      setGenerationStep("idle");
-      setErrorMsg("Not authenticated.");
-      return;
-    }
-
-    let scriptTitle = "";
-    let explanation = "";
-    let explanationObj = {};
-    let code = "";
-    let version = 1;
-    let scriptApiId = null;
-    // --- AbortController for polling ---
-    const abortController = new AbortController();
-
-    try {
-      // --- 1. Generate Title ---
-      setGenerationStep("title");
-
-  let titleRes;
-  titleRes = await authedFetch(user, `${BACKEND_URL}/api/generate-title-advanced`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      prompt: cleaned,
-      conversation: [],
-      isNewScript: !currentScriptId,
-      previousTitle: ""
-    }),
+  const batch = writeBatch(db);
+  batch.set(chatRef, {
+    title,              // final title from AI
+    createdAt: now,
+    updatedAt: now,
+    firstMessageAt: now,
+    lastMessage: firstMessage,
+    projectId: null,
+    archived: false,
+  });
+  batch.set(msgRef, {
+    clientId,
+    role: "user",
+    content: firstMessage,
+    createdAt: now,
   });
 
-      if (!titleRes.ok) {
-        const text = await titleRes.text();
-        throw new Error(
-          `Failed to generate title: ${titleRes.status} ${titleRes.statusText} - ${text.slice(
-            0,
-            200
-          )}`
-        );
-      }
-      let titleData;
-      try {
-        titleData = await titleRes.json();
-      } catch (err) {
-        const text = await titleRes.text();
-        setIsGenerating(false);
-        setGenerationStep("idle");
-        setErrorMsg("Failed to parse title response. Please try again.");
-        return;
-      }
-      scriptTitle = titleData.title || "Script";
-      if (!scriptTitle) throw new Error("Failed to generate title");
-
-      // Ensure we have a projectId before generating artifact
-      let projectIdToUse = currentScriptId;
-      if (!projectIdToUse) {
-        const createProjectRes = await authedFetch(user, `${BACKEND_URL}/api/projects`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ title: scriptTitle }),
-        });
-        if (!createProjectRes.ok) {
-          const text = await createProjectRes.text();
-          throw new Error(`Failed to create project: ${createProjectRes.status} ${createProjectRes.statusText} - ${text.slice(0,200)}`);
-        }
-        const created = await createProjectRes.json();
-        projectIdToUse = created.projectId;
-        setCurrentScriptId(projectIdToUse);
-        localStorage.setItem("nexusrbx:lastProjectId", projectIdToUse);
-      }
-
-      // --- 2. Generate Outline (use as explanation text) ---
-      setGenerationStep("explanation");
-
-      let conversation = [];
-      if (versionHistory.length > 0) {
-        const prevVersion = versionHistory[0];
-        conversation = [
-          { role: "assistant", content: prevVersion.explanation || "" },
-          { role: "assistant", content: prevVersion.code || "" },
-        ];
-      }
-
-      let outlineRes;
-      try {
-        outlineRes = await authedFetch(user, `${BACKEND_URL}/api/generate/outline`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            projectId: projectIdToUse,
-            prompt: cleaned,
-            conversation,
-            settings: {
-              model: resolveModel(settings.modelVersion),
-              temperature: settings.creativity,
-              codeStyle: settings.codeStyle,
-            },
-          }),
-        });
-      } catch (err) {
-        setIsGenerating(false);
-        setGenerationStep("idle");
-        setErrorMsg("Network error during outline generation.");
-        return;
-      }
-
-      if (!outlineRes.ok) {
-        const text = await outlineRes.text();
-        throw new Error(`Failed to generate outline: ${outlineRes.status} ${outlineRes.statusText} - ${text.slice(0,200)}`);
-      }
-
-      let outlineData;
-      try {
-        outlineData = await outlineRes.json();
-      } catch (err) {
-        setIsGenerating(false);
-        setGenerationStep("idle");
-        setErrorMsg("Failed to parse outline response. Please try again.");
-        return;
-      }
-
-      const outline = Array.isArray(outlineData.outline) ? outlineData.outline : [];
-      explanationObj = { outline };
-      explanation = outlineToExplanationText(outline);
-      if (!explanation) throw new Error("Failed to generate outline/explanation");
-
-      // --- 3. Show explanation immediately, then wait, then start code generation ---
-      const tempId = `temp-${Date.now()}`;
-      setAnimatedScriptIds((prev) => ({
-        ...prev,
-        [tempId]: true,
-      }));
-
-      setCurrentScript({
-        id: tempId,
-        title: scriptTitle,
-        versions: [
-          {
-            id: tempId,
-            title: scriptTitle,
-            explanation: explanation,
-            code: "",
-            version: 1,
-            temp: true,
-            createdAt: new Date().toISOString(),
-          },
-        ],
-      });
-      setVersionHistory([
-        {
-          id: tempId,
-          title: scriptTitle,
-          explanation: explanation,
-          code: "",
-          version: 1,
-          temp: true,
-          createdAt: new Date().toISOString(),
-        },
-      ]);
-      setSelectedVersion({
-        id: tempId,
-        title: scriptTitle,
-        explanation: explanation,
-        code: "",
-        version: 1,
-        temp: true,
-        createdAt: new Date().toISOString(),
-      });
-
-      // Wait for a short moment before starting code generation
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      // --- 4. Show Loading Bar for Code Generation (before calling API) ---
-      setGenerationStep("preparing");
-      setLoadingBarVisible(true);
-      const generatedFilename = safeFile(scriptTitle);
-
-      setLoadingBarData({
-        filename: generatedFilename,
-        version: `v1`,
-        language: "lua",
-        loading: true,
-        codeReady: false,
-        estimatedLines: null,
-        saved: false,
-        onSave: () => {},
-        onView: () => {},
-        stage: "Preparing",
-        eta: null,
-      });
-
-      // --- 5. Generate Code via Job Flow ---
-      let artifactStart;
-      try {
-        artifactStart = await authedFetch(user, `${BACKEND_URL}/api/generate/artifact`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Idempotency-Key": window.crypto?.randomUUID?.() || Math.random().toString(36).slice(2, 26),
-          },
-          body: JSON.stringify({
-            projectId: projectIdToUse,
-            prompt: cleaned,
-            pipelineId: window.crypto?.randomUUID?.() || Math.random().toString(36).slice(2, 26),
-            outline: explanationObj?.outline || [{ heading: "Plan", bulletPoints: [] }],
-            settings: {
-              model: resolveModel(settings.modelVersion),
-              temperature: settings.creativity,
-              codeStyle: settings.codeStyle,
-            },
-          }),
-        });
-      } catch (err) {
-        setIsGenerating(false);
-        setGenerationStep("idle");
-        setLoadingBarVisible(false);
-        setErrorMsg("Network error during code generation.");
-        return;
-      }
-      let jobId, pipelineId;
-      try {
-        const jobStartData = await artifactStart.json();
-        jobId = jobStartData.jobId;
-        pipelineId = jobStartData.pipelineId;
-      } catch (err) {
-        setIsGenerating(false);
-        setGenerationStep("idle");
-        setLoadingBarVisible(false);
-        setErrorMsg("Failed to start code generation job.");
-        return;
-      }
-
-      // --- Poll job status ---
-      pollingTimesRef.current = [];
-      let lastStage = "";
-      let jobResult;
-      try {
-        jobResult = await pollJob(
-          user,
-          jobId,
-          (tick) => {
-            // Map backend stage to UI step
-            let stage = tick.stage || "";
-            let mappedStep = "preparing";
-            if (/prepar/i.test(stage)) mappedStep = "preparing";
-            else if (/call/i.test(stage)) mappedStep = "calling model";
-            else if (/post/i.test(stage)) mappedStep = "post-processing";
-            else if (/polish/i.test(stage)) mappedStep = "polishing";
-            else if (/final/i.test(stage)) mappedStep = "finalizing";
-            setGenerationStep(mappedStep);
-
-            // Progress/ETA
-            if (tick.stage !== lastStage) {
-              pollingTimesRef.current.push(Date.now());
-              if (pollingTimesRef.current.length > 5)
-                pollingTimesRef.current.shift();
-              lastStage = tick.stage;
-            }
-            let eta = null;
-            if (pollingTimesRef.current.length > 1) {
-              const diffs = [];
-              for (let i = 1; i < pollingTimesRef.current.length; ++i) {
-                diffs.push(
-                  pollingTimesRef.current[i] - pollingTimesRef.current[i - 1]
-                );
-              }
-              const avg = diffs.reduce((a, b) => a + b, 0) / diffs.length;
-              eta = Math.round(avg / 1000);
-            }
-            setLoadingBarData((prev) => ({
-              ...prev,
-              estimatedLines: undefined,
-              stage: stage,
-              eta,
-            }));
-          },
-          { intervalMs: 1200, maxMs: 120000, signal: abortController.signal }
-        );
-      } catch (err) {
-        setIsGenerating(false);
-        setGenerationStep("idle");
-        setLoadingBarVisible(false);
-        setErrorMsg("Job polling aborted or failed.");
-        return;
-      }
-
-      if (jobResult.status !== "succeeded") {
-        setIsGenerating(false);
-        setGenerationStep("idle");
-        setLoadingBarVisible(false);
-        setErrorMsg(jobResult.error || "Generation failed");
-        return;
-      }
-      const { code: generatedCode, warnings, versionId } = jobResult.result;
-      code = generatedCode || "";
-      if (!code) {
-        setIsGenerating(false);
-        setGenerationStep("idle");
-        setLoadingBarVisible(false);
-        setErrorMsg("Failed to generate code");
-        return;
-      }
-
-      // --- 6. Fetch Version History from backend (artifact job already saved) ---
-      setGenerationStep("saving"); // UI consistency
-
-      let versions = [];
-      try {
-        const versionsRes = await authedFetch(user, `${BACKEND_URL}/api/projects/${projectIdToUse}/versions`, {
-          method: "GET",
-        });
-        if (versionsRes.ok) {
-          const versionsData = await versionsRes.json();
-          versions = versionsData.versions || [];
-        }
-      } catch (err) {
-        // keep empty
-      }
-
-      // Keep versions DESC (latest first)
-      const sorted = versions.sort((a, b) => (b.version || 1) - (a.version || 1));
-      setVersionHistory(sorted);
-      setCurrentScript({
-        id: projectIdToUse,
-        title: scriptTitle,
-        versions: sorted,
-      });
-      setSelectedVersion(sorted[0]);
-
-      setLoadingBarData((prev) => ({
-        ...prev,
-        loading: false,
-        codeReady: true,
-        saved: true,
-        version: sorted[0]?.version ? `v${sorted[0].version}` : `v1`,
-        filename: safeFile(scriptTitle),
-        onSave: () => {},
-        onView: () => {},
-      }));
-      setTimeout(() => setLoadingBarVisible(false), 1500);
-      setGenerationStep("done");
-      setShowCelebration(true);
-      setAnimatedScriptIds((prev) => ({ ...prev, [projectIdToUse]: true }));
-      setTimeout(() => setShowCelebration(false), 3000);
-      setTimeout(() => setErrorMsg(`Saved ${sorted[0]?.version ? `v${sorted[0].version}` : "v1"}`), 500);
-    } catch (err) {
-      setIsGenerating(false);
-      setGenerationStep("idle");
-      setLoadingBarVisible(false);
-      setErrorMsg("Error during script generation: " + (err.message || err));
-    } finally {
-      setIsGenerating(false);
-      setGenerationStep("idle");
-    }
-    // Abort polling if unmount
-    return () => abortController.abort();
-  };
-
-  // --- Save Script (manual save disabled) ---
-  const handleSaveScript = async (newTitle, code, explanation = "") => {
-    setErrorMsg("Manual save is not supported yet (artifact job writes versions).");
-    return false;
-  };
+  await batch.commit();
+  return chatRef.id;
+}
 
   // --- Sidebar Version Click Handler (no single-version GET) ---
   const handleVersionView = async (versionObj) => {
     setErrorMsg("");
-setSelectedVersion(versionObj);
-setCurrentScript((cs) => ({
-  ...cs,
-  title: versionObj?.title || cs?.title || "",
-}));
+    setSelectedVersion(versionObj);
+    setCurrentScript((cs) => ({
+      ...cs,
+      title: versionObj?.title || cs?.title || "",
+    }));
   };
 
   // --- Download Handler for Version ---
@@ -848,22 +586,22 @@ setCurrentScript((cs) => ({
   };
 
   // --- Script Management ---
-const handleCreateScript = async (title = "New Script") => {
-  setErrorMsg("");
-  if (!user) return;
-  const res = await authedFetch(user, `${BACKEND_URL}/api/projects`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ title }),
-  });
-  if (res.ok) {
-    const data = await res.json();
-    setCurrentScriptId(data.projectId);
-    localStorage.setItem("nexusrbx:lastProjectId", data.projectId);
-  } else {
-    setErrorMsg("Failed to create project.");
-  }
-};
+  const handleCreateScript = async (title = "New Script") => {
+    setErrorMsg("");
+    if (!user) return;
+    const res = await authedFetch(user, `${BACKEND_URL}/api/projects`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title }),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      setCurrentScriptId(data.projectId);
+      localStorage.setItem("nexusrbx:lastProjectId", data.projectId);
+    } else {
+      setErrorMsg("Failed to create project.");
+    }
+  };
 
   const handleRenameScript = async (scriptId, newTitle) => {
     setErrorMsg("Renaming projects is not supported yet.");
@@ -871,6 +609,42 @@ const handleCreateScript = async (title = "New Script") => {
 
   const handleDeleteScript = async (scriptId) => {
     setErrorMsg("Deleting projects is not supported yet.");
+  };
+
+  // --- Chat Management for Sidebar (rename/delete) ---
+  const handleRenameChat = async (chatId, newTitle) => {
+    if (!user || !chatId || !newTitle.trim()) return;
+    try {
+      const db = getFirestore();
+      await updateDoc(doc(db, "users", user.uid, "chats", chatId), {
+        title: newTitle.trim(),
+        updatedAt: serverTimestamp(),
+      });
+      setSuccessMsg("Chat renamed.");
+    } catch (err) {
+      setErrorMsg("Failed to rename chat.");
+    }
+  };
+
+  const handleDeleteChat = async (chatId) => {
+    if (!user || !chatId) return;
+    try {
+      const db = getFirestore();
+      await deleteDoc(doc(db, "users", user.uid, "chats", chatId));
+      // If the deleted chat is currently open, reset to draft
+      if (currentChatId === chatId) {
+        setCurrentChatId(null);
+        setCurrentChatMeta(null);
+        setCurrentScriptId(null);
+        setCurrentScript(null);
+        setVersionHistory([]);
+        setMessages([]);
+        setSelectedVersion(null);
+      }
+      setSuccessMsg("Chat deleted.");
+    } catch (err) {
+      setErrorMsg("Failed to delete chat.");
+    }
   };
 
   // --- AI Avatar (NexusRBX Logo) ---
@@ -925,15 +699,400 @@ const handleCreateScript = async (title = "New Script") => {
     );
   }, [user]);
 
+  // --- Main Generation Flow (Handles both new script and new version) ---
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  setErrorMsg("");
+
+  // guard rails
+  if (typeof prompt !== "string" || !prompt.trim() || isGenerating) return;
+  if (prompt.length > 800) {
+    setPromptError("Prompt too long (max 800 characters).");
+    return;
+  }
+  if (!user) {
+    setErrorMsg("Sign in to generate scripts.");
+    return;
+  }
+
+  // stable id for this user message (helps dedupe)
+  const clientId = "u-" + Date.now();
+
+  // clean prompt
+  const cleaned = prompt.trim().replace(/\s+/g, " ");
+  if (!cleaned) return;
+
+  let chatIdToUse = currentChatId;
+
+  // cancel any previous job
+  if (jobAbortRef.current) {
+    try { jobAbortRef.current.abort(); } catch {}
+  }
+  const abortController = new AbortController();
+  jobAbortRef.current = abortController;
+
+  try {
+    setIsGenerating(true);
+    setGenerationStep("title");
+    setShowCelebration(false);
+
+    // 1) Title
+    const titleRes = await authedFetch(user, `${BACKEND_URL}/api/generate-title-advanced`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        prompt: cleaned,
+        conversation: [],
+        isNewScript: !currentScriptId,
+        previousTitle: "",
+        settings: {
+          model: resolveModel(settings.modelVersion),
+          temperature: settings.creativity,
+        }
+      }),
+      signal: abortController.signal,
+    });
+    if (!titleRes.ok) {
+      const text = await titleRes.text();
+      throw new Error(`Failed to generate title: ${titleRes.status} ${titleRes.statusText} - ${text.slice(0,200)}`);
+    }
+    const titleData = await titleRes.json().catch(() => null);
+    if (!titleData?.title) throw new Error("No title returned");
+    const scriptTitle = titleData.title;
+
+    // 2) Chat create/update
+    try {
+      if (!chatIdToUse) {
+        const newChatId = await createChatWithTitleAndFirstMessage({
+          user,
+          title: scriptTitle,
+          firstMessage: cleaned,
+          clientId,
+        });
+        chatIdToUse = newChatId;
+        setCurrentChatId(chatIdToUse);
+        openChatById(chatIdToUse);
+        window.dispatchEvent(new CustomEvent("nexus:chatActivity", {
+          detail: { id: chatIdToUse, title: scriptTitle, lastMessage: cleaned }
+        }));
+      } else {
+        const db = getFirestore();
+        const authUser = auth.currentUser;
+        const chatRef = doc(db, "users", authUser.uid, "chats", chatIdToUse);
+        const msgRef = doc(collection(chatRef, "messages"));
+        await setDoc(msgRef, {
+          clientId,
+          role: "user",
+          content: cleaned,
+          createdAt: serverTimestamp(),
+        });
+        await updateDoc(chatRef, {
+          lastMessage: cleaned,
+          updatedAt: serverTimestamp(),
+        });
+      }
+    } catch {
+      setErrorMsg("Could not create or update chat.");
+    }
+
+    // 3) Ensure project
+    let projectIdToUse = currentScriptId;
+    if (!projectIdToUse) {
+      const createProjectRes = await authedFetch(user, `${BACKEND_URL}/api/projects`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: scriptTitle || "Script" }),
+      });
+      if (!createProjectRes.ok) {
+        const text = await createProjectRes.text();
+        throw new Error(`Failed to create project: ${createProjectRes.status} ${createProjectRes.statusText} - ${text.slice(0,200)}`);
+      }
+      const created = await createProjectRes.json();
+      projectIdToUse = created.projectId;
+      setCurrentScriptId(projectIdToUse);
+
+      // link chat -> project
+      try {
+        const db = getFirestore();
+        const authUser = auth.currentUser;
+        if (authUser && chatIdToUse) {
+          await updateDoc(doc(db, "users", authUser.uid, "chats", chatIdToUse), {
+            projectId: projectIdToUse,
+            updatedAt: serverTimestamp(),
+          });
+        }
+      } catch {}
+    }
+
+    // 4) Outline (explanation)
+    setGenerationStep("explanation");
+    const recent = [...messages, { role: "user", content: cleaned }].slice(-6);
+    const conversation = recent.map((m) => {
+      if (m.role === "user") return { role: "user", content: m.content };
+      const content = m.explanation
+        ? `Explanation:\n${m.explanation}`
+        : (m.code ? "Provided code previously." : "Assistant response.");
+      return { role: "assistant", content };
+    });
+
+    const outlineRes = await authedFetch(user, `${BACKEND_URL}/api/generate/outline`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        projectId: projectIdToUse,
+        prompt: cleaned,
+        conversation,
+        settings: {
+          model: resolveModel(settings.modelVersion),
+          temperature: settings.creativity,
+          codeStyle: settings.codeStyle,
+        },
+      }),
+    });
+    if (!outlineRes.ok) {
+      const text = await outlineRes.text();
+      throw new Error(`Failed to generate outline: ${outlineRes.status} ${outlineRes.statusText} - ${text.slice(0,200)}`);
+    }
+    const outlineData = await outlineRes.json().catch(() => null);
+    const outline = Array.isArray(outlineData?.outline) ? outlineData.outline : [];
+    const explanation = outline
+      .map(sec => {
+        const heading = sec?.heading ? `## ${sec.heading}` : "";
+        const bullets = (sec?.bulletPoints || []).map(b => `• ${b}`).join("\n");
+        return [heading, bullets].filter(Boolean).join("\n");
+      })
+      .join("\n\n");
+    if (!explanation) throw new Error("Failed to generate outline/explanation");
+
+    // 5) Show pending assistant message with explanation
+    const tempId = `temp-${Date.now()}`;
+    const nextVersionNum = (versionHistory[0]?.version || 0) + 1;
+    const pendingId = `a-temp-${Date.now()}`;
+    setMessages(prev => [
+      ...prev,
+      {
+        id: pendingId,
+        role: "assistant",
+        content: explanation,
+        createdAt: new Date().toISOString(),
+        versionNumber: nextVersionNum,
+        explanation,
+        code: "",
+        pending: true,
+      },
+    ]);
+    setAnimatedScriptIds(prev => ({ ...prev, [tempId]: true }));
+    setCurrentScript({
+      id: tempId,
+      title: scriptTitle,
+      versions: [
+        { id: tempId, title: scriptTitle, explanation, code: "", version: 1, temp: true, createdAt: new Date().toISOString() },
+      ],
+    });
+    setVersionHistory([
+      { id: tempId, title: scriptTitle, explanation, code: "", version: 1, temp: true, createdAt: new Date().toISOString() },
+    ]);
+    setSelectedVersion({
+      id: tempId, title: scriptTitle, explanation, code: "", version: 1, temp: true, createdAt: new Date().toISOString(),
+    });
+
+    // tiny pause for UI
+    await new Promise((r) => setTimeout(r, 1000));
+
+    // 6) Start code job
+    setGenerationStep("preparing");
+    setLoadingBarVisible(true);
+    setLoadingBarData({
+      filename: (scriptTitle || "Script").replace(/[^a-zA-Z0-9_\- ]/g, "").replace(/\s+/g, "_").slice(0, 40) + ".lua",
+      version: "v1",
+      language: "lua",
+      loading: true,
+      codeReady: false,
+      estimatedLines: null,
+      saved: false,
+      onSave: () => {},
+      onView: () => {},
+      stage: "Preparing",
+      eta: null,
+    });
+
+    const artifactStart = await authedFetch(user, `${BACKEND_URL}/api/generate/artifact`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Idempotency-Key": window.crypto?.randomUUID?.() || Math.random().toString(36).slice(2, 26),
+      },
+      body: JSON.stringify({
+        projectId: projectIdToUse,
+        prompt: cleaned,
+        pipelineId: window.crypto?.randomUUID?.() || Math.random().toString(36).slice(2, 26),
+        outline: outline || [{ heading: "Plan", bulletPoints: [] }],
+        settings: {
+          model: resolveModel(settings.modelVersion),
+          temperature: settings.creativity,
+          codeStyle: settings.codeStyle,
+        },
+      }),
+    });
+
+    let jobId, pipelineId;
+    try {
+      const jobStartData = await artifactStart.json();
+      jobId = jobStartData.jobId;
+      pipelineId = jobStartData.pipelineId;
+    } catch {
+      throw new Error("Failed to start code generation job.");
+    }
+
+    // 7) Poll status
+    pollingTimesRef.current = [];
+    let lastStage = "";
+    const jobResult = await pollJob(
+      user,
+      jobId,
+      (tick) => {
+        const stage = tick.stage || "";
+        let mappedStep = "preparing";
+        if (/prepar/i.test(stage)) mappedStep = "preparing";
+        else if (/call/i.test(stage)) mappedStep = "calling model";
+        else if (/post/i.test(stage)) mappedStep = "post-processing";
+        else if (/polish/i.test(stage)) mappedStep = "polishing";
+        else if (/final/i.test(stage)) mappedStep = "finalizing";
+        setGenerationStep(mappedStep);
+
+        if (tick.stage !== lastStage) {
+          pollingTimesRef.current.push(Date.now());
+          if (pollingTimesRef.current.length > 5) pollingTimesRef.current.shift();
+          lastStage = tick.stage;
+        }
+        let eta = null;
+        if (pollingTimesRef.current.length > 1) {
+          const diffs = [];
+          for (let i = 1; i < pollingTimesRef.current.length; ++i) {
+            diffs.push(pollingTimesRef.current[i] - pollingTimesRef.current[i - 1]);
+          }
+          const avg = diffs.reduce((a, b) => a + b, 0) / diffs.length;
+          eta = Math.round(avg / 1000);
+        }
+        setLoadingBarData((prev) => ({ ...prev, estimatedLines: undefined, stage, eta }));
+      },
+      { intervalMs: 1200, maxMs: 120000, signal: abortController.signal }
+    );
+
+    if (jobResult.status !== "succeeded") throw new Error(jobResult.error || "Generation failed");
+    const { code: generatedCode, versionId } = jobResult.result;
+    const code = generatedCode || "";
+    if (!code) throw new Error("Failed to generate code");
+
+    // 8) Get versions (fallback if empty)
+    setGenerationStep("saving");
+    let versions = [];
+    try {
+      const versionsRes = await authedFetch(user, `${BACKEND_URL}/api/projects/${projectIdToUse}/versions`, { method: "GET" });
+      if (versionsRes.ok) {
+        const versionsData = await versionsRes.json();
+        versions = Array.isArray(versionsData.versions) ? versionsData.versions : [];
+      }
+    } catch {}
+
+    if (versions.length === 0) {
+      versions = [{
+        id: versionId || `local-${Date.now()}`,
+        title: scriptTitle,
+        explanation,
+        code,
+        version: 1,
+        createdAt: new Date().toISOString(),
+      }];
+    }
+
+    const sorted = versions
+      .map(v => ({ ...v, createdAt: typeof v.createdAt === "number" ? v.createdAt : Date.parse(v.createdAt) || Date.now() }))
+      .sort((a, b) => (b.version || 1) - (a.version || 1));
+
+    setVersionHistory(sorted);
+    setCurrentScript({ id: projectIdToUse, title: scriptTitle, versions: sorted });
+    setSelectedVersion(sorted[0]);
+
+    setLoadingBarData((prev) => ({
+      ...prev,
+      loading: false,
+      codeReady: true,
+      saved: true,
+      version: sorted[0]?.version ? `v${sorted[0].version}` : `v1`,
+      filename: (scriptTitle || "Script").replace(/[^a-zA-Z0-9_\- ]/g, "").replace(/\s+/g, "_").slice(0, 40) + ".lua",
+      onSave: () => {},
+      onView: () => {},
+    }));
+    setTimeout(() => setLoadingBarVisible(false), 1500);
+
+    // 9) Finalize assistant msg + persist in chat
+    const finalVersion = sorted[0]?.version || ((versionHistory[0]?.version || 0) + 1);
+    setMessages(prev => {
+      const copy = [...prev];
+      const idx = copy.findIndex(m => m.role === "assistant" && m.pending);
+      const finalized = {
+        ...(idx !== -1 ? copy[idx] : { id: `a-${Date.now()}`, role: "assistant", createdAt: new Date().toISOString() }),
+        content: explanation,
+        versionId: sorted[0]?.id || versionId,
+        versionNumber: finalVersion,
+        code,
+        explanation,
+        pending: false,
+      };
+      if (idx !== -1) copy[idx] = finalized; else copy.push(finalized);
+      return copy;
+    });
+
+    try {
+      const db = getFirestore();
+      const authUser = auth.currentUser;
+      if (authUser && chatIdToUse) {
+        const chatRef = doc(db, "users", authUser.uid, "chats", chatIdToUse);
+        const msgRef = doc(collection(chatRef, "messages"));
+        await setDoc(msgRef, {
+          role: "assistant",
+          content: explanation || "Generated code",
+          code,
+          versionId: sorted[0]?.id || versionId || null,
+          versionNumber: sorted[0]?.version || finalVersion || 1,
+          createdAt: serverTimestamp(),
+        });
+        await updateDoc(chatRef, {
+          lastMessage: `v${sorted[0]?.version || finalVersion} ready`,
+          updatedAt: serverTimestamp(),
+        });
+        window.dispatchEvent(new CustomEvent("nexus:chatActivity", {
+          detail: { id: chatIdToUse, lastMessage: `v${sorted[0]?.version || finalVersion} ready` }
+        }));
+      }
+    } catch {}
+
+    setGenerationStep("done");
+    setShowCelebration(true);
+    setAnimatedScriptIds((prev) => ({ ...prev, [projectIdToUse]: true }));
+    setTimeout(() => setShowCelebration(false), 3000);
+    setTimeout(() => setSuccessMsg(`Saved ${sorted[0]?.version ? `v${sorted[0].version}` : "v1"}`), 500);
+
+    // tokens (skip if dev)
+    setTokensLeft((prev) => (prev == null ? null : Math.max(0, (prev || 4) - 1)));
+  } catch (err) {
+    setErrorMsg("Error during script generation: " + (err.message || err));
+  } finally {
+    setIsGenerating(false);
+    setGenerationStep("idle");
+  }
+};
+
   // --- Keyboard UX for textarea ---
   const handlePromptKeyDown = (e) => {
-    if (e.key === "Enter" && !e.shiftKey) {
+    if ((e.key === "Enter" && !e.shiftKey) || ((e.ctrlKey || e.metaKey) && e.key === "Enter")) {
       e.preventDefault();
       handleSubmit(e);
     }
+    // Add more keyboard shortcuts here if desired
   };
 
-  // --- Main Layout ---
   return (
     <div
       className="min-h-screen bg-[#0D0D0D] text-white font-sans flex flex-col relative"
@@ -947,6 +1106,7 @@ const handleCreateScript = async (title = "New Script") => {
         <div className="container mx-auto px-4 py-4 flex items-center">
           {/* Hamburger for mobile */}
           <button
+            type="button"
             className="md:hidden text-gray-300 mr-2 p-2 rounded hover:bg-gray-800 transition-colors"
             onClick={() => {
               setMobileLeftSidebarOpen(true);
@@ -956,6 +1116,7 @@ const handleCreateScript = async (title = "New Script") => {
           >
             <Menu className="h-6 w-6" />
           </button>
+
           <div className="flex-1 flex items-center">
             <div
               className="text-2xl font-bold bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-transparent bg-clip-text cursor-pointer"
@@ -966,30 +1127,34 @@ const handleCreateScript = async (title = "New Script") => {
               NexusRBX
             </div>
             <nav className="hidden md:flex space-x-8 ml-10">
-              <a
-                href="/"
+              <button
+                type="button"
+                onClick={() => navigate("/")}
                 className="text-gray-300 hover:text-white transition-colors duration-300"
               >
                 Home
-              </a>
-              <a
-                href="/ai"
+              </button>
+              <button
+                type="button"
+                onClick={() => navigate("/ai")}
                 className="text-white border-b-2 border-[#9b5de5] transition-colors duration-300"
               >
                 AI Console
-              </a>
-              <a
-                href="/docs"
+              </button>
+              <button
+                type="button"
+                onClick={() => navigate("/docs")}
                 className="text-gray-300 hover:text-white transition-colors duration-300"
               >
                 Docs
-              </a>
-              <a
-                href="#"
+              </button>
+              <button
+                type="button"
+                onClick={() => window.open("https://discord.com/invite/yourserver", "_blank", "noopener,noreferrer")}
                 className="text-gray-300 hover:text-white transition-colors duration-300"
               >
                 Discord
-              </a>
+              </button>
             </nav>
           </div>
           {/* Settings icon for mobile */}
@@ -1044,12 +1209,16 @@ const handleCreateScript = async (title = "New Script") => {
           <SidebarContent
             activeTab={activeTab}
             setActiveTab={setActiveTab}
-handleClearChat={() => {
-  if (!window.confirm('Clear this chat?')) return;
-  setCurrentScript(null);
-  setVersionHistory([]);
-  setSelectedVersion(null);
-}}
+            handleClearChat={() => {
+              if (!window.confirm('Clear this chat?')) return;
+              setCurrentScript(null);
+              setVersionHistory([]);
+              setMessages([]);
+              setSelectedVersion(null);
+              setCurrentScriptId(null);
+              setCurrentChatId(null);
+              setCurrentChatMeta(null);
+            }}
             setPrompt={setPrompt}
             scripts={scripts}
             currentScriptId={currentScriptId}
@@ -1064,6 +1233,9 @@ handleClearChat={() => {
             promptSearch={promptSearch}
             setPromptSearch={setPromptSearch}
             isMobile
+            // Chat management
+            onRenameChat={handleRenameChat}
+            onDeleteChat={handleDeleteChat}
           />
         </aside>
       </div>
@@ -1109,7 +1281,7 @@ handleClearChat={() => {
             modelOptions={modelOptions}
             creativityOptions={creativityOptions}
             codeStyleOptions={codeStyleOptions}
-            messages={currentScript ? currentScript.versions : []}
+            messages={messages}
             setPrompt={setPrompt}
             userPromptTemplates={userPromptTemplates}
             setUserPromptTemplates={setUserPromptTemplates}
@@ -1128,29 +1300,36 @@ handleClearChat={() => {
           maxHeight: "calc(100vh - 64px)",
         }}
       >
-<SidebarContent
-  activeTab={activeTab}
-  setActiveTab={setActiveTab}
-  handleClearChat={() => {
-    if (!window.confirm('Clear this chat?')) return;
-    setCurrentScript(null);
-    setVersionHistory([]);
-    setSelectedVersion(null);
-  }}
-  setPrompt={setPrompt}
-  scripts={scripts}
-  currentScriptId={currentScriptId}
-  setCurrentScriptId={setCurrentScriptId}
-  handleCreateScript={handleCreateScript}
-  handleRenameScript={handleRenameScript}
-  handleDeleteScript={handleDeleteScript}
-  currentScript={currentScript}
-  versionHistory={versionHistory}
-  onVersionView={handleVersionView}
-  onVersionDownload={handleVersionDownload}
-  promptSearch={promptSearch}
-  setPromptSearch={setPromptSearch}
-/>
+        <SidebarContent
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          handleClearChat={() => {
+            if (!window.confirm('Clear this chat?')) return;
+            setCurrentScript(null);
+            setVersionHistory([]);
+            setMessages([]);
+            setSelectedVersion(null);
+            setCurrentScriptId(null);
+            setCurrentChatId(null);
+            setCurrentChatMeta(null);
+          }}
+          setPrompt={setPrompt}
+          scripts={scripts}
+          currentScriptId={currentScriptId}
+          setCurrentScriptId={setCurrentScriptId}
+          handleCreateScript={handleCreateScript}
+          handleRenameScript={handleRenameScript}
+          handleDeleteScript={handleDeleteScript}
+          currentScript={currentScript}
+          versionHistory={versionHistory}
+          onVersionView={handleVersionView}
+          onVersionDownload={handleVersionDownload}
+          promptSearch={promptSearch}
+          setPromptSearch={setPromptSearch}
+          // Chat management
+          onRenameChat={handleRenameChat}
+          onDeleteChat={handleDeleteChat}
+        />
       </aside>
 
       {/* Main Content */}
@@ -1160,7 +1339,7 @@ handleClearChat={() => {
           <div className="flex-grow overflow-y-auto px-2 md:px-4 py-6 flex flex-col items-center">
             <div className="w-full max-w-2xl mx-auto space-y-6">
               {/* Show Title at Top */}
-              {!currentScript && !isGenerating ? (
+              {messages.length === 0 && !isGenerating ? (
                 <WelcomeCard
                   setPrompt={setPrompt}
                   promptTemplates={promptTemplates}
@@ -1170,110 +1349,94 @@ handleClearChat={() => {
                 />
               ) : (
                 <>
-                  {/* Render all versions as chat bubbles/cards */}
-                  {currentScript &&
-                    currentScript.versions.map((version, idx, arr) => {
-                      // Keep DESC order (latest first)
-                      const isLatest = idx === 0;
-                      const animateThisScript =
-                        !!animatedScriptIds[currentScript.id] && isLatest;
+                  {/* Chat timeline driven by `messages` */}
+                  {messages.map((m) => {
+                    const isUser = m.role === 'user';
 
+                    if (isUser) {
                       return (
-                        <div key={version.id || `${currentScript?.id || 'temp'}-v${version.version || 1}`} className="space-y-2">
-                          {/* User Prompt Bubble */}
-                          {lastUserPrompt && isLatest && (
-                            <div className="flex justify-end items-end mb-1">
-                              <div className="flex flex-row-reverse items-end gap-2 w-full max-w-2xl">
-                                <UserAvatar email={user?.email} />
-                                <div className="bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-white px-4 py-2 rounded-2xl rounded-br-sm shadow-lg max-w-[75%] text-right break-words text-base font-medium animate-fade-in">
-                                  {lastUserPrompt}
-                                </div>
-                              </div>
-                            </div>
-                          )}
-
-                          {/* AI Response Card (left-aligned) */}
-                          <div className="flex items-start gap-2 w-full max-w-2xl animate-fade-in">
-                            <NexusRBXAvatar />
-                            <div className="flex-1 bg-gray-900/80 border border-gray-800 rounded-2xl rounded-tl-sm shadow-lg px-5 py-4 mb-2">
-                              {/* Title */}
-                              {version.title && (
-                                <div className="mb-1 flex items-center gap-2">
-                                  <span className="text-xl font-bold bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-transparent bg-clip-text">
-                                    {version.title.replace(/\s*v\d+$/i, "")}
-                                  </span>
-                                  {version.version && (
-                                    <span className="ml-2 px-2 py-0.5 rounded bg-[#9b5de5]/20 text-[#9b5de5] text-xs font-semibold">
-                                      v{version.version}
-                                    </span>
-                                  )}
-                                  {isLatest && (
-                                    <span className="ml-2 px-2 py-0.5 rounded bg-[#00f5d4]/20 text-[#00f5d4] text-xs font-semibold">
-                                      Latest
-                                    </span>
-                                  )}
-                                </div>
-                              )}
-                              {/* Explanation */}
-                              {version.explanation && (
-                                <div className="mb-2">
-                                  <div className="font-bold text-[#9b5de5] mb-1">
-                                    Explanation
-                                  </div>
-                                  <div className="text-gray-200 whitespace-pre-line text-base">
-                                    <div>{version.explanation}</div>
-                                  </div>
-                                </div>
-                              )}
-                              {/* Code Block */}
-                              {animatedScriptIds[currentScript.id] && (
-                                <div className="mb-2 mt-3">
-                                  <ScriptLoadingBarContainer
-                                    filename={safeFile(version.title || currentScript?.title)}
-                                    displayName={version.title || currentScript?.title || "Script"}
-                                    version={
-                                      version.version
-                                        ? `v${version.version}`
-                                        : "v1"
-                                    }
-                                    language="lua"
-                                    loading={!!isGenerating || loadingBarVisible}
-                                    codeReady={!!version.code}
-                                    estimatedLines={
-                                      version.code
-                                        ? version.code.split("\n").length
-                                        : null
-                                    }
-                                    saved={loadingBarData.saved}
-                                    onSave={() =>
-                                      handleSaveScript(
-                                        version.title,
-                                        version.code
-                                      )
-                                    }
-                                    onView={() =>
-                                      handleVersionView(
-                                        version
-                                      )
-                                    }
-                                    stage={loadingBarData.stage}
-                                    eta={loadingBarData.eta}
-                                  />
-                                </div>
-                              )}
-                              {/* Timestamp */}
-                              <div className="text-xs text-gray-500 mt-2 text-right">
-                                {toLocalTime(version.createdAt)}
-                              </div>
+                        <div key={m.id} className="flex justify-end items-end mb-1">
+                          <div className="flex flex-row-reverse items-end gap-2 w-full max-w-2xl">
+                            <UserAvatar email={user?.email} />
+                            <div className="bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-white px-4 py-2 rounded-2xl rounded-br-sm shadow-lg max-w-[75%] text-right break-words text-base font-medium animate-fade-in">
+                              {m.content}
                             </div>
                           </div>
                         </div>
                       );
-                    })}
+                    }
+
+                    // assistant bubble
+                    return (
+                      <div key={m.id} className="flex items-start gap-2 w-full max-w-2xl animate-fade-in">
+                        <NexusRBXAvatar />
+                        <div className="flex-1 bg-gray-900/80 border border-gray-800 rounded-2xl rounded-tl-sm shadow-lg px-5 py-4 mb-2">
+                          <div className="mb-1 flex items-center gap-2">
+                            <span className="text-xl font-bold bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-transparent bg-clip-text">
+                              {(currentScript?.title || "Script").replace(/\s*v\d+$/i, "")}
+                            </span>
+                            {m.versionNumber && (
+                              <span className="ml-2 px-2 py-0.5 rounded bg-[#9b5de5]/20 text-[#9b5de5] text-xs font-semibold">
+                                v{m.versionNumber}
+                              </span>
+                            )}
+                            {m.pending && (
+                              <span className="ml-2 px-2 py-0.5 rounded bg-[#00f5d4]/20 text-[#00f5d4] text-xs font-semibold">
+                                Generating…
+                              </span>
+                            )}
+                          </div>
+
+                          {m.explanation && (
+                            <div className="mb-2">
+                              <div className="font-bold text-[#9b5de5] mb-1">Explanation</div>
+                              <div className="text-gray-200 whitespace-pre-line text-base">{m.explanation}</div>
+                            </div>
+                          )}
+
+                          <div className="mb-2 mt-3">
+                            <ScriptLoadingBarContainer
+                              filename={safeFile(currentScript?.title || "Script")}
+                              displayName={currentScript?.title || "Script"}
+                              version={m.versionNumber ? `v${m.versionNumber}` : ""}
+                              language="lua"
+                              loading={!!m.pending || !!isGenerating || loadingBarVisible}
+                              codeReady={!!m.code}
+                              estimatedLines={m.code ? m.code.split("\n").length : null}
+                              saved={!m.pending && !!m.code}
+                              onSave={() => {
+                                setErrorMsg("Manual save is not supported yet (artifact job writes versions).");
+                                return false;
+                              }}
+                              onView={() => {
+                                if (!m.code) return;
+                                setSelectedVersion({
+                                  id: m.versionId || `local-${m.versionNumber}`,
+                                  title: currentScript?.title || "Script",
+                                  version: m.versionNumber,
+                                  code: m.code,
+                                  explanation: m.explanation,
+                                  createdAt: m.createdAt,
+                                });
+                              }}
+                              stage={loadingBarData.stage}
+                              eta={loadingBarData.eta}
+                            />
+                          </div>
+
+                          <div className="text-xs text-gray-500 mt-2 text-right">{toLocalTime(m.createdAt)}</div>
+                        </div>
+                      </div>
+                    );
+                  })}
+
                 </>
               )}
               {/* Loading bar appears just below the latest script output */}
-              {(isGenerating || loadingBarVisible) && (
+              {(() => {
+                const last = messages[messages.length - 1];
+                return (last?.role === 'assistant' && last?.pending);
+              })() && (
                 <div className="flex items-center text-gray-400 text-sm mt-2 animate-fade-in">
                   <span className="mr-2">
                     <span className="inline-block w-8 h-8 rounded-full bg-gradient-to-br from-[#9b5de5] to-[#00f5d4] flex items-center justify-center shadow-lg overflow-hidden animate-pulse">
@@ -1287,17 +1450,9 @@ handleClearChat={() => {
                   </span>
                   <span aria-live="polite">
                     NexusRBX is typing...
-                    {generationStep === "title" && " (Generating script title...)"}
-                    {generationStep === "explanation" && " (Generating explanation...)"}
-                    {["preparing", "calling model", "post-processing", "polishing", "finalizing"].includes(generationStep) && (
-                      <>
-                        {" ("}
-                        {loadingBarData.stage || generationStep.charAt(0).toUpperCase() + generationStep.slice(1)}
-                        {loadingBarData.eta ? `, ETA: ${loadingBarData.eta}s` : ""}
-                        {")"}
-                      </>
+                    {["preparing","calling model","post-processing","polishing","finalizing"].includes(generationStep) && (
+                      <> ({loadingBarData.stage || generationStep}{loadingBarData.eta ? `, ETA: ${loadingBarData.eta}s` : ""})</>
                     )}
-                    {generationStep === "code" && " (Generating code...)"}
                   </span>
                 </div>
               )}
@@ -1369,6 +1524,7 @@ handleClearChat={() => {
                       : "bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-white hover:shadow-xl hover:scale-110"
                   }`}
                   aria-label="Send prompt"
+                  title="Enter to send • Shift+Enter for newline"
                 >
                   {isGenerating ? (
                     <Loader className="h-5 w-5 animate-spin" />
@@ -1413,7 +1569,7 @@ handleClearChat={() => {
             modelOptions={modelOptions}
             creativityOptions={creativityOptions}
             codeStyleOptions={codeStyleOptions}
-            messages={currentScript ? currentScript.versions : []}
+            messages={messages}
             setPrompt={setPrompt}
             userPromptTemplates={userPromptTemplates}
             setUserPromptTemplates={setUserPromptTemplates}
@@ -1431,16 +1587,68 @@ handleClearChat={() => {
           filename={safeFile(selectedVersion.title)}
           version={selectedVersion.version ? `v${selectedVersion.version}` : ""}
           onClose={() => setSelectedVersion(null)}
-          onSaveScript={handleSaveScript}
+          onSaveScript={async (newTitle, code, explanation = "") => {
+            try {
+              if (!user || !currentScriptId || !code) return false;
+              const res = await authedFetch(user, `${BACKEND_URL}/api/projects/${currentScriptId}/versions`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  code,
+                  explanation,
+                  title: newTitle || (currentScript?.title || "Script"),
+                }),
+              });
+              if (!res.ok) {
+                const t = await res.text();
+                setErrorMsg(`Save failed: ${res.status} ${res.statusText} - ${t.slice(0,120)}`);
+                return false;
+              }
+              // refresh versions immediately (bypass throttle)
+              lastVersionsFetchRef.current = 0;
+              versionsBackoffRef.current = 0;
+              setSuccessMsg("Saved new version");
+
+              // Optional: when saving a new version from the code drawer, log a tiny assistant message
+              try {
+                const db = getFirestore();
+                const authUser = auth.currentUser;
+                if (authUser && currentChatId) {
+                  const chatRef = doc(db, "users", authUser.uid, "chats", currentChatId);
+                  const msgRef = doc(collection(chatRef, "messages"));
+                  await setDoc(msgRef, {
+                    role: "assistant",
+                    content: "Saved a new version.",
+                    createdAt: serverTimestamp(),
+                  });
+                  await updateDoc(chatRef, {
+                    lastMessage: "Saved a new version.",
+                    updatedAt: serverTimestamp(),
+                  });
+                }
+              } catch {}
+
+              return true;
+            } catch (e) {
+              setErrorMsg(`Save error: ${e.message || e}`);
+              return false;
+            }
+          }}
+          onLiveOpen={() => {}}
         />
       )}
       {/* Celebration Animation */}
       {showCelebration && <CelebrationAnimation />}
       {errorMsg && (
-  <div className="fixed bottom-20 left-1/2 transform -translate-x-1/2 bg-red-700 text-white px-6 py-3 rounded-lg shadow-lg z-[200] animate-fade-in">
-    {errorMsg}
-  </div>
-)}
+        <div className="fixed bottom-20 left-1/2 transform -translate-x-1/2 bg-red-700 text-white px-6 py-3 rounded-lg shadow-lg z-[200] animate-fade-in">
+          {errorMsg}
+        </div>
+      )}
+      {successMsg && (
+        <div className="fixed bottom-20 left-1/2 transform -translate-x-1/2 bg-green-700 text-white px-6 py-3 rounded-lg shadow-lg z-[200] animate-fade-in">
+          {successMsg}
+        </div>
+      )}
       {/* Footer */}
       <footer className="border-t border-gray-800 py-4 px-4 bg-black/40 text-center text-sm text-gray-500">
         <div className="max-w-6xl mx-auto">

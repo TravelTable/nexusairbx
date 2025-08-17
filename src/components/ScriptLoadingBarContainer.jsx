@@ -36,7 +36,6 @@ export default function ScriptLoadingBarContainer({
   onCancel = null,
 }) {
   const [progress, setProgress] = useState(0);
-  const [progressLabel, setProgressLabel] = useState("0%");
   const [internalSaved, setInternalSaved] = useState(saved);
   const [saving, setSaving] = useState(false);
 
@@ -49,14 +48,14 @@ export default function ScriptLoadingBarContainer({
     return noExt.length > 28 ? noExt.slice(0, 25) + "…" : noExt;
   }, [displayName, filename, language]);
 
-  // Reset progress and saved state when loading starts
-  useEffect(() => {
-    if (loading && !codeReady) {
-      setProgress(0);
-      setProgressLabel("0%");
-      setInternalSaved(false);
-    }
-  }, [loading, codeReady]);
+// Reset progress and saved state when loading starts
+useEffect(() => {
+  if (loading && !codeReady) {
+    setProgress(0);
+    setInternalSaved(false);
+  }
+}, [loading, codeReady]);
+
 
   // Clamp and guard progress
   const clampProgress = (val, max = 100) =>
@@ -69,19 +68,18 @@ export default function ScriptLoadingBarContainer({
     let cancelled = false;
 
     // If backend progress is provided, use it
-    if (typeof jobProgress === "number" && !isNaN(jobProgress)) {
-      const pct = clampProgress(jobProgress * 100, 100);
-      setProgress(pct);
-      setProgressLabel(`${Math.round(pct)}%`);
-      return () => {};
-    }
+if (typeof jobProgress === "number" && !isNaN(jobProgress)) {
+  const pct = clampProgress(jobProgress * 100, 100);
+  setProgress(pct);
+  return () => {};
+}
+
 
     // Otherwise, use faux timer
     const tickTo100 = (durationMs = 400) => {
       const start = performance.now();
-      const startVal = progress;
+      const startVal = Number.isFinite(progress) ? Math.min(progress, 100) : 0;
       const delta = 100 - startVal;
-
       const step = (t) => {
         if (cancelled) return;
         const elapsed = t - start;
@@ -89,27 +87,20 @@ export default function ScriptLoadingBarContainer({
           elapsed >= durationMs
             ? 100
             : clampProgress(startVal + delta * (elapsed / durationMs), 100);
-        setProgress(pct);
-        setProgressLabel(`${Math.round(pct)}%`);
+setProgress(pct);
         if (pct < 100) rafId = requestAnimationFrame(step);
       };
       rafId = requestAnimationFrame(step);
     };
 
-    if (loading && !codeReady) {
-      setProgress((p) => (p > 0 && p < 95 ? p : 0));
-      setProgressLabel("0%");
-      intervalId = setInterval(() => {
-        setProgress((prev) => {
-          if (cancelled) return prev;
-          const next = clampProgress(prev + 0.2, 95);
-          return next;
-        });
-        setProgressLabel((p) =>
-          `${clampProgress(Number(p.replace("%", "")), 100)}%`
-        );
-      }, 200);
-    }
+if (loading && !codeReady) {
+  setProgress(0);
+  intervalId = setInterval(() => {
+    if (cancelled) return;
+    setProgress((prev) => clampProgress(prev + 0.2, 95));
+  }, 200);
+}
+
 
     if (codeReady) {
       if (intervalId) clearInterval(intervalId);
@@ -177,11 +168,13 @@ export default function ScriptLoadingBarContainer({
   // Compose stage label
   const stageLabel = jobStage || (codeReady ? "Finalizing" : "Generating");
 
-  return (
-    <div
-      className="sbc max-w-3xl mx-auto my-4 w-full px-2 sm:px-4"
-      aria-busy={loading}
-    >
+  
+return (
+  <div
+    className="sbc max-w-3xl mx-auto my-4 w-full px-2 sm:px-4"
+    aria-busy={loading}
+    onSubmit={(e) => e.preventDefault()}
+  >
       <div className="bg-gray-900 bg-opacity-80 backdrop-blur-sm rounded-lg overflow-hidden border border-gray-700 shadow-lg">
         <div className="relative">
           {/* Header Content */}
@@ -305,14 +298,15 @@ export default function ScriptLoadingBarContainer({
             </div>
           </div>
           {/* Progress Bar */}
-          <div
-            className="absolute bottom-0 left-0 h-1 bg-gray-800 w-full overflow-hidden"
-            role="progressbar"
-            aria-valuenow={Math.round(pct)}
-            aria-valuemin={0}
-            aria-valuemax={100}
-            aria-label="Script generation progress"
-          >
+<div
+  className="absolute bottom-0 left-0 h-1 bg-gray-800 w-full overflow-hidden"
+  role="progressbar"
+  aria-valuenow={Math.round(pct)}
+  aria-valuemin={0}
+  aria-valuemax={100}
+  aria-label="Script generation progress"
+  aria-valuetext={`${Math.round(pct)}% ${stageLabel}`}
+>
             <div
               className="h-full bg-gradient-to-r from-purple-600 via-blue-500 to-cyan-400 transition-all duration-300 ease-out"
               style={{ width: `${pct}%` }}

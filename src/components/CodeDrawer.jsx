@@ -13,10 +13,14 @@ import lua from "react-syntax-highlighter/dist/esm/languages/hljs/lua";
 import { atomOneDark } from "react-syntax-highlighter/dist/esm/styles/hljs";
 
 // Register lua highlighting
-// Move this registration OUTSIDE of any component/function, at the top level
-if (!SyntaxHighlighter.supportedLanguages || !SyntaxHighlighter.supportedLanguages.includes("lua")) {
-  SyntaxHighlighter.registerLanguage("lua", lua);
-}
+let __luaRegistered = false;
+try {
+  if (!__luaRegistered) {
+    SyntaxHighlighter.registerLanguage("lua", lua);
+    __luaRegistered = true;
+  }
+} catch {/* safe if already registered */}
+
 
 const FONT_SIZE_KEY = "codeDrawerFontSize";
 
@@ -54,13 +58,18 @@ export default function CodeDrawerContainer({
   const [gotoLine, setGotoLine] = useState("");
   const [highlightLine, setHighlightLine] = useState(null);
 
-  const inputRef = useRef(null);
-  const closeBtnRef = useRef(null);
-  const drawerRef = useRef(null);
-  const openerRef = useRef(null);
+const inputRef = useRef(null);
+const closeBtnRef = useRef(null);
+const drawerRef = useRef(null);
+const openerRef = useRef(null);
 
-  // Focus trap refs
-  const focusableRefs = useRef([]);
+// Focus trap refs
+const focusableRefs = useRef([]);
+
+// Keep latest handlers without putting them in effect deps
+const saveHandlerRef = useRef(null);
+const copyHandlerRef = useRef(null);
+
 
   // Handle window resize (throttled)
   useEffect(() => {
@@ -112,56 +121,65 @@ export default function CodeDrawerContainer({
     // eslint-disable-next-line
   }, [open]);
 
-  // Keyboard shortcuts and focus trap
-  useEffect(() => {
-    if (!open) return;
-    function handleKeyDown(e) {
-      // Focus trap
-      if (e.key === "Tab") {
-        const focusables = focusableRefs.current.filter(Boolean);
-        if (focusables.length === 0) return;
-        const idx = focusables.indexOf(document.activeElement);
-        if (e.shiftKey) {
-          if (idx <= 0) {
-            e.preventDefault();
-            focusables[focusables.length - 1].focus();
-          }
-        } else {
-          if (idx === focusables.length - 1) {
-            e.preventDefault();
-            focusables[0].focus();
-          }
+  // Keyboard shortcuts and focus trap (no TDZ: use refs for handlers)
+useEffect(() => {
+  if (!open) return;
+
+  function handleKeyDown(e) {
+    // Focus trap
+    if (e.key === "Tab") {
+      const focusables = focusableRefs.current.filter(Boolean);
+      if (focusables.length === 0) return;
+      const idx = focusables.indexOf(document.activeElement);
+      if (e.shiftKey) {
+        if (idx <= 0) {
+          e.preventDefault();
+          focusables[focusables.length - 1].focus();
+        }
+      } else {
+        if (idx === focusables.length - 1) {
+          e.preventDefault();
+          focusables[0].focus();
         }
       }
-      // Shortcuts
-      if (e.key === "Escape") {
-        e.preventDefault();
-        onClose();
-      }
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") {
-        e.preventDefault();
-        handleSaveScript();
-      }
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "c") {
-        e.preventDefault();
-        handleCopy();
-      }
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "f") {
-        e.preventDefault();
-        setSearchOpen((v) => !v);
-        setTimeout(() => {
-          const el = document.getElementById("code-drawer-search-input");
-          if (el) el.focus();
-        }, 0);
-      }
     }
-    const node = drawerRef.current;
-    if (node) node.addEventListener("keydown", handleKeyDown);
-    return () => {
-      if (node) node.removeEventListener("keydown", handleKeyDown);
-    };
-    // eslint-disable-next-line
-  }, [open, handleCopy, handleSaveScript, onClose]);
+
+    // Shortcuts
+    if (e.key === "Escape") {
+      e.preventDefault();
+      onClose();
+    }
+
+    // Ctrl/Cmd+S -> save
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") {
+      e.preventDefault();
+      // Use latest handler via ref
+      if (saveHandlerRef.current) saveHandlerRef.current();
+    }
+
+    // Ctrl/Cmd+C -> copy
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "c") {
+      e.preventDefault();
+      if (copyHandlerRef.current) copyHandlerRef.current();
+    }
+
+    // Ctrl/Cmd+F -> toggle search
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "f") {
+      e.preventDefault();
+      setSearchOpen((v) => !v);
+      setTimeout(() => {
+        const el = document.getElementById("code-drawer-search-input");
+        if (el) el.focus();
+      }, 0);
+    }
+  }
+
+  const node = drawerRef.current;
+  if (node) node.addEventListener("keydown", handleKeyDown);
+  return () => {
+    if (node) node.removeEventListener("keydown", handleKeyDown);
+  };
+}, [open, onClose, setSearchOpen]);
 
   // Call onLiveOpen when drawer opens
   useEffect(() => {
@@ -213,35 +231,35 @@ export default function CodeDrawerContainer({
   );
 
   // Copy to clipboard handler (with fallback)
-  const handleCopy = useCallback(() => {
-    const displayCode =
-      liveGenerating && liveContent ? liveContent : code;
-    function fallbackCopy(text) {
-      const textarea = document.createElement("textarea");
-      textarea.value = text;
-      textarea.setAttribute("readonly", "");
-      textarea.style.position = "absolute";
-      textarea.style.left = "-9999px";
-      document.body.appendChild(textarea);
-      textarea.select();
-      try {
-        document.execCommand("copy");
-      } catch (err) {}
-      document.body.removeChild(textarea);
-    }
-    if (navigator.clipboard && window.isSecureContext) {
-      navigator.clipboard
-        .writeText(displayCode)
-        .then(() => setCopySuccess(true))
-        .catch(() => {
-          fallbackCopy(displayCode);
-          setCopySuccess(true);
-        });
-    } else {
-      fallbackCopy(displayCode);
-      setCopySuccess(true);
-    }
-  }, [code, liveGenerating, liveContent]);
+const handleCopy = useCallback(() => {
+  const displayCode =
+    liveGenerating && liveContent ? liveContent : code;
+  function fallbackCopy(text) {
+    const textarea = document.createElement("textarea");
+    textarea.value = text;
+    textarea.setAttribute("readonly", "");
+    textarea.style.position = "absolute";
+    textarea.style.left = "-9999px";
+    document.body.appendChild(textarea);
+    textarea.select();
+    try {
+      document.execCommand("copy");
+    } catch (err) {}
+    document.body.removeChild(textarea);
+  }
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard
+      .writeText(displayCode)
+      .then(() => setCopySuccess(true))
+      .catch(() => {
+        fallbackCopy(displayCode);
+        setCopySuccess(true);
+      });
+  } else {
+    fallbackCopy(displayCode);
+    setCopySuccess(true);
+  }
+}, [code, liveGenerating, liveContent]);
 
   // Save script handler (async, supports backend versioning)
   const handleSaveScript = useCallback(async () => {
@@ -254,6 +272,10 @@ export default function CodeDrawerContainer({
       alert("Script saved!\n\nTitle: " + editTitle);
     }
   }, [onSaveScript, editTitle, code]);
+
+  // Keep handler refs updated for use in keyboard shortcut effect
+  useEffect(() => { copyHandlerRef.current = handleCopy; }, [handleCopy]);
+  useEffect(() => { saveHandlerRef.current = handleSaveScript; }, [handleSaveScript]);
 
   // Title editing handlers
   const startEditing = useCallback(() => setIsEditing(true), []);
@@ -818,14 +840,14 @@ function CodeDrawerUI({
         </div>
         {/* Bottom Buttons */}
         <div className="flex flex-wrap items-center gap-2 sm:gap-3 justify-end p-4 border-t border-gray-800 bg-[#161622] sticky bottom-0 z-10">
-          <GlowButton
-            onClick={onCopy}
-            icon={Copy}
-            aria-label="Copy code"
-            locked={copySuccess}
-          >
-            {copySuccess ? "Copied!" : "Copy"}
-          </GlowButton>
+<GlowButton
+  onClick={onCopy}
+  icon={Copy}
+  aria-label="Copy code"
+  locked={copySuccess}
+>
+  {copySuccess ? "Copied!" : "Copy"}
+</GlowButton>
           <GlowButton
             onClick={() => onDownload("lua")}
             icon={Download}
