@@ -102,6 +102,13 @@ export default function ScriptLoadingBarContainer({
   if (saving || internalSaved) return;
   setSaving(true);
   try {
+    // Prevent duplicate save if already marked as saved
+    if (internalSaved) {
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 2000);
+      setSaving(false);
+      return;
+    }
     let result = false;
     if (typeof onSave === "function") {
       result = await onSave();
@@ -239,81 +246,6 @@ export default function ScriptLoadingBarContainer({
   >
     <FileCode className="w-4 h-4 mr-1.5" />
     <span>View</span>
-  </button>
-</div>
-
-
-              {/* Save */}
-<div className={`relative group flex-1 sm:flex-none min-w-[160px] ${!ready ? "opacity-50 cursor-not-allowed" : ""}`}>
-  <div
-    className={`absolute inset-0 rounded-md bg-gradient-to-r from-purple-600 via-blue-500 to-cyan-400 opacity-0 group-hover:opacity-100 blur-sm transition-opacity duration-300 ${!ready ? "hidden" : ""}`}
-  />
-  <button
-    type="button"
-    onClick={async () => {
-      setSaveError("");
-      if (saving || internalSaved) return;
-      setSaving(true);
-      try {
-        let result = false;
-        if (typeof onSave === "function") {
-          result = await onSave();
-        } else {
-          // fallback: save to localStorage or fire a global event
-          window.dispatchEvent(
-            new CustomEvent("nexus:saveScript", {
-              detail: {
-                code: typeof window !== "undefined" && window.nexusCurrentCode ? window.nexusCurrentCode : "",
-                title: displayName || filename || "Script",
-                version: version,
-                language: language,
-              },
-            })
-          );
-          result = true;
-        }
-        if (result !== false) {
-          setInternalSaved(true);
-          setSaveSuccess(true);
-          setTimeout(() => setSaveSuccess(false), 2000);
-        } else {
-          setSaveError("Failed to save script.");
-        }
-      } catch (e) {
-        setSaveError("Save error: " + (e?.message || String(e)));
-      } finally {
-        setSaving(false);
-      }
-    }}
-    disabled={!ready || internalSaved || saving}
-    aria-disabled={!ready || internalSaved || saving}
-    className={`relative flex items-center justify-center w-full sm:w-auto px-4 py-1.5 rounded-md text-sm bg-black text-white border border-transparent transition-all duration-300 ${
-      ready && !internalSaved && !saving ? "group-hover:shadow-[0_0_15px_rgba(168,85,247,0.5)]" : ""
-    } ${saving ? "cursor-wait opacity-80" : ""}`}
-    title={!ready ? "Wait for script to complete" : internalSaved ? "Already saved as latest version" : "Save as new version"}
-    tabIndex={ready && !internalSaved && !saving ? 0 : -1}
-  >
-    {saveSuccess ? (
-      <>
-        <Check className="w-4 h-4 mr-1.5" />
-        <span>Saved!</span>
-      </>
-    ) : internalSaved ? (
-      <>
-        <Check className="w-4 h-4 mr-1.5" />
-        <span>Saved</span>
-      </>
-    ) : saving ? (
-      <>
-        <Save className="w-4 h-4 mr-1.5 animate-pulse" />
-        <span>Saving…</span>
-      </>
-    ) : (
-      <>
-        <Save className="w-4 h-4 mr-1.5" />
-        <span>Save as new version</span>
-      </>
-    )}
   </button>
 </div>
 

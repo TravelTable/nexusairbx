@@ -919,19 +919,18 @@ export default function NexusRBXAIPageContainer() {
       // 5) Show pending assistant message with explanation AND save to Firestore
       const tempId = `temp-${Date.now()}`;
       const pendingId = `a-temp-${Date.now()}`;
-      const nextVersionNum = (versionHistory[0]?.version || 0) + 1;
       const assistantMsgData = {
-        id: pendingId,
-        clientId: pendingId,
-        role: "assistant",
-        content: explanation,
-        createdAt: new Date().toISOString(),
-        versionNumber: nextVersionNum,
-        explanation,
-        projectId: projectIdToUse,
-        versionId: null,
-        pending: true,
-      };
+  id: pendingId,
+  clientId: pendingId,
+  role: "assistant",
+  content: explanation,
+  createdAt: new Date().toISOString(),
+  versionNumber: null, // will be set after backend returns
+  explanation,
+  projectId: projectIdToUse,
+  versionId: null,
+  pending: true,
+};
 
       setMessages(prev => [...prev, assistantMsgData]);
       setAnimatedScriptIds(prev => ({ ...prev, [tempId]: true }));
@@ -1106,22 +1105,22 @@ export default function NexusRBXAIPageContainer() {
       setTimeout(() => setLoadingBarVisible(false), 1500);
 
       // 9) Finalize assistant msg + persist in chat (update the SAME Firestore message by pendingId)
-      const finalVersion = sorted[0]?.version || ((versionHistory[0]?.version || 0) + 1);
       setMessages(prev => {
-        const copy = [...prev];
-        const idx = copy.findIndex(m => m.id === pendingId);
-        const finalized = {
-          ...(idx !== -1 ? copy[idx] : { id: pendingId, role: "assistant", createdAt: new Date().toISOString() }),
-          content: explanation,
-          projectId: projectIdToUse,
-          versionId: sorted[0]?.id || versionId,
-          versionNumber: sorted[0]?.version || finalVersion,
-          explanation,
-          pending: false,
-        };
-        if (idx !== -1) copy[idx] = finalized; else copy.push(finalized);
-        return copy;
-      });
+  const copy = [...prev];
+  const idx = copy.findIndex(m => m.id === pendingId);
+  const backendVersion = sorted[0]?.version || 1;
+  const finalized = {
+    ...(idx !== -1 ? copy[idx] : { id: pendingId, role: "assistant", createdAt: new Date().toISOString() }),
+    content: explanation,
+    projectId: projectIdToUse,
+    versionId: sorted[0]?.id || versionId,
+    versionNumber: backendVersion,
+    explanation,
+    pending: false,
+  };
+  if (idx !== -1) copy[idx] = finalized; else copy.push(finalized);
+  return copy;
+});
 
       try {
         const db = getFirestore();
@@ -1130,21 +1129,21 @@ export default function NexusRBXAIPageContainer() {
           // Update the known pendingId doc directly
           const chatRef = doc(db, "users", authUser.uid, "chats", chatIdToUse);
           const msgRef = doc(collection(chatRef, "messages"), pendingId);
-          await updateDoc(msgRef, {
-            projectId: projectIdToUse,
-            versionId: sorted[0]?.id || versionId || null,
-            versionNumber: sorted[0]?.version || finalVersion || 1,
-            pending: false,
-            updatedAt: serverTimestamp(),
-            // Do NOT store code in chat message
-          });
-          await updateDoc(chatRef, {
-            lastMessage: `v${sorted[0]?.version || finalVersion} ready`,
-            updatedAt: serverTimestamp(),
-          });
-          window.dispatchEvent(new CustomEvent("nexus:chatActivity", {
-            detail: { id: chatIdToUse, lastMessage: `v${sorted[0]?.version || finalVersion} ready` }
-          }));
+await updateDoc(msgRef, {
+  projectId: projectIdToUse,
+  versionId: sorted[0]?.id || versionId || null,
+  versionNumber: sorted[0]?.version || 1,
+  pending: false,
+  updatedAt: serverTimestamp(),
+  // Do NOT store code in chat message
+});
+await updateDoc(chatRef, {
+  lastMessage: `v${sorted[0]?.version || 1} ready`,
+  updatedAt: serverTimestamp(),
+});
+window.dispatchEvent(new CustomEvent("nexus:chatActivity", {
+  detail: { id: chatIdToUse, lastMessage: `v${sorted[0]?.version || 1} ready` }
+}));
         }
       } catch (err) {
         setErrorMsg("Could not update assistant message with code.");

@@ -877,15 +877,6 @@ function CodeDrawerUI({
           >
             .txt
           </GlowButton>
-          <GlowButton
-            onClick={onSaveScript}
-            icon={Save}
-            aria-label="Save script"
-            glowColor="from-[#00f5d4] to-[#9b5de5]"
-            locked={saveSuccess}
-          >
-            {saveSuccess ? "Saved!" : "Save Script"}
-          </GlowButton>
           <SecondaryButton
             onClick={onClose}
             icon={X}
