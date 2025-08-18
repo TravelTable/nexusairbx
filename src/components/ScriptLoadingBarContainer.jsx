@@ -1,24 +1,6 @@
 import React, { useEffect, useState, useCallback, useMemo } from "react";
-import { FileCode, Save, Check, X } from "lucide-react";
+import { FileCode, Save, Check, XCircle } from "lucide-react";
 
-/**
- * ScriptLoadingBarContainer
- * Props:
- * - filename: string (required)
- * - displayName: string (optional)
- * - version: string (optional, e.g. "v1", "v2", etc.)
- * - language: string (default: "lua")
- * - loading: boolean (true while code is being fetched)
- * - onSave: function (called when Save is clicked)
- * - codeReady: boolean (true when code is ready)
- * - estimatedLines: number (optional)
- * - saved: boolean (true if script is saved)
- * - onView: function (called when View is clicked, should open the drawer for this script)
- * - jobProgress: number (0..1, optional, backend-driven progress)
- * - jobStage: string (optional, e.g. "Preparing", "Calling model", etc.)
- * - etaSeconds: number (optional, estimated seconds remaining)
- * - onCancel: function (optional, called when Cancel is clicked)
- */
 export default function ScriptLoadingBarContainer({
   filename = "Script.lua",
   displayName = "",
@@ -33,172 +15,163 @@ export default function ScriptLoadingBarContainer({
   jobProgress = null,
   jobStage = null,
   etaSeconds = null,
+  stage = null,
+  eta = null,
   onCancel = null,
 }) {
   const [progress, setProgress] = useState(0);
   const [internalSaved, setInternalSaved] = useState(saved);
   const [saving, setSaving] = useState(false);
+  const [canceled, setCanceled] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
+  const [saveError, setSaveError] = useState("");
 
-  // Memoized pretty name, language-proof extension stripping
+  const effectiveStage = jobStage ?? stage ?? null;
+  const effectiveEta = etaSeconds ?? eta ?? null;
+
   const prettyName = useMemo(() => {
-    const base = (displayName || filename || "Script");
+    const base = displayName || filename || "Script";
     const ext = language ? `.${language}` : "";
-    const lowerBase = base.toLowerCase();
-    const noExt = lowerBase.endsWith(ext) ? base.slice(0, -ext.length) : base;
+    const noExt =
+      base.toLowerCase().endsWith(ext.toLowerCase()) ? base.slice(0, -ext.length) : base;
     return noExt.length > 28 ? noExt.slice(0, 25) + "…" : noExt;
   }, [displayName, filename, language]);
 
-// Reset progress and saved state when loading starts
-useEffect(() => {
-  if (loading && !codeReady) {
-    setProgress(0);
-    setInternalSaved(false);
-  }
-}, [loading, codeReady]);
-
-
-  // Clamp and guard progress
-  const clampProgress = (val, max = 100) =>
-    Math.min(max, Math.max(0, +val.toFixed(1)));
-
-  // Progress animation logic: backend-driven or faux timer
+  // Reset progress and flags when (re)starting a job
   useEffect(() => {
-    let rafId = null;
+    if (loading && !codeReady) {
+      setProgress(0);
+      setInternalSaved(false);
+      setCanceled(false);
+    }
+  }, [loading, codeReady]);
+
+  const clampProgress = (val, max = 100) =>
+    Math.min(max, Math.max(0, +Number(val).toFixed(1)));
+
+  // Faux progress when backend doesn't provide jobProgress
+  useEffect(() => {
     let intervalId = null;
     let cancelled = false;
 
-    // If backend progress is provided, use it
-if (typeof jobProgress === "number" && !isNaN(jobProgress)) {
-  const pct = clampProgress(jobProgress * 100, 100);
-  setProgress(pct);
-  return () => {};
-}
-
-
-    // Otherwise, use faux timer
-    const tickTo100 = (durationMs = 400) => {
-      const start = performance.now();
-      const startVal = Number.isFinite(progress) ? Math.min(progress, 100) : 0;
-      const delta = 100 - startVal;
-      const step = (t) => {
-        if (cancelled) return;
-        const elapsed = t - start;
-        const pct =
-          elapsed >= durationMs
-            ? 100
-            : clampProgress(startVal + delta * (elapsed / durationMs), 100);
-setProgress(pct);
-        if (pct < 100) rafId = requestAnimationFrame(step);
-      };
-      rafId = requestAnimationFrame(step);
-    };
-
-if (loading && !codeReady) {
-  setProgress(0);
-  intervalId = setInterval(() => {
-    if (cancelled) return;
-    setProgress((prev) => clampProgress(prev + 0.2, 95));
-  }, 200);
-}
-
-
-    if (codeReady) {
-      if (intervalId) clearInterval(intervalId);
-      tickTo100(450);
+    // if backend drives progress, just mirror it
+    if (typeof jobProgress === "number" && !isNaN(jobProgress)) {
+      setProgress(clampProgress(jobProgress * 100, 100));
+      return () => {};
     }
+
+    if (canceled || !loading || codeReady) return () => {};
+
+    let local = 0;
+    intervalId = setInterval(() => {
+      if (cancelled) return;
+      if (local < 80) local += Math.random() * 2 + 1;
+      else if (local < 95) local += Math.random() * 0.5 + 0.2;
+      else local += Math.random() * 0.1;
+      if (local > 99) local = 99;
+      setProgress(clampProgress(local, 99));
+    }, 120);
 
     return () => {
       cancelled = true;
       if (intervalId) clearInterval(intervalId);
-      if (rafId) cancelAnimationFrame(rafId);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loading, codeReady, jobProgress]);
+  }, [loading, codeReady, jobProgress, canceled]);
 
-  // When parent updates saved prop, sync internal state
-  useEffect(() => {
-    setInternalSaved(saved);
-  }, [saved]);
+  // === The important part: derive readiness without relying solely on codeReady ===
+  const ready = useMemo(() => {
+    const backendDone =
+      typeof jobProgress === "number" && !isNaN(jobProgress) && jobProgress >= 1;
+    const finishedWithoutBackend = !loading && (progress >= 99 || jobProgress == null);
+    return !!(codeReady || backendDone || finishedWithoutBackend);
+  }, [codeReady, jobProgress, loading, progress]);
 
-  // Reset internalSaved when loading flips true
+  // Snap to 100% when ready
   useEffect(() => {
-    if (loading && !codeReady) setInternalSaved(false);
-  }, [loading, codeReady]);
-  // Save handler with saving guard, useCallback for perf
-  const [saveSuccess, setSaveSuccess] = useState(false);
-  const [saveError, setSaveError] = useState("");
+    if (ready && !canceled) setProgress(100);
+  }, [ready, canceled]);
+
+  // Sync saved flag from parent
+  useEffect(() => setInternalSaved(saved), [saved]);
+  useEffect(() => {
+    if (loading && !ready) setInternalSaved(false);
+  }, [loading, ready]);
+
   const handleSave = useCallback(async () => {
-    setSaveError("");
-    if (saving || internalSaved || typeof onSave !== "function") return;
-    try {
-      setSaving(true);
-      const result = await onSave();
-      if (result !== false) {
-        setInternalSaved(true);
-        setSaveSuccess(true);
-        setTimeout(() => setSaveSuccess(false), 2000);
-      } else {
-        setSaveError("Failed to save script.");
-      }
-    } catch (e) {
-      setSaveError("Save error: " + (e?.message || e));
-    } finally {
-      setSaving(false);
+  setSaveError("");
+  if (saving || internalSaved) return;
+  setSaving(true);
+  try {
+    let result = false;
+    if (typeof onSave === "function") {
+      result = await onSave();
+    } else {
+      // fallback: fire a global event for sidebar to handle saving
+      window.dispatchEvent(
+        new CustomEvent("nexus:saveScript", {
+          detail: {
+            code: typeof window !== "undefined" && window.nexusCurrentCode ? window.nexusCurrentCode : "",
+            title: displayName || filename || "Script",
+            version: version,
+            language: language,
+          },
+        })
+      );
+      result = true;
     }
-  }, [saving, internalSaved, onSave]);
+    // Also fire a global event for sidebar to handle saving (for sidebar "Saved" tab)
+    window.dispatchEvent(
+      new CustomEvent("nexus:sidebarSaveScript", {
+        detail: {
+          code: typeof window !== "undefined" && window.nexusCurrentCode ? window.nexusCurrentCode : "",
+          title: displayName || filename || "Script",
+          version: version,
+          language: language,
+        },
+      })
+    );
+    if (result !== false) {
+      setInternalSaved(true);
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 2000);
+    } else {
+      setSaveError("Failed to save script.");
+    }
+  } catch (e) {
+    setSaveError("Save error: " + (e?.message || String(e)));
+  } finally {
+    setSaving(false);
+  }
+}, [saving, internalSaved, onSave, displayName, filename, version, language]);
 
-  // View handler, useCallback for perf
   const handleView = useCallback(() => {
-    if (typeof onView === "function" && codeReady) {
-      onView();
-    }
-  }, [onView, codeReady]);
+    if (typeof onView === "function" && ready) onView();
+  }, [onView, ready]);
 
-  // Cancel handler, useCallback for perf
   const handleCancel = useCallback(() => {
-    if (typeof onCancel === "function" && loading && !codeReady) {
+    if (typeof onCancel === "function" && loading && !ready) {
       onCancel();
+      setCanceled(true);
     }
-  }, [onCancel, loading, codeReady]);
+  }, [onCancel, loading, ready]);
 
-  // Compose progress percent for display and bar
-  const pct = useMemo(() => {
-    if (typeof jobProgress === "number" && !isNaN(jobProgress)) {
-      return clampProgress(jobProgress * 100, 100);
-    }
-    return clampProgress(progress, 100);
-  }, [jobProgress, progress]);
+  const pct = clampProgress(progress, 100);
+  const progressLabelDisplay = `${Math.round(pct)}%`;
+  const stageLabel = canceled ? "Canceled" : effectiveStage || (ready ? "Finalizing" : "Generating");
 
-  // Compose progress label
-  const progressLabelDisplay = useMemo(
-    () => `${Math.round(pct)}%`,
-    [pct]
-  );
-
-  // Compose stage label
-  const stageLabel = jobStage || (codeReady ? "Finalizing" : "Generating");
-
-  
-return (
-  <div
-    className="sbc max-w-3xl mx-auto my-4 w-full px-2 sm:px-4"
-    aria-busy={loading}
-    onSubmit={(e) => e.preventDefault()}
-  >
+  return (
+    <div className="sbc max-w-3xl mx-auto my-4 w-full px-2 sm:px-4" aria-busy={loading}>
       <div className="bg-gray-900 bg-opacity-80 backdrop-blur-sm rounded-lg overflow-hidden border border-gray-700 shadow-lg">
         <div className="relative">
-          {/* Header Content */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between px-3 sm:px-4 py-3 z-10 relative gap-3 sm:gap-0">
-            <div className="flex items-center w-full sm:w-auto">
-              <div className="bg-gray-800 bg-opacity-70 p-1.5 rounded-md mr-3 border border-gray-700 flex-shrink-0">
+          {/* Header */}
+          <div className="flex flex-col gap-3 sm:gap-0 sm:flex-row sm:items-center sm:justify-between px-3 sm:px-4 py-3 z-10 relative">
+            <div className="flex items-start w-full sm:w-auto min-w-0">
+              <div className="bg-gray-800 bg-opacity-70 p-1.5 rounded-md mr-3 border border-gray-700 flex-shrink-0 mt-0.5">
                 <FileCode className="w-5 h-5 text-white" />
               </div>
-              <div className="min-w-0">
+              <div className="min-w-0 flex-1">
                 <div className="flex items-center flex-wrap">
-                  <span
-                    className="font-medium text-white truncate max-w-[160px] sm:max-w-none"
-                    title={prettyName}
-                  >
+                  <span className="font-medium text-white truncate max-w-[160px] sm:max-w-none" title={prettyName}>
                     {prettyName}
                   </span>
                   {version && (
@@ -207,132 +180,175 @@ return (
                     </span>
                   )}
                 </div>
-                <div className="text-xs text-gray-300 mt-0.5 flex items-center flex-wrap" aria-live="polite">
+                <div className="text-xs text-gray-300 mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1" aria-live="polite">
                   <span>
-                    {codeReady
-                      ? `${language.toUpperCase()} script generated`
-                      : `Generating ${language.toUpperCase()} script...`}
+                    {canceled ? "Script generation canceled" : ready ? `${language.toUpperCase()} script generated` : `Generating ${language.toUpperCase()} script...`}
                   </span>
-                  <span className="ml-2 font-semibold">{progressLabelDisplay}</span>
-                  <span className="ml-2 text-gray-400">• {stageLabel}</span>
-                  {estimatedLines != null && (
-                    <span className="ml-2 text-gray-400">
-                      • ~{estimatedLines} lines
-                    </span>
+                  <span className="font-semibold">{progressLabelDisplay}</span>
+                  <span className="text-gray-400">• {stageLabel}</span>
+                  {estimatedLines != null && <span className="text-gray-400">• ~{estimatedLines} lines</span>}
+                  {effectiveEta != null && !ready && <span className="text-gray-400">• ~{Math.ceil(effectiveEta)}s</span>}
+                  {!ready && !canceled && (
+                    <span className="text-yellow-400">This may take a few minutes depending on script complexity...</span>
                   )}
-                  {etaSeconds != null && !codeReady && (
-                    <span className="ml-2 text-gray-400">
-                      • ~{Math.ceil(etaSeconds)}s
-                    </span>
-                  )}
-                  {!codeReady && (
-                    <span className="ml-2 text-yellow-400">
-                      This may take a few minutes depending on script complexity...
-                    </span>
-                  )}
+                  {canceled && <span className="text-red-400">Generation was canceled. No further progress.</span>}
+                  {saveError && <span className="text-xs text-red-400">{saveError}</span>}
                 </div>
               </div>
             </div>
-            {/* View, Save, Cancel Buttons */}
-            <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
-              {/* View Button */}
-              <div className={`relative group flex-1 sm:flex-none ${!codeReady ? 'opacity-50 cursor-not-allowed' : ''}`}>
-                <div className={`absolute inset-0 rounded-md bg-gradient-to-r from-purple-600 via-blue-500 to-cyan-400 
-                  opacity-0 group-hover:opacity-100 blur-sm transition-opacity duration-300 
-                  ${!codeReady ? 'hidden' : ''}`}>
-                </div>
-                <button
-                  type="button"
-                  onClick={handleView}
-                  disabled={!codeReady}
-                  aria-disabled={!codeReady}
-                  className={`relative flex items-center justify-center w-full sm:w-auto px-4 py-1.5 rounded-md text-sm bg-black text-white
-                    border border-transparent group-hover:border-transparent transition-all duration-300
-                    ${codeReady ? 'group-hover:shadow-[0_0_15px_rgba(168,85,247,0.5)]' : ''}`}
-                  title={codeReady ? "View script" : "Wait for script to complete"}
-                  style={{ marginRight: "0.5rem" }}
-                >
-                  <FileCode className="w-4 h-4 mr-1.5" />
-                  <span>View</span>
-                </button>
-              </div>
-              {/* Save Button */}
-                <div className={`relative group flex-1 sm:flex-none ${!codeReady ? 'opacity-50 cursor-not-allowed' : ''}`}>
-                <div className={`absolute inset-0 rounded-md bg-gradient-to-r from-purple-600 via-blue-500 to-cyan-400 
-                  opacity-0 group-hover:opacity-100 blur-sm transition-opacity duration-300 
-                  ${!codeReady ? 'hidden' : ''}`}>
-                </div>
-                <button
-                  type="button"
-                  onClick={handleSave}
-                  disabled={!codeReady || internalSaved || saving}
-                  aria-disabled={!codeReady || internalSaved || saving}
-                  className={`relative flex items-center justify-center w-full sm:w-auto px-4 py-1.5 rounded-md text-sm bg-black text-white
-                    border border-transparent group-hover:border-transparent transition-all duration-300
-                    ${codeReady && !internalSaved && !saving ? 'group-hover:shadow-[0_0_15px_rgba(168,85,247,0.5)]' : ''}
-                    ${saving ? 'cursor-wait opacity-80' : ''}`}
-                  title={codeReady ? (internalSaved ? "Already saved" : "Save script") : "Wait for script to complete"}
-                >
-                  {saveSuccess ? (
-                    <>
-                      <Check className="w-4 h-4 mr-1.5" />
-                      <span>Saved!</span>
-                    </>
-                  ) : internalSaved ? (
-                    <>
-                      <Check className="w-4 h-4 mr-1.5" />
-                      <span>Saved</span>
-                    </>
-                  ) : saving ? (
-                    <>
-                      <Save className="w-4 h-4 mr-1.5 animate-pulse" />
-                      <span>Saving…</span>
-                    </>
-                  ) : (
-                    <>
-                      <Save className="w-4 h-4 mr-1.5" />
-                      <span>Save</span>
-                    </>
-                  )}
-                </button>
-                {saveError && (
-                  <span className="ml-2 text-xs text-red-400">{saveError}</span>
-                )}
-              </div>
-              {/* Cancel Button */}
-              {typeof onCancel === "function" && loading && !codeReady && (
-                <div className="relative group flex-1 sm:flex-none">
+
+            {/* Buttons */}
+            <div className="flex flex-row flex-wrap items-center gap-2 w-full sm:w-auto sm:justify-end mt-2 sm:mt-0">
+{/* View */}
+<div
+  className={`relative group inline-flex sm:flex-none ${
+    !ready ? "opacity-50 cursor-not-allowed" : ""
+  }`}
+>
+  {/* Gradient glow (clipped to button size) */}
+  <div
+    className={`absolute inset-0 rounded-md bg-gradient-to-r from-purple-600 via-blue-500 to-cyan-400 opacity-0 group-hover:opacity-100 blur-sm transition-opacity duration-300 ${
+      !ready ? "hidden" : ""
+    }`}
+    aria-hidden="true"
+  />
+  <button
+    type="button"
+    onClick={() => {
+      if (typeof onView === "function" && ready) {
+        onView();
+      } else if (ready) {
+        // fallback: open a modal or drawer with code if available
+        window.dispatchEvent(
+          new CustomEvent("nexus:openCodeDrawer", {
+            detail: {
+              code: typeof window !== "undefined" && window.nexusCurrentCode ? window.nexusCurrentCode : "",
+              title: displayName || filename || "Script",
+              version: version,
+              language: language,
+            },
+          })
+        );
+      }
+    }}
+    disabled={!ready}
+    aria-disabled={!ready}
+    className="relative z-10 flex items-center justify-center px-4 py-1.5 rounded-md text-sm bg-black text-white border border-transparent transition-all duration-300"
+    title={ready ? "View script" : "Wait for script to complete"}
+    tabIndex={ready ? 0 : -1}
+  >
+    <FileCode className="w-4 h-4 mr-1.5" />
+    <span>View</span>
+  </button>
+</div>
+
+
+              {/* Save */}
+<div className={`relative group flex-1 sm:flex-none min-w-[160px] ${!ready ? "opacity-50 cursor-not-allowed" : ""}`}>
+  <div
+    className={`absolute inset-0 rounded-md bg-gradient-to-r from-purple-600 via-blue-500 to-cyan-400 opacity-0 group-hover:opacity-100 blur-sm transition-opacity duration-300 ${!ready ? "hidden" : ""}`}
+  />
+  <button
+    type="button"
+    onClick={async () => {
+      setSaveError("");
+      if (saving || internalSaved) return;
+      setSaving(true);
+      try {
+        let result = false;
+        if (typeof onSave === "function") {
+          result = await onSave();
+        } else {
+          // fallback: save to localStorage or fire a global event
+          window.dispatchEvent(
+            new CustomEvent("nexus:saveScript", {
+              detail: {
+                code: typeof window !== "undefined" && window.nexusCurrentCode ? window.nexusCurrentCode : "",
+                title: displayName || filename || "Script",
+                version: version,
+                language: language,
+              },
+            })
+          );
+          result = true;
+        }
+        if (result !== false) {
+          setInternalSaved(true);
+          setSaveSuccess(true);
+          setTimeout(() => setSaveSuccess(false), 2000);
+        } else {
+          setSaveError("Failed to save script.");
+        }
+      } catch (e) {
+        setSaveError("Save error: " + (e?.message || String(e)));
+      } finally {
+        setSaving(false);
+      }
+    }}
+    disabled={!ready || internalSaved || saving}
+    aria-disabled={!ready || internalSaved || saving}
+    className={`relative flex items-center justify-center w-full sm:w-auto px-4 py-1.5 rounded-md text-sm bg-black text-white border border-transparent transition-all duration-300 ${
+      ready && !internalSaved && !saving ? "group-hover:shadow-[0_0_15px_rgba(168,85,247,0.5)]" : ""
+    } ${saving ? "cursor-wait opacity-80" : ""}`}
+    title={!ready ? "Wait for script to complete" : internalSaved ? "Already saved as latest version" : "Save as new version"}
+    tabIndex={ready && !internalSaved && !saving ? 0 : -1}
+  >
+    {saveSuccess ? (
+      <>
+        <Check className="w-4 h-4 mr-1.5" />
+        <span>Saved!</span>
+      </>
+    ) : internalSaved ? (
+      <>
+        <Check className="w-4 h-4 mr-1.5" />
+        <span>Saved</span>
+      </>
+    ) : saving ? (
+      <>
+        <Save className="w-4 h-4 mr-1.5 animate-pulse" />
+        <span>Saving…</span>
+      </>
+    ) : (
+      <>
+        <Save className="w-4 h-4 mr-1.5" />
+        <span>Save as new version</span>
+      </>
+    )}
+  </button>
+</div>
+
+              {/* Cancel */}
+              {typeof onCancel === "function" && loading && !ready && !canceled && (
+                <div className="relative group flex-1 sm:flex-none min-w-[120px]">
                   <button
                     type="button"
                     onClick={handleCancel}
                     className="relative flex items-center justify-center w-full sm:w-auto px-4 py-1.5 rounded-md text-sm bg-transparent text-gray-300 border border-gray-600 hover:bg-gray-800 hover:text-white transition-all duration-200"
                     title="Cancel script generation"
                   >
-                    <X className="w-4 h-4 mr-1.5" />
+                    <XCircle className="w-4 h-4 mr-1.5" />
                     <span>Cancel</span>
                   </button>
                 </div>
               )}
             </div>
           </div>
+
           {/* Progress Bar */}
-<div
-  className="absolute bottom-0 left-0 h-1 bg-gray-800 w-full overflow-hidden"
-  role="progressbar"
-  aria-valuenow={Math.round(pct)}
-  aria-valuemin={0}
-  aria-valuemax={100}
-  aria-label="Script generation progress"
-  aria-valuetext={`${Math.round(pct)}% ${stageLabel}`}
->
-            <div
-              className="h-full bg-gradient-to-r from-purple-600 via-blue-500 to-cyan-400 transition-all duration-300 ease-out"
-              style={{ width: `${pct}%` }}
-            ></div>
+          <div
+            className="absolute bottom-0 left-0 h-1 bg-gray-800 w-full overflow-hidden"
+            role="progressbar"
+            aria-valuenow={Math.round(pct)}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-label="Script generation progress"
+            aria-valuetext={`${Math.round(pct)}% ${stageLabel}`}
+          >
+            <div className="h-full bg-gradient-to-r from-purple-600 via-blue-500 to-cyan-400 transition-all duration-300 ease-out" style={{ width: `${pct}%` }} />
           </div>
         </div>
       </div>
-      {/* Responsive and animated gradient border CSS, scoped to .sbc */}
+
       <style>{`
         @keyframes sbcBorderAnimation {
           0% { background-position: 0% 50%; }
@@ -344,38 +360,19 @@ return (
           background-size: 200% 200%;
         }
         @media (max-width: 640px) {
-          .sbc .max-w-3xl {
-            max-width: 100vw !important;
-          }
-          .sbc .rounded-lg {
-            border-radius: 1rem !important;
-          }
-          .sbc .px-3, .sbc .sm\\:px-4 {
-            padding-left: 0.75rem !important;
-            padding-right: 0.75rem !important;
-          }
-          .sbc .py-3 {
-            padding-top: 0.75rem !important;
-            padding-bottom: 0.75rem !important;
-          }
-          .sbc .flex-row {
-            flex-direction: column !important;
-          }
-          .sbc .items-center {
-            align-items: flex-start !important;
-          }
-          .sbc .gap-2 {
-            gap: 0.5rem !important;
-          }
-          .sbc .mr-3 {
-            margin-right: 0.75rem !important;
-          }
-          .sbc .w-full {
-            width: 100% !important;
-          }
-          .sbc .justify-end {
-            justify-content: flex-end !important;
-          }
+          .sbc .max-w-3xl { max-width: 100vw !important; }
+          .sbc .rounded-lg { border-radius: 1rem !important; }
+          .sbc .px-3, .sbc .sm\\:px-4 { padding-left: 0.75rem !important; padding-right: 0.75rem !important; }
+          .sbc .py-3 { padding-top: 0.75rem !important; padding-bottom: 0.75rem !important; }
+          .sbc .flex-row { flex-direction: column !important; }
+          .sbc .items-center { align-items: flex-start !important; }
+          .sbc .gap-2 { gap: 0.5rem !important; }
+          .sbc .mr-3 { margin-right: 0.75rem !important; }
+          .sbc .w-full { width: 100% !important; }
+          .sbc .justify-end { justify-content: flex-end !important; }
+          .sbc .min-w-0 { min-width: 0 !important; }
+          .sbc .min-w-\\[120px\\] { min-width: 100px !important; }
+          .sbc .min-w-\\[160px\\] { min-width: 120px !important; }
         }
       `}</style>
     </div>

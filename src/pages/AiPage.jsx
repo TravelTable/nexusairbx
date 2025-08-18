@@ -96,16 +96,13 @@ function getUserInitials(email) {
     .slice(0, 2);
 }
 
-// --- Model Resolver ---
+// --- Model Resolver (distinct) ---
 const resolveModel = (mv) => {
   switch (mv) {
-    case "nexus-4":
-      return "gpt-4.1-2025-04-14";
-    case "nexus-2":
-      return "gpt-3.5-turbo";
-    case "nexus-3":
-    default:
-      return "gpt-4.1-2025-04-14";
+    case "nexus-4": return "gpt-4.1-2025-04-14";
+    case "nexus-3": return "gpt-4.1-mini";
+    case "nexus-2": return "gpt-3.5-turbo";
+    default: return "gpt-4.1-2025-04-14";
   }
 };
 
@@ -118,6 +115,7 @@ async function authedFetch(user, url, init = {}, retry = true) {
       ...(init.headers || {}),
       Authorization: `Bearer ${idToken}`,
     },
+    signal: init.signal,
   });
   if (res.status === 401 && retry) {
     // Try to refresh token and retry once
@@ -129,6 +127,7 @@ async function authedFetch(user, url, init = {}, retry = true) {
         ...(init.headers || {}),
         Authorization: `Bearer ${idToken}`,
       },
+      signal: init.signal,
     });
   }
   return res;
@@ -203,6 +202,25 @@ async function pollJob(user, jobId, onTick, { intervalMs = 1200, maxMs = 120000,
     await new Promise(r => setTimeout(r, intervalMs));
   }
   return { status: "failed", error: "Timeout" };
+}
+
+// --- Safe localStorage helpers ---
+function safeGet(key, fallback = null) {
+  try { return JSON.parse(localStorage.getItem(key)) ?? fallback; }
+  catch { return fallback; }
+}
+function safeSet(key, val) {
+  try { localStorage.setItem(key, JSON.stringify(val)); } catch {}
+}
+
+// --- Version Map Helper ---
+function versionMap({ projectId, id, version, ...rest }) {
+  return {
+    projectId,
+    versionId: id,
+    versionNumber: version ?? null,
+    ...rest,
+  };
 }
 
 export default function NexusRBXAIPageContainer() {
@@ -289,24 +307,24 @@ export default function NexusRBXAIPageContainer() {
 
   // --- Local Persistence for chat/sidebar ---
   useEffect(() => {
-    if (currentScript) localStorage.setItem("nexusrbx:currentScript", JSON.stringify(currentScript));
+    if (currentScript) safeSet("nexusrbx:currentScript", currentScript);
   }, [currentScript]);
 
   useEffect(() => {
-    localStorage.setItem("nexusrbx:versionHistory", JSON.stringify(versionHistory || []));
+    safeSet("nexusrbx:versionHistory", versionHistory || []);
   }, [versionHistory]);
 
   useEffect(() => {
-    localStorage.setItem(`nexusrbx:messages:${currentScriptId || "none"}`, JSON.stringify(messages || []));
+    safeSet(`nexusrbx:messages:${currentScriptId || "none"}`, messages || []);
   }, [messages, currentScriptId]);
 
   useEffect(() => {
-    const cachedScript = localStorage.getItem("nexusrbx:currentScript");
-    if (cachedScript) setCurrentScript(JSON.parse(cachedScript));
-    const cachedVersions = localStorage.getItem("nexusrbx:versionHistory");
-    if (cachedVersions) setVersionHistory(JSON.parse(cachedVersions));
-    const cachedScripts = localStorage.getItem("nexusrbx:scripts");
-    if (cachedScripts) setScripts(JSON.parse(cachedScripts));
+    const cachedScript = safeGet("nexusrbx:currentScript");
+    if (cachedScript) setCurrentScript(cachedScript);
+    const cachedVersions = safeGet("nexusrbx:versionHistory");
+    if (cachedVersions) setVersionHistory(cachedVersions);
+    const cachedScripts = safeGet("nexusrbx:scripts");
+    if (cachedScripts) setScripts(cachedScripts);
     // No auto-restore of project/chat here
   }, []);
 
@@ -342,8 +360,8 @@ export default function NexusRBXAIPageContainer() {
     if (!authUser || !chatId) return;
 
     // clean previous listeners
-    if (messagesUnsubRef.current) { try { messagesUnsubRef.current(); } catch {} messagesUnsubRef.current = null; }
-    if (chatUnsubRef.current) { try { chatUnsubRef.current(); } catch {} chatUnsubRef.current = null; }
+    if (messagesUnsubRef.current) { try { messagesUnsubRef.current(); } finally { messagesUnsubRef.current = null; } }
+    if (chatUnsubRef.current) { try { chatUnsubRef.current(); } finally { chatUnsubRef.current = null; } }
 
     setCurrentChatId(chatId);
 
@@ -532,34 +550,34 @@ export default function NexusRBXAIPageContainer() {
   }, []);
 
   async function createChatWithTitleAndFirstMessage({ user, title, firstMessage, clientId }) {
-  const db = getFirestore();
-  const authUser = auth.currentUser;
-  if (!authUser) throw new Error("Not authenticated");
+    const db = getFirestore();
+    const authUser = auth.currentUser;
+    if (!authUser) throw new Error("Not authenticated");
 
-  const chatRef = doc(collection(db, "users", authUser.uid, "chats"));
-  const msgRef = doc(collection(chatRef, "messages"));
-  const now = serverTimestamp();
+    const chatRef = doc(collection(db, "users", authUser.uid, "chats"));
+    const msgRef = doc(collection(chatRef, "messages"));
+    const now = serverTimestamp();
 
-  const batch = writeBatch(db);
-  batch.set(chatRef, {
-    title,              // final title from AI
-    createdAt: now,
-    updatedAt: now,
-    firstMessageAt: now,
-    lastMessage: firstMessage,
-    projectId: null,
-    archived: false,
-  });
-  batch.set(msgRef, {
-    clientId,
-    role: "user",
-    content: firstMessage,
-    createdAt: now,
-  });
+    const batch = writeBatch(db);
+    batch.set(chatRef, {
+      title,              // final title from AI
+      createdAt: now,
+      updatedAt: now,
+      firstMessageAt: now,
+      lastMessage: firstMessage,
+      projectId: null,
+      archived: false,
+    });
+    batch.set(msgRef, {
+      clientId,
+      role: "user",
+      content: firstMessage,
+      createdAt: now,
+    });
 
-  await batch.commit();
-  return chatRef.id;
-}
+    await batch.commit();
+    return chatRef.id;
+  }
 
   // --- Sidebar Version Click Handler (no single-version GET) ---
   const handleVersionView = async (versionObj) => {
@@ -597,7 +615,7 @@ export default function NexusRBXAIPageContainer() {
     if (res.ok) {
       const data = await res.json();
       setCurrentScriptId(data.projectId);
-      localStorage.setItem("nexusrbx:lastProjectId", data.projectId);
+      safeSet("nexusrbx:lastProjectId", data.projectId);
     } else {
       setErrorMsg("Failed to create project.");
     }
@@ -700,420 +718,458 @@ export default function NexusRBXAIPageContainer() {
   }, [user]);
 
   useEffect(() => {
-  function onOpenCodeDrawer(e) {
-    const scriptId = e?.detail?.scriptId;
-    const code = e?.detail?.code;
-    const title = e?.detail?.title;
-    const version = e?.detail?.version;
-    if (!scriptId) return;
-    // If code is provided (from saved tab), open drawer immediately
-    if (code) {
-    setSelectedVersion({
-      id: scriptId,
-      code,
-      title: title || "Script",
-      version: version || "",
-      explanation: "",
-      createdAt: new Date().toISOString(),
-    });
-      return;
+    function onOpenCodeDrawer(e) {
+      const scriptId = e?.detail?.scriptId;
+      const code = e?.detail?.code;
+      const title = e?.detail?.title;
+      const version = e?.detail?.version;
+      if (!scriptId) return;
+      // If code is provided (from saved tab), open drawer immediately
+      if (code) {
+        setSelectedVersion(versionMap({
+          projectId: scriptId,
+          id: scriptId,
+          code,
+          title: title || "Script",
+          version: version || "",
+          explanation: "",
+          createdAt: new Date().toISOString(),
+        }));
+        return;
+      }
+      // If already loaded, open the latest version
+      if (scriptId === currentScriptId && versionHistory.length > 0) {
+        setSelectedVersion(versionMap({ ...versionHistory[0], projectId: scriptId }));
+      } else {
+        setCurrentScriptId(scriptId);
+        // When versionHistory loads, the code drawer will open automatically
+      }
     }
-    // If already loaded, open the latest version
-    if (scriptId === currentScriptId && versionHistory.length > 0) {
-      setSelectedVersion(versionHistory[0]);
-    } else {
-      setCurrentScriptId(scriptId);
-      // When versionHistory loads, the code drawer will open automatically
-    }
-  }
-  window.addEventListener("nexus:openCodeDrawer", onOpenCodeDrawer);
-  return () => window.removeEventListener("nexus:openCodeDrawer", onOpenCodeDrawer);
-}, [currentScriptId, versionHistory]);
+    window.addEventListener("nexus:openCodeDrawer", onOpenCodeDrawer);
+    return () => window.removeEventListener("nexus:openCodeDrawer", onOpenCodeDrawer);
+  }, [currentScriptId, versionHistory]);
 
   // --- Main Generation Flow (Handles both new script and new version) ---
-const handleSubmit = async (e) => {
-  e.preventDefault();
-  setErrorMsg("");
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setErrorMsg("");
 
-  // guard rails
-  if (typeof prompt !== "string" || !prompt.trim() || isGenerating) return;
-  if (prompt.length > 800) {
-    setPromptError("Prompt too long (max 800 characters).");
-    return;
-  }
-  if (!user) {
-    setErrorMsg("Sign in to generate scripts.");
-    return;
-  }
-
-  // stable id for this user message (helps dedupe)
-  const clientId = "u-" + Date.now();
-
-  // clean prompt
-  const cleaned = prompt.trim().replace(/\s+/g, " ");
-  if (!cleaned) return;
-
-  let chatIdToUse = currentChatId;
-
-  // cancel any previous job
-  if (jobAbortRef.current) {
-    try { jobAbortRef.current.abort(); } catch {}
-  }
-  const abortController = new AbortController();
-  jobAbortRef.current = abortController;
-
-  try {
-    setIsGenerating(true);
-    setGenerationStep("title");
-    setShowCelebration(false);
-
-    // 1) Title
-    const titleRes = await authedFetch(user, `${BACKEND_URL}/api/generate-title-advanced`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        prompt: cleaned,
-        conversation: [],
-        isNewScript: !currentScriptId,
-        previousTitle: "",
-        settings: {
-          model: resolveModel(settings.modelVersion),
-          temperature: settings.creativity,
-        }
-      }),
-      signal: abortController.signal,
-    });
-    if (!titleRes.ok) {
-      const text = await titleRes.text();
-      throw new Error(`Failed to generate title: ${titleRes.status} ${titleRes.statusText} - ${text.slice(0,200)}`);
+    // guard rails
+    if (typeof prompt !== "string" || !prompt.trim() || isGenerating) return;
+    if (prompt.length > 800) {
+      setPromptError("Prompt too long (max 800 characters).");
+      return;
     }
-    const titleData = await titleRes.json().catch(() => null);
-    if (!titleData?.title) throw new Error("No title returned");
-    const scriptTitle = titleData.title;
+    if (!user) {
+      setErrorMsg("Sign in to generate scripts.");
+      return;
+    }
 
-    // 2) Chat create/update
+    // stable id for this user message (helps dedupe)
+    const clientId = "u-" + Date.now();
+
+    // clean prompt
+    const cleaned = prompt.trim().replace(/\s+/g, " ");
+    if (!cleaned) return;
+
+    let chatIdToUse = currentChatId;
+
+    // cancel any previous job
+    if (jobAbortRef.current) {
+      try { jobAbortRef.current.abort(); } catch {}
+    }
+    const abortController = new AbortController();
+    jobAbortRef.current = abortController;
+
     try {
-      if (!chatIdToUse) {
-        const newChatId = await createChatWithTitleAndFirstMessage({
-          user,
-          title: scriptTitle,
-          firstMessage: cleaned,
-          clientId,
-        });
-        chatIdToUse = newChatId;
-        setCurrentChatId(chatIdToUse);
-        openChatById(chatIdToUse);
-        window.dispatchEvent(new CustomEvent("nexus:chatActivity", {
-          detail: { id: chatIdToUse, title: scriptTitle, lastMessage: cleaned }
-        }));
-      } else {
-        const db = getFirestore();
-        const authUser = auth.currentUser;
-        const chatRef = doc(db, "users", authUser.uid, "chats", chatIdToUse);
-        const msgRef = doc(collection(chatRef, "messages"));
-        await setDoc(msgRef, {
-          clientId,
-          role: "user",
-          content: cleaned,
-          createdAt: serverTimestamp(),
-        });
-        await updateDoc(chatRef, {
-          lastMessage: cleaned,
-          updatedAt: serverTimestamp(),
-        });
-      }
-    } catch {
-      setErrorMsg("Could not create or update chat.");
-    }
+      setIsGenerating(true);
+      setGenerationStep("title");
+      setShowCelebration(false);
 
-    // 3) Ensure project
-    let projectIdToUse = currentScriptId;
-    if (!projectIdToUse) {
-      const createProjectRes = await authedFetch(user, `${BACKEND_URL}/api/projects`, {
+      // 1) Title
+      const titleRes = await authedFetch(user, `${BACKEND_URL}/api/generate-title-advanced`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: scriptTitle || "Script" }),
+        body: JSON.stringify({
+          prompt: cleaned,
+          conversation: [],
+          isNewScript: !currentScriptId,
+          previousTitle: "",
+          settings: {
+            model: resolveModel(settings.modelVersion),
+            temperature: settings.creativity,
+          }
+        }),
+        signal: abortController.signal,
       });
-      if (!createProjectRes.ok) {
-        const text = await createProjectRes.text();
-        throw new Error(`Failed to create project: ${createProjectRes.status} ${createProjectRes.statusText} - ${text.slice(0,200)}`);
+      if (!titleRes.ok) {
+        const text = await titleRes.text();
+        throw new Error(`Failed to generate title: ${titleRes.status} ${titleRes.statusText} - ${text.slice(0,200)}`);
       }
-      const created = await createProjectRes.json();
-      projectIdToUse = created.projectId;
-      setCurrentScriptId(projectIdToUse);
+      const titleData = await titleRes.json().catch(() => null);
+      if (!titleData?.title) throw new Error("No title returned");
+      const scriptTitle = titleData.title;
 
-      // link chat -> project
+      // 2) Chat create/update
       try {
-        const db = getFirestore();
-        const authUser = auth.currentUser;
-        if (authUser && chatIdToUse) {
-          await updateDoc(doc(db, "users", authUser.uid, "chats", chatIdToUse), {
-            projectId: projectIdToUse,
+        if (!chatIdToUse) {
+          const newChatId = await createChatWithTitleAndFirstMessage({
+            user,
+            title: scriptTitle,
+            firstMessage: cleaned,
+            clientId,
+          });
+          chatIdToUse = newChatId;
+          setCurrentChatId(chatIdToUse);
+          openChatById(chatIdToUse);
+          window.dispatchEvent(new CustomEvent("nexus:chatActivity", {
+            detail: { id: chatIdToUse, title: scriptTitle, lastMessage: cleaned }
+          }));
+        } else {
+          const db = getFirestore();
+          const authUser = auth.currentUser;
+          const chatRef = doc(db, "users", authUser.uid, "chats", chatIdToUse);
+          const msgRef = doc(collection(chatRef, "messages"));
+          await setDoc(msgRef, {
+            clientId,
+            role: "user",
+            content: cleaned,
+            createdAt: serverTimestamp(),
+          });
+          await updateDoc(chatRef, {
+            lastMessage: cleaned,
             updatedAt: serverTimestamp(),
           });
         }
-      } catch {}
-    }
+      } catch {
+        setErrorMsg("Could not create or update chat.");
+      }
 
-    // 4) Outline (explanation)
-    setGenerationStep("explanation");
-    const recent = [...messages, { role: "user", content: cleaned }].slice(-6);
-    const conversation = recent.map((m) => {
-      if (m.role === "user") return { role: "user", content: m.content };
-      const content = m.explanation
-        ? `Explanation:\n${m.explanation}`
-        : (m.code ? "Provided code previously." : "Assistant response.");
-      return { role: "assistant", content };
-    });
+      // 3) Ensure project
+      let projectIdToUse = currentScriptId;
+      if (!projectIdToUse) {
+        const createProjectRes = await authedFetch(user, `${BACKEND_URL}/api/projects`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ title: scriptTitle || "Script" }),
+          signal: abortController.signal,
+        });
+        if (!createProjectRes.ok) {
+          const text = await createProjectRes.text();
+          throw new Error(`Failed to create project: ${createProjectRes.status} ${createProjectRes.statusText} - ${text.slice(0,200)}`);
+        }
+        const created = await createProjectRes.json();
+        projectIdToUse = created.projectId;
+        setCurrentScriptId(projectIdToUse);
 
-    const outlineRes = await authedFetch(user, `${BACKEND_URL}/api/generate/outline`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        projectId: projectIdToUse,
-        prompt: cleaned,
-        conversation,
-        settings: {
-          model: resolveModel(settings.modelVersion),
-          temperature: settings.creativity,
-          codeStyle: settings.codeStyle,
-        },
-      }),
-    });
-    if (!outlineRes.ok) {
-      const text = await outlineRes.text();
-      throw new Error(`Failed to generate outline: ${outlineRes.status} ${outlineRes.statusText} - ${text.slice(0,200)}`);
-    }
-    const outlineData = await outlineRes.json().catch(() => null);
-    const outline = Array.isArray(outlineData?.outline) ? outlineData.outline : [];
-    const explanation = outline
-      .map(sec => {
-        const heading = sec?.heading ? `## ${sec.heading}` : "";
-        const bullets = (sec?.bulletPoints || []).map(b => `• ${b}`).join("\n");
-        return [heading, bullets].filter(Boolean).join("\n");
-      })
-      .join("\n\n");
-    if (!explanation) throw new Error("Failed to generate outline/explanation");
+        // link chat -> project
+        try {
+          const db = getFirestore();
+          const authUser = auth.currentUser;
+          if (authUser && chatIdToUse) {
+            await updateDoc(doc(db, "users", authUser.uid, "chats", chatIdToUse), {
+              projectId: projectIdToUse,
+              updatedAt: serverTimestamp(),
+            });
+          }
+        } catch {}
+      }
 
-    // 5) Show pending assistant message with explanation
-    const tempId = `temp-${Date.now()}`;
-    const nextVersionNum = (versionHistory[0]?.version || 0) + 1;
-    const pendingId = `a-temp-${Date.now()}`;
-    setMessages(prev => [
-      ...prev,
-      {
+      // 4) Outline (explanation)
+      setGenerationStep("explanation");
+      const recent = [...messages, { role: "user", content: cleaned }].slice(-6);
+      const conversation = recent.map((m) => {
+        if (m.role === "user") return { role: "user", content: m.content };
+        const content = m.explanation
+          ? `Explanation:\n${m.explanation}`
+          : (m.code ? "Provided code previously." : "Assistant response.");
+        return { role: "assistant", content };
+      });
+
+      const outlineRes = await authedFetch(user, `${BACKEND_URL}/api/generate/outline`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          projectId: projectIdToUse,
+          prompt: cleaned,
+          conversation,
+          settings: {
+            model: resolveModel(settings.modelVersion),
+            temperature: settings.creativity,
+            codeStyle: settings.codeStyle,
+          },
+        }),
+        signal: abortController.signal,
+      });
+      if (!outlineRes.ok) {
+        const text = await outlineRes.text();
+        throw new Error(`Failed to generate outline: ${outlineRes.status} ${outlineRes.statusText} - ${text.slice(0,200)}`);
+      }
+      const outlineData = await outlineRes.json().catch(() => null);
+      const outline = Array.isArray(outlineData?.outline) ? outlineData.outline : [];
+      const explanation = outline
+        .map(sec => {
+          const heading = sec?.heading ? `## ${sec.heading}` : "";
+          const bullets = (sec?.bulletPoints || []).map(b => `• ${b}`).join("\n");
+          return [heading, bullets].filter(Boolean).join("\n");
+        })
+        .join("\n\n");
+      if (!explanation) throw new Error("Failed to generate outline/explanation");
+
+      // 5) Show pending assistant message with explanation AND save to Firestore
+      const tempId = `temp-${Date.now()}`;
+      const pendingId = `a-temp-${Date.now()}`;
+      const nextVersionNum = (versionHistory[0]?.version || 0) + 1;
+      const assistantMsgData = {
         id: pendingId,
+        clientId: pendingId,
         role: "assistant",
         content: explanation,
         createdAt: new Date().toISOString(),
         versionNumber: nextVersionNum,
         explanation,
-        code: "",
-        pending: true,
-      },
-    ]);
-    setAnimatedScriptIds(prev => ({ ...prev, [tempId]: true }));
-    setCurrentScript({
-      id: tempId,
-      title: scriptTitle,
-      versions: [
-        { id: tempId, title: scriptTitle, explanation, code: "", version: 1, temp: true, createdAt: new Date().toISOString() },
-      ],
-    });
-    setVersionHistory([
-      { id: tempId, title: scriptTitle, explanation, code: "", version: 1, temp: true, createdAt: new Date().toISOString() },
-    ]);
-    setSelectedVersion({
-      id: tempId, title: scriptTitle, explanation, code: "", version: 1, temp: true, createdAt: new Date().toISOString(),
-    });
-
-    // tiny pause for UI
-    await new Promise((r) => setTimeout(r, 1000));
-
-    // 6) Start code job
-    setGenerationStep("preparing");
-    setLoadingBarVisible(true);
-    setLoadingBarData({
-      filename: (scriptTitle || "Script").replace(/[^a-zA-Z0-9_\- ]/g, "").replace(/\s+/g, "_").slice(0, 40) + ".lua",
-      version: "v1",
-      language: "lua",
-      loading: true,
-      codeReady: false,
-      estimatedLines: null,
-      saved: false,
-      onSave: () => {},
-      onView: () => {},
-      stage: "Preparing",
-      eta: null,
-    });
-
-    const artifactStart = await authedFetch(user, `${BACKEND_URL}/api/generate/artifact`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Idempotency-Key": window.crypto?.randomUUID?.() || Math.random().toString(36).slice(2, 26),
-      },
-      body: JSON.stringify({
         projectId: projectIdToUse,
-        prompt: cleaned,
-        pipelineId: window.crypto?.randomUUID?.() || Math.random().toString(36).slice(2, 26),
-        outline: outline || [{ heading: "Plan", bulletPoints: [] }],
-        settings: {
-          model: resolveModel(settings.modelVersion),
-          temperature: settings.creativity,
-          codeStyle: settings.codeStyle,
-        },
-      }),
-    });
-
-    let jobId, pipelineId;
-    try {
-      const jobStartData = await artifactStart.json();
-      jobId = jobStartData.jobId;
-      pipelineId = jobStartData.pipelineId;
-    } catch {
-      throw new Error("Failed to start code generation job.");
-    }
-
-    // 7) Poll status
-    pollingTimesRef.current = [];
-    let lastStage = "";
-    const jobResult = await pollJob(
-      user,
-      jobId,
-      (tick) => {
-        const stage = tick.stage || "";
-        let mappedStep = "preparing";
-        if (/prepar/i.test(stage)) mappedStep = "preparing";
-        else if (/call/i.test(stage)) mappedStep = "calling model";
-        else if (/post/i.test(stage)) mappedStep = "post-processing";
-        else if (/polish/i.test(stage)) mappedStep = "polishing";
-        else if (/final/i.test(stage)) mappedStep = "finalizing";
-        setGenerationStep(mappedStep);
-
-        if (tick.stage !== lastStage) {
-          pollingTimesRef.current.push(Date.now());
-          if (pollingTimesRef.current.length > 5) pollingTimesRef.current.shift();
-          lastStage = tick.stage;
-        }
-        let eta = null;
-        if (pollingTimesRef.current.length > 1) {
-          const diffs = [];
-          for (let i = 1; i < pollingTimesRef.current.length; ++i) {
-            diffs.push(pollingTimesRef.current[i] - pollingTimesRef.current[i - 1]);
-          }
-          const avg = diffs.reduce((a, b) => a + b, 0) / diffs.length;
-          eta = Math.round(avg / 1000);
-        }
-        setLoadingBarData((prev) => ({ ...prev, estimatedLines: undefined, stage, eta }));
-      },
-      { intervalMs: 1200, maxMs: 120000, signal: abortController.signal }
-    );
-
-    if (jobResult.status !== "succeeded") throw new Error(jobResult.error || "Generation failed");
-    const { code: generatedCode, versionId } = jobResult.result;
-    const code = generatedCode || "";
-    if (!code) throw new Error("Failed to generate code");
-
-    // 8) Get versions (fallback if empty)
-    setGenerationStep("saving");
-    let versions = [];
-    try {
-      const versionsRes = await authedFetch(user, `${BACKEND_URL}/api/projects/${projectIdToUse}/versions`, { method: "GET" });
-      if (versionsRes.ok) {
-        const versionsData = await versionsRes.json();
-        versions = Array.isArray(versionsData.versions) ? versionsData.versions : [];
-      }
-    } catch {}
-
-    if (versions.length === 0) {
-      versions = [{
-        id: versionId || `local-${Date.now()}`,
-        title: scriptTitle,
-        explanation,
-        code,
-        version: 1,
-        createdAt: new Date().toISOString(),
-      }];
-    }
-
-    const sorted = versions
-      .map(v => ({ ...v, createdAt: typeof v.createdAt === "number" ? v.createdAt : Date.parse(v.createdAt) || Date.now() }))
-      .sort((a, b) => (b.version || 1) - (a.version || 1));
-
-    setVersionHistory(sorted);
-    setCurrentScript({ id: projectIdToUse, title: scriptTitle, versions: sorted });
-    setSelectedVersion(sorted[0]);
-
-    setLoadingBarData((prev) => ({
-      ...prev,
-      loading: false,
-      codeReady: true,
-      saved: true,
-      version: sorted[0]?.version ? `v${sorted[0].version}` : `v1`,
-      filename: (scriptTitle || "Script").replace(/[^a-zA-Z0-9_\- ]/g, "").replace(/\s+/g, "_").slice(0, 40) + ".lua",
-      onSave: () => {},
-      onView: () => {},
-    }));
-    setTimeout(() => setLoadingBarVisible(false), 1500);
-
-    // 9) Finalize assistant msg + persist in chat
-    const finalVersion = sorted[0]?.version || ((versionHistory[0]?.version || 0) + 1);
-    setMessages(prev => {
-      const copy = [...prev];
-      const idx = copy.findIndex(m => m.role === "assistant" && m.pending);
-      const finalized = {
-        ...(idx !== -1 ? copy[idx] : { id: `a-${Date.now()}`, role: "assistant", createdAt: new Date().toISOString() }),
-        content: explanation,
-        versionId: sorted[0]?.id || versionId,
-        versionNumber: finalVersion,
-        code,
-        explanation,
-        pending: false,
+        versionId: null,
+        pending: true,
       };
-      if (idx !== -1) copy[idx] = finalized; else copy.push(finalized);
-      return copy;
-    });
 
-    try {
-      const db = getFirestore();
-      const authUser = auth.currentUser;
-      if (authUser && chatIdToUse) {
-        const chatRef = doc(db, "users", authUser.uid, "chats", chatIdToUse);
-        const msgRef = doc(collection(chatRef, "messages"));
-        await setDoc(msgRef, {
-          role: "assistant",
-          content: explanation || "Generated code",
-          code,
-          versionId: sorted[0]?.id || versionId || null,
-          versionNumber: sorted[0]?.version || finalVersion || 1,
-          createdAt: serverTimestamp(),
-        });
-        await updateDoc(chatRef, {
-          lastMessage: `v${sorted[0]?.version || finalVersion} ready`,
-          updatedAt: serverTimestamp(),
-        });
-        window.dispatchEvent(new CustomEvent("nexus:chatActivity", {
-          detail: { id: chatIdToUse, lastMessage: `v${sorted[0]?.version || finalVersion} ready` }
-        }));
+      setMessages(prev => [...prev, assistantMsgData]);
+      setAnimatedScriptIds(prev => ({ ...prev, [tempId]: true }));
+      setCurrentScript({
+        id: tempId,
+        title: scriptTitle,
+        versions: [
+          { id: tempId, title: scriptTitle, explanation, code: "", version: 1, temp: true, createdAt: new Date().toISOString(), projectId: projectIdToUse },
+        ],
+      });
+      setVersionHistory([
+        { id: tempId, title: scriptTitle, explanation, code: "", version: 1, temp: true, createdAt: new Date().toISOString(), projectId: projectIdToUse },
+      ]);
+      setSelectedVersion({
+        id: tempId, title: scriptTitle, explanation, code: "", version: 1, temp: true, createdAt: new Date().toISOString(), projectId: projectIdToUse,
+      });
+
+      // Save pending assistant message to Firestore (with known id)
+      try {
+        const db = getFirestore();
+        const authUser = auth.currentUser;
+        if (authUser && chatIdToUse) {
+          const chatRef = doc(db, "users", authUser.uid, "chats", chatIdToUse);
+          const msgRef = doc(collection(chatRef, "messages"), pendingId);
+          await setDoc(msgRef, {
+            ...assistantMsgData,
+            firestoreId: pendingId,
+            updatedAt: serverTimestamp(),
+          });
+        }
+      } catch (err) {
+        setErrorMsg("Could not save assistant explanation to chat.");
       }
-    } catch {}
 
-    setGenerationStep("done");
-    setShowCelebration(true);
-    setAnimatedScriptIds((prev) => ({ ...prev, [projectIdToUse]: true }));
-    setTimeout(() => setShowCelebration(false), 3000);
-    setTimeout(() => setSuccessMsg(`Saved ${sorted[0]?.version ? `v${sorted[0].version}` : "v1"}`), 500);
+      // tiny pause for UI
+      await new Promise((r) => setTimeout(r, 1000));
 
-    // tokens (skip if dev)
-    setTokensLeft((prev) => (prev == null ? null : Math.max(0, (prev || 4) - 1)));
-  } catch (err) {
-    setErrorMsg("Error during script generation: " + (err.message || err));
-  } finally {
-    setIsGenerating(false);
-    setGenerationStep("idle");
-  }
-};
+      // 6) Start code job
+      setGenerationStep("preparing");
+      setLoadingBarVisible(true);
+      setLoadingBarData({
+        filename: (scriptTitle || "Script").replace(/[^a-zA-Z0-9_\- ]/g, "").replace(/\s+/g, "_").slice(0, 40) + ".lua",
+        version: "v1",
+        language: "lua",
+        loading: true,
+        codeReady: false,
+        estimatedLines: null,
+        saved: false,
+        onSave: () => {},
+        onView: () => {},
+        stage: "Preparing",
+        eta: null,
+      });
+
+      const artifactStart = await authedFetch(user, `${BACKEND_URL}/api/generate/artifact`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Idempotency-Key": window.crypto?.randomUUID?.() || Math.random().toString(36).slice(2, 26),
+        },
+        body: JSON.stringify({
+          projectId: projectIdToUse,
+          prompt: cleaned,
+          pipelineId: window.crypto?.randomUUID?.() || Math.random().toString(36).slice(2, 26),
+          outline: outline || [{ heading: "Plan", bulletPoints: [] }],
+          settings: {
+            model: resolveModel(settings.modelVersion),
+            temperature: settings.creativity,
+            codeStyle: settings.codeStyle,
+          },
+        }),
+        signal: abortController.signal,
+      });
+
+      let jobId, pipelineId;
+      try {
+        const jobStartData = await artifactStart.json();
+        jobId = jobStartData.jobId;
+        pipelineId = jobStartData.pipelineId;
+      } catch {
+        throw new Error("Failed to start code generation job.");
+      }
+
+      // 7) Poll status
+      pollingTimesRef.current = [];
+      let lastStage = "";
+      const jobResult = await pollJob(
+        user,
+        jobId,
+        (tick) => {
+          const stage = tick.stage || "";
+          let mappedStep = "preparing";
+          if (/prepar/i.test(stage)) mappedStep = "preparing";
+          else if (/call/i.test(stage)) mappedStep = "calling model";
+          else if (/post/i.test(stage)) mappedStep = "post-processing";
+          else if (/polish/i.test(stage)) mappedStep = "polishing";
+          else if (/final/i.test(stage)) mappedStep = "finalizing";
+          setGenerationStep(mappedStep);
+
+          if (tick.stage !== lastStage) {
+            pollingTimesRef.current.push(Date.now());
+            if (pollingTimesRef.current.length > 5) pollingTimesRef.current.shift();
+            lastStage = tick.stage;
+          }
+          let eta = null;
+          if (pollingTimesRef.current.length > 1) {
+            const diffs = [];
+            for (let i = 1; i < pollingTimesRef.current.length; ++i) {
+              diffs.push(pollingTimesRef.current[i] - pollingTimesRef.current[i - 1]);
+            }
+            const avg = diffs.reduce((a, b) => a + b, 0) / diffs.length;
+            eta = Math.round(avg / 1000);
+          }
+          setLoadingBarData((prev) => ({ ...prev, estimatedLines: undefined, stage, eta }));
+        },
+        { intervalMs: 1200, maxMs: 120000, signal: abortController.signal }
+      );
+
+      if (jobResult.status !== "succeeded") throw new Error(jobResult.error || "Generation failed");
+      const { code: generatedCode, versionId } = jobResult.result;
+      const code = generatedCode || "";
+      if (!code) throw new Error("Failed to generate code");
+
+      // 8) Get versions (always use backend version numbers)
+      setGenerationStep("saving");
+      let versions = [];
+      try {
+        const versionsRes = await authedFetch(user, `${BACKEND_URL}/api/projects/${projectIdToUse}/versions`, { method: "GET", signal: abortController.signal });
+        if (versionsRes.ok) {
+          const versionsData = await versionsRes.json();
+          versions = Array.isArray(versionsData.versions) ? versionsData.versions : [];
+        }
+      } catch {}
+
+      if (versions.length === 0) {
+        versions = [{
+          id: versionId || `local-${Date.now()}`,
+          title: scriptTitle,
+          explanation,
+          code,
+          version: 1,
+          createdAt: new Date().toISOString(),
+          projectId: projectIdToUse,
+        }];
+      }
+
+      const sorted = versions
+        .map(v => ({
+          ...v,
+          createdAt: typeof v.createdAt === "number"
+            ? v.createdAt
+            : Date.parse(v.createdAt) || Date.now(),
+          projectId: projectIdToUse,
+        }))
+        .sort((a, b) => (b.version || 1) - (a.version || 1));
+
+      // Always use backend version numbers for UI and chat
+      setVersionHistory(sorted);
+      setCurrentScript({ id: projectIdToUse, title: scriptTitle, versions: sorted });
+      setSelectedVersion(sorted[0]);
+
+      setLoadingBarData((prev) => ({
+        ...prev,
+        loading: false,
+        codeReady: true,
+        saved: true,
+        version: sorted[0]?.version ? `v${sorted[0].version}` : `v1`,
+        filename: (scriptTitle || "Script").replace(/[^a-zA-Z0-9_\- ]/g, "").replace(/\s+/g, "_").slice(0, 40) + ".lua",
+        onSave: () => {},
+        onView: () => {},
+      }));
+      setTimeout(() => setLoadingBarVisible(false), 1500);
+
+      // 9) Finalize assistant msg + persist in chat (update the SAME Firestore message by pendingId)
+      const finalVersion = sorted[0]?.version || ((versionHistory[0]?.version || 0) + 1);
+      setMessages(prev => {
+        const copy = [...prev];
+        const idx = copy.findIndex(m => m.id === pendingId);
+        const finalized = {
+          ...(idx !== -1 ? copy[idx] : { id: pendingId, role: "assistant", createdAt: new Date().toISOString() }),
+          content: explanation,
+          projectId: projectIdToUse,
+          versionId: sorted[0]?.id || versionId,
+          versionNumber: sorted[0]?.version || finalVersion,
+          explanation,
+          pending: false,
+        };
+        if (idx !== -1) copy[idx] = finalized; else copy.push(finalized);
+        return copy;
+      });
+
+      try {
+        const db = getFirestore();
+        const authUser = auth.currentUser;
+        if (authUser && chatIdToUse) {
+          // Update the known pendingId doc directly
+          const chatRef = doc(db, "users", authUser.uid, "chats", chatIdToUse);
+          const msgRef = doc(collection(chatRef, "messages"), pendingId);
+          await updateDoc(msgRef, {
+            projectId: projectIdToUse,
+            versionId: sorted[0]?.id || versionId || null,
+            versionNumber: sorted[0]?.version || finalVersion || 1,
+            pending: false,
+            updatedAt: serverTimestamp(),
+            // Do NOT store code in chat message
+          });
+          await updateDoc(chatRef, {
+            lastMessage: `v${sorted[0]?.version || finalVersion} ready`,
+            updatedAt: serverTimestamp(),
+          });
+          window.dispatchEvent(new CustomEvent("nexus:chatActivity", {
+            detail: { id: chatIdToUse, lastMessage: `v${sorted[0]?.version || finalVersion} ready` }
+          }));
+        }
+      } catch (err) {
+        setErrorMsg("Could not update assistant message with code.");
+      }
+
+      setGenerationStep("done");
+      setShowCelebration(true);
+      setAnimatedScriptIds((prev) => ({ ...prev, [projectIdToUse]: true }));
+      setTimeout(() => setShowCelebration(false), 3000);
+      setTimeout(() => setSuccessMsg(`Saved ${sorted[0]?.version ? `v${sorted[0].version}` : "v1"}`), 500);
+
+      // tokens (skip if dev)
+      setTokensLeft((prev) => (prev == null ? null : Math.max(0, (prev || 4) - 1)));
+
+      // Emit code ready event
+      window.dispatchEvent(new CustomEvent("nexus:codeReady", {
+        detail: { projectId: projectIdToUse, versionId: sorted[0]?.id }
+      }));
+    } catch (err) {
+      setErrorMsg("Error during script generation: " + (err.message || err));
+    } finally {
+      setIsGenerating(false);
+      setGenerationStep("idle");
+    }
+  };
 
   // --- Keyboard UX for textarea ---
   const handlePromptKeyDown = (e) => {
@@ -1427,32 +1483,123 @@ const handleSubmit = async (e) => {
 
                           <div className="mb-2 mt-3">
                             <ScriptLoadingBarContainer
-                              filename={safeFile(currentScript?.title || "Script")}
-                              displayName={currentScript?.title || "Script"}
-                              version={m.versionNumber ? `v${m.versionNumber}` : ""}
-                              language="lua"
-                              loading={!!m.pending || !!isGenerating || loadingBarVisible}
-                              codeReady={!!m.code}
-                              estimatedLines={m.code ? m.code.split("\n").length : null}
-                              saved={!m.pending && !!m.code}
-                              onSave={() => {
-                                setErrorMsg("Manual save is not supported yet (artifact job writes versions).");
-                                return false;
-                              }}
-                              onView={() => {
-                                if (!m.code) return;
-                                setSelectedVersion({
-                                  id: m.versionId || `local-${m.versionNumber}`,
-                                  title: currentScript?.title || "Script",
-                                  version: m.versionNumber,
-                                  code: m.code,
-                                  explanation: m.explanation,
-                                  createdAt: m.createdAt,
-                                });
-                              }}
-                              stage={loadingBarData.stage}
-                              eta={loadingBarData.eta}
-                            />
+  filename={safeFile(currentScript?.title || "Script")}
+  displayName={currentScript?.title || "Script"}
+  version={m.versionNumber ? `v${m.versionNumber}` : ""}
+  language="lua"
+  loading={!!m.pending || !!isGenerating || loadingBarVisible}
+  codeReady={!!m.code}
+  estimatedLines={m.code ? m.code.split("\n").length : null}
+  saved={!m.pending && !!m.code}
+  onSave={async () => {
+    try {
+      if (!user || !m.code) return false;
+
+      // Try to determine the script/project ID
+      let scriptId = currentScriptId;
+      if (!scriptId && m.projectId) scriptId = m.projectId;
+
+      // If still not available, create a new project
+      if (!scriptId) {
+        const resCreate = await authedFetch(user, `${BACKEND_URL}/api/projects`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ title: currentScript?.title || "Script" }),
+        });
+        if (!resCreate.ok) {
+          setErrorMsg("Failed to create new script for saving.");
+          return false;
+        }
+        const data = await resCreate.json();
+        scriptId = data.projectId;
+        setCurrentScriptId(scriptId);
+      }
+
+      // Save the new version
+      const res = await authedFetch(user, `${BACKEND_URL}/api/projects/${scriptId}/versions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          code: m.code,
+          explanation: m.explanation || "",
+          title: currentScript?.title || "Script",
+        }),
+      });
+      if (!res.ok) {
+        const t = await res.text();
+        setErrorMsg(`Save failed: ${res.status} ${res.statusText} - ${t.slice(0,120)}`);
+        return false;
+      }
+      // refresh versions immediately (bypass throttle)
+      lastVersionsFetchRef.current = 0;
+      versionsBackoffRef.current = 0;
+      setSuccessMsg("Saved new version");
+
+      // Immediately update versionHistory and selectedVersion with the new version
+      try {
+        const versionsRes = await authedFetch(user, `${BACKEND_URL}/api/projects/${scriptId}/versions`, { method: "GET" });
+        if (versionsRes.ok) {
+          const versionsData = await versionsRes.json();
+          const versions = Array.isArray(versionsData.versions) ? versionsData.versions : [];
+          const sorted = versions
+            .map(v => ({
+              ...v,
+              createdAt: typeof v.createdAt === "number"
+                ? v.createdAt
+                : Date.parse(v.createdAt) || Date.now(),
+              projectId: scriptId,
+            }))
+            .sort((a, b) => (b.version || 1) - (a.version || 1));
+          setVersionHistory(sorted);
+          setCurrentScript({ id: scriptId, title: currentScript?.title || "Script", versions: sorted });
+          setSelectedVersion(sorted[0]);
+        }
+      } catch {}
+
+      // Optional: when saving a new version from the code drawer, log a tiny assistant message
+      try {
+        const db = getFirestore();
+        const authUser = auth.currentUser;
+        if (authUser && currentChatId) {
+          const chatRef = doc(db, "users", authUser.uid, "chats", currentChatId);
+          const msgRef = doc(collection(chatRef, "messages"));
+          await setDoc(msgRef, {
+            role: "assistant",
+            content: "Saved a new version.",
+            createdAt: serverTimestamp(),
+          });
+          await updateDoc(chatRef, {
+            lastMessage: "Saved a new version.",
+            updatedAt: serverTimestamp(),
+          });
+        }
+      } catch {}
+
+      return true;
+    } catch (e) {
+      setErrorMsg(`Save error: ${e.message || e}`);
+      return false;
+    }
+  }}
+  onView={() => {
+    if (m.code) {
+      setSelectedVersion({
+        ...m,
+        projectId: m.projectId || currentScriptId,
+        version: m.versionNumber,
+        code: m.code,
+        title: currentScript?.title || "Script",
+      });
+    } else if (m.versionId) {
+      const versionObj = versionHistory.find(v => v.id === m.versionId);
+      if (versionObj) {
+        setSelectedVersion(versionMap({ ...versionObj, projectId: m.projectId }));
+      }
+    }
+  }}
+  jobStage={loadingBarData.stage}
+  etaSeconds={loadingBarData.eta}
+/>
                           </div>
 
                           <div className="text-xs text-gray-500 mt-2 text-right">{toLocalTime(m.createdAt)}</div>
@@ -1611,107 +1758,108 @@ const handleSubmit = async (e) => {
       </main>
       {/* --- Code Drawer Integration --- */}
       {selectedVersion && (
-<SimpleCodeDrawer
-  open={!!selectedVersion}
-  code={selectedVersion.code}
-  title={selectedVersion.title}
-  filename={safeFile(selectedVersion.title)}
-  version={selectedVersion.version ? `v${selectedVersion.version}` : ""}
-  onClose={() => setSelectedVersion(null)}
-  onSaveScript={async (newTitle, code, explanation = "") => {
-    try {
-      if (!user || !code) return false;
+        <SimpleCodeDrawer
+          open={!!selectedVersion}
+          code={selectedVersion.code}
+          title={selectedVersion.title}
+          filename={safeFile(selectedVersion.title)}
+          version={selectedVersion.version ? `v${selectedVersion.version}` : ""}
+          onClose={() => setSelectedVersion(null)}
+          onSaveScript={async (newTitle, code, explanation = "") => {
+            try {
+              if (!user || !code) return false;
 
-      // Try to determine the script/project ID
-      let scriptId = currentScriptId;
-      // If not available, try to use selectedVersion.id as scriptId
-      if (!scriptId && selectedVersion?.id) {
-        scriptId = selectedVersion.id;
-      }
+              // Try to determine the script/project ID
+              let scriptId = currentScriptId;
+              // If not available, try to use selectedVersion.projectId as scriptId
+              if (!scriptId && selectedVersion?.projectId) {
+                scriptId = selectedVersion.projectId;
+              }
 
-      // If still not available, create a new project
-      if (!scriptId) {
-        const resCreate = await authedFetch(user, `${BACKEND_URL}/api/projects`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ title: newTitle || "Script" }),
-        });
-        if (!resCreate.ok) {
-          setErrorMsg("Failed to create new script for saving.");
-          return false;
-        }
-        const data = await resCreate.json();
-        scriptId = data.projectId;
-        setCurrentScriptId(scriptId);
-      }
+              // If still not available, create a new project
+              if (!scriptId) {
+                const resCreate = await authedFetch(user, `${BACKEND_URL}/api/projects`, {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ title: newTitle || "Script" }),
+                });
+                if (!resCreate.ok) {
+                  setErrorMsg("Failed to create new script for saving.");
+                  return false;
+                }
+                const data = await resCreate.json();
+                scriptId = data.projectId;
+                setCurrentScriptId(scriptId);
+              }
 
-      // Save the new version
-      const res = await authedFetch(user, `${BACKEND_URL}/api/projects/${scriptId}/versions`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          code,
-          explanation,
-          title: newTitle || (currentScript?.title || "Script"),
-        }),
-      });
-      if (!res.ok) {
-        const t = await res.text();
-        setErrorMsg(`Save failed: ${res.status} ${res.statusText} - ${t.slice(0,120)}`);
-        return false;
-      }
-      // refresh versions immediately (bypass throttle)
-      lastVersionsFetchRef.current = 0;
-      versionsBackoffRef.current = 0;
-      setSuccessMsg("Saved new version");
+              // Save the new version
+              const res = await authedFetch(user, `${BACKEND_URL}/api/projects/${scriptId}/versions`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  code,
+                  explanation,
+                  title: newTitle || (currentScript?.title || "Script"),
+                }),
+              });
+              if (!res.ok) {
+                const t = await res.text();
+                setErrorMsg(`Save failed: ${res.status} ${res.statusText} - ${t.slice(0,120)}`);
+                return false;
+              }
+              // refresh versions immediately (bypass throttle)
+              lastVersionsFetchRef.current = 0;
+              versionsBackoffRef.current = 0;
+              setSuccessMsg("Saved new version");
 
-      // Immediately update versionHistory and selectedVersion with the new version
-      try {
-        const versionsRes = await authedFetch(user, `${BACKEND_URL}/api/projects/${scriptId}/versions`, { method: "GET" });
-        if (versionsRes.ok) {
-          const versionsData = await versionsRes.json();
-          const versions = Array.isArray(versionsData.versions) ? versionsData.versions : [];
-          const sorted = versions
-            .map(v => ({
-              ...v,
-              createdAt: typeof v.createdAt === "number"
-                ? v.createdAt
-                : Date.parse(v.createdAt) || Date.now(),
-            }))
-            .sort((a, b) => (b.version || 1) - (a.version || 1));
-          setVersionHistory(sorted);
-          setCurrentScript({ id: scriptId, title: newTitle || (currentScript?.title || "Script"), versions: sorted });
-          setSelectedVersion(sorted[0]);
-        }
-      } catch {}
+              // Immediately update versionHistory and selectedVersion with the new version
+              try {
+                const versionsRes = await authedFetch(user, `${BACKEND_URL}/api/projects/${scriptId}/versions`, { method: "GET" });
+                if (versionsRes.ok) {
+                  const versionsData = await versionsRes.json();
+                  const versions = Array.isArray(versionsData.versions) ? versionsData.versions : [];
+                  const sorted = versions
+                    .map(v => ({
+                      ...v,
+                      createdAt: typeof v.createdAt === "number"
+                        ? v.createdAt
+                        : Date.parse(v.createdAt) || Date.now(),
+                      projectId: scriptId,
+                    }))
+                    .sort((a, b) => (b.version || 1) - (a.version || 1));
+                  setVersionHistory(sorted);
+                  setCurrentScript({ id: scriptId, title: newTitle || (currentScript?.title || "Script"), versions: sorted });
+                  setSelectedVersion(sorted[0]);
+                }
+              } catch {}
 
-      // Optional: when saving a new version from the code drawer, log a tiny assistant message
-      try {
-        const db = getFirestore();
-        const authUser = auth.currentUser;
-        if (authUser && currentChatId) {
-          const chatRef = doc(db, "users", authUser.uid, "chats", currentChatId);
-          const msgRef = doc(collection(chatRef, "messages"));
-          await setDoc(msgRef, {
-            role: "assistant",
-            content: "Saved a new version.",
-            createdAt: serverTimestamp(),
-          });
-          await updateDoc(chatRef, {
-            lastMessage: "Saved a new version.",
-            updatedAt: serverTimestamp(),
-          });
-        }
-      } catch {}
+              // Optional: when saving a new version from the code drawer, log a tiny assistant message
+              try {
+                const db = getFirestore();
+                const authUser = auth.currentUser;
+                if (authUser && currentChatId) {
+                  const chatRef = doc(db, "users", authUser.uid, "chats", currentChatId);
+                  const msgRef = doc(collection(chatRef, "messages"));
+                  await setDoc(msgRef, {
+                    role: "assistant",
+                    content: "Saved a new version.",
+                    createdAt: serverTimestamp(),
+                  });
+                  await updateDoc(chatRef, {
+                    lastMessage: "Saved a new version.",
+                    updatedAt: serverTimestamp(),
+                  });
+                }
+              } catch {}
 
-      return true;
-    } catch (e) {
-      setErrorMsg(`Save error: ${e.message || e}`);
-      return false;
-    }
-  }}
-  onLiveOpen={() => {}}
-/>
+              return true;
+            } catch (e) {
+              setErrorMsg(`Save error: ${e.message || e}`);
+              return false;
+            }
+          }}
+          onLiveOpen={() => {}}
+        />
       )}
       {/* Celebration Animation */}
       {showCelebration && <CelebrationAnimation />}

@@ -284,11 +284,28 @@ useEffect(() => {
       snap.forEach((docSnap) => arr.push({ id: docSnap.id, ...docSnap.data() }));
       setSavedScripts(arr);
     });
+
+    // Listen for save events from ScriptLoadingBarContainer
+    window.addEventListener("nexus:sidebarSaveScript", async (e) => {
+      const { code, title, version, language } = e.detail || {};
+      if (!code) return;
+      // Save to Firestore savedScripts
+      await addDoc(collection(db, "users", u.uid, "savedScripts"), {
+        scriptId: null, // You can set this to the actual script/project id if available
+        code,
+        title: title || "Untitled",
+        version: version || "",
+        language: language || "lua",
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
+    });
   });
 
   return () => {
     if (unsubSnapshot) unsubSnapshot();
     unsubAuth();
+    window.removeEventListener("nexus:sidebarSaveScript", () => {});
   };
 }, []);
 
@@ -1086,57 +1103,63 @@ const handleToggleSaveScript = useCallback(async (script) => {
       key={row.id}
       className="w-full flex items-center justify-between px-3 py-2 rounded-lg border border-gray-700 bg-gray-900/40 transition-colors text-left group"
       onClick={async () => {
-        if (row.scriptId) {
-          // Try to get the latest code for this scriptId from versionHistory or backend
-          let code = "";
-          let title = row.title || "Untitled";
-          let version = "";
-          // Try to find in versionHistory first (if available)
-          if (typeof window !== "undefined" && window.nexusVersionHistory && Array.isArray(window.nexusVersionHistory)) {
-            const found = window.nexusVersionHistory.find(v => v.id === row.scriptId || v.projectId === row.scriptId);
-            if (found) {
-              code = found.code || "";
-              title = found.title || title;
-              version = found.version ? `v${found.version}` : "";
-            }
-          }
-          // If not found, fetch from backend
-          if (!code && typeof fetch !== "undefined") {
-            try {
-              const user = window.nexusCurrentUser;
-              let idToken = "";
-              if (user && user.getIdToken) {
-                idToken = await user.getIdToken();
-              }
-              const res = await fetch(
-                `${process.env.REACT_APP_BACKEND_URL || "https://nexusrbx-backend-production.up.railway.app"}/api/projects/${row.scriptId}/versions`,
-                {
-                  headers: idToken ? { Authorization: `Bearer ${idToken}` } : {},
-                }
-              );
-              if (res.ok) {
-                const data = await res.json();
-                if (Array.isArray(data.versions) && data.versions.length > 0) {
-                  const latest = data.versions[0];
-                  code = latest.code || "";
-                  title = latest.title || title;
-                  version = latest.version ? `v${latest.version}` : "";
-                }
-              }
-            } catch {}
-          }
-          window.dispatchEvent(
-            new CustomEvent("nexus:openCodeDrawer", {
-              detail: {
-                scriptId: row.scriptId,
-                code,
-                title,
-                version,
-              },
-            })
-          );
+  if (row.scriptId) {
+    let code = "";
+    let title = row.title || "Untitled";
+    let version = "";
+    // Try to find in versionHistory first (if available)
+    if (typeof window !== "undefined" && window.nexusVersionHistory && Array.isArray(window.nexusVersionHistory)) {
+      const found = window.nexusVersionHistory.find(v => v.id === row.scriptId || v.projectId === row.scriptId);
+      if (found) {
+        code = found.code || "";
+        title = found.title || title;
+        version = found.version ? `v${found.version}` : "";
+      }
+    }
+    // If not found, fetch from backend
+    if (!code && typeof fetch !== "undefined") {
+      try {
+        // Try to get Firebase user from window or from firebase/auth
+        let user = window.nexusCurrentUser;
+        if (!user && window.firebase && window.firebase.auth) {
+          user = window.firebase.auth().currentUser;
         }
-      }}
+        let idToken = "";
+        if (user && user.getIdToken) {
+          idToken = await user.getIdToken();
+        }
+        const res = await fetch(
+          `${process.env.REACT_APP_BACKEND_URL || "https://nexusrbx-backend-production.up.railway.app"}/api/projects/${row.scriptId}/versions`,
+          {
+            headers: idToken ? { Authorization: `Bearer ${idToken}` } : {},
+          }
+        );
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data.versions) && data.versions.length > 0) {
+            const latest = data.versions[0];
+            code = latest.code || "";
+            title = latest.title || title;
+            version = latest.version ? `v${latest.version}` : "";
+          }
+        }
+      } catch (err) {
+        // Optionally show error to user
+        alert("Failed to load script code.");
+      }
+    }
+    window.dispatchEvent(
+      new CustomEvent("nexus:openCodeDrawer", {
+        detail: {
+          scriptId: row.scriptId,
+          code,
+          title,
+          version,
+        },
+      })
+    );
+  }
+}}
       title="Open saved script"
     >
       <div className="flex-1 min-w-0">
