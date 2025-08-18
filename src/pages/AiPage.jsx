@@ -1472,7 +1472,7 @@ const handleSubmit = async (e) => {
                   <span className="mr-2">
                     <span className="inline-block w-8 h-8 rounded-full bg-gradient-to-br from-[#9b5de5] to-[#00f5d4] flex items-center justify-center shadow-lg overflow-hidden animate-pulse">
                       <img
-                        src="/logo.svg"
+                        src="/logo.png"
                         alt="NexusRBX"
                         className="w-6 h-6 object-contain"
                         style={{ filter: "drop-shadow(0 0 2px #9b5de5)" }}
