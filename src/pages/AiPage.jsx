@@ -19,7 +19,7 @@ import ScriptLoadingBarContainer from "../components/ScriptLoadingBarContainer";
 import WelcomeCard from "../components/WelcomeCard";
 import TokenBar from "../components/TokenBar";
 import CelebrationAnimation from "../components/CelebrationAnimation";
-import { normalizeServerVersion, sortDesc, nextVersionNumber, cryptoRandomId } from "../versioning";
+import { normalizeServerVersion, sortDesc, nextVersionNumber, cryptoRandomId } from "../lib/versioning";
 // --- Firestore Imports ---
 import {
   getFirestore,
