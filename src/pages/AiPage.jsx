@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Send,
@@ -36,8 +36,19 @@ import {
   deleteDoc,
 } from "firebase/firestore";
 
+// --- Versioning Helper ---
+import {
+  normalizeServerVersion,
+  sortDesc,
+  nextVersionNumber,
+  cryptoRandomId,
+} from "../lib/versioning";
+
 // --- Backend API URL ---
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || "https://nexusrbx-backend-production.up.railway.app";
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+if (!BACKEND_URL) {
+  console.warn("REACT_APP_BACKEND_URL is not set. Backend calls will fail.");
+}
 
 // --- Token System Constants ---
 const TOKEN_LIMIT = 4;
@@ -99,10 +110,14 @@ function getUserInitials(email) {
 // --- Model Resolver (distinct) ---
 const resolveModel = (mv) => {
   switch (mv) {
-    case "nexus-4": return "gpt-4.1-2025-04-14";
-    case "nexus-3": return "gpt-4.1-mini";
-    case "nexus-2": return "gpt-3.5-turbo";
-    default: return "gpt-4.1-2025-04-14";
+    case "nexus-4":
+      return "gpt-4.1-2025-04-14";
+    case "nexus-3":
+      return "gpt-4.1-mini";
+    case "nexus-2":
+      return "gpt-3.5-turbo";
+    default:
+      return "gpt-4.1-2025-04-14";
   }
 };
 
@@ -146,81 +161,78 @@ function useDebounce(value, delay) {
 // --- Safe Timestamp Helper ---
 const toLocalTime = (ts) => {
   if (!ts) return "";
-  let date;
-  if (typeof ts === "number") date = new Date(ts);
-  else if (typeof ts === "string") {
-    const parsed = Date.parse(ts);
-    if (!isNaN(parsed)) date = new Date(parsed);
-    else return "";
-  } else if (ts?.seconds) date = new Date(ts.seconds * 1000);
-  else return "";
-  if (!date || isNaN(date.getTime())) return "";
-  return date.toLocaleString();
+  const d = new Date(typeof ts === "number" ? ts : Date.parse(ts) || Date.now());
+  return isNaN(d.getTime()) ? "" : d.toLocaleString();
 };
 
 // --- Safe Filename Helper ---
 const safeFile = (title) =>
-  (title || "Script").replace(/[^a-zA-Z0-9_\- ]/g, "").replace(/\s+/g, "_").slice(0, 40) + ".lua";
-
-// --- Stable Hash Helper ---
-function hash(str) {
-  let h = 0, i, chr;
-  if (!str) return "0";
-  for (i = 0; i < str.length; i++) {
-    chr = str.charCodeAt(i);
-    h = (h << 5) - h + chr;
-    h |= 0;
-  }
-  return Math.abs(h).toString(16);
-}
+  (title || "Script")
+    .replace(/[^a-zA-Z0-9_\- ]/g, "")
+    .replace(/\s+/g, "_")
+    .slice(0, 40) + ".lua";
 
 // --- Outline → Explanation Helper ---
 function outlineToExplanationText(outline = []) {
   if (!Array.isArray(outline)) return "";
   return outline
-    .map(sec => {
+    .map((sec) => {
       const heading = sec?.heading ? `## ${sec.heading}` : "";
-      const bullets = (sec?.bulletPoints || [])
-        .map(b => `• ${b}`)
-        .join("\n");
+      const bullets = (sec?.bulletPoints || []).map((b) => `• ${b}`).join("\n");
       return [heading, bullets].filter(Boolean).join("\n");
     })
     .join("\n\n");
 }
 
 // --- Polling Utility ---
-async function pollJob(user, jobId, onTick, { intervalMs = 1200, maxMs = 120000, signal } = {}) {
+async function pollJob(
+  user,
+  jobId,
+  onTick,
+  { intervalMs = 1200, maxMs = 120000, signal } = {}
+) {
   const started = Date.now();
   let status = "running";
   while (Date.now() - started < maxMs) {
     if (signal?.aborted) throw new Error("Aborted");
-    const res = await authedFetch(user, `${BACKEND_URL}/api/jobs/${jobId}`, { method: "GET", signal });
+    const res = await authedFetch(
+      user,
+      `${BACKEND_URL}/api/jobs/${jobId}`,
+      { method: "GET", signal }
+    );
     const data = await res.json().catch(() => ({}));
     if (onTick) onTick(data);
     status = data.status;
     if (status === "succeeded" || status === "failed") return data;
-    await new Promise(r => setTimeout(r, intervalMs));
+    await new Promise((r) => setTimeout(r, intervalMs));
   }
   return { status: "failed", error: "Timeout" };
 }
 
 // --- Safe localStorage helpers ---
 function safeGet(key, fallback = null) {
-  try { return JSON.parse(localStorage.getItem(key)) ?? fallback; }
-  catch { return fallback; }
+  try {
+    return JSON.parse(localStorage.getItem(key)) ?? fallback;
+  } catch {
+    return fallback;
+  }
 }
 function safeSet(key, val) {
-  try { localStorage.setItem(key, JSON.stringify(val)); } catch {}
+  try {
+    localStorage.setItem(key, JSON.stringify(val));
+  } catch {}
 }
 
-// --- Version Map Helper ---
-function versionMap({ projectId, id, version, ...rest }) {
-  return {
-    projectId,
-    versionId: id,
-    versionNumber: version ?? null,
-    ...rest,
-  };
+// --- AI Bubble Sizing Helper ---
+function getAiBubbleSizing(text = "") {
+  const len = text.length;
+  if (len < 240) {
+    return { wrapClass: "max-w-2xl", bubbleClass: "text-base px-5 py-4" };
+  }
+  if (len < 1200) {
+    return { wrapClass: "max-w-3xl", bubbleClass: "text-[15px] leading-6 px-6 py-5" };
+  }
+  return { wrapClass: "max-w-4xl", bubbleClass: "text-[14px] leading-7 px-7 py-6" };
 }
 
 export default function NexusRBXAIPageContainer() {
@@ -228,14 +240,13 @@ export default function NexusRBXAIPageContainer() {
 
   // --- State for scripts and versions ---
   const [user, setUser] = useState(null);
-  const [scripts, setScripts] = useState([]); // (reserved for future /list route)
+  const [scripts, setScripts] = useState([]);
   const [currentScriptId, setCurrentScriptId] = useState(null);
-  const [currentScript, setCurrentScript] = useState(null); // { id, title }
-  const [versionHistory, setVersionHistory] = useState([]); // authoritative versions from backend (DESC)
+  const [currentScript, setCurrentScript] = useState(null);
+  const [versionHistory, setVersionHistory] = useState([]);
   const [selectedVersion, setSelectedVersion] = useState(null);
 
   // Chat timeline: ordered messages
-  // { id, role: 'user'|'assistant', content, createdAt, versionId?, versionNumber?, code?, explanation? }
   const [messages, setMessages] = useState([]);
 
   // --- Chat state + listener refs ---
@@ -248,10 +259,10 @@ export default function NexusRBXAIPageContainer() {
   const [prompt, setPrompt] = useState("");
   const [promptCharCount, setPromptCharCount] = useState(0);
   const [promptError, setPromptError] = useState("");
-  const [errorMsg, setErrorMsg] = useState(""); // Inline error
-  const [successMsg, setSuccessMsg] = useState(""); // Inline success toast
+  const [errorMsg, setErrorMsg] = useState("");
+  const [successMsg, setSuccessMsg] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
-  const [generationStep, setGenerationStep] = useState("idle"); // idle | title | explanation | code | done | preparing | calling model | post-processing | polishing | finalizing
+  const [generationStep, setGenerationStep] = useState("idle");
   const [showCelebration, setShowCelebration] = useState(false);
 
   // --- Loading Bar ---
@@ -285,7 +296,7 @@ export default function NexusRBXAIPageContainer() {
   const [mobileRightSidebarOpen, setMobileRightSidebarOpen] = useState(false);
 
   // --- Typewriter Animation State ---
-  const [animatedScriptIds, setAnimatedScriptIds] = useState({}); // { [scriptId]: true }
+  const [animatedScriptIds, setAnimatedScriptIds] = useState({});
 
   // --- Token Bar State ---
   const [tokensLeft, setTokensLeft] = useState(TOKEN_LIMIT);
@@ -325,7 +336,6 @@ export default function NexusRBXAIPageContainer() {
     if (cachedVersions) setVersionHistory(cachedVersions);
     const cachedScripts = safeGet("nexusrbx:scripts");
     if (cachedScripts) setScripts(cachedScripts);
-    // No auto-restore of project/chat here
   }, []);
 
   // --- Auth ---
@@ -354,18 +364,28 @@ export default function NexusRBXAIPageContainer() {
   }, [user]);
 
   // --- Listen for SidebarContent’s open-chat event and start-draft event ---
-  const openChatById = React.useCallback((chatId) => {
+  const openChatById = useCallback((chatId) => {
     const db = getFirestore();
     const authUser = auth.currentUser;
     if (!authUser || !chatId) return;
 
-    // clean previous listeners
-    if (messagesUnsubRef.current) { try { messagesUnsubRef.current(); } finally { messagesUnsubRef.current = null; } }
-    if (chatUnsubRef.current) { try { chatUnsubRef.current(); } finally { chatUnsubRef.current = null; } }
+    if (messagesUnsubRef.current) {
+      try {
+        messagesUnsubRef.current();
+      } finally {
+        messagesUnsubRef.current = null;
+      }
+    }
+    if (chatUnsubRef.current) {
+      try {
+        chatUnsubRef.current();
+      } finally {
+        chatUnsubRef.current = null;
+      }
+    }
 
     setCurrentChatId(chatId);
 
-    // chat meta
     const chatDocRef = doc(db, "users", authUser.uid, "chats", chatId);
     chatUnsubRef.current = onSnapshot(chatDocRef, (snap) => {
       const data = snap.exists() ? { id: snap.id, ...snap.data() } : null;
@@ -375,13 +395,11 @@ export default function NexusRBXAIPageContainer() {
       }
     });
 
-    // messages (last 200, oldest→newest)
     const msgsRef = collection(db, "users", authUser.uid, "chats", chatId, "messages");
     const qMsgs = query(msgsRef, orderBy("createdAt", "asc"), limitToLast(200));
     messagesUnsubRef.current = onSnapshot(qMsgs, (snap) => {
       const arr = [];
       snap.forEach((d) => arr.push({ id: d.id, ...d.data() }));
-      // Deduplicate by clientId if present (fallback to Firestore doc id)
       const seen = new Set();
       const unique = arr.filter((m) => {
         const key = m.clientId || m.id;
@@ -393,14 +411,12 @@ export default function NexusRBXAIPageContainer() {
     });
   }, [setCurrentScriptId, setMessages]);
 
-  // Listen for sidebar events: open chat and start draft
   useEffect(() => {
     const onOpenChat = (e) => {
       const id = e?.detail?.id;
       if (id) openChatById(id);
     };
     const onStartDraft = () => {
-      // Reset to draft state (no Firestore chat yet)
       setCurrentChatId(null);
       setCurrentChatMeta(null);
       setCurrentScriptId(null);
@@ -419,8 +435,8 @@ export default function NexusRBXAIPageContainer() {
 
   // --- Load Versions for Current Script from Backend ---
   useEffect(() => {
-    if (!authReady) return; // wait until auth resolves
-    if (!user || !currentScriptId) return; // don't clear; keep what we have
+    if (!authReady) return;
+    if (!user || !currentScriptId) return;
 
     const now = Date.now();
     const delay = 10000 + (versionsBackoffRef.current || 0);
@@ -432,9 +448,8 @@ export default function NexusRBXAIPageContainer() {
       if (versionsEtagRef.current) headers["If-None-Match"] = versionsEtagRef.current;
 
       fetch(`${BACKEND_URL}/api/projects/${currentScriptId}/versions`, { headers })
-        .then((res) => {
+        .then(async (res) => {
           if (res.status === 304) {
-            // nothing new; collapse backoff
             versionsBackoffRef.current = 0;
             return { versions: null, etag: versionsEtagRef.current };
           }
@@ -453,40 +468,29 @@ export default function NexusRBXAIPageContainer() {
             return null;
           }
           const etag = res.headers.get("ETag");
-          return res.json().then(data => ({ ...data, etag }));
+          const data = await res.json().catch(() => null);
+          return { ...data, etag };
         })
         .then((data) => {
           if (!data) return;
-          if (data.versions === null) return; // 304, keep what we have
-          if (!Array.isArray(data.versions)) return;
-
+          if (data.versions === null) return;
+          const normalized = Array.isArray(data.versions)
+            ? data.versions.map(normalizeServerVersion).sort(sortDesc)
+            : [];
           if (data.etag) versionsEtagRef.current = data.etag;
-
-          const normalized = data.versions.map((v) => ({
-            ...v,
-            createdAt:
-              typeof v.createdAt === "number"
-                ? v.createdAt
-                : Date.parse(v.createdAt) || Date.now(),
-          }));
           if (normalized.length === 0) return;
-
-          const sortedVersions = normalized.sort((a, b) => (b.version || 1) - (a.version || 1));
-
           setCurrentScript((cs) => ({
             id: currentScriptId,
-            title: sortedVersions[0]?.title || cs?.title || "",
-            versions: sortedVersions,
+            title: normalized[0]?.title || cs?.title || "",
+            versions: normalized,
           }));
-          setVersionHistory(sortedVersions);
+          setVersionHistory(normalized);
           setSelectedVersion((sv) =>
-            sv
-              ? sortedVersions.find((v) => v.id === sv.id) || sortedVersions[0]
-              : sortedVersions[0]
+            sv ? normalized.find((v) => v.id === sv.id) || normalized[0] : normalized[0]
           );
-        });
+        })
+        .catch(() => setErrorMsg("Failed to load versions."));
     });
-    // eslint-disable-next-line
   }, [user, currentScriptId, authReady]);
 
   // --- Prompt Char Count & Error ---
@@ -544,7 +548,9 @@ export default function NexusRBXAIPageContainer() {
   useEffect(() => {
     return () => {
       if (jobAbortRef.current) {
-        try { jobAbortRef.current.abort(); } catch {}
+        try {
+          jobAbortRef.current.abort();
+        } catch {}
       }
     };
   }, []);
@@ -560,7 +566,7 @@ export default function NexusRBXAIPageContainer() {
 
     const batch = writeBatch(db);
     batch.set(chatRef, {
-      title,              // final title from AI
+      title,
       createdAt: now,
       updatedAt: now,
       firstMessageAt: now,
@@ -579,7 +585,7 @@ export default function NexusRBXAIPageContainer() {
     return chatRef.id;
   }
 
-  // --- Sidebar Version Click Handler (no single-version GET) ---
+  // --- Sidebar Version Click Handler ---
   const handleVersionView = async (versionObj) => {
     setErrorMsg("");
     setSelectedVersion(versionObj);
@@ -649,7 +655,6 @@ export default function NexusRBXAIPageContainer() {
     try {
       const db = getFirestore();
       await deleteDoc(doc(db, "users", user.uid, "chats", chatId));
-      // If the deleted chat is currently open, reset to draft
       if (currentChatId === chatId) {
         setCurrentChatId(null);
         setCurrentChatMeta(null);
@@ -698,20 +703,17 @@ export default function NexusRBXAIPageContainer() {
 
   // --- Token Bar Logic (simulate tokens for now) ---
   useEffect(() => {
-    // Simulate token system for demo
     if (!user) {
       setTokensLeft(TOKEN_LIMIT);
       setTokenRefreshTime(null);
       return;
     }
-    // For dev email, infinite tokens
     if (!!user?.email && user.email.toLowerCase() === DEVELOPER_EMAIL) {
-      setTokensLeft(null); // null = unlimited
+      setTokensLeft(null);
       setTokenRefreshTime(null);
       return;
     }
-    // Otherwise, simulate tokens
-    setTokensLeft(TOKEN_LIMIT - 0); // TODO: Replace with real backend logic
+    setTokensLeft(TOKEN_LIMIT - 0);
     setTokenRefreshTime(
       new Date(Date.now() + TOKEN_REFRESH_HOURS * 60 * 60 * 1000)
     );
@@ -721,32 +723,30 @@ export default function NexusRBXAIPageContainer() {
     function onOpenCodeDrawer(e) {
       const scriptId = e?.detail?.scriptId;
       const code = e?.detail?.code;
-      const title = e?.detail?.title;
-      const version = e?.detail?.version;
+      const title = e?.detail?.title || "Script";
+      const vn = e?.detail?.versionNumber;
       if (!scriptId) return;
-      // If code is provided (from saved tab), open drawer immediately
       if (code) {
-        setSelectedVersion(versionMap({
+        setSelectedVersion({
+          id: cryptoRandomId(),
           projectId: scriptId,
-          id: scriptId,
           code,
-          title: title || "Script",
-          version: version || "",
+          title,
+          versionNumber: vn || null,
           explanation: "",
-          createdAt: new Date().toISOString(),
-        }));
+          createdAtMs: Date.now(),
+        });
         return;
       }
-      // If already loaded, open the latest version
       if (scriptId === currentScriptId && versionHistory.length > 0) {
-        setSelectedVersion(versionMap({ ...versionHistory[0], projectId: scriptId }));
+        setSelectedVersion(versionHistory[0]);
       } else {
         setCurrentScriptId(scriptId);
-        // When versionHistory loads, the code drawer will open automatically
       }
     }
     window.addEventListener("nexus:openCodeDrawer", onOpenCodeDrawer);
-    return () => window.removeEventListener("nexus:openCodeDrawer", onOpenCodeDrawer);
+    return () =>
+      window.removeEventListener("nexus:openCodeDrawer", onOpenCodeDrawer);
   }, [currentScriptId, versionHistory]);
 
   // --- Main Generation Flow (Handles both new script and new version) ---
@@ -754,7 +754,6 @@ export default function NexusRBXAIPageContainer() {
     e.preventDefault();
     setErrorMsg("");
 
-    // guard rails
     if (typeof prompt !== "string" || !prompt.trim() || isGenerating) return;
     if (prompt.length > 800) {
       setPromptError("Prompt too long (max 800 characters).");
@@ -765,18 +764,16 @@ export default function NexusRBXAIPageContainer() {
       return;
     }
 
-    // stable id for this user message (helps dedupe)
     const clientId = "u-" + Date.now();
-
-    // clean prompt
     const cleaned = prompt.trim().replace(/\s+/g, " ");
     if (!cleaned) return;
 
     let chatIdToUse = currentChatId;
 
-    // cancel any previous job
     if (jobAbortRef.current) {
-      try { jobAbortRef.current.abort(); } catch {}
+      try {
+        jobAbortRef.current.abort();
+      } catch {}
     }
     const abortController = new AbortController();
     jobAbortRef.current = abortController;
@@ -787,24 +784,33 @@ export default function NexusRBXAIPageContainer() {
       setShowCelebration(false);
 
       // 1) Title
-      const titleRes = await authedFetch(user, `${BACKEND_URL}/api/generate-title-advanced`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          prompt: cleaned,
-          conversation: [],
-          isNewScript: !currentScriptId,
-          previousTitle: "",
-          settings: {
-            model: resolveModel(settings.modelVersion),
-            temperature: settings.creativity,
-          }
-        }),
-        signal: abortController.signal,
-      });
+      const titleRes = await authedFetch(
+        user,
+        `${BACKEND_URL}/api/generate-title-advanced`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            prompt: cleaned,
+            conversation: [],
+            isNewScript: !currentScriptId,
+            previousTitle: "",
+            settings: {
+              model: resolveModel(settings.modelVersion),
+              temperature: settings.creativity,
+            },
+          }),
+          signal: abortController.signal,
+        }
+      );
       if (!titleRes.ok) {
         const text = await titleRes.text();
-        throw new Error(`Failed to generate title: ${titleRes.status} ${titleRes.statusText} - ${text.slice(0,200)}`);
+        throw new Error(
+          `Failed to generate title: ${titleRes.status} ${titleRes.statusText} - ${text.slice(
+            0,
+            200
+          )}`
+        );
       }
       const titleData = await titleRes.json().catch(() => null);
       if (!titleData?.title) throw new Error("No title returned");
@@ -822,9 +828,11 @@ export default function NexusRBXAIPageContainer() {
           chatIdToUse = newChatId;
           setCurrentChatId(chatIdToUse);
           openChatById(chatIdToUse);
-          window.dispatchEvent(new CustomEvent("nexus:chatActivity", {
-            detail: { id: chatIdToUse, title: scriptTitle, lastMessage: cleaned }
-          }));
+          window.dispatchEvent(
+            new CustomEvent("nexus:chatActivity", {
+              detail: { id: chatIdToUse, title: scriptTitle, lastMessage: cleaned },
+            })
+          );
         } else {
           const db = getFirestore();
           const authUser = auth.currentUser;
@@ -848,29 +856,40 @@ export default function NexusRBXAIPageContainer() {
       // 3) Ensure project
       let projectIdToUse = currentScriptId;
       if (!projectIdToUse) {
-        const createProjectRes = await authedFetch(user, `${BACKEND_URL}/api/projects`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ title: scriptTitle || "Script" }),
-          signal: abortController.signal,
-        });
+        const createProjectRes = await authedFetch(
+          user,
+          `${BACKEND_URL}/api/projects`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ title: scriptTitle || "Script" }),
+            signal: abortController.signal,
+          }
+        );
         if (!createProjectRes.ok) {
           const text = await createProjectRes.text();
-          throw new Error(`Failed to create project: ${createProjectRes.status} ${createProjectRes.statusText} - ${text.slice(0,200)}`);
+          throw new Error(
+            `Failed to create project: ${createProjectRes.status} ${createProjectRes.statusText} - ${text.slice(
+              0,
+              200
+            )}`
+          );
         }
         const created = await createProjectRes.json();
         projectIdToUse = created.projectId;
         setCurrentScriptId(projectIdToUse);
 
-        // link chat -> project
         try {
           const db = getFirestore();
           const authUser = auth.currentUser;
           if (authUser && chatIdToUse) {
-            await updateDoc(doc(db, "users", authUser.uid, "chats", chatIdToUse), {
-              projectId: projectIdToUse,
-              updatedAt: serverTimestamp(),
-            });
+            await updateDoc(
+              doc(db, "users", authUser.uid, "chats", chatIdToUse),
+              {
+                projectId: projectIdToUse,
+                updatedAt: serverTimestamp(),
+              }
+            );
           }
         } catch {}
       }
@@ -882,73 +901,69 @@ export default function NexusRBXAIPageContainer() {
         if (m.role === "user") return { role: "user", content: m.content };
         const content = m.explanation
           ? `Explanation:\n${m.explanation}`
-          : (m.code ? "Provided code previously." : "Assistant response.");
+          : m.code
+          ? "Provided code previously."
+          : "Assistant response.";
         return { role: "assistant", content };
       });
 
-      const outlineRes = await authedFetch(user, `${BACKEND_URL}/api/generate/outline`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          projectId: projectIdToUse,
-          prompt: cleaned,
-          conversation,
-          settings: {
-            model: resolveModel(settings.modelVersion),
-            temperature: settings.creativity,
-            codeStyle: settings.codeStyle,
-          },
-        }),
-        signal: abortController.signal,
-      });
+      const outlineRes = await authedFetch(
+        user,
+        `${BACKEND_URL}/api/generate/outline`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            projectId: projectIdToUse,
+            prompt: cleaned,
+            conversation,
+            settings: {
+              model: resolveModel(settings.modelVersion),
+              temperature: settings.creativity,
+              codeStyle: settings.codeStyle,
+            },
+          }),
+          signal: abortController.signal,
+        }
+      );
       if (!outlineRes.ok) {
         const text = await outlineRes.text();
-        throw new Error(`Failed to generate outline: ${outlineRes.status} ${outlineRes.statusText} - ${text.slice(0,200)}`);
+        throw new Error(
+          `Failed to generate outline: ${outlineRes.status} ${outlineRes.statusText} - ${text.slice(
+            0,
+            200
+          )}`
+        );
       }
       const outlineData = await outlineRes.json().catch(() => null);
       const outline = Array.isArray(outlineData?.outline) ? outlineData.outline : [];
       const explanation = outline
-        .map(sec => {
+        .map((sec) => {
           const heading = sec?.heading ? `## ${sec.heading}` : "";
-          const bullets = (sec?.bulletPoints || []).map(b => `• ${b}`).join("\n");
+          const bullets = (sec?.bulletPoints || []).map((b) => `• ${b}`).join("\n");
           return [heading, bullets].filter(Boolean).join("\n");
         })
         .join("\n\n");
       if (!explanation) throw new Error("Failed to generate outline/explanation");
 
       // 5) Show pending assistant message with explanation AND save to Firestore
-      const tempId = `temp-${Date.now()}`;
       const pendingId = `a-temp-${Date.now()}`;
       const assistantMsgData = {
-  id: pendingId,
-  clientId: pendingId,
-  role: "assistant",
-  content: explanation,
-  createdAt: new Date().toISOString(),
-  versionNumber: null, // will be set after backend returns
-  explanation,
-  projectId: projectIdToUse,
-  versionId: null,
-  pending: true,
-};
+        id: pendingId,
+        clientId: pendingId,
+        role: "assistant",
+        content: explanation,
+        createdAt: new Date().toISOString(),
+        versionNumber: null,
+        explanation,
+        projectId: projectIdToUse,
+        versionId: null,
+        pending: true,
+      };
 
-      setMessages(prev => [...prev, assistantMsgData]);
-      setAnimatedScriptIds(prev => ({ ...prev, [tempId]: true }));
-      setCurrentScript({
-        id: tempId,
-        title: scriptTitle,
-        versions: [
-          { id: tempId, title: scriptTitle, explanation, code: "", version: 1, temp: true, createdAt: new Date().toISOString(), projectId: projectIdToUse },
-        ],
-      });
-      setVersionHistory([
-        { id: tempId, title: scriptTitle, explanation, code: "", version: 1, temp: true, createdAt: new Date().toISOString(), projectId: projectIdToUse },
-      ]);
-      setSelectedVersion({
-        id: tempId, title: scriptTitle, explanation, code: "", version: 1, temp: true, createdAt: new Date().toISOString(), projectId: projectIdToUse,
-      });
+      setMessages((prev) => [...prev, assistantMsgData]);
+      setAnimatedScriptIds((prev) => ({ ...prev, [pendingId]: true }));
 
-      // Save pending assistant message to Firestore (with known id)
       try {
         const db = getFirestore();
         const authUser = auth.currentUser;
@@ -965,14 +980,16 @@ export default function NexusRBXAIPageContainer() {
         setErrorMsg("Could not save assistant explanation to chat.");
       }
 
-      // tiny pause for UI
       await new Promise((r) => setTimeout(r, 1000));
 
       // 6) Start code job
       setGenerationStep("preparing");
       setLoadingBarVisible(true);
       setLoadingBarData({
-        filename: (scriptTitle || "Script").replace(/[^a-zA-Z0-9_\- ]/g, "").replace(/\s+/g, "_").slice(0, 40) + ".lua",
+        filename: (scriptTitle || "Script")
+          .replace(/[^a-zA-Z0-9_\- ]/g, "")
+          .replace(/\s+/g, "_")
+          .slice(0, 40) + ".lua",
         version: "v1",
         language: "lua",
         loading: true,
@@ -985,25 +1002,37 @@ export default function NexusRBXAIPageContainer() {
         eta: null,
       });
 
-      const artifactStart = await authedFetch(user, `${BACKEND_URL}/api/generate/artifact`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Idempotency-Key": window.crypto?.randomUUID?.() || Math.random().toString(36).slice(2, 26),
-        },
-        body: JSON.stringify({
-          projectId: projectIdToUse,
-          prompt: cleaned,
-          pipelineId: window.crypto?.randomUUID?.() || Math.random().toString(36).slice(2, 26),
-          outline: outline || [{ heading: "Plan", bulletPoints: [] }],
-          settings: {
-            model: resolveModel(settings.modelVersion),
-            temperature: settings.creativity,
-            codeStyle: settings.codeStyle,
+      // --- Versioning: FE chooses next version number ---
+      const plannedVersionNumber = nextVersionNumber(versionHistory);
+
+      const artifactStart = await authedFetch(
+        user,
+        `${BACKEND_URL}/api/generate/artifact`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Idempotency-Key":
+              window.crypto?.randomUUID?.() ||
+              Math.random().toString(36).slice(2, 26),
           },
-        }),
-        signal: abortController.signal,
-      });
+          body: JSON.stringify({
+            projectId: projectIdToUse,
+            prompt: cleaned,
+            pipelineId:
+              window.crypto?.randomUUID?.() ||
+              Math.random().toString(36).slice(2, 26),
+            outline: outline || [{ heading: "Plan", bulletPoints: [] }],
+            settings: {
+              model: resolveModel(settings.modelVersion),
+              temperature: settings.creativity,
+              codeStyle: settings.codeStyle,
+            },
+            versionNumber: plannedVersionNumber,
+          }),
+          signal: abortController.signal,
+        }
+      );
 
       let jobId, pipelineId;
       try {
@@ -1044,12 +1073,18 @@ export default function NexusRBXAIPageContainer() {
             const avg = diffs.reduce((a, b) => a + b, 0) / diffs.length;
             eta = Math.round(avg / 1000);
           }
-          setLoadingBarData((prev) => ({ ...prev, estimatedLines: undefined, stage, eta }));
+          setLoadingBarData((prev) => ({
+            ...prev,
+            estimatedLines: undefined,
+            stage,
+            eta,
+          }));
         },
         { intervalMs: 1200, maxMs: 120000, signal: abortController.signal }
       );
 
-      if (jobResult.status !== "succeeded") throw new Error(jobResult.error || "Generation failed");
+      if (jobResult.status !== "succeeded")
+        throw new Error(jobResult.error || "Generation failed");
       const { code: generatedCode, versionId } = jobResult.result;
       const code = generatedCode || "";
       if (!code) throw new Error("Failed to generate code");
@@ -1058,38 +1093,41 @@ export default function NexusRBXAIPageContainer() {
       setGenerationStep("saving");
       let versions = [];
       try {
-        const versionsRes = await authedFetch(user, `${BACKEND_URL}/api/projects/${projectIdToUse}/versions`, { method: "GET", signal: abortController.signal });
+        const versionsRes = await authedFetch(
+          user,
+          `${BACKEND_URL}/api/projects/${projectIdToUse}/versions`,
+          { method: "GET", signal: abortController.signal }
+        );
         if (versionsRes.ok) {
           const versionsData = await versionsRes.json();
-          versions = Array.isArray(versionsData.versions) ? versionsData.versions : [];
+          versions = Array.isArray(versionsData.versions)
+            ? versionsData.versions.map(normalizeServerVersion).sort(sortDesc)
+            : [];
         }
       } catch {}
 
       if (versions.length === 0) {
-        versions = [{
-          id: versionId || `local-${Date.now()}`,
-          title: scriptTitle,
-          explanation,
-          code,
-          version: 1,
-          createdAt: new Date().toISOString(),
-          projectId: projectIdToUse,
-        }];
+        versions = [
+          normalizeServerVersion({
+            id: versionId || `local-${Date.now()}`,
+            title: scriptTitle,
+            explanation,
+            code,
+            versionNumber: plannedVersionNumber,
+            createdAt: new Date().toISOString(),
+            projectId: projectIdToUse,
+          }),
+        ];
       }
 
-      const sorted = versions
-        .map(v => ({
-          ...v,
-          createdAt: typeof v.createdAt === "number"
-            ? v.createdAt
-            : Date.parse(v.createdAt) || Date.now(),
-          projectId: projectIdToUse,
-        }))
-        .sort((a, b) => (b.version || 1) - (a.version || 1));
+      const sorted = versions;
 
-      // Always use backend version numbers for UI and chat
       setVersionHistory(sorted);
-      setCurrentScript({ id: projectIdToUse, title: scriptTitle, versions: sorted });
+      setCurrentScript({
+        id: projectIdToUse,
+        title: scriptTitle,
+        versions: sorted,
+      });
       setSelectedVersion(sorted[0]);
 
       setLoadingBarData((prev) => ({
@@ -1097,53 +1135,68 @@ export default function NexusRBXAIPageContainer() {
         loading: false,
         codeReady: true,
         saved: true,
-        version: sorted[0]?.version ? `v${sorted[0].version}` : `v1`,
-        filename: (scriptTitle || "Script").replace(/[^a-zA-Z0-9_\- ]/g, "").replace(/\s+/g, "_").slice(0, 40) + ".lua",
+        version: sorted[0]?.versionNumber
+          ? `v${sorted[0].versionNumber}`
+          : `v1`,
+        filename: (scriptTitle || "Script")
+          .replace(/[^a-zA-Z0-9_\- ]/g, "")
+          .replace(/\s+/g, "_")
+          .slice(0, 40) + ".lua",
         onSave: () => {},
         onView: () => {},
       }));
       setTimeout(() => setLoadingBarVisible(false), 1500);
 
       // 9) Finalize assistant msg + persist in chat (update the SAME Firestore message by pendingId)
-      setMessages(prev => {
-  const copy = [...prev];
-  const idx = copy.findIndex(m => m.id === pendingId);
-  const backendVersion = sorted[0]?.version || 1;
-  const finalized = {
-    ...(idx !== -1 ? copy[idx] : { id: pendingId, role: "assistant", createdAt: new Date().toISOString() }),
-    content: explanation,
-    projectId: projectIdToUse,
-    versionId: sorted[0]?.id || versionId,
-    versionNumber: backendVersion,
-    explanation,
-    pending: false,
-  };
-  if (idx !== -1) copy[idx] = finalized; else copy.push(finalized);
-  return copy;
-});
+      setMessages((prev) => {
+        const copy = [...prev];
+        const idx = copy.findIndex((m) => m.id === pendingId);
+        const backendVersion = plannedVersionNumber;
+        const finalized = {
+          ...(idx !== -1
+            ? copy[idx]
+            : {
+                id: pendingId,
+                role: "assistant",
+                createdAt: new Date().toISOString(),
+              }),
+          content: explanation,
+          projectId: projectIdToUse,
+          versionId: sorted[0]?.id || versionId,
+          versionNumber: backendVersion,
+          explanation,
+          pending: false,
+        };
+        if (idx !== -1) copy[idx] = finalized;
+        else copy.push(finalized);
+        return copy;
+      });
 
       try {
         const db = getFirestore();
         const authUser = auth.currentUser;
         if (authUser && chatIdToUse) {
-          // Update the known pendingId doc directly
           const chatRef = doc(db, "users", authUser.uid, "chats", chatIdToUse);
           const msgRef = doc(collection(chatRef, "messages"), pendingId);
-await updateDoc(msgRef, {
-  projectId: projectIdToUse,
-  versionId: sorted[0]?.id || versionId || null,
-  versionNumber: sorted[0]?.version || 1,
-  pending: false,
-  updatedAt: serverTimestamp(),
-  // Do NOT store code in chat message
-});
-await updateDoc(chatRef, {
-  lastMessage: `v${sorted[0]?.version || 1} ready`,
-  updatedAt: serverTimestamp(),
-});
-window.dispatchEvent(new CustomEvent("nexus:chatActivity", {
-  detail: { id: chatIdToUse, lastMessage: `v${sorted[0]?.version || 1} ready` }
-}));
+          await updateDoc(msgRef, {
+            projectId: projectIdToUse,
+            versionId: sorted[0]?.id || versionId || null,
+            versionNumber: plannedVersionNumber,
+            pending: false,
+            updatedAt: serverTimestamp(),
+          });
+          await updateDoc(chatRef, {
+            lastMessage: `v${sorted[0]?.versionNumber || 1} ready`,
+            updatedAt: serverTimestamp(),
+          });
+          window.dispatchEvent(
+            new CustomEvent("nexus:chatActivity", {
+              detail: {
+                id: chatIdToUse,
+                lastMessage: `v${sorted[0]?.versionNumber || 1} ready`,
+              },
+            })
+          );
         }
       } catch (err) {
         setErrorMsg("Could not update assistant message with code.");
@@ -1153,15 +1206,23 @@ window.dispatchEvent(new CustomEvent("nexus:chatActivity", {
       setShowCelebration(true);
       setAnimatedScriptIds((prev) => ({ ...prev, [projectIdToUse]: true }));
       setTimeout(() => setShowCelebration(false), 3000);
-      setTimeout(() => setSuccessMsg(`Saved ${sorted[0]?.version ? `v${sorted[0].version}` : "v1"}`), 500);
+      setTimeout(
+        () =>
+          setSuccessMsg(
+            `Saved ${sorted[0]?.versionNumber ? `v${sorted[0].versionNumber}` : "v1"}`
+          ),
+        500
+      );
 
-      // tokens (skip if dev)
-      setTokensLeft((prev) => (prev == null ? null : Math.max(0, (prev || 4) - 1)));
+      setTokensLeft((prev) =>
+        prev == null ? null : Math.max(0, (prev || 4) - 1)
+      );
 
-      // Emit code ready event
-      window.dispatchEvent(new CustomEvent("nexus:codeReady", {
-        detail: { projectId: projectIdToUse, versionId: sorted[0]?.id }
-      }));
+      window.dispatchEvent(
+        new CustomEvent("nexus:codeReady", {
+          detail: { projectId: projectIdToUse, versionId: sorted[0]?.id },
+        })
+      );
     } catch (err) {
       setErrorMsg("Error during script generation: " + (err.message || err));
     } finally {
@@ -1172,11 +1233,13 @@ window.dispatchEvent(new CustomEvent("nexus:chatActivity", {
 
   // --- Keyboard UX for textarea ---
   const handlePromptKeyDown = (e) => {
-    if ((e.key === "Enter" && !e.shiftKey) || ((e.ctrlKey || e.metaKey) && e.key === "Enter")) {
+    if (
+      (e.key === "Enter" && !e.shiftKey) ||
+      ((e.ctrlKey || e.metaKey) && e.key === "Enter")
+    ) {
       e.preventDefault();
       handleSubmit(e);
     }
-    // Add more keyboard shortcuts here if desired
   };
 
   return (
@@ -1236,7 +1299,13 @@ window.dispatchEvent(new CustomEvent("nexus:chatActivity", {
               </button>
               <button
                 type="button"
-                onClick={() => window.open("https://discord.com/invite/yourserver", "_blank", "noopener,noreferrer")}
+                onClick={() =>
+                  window.open(
+                    "https://discord.com/invite/yourserver",
+                    "_blank",
+                    "noopener,noreferrer"
+                  )
+                }
                 className="text-gray-300 hover:text-white transition-colors duration-300"
               >
                 Discord
@@ -1275,9 +1344,7 @@ window.dispatchEvent(new CustomEvent("nexus:chatActivity", {
         {/* Sidebar */}
         <aside
           className={`fixed top-0 left-0 h-full bg-gray-900 border-r border-gray-800 w-[80vw] max-w-xs z-[101] shadow-2xl transition-transform duration-300 ${
-            mobileLeftSidebarOpen
-              ? "translate-x-0"
-              : "-translate-x-full"
+            mobileLeftSidebarOpen ? "translate-x-0" : "-translate-x-full"
           }`}
         >
           <div className="flex items-center justify-between px-4 py-4 border-b border-gray-800">
@@ -1296,7 +1363,7 @@ window.dispatchEvent(new CustomEvent("nexus:chatActivity", {
             activeTab={activeTab}
             setActiveTab={setActiveTab}
             handleClearChat={() => {
-              if (!window.confirm('Clear this chat?')) return;
+              if (!window.confirm("Clear this chat?")) return;
               setCurrentScript(null);
               setVersionHistory([]);
               setMessages([]);
@@ -1319,7 +1386,6 @@ window.dispatchEvent(new CustomEvent("nexus:chatActivity", {
             promptSearch={promptSearch}
             setPromptSearch={setPromptSearch}
             isMobile
-            // Chat management
             onRenameChat={handleRenameChat}
             onDeleteChat={handleDeleteChat}
           />
@@ -1344,9 +1410,7 @@ window.dispatchEvent(new CustomEvent("nexus:chatActivity", {
         {/* Sidebar */}
         <aside
           className={`fixed top-0 right-0 h-full bg-gray-900 border-l border-gray-800 w-[80vw] max-w-xs z-[101] shadow-2xl transition-transform duration-300 ${
-            mobileRightSidebarOpen
-              ? "translate-x-0"
-              : "translate-x-full"
+            mobileRightSidebarOpen ? "translate-x-0" : "translate-x-full"
           }`}
         >
           <div className="flex items-center justify-between px-4 py-4 border-b border-gray-800">
@@ -1390,7 +1454,7 @@ window.dispatchEvent(new CustomEvent("nexus:chatActivity", {
           activeTab={activeTab}
           setActiveTab={setActiveTab}
           handleClearChat={() => {
-            if (!window.confirm('Clear this chat?')) return;
+            if (!window.confirm("Clear this chat?")) return;
             setCurrentScript(null);
             setVersionHistory([]);
             setMessages([]);
@@ -1412,7 +1476,6 @@ window.dispatchEvent(new CustomEvent("nexus:chatActivity", {
           onVersionDownload={handleVersionDownload}
           promptSearch={promptSearch}
           setPromptSearch={setPromptSearch}
-          // Chat management
           onRenameChat={handleRenameChat}
           onDeleteChat={handleDeleteChat}
         />
@@ -1423,7 +1486,7 @@ window.dispatchEvent(new CustomEvent("nexus:chatActivity", {
         {/* Main chat area */}
         <section className="flex-grow flex flex-col md:w-2/3 h-full relative z-10">
           <div className="flex-grow overflow-y-auto px-2 md:px-4 py-6 flex flex-col items-center">
-            <div className="w-full max-w-2xl mx-auto space-y-6">
+            <div className="w-full mx-auto space-y-6">
               {/* Show Title at Top */}
               {messages.length === 0 && !isGenerating ? (
                 <WelcomeCard
@@ -1437,8 +1500,7 @@ window.dispatchEvent(new CustomEvent("nexus:chatActivity", {
                 <>
                   {/* Chat timeline driven by `messages` */}
                   {messages.map((m) => {
-                    const isUser = m.role === 'user';
-
+                    const isUser = m.role === "user";
                     if (isUser) {
                       return (
                         <div key={m.id} className="flex justify-end items-end mb-1">
@@ -1453,10 +1515,21 @@ window.dispatchEvent(new CustomEvent("nexus:chatActivity", {
                     }
 
                     // assistant bubble
+                    const coreText = m.explanation || m.content || "";
+                    const size = getAiBubbleSizing(coreText);
+                    const ver = m.versionId
+                      ? versionHistory.find((v) => v.id === m.versionId)
+                      : versionHistory.find((v) => v.versionNumber === m.versionNumber);
+
                     return (
-                      <div key={m.id} className="flex items-start gap-2 w-full max-w-2xl animate-fade-in">
+                      <div
+                        key={m.id}
+                        className={`flex items-start gap-2 w-full ${size.wrapClass} mx-auto animate-fade-in`}
+                      >
                         <NexusRBXAvatar />
-                        <div className="flex-1 bg-gray-900/80 border border-gray-800 rounded-2xl rounded-tl-sm shadow-lg px-5 py-4 mb-2">
+                        <div
+                          className={`flex-1 bg-gray-900/80 border border-gray-800 rounded-2xl rounded-tl-sm shadow-lg mb-2 ${size.bubbleClass}`}
+                        >
                           <div className="mb-1 flex items-center gap-2">
                             <span className="text-xl font-bold bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-transparent bg-clip-text">
                               {(currentScript?.title || "Script").replace(/\s*v\d+$/i, "")}
@@ -1476,143 +1549,102 @@ window.dispatchEvent(new CustomEvent("nexus:chatActivity", {
                           {m.explanation && (
                             <div className="mb-2">
                               <div className="font-bold text-[#9b5de5] mb-1">Explanation</div>
-                              <div className="text-gray-200 whitespace-pre-line text-base">{m.explanation}</div>
+                              <div className="text-gray-200 whitespace-pre-line text-base">
+                                {m.explanation}
+                              </div>
                             </div>
                           )}
 
                           <div className="mb-2 mt-3">
                             <ScriptLoadingBarContainer
-  filename={safeFile(currentScript?.title || "Script")}
-  displayName={currentScript?.title || "Script"}
-  version={m.versionNumber ? `v${m.versionNumber}` : ""}
-  language="lua"
-  loading={!!m.pending || !!isGenerating || loadingBarVisible}
-  codeReady={!!m.code}
-  estimatedLines={m.code ? m.code.split("\n").length : null}
-  saved={!m.pending && !!m.code}
-  onSave={async () => {
-    try {
-      if (!user || !m.code) return false;
-
-      // Try to determine the script/project ID
-      let scriptId = currentScriptId;
-      if (!scriptId && m.projectId) scriptId = m.projectId;
-
-      // If still not available, create a new project
-      if (!scriptId) {
-        const resCreate = await authedFetch(user, `${BACKEND_URL}/api/projects`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ title: currentScript?.title || "Script" }),
-        });
-        if (!resCreate.ok) {
-          setErrorMsg("Failed to create new script for saving.");
-          return false;
-        }
-        const data = await resCreate.json();
-        scriptId = data.projectId;
-        setCurrentScriptId(scriptId);
-      }
-
-      // Save the new version
-      const res = await authedFetch(user, `${BACKEND_URL}/api/projects/${scriptId}/versions`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          code: m.code,
-          explanation: m.explanation || "",
-          title: currentScript?.title || "Script",
-        }),
-      });
-      if (!res.ok) {
-        const t = await res.text();
-        setErrorMsg(`Save failed: ${res.status} ${res.statusText} - ${t.slice(0,120)}`);
-        return false;
-      }
-      // refresh versions immediately (bypass throttle)
-      lastVersionsFetchRef.current = 0;
-      versionsBackoffRef.current = 0;
-      setSuccessMsg("Saved new version");
-
-      // Immediately update versionHistory and selectedVersion with the new version
-      try {
-        const versionsRes = await authedFetch(user, `${BACKEND_URL}/api/projects/${scriptId}/versions`, { method: "GET" });
-        if (versionsRes.ok) {
-          const versionsData = await versionsRes.json();
-          const versions = Array.isArray(versionsData.versions) ? versionsData.versions : [];
-          const sorted = versions
-            .map(v => ({
-              ...v,
-              createdAt: typeof v.createdAt === "number"
-                ? v.createdAt
-                : Date.parse(v.createdAt) || Date.now(),
-              projectId: scriptId,
-            }))
-            .sort((a, b) => (b.version || 1) - (a.version || 1));
-          setVersionHistory(sorted);
-          setCurrentScript({ id: scriptId, title: currentScript?.title || "Script", versions: sorted });
-          setSelectedVersion(sorted[0]);
-        }
-      } catch {}
-
-      // Optional: when saving a new version from the code drawer, log a tiny assistant message
-      try {
-        const db = getFirestore();
-        const authUser = auth.currentUser;
-        if (authUser && currentChatId) {
-          const chatRef = doc(db, "users", authUser.uid, "chats", currentChatId);
-          const msgRef = doc(collection(chatRef, "messages"));
-          await setDoc(msgRef, {
-            role: "assistant",
-            content: "Saved a new version.",
-            createdAt: serverTimestamp(),
-          });
-          await updateDoc(chatRef, {
-            lastMessage: "Saved a new version.",
-            updatedAt: serverTimestamp(),
-          });
-        }
-      } catch {}
-
-      return true;
-    } catch (e) {
-      setErrorMsg(`Save error: ${e.message || e}`);
-      return false;
-    }
-  }}
-  onView={() => {
-    if (m.code) {
-      setSelectedVersion({
-        ...m,
-        projectId: m.projectId || currentScriptId,
-        version: m.versionNumber,
-        code: m.code,
-        title: currentScript?.title || "Script",
-      });
-    } else if (m.versionId) {
-      const versionObj = versionHistory.find(v => v.id === m.versionId);
-      if (versionObj) {
-        setSelectedVersion(versionMap({ ...versionObj, projectId: m.projectId }));
-      }
-    }
-  }}
-  jobStage={loadingBarData.stage}
-  etaSeconds={loadingBarData.eta}
-/>
+                              filename={safeFile(currentScript?.title || "Script")}
+                              displayName={currentScript?.title || "Script"}
+                              version={m.versionNumber ? `v${m.versionNumber}` : ""}
+                              language="lua"
+                              loading={!!m.pending || !!isGenerating || loadingBarVisible}
+                              codeReady={!!ver?.code}
+                              estimatedLines={ver?.code ? ver.code.split("\n").length : null}
+                              saved={!!ver?.code}
+                              onSave={async () => {
+                                try {
+                                  if (!user || !ver?.code) return false;
+                                  let scriptId = currentScriptId || ver.projectId;
+                                  if (!scriptId) return false;
+                                  const vn = nextVersionNumber(versionHistory);
+                                  const res = await authedFetch(
+                                    user,
+                                    `${BACKEND_URL}/api/projects/${scriptId}/versions`,
+                                    {
+                                      method: "POST",
+                                      headers: { "Content-Type": "application/json" },
+                                      body: JSON.stringify({
+                                        code: ver.code,
+                                        explanation: ver.explanation || "",
+                                        title: currentScript?.title || "Script",
+                                        versionNumber: vn,
+                                      }),
+                                    }
+                                  );
+                                  if (!res.ok) {
+                                    const t = await res.text();
+                                    setErrorMsg(
+                                      `Save failed: ${res.status} ${res.statusText} - ${t.slice(
+                                        0,
+                                        120
+                                      )}`
+                                    );
+                                    return false;
+                                  }
+                                  lastVersionsFetchRef.current = 0;
+                                  versionsBackoffRef.current = 0;
+                                  setSuccessMsg(`Saved v${vn}`);
+                                  try {
+                                    const versionsRes = await authedFetch(
+                                      user,
+                                      `${BACKEND_URL}/api/projects/${scriptId}/versions`,
+                                      { method: "GET" }
+                                    );
+                                    if (versionsRes.ok) {
+                                      const { versions = [] } = await versionsRes.json();
+                                      const sorted = versions
+                                        .map(normalizeServerVersion)
+                                        .sort(sortDesc);
+                                      setVersionHistory(sorted);
+                                      setCurrentScript({
+                                        id: scriptId,
+                                        title: currentScript?.title || "Script",
+                                        versions: sorted,
+                                      });
+                                      setSelectedVersion(sorted[0]);
+                                    }
+                                  } catch {}
+                                  return true;
+                                } catch (e) {
+                                  setErrorMsg(`Save error: ${e.message || e}`);
+                                  return false;
+                                }
+                              }}
+                              onView={() => {
+                                if (ver) setSelectedVersion(ver);
+                              }}
+                              jobStage={loadingBarData.stage}
+                              etaSeconds={loadingBarData.eta}
+                            />
                           </div>
 
-                          <div className="text-xs text-gray-500 mt-2 text-right">{toLocalTime(m.createdAt)}</div>
+                          <div className="text-xs text-gray-500 mt-2 text-right">
+                            {toLocalTime(m.createdAtMs || m.createdAt)}
+                          </div>
                         </div>
                       </div>
                     );
                   })}
-
                 </>
               )}
               {/* Loading bar appears just below the latest script output */}
               {(() => {
                 const last = messages[messages.length - 1];
-                return (last?.role === 'assistant' && last?.pending);
+                return last?.role === "assistant" && last?.pending;
               })() && (
                 <div className="flex items-center text-gray-400 text-sm mt-2 animate-fade-in">
                   <span className="mr-2">
@@ -1627,8 +1659,14 @@ window.dispatchEvent(new CustomEvent("nexus:chatActivity", {
                   </span>
                   <span aria-live="polite">
                     NexusRBX is typing...
-                    {["preparing","calling model","post-processing","polishing","finalizing"].includes(generationStep) && (
-                      <> ({loadingBarData.stage || generationStep}{loadingBarData.eta ? `, ETA: ${loadingBarData.eta}s` : ""})</>
+                    {["preparing", "calling model", "post-processing", "polishing", "finalizing"].includes(
+                      generationStep
+                    ) && (
+                      <>
+                        {" "}
+                        ({loadingBarData.stage || generationStep}
+                        {loadingBarData.eta ? `, ETA: ${loadingBarData.eta}s` : ""})
+                      </>
                     )}
                   </span>
                 </div>
@@ -1762,26 +1800,29 @@ window.dispatchEvent(new CustomEvent("nexus:chatActivity", {
           code={selectedVersion.code}
           title={selectedVersion.title}
           filename={safeFile(selectedVersion.title)}
-          version={selectedVersion.version ? `v${selectedVersion.version}` : ""}
+          version={
+            selectedVersion.versionNumber
+              ? `v${selectedVersion.versionNumber}`
+              : ""
+          }
           onClose={() => setSelectedVersion(null)}
           onSaveScript={async (newTitle, code, explanation = "") => {
             try {
               if (!user || !code) return false;
-
-              // Try to determine the script/project ID
               let scriptId = currentScriptId;
-              // If not available, try to use selectedVersion.projectId as scriptId
               if (!scriptId && selectedVersion?.projectId) {
                 scriptId = selectedVersion.projectId;
               }
-
-              // If still not available, create a new project
               if (!scriptId) {
-                const resCreate = await authedFetch(user, `${BACKEND_URL}/api/projects`, {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ title: newTitle || "Script" }),
-                });
+                const resCreate = await authedFetch(
+                  user,
+                  `${BACKEND_URL}/api/projects`,
+                  {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ title: newTitle || "Script" }),
+                  }
+                );
                 if (!resCreate.ok) {
                   setErrorMsg("Failed to create new script for saving.");
                   return false;
@@ -1790,54 +1831,65 @@ window.dispatchEvent(new CustomEvent("nexus:chatActivity", {
                 scriptId = data.projectId;
                 setCurrentScriptId(scriptId);
               }
-
-              // Save the new version
-              const res = await authedFetch(user, `${BACKEND_URL}/api/projects/${scriptId}/versions`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  code,
-                  explanation,
-                  title: newTitle || (currentScript?.title || "Script"),
-                }),
-              });
+              const vn = nextVersionNumber(versionHistory);
+              const res = await authedFetch(
+                user,
+                `${BACKEND_URL}/api/projects/${scriptId}/versions`,
+                {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    code,
+                    explanation,
+                    title: newTitle || (currentScript?.title || "Script"),
+                    versionNumber: vn,
+                  }),
+                }
+              );
               if (!res.ok) {
                 const t = await res.text();
-                setErrorMsg(`Save failed: ${res.status} ${res.statusText} - ${t.slice(0,120)}`);
+                setErrorMsg(
+                  `Save failed: ${res.status} ${res.statusText} - ${t.slice(
+                    0,
+                    120
+                  )}`
+                );
                 return false;
               }
-              // refresh versions immediately (bypass throttle)
               lastVersionsFetchRef.current = 0;
               versionsBackoffRef.current = 0;
               setSuccessMsg("Saved new version");
-
-              // Immediately update versionHistory and selectedVersion with the new version
               try {
-                const versionsRes = await authedFetch(user, `${BACKEND_URL}/api/projects/${scriptId}/versions`, { method: "GET" });
+                const versionsRes = await authedFetch(
+                  user,
+                  `${BACKEND_URL}/api/projects/${scriptId}/versions`,
+                  { method: "GET" }
+                );
                 if (versionsRes.ok) {
                   const versionsData = await versionsRes.json();
-                  const versions = Array.isArray(versionsData.versions) ? versionsData.versions : [];
-                  const sorted = versions
-                    .map(v => ({
-                      ...v,
-                      createdAt: typeof v.createdAt === "number"
-                        ? v.createdAt
-                        : Date.parse(v.createdAt) || Date.now(),
-                      projectId: scriptId,
-                    }))
-                    .sort((a, b) => (b.version || 1) - (a.version || 1));
-                  setVersionHistory(sorted);
-                  setCurrentScript({ id: scriptId, title: newTitle || (currentScript?.title || "Script"), versions: sorted });
-                  setSelectedVersion(sorted[0]);
+                  const versions = Array.isArray(versionsData.versions)
+                    ? versionsData.versions.map(normalizeServerVersion).sort(sortDesc)
+                    : [];
+                  setVersionHistory(versions);
+                  setCurrentScript({
+                    id: scriptId,
+                    title: newTitle || (currentScript?.title || "Script"),
+                    versions,
+                  });
+                  setSelectedVersion(versions[0]);
                 }
               } catch {}
-
-              // Optional: when saving a new version from the code drawer, log a tiny assistant message
               try {
                 const db = getFirestore();
                 const authUser = auth.currentUser;
                 if (authUser && currentChatId) {
-                  const chatRef = doc(db, "users", authUser.uid, "chats", currentChatId);
+                  const chatRef = doc(
+                    db,
+                    "users",
+                    authUser.uid,
+                    "chats",
+                    currentChatId
+                  );
                   const msgRef = doc(collection(chatRef, "messages"));
                   await setDoc(msgRef, {
                     role: "assistant",
@@ -1850,7 +1902,6 @@ window.dispatchEvent(new CustomEvent("nexus:chatActivity", {
                   });
                 }
               } catch {}
-
               return true;
             } catch (e) {
               setErrorMsg(`Save error: ${e.message || e}`);
