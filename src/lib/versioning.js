@@ -29,8 +29,8 @@ export function nextVersionNumber(history = []) {
 }
 
 export function cryptoRandomId() {
-  if (typeof self !== "undefined" && self.crypto?.randomUUID) {
-    return self.crypto.randomUUID();
+  if (typeof window !== "undefined" && window.crypto?.randomUUID) {
+    return window.crypto.randomUUID();
   }
   if (typeof crypto !== "undefined" && crypto.randomUUID) {
     return crypto.randomUUID();
