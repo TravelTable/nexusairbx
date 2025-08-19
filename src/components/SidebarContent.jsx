@@ -27,6 +27,7 @@ import {
   query,
   orderBy,
   serverTimestamp,
+  getDocs,
 } from "firebase/firestore";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 
@@ -287,11 +288,12 @@ useEffect(() => {
 
     // Listen for save events from ScriptLoadingBarContainer
     window.addEventListener("nexus:sidebarSaveScript", async (e) => {
-      const { code, title, version, language } = e.detail || {};
+      const { code, title, version, language, scriptId, chatId } = e.detail || {};
       if (!code) return;
       // Save to Firestore savedScripts
       await addDoc(collection(db, "users", u.uid, "savedScripts"), {
-        scriptId: null, // You can set this to the actual script/project id if available
+        scriptId: scriptId || null,
+        chatId: chatId || null,
         code,
         title: title || "Untitled",
         version: version || "",
@@ -414,14 +416,59 @@ const handleRenameChatCommit = useCallback(async (id, title) => {
 }, [onRenameChat]);
 
   const handleDeleteChatConfirm = useCallback(async () => {
-    setChatDeleteLoading(true);
-    if (onDeleteChat && deleteChatId) {
-      await onDeleteChat(deleteChatId);
-    }
-    setChatDeleteLoading(false);
-    if (selectedChatId === deleteChatId) setSelectedChatId(null);
-    setDeleteChatId(null);
-  }, [onDeleteChat, deleteChatId, selectedChatId]);
+  setChatDeleteLoading(true);
+
+  const db = getFirestore();
+  const auth = getAuth();
+  const userId = auth.currentUser?.uid;
+
+  if (onDeleteChat && deleteChatId) {
+    await onDeleteChat(deleteChatId);
+  } else if (userId && deleteChatId) {
+    await deleteDoc(doc(db, "users", userId, "chats", deleteChatId));
+  }
+
+  // Delete all scripts and savedScripts associated with this chat
+  if (userId && deleteChatId) {
+    // Delete scripts with chatId === deleteChatId
+    const scriptsRef = collection(db, "users", userId, "scripts");
+    const scriptsQuery = query(scriptsRef);
+    const scriptsSnap = await getDocs(scriptsQuery);
+    const scriptIdsToDelete = [];
+    scriptsSnap.forEach((docSnap) => {
+      const data = docSnap.data();
+      if (data.chatId === deleteChatId) {
+        scriptIdsToDelete.push(docSnap.id);
+      }
+    });
+
+    // Delete scripts
+    await Promise.all(
+      scriptIdsToDelete.map((scriptId) =>
+        deleteDoc(doc(db, "users", userId, "scripts", scriptId))
+      )
+    );
+
+    // Delete savedScripts with scriptId in scriptIdsToDelete OR chatId === deleteChatId
+    const savedRef = collection(db, "users", userId, "savedScripts");
+    const savedSnap = await getDocs(savedRef);
+    const savedDeletes = [];
+    savedSnap.forEach((savedDoc) => {
+      const saved = savedDoc.data();
+      if (
+        (saved.scriptId && scriptIdsToDelete.includes(saved.scriptId)) ||
+        saved.chatId === deleteChatId
+      ) {
+        savedDeletes.push(deleteDoc(doc(db, "users", userId, "savedScripts", savedDoc.id)));
+      }
+    });
+    await Promise.all(savedDeletes);
+  }
+
+  setChatDeleteLoading(false);
+  if (selectedChatId === deleteChatId) setSelectedChatId(null);
+  setDeleteChatId(null);
+}, [onDeleteChat, deleteChatId, selectedChatId, savedScripts]);
 
   const handleOpenChat = useCallback((chatId) => {
     setSelectedChatId(chatId);
@@ -444,12 +491,14 @@ const handleToggleSaveScript = useCallback(async (script) => {
     if (!match) return;
     await deleteDoc(doc(db, "users", userId, "savedScripts", match.id));
   } else {
-    await addDoc(collection(db, "users", userId, "savedScripts"), {
-      scriptId: script.id,
-      title: script.title || "Untitled",
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-    });
+await addDoc(collection(db, "users", userId, "savedScripts"), {
+  scriptId: script.id,
+  chatId: script.chatId || null,
+  title: script.title || "Untitled",
+  version: script.version || script.versionNumber || "",
+  createdAt: serverTimestamp(),
+  updatedAt: serverTimestamp(),
+});
   }
 }, [savedIdSet, savedScripts]);
 
@@ -620,12 +669,17 @@ const handleToggleSaveScript = useCallback(async (script) => {
                           aria-label="Rename script"
                         />
                       ) : (
-                        <span
-                          className="font-semibold text-white truncate block max-w-[12rem] md:max-w-[16rem]"
-                          title={script.title || "Untitled"}
-                        >
-                          {script.title || "Untitled"}
-                        </span>
+<span
+  className="font-semibold text-white truncate block max-w-[12rem] md:max-w-[16rem]"
+  title={script.title || "Untitled"}
+>
+  {script.title || "Untitled"}
+  {(script.version || script.versionNumber) && (
+    <span className="inline-block px-2 py-0.5 rounded bg-[#9b5de5]/20 text-[#9b5de5] text-xs font-semibold ml-2">
+      v{script.version || script.versionNumber}
+    </span>
+  )}
+</span>
                       )}
                       <div className="text-xs text-gray-400">
                         {script.updatedAt && (
@@ -824,13 +878,19 @@ const handleToggleSaveScript = useCallback(async (script) => {
       className="flex items-center justify-between px-3 py-2 border-b border-gray-800 last:border-b-0 hover:bg-gray-800 transition-colors rounded"
     >
       <div className="flex flex-col flex-1 min-w-0">
-        <span className="font-semibold text-[#00f5d4] truncate block max-w-[12rem] md:max-w-[16rem]" title={ver.title || "Untitled"}>
-          {ver.title || "Untitled"}
-        </span>
-        <span className="text-xs text-gray-400" title={ver.createdAt ? toJsDate(ver.createdAt)?.toLocaleString() : undefined}>
-          {ver.version ? `v${ver.version}` : ""}
-          {ver.createdAt ? ` • ${fromNow(ver.createdAt)}` : ""}
-        </span>
+<div className="flex items-center gap-2">
+  <span className="font-semibold text-[#00f5d4] truncate block max-w-[10rem] md:max-w-[14rem]" title={ver.title || "Untitled"}>
+    {ver.title || "Untitled"}
+  </span>
+  {ver.versionNumber || ver.version ? (
+    <span className="inline-block px-2 py-0.5 rounded bg-[#9b5de5]/20 text-[#9b5de5] text-xs font-semibold ml-1">
+      v{ver.versionNumber || ver.version}
+    </span>
+  ) : null}
+</div>
+<span className="text-xs text-gray-400" title={ver.createdAt ? toJsDate(ver.createdAt)?.toLocaleString() : undefined}>
+  {ver.createdAt ? fromNow(ver.createdAt) : ""}
+</span>
       </div>
       <div className="flex items-center gap-1 ml-2">
         <button
@@ -920,130 +980,130 @@ const handleToggleSaveScript = useCallback(async (script) => {
             </div>
 
             <div className="space-y-2">
-              {(filteredChats ?? []).map((chat) => (
-                <button
-                  type="button"
-                  key={chat.id}
-                  className={`w-full flex items-center justify-between px-3 py-2 rounded-lg border ${
-                    selectedChatId === chat.id
-                      ? "border-[#00f5d4] bg-gray-800/60"
-                      : "border-gray-700 bg-gray-900/40"
-                  } transition-colors text-left group`}
-                  aria-pressed={selectedChatId === chat.id}
-                  tabIndex={0}
-                  role="button"
-                  aria-label={`Open chat ${chat.title || "Untitled chat"}`}
-                  onClick={() => handleOpenChat(chat.id)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                      e.preventDefault();
-                      handleOpenChat(chat.id);
-                    }
-                    if (e.key === "Delete") {
-                      e.preventDefault();
-                      setDeleteChatId(chat.id);
-                    }
-                    if (e.key === "F2") {
-                      e.preventDefault();
-                      setRenamingChatId(chat.id);
-                      setRenameChatTitle(chat.title || "");
-                    }
-                  }}
-                  title={`Open chat\nF2: Rename • Delete: Delete`}
-                >
-                  <div className="flex-1 min-w-0">
-                    {renamingChatId === chat.id ? (
-                      <input
-                        className="bg-gray-800 border border-gray-700 rounded px-2 py-1 text-white w-full"
-                        value={renameChatTitle}
-                        onChange={(e) => setRenameChatTitle(e.target.value)}
-                        autoFocus
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") {
-                            e.stopPropagation();
-                            handleRenameChatCommit(chat.id, renameChatTitle);
-                            setRenamingChatId(null);
-                          }
-                          if (e.key === "Escape") {
-                            e.stopPropagation();
-                            setRenamingChatId(null);
-                          }
-                        }}
-                        onBlur={() => {
-                          handleRenameChatCommit(renamingChatId, renameChatTitle);
-                          setRenamingChatId(null);
-                        }}
-                        aria-label="Rename chat"
-                      />
-                    ) : (
-                      <span
-                        className="font-semibold text-white truncate block max-w-[12rem] md:max-w-[16rem]"
-                        title={chat.title || "Untitled chat"}
-                      >
-                        {chat.title || "Untitled chat"}
-                      </span>
-                    )}
-                    <div className="text-xs text-gray-400">
-                      {chat.updatedAt && (
-                        <span title={toJsDate(chat.updatedAt)?.toLocaleString?.()}>
-                          Updated {fromNow(chat.updatedAt)}
-                        </span>
-                      )}
-                      {chat.lastMessage && (
-                        <span className="ml-2 text-gray-500 truncate">
-                          {chat.lastMessage}
-                        </span>
-                      )}
-                      <span className="ml-2 text-[10px] text-gray-500 hidden group-hover:inline">
-                        (F2: Rename • Delete: Delete)
-                      </span>
-                    </div>
-                  </div>
-<div className="flex items-center gap-1 ml-2">
-  {renamingChatId === chat.id ? (
-    <button
-      className="p-1 rounded hover:bg-gray-700"
-      title="Save"
-      tabIndex={-1}
-      aria-label="Save chat name"
-      onClick={(e) => {
-        e.stopPropagation();
-        handleRenameChatCommit(chat.id, renameChatTitle);
-        setRenamingChatId(null);
-      }}
-    >
-      <Check className="h-4 w-4 text-green-400" />
-    </button>
-  ) : (
-    <button
-      className="p-1 rounded hover:bg-gray-700"
-      title="Rename"
-      tabIndex={-1}
-      aria-label="Rename chat"
-      onClick={(e) => {
-        e.stopPropagation();
-        setRenamingChatId(chat.id);
-        setRenameChatTitle(chat.title || "");
-      }}
-    >
-      <Edit className="h-4 w-4 text-gray-400" />
-    </button>
-  )}
+              {(filteredChats ?? []).map((c) => (
   <button
-    className="p-1 rounded hover:bg-gray-700"
-    title="Delete"
-    tabIndex={-1}
-    aria-label="Delete chat"
-    onClick={(e) => {
-      e.stopPropagation();
-      setDeleteChatId(chat.id);
+    type="button"
+    key={c.id}
+    className={`w-full flex items-center justify-between px-3 py-2 rounded-lg border ${
+      selectedChatId === c.id
+        ? "border-[#00f5d4] bg-gray-800/60"
+        : "border-gray-700 bg-gray-900/40"
+    } transition-colors text-left group`}
+    aria-pressed={selectedChatId === c.id}
+    tabIndex={0}
+    role="button"
+    aria-label={`Open chat ${c.title || "Untitled chat"}`}
+    onClick={() => handleOpenChat(c.id)}
+    onKeyDown={(e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        handleOpenChat(c.id);
+      }
+      if (e.key === "Delete") {
+        e.preventDefault();
+        setDeleteChatId(c.id);
+      }
+      if (e.key === "F2") {
+        e.preventDefault();
+        setRenamingChatId(c.id);
+        setRenameChatTitle(c.title || "");
+      }
     }}
+    title={`Open chat\nF2: Rename • Delete: Delete`}
   >
-    <Trash2 className="h-4 w-4 text-gray-400" />
+    <div className="flex-1 min-w-0">
+      {renamingChatId === c.id ? (
+        <input
+          className="bg-gray-800 border border-gray-700 rounded px-2 py-1 text-white w-full"
+          value={renameChatTitle}
+          onChange={(e) => setRenameChatTitle(e.target.value)}
+          autoFocus
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.stopPropagation();
+              handleRenameChatCommit(c.id, renameChatTitle);
+              setRenamingChatId(null);
+            }
+            if (e.key === "Escape") {
+              e.stopPropagation();
+              setRenamingChatId(null);
+            }
+          }}
+          onBlur={() => {
+            handleRenameChatCommit(renamingChatId, renameChatTitle);
+            setRenamingChatId(null);
+          }}
+          aria-label="Rename chat"
+        />
+      ) : (
+        <span
+          className="font-semibold text-white truncate block max-w-[12rem] md:max-w-[16rem]"
+          title={c.title || "Untitled chat"}
+        >
+          {c.title || "Untitled chat"}
+        </span>
+      )}
+      <div className="text-xs text-gray-400">
+        {c.updatedAt && (
+          <span title={toJsDate(c.updatedAt)?.toLocaleString?.()}>
+            Updated {fromNow(c.updatedAt)}
+          </span>
+        )}
+        {c.lastMessage && (
+          <span className="ml-2 text-gray-500 truncate">
+            {c.lastMessage}
+          </span>
+        )}
+        <span className="ml-2 text-[10px] text-gray-500 hidden group-hover:inline">
+          (F2: Rename • Delete: Delete)
+        </span>
+      </div>
+    </div>
+    <div className="flex items-center gap-1 ml-2">
+      {renamingChatId === c.id ? (
+        <button
+          className="p-1 rounded hover:bg-gray-700"
+          title="Save"
+          tabIndex={-1}
+          aria-label="Save chat name"
+          onClick={(e) => {
+            e.stopPropagation();
+            handleRenameChatCommit(c.id, renameChatTitle);
+            setRenamingChatId(null);
+          }}
+        >
+          <Check className="h-4 w-4 text-green-400" />
+        </button>
+      ) : (
+        <button
+          className="p-1 rounded hover:bg-gray-700"
+          title="Rename"
+          tabIndex={-1}
+          aria-label="Rename chat"
+          onClick={(e) => {
+            e.stopPropagation();
+            setRenamingChatId(c.id);
+            setRenameChatTitle(c.title || "");
+          }}
+        >
+          <Edit className="h-4 w-4 text-gray-400" />
+        </button>
+      )}
+      <button
+        className="p-1 rounded hover:bg-gray-700"
+        title="Delete"
+        tabIndex={-1}
+        aria-label="Delete chat"
+        onClick={(e) => {
+          e.stopPropagation();
+          setDeleteChatId(c.id);
+        }}
+      >
+        <Trash2 className="h-4 w-4 text-gray-400" />
+      </button>
+    </div>
   </button>
-</div>
-                </button>
-              ))}
+))}
             </div>
 
             {/* Delete Chat Modal */}
@@ -1099,76 +1159,54 @@ const handleToggleSaveScript = useCallback(async (script) => {
 <div className="space-y-2">
   {(filteredSavedScripts ?? []).map((row) => (
     <button
-      type="button"
       key={row.id}
-      className="w-full flex items-center justify-between px-3 py-2 rounded-lg border border-gray-700 bg-gray-900/40 transition-colors text-left group"
-      onClick={async () => {
-  if (row.scriptId) {
-    let code = "";
-    let title = row.title || "Untitled";
-    let version = "";
-    // Try to find in versionHistory first (if available)
-    if (typeof window !== "undefined" && window.nexusVersionHistory && Array.isArray(window.nexusVersionHistory)) {
-      const found = window.nexusVersionHistory.find(v => v.id === row.scriptId || v.projectId === row.scriptId);
-      if (found) {
-        code = found.code || "";
-        title = found.title || title;
-        version = found.version ? `v${found.version}` : "";
-      }
-    }
-    // If not found, fetch from backend
-    if (!code && typeof fetch !== "undefined") {
-      try {
-        // Try to get Firebase user from window or from firebase/auth
-        let user = window.nexusCurrentUser;
-        if (!user && window.firebase && window.firebase.auth) {
-          user = window.firebase.auth().currentUser;
-        }
-        let idToken = "";
-        if (user && user.getIdToken) {
-          idToken = await user.getIdToken();
-        }
-        const res = await fetch(
-          `${process.env.REACT_APP_BACKEND_URL || "https://nexusrbx-backend-production.up.railway.app"}/api/projects/${row.scriptId}/versions`,
-          {
-            headers: idToken ? { Authorization: `Bearer ${idToken}` } : {},
-          }
+      type="button"
+      className="w-full flex items-center justify-between px-3 py-2 rounded-lg border border-gray-700 bg-gray-900/40 transition-colors group hover:border-[#00f5d4] hover:bg-gray-800/60 focus:outline-none"
+      title={row.title || "Untitled"}
+      onClick={() => {
+        window.dispatchEvent(
+          new CustomEvent("nexus:openCodeDrawer", {
+            detail: {
+              scriptId: row.scriptId,
+              code: row.code,
+              title: row.title,
+              version: row.version,
+            },
+          })
         );
-        if (res.ok) {
-          const data = await res.json();
-          if (Array.isArray(data.versions) && data.versions.length > 0) {
-            const latest = data.versions[0];
-            code = latest.code || "";
-            title = latest.title || title;
-            version = latest.version ? `v${latest.version}` : "";
-          }
+      }}
+      tabIndex={0}
+      aria-label={`Open saved script ${row.title || "Untitled"}`}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          window.dispatchEvent(
+            new CustomEvent("nexus:openCodeDrawer", {
+              detail: {
+                scriptId: row.scriptId,
+                code: row.code,
+                title: row.title,
+                version: row.version,
+              },
+            })
+          );
         }
-      } catch (err) {
-        // Optionally show error to user
-        alert("Failed to load script code.");
-      }
-    }
-    window.dispatchEvent(
-      new CustomEvent("nexus:openCodeDrawer", {
-        detail: {
-          scriptId: row.scriptId,
-          code,
-          title,
-          version,
-        },
-      })
-    );
-  }
-}}
-      title="Open saved script"
+      }}
     >
       <div className="flex-1 min-w-0">
-        <span
-          className="font-semibold text-white truncate block max-w-[12rem] md:max-w-[16rem]"
-          title={row.title || "Untitled"}
-        >
-          {row.title || "Untitled"}
-        </span>
+        <div className="flex items-center gap-2">
+<span
+  className="font-semibold text-white truncate block max-w-[12rem] md:max-w-[16rem]"
+  title={row.title || "Untitled"}
+>
+  {row.title || "Untitled"}
+  {row.version && (
+    <span className="inline-block px-2 py-0.5 rounded bg-[#9b5de5]/20 text-[#9b5de5] text-xs font-semibold ml-2">
+      v{row.version}
+    </span>
+  )}
+</span>
+        </div>
         <div className="text-xs text-gray-400">
           {row.updatedAt && (
             <span title={toJsDate(row.updatedAt)?.toLocaleString?.()}>

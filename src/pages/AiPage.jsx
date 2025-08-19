@@ -19,6 +19,9 @@ import ScriptLoadingBarContainer from "../components/ScriptLoadingBarContainer";
 import WelcomeCard from "../components/WelcomeCard";
 import TokenBar from "../components/TokenBar";
 import CelebrationAnimation from "../components/CelebrationAnimation";
+import FancyLoadingOverlay from "../components/FancyLoadingOverlay";
+import NotificationToast from "../components/NotificationToast";
+import { v4 as uuidv4 } from "uuid";
 import { normalizeServerVersion, sortDesc, nextVersionNumber, cryptoRandomId } from "../lib/versioning";
 // --- Firestore Imports ---
 import {
@@ -38,9 +41,13 @@ import {
 
 
 // --- Backend API URL ---
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+let BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 if (!BACKEND_URL) {
-  console.warn("REACT_APP_BACKEND_URL is not set. Backend calls will fail.");
+  BACKEND_URL = "https://nexusrbx-backend-production.up.railway.app";
+  console.warn("REACT_APP_BACKEND_URL is not set. Using default:", BACKEND_URL);
+}
+if (BACKEND_URL.endsWith("/")) {
+  BACKEND_URL = BACKEND_URL.replace(/\/+$/, "");
 }
 
 // --- Token System Constants ---
@@ -257,6 +264,18 @@ export default function NexusRBXAIPageContainer() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationStep, setGenerationStep] = useState("idle");
   const [showCelebration, setShowCelebration] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+
+    // --- Notification Helper (now has access to setNotifications) ---
+  const notify = useCallback(
+    ({ message, type = "info", duration = 4000 }) => {
+      setNotifications((prev) => [
+        ...prev,
+        { id: uuidv4(), message, type, duration }
+      ]);
+    },
+    [setNotifications]
+  );
 
   // --- Loading Bar ---
   const [loadingBarVisible, setLoadingBarVisible] = useState(false);
@@ -602,23 +621,37 @@ export default function NexusRBXAIPageContainer() {
     URL.revokeObjectURL(url);
   };
 
-  // --- Script Management ---
-  const handleCreateScript = async (title = "New Script") => {
-    setErrorMsg("");
-    if (!user) return;
+// --- Script Management (Firestore-based Project IDs) ---
+const handleCreateScript = async (title = "New Script") => {
+  setErrorMsg("");
+  if (!user) return;
+  try {
+    const db = getFirestore();
+    const authUser = auth.currentUser;
+    // Create a Firestore document for the project
+    const projectRef = doc(collection(db, "users", authUser.uid, "projects"));
+    await setDoc(projectRef, {
+      title,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+      owner: authUser.uid,
+    });
+    setCurrentScriptId(projectRef.id);
+    safeSet("nexusrbx:lastProjectId", projectRef.id);
+
+    // Optionally, also create the project in your backend for code generation
     const res = await authedFetch(user, `${BACKEND_URL}/api/projects`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title }),
+      body: JSON.stringify({ title, firestoreId: projectRef.id }),
     });
-    if (res.ok) {
-      const data = await res.json();
-      setCurrentScriptId(data.projectId);
-      safeSet("nexusrbx:lastProjectId", data.projectId);
-    } else {
-      setErrorMsg("Failed to create project.");
+    if (!res.ok) {
+      notify({ message: "Failed to sync project to backend.", type: "error" });
     }
-  };
+  } catch (err) {
+    notify({ message: "Failed to create project.", type: "error" });
+  }
+};
 
   const handleRenameScript = async (scriptId, newTitle) => {
     setErrorMsg("Renaming projects is not supported yet.");
@@ -1318,7 +1351,20 @@ export default function NexusRBXAIPageContainer() {
           </button>
         </div>
       </header>
-
+{/* Notification stack (top left) */}
+<div className="fixed top-6 left-6 z-[9999] flex flex-col items-start pointer-events-none">
+  {notifications.map((n) => (
+    <NotificationToast
+      key={n.id}
+      message={n.message}
+      type={n.type}
+      duration={n.duration}
+      onClose={() =>
+        setNotifications((prev) => prev.filter((x) => x.id !== n.id))
+      }
+    />
+  ))}
+</div>
       {/* --- Mobile Left Sidebar --- */}
       <div
         className={`fixed inset-0 z-[100] md:hidden transition-all duration-300 ${
@@ -1668,37 +1714,50 @@ export default function NexusRBXAIPageContainer() {
             </div>
           </div>
           {/* Input Area */}
-          <div className="border-t border-gray-800 bg-black/30 px-2 md:px-4 py-4 flex flex-col items-center shadow-inner">
-            {/* Token Bar */}
-            <div className="w-full max-w-2xl mx-auto mb-2">
-              <TokenBar
-                tokensLeft={tokensLeft}
-                tokenLimit={TOKEN_LIMIT}
-                refreshTime={tokenRefreshTime}
-                isDev={!!user?.email && user.email.toLowerCase() === DEVELOPER_EMAIL}
-              />
-            </div>
-            <form
-              onSubmit={handleSubmit}
-              className="w-full max-w-2xl mx-auto"
-              autoComplete="off"
-            >
-              <div className="relative">
-                <textarea
-                  ref={promptInputRef}
-                  value={typeof prompt === "string" ? prompt : ""}
-                  onChange={(e) => setPrompt(e.target.value)}
-                  onKeyDown={handlePromptKeyDown}
-                  placeholder="Describe the Roblox mod you want to create..."
-                  className={`w-full rounded-lg bg-gray-900/60 border border-gray-700 focus:border-[#9b5de5] focus:outline-none focus:ring-2 focus:ring-[#9b5de5]/50 transition-all duration-300 py-3 px-4 pr-14 resize-none shadow-lg ${
-                    promptError ? "border-red-500" : ""
-                  }`}
-                  rows="3"
-                  disabled={isGenerating}
-                  maxLength={800}
-                  aria-label="Prompt input"
-                ></textarea>
-
+<div className="border-t border-gray-800 bg-black/30 px-2 md:px-4 py-4 flex flex-col items-center shadow-inner">
+  {/* Token Bar */}
+  <div className="w-full max-w-2xl mx-auto mb-2">
+    <TokenBar
+      tokensLeft={tokensLeft}
+      tokenLimit={TOKEN_LIMIT}
+      refreshTime={tokenRefreshTime}
+      isDev={!!user?.email && user.email.toLowerCase() === DEVELOPER_EMAIL}
+    />
+  </div>
+  {/* Fancy Loading Overlay */}
+  <div className="w-full max-w-2xl mx-auto">
+    <FancyLoadingOverlay
+      visible={
+        isGenerating &&
+        !(
+          // Find any assistant message that is NOT pending (means AI output is visible)
+          messages.some(
+            (m) => m.role === "assistant" && !m.pending
+          )
+        )
+      }
+    />
+  </div>
+  <form
+    onSubmit={handleSubmit}
+    className="w-full max-w-2xl mx-auto"
+    autoComplete="off"
+  >
+    <div className="relative">
+      <textarea
+        ref={promptInputRef}
+        value={typeof prompt === "string" ? prompt : ""}
+        onChange={(e) => setPrompt(e.target.value)}
+        onKeyDown={handlePromptKeyDown}
+        placeholder="Describe the Roblox mod you want to create..."
+        className={`w-full rounded-lg bg-gray-900/60 border border-gray-700 focus:border-[#9b5de5] focus:outline-none focus:ring-2 focus:ring-[#9b5de5]/50 transition-all duration-300 py-3 px-4 pr-14 resize-none shadow-lg ${
+          promptError ? "border-red-500" : ""
+        }`}
+        rows="3"
+        disabled={isGenerating}
+        maxLength={800}
+        aria-label="Prompt input"
+      ></textarea>
                 {/* Prompt Autocomplete Dropdown */}
                 {promptAutocomplete.length > 0 && (
                   <div className="absolute left-0 right-0 top-full z-30 bg-gray-900 border border-gray-700 rounded-b-lg shadow-lg">
@@ -1851,7 +1910,7 @@ export default function NexusRBXAIPageContainer() {
               }
               lastVersionsFetchRef.current = 0;
               versionsBackoffRef.current = 0;
-              setSuccessMsg("Saved new version");
+              notify({ message: "Saved new version", type: "success" });
               try {
                 const versionsRes = await authedFetch(
                   user,
@@ -1906,16 +1965,6 @@ export default function NexusRBXAIPageContainer() {
       )}
       {/* Celebration Animation */}
       {showCelebration && <CelebrationAnimation />}
-      {errorMsg && (
-        <div className="fixed bottom-20 left-1/2 transform -translate-x-1/2 bg-red-700 text-white px-6 py-3 rounded-lg shadow-lg z-[200] animate-fade-in">
-          {errorMsg}
-        </div>
-      )}
-      {successMsg && (
-        <div className="fixed bottom-20 left-1/2 transform -translate-x-1/2 bg-green-700 text-white px-6 py-3 rounded-lg shadow-lg z-[200] animate-fade-in">
-          {successMsg}
-        </div>
-      )}
       {/* Footer */}
       <footer className="border-t border-gray-800 py-4 px-4 bg-black/40 text-center text-sm text-gray-500">
         <div className="max-w-6xl mx-auto">
