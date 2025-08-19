@@ -1,12 +1,10 @@
-// src/versioning.js
-
 // Canonical version shape for the FE
+
 export function normalizeServerVersion(v = {}) {
   const createdAtMs =
     typeof v.createdAt === "number"
       ? v.createdAt
       : Date.parse(v.createdAt ?? "") || Date.now();
-
   return {
     id: String(v.id ?? v.versionId ?? cryptoRandomId()),
     projectId: String(v.projectId ?? ""),
@@ -29,9 +27,11 @@ export function nextVersionNumber(history = []) {
 }
 
 export function cryptoRandomId() {
-  // Use browser crypto if available, fallback to Math.random
-  if (typeof window !== "undefined" && window.crypto?.randomUUID) {
-    return window.crypto.randomUUID();
+  if (typeof self !== "undefined" && self.crypto?.randomUUID) {
+    return self.crypto.randomUUID();
+  }
+  if (typeof crypto !== "undefined" && crypto.randomUUID) {
+    return crypto.randomUUID();
   }
   return Math.random().toString(36).slice(2, 10);
 }
