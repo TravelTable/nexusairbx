@@ -1,3 +1,5 @@
+// src/versioning.js
+
 // Canonical version shape for the FE
 
 export function normalizeServerVersion(v = {}) {
