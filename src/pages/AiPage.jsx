@@ -36,13 +36,6 @@ import {
   deleteDoc,
 } from "firebase/firestore";
 
-// --- Versioning Helper ---
-import {
-  normalizeServerVersion,
-  sortDesc,
-  nextVersionNumber,
-  cryptoRandomId,
-} from "../lib/versioning";
 
 // --- Backend API URL ---
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
