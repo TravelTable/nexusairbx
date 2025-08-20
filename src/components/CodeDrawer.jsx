@@ -36,6 +36,7 @@ export default function CodeDrawerContainer({
   liveGenerating = false,
   liveContent = "",
   onLiveOpen,
+  isSavedScript = false, // <-- add this prop for badge
 }) {
   // Responsive drawer width calculation
   const getDrawerWidth = useCallback(() => {
@@ -58,18 +59,17 @@ export default function CodeDrawerContainer({
   const [gotoLine, setGotoLine] = useState("");
   const [highlightLine, setHighlightLine] = useState(null);
 
-const inputRef = useRef(null);
-const closeBtnRef = useRef(null);
-const drawerRef = useRef(null);
-const openerRef = useRef(null);
+  const inputRef = useRef(null);
+  const closeBtnRef = useRef(null);
+  const drawerRef = useRef(null);
+  const openerRef = useRef(null);
 
-// Focus trap refs
-const focusableRefs = useRef([]);
+  // Focus trap refs
+  const focusableRefs = useRef([]);
 
-// Keep latest handlers without putting them in effect deps
-const saveHandlerRef = useRef(null);
-const copyHandlerRef = useRef(null);
-
+  // Keep latest handlers without putting them in effect deps
+  const saveHandlerRef = useRef(null);
+  const copyHandlerRef = useRef(null);
 
   // Handle window resize (throttled)
   useEffect(() => {
@@ -122,64 +122,64 @@ const copyHandlerRef = useRef(null);
   }, [open]);
 
   // Keyboard shortcuts and focus trap (no TDZ: use refs for handlers)
-useEffect(() => {
-  if (!open) return;
+  useEffect(() => {
+    if (!open) return;
 
-  function handleKeyDown(e) {
-    // Focus trap
-    if (e.key === "Tab") {
-      const focusables = focusableRefs.current.filter(Boolean);
-      if (focusables.length === 0) return;
-      const idx = focusables.indexOf(document.activeElement);
-      if (e.shiftKey) {
-        if (idx <= 0) {
-          e.preventDefault();
-          focusables[focusables.length - 1].focus();
+    function handleKeyDown(e) {
+      // Focus trap
+      if (e.key === "Tab") {
+        const focusables = focusableRefs.current.filter(Boolean);
+        if (focusables.length === 0) return;
+        const idx = focusables.indexOf(document.activeElement);
+        if (e.shiftKey) {
+          if (idx <= 0) {
+            e.preventDefault();
+            focusables[focusables.length - 1].focus();
+          }
+        } else {
+          if (idx === focusables.length - 1) {
+            e.preventDefault();
+            focusables[0].focus();
+          }
         }
-      } else {
-        if (idx === focusables.length - 1) {
-          e.preventDefault();
-          focusables[0].focus();
-        }
+      }
+
+      // Shortcuts
+      if (e.key === "Escape") {
+        e.preventDefault();
+        onClose();
+      }
+
+      // Ctrl/Cmd+S -> save
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") {
+        e.preventDefault();
+        // Use latest handler via ref
+        if (saveHandlerRef.current) saveHandlerRef.current();
+      }
+
+      // Ctrl/Cmd+C -> copy
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "c") {
+        e.preventDefault();
+        if (copyHandlerRef.current) copyHandlerRef.current();
+      }
+
+      // Ctrl/Cmd+F -> toggle search
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "f") {
+        e.preventDefault();
+        setSearchOpen((v) => !v);
+        setTimeout(() => {
+          const el = document.getElementById("code-drawer-search-input");
+          if (el) el.focus();
+        }, 0);
       }
     }
 
-    // Shortcuts
-    if (e.key === "Escape") {
-      e.preventDefault();
-      onClose();
-    }
-
-    // Ctrl/Cmd+S -> save
-    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") {
-      e.preventDefault();
-      // Use latest handler via ref
-      if (saveHandlerRef.current) saveHandlerRef.current();
-    }
-
-    // Ctrl/Cmd+C -> copy
-    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "c") {
-      e.preventDefault();
-      if (copyHandlerRef.current) copyHandlerRef.current();
-    }
-
-    // Ctrl/Cmd+F -> toggle search
-    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "f") {
-      e.preventDefault();
-      setSearchOpen((v) => !v);
-      setTimeout(() => {
-        const el = document.getElementById("code-drawer-search-input");
-        if (el) el.focus();
-      }, 0);
-    }
-  }
-
-  const node = drawerRef.current;
-  if (node) node.addEventListener("keydown", handleKeyDown);
-  return () => {
-    if (node) node.removeEventListener("keydown", handleKeyDown);
-  };
-}, [open, onClose, setSearchOpen]);
+    const node = drawerRef.current;
+    if (node) node.addEventListener("keydown", handleKeyDown);
+    return () => {
+      if (node) node.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [open, onClose, setSearchOpen]);
 
   // Call onLiveOpen when drawer opens
   useEffect(() => {
@@ -231,58 +231,58 @@ useEffect(() => {
   );
 
   // Copy to clipboard handler (with fallback)
-const handleCopy = useCallback(() => {
-  const displayCode =
-    liveGenerating && liveContent ? liveContent : code;
-  function fallbackCopy(text) {
-    const textarea = document.createElement("textarea");
-    textarea.value = text;
-    textarea.setAttribute("readonly", "");
-    textarea.style.position = "absolute";
-    textarea.style.left = "-9999px";
-    document.body.appendChild(textarea);
-    textarea.select();
-    try {
-      document.execCommand("copy");
-    } catch (err) {}
-    document.body.removeChild(textarea);
-  }
-  if (navigator.clipboard && window.isSecureContext) {
-    navigator.clipboard
-      .writeText(displayCode)
-      .then(() => setCopySuccess(true))
-      .catch(() => {
-        fallbackCopy(displayCode);
-        setCopySuccess(true);
-      });
-  } else {
-    fallbackCopy(displayCode);
-    setCopySuccess(true);
-  }
-}, [code, liveGenerating, liveContent]);
+  const handleCopy = useCallback(() => {
+    const displayCode =
+      liveGenerating && liveContent ? liveContent : code;
+    function fallbackCopy(text) {
+      const textarea = document.createElement("textarea");
+      textarea.value = text;
+      textarea.setAttribute("readonly", "");
+      textarea.style.position = "absolute";
+      textarea.style.left = "-9999px";
+      document.body.appendChild(textarea);
+      textarea.select();
+      try {
+        document.execCommand("copy");
+      } catch (err) {}
+      document.body.removeChild(textarea);
+    }
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard
+        .writeText(displayCode)
+        .then(() => setCopySuccess(true))
+        .catch(() => {
+          fallbackCopy(displayCode);
+          setCopySuccess(true);
+        });
+    } else {
+      fallbackCopy(displayCode);
+      setCopySuccess(true);
+    }
+  }, [code, liveGenerating, liveContent]);
 
   // Save script handler (async, supports backend versioning)
   const [saveSuccess, setSaveSuccess] = useState(false);
-const [saveError, setSaveError] = useState("");
+  const [saveError, setSaveError] = useState("");
 
-const handleSaveScript = useCallback(async () => {
-  setSaveError("");
-  if (typeof onSaveScript === "function") {
-    try {
-      const result = await onSaveScript(editTitle, code);
-      if (result !== false) {
-        setSaveSuccess(true);
-        setTimeout(() => setSaveSuccess(false), 2000);
-      } else {
-        setSaveError("Failed to save script.");
+  const handleSaveScript = useCallback(async () => {
+    setSaveError("");
+    if (typeof onSaveScript === "function") {
+      try {
+        const result = await onSaveScript(editTitle, code);
+        if (result !== false) {
+          setSaveSuccess(true);
+          setTimeout(() => setSaveSuccess(false), 2000);
+        } else {
+          setSaveError("Failed to save script.");
+        }
+      } catch (e) {
+        setSaveError("Save error: " + (e?.message || e));
       }
-    } catch (e) {
-      setSaveError("Save error: " + (e?.message || e));
+    } else {
+      alert("Script saved!\n\nTitle: " + editTitle);
     }
-  } else {
-    alert("Script saved!\n\nTitle: " + editTitle);
-  }
-}, [onSaveScript, editTitle, code]);
+  }, [onSaveScript, editTitle, code]);
 
   // Keep handler refs updated for use in keyboard shortcut effect
   useEffect(() => { copyHandlerRef.current = handleCopy; }, [handleCopy]);
@@ -478,6 +478,7 @@ function CodeDrawerUI({
   drawerRef,
   saveSuccess = false,
   saveError = "",
+  isSavedScript = false, // <-- add this prop
 }) {
   const drawerVariants = {
     hidden: { x: "100%" },
@@ -680,6 +681,11 @@ function CodeDrawerUI({
                 {version}
               </span>
             )}
+            {isSavedScript && (
+              <span className="ml-2 px-2 py-1 rounded bg-[#00f5d4]/20 text-[#00f5d4] text-xs font-semibold">
+                Saved Version
+              </span>
+            )}
             <LiveStatus />
           </div>
           {/* Header controls: Search, Font size, Go-to-line */}
@@ -815,42 +821,42 @@ function CodeDrawerUI({
           tabIndex={0}
         >
           <div id="code-drawer-codeblock">
- <SyntaxHighlighter
-  language="lua"
-  style={atomOneDark}
-  customStyle={{
-    background: "#181825",
-    margin: 0,
-    borderRadius: 0,
-    fontSize: `${fontSize}px`,
-    minHeight: "100%",
-    padding: "1.5rem 1.25rem",
-    outline: "none",
-  }}
-  showLineNumbers
-  wrapLongLines
-  lineProps={lineNumber => lineProps(lineNumber)}
-  useInlineStyles={true}
-  PreTag="pre"
-  CodeTag="code"
->
-  {(!searchTerm || searchMatches.length === 0) ? displayCode : null}
-</SyntaxHighlighter>
-{(searchTerm && searchMatches.length > 0) && (
-  <div
-    style={{
-      position: "absolute",
-      top: 0,
-      left: 0,
-      width: "100%",
-      height: "100%",
-      pointerEvents: "none",
-      zIndex: 2,
-      background: "transparent",
-    }}
-    dangerouslySetInnerHTML={{ __html: `<pre style="background:transparent;border:none;box-shadow:none;margin:0;padding:1.5rem 1.25rem;font-size:${fontSize}px;line-height:1.5;white-space:pre-wrap;word-break:break-word;">${highlightedCode}</pre>` }}
-  />
-)}
+            <SyntaxHighlighter
+              language="lua"
+              style={atomOneDark}
+              customStyle={{
+                background: "#181825",
+                margin: 0,
+                borderRadius: 0,
+                fontSize: `${fontSize}px`,
+                minHeight: "100%",
+                padding: "1.5rem 1.25rem",
+                outline: "none",
+              }}
+              showLineNumbers
+              wrapLongLines
+              lineProps={lineNumber => lineProps(lineNumber)}
+              useInlineStyles={true}
+              PreTag="pre"
+              CodeTag="code"
+            >
+              {(!searchTerm || searchMatches.length === 0) ? displayCode : null}
+            </SyntaxHighlighter>
+            {(searchTerm && searchMatches.length > 0) && (
+              <div
+                style={{
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  width: "100%",
+                  height: "100%",
+                  pointerEvents: "none",
+                  zIndex: 2,
+                  background: "transparent",
+                }}
+                dangerouslySetInnerHTML={{ __html: `<pre style="background:transparent;border:none;box-shadow:none;margin:0;padding:1.5rem 1.25rem;font-size:${fontSize}px;line-height:1.5;white-space:pre-wrap;word-break:break-word;">${highlightedCode}</pre>` }}
+              />
+            )}
           </div>
         </div>
         {/* Bottom Buttons */}
@@ -925,43 +931,5 @@ function CodeDrawerUI({
         `}</style>
       </motion.div>
     </AnimatePresence>
-  );
-}
-
-// Button kit: black base + animated glow
-function GlowButton({
-  children,
-  onClick,
-  icon: Icon,
-  className = "",
-  glowColor = "from-[#9b5de5] to-[#00f5d4]",
-  disabled = false,
-  "aria-label": ariaLabel,
-  locked = false,
-}) {
-  return (
-    <span className="relative group inline-flex">
-      <span
-        className={`absolute inset-0 rounded-md bg-gradient-to-r ${glowColor} blur-sm opacity-0 group-hover:opacity-100 group-focus:opacity-100 transition-opacity duration-200 pointer-events-none code-drawer-glow${
-          locked ? " opacity-0" : ""
-        }`}
-        aria-hidden="true"
-      />
-      <button
-        type="button"
-        className={`relative z-10 flex items-center gap-2 px-4 py-1.5 rounded-md font-bold text-white bg-black border border-transparent text-sm shadow transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#00f5d4] ${
-          locked
-            ? "pointer-events-none bg-green-600 border-green-600 shadow-none"
-            : "hover:shadow-lg hover:scale-[1.03] active:scale-100"
-        } ${className}`}
-        onClick={onClick}
-        aria-label={ariaLabel}
-        disabled={disabled}
-        tabIndex={0}
-      >
-        {Icon && <Icon className="h-5 w-5" />}
-        {children}
-      </button>
-    </span>
   );
 }

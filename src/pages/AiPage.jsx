@@ -597,15 +597,26 @@ export default function NexusRBXAIPageContainer() {
     return chatRef.id;
   }
 
-  // --- Sidebar Version Click Handler ---
-  const handleVersionView = async (versionObj) => {
-    setErrorMsg("");
-    setSelectedVersion(versionObj);
+// --- Sidebar Version Click Handler ---
+const handleVersionView = async (versionObj) => {
+  setErrorMsg("");
+  setSelectedVersion(versionObj);
+
+  // If the version is from a different script/project, switch to that script
+  if (versionObj?.projectId && versionObj.projectId !== currentScriptId) {
+    setCurrentScriptId(versionObj.projectId);
+    setCurrentScript((cs) => ({
+      ...cs,
+      id: versionObj.projectId,
+      title: versionObj?.title || cs?.title || "",
+    }));
+  } else {
     setCurrentScript((cs) => ({
       ...cs,
       title: versionObj?.title || cs?.title || "",
     }));
-  };
+  }
+};
 
   // --- Download Handler for Version ---
   const handleVersionDownload = (versionObj) => {
@@ -745,35 +756,39 @@ const handleCreateScript = async (title = "New Script") => {
     );
   }, [user]);
 
-  useEffect(() => {
-    function onOpenCodeDrawer(e) {
-      const scriptId = e?.detail?.scriptId;
-      const code = e?.detail?.code;
-      const title = e?.detail?.title || "Script";
-      const vn = e?.detail?.versionNumber;
-      if (!scriptId) return;
-      if (code) {
-        setSelectedVersion({
-          id: cryptoRandomId(),
-          projectId: scriptId,
-          code,
-          title,
-          versionNumber: vn || null,
-          explanation: "",
-          createdAtMs: Date.now(),
-        });
-        return;
-      }
-      if (scriptId === currentScriptId && versionHistory.length > 0) {
-        setSelectedVersion(versionHistory[0]);
-      } else {
-        setCurrentScriptId(scriptId);
-      }
+useEffect(() => {
+  function onOpenCodeDrawer(e) {
+    const scriptId = e?.detail?.scriptId;
+    const code = e?.detail?.code;
+    const title = e?.detail?.title || "Script";
+    const version = e?.detail?.version || e?.detail?.versionNumber || null;
+    const explanation = e?.detail?.explanation || "";
+    const savedScriptId = e?.detail?.savedScriptId || null;
+    // If code is present, open the drawer with exactly this version
+    if (code) {
+      setSelectedVersion({
+        id: savedScriptId || cryptoRandomId(),
+        projectId: scriptId,
+        code,
+        title,
+        versionNumber: version,
+        explanation,
+        createdAtMs: Date.now(),
+        isSavedScript: true,
+      });
+      return;
     }
-    window.addEventListener("nexus:openCodeDrawer", onOpenCodeDrawer);
-    return () =>
-      window.removeEventListener("nexus:openCodeDrawer", onOpenCodeDrawer);
-  }, [currentScriptId, versionHistory]);
+    // Fallback: open latest version for scriptId
+    if (scriptId === currentScriptId && versionHistory.length > 0) {
+      setSelectedVersion(versionHistory[0]);
+    } else {
+      setCurrentScriptId(scriptId);
+    }
+  }
+  window.addEventListener("nexus:openCodeDrawer", onOpenCodeDrawer);
+  return () =>
+    window.removeEventListener("nexus:openCodeDrawer", onOpenCodeDrawer);
+}, [currentScriptId, versionHistory]);
 
   // --- Main Generation Flow (Handles both new script and new version) ---
   const handleSubmit = async (e) => {

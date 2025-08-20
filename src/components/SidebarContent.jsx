@@ -367,26 +367,45 @@ useEffect(() => {
     });
   }, [chats, chatSearch]);
 
-  // Which scripts are saved
-  const savedIdSet = useMemo(() => {
-    const s = new Set();
-    for (const row of savedScripts) if (row.scriptId) s.add(row.scriptId);
-    return s;
-  }, [savedScripts]);
+// Which script versions are saved (by scriptId + version)
+const savedVersionSet = useMemo(() => {
+  const s = new Set();
+  for (const row of savedScripts) {
+    if (row.scriptId && row.version) s.add(`${row.scriptId}__${row.version}`);
+  }
+  return s;
+}, [savedScripts]);
+
+// For quick lookup by scriptId (for "any version saved" logic)
+const savedScriptIdSet = useMemo(() => {
+  const s = new Set();
+  for (const row of savedScripts) {
+    if (row.scriptId) s.add(row.scriptId);
+  }
+  return s;
+}, [savedScripts]);
 
   // Filtered Saved Scripts list
-  const filteredSavedScripts = useMemo(() => {
-    const q = savedSearch.trim().toLowerCase();
-    const list = Array.isArray(savedScripts) ? savedScripts : [];
-    const filtered = q
-      ? list.filter((s) => (s.title || "").toLowerCase().includes(q))
-      : list;
-    return filtered.slice().sort((a, b) => {
-      const au = Number(+toJsDate(a.updatedAt || a.createdAt || 0)) || 0;
-      const bu = Number(+toJsDate(b.updatedAt || b.createdAt || 0)) || 0;
-      return bu - au;
-    });
-  }, [savedScripts, savedSearch]);
+// Filtered Saved Scripts list (show each saved version as a separate row)
+const filteredSavedScripts = useMemo(() => {
+  const q = savedSearch.trim().toLowerCase();
+  const list = Array.isArray(savedScripts) ? savedScripts : [];
+  const filtered = q
+    ? list.filter((s) =>
+        (s.title || "").toLowerCase().includes(q) ||
+        String(s.version || "").toLowerCase().includes(q)
+      )
+    : list;
+  // Sort by updatedAt, then by title, then by version (as string)
+  return filtered.slice().sort((a, b) => {
+    const au = Number(+toJsDate(a.updatedAt || a.createdAt || 0)) || 0;
+    const bu = Number(+toJsDate(b.updatedAt || b.createdAt || 0)) || 0;
+    if (bu !== au) return bu - au;
+    const at = (a.title || "").localeCompare(b.title || "");
+    if (at !== 0) return at;
+    return String(a.version || "").localeCompare(String(b.version || ""));
+  });
+}, [savedScripts, savedSearch]);
 
   // Handlers
   const handleCreateChatLocal = useCallback(() => {
@@ -428,42 +447,29 @@ const handleRenameChatCommit = useCallback(async (id, title) => {
     await deleteDoc(doc(db, "users", userId, "chats", deleteChatId));
   }
 
-  // Delete all scripts and savedScripts associated with this chat
-  if (userId && deleteChatId) {
-    // Delete scripts with chatId === deleteChatId
-    const scriptsRef = collection(db, "users", userId, "scripts");
-    const scriptsQuery = query(scriptsRef);
-    const scriptsSnap = await getDocs(scriptsQuery);
-    const scriptIdsToDelete = [];
-    scriptsSnap.forEach((docSnap) => {
-      const data = docSnap.data();
-      if (data.chatId === deleteChatId) {
-        scriptIdsToDelete.push(docSnap.id);
-      }
-    });
+  // Delete all scripts associated with this chat (but DO NOT delete savedScripts)
+if (userId && deleteChatId) {
+  // Delete scripts with chatId === deleteChatId
+  const scriptsRef = collection(db, "users", userId, "scripts");
+  const scriptsQuery = query(scriptsRef);
+  const scriptsSnap = await getDocs(scriptsQuery);
+  const scriptIdsToDelete = [];
+  scriptsSnap.forEach((docSnap) => {
+    const data = docSnap.data();
+    if (data.chatId === deleteChatId) {
+      scriptIdsToDelete.push(docSnap.id);
+    }
+  });
 
-    // Delete scripts
-    await Promise.all(
-      scriptIdsToDelete.map((scriptId) =>
-        deleteDoc(doc(db, "users", userId, "scripts", scriptId))
-      )
-    );
+  // Delete scripts
+  await Promise.all(
+    scriptIdsToDelete.map((scriptId) =>
+      deleteDoc(doc(db, "users", userId, "scripts", scriptId))
+    )
+  );
 
-    // Delete savedScripts with scriptId in scriptIdsToDelete OR chatId === deleteChatId
-    const savedRef = collection(db, "users", userId, "savedScripts");
-    const savedSnap = await getDocs(savedRef);
-    const savedDeletes = [];
-    savedSnap.forEach((savedDoc) => {
-      const saved = savedDoc.data();
-      if (
-        (saved.scriptId && scriptIdsToDelete.includes(saved.scriptId)) ||
-        saved.chatId === deleteChatId
-      ) {
-        savedDeletes.push(deleteDoc(doc(db, "users", userId, "savedScripts", savedDoc.id)));
-      }
-    });
-    await Promise.all(savedDeletes);
-  }
+  // DO NOT delete savedScripts! Saved scripts are independent and should remain.
+}
 
   setChatDeleteLoading(false);
   if (selectedChatId === deleteChatId) setSelectedChatId(null);
@@ -484,23 +490,25 @@ const handleToggleSaveScript = useCallback(async (script) => {
   if (!auth.currentUser) return;
   const userId = auth.currentUser.uid;
 
-  const isSaved = savedIdSet.has(script.id);
+  const version = script.version || script.versionNumber || "";
+  const saveKey = `${script.id}__${version}`;
+  const isSaved = savedVersionSet.has(saveKey);
 
   if (isSaved) {
-    const match = savedScripts.find((s) => s.scriptId === script.id);
+    const match = savedScripts.find((s) => s.scriptId === script.id && (s.version === version));
     if (!match) return;
     await deleteDoc(doc(db, "users", userId, "savedScripts", match.id));
   } else {
-await addDoc(collection(db, "users", userId, "savedScripts"), {
-  scriptId: script.id,
-  chatId: script.chatId || null,
-  title: script.title || "Untitled",
-  version: script.version || script.versionNumber || "",
-  createdAt: serverTimestamp(),
-  updatedAt: serverTimestamp(),
-});
+    await addDoc(collection(db, "users", userId, "savedScripts"), {
+      scriptId: script.id,
+      chatId: script.chatId || null,
+      title: script.title || "Untitled",
+      version,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
   }
-}, [savedIdSet, savedScripts]);
+}, [savedVersionSet, savedScripts]);
 
 
   // Unsave directly from the Saved tab
@@ -611,152 +619,155 @@ await addDoc(collection(db, "users", userId, "savedScripts"), {
                   </button>
                 </div>
               ) : (
-                (filteredScripts ?? []).map((script) => (
-                  <button
-                    type="button"
-                    key={script.id}
-                    className={`w-full flex items-center justify-between px-3 py-2 rounded-lg border ${
-                      currentScriptId === script.id
-                        ? "border-[#00f5d4] bg-gray-800/60"
-                        : "border-gray-700 bg-gray-900/40"
-                    } transition-colors text-left group`}
-                    aria-pressed={currentScriptId === script.id}
-                    tabIndex={0}
-                    role="button"
-                    aria-label={`Select script ${script.title || "Untitled"}`}
-                    onClick={() => handleScriptSelect(script.id)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === " ") {
-                        e.preventDefault();
-                        handleScriptSelect(script.id);
-                      }
-                      if (e.key === "Delete") {
-                        e.preventDefault();
-                        setDeleteScriptId(script.id);
-                      }
-                      if (e.key === "F2") {
-                        e.preventDefault();
-                        setRenamingScriptId(script.id);
-                        setRenameScriptTitle(script.title || "");
-                      }
-                    }}
-                    title={`Select script\nF2: Rename • Delete: Delete`}
-                  >
-                    <div className="flex-1 min-w-0">
-                      {renamingScriptId === script.id ? (
-                        <input
-                          className="bg-gray-800 border border-gray-700 rounded px-2 py-1 text-white w-full"
-                          value={renameScriptTitle}
-                          onChange={(e) => setRenameScriptTitle(e.target.value)}
-                          autoFocus
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") {
+                (filteredScripts ?? []).map((script) => {
+                  const version = script.version || script.versionNumber || "";
+                  const saveKey = `${script.id}__${version}`;
+                  const isSaved = savedVersionSet.has(saveKey);
+                  return (
+                    <button
+                      type="button"
+                      key={script.id + "__" + version}
+                      className={`w-full flex items-center justify-between px-3 py-2 rounded-lg border ${
+                        currentScriptId === script.id
+                          ? "border-[#00f5d4] bg-gray-800/60"
+                          : "border-gray-700 bg-gray-900/40"
+                      } transition-colors text-left group`}
+                      aria-pressed={currentScriptId === script.id}
+                      tabIndex={0}
+                      role="button"
+                      aria-label={`Select script ${script.title || "Untitled"}`}
+                      onClick={() => handleScriptSelect(script.id)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          handleScriptSelect(script.id);
+                        }
+                        if (e.key === "Delete") {
+                          e.preventDefault();
+                          setDeleteScriptId(script.id);
+                        }
+                        if (e.key === "F2") {
+                          e.preventDefault();
+                          setRenamingScriptId(script.id);
+                          setRenameScriptTitle(script.title || "");
+                        }
+                      }}
+                      title={`Select script\nF2: Rename • Delete: Delete`}
+                    >
+                      <div className="flex-1 min-w-0">
+                        {renamingScriptId === script.id ? (
+                          <input
+                            className="bg-gray-800 border border-gray-700 rounded px-2 py-1 text-white w-full"
+                            value={renameScriptTitle}
+                            onChange={(e) => setRenameScriptTitle(e.target.value)}
+                            autoFocus
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") {
+                                e.stopPropagation();
+                                if (renameScriptTitle.trim()) {
+                                  handleRenameScript(script.id, renameScriptTitle.trim());
+                                }
+                                setRenamingScriptId(null);
+                              }
+                              if (e.key === "Escape") {
+                                e.stopPropagation();
+                                setRenamingScriptId(null);
+                              }
+                            }}
+                            onBlur={() => {
+                              if (renameScriptTitle.trim()) handleRenameScript(renamingScriptId, renameScriptTitle.trim());
+                              setRenamingScriptId(null);
+                            }}
+                            aria-label="Rename script"
+                          />
+                        ) : (
+                          <span
+                            className="font-semibold text-white truncate block max-w-[12rem] md:max-w-[16rem]"
+                            title={script.title || "Untitled"}
+                          >
+                            {script.title || "Untitled"}
+                            {version && (
+                              <span className="inline-block px-2 py-0.5 rounded bg-[#9b5de5]/20 text-[#9b5de5] text-xs font-semibold ml-2">
+                                v{version}
+                              </span>
+                            )}
+                          </span>
+                        )}
+                        <div className="text-xs text-gray-400">
+                          {script.updatedAt && (
+                            <span
+                              title={toJsDate(script.updatedAt)?.toLocaleString()}
+                            >
+                              Last updated: {fromNow(script.updatedAt)}
+                            </span>
+                          )}
+                          <span className="ml-2 text-[10px] text-gray-500 hidden group-hover:inline">
+                            (F2: Rename • Delete: Delete)
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1 ml-2">
+                        <button
+                          className="p-1 rounded hover:bg-gray-700"
+                          title={isSaved ? "Unsave" : "Save"}
+                          tabIndex={-1}
+                          aria-label={isSaved ? "Unsave script" : "Save script"}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleToggleSaveScript(script);
+                          }}
+                        >
+                          {isSaved
+                            ? <Bookmark className="h-4 w-4 text-[#00f5d4]" />
+                            : <Bookmark className="h-4 w-4 text-gray-400" />}
+                        </button>
+                        {renamingScriptId === script.id ? (
+                          <button
+                            className="p-1 rounded hover:bg-gray-700"
+                            title="Save"
+                            tabIndex={-1}
+                            aria-label="Save script name"
+                            onClick={(e) => {
                               e.stopPropagation();
                               if (renameScriptTitle.trim()) {
                                 handleRenameScript(script.id, renameScriptTitle.trim());
                               }
                               setRenamingScriptId(null);
-                            }
-                            if (e.key === "Escape") {
-                              e.stopPropagation();
-                              setRenamingScriptId(null);
-                            }
-                          }}
-                          onBlur={() => {
-                            if (renameScriptTitle.trim()) handleRenameScript(renamingScriptId, renameScriptTitle.trim());
-                            setRenamingScriptId(null);
-                          }}
-                          aria-label="Rename script"
-                        />
-                      ) : (
-<span
-  className="font-semibold text-white truncate block max-w-[12rem] md:max-w-[16rem]"
-  title={script.title || "Untitled"}
->
-  {script.title || "Untitled"}
-  {(script.version || script.versionNumber) && (
-    <span className="inline-block px-2 py-0.5 rounded bg-[#9b5de5]/20 text-[#9b5de5] text-xs font-semibold ml-2">
-      v{script.version || script.versionNumber}
-    </span>
-  )}
-</span>
-                      )}
-                      <div className="text-xs text-gray-400">
-                        {script.updatedAt && (
-                          <span
-                            title={toJsDate(script.updatedAt)?.toLocaleString()}
+                            }}
                           >
-                            Last updated: {fromNow(script.updatedAt)}
-                          </span>
+                            <Check className="h-4 w-4 text-green-400" />
+                          </button>
+                        ) : (
+                          <button
+                            className="p-1 rounded hover:bg-gray-700"
+                            title="Rename"
+                            tabIndex={-1}
+                            aria-label="Rename script"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setRenamingScriptId(script.id);
+                              setRenameScriptTitle(script.title || "");
+                            }}
+                          >
+                            <Edit className="h-4 w-4 text-gray-400" />
+                          </button>
                         )}
-                        <span className="ml-2 text-[10px] text-gray-500 hidden group-hover:inline">
-                          (F2: Rename • Delete: Delete)
-                        </span>
+                        <button
+                          className="p-1 rounded hover:bg-gray-700"
+                          title="Delete"
+                          tabIndex={-1}
+                          aria-label="Delete script"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setDeleteScriptId(script.id);
+                          }}
+                        >
+                          <Trash2 className="h-4 w-4 text-gray-400" />
+                        </button>
                       </div>
-                    </div>
-                    <div className="flex items-center gap-1 ml-2">
-                      <button
-                        className="p-1 rounded hover:bg-gray-700"
-                        title={savedIdSet.has(script.id) ? "Unsave" : "Save"}
-                        tabIndex={-1}
-                        aria-label={savedIdSet.has(script.id) ? "Unsave script" : "Save script"}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleToggleSaveScript(script);
-                        }}
-                      >
-                        {savedIdSet.has(script.id)
-                          ? <Bookmark className="h-4 w-4 text-[#00f5d4]" />
-                          : <Bookmark className="h-4 w-4 text-gray-400" />}
-                      </button>
-
-                      {renamingScriptId === script.id ? (
-                        <button
-                          className="p-1 rounded hover:bg-gray-700"
-                          title="Save"
-                          tabIndex={-1}
-                          aria-label="Save script name"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (renameScriptTitle.trim()) {
-                              handleRenameScript(script.id, renameScriptTitle.trim());
-                            }
-                            setRenamingScriptId(null);
-                          }}
-                        >
-                          <Check className="h-4 w-4 text-green-400" />
-                        </button>
-                      ) : (
-                        <button
-                          className="p-1 rounded hover:bg-gray-700"
-                          title="Rename"
-                          tabIndex={-1}
-                          aria-label="Rename script"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setRenamingScriptId(script.id);
-                            setRenameScriptTitle(script.title || "");
-                          }}
-                        >
-                          <Edit className="h-4 w-4 text-gray-400" />
-                        </button>
-                      )}
-
-                      <button
-                        className="p-1 rounded hover:bg-gray-700"
-                        title="Delete"
-                        tabIndex={-1}
-                        aria-label="Delete script"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setDeleteScriptId(script.id);
-                        }}
-                      >
-                        <Trash2 className="h-4 w-4 text-gray-400" />
-                      </button>
-                    </div>
-                  </button>
-                ))
+                    </button>
+                  );
+                })
               )}
             </div>
             {/* Add Script Modal */}
@@ -844,25 +855,7 @@ await addDoc(collection(db, "users", userId, "savedScripts"), {
     <MessageCircle className="h-4 w-4 text-[#00f5d4]" />
     <span className="font-bold text-[#00f5d4]">Version History</span>
   </div>
-  {currentScriptId && (
-    <button
-      className="p-1 rounded hover:bg-gray-800 transition"
-      title={savedIdSet.has(currentScriptId) ? "Unsave script" : "Save script"}
-      aria-label={savedIdSet.has(currentScriptId) ? "Unsave script" : "Save script"}
-      onClick={() =>
-        handleToggleSaveScript({
-          id: currentScriptId,
-          title: currentScript?.title || "Untitled",
-        })
-      }
-    >
-      {savedIdSet.has(currentScriptId) ? (
-        <BookmarkCheck className="h-4 w-4 text-[#00f5d4]" />
-      ) : (
-        <Bookmark className="h-4 w-4 text-gray-400" />
-      )}
-    </button>
-  )}
+
 </div>
               {(!versionHistory || versionHistory.length === 0) && (
                 <div className="text-gray-400 text-sm">
@@ -871,37 +864,58 @@ await addDoc(collection(db, "users", userId, "savedScripts"), {
               )}
               <div className="space-y-2">
                 {(versionHistory ?? []).map((ver, vIdx) => {
-  const isSaved = savedIdSet.has(ver.id);
+  const version = ver.versionNumber || ver.version || "";
+  const saveKey = `${currentScriptId}__${version}`;
+  const isSaved = savedVersionSet.has(saveKey);
   return (
-    <div
+    <button
       key={keyFor(ver, vIdx)}
-      className="flex items-center justify-between px-3 py-2 border-b border-gray-800 last:border-b-0 hover:bg-gray-800 transition-colors rounded"
+      className={`w-full flex items-center justify-between px-3 py-2 border-b border-gray-800 last:border-b-0 hover:bg-gray-800 transition-colors rounded text-left group`}
+      style={{ background: (currentScript?.versionNumber === version || currentScript?.version === version) ? "rgba(0,245,212,0.08)" : undefined }}
+      onClick={() => {
+        // Show this version as the current script
+        if (typeof onVersionView === "function") {
+          onVersionView(ver);
+        }
+      }}
+      tabIndex={0}
+      aria-label={`Show version ${version}`}
+      onKeyDown={e => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          if (typeof onVersionView === "function") {
+            onVersionView(ver);
+          }
+        }
+      }}
     >
       <div className="flex flex-col flex-1 min-w-0">
-<div className="flex items-center gap-2">
-  <span className="font-semibold text-[#00f5d4] truncate block max-w-[10rem] md:max-w-[14rem]" title={ver.title || "Untitled"}>
-    {ver.title || "Untitled"}
-  </span>
-  {ver.versionNumber || ver.version ? (
-    <span className="inline-block px-2 py-0.5 rounded bg-[#9b5de5]/20 text-[#9b5de5] text-xs font-semibold ml-1">
-      v{ver.versionNumber || ver.version}
-    </span>
-  ) : null}
-</div>
-<span className="text-xs text-gray-400" title={ver.createdAt ? toJsDate(ver.createdAt)?.toLocaleString() : undefined}>
-  {ver.createdAt ? fromNow(ver.createdAt) : ""}
-</span>
+        <div className="flex items-center gap-2">
+          <span className="font-semibold text-[#00f5d4] truncate block max-w-[10rem] md:max-w-[14rem]" title={ver.title || "Untitled"}>
+            {ver.title || "Untitled"}
+          </span>
+          {version ? (
+            <span className="inline-block px-2 py-0.5 rounded bg-[#9b5de5]/20 text-[#9b5de5] text-xs font-semibold ml-1">
+              v{version}
+            </span>
+          ) : null}
+        </div>
+        <span className="text-xs text-gray-400" title={ver.createdAt ? toJsDate(ver.createdAt)?.toLocaleString() : undefined}>
+          {ver.createdAt ? fromNow(ver.createdAt) : ""}
+        </span>
       </div>
       <div className="flex items-center gap-1 ml-2">
         <button
           className="p-1 rounded hover:bg-gray-700"
           title={isSaved ? "Unsave script" : "Save script"}
           aria-label={isSaved ? "Unsave script" : "Save script"}
-          onClick={(e) => {
+          onClick={e => {
             e.stopPropagation();
             handleToggleSaveScript({
-              id: ver.id,
+              id: currentScriptId,
               title: ver.title || "Untitled",
+              version,
+              chatId: currentScript?.chatId ?? null,
             });
           }}
         >
@@ -915,9 +929,11 @@ await addDoc(collection(db, "users", userId, "savedScripts"), {
           className="p-1 rounded hover:bg-gray-700"
           title="View"
           aria-label="View version"
-          onClick={(e) => {
+          onClick={e => {
             e.stopPropagation();
-            memoOnVersionView(ver);
+            if (typeof onVersionView === "function") {
+              onVersionView(ver);
+            }
           }}
         >
           <Eye className="h-4 w-4 text-[#00f5d4]" />
@@ -926,7 +942,7 @@ await addDoc(collection(db, "users", userId, "savedScripts"), {
           className="p-1 rounded hover:bg-gray-700"
           title="Download"
           aria-label="Download version"
-          onClick={(e) => {
+          onClick={e => {
             e.stopPropagation();
             memoOnVersionDownload(ver);
           }}
@@ -934,7 +950,7 @@ await addDoc(collection(db, "users", userId, "savedScripts"), {
           <Download className="h-4 w-4 text-gray-400" />
         </button>
       </div>
-    </div>
+    </button>
   );
 })}
               </div>
@@ -1171,6 +1187,9 @@ await addDoc(collection(db, "users", userId, "savedScripts"), {
               code: row.code,
               title: row.title,
               version: row.version,
+              explanation: row.explanation || "",
+              savedScriptId: row.id,
+              // Pass any other fields you want to show in the drawer
             },
           })
         );
@@ -1187,6 +1206,8 @@ await addDoc(collection(db, "users", userId, "savedScripts"), {
                 code: row.code,
                 title: row.title,
                 version: row.version,
+                explanation: row.explanation || "",
+                savedScriptId: row.id,
               },
             })
           );
@@ -1195,17 +1216,17 @@ await addDoc(collection(db, "users", userId, "savedScripts"), {
     >
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
-<span
-  className="font-semibold text-white truncate block max-w-[12rem] md:max-w-[16rem]"
-  title={row.title || "Untitled"}
->
-  {row.title || "Untitled"}
-  {row.version && (
-    <span className="inline-block px-2 py-0.5 rounded bg-[#9b5de5]/20 text-[#9b5de5] text-xs font-semibold ml-2">
-      v{row.version}
-    </span>
-  )}
-</span>
+          <span
+            className="font-semibold text-white truncate block max-w-[12rem] md:max-w-[16rem]"
+            title={row.title || "Untitled"}
+          >
+            {row.title || "Untitled"}
+            {row.version && (
+              <span className="inline-block px-2 py-0.5 rounded bg-[#9b5de5]/20 text-[#9b5de5] text-xs font-semibold ml-2">
+                v{row.version}
+              </span>
+            )}
+          </span>
         </div>
         <div className="text-xs text-gray-400">
           {row.updatedAt && (
