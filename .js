@@ -30,16 +30,32 @@ if (!OPENAI_API_KEY) {
 const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
 
 // --- EXPRESS APP ---
-const allowlist = (FRONTEND_ORIGIN || "").split(",").map(s => s.trim()).filter(Boolean);
+const allowlist = [
+  "http://localhost:3000",
+  "https://nexusrbx.com",
+  "http://nexusrbx.com"
+];
 const corsOptions = {
-  origin: (origin, cb) => {
-    if (!origin || allowlist.length === 0) return cb(null, true); // local tools / SSR
-    return allowlist.includes(origin) ? cb(null, true) : cb(new Error("Not allowed by CORS"));
+  origin: function(origin, callback) {
+    // Allow requests with no origin (like SSR, curl, mobile apps)
+    if (!origin) return callback(null, true);
+    if (allowlist.includes(origin)) return callback(null, true);
+    // Allow if origin matches ignoring protocol (for http/https mix)
+    try {
+      const o = new URL(origin);
+      if (allowlist.some(allowed => {
+        try {
+          const a = new URL(allowed);
+          return o.hostname === a.hostname;
+        } catch { return false; }
+      })) return callback(null, true);
+    } catch {}
+    return callback(new Error("Not allowed by CORS"));
   },
   methods: ["GET","POST","DELETE","PUT","PATCH","OPTIONS"],
   allowedHeaders: ["Content-Type","Authorization","If-None-Match","Idempotency-Key"],
   maxAge: 86400,
-  credentials: false,
+  credentials: true,
 };
 const app = express();
 app.use(cors(corsOptions));
@@ -61,7 +77,7 @@ const asyncHandler = fn => (req, res, next) => {
   Promise.resolve(fn(req, res, next)).catch(next);
 };
 
-// --- SYSTEM PROMPTS ---
+// --- SYSTEM PROMPT ---
 const SYSTEM_PROMPT = `When fulfilling requests for Roblox LocalScript “hack” GUIs, provide both a robust, fully functional script and an in-depth explanation of the GUI design techniques used. Ensure that every response includes detailed, professional descriptions of how and why each UI choice, layout, and control was implemented, referencing established UI/UX best practices applicable to Roblox/Roblox Studio. 
 
 For a user’s initial script request, generate a simple, polished, and user-friendly GUI, fully describing the deliberate design decisions and UI techniques behind the interface. For any successive request that asks for new features, an advanced version, or more capability, iteratively enhance both the features and the GUI sophistication—always providing thorough, technical rationales for every UI improvement and advanced control, and outlining the UI principles guiding the progression. 
@@ -815,18 +831,32 @@ app.post("/api/scripts", verifyFirebaseToken, asyncHandler(async (req, res) => {
 }));
 
 // Alias: /api/projects (Create)
+// --- PATCH: Accept firestoreId from frontend and use it as the Firestore doc ID if provided ---
 app.post("/api/projects", verifyFirebaseToken, asyncHandler(async (req, res) => {
-  const { title, code, explanation } = req.body;
+  const { title, code, explanation, firestoreId } = req.body;
   if (!title) return res.status(400).json({ error: "Missing title" });
 
   const userId = req.user.uid;
   const scriptsCol = firestore.collection("users").doc(userId).collection("scripts");
-  const scriptDoc = await scriptsCol.add({
-    title,
-    createdAt: admin.firestore.FieldValue.serverTimestamp(),
-    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-    latestVersion: 1
-  });
+  let scriptDoc;
+  if (firestoreId && typeof firestoreId === "string" && firestoreId.length > 0) {
+    // Use the provided Firestore ID
+    scriptDoc = scriptsCol.doc(firestoreId);
+    await scriptDoc.set({
+      title,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      latestVersion: 1
+    }, { merge: true });
+  } else {
+    // Create a new doc with random ID
+    scriptDoc = await scriptsCol.add({
+      title,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      latestVersion: 1
+    });
+  }
 
   // Only create version if code is provided
   if (code) {
@@ -1220,7 +1250,28 @@ app.use((err, req, res, next) => {
   res.status(err.statusCode || 500).json({ error: err.message || "Internal server error" });
 });
 
-// --- START SERVER ---
-app.listen(PORT, () => {
-  console.log(`NexusRBX Backend listening on port ${PORT}`);
+const http = require('http');
+const WebSocket = require('ws');
+
+// Create HTTP server from Express app
+const server = http.createServer(app);
+
+// Create WebSocket server
+const wss = new WebSocket.Server({ server, path: '/ws' });
+
+wss.on('connection', (ws) => {
+  console.log('WebSocket client connected');
+  ws.on('message', (message) => {
+    console.log('Received:', message);
+    // Echo the message back
+    ws.send(`Echo: ${message}`);
+  });
+  ws.on('close', () => {
+    console.log('WebSocket client disconnected');
+  });
+});
+
+// Start both HTTP and WebSocket server
+server.listen(PORT, () => {
+  console.log(`NexusRBX Backend (HTTP+WS) listening on port ${PORT}`);
 });

@@ -1,4 +1,12 @@
-import React, { useState, useMemo, useCallback, useEffect, useRef } from "react";
+import React, {
+  useState,
+  useMemo,
+  useCallback,
+  useEffect,
+  useRef,
+  useId,
+  useDeferredValue,
+} from "react";
 import { motion } from "framer-motion";
 import {
   X,
@@ -28,33 +36,17 @@ import {
   orderBy,
   serverTimestamp,
   getDocs,
+  limit,
+  startAfter,
 } from "firebase/firestore";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
+import { FixedSizeList as List } from "react-window";
 
-// Debug logs (safe to remove later)
-console.log("SidebarTab:", SidebarTab);
-console.log("Modal:", Modal);
-console.log("Icons:", {
-  X,
-  Plus,
-  Edit,
-  Trash2,
-  Download,
-  Eye,
-  Search,
-  Check,
-  MessageCircle,
-  Bookmark,
-});
+// --- Utility Functions ---
 
-
-// Utility: Firestore timestamp to JS Date (hardened)
-const toJsDate = (ts) =>
-  ts && typeof ts === "object" && typeof ts.seconds === "number"
-    ? new Date(ts.seconds * 1000)
-    : ts
-    ? new Date(ts)
-    : undefined;
+// Normalize Firestore timestamp to ms
+const toMs = (t) =>
+  t?.toMillis?.() ? t.toMillis() : +new Date(t) || Date.now();
 
 // Utility: Safe filename for download
 const safeFile = (t) =>
@@ -63,19 +55,19 @@ const safeFile = (t) =>
     .replace(/\s+/g, "_")
     .slice(0, 40) + ".lua";
 
-// Utility: Stable key for versions (use id or fallback to v-version)
-const keyFor = (v, i) => v.id ?? `v-${v.version ?? i}`;
+// Version string getter (always string)
+const getVersionStr = (v) =>
+  String(v?.versionNumber ?? v?.version ?? "");
 
-// Utility: fromNow with Firestore timestamp support (hardened)
+// Stable key for scripts/versions
+const keyForScript = (s) => `${s.id}__${getVersionStr(s)}`;
+
+// Utility: fromNow with ms support
 const rtf = new Intl.RelativeTimeFormat(undefined, { numeric: "auto" });
-const fromNow = (ts) => {
-  if (!ts) return "—";
-  const dt = toJsDate(ts);
-  if (!dt) return "—";
-  const d = +dt;
-  if (!Number.isFinite(d)) return "—";
+const fromNow = (ms) => {
+  if (!ms || !Number.isFinite(ms)) return "—";
   const now = Date.now();
-  const diff = d - now;
+  const diff = ms - now;
   const mins = Math.round(diff / 60000);
   if (isFinite(mins) && Math.abs(mins) < 60) return rtf.format(mins, "minute");
   const hrs = Math.round(diff / 3600000);
@@ -85,11 +77,154 @@ const fromNow = (ts) => {
   return "—";
 };
 
-// Generate a random id (for local use, but Firestore will use its own ids)
-const generateId = () =>
-  (typeof crypto !== "undefined" && crypto.randomUUID
-    ? crypto.randomUUID()
-    : `c_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`);
+// --- Toast Hook for Error Surfaces ---
+function useToast() {
+  const [toast, setToast] = useState(null);
+  const show = (msg) => setToast(msg);
+  const clear = () => setToast(null);
+  return { toast, show, clear };
+}
+
+// --- Memoized Script Row ---
+const ScriptRow = React.memo(function ScriptRow({
+  script,
+  isSelected,
+  onSelect,
+  onRename,
+  onDelete,
+  onToggleSave,
+  isSaved,
+  renaming,
+  renameValue,
+  setRenameValue,
+  onRenameCommit,
+  onRenameCancel,
+}) {
+  const version = getVersionStr(script);
+  return (
+    <div
+      className={`w-full flex items-center justify-between px-3 py-2 rounded-lg border ${
+        isSelected
+          ? "border-[#00f5d4] bg-gray-800/60"
+          : "border-gray-700 bg-gray-900/40"
+      } transition-colors text-left group`}
+      tabIndex={0}
+      role="row"
+      aria-selected={isSelected}
+      style={{ outline: "none" }}
+      data-id={script.id}
+      data-version={version}
+      aria-label={`Select script ${script.title || "Untitled"}`}
+      onClick={onSelect}
+    >
+      <div className="flex-1 min-w-0">
+        {renaming ? (
+          <input
+            className="bg-gray-800 border border-gray-700 rounded px-2 py-1 text-white w-full"
+            value={renameValue}
+            onChange={(e) => setRenameValue(e.target.value)}
+            autoFocus
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.stopPropagation();
+                if (renameValue.trim()) onRenameCommit(script.id, renameValue.trim());
+              }
+              if (e.key === "Escape") {
+                e.stopPropagation();
+                onRenameCancel();
+              }
+            }}
+            onBlur={() => {
+              if (renameValue.trim()) onRenameCommit(script.id, renameValue.trim());
+              onRenameCancel();
+            }}
+            aria-label="Rename script"
+          />
+        ) : (
+          <span
+            className="font-semibold text-white truncate block max-w-[12rem] md:max-w-[16rem]"
+            title={script.title || "Untitled"}
+          >
+            {script.title || "Untitled"}
+            {version && (
+              <span className="inline-block px-2 py-0.5 rounded bg-[#9b5de5]/20 text-[#9b5de5] text-xs font-semibold ml-2">
+                v{version}
+              </span>
+            )}
+          </span>
+        )}
+        <div className="text-xs text-gray-400">
+          {script.updatedAt && (
+            <span title={new Date(script.updatedAt).toLocaleString()}>
+              Last updated: {fromNow(script.updatedAt)}
+            </span>
+          )}
+          <span className="ml-2 text-[10px] text-gray-500 hidden group-hover:inline">
+            (F2: Rename • Delete: Delete)
+          </span>
+        </div>
+      </div>
+      <div className="flex items-center gap-1 ml-2">
+        <button
+          className="p-1 rounded hover:bg-gray-700"
+          title={isSaved ? "Unsave" : "Save"}
+          tabIndex={-1}
+          aria-label={isSaved ? "Unsave script" : "Save script"}
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleSave(script);
+          }}
+        >
+          {isSaved ? (
+            <Bookmark className="h-4 w-4 text-[#00f5d4]" />
+          ) : (
+            <Bookmark className="h-4 w-4 text-gray-400" />
+          )}
+        </button>
+        {renaming ? (
+          <button
+            className="p-1 rounded hover:bg-gray-700"
+            title="Save"
+            tabIndex={-1}
+            aria-label="Save script name"
+            onClick={(e) => {
+              e.stopPropagation();
+              if (renameValue.trim()) onRenameCommit(script.id, renameValue.trim());
+              onRenameCancel();
+            }}
+          >
+            <Check className="h-4 w-4 text-green-400" />
+          </button>
+        ) : (
+          <button
+            className="p-1 rounded hover:bg-gray-700"
+            title="Rename"
+            tabIndex={-1}
+            aria-label="Rename script"
+            onClick={(e) => {
+              e.stopPropagation();
+              onRename(script.id, script.title || "");
+            }}
+          >
+            <Edit className="h-4 w-4 text-gray-400" />
+          </button>
+        )}
+        <button
+          className="p-1 rounded hover:bg-gray-700"
+          title="Delete"
+          tabIndex={-1}
+          aria-label="Delete script"
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete(script.id);
+          }}
+        >
+          <Trash2 className="h-4 w-4 text-gray-400" />
+        </button>
+      </div>
+    </div>
+  );
+});
 
 // --- SidebarContent component ---
 export default function SidebarContent({
@@ -110,10 +245,14 @@ export default function SidebarContent({
   promptSearch,
   setPromptSearch,
   isMobile,
-  onSelect, // optional: parent can pass to close drawer on mobile
+  onSelect,
   onRenameChat,
   onDeleteChat,
+  selectedVersionId, // <-- pass from parent for version selection
 }) {
+  // --- State ---
+  const tabId = useId();
+
   // Script management state
   const [showAddScriptModal, setShowAddScriptModal] = useState(false);
   const [newScriptTitle, setNewScriptTitle] = useState("");
@@ -124,97 +263,484 @@ export default function SidebarContent({
 
   // Debounced search state
   const [localSearch, setLocalSearch] = useState(promptSearch || "");
+  const deferredSearch = useDeferredValue(localSearch);
+  useEffect(() => setPromptSearch(deferredSearch), [deferredSearch, setPromptSearch]);
   useEffect(() => setLocalSearch(promptSearch || ""), [promptSearch]);
-  const debRef = useRef();
 
-useEffect(() => {
-  return () => {
-    if (debRef?.current) clearTimeout(debRef.current);
-  };
-}, []);
+// --- Saved Scripts state ---
+const [savedScripts, setSavedScripts] = useState([]);
+const [savedSearch, setSavedSearch] = useState("");
+const [savedErr, setSavedErr] = useState(null);
 
 
-  // --- Saved Scripts state ---
-  const [savedScripts, setSavedScripts] = useState([]);
-  const [savedSearch, setSavedSearch] = useState("");
 
-  // Memoized filtered and sorted scripts (null-safe search, consistent sorting)
-  const q = (promptSearch || "").toLowerCase();
+  // --- Chats state (Firestore) ---
+  const [chats, setChats] = useState([]);
+  const [selectedChatId, setSelectedChatId] = useState(null);
+  const [chatSearch, setChatSearch] = useState("");
+  const [renamingChatId, setRenamingChatId] = useState(null);
+  const [renameChatTitle, setRenameChatTitle] = useState("");
+  const [deleteChatId, setDeleteChatId] = useState(null);
+  const [chatDeleteLoading, setChatDeleteLoading] = useState(false);
+  const [chatCursor, setChatCursor] = useState(null);
+  const [chatErr, setChatErr] = useState(null);
+
+  // --- Toast for errors ---
+  const { toast, show: showToast, clear: clearToast } = useToast();
+
+  // --- Firestore: subscribe to chats for current user (paginated) ---
+  useEffect(() => {
+    const db = getFirestore();
+    const auth = getAuth();
+    let unsubSnapshot = null;
+    let unsubAuth = null;
+
+    unsubAuth = onAuthStateChanged(auth, (u) => {
+      if (unsubSnapshot) {
+        unsubSnapshot();
+        unsubSnapshot = null;
+      }
+      if (!u) {
+        setChats([]);
+        setChatCursor(null);
+        return;
+      }
+
+      let qRef = query(
+        collection(db, "users", u.uid, "chats"),
+        orderBy("updatedAt", "desc"),
+        limit(50),
+        ...(chatCursor ? [startAfter(chatCursor)] : [])
+      );
+
+      unsubSnapshot = onSnapshot(
+        qRef,
+        (snap) => {
+          const arr = snap.docs.map((d) => ({
+            id: d.id,
+            ...d.data(),
+            updatedAt: toMs(d.data().updatedAt),
+            createdAt: toMs(d.data().createdAt),
+          }));
+          setChats(arr);
+          setChatCursor(snap.docs[snap.docs.length - 1]);
+        },
+        (err) => setChatErr(err.message)
+      );
+    });
+
+    return () => {
+      if (unsubSnapshot) unsubSnapshot();
+      if (unsubAuth) unsubAuth();
+    };
+    // eslint-disable-next-line
+  }, []);
+
+  // --- Firestore: subscribe to saved scripts (event-listener leak fixed) ---
+  useEffect(() => {
+    const db = getFirestore();
+    const auth = getAuth();
+    let unsubSnapshot = null;
+    let handler = null;
+    let unsubAuth = null;
+
+    unsubAuth = onAuthStateChanged(auth, (u) => {
+      if (unsubSnapshot) {
+        unsubSnapshot();
+        unsubSnapshot = null;
+      }
+      if (handler) {
+        window.removeEventListener("nexus:sidebarSaveScript", handler);
+        handler = null;
+      }
+      if (!u) {
+        setSavedScripts([]);
+        return;
+      }
+
+      const savedRef = collection(db, "users", u.uid, "savedScripts");
+      const qSaved = query(savedRef, orderBy("updatedAt", "desc"));
+      unsubSnapshot = onSnapshot(
+        qSaved,
+        (snap) => {
+          const arr = [];
+          snap.forEach((docSnap) =>
+            arr.push({
+              id: docSnap.id,
+              ...docSnap.data(),
+              updatedAt: toMs(docSnap.data().updatedAt),
+              createdAt: toMs(docSnap.data().createdAt),
+              versionNumber: getVersionStr(docSnap.data()),
+            })
+          );
+          setSavedScripts(arr);
+        },
+        (err) => setSavedErr(err.message)
+      );
+
+      handler = async (e) => {
+        const { code, title, version, language, scriptId, chatId } = e.detail || {};
+        if (!code) return;
+        try {
+          await addDoc(collection(db, "users", u.uid, "savedScripts"), {
+            scriptId: scriptId ?? null,
+            chatId: chatId ?? null,
+            code,
+            title: title || "Untitled",
+            version: version || "",
+            language: language || "lua",
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+          });
+        } catch (err) {
+          showToast("Failed to save script: " + err.message);
+        }
+      };
+      window.addEventListener("nexus:sidebarSaveScript", handler);
+    });
+
+    return () => {
+      if (unsubSnapshot) unsubSnapshot();
+      if (unsubAuth) unsubAuth();
+      if (handler) window.removeEventListener("nexus:sidebarSaveScript", handler);
+    };
+    // eslint-disable-next-line
+  }, []);
+
+  // --- Writer: upsert chats on activity ---
+  useEffect(() => {
+    const db = getFirestore();
+    const auth = getAuth();
+
+    const onActivity = async (e) => {
+      const { id, title, lastMessage } = e.detail || {};
+      const u = auth.currentUser;
+      if (!id || !u) return;
+
+      const chatRef = doc(db, "users", u.uid, "chats", id);
+      const updates = {
+        ...(title !== undefined
+          ? { title: (title ?? "").trim() || "Untitled chat" }
+          : {}),
+        ...(lastMessage !== undefined ? { lastMessage } : {}),
+        updatedAt: serverTimestamp(),
+      };
+
+      try {
+        await updateDoc(chatRef, updates);
+      } catch (err) {
+        await setDoc(
+          chatRef,
+          {
+            title: (title ?? "").trim() || "Untitled chat",
+            lastMessage: lastMessage ?? "",
+            createdAt: serverTimestamp(),
+            ...updates,
+          },
+          { merge: true }
+        );
+      }
+    };
+
+    window.addEventListener("nexus:chatActivity", onActivity);
+    return () => window.removeEventListener("nexus:chatActivity", onActivity);
+  }, []);
+
+  // --- Memoized filtered and sorted scripts (deferred search) ---
+  const deferredScriptSearch = useDeferredValue(localSearch.trim().toLowerCase());
   const filteredScripts = useMemo(() => {
     const list = Array.isArray(scripts) ? scripts : [];
+    const q = deferredScriptSearch;
     const filtered = q
       ? list.filter((s) => (s.title || "").toLowerCase().includes(q))
       : list;
-    // Sort: latest updated first, fallback to createdAt, then title
-    return filtered.slice().sort((a, b) => {
-      const au = Number(+toJsDate(a.updatedAt)) || 0;
-      const bu = Number(+toJsDate(b.updatedAt)) || 0;
-      if (bu !== au) return bu - au;
-      const ac = Number(+toJsDate(a.createdAt)) || 0;
-      const bc = Number(+toJsDate(b.createdAt)) || 0;
-      if (bc !== ac) return bc - ac;
-      return (a.title || "").localeCompare(b.title || "");
-    });
-  }, [scripts, q]);
+    return filtered
+      .slice()
+      .sort((a, b) => {
+        const au = Number(a.updatedAt) || 0;
+        const bu = Number(b.updatedAt) || 0;
+        if (bu !== au) return bu - au;
+        const ac = Number(a.createdAt) || 0;
+        const bc = Number(b.createdAt) || 0;
+        if (bc !== ac) return bc - ac;
+        return (a.title || "").localeCompare(b.title || "");
+      });
+  }, [scripts, deferredScriptSearch]);
 
-  // --- New Script Logic: clear selection and start a new script ---
+  // --- Memoized filtered/sorted chats (deferred search) ---
+  const deferredChatSearch = useDeferredValue(chatSearch.trim().toLowerCase());
+  const filteredChats = useMemo(() => {
+    const list = Array.isArray(chats) ? chats : [];
+    const q = deferredChatSearch;
+    const filtered = q
+      ? list.filter(
+          (c) =>
+            (c.title || "").toLowerCase().includes(q) ||
+            (c.lastMessage || "").toLowerCase().includes(q)
+        )
+      : list;
+    return filtered
+      .slice()
+      .sort((a, b) => {
+        const au = Number(a.updatedAt || a.createdAt || 0) || 0;
+        const bu = Number(b.updatedAt || b.createdAt || 0) || 0;
+        return bu - au;
+      });
+  }, [chats, deferredChatSearch]);
+
+  // --- Memoized filtered/sorted saved scripts (deferred search, unique per scriptId+versionNumber) ---
+const deferredSavedSearch = useDeferredValue(savedSearch.trim().toLowerCase());
+const filteredSavedScripts = useMemo(() => {
+  const list = Array.isArray(savedScripts) ? savedScripts : [];
+  const q = deferredSavedSearch;
+  // Remove duplicates: only one per scriptId+versionNumber
+  const uniqueMap = new Map();
+  for (const s of list) {
+    const key = `${s.scriptId}__${s.versionNumber || getVersionStr(s)}`;
+    if (!uniqueMap.has(key)) uniqueMap.set(key, s);
+  }
+  const uniqueList = Array.from(uniqueMap.values());
+  const filtered = q
+    ? uniqueList.filter(
+        (s) =>
+          (s.title || "").toLowerCase().includes(q) ||
+          getVersionStr(s).toLowerCase().includes(q)
+      )
+    : uniqueList;
+  return filtered
+    .slice()
+    .sort((a, b) => {
+      const au = Number(a.updatedAt || a.createdAt || 0) || 0;
+      const bu = Number(b.updatedAt || b.createdAt || 0) || 0;
+      if (bu !== au) return bu - au;
+      const at = (a.title || "").localeCompare(b.title || "");
+      if (at !== 0) return at;
+      return getVersionStr(a).localeCompare(getVersionStr(b));
+    });
+}, [savedScripts, deferredSavedSearch]);
+
+  // --- Saved version set (single source of truth) ---
+  const savedVersionSet = useMemo(() => {
+    const s = new Set();
+    for (const row of savedScripts) {
+      if (row.scriptId) s.add(keyForScript(row));
+    }
+    return s;
+  }, [savedScripts]);
+
+  // --- Handlers ---
   const handleNewScript = useCallback(() => {
-    setCurrentScriptId(null); // Clear selection
-    // Instead of creating a chat, just trigger a draft event
+    setCurrentScriptId(null);
     window.dispatchEvent(new CustomEvent("nexus:startDraft"));
     if (isMobile && typeof onSelect === "function") onSelect();
   }, [setCurrentScriptId, isMobile, onSelect]);
 
-  // --- Script Selection Logic: select script and load its version history ---
   const handleScriptSelect = useCallback(
     (scriptId) => {
       setCurrentScriptId(scriptId);
-      if (isMobile && typeof onSelect === "function") {
-        onSelect();
-      }
+      if (isMobile && typeof onSelect === "function") onSelect();
     },
     [isMobile, setCurrentScriptId, onSelect]
   );
 
-  // --- Debounced search input handler ---
-  const handleSearchChange = (e) => {
-    const v = e.target.value;
-    setLocalSearch(v);
-    clearTimeout(debRef.current);
-    debRef.current = setTimeout(() => setPromptSearch(v), 150);
-  };
-
-  // --- Create Script Modal handler (parent-driven state, no local setCurrentScriptId) ---
   const handleCreateScriptClick = async () => {
     await handleCreateScript(newScriptTitle || "New Script");
     setShowAddScriptModal(false);
     setNewScriptTitle("");
-    // Parent will setCurrentScriptId; no local override here.
   };
 
-  // --- Confirm Delete Handler ---
   const handleDeleteScriptConfirm = async () => {
     setDeleteLoading(true);
     await handleDeleteScript(deleteScriptId);
     setDeleteLoading(false);
     setDeleteScriptId(null);
     if (currentScriptId === deleteScriptId) {
-      setCurrentScriptId(null); // Clear selection if deleted
+      setCurrentScriptId(null);
     }
   };
 
-  
-  // --- Memoized callbacks for version actions ---
-  const memoOnVersionView = useCallback(
-    (ver) => onVersionView && onVersionView(ver),
-    [onVersionView]
-  );
-  const memoOnVersionDownload = useCallback(
-    (ver) => onVersionDownload && onVersionDownload(ver),
-    [onVersionDownload]
+  // --- Optimistic Save/Unsave with rollback, prevent duplicate saves (scriptId + versionNumber) ---
+const handleToggleSaveScript = useCallback(
+  async (script) => {
+    const db = getFirestore();
+    const auth = getAuth();
+    const u = auth.currentUser;
+    if (!u) return;
+
+    const version = getVersionStr(script);
+    const versionNumber = script.versionNumber || Number(version) || 1;
+    const key = `${script.id}__${versionNumber}`;
+    const wasSaved = savedVersionSet.has(key);
+
+    // optimistic: UI will update on snapshot
+    const revert = () => setSavedScripts((prev) => [...prev]);
+
+    try {
+      if (wasSaved) {
+        // Unsave: find the matching savedScript and delete
+        const match = savedScripts.find(
+          (s) =>
+            s.scriptId === script.id &&
+            (s.versionNumber === versionNumber ||
+              getVersionStr(s) === String(versionNumber))
+        );
+        if (match)
+          await deleteDoc(doc(db, "users", u.uid, "savedScripts", match.id));
+      } else {
+        // Prevent duplicate: check if already exists in Firestore
+        const q = query(
+          collection(db, "users", u.uid, "savedScripts"),
+          // Firestore doesn't support compound unique, so filter client-side
+        );
+        const snapshot = await getDocs(q);
+        const exists = snapshot.docs.some(
+          (docSnap) => {
+            const d = docSnap.data();
+            return (
+              d.scriptId === script.id &&
+              (d.versionNumber === versionNumber ||
+                getVersionStr(d) === String(versionNumber))
+            );
+          }
+        );
+        if (exists) {
+          showToast("This version is already saved.");
+          return;
+        }
+        await addDoc(collection(db, "users", u.uid, "savedScripts"), {
+          scriptId: script.id,
+          title: script.title || "Untitled",
+          version: version,
+          versionNumber: versionNumber,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        });
+      }
+    } catch {
+      revert();
+      showToast("Failed to update saved scripts.");
+    }
+  },
+  [savedVersionSet, savedScripts, showToast]
+);
+  const handleUnsaveBySavedId = useCallback(
+    async (savedDocId) => {
+      const db = getFirestore();
+      const auth = getAuth();
+      if (!auth.currentUser) return;
+      const userId = auth.currentUser.uid;
+      try {
+        await deleteDoc(doc(db, "users", userId, "savedScripts", savedDocId));
+      } catch (err) {
+        showToast("Failed to unsave script: " + err.message);
+      }
+    },
+    [showToast]
   );
 
-  // --- Empty state skeleton shimmer ---
+  const handleCreateChatLocal = useCallback(() => {
+    window.dispatchEvent(new CustomEvent("nexus:startDraft"));
+    setSelectedChatId(null);
+    if (isMobile && typeof onSelect === "function") onSelect();
+  }, [isMobile, onSelect]);
+
+  const handleRenameChatCommit = useCallback(
+    async (id, title) => {
+      const t = (title || "").trim();
+      if (!t) return;
+
+      if (onRenameChat) {
+        await onRenameChat(id, t);
+        return;
+      }
+
+      const db = getFirestore();
+      const auth = getAuth();
+      if (!auth.currentUser) return;
+
+      await updateDoc(doc(db, "users", auth.currentUser.uid, "chats", id), {
+        title: t,
+        updatedAt: serverTimestamp(),
+      });
+    },
+    [onRenameChat]
+  );
+
+  const handleDeleteChatConfirm = useCallback(async () => {
+    setChatDeleteLoading(true);
+
+    const db = getFirestore();
+    const auth = getAuth();
+    const userId = auth.currentUser?.uid;
+
+    if (onDeleteChat && deleteChatId) {
+      await onDeleteChat(deleteChatId);
+    } else if (userId && deleteChatId) {
+      await deleteDoc(doc(db, "users", userId, "chats", deleteChatId));
+    }
+
+    // Delete all scripts associated with this chat (but DO NOT delete savedScripts)
+    if (userId && deleteChatId) {
+      const scriptsRef = collection(db, "users", userId, "scripts");
+      const scriptsQuery = query(scriptsRef);
+      const scriptsSnap = await getDocs(scriptsQuery);
+      const scriptIdsToDelete = [];
+      scriptsSnap.forEach((docSnap) => {
+        const data = docSnap.data();
+        if (data.chatId === deleteChatId) {
+          scriptIdsToDelete.push(docSnap.id);
+        }
+      });
+
+      await Promise.all(
+        scriptIdsToDelete.map((scriptId) =>
+          deleteDoc(doc(db, "users", userId, "scripts", scriptId))
+        )
+      );
+    }
+
+    setChatDeleteLoading(false);
+    if (selectedChatId === deleteChatId) setSelectedChatId(null);
+    setDeleteChatId(null);
+  }, [onDeleteChat, deleteChatId, selectedChatId, savedScripts]);
+
+  const handleOpenChat = useCallback(
+    (chatId) => {
+      setSelectedChatId(chatId);
+      window.dispatchEvent(
+        new CustomEvent("nexus:openChat", { detail: { id: chatId } })
+      );
+      if (isMobile && typeof onSelect === "function") onSelect();
+    },
+    [isMobile, onSelect]
+  );
+
+  // --- Keydown handler for list actions ---
+  const scriptsContainerRef = useRef(null);
+  useEffect(() => {
+    const el = scriptsContainerRef.current;
+    if (!el) return;
+    const onKey = (e) => {
+      const active = document.activeElement;
+      if (!active || !el.contains(active)) return;
+      const id = active.getAttribute("data-id");
+      if (!id) return;
+      if (e.key === "F2") {
+        e.preventDefault();
+        setRenamingScriptId(id);
+        const script = filteredScripts.find((s) => s.id === id);
+        setRenameScriptTitle(script?.title || "");
+      }
+      if (e.key === "Delete") {
+        e.preventDefault();
+        setDeleteScriptId(id);
+      }
+    };
+    el.addEventListener("keydown", onKey);
+    return () => el.removeEventListener("keydown", onKey);
+  }, [filteredScripts]);
+
+  // --- Render skeleton shimmer ---
   const renderSkeleton = () => (
     <div className="animate-pulse flex items-center justify-between px-3 py-2 rounded-lg border border-gray-700 bg-gray-900/40">
       <div className="flex-1 min-w-0">
@@ -228,298 +754,7 @@ useEffect(() => {
     </div>
   );
 
-  // --- Chats state (Firestore) ---
-  const [chats, setChats] = useState([]);
-  const [selectedChatId, setSelectedChatId] = useState(null);
-  const [chatSearch, setChatSearch] = useState("");
-  const [renamingChatId, setRenamingChatId] = useState(null);
-  const [renameChatTitle, setRenameChatTitle] = useState("");
-  const [deleteChatId, setDeleteChatId] = useState(null);
-  const [chatDeleteLoading, setChatDeleteLoading] = useState(false);
-
-// Firestore: subscribe to chats for current user (READS)
-useEffect(() => {
-  const db = getFirestore();
-  const auth = getAuth();
-  let unsubSnapshot = null; // <-- plain JS, no TS annotation
-
-  const unsubAuth = onAuthStateChanged(auth, (u) => {
-    if (unsubSnapshot) { unsubSnapshot(); unsubSnapshot = null; }
-    if (!u) { setChats([]); return; }
-
-    const chatsRef = collection(db, "users", u.uid, "chats");
-    const qChats = query(chatsRef, orderBy("updatedAt", "desc"));
-    unsubSnapshot = onSnapshot(
-      qChats,
-      (snap) => {
-        const arr = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-        setChats(arr);
-      },
-      (err) => console.error("chats onSnapshot error:", err)
-    );
-  });
-
-  return () => {
-    if (unsubSnapshot) unsubSnapshot();
-    unsubAuth();
-  };
-}, []);
-
-
-
-
-  // Firestore: subscribe to saved scripts
-useEffect(() => {
-  const db = getFirestore();
-  const auth = getAuth();
-  let unsubSnapshot = null;
-
-  const unsubAuth = onAuthStateChanged(auth, (u) => {
-    if (unsubSnapshot) { unsubSnapshot(); unsubSnapshot = null; }
-    if (!u) { setSavedScripts([]); return; }
-
-    const savedRef = collection(db, "users", u.uid, "savedScripts");
-    const qSaved = query(savedRef, orderBy("updatedAt", "desc"));
-    unsubSnapshot = onSnapshot(qSaved, (snap) => {
-      const arr = [];
-      snap.forEach((docSnap) => arr.push({ id: docSnap.id, ...docSnap.data() }));
-      setSavedScripts(arr);
-    });
-
-    // Listen for save events from ScriptLoadingBarContainer
-    window.addEventListener("nexus:sidebarSaveScript", async (e) => {
-      const { code, title, version, language, scriptId, chatId } = e.detail || {};
-      if (!code) return;
-      // Save to Firestore savedScripts
-      await addDoc(collection(db, "users", u.uid, "savedScripts"), {
-        scriptId: scriptId || null,
-        chatId: chatId || null,
-        code,
-        title: title || "Untitled",
-        version: version || "",
-        language: language || "lua",
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-      });
-    });
-  });
-
-  return () => {
-    if (unsubSnapshot) unsubSnapshot();
-    unsubAuth();
-    window.removeEventListener("nexus:sidebarSaveScript", () => {});
-  };
-}, []);
-
-// Writer: upsert chats on activity (KEEP ONLY THIS ONE)
-useEffect(() => {
-  const db = getFirestore();
-  const auth = getAuth();
-
-  const onActivity = async (e) => {
-    const { id, title, lastMessage } = e.detail || {};
-    const u = auth.currentUser;
-    if (!id || !u) return;
-
-    const chatRef = doc(db, "users", u.uid, "chats", id);
-    const updates = {
-      ...(title !== undefined ? { title: (title ?? "").trim() || "Untitled chat" } : {}),
-      ...(lastMessage !== undefined ? { lastMessage } : {}),
-      updatedAt: serverTimestamp(),
-    };
-
-    try {
-      await updateDoc(chatRef, updates);
-    } catch (err) {
-      await setDoc(
-        chatRef,
-        {
-          title: (title ?? "").trim() || "Untitled chat",
-          lastMessage: lastMessage ?? "",
-          createdAt: serverTimestamp(),
-          ...updates,
-        },
-        { merge: true }
-      );
-    }
-  };
-
-  window.addEventListener("nexus:chatActivity", onActivity);
-  return () => window.removeEventListener("nexus:chatActivity", onActivity);
-}, []);
-
-
-  // Derived: filtered/sorted chats
-  const filteredChats = useMemo(() => {
-    const list = Array.isArray(chats) ? chats : [];
-    const q = chatSearch.trim().toLowerCase();
-    const filtered = q
-      ? list.filter(
-          (c) =>
-            (c.title || "").toLowerCase().includes(q) ||
-            (c.lastMessage || "").toLowerCase().includes(q)
-        )
-      : list;
-    return filtered.slice().sort((a, b) => {
-      const au = Number(+toJsDate(a.updatedAt || a.createdAt || 0)) || 0;
-      const bu = Number(+toJsDate(b.updatedAt || b.createdAt || 0)) || 0;
-      return bu - au;
-    });
-  }, [chats, chatSearch]);
-
-// Which script versions are saved (by scriptId + version)
-const savedVersionSet = useMemo(() => {
-  const s = new Set();
-  for (const row of savedScripts) {
-    if (row.scriptId && row.version) s.add(`${row.scriptId}__${row.version}`);
-  }
-  return s;
-}, [savedScripts]);
-
-// For quick lookup by scriptId (for "any version saved" logic)
-const savedScriptIdSet = useMemo(() => {
-  const s = new Set();
-  for (const row of savedScripts) {
-    if (row.scriptId) s.add(row.scriptId);
-  }
-  return s;
-}, [savedScripts]);
-
-  // Filtered Saved Scripts list
-// Filtered Saved Scripts list (show each saved version as a separate row)
-const filteredSavedScripts = useMemo(() => {
-  const q = savedSearch.trim().toLowerCase();
-  const list = Array.isArray(savedScripts) ? savedScripts : [];
-  const filtered = q
-    ? list.filter((s) =>
-        (s.title || "").toLowerCase().includes(q) ||
-        String(s.version || "").toLowerCase().includes(q)
-      )
-    : list;
-  // Sort by updatedAt, then by title, then by version (as string)
-  return filtered.slice().sort((a, b) => {
-    const au = Number(+toJsDate(a.updatedAt || a.createdAt || 0)) || 0;
-    const bu = Number(+toJsDate(b.updatedAt || b.createdAt || 0)) || 0;
-    if (bu !== au) return bu - au;
-    const at = (a.title || "").localeCompare(b.title || "");
-    if (at !== 0) return at;
-    return String(a.version || "").localeCompare(String(b.version || ""));
-  });
-}, [savedScripts, savedSearch]);
-
-  // Handlers
-  const handleCreateChatLocal = useCallback(() => {
-    // no Firestore writes here — just tell the container to reset to a draft
-    window.dispatchEvent(new CustomEvent("nexus:startDraft"));
-    setSelectedChatId(null);
-    if (isMobile && typeof onSelect === "function") onSelect();
-  }, [isMobile, onSelect]);
-
-const handleRenameChatCommit = useCallback(async (id, title) => {
-  const t = (title || "").trim();
-  if (!t) return;
-
-  if (onRenameChat) {
-    await onRenameChat(id, t);
-    return;
-  }
-
-  const db = getFirestore();
-  const auth = getAuth();
-  if (!auth.currentUser) return;
-
-  await updateDoc(doc(db, "users", auth.currentUser.uid, "chats", id), {
-    title: t,
-    updatedAt: serverTimestamp(),
-  });
-}, [onRenameChat]);
-
-  const handleDeleteChatConfirm = useCallback(async () => {
-  setChatDeleteLoading(true);
-
-  const db = getFirestore();
-  const auth = getAuth();
-  const userId = auth.currentUser?.uid;
-
-  if (onDeleteChat && deleteChatId) {
-    await onDeleteChat(deleteChatId);
-  } else if (userId && deleteChatId) {
-    await deleteDoc(doc(db, "users", userId, "chats", deleteChatId));
-  }
-
-  // Delete all scripts associated with this chat (but DO NOT delete savedScripts)
-if (userId && deleteChatId) {
-  // Delete scripts with chatId === deleteChatId
-  const scriptsRef = collection(db, "users", userId, "scripts");
-  const scriptsQuery = query(scriptsRef);
-  const scriptsSnap = await getDocs(scriptsQuery);
-  const scriptIdsToDelete = [];
-  scriptsSnap.forEach((docSnap) => {
-    const data = docSnap.data();
-    if (data.chatId === deleteChatId) {
-      scriptIdsToDelete.push(docSnap.id);
-    }
-  });
-
-  // Delete scripts
-  await Promise.all(
-    scriptIdsToDelete.map((scriptId) =>
-      deleteDoc(doc(db, "users", userId, "scripts", scriptId))
-    )
-  );
-
-  // DO NOT delete savedScripts! Saved scripts are independent and should remain.
-}
-
-  setChatDeleteLoading(false);
-  if (selectedChatId === deleteChatId) setSelectedChatId(null);
-  setDeleteChatId(null);
-}, [onDeleteChat, deleteChatId, selectedChatId, savedScripts]);
-
-  const handleOpenChat = useCallback((chatId) => {
-    setSelectedChatId(chatId);
-    window.dispatchEvent(new CustomEvent("nexus:openChat", { detail: { id: chatId } }));
-    if (isMobile && typeof onSelect === "function") onSelect();
-  }, [isMobile, onSelect]);
-
-  // Toggle save on a script from the Scripts tab
-const handleToggleSaveScript = useCallback(async (script) => {
-  if (!script || !script.id) return;
-  const db = getFirestore();
-  const auth = getAuth();
-  if (!auth.currentUser) return;
-  const userId = auth.currentUser.uid;
-
-  const version = script.version || script.versionNumber || "";
-  const saveKey = `${script.id}__${version}`;
-  const isSaved = savedVersionSet.has(saveKey);
-
-  if (isSaved) {
-    const match = savedScripts.find((s) => s.scriptId === script.id && (s.version === version));
-    if (!match) return;
-    await deleteDoc(doc(db, "users", userId, "savedScripts", match.id));
-  } else {
-    await addDoc(collection(db, "users", userId, "savedScripts"), {
-      scriptId: script.id,
-      chatId: script.chatId || null,
-      title: script.title || "Untitled",
-      version,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-    });
-  }
-}, [savedVersionSet, savedScripts]);
-
-
-  // Unsave directly from the Saved tab
-  const handleUnsaveBySavedId = useCallback(async (savedDocId) => {
-    const db = getFirestore();
-    const auth = getAuth();
-    if (!auth.currentUser) return;
-    const userId = auth.currentUser.uid;
-    await deleteDoc(doc(db, "users", userId, "savedScripts", savedDocId));
-  }, []);
-
+  // --- Main Render ---
   return (
     <>
       <div className="flex border-b border-gray-800" role="tablist" aria-label="Sidebar sections">
@@ -529,8 +764,8 @@ const handleToggleSaveScript = useCallback(async (script) => {
           onClick={() => setActiveTab("scripts")}
           role="tab"
           aria-selected={activeTab === "scripts"}
-          aria-controls="panel-scripts"
-          id="tab-scripts"
+          aria-controls={`${tabId}-panel-scripts`}
+          id={`${tabId}-scripts`}
           tabIndex={0}
         />
         <SidebarTab
@@ -539,8 +774,8 @@ const handleToggleSaveScript = useCallback(async (script) => {
           onClick={() => setActiveTab("history")}
           role="tab"
           aria-selected={activeTab === "history"}
-          aria-controls="panel-history"
-          id="tab-history"
+          aria-controls={`${tabId}-panel-history`}
+          id={`${tabId}-history`}
           tabIndex={0}
         />
         <SidebarTab
@@ -549,8 +784,8 @@ const handleToggleSaveScript = useCallback(async (script) => {
           onClick={() => setActiveTab("chats")}
           role="tab"
           aria-selected={activeTab === "chats"}
-          aria-controls="panel-chats"
-          id="tab-chats"
+          aria-controls={`${tabId}-panel-chats`}
+          id={`${tabId}-chats`}
           tabIndex={0}
         />
         <SidebarTab
@@ -559,14 +794,19 @@ const handleToggleSaveScript = useCallback(async (script) => {
           onClick={() => setActiveTab("saved")}
           role="tab"
           aria-selected={activeTab === "saved"}
-          aria-controls="panel-saved"
-          id="tab-saved"
+          aria-controls={`${tabId}-panel-saved`}
+          id={`${tabId}-saved`}
           tabIndex={0}
         />
       </div>
       <div className="flex-grow overflow-y-auto">
         {activeTab === "scripts" && (
-          <div className="p-4" role="tabpanel" id="panel-scripts" aria-labelledby="tab-scripts">
+          <div
+            className="p-4"
+            role="tabpanel"
+            id={`${tabId}-panel-scripts`}
+            aria-labelledby={`${tabId}-scripts`}
+          >
             <div className="flex items-center justify-between mb-2">
               <span className="font-bold text-lg text-[#00f5d4]">Your Scripts</span>
               <button
@@ -595,17 +835,22 @@ const handleToggleSaveScript = useCallback(async (script) => {
                 className="flex-1 rounded bg-gray-800 border border-gray-700 px-2 py-1 text-sm text-white"
                 placeholder="Search scripts..."
                 value={localSearch}
-                onChange={handleSearchChange}
+                onChange={(e) => setLocalSearch(e.target.value)}
                 aria-label="Search scripts"
               />
             </div>
-            <div className="space-y-2">
+            <div
+              className="space-y-2"
+              ref={scriptsContainerRef}
+              tabIndex={-1}
+              aria-live="polite"
+            >
               {scripts === undefined ? (
                 <>
                   {renderSkeleton()}
                   {renderSkeleton()}
                 </>
-              ) : (filteredScripts ?? []).length === 0 && scripts.length > 0 ? (
+              ) : filteredScripts.length === 0 && scripts.length > 0 ? (
                 <div className="text-gray-400 text-sm flex items-center gap-2">
                   No scripts match your search.
                   <button
@@ -618,156 +863,66 @@ const handleToggleSaveScript = useCallback(async (script) => {
                     Clear search
                   </button>
                 </div>
+              ) : filteredScripts.length > 60 ? (
+                <List
+                  height={400}
+                  itemCount={filteredScripts.length}
+                  itemSize={56}
+                  width="100%"
+                  style={{ background: "transparent" }}
+                >
+                  {({ index, style }) => {
+                    const script = filteredScripts[index];
+                    return (
+                      <div style={style} key={keyForScript(script)}>
+                        <ScriptRow
+                          script={script}
+                          isSelected={currentScriptId === script.id}
+                          onSelect={() => handleScriptSelect(script.id)}
+                          onRename={(id, title) => {
+                            setRenamingScriptId(id);
+                            setRenameScriptTitle(title);
+                          }}
+                          onDelete={setDeleteScriptId}
+                          onToggleSave={handleToggleSaveScript}
+                          isSaved={savedVersionSet.has(keyForScript(script))}
+                          renaming={renamingScriptId === script.id}
+                          renameValue={renameScriptTitle}
+                          setRenameValue={setRenameScriptTitle}
+                          onRenameCommit={async (id, title) => {
+                            await handleRenameScript(id, title);
+                            setRenamingScriptId(null);
+                          }}
+                          onRenameCancel={() => setRenamingScriptId(null)}
+                        />
+                      </div>
+                    );
+                  }}
+                </List>
               ) : (
-                (filteredScripts ?? []).map((script) => {
-                  const version = script.version || script.versionNumber || "";
-                  const saveKey = `${script.id}__${version}`;
-                  const isSaved = savedVersionSet.has(saveKey);
-                  return (
-                    <button
-                      type="button"
-                      key={script.id + "__" + version}
-                      className={`w-full flex items-center justify-between px-3 py-2 rounded-lg border ${
-                        currentScriptId === script.id
-                          ? "border-[#00f5d4] bg-gray-800/60"
-                          : "border-gray-700 bg-gray-900/40"
-                      } transition-colors text-left group`}
-                      aria-pressed={currentScriptId === script.id}
-                      tabIndex={0}
-                      role="button"
-                      aria-label={`Select script ${script.title || "Untitled"}`}
-                      onClick={() => handleScriptSelect(script.id)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" || e.key === " ") {
-                          e.preventDefault();
-                          handleScriptSelect(script.id);
-                        }
-                        if (e.key === "Delete") {
-                          e.preventDefault();
-                          setDeleteScriptId(script.id);
-                        }
-                        if (e.key === "F2") {
-                          e.preventDefault();
-                          setRenamingScriptId(script.id);
-                          setRenameScriptTitle(script.title || "");
-                        }
-                      }}
-                      title={`Select script\nF2: Rename • Delete: Delete`}
-                    >
-                      <div className="flex-1 min-w-0">
-                        {renamingScriptId === script.id ? (
-                          <input
-                            className="bg-gray-800 border border-gray-700 rounded px-2 py-1 text-white w-full"
-                            value={renameScriptTitle}
-                            onChange={(e) => setRenameScriptTitle(e.target.value)}
-                            autoFocus
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter") {
-                                e.stopPropagation();
-                                if (renameScriptTitle.trim()) {
-                                  handleRenameScript(script.id, renameScriptTitle.trim());
-                                }
-                                setRenamingScriptId(null);
-                              }
-                              if (e.key === "Escape") {
-                                e.stopPropagation();
-                                setRenamingScriptId(null);
-                              }
-                            }}
-                            onBlur={() => {
-                              if (renameScriptTitle.trim()) handleRenameScript(renamingScriptId, renameScriptTitle.trim());
-                              setRenamingScriptId(null);
-                            }}
-                            aria-label="Rename script"
-                          />
-                        ) : (
-                          <span
-                            className="font-semibold text-white truncate block max-w-[12rem] md:max-w-[16rem]"
-                            title={script.title || "Untitled"}
-                          >
-                            {script.title || "Untitled"}
-                            {version && (
-                              <span className="inline-block px-2 py-0.5 rounded bg-[#9b5de5]/20 text-[#9b5de5] text-xs font-semibold ml-2">
-                                v{version}
-                              </span>
-                            )}
-                          </span>
-                        )}
-                        <div className="text-xs text-gray-400">
-                          {script.updatedAt && (
-                            <span
-                              title={toJsDate(script.updatedAt)?.toLocaleString()}
-                            >
-                              Last updated: {fromNow(script.updatedAt)}
-                            </span>
-                          )}
-                          <span className="ml-2 text-[10px] text-gray-500 hidden group-hover:inline">
-                            (F2: Rename • Delete: Delete)
-                          </span>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-1 ml-2">
-                        <button
-                          className="p-1 rounded hover:bg-gray-700"
-                          title={isSaved ? "Unsave" : "Save"}
-                          tabIndex={-1}
-                          aria-label={isSaved ? "Unsave script" : "Save script"}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleToggleSaveScript(script);
-                          }}
-                        >
-                          {isSaved
-                            ? <Bookmark className="h-4 w-4 text-[#00f5d4]" />
-                            : <Bookmark className="h-4 w-4 text-gray-400" />}
-                        </button>
-                        {renamingScriptId === script.id ? (
-                          <button
-                            className="p-1 rounded hover:bg-gray-700"
-                            title="Save"
-                            tabIndex={-1}
-                            aria-label="Save script name"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (renameScriptTitle.trim()) {
-                                handleRenameScript(script.id, renameScriptTitle.trim());
-                              }
-                              setRenamingScriptId(null);
-                            }}
-                          >
-                            <Check className="h-4 w-4 text-green-400" />
-                          </button>
-                        ) : (
-                          <button
-                            className="p-1 rounded hover:bg-gray-700"
-                            title="Rename"
-                            tabIndex={-1}
-                            aria-label="Rename script"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setRenamingScriptId(script.id);
-                              setRenameScriptTitle(script.title || "");
-                            }}
-                          >
-                            <Edit className="h-4 w-4 text-gray-400" />
-                          </button>
-                        )}
-                        <button
-                          className="p-1 rounded hover:bg-gray-700"
-                          title="Delete"
-                          tabIndex={-1}
-                          aria-label="Delete script"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setDeleteScriptId(script.id);
-                          }}
-                        >
-                          <Trash2 className="h-4 w-4 text-gray-400" />
-                        </button>
-                      </div>
-                    </button>
-                  );
-                })
+                filteredScripts.map((script) => (
+                  <ScriptRow
+                    key={keyForScript(script)}
+                    script={script}
+                    isSelected={currentScriptId === script.id}
+                    onSelect={() => handleScriptSelect(script.id)}
+                    onRename={(id, title) => {
+                      setRenamingScriptId(id);
+                      setRenameScriptTitle(title);
+                    }}
+                    onDelete={setDeleteScriptId}
+                    onToggleSave={handleToggleSaveScript}
+                    isSaved={savedVersionSet.has(keyForScript(script))}
+                    renaming={renamingScriptId === script.id}
+                    renameValue={renameScriptTitle}
+                    setRenameValue={setRenameScriptTitle}
+                    onRenameCommit={async (id, title) => {
+                      await handleRenameScript(id, title);
+                      setRenamingScriptId(null);
+                    }}
+                    onRenameCancel={() => setRenamingScriptId(null)}
+                  />
+                ))
               )}
             </div>
             {/* Add Script Modal */}
@@ -832,13 +987,20 @@ const handleToggleSaveScript = useCallback(async (script) => {
           </div>
         )}
 
-        
-
         {activeTab === "history" && (
-          <div className="p-4" role="tabpanel" id="panel-history" aria-labelledby="tab-history">
+          <div
+            className="p-4"
+            role="tabpanel"
+            id={`${tabId}-panel-history`}
+            aria-labelledby={`${tabId}-history`}
+          >
             <button
               onClick={() => {
-                if (window.confirm("Clear this conversation? This cannot be undone.")) {
+                if (
+                  window.confirm(
+                    "Clear this conversation? This cannot be undone."
+                  )
+                ) {
                   handleClearChat();
                 }
               }}
@@ -850,116 +1012,135 @@ const handleToggleSaveScript = useCallback(async (script) => {
             </button>
             {/* Version History for Current Script */}
             <div className="mt-6">
-<div className="flex items-center justify-between mb-2">
-  <div className="flex items-center gap-2">
-    <MessageCircle className="h-4 w-4 text-[#00f5d4]" />
-    <span className="font-bold text-[#00f5d4]">Version History</span>
-  </div>
-
-</div>
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <MessageCircle className="h-4 w-4 text-[#00f5d4]" />
+                  <span className="font-bold text-[#00f5d4]">
+                    Version History
+                  </span>
+                </div>
+              </div>
               {(!versionHistory || versionHistory.length === 0) && (
                 <div className="text-gray-400 text-sm">
                   No versions for this script yet. Generate your first version by submitting a prompt on the AI Console.
                 </div>
               )}
-              <div className="space-y-2">
+              <div className="space-y-2" aria-live="polite">
                 {(versionHistory ?? []).map((ver, vIdx) => {
-  const version = ver.versionNumber || ver.version || "";
-  const saveKey = `${currentScriptId}__${version}`;
-  const isSaved = savedVersionSet.has(saveKey);
-  return (
-    <button
-      key={keyFor(ver, vIdx)}
-      className={`w-full flex items-center justify-between px-3 py-2 border-b border-gray-800 last:border-b-0 hover:bg-gray-800 transition-colors rounded text-left group`}
-      style={{ background: (currentScript?.versionNumber === version || currentScript?.version === version) ? "rgba(0,245,212,0.08)" : undefined }}
-      onClick={() => {
-        // Show this version as the current script
-        if (typeof onVersionView === "function") {
-          onVersionView(ver);
-        }
-      }}
-      tabIndex={0}
-      aria-label={`Show version ${version}`}
-      onKeyDown={e => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          if (typeof onVersionView === "function") {
-            onVersionView(ver);
-          }
-        }
-      }}
-    >
-      <div className="flex flex-col flex-1 min-w-0">
-        <div className="flex items-center gap-2">
-          <span className="font-semibold text-[#00f5d4] truncate block max-w-[10rem] md:max-w-[14rem]" title={ver.title || "Untitled"}>
-            {ver.title || "Untitled"}
-          </span>
-          {version ? (
-            <span className="inline-block px-2 py-0.5 rounded bg-[#9b5de5]/20 text-[#9b5de5] text-xs font-semibold ml-1">
-              v{version}
-            </span>
-          ) : null}
-        </div>
-        <span className="text-xs text-gray-400" title={ver.createdAt ? toJsDate(ver.createdAt)?.toLocaleString() : undefined}>
-          {ver.createdAt ? fromNow(ver.createdAt) : ""}
-        </span>
-      </div>
-      <div className="flex items-center gap-1 ml-2">
-        <button
-          className="p-1 rounded hover:bg-gray-700"
-          title={isSaved ? "Unsave script" : "Save script"}
-          aria-label={isSaved ? "Unsave script" : "Save script"}
-          onClick={e => {
-            e.stopPropagation();
-            handleToggleSaveScript({
-              id: currentScriptId,
-              title: ver.title || "Untitled",
-              version,
-              chatId: currentScript?.chatId ?? null,
-            });
-          }}
-        >
-          {isSaved ? (
-            <BookmarkCheck className="h-4 w-4 text-[#00f5d4]" />
-          ) : (
-            <Bookmark className="h-4 w-4 text-gray-400" />
-          )}
-        </button>
-        <button
-          className="p-1 rounded hover:bg-gray-700"
-          title="View"
-          aria-label="View version"
-          onClick={e => {
-            e.stopPropagation();
-            if (typeof onVersionView === "function") {
-              onVersionView(ver);
-            }
-          }}
-        >
-          <Eye className="h-4 w-4 text-[#00f5d4]" />
-        </button>
-        <button
-          className="p-1 rounded hover:bg-gray-700"
-          title="Download"
-          aria-label="Download version"
-          onClick={e => {
-            e.stopPropagation();
-            memoOnVersionDownload(ver);
-          }}
-        >
-          <Download className="h-4 w-4 text-gray-400" />
-        </button>
-      </div>
-    </button>
-  );
-})}
+                  const version = getVersionStr(ver);
+                  const saveKey = `${currentScriptId}__${version}`;
+                  const isSaved = savedVersionSet.has(saveKey);
+                  const isSelected =
+                    selectedVersionId === version ||
+                    selectedVersionId === ver.id ||
+                    selectedVersionId === saveKey;
+                  return (
+                    <button
+                      key={keyForScript({ ...ver, id: currentScriptId })}
+                      className={`w-full flex items-center justify-between px-3 py-2 border-b border-gray-800 last:border-b-0 hover:bg-gray-800 transition-colors rounded text-left group ${
+                        isSelected ? "bg-[#00f5d4]/10" : ""
+                      }`}
+                      style={{
+                        background: isSelected
+                          ? "rgba(0,245,212,0.08)"
+                          : undefined,
+                      }}
+                      onClick={() => {
+                        if (typeof onVersionView === "function") {
+                          onVersionView(ver);
+                        }
+                      }}
+                      tabIndex={0}
+                      aria-label={`Show version ${version}`}
+                    >
+                      <div className="flex flex-col flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span
+                            className="font-semibold text-[#00f5d4] truncate block max-w-[10rem] md:max-w-[14rem]"
+                            title={ver.title || "Untitled"}
+                          >
+                            {ver.title || "Untitled"}
+                          </span>
+                          {version ? (
+                            <span className="inline-block px-2 py-0.5 rounded bg-[#9b5de5]/20 text-[#9b5de5] text-xs font-semibold ml-1">
+                              v{version}
+                            </span>
+                          ) : null}
+                        </div>
+                        <span
+                          className="text-xs text-gray-400"
+                          title={
+                            ver.createdAt
+                              ? new Date(ver.createdAt).toLocaleString()
+                              : undefined
+                          }
+                        >
+                          {ver.createdAt ? fromNow(ver.createdAt) : ""}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1 ml-2">
+                        <button
+                          className="p-1 rounded hover:bg-gray-700"
+                          title={isSaved ? "Unsave script" : "Save script"}
+                          aria-label={isSaved ? "Unsave script" : "Save script"}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleToggleSaveScript({
+                              id: currentScriptId,
+                              title: ver.title || "Untitled",
+                              version,
+                              chatId: currentScript?.chatId ?? null,
+                            });
+                          }}
+                        >
+                          {isSaved ? (
+                            <BookmarkCheck className="h-4 w-4 text-[#00f5d4]" />
+                          ) : (
+                            <Bookmark className="h-4 w-4 text-gray-400" />
+                          )}
+                        </button>
+                        <button
+                          className="p-1 rounded hover:bg-gray-700"
+                          title="View"
+                          aria-label="View version"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (typeof onVersionView === "function") {
+                              onVersionView(ver);
+                            }
+                          }}
+                        >
+                          <Eye className="h-4 w-4 text-[#00f5d4]" />
+                        </button>
+                        <button
+                          className="p-1 rounded hover:bg-gray-700"
+                          title="Download"
+                          aria-label="Download version"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (typeof onVersionDownload === "function") {
+                              onVersionDownload(ver);
+                            }
+                          }}
+                        >
+                          <Download className="h-4 w-4 text-gray-400" />
+                        </button>
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
             </div>
           </div>
         )}
 
         {activeTab === "chats" && (
-          <div className="p-4" role="tabpanel" id="panel-chats" aria-labelledby="tab-chats">
+          <div
+            className="p-4"
+            role="tabpanel"
+            id={`${tabId}-panel-chats`}
+            aria-labelledby={`${tabId}-chats`}
+          >
             <div className="flex items-center justify-between mb-2">
               <span className="font-bold text-lg text-[#00f5d4]">Your Chats</span>
               <button
@@ -995,131 +1176,115 @@ const handleToggleSaveScript = useCallback(async (script) => {
               />
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-2" aria-live="polite">
               {(filteredChats ?? []).map((c) => (
-  <button
-    type="button"
-    key={c.id}
-    className={`w-full flex items-center justify-between px-3 py-2 rounded-lg border ${
-      selectedChatId === c.id
-        ? "border-[#00f5d4] bg-gray-800/60"
-        : "border-gray-700 bg-gray-900/40"
-    } transition-colors text-left group`}
-    aria-pressed={selectedChatId === c.id}
-    tabIndex={0}
-    role="button"
-    aria-label={`Open chat ${c.title || "Untitled chat"}`}
-    onClick={() => handleOpenChat(c.id)}
-    onKeyDown={(e) => {
-      if (e.key === "Enter" || e.key === " ") {
-        e.preventDefault();
-        handleOpenChat(c.id);
-      }
-      if (e.key === "Delete") {
-        e.preventDefault();
-        setDeleteChatId(c.id);
-      }
-      if (e.key === "F2") {
-        e.preventDefault();
-        setRenamingChatId(c.id);
-        setRenameChatTitle(c.title || "");
-      }
-    }}
-    title={`Open chat\nF2: Rename • Delete: Delete`}
-  >
-    <div className="flex-1 min-w-0">
-      {renamingChatId === c.id ? (
-        <input
-          className="bg-gray-800 border border-gray-700 rounded px-2 py-1 text-white w-full"
-          value={renameChatTitle}
-          onChange={(e) => setRenameChatTitle(e.target.value)}
-          autoFocus
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              e.stopPropagation();
-              handleRenameChatCommit(c.id, renameChatTitle);
-              setRenamingChatId(null);
-            }
-            if (e.key === "Escape") {
-              e.stopPropagation();
-              setRenamingChatId(null);
-            }
-          }}
-          onBlur={() => {
-            handleRenameChatCommit(renamingChatId, renameChatTitle);
-            setRenamingChatId(null);
-          }}
-          aria-label="Rename chat"
-        />
-      ) : (
-        <span
-          className="font-semibold text-white truncate block max-w-[12rem] md:max-w-[16rem]"
-          title={c.title || "Untitled chat"}
-        >
-          {c.title || "Untitled chat"}
-        </span>
-      )}
-      <div className="text-xs text-gray-400">
-        {c.updatedAt && (
-          <span title={toJsDate(c.updatedAt)?.toLocaleString?.()}>
-            Updated {fromNow(c.updatedAt)}
-          </span>
-        )}
-        {c.lastMessage && (
-          <span className="ml-2 text-gray-500 truncate">
-            {c.lastMessage}
-          </span>
-        )}
-        <span className="ml-2 text-[10px] text-gray-500 hidden group-hover:inline">
-          (F2: Rename • Delete: Delete)
-        </span>
-      </div>
-    </div>
-    <div className="flex items-center gap-1 ml-2">
-      {renamingChatId === c.id ? (
-        <button
-          className="p-1 rounded hover:bg-gray-700"
-          title="Save"
-          tabIndex={-1}
-          aria-label="Save chat name"
-          onClick={(e) => {
-            e.stopPropagation();
-            handleRenameChatCommit(c.id, renameChatTitle);
-            setRenamingChatId(null);
-          }}
-        >
-          <Check className="h-4 w-4 text-green-400" />
-        </button>
-      ) : (
-        <button
-          className="p-1 rounded hover:bg-gray-700"
-          title="Rename"
-          tabIndex={-1}
-          aria-label="Rename chat"
-          onClick={(e) => {
-            e.stopPropagation();
-            setRenamingChatId(c.id);
-            setRenameChatTitle(c.title || "");
-          }}
-        >
-          <Edit className="h-4 w-4 text-gray-400" />
-        </button>
-      )}
-      <button
-        className="p-1 rounded hover:bg-gray-700"
-        title="Delete"
-        tabIndex={-1}
-        aria-label="Delete chat"
-        onClick={(e) => {
-          e.stopPropagation();
-          setDeleteChatId(c.id);
-        }}
-      >
-        <Trash2 className="h-4 w-4 text-gray-400" />
-      </button>
-    </div>
-  </button>
-))}
+                <div
+                  key={c.id}
+                  className={`w-full flex items-center justify-between px-3 py-2 rounded-lg border ${
+                    selectedChatId === c.id
+                      ? "border-[#00f5d4] bg-gray-800/60"
+                      : "border-gray-700 bg-gray-900/40"
+                  } transition-colors text-left group`}
+                  tabIndex={0}
+                  role="row"
+                  aria-selected={selectedChatId === c.id}
+                  data-id={c.id}
+                  aria-label={`Open chat ${c.title || "Untitled chat"}`}
+                  onClick={() => handleOpenChat(c.id)}
+                >
+                  <div className="flex-1 min-w-0">
+                    {renamingChatId === c.id ? (
+                      <input
+                        className="bg-gray-800 border border-gray-700 rounded px-2 py-1 text-white w-full"
+                        value={renameChatTitle}
+                        onChange={(e) => setRenameChatTitle(e.target.value)}
+                        autoFocus
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.stopPropagation();
+                            handleRenameChatCommit(c.id, renameChatTitle);
+                            setRenamingChatId(null);
+                          }
+                          if (e.key === "Escape") {
+                            e.stopPropagation();
+                            setRenamingChatId(null);
+                          }
+                        }}
+                        onBlur={() => {
+                          handleRenameChatCommit(renamingChatId, renameChatTitle);
+                          setRenamingChatId(null);
+                        }}
+                        aria-label="Rename chat"
+                      />
+                    ) : (
+                      <span
+                        className="font-semibold text-white truncate block max-w-[12rem] md:max-w-[16rem]"
+                        title={c.title || "Untitled chat"}
+                      >
+                        {c.title || "Untitled chat"}
+                      </span>
+                    )}
+                    <div className="text-xs text-gray-400">
+                      {c.updatedAt && (
+                        <span title={new Date(c.updatedAt).toLocaleString()}>
+                          Updated {fromNow(c.updatedAt)}
+                        </span>
+                      )}
+                      {c.lastMessage && (
+                        <span className="ml-2 text-gray-500 truncate">
+                          {c.lastMessage}
+                        </span>
+                      )}
+                      <span className="ml-2 text-[10px] text-gray-500 hidden group-hover:inline">
+                        (F2: Rename • Delete: Delete)
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1 ml-2">
+                    {renamingChatId === c.id ? (
+                      <button
+                        className="p-1 rounded hover:bg-gray-700"
+                        title="Save"
+                        tabIndex={-1}
+                        aria-label="Save chat name"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleRenameChatCommit(c.id, renameChatTitle);
+                          setRenamingChatId(null);
+                        }}
+                      >
+                        <Check className="h-4 w-4 text-green-400" />
+                      </button>
+                    ) : (
+                      <button
+                        className="p-1 rounded hover:bg-gray-700"
+                        title="Rename"
+                        tabIndex={-1}
+                        aria-label="Rename chat"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setRenamingChatId(c.id);
+                          setRenameChatTitle(c.title || "");
+                        }}
+                      >
+                        <Edit className="h-4 w-4 text-gray-400" />
+                      </button>
+                    )}
+                    <button
+                      className="p-1 rounded hover:bg-gray-700"
+                      title="Delete"
+                      tabIndex={-1}
+                      aria-label="Delete chat"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setDeleteChatId(c.id);
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4 text-gray-400" />
+                    </button>
+                  </div>
+                </div>
+              ))}
             </div>
 
             {/* Delete Chat Modal */}
@@ -1150,9 +1315,16 @@ const handleToggleSaveScript = useCallback(async (script) => {
         )}
 
         {activeTab === "saved" && (
-          <div className="p-4" role="tabpanel" id="panel-saved" aria-labelledby="tab-saved">
+          <div
+            className="p-4"
+            role="tabpanel"
+            id={`${tabId}-panel-saved`}
+            aria-labelledby={`${tabId}-saved`}
+          >
             <div className="flex items-center justify-between mb-2">
-              <span className="font-bold text-lg text-[#00f5d4]">Saved Scripts</span>
+              <span className="font-bold text-lg text-[#00f5d4]">
+                Saved Scripts
+              </span>
             </div>
 
             {savedScripts.length === 0 && (
@@ -1172,87 +1344,86 @@ const handleToggleSaveScript = useCallback(async (script) => {
               />
             </div>
 
-<div className="space-y-2">
-  {(filteredSavedScripts ?? []).map((row) => (
-    <button
-      key={row.id}
-      type="button"
-      className="w-full flex items-center justify-between px-3 py-2 rounded-lg border border-gray-700 bg-gray-900/40 transition-colors group hover:border-[#00f5d4] hover:bg-gray-800/60 focus:outline-none"
+            <div className="space-y-2" aria-live="polite">
+              {(filteredSavedScripts ?? []).map((row) => (
+<button
+  key={`${row.scriptId || ""}__${getVersionStr(row)}`}
+  type="button"
+  className="w-full flex items-center justify-between px-3 py-2 rounded-lg border border-gray-700 bg-gray-900/40 transition-colors group hover:border-[#00f5d4] hover:bg-gray-800/60 focus:outline-none"
+  title={row.title || "Untitled"}
+  onClick={() => {
+    window.dispatchEvent(
+      new CustomEvent("nexus:openCodeDrawer", {
+        detail: {
+          scriptId: row.scriptId,
+          code: row.code,
+          title: row.title,
+          versionNumber: getVersionStr(row),
+          explanation: row.explanation || "",
+          savedScriptId: `${row.scriptId || ""}__${getVersionStr(row)}`,
+        },
+      })
+    );
+  }}
+  tabIndex={0}
+  aria-label={`Open saved script ${row.title || "Untitled"} v${getVersionStr(row)}`}
+  onKeyDown={(e) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      window.dispatchEvent(
+        new CustomEvent("nexus:openCodeDrawer", {
+          detail: {
+            scriptId: row.scriptId,
+            code: row.code,
+            title: row.title,
+            versionNumber: getVersionStr(row),
+            explanation: row.explanation || "",
+            savedScriptId: `${row.scriptId || ""}__${getVersionStr(row)}`,
+          },
+        })
+      );
+    }
+  }}
+>
+<div className="flex-1 min-w-0 flex flex-col">
+  <div className="flex items-center gap-2">
+    <span
+      className="font-semibold text-white truncate block max-w-[10rem] md:max-w-[14rem]"
       title={row.title || "Untitled"}
-      onClick={() => {
-        window.dispatchEvent(
-          new CustomEvent("nexus:openCodeDrawer", {
-            detail: {
-              scriptId: row.scriptId,
-              code: row.code,
-              title: row.title,
-              version: row.version,
-              explanation: row.explanation || "",
-              savedScriptId: row.id,
-              // Pass any other fields you want to show in the drawer
-            },
-          })
-        );
-      }}
-      tabIndex={0}
-      aria-label={`Open saved script ${row.title || "Untitled"}`}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          window.dispatchEvent(
-            new CustomEvent("nexus:openCodeDrawer", {
-              detail: {
-                scriptId: row.scriptId,
-                code: row.code,
-                title: row.title,
-                version: row.version,
-                explanation: row.explanation || "",
-                savedScriptId: row.id,
-              },
-            })
-          );
-        }
-      }}
     >
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
-          <span
-            className="font-semibold text-white truncate block max-w-[12rem] md:max-w-[16rem]"
-            title={row.title || "Untitled"}
-          >
-            {row.title || "Untitled"}
-            {row.version && (
-              <span className="inline-block px-2 py-0.5 rounded bg-[#9b5de5]/20 text-[#9b5de5] text-xs font-semibold ml-2">
-                v{row.version}
-              </span>
-            )}
-          </span>
-        </div>
-        <div className="text-xs text-gray-400">
-          {row.updatedAt && (
-            <span title={toJsDate(row.updatedAt)?.toLocaleString?.()}>
-              Saved {fromNow(row.updatedAt)}
-            </span>
-          )}
-        </div>
-      </div>
-      <div className="flex items-center gap-1 ml-2">
-        <button
-          className="p-1 rounded hover:bg-gray-700"
-          title="Unsave"
-          tabIndex={-1}
-          aria-label="Unsave script"
-          onClick={(e) => {
-            e.stopPropagation();
-            handleUnsaveBySavedId(row.id);
-          }}
-        >
-          <Bookmark className="h-4 w-4 text-[#00f5d4]" />
-        </button>
-      </div>
-    </button>
-  ))}
+      {row.title || "Untitled"}
+    </span>
+    {getVersionStr(row) && (
+      <span className="inline-block px-2 py-0.5 rounded bg-[#9b5de5]/20 text-[#9b5de5] text-xs font-semibold ml-2">
+        v{getVersionStr(row)}
+      </span>
+    )}
+  </div>
+  <div className="text-xs text-gray-400">
+    {row.updatedAt && (
+      <span title={new Date(row.updatedAt).toLocaleString()}>
+        Saved {fromNow(row.updatedAt)}
+      </span>
+    )}
+  </div>
 </div>
+                  <div className="flex items-center gap-1 ml-2">
+                    <button
+                      className="p-1 rounded hover:bg-gray-700"
+                      title="Unsave"
+                      tabIndex={-1}
+                      aria-label="Unsave script"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleUnsaveBySavedId(row.id);
+                      }}
+                    >
+                      <Bookmark className="h-4 w-4 text-[#00f5d4]" />
+                    </button>
+                  </div>
+                </button>
+              ))}
+            </div>
           </div>
         )}
       </div>
@@ -1265,13 +1436,51 @@ const handleToggleSaveScript = useCallback(async (script) => {
             repeat: Infinity,
             repeatType: "loop",
             duration: 1.4,
-            ease: "easeInOut"
+            ease: "easeInOut",
           }}
           className="w-full flex justify-center"
         >
           {/* You can import and use SubscribeButtonInline here if needed */}
         </motion.div>
       </div>
+      {/* Toast for errors */}
+      {toast && (
+        <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-red-700 text-white px-4 py-2 rounded shadow-lg z-50">
+          {toast}
+          <button
+            className="ml-4 text-white underline"
+            onClick={clearToast}
+            aria-label="Dismiss error"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+      {/* Firestore error surfaces */}
+      {savedErr && (
+        <div className="fixed bottom-16 left-1/2 transform -translate-x-1/2 bg-red-700 text-white px-4 py-2 rounded shadow-lg z-50">
+          Error loading saved scripts: {savedErr}
+          <button
+            className="ml-4 text-white underline"
+            onClick={() => window.location.reload()}
+            aria-label="Retry"
+          >
+            Retry
+          </button>
+        </div>
+      )}
+      {chatErr && (
+        <div className="fixed bottom-24 left-1/2 transform -translate-x-1/2 bg-red-700 text-white px-4 py-2 rounded shadow-lg z-50">
+          Error loading chats: {chatErr}
+          <button
+            className="ml-4 text-white underline"
+            onClick={() => window.location.reload()}
+            aria-label="Retry"
+          >
+            Retry
+          </button>
+        </div>
+      )}
     </>
   );
 }

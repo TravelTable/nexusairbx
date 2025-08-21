@@ -1,4 +1,10 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  useDeferredValue,
+} from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Send,
@@ -19,11 +25,16 @@ import ScriptLoadingBarContainer from "../components/ScriptLoadingBarContainer";
 import WelcomeCard from "../components/WelcomeCard";
 import TokenBar from "../components/TokenBar";
 import CelebrationAnimation from "../components/CelebrationAnimation";
+import OnboardingContainer from "../components/OnboardingContainer";
 import FancyLoadingOverlay from "../components/FancyLoadingOverlay";
 import NotificationToast from "../components/NotificationToast";
 import { v4 as uuidv4 } from "uuid";
-import { normalizeServerVersion, sortDesc, nextVersionNumber, cryptoRandomId } from "../lib/versioning";
-// --- Firestore Imports ---
+import {
+  normalizeServerVersion,
+  sortDesc,
+  nextVersionNumber,
+  cryptoRandomId,
+} from "../lib/versioning";
 import {
   getFirestore,
   doc,
@@ -38,7 +49,7 @@ import {
   updateDoc,
   deleteDoc,
 } from "firebase/firestore";
-
+import { FixedSizeList as List } from "react-window";
 
 // --- Backend API URL ---
 let BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
@@ -55,8 +66,9 @@ const TOKEN_LIMIT = 4;
 const TOKEN_REFRESH_HOURS = 48; // 2 days
 
 // --- Developer Email for Infinite Tokens ---
-const DEVELOPER_EMAIL = "jackt1263@gmail.com"; // CHANGE THIS TO YOUR DEV EMAIL
+const DEV_EMAIL = process.env.REACT_APP_DEV_EMAIL?.toLowerCase() || "dev@example.com";
 
+// --- Model/Creativity/CodeStyle Options ---
 const modelOptions = [
   { value: "nexus-3", label: "Nexus-3 (Legacy, Default)" },
   { value: "nexus-4", label: "Nexus-4 (Fast, Accurate)" },
@@ -107,19 +119,9 @@ function getUserInitials(email) {
     .slice(0, 2);
 }
 
-// --- Model Resolver (distinct) ---
-const resolveModel = (mv) => {
-  switch (mv) {
-    case "nexus-4":
-      return "gpt-4.1-2025-04-14";
-    case "nexus-3":
-      return "gpt-4.1-mini";
-    case "nexus-2":
-      return "gpt-3.5-turbo";
-    default:
-      return "gpt-4.1-2025-04-14";
-  }
-};
+// --- Version Number Helpers ---
+const getVN = (v) => Number(v?.versionNumber ?? v?.version ?? 0);
+const byVN = (a, b) => getVN(b) - getVN(a);
 
 // --- Auth Retry Helper ---
 async function authedFetch(user, url, init = {}, retry = true) {
@@ -133,7 +135,6 @@ async function authedFetch(user, url, init = {}, retry = true) {
     signal: init.signal,
   });
   if (res.status === 401 && retry) {
-    // Try to refresh token and retry once
     await user.getIdToken(true);
     idToken = await user.getIdToken();
     res = await fetch(url, {
@@ -147,6 +148,11 @@ async function authedFetch(user, url, init = {}, retry = true) {
   }
   return res;
 }
+
+
+const [showOnboarding, setShowOnboarding] = useState(
+  localStorage.getItem("nexusrbx:onboardingComplete") !== "true"
+);
 
 // --- Debounce Helper ---
 function useDebounce(value, delay) {
@@ -167,10 +173,10 @@ const toLocalTime = (ts) => {
 
 // --- Safe Filename Helper ---
 const safeFile = (title) =>
-  (title || "Script")
+  ((title || "Script")
     .replace(/[^a-zA-Z0-9_\- ]/g, "")
     .replace(/\s+/g, "_")
-    .slice(0, 40) + ".lua";
+    .slice(0, 40) || "Script") + ".lua";
 
 // --- Outline → Explanation Helper ---
 function outlineToExplanationText(outline = []) {
@@ -184,29 +190,27 @@ function outlineToExplanationText(outline = []) {
     .join("\n\n");
 }
 
-// --- Polling Utility ---
-async function pollJob(
-  user,
-  jobId,
-  onTick,
-  { intervalMs = 1200, maxMs = 120000, signal } = {}
-) {
-  const started = Date.now();
-  let status = "running";
-  while (Date.now() - started < maxMs) {
+// --- Polling Utility (with Retry-After, abort, backoff) ---
+async function pollJob(user, jobId, onTick, { signal }) {
+  let delay = 1200;
+  while (true) {
     if (signal?.aborted) throw new Error("Aborted");
     const res = await authedFetch(
       user,
       `${BACKEND_URL}/api/jobs/${jobId}`,
       { method: "GET", signal }
     );
-    const data = await res.json().catch(() => ({}));
-    if (onTick) onTick(data);
-    status = data.status;
-    if (status === "succeeded" || status === "failed") return data;
-    await new Promise((r) => setTimeout(r, intervalMs));
+    if (res.status === 429) {
+      const ra = Number(res.headers.get("Retry-After")) || 2;
+      await new Promise((r) => setTimeout(r, ra * 1000));
+      continue;
+    }
+    const data = await res.json();
+    onTick?.(data);
+    if (data.status === "succeeded" || data.status === "failed") return data;
+    await new Promise((r) => setTimeout(r, delay));
+    delay = Math.min(delay + 300, 3000);
   }
-  return { status: "failed", error: "Timeout" };
 }
 
 // --- Safe localStorage helpers ---
@@ -266,16 +270,28 @@ export default function NexusRBXAIPageContainer() {
   const [showCelebration, setShowCelebration] = useState(false);
   const [notifications, setNotifications] = useState([]);
 
-    // --- Notification Helper (now has access to setNotifications) ---
+  // --- Notification Helper (deduped) ---
   const notify = useCallback(
     ({ message, type = "info", duration = 4000 }) => {
-      setNotifications((prev) => [
-        ...prev,
-        { id: uuidv4(), message, type, duration }
-      ]);
+      setNotifications((prev) => {
+        if (prev.some((n) => n.message === message && n.type === type)) return prev;
+        return [...prev, { id: uuidv4(), message, type, duration }];
+      });
     },
     [setNotifications]
   );
+
+
+  // Hide onboarding when finished (listen for reload or localStorage change)
+  useEffect(() => {
+    function handleStorage() {
+      if (localStorage.getItem("nexusrbx:onboardingComplete") === "true") {
+        setShowOnboarding(false);
+      }
+    }
+    window.addEventListener("storage", handleStorage);
+    return () => window.removeEventListener("storage", handleStorage);
+  }, []);
 
   // --- Loading Bar ---
   const [loadingBarVisible, setLoadingBarVisible] = useState(false);
@@ -328,18 +344,28 @@ export default function NexusRBXAIPageContainer() {
   const versionsBackoffRef = useRef(0);
   const versionsEtagRef = useRef(null);
 
-  // --- Local Persistence for chat/sidebar ---
+  // --- Local Persistence for chat/sidebar (throttled) ---
+  const persist = useRef(0);
+  useEffect(() => {
+    const now = Date.now();
+    if (now - persist.current < 800) return;
+    persist.current = now;
+    safeSet(
+      `nexusrbx:messages:${currentScriptId || "none"}`,
+      messages.map((m) => ({
+        id: m.id,
+        role: m.role,
+        versionId: m.versionId,
+        versionNumber: m.versionNumber,
+      }))
+    );
+  }, [messages, currentScriptId]);
   useEffect(() => {
     if (currentScript) safeSet("nexusrbx:currentScript", currentScript);
   }, [currentScript]);
-
   useEffect(() => {
     safeSet("nexusrbx:versionHistory", versionHistory || []);
   }, [versionHistory]);
-
-  useEffect(() => {
-    safeSet(`nexusrbx:messages:${currentScriptId || "none"}`, messages || []);
-  }, [messages, currentScriptId]);
 
   useEffect(() => {
     const cachedScript = safeGet("nexusrbx:currentScript");
@@ -375,55 +401,58 @@ export default function NexusRBXAIPageContainer() {
     setCurrentChatMeta(null);
   }, [user]);
 
-  // --- Listen for SidebarContent’s open-chat event and start-draft event ---
-  const openChatById = useCallback((chatId) => {
-    const db = getFirestore();
-    const authUser = auth.currentUser;
-    if (!authUser || !chatId) return;
+  // --- Listener cleanup and abort on chat/project switch ---
+  const openChatById = useCallback(
+    (chatId) => {
+      const db = getFirestore();
+      const u = auth.currentUser;
+      if (!u || !chatId) return;
 
-    if (messagesUnsubRef.current) {
-      try {
-        messagesUnsubRef.current();
-      } finally {
-        messagesUnsubRef.current = null;
+      // abort inflight job
+      if (jobAbortRef.current) {
+        try {
+          jobAbortRef.current.abort();
+        } catch {}
+        jobAbortRef.current = null;
       }
-    }
-    if (chatUnsubRef.current) {
-      try {
-        chatUnsubRef.current();
-      } finally {
-        chatUnsubRef.current = null;
-      }
-    }
 
-    setCurrentChatId(chatId);
+      // clean old listeners first
+      messagesUnsubRef.current?.();
+      messagesUnsubRef.current = null;
+      chatUnsubRef.current?.();
+      chatUnsubRef.current = null;
 
-    const chatDocRef = doc(db, "users", authUser.uid, "chats", chatId);
-    chatUnsubRef.current = onSnapshot(chatDocRef, (snap) => {
-      const data = snap.exists() ? { id: snap.id, ...snap.data() } : null;
-      setCurrentChatMeta(data || null);
-      if (data?.projectId) {
-        setCurrentScriptId(data.projectId);
-      }
-    });
+      setCurrentChatId(chatId);
 
-    const msgsRef = collection(db, "users", authUser.uid, "chats", chatId, "messages");
-    const qMsgs = query(msgsRef, orderBy("createdAt", "asc"), limitToLast(200));
-    messagesUnsubRef.current = onSnapshot(qMsgs, (snap) => {
-      const arr = [];
-      snap.forEach((d) => arr.push({ id: d.id, ...d.data() }));
-      const seen = new Set();
-      const unique = arr.filter((m) => {
-        const key = m.clientId || m.id;
-        if (seen.has(key)) return false;
-        seen.add(key);
-        return true;
+      const chatDocRef = doc(db, "users", u.uid, "chats", chatId);
+      chatUnsubRef.current = onSnapshot(chatDocRef, (snap) => {
+        const data = snap.exists() ? { id: snap.id, ...snap.data() } : null;
+        setCurrentChatMeta(data || null);
+        if (data?.projectId) {
+          setCurrentScriptId(data.projectId);
+        }
       });
-      setMessages(unique);
-    });
-  }, [setCurrentScriptId, setMessages]);
+
+      const msgsRef = collection(db, "users", u.uid, "chats", chatId, "messages");
+      const qMsgs = query(msgsRef, orderBy("createdAt", "asc"), limitToLast(200));
+      messagesUnsubRef.current = onSnapshot(qMsgs, (snap) => {
+        const arr = [];
+        snap.forEach((d) => arr.push({ id: d.id, ...d.data() }));
+        const seen = new Set();
+        const unique = arr.filter((m) => {
+          const key = m.clientId || m.id;
+          if (seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        });
+        setMessages(unique);
+      });
+    },
+    [setCurrentScriptId, setMessages]
+  );
 
   useEffect(() => {
+    // window event listeners
     const onOpenChat = (e) => {
       const id = e?.detail?.id;
       if (id) openChatById(id);
@@ -439,16 +468,25 @@ export default function NexusRBXAIPageContainer() {
     };
     window.addEventListener("nexus:openChat", onOpenChat);
     window.addEventListener("nexus:startDraft", onStartDraft);
+
+    // ESC closes mobile sidebars
+    const onKey = (e) => e.key === "Escape" && closeAllMobileSidebars();
+    window.addEventListener("keydown", onKey);
+
     return () => {
       window.removeEventListener("nexus:openChat", onOpenChat);
       window.removeEventListener("nexus:startDraft", onStartDraft);
+      window.removeEventListener("keydown", onKey);
+      messagesUnsubRef.current?.();
+      chatUnsubRef.current?.();
     };
   }, [openChatById]);
 
-  // --- Load Versions for Current Script from Backend ---
+  // --- Load Versions for Current Script from Backend (event-driven, skip if not current) ---
   useEffect(() => {
     if (!authReady) return;
     if (!user || !currentScriptId) return;
+    if (selectedVersion && selectedVersion.projectId && selectedVersion.projectId !== currentScriptId) return;
 
     const now = Date.now();
     const delay = 10000 + (versionsBackoffRef.current || 0);
@@ -487,7 +525,7 @@ export default function NexusRBXAIPageContainer() {
           if (!data) return;
           if (data.versions === null) return;
           const normalized = Array.isArray(data.versions)
-            ? data.versions.map(normalizeServerVersion).sort(sortDesc)
+            ? data.versions.map(normalizeServerVersion).sort(byVN)
             : [];
           if (data.etag) versionsEtagRef.current = data.etag;
           if (normalized.length === 0) return;
@@ -503,7 +541,7 @@ export default function NexusRBXAIPageContainer() {
         })
         .catch(() => setErrorMsg("Failed to load versions."));
     });
-  }, [user, currentScriptId, authReady]);
+  }, [user, currentScriptId, authReady, selectedVersion]);
 
   // --- Prompt Char Count & Error ---
   useEffect(() => {
@@ -515,12 +553,10 @@ export default function NexusRBXAIPageContainer() {
     }
   }, [prompt]);
 
-  // --- Debounced Prompt for Autocomplete ---
-  const debouncedPrompt = useDebounce(prompt, 150);
-
-  // --- Autocomplete logic (debounced) ---
+  // --- Debounced Prompt for Autocomplete (deferred for snappy typing) ---
+  const deferredPrompt = useDeferredValue(prompt);
   useEffect(() => {
-    if (debouncedPrompt.length > 1) {
+    if (deferredPrompt.length > 1 && !isGenerating) {
       const allPrompts = [
         ...promptTemplates,
         ...userPromptTemplates,
@@ -529,15 +565,15 @@ export default function NexusRBXAIPageContainer() {
       const filtered = allPrompts
         .filter(
           (p) =>
-            p.toLowerCase().startsWith(debouncedPrompt.toLowerCase()) &&
-            p.toLowerCase() !== debouncedPrompt.toLowerCase()
+            p.toLowerCase().startsWith(deferredPrompt.toLowerCase()) &&
+            p.toLowerCase() !== deferredPrompt.toLowerCase()
         )
         .slice(0, 5);
       setPromptAutocomplete(filtered);
     } else {
       setPromptAutocomplete([]);
     }
-  }, [debouncedPrompt, promptTemplates, userPromptTemplates, promptHistory]);
+  }, [deferredPrompt, promptTemplates, userPromptTemplates, promptHistory, isGenerating]);
 
   // --- Scroll to bottom on new script or loading bar ---
   const messagesEndRef = useRef(null);
@@ -563,6 +599,7 @@ export default function NexusRBXAIPageContainer() {
         try {
           jobAbortRef.current.abort();
         } catch {}
+        jobAbortRef.current = null;
       }
     };
   }, []);
@@ -597,33 +634,34 @@ export default function NexusRBXAIPageContainer() {
     return chatRef.id;
   }
 
-// --- Sidebar Version Click Handler ---
-const handleVersionView = async (versionObj) => {
-  setErrorMsg("");
-  setSelectedVersion(versionObj);
+  // --- Sidebar Version Click Handler ---
+  const handleVersionView = async (versionObj) => {
+    setErrorMsg("");
+    setSelectedVersion(versionObj);
 
-  // If the version is from a different script/project, switch to that script
-  if (versionObj?.projectId && versionObj.projectId !== currentScriptId) {
-    setCurrentScriptId(versionObj.projectId);
-    setCurrentScript((cs) => ({
-      ...cs,
-      id: versionObj.projectId,
-      title: versionObj?.title || cs?.title || "",
-    }));
-  } else {
-    setCurrentScript((cs) => ({
-      ...cs,
-      title: versionObj?.title || cs?.title || "",
-    }));
-  }
-};
+    if (versionObj?.projectId && versionObj.projectId !== currentScriptId) {
+      setCurrentScriptId(versionObj.projectId);
+      setCurrentScript((cs) => ({
+        ...cs,
+        id: versionObj.projectId,
+        title: versionObj?.title || cs?.title || "",
+      }));
+    } else {
+      setCurrentScript((cs) => ({
+        ...cs,
+        title: versionObj?.title || cs?.title || "",
+      }));
+    }
+  };
 
   // --- Download Handler for Version ---
   const handleVersionDownload = (versionObj) => {
+    const filename = safeFile(
+      (versionObj?.title || currentScript?.title || "Script").trim() || "Script"
+    );
     const blob = new Blob([versionObj.code], { type: "text/plain" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    const filename = safeFile(versionObj.title);
     a.href = url;
     a.download = filename;
     document.body.appendChild(a);
@@ -632,37 +670,35 @@ const handleVersionView = async (versionObj) => {
     URL.revokeObjectURL(url);
   };
 
-// --- Script Management (Firestore-based Project IDs) ---
-const handleCreateScript = async (title = "New Script") => {
-  setErrorMsg("");
-  if (!user) return;
-  try {
-    const db = getFirestore();
-    const authUser = auth.currentUser;
-    // Create a Firestore document for the project
-    const projectRef = doc(collection(db, "users", authUser.uid, "projects"));
-    await setDoc(projectRef, {
-      title,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-      owner: authUser.uid,
-    });
-    setCurrentScriptId(projectRef.id);
-    safeSet("nexusrbx:lastProjectId", projectRef.id);
+  // --- Script Management (Firestore-based Project IDs) ---
+  const handleCreateScript = async (title = "New Script") => {
+    setErrorMsg("");
+    if (!user) return;
+    try {
+      const db = getFirestore();
+      const authUser = auth.currentUser;
+      const projectRef = doc(collection(db, "users", authUser.uid, "projects"));
+      await setDoc(projectRef, {
+        title,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+        owner: authUser.uid,
+      });
+      setCurrentScriptId(projectRef.id);
+      safeSet("nexusrbx:lastProjectId", projectRef.id);
 
-    // Optionally, also create the project in your backend for code generation
-    const res = await authedFetch(user, `${BACKEND_URL}/api/projects`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title, firestoreId: projectRef.id }),
-    });
-    if (!res.ok) {
-      notify({ message: "Failed to sync project to backend.", type: "error" });
+      const res = await authedFetch(user, `${BACKEND_URL}/api/projects`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title, firestoreId: projectRef.id }),
+      });
+      if (!res.ok) {
+        notify({ message: "Failed to sync project to backend.", type: "error" });
+      }
+    } catch (err) {
+      notify({ message: "Failed to create project.", type: "error" });
     }
-  } catch (err) {
-    notify({ message: "Failed to create project.", type: "error" });
-  }
-};
+  };
 
   const handleRenameScript = async (scriptId, newTitle) => {
     setErrorMsg("Renaming projects is not supported yet.");
@@ -738,14 +774,15 @@ const handleCreateScript = async (title = "New Script") => {
     );
   };
 
-  // --- Token Bar Logic (simulate tokens for now) ---
+  // --- Token Bar Logic (dev bypass) ---
   useEffect(() => {
     if (!user) {
       setTokensLeft(TOKEN_LIMIT);
       setTokenRefreshTime(null);
       return;
     }
-    if (!!user?.email && user.email.toLowerCase() === DEVELOPER_EMAIL) {
+    const isDev = !!user?.email && user.email.toLowerCase() === DEV_EMAIL;
+    if (isDev) {
       setTokensLeft(null);
       setTokenRefreshTime(null);
       return;
@@ -764,7 +801,8 @@ useEffect(() => {
     const version = e?.detail?.version || e?.detail?.versionNumber || null;
     const explanation = e?.detail?.explanation || "";
     const savedScriptId = e?.detail?.savedScriptId || null;
-    // If code is present, open the drawer with exactly this version
+
+    // If code is provided (from Saved tab), always open as-is
     if (code) {
       setSelectedVersion({
         id: savedScriptId || cryptoRandomId(),
@@ -778,9 +816,18 @@ useEffect(() => {
       });
       return;
     }
-    // Fallback: open latest version for scriptId
+
+    // If opening from version history, find the correct version
     if (scriptId === currentScriptId && versionHistory.length > 0) {
-      setSelectedVersion(versionHistory[0]);
+      // Try to find by id, versionNumber, or savedScriptId
+      const found = versionHistory.find(
+        (v) =>
+          v.id === savedScriptId ||
+          String(v.versionNumber) === String(version) ||
+          String(v.id) === String(version) ||
+          String(v.id) === String(savedScriptId)
+      );
+      setSelectedVersion(found || versionHistory[0]);
     } else {
       setCurrentScriptId(scriptId);
     }
@@ -811,10 +858,12 @@ useEffect(() => {
 
     let chatIdToUse = currentChatId;
 
+    // abort inflight job
     if (jobAbortRef.current) {
       try {
         jobAbortRef.current.abort();
       } catch {}
+      jobAbortRef.current = null;
     }
     const abortController = new AbortController();
     jobAbortRef.current = abortController;
@@ -837,7 +886,7 @@ useEffect(() => {
             isNewScript: !currentScriptId,
             previousTitle: "",
             settings: {
-              model: resolveModel(settings.modelVersion),
+              modelVersion: settings.modelVersion,
               temperature: settings.creativity,
             },
           }),
@@ -959,7 +1008,7 @@ useEffect(() => {
             prompt: cleaned,
             conversation,
             settings: {
-              model: resolveModel(settings.modelVersion),
+              modelVersion: settings.modelVersion,
               temperature: settings.creativity,
               codeStyle: settings.codeStyle,
             },
@@ -978,13 +1027,7 @@ useEffect(() => {
       }
       const outlineData = await outlineRes.json().catch(() => null);
       const outline = Array.isArray(outlineData?.outline) ? outlineData.outline : [];
-      const explanation = outline
-        .map((sec) => {
-          const heading = sec?.heading ? `## ${sec.heading}` : "";
-          const bullets = (sec?.bulletPoints || []).map((b) => `• ${b}`).join("\n");
-          return [heading, bullets].filter(Boolean).join("\n");
-        })
-        .join("\n\n");
+      const explanation = outlineToExplanationText(outline);
       if (!explanation) throw new Error("Failed to generate outline/explanation");
 
       // 5) Show pending assistant message with explanation AND save to Firestore
@@ -1000,6 +1043,7 @@ useEffect(() => {
         projectId: projectIdToUse,
         versionId: null,
         pending: true,
+        localOnly: true,
       };
 
       setMessages((prev) => [...prev, assistantMsgData]);
@@ -1013,7 +1057,7 @@ useEffect(() => {
           const msgRef = doc(collection(chatRef, "messages"), pendingId);
           await setDoc(msgRef, {
             ...assistantMsgData,
-            firestoreId: pendingId,
+            localOnly: false,
             updatedAt: serverTimestamp(),
           });
         }
@@ -1027,10 +1071,7 @@ useEffect(() => {
       setGenerationStep("preparing");
       setLoadingBarVisible(true);
       setLoadingBarData({
-        filename: (scriptTitle || "Script")
-          .replace(/[^a-zA-Z0-9_\- ]/g, "")
-          .replace(/\s+/g, "_")
-          .slice(0, 40) + ".lua",
+        filename: safeFile((scriptTitle || "Script").trim() || "Script"),
         version: "v1",
         language: "lua",
         loading: true,
@@ -1065,7 +1106,7 @@ useEffect(() => {
               Math.random().toString(36).slice(2, 26),
             outline: outline || [{ heading: "Plan", bulletPoints: [] }],
             settings: {
-              model: resolveModel(settings.modelVersion),
+              modelVersion: settings.modelVersion,
               temperature: settings.creativity,
               codeStyle: settings.codeStyle,
             },
@@ -1084,7 +1125,7 @@ useEffect(() => {
         throw new Error("Failed to start code generation job.");
       }
 
-      // 7) Poll status
+      // 7) Poll status (with backoff, abort, Retry-After)
       pollingTimesRef.current = [];
       let lastStage = "";
       const jobResult = await pollJob(
@@ -1121,7 +1162,7 @@ useEffect(() => {
             eta,
           }));
         },
-        { intervalMs: 1200, maxMs: 120000, signal: abortController.signal }
+        { signal: abortController.signal }
       );
 
       if (jobResult.status !== "succeeded")
@@ -1142,7 +1183,7 @@ useEffect(() => {
         if (versionsRes.ok) {
           const versionsData = await versionsRes.json();
           versions = Array.isArray(versionsData.versions)
-            ? versionsData.versions.map(normalizeServerVersion).sort(sortDesc)
+            ? versionsData.versions.map(normalizeServerVersion).sort(byVN)
             : [];
         }
       } catch {}
@@ -1179,10 +1220,7 @@ useEffect(() => {
         version: sorted[0]?.versionNumber
           ? `v${sorted[0].versionNumber}`
           : `v1`,
-        filename: (scriptTitle || "Script")
-          .replace(/[^a-zA-Z0-9_\- ]/g, "")
-          .replace(/\s+/g, "_")
-          .slice(0, 40) + ".lua",
+        filename: safeFile((scriptTitle || "Script").trim() || "Script"),
         onSave: () => {},
         onView: () => {},
       }));
@@ -1207,6 +1245,7 @@ useEffect(() => {
           versionNumber: backendVersion,
           explanation,
           pending: false,
+          localOnly: false,
         };
         if (idx !== -1) copy[idx] = finalized;
         else copy.push(finalized);
@@ -1224,6 +1263,7 @@ useEffect(() => {
             versionId: sorted[0]?.id || versionId || null,
             versionNumber: plannedVersionNumber,
             pending: false,
+            localOnly: false,
             updatedAt: serverTimestamp(),
           });
           await updateDoc(chatRef, {
@@ -1269,30 +1309,56 @@ useEffect(() => {
     } finally {
       setIsGenerating(false);
       setGenerationStep("idle");
+      jobAbortRef.current?.abort();
+      jobAbortRef.current = null;
     }
   };
 
-  // --- Keyboard UX for textarea ---
+  // --- Keyboard UX for textarea (single Enter rule, IME safe) ---
   const handlePromptKeyDown = (e) => {
-    if (
-      (e.key === "Enter" && !e.shiftKey) ||
-      ((e.ctrlKey || e.metaKey) && e.key === "Enter")
-    ) {
+    if (e.isComposing) return;
+    if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSubmit(e);
     }
   };
 
+  // --- Virtualized version list for long histories ---
+  const renderVersionList = (props) => {
+    if (versionHistory.length > 80) {
+      return (
+        <List
+          height={400}
+          itemCount={versionHistory.length}
+          itemSize={56}
+          width="100%"
+        >
+          {({ index, style }) => {
+            const v = versionHistory[index];
+            return (
+              <div style={style} key={v.id}>
+                {props.renderVersion(v)}
+              </div>
+            );
+          }}
+        </List>
+      );
+    }
+    return versionHistory.map(props.renderVersion);
+  };
+
   return (
-    <div
-      className="min-h-screen bg-[#0D0D0D] text-white font-sans flex flex-col relative"
-      style={{
-        backgroundImage:
-          "radial-gradient(ellipse at 60% 0%, rgba(155,93,229,0.08) 0%, rgba(0,0,0,0) 70%), radial-gradient(ellipse at 0% 100%, rgba(0,245,212,0.06) 0%, rgba(0,0,0,0) 80%)",
-      }}
-    >
-      {/* Header */}
-      <header className="border-b border-gray-800 bg-black/30 backdrop-blur-md sticky top-0 z-50">
+    <React.Fragment>
+      {showOnboarding && <OnboardingContainer />}
+      <div
+        className="min-h-screen bg-[#0D0D0D] text-white font-sans flex flex-col relative"
+        style={{
+          backgroundImage:
+            "radial-gradient(ellipse at 60% 0%, rgba(155,93,229,0.08) 0%, rgba(0,0,0,0) 70%), radial-gradient(ellipse at 0% 100%, rgba(0,245,212,0.06) 0%, rgba(0,0,0,0) 80%)",
+        }}
+      >
+        {/* Header */}
+        <header className="border-b border-gray-800 bg-black/30 backdrop-blur-md sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 flex items-center">
           {/* Hamburger for mobile */}
           <button
@@ -1366,20 +1432,20 @@ useEffect(() => {
           </button>
         </div>
       </header>
-{/* Notification stack (top left) */}
-<div className="fixed top-6 left-6 z-[9999] flex flex-col items-start pointer-events-none">
-  {notifications.map((n) => (
-    <NotificationToast
-      key={n.id}
-      message={n.message}
-      type={n.type}
-      duration={n.duration}
-      onClose={() =>
-        setNotifications((prev) => prev.filter((x) => x.id !== n.id))
-      }
-    />
-  ))}
-</div>
+      {/* Notification stack (top left) */}
+      <div className="fixed top-6 left-6 z-[9999] flex flex-col items-start pointer-events-none">
+        {notifications.map((n) => (
+          <NotificationToast
+            key={n.id}
+            message={n.message}
+            type={n.type}
+            duration={n.duration}
+            onClose={() =>
+              setNotifications((prev) => prev.filter((x) => x.id !== n.id))
+            }
+          />
+        ))}
+      </div>
       {/* --- Mobile Left Sidebar --- */}
       <div
         className={`fixed inset-0 z-[100] md:hidden transition-all duration-300 ${
@@ -1442,6 +1508,7 @@ useEffect(() => {
             isMobile
             onRenameChat={handleRenameChat}
             onDeleteChat={handleDeleteChat}
+            renderVersionList={renderVersionList}
           />
         </aside>
       </div>
@@ -1532,6 +1599,7 @@ useEffect(() => {
           setPromptSearch={setPromptSearch}
           onRenameChat={handleRenameChat}
           onDeleteChat={handleDeleteChat}
+          renderVersionList={renderVersionList}
         />
       </aside>
 
@@ -1573,7 +1641,7 @@ useEffect(() => {
                     const size = getAiBubbleSizing(coreText);
                     const ver = m.versionId
                       ? versionHistory.find((v) => v.id === m.versionId)
-                      : versionHistory.find((v) => v.versionNumber === m.versionNumber);
+                      : versionHistory.find((v) => getVN(v) === getVN(m));
 
                     return (
                       <div
@@ -1590,7 +1658,7 @@ useEffect(() => {
                             </span>
                             {m.versionNumber && (
                               <span className="ml-2 px-2 py-0.5 rounded bg-[#9b5de5]/20 text-[#9b5de5] text-xs font-semibold">
-                                v{m.versionNumber}
+                                v{getVN(m)}
                               </span>
                             )}
                             {m.pending && (
@@ -1611,15 +1679,20 @@ useEffect(() => {
 
                           <div className="mb-2 mt-3">
                             <ScriptLoadingBarContainer
-                              filename={safeFile(currentScript?.title || "Script")}
+                              filename={safeFile((currentScript?.title || "Script").trim() || "Script")}
                               displayName={currentScript?.title || "Script"}
-                              version={m.versionNumber ? `v${m.versionNumber}` : ""}
+                              version={m.versionNumber ? `v${getVN(m)}` : ""}
                               language="lua"
                               loading={!!m.pending || !!isGenerating || loadingBarVisible}
                               codeReady={!!ver?.code}
                               estimatedLines={ver?.code ? ver.code.split("\n").length : null}
                               saved={!!ver?.code}
                               onSave={async () => {
+                                const prev = versionHistory;
+                                setVersionHistory((v) => [
+                                  { ...v[0], versionNumber: getVN(v[0]) + 1 },
+                                  ...v,
+                                ]);
                                 try {
                                   if (!user || !ver?.code) return false;
                                   let scriptId = currentScriptId || ver.projectId;
@@ -1640,6 +1713,7 @@ useEffect(() => {
                                     }
                                   );
                                   if (!res.ok) {
+                                    setVersionHistory(prev);
                                     const t = await res.text();
                                     setErrorMsg(
                                       `Save failed: ${res.status} ${res.statusText} - ${t.slice(
@@ -1662,7 +1736,7 @@ useEffect(() => {
                                       const { versions = [] } = await versionsRes.json();
                                       const sorted = versions
                                         .map(normalizeServerVersion)
-                                        .sort(sortDesc);
+                                        .sort(byVN);
                                       setVersionHistory(sorted);
                                       setCurrentScript({
                                         id: scriptId,
@@ -1674,6 +1748,7 @@ useEffect(() => {
                                   } catch {}
                                   return true;
                                 } catch (e) {
+                                  setVersionHistory(prev);
                                   setErrorMsg(`Save error: ${e.message || e}`);
                                   return false;
                                 }
@@ -1729,52 +1804,54 @@ useEffect(() => {
             </div>
           </div>
           {/* Input Area */}
-<div className="border-t border-gray-800 bg-black/30 px-2 md:px-4 py-4 flex flex-col items-center shadow-inner">
-  {/* Token Bar */}
-  <div className="w-full max-w-2xl mx-auto mb-2">
-    <TokenBar
-      tokensLeft={tokensLeft}
-      tokenLimit={TOKEN_LIMIT}
-      refreshTime={tokenRefreshTime}
-      isDev={!!user?.email && user.email.toLowerCase() === DEVELOPER_EMAIL}
-    />
-  </div>
-  {/* Fancy Loading Overlay */}
-  <div className="w-full max-w-2xl mx-auto">
-    <FancyLoadingOverlay
-      visible={
-        isGenerating &&
-        !(
-          // Find any assistant message that is NOT pending (means AI output is visible)
-          messages.some(
-            (m) => m.role === "assistant" && !m.pending
-          )
-        )
-      }
-    />
-  </div>
-  <form
-    onSubmit={handleSubmit}
-    className="w-full max-w-2xl mx-auto"
-    autoComplete="off"
-  >
-    <div className="relative">
-      <textarea
-        ref={promptInputRef}
-        value={typeof prompt === "string" ? prompt : ""}
-        onChange={(e) => setPrompt(e.target.value)}
-        onKeyDown={handlePromptKeyDown}
-        placeholder="Describe the Roblox mod you want to create..."
-        className={`w-full rounded-lg bg-gray-900/60 border border-gray-700 focus:border-[#9b5de5] focus:outline-none focus:ring-2 focus:ring-[#9b5de5]/50 transition-all duration-300 py-3 px-4 pr-14 resize-none shadow-lg ${
-          promptError ? "border-red-500" : ""
-        }`}
-        rows="3"
-        disabled={isGenerating}
-        maxLength={800}
-        aria-label="Prompt input"
-      ></textarea>
+          <div
+            className="border-t border-gray-800 bg-black/30 px-2 md:px-4 py-4 flex flex-col items-center shadow-inner"
+            aria-busy={isGenerating}
+          >
+            {/* Token Bar */}
+            <div className="w-full max-w-2xl mx-auto mb-2">
+              <TokenBar
+                tokensLeft={tokensLeft}
+                tokenLimit={TOKEN_LIMIT}
+                refreshTime={tokenRefreshTime}
+                isDev={!!user?.email && user.email.toLowerCase() === DEV_EMAIL}
+              />
+            </div>
+            {/* Fancy Loading Overlay */}
+            <div className="w-full max-w-2xl mx-auto">
+              <FancyLoadingOverlay
+                visible={
+                  isGenerating &&
+                  !(
+                    messages.some(
+                      (m) => m.role === "assistant" && !m.pending
+                    )
+                  )
+                }
+              />
+            </div>
+            <form
+              onSubmit={handleSubmit}
+              className="w-full max-w-2xl mx-auto"
+              autoComplete="off"
+            >
+              <div className="relative">
+                <textarea
+                  ref={promptInputRef}
+                  value={typeof prompt === "string" ? prompt : ""}
+                  onChange={(e) => setPrompt(e.target.value)}
+                  onKeyDown={handlePromptKeyDown}
+                  placeholder="Describe the Roblox mod you want to create..."
+                  className={`w-full rounded-lg bg-gray-900/60 border border-gray-700 focus:border-[#9b5de5] focus:outline-none focus:ring-2 focus:ring-[#9b5de5]/50 transition-all duration-300 py-3 px-4 pr-14 resize-none shadow-lg ${
+                    promptError ? "border-red-500" : ""
+                  }`}
+                  rows="3"
+                  disabled={isGenerating}
+                  maxLength={800}
+                  aria-label="Prompt input"
+                ></textarea>
                 {/* Prompt Autocomplete Dropdown */}
-                {promptAutocomplete.length > 0 && (
+                {promptAutocomplete.length > 0 && !isGenerating && (
                   <div className="absolute left-0 right-0 top-full z-30 bg-gray-900 border border-gray-700 rounded-b-lg shadow-lg">
                     {promptAutocomplete.map((sugg, i) => (
                       <button
@@ -1866,14 +1943,22 @@ useEffect(() => {
           open={!!selectedVersion}
           code={selectedVersion.code}
           title={selectedVersion.title}
-          filename={safeFile(selectedVersion.title)}
+          filename={safeFile(
+            (selectedVersion?.title || currentScript?.title || "Script").trim() ||
+              "Script"
+          )}
           version={
             selectedVersion.versionNumber
-              ? `v${selectedVersion.versionNumber}`
+              ? `v${getVN(selectedVersion)}`
               : ""
           }
           onClose={() => setSelectedVersion(null)}
           onSaveScript={async (newTitle, code, explanation = "") => {
+            const prev = versionHistory;
+            setVersionHistory((v) => [
+              { ...v[0], versionNumber: getVN(v[0]) + 1 },
+              ...v,
+            ]);
             try {
               if (!user || !code) return false;
               let scriptId = currentScriptId;
@@ -1891,6 +1976,7 @@ useEffect(() => {
                   }
                 );
                 if (!resCreate.ok) {
+                  setVersionHistory(prev);
                   setErrorMsg("Failed to create new script for saving.");
                   return false;
                 }
@@ -1914,6 +2000,7 @@ useEffect(() => {
                 }
               );
               if (!res.ok) {
+                setVersionHistory(prev);
                 const t = await res.text();
                 setErrorMsg(
                   `Save failed: ${res.status} ${res.statusText} - ${t.slice(
@@ -1935,7 +2022,7 @@ useEffect(() => {
                 if (versionsRes.ok) {
                   const versionsData = await versionsRes.json();
                   const versions = Array.isArray(versionsData.versions)
-                    ? versionsData.versions.map(normalizeServerVersion).sort(sortDesc)
+                    ? versionsData.versions.map(normalizeServerVersion).sort(byVN)
                     : [];
                   setVersionHistory(versions);
                   setCurrentScript({
@@ -1971,6 +2058,7 @@ useEffect(() => {
               } catch {}
               return true;
             } catch (e) {
+              setVersionHistory(prev);
               setErrorMsg(`Save error: ${e.message || e}`);
               return false;
             }

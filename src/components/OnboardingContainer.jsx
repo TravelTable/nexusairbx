@@ -1,0 +1,299 @@
+import { useState } from "react";
+import { ChevronLeft, ChevronRight, Info, Shield, Code, Zap, MessageSquare } from "lucide-react";
+
+export default function OnboardingContainer() {
+  const [currentStep, setCurrentStep] = useState(1);
+  const totalSteps = 5;
+
+  const handleNext = () => {
+    if (currentStep < totalSteps) {
+      setCurrentStep(currentStep + 1);
+    }
+  };
+
+  const handlePrevious = () => {
+    if (currentStep > 1) {
+      setCurrentStep(currentStep - 1);
+    }
+  };
+
+const handleFinish = () => {
+  // Mark onboarding as complete in localStorage
+  localStorage.setItem("nexusrbx:onboardingComplete", "true");
+  window.location.reload(); // Or set a state to hide the modal if you want a smoother UX
+};
+  return (
+    <OnboardingFlow
+      currentStep={currentStep}
+      totalSteps={totalSteps}
+      onNext={handleNext}
+      onPrevious={handlePrevious}
+      onFinish={handleFinish}
+    />
+  );
+}
+
+function OnboardingFlow({ currentStep, totalSteps, onNext, onPrevious, onFinish }) {
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50">
+      <div className="bg-gray-900 rounded-xl shadow-2xl w-full max-w-3xl overflow-hidden border border-gray-700">
+        {/* Progress bar */}
+        <div className="w-full bg-gray-800 h-1">
+          <div 
+            className="bg-blue-500 h-1 transition-all duration-300 ease-in-out" 
+            style={{ width: `${(currentStep / totalSteps) * 100}%` }}
+          ></div>
+        </div>
+        
+        <div className="p-6 md:p-8">
+          {/* Step content */}
+          {currentStep === 1 && <WelcomeStep />}
+          {currentStep === 2 && <PromptingTipsStep />}
+          {currentStep === 3 && <EditCustomizeStep />}
+          {currentStep === 4 && <PrivacyStep />}
+          {currentStep === 5 && <FinalStep />}
+          
+          {/* Navigation buttons */}
+          <div className="flex justify-between mt-8">
+            <div>
+              {currentStep > 1 && (
+                <button 
+                  onClick={onPrevious}
+                  className="flex items-center text-gray-400 hover:text-blue-400 transition-colors"
+                >
+                  <ChevronLeft className="w-5 h-5 mr-1" />
+                  Back
+                </button>
+              )}
+            </div>
+            
+            <div className="flex items-center text-sm text-gray-500">
+              Step {currentStep} of {totalSteps}
+            </div>
+            
+            <div>
+              {currentStep < totalSteps ? (
+                <button 
+                  onClick={onNext}
+                  className="flex items-center bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
+                >
+                  Next
+                  <ChevronRight className="w-5 h-5 ml-1" />
+                </button>
+              ) : (
+                <button 
+                  onClick={onFinish}
+                  className="flex items-center bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
+                >
+                  Finish
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function WelcomeStep() {
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center space-x-3">
+        <div className="bg-blue-900 bg-opacity-50 p-2 rounded-lg">
+          <Info className="w-6 h-6 text-blue-400" />
+        </div>
+        <h2 className="text-2xl font-bold text-white">Step 1: Welcome to NexusRBX AI Console (Beta)</h2>
+      </div>
+      
+      <h3 className="text-xl font-semibold text-blue-300">Welcome to NexusRBX!</h3>
+      
+      <p className="text-gray-300">
+        You're about to experience the next generation of Roblox scripting. NexusRBX AI Console is your personal AI assistant for generating, editing, and improving Roblox scripts—no advanced coding skills required.
+      </p>
+      
+      <div className="bg-yellow-900 bg-opacity-30 border-l-4 border-yellow-600 p-4 rounded-r-lg">
+        <h4 className="font-semibold text-yellow-400">Beta Notice:</h4>
+        <p className="text-yellow-200">
+          This platform is currently in Beta. That means you may encounter bugs, unfinished features, or unexpected results. We're working hard to improve every day, and your feedback is invaluable.
+        </p>
+      </div>
+      
+      <div className="bg-blue-900 bg-opacity-30 p-4 rounded-lg flex items-start">
+        <div className="text-blue-400 mr-3 mt-1">
+          <MessageSquare className="w-5 h-5" />
+        </div>
+        <p className="text-blue-300">
+          <span className="font-semibold">Tip:</span> If you have suggestions or run into issues, please let us know through the feedback button or our Discord community.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function PromptingTipsStep() {
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center space-x-3">
+        <div className="bg-purple-900 bg-opacity-50 p-2 rounded-lg">
+          <MessageSquare className="w-6 h-6 text-purple-400" />
+        </div>
+        <h2 className="text-2xl font-bold text-white">Step 2: Script Quality & Prompting Tips</h2>
+      </div>
+      
+      <h3 className="text-xl font-semibold text-purple-300">Get the best results with clear prompts!</h3>
+      
+      <p className="text-gray-300">
+        The AI does its best to understand your request, but the more details you provide, the better your script will be.
+      </p>
+      
+      <div className="space-y-3">
+        <p className="text-gray-300">If your script doesn't work as expected, try:</p>
+        <ul className="list-disc pl-6 space-y-2 text-gray-300">
+          <li>Rephrasing your prompt</li>
+          <li>Adding more context (e.g., "Make a script for a Roblox part that changes color when touched, and only works for players with a certain badge.")</li>
+          <li>Specifying what you want the script to do, step by step</li>
+        </ul>
+      </div>
+      
+      <p className="text-gray-300">
+        Some scripts may need manual tweaks or debugging—don't hesitate to ask the AI for help fixing errors!
+      </p>
+      
+      <div className="bg-blue-900 bg-opacity-30 p-4 rounded-lg">
+        <p className="text-blue-300 font-semibold">
+          Remember: AI is a powerful tool, but it's not perfect. Experiment, iterate, and have fun!
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function EditCustomizeStep() {
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center space-x-3">
+        <div className="bg-green-900 bg-opacity-50 p-2 rounded-lg">
+          <Code className="w-6 h-6 text-green-400" />
+        </div>
+        <h2 className="text-2xl font-bold text-white">Step 3: Edit & Customize with AI</h2>
+      </div>
+      
+      <h3 className="text-xl font-semibold text-green-300">You're in control—edit, improve, and build on your scripts!</h3>
+      
+      <div className="space-y-3">
+        <p className="text-gray-300">You can use the AI to add new features, fix bugs, or change how your script works.</p>
+        <p className="text-gray-300">Paste your existing code and describe what you want to change.</p>
+      </div>
+      
+      <div className="space-y-3">
+        <p className="text-gray-300">The AI can help you:</p>
+        <ul className="list-disc pl-6 space-y-2 text-gray-300">
+          <li>Add new functionality ("Add a leaderboard to this script")</li>
+          <li>Fix errors ("Fix the bug where the script doesn't reset the timer")</li>
+          <li>Refactor or optimize code ("Make this script more efficient and readable")</li>
+        </ul>
+      </div>
+      
+      <p className="text-gray-300">
+        You can repeat this process as many times as you like—iterate until your script is just right!
+      </p>
+      
+      <div className="bg-blue-900 bg-opacity-30 p-4 rounded-lg flex items-start">
+        <div className="text-blue-400 mr-3 mt-1">
+          <MessageSquare className="w-5 h-5" />
+        </div>
+        <p className="text-blue-300">
+          <span className="font-semibold">Tip:</span> The more specific your instructions, the better the AI can help.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function PrivacyStep() {
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center space-x-3">
+        <div className="bg-red-900 bg-opacity-50 p-2 rounded-lg">
+          <Shield className="w-6 h-6 text-red-400" />
+        </div>
+        <h2 className="text-2xl font-bold text-white">Step 4: Privacy & Safety</h2>
+      </div>
+      
+      <h3 className="text-xl font-semibold text-red-300">Your security and privacy matter.</h3>
+      
+      <ul className="space-y-4">
+        <li className="flex items-start">
+          <div className="bg-gray-800 p-1 rounded-full mr-3 mt-1">
+            <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
+          </div>
+          <p className="text-gray-300">Your prompts and generated scripts are stored securely and are only visible to you.</p>
+        </li>
+        
+        <li className="flex items-start">
+          <div className="bg-gray-800 p-1 rounded-full mr-3 mt-1">
+            <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
+          </div>
+          <p className="text-gray-300">Never share sensitive personal information (like passwords, emails, or private game data) in your prompts.</p>
+        </li>
+        
+        <li className="flex items-start">
+          <div className="bg-gray-800 p-1 rounded-full mr-3 mt-1">
+            <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
+          </div>
+          <p className="text-gray-300">Always review and test scripts before using them in your Roblox games—especially if you're sharing them with others.</p>
+        </li>
+        
+        <li className="flex items-start">
+          <div className="bg-gray-800 p-1 rounded-full mr-3 mt-1">
+            <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
+          </div>
+          <p className="text-gray-300">If you see anything suspicious or unsafe, please report it immediately.</p>
+        </li>
+      </ul>
+      
+      <div className="bg-red-900 bg-opacity-30 p-4 rounded-lg">
+        <p className="text-red-300 font-semibold">
+          Stay safe, and help us keep NexusRBX a positive, creative space!
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function FinalStep() {
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center space-x-3">
+        <div className="bg-yellow-900 bg-opacity-50 p-2 rounded-lg">
+          <Zap className="w-6 h-6 text-yellow-400" />
+        </div>
+        <h2 className="text-2xl font-bold text-white">Step 5: Happy Hacking!</h2>
+      </div>
+      
+      <h3 className="text-xl font-semibold text-yellow-300">You're ready to create!</h3>
+      
+      <p className="text-gray-300">
+        NexusRBX AI Console is here to help you bring your Roblox ideas to life—whether you're a beginner or a pro.
+      </p>
+      
+      <ul className="list-disc pl-6 space-y-2 text-gray-300">
+        <li>Generate new scripts</li>
+        <li>Edit and improve existing ones</li>
+        <li>Experiment, learn, and have fun</li>
+      </ul>
+      
+      <div className="bg-gradient-to-r from-blue-900 to-purple-900 p-6 rounded-lg text-center border border-blue-700">
+        <h3 className="text-white text-xl font-bold mb-2">Happy hacking!</h3>
+        <p className="text-blue-200">
+          Click Finish to get started.
+        </p>
+      </div>
+      
+      <p className="text-sm text-gray-500 italic">
+        (You won't see this onboarding again, but you can revisit it anytime from the settings menu.)
+      </p>
+    </div>
+  );
+}
