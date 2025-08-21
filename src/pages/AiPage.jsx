@@ -150,9 +150,13 @@ async function authedFetch(user, url, init = {}, retry = true) {
 }
 
 
-const [showOnboarding, setShowOnboarding] = useState(
-  localStorage.getItem("nexusrbx:onboardingComplete") !== "true"
-);
+export default function NexusRBXAIPageContainer() {
+  const navigate = useNavigate();
+
+  const [showOnboarding, setShowOnboarding] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return localStorage.getItem("nexusrbx:onboardingComplete") !== "true";
+  });
 
 // --- Debounce Helper ---
 function useDebounce(value, delay) {
