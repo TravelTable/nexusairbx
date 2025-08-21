@@ -1775,35 +1775,7 @@ useEffect(() => {
                 </>
               )}
               {/* Loading bar appears just below the latest script output */}
-              {(() => {
-                const last = messages[messages.length - 1];
-                return last?.role === "assistant" && last?.pending;
-              })() && (
-                <div className="flex items-center text-gray-400 text-sm mt-2 animate-fade-in">
-                  <span className="mr-2">
-                    <span className="inline-block w-8 h-8 rounded-full bg-gradient-to-br from-[#9b5de5] to-[#00f5d4] flex items-center justify-center shadow-lg overflow-hidden animate-pulse">
-                      <img
-                        src="/logo.png"
-                        alt="NexusRBX"
-                        className="w-6 h-6 object-contain"
-                        style={{ filter: "drop-shadow(0 0 2px #9b5de5)" }}
-                      />
-                    </span>
-                  </span>
-                  <span aria-live="polite">
-                    NexusRBX is typing...
-                    {["preparing", "calling model", "post-processing", "polishing", "finalizing"].includes(
-                      generationStep
-                    ) && (
-                      <>
-                        {" "}
-                        ({loadingBarData.stage || generationStep}
-                        {loadingBarData.eta ? `, ETA: ${loadingBarData.eta}s` : ""})
-                      </>
-                    )}
-                  </span>
-                </div>
-              )}
+const last = messages[messages.length - 1
               <div ref={messagesEndRef} />
             </div>
           </div>
