@@ -85,19 +85,37 @@ function OnboardingFlow({
     setTimeout(() => setVisible(true), 10);
   }, []);
 
+  // Prevent background scroll when modal is open (mobile-friendly)
+  useEffect(() => {
+    document.body.style.overflow = visible ? "hidden" : "";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [visible]);
+
   return (
     <div
-      className={`fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50 transition-opacity duration-300 ${
+      className={`fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-2 sm:p-4 z-50 transition-opacity duration-300 ${
         visible ? "opacity-100" : "opacity-0"
       }`}
       aria-modal="true"
       role="dialog"
+      style={{ overscrollBehavior: "contain" }}
     >
-      <div className="bg-gray-900 rounded-xl shadow-2xl w-full max-w-3xl overflow-hidden border border-gray-700 relative animate-fadeIn">
+      <div
+        className="bg-gray-900 rounded-xl shadow-2xl w-full max-w-3xl sm:max-w-2xl md:max-w-3xl overflow-hidden border border-gray-700 relative animate-fadeIn
+        flex flex-col
+        max-h-[95vh] sm:max-h-[90vh]
+        "
+        style={{
+          width: "100%",
+          maxWidth: "480px",
+        }}
+      >
         {/* Close button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 text-gray-500 hover:text-gray-300 transition-colors z-10"
+          className="absolute top-3 right-3 text-gray-500 hover:text-gray-300 transition-colors z-10 p-2 rounded-full bg-gray-800 bg-opacity-60 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
           aria-label="Close onboarding"
         >
           <X className="w-6 h-6" />
@@ -110,7 +128,7 @@ function OnboardingFlow({
           ></div>
         </div>
 
-        <div className="p-6 md:p-8">
+        <div className="p-4 sm:p-6 md:p-8 overflow-y-auto flex-1" style={{ maxHeight: "calc(95vh - 48px)" }}>
           {/* Step content */}
           {currentStep === 1 && <WelcomeStep />}
           {currentStep === 2 && <PromptingTipsStep />}
@@ -119,12 +137,12 @@ function OnboardingFlow({
           {currentStep === 5 && <FinalStep />}
 
           {/* Navigation buttons */}
-          <div className="flex justify-between mt-8 items-center">
-            <div>
+          <div className="flex flex-col-reverse sm:flex-row justify-between mt-8 items-center gap-4 sm:gap-0">
+            <div className="w-full sm:w-auto flex justify-start">
               {currentStep > 1 && (
                 <button
                   onClick={onPrevious}
-                  className="flex items-center text-gray-400 hover:text-blue-400 transition-colors font-medium"
+                  className="flex items-center text-gray-400 hover:text-blue-400 transition-colors font-medium px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
                 >
                   <ChevronLeft className="w-5 h-5 mr-1" />
                   Back
@@ -132,15 +150,15 @@ function OnboardingFlow({
               )}
             </div>
 
-            <div className="flex items-center text-sm text-gray-500">
+            <div className="w-full sm:w-auto flex justify-center text-sm text-gray-500">
               Step {currentStep} of {totalSteps}
             </div>
 
-            <div>
+            <div className="w-full sm:w-auto flex justify-end">
               {currentStep < totalSteps ? (
                 <button
                   onClick={onNext}
-                  className="flex items-center bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-5 py-2 rounded-lg transition-colors font-semibold shadow-sm"
+                  className="flex items-center justify-center w-full sm:w-auto bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-5 py-2 rounded-lg transition-colors font-semibold shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
                 >
                   Next
                   <ChevronRight className="w-5 h-5 ml-1" />
@@ -148,7 +166,7 @@ function OnboardingFlow({
               ) : (
                 <button
                   onClick={onFinish}
-                  className="flex items-center bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-5 py-2 rounded-lg transition-colors font-semibold shadow-sm"
+                  className="flex items-center justify-center w-full sm:w-auto bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-5 py-2 rounded-lg transition-colors font-semibold shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
                 >
                   Finish
                 </button>
