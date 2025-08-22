@@ -38,20 +38,19 @@ export default function NexusRBXHomepageContainer() {
   };
 
   const handleSubmit = (e) => {
-    e.preventDefault();
-    setError("");
-    if (!inputValue.trim()) return;
+  e.preventDefault();
+  setError("");
+  if (!inputValue.trim()) return;
 
-    // Only navigate, do not call any API here
-    navigate("/ai", {
-      state: {
-        initialPrompt: inputValue.trim(),
-        aiResult: null
-      }
-    });
-    setInputValue("");
-  };
-
+  // Pass prompt to /ai page, but do not trigger generation
+  navigate("/ai", {
+    state: {
+      initialPrompt: inputValue.trim(),
+      aiResult: null
+    }
+  });
+  setInputValue("");
+};
   useEffect(() => {
     const timer = setTimeout(() => {
       setIsTyping(true);

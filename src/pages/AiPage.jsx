@@ -5,7 +5,7 @@ import React, {
   useCallback,
   useDeferredValue,
 } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import {
   Send,
   Loader,
@@ -150,14 +150,6 @@ async function authedFetch(user, url, init = {}, retry = true) {
 }
 
 
-export default function NexusRBXAIPageContainer() {
-  const navigate = useNavigate();
-
-  const [showOnboarding, setShowOnboarding] = useState(() => {
-    if (typeof window === "undefined") return false;
-    return localStorage.getItem("nexusrbx:onboardingComplete") !== "true";
-  });
-
 // --- Debounce Helper ---
 function useDebounce(value, delay) {
   const [debounced, setDebounced] = useState(value);
@@ -243,8 +235,13 @@ function getAiBubbleSizing(text = "") {
   return { wrapClass: "max-w-4xl", bubbleClass: "text-[14px] leading-7 px-7 py-6" };
 }
 
-export default function NexusRBXAIPageContainer() {
+
+function NexusRBXAIPageContainer() {
+  const [showOnboarding, setShowOnboarding] = useState(
+    localStorage.getItem("nexusrbx:onboardingComplete") !== "true"
+  );
   const navigate = useNavigate();
+  const location = useLocation();
 
   // --- State for scripts and versions ---
   const [user, setUser] = useState(null);
@@ -257,6 +254,9 @@ export default function NexusRBXAIPageContainer() {
   // Chat timeline: ordered messages
   const [messages, setMessages] = useState([]);
 
+  // --- Prompt state (move to top so setPrompt is defined for all hooks below) ---
+  const [prompt, setPrompt] = useState("");
+
   // --- Chat state + listener refs ---
   const [currentChatId, setCurrentChatId] = useState(null);
   const [currentChatMeta, setCurrentChatMeta] = useState(null);
@@ -264,7 +264,21 @@ export default function NexusRBXAIPageContainer() {
   const chatUnsubRef = useRef(null);
 
   const [activeTab, setActiveTab] = useState("scripts");
-  const [prompt, setPrompt] = useState("");
+  
+  // Accept initialPrompt from navigation state (homepage)
+  useEffect(() => {
+    if (
+      location &&
+      location.state &&
+      typeof location.state.initialPrompt === "string" &&
+      location.state.initialPrompt.trim()
+    ) {
+      setPrompt(location.state.initialPrompt);
+      // Optionally, clear the state so it doesn't reapply on every render
+      window.history.replaceState({}, document.title);
+    }
+    // eslint-disable-next-line
+  }, [location]);
   const [promptCharCount, setPromptCharCount] = useState(0);
   const [promptError, setPromptError] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
@@ -797,49 +811,49 @@ export default function NexusRBXAIPageContainer() {
     );
   }, [user]);
 
-useEffect(() => {
-  function onOpenCodeDrawer(e) {
-    const scriptId = e?.detail?.scriptId;
-    const code = e?.detail?.code;
-    const title = e?.detail?.title || "Script";
-    const version = e?.detail?.version || e?.detail?.versionNumber || null;
-    const explanation = e?.detail?.explanation || "";
-    const savedScriptId = e?.detail?.savedScriptId || null;
+  useEffect(() => {
+    function onOpenCodeDrawer(e) {
+      const scriptId = e?.detail?.scriptId;
+      const code = e?.detail?.code;
+      const title = e?.detail?.title || "Script";
+      const version = e?.detail?.version || e?.detail?.versionNumber || null;
+      const explanation = e?.detail?.explanation || "";
+      const savedScriptId = e?.detail?.savedScriptId || null;
 
-    // If code is provided (from Saved tab), always open as-is
-    if (code) {
-      setSelectedVersion({
-        id: savedScriptId || cryptoRandomId(),
-        projectId: scriptId,
-        code,
-        title,
-        versionNumber: version,
-        explanation,
-        createdAtMs: Date.now(),
-        isSavedScript: true,
-      });
-      return;
-    }
+      // If code is provided (from Saved tab), always open as-is
+      if (code) {
+        setSelectedVersion({
+          id: savedScriptId || cryptoRandomId(),
+          projectId: scriptId,
+          code,
+          title,
+          versionNumber: version,
+          explanation,
+          createdAtMs: Date.now(),
+          isSavedScript: true,
+        });
+        return;
+      }
 
-    // If opening from version history, find the correct version
-    if (scriptId === currentScriptId && versionHistory.length > 0) {
-      // Try to find by id, versionNumber, or savedScriptId
-      const found = versionHistory.find(
-        (v) =>
-          v.id === savedScriptId ||
-          String(v.versionNumber) === String(version) ||
-          String(v.id) === String(version) ||
-          String(v.id) === String(savedScriptId)
-      );
-      setSelectedVersion(found || versionHistory[0]);
-    } else {
-      setCurrentScriptId(scriptId);
+      // If opening from version history, find the correct version
+      if (scriptId === currentScriptId && versionHistory.length > 0) {
+        // Try to find by id, versionNumber, or savedScriptId
+        const found = versionHistory.find(
+          (v) =>
+            v.id === savedScriptId ||
+            String(v.versionNumber) === String(version) ||
+            String(v.id) === String(version) ||
+            String(v.id) === String(savedScriptId)
+        );
+        setSelectedVersion(found || versionHistory[0]);
+      } else if (scriptId) {
+        setCurrentScriptId(scriptId);
+      }
     }
-  }
-  window.addEventListener("nexus:openCodeDrawer", onOpenCodeDrawer);
-  return () =>
-    window.removeEventListener("nexus:openCodeDrawer", onOpenCodeDrawer);
-}, [currentScriptId, versionHistory]);
+    window.addEventListener("nexus:openCodeDrawer", onOpenCodeDrawer);
+    return () =>
+      window.removeEventListener("nexus:openCodeDrawer", onOpenCodeDrawer);
+  }, [currentScriptId, versionHistory]);
 
   // --- Main Generation Flow (Handles both new script and new version) ---
   const handleSubmit = async (e) => {
@@ -1351,9 +1365,64 @@ useEffect(() => {
     return versionHistory.map(props.renderVersion);
   };
 
+  // --- Accessibility: focus main on onboarding close ---
+  useEffect(() => {
+    if (!showOnboarding) {
+      const main = document.querySelector("main");
+      if (main) main.focus();
+    }
+  }, [showOnboarding]);
+
   return (
     <React.Fragment>
       {showOnboarding && <OnboardingContainer />}
+      {/* --- Dev Panel (only for DEV_EMAIL) --- */}
+      {user?.email && user.email.toLowerCase() === DEV_EMAIL && (
+        <div
+          style={{
+            position: "fixed",
+            bottom: 24,
+            right: 24,
+            zIndex: 99999,
+            background: "rgba(30,30,30,0.98)",
+            border: "1px solid #9b5de5",
+            borderRadius: 12,
+            padding: "12px 18px",
+            boxShadow: "0 2px 16px rgba(0,0,0,0.25)",
+            minWidth: 120,
+            minHeight: 48,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: 8,
+          }}
+        >
+          <div style={{ fontWeight: 700, color: "#9b5de5", fontSize: 13, marginBottom: 6 }}>
+            Dev Panel
+          </div>
+          <button
+            style={{
+              background: "linear-gradient(90deg, #9b5de5 0%, #00f5d4 100%)",
+              color: "#fff",
+              border: "none",
+              borderRadius: 6,
+              padding: "6px 14px",
+              fontWeight: 600,
+              fontSize: 13,
+              cursor: "pointer",
+              boxShadow: "0 1px 4px rgba(0,0,0,0.12)",
+              marginBottom: 2,
+            }}
+            onClick={() => {
+              localStorage.setItem("nexusrbx:onboardingComplete", "false");
+              setShowOnboarding(true);
+              window.dispatchEvent(new Event("nexus:devShowOnboarding"));
+            }}
+          >
+            Show Onboarding
+          </button>
+        </div>
+      )}
       <div
         className="min-h-screen bg-[#0D0D0D] text-white font-sans flex flex-col relative"
         style={{
@@ -1775,7 +1844,35 @@ useEffect(() => {
                 </>
               )}
               {/* Loading bar appears just below the latest script output */}
-const last = messages[messages.length - 1
+              {(() => {
+                const last = messages[messages.length - 1];
+                return last?.role === "assistant" && last?.pending;
+              })() && (
+                <div className="flex items-center text-gray-400 text-sm mt-2 animate-fade-in">
+                  <span className="mr-2">
+                    <span className="inline-block w-8 h-8 rounded-full bg-gradient-to-br from-[#9b5de5] to-[#00f5d4] flex items-center justify-center shadow-lg overflow-hidden animate-pulse">
+                      <img
+                        src="/logo.png"
+                        alt="NexusRBX"
+                        className="w-6 h-6 object-contain"
+                        style={{ filter: "drop-shadow(0 0 2px #9b5de5)" }}
+                      />
+                    </span>
+                  </span>
+                  <span aria-live="polite">
+                    NexusRBX is typing...
+                    {["preparing", "calling model", "post-processing", "polishing", "finalizing"].includes(
+                      generationStep
+                    ) && (
+                      <>
+                        {" "}
+                        ({loadingBarData.stage || generationStep}
+                        {loadingBarData.eta ? `, ETA: ${loadingBarData.eta}s` : ""})
+                      </>
+                    )}
+                  </span>
+                </div>
+              )}
               <div ref={messagesEndRef} />
             </div>
           </div>
@@ -2077,5 +2174,8 @@ const last = messages[messages.length - 1
         `}
       </style>
     </div>
+  </React.Fragment>
   );
 }
+
+export default NexusRBXAIPageContainer;
