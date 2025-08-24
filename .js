@@ -1,11 +1,17 @@
 require("dotenv").config();
 const express = require("express");
+const bodyParser = require("body-parser");
 const cors = require("cors");
 const { OpenAI } = require("openai");
+// const Stripe = require("stripe");
+// const { requireAuth } = require("./src/firebase");
+const { PRICE, PLAN_LIMITS, classifyPrice } = require("./src/pricing");
 const admin = require("firebase-admin");
 const rateLimit = require("express-rate-limit");
 const { ipKeyGenerator } = require("express-rate-limit");
 const crypto = require("crypto");
+
+// Stripe is now managed by the Firebase extension; do not instantiate here.
 
 // --- ENVIRONMENT VARIABLES ---
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
@@ -17,7 +23,16 @@ const FRONTEND_ORIGIN = process.env.FRONTEND_ORIGIN; // e.g. https://your-fronte
 if (!FIREBASE_SERVICE_ACCOUNT) {
   throw new Error("FIREBASE_SERVICE_ACCOUNT env variable is required.");
 }
-const serviceAccount = JSON.parse(FIREBASE_SERVICE_ACCOUNT);
+let serviceAccount;
+try {
+  serviceAccount = JSON.parse(FIREBASE_SERVICE_ACCOUNT);
+  if (serviceAccount.private_key) {
+    serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
+  }
+} catch (e) {
+  console.error('Failed to parse FIREBASE_SERVICE_ACCOUNT:', e);
+  process.exit(1);
+}
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
 });
@@ -59,11 +74,67 @@ const corsOptions = {
 };
 const app = express();
 app.use(cors(corsOptions));
-app.options("*", cors(corsOptions));
-app.set('trust proxy', 1); // Trust first proxy (needed for Railway, Vercel, Heroku, etc.)
-app.use(express.json({ limit: "2mb" }));
+// then JSON parser for the rest
+app.use(bodyParser.json({ limit: "2mb" }));
 app.set("etag", false); // we'll manually set ETags on hot GETs
+// Health
+app.get("/health", (_, res) => res.json({ ok: true }));
 
+// --- BILLING SYSTEM ---
+
+function nextMonthEnd(d = new Date()) {
+  const y = d.getUTCFullYear();
+  const m = d.getUTCMonth();
+  const end = new Date(Date.UTC(y, m + 1, 1, 0, 0, 0));
+  return end; // first day next month 00:00Z
+}
+
+// --- ENSURE NO DOUBLE SLASH IN API PATHS ---
+function cleanApiPath(path) {
+  return path.replace(/([^:]\/)\/+/g, "$1");
+}
+
+async function getOrCreateUser(uid, email) {
+  const userRef = firestore.collection("users").doc(uid);
+  let userSnap = await userRef.get();
+  let user = userSnap.exists ? userSnap.data() : null;
+
+  if (!user) {
+    user = {
+      email: email || null,
+      plan: "FREE",
+      cycle: null,
+      subLimit: PLAN_LIMITS.FREE,
+      subUsed: 0,
+      subPeriodEnd: nextMonthEnd(),
+      paygBalance: 0,
+      seats: 1,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    };
+    await userRef.set(user, { merge: true });
+    userSnap = await userRef.get();
+    user = userSnap.data();
+  } else if (email && !user.email) {
+    await userRef.update({ email });
+    user.email = email;
+  }
+  user.id = uid;
+  return user;
+}
+
+async function resetIfExpired(user, uid) {
+  if (user.subPeriodEnd && new Date() >= user.subPeriodEnd) {
+    user.subUsed = 0;
+    user.subPeriodEnd = nextMonthEnd();
+    await firestore.collection("users").doc(uid).update({
+      subUsed: 0,
+      subPeriodEnd: user.subPeriodEnd,
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+  }
+  return user;
+}
 // --- GLOBAL UNHANDLED REJECTION LOGGING ---
 process.on("unhandledRejection", err => {
   console.error("UNHANDLED REJECTION:", err);
@@ -558,6 +629,24 @@ app.post("/api/generate-code", verifyFirebaseToken, userLimiter, asyncHandler(as
   }
   code = code.trim();
 
+  // Meter tokens used (minimum 1000)
+  const used = Math.max(
+    MIN_TOKENS_PER_REQUEST,
+    (completion.usage?.prompt_tokens || 0) + (completion.usage?.completion_tokens || 0)
+  );
+  try {
+    await fetch(`${process.env.APP_URL}/api/billing/consume`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: req.headers.authorization || ""
+      },
+      body: JSON.stringify({ tokens: used, reason: "generate-code", jobId: req.body?.jobId || null })
+    });
+  } catch (e) {
+    console.error("consume failed", e);
+  }
+
   setCache(cacheKey, code, 3600);
 
   await firestore.collection('analytics').add({
@@ -664,6 +753,24 @@ app.post("/api/generate/artifact", verifyFirebaseToken, userLimiter, asyncHandle
       } catch (openaiErr) {
         updateJob(jobId, { status: "failed", error: "OpenAI API error", stage: "failed" });
         return;
+      }
+
+      // Bill tokens (min 1000)
+      try {
+        const used = Math.max(
+          MIN_TOKENS_PER_REQUEST,
+          (completion.usage?.prompt_tokens || 0) + (completion.usage?.completion_tokens || 0)
+        );
+        await fetch(`${process.env.APP_URL}/api/billing/consume`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: req.headers.authorization || ""
+          },
+          body: JSON.stringify({ tokens: used, reason: "generate-artifact", jobId })
+        });
+      } catch (e) {
+        console.error("consume failed", e);
       }
 
       updateJob(jobId, { stage: "polishing" });
@@ -872,6 +979,250 @@ app.post("/api/projects", verifyFirebaseToken, asyncHandler(async (req, res) => 
 
   res.json({ projectId: scriptDoc.id, version: 1 });
 }));
+
+// GET /api/billing/entitlements
+app.get("/api/billing/entitlements", verifyFirebaseToken, asyncHandler(async (req, res) => {
+  // DO NOT set ETag or use cache for this endpoint!
+  res.setHeader('Content-Type', 'application/json');
+  const { uid, email } = req.user;
+
+  const userRef = firestore.collection("users").doc(uid);
+  const userSnap = await userRef.get();
+  if (!userSnap.exists) {
+    await userRef.set({
+      email: email || null,
+      plan: "FREE",
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    }, { merge: true });
+  }
+
+  // Read Stripe extension subs
+  const subsSnap = await firestore.collection("customers").doc(uid).collection("subscriptions").get();
+
+  let activePlan = null; // { priceId, interval }
+  subsSnap.forEach(d => {
+    const s = d.data();
+    if (["active", "trialing", "past_due"].includes(s.status)) {
+      const item = Array.isArray(s.items) && s.items[0];
+      const priceId = item?.price?.id;
+      const interval = item?.price?.recurring?.interval;
+      if (priceId) activePlan = { priceId, interval };
+    }
+  });
+
+  const planInfo = activePlan ? classifyPrice(activePlan.priceId) : null;
+  const plan = planInfo?.plan || "FREE";
+  const cycle = activePlan ? (activePlan.interval === "year" ? "YEARLY" : "MONTHLY") : null;
+
+  // Subscription cap (fall back to FREE limit if nothing active)
+  const FREE_LIMIT = PLAN_LIMITS?.FREE ?? 50000;
+  const subLimit = planInfo?.limit ?? FREE_LIMIT;
+
+  // Period end from Stripe doc if present
+  let resetsAt = null;
+  subsSnap.forEach(d => {
+    const s = d.data();
+    if (["active","trialing","past_due"].includes(s.status) && s.current_period_end) {
+      const ms = typeof s.current_period_end === "number" ? s.current_period_end * 1000 : null;
+      if (ms && (!resetsAt || ms > resetsAt)) resetsAt = new Date(ms).toISOString();
+    }
+  });
+  if (!resetsAt) {
+    // give FREE users a monthly reset window starting now
+    resetsAt = new Date(Date.now() + 30*24*60*60*1000).toISOString();
+  }
+
+  // PAYG remaining
+  let paygRemaining = 0;
+  try {
+    const paygSnap = await userRef.collection("paygCredits").doc("main").get();
+    if (paygSnap.exists && typeof paygSnap.data().balance === "number") {
+      paygRemaining = Math.max(0, paygSnap.data().balance);
+    }
+  } catch {}
+
+  // Used tokens (optional aggregation)
+  let used = 0;
+  try {
+    const logs = await userRef.collection("usageLogs").orderBy("createdAt", "desc").limit(500).get();
+    logs.forEach(l => used += Number(l.data().tokens || 0));
+  } catch {}
+
+  // Always return an entitlement, even for FREE users
+  return res.json({
+    plan,
+    cycle,
+    sub: { limit: subLimit, used, resetsAt },
+    payg: { remaining: paygRemaining },
+    seats: 1,
+  });
+}));
+
+
+// REPLACEMENT: Use Firebase extension for Stripe checkout
+app.post("/api/billing/checkout", verifyFirebaseToken, async (req, res) => {
+  const { uid } = req.user;
+  const { priceId, mode = "subscription" } = req.body || {};
+  if (!priceId) return res.status(400).json({ error: "priceId required" });
+  if (!["subscription", "payment"].includes(mode)) {
+    return res.status(400).json({ error: "mode must be 'subscription' or 'payment'" });
+  }
+
+  // Create a checkout session doc for the extension
+  const csRef = await firestore
+    .collection("customers").doc(uid)
+    .collection("checkout_sessions")
+    .add({
+      price: priceId,
+      mode,
+      success_url: `${process.env.APP_URL}/ai?checkout=success`,
+      cancel_url: `${process.env.APP_URL}/ai?checkout=cancel`,
+      allow_promotion_codes: true,
+    });
+
+  // Wait up to ~10s for the extension to populate the URL
+  const started = Date.now();
+  while (Date.now() - started < 10000) {
+    const snap = await csRef.get();
+    const data = snap.data() || {};
+    if (data.url) return res.json({ url: data.url });
+    await new Promise(r => setTimeout(r, 400));
+  }
+  return res.status(202).json({ sessionDocPath: csRef.path }); // FE can poll if needed
+});
+
+// Keep your old frontend path working
+app.post("/api/checkout", verifyFirebaseToken, (req, res, next) =>
+  app._router.handle({ ...req, url: "/api/billing/checkout" }, res, next)
+);
+
+// POST /api/billing/portal (Firebase extension version)
+app.post("/api/billing/portal", verifyFirebaseToken, async (req, res) => {
+  const { uid } = req.user;
+  const docRef = await firestore
+    .collection("customers").doc(uid)
+    .collection("portal_sessions")
+    .add({ return_url: `${process.env.APP_URL}/ai` });
+
+  const started = Date.now();
+  while (Date.now() - started < 8000) {
+    const snap = await docRef.get();
+    const data = snap.data() || {};
+    if (data.url) return res.json({ url: data.url });
+    await new Promise(r => setTimeout(r, 300));
+  }
+  return res.status(202).json({ portalDocPath: docRef.path }); // FE can poll
+});
+// Alias for billing portal
+app.post("/api/portal", verifyFirebaseToken, (req, res, next) =>
+  app._router.handle({ ...req, url: "/api/billing/portal" }, res, next)
+);
+
+const MIN_TOKENS_PER_REQUEST = 1000;
+
+// POST /api/billing/consume { tokens, reason, jobId }
+app.post("/api/billing/consume", verifyFirebaseToken, async (req, res) => {
+  const { uid, email } = req.user;
+  const { tokens, reason, jobId } = req.body || {};
+  const amount = Math.max(MIN_TOKENS_PER_REQUEST, Math.ceil(Number(tokens || 0)));
+
+  const u = await getOrCreateUser(uid, email);
+
+  // dev bypass (optional, keep FE-only if you prefer)
+  if (process.env.DEV_EMAIL && u.email && u.email.toLowerCase() === process.env.DEV_EMAIL.toLowerCase()) {
+    return res.json({ ok: true, newBalances: { subRemaining: Infinity, paygRemaining: Infinity } });
+  }
+
+  try {
+    const userRef = firestore.collection("users").doc(uid);
+    const usageLogRef = userRef.collection("usageLogs");
+    const paygRef = userRef.collection("paygCredits").doc("main");
+
+    let result = await firestore.runTransaction(async (tx) => {
+      const userSnap = await tx.get(userRef);
+      if (!userSnap.exists) throw new Error("UserNotFound");
+      let user = userSnap.data();
+
+      // reset if billing window ended (safety)
+      if (user.subPeriodEnd && new Date() >= user.subPeriodEnd) {
+        user.subUsed = 0;
+        user.subPeriodEnd = nextMonthEnd();
+        tx.update(userRef, {
+          subUsed: 0,
+          subPeriodEnd: user.subPeriodEnd,
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+      }
+
+      // Fetch PAYG balance from subfield or /paygCredits
+      let paygBalance = user.paygBalance;
+      let paygSnap = await tx.get(paygRef);
+      if (paygSnap.exists && typeof paygSnap.data().balance === "number") {
+        paygBalance = paygSnap.data().balance;
+      }
+
+      const subRemaining = Math.max(0, user.subLimit - user.subUsed);
+      const paygRemaining = Math.max(0, paygBalance);
+      const total = subRemaining + paygRemaining;
+
+      if (total < amount) {
+        throw new Error("INSUFFICIENT_TOKENS");
+      }
+
+      // idempotent by jobId
+      if (jobId) {
+        const existing = await tx.get(usageLogRef.doc(jobId));
+        if (existing.exists) {
+          return {
+            subRemaining,
+            paygRemaining,
+          };
+        }
+      }
+
+      let consumeFromSub = Math.min(amount, subRemaining);
+      let consumeFromPayg = amount - consumeFromSub;
+
+      // Update user subUsed
+      tx.update(userRef, {
+        subUsed: admin.firestore.FieldValue.increment(consumeFromSub),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+
+      // Update PAYG balance if needed
+      if (consumeFromPayg > 0) {
+        tx.set(paygRef, {
+          balance: admin.firestore.FieldValue.increment(-consumeFromPayg),
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        }, { merge: true });
+      }
+
+      // Write usage log (use jobId as doc id for idempotency)
+      tx.set(usageLogRef.doc(jobId || `${Date.now()}-${Math.random()}`), {
+        tokens: amount,
+        reason: reason || null,
+        jobId: jobId || null,
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+
+      return {
+        subRemaining: Math.max(0, user.subLimit - user.subUsed - consumeFromSub),
+        paygRemaining: Math.max(0, paygBalance - consumeFromPayg),
+      };
+    });
+
+    res.json({ ok: true, newBalances: result });
+  } catch (e) {
+    if (String(e.message).includes("INSUFFICIENT_TOKENS")) {
+      return res.status(402).json({ error: "Not enough tokens" });
+    }
+    if (String(e.message).includes("UserNotFound")) {
+      return res.status(404).json({ error: "User not found" });
+    }
+    res.status(500).json({ error: "Consume failed" });
+  }
+});
 
 // DELETE a script and all its versions
 app.delete("/api/scripts/:scriptId", verifyFirebaseToken, asyncHandler(async (req, res) => {
@@ -1247,6 +1598,10 @@ app.get("/", (req, res) => {
 // --- ERROR HANDLING ---
 app.use((err, req, res, next) => {
   console.error("Unhandled error:", err.stack || err);
+  // If this is a 404 from a missing API endpoint, clarify
+  if (err.statusCode === 404 && req.originalUrl && req.originalUrl.includes('/api/billing/entitlements')) {
+    return res.status(404).json({ error: "Entitlements endpoint not found. Please check your backend deployment and ensure the /api/billing/entitlements route exists." });
+  }
   res.status(err.statusCode || 500).json({ error: err.message || "Internal server error" });
 });
 
@@ -1275,3 +1630,4 @@ wss.on('connection', (ws) => {
 server.listen(PORT, () => {
   console.log(`NexusRBX Backend (HTTP+WS) listening on port ${PORT}`);
 });
+// (Do not start app with app.listen again – HTTP server already running)

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Home,
   Check,
@@ -15,21 +15,21 @@ import {
   Sparkles,
   Star,
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { getAuth, onAuthStateChanged } from "firebase/auth";
 
 // Stripe Price IDs (example). Swap to your real ones.
 const PRICE = {
   sub: {
-    starterMonthly: "price_sub_starter_m",
-    starterYearly: "price_sub_starter_y",
-    proMonthly: "price_sub_pro_m",
-    proYearly: "price_sub_pro_y",
-    teamMonthly: "price_sub_team_m",
-    teamYearly: "price_sub_team_y",
+    proMonthly:  "price_1Rz8AsAu3NmqHUAu2X27DNPq", // $14.99 / month
+    proYearly:   "price_1Rz8CGAu3NmqHUAulBRTflg5", // $133.99 / year
+    teamMonthly: "price_1Rz8FWAu3NmqHUAuJXQXYqxZ", // $49.99 / month
+    teamYearly:  "price_1Rz8IrAu3NmqHUAu4YSpwuTP", // $449.91 / year
   },
   payg: {
-    pack100k: "price_payg_100k",
-    pack500k: "price_payg_500k",
-    pack1m: "price_payg_1m",
+    pack100k: "price_1Ryy1HAu3NmqHUAu3Q9qijm3", // $4.99 – 100k tokens
+    pack500k: "price_1Ryy0vAu3NmqHUAu0aQ0TfYq", // $12.99 – 500k tokens
+    pack1m:   "price_1Ryy0kAu3NmqHUAudDjtBdeg", // $24.99 – 1M tokens
   },
 };
 
@@ -64,9 +64,8 @@ const plans = [
     id: "pro",
     name: "Pro",
     description: "For serious Roblox developers",
-    monthlyUSD: 19.99,
-    yearlyUSD:
-      Math.round((19.99 * 12 * 0.75 + Number.EPSILON) * 100) / 100, // 179.91
+    monthlyUSD: 14.99,
+    yearlyUSD: 133.99, // $14.99 * 12 * 0.75
     tokenAllowancePM: 500_000,
     approxScriptsPM: "~70–100 medium scripts",
     features: [
@@ -90,8 +89,7 @@ const plans = [
     name: "Team",
     description: "For development teams",
     monthlyUSD: 49.99,
-    yearlyUSD:
-      Math.round((49.99 * 12 * 0.75 + Number.EPSILON) * 100) / 100, // 449.91
+    yearlyUSD: 449.91, // $49.99 * 12 * 0.75
     tokenAllowancePM: 1_500_000,
     approxScriptsPM: "~200–300 medium scripts",
     features: [
@@ -151,22 +149,22 @@ const faqs = [
   },
 ];
 
-// Checkout function for Stripe
-async function checkout(priceId) {
-  const res = await fetch("/api/checkout", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ priceId }),
-  });
-  const data = await res.json();
-  if (data.url) window.location.href = data.url;
-}
-
 // Container Component
 export default function NexusRBXSubscribePageContainer() {
-  const [billingCycle, setBillingCycle] = useState("yearly");
+  const [billingCycle, setBillingCycle] = useState("monthly");
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [showFaq, setShowFaq] = useState({});
+  const [user, setUser] = useState(null);
+  const navigate = useNavigate();
+
+  // Listen for Firebase authentication state
+  useEffect(() => {
+    const auth = getAuth();
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+    });
+    return () => unsubscribe();
+  }, []);
 
   const handleBillingCycleChange = (cycle) => {
     setBillingCycle(cycle);
@@ -183,6 +181,24 @@ export default function NexusRBXSubscribePageContainer() {
     }));
   };
 
+  // Instead of Stripe checkout, navigate to /billing with priceId as query param
+  const goToPaymentPage = (priceId) => {
+    if (priceId) {
+      navigate(`/billing?priceId=${encodeURIComponent(priceId)}`);
+    }
+  };
+
+  const handleLogin = () => {
+    navigate("/signin");
+  };
+
+  const handleLogout = () => {
+    const auth = getAuth();
+    auth.signOut();
+    setUser(null);
+    navigate("/signin");
+  };
+
   return (
     <NexusRBXSubscribePage
       billingCycle={billingCycle}
@@ -193,6 +209,10 @@ export default function NexusRBXSubscribePageContainer() {
       handleBillingCycleChange={handleBillingCycleChange}
       handlePlanSelect={handlePlanSelect}
       toggleFaq={toggleFaq}
+      goToPaymentPage={goToPaymentPage}
+      user={user}
+      handleLogin={handleLogin}
+      handleLogout={handleLogout}
     />
   );
 }
@@ -207,6 +227,10 @@ function NexusRBXSubscribePage({
   handleBillingCycleChange,
   handlePlanSelect,
   toggleFaq,
+  goToPaymentPage,
+  user,
+  handleLogin,
+  handleLogout,
 }) {
   return (
     <div className="min-h-screen bg-[#0D0D0D] text-white font-sans flex flex-col">
@@ -214,13 +238,13 @@ function NexusRBXSubscribePage({
       <header className="border-b border-gray-800 bg-black/30 backdrop-blur-md sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <div className="flex items-center">
-            <div className="text-2xl font-bold bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-transparent bg-clip-text">
+            <div className="text-2xl font-bold bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-transparent bg-clip-text cursor-pointer" tabIndex={0} onClick={() => window.location.href = "/"} onKeyDown={e => { if (e.key === "Enter") window.location.href = "/"; }}>
               NexusRBX
             </div>
             <div className="ml-2 text-sm text-gray-400">Pricing</div>
           </div>
 
-          <nav className="hidden md:flex space-x-6">
+          <nav className="hidden md:flex space-x-6 items-center">
             <a
               href="/"
               className="text-gray-300 hover:text-white transition-colors duration-300 flex items-center"
@@ -247,6 +271,39 @@ function NexusRBXSubscribePage({
             >
               Contact
             </a>
+            {!user ? (
+              <button
+                onClick={handleLogin}
+                className="ml-4 text-gray-300 hover:text-white transition-colors duration-300 font-sans text-base"
+                type="button"
+                aria-label="Login"
+                style={{
+                  background: "none",
+                  border: "none",
+                  padding: 0,
+                  margin: 0,
+                  cursor: "pointer"
+                }}
+              >
+                Login
+              </button>
+            ) : (
+              <button
+                onClick={handleLogout}
+                className="ml-4 text-gray-300 hover:text-white transition-colors duration-300 font-sans text-base"
+                type="button"
+                aria-label="Logout"
+                style={{
+                  background: "none",
+                  border: "none",
+                  padding: 0,
+                  margin: 0,
+                  cursor: "pointer"
+                }}
+              >
+                Logout
+              </button>
+            )}
           </nav>
 
           <button className="md:hidden text-gray-300">
@@ -278,6 +335,17 @@ function NexusRBXSubscribePage({
             <p className="text-xl text-gray-400 max-w-2xl mx-auto">
               Unlock GPT‑4.1‑powered Roblox scripting with transparent, usage‑based pricing.
             </p>
+            <div className="mt-4">
+              {user ? (
+                <span className="inline-flex items-center px-3 py-1 rounded-full bg-[#00f5d4]/10 text-[#00f5d4] text-sm font-medium">
+                  Logged in as {user.email || user.displayName || "user"}
+                </span>
+              ) : (
+                <span className="inline-flex items-center px-3 py-1 rounded-full bg-[#f15bb5]/10 text-[#f15bb5] text-sm font-medium">
+                  Not logged in
+                </span>
+              )}
+            </div>
           </div>
 
           {/* Billing Toggle */}
@@ -355,14 +423,23 @@ function NexusRBXSubscribePage({
                   <button
                     onClick={() => {
                       if (plan.id === "free") {
-                        window.location.href = "/signup";
+                        if (!user) {
+                          window.location.href = "/signup";
+                        } else {
+                          // Already logged in, maybe go to dashboard or show message
+                          window.location.href = "/ai";
+                        }
+                        return;
+                      }
+                      if (!user) {
+                        handleLogin();
                         return;
                       }
                       const pid =
                         typeof plan.stripePriceId === "function"
                           ? plan.stripePriceId(billingCycle)
                           : plan.stripePriceId;
-                      if (pid) checkout(pid);
+                      if (pid) goToPaymentPage(pid);
                     }}
                     className={`w-full py-3 px-4 rounded-lg font-medium transition-all duration-300 ${
                       plan.highlight
@@ -370,7 +447,13 @@ function NexusRBXSubscribePage({
                         : "bg-gray-800 text-white hover:bg-gray-700"
                     }`}
                   >
-                    {plan.cta}
+                    {plan.id === "free"
+                      ? !user
+                        ? "Get Started"
+                        : "Go to AI Console"
+                      : !user
+                        ? "Login to Subscribe"
+                        : plan.cta}
                   </button>
                 </div>
 
@@ -412,20 +495,20 @@ function NexusRBXSubscribePage({
                 {
                   name: "Top‑Up 100k",
                   tokens: 100_000,
-                  price: 5,
+                  price: 4.99,
                   priceId: PRICE.payg.pack100k,
                 },
                 {
                   name: "Top‑Up 500k",
                   tokens: 500_000,
-                  price: 15,
+                  price: 12.99,
                   priceId: PRICE.payg.pack500k,
                   popular: true,
                 },
                 {
                   name: "Top‑Up 1M",
                   tokens: 1_000_000,
-                  price: 25,
+                  price: 24.99,
                   priceId: PRICE.payg.pack1m,
                 },
               ].map((p) => (
@@ -447,10 +530,16 @@ function NexusRBXSubscribePage({
                   </div>
                   <div className="text-3xl font-bold mb-4">${p.price}</div>
                   <button
-                    onClick={() => checkout(p.priceId)}
+                    onClick={() => {
+                      if (!user) {
+                        handleLogin();
+                        return;
+                      }
+                      goToPaymentPage(p.priceId);
+                    }}
                     className="w-full py-3 px-4 rounded-lg bg-gray-800 hover:bg-gray-700 transition"
                   >
-                    Buy Pack
+                    {user ? "Buy Pack" : "Login to Buy"}
                   </button>
                 </div>
               ))}
@@ -656,12 +745,21 @@ function NexusRBXSubscribePage({
               Join thousands of developers who are creating amazing Roblox experiences with the power of AI.
             </p>
             <div className="flex flex-col sm:flex-row justify-center gap-4">
-              <a
-                href="/signup"
-                className="px-8 py-3 rounded-lg bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-white font-medium hover:shadow-lg hover:shadow-[#9b5de5]/20 transform hover:translate-y-[-2px] transition-all duration-300"
-              >
-                Get Started for Free
-              </a>
+              {!user ? (
+                <a
+                  href="/signup"
+                  className="px-8 py-3 rounded-lg bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-white font-medium hover:shadow-lg hover:shadow-[#9b5de5]/20 transform hover:translate-y-[-2px] transition-all duration-300"
+                >
+                  Get Started for Free
+                </a>
+              ) : (
+                <a
+                  href="/ai"
+                  className="px-8 py-3 rounded-lg bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-white font-medium hover:shadow-lg hover:shadow-[#9b5de5]/20 transform hover:translate-y-[-2px] transition-all duration-300"
+                >
+                  Go to AI Console
+                </a>
+              )}
               <a
                 href="/contact"
                 className="px-8 py-3 rounded-lg bg-gray-800 text-white font-medium hover:bg-gray-700 transition-all duration-300"

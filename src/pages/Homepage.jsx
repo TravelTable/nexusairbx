@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Github, Zap, Settings, Shield, ChevronRight, Loader } from "lucide-react";
+import { Github, Zap, Settings, Shield, ChevronRight, Loader, Star, DollarSign } from "lucide-react";
 import { auth } from "../firebase";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 
@@ -38,19 +38,20 @@ export default function NexusRBXHomepageContainer() {
   };
 
   const handleSubmit = (e) => {
-  e.preventDefault();
-  setError("");
-  if (!inputValue.trim()) return;
+    e.preventDefault();
+    setError("");
+    if (!inputValue.trim()) return;
 
-  // Pass prompt to /ai page, but do not trigger generation
-  navigate("/ai", {
-    state: {
-      initialPrompt: inputValue.trim(),
-      aiResult: null
-    }
-  });
-  setInputValue("");
-};
+    // Pass prompt to /ai page, but do not trigger generation
+    navigate("/ai", {
+      state: {
+        initialPrompt: inputValue.trim(),
+        aiResult: null
+      }
+    });
+    setInputValue("");
+  };
+
   useEffect(() => {
     const timer = setTimeout(() => {
       setIsTyping(true);
@@ -419,6 +420,40 @@ function NexusRBXHomepage({
             )}
             <div className="text-sm text-gray-500 mt-2">
               <span>Type your Roblox mod idea and press <b>Enter</b> or click "Generate with AI"</span>
+            </div>
+          </div>
+        </section>
+
+        {/* ADVERTISING BANNER */}
+        <section className="w-full flex justify-center px-4">
+          <div className="max-w-3xl w-full">
+            <div className="relative rounded-xl bg-gradient-to-r from-[#9b5de5]/80 via-[#f15bb5]/80 to-[#00f5d4]/80 shadow-lg border border-[#9b5de5] px-6 py-6 md:py-8 flex flex-col md:flex-row items-center justify-between gap-6 mb-12 animate-fade-in">
+              <div className="flex items-center gap-4">
+                <DollarSign className="h-10 w-10 text-[#00f5d4] bg-black/20 rounded-full p-2 shadow-lg" />
+                <div>
+                  <div className="text-lg md:text-2xl font-bold text-white mb-1">
+                    Unlock <span className="bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-transparent bg-clip-text">Pro Features</span>
+                  </div>
+                  <div className="text-gray-100 text-sm md:text-base">
+                    Get GPT‑4.1 scripting, higher limits, and advanced tools. <span className="hidden md:inline">Upgrade your Roblox development today!</span>
+                  </div>
+                  <div className="flex items-center gap-1 mt-2">
+                    <Star className="h-4 w-4 text-[#f15bb5]" />
+                    <Star className="h-4 w-4 text-[#f15bb5]" />
+                    <Star className="h-4 w-4 text-[#f15bb5]" />
+                    <span className="text-xs text-gray-200 ml-2">Thousands of devs love NexusRBX Pro</span>
+                  </div>
+                </div>
+              </div>
+              <button
+                className="mt-4 md:mt-0 px-6 py-3 rounded-lg bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-white font-semibold shadow-lg hover:shadow-[#9b5de5]/30 hover:scale-105 transition-all duration-300 flex items-center"
+                onClick={() => navigate("/subscribe")}
+                type="button"
+                aria-label="Subscribe to NexusRBX Pro"
+              >
+                Subscribe Now
+                <ChevronRight className="ml-2 h-5 w-5" />
+              </button>
             </div>
           </div>
         </section>
