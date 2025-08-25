@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import {
   CreditCard,
   Zap,
@@ -7,25 +7,52 @@ import {
   AlertTriangle,
   DollarSign,
   ExternalLink,
+  ArrowUpRight,
 } from "lucide-react";
 import { getEntitlements, startCheckout, openPortal } from "../lib/billing";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
+import { getFirestore, doc, onSnapshot } from "firebase/firestore";
+import { PRICE } from "../lib/prices";
 
-// Stripe Price IDs (replace with your real ones if needed)
-const PRICE = {
-  sub: {
-    proMonthly: "price_1Rz8AsAu3NmqHUAu2X27DNPq",
-    proYearly: "price_1Rz8CGAu3NmqHUAulBRTflg5",
-    teamMonthly: "price_1Rz8FWAu3NmqHUAuJXQXYqxZ",
-    teamYearly: "price_1Rz8IrAu3NmqHUAu4YSpwuTP",
+// Subscription plan definitions
+const SUBSCRIPTION_PLANS = [
+  {
+    key: "PRO",
+    name: "Pro",
+    description: "For individuals and power users.",
+    monthlyPrice: 14.99,
+    yearlyPrice: 133.99,
+    monthlyPriceId: PRICE.sub.proMonthly,
+    yearlyPriceId: PRICE.sub.proYearly,
+    tokens: 500_000,
+    features: [
+      "500,000 tokens/month",
+      "Priority support",
+      "Advanced features",
+      "Personal use",
+    ],
+    highlight: false,
   },
-  payg: {
-    pack100k: "price_1Ryy1HAu3NmqHUAu3Q9qijm3",
-    pack500k: "price_1Ryy0vAu3NmqHUAu0aQ0TfYq",
-    pack1m: "price_1Ryy0kAu3NmqHUAudDjtBdeg",
+  {
+    key: "TEAM",
+    name: "Team",
+    description: "For teams and organizations.",
+    monthlyPrice: 49.99,
+    yearlyPrice: 449.91,
+    monthlyPriceId: PRICE.sub.teamMonthly,
+    yearlyPriceId: PRICE.sub.teamYearly,
+    tokens: 1_500_000,
+    features: [
+      "1,500,000 tokens/month",
+      "Team management",
+      "Priority support",
+      "Advanced features",
+      "For teams/orgs",
+    ],
+    highlight: true,
   },
-};
+];
 
 export default function BillingPage() {
   const [entitlements, setEntitlements] = useState(null);
@@ -39,6 +66,9 @@ export default function BillingPage() {
 
   // Debug state
   const [debugInfo, setDebugInfo] = useState(null);
+
+  // Firestore session listener ref
+  const sessionUnsubRef = useRef(null);
 
   const navigate = useNavigate();
 
@@ -143,6 +173,7 @@ export default function BillingPage() {
   async function handleCheckout(priceId, mode) {
     setCheckoutLoading(true);
     setError("");
+    setNote("");
     setDebugInfo((prev) => ({
       ...prev,
       checkout: {
@@ -151,8 +182,15 @@ export default function BillingPage() {
         status: "starting",
       },
     }));
+
+    // Clean up any previous session listener
+    if (sessionUnsubRef.current) {
+      sessionUnsubRef.current();
+      sessionUnsubRef.current = null;
+    }
+
     try {
-      const r = await startCheckout(priceId, mode); // auto-navigates if URL present
+      const r = await startCheckout(priceId, mode); // returns { url } or { sessionDocPath }
       setDebugInfo((prev) => ({
         ...prev,
         checkout: {
@@ -162,7 +200,44 @@ export default function BillingPage() {
           response: r,
         },
       }));
-      if (!r?.url) setNote("Checkout session pending…");
+
+      // If direct url, redirect immediately
+      if (r?.url) {
+        window.location.href = r.url;
+        return;
+      }
+
+      // If sessionDocPath, listen for url in Firestore
+      if (r?.sessionDocPath) {
+        setNote("Preparing your checkout session…");
+        const db = getFirestore();
+        const sessionDocRef = doc(db, r.sessionDocPath);
+
+        sessionUnsubRef.current = onSnapshot(sessionDocRef, (docSnap) => {
+          const data = docSnap.data();
+          setDebugInfo((prev) => ({
+            ...prev,
+            checkoutSessionDoc: {
+              path: r.sessionDocPath,
+              data,
+            },
+          }));
+          if (data?.url) {
+            window.location.href = data.url;
+          } else if (data?.error) {
+            setError(
+              data.error.message ||
+                "There was an error creating your checkout session. Please try again."
+            );
+            if (sessionUnsubRef.current) {
+              sessionUnsubRef.current();
+              sessionUnsubRef.current = null;
+            }
+          }
+        });
+      } else {
+        setNote("Checkout session pending…");
+      }
     } catch (e) {
       setDebugInfo((prev) => ({
         ...prev,
@@ -183,6 +258,16 @@ export default function BillingPage() {
     }
   }
 
+  // Clean up Firestore listener on unmount
+  useEffect(() => {
+    return () => {
+      if (sessionUnsubRef.current) {
+        sessionUnsubRef.current();
+        sessionUnsubRef.current = null;
+      }
+    };
+  }, []);
+
   // Plan display helpers
   function planLabel(plan) {
     if (!plan) return "Free";
@@ -198,6 +283,20 @@ export default function BillingPage() {
       return cycle === "YEARLY" ? "$449.91/year" : "$49.99/month";
     }
     return "Free";
+  }
+
+  // Determine available upgrades
+  function getAvailableUpgrades(currentPlan) {
+    if (!currentPlan || currentPlan === "FREE") {
+      // Show both Pro and Team
+      return SUBSCRIPTION_PLANS;
+    }
+    if (currentPlan === "PRO") {
+      // Only Team is an upgrade
+      return SUBSCRIPTION_PLANS.filter((p) => p.key === "TEAM");
+    }
+    // Team is highest, no upgrades
+    return [];
   }
 
   // Loading state
@@ -264,6 +363,8 @@ export default function BillingPage() {
   }
 
   // Main UI
+  const availableUpgrades = getAvailableUpgrades(entitlements?.plan);
+
   return (
     <div className="min-h-screen bg-gray-900 text-gray-200">
       <div className="max-w-3xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
@@ -391,6 +492,79 @@ export default function BillingPage() {
           </div>
         </div>
 
+        {/* Upgrade Plans Section */}
+        {availableUpgrades.length > 0 && (
+          <div className="bg-gray-800 rounded-lg shadow-lg p-6 mb-8 border border-purple-700">
+            <div className="flex items-center mb-4">
+              <ArrowUpRight className="h-6 w-6 text-purple-400 mr-2" />
+              <h2 className="text-xl font-semibold text-white">
+                Upgrade Your Plan
+              </h2>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {availableUpgrades.map((plan) => (
+                <div
+                  key={plan.key}
+                  className={`relative bg-gray-900 rounded-lg border ${
+                    plan.highlight
+                      ? "border-purple-500 shadow-lg shadow-purple-700/10"
+                      : "border-gray-700"
+                  } p-6 flex flex-col`}
+                >
+                  {plan.highlight && (
+                    <div className="absolute top-0 right-0 bg-purple-600 text-white text-xs px-3 py-1 rounded-bl-lg rounded-tr-lg font-bold">
+                      Most Popular
+                    </div>
+                  )}
+                  <div className="flex items-center mb-2">
+                    <Zap className="h-5 w-5 text-purple-400 mr-2" />
+                    <span className="text-lg font-bold text-white">
+                      {plan.name}
+                    </span>
+                  </div>
+                  <div className="text-gray-400 mb-2">{plan.description}</div>
+                  <div className="flex items-baseline gap-2 mb-2">
+                    <span className="text-2xl font-bold text-green-300">
+                      ${plan.monthlyPrice.toFixed(2)}
+                    </span>
+                    <span className="text-gray-400 text-sm">/month</span>
+                    <span className="ml-2 text-gray-500 text-xs">
+                      or ${plan.yearlyPrice.toFixed(2)}/year
+                    </span>
+                  </div>
+                  <ul className="mb-4 text-sm text-gray-300 list-disc pl-5 space-y-1">
+                    {plan.features.map((f, i) => (
+                      <li key={i}>{f}</li>
+                    ))}
+                  </ul>
+                  <div className="flex flex-col gap-2 mt-auto">
+                    <button
+                      className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md font-medium flex items-center gap-2 transition disabled:opacity-60"
+                      onClick={() =>
+                        handleCheckout(plan.monthlyPriceId, "subscription")
+                      }
+                      disabled={checkoutLoading || portalLoading}
+                    >
+                      <DollarSign className="h-4 w-4" />
+                      Upgrade (Monthly)
+                    </button>
+                    <button
+                      className="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-md font-medium flex items-center gap-2 transition disabled:opacity-60"
+                      onClick={() =>
+                        handleCheckout(plan.yearlyPriceId, "subscription")
+                      }
+                      disabled={checkoutLoading || portalLoading}
+                    >
+                      <DollarSign className="h-4 w-4" />
+                      Upgrade (Yearly)
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Buy PAYG Tokens */}
         <div className="bg-gray-800 rounded-lg shadow-lg p-6 mb-8 border border-gray-700">
           <div className="flex items-center mb-4">
@@ -420,7 +594,7 @@ export default function BillingPage() {
               <div className="text-lg font-bold text-white mb-1">500,000</div>
               <div className="text-xs text-gray-400 mb-2">tokens</div>
               <div className="text-xl font-semibold text-green-300 mb-2">
-                $12.99
+                $15.19
               </div>
               <div className="text-xs text-purple-400 font-bold">
                 Best Value

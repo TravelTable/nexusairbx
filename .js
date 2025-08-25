@@ -10,9 +10,19 @@ const admin = require("firebase-admin");
 const rateLimit = require("express-rate-limit");
 const { ipKeyGenerator } = require("express-rate-limit");
 const crypto = require("crypto");
-
 // Stripe is now managed by the Firebase extension; do not instantiate here.
-
+// If you need Stripe, install it and uncomment below. Otherwise, leave Stripe out entirely.
+// const Stripe = require("stripe");
+// const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY;
+// const stripe = STRIPE_SECRET_KEY ? new Stripe(STRIPE_SECRET_KEY, { apiVersion: "2023-10-16" }) : null;
+function isValidUrl(url) {
+  try {
+    new URL(url);
+    return true;
+  } catch {
+    return false;
+  }
+}
 // --- ENVIRONMENT VARIABLES ---
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const FIREBASE_SERVICE_ACCOUNT = process.env.FIREBASE_SERVICE_ACCOUNT;
@@ -48,8 +58,16 @@ const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
 const allowlist = [
   "http://localhost:3000",
   "https://nexusrbx.com",
-  "http://nexusrbx.com"
+  "http://nexusrbx.com",
+  "https://nexusairbx-git-main-traveltables-projects.vercel.app",
+  "https://nexusrbx-backend-production.up.railway.app",
+  "https://nexusairbx-git-main-traveltables-projects.vercel.app",
+  "https://nexusairbx.vercel.app",
+  "https://nexusairbx.com",
+  "http://nexusairbx.com",
+  "https://nexusairbx-git-main-traveltables-projects.vercel.app",
 ];
+
 const corsOptions = {
   origin: function(origin, callback) {
     // Allow requests with no origin (like SSR, curl, mobile apps)
@@ -65,12 +83,13 @@ const corsOptions = {
         } catch { return false; }
       })) return callback(null, true);
     } catch {}
-    return callback(new Error("Not allowed by CORS"));
+    console.error("Blocked by CORS:", origin);
+    return callback(new Error("Not allowed by CORS: " + origin));
   },
+  credentials: true,
   methods: ["GET","POST","DELETE","PUT","PATCH","OPTIONS"],
   allowedHeaders: ["Content-Type","Authorization","If-None-Match","Idempotency-Key"],
   maxAge: 86400,
-  credentials: true,
 };
 const app = express();
 app.use(cors(corsOptions));
@@ -982,7 +1001,6 @@ app.post("/api/projects", verifyFirebaseToken, asyncHandler(async (req, res) => 
 
 // GET /api/billing/entitlements
 app.get("/api/billing/entitlements", verifyFirebaseToken, asyncHandler(async (req, res) => {
-  // DO NOT set ETag or use cache for this endpoint!
   res.setHeader('Content-Type', 'application/json');
   const { uid, email } = req.user;
 
@@ -1060,39 +1078,57 @@ app.get("/api/billing/entitlements", verifyFirebaseToken, asyncHandler(async (re
 }));
 
 
-// REPLACEMENT: Use Firebase extension for Stripe checkout
+
+// Keep your old frontend path working
+// Stripe Checkout session creation for Firebase Extension
 app.post("/api/billing/checkout", verifyFirebaseToken, async (req, res) => {
-  const { uid } = req.user;
-  const { priceId, mode = "subscription" } = req.body || {};
-  if (!priceId) return res.status(400).json({ error: "priceId required" });
-  if (!["subscription", "payment"].includes(mode)) {
-    return res.status(400).json({ error: "mode must be 'subscription' or 'payment'" });
+  const { priceId, mode = "subscription", success_url, cancel_url } = req.body || {};
+  const { uid, email } = req.user;
+
+  if (!priceId) {
+    return res.status(400).json({ error: "Missing priceId" });
   }
 
-  // Create a checkout session doc for the extension
-  const csRef = await firestore
+  // Determine base URL for fallback
+  let baseUrl = "https://nexusrbx.com";
+  if (process.env.APP_URL && isValidUrl(process.env.APP_URL)) {
+    baseUrl = process.env.APP_URL.replace(/\/$/, "");
+  }
+
+  // Always use valid URLs for Stripe
+  const resolvedSuccessUrl = (success_url && isValidUrl(success_url))
+    ? success_url
+    : `${baseUrl}/ai?checkout=success`;
+  const resolvedCancelUrl = (cancel_url && isValidUrl(cancel_url))
+    ? cancel_url
+    : `${baseUrl}/ai?checkout=cancel`;
+
+  // Create a checkout_sessions doc for the Firebase Stripe extension to process
+  const docRef = await firestore
     .collection("customers").doc(uid)
     .collection("checkout_sessions")
     .add({
       price: priceId,
       mode,
-      success_url: `${process.env.APP_URL}/ai?checkout=success`,
-      cancel_url: `${process.env.APP_URL}/ai?checkout=cancel`,
+      success_url: resolvedSuccessUrl,
+      cancel_url: resolvedCancelUrl,
       allow_promotion_codes: true,
+      metadata: { email: email || "" }
     });
 
-  // Wait up to ~10s for the extension to populate the URL
+  // Poll for the session URL (extension will populate it)
   const started = Date.now();
-  while (Date.now() - started < 10000) {
-    const snap = await csRef.get();
+  while (Date.now() - started < 8000) {
+    const snap = await docRef.get();
     const data = snap.data() || {};
     if (data.url) return res.json({ url: data.url });
-    await new Promise(r => setTimeout(r, 400));
+    if (data.error) return res.status(400).json({ error: data.error });
+    await new Promise(r => setTimeout(r, 300));
   }
-  return res.status(202).json({ sessionDocPath: csRef.path }); // FE can poll if needed
+  return res.status(202).json({ checkoutDocPath: docRef.path }); // FE can poll
 });
 
-// Keep your old frontend path working
+// Legacy/alias route for backward compatibility
 app.post("/api/checkout", verifyFirebaseToken, (req, res, next) =>
   app._router.handle({ ...req, url: "/api/billing/checkout" }, res, next)
 );
