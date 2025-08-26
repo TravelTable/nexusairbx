@@ -14,6 +14,7 @@ import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
 import { getFirestore, doc, onSnapshot } from "firebase/firestore";
 import { PRICE } from "../lib/prices";
+import TokensCounterContainer from "../components/TokensCounterContainer";
 
 // Subscription plan definitions
 const SUBSCRIPTION_PLANS = [
@@ -54,6 +55,7 @@ const SUBSCRIPTION_PLANS = [
   },
 ];
 
+
 export default function BillingPage() {
   const [entitlements, setEntitlements] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -63,14 +65,20 @@ export default function BillingPage() {
   const [portalLoading, setPortalLoading] = useState(false);
   const [authReady, setAuthReady] = useState(false);
   const [user, setUser] = useState(null);
+ 
 
   // Debug state
   const [debugInfo, setDebugInfo] = useState(null);
 
   // Firestore session listener ref
   const sessionUnsubRef = useRef(null);
+  const portalUnsubRef = useRef(null);
 
   const navigate = useNavigate();
+
+  // Calculate subRemaining at the top level so it's always up to date
+  const subRemaining =
+    Math.max(0, (entitlements?.sub?.limit || 0) - (entitlements?.sub?.used || 0));
 
   useEffect(() => {
     const unsub = onAuthStateChanged(getAuth(), (currentUser) => {
@@ -87,11 +95,16 @@ export default function BillingPage() {
     return () => unsub();
   }, []);
 
-  // Read ?checkout=success|cancel for lightweight UX
+  // Read ?checkout=success|cancel for lightweight UX and refresh entitlements on success
   useEffect(() => {
     const p = new URLSearchParams(window.location.search);
     const status = p.get("checkout");
-    if (status === "success") setNote("Checkout completed successfully ✅");
+    if (status === "success") {
+      setNote("Checkout completed successfully ✅");
+      (async () => {
+        try { setEntitlements(await getEntitlements()); } catch {}
+      })();
+    }
     if (status === "cancel") setNote("Checkout was canceled.");
     setDebugInfo((prev) => ({
       ...prev,
@@ -258,15 +271,65 @@ export default function BillingPage() {
     }
   }
 
-  // Clean up Firestore listener on unmount
+  // Portal handler
+  const handlePortal = async () => {
+    setPortalLoading(true);
+    setError("");
+    setNote("");
+
+    portalUnsubRef.current?.();
+    portalUnsubRef.current = null;
+
+    try {
+      const r = await openPortal();
+      if (r?.url) {
+        window.location.href = r.url;
+        return;
+      }
+      if (r?.portalDocPath) {
+        setNote("Preparing your portal session…");
+        const db = getFirestore();
+        const ref = doc(db, r.portalDocPath);
+        portalUnsubRef.current = onSnapshot(ref, (snap) => {
+          const data = snap.data();
+          if (data?.url) {
+            window.location.href = data.url;
+          } else if (data?.error) {
+            setError(data.error.message || "Portal error. Please try again.");
+            portalUnsubRef.current?.();
+            portalUnsubRef.current = null;
+          }
+        });
+      } else {
+        setNote("Portal session pending…");
+      }
+    } catch (e) {
+      setError(e?.message || "Could not open billing portal.");
+    } finally {
+      setPortalLoading(false);
+    }
+  };
+
+
+
+  // Clean up Firestore listeners on unmount
   useEffect(() => {
     return () => {
-      if (sessionUnsubRef.current) {
-        sessionUnsubRef.current();
-        sessionUnsubRef.current = null;
-      }
+      sessionUnsubRef.current?.();
+      sessionUnsubRef.current = null;
+      portalUnsubRef.current?.();
+      portalUnsubRef.current = null;
     };
   }, []);
+
+    useEffect(() => {
+    const onFocus = async () => {
+      if (!user) return;
+      try { setEntitlements(await getEntitlements()); } catch {}
+    };
+    window.addEventListener("focus", onFocus);
+    return () => window.removeEventListener("focus", onFocus);
+  }, [user]);
 
   // Plan display helpers
   function planLabel(plan) {
@@ -399,7 +462,7 @@ export default function BillingPage() {
               <div className="text-gray-400 text-sm">
                 {planPrice(entitlements?.plan, entitlements?.cycle)}
               </div>
-              {entitlements?.cycle && (
+              {entitlements?.plan !== "FREE" && entitlements?.cycle && (
                 <div className="text-xs text-gray-500 mt-1">
                   {entitlements.cycle === "YEARLY"
                     ? "Billed yearly"
@@ -410,46 +473,15 @@ export default function BillingPage() {
             <div className="flex flex-col gap-2 md:gap-0 md:flex-row md:items-center md:space-x-3">
               <button
                 className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md font-medium flex items-center gap-2 transition disabled:opacity-60"
-                onClick={() =>
-                  handleCheckout(PRICE.sub.proMonthly, "subscription")
-                }
+                onClick={handlePortal}
                 disabled={checkoutLoading || portalLoading}
               >
-                <DollarSign className="h-4 w-4" />
-                Change Plan
+                <CreditCard className="h-4 w-4" />
+                Manage Plan
               </button>
               <button
                 className="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-md font-medium flex items-center gap-2 transition disabled:opacity-60"
-                onClick={async () => {
-                  setPortalLoading(true);
-                  setError("");
-                  setDebugInfo((prev) => ({
-                    ...prev,
-                    portal: { status: "starting" },
-                  }));
-                  try {
-                    const r = await openPortal(); // auto-navigates if URL present
-                    setDebugInfo((prev) => ({
-                      ...prev,
-                      portal: { status: "response", response: r },
-                    }));
-                    if (!r?.url) setNote("Portal session pending…");
-                  } catch (e) {
-                    setDebugInfo((prev) => ({
-                      ...prev,
-                      portal: {
-                        status: "error",
-                        error: e?.message,
-                        stack: e?.stack,
-                      },
-                    }));
-                    setError(
-                      "Could not open billing portal. Please try again."
-                    );
-                  } finally {
-                    setPortalLoading(false);
-                  }
-                }}
+                onClick={handlePortal}
                 disabled={portalLoading || checkoutLoading}
               >
                 <CreditCard className="h-4 w-4" />
@@ -458,38 +490,31 @@ export default function BillingPage() {
               </button>
             </div>
           </div>
-          <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="bg-gray-900/60 rounded-lg p-4 border border-gray-700">
-              <div className="text-xs text-gray-400 mb-1">
-                Subscription Tokens
-              </div>
-              <div className="text-lg font-semibold text-gray-100">
-                {entitlements?.sub?.used?.toLocaleString() ?? 0} /{" "}
-                {entitlements?.sub?.limit?.toLocaleString() ?? 0}
-              </div>
-              <div className="text-xs text-gray-500 mt-1">
-                {entitlements?.sub?.resetsAt ? (
-                  <>
-                    Resets&nbsp;
-                    {new Date(
-                      entitlements.sub.resetsAt
-                    ).toLocaleDateString()}
-                  </>
-                ) : (
-                  <>No reset date</>
-                )}
-              </div>
-            </div>
-            <div className="bg-gray-900/60 rounded-lg p-4 border border-gray-700">
-              <div className="text-xs text-gray-400 mb-1">
-                PAYG Token Balance
-              </div>
-              <div className="text-lg font-semibold text-gray-100">
-                {entitlements?.payg?.remaining?.toLocaleString() ?? 0}
-              </div>
-              <div className="text-xs text-gray-500 mt-1">Never expires</div>
-            </div>
-          </div>
+<div className="mt-6">
+  <div className="text-xs text-gray-400 mb-1">Tokens</div>
+  <TokensCounterContainer
+    tokens={{
+      sub: { remaining: subRemaining, limit: entitlements?.sub?.limit || 0 },
+      payg: { remaining: entitlements?.payg?.remaining || 0 },
+    }}
+    isLoading={loading}
+    showRefreshButton
+    onRefresh={async () => {
+      setLoading(true);
+      setError("");
+      setNote("");
+      try { setEntitlements(await getEntitlements()); }
+      catch (e) { setError(e?.message || "Could not load billing info."); }
+      finally { setLoading(false); }
+    }}
+    lowTokenThreshold={100}
+  />
+  {entitlements?.sub?.resetsAt && (
+    <div className="text-xs text-gray-500 mt-1">
+      Resets {new Date(entitlements.sub.resetsAt).toLocaleDateString()}
+    </div>
+  )}
+</div>
         </div>
 
         {/* Upgrade Plans Section */}
@@ -636,36 +661,7 @@ export default function BillingPage() {
               via the{" "}
               <button
                 className="underline text-purple-400 hover:text-purple-300"
-                onClick={async () => {
-                  setPortalLoading(true);
-                  setError("");
-                  setDebugInfo((prev) => ({
-                    ...prev,
-                    portal: { status: "starting" },
-                  }));
-                  try {
-                    const r = await openPortal(); // auto-navigates if URL present
-                    setDebugInfo((prev) => ({
-                      ...prev,
-                      portal: { status: "response", response: r },
-                    }));
-                    if (!r?.url) setNote("Portal session pending…");
-                  } catch (e) {
-                    setDebugInfo((prev) => ({
-                      ...prev,
-                      portal: {
-                        status: "error",
-                        error: e?.message,
-                        stack: e?.stack,
-                      },
-                    }));
-                    setError(
-                      "Could not open billing portal. Please try again."
-                    );
-                  } finally {
-                    setPortalLoading(false);
-                  }
-                }}
+                onClick={handlePortal}
                 disabled={portalLoading}
               >
                 Stripe Portal

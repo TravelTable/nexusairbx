@@ -15,14 +15,7 @@ const crypto = require("crypto");
 // const Stripe = require("stripe");
 // const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY;
 // const stripe = STRIPE_SECRET_KEY ? new Stripe(STRIPE_SECRET_KEY, { apiVersion: "2023-10-16" }) : null;
-function isValidUrl(url) {
-  try {
-    new URL(url);
-    return true;
-  } catch {
-    return false;
-  }
-}
+
 // --- ENVIRONMENT VARIABLES ---
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const FIREBASE_SERVICE_ACCOUNT = process.env.FIREBASE_SERVICE_ACCOUNT;
@@ -59,6 +52,7 @@ const allowlist = [
   "http://localhost:3000",
   "https://nexusrbx.com",
   "http://nexusrbx.com",
+  "https://www.nexusrbx.com",
   "https://nexusairbx-git-main-traveltables-projects.vercel.app",
   "https://nexusrbx-backend-production.up.railway.app",
   "https://nexusairbx-git-main-traveltables-projects.vercel.app",
@@ -67,6 +61,7 @@ const allowlist = [
   "http://nexusairbx.com",
   "https://nexusairbx-git-main-traveltables-projects.vercel.app",
 ];
+if (FRONTEND_ORIGIN) allowlist.push(FRONTEND_ORIGIN);
 
 const corsOptions = {
   origin: function(origin, callback) {
@@ -654,7 +649,8 @@ app.post("/api/generate-code", verifyFirebaseToken, userLimiter, asyncHandler(as
     (completion.usage?.prompt_tokens || 0) + (completion.usage?.completion_tokens || 0)
   );
   try {
-    await fetch(`${process.env.APP_URL}/api/billing/consume`, {
+    const selfUrl = `${req.protocol}://${req.get('host')}`;
+    await fetch(`${selfUrl}/api/billing/consume`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -775,12 +771,14 @@ app.post("/api/generate/artifact", verifyFirebaseToken, userLimiter, asyncHandle
       }
 
       // Bill tokens (min 1000)
+      // Bill tokens (min 1000)
       try {
         const used = Math.max(
           MIN_TOKENS_PER_REQUEST,
           (completion.usage?.prompt_tokens || 0) + (completion.usage?.completion_tokens || 0)
         );
-        await fetch(`${process.env.APP_URL}/api/billing/consume`, {
+        const selfUrl = `${req.protocol}://${req.get('host')}`;
+        await fetch(`${selfUrl}/api/billing/consume`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -1022,10 +1020,12 @@ app.get("/api/billing/entitlements", verifyFirebaseToken, asyncHandler(async (re
   subsSnap.forEach(d => {
     const s = d.data();
     if (["active", "trialing", "past_due"].includes(s.status)) {
-      const item = Array.isArray(s.items) && s.items[0];
-      const priceId = item?.price?.id;
-      const interval = item?.price?.recurring?.interval;
-      if (priceId) activePlan = { priceId, interval };
+const item = Array.isArray(s.items) ? s.items[0]
+            : Array.isArray(s.items?.data) ? s.items.data[0]
+            : null;
+const priceId = item?.price?.id;
+const interval = item?.price?.recurring?.interval;
+if (priceId) activePlan = { priceId, interval };
     }
   });
 
@@ -1079,59 +1079,37 @@ app.get("/api/billing/entitlements", verifyFirebaseToken, asyncHandler(async (re
 
 
 
-// Keep your old frontend path working
-// Stripe Checkout session creation for Firebase Extension
-app.post("/api/billing/checkout", verifyFirebaseToken, async (req, res) => {
-  const { priceId, mode = "subscription", success_url, cancel_url } = req.body || {};
-  const { uid, email } = req.user;
+// --- STRIPE CHECKOUT SESSION CREATION (Firebase Extension Compatible) ---
+// This endpoint creates a checkout session doc in Firestore for the Firebase Stripe extension to process.
+// The frontend should listen for the session doc to be updated with a .url field.
 
-  if (!priceId) {
-    return res.status(400).json({ error: "Missing priceId" });
+app.post("/api/checkout", verifyFirebaseToken, asyncHandler(async (req, res) => {
+  const { priceId, mode } = req.body || {};
+  const { uid } = req.user;
+
+  if (!priceId || typeof priceId !== "string") {
+    return res.status(400).json({ error: "Missing or invalid priceId" });
+  }
+  if (!mode || !["subscription", "payment"].includes(mode)) {
+    return res.status(400).json({ error: "Missing or invalid mode" });
   }
 
-  // Determine base URL for fallback
-  let baseUrl = "https://nexusrbx.com";
-  if (process.env.APP_URL && isValidUrl(process.env.APP_URL)) {
-    baseUrl = process.env.APP_URL.replace(/\/$/, "");
-  }
-
-  // Always use valid URLs for Stripe
-  const resolvedSuccessUrl = (success_url && isValidUrl(success_url))
-    ? success_url
-    : `${baseUrl}/ai?checkout=success`;
-  const resolvedCancelUrl = (cancel_url && isValidUrl(cancel_url))
-    ? cancel_url
-    : `${baseUrl}/ai?checkout=cancel`;
-
-  // Create a checkout_sessions doc for the Firebase Stripe extension to process
-  const docRef = await firestore
+  // Create a checkout session doc in Firestore for the Stripe extension to process
+  const sessionRef = await firestore
     .collection("customers").doc(uid)
     .collection("checkout_sessions")
     .add({
       price: priceId,
       mode,
-      success_url: resolvedSuccessUrl,
-      cancel_url: resolvedCancelUrl,
+      success_url: `${process.env.APP_URL}/billing?checkout=success`,
+      cancel_url: `${process.env.APP_URL}/billing?checkout=cancel`,
       allow_promotion_codes: true,
-      metadata: { email: email || "" }
+      // Add more fields as needed (quantity, metadata, etc)
     });
 
-  // Poll for the session URL (extension will populate it)
-  const started = Date.now();
-  while (Date.now() - started < 8000) {
-    const snap = await docRef.get();
-    const data = snap.data() || {};
-    if (data.url) return res.json({ url: data.url });
-    if (data.error) return res.status(400).json({ error: data.error });
-    await new Promise(r => setTimeout(r, 300));
-  }
-  return res.status(202).json({ checkoutDocPath: docRef.path }); // FE can poll
-});
-
-// Legacy/alias route for backward compatibility
-app.post("/api/checkout", verifyFirebaseToken, (req, res, next) =>
-  app._router.handle({ ...req, url: "/api/billing/checkout" }, res, next)
-);
+  // Respond with the Firestore doc path so the frontend can listen for .url
+  return res.json({ sessionDocPath: sessionRef.path });
+}));
 
 // POST /api/billing/portal (Firebase extension version)
 app.post("/api/billing/portal", verifyFirebaseToken, async (req, res) => {
@@ -1139,7 +1117,7 @@ app.post("/api/billing/portal", verifyFirebaseToken, async (req, res) => {
   const docRef = await firestore
     .collection("customers").doc(uid)
     .collection("portal_sessions")
-    .add({ return_url: `${process.env.APP_URL}/ai` });
+    .add({ return_url: `${process.env.APP_URL}/billing` });
 
   const started = Date.now();
   while (Date.now() - started < 8000) {

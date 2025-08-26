@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Github, Zap, Settings, Shield, ChevronRight, Loader, Star, DollarSign } from "lucide-react";
+import TokensCounterContainer from "../components/TokensCounterContainer";
 import { auth } from "../firebase";
 import { onAuthStateChanged, signOut } from "firebase/auth";
+import { getEntitlements } from "../lib/billing";
+import SubscribeTabContainer from "../components/SubscribeTabContainer";
 
 // Container Component
 export default function NexusRBXHomepageContainer() {
@@ -12,6 +15,8 @@ export default function NexusRBXHomepageContainer() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [user, setUser] = useState(null);
+  const [tokenInfo, setTokenInfo] = useState(null);
+  const [tokenLoading, setTokenLoading] = useState(false);
 
   const navigate = useNavigate();
 
@@ -22,6 +27,23 @@ export default function NexusRBXHomepageContainer() {
     });
     return () => unsubscribe();
   }, []);
+
+  // Fetch token info when user logs in
+  useEffect(() => {
+    if (!user) {
+      setTokenInfo(null);
+      return;
+    }
+    setTokenLoading(true);
+    getEntitlements()
+      .then((data) => {
+        setTokenInfo(data);
+      })
+      .catch(() => {
+        setTokenInfo(null);
+      })
+      .finally(() => setTokenLoading(false));
+  }, [user]);
 
   const handleLogin = () => {
     navigate("/signin");
@@ -117,11 +139,12 @@ export default function NexusRBXHomepageContainer() {
     },
     {
       id: 2,
-      title: "Exploit Simulator",
-      description: "Test exploits in a safe, sandboxed environment",
-      icon: Settings,
+      title: "Premium",
+      description: "Unlock advanced AI, unlimited scripts, and more.",
+      icon: null, // We'll use the custom component instead of an icon
       gradient: "from-cyan-500 to-blue-600",
-      button: { text: "Open Simulator", href: "/subscribe" },
+      button: { text: "Subscribe", href: "/subscribe" }, // Button will be replaced by the component
+      isSubscribeTab: true,
     },
     {
       id: 3,
@@ -166,6 +189,8 @@ export default function NexusRBXHomepageContainer() {
       user={user}
       handleLogin={handleLogin}
       handleLogout={handleLogout}
+      tokenInfo={tokenInfo}
+      tokenLoading={tokenLoading}
     />
   );
 }
@@ -187,7 +212,9 @@ function NexusRBXHomepage({
   error,
   user,
   handleLogin,
-  handleLogout
+  handleLogout,
+  tokenInfo,
+  tokenLoading
 }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -237,6 +264,30 @@ function NexusRBXHomepage({
                 )}
               </React.Fragment>
             ))}
+{user && (
+  <div className="flex items-center space-x-3 mr-2">
+    <TokensCounterContainer
+      tokens={{
+        sub: {
+          remaining:
+            typeof tokenInfo?.sub?.limit === "number" && typeof tokenInfo?.sub?.used === "number"
+              ? tokenInfo.sub.limit - tokenInfo.sub.used
+              : 0,
+          limit: tokenInfo?.sub?.limit ?? 0,
+        },
+        payg: {
+          remaining:
+            typeof tokenInfo?.payg?.remaining === "number"
+              ? tokenInfo.payg.remaining
+              : 0,
+        },
+      }}
+      isLoading={tokenLoading}
+      showRefreshButton={false}
+      className="!bg-transparent !border-none !shadow-none p-0"
+    />
+  </div>
+)}
             {!user ? (
               <button
                 onClick={handleLogin}
@@ -253,23 +304,7 @@ function NexusRBXHomepage({
               >
                 Login
               </button>
-            ) : (
-              <button
-                onClick={handleLogout}
-                className="text-gray-300 hover:text-white transition-colors duration-300 font-sans text-base"
-                type="button"
-                aria-label="Logout"
-                style={{
-                  background: "none",
-                  border: "none",
-                  padding: 0,
-                  margin: 0,
-                  cursor: "pointer"
-                }}
-              >
-                Logout
-              </button>
-            )}
+            ) : null}
           </nav>
           <button
             className="md:hidden text-gray-300"
@@ -323,6 +358,30 @@ function NexusRBXHomepage({
                   )}
                 </React.Fragment>
               ))}
+{user && (
+  <div className="flex flex-col gap-1 px-3 py-1 rounded bg-gray-800 border border-gray-700 text-xs text-gray-200">
+    <TokensCounterContainer
+      tokens={{
+        sub: {
+          remaining:
+            typeof tokenInfo?.sub?.limit === "number" && typeof tokenInfo?.sub?.used === "number"
+              ? tokenInfo.sub.limit - tokenInfo.sub.used
+              : 0,
+          limit: tokenInfo?.sub?.limit ?? 0,
+        },
+        payg: {
+          remaining:
+            typeof tokenInfo?.payg?.remaining === "number"
+              ? tokenInfo.payg.remaining
+              : 0,
+        },
+      }}
+      isLoading={tokenLoading}
+      showRefreshButton={false}
+      className="!bg-transparent !border-none !shadow-none p-0"
+    />
+  </div>
+)}
               {!user ? (
                 <button
                   onClick={() => {
@@ -342,26 +401,7 @@ function NexusRBXHomepage({
                 >
                   Login
                 </button>
-              ) : (
-                <button
-                  onClick={() => {
-                    setMobileMenuOpen(false);
-                    handleLogout();
-                  }}
-                  className="text-gray-300 hover:text-white transition-colors duration-300 font-sans text-base"
-                  type="button"
-                  aria-label="Logout"
-                  style={{
-                    background: "none",
-                    border: "none",
-                    padding: 0,
-                    margin: 0,
-                    cursor: "pointer"
-                  }}
-                >
-                  Logout
-                </button>
-              )}
+              ) : null}
             </nav>
           </div>
         )}
@@ -424,39 +464,7 @@ function NexusRBXHomepage({
           </div>
         </section>
 
-        {/* ADVERTISING BANNER */}
-        <section className="w-full flex justify-center px-4">
-          <div className="max-w-3xl w-full">
-            <div className="relative rounded-xl bg-gradient-to-r from-[#9b5de5]/80 via-[#f15bb5]/80 to-[#00f5d4]/80 shadow-lg border border-[#9b5de5] px-6 py-6 md:py-8 flex flex-col md:flex-row items-center justify-between gap-6 mb-12 animate-fade-in">
-              <div className="flex items-center gap-4">
-                <DollarSign className="h-10 w-10 text-[#00f5d4] bg-black/20 rounded-full p-2 shadow-lg" />
-                <div>
-                  <div className="text-lg md:text-2xl font-bold text-white mb-1">
-                    Unlock <span className="bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-transparent bg-clip-text">Pro Features</span>
-                  </div>
-                  <div className="text-gray-100 text-sm md:text-base">
-                    Get GPT‑4.1 scripting, higher limits, and advanced tools. <span className="hidden md:inline">Upgrade your Roblox development today!</span>
-                  </div>
-                  <div className="flex items-center gap-1 mt-2">
-                    <Star className="h-4 w-4 text-[#f15bb5]" />
-                    <Star className="h-4 w-4 text-[#f15bb5]" />
-                    <Star className="h-4 w-4 text-[#f15bb5]" />
-                    <span className="text-xs text-gray-200 ml-2">Thousands of devs love NexusRBX Pro</span>
-                  </div>
-                </div>
-              </div>
-              <button
-                className="mt-4 md:mt-0 px-6 py-3 rounded-lg bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-white font-semibold shadow-lg hover:shadow-[#9b5de5]/30 hover:scale-105 transition-all duration-300 flex items-center"
-                onClick={() => navigate("/subscribe")}
-                type="button"
-                aria-label="Subscribe to NexusRBX Pro"
-              >
-                Subscribe Now
-                <ChevronRight className="ml-2 h-5 w-5" />
-              </button>
-            </div>
-          </div>
-        </section>
+
 
         {/* Feature Cards */}
         <section className="py-16 px-4">
@@ -472,22 +480,32 @@ function NexusRBXHomepage({
                 <div className="absolute -inset-1 bg-gradient-to-r from-transparent via-[#9b5de5]/20 to-transparent opacity-0 group-hover:opacity-100 blur-xl transition-opacity duration-500"></div>
 
                 <div className="relative flex-1">
-                  <div
-                    className={`w-12 h-12 rounded-full bg-gradient-to-br ${card.gradient} flex items-center justify-center mb-4`}
-                  >
-                    <card.icon className="h-6 w-6 text-white" />
-                  </div>
-                  <h3 className="text-xl font-bold mb-2">{card.title}</h3>
-                  <p className="text-gray-400">{card.description}</p>
+                  {card.isSubscribeTab ? (
+                    <SubscribeTabContainer
+                      onSubscribe={() => navigate("/subscribe")}
+                      isSubscribed={false}
+                      className="!bg-transparent !border-none !shadow-none p-0"
+                    />
+                  ) : (
+                    <>
+                      <div
+                        className={`w-12 h-12 rounded-full bg-gradient-to-br ${card.gradient} flex items-center justify-center mb-4`}
+                      >
+                        {card.icon && <card.icon className="h-6 w-6 text-white" />}
+                      </div>
+                      <h3 className="text-xl font-bold mb-2">{card.title}</h3>
+                      <p className="text-gray-400">{card.description}</p>
+                      <button
+                        className="mt-6 px-4 py-2 rounded-lg bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-white font-medium hover:shadow-lg hover:shadow-[#9b5de5]/20 transform hover:translate-y-[-2px] transition-all duration-300 flex items-center justify-center"
+                        onClick={() => navigate(card.button.href)}
+                        type="button"
+                      >
+                        {card.button.text}
+                        <ChevronRight className="ml-2 h-4 w-4" />
+                      </button>
+                    </>
+                  )}
                 </div>
-                <button
-                  className="mt-6 px-4 py-2 rounded-lg bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-white font-medium hover:shadow-lg hover:shadow-[#9b5de5]/20 transform hover:translate-y-[-2px] transition-all duration-300 flex items-center justify-center"
-                  onClick={() => navigate(card.button.href)}
-                  type="button"
-                >
-                  {card.button.text}
-                  <ChevronRight className="ml-2 h-4 w-4" />
-                </button>
               </div>
             ))}
           </div>
