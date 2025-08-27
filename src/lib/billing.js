@@ -71,11 +71,16 @@ export function summarizeEntitlements(e) {
   };
 }
 
-export async function startCheckout(priceId, mode = "subscription") {
+export async function startCheckout(priceId, mode = "subscription", topupTokens) {
+  const user = getAuth().currentUser;
+  const uid = user?.uid;
+  const body = { priceId, mode, uid };
+  if (topupTokens) body.topupTokens = topupTokens;
+
   const r = await authedFetch("/api/checkout", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ priceId, mode }),
+    body: JSON.stringify(body),
   });
   if (!r.ok) {
     const text = await r.text();

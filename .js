@@ -12,9 +12,10 @@ const { ipKeyGenerator } = require("express-rate-limit");
 const crypto = require("crypto");
 // Stripe is now managed by the Firebase extension; do not instantiate here.
 // If you need Stripe, install it and uncomment below. Otherwise, leave Stripe out entirely.
-// const Stripe = require("stripe");
-// const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY;
-// const stripe = STRIPE_SECRET_KEY ? new Stripe(STRIPE_SECRET_KEY, { apiVersion: "2023-10-16" }) : null;
+const Stripe = require("stripe");
+const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY;
+const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET;
+const stripe = STRIPE_SECRET_KEY ? new Stripe(STRIPE_SECRET_KEY, { apiVersion: "2023-10-16" }) : null;
 
 // --- ENVIRONMENT VARIABLES ---
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
@@ -89,6 +90,87 @@ const corsOptions = {
 const app = express();
 app.use(cors(corsOptions));
 // then JSON parser for the rest
+// --- STRIPE WEBHOOK HANDLER (must be before bodyParser.json!) ---
+app.post("/api/stripe/webhook", bodyParser.raw({ type: "application/json" }), async (req, res) => {
+  if (!stripe || !STRIPE_WEBHOOK_SECRET) {
+    return res.status(501).send("Stripe webhook not configured");
+  }
+  const sig = req.headers["stripe-signature"];
+  let event;
+  try {
+    event = stripe.webhooks.constructEvent(req.body, sig, STRIPE_WEBHOOK_SECRET);
+  } catch (err) {
+    console.error("⚠️  Webhook signature verification failed.", err.message);
+    return res.status(400).send(`Webhook Error: ${err.message}`);
+  }
+
+  // Helper: credit PAYG tokens
+  async function creditPayg(uid, tokens, meta = {}) {
+    const userRef = firestore.collection("users").doc(uid);
+    const paygRef = userRef.collection("paygCredits").doc("main");
+    await firestore.runTransaction(async (tx) => {
+      const snap = await tx.get(paygRef);
+      const prev = snap.exists && typeof snap.data().balance === "number" ? snap.data().balance : 0;
+      tx.set(paygRef, {
+        balance: prev + tokens,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        ...meta,
+      }, { merge: true });
+    });
+  }
+
+  try {
+    console.log("Stripe webhook received:", event.type, event.data?.object?.id || "");
+    if (event.type === "checkout.session.completed") {
+      const session = event.data.object;
+      const uid =
+        session.metadata?.uid ||
+        session.client_reference_id;
+
+      console.log("checkout.session.completed for uid:", uid, "mode:", session.mode);
+
+      if (uid && session.mode === "payment") {
+        // Priority 1: explicit tokens passed from FE
+        let tokensToCredit = Number(session.metadata?.tokens || 0);
+
+        // Priority 2: read tokens from the Price metadata (set metadata.tokens on the Price in Stripe)
+        if (!Number.isFinite(tokensToCredit) || tokensToCredit <= 0) {
+          const lineItems = await stripe.checkout.sessions.listLineItems(session.id, {
+            limit: 10,
+            expand: ["data.price"]
+          });
+          const price = lineItems.data?.[0]?.price;
+          const metaTokens = Number(price?.metadata?.tokens || 0);
+          if (Number.isFinite(metaTokens) && metaTokens > 0) {
+            tokensToCredit = metaTokens;
+          }
+        }
+
+        if (Number.isFinite(tokensToCredit) && tokensToCredit > 0) {
+          console.log("Crediting PAYG tokens:", tokensToCredit, "to uid:", uid);
+          await creditPayg(uid, tokensToCredit, {
+            source: "stripe",
+            sessionId: session.id,
+            customer: session.customer,
+          });
+        } else {
+          console.warn("checkout.session.completed with mode=payment but no tokens resolved");
+        }
+      }
+      // For subscriptions, Firebase Extension writes /customers/{uid}/subscriptions; your FE reads it via /api/billing/entitlements
+      if (uid && session.mode === "subscription") {
+        console.log("Subscription purchase completed for uid:", uid, "session:", session.id);
+        // The Firebase Stripe extension should create/update the subscription doc in Firestore.
+        // You can add extra logging here if you want to check Firestore after a delay.
+      }
+    }
+
+    return res.json({ received: true });
+  } catch (err) {
+    console.error("Webhook handler error:", err);
+    return res.status(500).send("Webhook handler error");
+  }
+});
 app.use(bodyParser.json({ limit: "2mb" }));
 app.set("etag", false); // we'll manually set ETags on hot GETs
 // Health
@@ -649,8 +731,8 @@ app.post("/api/generate-code", verifyFirebaseToken, userLimiter, asyncHandler(as
     (completion.usage?.prompt_tokens || 0) + (completion.usage?.completion_tokens || 0)
   );
   try {
-    const selfUrl = `${req.protocol}://${req.get('host')}`;
-    await fetch(`${selfUrl}/api/billing/consume`, {
+    const backendUrl = process.env.BACKEND_URL || `${req.protocol}://${req.get('host')}`;
+    await fetch(`${backendUrl}/api/billing/consume`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -777,8 +859,8 @@ app.post("/api/generate/artifact", verifyFirebaseToken, userLimiter, asyncHandle
           MIN_TOKENS_PER_REQUEST,
           (completion.usage?.prompt_tokens || 0) + (completion.usage?.completion_tokens || 0)
         );
-        const selfUrl = `${req.protocol}://${req.get('host')}`;
-        await fetch(`${selfUrl}/api/billing/consume`, {
+        const backendUrl = process.env.BACKEND_URL || `${req.protocol}://${req.get('host')}`;
+        await fetch(`${backendUrl}/api/billing/consume`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -1084,7 +1166,7 @@ if (priceId) activePlan = { priceId, interval };
 // The frontend should listen for the session doc to be updated with a .url field.
 
 app.post("/api/checkout", verifyFirebaseToken, asyncHandler(async (req, res) => {
-  const { priceId, mode } = req.body || {};
+  const { priceId, mode, uid: bodyUid, topupTokens } = req.body || {};
   const { uid } = req.user;
 
   if (!priceId || typeof priceId !== "string") {
@@ -1094,17 +1176,22 @@ app.post("/api/checkout", verifyFirebaseToken, asyncHandler(async (req, res) => 
     return res.status(400).json({ error: "Missing or invalid mode" });
   }
 
+  // Use the UID from auth, fallback to body (for extra safety)
+  const effectiveUid = uid || bodyUid;
+
   // Create a checkout session doc in Firestore for the Stripe extension to process
   const sessionRef = await firestore
-    .collection("customers").doc(uid)
+    .collection("customers").doc(effectiveUid)
     .collection("checkout_sessions")
     .add({
       price: priceId,
       mode,
-      success_url: `${process.env.APP_URL}/billing?checkout=success`,
-      cancel_url: `${process.env.APP_URL}/billing?checkout=cancel`,
+      success_url: `${FRONTEND_ORIGIN}/billing?checkout=success`,
+      cancel_url: `${FRONTEND_ORIGIN}/billing?checkout=cancel`,
       allow_promotion_codes: true,
-      // Add more fields as needed (quantity, metadata, etc)
+      client_reference_id: effectiveUid,
+      metadata: { uid: effectiveUid, ...(topupTokens ? { tokens: topupTokens } : {}) },
+      ...(topupTokens ? { quantity: 1 } : {}),
     });
 
   // Respond with the Firestore doc path so the frontend can listen for .url
@@ -1117,7 +1204,7 @@ app.post("/api/billing/portal", verifyFirebaseToken, async (req, res) => {
   const docRef = await firestore
     .collection("customers").doc(uid)
     .collection("portal_sessions")
-    .add({ return_url: `${process.env.APP_URL}/billing` });
+    .add({ return_url: `${FRONTEND_ORIGIN}/billing` });
 
   const started = Date.now();
   while (Date.now() - started < 8000) {
@@ -1143,68 +1230,94 @@ app.post("/api/billing/consume", verifyFirebaseToken, async (req, res) => {
 
   const u = await getOrCreateUser(uid, email);
 
-  // dev bypass (optional, keep FE-only if you prefer)
+  // dev bypass
   if (process.env.DEV_EMAIL && u.email && u.email.toLowerCase() === process.env.DEV_EMAIL.toLowerCase()) {
     return res.json({ ok: true, newBalances: { subRemaining: Infinity, paygRemaining: Infinity } });
   }
+
+  // derive active plan + reset date from Stripe Extension docs
+  const subsSnap = await firestore.collection("customers").doc(uid).collection("subscriptions").get();
+  let activePlan = null;
+  let resetsAtMs = null;
+
+  subsSnap.forEach(d => {
+    const s = d.data();
+    if (["active","trialing","past_due"].includes(s.status)) {
+      const item = Array.isArray(s.items) ? s.items[0]
+                  : Array.isArray(s.items?.data) ? s.items.data[0]
+                  : null;
+      const priceId = item?.price?.id;
+      const interval = item?.price?.recurring?.interval;
+      if (priceId) activePlan = { priceId, interval };
+      const endMs = typeof s.current_period_end === "number" ? s.current_period_end * 1000 : null;
+      if (endMs && (!resetsAtMs || endMs > resetsAtMs)) resetsAtMs = endMs;
+    }
+  });
+
+  const planInfo = activePlan ? classifyPrice(activePlan.priceId) : null;
+  const effectiveSubLimit = planInfo?.limit ?? (PLAN_LIMITS?.FREE ?? 50000);
+  const nextReset = resetsAtMs ? new Date(resetsAtMs) : null;
 
   try {
     const userRef = firestore.collection("users").doc(uid);
     const usageLogRef = userRef.collection("usageLogs");
     const paygRef = userRef.collection("paygCredits").doc("main");
 
-    let result = await firestore.runTransaction(async (tx) => {
+    const result = await firestore.runTransaction(async (tx) => {
       const userSnap = await tx.get(userRef);
       if (!userSnap.exists) throw new Error("UserNotFound");
       let user = userSnap.data();
 
-      // reset if billing window ended (safety)
-      if (user.subPeriodEnd && new Date() >= user.subPeriodEnd) {
+      // sync subLimit to Stripe plan
+      if (user.subLimit !== effectiveSubLimit) {
+        tx.update(userRef, { subLimit: effectiveSubLimit, updatedAt: admin.firestore.FieldValue.serverTimestamp() });
+        user.subLimit = effectiveSubLimit;
+      }
+
+      // sync/reset period end to Stripe if available; else keep monthly rolling fallback
+      if (nextReset && (!user.subPeriodEnd || new Date(user.subPeriodEnd).getTime() !== nextReset.getTime())) {
+        tx.update(userRef, { subPeriodEnd: nextReset, updatedAt: admin.firestore.FieldValue.serverTimestamp() });
+        user.subPeriodEnd = nextReset;
+      }
+
+      // hard reset if past period end (safety)
+      if (user.subPeriodEnd && new Date() >= new Date(user.subPeriodEnd)) {
         user.subUsed = 0;
-        user.subPeriodEnd = nextMonthEnd();
+        const newEnd = nextReset || (function nm(){ return new Date(Date.now() + 30*24*60*60*1000); })();
         tx.update(userRef, {
           subUsed: 0,
-          subPeriodEnd: user.subPeriodEnd,
+          subPeriodEnd: newEnd,
           updatedAt: admin.firestore.FieldValue.serverTimestamp(),
         });
+        user.subPeriodEnd = newEnd;
       }
 
-      // Fetch PAYG balance from subfield or /paygCredits
-      let paygBalance = user.paygBalance;
-      let paygSnap = await tx.get(paygRef);
-      if (paygSnap.exists && typeof paygSnap.data().balance === "number") {
-        paygBalance = paygSnap.data().balance;
-      }
+      // load PAYG
+      const paygSnap = await tx.get(paygRef);
+      const paygBalance = (paygSnap.exists && typeof paygSnap.data().balance === "number") ? paygSnap.data().balance : 0;
 
-      const subRemaining = Math.max(0, user.subLimit - user.subUsed);
+      const subRemaining = Math.max(0, (user.subLimit || 0) - (user.subUsed || 0));
       const paygRemaining = Math.max(0, paygBalance);
       const total = subRemaining + paygRemaining;
 
-      if (total < amount) {
-        throw new Error("INSUFFICIENT_TOKENS");
-      }
+      if (total < amount) throw new Error("INSUFFICIENT_TOKENS");
 
       // idempotent by jobId
       if (jobId) {
         const existing = await tx.get(usageLogRef.doc(jobId));
         if (existing.exists) {
-          return {
-            subRemaining,
-            paygRemaining,
-          };
+          return { subRemaining, paygRemaining };
         }
       }
 
-      let consumeFromSub = Math.min(amount, subRemaining);
-      let consumeFromPayg = amount - consumeFromSub;
+      const consumeFromSub = Math.min(amount, subRemaining);
+      const consumeFromPayg = amount - consumeFromSub;
 
-      // Update user subUsed
       tx.update(userRef, {
         subUsed: admin.firestore.FieldValue.increment(consumeFromSub),
         updatedAt: admin.firestore.FieldValue.serverTimestamp(),
       });
 
-      // Update PAYG balance if needed
       if (consumeFromPayg > 0) {
         tx.set(paygRef, {
           balance: admin.firestore.FieldValue.increment(-consumeFromPayg),
@@ -1212,7 +1325,6 @@ app.post("/api/billing/consume", verifyFirebaseToken, async (req, res) => {
         }, { merge: true });
       }
 
-      // Write usage log (use jobId as doc id for idempotency)
       tx.set(usageLogRef.doc(jobId || `${Date.now()}-${Math.random()}`), {
         tokens: amount,
         reason: reason || null,
@@ -1221,20 +1333,17 @@ app.post("/api/billing/consume", verifyFirebaseToken, async (req, res) => {
       });
 
       return {
-        subRemaining: Math.max(0, user.subLimit - user.subUsed - consumeFromSub),
+        subRemaining: Math.max(0, (user.subLimit || 0) - (user.subUsed || 0) - consumeFromSub),
         paygRemaining: Math.max(0, paygBalance - consumeFromPayg),
       };
     });
 
-    res.json({ ok: true, newBalances: result });
+    return res.json({ ok: true, newBalances: result });
   } catch (e) {
-    if (String(e.message).includes("INSUFFICIENT_TOKENS")) {
-      return res.status(402).json({ error: "Not enough tokens" });
-    }
-    if (String(e.message).includes("UserNotFound")) {
-      return res.status(404).json({ error: "User not found" });
-    }
-    res.status(500).json({ error: "Consume failed" });
+    if (String(e.message).includes("INSUFFICIENT_TOKENS")) return res.status(402).json({ error: "Not enough tokens" });
+    if (String(e.message).includes("UserNotFound")) return res.status(404).json({ error: "User not found" });
+    console.error(e);
+    return res.status(500).json({ error: "Consume failed" });
   }
 });
 

@@ -16,6 +16,12 @@ import { getFirestore, doc, onSnapshot } from "firebase/firestore";
 import { PRICE } from "../lib/prices";
 import TokensCounterContainer from "../components/TokensCounterContainer";
 
+const PAYG_TOKENS_BY_PRICE_ID = {
+  [PRICE.payg.pack100k]: 100000,
+  [PRICE.payg.pack500k]: 500000,
+  [PRICE.payg.pack1m]: 1000000,
+};
+
 // Subscription plan definitions
 const SUBSCRIPTION_PLANS = [
   {
@@ -96,23 +102,54 @@ export default function BillingPage() {
   }, []);
 
   // Read ?checkout=success|cancel for lightweight UX and refresh entitlements on success
-  useEffect(() => {
-    const p = new URLSearchParams(window.location.search);
-    const status = p.get("checkout");
-    if (status === "success") {
-      setNote("Checkout completed successfully ✅");
-      (async () => {
-        try { setEntitlements(await getEntitlements()); } catch {}
-      })();
+// Set note on checkout success/cancel
+useEffect(() => {
+  const p = new URLSearchParams(window.location.search);
+  const status = p.get("checkout");
+  if (status === "success") {
+    setNote("Checkout completed successfully ✅");
+    (async () => {
+      try { setEntitlements(await getEntitlements()); } catch {}
+    })();
+  }
+  if (status === "cancel") setNote("Checkout was canceled.");
+  setDebugInfo((prev) => ({
+    ...prev,
+    urlParams: {
+      checkout: status,
+    },
+  }));
+}, []);
+
+// Poll for entitlements after checkout success
+useEffect(() => {
+  const p = new URLSearchParams(window.location.search);
+  const status = p.get("checkout");
+  if (status !== "success") return;
+
+  let cancelled = false;
+  (async () => {
+    // poll every 1.2s up to ~30s or until something changes
+    const start = Date.now();
+    const initialPlan = entitlements?.plan;
+    const initialPayg = entitlements?.payg?.remaining || 0;
+
+    while (!cancelled && Date.now() - start < 30000) {
+      try {
+        const e = await getEntitlements();
+        setEntitlements(e);
+        // break if plan changed or PAYG increased
+        const planChanged = e?.plan && e.plan !== initialPlan;
+        const paygIncreased = (e?.payg?.remaining || 0) > initialPayg;
+        if (planChanged || paygIncreased) break;
+      } catch {/* ignore and keep polling */}
+      await new Promise(r => setTimeout(r, 1200));
     }
-    if (status === "cancel") setNote("Checkout was canceled.");
-    setDebugInfo((prev) => ({
-      ...prev,
-      urlParams: {
-        checkout: status,
-      },
-    }));
-  }, []);
+  })();
+
+  return () => { cancelled = true; };
+}, [entitlements]);
+
 
   // Load entitlements
   useEffect(() => {
@@ -203,7 +240,8 @@ export default function BillingPage() {
     }
 
     try {
-      const r = await startCheckout(priceId, mode); // returns { url } or { sessionDocPath }
+      const topupTokens = mode === "payment" ? PAYG_TOKENS_BY_PRICE_ID[priceId] || undefined : undefined;
+      const r = await startCheckout(priceId, mode, topupTokens); // returns { url } or { sessionDocPath }
       setDebugInfo((prev) => ({
         ...prev,
         checkout: {
@@ -447,6 +485,9 @@ export default function BillingPage() {
             <span>{note}</span>
           </div>
         )}
+{note && note.includes("success") && (
+  <div className="mt-2 text-xs text-gray-400">Syncing purchase…</div>
+)}
 
         {/* Current Plan */}
         <div className="bg-gray-800 rounded-lg shadow-lg p-6 mb-8 border border-gray-700">
