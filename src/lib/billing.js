@@ -1,55 +1,84 @@
 // src/lib/billing.js
 import { getAuth } from "firebase/auth";
-console.log("REACT_APP_API_ORIGIN:", process.env.REACT_APP_API_ORIGIN);
 
-// Works with Vite, CRA, Next, or a window-injected env.
+// Backend origin (hardcoded OK if that’s your deploy)
 const API_ORIGIN = "https://nexusrbx-backend-production.up.railway.app";
-console.log("DEBUG API_ORIGIN:", API_ORIGIN);
 
 function buildUrl(path) {
   return new URL(path, API_ORIGIN).toString();
 }
 
-async function getToken() {
+async function getIdToken({ force = false } = {}) {
   const user = getAuth().currentUser;
   if (!user) throw new Error("Not signed in");
-  return user.getIdToken();
+  return user.getIdToken(force);
 }
 
+// Core authed fetch. Adds Bearer token, disables caches, retries once on 401.
 export async function authedFetch(path, init = {}) {
-  let token = await getToken();
-  let res = await fetch(buildUrl(path), {
+  const noCache = init.noCache === true;
+  const url = new URL(path, API_ORIGIN);
+  if (noCache) url.searchParams.set("t", String(Date.now()));
+
+  let token = await getIdToken({ force: false });
+
+  let res = await fetch(url.toString(), {
     ...init,
-    headers: { ...(init.headers || {}), Authorization: `Bearer ${token}` },
+    method: init.method || "GET",
     credentials: "include",
+    mode: "cors",
+    cache: "no-store",
+    headers: {
+      Accept: "application/json",
+      ...(init.headers || {}),
+      Authorization: `Bearer ${token}`,
+      "Cache-Control": "no-cache, no-store, max-age=0",
+      Pragma: "no-cache",
+    },
   });
+
+  // Retry once if token expired
   if (res.status === 401) {
-    const user = getAuth().currentUser;
-    if (!user) throw new Error("Not signed in");
-    await user.getIdToken(true);
-    token = await user.getIdToken();
-    res = await fetch(buildUrl(path), {
+    token = await getIdToken({ force: true });
+    res = await fetch(url.toString(), {
       ...init,
-      headers: { ...(init.headers || {}), Authorization: `Bearer ${token}` },
+      method: init.method || "GET",
       credentials: "include",
+      mode: "cors",
+      cache: "no-store",
+      headers: {
+        Accept: "application/json",
+        ...(init.headers || {}),
+        Authorization: `Bearer ${token}`,
+        "Cache-Control": "no-cache, no-store, max-age=0",
+        Pragma: "no-cache",
+      },
     });
   }
+
   return res;
 }
 
-export async function getEntitlements() {
-  const r = await authedFetch("/api/billing/entitlements", { method: "GET" });
-  if (r.status === 304) {
-    // No new data, handle as needed (return null, cached, or throw)
-    throw new Error("entitlements: Not modified (304) - no new data available.");
-  }
+// ALWAYS default to noCache; force-refresh the token if caller asked noCache
+export async function getEntitlements({ noCache = true } = {}) {
+  // If caller wants a fresh read (e.g., right after checkout), refresh the token once.
+  if (noCache) await getIdToken({ force: true });
+
+  const r = await authedFetch("/api/billing/entitlements", {
+    method: "GET",
+    noCache,
+    headers: { Accept: "application/json" },
+  });
+
+  if (r.status === 304) return {}; // caller can ignore if unchanged
+
   const contentType = r.headers.get("content-type") || "";
   if (!r.ok) {
-    const text = await r.text();
+    const text = await r.text().catch(() => "");
     throw new Error(`entitlements ${r.status}: ${text}`);
   }
   if (!contentType.includes("application/json")) {
-    const text = await r.text();
+    const text = await r.text().catch(() => "");
     throw new Error(`entitlements: Expected JSON but got: ${text}`);
   }
   return r.json();
@@ -72,6 +101,9 @@ export function summarizeEntitlements(e) {
 }
 
 export async function startCheckout(priceId, mode = "subscription", topupTokens) {
+  if (!priceId) throw new Error("Missing priceId");
+  if (!["subscription", "payment"].includes(mode)) throw new Error("Invalid checkout mode");
+
   const user = getAuth().currentUser;
   const uid = user?.uid;
   const body = { priceId, mode, uid };
@@ -86,9 +118,8 @@ export async function startCheckout(priceId, mode = "subscription", topupTokens)
     const text = await r.text();
     throw new Error(`checkout ${r.status}: ${text}`);
   }
-  const j = await r.json().catch(() => ({}));
-  if (j?.url) window.location.href = j.url;
-  return j;
+  // IMPORTANT: do NOT redirect here. Let the page decide.
+  return r.json().catch(() => ({})); // {url} OR {sessionDocPath}
 }
 
 export async function openPortal() {
@@ -97,7 +128,6 @@ export async function openPortal() {
     const text = await r.text();
     throw new Error(`portal ${r.status}: ${text}`);
   }
-  const j = await r.json().catch(() => ({}));
-  if (j?.url) window.location.href = j.url;
-  return j;
+  // IMPORTANT: do NOT redirect here. Let the page decide.
+  return r.json().catch(() => ({})); // {url} or {portalDocPath}
 }

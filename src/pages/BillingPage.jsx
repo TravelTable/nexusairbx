@@ -8,8 +8,15 @@ import {
   DollarSign,
   ExternalLink,
   ArrowUpRight,
+  ArrowLeft,
+  Info,
 } from "lucide-react";
-import { getEntitlements, startCheckout, openPortal } from "../lib/billing";
+import {
+  getEntitlements,
+  startCheckout,
+  openPortal,
+  summarizeEntitlements,
+} from "../lib/billing";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
 import { getFirestore, doc, onSnapshot } from "firebase/firestore";
@@ -61,7 +68,6 @@ const SUBSCRIPTION_PLANS = [
   },
 ];
 
-
 export default function BillingPage() {
   const [entitlements, setEntitlements] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -71,9 +77,8 @@ export default function BillingPage() {
   const [portalLoading, setPortalLoading] = useState(false);
   const [authReady, setAuthReady] = useState(false);
   const [user, setUser] = useState(null);
- 
 
-  // Debug state
+  // Debug state (dev only)
   const [debugInfo, setDebugInfo] = useState(null);
 
   // Firestore session listener ref
@@ -85,121 +90,167 @@ export default function BillingPage() {
   // Calculate subRemaining at the top level so it's always up to date
   const subRemaining =
     Math.max(0, (entitlements?.sub?.limit || 0) - (entitlements?.sub?.used || 0));
+  const subLimit = entitlements?.sub?.limit || 0;
+  const subUsed = entitlements?.sub?.used || 0;
+  const subPercent = subLimit > 0 ? Math.round((subRemaining / subLimit) * 100) : 0;
+
+  // For sticky mobile bar
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 640);
+  useEffect(() => {
+    const onResize = () => setIsMobile(window.innerWidth < 640);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+
+  // Success/cancel note auto-dismiss
+  useEffect(() => {
+    if (!note) return;
+    const timeout = setTimeout(() => setNote(""), 7000);
+    return () => clearTimeout(timeout);
+  }, [note]);
 
   useEffect(() => {
     const unsub = onAuthStateChanged(getAuth(), (currentUser) => {
       setUser(currentUser);
       setAuthReady(true);
-      setDebugInfo((prev) => ({
-        ...prev,
-        auth: {
-          user: currentUser,
-          authReady: true,
-        },
-      }));
+      if (process.env.NODE_ENV === "development") {
+        setDebugInfo((prev) => ({
+          ...prev,
+          auth: {
+            user: currentUser,
+            authReady: true,
+          },
+        }));
+      }
     });
     return () => unsub();
   }, []);
 
   // Read ?checkout=success|cancel for lightweight UX and refresh entitlements on success
-// Set note on checkout success/cancel
-useEffect(() => {
-  const p = new URLSearchParams(window.location.search);
-  const status = p.get("checkout");
-  if (status === "success") {
-    setNote("Checkout completed successfully ✅");
-    (async () => {
-      try { setEntitlements(await getEntitlements()); } catch {}
-    })();
-  }
-  if (status === "cancel") setNote("Checkout was canceled.");
-  setDebugInfo((prev) => ({
-    ...prev,
-    urlParams: {
-      checkout: status,
-    },
-  }));
-}, []);
+  useEffect(() => {
+    const p = new URLSearchParams(window.location.search);
+    const status = p.get("checkout");
+    if (status !== "success" && status !== "cancel") return;
 
-// Poll for entitlements after checkout success
-useEffect(() => {
-  const p = new URLSearchParams(window.location.search);
-  const status = p.get("checkout");
-  if (status !== "success") return;
-
-  let cancelled = false;
-  (async () => {
-    // poll every 1.2s up to ~30s or until something changes
-    const start = Date.now();
-    const initialPlan = entitlements?.plan;
-    const initialPayg = entitlements?.payg?.remaining || 0;
-
-    while (!cancelled && Date.now() - start < 30000) {
-      try {
-        const e = await getEntitlements();
-        setEntitlements(e);
-        // break if plan changed or PAYG increased
-        const planChanged = e?.plan && e.plan !== initialPlan;
-        const paygIncreased = (e?.payg?.remaining || 0) > initialPayg;
-        if (planChanged || paygIncreased) break;
-      } catch {/* ignore and keep polling */}
-      await new Promise(r => setTimeout(r, 1200));
+    if (status === "success") {
+      setNote("Checkout completed successfully");
     }
-  })();
+    if (status === "cancel") {
+      setNote("Checkout was canceled.");
+    }
 
-  return () => { cancelled = true; };
-}, [entitlements]);
+    if (process.env.NODE_ENV === "development") {
+      setDebugInfo((prev) => ({
+        ...prev,
+        urlParams: { checkout: status },
+      }));
+    }
 
+    let cancelled = false;
+
+    (async () => {
+      // Take a snapshot of current values once
+      const initialPlan = entitlements?.plan || "FREE";
+      const initialPayg = entitlements?.payg?.remaining || 0;
+
+      // First forced refresh
+      try {
+        const e1 = await getEntitlements({ noCache: true });
+        if (!cancelled) setEntitlements(e1);
+      } catch {}
+
+      // Poll up to ~30s for actual change
+      const start = Date.now();
+      while (!cancelled && Date.now() - start < 30000) {
+        try {
+          const e = await getEntitlements({ noCache: true });
+          if (!cancelled) setEntitlements(e);
+
+          const planChanged = e?.plan && e.plan !== initialPlan;
+          const paygIncreased = (e?.payg?.remaining || 0) > initialPayg;
+
+          if (planChanged) setNote("Your subscription upgrade is now active!");
+          if (paygIncreased) setNote("Your PAYG token purchase is now active!");
+        } catch {
+          // ignore and keep polling
+        }
+        await new Promise((r) => setTimeout(r, 1200));
+      }
+
+      // Clean the URL so this effect won't run again
+      if (!cancelled) {
+        const url = new URL(window.location.href);
+        url.searchParams.delete("checkout");
+        window.history.replaceState({}, "", url.toString());
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+    // run once on mount only
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Load entitlements
   useEffect(() => {
     if (!authReady) return;
     if (!user) {
       setLoading(false);
-      setDebugInfo((prev) => ({
-        ...prev,
-        entitlements: "No user, skipping entitlements fetch.",
-      }));
+      if (process.env.NODE_ENV === "development") {
+        setDebugInfo((prev) => ({
+          ...prev,
+          entitlements: "No user, skipping entitlements fetch.",
+        }));
+      }
       return;
     }
     setLoading(true);
     setError("");
     (async () => {
       try {
-        setDebugInfo((prev) => ({
-          ...prev,
-          entitlements: "Fetching...",
-        }));
-        const json = await getEntitlements(); // no args; adds token + base URL for you
-        // Defensive: If response is not valid JSON, catch and show a friendly error
+        if (process.env.NODE_ENV === "development") {
+          setDebugInfo((prev) => ({
+            ...prev,
+            entitlements: "Fetching...",
+          }));
+        }
+        const json = await getEntitlements({ noCache: true });
         if (typeof json !== "object" || json === null) {
+          if (process.env.NODE_ENV === "development") {
+            setDebugInfo((prev) => ({
+              ...prev,
+              entitlements: {
+                error: "Response is not a valid object",
+                raw: json,
+              },
+            }));
+          }
+          throw new Error(
+            "Could not load billing info. Please refresh or contact support."
+          );
+        }
+        setEntitlements(json);
+        if (process.env.NODE_ENV === "development") {
           setDebugInfo((prev) => ({
             ...prev,
             entitlements: {
-              error: "Response is not a valid object",
-              raw: json,
+              status: "success",
+              data: json,
             },
           }));
-          throw new Error("Could not load billing info. Please refresh or contact support.");
         }
-        setEntitlements(json);
-        setDebugInfo((prev) => ({
-          ...prev,
-          entitlements: {
-            status: "success",
-            data: json,
-          },
-        }));
       } catch (e) {
-        setDebugInfo((prev) => ({
-          ...prev,
-          entitlements: {
-            status: "error",
-            error: e?.message,
-            stack: e?.stack,
-          },
-        }));
-        // If error message looks like a JSON parse error, show a friendlier message
+        if (process.env.NODE_ENV === "development") {
+          setDebugInfo((prev) => ({
+            ...prev,
+            entitlements: {
+              status: "error",
+              error: e?.message,
+              stack: e?.stack,
+            },
+          }));
+        }
         if (
           typeof e?.message === "string" &&
           (e.message.includes("Unexpected token") || e.message.includes("JSON"))
@@ -224,14 +275,16 @@ useEffect(() => {
     setCheckoutLoading(true);
     setError("");
     setNote("");
-    setDebugInfo((prev) => ({
-      ...prev,
-      checkout: {
-        priceId,
-        mode,
-        status: "starting",
-      },
-    }));
+    if (process.env.NODE_ENV === "development") {
+      setDebugInfo((prev) => ({
+        ...prev,
+        checkout: {
+          priceId,
+          mode,
+          status: "starting",
+        },
+      }));
+    }
 
     // Clean up any previous session listener
     if (sessionUnsubRef.current) {
@@ -240,17 +293,20 @@ useEffect(() => {
     }
 
     try {
-      const topupTokens = mode === "payment" ? PAYG_TOKENS_BY_PRICE_ID[priceId] || undefined : undefined;
+      const topupTokens =
+        mode === "payment" ? PAYG_TOKENS_BY_PRICE_ID[priceId] || undefined : undefined;
       const r = await startCheckout(priceId, mode, topupTokens); // returns { url } or { sessionDocPath }
-      setDebugInfo((prev) => ({
-        ...prev,
-        checkout: {
-          priceId,
-          mode,
-          status: "response",
-          response: r,
-        },
-      }));
+      if (process.env.NODE_ENV === "development") {
+        setDebugInfo((prev) => ({
+          ...prev,
+          checkout: {
+            priceId,
+            mode,
+            status: "response",
+            response: r,
+          },
+        }));
+      }
 
       // If direct url, redirect immediately
       if (r?.url) {
@@ -266,13 +322,15 @@ useEffect(() => {
 
         sessionUnsubRef.current = onSnapshot(sessionDocRef, (docSnap) => {
           const data = docSnap.data();
-          setDebugInfo((prev) => ({
-            ...prev,
-            checkoutSessionDoc: {
-              path: r.sessionDocPath,
-              data,
-            },
-          }));
+          if (process.env.NODE_ENV === "development") {
+            setDebugInfo((prev) => ({
+              ...prev,
+              checkoutSessionDoc: {
+                path: r.sessionDocPath,
+                data,
+              },
+            }));
+          }
           if (data?.url) {
             window.location.href = data.url;
           } else if (data?.error) {
@@ -290,16 +348,18 @@ useEffect(() => {
         setNote("Checkout session pending…");
       }
     } catch (e) {
-      setDebugInfo((prev) => ({
-        ...prev,
-        checkout: {
-          priceId,
-          mode,
-          status: "error",
-          error: e?.message,
-          stack: e?.stack,
-        },
-      }));
+      if (process.env.NODE_ENV === "development") {
+        setDebugInfo((prev) => ({
+          ...prev,
+          checkout: {
+            priceId,
+            mode,
+            status: "error",
+            error: e?.message,
+            stack: e?.stack,
+          },
+        }));
+      }
       setError(
         e?.message ||
           "Could not start checkout. Please try again or contact support."
@@ -348,7 +408,71 @@ useEffect(() => {
     }
   };
 
+  // Live subscription listener (instant UI updates from Firebase Stripe Extension)
+  const subsUnsubRef = useRef(null);
+  useEffect(() => {
+    if (!user) return;
 
+    (async () => {
+      const {
+        collection,
+        onSnapshot,
+        query,
+        where,
+        getFirestore,
+      } = await import("firebase/firestore");
+      const q = query(
+        collection(getFirestore(), `customers/${user.uid}/subscriptions`),
+        where("status", "in", ["active", "trialing", "past_due"])
+      );
+
+      // Clean any previous subs listener
+      subsUnsubRef.current?.();
+      subsUnsubRef.current = onSnapshot(q, (snap) => {
+        let plan = "FREE";
+        let cycle = null;
+
+        snap.forEach((d) => {
+          const s = d.data() || {};
+          const item =
+            Array.isArray(s.items) ? s.items[0]
+            : Array.isArray(s.items?.data) ? s.items.data[0]
+            : null;
+          const priceId = item?.price?.id || null;
+          if (!priceId) return;
+
+          // Use the same mapping as backend
+          const mapped = typeof PRICE?.sub === "object" && priceId
+            ? (() => {
+                if (priceId === PRICE.sub.proMonthly)  return { plan: "PRO",  cycle: "MONTHLY" };
+                if (priceId === PRICE.sub.proYearly)   return { plan: "PRO",  cycle: "YEARLY"  };
+                if (priceId === PRICE.sub.teamMonthly) return { plan: "TEAM", cycle: "MONTHLY" };
+                if (priceId === PRICE.sub.teamYearly)  return { plan: "TEAM", cycle: "YEARLY"  };
+                return null;
+              })()
+            : null;
+
+          if (mapped) {
+            plan = mapped.plan;
+            cycle = mapped.cycle;
+          }
+        });
+
+        setEntitlements((prev) => ({
+          ...(prev || {}),
+          plan,
+          cycle,
+        }));
+      });
+    })();
+
+    return () => {
+      try {
+        subsUnsubRef.current?.();
+      } catch {}
+      subsUnsubRef.current = null;
+    };
+  }, [user]);
 
   // Clean up Firestore listeners on unmount
   useEffect(() => {
@@ -360,10 +484,13 @@ useEffect(() => {
     };
   }, []);
 
-    useEffect(() => {
+  useEffect(() => {
     const onFocus = async () => {
       if (!user) return;
-      try { setEntitlements(await getEntitlements()); } catch {}
+      try {
+        const e = await getEntitlements({ noCache: true });
+        setEntitlements(e);
+      } catch {}
     };
     window.addEventListener("focus", onFocus);
     return () => window.removeEventListener("focus", onFocus);
@@ -386,17 +513,26 @@ useEffect(() => {
     return "Free";
   }
 
+  // Next invoice date
+  function nextInvoiceDate() {
+    if (entitlements?.sub?.nextInvoiceAt) {
+      return (
+        <div className="text-xs text-gray-500 mt-1">
+          Next invoice: {new Date(entitlements.sub.nextInvoiceAt).toLocaleDateString()}
+        </div>
+      );
+    }
+    return null;
+  }
+
   // Determine available upgrades
   function getAvailableUpgrades(currentPlan) {
     if (!currentPlan || currentPlan === "FREE") {
-      // Show both Pro and Team
       return SUBSCRIPTION_PLANS;
     }
     if (currentPlan === "PRO") {
-      // Only Team is an upgrade
       return SUBSCRIPTION_PLANS.filter((p) => p.key === "TEAM");
     }
-    // Team is highest, no upgrades
     return [];
   }
 
@@ -405,7 +541,7 @@ useEffect(() => {
     return (
       <div className="min-h-screen bg-gray-900 flex items-center justify-center">
         <Loader2 className="animate-spin h-8 w-8 text-purple-400" />
-        <DebugPanel debugInfo={debugInfo} />
+        {process.env.NODE_ENV === "development" && <DebugPanel debugInfo={debugInfo} />}
       </div>
     );
   }
@@ -419,7 +555,7 @@ useEffect(() => {
           You must be logged in to view billing and manage your subscription.
         </div>
         <button
-          className="mt-6 px-6 py-2 rounded bg-purple-600 text-white hover:bg-purple-700"
+          className="mt-6 px-6 py-2 rounded bg-gradient-to-r from-purple-600 to-teal-400 text-white hover:from-purple-700 hover:to-teal-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-400"
           onClick={() => navigate("/signin")}
         >
           Login to Continue
@@ -433,7 +569,7 @@ useEffect(() => {
             Sign up
           </a>
         </div>
-        <DebugPanel debugInfo={debugInfo} />
+        {process.env.NODE_ENV === "development" && <DebugPanel debugInfo={debugInfo} />}
       </div>
     );
   }
@@ -446,19 +582,18 @@ useEffect(() => {
         <div className="text-red-300 font-medium text-center max-w-md">
           {error}
         </div>
-        {/* If the error looks like a JSON parse error, show a hint */}
         {error.includes("Unexpected token") && (
           <div className="mt-2 text-xs text-gray-400 text-center max-w-xs">
             This usually means the server is returning an error page instead of billing data. Please check your network connection or try again later.
           </div>
         )}
         <button
-          className="mt-6 px-6 py-2 rounded bg-purple-600 text-white hover:bg-purple-700"
+          className="mt-6 px-6 py-2 rounded bg-gradient-to-r from-purple-600 to-teal-400 text-white hover:from-purple-700 hover:to-teal-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-400"
           onClick={() => window.location.reload()}
         >
           Reload
         </button>
-        <DebugPanel debugInfo={debugInfo} />
+        {process.env.NODE_ENV === "development" && <DebugPanel debugInfo={debugInfo} />}
       </div>
     );
   }
@@ -467,12 +602,22 @@ useEffect(() => {
   const availableUpgrades = getAvailableUpgrades(entitlements?.plan);
 
   return (
-    <div className="min-h-screen bg-gray-900 text-gray-200">
-      <div className="max-w-3xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-white mb-2">
-            Billing & Subscription
-          </h1>
+    <div className="min-h-screen bg-gray-900 text-gray-200 relative pb-24">
+      {/* Back to Home Button */}
+      <div className="max-w-3xl mx-auto pt-6 px-4 sm:px-6 lg:px-8 flex items-center">
+        <button
+          className="flex items-center gap-1 text-sm text-gray-400 hover:text-purple-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 rounded px-2 py-1 transition"
+          onClick={() => navigate("/")}
+          aria-label="Back to Home"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          <span className="font-medium">Back to Home</span>
+        </button>
+      </div>
+
+      <div className="max-w-3xl mx-auto py-10 px-4 sm:px-5 lg:px-6">
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold text-white mb-1">Billing & Subscription</h1>
           <p className="text-gray-400">
             Manage your NexusRBX plan, tokens, and billing.
           </p>
@@ -480,22 +625,84 @@ useEffect(() => {
 
         {/* Note block (success/cancel) */}
         {note && (
-          <div className="mb-6 text-sm rounded-md bg-gray-900 border border-gray-700 px-4 py-3 flex items-center gap-2">
+          <div
+            className="mb-5 text-sm rounded-md bg-gray-900 border border-gray-700 px-4 py-2 flex items-center gap-2"
+            aria-live="polite"
+          >
             <CheckCircle className="h-5 w-5 text-green-400" />
             <span>{note}</span>
           </div>
         )}
-{note && note.includes("success") && (
-  <div className="mt-2 text-xs text-gray-400">Syncing purchase…</div>
-)}
 
         {/* Current Plan */}
-        <div className="bg-gray-800 rounded-lg shadow-lg p-6 mb-8 border border-gray-700">
-          <div className="flex items-center mb-4">
-            <Zap className="h-6 w-6 text-purple-400 mr-2" />
+        <div className="bg-gray-800 rounded-lg shadow-sm p-5 mb-7 border border-gray-700">
+          <div className="flex items-center mb-3">
+            <Zap className="h-5 w-5 text-purple-400 mr-2" />
             <h2 className="text-xl font-semibold text-white">Current Plan</h2>
           </div>
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          {/* Token Meter */}
+          <div className="mb-4">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-xs text-gray-400 font-medium">Tokens</span>
+              <button
+                className="text-xs text-purple-400 underline hover:text-teal-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 rounded px-1 py-0.5"
+                onClick={async () => {
+                  setLoading(true);
+                  setError("");
+                  setNote("Refreshing subscription status…");
+                  try {
+                    setEntitlements(await getEntitlements({ noCache: true }));
+                  } catch (e) {
+                    setError(e?.message || "Could not load billing info.");
+                  } finally {
+                    setLoading(false);
+                    setNote("");
+                  }
+                }}
+                tabIndex={0}
+              >
+                Refresh
+              </button>
+            </div>
+            <div className="w-full bg-gray-700 rounded-full h-6 relative overflow-hidden mb-1">
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-purple-500 to-teal-400 transition-all duration-500"
+                style={{
+                  width: `${subLimit > 0 ? (subRemaining / subLimit) * 100 : 0}%`,
+                  minWidth: subLimit > 0 && subRemaining > 0 ? "2.5rem" : 0,
+                }}
+              >
+                <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-xs font-semibold text-white drop-shadow">
+                  {subLimit > 0
+                    ? `${subRemaining.toLocaleString()} / ${subLimit.toLocaleString()} (${subPercent}%)`
+                    : "No tokens"}
+                </span>
+              </div>
+              {subLimit === 0 && (
+                <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-xs font-semibold text-white">
+                  0 tokens
+                </span>
+              )}
+            </div>
+            <div className="flex items-center gap-2 mt-1">
+              {entitlements?.sub?.resetsAt && (
+                <span className="text-xs text-gray-500">
+                  Resets {new Date(entitlements.sub.resetsAt).toLocaleDateString()}
+                </span>
+              )}
+              <a
+                href="https://docs.nexusrbx.com/tokens"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1 text-xs text-purple-400 hover:text-teal-400 underline ml-2"
+              >
+                <Info className="h-3 w-3" />
+                How tokens work
+              </a>
+            </div>
+          </div>
+          {/* Plan Info */}
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
             <div>
               <div className="text-lg font-bold text-purple-300">
                 {planLabel(entitlements?.plan)} Plan
@@ -510,20 +717,13 @@ useEffect(() => {
                     : "Billed monthly"}
                 </div>
               )}
+              {nextInvoiceDate()}
             </div>
-            <div className="flex flex-col gap-2 md:gap-0 md:flex-row md:items-center md:space-x-3">
+            <div>
               <button
-                className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md font-medium flex items-center gap-2 transition disabled:opacity-60"
+                className="bg-gradient-to-r from-purple-600 to-teal-400 hover:from-purple-700 hover:to-teal-500 text-white px-4 py-2 rounded-md font-medium flex items-center gap-2 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-400"
                 onClick={handlePortal}
                 disabled={checkoutLoading || portalLoading}
-              >
-                <CreditCard className="h-4 w-4" />
-                Manage Plan
-              </button>
-              <button
-                className="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-md font-medium flex items-center gap-2 transition disabled:opacity-60"
-                onClick={handlePortal}
-                disabled={portalLoading || checkoutLoading}
               >
                 <CreditCard className="h-4 w-4" />
                 Manage Billing
@@ -531,98 +731,65 @@ useEffect(() => {
               </button>
             </div>
           </div>
-<div className="mt-6">
-  <div className="text-xs text-gray-400 mb-1">Tokens</div>
-  <TokensCounterContainer
-    tokens={{
-      sub: { remaining: subRemaining, limit: entitlements?.sub?.limit || 0 },
-      payg: { remaining: entitlements?.payg?.remaining || 0 },
-    }}
-    isLoading={loading}
-    showRefreshButton
-    onRefresh={async () => {
-      setLoading(true);
-      setError("");
-      setNote("");
-      try { setEntitlements(await getEntitlements()); }
-      catch (e) { setError(e?.message || "Could not load billing info."); }
-      finally { setLoading(false); }
-    }}
-    lowTokenThreshold={100}
-  />
-  {entitlements?.sub?.resetsAt && (
-    <div className="text-xs text-gray-500 mt-1">
-      Resets {new Date(entitlements.sub.resetsAt).toLocaleDateString()}
-    </div>
-  )}
-</div>
         </div>
 
         {/* Upgrade Plans Section */}
         {availableUpgrades.length > 0 && (
-          <div className="bg-gray-800 rounded-lg shadow-lg p-6 mb-8 border border-purple-700">
-            <div className="flex items-center mb-4">
-              <ArrowUpRight className="h-6 w-6 text-purple-400 mr-2" />
+          <div className="bg-gray-800 rounded-lg shadow-sm p-5 mb-7 border border-purple-700/40">
+            <div className="flex items-center mb-3">
+              <ArrowUpRight className="h-5 w-5 text-purple-400 mr-2" />
               <h2 className="text-xl font-semibold text-white">
                 Upgrade Your Plan
               </h2>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {availableUpgrades.map((plan) => (
                 <div
                   key={plan.key}
-                  className={`relative bg-gray-900 rounded-lg border ${
-                    plan.highlight
-                      ? "border-purple-500 shadow-lg shadow-purple-700/10"
-                      : "border-gray-700"
-                  } p-6 flex flex-col`}
+                  className={`relative bg-gray-900 rounded-lg border border-gray-700 p-4 flex flex-col min-h-[260px]`}
                 >
                   {plan.highlight && (
-                    <div className="absolute top-0 right-0 bg-purple-600 text-white text-xs px-3 py-1 rounded-bl-lg rounded-tr-lg font-bold">
+                    <span className="absolute top-3 right-3 bg-purple-600 text-white text-xs font-bold px-2 py-0.5 rounded-full shadow-sm">
                       Most Popular
-                    </div>
-                  )}
-                  <div className="flex items-center mb-2">
-                    <Zap className="h-5 w-5 text-purple-400 mr-2" />
-                    <span className="text-lg font-bold text-white">
-                      {plan.name}
                     </span>
+                  )}
+                  <div className="flex items-center mb-1">
+                    <Zap className="h-4 w-4 text-purple-400 mr-1" />
+                    <span className="text-lg font-bold text-white">{plan.name}</span>
                   </div>
-                  <div className="text-gray-400 mb-2">{plan.description}</div>
-                  <div className="flex items-baseline gap-2 mb-2">
-                    <span className="text-2xl font-bold text-green-300">
+                  <div className="text-gray-400 mb-1 text-sm">{plan.description}</div>
+                  <div className="flex items-baseline gap-2 mb-1">
+                    <span className="text-xl font-bold text-green-300">
                       ${plan.monthlyPrice.toFixed(2)}
                     </span>
-                    <span className="text-gray-400 text-sm">/month</span>
+                    <span className="text-gray-400 text-xs">/month</span>
                     <span className="ml-2 text-gray-500 text-xs">
                       or ${plan.yearlyPrice.toFixed(2)}/year
                     </span>
                   </div>
-                  <ul className="mb-4 text-sm text-gray-300 list-disc pl-5 space-y-1">
+                  <ul className="mb-2 text-xs text-gray-300 list-disc pl-5 space-y-0.5 leading-tight">
                     {plan.features.map((f, i) => (
                       <li key={i}>{f}</li>
                     ))}
                   </ul>
                   <div className="flex flex-col gap-2 mt-auto">
                     <button
-                      className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md font-medium flex items-center gap-2 transition disabled:opacity-60"
+                      className="bg-gradient-to-r from-purple-600 to-teal-400 hover:from-purple-700 hover:to-teal-500 text-white px-3 py-1.5 rounded-md font-medium flex items-center gap-2 text-sm transition focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-400"
                       onClick={() =>
                         handleCheckout(plan.monthlyPriceId, "subscription")
                       }
                       disabled={checkoutLoading || portalLoading}
                     >
-                      <DollarSign className="h-4 w-4" />
-                      Upgrade (Monthly)
+                      Choose Monthly
                     </button>
                     <button
-                      className="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-md font-medium flex items-center gap-2 transition disabled:opacity-60"
+                      className="bg-gray-700 hover:bg-gray-600 text-white px-3 py-1.5 rounded-md font-medium flex items-center gap-2 text-sm transition focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-400"
                       onClick={() =>
                         handleCheckout(plan.yearlyPriceId, "subscription")
                       }
                       disabled={checkoutLoading || portalLoading}
                     >
-                      <DollarSign className="h-4 w-4" />
-                      Upgrade (Yearly)
+                      Choose Yearly
                     </button>
                   </div>
                 </div>
@@ -632,76 +799,68 @@ useEffect(() => {
         )}
 
         {/* Buy PAYG Tokens */}
-        <div className="bg-gray-800 rounded-lg shadow-lg p-6 mb-8 border border-gray-700">
-          <div className="flex items-center mb-4">
-            <DollarSign className="h-6 w-6 text-green-400 mr-2" />
-            <h2 className="text-xl font-semibold text-white">
-              Buy More Tokens (PAYG)
-            </h2>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <button
-              className="bg-gray-900 border border-gray-700 rounded-lg p-4 flex flex-col items-center hover:bg-gray-700 transition disabled:opacity-60"
-              onClick={() => handleCheckout(PRICE.payg.pack100k, "payment")}
-              disabled={checkoutLoading || portalLoading}
-            >
-              <div className="text-lg font-bold text-white mb-1">100,000</div>
-              <div className="text-xs text-gray-400 mb-2">tokens</div>
-              <div className="text-xl font-semibold text-green-300 mb-2">
-                $4.99
-              </div>
-              <div className="text-xs text-gray-500">≈ 14 medium scripts</div>
-            </button>
-            <button
-              className="bg-gray-900 border border-purple-700 rounded-lg p-4 flex flex-col items-center hover:bg-gray-700 transition shadow-lg shadow-purple-700/10 disabled:opacity-60"
-              onClick={() => handleCheckout(PRICE.payg.pack500k, "payment")}
-              disabled={checkoutLoading || portalLoading}
-            >
-              <div className="text-lg font-bold text-white mb-1">500,000</div>
-              <div className="text-xs text-gray-400 mb-2">tokens</div>
-              <div className="text-xl font-semibold text-green-300 mb-2">
-                $15.19
-              </div>
-              <div className="text-xs text-purple-400 font-bold">
-                Best Value
-              </div>
-              <div className="text-xs text-gray-500">≈ 70 medium scripts</div>
-            </button>
-            <button
-              className="bg-gray-900 border border-gray-700 rounded-lg p-4 flex flex-col items-center hover:bg-gray-700 transition disabled:opacity-60"
-              onClick={() => handleCheckout(PRICE.payg.pack1m, "payment")}
-              disabled={checkoutLoading || portalLoading}
-            >
-              <div className="text-lg font-bold text-white mb-1">1,000,000</div>
-              <div className="text-xs text-gray-400 mb-2">tokens</div>
-              <div className="text-xl font-semibold text-green-300 mb-2">
-                $24.99
-              </div>
-              <div className="text-xs text-gray-500">≈ 140 medium scripts</div>
-            </button>
-          </div>
-          <div className="text-xs text-gray-500 mt-4 text-center">
-            PAYG tokens never expire and are used automatically if you run out
-            of subscription tokens.
-          </div>
-        </div>
+<div className="bg-gray-800 rounded-lg p-5 mb-7 border border-gray-700">
+  <div className="flex items-center mb-3">
+    <DollarSign className="h-5 w-5 text-green-400 mr-2" />
+    <h2 className="text-xl font-semibold text-white">Buy More Tokens (PAYG)</h2>
+  </div>
+
+  {/* simple, even cards — no nested buttons */}
+  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+    {[
+      { label: "100,000", price: "$4.99", id: PRICE.payg.pack100k, scripts: 14 },
+      { label: "500,000", price: "$15.19", id: PRICE.payg.pack500k, scripts: 70, popular: true },
+      { label: "1,000,000", price: "$24.99", id: PRICE.payg.pack1m, scripts: 140 },
+    ].map((p) => (
+      <div
+        key={p.id}
+        className="group relative flex flex-col rounded-lg border border-gray-700 bg-gray-900 p-4 transition-shadow hover:shadow-md hover:shadow-black/30"
+      >
+        {p.popular && (
+          <span className="absolute top-3 right-3 rounded-full bg-purple-600 px-2 py-0.5 text-[10px] font-bold text-white">
+            Best Value
+          </span>
+        )}
+
+        <div className="text-lg font-bold text-white">{p.label}</div>
+        <div className="mt-0.5 text-xs text-gray-400">tokens</div>
+        <div className="mt-2 text-xl font-semibold text-green-300">{p.price}</div>
+        <div className="mt-1 text-[11px] text-gray-500">≈ {p.scripts} medium scripts</div>
+
+        <button
+          type="button"
+          onClick={() => handleCheckout(p.id, "payment")}
+          disabled={checkoutLoading || portalLoading}
+          className="mt-auto inline-flex items-center justify-center rounded-md bg-gray-100 px-3 py-1.5 text-sm font-semibold text-gray-900 transition hover:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-400"
+        >
+          Buy {p.label.replace(/,000$/, "k").replace(/,000,000$/, " 1M").replace(",", "")}
+        </button>
+      </div>
+    ))}
+  </div>
+
+  <div className="mt-4 text-center text-xs text-gray-500">
+    PAYG tokens never expire and are used automatically when subscription tokens run out.
+  </div>
+</div>
+
 
         {/* Info Section */}
-        <div className="bg-gray-800 rounded-lg shadow-lg p-6 border border-gray-700">
-          <div className="flex items-center mb-4">
-            <AlertTriangle className="h-6 w-6 text-yellow-400 mr-2" />
+        <div className="bg-gray-800 rounded-lg shadow-sm p-5 border border-gray-700">
+          <div className="flex items-center mb-3">
+            <AlertTriangle className="h-5 w-5 text-yellow-400 mr-2" />
             <h2 className="text-xl font-semibold text-white">
               Billing & Support
             </h2>
           </div>
-          <ul className="list-disc pl-6 text-gray-300 text-sm space-y-2">
+          <ul className="list-disc pl-6 text-gray-300 text-xs space-y-1 leading-tight">
             <li>
               <span className="font-medium text-white">
                 Manage payment methods, invoices, and billing info
               </span>{" "}
               via the{" "}
               <button
-                className="underline text-purple-400 hover:text-purple-300"
+                className="underline text-purple-400 hover:text-teal-400"
                 onClick={handlePortal}
                 disabled={portalLoading}
               >
@@ -713,18 +872,17 @@ useEffect(() => {
               <span className="font-medium text-white">
                 Cancel or change your subscription
               </span>{" "}
-              at any time via the Portal or the "Change Plan" button.
+              at any time via the Portal.
             </li>
             <li>
               <span className="font-medium text-white">Token usage</span> is
-              metered per request. Subscription tokens reset monthly or yearly;
-              PAYG tokens never expire.
+              metered per request. Subscription tokens reset monthly or yearly; PAYG tokens never expire.
             </li>
             <li>
               <span className="font-medium text-white">Need help?</span>{" "}
               <a
                 href="/contact"
-                className="underline text-purple-400 hover:text-purple-300"
+                className="underline text-purple-400 hover:text-teal-400"
               >
                 Contact support
               </a>
@@ -732,13 +890,35 @@ useEffect(() => {
             </li>
           </ul>
         </div>
-        <DebugPanel debugInfo={debugInfo} />
+        <div className="mt-4 text-center">
+          <a
+            href="/contact"
+            className="inline-block underline text-purple-400 hover:text-teal-400 text-xs"
+          >
+            Contact support
+          </a>
+        </div>
+        {process.env.NODE_ENV === "development" && <DebugPanel debugInfo={debugInfo} />}
       </div>
+
+      {/* Sticky Mobile Bar */}
+      {isMobile && (
+        <div className="fixed bottom-0 left-0 right-0 z-50 bg-gradient-to-r from-purple-700 to-teal-500 shadow-lg px-4 py-3 flex justify-center sm:hidden">
+          <button
+            className="w-full max-w-xs bg-white text-purple-700 font-semibold rounded-md px-4 py-2 flex items-center justify-center gap-2 shadow focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-400"
+            onClick={handlePortal}
+            disabled={checkoutLoading || portalLoading}
+          >
+            <CreditCard className="h-5 w-5" />
+            Manage Billing
+          </button>
+        </div>
+      )}
     </div>
   );
 }
 
-// DebugPanel component for showing debug info
+// DebugPanel component for showing debug info (dev only)
 function DebugPanel({ debugInfo }) {
   const [open, setOpen] = useState(false);
 

@@ -275,6 +275,13 @@ function NexusRBXHomepage({
               : 0,
           limit: tokenInfo?.sub?.limit ?? 0,
         },
+      }}
+      isLoading={tokenLoading}
+      showRefreshButton={false}
+      className="!bg-transparent !border-none !shadow-none p-0"
+    />
+    <TokensCounterContainer
+      tokens={{
         payg: {
           remaining:
             typeof tokenInfo?.payg?.remaining === "number"
@@ -369,6 +376,13 @@ function NexusRBXHomepage({
               : 0,
           limit: tokenInfo?.sub?.limit ?? 0,
         },
+      }}
+      isLoading={tokenLoading}
+      showRefreshButton={false}
+      className="!bg-transparent !border-none !shadow-none p-0"
+    />
+    <TokensCounterContainer
+      tokens={{
         payg: {
           remaining:
             typeof tokenInfo?.payg?.remaining === "number"

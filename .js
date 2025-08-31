@@ -42,135 +42,95 @@ admin.initializeApp({
 });
 const firestore = admin.firestore();
 
+
+
+
 // --- OPENAI INIT ---
 if (!OPENAI_API_KEY) {
   throw new Error("OPENAI_API_KEY env variable is required.");
 }
 const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
 
-// --- EXPRESS APP ---
-const allowlist = [
-  "http://localhost:3000",
-  "https://nexusrbx.com",
-  "http://nexusrbx.com",
+// --- CORS (strict allowlist by hostname; supports credentials & preflight) ---
+const ALLOWED_ORIGINS = [
   "https://www.nexusrbx.com",
-  "https://nexusairbx-git-main-traveltables-projects.vercel.app",
-  "https://nexusrbx-backend-production.up.railway.app",
-  "https://nexusairbx-git-main-traveltables-projects.vercel.app",
-  "https://nexusairbx.vercel.app",
-  "https://nexusairbx.com",
-  "http://nexusairbx.com",
-  "https://nexusairbx-git-main-traveltables-projects.vercel.app",
+  "https://nexusrbx.com",
+  "http://localhost:3000",
+  // add any other frontends you actually use:
+  // "https://nexusairbx.vercel.app",
 ];
-if (FRONTEND_ORIGIN) allowlist.push(FRONTEND_ORIGIN);
+
+// Allow env FRONTEND_ORIGIN dynamically
+try {
+  if (FRONTEND_ORIGIN) {
+    const u = new URL(FRONTEND_ORIGIN);
+    if (!ALLOWED_ORIGINS.includes(u.origin)) ALLOWED_ORIGINS.push(u.origin);
+  }
+} catch {}
+
+const allowedHostnames = new Set(
+  ALLOWED_ORIGINS.map(o => {
+    try { return new URL(o).hostname; } catch { return null; }
+  }).filter(Boolean)
+);
 
 const corsOptions = {
-  origin: function(origin, callback) {
-    // Allow requests with no origin (like SSR, curl, mobile apps)
+  origin: function (origin, callback) {
+    // Allow requests with no Origin (SSR, curl, health checks)
     if (!origin) return callback(null, true);
-    if (allowlist.includes(origin)) return callback(null, true);
-    // Allow if origin matches ignoring protocol (for http/https mix)
+
+    // Exact origin allow (protocol+host+port)
+    if (ALLOWED_ORIGINS.includes(origin)) return callback(null, true);
+
+    // Hostname allow (ignore protocol/port)
     try {
-      const o = new URL(origin);
-      if (allowlist.some(allowed => {
-        try {
-          const a = new URL(allowed);
-          return o.hostname === a.hostname;
-        } catch { return false; }
-      })) return callback(null, true);
+      const { hostname } = new URL(origin);
+      if (allowedHostnames.has(hostname)) return callback(null, true);
     } catch {}
+
     console.error("Blocked by CORS:", origin);
     return callback(new Error("Not allowed by CORS: " + origin));
   },
   credentials: true,
   methods: ["GET","POST","DELETE","PUT","PATCH","OPTIONS"],
-  allowedHeaders: ["Content-Type","Authorization","If-None-Match","Idempotency-Key"],
+  allowedHeaders: [
+    "Content-Type",
+    "Authorization",
+    "If-None-Match",
+    "Idempotency-Key",
+    "cache-control",
+    "Pragma" // <-- ADD THIS LINE
+  ],
+  exposedHeaders: [
+    "ETag",
+    "Content-Length",
+    "Content-Type",
+    "Authorization",
+    "Pragma"
+  ],
   maxAge: 86400,
 };
+
 const app = express();
-app.use(cors(corsOptions));
-// then JSON parser for the rest
-// --- STRIPE WEBHOOK HANDLER (must be before bodyParser.json!) ---
-app.post("/api/stripe/webhook", bodyParser.raw({ type: "application/json" }), async (req, res) => {
-  if (!stripe || !STRIPE_WEBHOOK_SECRET) {
-    return res.status(501).send("Stripe webhook not configured");
-  }
-  const sig = req.headers["stripe-signature"];
-  let event;
-  try {
-    event = stripe.webhooks.constructEvent(req.body, sig, STRIPE_WEBHOOK_SECRET);
-  } catch (err) {
-    console.error("⚠️  Webhook signature verification failed.", err.message);
-    return res.status(400).send(`Webhook Error: ${err.message}`);
-  }
-
-  // Helper: credit PAYG tokens
-  async function creditPayg(uid, tokens, meta = {}) {
-    const userRef = firestore.collection("users").doc(uid);
-    const paygRef = userRef.collection("paygCredits").doc("main");
-    await firestore.runTransaction(async (tx) => {
-      const snap = await tx.get(paygRef);
-      const prev = snap.exists && typeof snap.data().balance === "number" ? snap.data().balance : 0;
-      tx.set(paygRef, {
-        balance: prev + tokens,
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-        ...meta,
-      }, { merge: true });
-    });
-  }
-
-  try {
-    console.log("Stripe webhook received:", event.type, event.data?.object?.id || "");
-    if (event.type === "checkout.session.completed") {
-      const session = event.data.object;
-      const uid =
-        session.metadata?.uid ||
-        session.client_reference_id;
-
-      console.log("checkout.session.completed for uid:", uid, "mode:", session.mode);
-
-      if (uid && session.mode === "payment") {
-        // Priority 1: explicit tokens passed from FE
-        let tokensToCredit = Number(session.metadata?.tokens || 0);
-
-        // Priority 2: read tokens from the Price metadata (set metadata.tokens on the Price in Stripe)
-        if (!Number.isFinite(tokensToCredit) || tokensToCredit <= 0) {
-          const lineItems = await stripe.checkout.sessions.listLineItems(session.id, {
-            limit: 10,
-            expand: ["data.price"]
-          });
-          const price = lineItems.data?.[0]?.price;
-          const metaTokens = Number(price?.metadata?.tokens || 0);
-          if (Number.isFinite(metaTokens) && metaTokens > 0) {
-            tokensToCredit = metaTokens;
-          }
-        }
-
-        if (Number.isFinite(tokensToCredit) && tokensToCredit > 0) {
-          console.log("Crediting PAYG tokens:", tokensToCredit, "to uid:", uid);
-          await creditPayg(uid, tokensToCredit, {
-            source: "stripe",
-            sessionId: session.id,
-            customer: session.customer,
-          });
-        } else {
-          console.warn("checkout.session.completed with mode=payment but no tokens resolved");
-        }
-      }
-      // For subscriptions, Firebase Extension writes /customers/{uid}/subscriptions; your FE reads it via /api/billing/entitlements
-      if (uid && session.mode === "subscription") {
-        console.log("Subscription purchase completed for uid:", uid, "session:", session.id);
-        // The Firebase Stripe extension should create/update the subscription doc in Firestore.
-        // You can add extra logging here if you want to check Firestore after a delay.
-      }
-    }
-
-    return res.json({ received: true });
-  } catch (err) {
-    console.error("Webhook handler error:", err);
-    return res.status(500).send("Webhook handler error");
-  }
+// (move this block BELOW where you define "const app = express();")
+const stripeWebhook = require("./src/routes/stripeWebhook.js");
+app.use("/api/stripe", stripeWebhook);
+// Quick sanity check
+app.get("/api/stripe/webhook", (_req, res) => {
+  const configured = Boolean(STRIPE_SECRET_KEY) && Boolean(STRIPE_WEBHOOK_SECRET);
+  res.status(200).json({
+    ok: true,
+    route: "/api/stripe/webhook",
+    stripeConfigured: configured,
+    hasSecretKey: Boolean(STRIPE_SECRET_KEY),
+    hasWebhookSecret: Boolean(STRIPE_WEBHOOK_SECRET),
+  });
 });
+
+app.use(cors(corsOptions));
+// Ensure preflight succeeds globally
+app.options("*", cors(corsOptions));
+
 app.use(bodyParser.json({ limit: "2mb" }));
 app.set("etag", false); // we'll manually set ETags on hot GETs
 // Health
@@ -1079,12 +1039,16 @@ app.post("/api/projects", verifyFirebaseToken, asyncHandler(async (req, res) => 
   res.json({ projectId: scriptDoc.id, version: 1 });
 }));
 
-// GET /api/billing/entitlements
+// REPLACE your existing GET /api/billing/entitlements route with this version
 app.get("/api/billing/entitlements", verifyFirebaseToken, asyncHandler(async (req, res) => {
-  res.setHeader('Content-Type', 'application/json');
-  const { uid, email } = req.user;
+  res.setHeader("Content-Type", "application/json");
+  res.setHeader("Cache-Control", "no-store");
+  res.setHeader("Pragma", "no-cache");
+  res.setHeader("Vary", "Origin, Authorization");
 
+  const { uid, email } = req.user;
   const userRef = firestore.collection("users").doc(uid);
+
   const userSnap = await userRef.get();
   if (!userSnap.exists) {
     await userRef.set({
@@ -1095,45 +1059,86 @@ app.get("/api/billing/entitlements", verifyFirebaseToken, asyncHandler(async (re
     }, { merge: true });
   }
 
-  // Read Stripe extension subs
-  const subsSnap = await firestore.collection("customers").doc(uid).collection("subscriptions").get();
+  let activePlan = null;   // { priceId, interval }
+  let resetsAtIso = null;  // ISO
 
-  let activePlan = null; // { priceId, interval }
-  subsSnap.forEach(d => {
-    const s = d.data();
-    if (["active", "trialing", "past_due"].includes(s.status)) {
-const item = Array.isArray(s.items) ? s.items[0]
-            : Array.isArray(s.items?.data) ? s.items.data[0]
-            : null;
-const priceId = item?.price?.id;
-const interval = item?.price?.recurring?.interval;
-if (priceId) activePlan = { priceId, interval };
-    }
-  });
+  // 1) Firebase Stripe Extension collections
+  try {
+    const subsSnap = await firestore
+      .collection("customers").doc(uid)
+      .collection("subscriptions").get();
 
-  const planInfo = activePlan ? classifyPrice(activePlan.priceId) : null;
-  const plan = planInfo?.plan || "FREE";
-  const cycle = activePlan ? (activePlan.interval === "year" ? "YEARLY" : "MONTHLY") : null;
+    subsSnap.forEach(d => {
+      const s = d.data();
+      if (["active","trialing","past_due"].includes(s?.status)) {
+        const item =
+          Array.isArray(s.items) ? s.items[0] :
+          Array.isArray(s.items?.data) ? s.items.data[0] :
+          null;
+        const priceId = item?.price?.id;
+        const interval = item?.price?.recurring?.interval; // month|year
+        if (priceId) activePlan = { priceId, interval };
 
-  // Subscription cap (fall back to FREE limit if nothing active)
-  const FREE_LIMIT = PLAN_LIMITS?.FREE ?? 50000;
-  const subLimit = planInfo?.limit ?? FREE_LIMIT;
-
-  // Period end from Stripe doc if present
-  let resetsAt = null;
-  subsSnap.forEach(d => {
-    const s = d.data();
-    if (["active","trialing","past_due"].includes(s.status) && s.current_period_end) {
-      const ms = typeof s.current_period_end === "number" ? s.current_period_end * 1000 : null;
-      if (ms && (!resetsAt || ms > resetsAt)) resetsAt = new Date(ms).toISOString();
-    }
-  });
-  if (!resetsAt) {
-    // give FREE users a monthly reset window starting now
-    resetsAt = new Date(Date.now() + 30*24*60*60*1000).toISOString();
+        if (s?.current_period_end && typeof s.current_period_end === "number") {
+          const ms = s.current_period_end * 1000;
+          if (!resetsAtIso || ms > Date.parse(resetsAtIso)) {
+            resetsAtIso = new Date(ms).toISOString();
+          }
+        }
+      }
+    });
+  } catch (e) {
+    console.error("Extension subs read failed:", e);
   }
 
-  // PAYG remaining
+  // 2) Fallback to users/{uid}.stripe + live Stripe API
+  if (!activePlan) {
+    try {
+      const u = (await userRef.get()).data() || {};
+      const link = u?.stripe || {};
+
+      if (link.subscriptionId && typeof stripe?.subscriptions?.retrieve === "function") {
+        const sub = await stripe.subscriptions.retrieve(link.subscriptionId);
+        if (["active","trialing","past_due"].includes(sub?.status)) {
+          const item = sub.items?.data?.[0];
+          const priceId = item?.price?.id || link.priceId || null;
+          const interval = item?.price?.recurring?.interval || null;
+          if (priceId) activePlan = { priceId, interval };
+          if (sub.current_period_end) {
+            resetsAtIso = new Date(sub.current_period_end * 1000).toISOString();
+          }
+        }
+      } else if (link.customerId && typeof stripe?.subscriptions?.list === "function") {
+        const list = await stripe.subscriptions.list({ customer: link.customerId, limit: 1, status: "all" });
+        const candidate = list?.data?.find(s => ["active","trialing","past_due"].includes(s.status));
+        if (candidate) {
+          const item = candidate.items?.data?.[0];
+          const priceId = item?.price?.id || link.priceId || null;
+          const interval = item?.price?.recurring?.interval || null;
+          if (priceId) activePlan = { priceId, interval };
+          if (candidate.current_period_end) {
+            resetsAtIso = new Date(candidate.current_period_end * 1000).toISOString();
+          }
+        }
+      }
+    } catch (e) {
+      console.error("Stripe fallback fetch failed:", e);
+    }
+  }
+
+  // 3) Derive plan + limits
+  const planInfo = activePlan ? classifyPrice(activePlan.priceId) : null;
+  const plan = planInfo?.plan || "FREE";
+  const cycle = activePlan ? ((activePlan.interval === "year") ? "YEARLY" : "MONTHLY") : null;
+
+  const FREE_LIMIT = PLAN_LIMITS?.FREE ?? 50000;
+  const subLimit = PLAN_LIMITS?.[plan] ?? FREE_LIMIT;
+
+  if (!resetsAtIso) {
+    resetsAtIso = new Date(Date.now() + 30*24*60*60*1000).toISOString();
+  }
+
+  // 4) PAYG + used
   let paygRemaining = 0;
   try {
     const paygSnap = await userRef.collection("paygCredits").doc("main").get();
@@ -1142,22 +1147,21 @@ if (priceId) activePlan = { priceId, interval };
     }
   } catch {}
 
-  // Used tokens (optional aggregation)
   let used = 0;
   try {
     const logs = await userRef.collection("usageLogs").orderBy("createdAt", "desc").limit(500).get();
     logs.forEach(l => used += Number(l.data().tokens || 0));
   } catch {}
 
-  // Always return an entitlement, even for FREE users
   return res.json({
     plan,
     cycle,
-    sub: { limit: subLimit, used, resetsAt },
+    sub: { limit: subLimit, used, resetsAt: resetsAtIso },
     payg: { remaining: paygRemaining },
     seats: 1,
   });
 }));
+
 
 
 
@@ -1255,7 +1259,8 @@ app.post("/api/billing/consume", verifyFirebaseToken, async (req, res) => {
   });
 
   const planInfo = activePlan ? classifyPrice(activePlan.priceId) : null;
-  const effectiveSubLimit = planInfo?.limit ?? (PLAN_LIMITS?.FREE ?? 50000);
+  const planLabel = planInfo?.plan || "FREE";
+  const effectiveSubLimit = PLAN_LIMITS?.[planLabel] ?? (PLAN_LIMITS?.FREE ?? 50000);
   const nextReset = resetsAtMs ? new Date(resetsAtMs) : null;
 
   try {
@@ -1712,6 +1717,15 @@ app.get('/api/admin/openai-usage', verifyFirebaseToken, requireAdmin, readLimite
   const usage = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
   res.json({ usage });
 }));
+
+app.get("/api/stripe/mode", (_req, res) => {
+  res.json({
+    stripeMode: process.env.STRIPE_MODE || null,
+    hasSecretKey: Boolean(process.env.STRIPE_SECRET_KEY),
+    hasWebhookSecret: Boolean(process.env.STRIPE_WEBHOOK_SECRET),
+  });
+});
+
 
 // --- HEALTH CHECK ---
 app.get("/", (req, res) => {
