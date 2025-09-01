@@ -6,7 +6,6 @@ import React, {
   useDeferredValue,
 } from "react";
 import { useBilling } from "../context/BillingContext";
-import { PRICE } from "../lib/prices";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   Send,
@@ -15,6 +14,7 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
+  Info,
 } from "lucide-react";
 import { auth } from "./firebase";
 import { onAuthStateChanged, signInAnonymously } from "firebase/auth";
@@ -24,12 +24,13 @@ import Modal from "../components/Modal";
 import FeedbackModal from "../components/FeedbackModal";
 import SimpleCodeDrawer from "../components/CodeDrawer";
 import ScriptLoadingBarContainer from "../components/ScriptLoadingBarContainer";
-import WelcomeCard from "../components/WelcomeCard";
-import TokenBar from "../components/TokenBar";
+import PlanWelcomeCard from "../components/PlanWelcomeCard";
+import PLAN_INFO from "../lib/planInfo";
 import CelebrationAnimation from "../components/CelebrationAnimation";
 import OnboardingContainer from "../components/OnboardingContainer";
 import FancyLoadingOverlay from "../components/FancyLoadingOverlay";
 import NotificationToast from "../components/NotificationToast";
+import { sha256 } from "../lib/hash"; // You need a hash util for duplicate detection
 import { v4 as uuidv4 } from "uuid";
 import {
   normalizeServerVersion,
@@ -62,10 +63,6 @@ if (!BACKEND_URL) {
 if (BACKEND_URL.endsWith("/")) {
   BACKEND_URL = BACKEND_URL.replace(/\/+$/, "");
 }
-
-// --- Token System Constants ---
-const TOKEN_LIMIT = 4;
-const TOKEN_REFRESH_HOURS = 48; // 2 days
 
 // --- Developer Email for Infinite Tokens ---
 const DEV_EMAIL = process.env.REACT_APP_DEV_EMAIL?.toLowerCase() || "dev@example.com";
@@ -150,7 +147,6 @@ async function authedFetch(user, url, init = {}, retry = true) {
   }
   return res;
 }
-
 
 // --- Debounce Helper ---
 function useDebounce(value, delay) {
@@ -237,8 +233,101 @@ function getAiBubbleSizing(text = "") {
   return { wrapClass: "max-w-4xl", bubbleClass: "text-[14px] leading-7 px-7 py-6" };
 }
 
+// --- Plan/Token Cap Info ---
 
-function NexusRBXAIPageContainer() {
+
+function formatNumber(n) {
+  if (typeof n !== "number") return n;
+  return n.toLocaleString();
+}
+
+function formatResetDate(date) {
+  if (!date) return "";
+  const d = typeof date === "string" ? new Date(date) : date;
+  return d.toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
+// --- Token Meter (TokenBar) ---
+function TokenBar({ tokensLeft, tokensLimit, resetsAt, plan }) {
+  const percent =
+    typeof tokensLeft === "number" && typeof tokensLimit === "number"
+      ? Math.max(0, Math.min(100, (tokensLeft / tokensLimit) * 100))
+      : 100;
+  const planInfo = PLAN_INFO[plan] || PLAN_INFO.free;
+  return (
+    <div className="w-full flex flex-col gap-1">
+      <div className="flex items-center justify-between mb-1">
+        <div className="text-xs text-gray-300 font-medium">
+          Tokens:{" "}
+          <span className="text-white font-bold">
+            {typeof tokensLeft === "number" ? formatNumber(tokensLeft) : "∞"}
+          </span>{" "}
+          <span className="text-gray-400">/ {formatNumber(tokensLimit)}</span>
+        </div>
+        <a
+          href="/docs#tokens"
+          className="flex items-center gap-1 text-xs text-[#9b5de5] hover:text-[#00f5d4] underline"
+          title="How tokens work"
+        >
+          <Info className="w-4 h-4" />
+          How tokens work
+        </a>
+      </div>
+      <div className="w-full h-3 bg-gray-800 rounded-full overflow-hidden relative">
+        <div
+          className={`h-full rounded-full transition-all duration-500 ${
+            plan === "team"
+              ? "bg-gradient-to-r from-[#00f5d4] to-[#9b5de5]"
+              : plan === "pro"
+              ? "bg-gradient-to-r from-[#9b5de5] to-[#00f5d4]"
+              : "bg-gray-400"
+          }`}
+          style={{ width: `${percent}%` }}
+        ></div>
+      </div>
+      <div className="flex items-center justify-between mt-1 text-xs text-gray-400">
+        <span>
+          {typeof resetsAt === "string" || resetsAt instanceof Date
+            ? `Resets on ${formatResetDate(resetsAt)}`
+            : ""}
+        </span>
+        <span className="text-gray-500">{planInfo.capText}</span>
+      </div>
+    </div>
+  );
+}
+
+// --- Plan Badge ---
+function PlanBadge({ plan }) {
+  const planInfo = PLAN_INFO[plan] || PLAN_INFO.free;
+  return (
+    <span
+      className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold mr-2 ${
+        planInfo.badgeClass
+      }`}
+      style={{
+        background:
+          plan === "pro"
+            ? "linear-gradient(90deg, #9b5de5 0%, #00f5d4 100%)"
+            : plan === "team"
+            ? "linear-gradient(90deg, #00f5d4 0%, #9b5de5 100%)"
+            : undefined,
+        color: plan === "team" ? "#222" : undefined,
+      }}
+    >
+      {planInfo.label}
+      <span className="ml-2 text-xs font-normal opacity-80">
+        • {planInfo.capText}
+      </span>
+    </span>
+  );
+}
+
+function AiPage() {
   const [showOnboarding, setShowOnboarding] = useState(
     localStorage.getItem("nexusrbx:onboardingComplete") !== "true"
   );
@@ -266,7 +355,7 @@ function NexusRBXAIPageContainer() {
   const chatUnsubRef = useRef(null);
 
   const [activeTab, setActiveTab] = useState("scripts");
-  
+
   // Accept initialPrompt from navigation state (homepage)
   useEffect(() => {
     if (
@@ -276,10 +365,8 @@ function NexusRBXAIPageContainer() {
       location.state.initialPrompt.trim()
     ) {
       setPrompt(location.state.initialPrompt);
-      // Optionally, clear the state so it doesn't reapply on every render
       window.history.replaceState({}, document.title);
     }
-    // eslint-disable-next-line
   }, [location]);
   const [promptCharCount, setPromptCharCount] = useState(0);
   const [promptError, setPromptError] = useState("");
@@ -292,15 +379,17 @@ function NexusRBXAIPageContainer() {
 
   // --- Notification Helper (deduped) ---
   const notify = useCallback(
-    ({ message, type = "info", duration = 4000 }) => {
+    ({ message, type = "info", duration = 4000, cta, secondary, children }) => {
       setNotifications((prev) => {
         if (prev.some((n) => n.message === message && n.type === type)) return prev;
-        return [...prev, { id: uuidv4(), message, type, duration }];
+        return [
+          ...prev,
+          { id: uuidv4(), message, type, duration, cta, secondary, children }
+        ];
       });
     },
     [setNotifications]
   );
-
 
   // Hide onboarding when finished (listen for reload or localStorage change)
   useEffect(() => {
@@ -346,26 +435,63 @@ function NexusRBXAIPageContainer() {
   // --- Typewriter Animation State ---
   const [animatedScriptIds, setAnimatedScriptIds] = useState({});
 
-// --- Token Bar State ---
-const [tokensLeft, setTokensLeft] = useState(TOKEN_LIMIT);
-const [tokenRefreshTime, setTokenRefreshTime] = useState(null);
+  // --- Billing/Entitlements ---
+  const {
+    loading: billingLoading,
+    error: billingError,
+    plan,
+    cycle,
+    totalRemaining,
+    resetsAt,
+    checkout,
+    portal,
+    refresh: refreshBilling,
+    tokens = {},
+    paygEnabled = false,
+  } = useBilling();
 
-const { loading: billingLoading, error: billingError, plan, cycle, totalRemaining, resetsAt, checkout, portal, refresh: refreshBilling } = useBilling();
-
+  // Listen for entitlement refresh after returning from /subscribe
 useEffect(() => {
-  if (billingLoading) return;
-  if (billingError) {
-    // leave previous values; optionally show a toast
-    return;
+  const params = new URLSearchParams(window.location.search);
+  if (params.get("checkout") === "success") {
+    refreshBilling?.();
+    // Clean up URL so this only runs once
+    params.delete("checkout");
+    window.history.replaceState({}, "", window.location.pathname + (params.toString() ? "?" + params.toString() : ""));
   }
-  if (totalRemaining === null) {
-    setTokensLeft(null);        // unlimited display (e.g., dev or admin)
-    setTokenRefreshTime(null);
-  } else {
-    setTokensLeft(totalRemaining);
-    setTokenRefreshTime(resetsAt || null);
-  }
-}, [billingLoading, billingError, totalRemaining, resetsAt]);
+}, [refreshBilling]);
+
+// Plan info
+const isSubscriber = !!(tokens && tokens.entitlements && tokens.entitlements.includes && (
+  tokens.entitlements.includes("subscriber") || tokens.entitlements.includes("pro") || tokens.entitlements.includes("team")
+));
+const normalizedPlan = typeof plan === "string" ? plan.toLowerCase() : "free";
+const planKey = normalizedPlan === "team" ? "team" : normalizedPlan === "pro" ? "pro" : "free";
+const planInfo = PLAN_INFO[planKey];
+  // --- Token State ---
+  const [tokensLeft, setTokensLeft] = useState(null);
+  const [tokensLimit, setTokensLimit] = useState(null);
+  const [tokenRefreshTime, setTokenRefreshTime] = useState(null);
+
+  useEffect(() => {
+    if (billingLoading) return;
+    if (billingError) {
+      return;
+    }
+    if (typeof tokens.remaining === "number" && typeof tokens.limit === "number") {
+      setTokensLeft(tokens.remaining);
+      setTokensLimit(tokens.limit);
+      setTokenRefreshTime(tokens.resetsAt || resetsAt || null);
+    } else if (typeof totalRemaining === "number") {
+      setTokensLeft(totalRemaining);
+      setTokensLimit(planInfo.cap);
+      setTokenRefreshTime(resetsAt || null);
+    } else {
+      setTokensLeft(null);
+      setTokensLimit(planInfo.cap);
+      setTokenRefreshTime(resetsAt || null);
+    }
+  }, [billingLoading, billingError, tokens, totalRemaining, resetsAt, planInfo.cap]);
 
   // --- Prompt Input Ref for focus ---
   const promptInputRef = useRef(null);
@@ -445,7 +571,6 @@ useEffect(() => {
       const u = auth.currentUser;
       if (!u || !chatId) return;
 
-      // abort inflight job
       if (jobAbortRef.current) {
         try {
           jobAbortRef.current.abort();
@@ -453,7 +578,6 @@ useEffect(() => {
         jobAbortRef.current = null;
       }
 
-      // clean old listeners first
       messagesUnsubRef.current?.();
       messagesUnsubRef.current = null;
       chatUnsubRef.current?.();
@@ -583,12 +707,14 @@ useEffect(() => {
   // --- Prompt Char Count & Error ---
   useEffect(() => {
     setPromptCharCount(prompt.length);
-    if (prompt.length > 800) {
-      setPromptError("Prompt too long (max 800 characters).");
+    if (prompt.length > (planInfo.promptCap || 800)) {
+      setPromptError(
+        `Prompt too long (max ${planInfo.promptCap || 800} characters for your plan).`
+      );
     } else {
       setPromptError("");
     }
-  }, [prompt]);
+  }, [prompt, planInfo.promptCap]);
 
   // --- Debounced Prompt for Autocomplete (deferred for snappy typing) ---
   const deferredPrompt = useDeferredValue(prompt);
@@ -629,156 +755,23 @@ useEffect(() => {
     promptInputRef.current?.focus();
   }, []);
 
-  // --- Cleanup job polling on unmount ---
-  useEffect(() => {
-    return () => {
-      if (jobAbortRef.current) {
-        try {
-          jobAbortRef.current.abort();
-        } catch {}
-        jobAbortRef.current = null;
+// --- Cleanup job polling and SSE on unmount ---
+useEffect(() => {
+  return () => {
+    if (jobAbortRef.current) {
+      if (typeof jobAbortRef.current.abortJob === "function") {
+        jobAbortRef.current.abortJob();
+      } else if (typeof jobAbortRef.current.abort === "function") {
+        jobAbortRef.current.abort();
       }
-    };
-  }, []);
-
-  async function createChatWithTitleAndFirstMessage({ user, title, firstMessage, clientId }) {
-    const db = getFirestore();
-    const authUser = auth.currentUser;
-    if (!authUser) throw new Error("Not authenticated");
-
-    const chatRef = doc(collection(db, "users", authUser.uid, "chats"));
-    const msgRef = doc(collection(chatRef, "messages"));
-    const now = serverTimestamp();
-
-    const batch = writeBatch(db);
-    batch.set(chatRef, {
-      title,
-      createdAt: now,
-      updatedAt: now,
-      firstMessageAt: now,
-      lastMessage: firstMessage,
-      projectId: null,
-      archived: false,
-    });
-    batch.set(msgRef, {
-      clientId,
-      role: "user",
-      content: firstMessage,
-      createdAt: now,
-    });
-
-    await batch.commit();
-    return chatRef.id;
-  }
-
-  // --- Sidebar Version Click Handler ---
-  const handleVersionView = async (versionObj) => {
-    setErrorMsg("");
-    setSelectedVersion(versionObj);
-
-    if (versionObj?.projectId && versionObj.projectId !== currentScriptId) {
-      setCurrentScriptId(versionObj.projectId);
-      setCurrentScript((cs) => ({
-        ...cs,
-        id: versionObj.projectId,
-        title: versionObj?.title || cs?.title || "",
-      }));
-    } else {
-      setCurrentScript((cs) => ({
-        ...cs,
-        title: versionObj?.title || cs?.title || "",
-      }));
+      jobAbortRef.current = null;
+    }
+    if (window.__activeSSE && typeof window.__activeSSE.close === "function") {
+      window.__activeSSE.close();
+      window.__activeSSE = null;
     }
   };
-
-  // --- Download Handler for Version ---
-  const handleVersionDownload = (versionObj) => {
-    const filename = safeFile(
-      (versionObj?.title || currentScript?.title || "Script").trim() || "Script"
-    );
-    const blob = new Blob([versionObj.code], { type: "text/plain" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  };
-
-  // --- Script Management (Firestore-based Project IDs) ---
-  const handleCreateScript = async (title = "New Script") => {
-    setErrorMsg("");
-    if (!user) return;
-    try {
-      const db = getFirestore();
-      const authUser = auth.currentUser;
-      const projectRef = doc(collection(db, "users", authUser.uid, "projects"));
-      await setDoc(projectRef, {
-        title,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-        owner: authUser.uid,
-      });
-      setCurrentScriptId(projectRef.id);
-      safeSet("nexusrbx:lastProjectId", projectRef.id);
-
-      const res = await authedFetch(user, `${BACKEND_URL}/api/projects`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title, firestoreId: projectRef.id }),
-      });
-      if (!res.ok) {
-        notify({ message: "Failed to sync project to backend.", type: "error" });
-      }
-    } catch (err) {
-      notify({ message: "Failed to create project.", type: "error" });
-    }
-  };
-
-  const handleRenameScript = async (scriptId, newTitle) => {
-    setErrorMsg("Renaming projects is not supported yet.");
-  };
-
-  const handleDeleteScript = async (scriptId) => {
-    setErrorMsg("Deleting projects is not supported yet.");
-  };
-
-  // --- Chat Management for Sidebar (rename/delete) ---
-  const handleRenameChat = async (chatId, newTitle) => {
-    if (!user || !chatId || !newTitle.trim()) return;
-    try {
-      const db = getFirestore();
-      await updateDoc(doc(db, "users", user.uid, "chats", chatId), {
-        title: newTitle.trim(),
-        updatedAt: serverTimestamp(),
-      });
-      setSuccessMsg("Chat renamed.");
-    } catch (err) {
-      setErrorMsg("Failed to rename chat.");
-    }
-  };
-
-  const handleDeleteChat = async (chatId) => {
-    if (!user || !chatId) return;
-    try {
-      const db = getFirestore();
-      await deleteDoc(doc(db, "users", user.uid, "chats", chatId));
-      if (currentChatId === chatId) {
-        setCurrentChatId(null);
-        setCurrentChatMeta(null);
-        setCurrentScriptId(null);
-        setCurrentScript(null);
-        setVersionHistory([]);
-        setMessages([]);
-        setSelectedVersion(null);
-      }
-      setSuccessMsg("Chat deleted.");
-    } catch (err) {
-      setErrorMsg("Failed to delete chat.");
-    }
-  };
+}, []);
 
   // --- AI Avatar (NexusRBX Logo) ---
   const NexusRBXAvatar = () => (
@@ -815,520 +808,617 @@ useEffect(() => {
 async function mustOk(res, label) {
   if (res.ok) return;
   if (res.status === 402) {
-    notify({ message: "You’re out of tokens. Choose a plan or buy a top-up.", type: "error", duration: 5000 });
+    notify({
+      message: planInfo.toastZero,
+      type: "error",
+      duration: 5000,
+      cta: {
+        label: "Upgrade",
+        onClick: () => navigate("/subscribe"),
+      },
+    });
+    // Optionally, redirect immediately:
+    // navigate("/subscribe");
     throw new Error("INSUFFICIENT_TOKENS");
   }
   const text = await res.text();
-  throw new Error(`${label}: ${res.status} ${res.statusText} - ${text.slice(0,200)}`);
+  throw new Error(`${label}: ${res.status} ${res.statusText} - ${text.slice(0, 200)}`);
 }
 
-  useEffect(() => {
-    function onOpenCodeDrawer(e) {
-      const scriptId = e?.detail?.scriptId;
-      const code = e?.detail?.code;
-      const title = e?.detail?.title || "Script";
-      const version = e?.detail?.version || e?.detail?.versionNumber || null;
-      const explanation = e?.detail?.explanation || "";
-      const savedScriptId = e?.detail?.savedScriptId || null;
+// --- Main Generation Flow (Handles both new script and new version) ---
 
-      // If code is provided (from Saved tab), always open as-is
-      if (code) {
-        setSelectedVersion({
-          id: savedScriptId || cryptoRandomId(),
-          projectId: scriptId,
-          code,
-          title,
-          versionNumber: version,
-          explanation,
-          createdAtMs: Date.now(),
-          isSavedScript: true,
-        });
-        return;
-      }
+const lastPromptHashRef = useRef(null);
+const lastPromptTimeRef = useRef(0);
+const [showSummarizeModal, setShowSummarizeModal] = useState(false);
+const [summarizedPrompt, setSummarizedPrompt] = useState("");
+const [pendingMsgId, setPendingMsgId] = useState(null);
+const [wasCanceled, setWasCanceled] = useState(false);
 
-      // If opening from version history, find the correct version
-      if (scriptId === currentScriptId && versionHistory.length > 0) {
-        // Try to find by id, versionNumber, or savedScriptId
-        const found = versionHistory.find(
-          (v) =>
-            v.id === savedScriptId ||
-            String(v.versionNumber) === String(version) ||
-            String(v.id) === String(version) ||
-            String(v.id) === String(savedScriptId)
-        );
-        setSelectedVersion(found || versionHistory[0]);
-      } else if (scriptId) {
-        setCurrentScriptId(scriptId);
-      }
-    }
-    window.addEventListener("nexus:openCodeDrawer", onOpenCodeDrawer);
-    return () =>
-      window.removeEventListener("nexus:openCodeDrawer", onOpenCodeDrawer);
-  }, [currentScriptId, versionHistory]);
+async function fireTelemetry(event, data = {}) {
+  // Replace with your analytics system
+  // Example: window.analytics?.track(event, data);
+}
 
-  // --- Main Generation Flow (Handles both new script and new version) ---
-const handleSubmit = async (e) => {
-  e.preventDefault();
+const handleSubmit = async (e, opts = {}) => {
+  if (e) e.preventDefault();
+  if (isGenerating) return;
+
+  // 1. Input & plan validation (client-side hints only)
+  let rawPrompt = typeof prompt === "string" ? prompt : "";
+  let cleanedPrompt = rawPrompt.replace(/\s+/g, " ").trim();
+  if (!cleanedPrompt) {
+    setPromptError("Please enter a prompt.");
+    return;
+  }
+  if (cleanedPrompt.length < 8) {
+    setPromptError("Prompt too short. Please be more specific.");
+    return;
+  }
+  if (planInfo && cleanedPrompt.length > planInfo.promptCap) {
+    setPromptError(
+      `Prompt too long (max ${planInfo.promptCap} characters for your plan).`
+    );
+    return;
+  }
+  // UX note: backend is source of truth; client checks are hints only
+
+  // 18. Large prompt safeguard: offer summarization if near cap
+  if (
+    planInfo &&
+    cleanedPrompt.length > 0.8 * planInfo.promptCap &&
+    !opts.skipSummarize
+  ) {
+    setShowSummarizeModal(true);
+    setSummarizedPrompt(cleanedPrompt);
+    return;
+  }
+
+  // 19. Duplicate submission detection
+  const promptHash = await sha256(
+    cleanedPrompt +
+      JSON.stringify(settings) +
+      (currentScriptId || "")
+  );
+  const now = Date.now();
+  if (
+    lastPromptHashRef.current === promptHash &&
+    now - lastPromptTimeRef.current < 30000 &&
+    !opts.forceDuplicate
+  ) {
+    setPromptError(
+      "You just submitted this prompt. Run again anyway?"
+    );
+    // Optionally show a "Run again anyway" button
+    return;
+  }
+  lastPromptHashRef.current = promptHash;
+  lastPromptTimeRef.current = now;
+
+  // 2. Concurrency & double-submit
+  setIsGenerating(true);
+  setGenerationStep("preparing");
   setErrorMsg("");
-  // pre-check balance
-  if (tokensLeft !== null && tokensLeft <= 0) {
-    notify({ message: "No tokens remaining. Open Billing to continue.", type: "error" });
-    return;
-  }
+  setSuccessMsg("");
+  setPromptError("");
+  setLoadingBarVisible(true);
+  setLoadingBarData((prev) => ({
+    ...prev,
+    loading: true,
+    codeReady: false,
+    stage: "preparing",
+    eta: null,
+  }));
+  setWasCanceled(false);
 
-  if (typeof prompt !== "string" || !prompt.trim() || isGenerating) return;
-  if (prompt.length > 800) {
-    setPromptError("Prompt too long (max 800 characters).");
-    return;
-  }
+  // 13. Telemetry: submitted
+  fireTelemetry("submitted", {
+    promptLength: cleanedPrompt.length,
+    plan: planKey,
+    settings,
+    projectId: currentScriptId,
+  });
+
+  // 14. UX polish on notifications: sign-in required → direct route
   if (!user) {
-    setErrorMsg("Sign in to generate scripts.");
+    setIsGenerating(false);
+    setGenerationStep("idle");
+    navigate("/signin");
+    notify({
+      message: "Sign in required.",
+      type: "error",
+      duration: 2000,
+    });
     return;
   }
 
-    const clientId = "u-" + Date.now();
-    const cleaned = prompt.trim().replace(/\s+/g, " ");
-    if (!cleaned) return;
+  // 1. Token check (client-side hint only)
+  if (typeof tokensLeft === "number" && tokensLeft <= 0) {
+    setIsGenerating(false);
+    setGenerationStep("idle");
+    notify({
+      message: planInfo.toastZero,
+      type: "error",
+      duration: 6000,
+      cta: {
+        label: "Upgrade",
+        onClick: () => navigate("/subscribe"),
+      },
+    });
+    return;
+  }
 
-    let chatIdToUse = currentChatId;
-
-    // abort inflight job
-    if (jobAbortRef.current) {
-      try {
-        jobAbortRef.current.abort();
-      } catch {}
-      jobAbortRef.current = null;
+  // 16. Prevent accidental multi-project writes
+  let projectIdToSend = undefined;
+  if (currentScriptId && !opts.forceNewProject) {
+    projectIdToSend = currentScriptId;
+  } else if (currentScriptId && opts.forceNewProject) {
+    if (
+      !window.confirm(
+        "Start a new project? This will not overwrite your current script."
+      )
+    ) {
+      setIsGenerating(false);
+      setGenerationStep("idle");
+      return;
     }
-    const abortController = new AbortController();
-    jobAbortRef.current = abortController;
+    projectIdToSend = undefined;
+  }
 
-    try {
-      setIsGenerating(true);
-      setGenerationStep("title");
-      setShowCelebration(false);
+  // 8. Server-side idempotency
+  const requestId = uuidv4();
 
-      // 1) Title
-      const titleRes = await authedFetch(
-        user,
-        `${BACKEND_URL}/api/generate-title-advanced`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            prompt: cleaned,
-            conversation: [],
-            isNewScript: !currentScriptId,
-            previousTitle: "",
-            settings: {
-              modelVersion: settings.modelVersion,
-              temperature: settings.creativity,
-            },
-          }),
-          signal: abortController.signal,
-        }
-      );
-      await mustOk(titleRes, "Failed to generate title");
-      const titleData = await titleRes.json().catch(() => null);
-      if (!titleData?.title) throw new Error("No title returned");
-      const scriptTitle = titleData.title;
+  // 10. Pending message content preview
+  const pendingMsgIdLocal = uuidv4();
+  setPendingMsgId(pendingMsgIdLocal);
 
-      // 2) Chat create/update
-      try {
-        if (!chatIdToUse) {
-          const newChatId = await createChatWithTitleAndFirstMessage({
-            user,
-            title: scriptTitle,
-            firstMessage: cleaned,
-            clientId,
-          });
-          chatIdToUse = newChatId;
-          setCurrentChatId(chatIdToUse);
-          openChatById(chatIdToUse);
-          window.dispatchEvent(
-            new CustomEvent("nexus:chatActivity", {
-              detail: { id: chatIdToUse, title: scriptTitle, lastMessage: cleaned },
-            })
-          );
-        } else {
-          const db = getFirestore();
-          const authUser = auth.currentUser;
-          const chatRef = doc(db, "users", authUser.uid, "chats", chatIdToUse);
-          const msgRef = doc(collection(chatRef, "messages"));
-          await setDoc(msgRef, {
-            clientId,
-            role: "user",
-            content: cleaned,
-            createdAt: serverTimestamp(),
-          });
-          await updateDoc(chatRef, {
-            lastMessage: cleaned,
-            updatedAt: serverTimestamp(),
-          });
-        }
-      } catch {
-        setErrorMsg("Could not create or update chat.");
-      }
+  // Add user message to chat
+  const userMsg = {
+    id: uuidv4(),
+    role: "user",
+    content: cleanedPrompt,
+    createdAt: Date.now(),
+    pending: false,
+  };
+  setMessages((prev) => [...prev, userMsg]);
 
-      // 3) Ensure project
-      let projectIdToUse = currentScriptId;
-      if (!projectIdToUse) {
-        const createProjectRes = await authedFetch(
-          user,
-          `${BACKEND_URL}/api/projects`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ title: scriptTitle || "Script" }),
-            signal: abortController.signal,
-          }
-        );
-        if (!createProjectRes.ok) {
-          const text = await createProjectRes.text();
-          throw new Error(
-            `Failed to create project: ${createProjectRes.status} ${createProjectRes.statusText} - ${text.slice(
-              0,
-              200
-            )}`
-          );
-        }
-        const created = await createProjectRes.json();
-        projectIdToUse = created.projectId;
-        setCurrentScriptId(projectIdToUse);
+  // Add pending assistant message
+  const pendingMsg = {
+    id: pendingMsgIdLocal,
+    role: "assistant",
+    content: "",
+    pending: true,
+    createdAt: Date.now(),
+    versionId: null,
+    versionNumber: null,
+  };
+  setMessages((prev) => [...prev, pendingMsg]);
 
-        try {
-          const db = getFirestore();
-          const authUser = auth.currentUser;
-          if (authUser && chatIdToUse) {
-            await updateDoc(
-              doc(db, "users", authUser.uid, "chats", chatIdToUse),
-              {
-                projectId: projectIdToUse,
-                updatedAt: serverTimestamp(),
-              }
-            );
-          }
-        } catch {}
-      }
+  let jobId = null;
+  let sse;
+  let jobData = null;
+  let jobAccepted = false;
+  let retriedToken = false;
 
-      // 4) Outline (explanation)
-      setGenerationStep("explanation");
-      const recent = [...messages, { role: "user", content: cleaned }].slice(-6);
-      const conversation = recent.map((m) => {
-        if (m.role === "user") return { role: "user", content: m.content };
-        const content = m.explanation
-          ? `Explanation:\n${m.explanation}`
-          : m.code
-          ? "Provided code previously."
-          : "Assistant response.";
-        return { role: "assistant", content };
+  try {
+
+    // 17. Safer cleanup: track cancel
+    setWasCanceled(false);
+
+    // Prepare request
+    const reqBody = {
+      prompt: cleanedPrompt,
+      model: settings.modelVersion,
+      creativity: settings.creativity,
+      codeStyle: settings.codeStyle,
+      projectId: projectIdToSend,
+      requestId,
+    };
+
+    // 5. Polling → SSE (or WS) for progress
+    // 15. Guard against stale user: refresh token on 401
+    let idToken = await user.getIdToken();
+    let res = await fetch(`${BACKEND_URL}/api/generate`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${idToken}`,
+      },
+      body: JSON.stringify(reqBody),
+    });
+
+    if (res.status === 401 && !retriedToken) {
+      await user.getIdToken(true);
+      idToken = await user.getIdToken();
+      retriedToken = true;
+      res = await fetch(`${BACKEND_URL}/api/generate`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${idToken}`,
+        },
+        body: JSON.stringify(reqBody),
       });
+    }
 
-      const outlineRes = await authedFetch(
-        user,
-        `${BACKEND_URL}/api/generate/outline`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            projectId: projectIdToUse,
-            prompt: cleaned,
-            conversation,
-            settings: {
-              modelVersion: settings.modelVersion,
-              temperature: settings.creativity,
-              codeStyle: settings.codeStyle,
-            },
-          }),
-          signal: abortController.signal,
+    await mustOk(res, "Generate");
+
+    const data = await res.json();
+if (!data || !data.jobId) throw { code: "BACKEND_ERROR", message: "No jobId returned from backend." };
+jobId = data.jobId;
+
+// 13. Telemetry: job_accepted
+fireTelemetry("job_accepted", { jobId });
+
+    // 13. Telemetry: stream_started
+    fireTelemetry("stream_started", { jobId });
+
+    // SSE or fallback to polling
+    let streamSupported = !!window.EventSource;
+    let streamDone = false;
+    let streamError = null;
+    let lastContent = "";
+    let lastStage = "preparing";
+    let lastEta = null;
+
+    if (streamSupported) {
+// Pass token in URL param (since EventSource does not support headers)
+sse = new window.EventSource(
+  `${BACKEND_URL}/api/generate/stream?jobId=${encodeURIComponent(jobId)}&token=${encodeURIComponent(idToken)}`,
+  { withCredentials: false }
+);
+      sse.onmessage = (event) => {
+        if (!event.data) return;
+        let tick;
+        try {
+          tick = JSON.parse(event.data);
+        } catch {
+          return;
         }
-      );
-      await mustOk(outlineRes, "Failed to generate outline");
-      const outlineData = await outlineRes.json().catch(() => null);
-      const outline = Array.isArray(outlineData?.outline) ? outlineData.outline : [];
-      const explanation = outlineToExplanationText(outline);
-      if (!explanation) throw new Error("Failed to generate outline/explanation");
-
-      // 5) Show pending assistant message with explanation AND save to Firestore
-      const pendingId = `a-temp-${Date.now()}`;
-      const assistantMsgData = {
-        id: pendingId,
-        clientId: pendingId,
-        role: "assistant",
-        content: explanation,
-        createdAt: new Date().toISOString(),
-        versionNumber: null,
-        explanation,
-        projectId: projectIdToUse,
-        versionId: null,
-        pending: true,
-        localOnly: true,
+        // 6. Progress/ETA UX truthfulness
+        if (tick.stage) {
+          setGenerationStep(tick.stage);
+          setLoadingBarData((prev) => ({
+            ...prev,
+            stage: tick.stage,
+            eta: typeof tick.eta === "number" && tick.eta > 0 ? tick.eta : null,
+          }));
+        }
+        // 10. Pending message content preview
+        if (tick.delta) {
+          lastContent += tick.delta;
+          setMessages((prev) =>
+            prev.map((m) =>
+              m.id === pendingMsgIdLocal
+                ? { ...m, content: lastContent }
+                : m
+            )
+          );
+        }
+        if (tick.status === "succeeded" || tick.status === "failed") {
+          streamDone = true;
+          jobData = tick;
+          sse.close();
+        }
+      };
+      sse.onerror = (err) => {
+        streamError = err;
+        streamDone = true;
+        sse.close();
       };
 
-      setMessages((prev) => [...prev, assistantMsgData]);
-      setAnimatedScriptIds((prev) => ({ ...prev, [pendingId]: true }));
+      // 4. Cancellation that actually cancels
+if (!jobAbortRef.current || !(jobAbortRef.current instanceof AbortController)) {
+  jobAbortRef.current = new AbortController();
+}
+const abortController = jobAbortRef.current;
+abortController.abortJob = async () => {
+  setWasCanceled(true);
+  try {
+    await fetch(`${BACKEND_URL}/api/generate/${jobId}/cancel`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${idToken}` },
+    });
+  } catch {}
+  if (sse) sse.close();
+  abortController.abort();
+};
 
-      try {
-        const db = getFirestore();
-        const authUser = auth.currentUser;
-        if (authUser && chatIdToUse) {
-          const chatRef = doc(db, "users", authUser.uid, "chats", chatIdToUse);
-          const msgRef = doc(collection(chatRef, "messages"), pendingId);
-          await setDoc(msgRef, {
-            ...assistantMsgData,
-            localOnly: false,
-            updatedAt: serverTimestamp(),
-          });
-        }
-      } catch (err) {
-        setErrorMsg("Could not save assistant explanation to chat.");
+      // Wait for stream to finish
+      while (!streamDone) {
+        await new Promise((r) => setTimeout(r, 200));
       }
-
-      await new Promise((r) => setTimeout(r, 1000));
-
-      // 6) Start code job
-      setGenerationStep("preparing");
-      setLoadingBarVisible(true);
-      setLoadingBarData({
-        filename: safeFile((scriptTitle || "Script").trim() || "Script"),
-        version: "v1",
-        language: "lua",
-        loading: true,
-        codeReady: false,
-        estimatedLines: null,
-        saved: false,
-        onSave: () => {},
-        onView: () => {},
-        stage: "Preparing",
-        eta: null,
-      });
-
-      // --- Versioning: FE chooses next version number ---
-      const plannedVersionNumber = nextVersionNumber(versionHistory);
-
-      const artifactStart = await authedFetch(
-        user,
-        `${BACKEND_URL}/api/generate/artifact`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Idempotency-Key":
-              window.crypto?.randomUUID?.() ||
-              Math.random().toString(36).slice(2, 26),
-          },
-          body: JSON.stringify({
-            projectId: projectIdToUse,
-            prompt: cleaned,
-            pipelineId:
-              window.crypto?.randomUUID?.() ||
-              Math.random().toString(36).slice(2, 26),
-            outline: outline || [{ heading: "Plan", bulletPoints: [] }],
-            settings: {
-              modelVersion: settings.modelVersion,
-              temperature: settings.creativity,
-              codeStyle: settings.codeStyle,
-            },
-            versionNumber: plannedVersionNumber,
-          }),
-          signal: abortController.signal,
-        }
-      );
-
-      let jobId, pipelineId;
-      try {
-        const jobStartData = await artifactStart.json();
-        jobId = jobStartData.jobId;
-        pipelineId = jobStartData.pipelineId;
-      } catch {
-        throw new Error("Failed to start code generation job.");
-      }
-
-      // 7) Poll status (with backoff, abort, Retry-After)
-      pollingTimesRef.current = [];
-      let lastStage = "";
-      const jobResult = await pollJob(
+      if (streamError) throw { code: "STREAM_ERROR", message: "Stream connection lost." };
+    } else {
+      // Fallback: pollJob
+      jobAbortRef.current = {
+        abort: async () => {
+          setWasCanceled(true);
+          try {
+            await fetch(`${BACKEND_URL}/api/generate/${jobId}/cancel`, {
+              method: "POST",
+              headers: { Authorization: `Bearer ${idToken}` },
+            });
+          } catch {}
+        },
+      };
+      jobData = await pollJob(
         user,
         jobId,
         (tick) => {
-          const stage = tick.stage || "";
-          let mappedStep = "preparing";
-          if (/prepar/i.test(stage)) mappedStep = "preparing";
-          else if (/call/i.test(stage)) mappedStep = "calling model";
-          else if (/post/i.test(stage)) mappedStep = "post-processing";
-          else if (/polish/i.test(stage)) mappedStep = "polishing";
-          else if (/final/i.test(stage)) mappedStep = "finalizing";
-          setGenerationStep(mappedStep);
-
-          if (tick.stage !== lastStage) {
-            pollingTimesRef.current.push(Date.now());
-            if (pollingTimesRef.current.length > 5) pollingTimesRef.current.shift();
-            lastStage = tick.stage;
+          if (tick.stage) {
+            setGenerationStep(tick.stage);
+            setLoadingBarData((prev) => ({
+              ...prev,
+              stage: tick.stage,
+              eta: typeof tick.eta === "number" && tick.eta > 0 ? tick.eta : null,
+            }));
           }
-          let eta = null;
-          if (pollingTimesRef.current.length > 1) {
-            const diffs = [];
-            for (let i = 1; i < pollingTimesRef.current.length; ++i) {
-              diffs.push(pollingTimesRef.current[i] - pollingTimesRef.current[i - 1]);
-            }
-            const avg = diffs.reduce((a, b) => a + b, 0) / diffs.length;
-            eta = Math.round(avg / 1000);
+          if (tick.delta) {
+            lastContent += tick.delta;
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === pendingMsgIdLocal
+                  ? { ...m, content: lastContent }
+                  : m
+              )
+            );
           }
-          setLoadingBarData((prev) => ({
-            ...prev,
-            estimatedLines: undefined,
-            stage,
-            eta,
-          }));
         },
-        { signal: abortController.signal }
+        { signal: { aborted: wasCanceled } }
       );
+    }
 
-      if (jobResult.status !== "succeeded")
-        throw new Error(jobResult.error || "Generation failed");
-      const { code: generatedCode, versionId } = jobResult.result;
-      const code = generatedCode || "";
-      if (!code) throw new Error("Failed to generate code");
-
-      // 8) Get versions (always use backend version numbers)
-      setGenerationStep("saving");
-      let versions = [];
-      try {
-        const versionsRes = await authedFetch(
-          user,
-          `${BACKEND_URL}/api/projects/${projectIdToUse}/versions`,
-          { method: "GET", signal: abortController.signal }
-        );
-        if (versionsRes.ok) {
-          const versionsData = await versionsRes.json();
-          versions = Array.isArray(versionsData.versions)
-            ? versionsData.versions.map(normalizeServerVersion).sort(byVN)
-            : [];
-        }
-      } catch {}
-
-      if (versions.length === 0) {
-        versions = [
-          normalizeServerVersion({
-            id: versionId || `local-${Date.now()}`,
-            title: scriptTitle,
-            explanation,
-            code,
-            versionNumber: plannedVersionNumber,
-            createdAt: new Date().toISOString(),
-            projectId: projectIdToUse,
-          }),
-        ];
-      }
-
-      const sorted = versions;
-
-      setVersionHistory(sorted);
-      setCurrentScript({
-        id: projectIdToUse,
-        title: scriptTitle,
-        versions: sorted,
-      });
-      setSelectedVersion(sorted[0]);
-
+    // 17. Safer cleanup: check cancel
+    if (wasCanceled) {
+      setGenerationStep("canceled");
+      setIsGenerating(false);
+      setLoadingBarVisible(false);
       setLoadingBarData((prev) => ({
         ...prev,
         loading: false,
-        codeReady: true,
-        saved: true,
-        version: sorted[0]?.versionNumber
-          ? `v${sorted[0].versionNumber}`
-          : `v1`,
-        filename: safeFile((scriptTitle || "Script").trim() || "Script"),
-        onSave: () => {},
-        onView: () => {},
+        codeReady: false,
+        stage: "canceled",
+        eta: null,
       }));
-      setTimeout(() => setLoadingBarVisible(false), 1500);
+      fireTelemetry("canceled", { jobId });
+      return;
+    }
 
-      // 9) Finalize assistant msg + persist in chat (update the SAME Firestore message by pendingId)
-      setMessages((prev) => {
-        const copy = [...prev];
-        const idx = copy.findIndex((m) => m.id === pendingId);
-        const backendVersion = plannedVersionNumber;
-        const finalized = {
-          ...(idx !== -1
-            ? copy[idx]
-            : {
-                id: pendingId,
-                role: "assistant",
-                createdAt: new Date().toISOString(),
-              }),
-          content: explanation,
-          projectId: projectIdToUse,
-          versionId: sorted[0]?.id || versionId,
-          versionNumber: backendVersion,
-          explanation,
-          pending: false,
-          localOnly: false,
-        };
-        if (idx !== -1) copy[idx] = finalized;
-        else copy.push(finalized);
-        return copy;
-      });
-
-      try {
-        const db = getFirestore();
-        const authUser = auth.currentUser;
-        if (authUser && chatIdToUse) {
-          const chatRef = doc(db, "users", authUser.uid, "chats", chatIdToUse);
-          const msgRef = doc(collection(chatRef, "messages"), pendingId);
-          await updateDoc(msgRef, {
-            projectId: projectIdToUse,
-            versionId: sorted[0]?.id || versionId || null,
-            versionNumber: plannedVersionNumber,
-            pending: false,
-            localOnly: false,
-            updatedAt: serverTimestamp(),
-          });
-          await updateDoc(chatRef, {
-            lastMessage: `v${sorted[0]?.versionNumber || 1} ready`,
-            updatedAt: serverTimestamp(),
-          });
-          window.dispatchEvent(
-            new CustomEvent("nexus:chatActivity", {
-              detail: {
-                id: chatIdToUse,
-                lastMessage: `v${sorted[0]?.versionNumber || 1} ready`,
-              },
-            })
-          );
-        }
-      } catch (err) {
-        setErrorMsg("Could not update assistant message with code.");
+    // 9. Error taxonomy & user messages
+    if (jobData.status !== "succeeded") {
+      let code = jobData.errorCode || jobData.code || "UNKNOWN";
+      let msg = jobData.error || jobData.message || "Generation failed.";
+      let cta = null;
+      switch (code) {
+        case "INSUFFICIENT_TOKENS":
+          msg = planInfo.toastZero;
+          cta = {
+            label: "Upgrade",
+            onClick: () => navigate("/subscribe"),
+          };
+          break;
+        case "PLAN_LIMIT_REACHED":
+          msg = "You’ve hit your plan’s monthly limit. Upgrade for more tokens.";
+          cta = {
+            label: "Upgrade",
+            onClick: () => navigate("/subscribe"),
+          };
+          break;
+        case "CONTENT_BLOCKED":
+          msg = "Your prompt was blocked. Please rephrase.";
+          break;
+        case "RATE_LIMIT":
+          msg = "Too many requests. Please wait and try again.";
+          break;
+        case "BACKEND_BUSY":
+          msg = "Server is busy. Try again in a moment.";
+          break;
+        case "TIMEOUT":
+          msg = "Generation timed out. Try again.";
+          break;
+        default:
+          break;
       }
-
-      setGenerationStep("done");
-      setShowCelebration(true);
-      setAnimatedScriptIds((prev) => ({ ...prev, [projectIdToUse]: true }));
-      setTimeout(() => setShowCelebration(false), 3000);
-      setTimeout(
-        () =>
-          setSuccessMsg(
-            `Saved ${sorted[0]?.versionNumber ? `v${sorted[0].versionNumber}` : "v1"}`
-          ),
-        500
-      );
-
-      try { await refreshBilling(); } catch {}
-
-      window.dispatchEvent(
-        new CustomEvent("nexus:codeReady", {
-          detail: { projectId: projectIdToUse, versionId: sorted[0]?.id },
-        })
-      );
-    } catch (err) {
-      setErrorMsg("Error during script generation: " + (err.message || err));
-    } finally {
+      setErrorMsg(msg);
+      notify({
+        message: msg,
+        type: "error",
+        duration: 6000,
+        cta,
+      });
+      fireTelemetry("job_failed", { jobId, code, msg });
+      setLoadingBarVisible(false);
+      setLoadingBarData((prev) => ({
+        ...prev,
+        loading: false,
+        codeReady: false,
+        stage: "error",
+        eta: null,
+      }));
+      // 20. Accessibility: focus error CTA
+      setTimeout(() => {
+        const ctaBtn = document.querySelector('[data-toast-cta]');
+        if (ctaBtn) ctaBtn.focus();
+      }, 100);
       setIsGenerating(false);
       setGenerationStep("idle");
-      jobAbortRef.current?.abort();
-      jobAbortRef.current = null;
+      return;
     }
-  };
+
+    // 7. Token/billing refresh race
+    await refreshBilling?.();
+
+    // 11. Versioning: stable ordering & selection
+    let normalizedVersions = [];
+    if (jobData.versions) {
+      normalizedVersions = jobData.versions.map(normalizeServerVersion).sort(byVN);
+      setVersionHistory(normalizedVersions);
+    }
+    if (jobData.version) {
+      const normVer = normalizeServerVersion(jobData.version);
+      setSelectedVersion(
+        normalizedVersions.find((v) => v.id === normVer.id) || normVer
+      );
+    }
+
+    // 3. Messaging list integrity: remove only the pending you added
+    setMessages((prev) =>
+      prev
+        .filter((m) => m.id !== pendingMsgIdLocal)
+        .concat([
+          {
+            id: uuidv4(),
+            role: "assistant",
+            content: jobData.content || lastContent || "",
+            explanation: jobData.explanation || "",
+            createdAt: Date.now(),
+            versionId: jobData.versionId || null,
+            versionNumber: jobData.versionNumber || null,
+            pending: false,
+          },
+        ])
+    );
+
+    // 12. State reset hygiene: clear after message attached
+    setShowCelebration(true);
+    setTimeout(() => setShowCelebration(false), 2500);
+
+    setSuccessMsg("Script generated successfully!");
+    setPrompt("");
+    setPromptAutocomplete([]);
+    setLoadingBarVisible(false);
+    setLoadingBarData((prev) => ({
+      ...prev,
+      loading: false,
+      codeReady: true,
+      stage: "done",
+      eta: null,
+    }));
+
+    // 13. Telemetry: stream_completed
+    fireTelemetry("stream_completed", { jobId });
+
+    // 20. Accessibility: focus "View Code" or "Save"
+    setTimeout(() => {
+      const codeBtn =
+        document.querySelector('[data-view-code]') ||
+        document.querySelector('[data-save-script]');
+      if (codeBtn) codeBtn.focus();
+    }, 100);
+  } catch (err) {
+    let code = err.code || err.message || "UNKNOWN";
+    let msg = err.message || "Failed to generate script.";
+    let cta = null;
+    switch (code) {
+      case "INSUFFICIENT_TOKENS":
+        msg = planInfo.toastZero;
+        cta = {
+          label: "Upgrade",
+          onClick: () => navigate("/subscribe"),
+        };
+        break;
+      case "PLAN_LIMIT_REACHED":
+        msg = "You’ve hit your plan’s monthly limit. Upgrade for more tokens.";
+        cta = {
+          label: "Upgrade",
+          onClick: () => navigate("/subscribe"),
+        };
+        break;
+      case "CONTENT_BLOCKED":
+        msg = "Your prompt was blocked. Please rephrase.";
+        break;
+      case "RATE_LIMIT":
+        msg = "Too many requests. Please wait and try again.";
+        break;
+      case "BACKEND_BUSY":
+        msg = "Server is busy. Try again in a moment.";
+        break;
+      case "TIMEOUT":
+        msg = "Generation timed out. Try again.";
+        break;
+      default:
+        break;
+    }
+    setErrorMsg(msg);
+    notify({
+      message: msg,
+      type: "error",
+      duration: 6000,
+      cta,
+    });
+    fireTelemetry("job_failed", { code, msg });
+    setLoadingBarVisible(false);
+    setLoadingBarData((prev) => ({
+      ...prev,
+      loading: false,
+      codeReady: false,
+      stage: "error",
+      eta: null,
+    }));
+    setTimeout(() => {
+      const ctaBtn = document.querySelector('[data-toast-cta]');
+      if (ctaBtn) ctaBtn.focus();
+    }, 100);
+    setIsGenerating(false);
+    setGenerationStep("idle");
+  } finally {
+    if (!wasCanceled) {
+      setIsGenerating(false);
+      setGenerationStep("idle");
+    } else {
+      setGenerationStep("canceled");
+    }
+  }
+};
+
+// Summarize modal logic (18)
+function SummarizePromptModal({ open, prompt, onConfirm, onCancel }) {
+  // Implement your summarization UI here
+  // For now, just a confirm/cancel dialog
+  if (!open) return null;
+  return (
+    <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center">
+      <div className="bg-gray-900 rounded-lg p-6 max-w-lg w-full">
+        <h2 className="text-lg font-bold mb-2">Prompt is very long</h2>
+        <p className="mb-4 text-gray-300">
+          Your prompt is near the maximum allowed length. Would you like to summarize it before sending? This can reduce token usage and improve results.
+        </p>
+        <textarea
+          className="w-full rounded border border-gray-700 bg-gray-800 text-white p-2 mb-4"
+          rows={4}
+          value={prompt}
+          onChange={(e) => setSummarizedPrompt(e.target.value)}
+        />
+        <div className="flex gap-2 justify-end">
+          <button
+            className="px-4 py-2 rounded bg-gray-700 text-white"
+            onClick={onCancel}
+          >
+            Cancel
+          </button>
+          <button
+            className="px-4 py-2 rounded bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-white"
+            onClick={() => onConfirm(summarizedPrompt)}
+          >
+            Send Summarized
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// In your render, add:
+<SummarizePromptModal
+  open={showSummarizeModal}
+  prompt={summarizedPrompt}
+  onConfirm={(newPrompt) => {
+    setShowSummarizeModal(false);
+    setPrompt(newPrompt);
+    handleSubmit(null, { skipSummarize: true });
+  }}
+  onCancel={() => setShowSummarizeModal(false)}
+/>
 
   // --- Keyboard UX for textarea (single Enter rule, IME safe) ---
   const handlePromptKeyDown = (e) => {
@@ -1371,8 +1461,131 @@ const handleSubmit = async (e) => {
     }
   }, [showOnboarding]);
 
+  // --- Plan-aware Toasts ---
+  useEffect(() => {
+    if (
+      typeof tokensLeft === "number" &&
+      tokensLeft === 0 &&
+      planInfo.toastZero
+    ) {
+      notify({
+        message: planInfo.toastZero,
+        type: "error",
+        duration: 6000,
+        cta: {
+          label: "Upgrade",
+          onClick: () => navigate("/subscribe"),
+        },
+      });
+    }
+  }, [tokensLeft, planInfo.toastZero, notify, navigate]);
+
+// If user tries to access /ai with no plan (not logged in), just show loading or allow access (no redirect)
+const [showEntitlementLoading, setShowEntitlementLoading] = useState(false);
+const [entitlementChecked, setEntitlementChecked] = useState(false);
+
+useEffect(() => {
+  let timeout;
+  // If auth is ready and user is not logged in, allow access (no loading)
+  if (authReady && !user) {
+    setEntitlementChecked(true);
+    setShowEntitlementLoading(false);
+    return;
+  }
+  // If auth is ready and user is logged in, but tokens are not loaded yet
+  if (authReady && user && (!tokens || typeof tokens !== "object")) {
+    setShowEntitlementLoading(true);
+    setEntitlementChecked(false);
+    // Wait up to 8 seconds for billing/tokens to load, then allow access anyway
+    timeout = setTimeout(() => {
+      setEntitlementChecked(true);
+      setShowEntitlementLoading(false);
+    }, 8000);
+  } else if (
+    authReady &&
+    user &&
+    tokens &&
+    (tokens.entitlements || tokens.limit !== undefined)
+  ) {
+    // tokens loaded (either entitlements or limit present)
+    setShowEntitlementLoading(false);
+    setEntitlementChecked(true);
+  }
+  return () => {
+    if (timeout) clearTimeout(timeout);
+  };
+}, [authReady, user, tokens]);
+
+  // --- Plan-aware nudge after successful Free run ---
+  useEffect(() => {
+    if (
+      planKey === "free" &&
+      !isSubscriber &&
+      messages.some((m) => m.role === "assistant" && !m.pending)
+    ) {
+      if (
+        Math.random() < 0.25 &&
+        planInfo.toastNudge &&
+        !notifications.some((n) => n.message === planInfo.toastNudge)
+      ) {
+        notify({
+          message: planInfo.toastNudge,
+          type: "info",
+          duration: 6000,
+          cta: {
+            label: "Upgrade",
+            onClick: () => navigate("/subscribe"),
+          },
+        });
+      }
+    }
+    // eslint-disable-next-line
+  }, [messages, planKey, planInfo.toastNudge, notify, notifications, navigate, isSubscriber]);
+
+  // --- Welcome State (plan-aware) ---
+  // moved to its own component: PlanWelcomeCard
+
   return (
     <React.Fragment>
+      {showEntitlementLoading && (
+        <div
+          style={{
+            position: "fixed",
+            zIndex: 999999,
+            inset: 0,
+            background: "rgba(0,0,0,0.98)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            color: "#fff",
+            fontSize: 24,
+            fontWeight: 700,
+            letterSpacing: 1,
+            transition: "opacity 0.3s",
+          }}
+        >
+          <div>
+            <div className="flex flex-col items-center">
+              <div className="animate-spin mb-6">
+                <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+                  <circle
+                    cx="24"
+                    cy="24"
+                    r="20"
+                    stroke="#9b5de5"
+                    strokeWidth="6"
+                    strokeDasharray="60 40"
+                  />
+                </svg>
+              </div>
+              <div>Checking your subscription...</div>
+              <div className="mt-2 text-base text-gray-400 font-normal">
+                Please wait a moment
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       {showOnboarding && <OnboardingContainer />}
       {/* --- Dev Panel (only for DEV_EMAIL) --- */}
       {user?.email && user.email.toLowerCase() === DEV_EMAIL && (
@@ -1419,6 +1632,11 @@ const handleSubmit = async (e) => {
           >
             Show Onboarding
           </button>
+          {isSubscriber && (
+            <div style={{ color: "#00f5d4", fontSize: 12, marginTop: 8 }}>
+              Subscriber mode: All advertising hidden
+            </div>
+          )}
         </div>
       )}
       <div
@@ -1430,130 +1648,244 @@ const handleSubmit = async (e) => {
       >
         {/* Header */}
         <header className="border-b border-gray-800 bg-black/30 backdrop-blur-md sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4 flex items-center">
-          {/* Hamburger for mobile */}
-          <button
-            type="button"
-            className="md:hidden text-gray-300 mr-2 p-2 rounded hover:bg-gray-800 transition-colors"
-            onClick={() => {
-              setMobileLeftSidebarOpen(true);
-              setMobileRightSidebarOpen(false);
-            }}
-            aria-label="Open sidebar"
-          >
-            <Menu className="h-6 w-6" />
-          </button>
-
-          <div className="flex-1 flex items-center">
-            <div
-              className="text-2xl font-bold bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-transparent bg-clip-text cursor-pointer"
-              onClick={() => navigate("/")}
-              tabIndex={0}
-              aria-label="Go to home"
-            >
-              NexusRBX
-            </div>
-            <nav className="hidden md:flex space-x-8 ml-10">
-              <button
-                type="button"
-                onClick={() => navigate("/")}
-                className="text-gray-300 hover:text-white transition-colors duration-300"
-              >
-                Home
-              </button>
-              <button
-                type="button"
-                onClick={() => navigate("/ai")}
-                className="text-white border-b-2 border-[#9b5de5] transition-colors duration-300"
-              >
-                AI Console
-              </button>
-              <button
-                type="button"
-                onClick={() => navigate("/docs")}
-                className="text-gray-300 hover:text-white transition-colors duration-300"
-              >
-                Docs
-              </button>
-              <button
-                type="button"
-                onClick={() =>
-                  window.open(
-                    "https://discord.com/invite/yourserver",
-                    "_blank",
-                    "noopener,noreferrer"
-                  )
-                }
-                className="text-gray-300 hover:text-white transition-colors duration-300"
-              >
-                Discord
-              </button>
-            </nav>
-          </div>
-          {/* Settings icon for mobile */}
-          <button
-            className="md:hidden text-gray-300 ml-2 p-2 rounded hover:bg-gray-800 transition-colors"
-            onClick={() => {
-              setMobileRightSidebarOpen(true);
-              setMobileLeftSidebarOpen(false);
-            }}
-            aria-label="Open settings"
-          >
-            <Settings className="h-6 w-6" />
-          </button>
-        </div>
-      </header>
-      <div className="hidden md:block text-xs text-gray-400 ml-4">
-  Plan: <span className="text-gray-200 font-medium">{plan}</span>
-  {cycle ? <span> • {cycle?.toLowerCase?.()}</span> : null}
-</div>
-      {/* Notification stack (top left) */}
-      <div className="fixed top-6 left-6 z-[9999] flex flex-col items-start pointer-events-none">
-        {notifications.map((n) => (
-          <NotificationToast
-            key={n.id}
-            message={n.message}
-            type={n.type}
-            duration={n.duration}
-            onClose={() =>
-              setNotifications((prev) => prev.filter((x) => x.id !== n.id))
-            }
-          />
-        ))}
-      </div>
-      {/* --- Mobile Left Sidebar --- */}
-      <div
-        className={`fixed inset-0 z-[100] md:hidden transition-all duration-300 ${
-          mobileLeftSidebarOpen ? "pointer-events-auto" : "pointer-events-none"
-        }`}
-        aria-modal={mobileLeftSidebarOpen}
-        style={{ display: mobileLeftSidebarOpen ? "block" : "none" }}
-      >
-        {/* Overlay */}
-        <div
-          className={`fixed inset-0 bg-black/60 transition-opacity duration-300 ${
-            mobileLeftSidebarOpen ? "opacity-100" : "opacity-0"
-          }`}
-          onClick={closeAllMobileSidebars}
-        />
-        {/* Sidebar */}
-        <aside
-          className={`fixed top-0 left-0 h-full bg-gray-900 border-r border-gray-800 w-[80vw] max-w-xs z-[101] shadow-2xl transition-transform duration-300 ${
-            mobileLeftSidebarOpen ? "translate-x-0" : "-translate-x-full"
-          }`}
-        >
-          <div className="flex items-center justify-between px-4 py-4 border-b border-gray-800">
-            <span className="font-bold text-lg bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-transparent bg-clip-text">
-              Menu
-            </span>
+          <div className="container mx-auto px-4 py-4 flex items-center">
+            {/* Hamburger for mobile */}
             <button
-              className="p-2 rounded hover:bg-gray-800 transition-colors"
-              onClick={closeAllMobileSidebars}
-              aria-label="Close sidebar"
+              type="button"
+              className="md:hidden text-gray-300 mr-2 p-2 rounded hover:bg-gray-800 transition-colors"
+              onClick={() => {
+                setMobileLeftSidebarOpen(true);
+                setMobileRightSidebarOpen(false);
+              }}
+              aria-label="Open sidebar"
             >
-              <ChevronLeft className="h-6 w-6" />
+              <Menu className="h-6 w-6" />
+            </button>
+            <div className="flex-1 flex items-center">
+              <div
+                className="text-2xl font-bold bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-transparent bg-clip-text cursor-pointer"
+                onClick={() => navigate("/")}
+                tabIndex={0}
+                aria-label="Go to home"
+              >
+                NexusRBX
+              </div>
+              <nav className="hidden md:flex space-x-8 ml-10">
+                <button
+                  type="button"
+                  onClick={() => navigate("/")}
+                  className="text-gray-300 hover:text-white transition-colors duration-300"
+                >
+                  Home
+                </button>
+                <button
+                  type="button"
+                  onClick={() => navigate("/ai")}
+                  className="text-white border-b-2 border-[#9b5de5] transition-colors duration-300"
+                >
+                  AI Console
+                </button>
+                <button
+                  type="button"
+                  onClick={() => navigate("/docs")}
+                  className="text-gray-300 hover:text-white transition-colors duration-300"
+                >
+                  Docs
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    window.open(
+                      "https://discord.com/invite/yourserver",
+                      "_blank",
+                      "noopener,noreferrer"
+                    )
+                  }
+                  className="text-gray-300 hover:text-white transition-colors duration-300"
+                >
+                  Discord
+                </button>
+                {/* Plan Badge */}
+                <button
+                  type="button"
+                  onClick={() => navigate("/subscribe")}
+                  className="ml-6"
+                  title="Manage your plan"
+                >
+                  <PlanBadge plan={planKey} />
+                </button>
+              </nav>
+            </div>
+            {/* Plan Badge for mobile/right */}
+            <button
+              type="button"
+              onClick={() => navigate("/subscribe")}
+              className="ml-4 md:hidden"
+              title="Manage your plan"
+            >
+              <PlanBadge plan={planKey} />
+            </button>
+            {/* Settings icon for mobile */}
+            <button
+              className="md:hidden text-gray-300 ml-2 p-2 rounded hover:bg-gray-800 transition-colors"
+              onClick={() => {
+                setMobileRightSidebarOpen(true);
+                setMobileLeftSidebarOpen(false);
+              }}
+              aria-label="Open settings"
+            >
+              <Settings className="h-6 w-6" />
             </button>
           </div>
+        </header>
+        {/* Notification stack (top left) */}
+        <div className="fixed top-6 left-6 z-[9999] flex flex-col items-start pointer-events-none">
+          {notifications.map((n) => (
+            <NotificationToast
+              key={n.id}
+              message={n.message}
+              type={n.type}
+              duration={n.duration}
+              onClose={() =>
+                setNotifications((prev) => prev.filter((x) => x.id !== n.id))
+              }
+              cta={n.cta}
+              secondary={n.secondary}
+            >
+              {n.children}
+            </NotificationToast>
+          ))}
+        </div>
+        {/* --- Mobile Left Sidebar --- */}
+        <div
+          className={`fixed inset-0 z-[100] md:hidden transition-all duration-300 ${
+            mobileLeftSidebarOpen ? "pointer-events-auto" : "pointer-events-none"
+          }`}
+          aria-modal={mobileLeftSidebarOpen}
+          style={{ display: mobileLeftSidebarOpen ? "block" : "none" }}
+        >
+          {/* Overlay */}
+          <div
+            className={`fixed inset-0 bg-black/60 transition-opacity duration-300 ${
+              mobileLeftSidebarOpen ? "opacity-100" : "opacity-0"
+            }`}
+            onClick={closeAllMobileSidebars}
+          />
+          {/* Sidebar */}
+          <aside
+            className={`fixed top-0 left-0 h-full bg-gray-900 border-r border-gray-800 w-[80vw] max-w-xs z-[101] shadow-2xl transition-transform duration-300 ${
+              mobileLeftSidebarOpen ? "translate-x-0" : "-translate-x-full"
+            }`}
+          >
+            <div className="flex items-center justify-between px-4 py-4 border-b border-gray-800">
+              <span className="font-bold text-lg bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-transparent bg-clip-text">
+                Menu
+              </span>
+              <button
+                className="p-2 rounded hover:bg-gray-800 transition-colors"
+                onClick={closeAllMobileSidebars}
+                aria-label="Close sidebar"
+              >
+                <ChevronLeft className="h-6 w-6" />
+              </button>
+            </div>
+            <SidebarContent
+              activeTab={activeTab}
+              setActiveTab={setActiveTab}
+              handleClearChat={() => {
+                if (!window.confirm("Clear this chat?")) return;
+                setCurrentScript(null);
+                setVersionHistory([]);
+                setMessages([]);
+                setSelectedVersion(null);
+                setCurrentScriptId(null);
+                setCurrentChatId(null);
+                setCurrentChatMeta(null);
+              }}
+              setPrompt={setPrompt}
+              scripts={scripts}
+              currentScriptId={currentScriptId}
+              setCurrentScriptId={setCurrentScriptId}
+              handleCreateScript={() => {}}
+              handleRenameScript={() => {}}
+              handleDeleteScript={() => {}}
+              currentScript={currentScript}
+              versionHistory={versionHistory}
+              onVersionView={() => {}}
+              onVersionDownload={() => {}}
+              promptSearch={promptSearch}
+              setPromptSearch={setPromptSearch}
+              isMobile
+              onRenameChat={() => {}}
+              onDeleteChat={() => {}}
+              renderVersionList={renderVersionList}
+              plan={planKey}
+              planInfo={planInfo}
+            />
+          <div className="border-t border-gray-800 px-4 py-2 text-xs text-gray-400 text-center">
+            {!isSubscriber && planInfo.sidebarStrip}
+          </div>
+          </aside>
+        </div>
+        {/* --- Mobile Right Sidebar --- */}
+        <div
+          className={`fixed inset-0 z-[100] md:hidden transition-all duration-300 ${
+            mobileRightSidebarOpen ? "pointer-events-auto" : "pointer-events-none"
+          }`}
+          aria-modal={mobileRightSidebarOpen}
+          style={{ display: mobileRightSidebarOpen ? "block" : "none" }}
+        >
+          {/* Overlay */}
+          <div
+            className={`fixed inset-0 bg-black/60 transition-opacity duration-300 ${
+              mobileRightSidebarOpen ? "opacity-100" : "opacity-0"
+            }`}
+            onClick={closeAllMobileSidebars}
+          />
+          {/* Sidebar */}
+          <aside
+            className={`fixed top-0 right-0 h-full bg-gray-900 border-l border-gray-800 w-[80vw] max-w-xs z-[101] shadow-2xl transition-transform duration-300 ${
+              mobileRightSidebarOpen ? "translate-x-0" : "translate-x-full"
+            }`}
+          >
+            <div className="flex items-center justify-between px-4 py-4 border-b border-gray-800">
+              <span className="font-bold text-lg bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-transparent bg-clip-text">
+                Settings
+              </span>
+              <button
+                className="p-2 rounded hover:bg-gray-800 transition-colors"
+                onClick={closeAllMobileSidebars}
+                aria-label="Close settings"
+              >
+                <ChevronRight className="h-6 w-6" />
+              </button>
+            </div>
+            <RightSidebar
+              settings={settings}
+              setSettings={setSettings}
+              modelOptions={modelOptions}
+              creativityOptions={creativityOptions}
+              codeStyleOptions={codeStyleOptions}
+              messages={messages}
+              setPrompt={setPrompt}
+              userPromptTemplates={userPromptTemplates}
+              setUserPromptTemplates={setUserPromptTemplates}
+              promptSuggestions={promptSuggestions}
+              promptSuggestionLoading={promptSuggestionLoading}
+              isMobile
+              plan={planKey}
+              planInfo={planInfo}
+            />
+          </aside>
+        </div>
+        {/* Sidebar (desktop) */}
+        <aside
+          className="hidden md:flex w-80 bg-gray-900 border-r border-gray-800 flex-col sticky top-[64px] left-0 z-30 h-[calc(100vh-64px)]"
+          style={{
+            minHeight: "calc(100vh - 64px)",
+            maxHeight: "calc(100vh - 64px)",
+          }}
+        >
           <SidebarContent
             activeTab={activeTab}
             setActiveTab={setActiveTab}
@@ -1571,620 +1903,433 @@ const handleSubmit = async (e) => {
             scripts={scripts}
             currentScriptId={currentScriptId}
             setCurrentScriptId={setCurrentScriptId}
-            handleCreateScript={handleCreateScript}
-            handleRenameScript={handleRenameScript}
-            handleDeleteScript={handleDeleteScript}
+            handleCreateScript={() => {}}
+            handleRenameScript={() => {}}
+            handleDeleteScript={() => {}}
             currentScript={currentScript}
             versionHistory={versionHistory}
-            onVersionView={handleVersionView}
-            onVersionDownload={handleVersionDownload}
+            onVersionView={() => {}}
+            onVersionDownload={() => {}}
             promptSearch={promptSearch}
             setPromptSearch={setPromptSearch}
-            isMobile
-            onRenameChat={handleRenameChat}
-            onDeleteChat={handleDeleteChat}
+            onRenameChat={() => {}}
+            onDeleteChat={() => {}}
             renderVersionList={renderVersionList}
+            plan={planKey}
+            planInfo={planInfo}
           />
-        </aside>
-      </div>
-
-      {/* --- Mobile Right Sidebar --- */}
-      <div
-        className={`fixed inset-0 z-[100] md:hidden transition-all duration-300 ${
-          mobileRightSidebarOpen ? "pointer-events-auto" : "pointer-events-none"
-        }`}
-        aria-modal={mobileRightSidebarOpen}
-        style={{ display: mobileRightSidebarOpen ? "block" : "none" }}
-      >
-        {/* Overlay */}
-        <div
-          className={`fixed inset-0 bg-black/60 transition-opacity duration-300 ${
-            mobileRightSidebarOpen ? "opacity-100" : "opacity-0"
-          }`}
-          onClick={closeAllMobileSidebars}
-        />
-        {/* Sidebar */}
-        <aside
-          className={`fixed top-0 right-0 h-full bg-gray-900 border-l border-gray-800 w-[80vw] max-w-xs z-[101] shadow-2xl transition-transform duration-300 ${
-            mobileRightSidebarOpen ? "translate-x-0" : "translate-x-full"
-          }`}
-        >
-          <div className="flex items-center justify-between px-4 py-4 border-b border-gray-800">
-            <span className="font-bold text-lg bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-transparent bg-clip-text">
-              Settings
-            </span>
-            <button
-              className="p-2 rounded hover:bg-gray-800 transition-colors"
-              onClick={closeAllMobileSidebars}
-              aria-label="Close settings"
-            >
-              <ChevronRight className="h-6 w-6" />
-            </button>
+          <div className="border-t border-gray-800 px-4 py-2 text-xs text-gray-400 text-center">
+            {planInfo.sidebarStrip}
           </div>
-          <RightSidebar
-            settings={settings}
-            setSettings={setSettings}
-            modelOptions={modelOptions}
-            creativityOptions={creativityOptions}
-            codeStyleOptions={codeStyleOptions}
-            messages={messages}
-            setPrompt={setPrompt}
-            userPromptTemplates={userPromptTemplates}
-            setUserPromptTemplates={setUserPromptTemplates}
-            promptSuggestions={promptSuggestions}
-            promptSuggestionLoading={promptSuggestionLoading}
-            isMobile
-          />
         </aside>
-      </div>
-
-      {/* Sidebar (desktop) */}
-      <aside
-        className="hidden md:flex w-80 bg-gray-900 border-r border-gray-800 flex-col sticky top-[64px] left-0 z-30 h-[calc(100vh-64px)]"
-        style={{
-          minHeight: "calc(100vh - 64px)",
-          maxHeight: "calc(100vh - 64px)",
-        }}
-      >
-        <SidebarContent
-          activeTab={activeTab}
-          setActiveTab={setActiveTab}
-          handleClearChat={() => {
-            if (!window.confirm("Clear this chat?")) return;
-            setCurrentScript(null);
-            setVersionHistory([]);
-            setMessages([]);
-            setSelectedVersion(null);
-            setCurrentScriptId(null);
-            setCurrentChatId(null);
-            setCurrentChatMeta(null);
-          }}
-          setPrompt={setPrompt}
-          scripts={scripts}
-          currentScriptId={currentScriptId}
-          setCurrentScriptId={setCurrentScriptId}
-          handleCreateScript={handleCreateScript}
-          handleRenameScript={handleRenameScript}
-          handleDeleteScript={handleDeleteScript}
-          currentScript={currentScript}
-          versionHistory={versionHistory}
-          onVersionView={handleVersionView}
-          onVersionDownload={handleVersionDownload}
-          promptSearch={promptSearch}
-          setPromptSearch={setPromptSearch}
-          onRenameChat={handleRenameChat}
-          onDeleteChat={handleDeleteChat}
-          renderVersionList={renderVersionList}
-        />
-      </aside>
-
-      {/* Main Content */}
-      <main className="flex-grow flex flex-col md:flex-row relative">
-        {/* Main chat area */}
-        <section className="flex-grow flex flex-col md:w-2/3 h-full relative z-10">
-          <div className="flex-grow overflow-y-auto px-2 md:px-4 py-6 flex flex-col items-center">
-            <div className="w-full mx-auto space-y-6">
-              {/* Show Title at Top */}
-              {messages.length === 0 && !isGenerating ? (
-                <WelcomeCard
-                  setPrompt={setPrompt}
-                  promptTemplates={promptTemplates}
-                  userPromptTemplates={userPromptTemplates}
-                  promptSuggestions={promptSuggestions}
-                  promptSuggestionLoading={promptSuggestionLoading}
-                />
-              ) : (
-                <>
-                  {/* Chat timeline driven by `messages` */}
-                  {messages.map((m) => {
-                    const isUser = m.role === "user";
-                    if (isUser) {
+        {/* Main Content */}
+        <main className="flex-grow flex flex-col md:flex-row relative">
+          {/* Main chat area */}
+          <section className="flex-grow flex flex-col md:w-2/3 h-full relative z-10">
+            <div className="flex-grow overflow-y-auto px-2 md:px-4 py-6 flex flex-col items-center">
+              <div className="w-full mx-auto space-y-6">
+                {/* Welcome State */}
+                {messages.length === 0 && !isGenerating ? (
+                  <PlanWelcomeCard
+                    isSubscriber={isSubscriber}
+                    planKey={planKey}
+                    planInfo={planInfo}
+                  />
+                ) : (
+                  <>
+                    {/* Chat timeline driven by `messages` */}
+                    {messages.map((m) => {
+                      const isUser = m.role === "user";
+                      if (isUser) {
+                        return (
+                          <div key={m.id} className="flex justify-end items-end mb-1">
+                            <div className="flex flex-row-reverse items-end gap-2 w-full max-w-2xl">
+                              <UserAvatar email={user?.email} />
+                              <div className="bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-white px-4 py-2 rounded-2xl rounded-br-sm shadow-lg max-w-[75%] text-right break-words text-base font-medium animate-fade-in">
+                                {m.content}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      }
+                      // assistant bubble
+                      const coreText = m.explanation || m.content || "";
+                      const size = getAiBubbleSizing(coreText);
+                      const ver = m.versionId
+                        ? versionHistory.find((v) => v.id === m.versionId)
+                        : versionHistory.find((v) => getVN(v) === getVN(m));
                       return (
-                        <div key={m.id} className="flex justify-end items-end mb-1">
-                          <div className="flex flex-row-reverse items-end gap-2 w-full max-w-2xl">
-                            <UserAvatar email={user?.email} />
-                            <div className="bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-white px-4 py-2 rounded-2xl rounded-br-sm shadow-lg max-w-[75%] text-right break-words text-base font-medium animate-fade-in">
-                              {m.content}
+                        <div
+                          key={m.id}
+                          className={`flex items-start gap-2 w-full ${size.wrapClass} mx-auto animate-fade-in`}
+                        >
+                          <NexusRBXAvatar />
+                          <div
+                            className={`flex-1 bg-gray-900/80 border border-gray-800 rounded-2xl rounded-tl-sm shadow-lg mb-2 ${size.bubbleClass}`}
+                          >
+                            <div className="mb-1 flex items-center gap-2">
+                              <span className="text-xl font-bold bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-transparent bg-clip-text">
+                                {(currentScript?.title || "Script").replace(/\s*v\d+$/i, "")}
+                              </span>
+                              {m.versionNumber && (
+                                <span className="ml-2 px-2 py-0.5 rounded bg-[#9b5de5]/20 text-[#9b5de5] text-xs font-semibold">
+                                  v{getVN(m)}
+                                </span>
+                              )}
+                              <span className="ml-2">
+                                <span
+                                  className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold ${
+                                    planInfo.badgeFilled
+                                      ? plan === "pro"
+                                        ? "bg-[#9b5de5] text-white"
+                                        : plan === "team"
+                                        ? "bg-[#00f5d4] text-black"
+                                        : "bg-gray-700 text-gray-200"
+                                      : "border border-gray-400 text-gray-300 bg-transparent"
+                                  }`}
+                                >
+                                  {planInfo.planNudge}
+                                </span>
+                              </span>
+                              {m.pending && (
+                                <span className="ml-2 px-2 py-0.5 rounded bg-[#00f5d4]/20 text-[#00f5d4] text-xs font-semibold">
+                                  Generating…
+                                </span>
+                              )}
+                            </div>
+                            {m.explanation && (
+                              <div className="mb-2">
+                                <div className="font-bold text-[#9b5de5] mb-1">Explanation</div>
+                                <div className="text-gray-200 whitespace-pre-line text-base">
+                                  {m.explanation}
+                                </div>
+                              </div>
+                            )}
+                            <div className="mb-2 mt-3">
+                              <ScriptLoadingBarContainer
+                                filename={safeFile((currentScript?.title || "Script").trim() || "Script")}
+                                displayName={currentScript?.title || "Script"}
+                                version={m.versionNumber ? `v${getVN(m)}` : ""}
+                                language="lua"
+                                loading={!!m.pending || !!isGenerating || loadingBarVisible}
+                                codeReady={!!ver?.code}
+                                estimatedLines={ver?.code ? ver.code.split("\n").length : null}
+                                saved={!!ver?.code}
+                                onSave={async () => {}}
+                                onView={() => {
+                                  if (ver) setSelectedVersion(ver);
+                                }}
+                                jobStage={loadingBarData.stage}
+                                etaSeconds={loadingBarData.eta}
+                                plan={planKey}
+                              />
+                              {/* Free plan nudge */}
+                              {planKey === "free" && !isSubscriber && (
+                                <div className="mt-2 text-xs text-[#9b5de5] text-center">
+                                  Pro users run faster in queue.
+                                </div>
+                              )}
+                            </div>
+                            <div className="text-xs text-gray-500 mt-2 text-right">
+                              {toLocalTime(m.createdAtMs || m.createdAt)}
                             </div>
                           </div>
                         </div>
                       );
-                    }
-
-                    // assistant bubble
-                    const coreText = m.explanation || m.content || "";
-                    const size = getAiBubbleSizing(coreText);
-                    const ver = m.versionId
-                      ? versionHistory.find((v) => v.id === m.versionId)
-                      : versionHistory.find((v) => getVN(v) === getVN(m));
-
-                    return (
-                      <div
-                        key={m.id}
-                        className={`flex items-start gap-2 w-full ${size.wrapClass} mx-auto animate-fade-in`}
-                      >
-                        <NexusRBXAvatar />
-                        <div
-                          className={`flex-1 bg-gray-900/80 border border-gray-800 rounded-2xl rounded-tl-sm shadow-lg mb-2 ${size.bubbleClass}`}
-                        >
-                          <div className="mb-1 flex items-center gap-2">
-                            <span className="text-xl font-bold bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-transparent bg-clip-text">
-                              {(currentScript?.title || "Script").replace(/\s*v\d+$/i, "")}
-                            </span>
-                            {m.versionNumber && (
-                              <span className="ml-2 px-2 py-0.5 rounded bg-[#9b5de5]/20 text-[#9b5de5] text-xs font-semibold">
-                                v{getVN(m)}
-                              </span>
-                            )}
-                            {m.pending && (
-                              <span className="ml-2 px-2 py-0.5 rounded bg-[#00f5d4]/20 text-[#00f5d4] text-xs font-semibold">
-                                Generating…
-                              </span>
-                            )}
-                          </div>
-
-                          {m.explanation && (
-                            <div className="mb-2">
-                              <div className="font-bold text-[#9b5de5] mb-1">Explanation</div>
-                              <div className="text-gray-200 whitespace-pre-line text-base">
-                                {m.explanation}
-                              </div>
-                            </div>
-                          )}
-
-                          <div className="mb-2 mt-3">
-                            <ScriptLoadingBarContainer
-                              filename={safeFile((currentScript?.title || "Script").trim() || "Script")}
-                              displayName={currentScript?.title || "Script"}
-                              version={m.versionNumber ? `v${getVN(m)}` : ""}
-                              language="lua"
-                              loading={!!m.pending || !!isGenerating || loadingBarVisible}
-                              codeReady={!!ver?.code}
-                              estimatedLines={ver?.code ? ver.code.split("\n").length : null}
-                              saved={!!ver?.code}
-                              onSave={async () => {
-                                const prev = versionHistory;
-                                setVersionHistory((v) => [
-                                  { ...v[0], versionNumber: getVN(v[0]) + 1 },
-                                  ...v,
-                                ]);
-                                try {
-                                  if (!user || !ver?.code) return false;
-                                  let scriptId = currentScriptId || ver.projectId;
-                                  if (!scriptId) return false;
-                                  const vn = nextVersionNumber(versionHistory);
-const res = await authedFetch(
-  user,
-  `${BACKEND_URL}/api/projects/${scriptId}/versions`,
-  {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      code: ver.code,
-      explanation: ver.explanation || "",
-      title: currentScript?.title || "Script",
-      versionNumber: vn,
-    }),
-  }
-);
-await mustOk(res, "Save failed");
-lastVersionsFetchRef.current = 0;
-versionsBackoffRef.current = 0;
-setSuccessMsg(`Saved v${vn}`);
-try {
-  const versionsRes = await authedFetch(
-    user,
-    `${BACKEND_URL}/api/projects/${scriptId}/versions`,
-    { method: "GET" }
-  );
-  if (versionsRes.ok) {
-    const { versions = [] } = await versionsRes.json();
-    const sorted = versions
-      .map(normalizeServerVersion)
-      .sort(byVN);
-    setVersionHistory(sorted);
-    setCurrentScript({
-      id: scriptId,
-      title: currentScript?.title || "Script",
-      versions: sorted,
-    });
-    setSelectedVersion(sorted[0]);
-  }
-} catch {}
-try { await refreshBilling(); } catch {}
-return true;
-                                } catch (e) {
-                                  setVersionHistory(prev);
-                                  setErrorMsg(`Save error: ${e.message || e}`);
-                                  return false;
-                                }
-                              }}
-                              onView={() => {
-                                if (ver) setSelectedVersion(ver);
-                              }}
-                              jobStage={loadingBarData.stage}
-                              etaSeconds={loadingBarData.eta}
-                            />
-                          </div>
-
-                          <div className="text-xs text-gray-500 mt-2 text-right">
-                            {toLocalTime(m.createdAtMs || m.createdAt)}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </>
-              )}
-              {/* Loading bar appears just below the latest script output */}
-              {(() => {
-                const last = messages[messages.length - 1];
-                return last?.role === "assistant" && last?.pending;
-              })() && (
-                <div className="flex items-center text-gray-400 text-sm mt-2 animate-fade-in">
-                  <span className="mr-2">
-                    <span className="inline-block w-8 h-8 rounded-full bg-gradient-to-br from-[#9b5de5] to-[#00f5d4] flex items-center justify-center shadow-lg overflow-hidden animate-pulse">
-                      <img
-                        src="/logo.png"
-                        alt="NexusRBX"
-                        className="w-6 h-6 object-contain"
-                        style={{ filter: "drop-shadow(0 0 2px #9b5de5)" }}
-                      />
+                    })}
+                  </>
+                )}
+                {/* Loading bar appears just below the latest script output */}
+                {(() => {
+                  const last = messages[messages.length - 1];
+                  return last?.role === "assistant" && last?.pending;
+                })() && (
+                  <div className="flex items-center text-gray-400 text-sm mt-2 animate-fade-in">
+                    <span className="mr-2">
+                      <span className="inline-block w-8 h-8 rounded-full bg-gradient-to-br from-[#9b5de5] to-[#00f5d4] flex items-center justify-center shadow-lg overflow-hidden animate-pulse">
+                        <img
+                          src="/logo.png"
+                          alt="NexusRBX"
+                          className="w-6 h-6 object-contain"
+                          style={{ filter: "drop-shadow(0 0 2px #9b5de5)" }}
+                        />
+                      </span>
                     </span>
-                  </span>
-                  <span aria-live="polite">
-                    NexusRBX is typing...
-                    {["preparing", "calling model", "post-processing", "polishing", "finalizing"].includes(
-                      generationStep
-                    ) && (
-                      <>
-                        {" "}
-                        ({loadingBarData.stage || generationStep}
-                        {loadingBarData.eta ? `, ETA: ${loadingBarData.eta}s` : ""})
-                      </>
-                    )}
-                  </span>
-                </div>
-              )}
-              <div ref={messagesEndRef} />
-            </div>
-          </div>
-          {/* Input Area */}
-          <div
-            className="border-t border-gray-800 bg-black/30 px-2 md:px-4 py-4 flex flex-col items-center shadow-inner"
-            aria-busy={isGenerating}
-          >
-            {/* Token Bar */}
-            <div className="w-full max-w-2xl mx-auto mb-2">
-              <TokenBar
-                tokensLeft={tokensLeft}
-                tokenLimit={TOKEN_LIMIT}
-                refreshTime={tokenRefreshTime}
-                isDev={!!user?.email && user.email.toLowerCase() === DEV_EMAIL}
-              />
-            </div>
-            {tokensLeft !== null && tokensLeft <= 0 && (
-              <div className="w-full max-w-2xl mx-auto mt-2 flex gap-2">
-                <button
-                  type="button"
-                  className="px-3 py-1.5 rounded bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-sm font-medium"
-                  onClick={() => navigate("/subscribe")}
-                >
-                  Choose a Plan
-                </button>
-                <button
-                  type="button"
-                  className="px-3 py-1.5 rounded bg-gray-800 text-sm font-medium hover:bg-gray-700"
-                  onClick={() => portal()}
-                >
-                  Manage Billing
-                </button>
-                <button
-                  type="button"
-                  className="px-3 py-1.5 rounded bg-gray-800 text-sm font-medium hover:bg-gray-700"
-                  onClick={() => checkout(PRICE.payg.pack500k, "payment")}
-                >
-                  Quick Top-Up (500k)
-                </button>
-              </div>
-            )}
-            {/* Fancy Loading Overlay */}
-            <div className="w-full max-w-2xl mx-auto">
-              <FancyLoadingOverlay
-                visible={
-                  isGenerating &&
-                  !(
-                    messages.some(
-                      (m) => m.role === "assistant" && !m.pending
-                    )
-                  )
-                }
-              />
-            </div>
-            <form
-              onSubmit={handleSubmit}
-              className="w-full max-w-2xl mx-auto"
-              autoComplete="off"
-            >
-              <div className="relative">
-                <textarea
-                  ref={promptInputRef}
-                  value={typeof prompt === "string" ? prompt : ""}
-                  onChange={(e) => setPrompt(e.target.value)}
-                  onKeyDown={handlePromptKeyDown}
-                  placeholder="Describe the Roblox mod you want to create..."
-                  className={`w-full rounded-lg bg-gray-900/60 border border-gray-700 focus:border-[#9b5de5] focus:outline-none focus:ring-2 focus:ring-[#9b5de5]/50 transition-all duration-300 py-3 px-4 pr-14 resize-none shadow-lg ${
-                    promptError ? "border-red-500" : ""
-                  }`}
-                  rows="3"
-                  disabled={isGenerating}
-                  maxLength={800}
-                  aria-label="Prompt input"
-                ></textarea>
-                {/* Prompt Autocomplete Dropdown */}
-                {promptAutocomplete.length > 0 && !isGenerating && (
-                  <div className="absolute left-0 right-0 top-full z-30 bg-gray-900 border border-gray-700 rounded-b-lg shadow-lg">
-                    {promptAutocomplete.map((sugg, i) => (
-                      <button
-                        key={i}
-                        type="button"
-                        className="block w-full text-left px-4 py-2 text-sm hover:bg-[#9b5de5]/20 text-gray-200"
-                        onClick={() => {
-                          setPrompt(sugg);
-                          setPromptAutocomplete([]);
-                        }}
-                      >
-                        <span className="font-semibold">{sugg}</span>
-                      </button>
-                    ))}
+                    <span aria-live="polite">
+                      NexusRBX is typing...
+                      {["preparing", "calling model", "post-processing", "polishing", "finalizing"].includes(
+                        generationStep
+                      ) && (
+                        <>
+                          {" "}
+                          ({loadingBarData.stage || generationStep}
+                          {loadingBarData.eta ? `, ETA: ${loadingBarData.eta}s` : ""})
+                        </>
+                      )}
+                    </span>
                   </div>
                 )}
-                <button
-                  type="submit"
-                  disabled={
-                    isGenerating ||
-                    !(typeof prompt === "string" && prompt.trim()) ||
-                    prompt.length > 800
-                  }
-                  className={`absolute right-3 bottom-3 p-3 rounded-full shadow-lg transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-[#9b5de5] ${
-                    isGenerating ||
-                    !(typeof prompt === "string" && prompt.trim()) ||
-                    prompt.length > 800
-                      ? "bg-gray-700 text-gray-400 cursor-not-allowed"
-                      : "bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-white hover:shadow-xl hover:scale-110"
-                  }`}
-                  aria-label="Send prompt"
-                  title="Enter to send • Shift+Enter for newline"
-                >
-                  {isGenerating ? (
-                    <Loader className="h-5 w-5 animate-spin" />
-                  ) : (
-                    <Send className="h-5 w-5" />
-                  )}
-                </button>
+                <div ref={messagesEndRef} />
               </div>
-              <div className="flex justify-between items-center mt-2 text-xs text-gray-500">
-                <div>
-                  <span className={promptCharCount > 800 ? "text-red-400" : ""}>
-                    {promptCharCount}/800
-                  </span>
-                  <span className="ml-2">Press Enter to submit</span>
-                </div>
-              </div>
-              {promptError && (
-                <div className="mt-2 text-xs text-red-400">{promptError}</div>
-              )}
-              {errorMsg && (
-                <div className="mt-2 text-xs text-red-400">{errorMsg}</div>
-              )}
-              {!user && (
-                <div className="mt-2 text-xs text-red-400">
-                  Sign in to generate scripts.
-                </div>
-              )}
-            </form>
-          </div>
-        </section>
-        {/* Right Sidebar */}
-        <aside
-          className="hidden md:flex w-80 bg-gray-900 border-l border-gray-800 flex-col fixed right-0 top-[64px] z-30 h-[calc(100vh-64px)]"
-          style={{
-            minHeight: "calc(100vh - 64px)",
-            maxHeight: "calc(100vh - 64px)",
-          }}
+            </div>
+            {/* Input Area */}
+            <div
+            
+              className="border-t border-gray-800 bg-black/30 px-2 md:px-4 py-4 flex flex-col items-center shadow-inner"
+              aria-busy={isGenerating}
+            >
+              <div className="w-full max-w-2xl mx-auto mb-4">
+  <TokenBar
+    tokensLeft={tokensLeft}
+    tokensLimit={tokensLimit}
+    resetsAt={tokenRefreshTime}
+    plan={planKey}
+  />
+</div>
+              {/* Zero-token state */}
+{typeof tokensLeft === "number" && tokensLeft <= 0 ? (
+  <div className="w-full max-w-2xl mx-auto mt-2 flex flex-col gap-3 items-center">
+    {!isSubscriber && (
+      <>
+        <button
+          type="button"
+          className="px-4 py-2 rounded bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-white font-semibold shadow hover:scale-105 transition-transform"
+          onClick={() => navigate("/subscribe")}
         >
-          <RightSidebar
-            settings={settings}
-            setSettings={setSettings}
-            modelOptions={modelOptions}
-            creativityOptions={creativityOptions}
-            codeStyleOptions={codeStyleOptions}
-            messages={messages}
-            setPrompt={setPrompt}
-            userPromptTemplates={userPromptTemplates}
-            setUserPromptTemplates={setUserPromptTemplates}
-            promptSuggestions={promptSuggestions}
-            promptSuggestionLoading={promptSuggestionLoading}
-          />
-        </aside>
-      </main>
-      {/* --- Code Drawer Integration --- */}
-      {selectedVersion && (
-        <SimpleCodeDrawer
-          open={!!selectedVersion}
-          code={selectedVersion.code}
-          title={selectedVersion.title}
-          filename={safeFile(
-            (selectedVersion?.title || currentScript?.title || "Script").trim() ||
-              "Script"
-          )}
-          version={
-            selectedVersion.versionNumber
-              ? `v${getVN(selectedVersion)}`
-              : ""
-          }
-          onClose={() => setSelectedVersion(null)}
-          onSaveScript={async (newTitle, code, explanation = "") => {
-            const prev = versionHistory;
-            setVersionHistory((v) => [
-              { ...v[0], versionNumber: getVN(v[0]) + 1 },
-              ...v,
-            ]);
-            try {
-              if (!user || !code) return false;
-              let scriptId = currentScriptId;
-              if (!scriptId && selectedVersion?.projectId) {
-                scriptId = selectedVersion.projectId;
-              }
-              if (!scriptId) {
-                const resCreate = await authedFetch(
-                  user,
-                  `${BACKEND_URL}/api/projects`,
-                  {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ title: newTitle || "Script" }),
-                  }
-                );
-                if (!resCreate.ok) {
-                  setVersionHistory(prev);
-                  setErrorMsg("Failed to create new script for saving.");
-                  return false;
-                }
-                const data = await resCreate.json();
-                scriptId = data.projectId;
-                setCurrentScriptId(scriptId);
-              }
-              const vn = nextVersionNumber(versionHistory);
-const res = await authedFetch(
-  user,
-  `${BACKEND_URL}/api/projects/${scriptId}/versions`,
-  {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      code,
-      explanation,
-      title: newTitle || (currentScript?.title || "Script"),
-      versionNumber: vn,
-    }),
-  }
-);
-await mustOk(res, "Save failed");
-lastVersionsFetchRef.current = 0;
-versionsBackoffRef.current = 0;
-notify({ message: "Saved new version", type: "success" });
-try {
-  const versionsRes = await authedFetch(
-    user,
-    `${BACKEND_URL}/api/projects/${scriptId}/versions`,
-    { method: "GET" }
-  );
-  if (versionsRes.ok) {
-    const versionsData = await versionsRes.json();
-    const versions = Array.isArray(versionsData.versions)
-      ? versionsData.versions.map(normalizeServerVersion).sort(byVN)
-      : [];
-    setVersionHistory(versions);
-    setCurrentScript({
-      id: scriptId,
-      title: newTitle || (currentScript?.title || "Script"),
-      versions,
-    });
-    setSelectedVersion(versions[0]);
-  }
-} catch {}
-try { await refreshBilling(); } catch {}
-try {
-  const db = getFirestore();
-  const authUser = auth.currentUser;
-  if (authUser && currentChatId) {
-    const chatRef = doc(
-      db,
-      "users",
-      authUser.uid,
-      "chats",
-      currentChatId
-    );
-    const msgRef = doc(collection(chatRef, "messages"));
-    await setDoc(msgRef, {
-      role: "assistant",
-      content: "Saved a new version.",
-      createdAt: serverTimestamp(),
-    });
-    await updateDoc(chatRef, {
-      lastMessage: "Saved a new version.",
-      updatedAt: serverTimestamp(),
-    });
-  }
-} catch {}
-return true;
-            } catch (e) {
-              setVersionHistory(prev);
-              setErrorMsg(`Save error: ${e.message || e}`);
-              return false;
-            }
-          }}
-          onLiveOpen={() => {}}
-        />
-      )}
-      {/* Celebration Animation */}
-      {showCelebration && <CelebrationAnimation />}
-      {/* Footer */}
-      <footer className="border-t border-gray-800 py-4 px-4 bg-black/40 text-center text-sm text-gray-500">
-        <div className="max-w-6xl mx-auto">
-          NexusRBX AI Console • &copy; 2023 NexusRBX. All rights reserved.
+          Choose a Plan
+        </button>
+        <button
+          type="button"
+          className="px-4 py-2 rounded bg-gray-800 text-white font-semibold shadow hover:bg-gray-700 transition-colors"
+          onClick={() => portal && portal()}
+        >
+          Manage Billing
+        </button>
+        <div className="text-xs text-gray-400 mt-1">
+          Top-ups (Pay-As-You-Go) are coming soon.
         </div>
-      </footer>
-      {/* Blinking cursor animation & fade-in */}
-      <style>
-        {`
-          @keyframes blink {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0; }
-          }
-          .animate-blink {
-            animation: blink 1s step-end infinite;
-          }
-          @keyframes fade-in {
-            from { opacity: 0; transform: translateY(16px);}
-            to { opacity: 1; transform: translateY(0);}
-          }
-          .animate-fade-in {
-            animation: fade-in 0.5s cubic-bezier(.4,0,.2,1) both;
-          }
-          .animate-pulse {
-            animation: pulse 1.2s cubic-bezier(.4,0,.6,1) infinite;
-          }
-          @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-          }
-        `}
-      </style>
-    </div>
-  </React.Fragment>
+      </>
+    )}
+  </div>
+) : (
+  <form
+    onSubmit={handleSubmit}
+    className="w-full max-w-2xl mx-auto"
+    autoComplete="off"
+  >
+                  <div className="relative">
+                    <textarea
+                      ref={promptInputRef}
+                      value={typeof prompt === "string" ? prompt : ""}
+                      onChange={(e) => setPrompt(e.target.value)}
+                      onKeyDown={handlePromptKeyDown}
+                      placeholder={planInfo.promptPlaceholder}
+                      className={`w-full rounded-lg bg-gray-900/60 border border-gray-700 focus:border-[#9b5de5] focus:outline-none focus:ring-2 focus:ring-[#9b5de5]/50 transition-all duration-300 py-3 px-4 pr-14 resize-none shadow-lg ${
+                        promptError ? "border-red-500" : ""
+                      }`}
+                      rows="3"
+                      disabled={isGenerating}
+                      maxLength={planInfo.promptCap}
+                      aria-label="Prompt input"
+                    ></textarea>
+                    {/* Prompt Autocomplete Dropdown */}
+                    {promptAutocomplete.length > 0 && !isGenerating && (
+                      <div className="absolute left-0 right-0 top-full z-30 bg-gray-900 border border-gray-700 rounded-b-lg shadow-lg">
+                        {promptAutocomplete.map((sugg, i) => (
+                          <button
+                            key={i}
+                            type="button"
+                            className="block w-full text-left px-4 py-2 text-sm hover:bg-[#9b5de5]/20 text-gray-200"
+                            onClick={() => {
+                              setPrompt(sugg);
+                              setPromptAutocomplete([]);
+                            }}
+                          >
+                            <span className="font-semibold">{sugg}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                    <button
+                      type="submit"
+                      disabled={
+                        isGenerating ||
+                        !(typeof prompt === "string" && prompt.trim()) ||
+                        prompt.length > planInfo.promptCap ||
+                        (typeof tokensLeft === "number" && tokensLeft <= 0)
+                      }
+                      className={`absolute right-3 bottom-3 p-3 rounded-full shadow-lg transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-[#9b5de5] ${
+                        isGenerating ||
+                        !(typeof prompt === "string" && prompt.trim()) ||
+                        prompt.length > planInfo.promptCap ||
+                        (typeof tokensLeft === "number" && tokensLeft <= 0)
+                          ? "bg-gray-700 text-gray-400 cursor-not-allowed"
+                          : "bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-white hover:shadow-xl hover:scale-110"
+                      }`}
+                      aria-label="Send prompt"
+                      title={
+                        typeof tokensLeft === "number" && tokensLeft <= 0
+                          ? "Out of tokens — upgrade to continue."
+                          : "Enter to send • Shift+Enter for newline"
+                      }
+                    >
+                      {isGenerating ? (
+                        <Loader className="h-5 w-5 animate-spin" />
+                      ) : (
+                        <Send className="h-5 w-5" />
+                      )}
+                    </button>
+                  </div>
+                  <div className="flex justify-between items-center mt-2 text-xs text-gray-500">
+                    <div>
+                      <span className={promptCharCount > planInfo.promptCap ? "text-red-400" : ""}>
+                        {promptCharCount}/{planInfo.promptCap}
+                      </span>
+                      <span className="ml-2">Press Enter to submit</span>
+                    </div>
+                  </div>
+                  {promptError && (
+                    <div className="mt-2 text-xs text-red-400">{promptError}</div>
+                  )}
+                  {errorMsg && (
+                    <div className="mt-2 text-xs text-red-400">{errorMsg}</div>
+                  )}
+                  {!user && (
+                    <div className="mt-2 text-xs text-red-400">
+                      Sign in to generate scripts.
+                    </div>
+                  )}
+              {/* Plan upgrade nudge */}
+              {!isSubscriber && (
+                <div className="mt-2 text-xs text-[#9b5de5] underline cursor-pointer hover:text-[#00f5d4] transition-colors"
+                  onClick={() => navigate("/subscribe")}
+                >
+                  {planInfo.upgradeLine}
+                </div>
+              )}
+                </form>
+              )}
+              {/* Fancy Loading Overlay */}
+              <div className="w-full max-w-2xl mx-auto">
+                <FancyLoadingOverlay
+                  visible={
+                    isGenerating &&
+                    !(
+                      messages.some(
+                        (m) => m.role === "assistant" && !m.pending
+                      )
+                    )
+                  }
+                />
+              </div>
+            </div>
+          </section>
+          {/* Right Sidebar */}
+          <aside
+            className="hidden md:flex w-80 bg-gray-900 border-l border-gray-800 flex-col fixed right-0 top-[64px] z-30 h-[calc(100vh-64px)]"
+            style={{
+              minHeight: "calc(100vh - 64px)",
+              maxHeight: "calc(100vh - 64px)",
+            }}
+          >
+            <div className="p-4 border-b border-gray-800">
+              {/* Upgrade Card */}
+              {!isSubscriber && planInfo.sidebarCta && (
+                <div className={`rounded-lg p-4 mb-4 ${planInfo.sidebarCtaColor}`}>
+                  <div className="font-bold text-lg mb-1">{planInfo.sidebarCtaText}</div>
+                  <div className="text-sm mb-2">{planInfo.sidebarCtaSub}</div>
+                  <button
+                    type="button"
+                    className="px-3 py-1 rounded bg-black/20 text-white font-semibold shadow hover:bg-black/40 transition-colors"
+                    onClick={() => navigate(planInfo.sidebarCtaLink)}
+                  >
+                    {planInfo.sidebarCta}
+                  </button>
+                </div>
+              )}
+            </div>
+            <RightSidebar
+              settings={settings}
+              setSettings={setSettings}
+              modelOptions={modelOptions}
+              creativityOptions={creativityOptions}
+              codeStyleOptions={codeStyleOptions}
+              messages={messages}
+              setPrompt={setPrompt}
+              userPromptTemplates={userPromptTemplates}
+              setUserPromptTemplates={setUserPromptTemplates}
+              promptSuggestions={promptSuggestions}
+              promptSuggestionLoading={promptSuggestionLoading}
+              plan={planKey}
+              planInfo={planInfo}
+            />
+          </aside>
+        </main>
+        {/* --- Code Drawer Integration --- */}
+        {selectedVersion && (
+          <SimpleCodeDrawer
+            open={!!selectedVersion}
+            code={selectedVersion.code}
+            title={selectedVersion.title}
+            filename={safeFile(
+              (selectedVersion?.title || currentScript?.title || "Script").trim() ||
+                "Script"
+            )}
+            version={
+              selectedVersion.versionNumber
+                ? `v${getVN(selectedVersion)}`
+                : ""
+            }
+            onClose={() => setSelectedVersion(null)}
+            onSaveScript={async () => {}}
+            onLiveOpen={() => {}}
+          />
+        )}
+        {/* Celebration Animation */}
+        {showCelebration && <CelebrationAnimation />}
+        {/* Footer */}
+        <footer className="border-t border-gray-800 py-4 px-4 bg-black/40 text-center text-sm text-gray-500">
+          <div className="max-w-6xl mx-auto">
+            NexusRBX AI Console • &copy; 2023 NexusRBX. All rights reserved.{" "}
+            <span className="ml-2">
+              <a
+                href="/contact"
+                className="text-[#9b5de5] underline hover:text-[#00f5d4] transition-colors"
+              >
+                Questions about billing? Contact Support
+              </a>
+            </span>
+          </div>
+        </footer>
+        {/* Blinking cursor animation & fade-in */}
+        <style>
+          {`
+            @keyframes blink {
+              0%, 100% { opacity: 1; }
+              50% { opacity: 0; }
+            }
+            .animate-blink {
+              animation: blink 1s step-end infinite;
+            }
+            @keyframes fade-in {
+              from { opacity: 0; transform: translateY(16px);}
+              to { opacity: 1; transform: translateY(0);}
+            }
+            .animate-fade-in {
+              animation: fade-in 0.5s cubic-bezier(.4,0,.2,1) both;
+            }
+            .animate-pulse {
+              animation: pulse 1.2s cubic-bezier(.4,0,.6,1) infinite;
+            }
+            @keyframes pulse {
+              0%, 100% { opacity: 1; }
+              50% { opacity: 0.5; }
+            }
+          `}
+        </style>
+      </div>
+    </React.Fragment>
   );
 }
 
-export default NexusRBXAIPageContainer;
+export default AiPage;

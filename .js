@@ -1153,12 +1153,20 @@ app.get("/api/billing/entitlements", verifyFirebaseToken, asyncHandler(async (re
     logs.forEach(l => used += Number(l.data().tokens || 0));
   } catch {}
 
+  // --- CRITICAL: Always return a top-level "entitlements" array for frontend compatibility ---
+  // This is what the frontend expects to check for "subscriber", "pro", "team", etc.
+  // Add "subscriber" if plan is not FREE, and add plan name as entitlement.
+  const entitlements = [];
+  if (plan && plan !== "FREE") entitlements.push("subscriber");
+  if (plan && plan !== "FREE") entitlements.push(plan.toLowerCase());
+
   return res.json({
     plan,
     cycle,
     sub: { limit: subLimit, used, resetsAt: resetsAtIso },
     payg: { remaining: paygRemaining },
     seats: 1,
+    entitlements, // <-- this is what the frontend expects!
   });
 }));
 

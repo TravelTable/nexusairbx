@@ -20,6 +20,7 @@ import {
   MessageCircle,
   Bookmark,
   BookmarkCheck,
+  Lock,
 } from "lucide-react";
 import SidebarTab from "./SidebarTab";
 import Modal from "./Modal";
@@ -41,6 +42,7 @@ import {
 } from "firebase/firestore";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { FixedSizeList as List } from "react-window";
+import { useBilling } from "../context/BillingContext";
 
 // --- Utility Functions ---
 
@@ -80,9 +82,34 @@ const fromNow = (ms) => {
 // --- Toast Hook for Error Surfaces ---
 function useToast() {
   const [toast, setToast] = useState(null);
-  const show = (msg) => setToast(msg);
+  const show = (msg, opts = {}) => setToast({ msg, ...opts });
   const clear = () => setToast(null);
   return { toast, show, clear };
+}
+
+// --- NotificationToast for upgrade nudges ---
+function NotificationToast({ open, message, cta, onCta, onClose }) {
+  if (!open) return null;
+  return (
+    <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white px-5 py-3 rounded shadow-lg z-50 flex items-center gap-4 border border-[#00f5d4]">
+      <span className="font-medium">{message}</span>
+      {cta && (
+        <button
+          className="ml-2 px-3 py-1 rounded bg-[#00f5d4] text-black font-bold text-xs"
+          onClick={onCta}
+        >
+          {cta}
+        </button>
+      )}
+      <button
+        className="ml-2 text-white opacity-60 hover:opacity-100"
+        onClick={onClose}
+        aria-label="Dismiss"
+      >
+        <X className="h-4 w-4" />
+      </button>
+    </div>
+  );
 }
 
 // --- Memoized Script Row ---
@@ -250,6 +277,9 @@ export default function SidebarContent({
   onDeleteChat,
   selectedVersionId, // <-- pass from parent for version selection
 }) {
+  // --- Billing ---
+  const { plan, historyDays } = useBilling();
+
   // --- State ---
   const tabId = useId();
 
@@ -267,12 +297,10 @@ export default function SidebarContent({
   useEffect(() => setPromptSearch(deferredSearch), [deferredSearch, setPromptSearch]);
   useEffect(() => setLocalSearch(promptSearch || ""), [promptSearch]);
 
-// --- Saved Scripts state ---
-const [savedScripts, setSavedScripts] = useState([]);
-const [savedSearch, setSavedSearch] = useState("");
-const [savedErr, setSavedErr] = useState(null);
-
-
+  // --- Saved Scripts state ---
+  const [savedScripts, setSavedScripts] = useState([]);
+  const [savedSearch, setSavedSearch] = useState("");
+  const [savedErr, setSavedErr] = useState(null);
 
   // --- Chats state (Firestore) ---
   const [chats, setChats] = useState([]);
@@ -285,8 +313,11 @@ const [savedErr, setSavedErr] = useState(null);
   const [chatCursor, setChatCursor] = useState(null);
   const [chatErr, setChatErr] = useState(null);
 
-  // --- Toast for errors ---
+  // --- Toast for errors and notification ---
   const { toast, show: showToast, clear: clearToast } = useToast();
+
+  // --- NotificationToast for upgrade nudges ---
+  const [notification, setNotification] = useState(null);
 
   // --- Firestore: subscribe to chats for current user (paginated) ---
   useEffect(() => {
@@ -489,35 +520,35 @@ const [savedErr, setSavedErr] = useState(null);
   }, [chats, deferredChatSearch]);
 
   // --- Memoized filtered/sorted saved scripts (deferred search, unique per scriptId+versionNumber) ---
-const deferredSavedSearch = useDeferredValue(savedSearch.trim().toLowerCase());
-const filteredSavedScripts = useMemo(() => {
-  const list = Array.isArray(savedScripts) ? savedScripts : [];
-  const q = deferredSavedSearch;
-  // Remove duplicates: only one per scriptId+versionNumber
-  const uniqueMap = new Map();
-  for (const s of list) {
-    const key = `${s.scriptId}__${s.versionNumber || getVersionStr(s)}`;
-    if (!uniqueMap.has(key)) uniqueMap.set(key, s);
-  }
-  const uniqueList = Array.from(uniqueMap.values());
-  const filtered = q
-    ? uniqueList.filter(
-        (s) =>
-          (s.title || "").toLowerCase().includes(q) ||
-          getVersionStr(s).toLowerCase().includes(q)
-      )
-    : uniqueList;
-  return filtered
-    .slice()
-    .sort((a, b) => {
-      const au = Number(a.updatedAt || a.createdAt || 0) || 0;
-      const bu = Number(b.updatedAt || b.createdAt || 0) || 0;
-      if (bu !== au) return bu - au;
-      const at = (a.title || "").localeCompare(b.title || "");
-      if (at !== 0) return at;
-      return getVersionStr(a).localeCompare(getVersionStr(b));
-    });
-}, [savedScripts, deferredSavedSearch]);
+  const deferredSavedSearch = useDeferredValue(savedSearch.trim().toLowerCase());
+  const filteredSavedScripts = useMemo(() => {
+    const list = Array.isArray(savedScripts) ? savedScripts : [];
+    const q = deferredSavedSearch;
+    // Remove duplicates: only one per scriptId+versionNumber
+    const uniqueMap = new Map();
+    for (const s of list) {
+      const key = `${s.scriptId}__${s.versionNumber || getVersionStr(s)}`;
+      if (!uniqueMap.has(key)) uniqueMap.set(key, s);
+    }
+    const uniqueList = Array.from(uniqueMap.values());
+    const filtered = q
+      ? uniqueList.filter(
+          (s) =>
+            (s.title || "").toLowerCase().includes(q) ||
+            getVersionStr(s).toLowerCase().includes(q)
+        )
+      : uniqueList;
+    return filtered
+      .slice()
+      .sort((a, b) => {
+        const au = Number(a.updatedAt || a.createdAt || 0) || 0;
+        const bu = Number(b.updatedAt || b.createdAt || 0) || 0;
+        if (bu !== au) return bu - au;
+        const at = (a.title || "").localeCompare(b.title || "");
+        if (at !== 0) return at;
+        return getVersionStr(a).localeCompare(getVersionStr(b));
+      });
+  }, [savedScripts, deferredSavedSearch]);
 
   // --- Saved version set (single source of truth) ---
   const savedVersionSet = useMemo(() => {
@@ -560,69 +591,69 @@ const filteredSavedScripts = useMemo(() => {
   };
 
   // --- Optimistic Save/Unsave with rollback, prevent duplicate saves (scriptId + versionNumber) ---
-const handleToggleSaveScript = useCallback(
-  async (script) => {
-    const db = getFirestore();
-    const auth = getAuth();
-    const u = auth.currentUser;
-    if (!u) return;
+  const handleToggleSaveScript = useCallback(
+    async (script) => {
+      const db = getFirestore();
+      const auth = getAuth();
+      const u = auth.currentUser;
+      if (!u) return;
 
-    const version = getVersionStr(script);
-    const versionNumber = script.versionNumber || Number(version) || 1;
-    const key = `${script.id}__${versionNumber}`;
-    const wasSaved = savedVersionSet.has(key);
+      const version = getVersionStr(script);
+      const versionNumber = script.versionNumber || Number(version) || 1;
+      const key = `${script.id}__${versionNumber}`;
+      const wasSaved = savedVersionSet.has(key);
 
-    // optimistic: UI will update on snapshot
-    const revert = () => setSavedScripts((prev) => [...prev]);
+      // optimistic: UI will update on snapshot
+      const revert = () => setSavedScripts((prev) => [...prev]);
 
-    try {
-      if (wasSaved) {
-        // Unsave: find the matching savedScript and delete
-        const match = savedScripts.find(
-          (s) =>
-            s.scriptId === script.id &&
-            (s.versionNumber === versionNumber ||
-              getVersionStr(s) === String(versionNumber))
-        );
-        if (match)
-          await deleteDoc(doc(db, "users", u.uid, "savedScripts", match.id));
-      } else {
-        // Prevent duplicate: check if already exists in Firestore
-        const q = query(
-          collection(db, "users", u.uid, "savedScripts"),
-          // Firestore doesn't support compound unique, so filter client-side
-        );
-        const snapshot = await getDocs(q);
-        const exists = snapshot.docs.some(
-          (docSnap) => {
-            const d = docSnap.data();
-            return (
-              d.scriptId === script.id &&
-              (d.versionNumber === versionNumber ||
-                getVersionStr(d) === String(versionNumber))
-            );
+      try {
+        if (wasSaved) {
+          // Unsave: find the matching savedScript and delete
+          const match = savedScripts.find(
+            (s) =>
+              s.scriptId === script.id &&
+              (s.versionNumber === versionNumber ||
+                getVersionStr(s) === String(versionNumber))
+          );
+          if (match)
+            await deleteDoc(doc(db, "users", u.uid, "savedScripts", match.id));
+        } else {
+          // Prevent duplicate: check if already exists in Firestore
+          const q = query(
+            collection(db, "users", u.uid, "savedScripts"),
+            // Firestore doesn't support compound unique, so filter client-side
+          );
+          const snapshot = await getDocs(q);
+          const exists = snapshot.docs.some(
+            (docSnap) => {
+              const d = docSnap.data();
+              return (
+                d.scriptId === script.id &&
+                (d.versionNumber === versionNumber ||
+                  getVersionStr(d) === String(versionNumber))
+              );
+            }
+          );
+          if (exists) {
+            showToast("This version is already saved.");
+            return;
           }
-        );
-        if (exists) {
-          showToast("This version is already saved.");
-          return;
+          await addDoc(collection(db, "users", u.uid, "savedScripts"), {
+            scriptId: script.id,
+            title: script.title || "Untitled",
+            version: version,
+            versionNumber: versionNumber,
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+          });
         }
-        await addDoc(collection(db, "users", u.uid, "savedScripts"), {
-          scriptId: script.id,
-          title: script.title || "Untitled",
-          version: version,
-          versionNumber: versionNumber,
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp(),
-        });
+      } catch {
+        revert();
+        showToast("Failed to update saved scripts.");
       }
-    } catch {
-      revert();
-      showToast("Failed to update saved scripts.");
-    }
-  },
-  [savedVersionSet, savedScripts, showToast]
-);
+    },
+    [savedVersionSet, savedScripts, showToast]
+  );
   const handleUnsaveBySavedId = useCallback(
     async (savedDocId) => {
       const db = getFirestore();
@@ -753,6 +784,39 @@ const handleToggleSaveScript = useCallback(
       </div>
     </div>
   );
+
+  // --- Version History Filtering and Locking ---
+  // Only show info bar if plan is free and historyDays is set
+  const showHistoryInfoBar = plan === "free" && !!historyDays;
+
+  // Compute cutoff timestamp (ms)
+  const historyCutoffMs =
+    historyDays && Number.isFinite(Number(historyDays))
+      ? Date.now() - Number(historyDays) * 24 * 60 * 60 * 1000
+      : null;
+
+  // Partition versionHistory into unlocked and locked
+  const versionHistoryWithLock = useMemo(() => {
+    if (!Array.isArray(versionHistory)) return [];
+    return versionHistory.map((ver) => {
+      const createdAtMs = toMs(ver.createdAt);
+      const isLocked =
+        showHistoryInfoBar && historyCutoffMs !== null && createdAtMs < historyCutoffMs;
+      return { ...ver, isLocked, createdAtMs };
+    });
+  }, [versionHistory, showHistoryInfoBar, historyCutoffMs]);
+
+  // --- Notification handler for locked history ---
+  const handleLockedHistoryClick = useCallback(() => {
+    setNotification({
+      message: "Older history is a Pro feature.",
+      cta: "Upgrade to view",
+      onCta: () => {
+        setNotification(null);
+        window.location.href = "/subscribe";
+      },
+    });
+  }, []);
 
   // --- Main Render ---
   return (
@@ -1010,8 +1074,15 @@ const handleToggleSaveScript = useCallback(
               <X className="h-4 w-4 mr-2" />
               Clear conversation
             </button>
+            {/* Info bar for Free users */}
+            {showHistoryInfoBar && (
+              <div className="w-full bg-[#00f5d4]/10 border border-[#00f5d4] text-[#00f5d4] text-xs font-semibold px-3 py-1 rounded mt-6 mb-2 flex items-center gap-2">
+                <Lock className="h-3 w-3 mr-1 text-[#00f5d4]" />
+                Showing last 7 days — Upgrade for unlimited history.
+              </div>
+            )}
             {/* Version History for Current Script */}
-            <div className="mt-6">
+            <div className="mt-2">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
                   <MessageCircle className="h-4 w-4 text-[#00f5d4]" />
@@ -1020,13 +1091,13 @@ const handleToggleSaveScript = useCallback(
                   </span>
                 </div>
               </div>
-              {(!versionHistory || versionHistory.length === 0) && (
+              {(!versionHistoryWithLock || versionHistoryWithLock.length === 0) && (
                 <div className="text-gray-400 text-sm">
                   No versions for this script yet. Generate your first version by submitting a prompt on the AI Console.
                 </div>
               )}
               <div className="space-y-2" aria-live="polite">
-                {(versionHistory ?? []).map((ver, vIdx) => {
+                {(versionHistoryWithLock ?? []).map((ver, vIdx) => {
                   const version = getVersionStr(ver);
                   const saveKey = `${currentScriptId}__${version}`;
                   const isSaved = savedVersionSet.has(saveKey);
@@ -1034,6 +1105,78 @@ const handleToggleSaveScript = useCallback(
                     selectedVersionId === version ||
                     selectedVersionId === ver.id ||
                     selectedVersionId === saveKey;
+
+                  // Locked item UI
+                  if (ver.isLocked) {
+                    return (
+                      <button
+                        key={keyForScript({ ...ver, id: currentScriptId })}
+                        className={`w-full flex items-center justify-between px-3 py-2 border-b border-gray-800 last:border-b-0 rounded text-left group cursor-not-allowed opacity-60 bg-gray-900/60 relative`}
+                        style={{
+                          background: "rgba(55,65,81,0.5)",
+                          pointerEvents: "auto",
+                        }}
+                        tabIndex={0}
+                        aria-label={`Locked version ${version}`}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          handleLockedHistoryClick();
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            handleLockedHistoryClick();
+                          }
+                        }}
+                      >
+                        <div className="flex flex-col flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span
+                              className="font-semibold text-[#00f5d4] truncate block max-w-[10rem] md:max-w-[14rem]"
+                              title={ver.title || "Untitled"}
+                            >
+                              {ver.title || "Untitled"}
+                            </span>
+                            {version ? (
+                              <span className="inline-block px-2 py-0.5 rounded bg-[#9b5de5]/20 text-[#9b5de5] text-xs font-semibold ml-1">
+                                v{version}
+                              </span>
+                            ) : null}
+                            <span className="flex items-center gap-1 ml-2 text-xs text-[#9b5de5] font-bold">
+                              <Lock className="h-3 w-3 mr-0.5" />
+                              Locked
+                            </span>
+                          </div>
+                          <span
+                            className="text-xs text-gray-400"
+                            title={
+                              ver.createdAt
+                                ? new Date(ver.createdAt).toLocaleString()
+                                : undefined
+                            }
+                          >
+                            {ver.createdAt ? fromNow(ver.createdAt) : ""}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1 ml-2">
+                          <button
+                            className="p-1 rounded hover:bg-gray-700"
+                            title="Locked"
+                            aria-label="Locked"
+                            tabIndex={-1}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              handleLockedHistoryClick();
+                            }}
+                          >
+                            <Lock className="h-4 w-4 text-[#9b5de5]" />
+                          </button>
+                        </div>
+                      </button>
+                    );
+                  }
+
+                  // Unlocked item UI
                   return (
                     <button
                       key={keyForScript({ ...ver, id: currentScriptId })}
@@ -1346,67 +1489,67 @@ const handleToggleSaveScript = useCallback(
 
             <div className="space-y-2" aria-live="polite">
               {(filteredSavedScripts ?? []).map((row) => (
-<button
-  key={`${row.scriptId || ""}__${getVersionStr(row)}`}
-  type="button"
-  className="w-full flex items-center justify-between px-3 py-2 rounded-lg border border-gray-700 bg-gray-900/40 transition-colors group hover:border-[#00f5d4] hover:bg-gray-800/60 focus:outline-none"
-  title={row.title || "Untitled"}
-  onClick={() => {
-    window.dispatchEvent(
-      new CustomEvent("nexus:openCodeDrawer", {
-        detail: {
-          scriptId: row.scriptId,
-          code: row.code,
-          title: row.title,
-          versionNumber: getVersionStr(row),
-          explanation: row.explanation || "",
-          savedScriptId: `${row.scriptId || ""}__${getVersionStr(row)}`,
-        },
-      })
-    );
-  }}
-  tabIndex={0}
-  aria-label={`Open saved script ${row.title || "Untitled"} v${getVersionStr(row)}`}
-  onKeyDown={(e) => {
-    if (e.key === "Enter" || e.key === " ") {
-      e.preventDefault();
-      window.dispatchEvent(
-        new CustomEvent("nexus:openCodeDrawer", {
-          detail: {
-            scriptId: row.scriptId,
-            code: row.code,
-            title: row.title,
-            versionNumber: getVersionStr(row),
-            explanation: row.explanation || "",
-            savedScriptId: `${row.scriptId || ""}__${getVersionStr(row)}`,
-          },
-        })
-      );
-    }
-  }}
->
-<div className="flex-1 min-w-0 flex flex-col">
-  <div className="flex items-center gap-2">
-    <span
-      className="font-semibold text-white truncate block max-w-[10rem] md:max-w-[14rem]"
-      title={row.title || "Untitled"}
-    >
-      {row.title || "Untitled"}
-    </span>
-    {getVersionStr(row) && (
-      <span className="inline-block px-2 py-0.5 rounded bg-[#9b5de5]/20 text-[#9b5de5] text-xs font-semibold ml-2">
-        v{getVersionStr(row)}
-      </span>
-    )}
-  </div>
-  <div className="text-xs text-gray-400">
-    {row.updatedAt && (
-      <span title={new Date(row.updatedAt).toLocaleString()}>
-        Saved {fromNow(row.updatedAt)}
-      </span>
-    )}
-  </div>
-</div>
+                <button
+                  key={`${row.scriptId || ""}__${getVersionStr(row)}`}
+                  type="button"
+                  className="w-full flex items-center justify-between px-3 py-2 rounded-lg border border-gray-700 bg-gray-900/40 transition-colors group hover:border-[#00f5d4] hover:bg-gray-800/60 focus:outline-none"
+                  title={row.title || "Untitled"}
+                  onClick={() => {
+                    window.dispatchEvent(
+                      new CustomEvent("nexus:openCodeDrawer", {
+                        detail: {
+                          scriptId: row.scriptId,
+                          code: row.code,
+                          title: row.title,
+                          versionNumber: getVersionStr(row),
+                          explanation: row.explanation || "",
+                          savedScriptId: `${row.scriptId || ""}__${getVersionStr(row)}`,
+                        },
+                      })
+                    );
+                  }}
+                  tabIndex={0}
+                  aria-label={`Open saved script ${row.title || "Untitled"} v${getVersionStr(row)}`}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      window.dispatchEvent(
+                        new CustomEvent("nexus:openCodeDrawer", {
+                          detail: {
+                            scriptId: row.scriptId,
+                            code: row.code,
+                            title: row.title,
+                            versionNumber: getVersionStr(row),
+                            explanation: row.explanation || "",
+                            savedScriptId: `${row.scriptId || ""}__${getVersionStr(row)}`,
+                          },
+                        })
+                      );
+                    }
+                  }}
+                >
+                  <div className="flex-1 min-w-0 flex flex-col">
+                    <div className="flex items-center gap-2">
+                      <span
+                        className="font-semibold text-white truncate block max-w-[10rem] md:max-w-[14rem]"
+                        title={row.title || "Untitled"}
+                      >
+                        {row.title || "Untitled"}
+                      </span>
+                      {getVersionStr(row) && (
+                        <span className="inline-block px-2 py-0.5 rounded bg-[#9b5de5]/20 text-[#9b5de5] text-xs font-semibold ml-2">
+                          v{getVersionStr(row)}
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-xs text-gray-400">
+                      {row.updatedAt && (
+                        <span title={new Date(row.updatedAt).toLocaleString()}>
+                          Saved {fromNow(row.updatedAt)}
+                        </span>
+                      )}
+                    </div>
+                  </div>
                   <div className="flex items-center gap-1 ml-2">
                     <button
                       className="p-1 rounded hover:bg-gray-700"
@@ -1444,9 +1587,9 @@ const handleToggleSaveScript = useCallback(
         </motion.div>
       </div>
       {/* Toast for errors */}
-      {toast && (
+      {toast && toast.msg && (
         <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-red-700 text-white px-4 py-2 rounded shadow-lg z-50">
-          {toast}
+          {toast.msg}
           <button
             className="ml-4 text-white underline"
             onClick={clearToast}
@@ -1481,6 +1624,14 @@ const handleToggleSaveScript = useCallback(
           </button>
         </div>
       )}
+      {/* NotificationToast for upgrade nudges */}
+      <NotificationToast
+        open={!!notification}
+        message={notification?.message}
+        cta={notification?.cta}
+        onCta={notification?.onCta}
+        onClose={() => setNotification(null)}
+      />
     </>
   );
 }

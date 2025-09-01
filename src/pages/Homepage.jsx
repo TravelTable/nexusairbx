@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Github, Zap, Settings, Shield, ChevronRight, Loader, Star, DollarSign } from "lucide-react";
 import TokensCounterContainer from "../components/TokensCounterContainer";
+import NexusRBXHeader from "../components/NexusRBXHeader";
+import NexusRBXFooter from "../components/NexusRBXFooter";
 import { auth } from "../firebase";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { getEntitlements } from "../lib/billing";
@@ -216,210 +218,18 @@ function NexusRBXHomepage({
   tokenInfo,
   tokenLoading
 }) {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
-  useEffect(() => {
-    if (!mobileMenuOpen) return;
-    const handleKeyDown = (e) => {
-      if (e.key === "Escape") setMobileMenuOpen(false);
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [mobileMenuOpen]);
-
-  useEffect(() => {
-    if (!mobileMenuOpen) return;
-    const firstFocusable = document.querySelector(".mobile-menu a, .mobile-menu button");
-    if (firstFocusable) firstFocusable.focus();
-  }, [mobileMenuOpen]);
-
   return (
     <div className="min-h-screen bg-[#0D0D0D] text-white font-sans flex flex-col">
       {/* Header */}
-      <header className="border-b border-gray-800 bg-black/30 backdrop-blur-md sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <div
-            className="text-2xl font-bold bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-transparent bg-clip-text cursor-pointer"
-            onClick={() => navigate("/")}
-            tabIndex={0}
-            aria-label="Go to homepage"
-            onKeyDown={e => { if (e.key === "Enter") navigate("/"); }}
-          >
-            NexusRBX
-          </div>
-          <nav className="hidden md:flex space-x-8 items-center">
-            {navLinks.map((link, idx) => (
-              <React.Fragment key={link.id}>
-                <a
-                  href={link.href}
-                  onClick={handleNavClick(link.href, link.external)}
-                  className="text-gray-300 hover:text-white transition-colors duration-300"
-                  rel={link.external ? "noopener noreferrer" : undefined}
-                  target={link.external ? "_blank" : undefined}
-                >
-                  {link.text}
-                </a>
-                {link.text === "Discord" && (
-                  <span className="inline-block w-6" aria-hidden="true"></span>
-                )}
-              </React.Fragment>
-            ))}
-{user && (
-  <div className="flex items-center space-x-3 mr-2">
-    <TokensCounterContainer
-      tokens={{
-        sub: {
-          remaining:
-            typeof tokenInfo?.sub?.limit === "number" && typeof tokenInfo?.sub?.used === "number"
-              ? tokenInfo.sub.limit - tokenInfo.sub.used
-              : 0,
-          limit: tokenInfo?.sub?.limit ?? 0,
-        },
-      }}
-      isLoading={tokenLoading}
-      showRefreshButton={false}
-      className="!bg-transparent !border-none !shadow-none p-0"
-    />
-    <TokensCounterContainer
-      tokens={{
-        payg: {
-          remaining:
-            typeof tokenInfo?.payg?.remaining === "number"
-              ? tokenInfo.payg.remaining
-              : 0,
-        },
-      }}
-      isLoading={tokenLoading}
-      showRefreshButton={false}
-      className="!bg-transparent !border-none !shadow-none p-0"
-    />
-  </div>
-)}
-            {!user ? (
-              <button
-                onClick={handleLogin}
-                className="text-gray-300 hover:text-white transition-colors duration-300 font-sans text-base"
-                type="button"
-                aria-label="Login"
-                style={{
-                  background: "none",
-                  border: "none",
-                  padding: 0,
-                  margin: 0,
-                  cursor: "pointer"
-                }}
-              >
-                Login
-              </button>
-            ) : null}
-          </nav>
-          <button
-            className="md:hidden text-gray-300"
-            onClick={() => setMobileMenuOpen((v) => !v)}
-            aria-label={mobileMenuOpen ? "Close navigation menu" : "Open navigation menu"}
-            aria-expanded={mobileMenuOpen}
-            aria-controls="mobile-menu"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-6 w-6"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d={mobileMenuOpen ? "M6 18L18 6M6 6l12 12" : "M4 6h16M4 12h16M4 18h16"}
-              />
-            </svg>
-          </button>
-        </div>
-        {mobileMenuOpen && (
-          <div className="md:hidden bg-black/90 border-b border-gray-800 px-4 py-4 mobile-menu" id="mobile-menu">
-            <nav className="flex flex-col space-y-4">
-              {navLinks.map((link, idx) => (
-                <React.Fragment key={link.id}>
-                  <a
-                    href={link.href}
-                    tabIndex={0}
-                    onClick={(e) => {
-                      setMobileMenuOpen(false);
-                      handleNavClick(link.href, link.external)(e);
-                    }}
-                    className="text-gray-300 hover:text-white transition-colors duration-300"
-                    rel={link.external ? "noopener noreferrer" : undefined}
-                    target={link.external ? "_blank" : undefined}
-                    onKeyDown={e => {
-                      if (e.key === "Enter") {
-                        setMobileMenuOpen(false);
-                        handleNavClick(link.href, link.external)(e);
-                      }
-                    }}
-                  >
-                    {link.text}
-                  </a>
-                  {link.text === "Discord" && (
-                    <span className="inline-block w-6" aria-hidden="true"></span>
-                  )}
-                </React.Fragment>
-              ))}
-{user && (
-  <div className="flex flex-col gap-1 px-3 py-1 rounded bg-gray-800 border border-gray-700 text-xs text-gray-200">
-    <TokensCounterContainer
-      tokens={{
-        sub: {
-          remaining:
-            typeof tokenInfo?.sub?.limit === "number" && typeof tokenInfo?.sub?.used === "number"
-              ? tokenInfo.sub.limit - tokenInfo.sub.used
-              : 0,
-          limit: tokenInfo?.sub?.limit ?? 0,
-        },
-      }}
-      isLoading={tokenLoading}
-      showRefreshButton={false}
-      className="!bg-transparent !border-none !shadow-none p-0"
-    />
-    <TokensCounterContainer
-      tokens={{
-        payg: {
-          remaining:
-            typeof tokenInfo?.payg?.remaining === "number"
-              ? tokenInfo.payg.remaining
-              : 0,
-        },
-      }}
-      isLoading={tokenLoading}
-      showRefreshButton={false}
-      className="!bg-transparent !border-none !shadow-none p-0"
-    />
-  </div>
-)}
-              {!user ? (
-                <button
-                  onClick={() => {
-                    setMobileMenuOpen(false);
-                    handleLogin();
-                  }}
-                  className="text-gray-300 hover:text-white transition-colors duration-300 font-sans text-base"
-                  type="button"
-                  aria-label="Login"
-                  style={{
-                    background: "none",
-                    border: "none",
-                    padding: 0,
-                    margin: 0,
-                    cursor: "pointer"
-                  }}
-                >
-                  Login
-                </button>
-              ) : null}
-            </nav>
-          </div>
-        )}
-      </header>
+      <NexusRBXHeader
+        navLinks={navLinks}
+        handleNavClick={handleNavClick}
+        navigate={navigate}
+        user={user}
+        handleLogin={handleLogin}
+        tokenInfo={tokenInfo}
+        tokenLoading={tokenLoading}
+      />
 
       <main className="flex-grow">
         {/* Hero Section */}
@@ -562,46 +372,11 @@ function NexusRBXHomepage({
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-gray-800 py-8 px-4 bg-gradient-to-t from-black/60 to-transparent">
-        <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center">
-          <div
-            className="text-xl font-bold bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-transparent bg-clip-text mb-4 md:mb-0 cursor-pointer"
-            onClick={() => navigate("/")}
-            tabIndex={0}
-            aria-label="Go to homepage"
-            onKeyDown={e => { if (e.key === "Enter") navigate("/"); }}
-          >
-            NexusRBX
-          </div>
-
-          <div className="flex flex-wrap justify-center gap-6">
-            {footerLinks.map((link) => (
-              <a
-                key={link.id}
-                href={link.href}
-                onClick={handleNavClick(link.href, link.external)}
-                className="text-gray-400 hover:text-white transition-colors duration-300"
-                rel={link.external ? "noopener noreferrer" : undefined}
-                target={link.external ? "_blank" : undefined}
-              >
-                {link.text}
-              </a>
-            ))}
-            <a
-              href="https://github.com/"
-              className="text-gray-400 hover:text-white transition-colors duration-300 flex items-center gap-2"
-              rel="noopener noreferrer"
-              target="_blank"
-            >
-              <Github className="h-4 w-4" />
-              GitHub
-            </a>
-          </div>
-        </div>
-        <div className="max-w-6xl mx-auto mt-6 text-center text-gray-500 text-sm">
-          © 2023 NexusRBX. All rights reserved.
-        </div>
-      </footer>
+      <NexusRBXFooter
+        footerLinks={footerLinks}
+        handleNavClick={handleNavClick}
+        navigate={navigate}
+      />
 
       {/* CSS Animations */}
       <style jsx>{`

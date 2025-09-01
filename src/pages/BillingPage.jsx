@@ -805,39 +805,33 @@ export default function BillingPage() {
     <h2 className="text-xl font-semibold text-white">Buy More Tokens (PAYG)</h2>
   </div>
 
-  {/* simple, even cards — no nested buttons */}
-  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-    {[
-      { label: "100,000", price: "$4.99", id: PRICE.payg.pack100k, scripts: 14 },
-      { label: "500,000", price: "$15.19", id: PRICE.payg.pack500k, scripts: 70, popular: true },
-      { label: "1,000,000", price: "$24.99", id: PRICE.payg.pack1m, scripts: 140 },
-    ].map((p) => (
-      <div
-        key={p.id}
-        className="group relative flex flex-col rounded-lg border border-gray-700 bg-gray-900 p-4 transition-shadow hover:shadow-md hover:shadow-black/30"
-      >
-        {p.popular && (
-          <span className="absolute top-3 right-3 rounded-full bg-purple-600 px-2 py-0.5 text-[10px] font-bold text-white">
-            Best Value
-          </span>
-        )}
+<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+  {[
+    { label: "100,000", price: "$4.99", id: PRICE.payg.pack100k, scripts: 14 },
+    { label: "500,000", price: "$15.19", id: PRICE.payg.pack500k, scripts: 70, popular: true },
+    { label: "1,000,000", price: "$24.99", id: PRICE.payg.pack1m, scripts: 140 },
+  ].map((p) => (
+    <div
+      key={p.id}
+      className="group relative flex flex-col rounded-lg border border-gray-700 bg-gray-900 p-4 transition-shadow hover:shadow-md hover:shadow-black/30"
+    >
+      {p.popular && (
+        <span className="absolute top-3 right-3 rounded-full bg-purple-600 px-2 py-0.5 text-[10px] font-bold text-white">
+          Best Value
+        </span>
+      )}
 
-        <div className="text-lg font-bold text-white">{p.label}</div>
-        <div className="mt-0.5 text-xs text-gray-400">tokens</div>
-        <div className="mt-2 text-xl font-semibold text-green-300">{p.price}</div>
-        <div className="mt-1 text-[11px] text-gray-500">≈ {p.scripts} medium scripts</div>
+      <div className="text-lg font-bold text-white">{p.label}</div>
+      <div className="mt-0.5 text-xs text-gray-400">tokens</div>
+      <div className="mt-2 text-xl font-semibold text-green-300">{p.price}</div>
+      <div className="mt-1 text-[11px] text-gray-500">≈ {p.scripts} medium scripts</div>
 
-        <button
-          type="button"
-          onClick={() => handleCheckout(p.id, "payment")}
-          disabled={checkoutLoading || portalLoading}
-          className="mt-auto inline-flex items-center justify-center rounded-md bg-gray-100 px-3 py-1.5 text-sm font-semibold text-gray-900 transition hover:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-400"
-        >
-          Buy {p.label.replace(/,000$/, "k").replace(/,000,000$/, " 1M").replace(",", "")}
-        </button>
-      </div>
-    ))}
-  </div>
+      <span className="mt-auto inline-flex items-center justify-center rounded-md bg-yellow-500/90 px-3 py-1.5 text-sm font-semibold text-white shadow focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-400">
+        Coming Soon
+      </span>
+    </div>
+  ))}
+</div>
 
   <div className="mt-4 text-center text-xs text-gray-500">
     PAYG tokens never expire and are used automatically when subscription tokens run out.

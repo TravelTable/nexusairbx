@@ -19,6 +19,8 @@ import {
   CheckCircle,
   Lock,
 } from "lucide-react";
+import NexusRBXHeader from "../components/NexusRBXHeader";
+import NexusRBXFooter from "../components/NexusRBXFooter";
 import { getEntitlements, startCheckout, openPortal } from "../lib/billing";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
@@ -1108,104 +1110,27 @@ function PlanComparisonTable() {
   return (
     <div className="min-h-screen bg-[#0D0D0D] text-white font-sans flex flex-col">
       {/* Header */}
-      <header className="border-b border-gray-800 bg-black/30 backdrop-blur-md sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-3 flex justify-between items-center">
-          <div className="flex items-center">
-            <div
-              className="text-2xl font-bold bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-transparent bg-clip-text cursor-pointer"
-              tabIndex={0}
-              onClick={() => window.location.href = "/"}
-              onKeyDown={e => { if (e.key === "Enter") window.location.href = "/"; }}
-              style={{
-                WebkitTextStroke: "0.5px #fff8",
-                textShadow: "0 1px 8px #0008",
-              }}
-            >
-              NexusRBX
-            </div>
-            <div className="ml-2 text-sm text-gray-400">Pricing</div>
-          </div>
-
-          <nav className="hidden md:flex space-x-6 items-center">
-            <a
-              href="/"
-              className="text-gray-300 hover:text-white transition-colors duration-300 flex items-center focus:ring-2 focus:ring-purple-400 focus:ring-offset-2"
-            >
-              <Home className="h-4 w-4 mr-1" />
-              Home
-            </a>
-            <a
-              href="/ai"
-              className="text-gray-300 hover:text-white transition-colors duration-300 focus:ring-2 focus:ring-purple-400 focus:ring-offset-2"
-            >
-              AI Console
-            </a>
-            <a
-              href="/docs"
-              className="text-gray-300 hover:text-white transition-colors duration-300 flex items-center focus:ring-2 focus:ring-purple-400 focus:ring-offset-2"
-            >
-              <BookOpen className="h-4 w-4 mr-1" />
-              Docs
-            </a>
-            <a
-              href="/contact"
-              className="text-gray-300 hover:text-white transition-colors duration-300 focus:ring-2 focus:ring-purple-400 focus:ring-offset-2"
-            >
-              Contact
-            </a>
-            {!user ? (
-              <button
-                onClick={handleLogin}
-                className="ml-4 text-gray-300 hover:text-white transition-colors duration-300 font-sans text-base focus:ring-2 focus:ring-purple-400 focus:ring-offset-2"
-                type="button"
-                aria-label="Login"
-                style={{
-                  background: "none",
-                  border: "none",
-                  padding: 0,
-                  margin: 0,
-                  cursor: "pointer"
-                }}
-              >
-                Login
-              </button>
-            ) : (
-              <button
-                onClick={handleLogout}
-                className="ml-4 text-gray-300 hover:text-white transition-colors duration-300 font-sans text-base focus:ring-2 focus:ring-purple-400 focus:ring-offset-2"
-                type="button"
-                aria-label="Logout"
-                style={{
-                  background: "none",
-                  border: "none",
-                  padding: 0,
-                  margin: 0,
-                  cursor: "pointer"
-                }}
-              >
-                Logout
-              </button>
-            )}
-          </nav>
-
-          <button className="md:hidden text-gray-300" aria-label="Open menu">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-6 w-6"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M4 6h16M4 12h16M4 18h16"
-              />
-            </svg>
-          </button>
-        </div>
-      </header>
+      <NexusRBXHeader
+        navLinks={[
+          { id: 1, text: "Home", href: "/", icon: Home },
+          { id: 2, text: "AI Console", href: "/ai" },
+          { id: 3, text: "Docs", href: "/docs", icon: BookOpen },
+          { id: 4, text: "Contact", href: "/contact" },
+        ]}
+        handleNavClick={(href, external) => (e) => {
+          e.preventDefault();
+          if (external) {
+            window.open(href, "_blank", "noopener noreferrer");
+          } else {
+            navigate(href);
+          }
+        }}
+        navigate={navigate}
+        user={user}
+        handleLogin={handleLogin}
+        tokenInfo={entitlements}
+        tokenLoading={entStatus === "loading"}
+      />
 
       <main className="flex-grow">
         <div className="max-w-6xl mx-auto px-4 py-8">
@@ -1385,6 +1310,20 @@ function PlanComparisonTable() {
                 ) {
                   isCurrentPlan = true;
                 }
+                if (plan.id === "free") {
+  if (!user) {
+    navigate("/signup");
+  } else {
+    // If coming from checkout success, clean up URL
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("checkout") === "success") {
+      params.delete("checkout");
+      window.history.replaceState({}, "", window.location.pathname + (params.toString() ? "?" + params.toString() : ""));
+    }
+    navigate("/ai");
+  }
+  return;
+}
                 if (
                   plan.id === "team" &&
                   entitlements.plan === "TEAM" &&
@@ -1529,67 +1468,56 @@ function PlanComparisonTable() {
               Buy tokens that never expire. Perfect for bursts or topping up mid‑month.
             </p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {[
-                {
-                  name: "Top‑Up 100k",
-                  tokens: 100_000,
-                  price: 4.99,
-                  priceId: PRICE.payg.pack100k,
-                },
-                {
-                  name: "Top‑Up 500k",
-                  tokens: 500_000,
-                  price: 15.19,
-                  priceId: PRICE.payg.pack500k,
-                  popular: true,
-                },
-                {
-                  name: "Top‑Up 1M",
-                  tokens: 1_000_000,
-                  price: 24.99,
-                  priceId: PRICE.payg.pack1m,
-                },
-              ].map((p) => {
-                if (!isValidPriceId(p.priceId)) return null;
-                return (
-                  <div
-                    key={p.name}
-                    className="bg-gray-900/30 border border-gray-800 rounded-xl p-5 flex flex-col items-center"
-                  >
-                    {p.popular && (
-                      <div className="mb-2">
-                        <span className="bg-yellow-400/90 text-gray-900 text-xs font-bold px-2 py-0.5 rounded-full">
-                          Best value
-                        </span>
-                      </div>
-                    )}
-                    <div className="text-lg font-semibold mb-1">{p.name}</div>
-                    <div className="text-gray-400 mb-1">
-                      {p.tokens.toLocaleString()} tokens • ≈{" "}
-                      {Math.round(p.tokens / 7000)} medium scripts
-                    </div>
-                    <div className="text-xs text-gray-500 mb-2">
-                      Based on ~7k tokens per script.
-                    </div>
-                    <div className="text-2xl font-bold mb-3">${p.price}</div>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (!user) {
-                          handleLogin();
-                          return;
-                        }
-                        handleCheckout(p.priceId, "payment");
-                      }}
-                      className="w-full py-2 px-4 rounded-lg bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-white font-medium hover:translate-y-[-2px] transition-all duration-200 focus:ring-2 focus:ring-purple-400 focus:ring-offset-2"
-                      disabled={checkoutState === CHECKOUT_STATES.starting || portalLoading}
-                    >
-                      {user ? `Choose ${p.tokens >= 1000000 ? "1M" : p.tokens / 1000 + "k"}` : "Login to Choose"}
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
+  {[
+    {
+      name: "Top‑Up 100k",
+      tokens: 100_000,
+      price: 4.99,
+      priceId: PRICE.payg.pack100k,
+    },
+    {
+      name: "Top‑Up 500k",
+      tokens: 500_000,
+      price: 15.19,
+      priceId: PRICE.payg.pack500k,
+      popular: true,
+    },
+    {
+      name: "Top‑Up 1M",
+      tokens: 1_000_000,
+      price: 24.99,
+      priceId: PRICE.payg.pack1m,
+    },
+  ].map((p) => {
+    if (!isValidPriceId(p.priceId)) return null;
+    return (
+      <div
+        key={p.name}
+        className="bg-gray-900/30 border border-gray-800 rounded-xl p-5 flex flex-col items-center"
+      >
+        {p.popular && (
+          <div className="mb-2">
+            <span className="bg-yellow-400/90 text-gray-900 text-xs font-bold px-2 py-0.5 rounded-full">
+              Best value
+            </span>
+          </div>
+        )}
+        <div className="text-lg font-semibold mb-1">{p.name}</div>
+        <div className="text-gray-400 mb-1">
+          {p.tokens.toLocaleString()} tokens • ≈{" "}
+          {Math.round(p.tokens / 7000)} medium scripts
+        </div>
+        <div className="text-xs text-gray-500 mb-2">
+          Based on ~7k tokens per script.
+        </div>
+        <div className="text-2xl font-bold mb-3">${p.price}</div>
+        <span className="w-full py-2 px-4 rounded-lg bg-yellow-500/90 text-white font-semibold text-center shadow focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 focus-visible:ring-offset-2">
+          Coming Soon
+        </span>
+      </div>
+    );
+  })}
+</div>
             <p className="text-center text-gray-500 text-sm mt-3">
               Packs do not expire. Applied instantly after checkout.
             </p>
@@ -1777,23 +1705,31 @@ function PlanComparisonTable() {
               Join thousands of developers creating amazing Roblox experiences with the power of AI.
             </p>
             <div className="flex flex-col sm:flex-row justify-center gap-4">
-              {!user ? (
-                <button
-                  type="button"
-                  onClick={() => navigate("/signup")}
-                  className="px-8 py-3 rounded-lg bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-white font-medium hover:translate-y-[-2px] transition-all duration-200 focus:ring-2 focus:ring-purple-400 focus:ring-offset-2"
-                >
-                  Get Started Free
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => navigate("/ai")}
-                  className="px-8 py-3 rounded-lg bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-white font-medium hover:translate-y-[-2px] transition-all duration-200 focus:ring-2 focus:ring-purple-400 focus:ring-offset-2"
-                >
-                  Open AI Console
-                </button>
-              )}
+ {!user ? (
+  <button
+    type="button"
+    onClick={() => navigate("/signup")}
+    className="px-8 py-3 rounded-lg bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-white font-medium hover:translate-y-[-2px] transition-all duration-200 focus:ring-2 focus:ring-purple-400 focus:ring-offset-2"
+  >
+    Get Started Free
+  </button>
+) : (
+  <button
+    type="button"
+    onClick={() => {
+      // If coming from checkout success, clean up URL
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("checkout") === "success") {
+        params.delete("checkout");
+        window.history.replaceState({}, "", window.location.pathname + (params.toString() ? "?" + params.toString() : ""));
+      }
+      navigate("/ai");
+    }}
+    className="px-8 py-3 rounded-lg bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-white font-medium hover:translate-y-[-2px] transition-all duration-200 focus:ring-2 focus:ring-purple-400 focus:ring-offset-2"
+  >
+    Open AI Console
+  </button>
+)}
               <button
                 type="button"
                 onClick={() => navigate("/contact")}
@@ -1845,49 +1781,10 @@ function PlanComparisonTable() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-gray-800 py-5 px-4 bg-black/40">
-        <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center">
-          <div className="flex items-center mb-3 md:mb-0">
-            <div className="text-xl font-bold bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-transparent bg-clip-text mr-2"
-              style={{
-                WebkitTextStroke: "0.5px #fff8",
-                textShadow: "0 1px 8px #0008",
-              }}
-            >
-              NexusRBX
-            </div>
-            <div className="text-sm text-gray-400">Pricing</div>
-          </div>
-          <div className="flex flex-wrap justify-center gap-6">
-            <a
-              href="/terms"
-              className="text-gray-400 hover:text-white transition-colors duration-200 focus:ring-2 focus:ring-purple-400 focus:ring-offset-2"
-            >
-              Terms
-            </a>
-            <a
-              href="/privacy"
-              className="text-gray-400 hover:text-white transition-colors duration-200 focus:ring-2 focus:ring-purple-400 focus:ring-offset-2"
-            >
-              Privacy
-            </a>
-            <a
-              href="/contact"
-              className="text-gray-400 hover:text-white transition-colors duration-200 focus:ring-2 focus:ring-purple-400 focus:ring-offset-2"
-            >
-              Contact
-            </a>
-          </div>
-        </div>
-        <div className="max-w-6xl mx-auto mt-3 text-center text-gray-500 text-xs flex flex-col items-center gap-1">
-          <span>
-            © {new Date().getFullYear()} NexusRBX. All rights reserved.
-          </span>
-          <span className="flex items-center gap-1 text-gray-400">
-            <Lock className="h-3 w-3" /> PCI-compliant. Secure payments by Stripe.
-          </span>
-        </div>
-      </footer>
+      <NexusRBXFooter
+        page="pricing"
+        navigate={navigate}
+      />
     </div>
   );
 }
