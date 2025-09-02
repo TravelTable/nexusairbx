@@ -600,13 +600,34 @@ app.post("/api/generate/outline", verifyFirebaseToken, userLimiter, asyncHandler
     { heading: "Controls",             bulletPoints: [] },
     { heading: "How It Should Act",    bulletPoints: [] },
   ];
-  const bulletRegex = /^[\s*-•]+\s*(.+)$/gm;
-  let m;
-  while ((m = bulletRegex.exec(explanationRaw)) !== null) {
-    sections[1].bulletPoints.push(m[1]);
+  // Parse each section for bullet points
+const sectionOrder = [
+  { heading: "Control Explanation",  regex: /2\.\s*\*\*In-Depth UI Technique Description\*\*[\s\S]*?3\.\s*\*\*Control Explanation Section\*\*([\s\S]*?)4\.\s*\*\*Features\*\*/i },
+  { heading: "Features",             regex: /4\.\s*\*\*Features\*\*([\s\S]*?)5\.\s*\*\*Controls\*\*/i },
+  { heading: "Controls",             regex: /5\.\s*\*\*Controls\*\*([\s\S]*?)6\.\s*\*\*How It Should Act\*\*/i },
+  { heading: "How It Should Act",    regex: /6\.\s*\*\*How It Should Act\*\*([\s\S]*?)(?:7\.|\*\*Roblox LocalScript Code\*\*|$)/i },
+];
+
+for (let i = 0; i < sectionOrder.length; i++) {
+  const { heading, regex } = sectionOrder[i];
+  const match = explanationRaw.match(regex);
+  if (match && match[1]) {
+    const bullets = [];
+    const bulletRegex = /^[\s*-•]+\s*(.+)$/gm;
+    let m;
+    while ((m = bulletRegex.exec(match[1])) !== null) {
+      bullets.push(m[1]);
+    }
+    sections[i].bulletPoints = bullets;
+    // For "How It Should Act", if no bullets, just add the raw text
+    if (heading === "How It Should Act" && bullets.length === 0) {
+      const text = match[1].trim();
+      if (text) sections[i].bulletPoints = [text];
+    }
   }
-  const outline = sections.filter(s => s.bulletPoints.length || s.heading === "How It Should Act");
-  res.json({ outline });
+}
+const outline = sections.filter(s => s.bulletPoints.length || s.heading === "How It Should Act");
+res.json({ outline });
 
   await firestore.collection('analytics').add({
     uid: req.user.uid,
@@ -965,6 +986,18 @@ app.get("/api/jobs/:jobId", verifyFirebaseToken, readLimiter, asyncHandler(async
   });
 }));
 
+// --- /api/generate/:jobId/cancel (CANCEL JOB) ---
+app.post("/api/generate/:jobId/cancel", verifyFirebaseToken, asyncHandler(async (req, res) => {
+  const { jobId } = req.params;
+  const job = getJob(jobId);
+  if (!job) return res.status(404).json({ error: "Job not found" });
+  if (job.userId && job.userId !== req.user.uid) return res.status(403).json({ error: "Forbidden" });
+  if (job.status === "succeeded" || job.status === "failed" || job.status === "canceled") {
+    return res.json({ ok: true, status: job.status });
+  }
+  updateJob(jobId, { status: "canceled", stage: "canceled", error: "Canceled by user" });
+  return res.json({ ok: true, status: "canceled" });
+}));
 // --- VERSIONED SCRIPT STORAGE ENDPOINTS ---
 
 // Create a new script (v1)
@@ -1378,6 +1411,60 @@ app.delete("/api/scripts/:scriptId", verifyFirebaseToken, asyncHandler(async (re
   await batch.commit();
 
   res.json({ success: true });
+}));
+
+// ---- USER SETTINGS ----
+
+// GET user settings
+app.get("/api/user/settings", verifyFirebaseToken, asyncHandler(async (req, res) => {
+  const userId = req.user.uid;
+  const doc = await firestore.collection("users").doc(userId).collection("meta").doc("settings").get();
+  res.json(doc.exists ? doc.data() : {});
+}));
+
+// POST/PUT user settings
+app.post("/api/user/settings", verifyFirebaseToken, asyncHandler(async (req, res) => {
+  const userId = req.user.uid;
+  const settings = req.body || {};
+  await firestore.collection("users").doc(userId).collection("meta").doc("settings").set(settings, { merge: true });
+  res.json({ ok: true });
+}));
+
+// ---- USER PROMPT TEMPLATES ----
+
+// GET all templates
+app.get("/api/user/templates", verifyFirebaseToken, asyncHandler(async (req, res) => {
+  const userId = req.user.uid;
+  const snap = await firestore.collection("users").doc(userId).collection("templates").get();
+  const templates = [];
+  snap.forEach(doc => templates.push({ id: doc.id, ...doc.data() }));
+  res.json({ templates });
+}));
+
+// POST new template
+app.post("/api/user/templates", verifyFirebaseToken, asyncHandler(async (req, res) => {
+  const userId = req.user.uid;
+  const { name, content } = req.body;
+  if (!name || !content) return res.status(400).json({ error: "Missing name or content" });
+  const doc = await firestore.collection("users").doc(userId).collection("templates").add({ name, content });
+  res.json({ id: doc.id, name, content });
+}));
+
+// PUT update template
+app.put("/api/user/templates/:templateId", verifyFirebaseToken, asyncHandler(async (req, res) => {
+  const userId = req.user.uid;
+  const { templateId } = req.params;
+  const { name, content } = req.body;
+  await firestore.collection("users").doc(userId).collection("templates").doc(templateId).set({ name, content }, { merge: true });
+  res.json({ ok: true });
+}));
+
+// DELETE template
+app.delete("/api/user/templates/:templateId", verifyFirebaseToken, asyncHandler(async (req, res) => {
+  const userId = req.user.uid;
+  const { templateId } = req.params;
+  await firestore.collection("users").doc(userId).collection("templates").doc(templateId).delete();
+  res.json({ ok: true });
 }));
 
 // Alias: /api/projects/:projectId (Delete)

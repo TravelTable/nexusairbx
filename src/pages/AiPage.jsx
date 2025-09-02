@@ -839,39 +839,60 @@ async function fireTelemetry(event, data = {}) {
   // Example: window.analytics?.track(event, data);
 }
 
+const MIN_PROMPT_LENGTH = 8;
+const SUMMARY_THRESHOLD = 0.8; // offer summarize modal if >80% of plan cap
+
 const handleSubmit = async (e, opts = {}) => {
   if (e) e.preventDefault();
   if (isGenerating) return;
 
-  // 1. Input & plan validation (client-side hints only)
-  let rawPrompt = typeof prompt === "string" ? prompt : "";
-  let cleanedPrompt = rawPrompt.replace(/\s+/g, " ").trim();
+  const cap = planInfo?.promptCap ?? 2000;
+
+  // 1) Clean prompt
+  const raw = typeof prompt === "string" ? prompt : "";
+  const cleanedPrompt = raw.replace(/\s+/g, " ").trim();
+
   if (!cleanedPrompt) {
     setPromptError("Please enter a prompt.");
     return;
   }
-  if (cleanedPrompt.length < 8) {
+  if (cleanedPrompt.length < MIN_PROMPT_LENGTH) {
     setPromptError("Prompt too short. Please be more specific.");
     return;
   }
-  if (planInfo && cleanedPrompt.length > planInfo.promptCap) {
-    setPromptError(
-      `Prompt too long (max ${planInfo.promptCap} characters for your plan).`
-    );
+  if (cleanedPrompt.length > cap) {
+    setPromptError(`Prompt too long (max ${cap} characters for your plan).`);
     return;
   }
-  // UX note: backend is source of truth; client checks are hints only
 
-  // 18. Large prompt safeguard: offer summarization if near cap
-  if (
-    planInfo &&
-    cleanedPrompt.length > 0.8 * planInfo.promptCap &&
-    !opts.skipSummarize
-  ) {
+  // 2) If near cap, offer to summarize (UX)
+  if (!opts.skipSummarize && cleanedPrompt.length > SUMMARY_THRESHOLD * cap) {
     setShowSummarizeModal(true);
     setSummarizedPrompt(cleanedPrompt);
     return;
   }
+
+  // 3) Require sign-in
+  if (!user) {
+    notify({ message: "Sign in required.", type: "error", duration: 2000 });
+    navigate("/signin");
+    return;
+  }
+
+  // 4) Token guard
+  if (typeof tokensLeft === "number" && tokensLeft <= 0) {
+    notify({
+      message: planKey === "free"
+        ? "You’ve used your free monthly token allowance."
+        : `You’ve reached your monthly limit for the ${planKey} plan.`,
+      type: "error",
+      duration: 6000,
+      cta: { label: planKey === "free" ? "Choose a Plan" : "Upgrade Plan", onClick: () => navigate("/subscribe") },
+    });
+    return;
+  }
+
+  // 5) Proceed (you already have the rest: setIsGenerating, placeholders, fetch, SSE, etc.)
 
   // 19. Duplicate submission detection
   const promptHash = await sha256(
@@ -917,35 +938,6 @@ const handleSubmit = async (e, opts = {}) => {
     settings,
     projectId: currentScriptId,
   });
-
-  // 14. UX polish on notifications: sign-in required → direct route
-  if (!user) {
-    setIsGenerating(false);
-    setGenerationStep("idle");
-    navigate("/signin");
-    notify({
-      message: "Sign in required.",
-      type: "error",
-      duration: 2000,
-    });
-    return;
-  }
-
-  // 1. Token check (client-side hint only)
-  if (typeof tokensLeft === "number" && tokensLeft <= 0) {
-    setIsGenerating(false);
-    setGenerationStep("idle");
-    notify({
-      message: planInfo.toastZero,
-      type: "error",
-      duration: 6000,
-      cta: {
-        label: "Upgrade",
-        onClick: () => navigate("/subscribe"),
-      },
-    });
-    return;
-  }
 
   // 16. Prevent accidental multi-project writes
   let projectIdToSend = undefined;
@@ -1017,34 +1009,68 @@ const handleSubmit = async (e, opts = {}) => {
     // 5. Polling → SSE (or WS) for progress
     // 15. Guard against stale user: refresh token on 401
     let idToken = await user.getIdToken();
-    let res = await fetch(`${BACKEND_URL}/api/generate`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${idToken}`,
+// 1. Get explanation first (optional, for outline/future use)
+let explanationRes = await fetch(`${BACKEND_URL}/api/generate-explanation`, {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${idToken}`,
+  },
+  body: JSON.stringify({ prompt: cleanedPrompt, conversation: [] }),
+});
+await mustOk(explanationRes, "Generate Explanation");
+const explanationData = await explanationRes.json();
+const explanation = explanationData.explanation;
+
+// 2. Now call generate-artifact (async job system) with explanation, outline, and conversation
+let artifactRes = await fetch(`${BACKEND_URL}/api/generate/artifact`, {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${idToken}`,
+    "Idempotency-Key": requestId,
+  },
+  body: JSON.stringify({
+    ...reqBody,
+    outline: [], // You can pass outline if you have it, else empty
+    conversation: [],
+    settings: {
+      model: settings.modelVersion,
+      temperature: settings.creativity,
+      codeStyle: settings.codeStyle,
+    },
+  }),
+});
+if (artifactRes.status === 401 && !retriedToken) {
+  await user.getIdToken(true);
+  idToken = await user.getIdToken();
+  retriedToken = true;
+  artifactRes = await fetch(`${BACKEND_URL}/api/generate/artifact`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${idToken}`,
+      "Idempotency-Key": requestId,
+    },
+    body: JSON.stringify({
+      ...reqBody,
+      outline: [],
+      conversation: [],
+      settings: {
+        model: settings.modelVersion,
+        temperature: settings.creativity,
+        codeStyle: settings.codeStyle,
       },
-      body: JSON.stringify(reqBody),
-    });
+    }),
+  });
+}
 
-    if (res.status === 401 && !retriedToken) {
-      await user.getIdToken(true);
-      idToken = await user.getIdToken();
-      retriedToken = true;
-      res = await fetch(`${BACKEND_URL}/api/generate`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${idToken}`,
-        },
-        body: JSON.stringify(reqBody),
-      });
-    }
+await mustOk(artifactRes, "Generate Artifact");
 
-    await mustOk(res, "Generate");
-
-    const data = await res.json();
-if (!data || !data.jobId) throw { code: "BACKEND_ERROR", message: "No jobId returned from backend." };
-jobId = data.jobId;
+const artifactData = await artifactRes.json();
+if (!artifactData || !artifactData.jobId) throw { code: "BACKEND_ERROR", message: "No jobId returned from backend." };
+jobId = artifactData.jobId;
+const pipelineId = artifactData.pipelineId || jobId;
 
 // 13. Telemetry: job_accepted
 fireTelemetry("job_accepted", { jobId });
@@ -2078,7 +2104,8 @@ useEffect(() => {
               className="border-t border-gray-800 bg-black/30 px-2 md:px-4 py-4 flex flex-col items-center shadow-inner"
               aria-busy={isGenerating}
             >
-              <div className="w-full max-w-2xl mx-auto mb-4">
+              {/* Token meter */}
+<div className="w-full max-w-2xl mx-auto mb-4">
   <TokenBar
     tokensLeft={tokensLeft}
     tokensLimit={tokensLimit}
@@ -2086,11 +2113,15 @@ useEffect(() => {
     plan={planKey}
   />
 </div>
-              {/* Zero-token state */}
+
+{/* If out of tokens: show upgrade/portal CTA instead of form */}
 {typeof tokensLeft === "number" && tokensLeft <= 0 ? (
   <div className="w-full max-w-2xl mx-auto mt-2 flex flex-col gap-3 items-center">
-    {!isSubscriber && (
+    {planKey === "free" ? (
       <>
+        <div className="text-sm text-gray-300 text-center">
+          You’ve used your free monthly token allowance.
+        </div>
         <button
           type="button"
           className="px-4 py-2 rounded bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-white font-semibold shadow hover:scale-105 transition-transform"
@@ -2098,117 +2129,81 @@ useEffect(() => {
         >
           Choose a Plan
         </button>
+      </>
+    ) : (
+      <>
+        <div className="text-sm text-red-400 text-center">
+          You’ve reached the monthly limit for the {planKey.charAt(0).toUpperCase() + planKey.slice(1)} plan.
+        </div>
         <button
           type="button"
-          className="px-4 py-2 rounded bg-gray-800 text-white font-semibold shadow hover:bg-gray-700 transition-colors"
-          onClick={() => portal && portal()}
+          className="px-4 py-2 rounded bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-white text-sm font-semibold shadow hover:scale-105 transition-transform"
+          onClick={() => navigate("/subscribe")}
         >
-          Manage Billing
+          Upgrade Plan
         </button>
-        <div className="text-xs text-gray-400 mt-1">
-          Top-ups (Pay-As-You-Go) are coming soon.
-        </div>
       </>
     )}
   </div>
 ) : (
-  <form
-    onSubmit={handleSubmit}
-    className="w-full max-w-2xl mx-auto"
-    autoComplete="off"
-  >
-                  <div className="relative">
-                    <textarea
-                      ref={promptInputRef}
-                      value={typeof prompt === "string" ? prompt : ""}
-                      onChange={(e) => setPrompt(e.target.value)}
-                      onKeyDown={handlePromptKeyDown}
-                      placeholder={planInfo.promptPlaceholder}
-                      className={`w-full rounded-lg bg-gray-900/60 border border-gray-700 focus:border-[#9b5de5] focus:outline-none focus:ring-2 focus:ring-[#9b5de5]/50 transition-all duration-300 py-3 px-4 pr-14 resize-none shadow-lg ${
-                        promptError ? "border-red-500" : ""
-                      }`}
-                      rows="3"
-                      disabled={isGenerating}
-                      maxLength={planInfo.promptCap}
-                      aria-label="Prompt input"
-                    ></textarea>
-                    {/* Prompt Autocomplete Dropdown */}
-                    {promptAutocomplete.length > 0 && !isGenerating && (
-                      <div className="absolute left-0 right-0 top-full z-30 bg-gray-900 border border-gray-700 rounded-b-lg shadow-lg">
-                        {promptAutocomplete.map((sugg, i) => (
-                          <button
-                            key={i}
-                            type="button"
-                            className="block w-full text-left px-4 py-2 text-sm hover:bg-[#9b5de5]/20 text-gray-200"
-                            onClick={() => {
-                              setPrompt(sugg);
-                              setPromptAutocomplete([]);
-                            }}
-                          >
-                            <span className="font-semibold">{sugg}</span>
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                    <button
-                      type="submit"
-                      disabled={
-                        isGenerating ||
-                        !(typeof prompt === "string" && prompt.trim()) ||
-                        prompt.length > planInfo.promptCap ||
-                        (typeof tokensLeft === "number" && tokensLeft <= 0)
-                      }
-                      className={`absolute right-3 bottom-3 p-3 rounded-full shadow-lg transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-[#9b5de5] ${
-                        isGenerating ||
-                        !(typeof prompt === "string" && prompt.trim()) ||
-                        prompt.length > planInfo.promptCap ||
-                        (typeof tokensLeft === "number" && tokensLeft <= 0)
-                          ? "bg-gray-700 text-gray-400 cursor-not-allowed"
-                          : "bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-white hover:shadow-xl hover:scale-110"
-                      }`}
-                      aria-label="Send prompt"
-                      title={
-                        typeof tokensLeft === "number" && tokensLeft <= 0
-                          ? "Out of tokens — upgrade to continue."
-                          : "Enter to send • Shift+Enter for newline"
-                      }
-                    >
-                      {isGenerating ? (
-                        <Loader className="h-5 w-5 animate-spin" />
-                      ) : (
-                        <Send className="h-5 w-5" />
-                      )}
-                    </button>
-                  </div>
-                  <div className="flex justify-between items-center mt-2 text-xs text-gray-500">
-                    <div>
-                      <span className={promptCharCount > planInfo.promptCap ? "text-red-400" : ""}>
-                        {promptCharCount}/{planInfo.promptCap}
-                      </span>
-                      <span className="ml-2">Press Enter to submit</span>
-                    </div>
-                  </div>
-                  {promptError && (
-                    <div className="mt-2 text-xs text-red-400">{promptError}</div>
-                  )}
-                  {errorMsg && (
-                    <div className="mt-2 text-xs text-red-400">{errorMsg}</div>
-                  )}
-                  {!user && (
-                    <div className="mt-2 text-xs text-red-400">
-                      Sign in to generate scripts.
-                    </div>
-                  )}
-              {/* Plan upgrade nudge */}
-              {!isSubscriber && (
-                <div className="mt-2 text-xs text-[#9b5de5] underline cursor-pointer hover:text-[#00f5d4] transition-colors"
-                  onClick={() => navigate("/subscribe")}
-                >
-                  {planInfo.upgradeLine}
-                </div>
-              )}
-                </form>
-              )}
+  /* Prompt form */
+  <form onSubmit={handleSubmit} className="w-full max-w-2xl mx-auto" autoComplete="off">
+    <div className="relative">
+      <textarea
+        ref={promptInputRef}
+        value={prompt}
+        onChange={(e) => setPrompt(e.target.value)}
+        onKeyDown={handlePromptKeyDown}
+        placeholder={planInfo?.promptPlaceholder || "Describe the Roblox script you want..."}
+        className={`w-full rounded-lg bg-gray-900/60 border border-gray-700 focus:border-[#9b5de5] focus:ring-2 focus:ring-[#9b5de5]/50 transition-all duration-300 py-3 px-4 pr-14 resize-none shadow-lg ${
+          promptError ? "border-red-500" : ""
+        }`}
+        rows="3"
+        maxLength={planInfo?.promptCap ?? 2000}
+        disabled={isGenerating}
+        aria-label="Prompt input"
+      ></textarea>
+
+      <button
+        type="submit"
+        disabled={
+          isGenerating ||
+          !prompt.trim() ||
+          (planInfo?.promptCap ? prompt.length > planInfo.promptCap : false) ||
+          (typeof tokensLeft === "number" && tokensLeft <= 0)
+        }
+        className={`absolute right-3 bottom-3 p-3 rounded-full shadow-lg focus:outline-none focus:ring-2 focus:ring-[#9b5de5] ${
+          isGenerating ||
+          !prompt.trim() ||
+          (planInfo?.promptCap ? prompt.length > planInfo.promptCap : false) ||
+          (typeof tokensLeft === "number" && tokensLeft <= 0)
+            ? "bg-gray-700 text-gray-400 cursor-not-allowed"
+            : "bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-white hover:shadow-xl hover:scale-110"
+        }`}
+        aria-label="Send prompt"
+        title={
+          typeof tokensLeft === "number" && tokensLeft <= 0
+            ? "Out of tokens — upgrade to continue."
+            : "Enter to send • Shift+Enter for newline"
+        }
+      >
+        {isGenerating ? <Loader className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
+      </button>
+    </div>
+
+    <div className="flex justify-between items-center mt-2 text-xs text-gray-500">
+      <div>
+        <span className={(planInfo?.promptCap && prompt.length > planInfo.promptCap) ? "text-red-400" : ""}>
+          {promptCharCount}/{planInfo?.promptCap ?? 2000}
+        </span>
+        <span className="ml-2">Press Enter to submit</span>
+      </div>
+      {promptError && <div className="mt-2 text-xs text-red-400">{promptError}</div>}
+      {errorMsg && <div className="mt-2 text-xs text-red-400">{errorMsg}</div>}
+      {!user && <div className="mt-2 text-xs text-red-400">Sign in to generate scripts.</div>}
+    </div>
+  </form>
+)}
               {/* Fancy Loading Overlay */}
               <div className="w-full max-w-2xl mx-auto">
                 <FancyLoadingOverlay

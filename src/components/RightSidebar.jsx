@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Lock, Plus, Info } from "lucide-react";
 import { useBilling } from "../context/BillingContext";
+import { auth } from "../pages/firebase"; // Make sure this path is correct for your project
 
 /**
  * RightSidebar
@@ -27,8 +28,100 @@ export default function RightSidebar({
   promptSuggestionLoading,
   isMobile = false,
 }) {
+
+  // Load templates from backend
+  useEffect(() => {
+    async function fetchTemplates() {
+      const user = auth.currentUser;
+      if (!user) return;
+      const token = await user.getIdToken();
+      const res = await fetch("/api/user/templates", {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setUserPromptTemplates(data.templates || []);
+      }
+    }
+    fetchTemplates();
+  }, [setUserPromptTemplates]);
+
+  // Add, update, delete template functions
+  async function addTemplate(name, content) {
+    const user = auth.currentUser;
+    if (!user) return;
+    const token = await user.getIdToken();
+    const res = await fetch("/api/user/templates", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ name, content })
+    });
+    if (res.ok) {
+      const tpl = await res.json();
+      setUserPromptTemplates((prev) => [...prev, tpl]);
+    }
+  }
+
+  async function updateTemplate(id, name, content) {
+    const user = auth.currentUser;
+    if (!user) return;
+    const token = await user.getIdToken();
+    await fetch(`/api/user/templates/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ name, content })
+    });
+    setUserPromptTemplates((prev) =>
+      prev.map((tpl) => (tpl.id === id ? { ...tpl, name, content } : tpl))
+    );
+  }
+
+  async function deleteTemplate(id) {
+    const user = auth.currentUser;
+    if (!user) return;
+    const token = await user.getIdToken();
+    await fetch(`/api/user/templates/${id}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    setUserPromptTemplates((prev) => prev.filter((tpl) => tpl.id !== id));
+  }
+
+  // Load user settings from backend
+  useEffect(() => {
+    async function fetchSettings() {
+      const user = auth.currentUser;
+      if (!user) return;
+      const token = await user.getIdToken();
+      const res = await fetch("/api/user/settings", {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setSettings((prev) => ({ ...prev, ...data }));
+      }
+    }
+    fetchSettings();
+  }, [setSettings]);
+
+  // Save settings to backend on change
+  useEffect(() => {
+    async function saveSettings() {
+      const user = auth.currentUser;
+      if (!user) return;
+      const token = await user.getIdToken();
+      await fetch("/api/user/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify(settings)
+      });
+    }
+    if (settings) saveSettings();
+  }, [settings]);
+
   const {
     plan,
+    entitlements = [],
     modelsAllowed = [],
     templatesMax = 0,
     apiLevel,
@@ -36,19 +129,20 @@ export default function RightSidebar({
     refresh: refreshBilling,
   } = useBilling();
 
+  // Helper: check if user is pro or team by entitlements
+  const isProOrTeam = entitlements.includes("pro") || entitlements.includes("team");
+
   // For template quota
   const [showUpgradeBanner, setShowUpgradeBanner] = useState(false);
-  // For locked model selection
-  const [lockedModelBanner, setLockedModelBanner] = useState(null);
+// For locked model selection
+const [lockedModelBanner, setLockedModelBanner] = useState(null); // No longer used, but kept for legacy
 
-  // --- Model Picker Filtering ---
-  // Allowed models at top, locked below divider
-  const allowedModels = modelOptions.filter((m) =>
-    modelsAllowed.includes(m.value)
-  );
-  const lockedModels = modelOptions.filter(
-    (m) => !modelsAllowed.includes(m.value)
-  );
+// --- Model Picker Filtering ---
+// For this version, allow all models for everyone (even free users)
+const allowedModels = modelOptions;
+const lockedModels = [];
+const displayAllowedModels = modelOptions;
+const displayLockedModels = [];
 
   // --- Template Quota Meter ---
   // For demo: count userPromptTemplates as "used"
@@ -62,20 +156,19 @@ export default function RightSidebar({
       key: "advancedCreativity",
       label: "Advanced Creativity",
       description: "Unlock higher creativity settings for more flexible scripts.",
-      proOnly: true,
+      proOnly: true, // Only show as locked for non-pro/team
     },
     // Add more toggles as needed
   ];
 
+  // isProOrTeam is now based on entitlements above
+
   // --- Handle Model Change ---
-  function handleModelChange(e) {
-    const value = e.target.value;
-    if (!modelsAllowed.includes(value)) {
-      setLockedModelBanner(value);
-      return;
-    }
-    setSettings((prev) => ({ ...prev, modelVersion: value }));
-  }
+function handleModelChange(e) {
+  const value = e.target.value;
+  // All models are allowed for all users
+  setSettings((prev) => ({ ...prev, modelVersion: value }));
+}
 
   // --- Handle Add Template ---
   function handleAddTemplate() {
@@ -83,11 +176,8 @@ export default function RightSidebar({
       setShowUpgradeBanner(true);
       return;
     }
-    // Add a new template (for demo, just push a blank)
-    setUserPromptTemplates((prev) => [
-      ...prev,
-      { name: `Template ${prev.length + 1}`, content: "" },
-    ]);
+    // Add a new template (persist to backend)
+    addTemplate(`Template ${userPromptTemplates.length + 1}`, "");
   }
 
   // --- UI ---
@@ -105,9 +195,10 @@ export default function RightSidebar({
             )}
           </span>
         </div>
+
         <div className="flex flex-col gap-2">
           {/* Allowed models */}
-          {allowedModels.map((m) => (
+          {displayAllowedModels.map((m) => (
             <label
               key={m.value}
               className={`flex items-center gap-2 px-3 py-2 rounded cursor-pointer transition-colors ${
@@ -127,56 +218,13 @@ export default function RightSidebar({
               <span className="font-medium">{m.label}</span>
             </label>
           ))}
+
           {/* Locked models */}
-          {lockedModels.length > 0 && (
-            <>
-              <div className="my-2 border-t border-gray-800" />
-              <div className="text-xs text-gray-400 mb-1">Pro & Team</div>
-              {lockedModels.map((m) => (
-                <label
-                  key={m.value}
-                  className="flex items-center gap-2 px-3 py-2 rounded cursor-not-allowed opacity-60 relative group"
-                  title="Pro unlocks Nexus-4 (fast, accurate)."
-                >
-                  <input
-                    type="radio"
-                    name="model"
-                    value={m.value}
-                    checked={settings.modelVersion === m.value}
-                    onChange={handleModelChange}
-                    disabled
-                  />
-                  <span className="font-medium">{m.label}</span>
-                  <Lock className="w-4 h-4 text-[#9b5de5] ml-1" />
-                  <span className="absolute left-full ml-2 top-1/2 -translate-y-1/2 bg-gray-800 text-xs text-gray-200 px-2 py-1 rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
-                    Pro unlocks Nexus-4 (fast, accurate).
-                  </span>
-                </label>
-              ))}
-            </>
-          )}
+{/* No locked models for any user */}
         </div>
-        {/* Inline banner for locked model selection */}
-        {lockedModelBanner && (
-          <div className="mt-3 bg-[#9b5de5]/10 border border-[#9b5de5] text-[#9b5de5] px-3 py-2 rounded flex items-center gap-2 text-sm">
-            <Lock className="w-4 h-4" />
-            <span>
-              Nexus-4 is a Pro feature.
-            </span>
-            <button
-              className="ml-auto px-3 py-1 rounded bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-white text-xs font-semibold"
-              onClick={() => window.location.href = "/subscribe"}
-            >
-              Upgrade to Pro
-            </button>
-            <button
-              className="ml-2 text-xs text-gray-400 underline"
-              onClick={() => setLockedModelBanner(null)}
-            >
-              Dismiss
-            </button>
-          </div>
-        )}
+
+        {/* Inline “locked” banner when user tries to pick a locked model */}
+{/* No locked model banner needed, all models are available */}
       </div>
 
       {/* Creativity Picker */}
@@ -257,11 +305,33 @@ export default function RightSidebar({
           {userPromptTemplates && userPromptTemplates.length > 0 ? (
             userPromptTemplates.map((tpl, idx) => (
               <div
-                key={idx}
+                key={tpl.id || idx}
                 className="flex items-center gap-2 px-3 py-2 rounded bg-gray-800 text-gray-200 text-sm"
               >
                 <span className="flex-1">{tpl.name || `Template ${idx + 1}`}</span>
-                {/* Optionally: edit/delete buttons */}
+                <button
+                  className="text-xs text-[#9b5de5] underline"
+                  onClick={() => {
+                    const newName = prompt("Rename template:", tpl.name);
+                    if (newName && newName !== tpl.name) {
+                      updateTemplate(tpl.id, newName, tpl.content);
+                    }
+                  }}
+                  title="Rename"
+                >
+                  Rename
+                </button>
+                <button
+                  className="text-xs text-red-400 underline"
+                  onClick={() => {
+                    if (window.confirm("Delete this template?")) {
+                      deleteTemplate(tpl.id);
+                    }
+                  }}
+                  title="Delete"
+                >
+                  Delete
+                </button>
               </div>
             ))
           ) : (
@@ -337,7 +407,7 @@ export default function RightSidebar({
         <div className="font-semibold text-gray-200 mb-2">Advanced</div>
         <div className="flex flex-col gap-2">
           {advancedToggles.map((toggle) =>
-            toggle.proOnly && plan === "free" ? (
+            toggle.proOnly && !isProOrTeam ? (
               <div
                 key={toggle.key}
                 className="flex items-center gap-2 px-3 py-2 rounded bg-gray-800 text-gray-400 opacity-60"
@@ -368,6 +438,7 @@ export default function RightSidebar({
                     }))
                   }
                   className="accent-[#9b5de5]"
+                  disabled={toggle.proOnly && !isProOrTeam}
                 />
                 <span className="font-medium">{toggle.label}</span>
                 <span className="ml-2 text-xs text-gray-400">{toggle.description}</span>

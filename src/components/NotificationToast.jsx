@@ -68,14 +68,16 @@ export default function NotificationToast({
       role="alert"
       aria-live="assertive"
     >
-      <button
-        className="absolute top-2 right-2 text-gray-400 hover:text-white text-lg font-bold focus:outline-none"
-        onClick={handleClose}
-        aria-label="Close notification"
-        tabIndex={0}
-      >
-        ×
-      </button>
+{!leaving && (
+  <button
+    className="absolute top-2 right-2 text-gray-400 hover:text-white text-lg font-bold focus:outline-none"
+    onClick={handleClose}
+    aria-label="Close notification"
+    tabIndex={0}
+  >
+    ×
+  </button>
+)}
       <div className="pr-6 text-base">{message}</div>
       {children && (
         <div className="mt-2">{children}</div>

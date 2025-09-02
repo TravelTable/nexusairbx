@@ -1294,45 +1294,32 @@ function PlanComparisonTable() {
                 typeof plan.stripePriceId === "function"
                   ? plan.stripePriceId(billingCycle)
                   : plan.stripePriceId;
-              if (plan.id !== "free" && pid && !isValidPriceId(pid)) return null;
+if (plan.id !== "free" && pid && !isValidPriceId(pid)) return null;
 
-              // Determine if this is the user's current plan
-              let isCurrentPlan = false;
-              if (user && entitlements) {
-                if (plan.id === "free" && (!entitlements.plan || entitlements.plan === "FREE")) {
-                  isCurrentPlan = true;
-                }
-                if (
-                  plan.id === "pro" &&
-                  entitlements.plan === "PRO" &&
-                  ((billingCycle === "monthly" && entitlements.cycle === "MONTHLY") ||
-                    (billingCycle === "yearly" && entitlements.cycle === "YEARLY"))
-                ) {
-                  isCurrentPlan = true;
-                }
-                if (plan.id === "free") {
-  if (!user) {
-    navigate("/signup");
-  } else {
-    // If coming from checkout success, clean up URL
-    const params = new URLSearchParams(window.location.search);
-    if (params.get("checkout") === "success") {
-      params.delete("checkout");
-      window.history.replaceState({}, "", window.location.pathname + (params.toString() ? "?" + params.toString() : ""));
-    }
-    navigate("/ai");
+// Determine if this is the user's current plan
+let isCurrentPlan = false;
+if (user && entitlements) {
+  if (plan.id === "free") {
+    // Free plan is never "current" if user has upgraded, always show as selectable
+    isCurrentPlan = (!entitlements.plan || entitlements.plan === "FREE");
   }
-  return;
+  if (
+    plan.id === "pro" &&
+    entitlements.plan === "PRO" &&
+    ((billingCycle === "monthly" && entitlements.cycle === "MONTHLY") ||
+      (billingCycle === "yearly" && entitlements.cycle === "YEARLY"))
+  ) {
+    isCurrentPlan = true;
+  }
+  if (
+    plan.id === "team" &&
+    entitlements.plan === "TEAM" &&
+    ((billingCycle === "monthly" && entitlements.cycle === "MONTHLY") ||
+      (billingCycle === "yearly" && entitlements.cycle === "YEARLY"))
+  ) {
+    isCurrentPlan = true;
+  }
 }
-                if (
-                  plan.id === "team" &&
-                  entitlements.plan === "TEAM" &&
-                  ((billingCycle === "monthly" && entitlements.cycle === "MONTHLY") ||
-                    (billingCycle === "yearly" && entitlements.cycle === "YEARLY"))
-                ) {
-                  isCurrentPlan = true;
-                }
-              }
 
               return (
                 <div

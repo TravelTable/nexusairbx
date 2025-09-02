@@ -785,26 +785,27 @@ export default function SidebarContent({
     </div>
   );
 
-  // --- Version History Filtering and Locking ---
-  // Only show info bar if plan is free and historyDays is set
-  const showHistoryInfoBar = plan === "free" && !!historyDays;
+// --- Version History Filtering and Locking ---
+// Only show info bar and lock history if plan is free and historyDays is set
+const showHistoryInfoBar = plan === "free" && !!historyDays;
+const lockHistory = plan === "free" && !!historyDays;
 
-  // Compute cutoff timestamp (ms)
-  const historyCutoffMs =
-    historyDays && Number.isFinite(Number(historyDays))
-      ? Date.now() - Number(historyDays) * 24 * 60 * 60 * 1000
-      : null;
+// Compute cutoff timestamp (ms)
+const historyCutoffMs =
+  historyDays && Number.isFinite(Number(historyDays))
+    ? Date.now() - Number(historyDays) * 24 * 60 * 60 * 1000
+    : null;
 
-  // Partition versionHistory into unlocked and locked
-  const versionHistoryWithLock = useMemo(() => {
-    if (!Array.isArray(versionHistory)) return [];
-    return versionHistory.map((ver) => {
-      const createdAtMs = toMs(ver.createdAt);
-      const isLocked =
-        showHistoryInfoBar && historyCutoffMs !== null && createdAtMs < historyCutoffMs;
-      return { ...ver, isLocked, createdAtMs };
-    });
-  }, [versionHistory, showHistoryInfoBar, historyCutoffMs]);
+// Partition versionHistory into unlocked and locked
+const versionHistoryWithLock = useMemo(() => {
+  if (!Array.isArray(versionHistory)) return [];
+  return versionHistory.map((ver) => {
+    const createdAtMs = toMs(ver.createdAt);
+    const isLocked =
+      lockHistory && historyCutoffMs !== null && createdAtMs < historyCutoffMs;
+    return { ...ver, isLocked, createdAtMs };
+  });
+}, [versionHistory, lockHistory, historyCutoffMs]);
 
   // --- Notification handler for locked history ---
   const handleLockedHistoryClick = useCallback(() => {
