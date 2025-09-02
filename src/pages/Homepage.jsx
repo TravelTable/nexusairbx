@@ -1,3 +1,4 @@
+// IMPORTS BLOCK (with Helmet import added)
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Github, Zap, Settings, Shield, ChevronRight, Loader, Star, DollarSign } from "lucide-react";
@@ -8,6 +9,7 @@ import { auth } from "../firebase";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { getEntitlements } from "../lib/billing";
 import SubscribeTabContainer from "../components/SubscribeTabContainer";
+import { Helmet } from "react-helmet-async";
 
 // Container Component
 export default function NexusRBXHomepageContainer() {
@@ -134,7 +136,7 @@ export default function NexusRBXHomepageContainer() {
     {
       id: 1,
       title: "Script AI",
-      description: "Generate powerful Roblox scripts with a simple prompt",
+      description: "Generate powerful Roblox scripts with a simple prompt using our AI-powered script generator. Save time and boost your Roblox game development workflow.",
       icon: Zap,
       gradient: "from-purple-600 to-pink-500",
       button: { text: "Try Script AI", href: "/ai" },
@@ -142,7 +144,7 @@ export default function NexusRBXHomepageContainer() {
     {
       id: 2,
       title: "Premium",
-      description: "Unlock advanced AI, unlimited scripts, and more.",
+      description: "Unlock advanced AI, unlimited scripts, and more. Access exclusive Roblox scripting features and priority support with NexusRBX Premium.",
       icon: null, // We'll use the custom component instead of an icon
       gradient: "from-cyan-500 to-blue-600",
       button: { text: "Subscribe", href: "/subscribe" }, // Button will be replaced by the component
@@ -151,7 +153,7 @@ export default function NexusRBXHomepageContainer() {
     {
       id: 3,
       title: "Secure Testing",
-      description: "Validate your mods without risking your account",
+      description: "Validate your Roblox mods and scripts in a secure environment without risking your account. Test and debug with confidence.",
       icon: Shield,
       gradient: "from-pink-500 to-purple-600",
       button: { text: "Learn More", href: "/docs" },
@@ -219,7 +221,53 @@ function NexusRBXHomepage({
   tokenLoading
 }) {
   return (
+    // OPENING OF TOP-LEVEL CONTAINER WITH <Helmet> INSERTED
     <div className="min-h-screen bg-[#0D0D0D] text-white font-sans flex flex-col">
+      <Helmet>
+        <title>NexusRBX — AI Roblox Script Generator & Mod Builder</title>
+        <meta name="description" content="NexusRBX is the leading AI Roblox script generator and mod builder. Instantly create Roblox scripts, mods, and developer tools with artificial intelligence. Try Script AI, unlock Premium features, and test securely." />
+        <link rel="canonical" href={typeof window !== "undefined" ? window.location.origin : "https://nexusrbx.com"} />
+        <meta property="og:type" content="website" />
+        <meta property="og:site_name" content="NexusRBX" />
+        <meta property="og:title" content="NexusRBX — AI Roblox Script Generator & Mod Builder" />
+        <meta property="og:description" content="NexusRBX is the best AI-powered Roblox script generator and mod builder. Generate Roblox scripts, mods, and tools with AI. Fast, safe, and built for creators." />
+        <meta property="og:url" content={typeof window !== "undefined" ? window.location.href : "https://nexusrbx.com"} />
+        <meta property="og:image" content="/social-card.png" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="NexusRBX — AI Roblox Script Generator & Mod Builder" />
+        <meta name="twitter:description" content="NexusRBX is the #1 AI Roblox script generator and mod builder. Instantly create Roblox scripts, mods, and developer tools with artificial intelligence." />
+        <meta name="twitter:image" content="/social-card.png" />
+        <link rel="icon" href="/favicon.ico" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+        <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
+        <meta name="keywords" content="AI Roblox script generator, Roblox mod builder, Roblox scripting, Roblox AI, generate Roblox scripts, Roblox developer tools, Roblox Premium, secure Roblox testing, Roblox scripting docs, Roblox AI features" />
+        <meta name="author" content="NexusRBX" />
+        <meta name="theme-color" content="#0D0D0D" />
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context":"https://schema.org",
+            "@type":"Organization",
+            "name":"NexusRBX",
+            "url":"https://nexusrbx.com",
+            "logo":"/logo.png",
+            "sameAs":[ "https://discord.gg/", "https://github.com/TravelTable/nexusairbx" ]
+          })}
+        </script>
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context":"https://schema.org",
+            "@type":"SoftwareApplication",
+            "name":"NexusRBX",
+            "applicationCategory":"DeveloperApplication",
+            "operatingSystem":"Web",
+            "description":"NexusRBX is an AI-powered Roblox scripting and mod builder platform. Instantly generate Roblox scripts, mods, and developer tools with artificial intelligence.",
+            "image":"/social-card.png",
+            "offers":{ "@type":"Offer", "price":"14.99", "priceCurrency":"USD" }
+          })}
+        </script>
+      </Helmet>
+
       {/* Header */}
       <NexusRBXHeader
         navLinks={navLinks}
@@ -232,16 +280,25 @@ function NexusRBXHomepage({
       />
 
       <main className="flex-grow">
-        {/* Hero Section */}
+        {/* HERO SECTION BLOCK WITH H1 + PARAGRAPH CHANGES AND HERO IMAGE PLACEHOLDER */}
         <section className="min-h-[70vh] flex items-center justify-center py-16 px-4">
           <div className="max-w-4xl mx-auto text-center space-y-8 animate-fade-in">
             <h1 className="text-4xl md:text-6xl font-bold bg-gradient-to-r from-[#9b5de5] via-[#f15bb5] to-[#00f5d4] text-transparent bg-clip-text">
-              Welcome to NexusRBX
+              AI Roblox Script Generator & Mod Builder — NexusRBX
             </h1>
             <p className="text-xl md:text-2xl text-gray-300 max-w-3xl mx-auto">
-              AI-powered Roblox scripting & simulation — no downloads, just innovation.
+              Build Roblox mods and scripts in minutes with our <a href="/ai" className="underline decoration-[#9b5de5]/60 hover:decoration-[#9b5de5]">AI script generator</a>. Explore our <a href="/docs" className="underline decoration-[#00f5d4]/60 hover:decoration-[#00f5d4]">Roblox scripting documentation</a> and unlock <a href="/subscribe" className="underline decoration-[#f15bb5]/60 hover:decoration-[#f15bb5]">Premium AI features</a> for advanced Roblox development. NexusRBX helps you generate, test, and deploy Roblox scripts faster and more securely.
             </p>
-
+            <img
+              src="/hero-placeholder.webp"
+              alt="AI Roblox script generator and mod builder interface"
+              width="1600"
+              height="900"
+              loading="eager"
+              decoding="async"
+              fetchpriority="high"
+              className="mx-auto rounded-2xl border border-gray-800 shadow-lg w-full max-w-5xl mt-6"
+            />
             <form
               onSubmit={handleSubmit}
               className="mt-8 flex flex-col md:flex-row gap-3 max-w-2xl mx-auto"
@@ -259,12 +316,14 @@ function NexusRBXHomepage({
                   }
                 }}
                 aria-label="Type your Roblox mod idea"
+                autoComplete="off"
+                name="roblox-mod-idea"
               />
               <button
                 type="submit"
                 className="px-6 py-3 rounded-lg bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-white font-medium hover:shadow-lg hover:shadow-[#9b5de5]/20 transform hover:translate-y-[-2px] transition-all duration-300 flex items-center justify-center"
                 disabled={!inputValue.trim() || loading}
-                aria-label="Generate with AI"
+                aria-label="Generate Roblox script with AI"
               >
                 {loading ? (
                   <>
@@ -288,15 +347,18 @@ function NexusRBXHomepage({
           </div>
         </section>
 
-
-
-        {/* Feature Cards */}
+        {/* FEATURES SECTION OPENING WITH H2 AND SAMPLE CARD WITH IMAGE PLACEHOLDER */}
         <section className="py-16 px-4">
+          <h2 className="text-2xl md:text-3xl font-bold text-center mb-12 bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-transparent bg-clip-text">
+            AI Roblox Scripting Features
+          </h2>
           <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
             {featureCards.map((card) => (
-              <div
+              <article
                 key={card.id}
                 className="relative overflow-hidden rounded-xl bg-gray-900/40 backdrop-blur-sm border border-gray-800 p-6 hover:border-gray-700 transition-all duration-500 group flex flex-col"
+                itemScope
+                itemType="https://schema.org/Service"
               >
                 <div
                   className={`absolute inset-0 bg-gradient-to-br ${card.gradient} opacity-0 group-hover:opacity-10 transition-opacity duration-500`}
@@ -305,11 +367,22 @@ function NexusRBXHomepage({
 
                 <div className="relative flex-1">
                   {card.isSubscribeTab ? (
-                    <SubscribeTabContainer
-                      onSubscribe={() => navigate("/subscribe")}
-                      isSubscribed={false}
-                      className="!bg-transparent !border-none !shadow-none p-0"
-                    />
+                    <>
+                      <SubscribeTabContainer
+                        onSubscribe={() => navigate("/subscribe")}
+                        isSubscribed={false}
+                        className="!bg-transparent !border-none !shadow-none p-0"
+                      />
+                      <img
+                        src="/feature-premium.webp"
+                        alt="Premium AI features for Roblox development"
+                        width="800"
+                        height="600"
+                        loading="lazy"
+                        decoding="async"
+                        className="rounded-lg border border-gray-800 mb-4 w-full"
+                      />
+                    </>
                   ) : (
                     <>
                       <div
@@ -317,12 +390,36 @@ function NexusRBXHomepage({
                       >
                         {card.icon && <card.icon className="h-6 w-6 text-white" />}
                       </div>
-                      <h3 className="text-xl font-bold mb-2">{card.title}</h3>
-                      <p className="text-gray-400">{card.description}</p>
+                      {/* Optional image placeholder for Script AI and Secure Testing */}
+                      {card.id === 1 && (
+                        <img
+                          src="/feature-script-ai.webp"
+                          alt="Roblox script generator preview"
+                          width="800"
+                          height="600"
+                          loading="lazy"
+                          decoding="async"
+                          className="rounded-lg border border-gray-800 mb-4 w-full"
+                        />
+                      )}
+                      {card.id === 3 && (
+                        <img
+                          src="/feature-secure.webp"
+                          alt="Secure testing environment for Roblox mods"
+                          width="800"
+                          height="600"
+                          loading="lazy"
+                          decoding="async"
+                          className="rounded-lg border border-gray-800 mb-4 w-full"
+                        />
+                      )}
+                      <h3 className="text-xl font-bold mb-2" itemProp="name">{card.title}</h3>
+                      <p className="text-gray-400" itemProp="description">{card.description}</p>
                       <button
                         className="mt-6 px-4 py-2 rounded-lg bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-white font-medium hover:shadow-lg hover:shadow-[#9b5de5]/20 transform hover:translate-y-[-2px] transition-all duration-300 flex items-center justify-center"
                         onClick={() => navigate(card.button.href)}
                         type="button"
+                        aria-label={`Learn more about ${card.title} for Roblox scripting`}
                       >
                         {card.button.text}
                         <ChevronRight className="ml-2 h-4 w-4" />
@@ -330,7 +427,7 @@ function NexusRBXHomepage({
                     </>
                   )}
                 </div>
-              </div>
+              </article>
             ))}
           </div>
         </section>
@@ -344,19 +441,20 @@ function NexusRBXHomepage({
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {exampleOutputs.map((example, index) => (
-                <div
+                <section
                   key={example.id}
                   className={`rounded-xl bg-gray-900/40 backdrop-blur-sm border border-gray-800 overflow-hidden transition-all duration-500 transform ${
                     index <= currentTypewriterIndex
                       ? "opacity-100 translate-y-0"
                       : "opacity-0 translate-y-8"
                   }`}
+                  aria-label={`Example Roblox script output: ${example.prompt}`}
                 >
-                  <div className="p-4 border-b border-gray-800 bg-black/40">
+                  <header className="p-4 border-b border-gray-800 bg-black/40">
                     <p className="text-gray-300 font-medium">
                       "{example.prompt}"
                     </p>
-                  </div>
+                  </header>
                   <div className="p-4">
                     <pre className="text-sm text-gray-400 font-mono whitespace-pre-wrap overflow-x-auto">
                       <code className={`language-${example.language}`}>
@@ -364,7 +462,7 @@ function NexusRBXHomepage({
                       </code>
                     </pre>
                   </div>
-                </div>
+                </section>
               ))}
             </div>
           </div>
