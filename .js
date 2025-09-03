@@ -1,3 +1,4 @@
+
 require("dotenv").config();
 const express = require("express");
 const bodyParser = require("body-parser");
@@ -820,18 +821,20 @@ app.post("/api/generate/artifact", verifyFirebaseToken, userLimiter, asyncHandle
         },
       ];
 
-      let completion;
-      try {
-        completion = await openai.chat.completions.create({
-          model: model,
-          messages,
-          max_tokens: 16000,
-          temperature: temperature,
-        });
-      } catch (openaiErr) {
-        updateJob(jobId, { status: "failed", error: "OpenAI API error", stage: "failed" });
-        return;
-      }
+let completion;
+try {
+  completion = await openai.chat.completions.create({
+    model: model,
+    messages,
+    max_tokens: 16000,
+    temperature: temperature,
+  });
+} catch (openaiErr) {
+  // Log the full error for debugging
+  console.error("OpenAI API error (artifact job):", openaiErr.response?.data || openaiErr.message || openaiErr);
+  updateJob(jobId, { status: "failed", error: "OpenAI API error", stage: "failed", openaiError: openaiErr.response?.data || openaiErr.message || String(openaiErr) });
+  return;
+}
 
       // Bill tokens (min 1000)
       // Bill tokens (min 1000)
@@ -983,6 +986,96 @@ app.get("/api/jobs/:jobId", verifyFirebaseToken, readLimiter, asyncHandler(async
     error: job.error,
     createdAt: job.createdAt,
     updatedAt: job.updatedAt,
+  });
+}));
+
+app.get("/api/generate/stream", asyncHandler(async (req, res) => {
+  const { jobId, token } = req.query;
+  if (!jobId) {
+    res.status(400).json({ error: "Missing jobId" });
+    return;
+  }
+  if (!token) {
+    res.status(401).json({ error: "Missing token" });
+    return;
+  }
+
+  // Verify Firebase token from query param
+  let user;
+  try {
+    user = await admin.auth().verifyIdToken(token);
+    req.user = user;
+  } catch (err) {
+    res.status(401).json({ error: "Invalid Firebase ID token" });
+    return;
+  }
+
+  // Set headers for SSE
+  res.set({
+    'Content-Type': 'text/event-stream',
+    'Cache-Control': 'no-cache',
+    'Connection': 'keep-alive',
+  });
+  res.flushHeaders();
+
+  let lastStatus = null;
+  let interval = null;
+  let finished = false;
+
+  function sendEvent(event, data) {
+    res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
+  }
+
+  // Poll job status every 1s
+  interval = setInterval(() => {
+    const job = getJob(jobId);
+    if (!job) {
+      sendEvent('error', { error: "Job not found" });
+      clearInterval(interval);
+      res.end();
+      finished = true;
+      return;
+    }
+    // Only allow the user who created the job to access it
+    if (job.userId && job.userId !== req.user.uid) {
+      sendEvent('error', { error: "Forbidden" });
+      clearInterval(interval);
+      res.end();
+      finished = true;
+      return;
+    }
+    // Only send if status changed
+    if (lastStatus !== job.status) {
+sendEvent('status', {
+  status: job.status,
+  stage: job.stage,
+  result: job.result,
+  error: job.error,
+  openaiError: job.openaiError, // add this line
+  createdAt: job.createdAt,
+  updatedAt: job.updatedAt,
+});
+      lastStatus = job.status;
+    }
+    // If job is finished, send result and close
+    if (["succeeded", "failed", "canceled"].includes(job.status)) {
+      sendEvent('done', {
+        status: job.status,
+        stage: job.stage,
+        result: job.result,
+        error: job.error,
+        createdAt: job.createdAt,
+        updatedAt: job.updatedAt,
+      });
+      clearInterval(interval);
+      res.end();
+      finished = true;
+    }
+  }, 1000);
+
+  // Clean up on client disconnect
+  req.on('close', () => {
+    if (!finished) clearInterval(interval);
   });
 }));
 

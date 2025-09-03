@@ -9,7 +9,7 @@ import { auth } from "../firebase";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { getEntitlements } from "../lib/billing";
 import SubscribeTabContainer from "../components/SubscribeTabContainer";
-import { Helmet } from "react-helmet-async";
+import { Helmet } from "react-helmet";
 
 // Container Component
 export default function NexusRBXHomepageContainer() {
