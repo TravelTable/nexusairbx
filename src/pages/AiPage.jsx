@@ -1085,6 +1085,27 @@ fireTelemetry("job_accepted", { jobId });
     let lastContent = "";
     let lastStage = "preparing";
     let lastEta = null;
+    const handleTick = (tick) => {
+      if (!tick) return;
+      if (tick.stage) {
+        setGenerationStep(tick.stage);
+        setLoadingBarData((prev) => ({
+          ...prev,
+          stage: tick.stage,
+          eta: typeof tick.eta === "number" && tick.eta > 0 ? tick.eta : null,
+        }));
+      }
+      if (tick.delta) {
+        lastContent += tick.delta;
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === pendingMsgIdLocal
+              ? { ...m, content: lastContent }
+              : m
+          )
+        );
+      }
+    };
 
     if (streamSupported) {
 // Pass token in URL param (since EventSource does not support headers)
@@ -1101,25 +1122,8 @@ sse = new window.EventSource(
           return;
         }
         // 6. Progress/ETA UX truthfulness
-        if (tick.stage) {
-          setGenerationStep(tick.stage);
-          setLoadingBarData((prev) => ({
-            ...prev,
-            stage: tick.stage,
-            eta: typeof tick.eta === "number" && tick.eta > 0 ? tick.eta : null,
-          }));
-        }
         // 10. Pending message content preview
-        if (tick.delta) {
-          lastContent += tick.delta;
-          setMessages((prev) =>
-            prev.map((m) =>
-              m.id === pendingMsgIdLocal
-                ? { ...m, content: lastContent }
-                : m
-            )
-          );
-        }
+        handleTick(tick);
         if (tick.status === "succeeded" || tick.status === "failed") {
           streamDone = true;
           jobData = tick;
@@ -1153,7 +1157,19 @@ abortController.abortJob = async () => {
       while (!streamDone) {
         await new Promise((r) => setTimeout(r, 200));
       }
-      if (streamError) throw { code: "STREAM_ERROR", message: "Stream connection lost." };
+      if (streamError) {
+        try {
+          jobData = await pollJob(
+            user,
+            jobId,
+            handleTick,
+            { signal: { aborted: wasCanceled } }
+          );
+          streamError = null;
+        } catch {
+          throw { code: "STREAM_ERROR", message: "Stream connection lost." };
+        }
+      }
     } else {
       // Fallback: pollJob
       jobAbortRef.current = {
@@ -1170,26 +1186,7 @@ abortController.abortJob = async () => {
       jobData = await pollJob(
         user,
         jobId,
-        (tick) => {
-          if (tick.stage) {
-            setGenerationStep(tick.stage);
-            setLoadingBarData((prev) => ({
-              ...prev,
-              stage: tick.stage,
-              eta: typeof tick.eta === "number" && tick.eta > 0 ? tick.eta : null,
-            }));
-          }
-          if (tick.delta) {
-            lastContent += tick.delta;
-            setMessages((prev) =>
-              prev.map((m) =>
-                m.id === pendingMsgIdLocal
-                  ? { ...m, content: lastContent }
-                  : m
-              )
-            );
-          }
-        },
+        handleTick,
         { signal: { aborted: wasCanceled } }
       );
     }
