@@ -392,6 +392,7 @@ export default function CodeDrawerContainer({
       closeBtnRef={closeBtnRef}
       version={version}
       displayCode={displayCode}
+      explanation={explanation}
       liveGenerating={liveGenerating}
       copySuccess={copySuccess}
       onClose={onClose}
@@ -419,6 +420,7 @@ export default function CodeDrawerContainer({
       drawerRef={drawerRef}
       saveSuccess={saveSuccess}
       saveError={saveError}
+      isSavedScript={isSavedScript}
     />
   );
 }
@@ -452,6 +454,7 @@ function CodeDrawerUI({
   closeBtnRef,
   version,
   displayCode,
+  explanation,
   liveGenerating,
   copySuccess,
   onClose,
