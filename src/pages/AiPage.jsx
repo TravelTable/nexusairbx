@@ -1113,7 +1113,7 @@ sse = new window.EventSource(
   `${BACKEND_URL}/api/generate/stream?jobId=${encodeURIComponent(jobId)}&token=${encodeURIComponent(idToken)}`,
   { withCredentials: false }
 );
-      sse.onmessage = (event) => {
+      sse.addEventListener("status", (event) => {
         if (!event.data) return;
         let tick;
         try {
@@ -1124,13 +1124,21 @@ sse = new window.EventSource(
         // 6. Progress/ETA UX truthfulness
         // 10. Pending message content preview
         handleTick(tick);
-        if (tick.status === "succeeded" || tick.status === "failed") {
-          streamDone = true;
-          jobData = tick;
-          sse.close();
+      });
+      sse.addEventListener("done", (event) => {
+        if (!event.data) return;
+        let tick;
+        try {
+          tick = JSON.parse(event.data);
+        } catch {
+          return;
         }
-      };
+        streamDone = true;
+        jobData = tick;
+        sse.close();
+      });
       sse.onerror = (err) => {
+        if (streamDone) return;
         streamError = err;
         streamDone = true;
         sse.close();
