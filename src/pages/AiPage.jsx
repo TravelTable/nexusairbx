@@ -15,6 +15,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Info,
+  Copy,
+  Check,
 } from "lucide-react";
 import { auth } from "./firebase";
 import { onAuthStateChanged, signInAnonymously } from "firebase/auth";
@@ -116,6 +118,14 @@ function getUserInitials(email) {
     .map((p) => p[0]?.toUpperCase())
     .join("")
     .slice(0, 2);
+}
+
+function buildPreviewSnippet(code, maxLines = 3, maxChars = 240) {
+  if (!code) return "";
+  const lines = code.split("\n").slice(0, maxLines);
+  const snippet = lines.join("\n");
+  if (snippet.length <= maxChars) return snippet;
+  return snippet.slice(0, maxChars).trimEnd() + "…";
 }
 
 // --- Version Number Helpers ---
@@ -978,6 +988,7 @@ const handleSubmit = async (e, opts = {}) => {
     id: pendingMsgIdLocal,
     role: "assistant",
     content: "",
+    explanation: "",
     pending: true,
     createdAt: Date.now(),
     versionId: null,
@@ -986,9 +997,7 @@ const handleSubmit = async (e, opts = {}) => {
   setMessages((prev) => [...prev, pendingMsg]);
 
   let jobId = null;
-  let sse;
   let jobData = null;
-  let jobAccepted = false;
   let retriedToken = false;
 
   try {
@@ -1006,197 +1015,258 @@ const handleSubmit = async (e, opts = {}) => {
       requestId,
     };
 
-    // 5. Polling → SSE (or WS) for progress
+    // 5. Streaming via POST SSE
     // 15. Guard against stale user: refresh token on 401
     let idToken = await user.getIdToken();
-// 1. Get explanation first (optional, for outline/future use)
-let explanationRes = await fetch(`${BACKEND_URL}/api/generate-explanation`, {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json",
-    Authorization: `Bearer ${idToken}`,
-  },
-  body: JSON.stringify({ prompt: cleanedPrompt, conversation: [] }),
-});
-await mustOk(explanationRes, "Generate Explanation");
-const explanationData = await explanationRes.json();
-const explanation = explanationData.explanation;
-
-// 2. Now call generate-artifact (async job system) with explanation, outline, and conversation
-let artifactRes = await fetch(`${BACKEND_URL}/api/generate/artifact`, {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json",
-    Authorization: `Bearer ${idToken}`,
-    "Idempotency-Key": requestId,
-  },
-  body: JSON.stringify({
-    ...reqBody,
-    outline: [], // You can pass outline if you have it, else empty
-    conversation: [],
-    settings: {
-      model: settings.modelVersion,
-      temperature: settings.creativity,
-      codeStyle: settings.codeStyle,
-    },
-  }),
-});
-if (artifactRes.status === 401 && !retriedToken) {
-  await user.getIdToken(true);
-  idToken = await user.getIdToken();
-  retriedToken = true;
-  artifactRes = await fetch(`${BACKEND_URL}/api/generate/artifact`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${idToken}`,
-      "Idempotency-Key": requestId,
-    },
-    body: JSON.stringify({
-      ...reqBody,
-      outline: [],
-      conversation: [],
-      settings: {
-        model: settings.modelVersion,
-        temperature: settings.creativity,
-        codeStyle: settings.codeStyle,
-      },
-    }),
-  });
-}
-
-await mustOk(artifactRes, "Generate Artifact");
-
-const artifactData = await artifactRes.json();
-if (!artifactData || !artifactData.jobId) throw { code: "BACKEND_ERROR", message: "No jobId returned from backend." };
-jobId = artifactData.jobId;
-const pipelineId = artifactData.pipelineId || jobId;
-
-// 13. Telemetry: job_accepted
-fireTelemetry("job_accepted", { jobId });
-
-    // 13. Telemetry: stream_started
-    fireTelemetry("stream_started", { jobId });
-
-    // SSE or fallback to polling
-    let streamSupported = !!window.EventSource;
+    let codeBuffer = "";
+    let explanationBuffer = "";
     let streamDone = false;
     let streamError = null;
-    let lastContent = "";
-    let lastStage = "preparing";
-    let lastEta = null;
-    const handleTick = (tick) => {
-      if (!tick) return;
-      if (tick.stage) {
-        setGenerationStep(tick.stage);
-        setLoadingBarData((prev) => ({
-          ...prev,
-          stage: tick.stage,
-          eta: typeof tick.eta === "number" && tick.eta > 0 ? tick.eta : null,
-        }));
+    let donePayload = null;
+    let artifactId = null;
+    let tokensConsumed = null;
+    let billingConsumed = false;
+    let jobIdFromStream = null;
+    let projectIdFromStream = null;
+
+    const appendPendingMessage = ({ codeDelta = "", explanationDelta = "" }) => {
+      if (codeDelta) {
+        codeBuffer += codeDelta;
+        if (typeof window !== "undefined") window.nexusCurrentCode = codeBuffer;
       }
-      if (tick.delta) {
-        lastContent += tick.delta;
-        setMessages((prev) =>
-          prev.map((m) =>
-            m.id === pendingMsgIdLocal
-              ? { ...m, content: lastContent }
-              : m
-          )
-        );
+      if (explanationDelta) {
+        explanationBuffer += explanationDelta;
+        if (typeof window !== "undefined") window.nexusCurrentExplanation = explanationBuffer;
+      }
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === pendingMsgIdLocal
+            ? { ...m, content: codeBuffer, explanation: explanationBuffer }
+            : m
+        )
+      );
+    };
+
+    const parseEventData = (raw) => {
+      if (!raw) return null;
+      try {
+        return JSON.parse(raw);
+      } catch {
+        return raw;
       }
     };
 
-    if (streamSupported) {
-// Pass token in URL param (since EventSource does not support headers)
-sse = new window.EventSource(
-  `${BACKEND_URL}/api/generate/stream?jobId=${encodeURIComponent(jobId)}&token=${encodeURIComponent(idToken)}`,
-  { withCredentials: false }
-);
-      sse.addEventListener("status", (event) => {
-        if (!event.data) return;
-        let tick;
-        try {
-          tick = JSON.parse(event.data);
-        } catch {
-          return;
-        }
-        // 6. Progress/ETA UX truthfulness
-        // 10. Pending message content preview
-        handleTick(tick);
-      });
-      sse.addEventListener("done", (event) => {
-        if (!event.data) return;
-        let tick;
-        try {
-          tick = JSON.parse(event.data);
-        } catch {
-          return;
-        }
-        streamDone = true;
-        jobData = tick;
-        sse.close();
-      });
-      sse.onerror = (err) => {
-        if (streamDone) return;
-        streamError = err;
-        streamDone = true;
-        sse.close();
-      };
+    const extractChunk = (raw) => {
+      const parsed = parseEventData(raw);
+      if (typeof parsed === "string") return parsed;
+      if (!parsed) return "";
+      return parsed.chunk || parsed.delta || parsed.content || "";
+    };
 
-      // 4. Cancellation that actually cancels
-if (!jobAbortRef.current || !(jobAbortRef.current instanceof AbortController)) {
-  jobAbortRef.current = new AbortController();
-}
-const abortController = jobAbortRef.current;
-abortController.abortJob = async () => {
-  setWasCanceled(true);
-  try {
-    await fetch(`${BACKEND_URL}/api/generate/${jobId}/cancel`, {
+    const handleStatusEvent = (raw) => {
+      const parsed = parseEventData(raw);
+      const stage =
+        parsed?.stage ||
+        parsed?.status ||
+        parsed?.state ||
+        (typeof parsed === "string" ? parsed : null);
+      const eta =
+        typeof parsed?.eta === "number" && parsed.eta > 0 ? parsed.eta : null;
+      if (parsed?.jobId || parsed?.job_id) jobIdFromStream = parsed.jobId || parsed.job_id;
+      if (parsed?.projectId || parsed?.project_id) {
+        projectIdFromStream = parsed.projectId || parsed.project_id;
+      }
+      if (stage) {
+        setGenerationStep(stage);
+        setLoadingBarData((prev) => ({
+          ...prev,
+          stage,
+          eta,
+        }));
+      }
+    };
+
+    const handleDoneEvent = (raw) => {
+      const parsed = parseEventData(raw) || {};
+      donePayload = parsed;
+      artifactId = parsed.artifact_id || parsed.artifactId || parsed.id || null;
+      tokensConsumed =
+        parsed.tokens_consumed ?? parsed.tokensConsumed ?? parsed.tokens ?? null;
+      if (parsed?.jobId || parsed?.job_id) jobIdFromStream = parsed.jobId || parsed.job_id;
+      if (parsed?.projectId || parsed?.project_id) {
+        projectIdFromStream = parsed.projectId || parsed.project_id;
+      }
+      streamDone = true;
+    };
+
+    // 13. Telemetry: stream_started
+    fireTelemetry("stream_started", { requestId });
+
+    const streamAbortController = new AbortController();
+    jobAbortRef.current = streamAbortController;
+    streamAbortController.abortJob = async () => {
+      setWasCanceled(true);
+      if (jobIdFromStream) {
+        try {
+          await fetch(`${BACKEND_URL}/api/generate/${jobIdFromStream}/cancel`, {
+            method: "POST",
+            headers: { Authorization: `Bearer ${idToken}` },
+          });
+        } catch {}
+      }
+      streamAbortController.abort();
+    };
+
+    let activeStreamRes = await fetch(`${BACKEND_URL}/api/generate/stream`, {
       method: "POST",
-      headers: { Authorization: `Bearer ${idToken}` },
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${idToken}`,
+        "Idempotency-Key": requestId,
+      },
+      body: JSON.stringify(reqBody),
+      signal: streamAbortController.signal,
     });
-  } catch {}
-  if (sse) sse.close();
-  abortController.abort();
-};
 
-      // Wait for stream to finish
-      while (!streamDone) {
-        await new Promise((r) => setTimeout(r, 200));
+    if (activeStreamRes.status === 401 && !retriedToken) {
+      await user.getIdToken(true);
+      idToken = await user.getIdToken();
+      retriedToken = true;
+      activeStreamRes = await fetch(`${BACKEND_URL}/api/generate/stream`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${idToken}`,
+          "Idempotency-Key": requestId,
+        },
+        body: JSON.stringify(reqBody),
+        signal: streamAbortController.signal,
+      });
+      if (!activeStreamRes.ok) {
+        throw {
+          code: "BACKEND_ERROR",
+          message: `Stream failed (${activeStreamRes.status})`,
+        };
       }
-      if (streamError) {
-        try {
-          jobData = await pollJob(
-            user,
-            jobId,
-            handleTick,
-            { signal: { aborted: wasCanceled } }
-          );
-          streamError = null;
-        } catch {
-          throw { code: "STREAM_ERROR", message: "Stream connection lost." };
+    } else if (!activeStreamRes.ok) {
+      throw {
+        code: "BACKEND_ERROR",
+        message: `Stream failed (${activeStreamRes.status})`,
+      };
+    }
+
+    if (!activeStreamRes.body) {
+      throw { code: "STREAM_ERROR", message: "No stream body returned." };
+    }
+
+    const reader = activeStreamRes.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+    let eventName = "message";
+    let dataBuffer = "";
+
+    const dispatchEvent = (name, data) => {
+      if (name === "code_chunk") {
+        const chunk = extractChunk(data);
+        if (chunk) appendPendingMessage({ codeDelta: chunk });
+      } else if (name === "explanation_chunk") {
+        const chunk = extractChunk(data);
+        if (chunk) appendPendingMessage({ explanationDelta: chunk });
+      } else if (name === "status") {
+        handleStatusEvent(data);
+      } else if (name === "done") {
+        handleDoneEvent(data);
+      } else if (name === "error") {
+        streamError = parseEventData(data) || { message: "Stream error." };
+        streamDone = true;
+      }
+    };
+
+    while (!streamDone) {
+      const { value, done } = await reader.read();
+      if (done) {
+        streamDone = true;
+        break;
+      }
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split(/\r?\n/);
+      buffer = lines.pop() || "";
+      for (const line of lines) {
+        if (line.startsWith("event:")) {
+          eventName = line.slice(6).trim() || "message";
+        } else if (line.startsWith("data:")) {
+          let dataLine = line.slice(5);
+          if (dataLine.startsWith(" ")) dataLine = dataLine.slice(1);
+          dataBuffer += dataLine + "\n";
+        } else if (line === "") {
+          if (dataBuffer) {
+            const payload = dataBuffer.replace(/\n$/, "");
+            dispatchEvent(eventName, payload);
+            dataBuffer = "";
+            eventName = "message";
+          }
         }
       }
-    } else {
-      // Fallback: pollJob
-      jobAbortRef.current = {
-        abort: async () => {
-          setWasCanceled(true);
-          try {
-            await fetch(`${BACKEND_URL}/api/generate/${jobId}/cancel`, {
-              method: "POST",
-              headers: { Authorization: `Bearer ${idToken}` },
-            });
-          } catch {}
-        },
+    }
+
+    if (dataBuffer) {
+      dispatchEvent(eventName, dataBuffer.replace(/\n$/, ""));
+    }
+
+    if (!donePayload && !wasCanceled) {
+      throw { code: "STREAM_ERROR", message: "Stream ended before completion." };
+    }
+
+    if (streamError) {
+      throw {
+        code: "STREAM_ERROR",
+        message: streamError?.message || "Stream connection lost.",
       };
-      jobData = await pollJob(
-        user,
-        jobId,
-        handleTick,
-        { signal: { aborted: wasCanceled } }
-      );
+    }
+
+    jobData = {
+      status: donePayload?.status || "succeeded",
+      content: codeBuffer,
+      explanation: explanationBuffer,
+      versionId: donePayload?.versionId || donePayload?.version_id || null,
+      versionNumber: donePayload?.versionNumber || donePayload?.version_number || null,
+      versions: donePayload?.versions || null,
+      version: donePayload?.version || null,
+      projectId: projectIdFromStream || donePayload?.projectId || donePayload?.project_id || projectIdToSend || null,
+      artifactId,
+      tokensConsumed,
+      errorCode: donePayload?.errorCode || donePayload?.error_code,
+      error: donePayload?.error || donePayload?.message,
+    };
+    jobId = jobIdFromStream || artifactId || requestId;
+
+    const shouldConsume =
+      donePayload?.billing_required === true ||
+      donePayload?.consume_required === true ||
+      donePayload?.consumeTokens === true;
+
+    if (
+      shouldConsume &&
+      !billingConsumed &&
+      tokensConsumed &&
+      artifactId
+    ) {
+      const consumeRes = await fetch(`${BACKEND_URL}/api/billing/consume`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${idToken}`,
+        },
+        body: JSON.stringify({
+          tokens: tokensConsumed,
+          reason: "generation",
+          artifact_id: artifactId,
+        }),
+      });
+      if (!consumeRes.ok) {
+        throw { code: "BILLING_ERROR", message: "Failed to consume tokens." };
+      }
+      billingConsumed = true;
     }
 
     // 17. Safer cleanup: check cancel
@@ -1276,6 +1346,10 @@ abortController.abortJob = async () => {
       return;
     }
 
+    if (jobData.projectId && jobData.projectId !== currentScriptId) {
+      setCurrentScriptId(jobData.projectId);
+    }
+
     // 7. Token/billing refresh race
     await refreshBilling?.();
 
@@ -1300,7 +1374,7 @@ abortController.abortJob = async () => {
           {
             id: uuidv4(),
             role: "assistant",
-            content: jobData.content || lastContent || "",
+            content: jobData.content || "",
             explanation: jobData.explanation || "",
             createdAt: Date.now(),
             versionId: jobData.versionId || null,
@@ -1366,6 +1440,9 @@ abortController.abortJob = async () => {
         break;
       case "TIMEOUT":
         msg = "Generation timed out. Try again.";
+        break;
+      case "BILLING_ERROR":
+        msg = "Billing failed. Please retry.";
         break;
       default:
         break;
@@ -1435,6 +1512,52 @@ function SummarizePromptModal({ open, prompt, onConfirm, onCancel }) {
           </button>
         </div>
       </div>
+    </div>
+  );
+}
+
+function AssistantCodeBlock({ code }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(code);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      const textarea = document.createElement("textarea");
+      textarea.value = code;
+      textarea.setAttribute("readonly", "");
+      textarea.style.position = "absolute";
+      textarea.style.left = "-9999px";
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand("copy");
+      document.body.removeChild(textarea);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    }
+  };
+
+  return (
+    <div className="mt-4 border border-gray-800 rounded-lg bg-black/30 overflow-hidden">
+      <div className="flex items-center justify-between px-4 py-2 border-b border-gray-800">
+        <span className="text-xs uppercase tracking-wide text-[#00f5d4] font-semibold">
+          Generated Code
+        </span>
+        <button
+          type="button"
+          onClick={handleCopy}
+          className="flex items-center gap-2 text-xs font-semibold text-white px-2 py-1 rounded bg-gray-800 hover:bg-gray-700 transition-colors"
+          aria-label="Copy generated code"
+        >
+          {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+          {copied ? "Copied" : "Copy"}
+        </button>
+      </div>
+      <pre className="px-4 py-3 text-sm text-gray-100 font-mono whitespace-pre-wrap">
+        {code}
+      </pre>
     </div>
   );
 }
@@ -1984,11 +2107,17 @@ useEffect(() => {
                         );
                       }
                       // assistant bubble
-                      const coreText = m.explanation || m.content || "";
+                      const coreText = [m.explanation, m.content]
+                        .filter(Boolean)
+                        .join("\n");
                       const size = getAiBubbleSizing(coreText);
                       const ver = m.versionId
                         ? versionHistory.find((v) => v.id === m.versionId)
                         : versionHistory.find((v) => getVN(v) === getVN(m));
+                      const resolvedCode = ver?.code || m.content || "";
+                      const resolvedExplanation =
+                        ver?.explanation || m.explanation || "";
+                      const previewSnippet = buildPreviewSnippet(resolvedCode);
                       return (
                         <div
                           key={m.id}
@@ -2036,6 +2165,7 @@ useEffect(() => {
                                 </div>
                               </div>
                             )}
+                            {m.content && <AssistantCodeBlock code={m.content} />}
                             <div className="mb-2 mt-3">
                               <ScriptLoadingBarContainer
                                 filename={safeFile((currentScript?.title || "Script").trim() || "Script")}
@@ -2043,12 +2173,32 @@ useEffect(() => {
                                 version={m.versionNumber ? `v${getVN(m)}` : ""}
                                 language="lua"
                                 loading={!!m.pending || !!isGenerating || loadingBarVisible}
-                                codeReady={!!ver?.code}
-                                estimatedLines={ver?.code ? ver.code.split("\n").length : null}
+                                codeReady={!m.pending && !!resolvedCode}
+                                estimatedLines={resolvedCode ? resolvedCode.split("\n").length : null}
                                 saved={!!ver?.code}
                                 onSave={async () => {}}
+                                previewSnippet={previewSnippet}
                                 onView={() => {
-                                  if (ver) setSelectedVersion(ver);
+                                  if (ver) {
+                                    setSelectedVersion(ver);
+                                    return;
+                                  }
+                                  if (resolvedCode) {
+                                    setSelectedVersion({
+                                      id: m.versionId || m.id,
+                                      code: resolvedCode,
+                                      explanation: resolvedExplanation,
+                                      title: currentScript?.title || "Script",
+                                      versionNumber: m.versionNumber || null,
+                                    });
+                                  }
+                                }}
+                                onCancel={() => {
+                                  if (jobAbortRef.current?.abortJob) {
+                                    jobAbortRef.current.abortJob();
+                                  } else if (jobAbortRef.current?.abort) {
+                                    jobAbortRef.current.abort();
+                                  }
                                 }}
                                 jobStage={loadingBarData.stage}
                                 etaSeconds={loadingBarData.eta}
@@ -2270,6 +2420,7 @@ useEffect(() => {
           <SimpleCodeDrawer
             open={!!selectedVersion}
             code={selectedVersion.code}
+            explanation={selectedVersion.explanation || ""}
             title={selectedVersion.title}
             filename={safeFile(
               (selectedVersion?.title || currentScript?.title || "Script").trim() ||

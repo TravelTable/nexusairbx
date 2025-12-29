@@ -12,6 +12,7 @@ export default function ScriptLoadingBarContainer({
   estimatedLines = null,
   saved = false,
   onView,
+  previewSnippet = "",
   jobProgress = null,
   jobStage = null,
   etaSeconds = null,
@@ -201,6 +202,11 @@ export default function ScriptLoadingBarContainer({
                   {canceled && <span className="text-red-400">Generation was canceled. No further progress.</span>}
                   {saveError && <span className="text-xs text-red-400">{saveError}</span>}
                 </div>
+                {previewSnippet && ready && (
+                  <div className="mt-2 text-xs text-gray-400 font-mono whitespace-pre-wrap max-h-16 overflow-hidden">
+                    {previewSnippet}
+                  </div>
+                )}
               </div>
             </div>
 

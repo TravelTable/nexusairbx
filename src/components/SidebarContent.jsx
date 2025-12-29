@@ -1110,13 +1110,14 @@ const versionHistoryWithLock = useMemo(() => {
                   // Locked item UI
                   if (ver.isLocked) {
                     return (
-                      <button
+                      <div
                         key={keyForScript({ ...ver, id: currentScriptId })}
                         className={`w-full flex items-center justify-between px-3 py-2 border-b border-gray-800 last:border-b-0 rounded text-left group cursor-not-allowed opacity-60 bg-gray-900/60 relative`}
                         style={{
                           background: "rgba(55,65,81,0.5)",
                           pointerEvents: "auto",
                         }}
+                        role="button"
                         tabIndex={0}
                         aria-label={`Locked version ${version}`}
                         onClick={(e) => {
@@ -1173,13 +1174,13 @@ const versionHistoryWithLock = useMemo(() => {
                             <Lock className="h-4 w-4 text-[#9b5de5]" />
                           </button>
                         </div>
-                      </button>
+                      </div>
                     );
                   }
 
                   // Unlocked item UI
                   return (
-                    <button
+                    <div
                       key={keyForScript({ ...ver, id: currentScriptId })}
                       className={`w-full flex items-center justify-between px-3 py-2 border-b border-gray-800 last:border-b-0 hover:bg-gray-800 transition-colors rounded text-left group ${
                         isSelected ? "bg-[#00f5d4]/10" : ""
@@ -1189,9 +1190,18 @@ const versionHistoryWithLock = useMemo(() => {
                           ? "rgba(0,245,212,0.08)"
                           : undefined,
                       }}
+                      role="button"
                       onClick={() => {
                         if (typeof onVersionView === "function") {
                           onVersionView(ver);
+                        }
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          if (typeof onVersionView === "function") {
+                            onVersionView(ver);
+                          }
                         }
                       }}
                       tabIndex={0}
@@ -1270,7 +1280,7 @@ const versionHistoryWithLock = useMemo(() => {
                           <Download className="h-4 w-4 text-gray-400" />
                         </button>
                       </div>
-                    </button>
+                    </div>
                   );
                 })}
               </div>

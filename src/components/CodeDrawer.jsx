@@ -28,6 +28,7 @@ const FONT_SIZE_KEY = "codeDrawerFontSize";
 export default function CodeDrawerContainer({
   open,
   code = "",
+  explanation = "",
   title = "Script Code",
   filename = null,
   version = null,
@@ -821,6 +822,16 @@ function CodeDrawerUI({
           tabIndex={0}
         >
           <div id="code-drawer-codeblock">
+            {explanation && (
+              <div className="px-5 pt-4 pb-2 border-b border-gray-800">
+                <div className="text-xs uppercase tracking-wide text-[#9b5de5] font-semibold mb-1">
+                  Explanation
+                </div>
+                <div className="text-sm text-gray-200 whitespace-pre-line">
+                  {explanation}
+                </div>
+              </div>
+            )}
             <SyntaxHighlighter
               language="lua"
               style={atomOneDark}
