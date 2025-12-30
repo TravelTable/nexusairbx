@@ -6,6 +6,7 @@ import React, {
   useDeferredValue,
 } from "react";
 import { useBilling } from "../context/BillingContext";
+import { consumeTokens } from "../lib/billing";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   Send,
@@ -1049,6 +1050,7 @@ const handleSubmit = async (e, opts = {}) => {
 
     const parseEventData = (raw) => {
       if (!raw) return null;
+      if (typeof raw === "object") return raw;
       try {
         return JSON.parse(raw);
       } catch {
@@ -1241,6 +1243,37 @@ const handleSubmit = async (e, opts = {}) => {
       }
     };
 
+    const dispatchNdjsonLine = (line) => {
+      const parsed = parseEventData(line);
+      if (!parsed) return;
+      if (typeof parsed === "string") {
+        dispatchEvent("chunk", parsed);
+        return;
+      }
+      const eventNameFromPayload =
+        parsed.event || parsed.type || parsed.kind || parsed.name || null;
+      const payload = parsed.data ?? parsed.payload ?? parsed;
+      if (eventNameFromPayload) {
+        dispatchEvent(eventNameFromPayload, payload);
+        return;
+      }
+      if (
+        parsed.done === true ||
+        parsed.completed === true ||
+        parsed.status === "done"
+      ) {
+        dispatchEvent("done", parsed);
+        return;
+      }
+      if (parsed.status || parsed.stage || parsed.state) {
+        dispatchEvent("status", parsed);
+        return;
+      }
+      if (parsed.chunk || parsed.delta || parsed.content) {
+        dispatchEvent("chunk", parsed);
+      }
+    };
+
     while (!streamDone) {
       const { value, done } = await reader.read();
       if (done) {
@@ -1257,6 +1290,8 @@ const handleSubmit = async (e, opts = {}) => {
           let dataLine = line.slice(5);
           if (dataLine.startsWith(" ")) dataLine = dataLine.slice(1);
           dataBuffer += dataLine + "\n";
+        } else if (line.startsWith("retry:") || line.startsWith(":")) {
+          continue;
         } else if (line === "") {
           if (dataBuffer) {
             const payload = dataBuffer.replace(/\n$/, "");
@@ -1264,6 +1299,8 @@ const handleSubmit = async (e, opts = {}) => {
             dataBuffer = "";
             eventName = "message";
           }
+        } else if (line.trim()) {
+          dispatchNdjsonLine(line.trim());
         }
       }
     }
@@ -1314,6 +1351,24 @@ const handleSubmit = async (e, opts = {}) => {
       fireTelemetry("canceled", { jobId });
       return;
     }
+
+    const billingJobId = jobIdFromStream || jobId || artifactId || requestId;
+    try {
+      await consumeTokens({
+        jobId: billingJobId,
+        pipelineId,
+        model: settings.modelVersion,
+        tokensUsed: tokensConsumed ?? undefined,
+      });
+    } catch (billingErr) {
+      throw {
+        code: "BILLING_ERROR",
+        message: billingErr?.message || "Billing failed.",
+      };
+    }
+
+    // 7. Token/billing refresh race
+    await refreshBilling?.();
 
     // 9. Error taxonomy & user messages
     if (jobData.status !== "succeeded") {
@@ -1379,9 +1434,6 @@ const handleSubmit = async (e, opts = {}) => {
     if (jobData.projectId && jobData.projectId !== currentScriptId) {
       setCurrentScriptId(jobData.projectId);
     }
-
-    // 7. Token/billing refresh race
-    await refreshBilling?.();
 
     // 11. Versioning: stable ordering & selection
     let normalizedVersions = [];
