@@ -146,6 +146,13 @@ function nextMonthEnd(d = new Date()) {
   return end; // first day next month 00:00Z
 }
 
+function toDate(value) {
+  if (!value) return null;
+  if (value instanceof Date) return value;
+  if (typeof value.toDate === "function") return value.toDate();
+  return new Date(value);
+}
+
 // --- ENSURE NO DOUBLE SLASH IN API PATHS ---
 function cleanApiPath(path) {
   return path.replace(/([^:]\/)\/+/g, "$1");
@@ -181,7 +188,8 @@ async function getOrCreateUser(uid, email) {
 }
 
 async function resetIfExpired(user, uid) {
-  if (user.subPeriodEnd && new Date() >= user.subPeriodEnd) {
+  const periodEnd = toDate(user.subPeriodEnd);
+  if (periodEnd && new Date() >= periodEnd) {
     user.subUsed = 0;
     user.subPeriodEnd = nextMonthEnd();
     await firestore.collection("users").doc(uid).update({
@@ -1414,13 +1422,15 @@ app.post("/api/billing/consume", verifyFirebaseToken, async (req, res) => {
       }
 
       // sync/reset period end to Stripe if available; else keep monthly rolling fallback
-      if (nextReset && (!user.subPeriodEnd || new Date(user.subPeriodEnd).getTime() !== nextReset.getTime())) {
+      const currentPeriodEnd = toDate(user.subPeriodEnd);
+      if (nextReset && (!currentPeriodEnd || currentPeriodEnd.getTime() !== nextReset.getTime())) {
         tx.update(userRef, { subPeriodEnd: nextReset, updatedAt: admin.firestore.FieldValue.serverTimestamp() });
         user.subPeriodEnd = nextReset;
       }
 
       // hard reset if past period end (safety)
-      if (user.subPeriodEnd && new Date() >= new Date(user.subPeriodEnd)) {
+      const effectivePeriodEnd = toDate(user.subPeriodEnd);
+      if (effectivePeriodEnd && new Date() >= effectivePeriodEnd) {
         user.subUsed = 0;
         const newEnd = nextReset || (function nm(){ return new Date(Date.now() + 30*24*60*60*1000); })();
         tx.update(userRef, {

@@ -104,9 +104,10 @@ async function upsertStripeLink(uid, { customerId, subscriptionId, priceId, stat
 async function setSubEntitlements(uid, plan, cycle, sub) {
   const db = getDb();
   const limit = PLAN_LIMITS?.[plan] ?? (PLAN_LIMITS?.FREE ?? 50000);
-  const resetsAtIso = sub?.current_period_end
-    ? new Date(sub.current_period_end * 1000).toISOString()
+  const resetsAtDate = sub?.current_period_end
+    ? new Date(sub.current_period_end * 1000)
     : null;
+  const resetsAtIso = resetsAtDate ? resetsAtDate.toISOString() : null;
 
   await db
     .collection("users")
@@ -122,6 +123,8 @@ async function setSubEntitlements(uid, plan, cycle, sub) {
             resetsAt: resetsAtIso,
           },
         },
+        ...(resetsAtDate ? { subPeriodEnd: resetsAtDate } : {}),
+        subUsed: 0,
         updatedAt: admin.firestore.FieldValue.serverTimestamp(),
       },
       { merge: true }
