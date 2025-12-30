@@ -131,3 +131,16 @@ export async function openPortal() {
   // IMPORTANT: do NOT redirect here. Let the page decide.
   return r.json().catch(() => ({})); // {url} or {portalDocPath}
 }
+
+export async function consumeTokens(payload) {
+  const r = await authedFetch("/api/billing/consume", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload || {}),
+  });
+  if (!r.ok) {
+    const text = await r.text().catch(() => "");
+    throw new Error(`consume ${r.status}: ${text}`);
+  }
+  return r.json().catch(() => ({}));
+}
