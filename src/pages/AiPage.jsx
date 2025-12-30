@@ -1309,6 +1309,15 @@ const handleSubmit = async (e, opts = {}) => {
       dispatchEvent(eventName, dataBuffer.replace(/\n$/, ""));
     }
 
+    if (!donePayload && !streamError && !wasCanceled) {
+      const hasContent =
+        Boolean(codeBuffer && codeBuffer.trim()) ||
+        Boolean(explanationBuffer && explanationBuffer.trim());
+      if (hasContent) {
+        donePayload = { status: "succeeded" };
+      }
+    }
+
     if (!donePayload && !wasCanceled) {
       throw { code: "STREAM_ERROR", message: "Stream ended before completion." };
     }
