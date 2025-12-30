@@ -72,9 +72,9 @@ const DEV_EMAIL = process.env.REACT_APP_DEV_EMAIL?.toLowerCase() || "dev@example
 
 // --- Model/Creativity/CodeStyle Options ---
 const modelOptions = [
-  { value: "nexus-3", label: "Nexus-3 (Legacy, Default)" },
-  { value: "nexus-4", label: "Nexus-4 (Fast, Accurate)" },
-  { value: "nexus-2", label: "Nexus-2 (GPT-3.5 Turbo)" },
+  { value: "gpt-4.1-2025-04-14", label: "GPT-4.1 (Nexus-3)" },
+  { value: "gpt-4.1-2025-04-14", label: "GPT-4.1 (Nexus-4)" },
+  { value: "gpt-4.1-2025-04-14", label: "GPT-4.1 (Nexus-2)" },
 ];
 const creativityOptions = [
   { value: 0.3, label: "Low (Precise)" },
@@ -87,7 +87,7 @@ const codeStyleOptions = [
 ];
 
 const defaultSettings = {
-  modelVersion: "nexus-3",
+  modelVersion: "gpt-4.1-2025-04-14",
   creativity: 0.7,
   codeStyle: "optimized",
 };
