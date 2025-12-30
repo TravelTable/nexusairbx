@@ -1025,9 +1025,9 @@ const handleSubmit = async (e, opts = {}) => {
     let donePayload = null;
     let artifactId = null;
     let tokensConsumed = null;
-    let billingConsumed = false;
     let jobIdFromStream = null;
     let projectIdFromStream = null;
+    let pipelineId = null;
 
     const appendPendingMessage = ({ codeDelta = "", explanationDelta = "" }) => {
       if (codeDelta) {
@@ -1099,9 +1099,6 @@ const handleSubmit = async (e, opts = {}) => {
       streamDone = true;
     };
 
-    // 13. Telemetry: stream_started
-    fireTelemetry("stream_started", { requestId });
-
     const streamAbortController = new AbortController();
     jobAbortRef.current = streamAbortController;
     streamAbortController.abortJob = async () => {
@@ -1117,7 +1114,7 @@ const handleSubmit = async (e, opts = {}) => {
       streamAbortController.abort();
     };
 
-    let activeStreamRes = await fetch(`${BACKEND_URL}/api/generate/stream`, {
+    let enqueueRes = await fetch(`${BACKEND_URL}/api/generate/artifact`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -1128,11 +1125,11 @@ const handleSubmit = async (e, opts = {}) => {
       signal: streamAbortController.signal,
     });
 
-    if (activeStreamRes.status === 401 && !retriedToken) {
+    if (enqueueRes.status === 401 && !retriedToken) {
       await user.getIdToken(true);
       idToken = await user.getIdToken();
       retriedToken = true;
-      activeStreamRes = await fetch(`${BACKEND_URL}/api/generate/stream`, {
+      enqueueRes = await fetch(`${BACKEND_URL}/api/generate/artifact`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -1142,6 +1139,56 @@ const handleSubmit = async (e, opts = {}) => {
         body: JSON.stringify(reqBody),
         signal: streamAbortController.signal,
       });
+      if (!enqueueRes.ok) {
+        throw {
+          code: "BACKEND_ERROR",
+          message: `Queue failed (${enqueueRes.status})`,
+        };
+      }
+    } else if (!enqueueRes.ok) {
+      throw {
+        code: "BACKEND_ERROR",
+        message: `Queue failed (${enqueueRes.status})`,
+      };
+    }
+
+    const enqueuePayload = await enqueueRes.json().catch(() => ({}));
+    jobId = enqueuePayload?.jobId || enqueuePayload?.job_id || null;
+    pipelineId =
+      enqueuePayload?.pipelineId || enqueuePayload?.pipeline_id || null;
+
+    if (!jobId) {
+      throw { code: "BACKEND_ERROR", message: "Queue did not return a job ID." };
+    }
+
+    // 13. Telemetry: stream_started
+    fireTelemetry("stream_started", { requestId, jobId, pipelineId });
+
+    let activeStreamRes = await fetch(
+      `${BACKEND_URL}/api/generate/stream?jobId=${encodeURIComponent(jobId)}`,
+      {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${idToken}`,
+        },
+        signal: streamAbortController.signal,
+      }
+    );
+
+    if (activeStreamRes.status === 401 && !retriedToken) {
+      await user.getIdToken(true);
+      idToken = await user.getIdToken();
+      retriedToken = true;
+      activeStreamRes = await fetch(
+        `${BACKEND_URL}/api/generate/stream?jobId=${encodeURIComponent(jobId)}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${idToken}`,
+          },
+          signal: streamAbortController.signal,
+        }
+      );
       if (!activeStreamRes.ok) {
         throw {
           code: "BACKEND_ERROR",
@@ -1166,7 +1213,7 @@ const handleSubmit = async (e, opts = {}) => {
     let dataBuffer = "";
 
     const dispatchEvent = (name, data) => {
-      if (name === "code_chunk") {
+      if (name === "chunk" || name === "code_chunk") {
         const chunk = extractChunk(data);
         if (chunk) appendPendingMessage({ codeDelta: chunk });
       } else if (name === "explanation_chunk") {
@@ -1177,7 +1224,19 @@ const handleSubmit = async (e, opts = {}) => {
       } else if (name === "done") {
         handleDoneEvent(data);
       } else if (name === "error") {
-        streamError = parseEventData(data) || { message: "Stream error." };
+        const parsedError =
+          parseEventData(data) || { message: "Stream error." };
+        if (
+          typeof parsedError?.message === "string" &&
+          parsedError.message.toLowerCase().includes("not enough tokens")
+        ) {
+          streamError = {
+            ...parsedError,
+            code: "INSUFFICIENT_TOKENS",
+          };
+        } else {
+          streamError = parsedError;
+        }
         streamDone = true;
       }
     };
@@ -1219,7 +1278,7 @@ const handleSubmit = async (e, opts = {}) => {
 
     if (streamError) {
       throw {
-        code: "STREAM_ERROR",
+        code: streamError?.code || "STREAM_ERROR",
         message: streamError?.message || "Stream connection lost.",
       };
     }
@@ -1239,35 +1298,6 @@ const handleSubmit = async (e, opts = {}) => {
       error: donePayload?.error || donePayload?.message,
     };
     jobId = jobIdFromStream || artifactId || requestId;
-
-    const shouldConsume =
-      donePayload?.billing_required === true ||
-      donePayload?.consume_required === true ||
-      donePayload?.consumeTokens === true;
-
-    if (
-      shouldConsume &&
-      !billingConsumed &&
-      tokensConsumed &&
-      artifactId
-    ) {
-      const consumeRes = await fetch(`${BACKEND_URL}/api/billing/consume`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${idToken}`,
-        },
-        body: JSON.stringify({
-          tokens: tokensConsumed,
-          reason: "generation",
-          artifact_id: artifactId,
-        }),
-      });
-      if (!consumeRes.ok) {
-        throw { code: "BILLING_ERROR", message: "Failed to consume tokens." };
-      }
-      billingConsumed = true;
-    }
 
     // 17. Safer cleanup: check cancel
     if (wasCanceled) {
