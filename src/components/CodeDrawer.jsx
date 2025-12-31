@@ -24,6 +24,25 @@ try {
 
 const FONT_SIZE_KEY = "codeDrawerFontSize";
 
+const getExplanationBlocks = (explanation = "") => {
+  if (!explanation.trim()) return [];
+  return explanation
+    .split(/\n{2,}/)
+    .map((block) => block.trim())
+    .filter(Boolean)
+    .map((block) => {
+      const lines = block.split("\n").map((line) => line.trim()).filter(Boolean);
+      const isList = lines.length > 1 && lines.every((line) => /^[-*]\s+/.test(line));
+      if (isList) {
+        return {
+          type: "list",
+          items: lines.map((line) => line.replace(/^[-*]\s+/, "")),
+        };
+      }
+      return { type: "paragraph", text: block };
+    });
+};
+
 // Container component for business logic
 export default function CodeDrawerContainer({
   open,
@@ -826,12 +845,30 @@ function CodeDrawerUI({
         >
           <div id="code-drawer-codeblock">
             {explanation && (
-              <div className="px-5 pt-4 pb-2 border-b border-gray-800">
-                <div className="text-xs uppercase tracking-wide text-[#9b5de5] font-semibold mb-1">
+              <div className="px-5 pt-4 pb-3 border-b border-gray-800">
+                <div className="text-xs uppercase tracking-wide text-[#9b5de5] font-semibold mb-2">
                   Explanation
                 </div>
-                <div className="text-sm text-gray-200 whitespace-pre-line">
-                  {explanation}
+                <div className="space-y-3 text-sm text-gray-200 leading-relaxed">
+                  {getExplanationBlocks(explanation).map((block, idx) => {
+                    if (block.type === "list") {
+                      return (
+                        <ul
+                          key={`drawer-exp-list-${idx}`}
+                          className="list-disc pl-5 space-y-1"
+                        >
+                          {block.items.map((item, itemIdx) => (
+                            <li key={`drawer-exp-item-${idx}-${itemIdx}`}>{item}</li>
+                          ))}
+                        </ul>
+                      );
+                    }
+                    return (
+                      <p key={`drawer-exp-paragraph-${idx}`} className="whitespace-pre-line">
+                        {block.text}
+                      </p>
+                    );
+                  })}
                 </div>
               </div>
             )}
