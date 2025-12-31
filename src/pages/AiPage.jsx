@@ -121,12 +121,23 @@ function getUserInitials(email) {
     .slice(0, 2);
 }
 
-function buildPreviewSnippet(code, maxLines = 3, maxChars = 240) {
-  if (!code) return "";
-  const lines = code.split("\n").slice(0, maxLines);
-  const snippet = lines.join("\n");
-  if (snippet.length <= maxChars) return snippet;
-  return snippet.slice(0, maxChars).trimEnd() + "…";
+function getExplanationBlocks(explanation = "") {
+  if (!explanation.trim()) return [];
+  return explanation
+    .split(/\n{2,}/)
+    .map((block) => block.trim())
+    .filter(Boolean)
+    .map((block) => {
+      const lines = block.split("\n").map((line) => line.trim()).filter(Boolean);
+      const isList = lines.length > 1 && lines.every((line) => /^[-*]\s+/.test(line));
+      if (isList) {
+        return {
+          type: "list",
+          items: lines.map((line) => line.replace(/^[-*]\s+/, "")),
+        };
+      }
+      return { type: "paragraph", text: block };
+    });
 }
 
 // --- Version Number Helpers ---
@@ -1302,17 +1313,30 @@ const handleSubmit = async (e, opts = {}) => {
       dispatchEvent(eventName, dataBuffer.replace(/\n$/, ""));
     }
 
-    if (!donePayload && !streamError && !wasCanceled) {
-      const hasContent =
-        Boolean(codeBuffer && codeBuffer.trim()) ||
-        Boolean(explanationBuffer && explanationBuffer.trim());
-      if (hasContent) {
-        donePayload = { status: "succeeded" };
-      }
+    const streamedCode = codeBuffer?.trim() || "";
+    const streamedExplanation = explanationBuffer?.trim() || "";
+    const payloadCode =
+      typeof donePayload?.code === "string"
+        ? donePayload.code
+        : typeof donePayload?.content === "string"
+        ? donePayload.content
+        : "";
+    const payloadExplanation =
+      typeof donePayload?.explanation === "string" ? donePayload.explanation : "";
+    const hasContent =
+      Boolean(streamedCode || payloadCode) ||
+      Boolean(streamedExplanation || payloadExplanation);
+
+    if (!donePayload && !streamError && !wasCanceled && hasContent) {
+      donePayload = { status: "succeeded" };
     }
 
     if (!donePayload && !wasCanceled) {
       throw { code: "STREAM_ERROR", message: "Stream ended before completion." };
+    }
+
+    if (streamError && hasContent && !donePayload?.errorCode && !donePayload?.error) {
+      streamError = null;
     }
 
     if (streamError) {
@@ -1324,8 +1348,8 @@ const handleSubmit = async (e, opts = {}) => {
 
     jobData = {
       status: donePayload?.status || "succeeded",
-      content: codeBuffer,
-      explanation: explanationBuffer,
+      content: streamedCode || payloadCode,
+      explanation: streamedExplanation || payloadExplanation,
       versionId: donePayload?.versionId || donePayload?.version_id || null,
       versionNumber: donePayload?.versionNumber || donePayload?.version_number || null,
       versions: donePayload?.versions || null,
@@ -2161,7 +2185,7 @@ useEffect(() => {
           </div>
         </aside>
         {/* Main Content */}
-        <main className="flex-grow flex flex-col md:flex-row relative">
+        <main className="flex-grow flex flex-col md:flex-row relative md:pr-80">
           {/* Main chat area */}
           <section className="flex-grow flex flex-col md:w-2/3 h-full relative z-10">
             <div className="flex-grow overflow-y-auto px-2 md:px-4 py-6 flex flex-col items-center">
@@ -2199,7 +2223,7 @@ useEffect(() => {
                       const resolvedCode = ver?.code || m.content || "";
                       const resolvedExplanation =
                         ver?.explanation || m.explanation || "";
-                      const previewSnippet = buildPreviewSnippet(resolvedCode);
+                      const previewSnippet = "";
                       return (
                         <div
                           key={m.id}
@@ -2239,11 +2263,32 @@ useEffect(() => {
                                 </span>
                               )}
                             </div>
-                            {m.explanation && (
+                            {resolvedExplanation && (
                               <div className="mb-2">
-                                <div className="font-bold text-[#9b5de5] mb-1">Explanation</div>
-                                <div className="text-gray-200 whitespace-pre-line text-base">
-                                  {m.explanation}
+                                <div className="font-bold text-[#9b5de5] mb-2">Explanation</div>
+                                <div className="space-y-3 text-gray-200 text-base leading-relaxed">
+                                  {getExplanationBlocks(resolvedExplanation).map((block, idx) => {
+                                    if (block.type === "list") {
+                                      return (
+                                        <ul
+                                          key={`exp-list-${idx}`}
+                                          className="list-disc pl-6 space-y-1 text-gray-200"
+                                        >
+                                          {block.items.map((item, itemIdx) => (
+                                            <li key={`exp-item-${idx}-${itemIdx}`}>{item}</li>
+                                          ))}
+                                        </ul>
+                                      );
+                                    }
+                                    return (
+                                      <p
+                                        key={`exp-paragraph-${idx}`}
+                                        className="whitespace-pre-line"
+                                      >
+                                        {block.text}
+                                      </p>
+                                    );
+                                  })}
                                 </div>
                               </div>
                             )}
