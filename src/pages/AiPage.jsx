@@ -1039,13 +1039,6 @@ const handleSubmit = async (e, opts = {}) => {
         explanationBuffer += explanationDelta;
         if (typeof window !== "undefined") window.nexusCurrentExplanation = explanationBuffer;
       }
-      setMessages((prev) =>
-        prev.map((m) =>
-          m.id === pendingMsgIdLocal
-            ? { ...m, content: codeBuffer, explanation: explanationBuffer }
-            : m
-        )
-      );
     };
 
     const parseEventData = (raw) => {
@@ -2198,9 +2191,7 @@ useEffect(() => {
                         );
                       }
                       // assistant bubble
-                      const coreText = [m.explanation, m.content]
-                        .filter(Boolean)
-                        .join("\n");
+                      const coreText = [m.explanation].filter(Boolean).join("\n");
                       const size = getAiBubbleSizing(coreText);
                       const ver = m.versionId
                         ? versionHistory.find((v) => v.id === m.versionId)
@@ -2256,7 +2247,6 @@ useEffect(() => {
                                 </div>
                               </div>
                             )}
-                            {m.content && <AssistantCodeBlock code={m.content} />}
                             <div className="mb-2 mt-3">
                               <ScriptLoadingBarContainer
                                 filename={safeFile((currentScript?.title || "Script").trim() || "Script")}
