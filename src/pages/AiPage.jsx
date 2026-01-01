@@ -1353,6 +1353,7 @@ const handleSubmit = async (e, opts = {}) => {
     // Extract code/explanation from root OR the version object
     const finalCode =
       jobData.code ||
+      jobData.content ||
       finalVersion?.code ||
       jobData.artifact?.code ||
       "";
