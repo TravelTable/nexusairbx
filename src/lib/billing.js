@@ -19,12 +19,13 @@ export async function authedFetch(path, init = {}) {
   const noCache = init.noCache === true;
   const url = new URL(path, API_ORIGIN);
   if (noCache) url.searchParams.set("t", String(Date.now()));
+  const resolvedMethod = init.method ?? (init.body ? "POST" : "GET");
 
   let token = await getIdToken({ force: false });
 
   let res = await fetch(url.toString(), {
     ...init,
-    method: init.method || "GET",
+    method: resolvedMethod,
     credentials: "include",
     mode: "cors",
     cache: "no-store",
@@ -42,7 +43,7 @@ export async function authedFetch(path, init = {}) {
     token = await getIdToken({ force: true });
     res = await fetch(url.toString(), {
       ...init,
-      method: init.method || "GET",
+      method: resolvedMethod,
       credentials: "include",
       mode: "cors",
       cache: "no-store",
