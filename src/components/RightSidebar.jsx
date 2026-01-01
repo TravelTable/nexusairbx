@@ -28,95 +28,162 @@ export default function RightSidebar({
   promptSuggestionLoading,
   isMobile = false,
 }) {
+  // --- API base: MUST point at backend, not the frontend origin ---
+  const API_BASE =
+    (process.env.REACT_APP_BACKEND_URL ||
+      "https://nexusrbx-backend-production.up.railway.app").replace(/\/+$/, "");
 
-  // Load templates from backend
-  useEffect(() => {
-    async function fetchTemplates() {
-      const user = auth.currentUser;
-      if (!user) return;
-      const token = await user.getIdToken();
-      const res = await fetch("/api/user/templates", {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setUserPromptTemplates(data.templates || []);
-      }
+  const DEBUG =
+    (typeof window !== "undefined" &&
+      (window.localStorage.getItem("nexusrbx:debug") === "true" ||
+        window.location.search.includes("debug=1"))) ||
+    false;
+
+  function debugLog(...args) {
+    if (DEBUG) console.log("[RightSidebar]", ...args);
+  }
+
+  async function safeJson(res) {
+    const ct = res.headers.get("content-type") || "";
+    if (ct.includes("application/json")) return res.json();
+
+    // If we got HTML (common when hitting the wrong origin), surface a real error.
+    const text = await res.text();
+    throw new Error(
+      `Expected JSON but got "${ct || "unknown"}" (${res.status}). ` +
+        `First 120 chars: ${text.slice(0, 120)}`
+    );
+  }
+
+  async function authedFetch(path, { method = "GET", body, headers = {} } = {}) {
+    const user = auth.currentUser;
+    if (!user) throw new Error("Not signed in");
+    const token = await user.getIdToken();
+
+    const res = await fetch(`${API_BASE}${path}`, {
+      method,
+      headers: {
+        Authorization: `Bearer ${token}`,
+        ...(body ? { "Content-Type": "application/json" } : {}),
+        ...headers,
+      },
+      body: body ? JSON.stringify(body) : undefined,
+    });
+
+    if (!res.ok) {
+      let extra = "";
+      try {
+        const ct = res.headers.get("content-type") || "";
+        extra = ct.includes("application/json")
+          ? JSON.stringify(await res.json())
+          : (await res.text()).slice(0, 300);
+      } catch {}
+      throw new Error(`HTTP ${res.status} ${res.statusText}: ${extra}`);
     }
-    fetchTemplates();
+
+    // For 204 / empty responses
+    if (res.status === 204) return null;
+    return safeJson(res);
+  }
+
+  // ---------- Templates ----------
+  useEffect(() => {
+    let canceled = false;
+    (async () => {
+      try {
+        const data = await authedFetch("/api/user/templates");
+        if (!canceled) setUserPromptTemplates(data?.templates || []);
+        debugLog("templates loaded", data?.templates?.length || 0);
+      } catch (e) {
+        console.error(e);
+      }
+    })();
+    return () => {
+      canceled = true;
+    };
   }, [setUserPromptTemplates]);
 
-  // Add, update, delete template functions
   async function addTemplate(name, content) {
-    const user = auth.currentUser;
-    if (!user) return;
-    const token = await user.getIdToken();
-    const res = await fetch("/api/user/templates", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ name, content })
-    });
-    if (res.ok) {
-      const tpl = await res.json();
+    try {
+      const tpl = await authedFetch("/api/user/templates", {
+        method: "POST",
+        body: { name, content },
+      });
       setUserPromptTemplates((prev) => [...prev, tpl]);
+    } catch (e) {
+      console.error(e);
     }
   }
 
   async function updateTemplate(id, name, content) {
-    const user = auth.currentUser;
-    if (!user) return;
-    const token = await user.getIdToken();
-    await fetch(`/api/user/templates/${id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ name, content })
-    });
-    setUserPromptTemplates((prev) =>
-      prev.map((tpl) => (tpl.id === id ? { ...tpl, name, content } : tpl))
-    );
+    try {
+      await authedFetch(`/api/user/templates/${id}`, {
+        method: "PUT",
+        body: { name, content },
+      });
+      setUserPromptTemplates((prev) =>
+        prev.map((tpl) => (tpl.id === id ? { ...tpl, name, content } : tpl))
+      );
+    } catch (e) {
+      console.error(e);
+    }
   }
 
   async function deleteTemplate(id) {
-    const user = auth.currentUser;
-    if (!user) return;
-    const token = await user.getIdToken();
-    await fetch(`/api/user/templates/${id}`, {
-      method: "DELETE",
-      headers: { Authorization: `Bearer ${token}` }
-    });
-    setUserPromptTemplates((prev) => prev.filter((tpl) => tpl.id !== id));
+    try {
+      await authedFetch(`/api/user/templates/${id}`, { method: "DELETE" });
+      setUserPromptTemplates((prev) => prev.filter((tpl) => tpl.id !== id));
+    } catch (e) {
+      console.error(e);
+    }
   }
 
-  // Load user settings from backend
+  // ---------- Settings (load once + debounced save) ----------
+  const didLoadSettingsRef = React.useRef(false);
+  const lastSavedSettingsRef = React.useRef("");
+
   useEffect(() => {
-    async function fetchSettings() {
-      const user = auth.currentUser;
-      if (!user) return;
-      const token = await user.getIdToken();
-      const res = await fetch("/api/user/settings", {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setSettings((prev) => ({ ...prev, ...data }));
+    let canceled = false;
+    (async () => {
+      try {
+        const data = await authedFetch("/api/user/settings");
+        if (canceled) return;
+        setSettings((prev) => ({ ...prev, ...(data || {}) }));
+        didLoadSettingsRef.current = true;
+        lastSavedSettingsRef.current = JSON.stringify({
+          ...settings,
+          ...(data || {}),
+        });
+        debugLog("settings loaded");
+      } catch (e) {
+        console.error(e);
       }
-    }
-    fetchSettings();
+    })();
+
+    return () => {
+      canceled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [setSettings]);
 
-  // Save settings to backend on change
   useEffect(() => {
-    async function saveSettings() {
-      const user = auth.currentUser;
-      if (!user) return;
-      const token = await user.getIdToken();
-      await fetch("/api/user/settings", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify(settings)
-      });
-    }
-    if (settings) saveSettings();
+    if (!settings) return;
+    if (!didLoadSettingsRef.current) return;
+
+    const next = JSON.stringify(settings);
+    if (next === lastSavedSettingsRef.current) return;
+
+    const t = setTimeout(async () => {
+      try {
+        await authedFetch("/api/user/settings", { method: "POST", body: settings });
+        lastSavedSettingsRef.current = next;
+        debugLog("settings saved");
+      } catch (e) {
+        console.error(e);
+      }
+    }, 700); // debounce to stop POST-spam
+
+    return () => clearTimeout(t);
   }, [settings]);
 
   const {

@@ -6,7 +6,6 @@ import React, {
   useDeferredValue,
 } from "react";
 import { useBilling } from "../context/BillingContext";
-import { consumeTokens } from "../lib/billing";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   Send,
@@ -1042,14 +1041,9 @@ const handleSubmit = async (e, opts = {}) => {
     let pipelineId = null;
 
     const appendPendingMessage = ({ codeDelta = "", explanationDelta = "" }) => {
-      if (codeDelta) {
-        codeBuffer += codeDelta;
-        if (typeof window !== "undefined") window.nexusCurrentCode = codeBuffer;
-      }
-      if (explanationDelta) {
-        explanationBuffer += explanationDelta;
-        if (typeof window !== "undefined") window.nexusCurrentExplanation = explanationBuffer;
-      }
+      if (codeDelta) codeBuffer += codeDelta;
+      if (explanationDelta) explanationBuffer += explanationDelta;
+      // Intentionally NO window/global updates (no live-stream UI).
     };
 
     const parseEventData = (raw) => {
@@ -1346,15 +1340,28 @@ const handleSubmit = async (e, opts = {}) => {
       };
     }
 
+    const finalCode = (streamedCode || payloadCode || "").trim();
+    const finalExplanation = (streamedExplanation || payloadExplanation || "").trim();
+
     jobData = {
       status: donePayload?.status || "succeeded",
-      content: streamedCode || payloadCode,
-      explanation: streamedExplanation || payloadExplanation,
+      // IMPORTANT: don't put code into chat message content
+      content: "",
+      // Keep explanation as the “structured output” you show in chat
+      explanation: finalExplanation,
+      // Store code separately for CodeDrawer / View Code
+      code: finalCode,
       versionId: donePayload?.versionId || donePayload?.version_id || null,
       versionNumber: donePayload?.versionNumber || donePayload?.version_number || null,
-      versions: donePayload?.versions || null,
-      version: donePayload?.version || null,
-      projectId: projectIdFromStream || donePayload?.projectId || donePayload?.project_id || projectIdToSend || null,
+      // Your backend 'done' event doesn't send versions; keep null and fetch later if you want.
+      versions: null,
+      version: null,
+      projectId:
+        projectIdFromStream ||
+        donePayload?.projectId ||
+        donePayload?.project_id ||
+        projectIdToSend ||
+        null,
       artifactId,
       tokensConsumed,
       errorCode: donePayload?.errorCode || donePayload?.error_code,
@@ -1378,22 +1385,8 @@ const handleSubmit = async (e, opts = {}) => {
       return;
     }
 
-    const billingJobId = jobIdFromStream || jobId || artifactId || requestId;
-    try {
-      await consumeTokens({
-        jobId: billingJobId,
-        pipelineId,
-        model: settings.modelVersion,
-        tokensUsed: tokensConsumed ?? undefined,
-      });
-    } catch (billingErr) {
-      throw {
-        code: "BILLING_ERROR",
-        message: billingErr?.message || "Billing failed.",
-      };
-    }
-
-    // 7. Token/billing refresh race
+    // Billing is handled server-side inside /api/generate/stream finalize.
+    // Frontend should ONLY refresh entitlements.
     await refreshBilling?.();
 
     // 9. Error taxonomy & user messages
@@ -1482,8 +1475,9 @@ const handleSubmit = async (e, opts = {}) => {
           {
             id: uuidv4(),
             role: "assistant",
-            content: jobData.content || "",
+            content: "",
             explanation: jobData.explanation || "",
+            code: jobData.code || "",
             createdAt: Date.now(),
             versionId: jobData.versionId || null,
             versionNumber: jobData.versionNumber || null,
@@ -2220,7 +2214,7 @@ useEffect(() => {
                       const ver = m.versionId
                         ? versionHistory.find((v) => v.id === m.versionId)
                         : versionHistory.find((v) => getVN(v) === getVN(m));
-                      const resolvedCode = ver?.code || m.content || "";
+                      const resolvedCode = ver?.code || m.code || "";
                       const resolvedExplanation =
                         ver?.explanation || m.explanation || "";
                       const previewSnippet = "";
