@@ -1040,10 +1040,11 @@ const handleSubmit = async (e, opts = {}) => {
     let projectIdFromStream = null;
     let pipelineId = null;
 
+    // With one-shot backend, we do NOT stream into UI (or window globals).
+    // Keep buffers only for backward compatibility if older backend emits chunks.
     const appendPendingMessage = ({ codeDelta = "", explanationDelta = "" }) => {
       if (codeDelta) codeBuffer += codeDelta;
       if (explanationDelta) explanationBuffer += explanationDelta;
-      // Intentionally NO window/global updates (no live-stream UI).
     };
 
     const parseEventData = (raw) => {
@@ -1095,6 +1096,22 @@ const handleSubmit = async (e, opts = {}) => {
       if (parsed?.jobId || parsed?.job_id) jobIdFromStream = parsed.jobId || parsed.job_id;
       if (parsed?.projectId || parsed?.project_id) {
         projectIdFromStream = parsed.projectId || parsed.project_id;
+      }
+      streamDone = true;
+    };
+
+    const handleErrorEvent = (raw) => {
+      const parsedError = parseEventData(raw) || { message: "Stream error." };
+      if (
+        typeof parsedError?.message === "string" &&
+        parsedError.message.toLowerCase().includes("not enough tokens")
+      ) {
+        streamError = {
+          ...parsedError,
+          code: "INSUFFICIENT_TOKENS",
+        };
+      } else {
+        streamError = parsedError;
       }
       streamDone = true;
     };
@@ -1208,101 +1225,113 @@ const handleSubmit = async (e, opts = {}) => {
 
     const reader = activeStreamRes.body.getReader();
     const decoder = new TextDecoder();
+
+    // We still parse SSE framing (event:/data:), but we only *act* on:
+    // - status
+    // - done
+    // - error
+    // Any chunk events are ignored (or buffered silently for backward compat).
     let buffer = "";
     let eventName = "message";
     let dataBuffer = "";
 
     const dispatchEvent = (name, data) => {
+      // Normalize: some servers might emit "message" with {event,type,...}
+      if (name === "message") {
+        const parsed = parseEventData(data);
+        if (!parsed) return;
+
+        const evt =
+          parsed.event || parsed.type || parsed.kind || parsed.name || null;
+
+        const payload = parsed.data ?? parsed.payload ?? parsed;
+
+        if (evt) return dispatchEvent(evt, payload);
+
+        if (
+          parsed.done === true ||
+          parsed.completed === true ||
+          parsed.status === "done"
+        ) {
+          return dispatchEvent("done", parsed);
+        }
+
+        if (parsed.error || parsed.code === "error" || parsed.status === "failed") {
+          return dispatchEvent("error", parsed);
+        }
+
+        if (parsed.status || parsed.stage || parsed.state) {
+          return dispatchEvent("status", parsed);
+        }
+
+        // If it's just content but no explicit event, treat as done (one-shot safe)
+        if (typeof parsed.content === "string" || typeof parsed.code === "string") {
+          return dispatchEvent("done", parsed);
+        }
+
+        return;
+      }
+
+      // We NO LONGER live-render code.
+      // If backend still emits chunks, buffer them silently (no UI updates).
       if (name === "chunk" || name === "code_chunk") {
         const chunk = extractChunk(data);
         if (chunk) appendPendingMessage({ codeDelta: chunk });
-      } else if (name === "explanation_chunk") {
+        return;
+      }
+      if (name === "explanation_chunk") {
         const chunk = extractChunk(data);
         if (chunk) appendPendingMessage({ explanationDelta: chunk });
-      } else if (name === "status") {
-        handleStatusEvent(data);
-      } else if (name === "done") {
-        handleDoneEvent(data);
-      } else if (name === "error") {
-        const parsedError =
-          parseEventData(data) || { message: "Stream error." };
-        if (
-          typeof parsedError?.message === "string" &&
-          parsedError.message.toLowerCase().includes("not enough tokens")
-        ) {
-          streamError = {
-            ...parsedError,
-            code: "INSUFFICIENT_TOKENS",
-          };
-        } else {
-          streamError = parsedError;
-        }
-        streamDone = true;
+        return;
       }
+
+      if (name === "status") return handleStatusEvent(data);
+      if (name === "done") return handleDoneEvent(data);
+      if (name === "error") return handleErrorEvent(data);
+
+      // Unknown events ignored
     };
 
     const dispatchNdjsonLine = (line) => {
       const parsed = parseEventData(line);
       if (!parsed) return;
-      if (typeof parsed === "string") {
-        dispatchEvent("chunk", parsed);
-        return;
-      }
-      const eventNameFromPayload =
-        parsed.event || parsed.type || parsed.kind || parsed.name || null;
-      const payload = parsed.data ?? parsed.payload ?? parsed;
-      if (eventNameFromPayload) {
-        dispatchEvent(eventNameFromPayload, payload);
-        return;
-      }
-      if (
-        parsed.done === true ||
-        parsed.completed === true ||
-        parsed.status === "done"
-      ) {
-        dispatchEvent("done", parsed);
-        return;
-      }
-      if (parsed.status || parsed.stage || parsed.state) {
-        dispatchEvent("status", parsed);
-        return;
-      }
-      if (parsed.chunk || parsed.delta || parsed.content) {
-        dispatchEvent("chunk", parsed);
-      }
+      dispatchEvent("message", parsed);
     };
 
+    // Read loop
     while (!streamDone) {
       const { value, done } = await reader.read();
       if (done) {
         streamDone = true;
         break;
       }
+
       buffer += decoder.decode(value, { stream: true });
-      const lines = buffer.split(/\r?\n/);
+
+      // Split by newline (SSE frames)
+      const lines = buffer.split("\n");
       buffer = lines.pop() || "";
+
       for (const line of lines) {
         if (line.startsWith("event:")) {
           eventName = line.slice(6).trim() || "message";
         } else if (line.startsWith("data:")) {
-          let dataLine = line.slice(5);
-          if (dataLine.startsWith(" ")) dataLine = dataLine.slice(1);
-          dataBuffer += dataLine + "\n";
-        } else if (line.startsWith("retry:") || line.startsWith(":")) {
-          continue;
-        } else if (line === "") {
+          dataBuffer += line.slice(5).trim() + "\n";
+        } else if (line.trim() === "") {
+          // End of SSE event
           if (dataBuffer) {
-            const payload = dataBuffer.replace(/\n$/, "");
-            dispatchEvent(eventName, payload);
+            dispatchEvent(eventName, dataBuffer.replace(/\n$/, ""));
             dataBuffer = "";
             eventName = "message";
           }
         } else if (line.trim()) {
+          // Sometimes servers send NDJSON without SSE framing
           dispatchNdjsonLine(line.trim());
         }
       }
     }
 
+    // Flush last buffered event if stream ended mid-frame
     if (dataBuffer) {
       dispatchEvent(eventName, dataBuffer.replace(/\n$/, ""));
     }
@@ -1310,10 +1339,10 @@ const handleSubmit = async (e, opts = {}) => {
     const streamedCode = codeBuffer?.trim() || "";
     const streamedExplanation = explanationBuffer?.trim() || "";
     const payloadCode =
-      typeof donePayload?.code === "string"
-        ? donePayload.code
-        : typeof donePayload?.content === "string"
+      typeof donePayload?.content === "string"
         ? donePayload.content
+        : typeof donePayload?.code === "string"
+        ? donePayload.code
         : "";
     const payloadExplanation =
       typeof donePayload?.explanation === "string" ? donePayload.explanation : "";
