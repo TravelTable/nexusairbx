@@ -1341,12 +1341,37 @@ const handleSubmit = async (e, opts = {}) => {
       normalizedVersions = jobData.versions.map(normalizeServerVersion).sort(byVN);
       setVersionHistory(normalizedVersions);
     }
+    // Normalize the version if present so we can grab code from it
+    let finalVersion = null;
     if (jobData.version) {
-      const normVer = normalizeServerVersion(jobData.version);
+      finalVersion = normalizeServerVersion(jobData.version);
       setSelectedVersion(
-        normalizedVersions.find((v) => v.id === normVer.id) || normVer
+        normalizedVersions.find((v) => v.id === finalVersion.id) || finalVersion
       );
     }
+
+    // Extract code/explanation from root OR the version object
+    const finalCode =
+      jobData.code ||
+      finalVersion?.code ||
+      jobData.artifact?.code ||
+      "";
+
+    const finalExplanation =
+      jobData.explanation ||
+      finalVersion?.explanation ||
+      "";
+
+    const finalVersionId =
+      jobData.versionId ||
+      finalVersion?.id ||
+      null;
+
+    const finalVersionNumber =
+      jobData.versionNumber ||
+      finalVersion?.versionNumber ||
+      finalVersion?.version ||
+      null;
 
     // 3. Messaging list integrity: remove only the pending you added
     setMessages((prev) =>
@@ -1357,11 +1382,11 @@ const handleSubmit = async (e, opts = {}) => {
             id: uuidv4(),
             role: "assistant",
             content: "",
-            explanation: jobData.explanation || "",
-            code: jobData.code || "",
+            explanation: finalExplanation, // Use the resolved explanation
+            code: finalCode,               // Use the resolved code
             createdAt: Date.now(),
-            versionId: jobData.versionId || null,
-            versionNumber: jobData.versionNumber || null,
+            versionId: finalVersionId,
+            versionNumber: finalVersionNumber,
             pending: false,
           },
         ])
