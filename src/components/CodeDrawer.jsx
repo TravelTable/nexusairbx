@@ -250,10 +250,13 @@ export default function CodeDrawerContainer({
     [code, editTitle, filename, sanitizeFilename]
   );
 
+  // Determine display code (memoized)
+  const displayCode = useMemo(() => {
+    return code && code.trim() !== "" ? code : "-- No code to display --";
+  }, [code]);
+
   // Copy to clipboard handler (with fallback)
   const handleCopy = useCallback(() => {
-    const displayCode =
-      liveGenerating && liveContent ? liveContent : code;
     function fallbackCopy(text) {
       const textarea = document.createElement("textarea");
       textarea.value = text;
@@ -279,7 +282,7 @@ export default function CodeDrawerContainer({
       fallbackCopy(displayCode);
       setCopySuccess(true);
     }
-  }, [code, liveGenerating, liveContent]);
+  }, [displayCode]);
 
   // Save script handler (async, supports backend versioning)
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -335,16 +338,6 @@ export default function CodeDrawerContainer({
     },
     []
   );
-
-  // Determine display code (memoized)
-  const displayCode = useMemo(() => {
-    if (liveGenerating) {
-      return liveContent && liveContent.trim() !== ""
-        ? liveContent
-        : "-- Generating code... --";
-    }
-    return code && code.trim() !== "" ? code : "-- No code to display --";
-  }, [code, liveGenerating, liveContent]);
 
   // Search logic
   useEffect(() => {
