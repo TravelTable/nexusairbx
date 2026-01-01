@@ -1181,222 +1181,74 @@ const handleSubmit = async (e, opts = {}) => {
     // 13. Telemetry: stream_started
     fireTelemetry("stream_started", { requestId, jobId, pipelineId });
 
-    let activeStreamRes = await fetch(
+    /**
+     * IMPORTANT:
+     * The backend only starts generation when /api/generate/stream is hit (SSE).
+     * We still call it, but we DO NOT read/parse chunks.
+     * We just let it run, and the UI uses polling via /api/jobs/:jobId.
+     */
+    let triggerRes = await fetch(
       `${BACKEND_URL}/api/generate/stream?jobId=${encodeURIComponent(jobId)}`,
       {
         method: "GET",
-        headers: {
-          Authorization: `Bearer ${idToken}`,
-        },
+        headers: { Authorization: `Bearer ${idToken}` },
         signal: streamAbortController.signal,
       }
     );
 
-    if (activeStreamRes.status === 401 && !retriedToken) {
+    if (triggerRes.status === 401 && !retriedToken) {
       await user.getIdToken(true);
       idToken = await user.getIdToken();
       retriedToken = true;
-      activeStreamRes = await fetch(
+
+      triggerRes = await fetch(
         `${BACKEND_URL}/api/generate/stream?jobId=${encodeURIComponent(jobId)}`,
         {
           method: "GET",
-          headers: {
-            Authorization: `Bearer ${idToken}`,
-          },
+          headers: { Authorization: `Bearer ${idToken}` },
           signal: streamAbortController.signal,
         }
       );
-      if (!activeStreamRes.ok) {
-        throw {
-          code: "BACKEND_ERROR",
-          message: `Stream failed (${activeStreamRes.status})`,
-        };
-      }
-    } else if (!activeStreamRes.ok) {
+    }
+
+    if (!triggerRes.ok) {
+      // Read text safely (backend might return HTML or SSE error text)
+      const t = await triggerRes.text().catch(() => "");
       throw {
         code: "BACKEND_ERROR",
-        message: `Stream failed (${activeStreamRes.status})`,
+        message: `Stream trigger failed (${triggerRes.status}) ${t ? `- ${t.slice(0, 200)}` : ""}`.trim(),
       };
     }
 
-    if (!activeStreamRes.body) {
-      throw { code: "STREAM_ERROR", message: "No stream body returned." };
-    }
+    // DO NOT read stream chunks.
+    // Just keep the connection alive while polling.
+    // (If the browser closes it early, polling still works as long as the backend started.)
+    setGenerationStep("running");
+    setLoadingBarData((prev) => ({ ...prev, stage: "running", eta: null }));
 
-    const reader = activeStreamRes.body.getReader();
-    const decoder = new TextDecoder();
-
-    // We still parse SSE framing (event:/data:), but we only *act* on:
-    // - status
-    // - done
-    // - error
-    // Any chunk events are ignored (or buffered silently for backward compat).
-    let buffer = "";
-    let eventName = "message";
-    let dataBuffer = "";
-
-    const dispatchEvent = (name, data) => {
-      // Normalize: some servers might emit "message" with {event,type,...}
-      if (name === "message") {
-        const parsed = parseEventData(data);
-        if (!parsed) return;
-
-        const evt =
-          parsed.event || parsed.type || parsed.kind || parsed.name || null;
-
-        const payload = parsed.data ?? parsed.payload ?? parsed;
-
-        if (evt) return dispatchEvent(evt, payload);
-
-        if (
-          parsed.done === true ||
-          parsed.completed === true ||
-          parsed.status === "done"
-        ) {
-          return dispatchEvent("done", parsed);
+    // 14) Poll until done (UI updates come ONLY from polling ticks)
+    jobData = await pollJob(
+      user,
+      jobId,
+      (tick) => {
+        // Debug (toggle in console: localStorage.setItem("debugAi","1"))
+        if (localStorage.getItem("debugAi") === "1") {
+          console.debug("[AI job tick]", tick);
         }
 
-        if (parsed.error || parsed.code === "error" || parsed.status === "failed") {
-          return dispatchEvent("error", parsed);
-        }
+        const stage = tick?.stage || tick?.status || "running";
+        setGenerationStep(stage);
 
-        if (parsed.status || parsed.stage || parsed.state) {
-          return dispatchEvent("status", parsed);
-        }
-
-        // If it's just content but no explicit event, treat as done (one-shot safe)
-        if (typeof parsed.content === "string" || typeof parsed.code === "string") {
-          return dispatchEvent("done", parsed);
-        }
-
-        return;
-      }
-
-      // We NO LONGER live-render code.
-      // If backend still emits chunks, buffer them silently (no UI updates).
-      if (name === "chunk" || name === "code_chunk") {
-        const chunk = extractChunk(data);
-        if (chunk) appendPendingMessage({ codeDelta: chunk });
-        return;
-      }
-      if (name === "explanation_chunk") {
-        const chunk = extractChunk(data);
-        if (chunk) appendPendingMessage({ explanationDelta: chunk });
-        return;
-      }
-
-      if (name === "status") return handleStatusEvent(data);
-      if (name === "done") return handleDoneEvent(data);
-      if (name === "error") return handleErrorEvent(data);
-
-      // Unknown events ignored
-    };
-
-    const dispatchNdjsonLine = (line) => {
-      const parsed = parseEventData(line);
-      if (!parsed) return;
-      dispatchEvent("message", parsed);
-    };
-
-    // Read loop
-    while (!streamDone) {
-      const { value, done } = await reader.read();
-      if (done) {
-        streamDone = true;
-        break;
-      }
-
-      buffer += decoder.decode(value, { stream: true });
-
-      // Split by newline (SSE frames)
-      const lines = buffer.split("\n");
-      buffer = lines.pop() || "";
-
-      for (const line of lines) {
-        if (line.startsWith("event:")) {
-          eventName = line.slice(6).trim() || "message";
-        } else if (line.startsWith("data:")) {
-          dataBuffer += line.slice(5).trim() + "\n";
-        } else if (line.trim() === "") {
-          // End of SSE event
-          if (dataBuffer) {
-            dispatchEvent(eventName, dataBuffer.replace(/\n$/, ""));
-            dataBuffer = "";
-            eventName = "message";
-          }
-        } else if (line.trim()) {
-          // Sometimes servers send NDJSON without SSE framing
-          dispatchNdjsonLine(line.trim());
-        }
-      }
-    }
-
-    // Flush last buffered event if stream ended mid-frame
-    if (dataBuffer) {
-      dispatchEvent(eventName, dataBuffer.replace(/\n$/, ""));
-    }
-
-    const streamedCode = codeBuffer?.trim() || "";
-    const streamedExplanation = explanationBuffer?.trim() || "";
-    const payloadCode =
-      typeof donePayload?.content === "string"
-        ? donePayload.content
-        : typeof donePayload?.code === "string"
-        ? donePayload.code
-        : "";
-    const payloadExplanation =
-      typeof donePayload?.explanation === "string" ? donePayload.explanation : "";
-    const hasContent =
-      Boolean(streamedCode || payloadCode) ||
-      Boolean(streamedExplanation || payloadExplanation);
-
-    if (!donePayload && !streamError && !wasCanceled && hasContent) {
-      donePayload = { status: "succeeded" };
-    }
-
-    if (!donePayload && !wasCanceled) {
-      throw { code: "STREAM_ERROR", message: "Stream ended before completion." };
-    }
-
-    if (streamError && hasContent && !donePayload?.errorCode && !donePayload?.error) {
-      streamError = null;
-    }
-
-    if (streamError) {
-      throw {
-        code: streamError?.code || "STREAM_ERROR",
-        message: streamError?.message || "Stream connection lost.",
-      };
-    }
-
-    const finalCode = (streamedCode || payloadCode || "").trim();
-    const finalExplanation = (streamedExplanation || payloadExplanation || "").trim();
-
-    jobData = {
-      status: donePayload?.status || "succeeded",
-      // IMPORTANT: don't put code into chat message content
-      content: "",
-      // Keep explanation as the “structured output” you show in chat
-      explanation: finalExplanation,
-      // Store code separately for CodeDrawer / View Code
-      code: finalCode,
-      versionId: donePayload?.versionId || donePayload?.version_id || null,
-      versionNumber: donePayload?.versionNumber || donePayload?.version_number || null,
-      // Your backend 'done' event doesn't send versions; keep null and fetch later if you want.
-      versions: null,
-      version: null,
-      projectId:
-        projectIdFromStream ||
-        donePayload?.projectId ||
-        donePayload?.project_id ||
-        projectIdToSend ||
-        null,
-      artifactId,
-      tokensConsumed,
-      errorCode: donePayload?.errorCode || donePayload?.error_code,
-      error: donePayload?.error || donePayload?.message,
-    };
-    jobId = jobIdFromStream || artifactId || requestId;
+        setLoadingBarVisible(true);
+        setLoadingBarData((prev) => ({
+          ...prev,
+          loading: true,
+          stage,
+          eta: null,
+        }));
+      },
+      { signal: streamAbortController.signal }
+    );
 
     // 17. Safer cleanup: check cancel
     if (wasCanceled) {
@@ -2349,8 +2201,8 @@ useEffect(() => {
                                     jobAbortRef.current.abort();
                                   }
                                 }}
-                                jobStage={loadingBarData.stage}
-                                etaSeconds={loadingBarData.eta}
+                                jobStage={m.pending ? loadingBarData.stage : null}
+                                etaSeconds={m.pending ? loadingBarData.eta : null}
                                 plan={planKey}
                               />
                               {/* Free plan nudge */}
