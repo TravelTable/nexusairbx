@@ -152,10 +152,6 @@ export default function ScriptLoadingBarContainer({
   }
 }, [saving, internalSaved, onSave, displayName, filename, version, language]);
 
-  const handleView = useCallback(() => {
-    if (typeof onView === "function" && ready) onView();
-  }, [onView, ready]);
-
   const handleCancel = useCallback(() => {
     if (typeof onCancel === "function" && loading && !ready) {
       onCancel();
@@ -166,6 +162,7 @@ export default function ScriptLoadingBarContainer({
   const pct = clampProgress(progress, 100);
   const progressLabelDisplay = `${Math.round(pct)}%`;
   const stageLabel = canceled ? "Canceled" : effectiveStage || (ready ? "Finalizing" : "Generating");
+  const canView = !!(codeReady || ready);
 
   return (
     <div className="sbc max-w-3xl mx-auto my-4 w-full px-2 sm:px-4" aria-busy={loading}>
@@ -212,48 +209,42 @@ export default function ScriptLoadingBarContainer({
 
             {/* Buttons */}
             <div className="flex flex-row flex-wrap items-center gap-2 w-full sm:w-auto sm:justify-end mt-2 sm:mt-0">
-{/* View */}
-<div
-  className={`relative group inline-flex sm:flex-none ${
-    !ready ? "opacity-50 cursor-not-allowed" : ""
-  }`}
->
-  {/* Gradient glow (clipped to button size) */}
-  <div
-    className={`absolute inset-0 rounded-md bg-gradient-to-r from-purple-600 via-blue-500 to-cyan-400 opacity-0 group-hover:opacity-100 blur-sm transition-opacity duration-300 ${
-      !ready ? "hidden" : ""
-    }`}
-    aria-hidden="true"
-  />
-  <button
-    type="button"
-    onClick={() => {
-      if (typeof onView === "function" && ready) {
-        onView();
-      } else if (ready) {
-        // fallback: open a modal or drawer with code if available
-        window.dispatchEvent(
-          new CustomEvent("nexus:openCodeDrawer", {
-            detail: {
-              code: typeof window !== "undefined" && window.nexusCurrentCode ? window.nexusCurrentCode : "",
-              title: displayName || filename || "Script",
-              version: version,
-              language: language,
-            },
-          })
-        );
-      }
-    }}
-    disabled={!ready}
-    aria-disabled={!ready}
-    className="relative z-10 flex items-center justify-center px-4 py-1.5 rounded-md text-sm bg-black text-white border border-transparent transition-all duration-300"
-    title={ready ? "View script" : "Wait for script to complete"}
-    tabIndex={ready ? 0 : -1}
-  >
-    <FileCode className="w-4 h-4 mr-1.5" />
-    <span>View</span>
-  </button>
-</div>
+            {/* View */}
+            <button
+              type="button"
+              onClick={() => {
+                // If parent provided a view handler, use it whenever we can view
+                if (typeof onView === "function" && canView) {
+                  onView();
+                  return;
+                }
+
+                // Fallback: if ready and no handler, try the legacy global drawer event
+                if (canView) {
+                  window.dispatchEvent(
+                    new CustomEvent("nexus:openCodeDrawer", {
+                      detail: {
+                        code:
+                          typeof window !== "undefined" && window.nexusCurrentCode
+                            ? window.nexusCurrentCode
+                            : "",
+                        title: displayName || filename || "Script",
+                        version: version,
+                        language: language,
+                      },
+                    })
+                  );
+                }
+              }}
+              disabled={!canView}
+              aria-disabled={!canView}
+              className="relative z-10 flex items-center justify-center px-4 py-1.5 rounded-md text-sm bg-black text-white border border-transparent transition-all duration-300"
+              title={canView ? "View script" : "No code available yet"}
+              tabIndex={canView ? 0 : -1}
+            >
+              <FileCode className="w-4 h-4 mr-1.5" />
+              <span>View</span>
+            </button>
 
               {/* Cancel */}
               {typeof onCancel === "function" && loading && !ready && !canceled && (

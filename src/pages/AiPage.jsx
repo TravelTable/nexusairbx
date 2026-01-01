@@ -16,7 +16,7 @@ import {
   ChevronRight,
   Info,
   Copy,
-  Check,
+  Check, 
 } from "lucide-react";
 import { auth } from "./firebase";
 import { onAuthStateChanged, signInAnonymously } from "firebase/auth";
@@ -2173,7 +2173,9 @@ useEffect(() => {
                                 displayName={currentScript?.title || "Script"}
                                 version={m.versionNumber ? `v${getVN(m)}` : ""}
                                 language="lua"
-                                loading={!!m.pending || !!isGenerating || loadingBarVisible}
+                                // Only the pending message should show "generating/error" stage and loading state.
+                                // Completed messages should not be affected by global generation UI.
+                                loading={!!m.pending}
                                 codeReady={!m.pending && !!resolvedCode}
                                 estimatedLines={resolvedCode ? resolvedCode.split("\n").length : null}
                                 saved={!!ver?.code}

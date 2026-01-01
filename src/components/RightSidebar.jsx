@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Lock, Plus, Info } from "lucide-react";
 import { useBilling } from "../context/BillingContext";
 import { auth } from "../pages/firebase"; // Make sure this path is correct for your project
+import { onAuthStateChanged } from "firebase/auth";
 
 /**
  * RightSidebar
@@ -28,6 +29,13 @@ export default function RightSidebar({
   promptSuggestionLoading,
   isMobile = false,
 }) {
+  const [user, setUser] = useState(auth.currentUser);
+
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, setUser);
+    return () => unsub();
+  }, []);
+
   // --- API base: MUST point at backend, not the frontend origin ---
   const API_BASE =
     (process.env.REACT_APP_BACKEND_URL ||
@@ -56,9 +64,9 @@ export default function RightSidebar({
   }
 
   async function authedFetch(path, { method = "GET", body, headers = {} } = {}) {
-    const user = auth.currentUser;
-    if (!user) throw new Error("Not signed in");
-    const token = await user.getIdToken();
+    const currentUser = user || auth.currentUser;
+    if (!currentUser) throw new Error("Not signed in");
+    const token = await currentUser.getIdToken();
 
     const res = await fetch(`${API_BASE}${path}`, {
       method,
@@ -89,6 +97,12 @@ export default function RightSidebar({
   // ---------- Templates ----------
   useEffect(() => {
     let canceled = false;
+    if (!user) {
+      setUserPromptTemplates?.([]);
+      return () => {
+        canceled = true;
+      };
+    }
     (async () => {
       try {
         const data = await authedFetch("/api/user/templates");
@@ -101,9 +115,13 @@ export default function RightSidebar({
     return () => {
       canceled = true;
     };
-  }, [setUserPromptTemplates]);
+  }, [setUserPromptTemplates, user]);
 
   async function addTemplate(name, content) {
+    if (!user) {
+      console.warn("Cannot add template: not signed in");
+      return;
+    }
     try {
       const tpl = await authedFetch("/api/user/templates", {
         method: "POST",
@@ -116,6 +134,10 @@ export default function RightSidebar({
   }
 
   async function updateTemplate(id, name, content) {
+    if (!user) {
+      console.warn("Cannot update template: not signed in");
+      return;
+    }
     try {
       await authedFetch(`/api/user/templates/${id}`, {
         method: "PUT",
@@ -130,6 +152,10 @@ export default function RightSidebar({
   }
 
   async function deleteTemplate(id) {
+    if (!user) {
+      console.warn("Cannot delete template: not signed in");
+      return;
+    }
     try {
       await authedFetch(`/api/user/templates/${id}`, { method: "DELETE" });
       setUserPromptTemplates((prev) => prev.filter((tpl) => tpl.id !== id));
@@ -144,6 +170,13 @@ export default function RightSidebar({
 
   useEffect(() => {
     let canceled = false;
+    if (!user) {
+      didLoadSettingsRef.current = false;
+      lastSavedSettingsRef.current = "";
+      return () => {
+        canceled = true;
+      };
+    }
     (async () => {
       try {
         const data = await authedFetch("/api/user/settings");
@@ -164,11 +197,12 @@ export default function RightSidebar({
       canceled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [setSettings]);
+  }, [setSettings, user]);
 
   useEffect(() => {
     if (!settings) return;
     if (!didLoadSettingsRef.current) return;
+    if (!user) return;
 
     const next = JSON.stringify(settings);
     if (next === lastSavedSettingsRef.current) return;
@@ -184,7 +218,7 @@ export default function RightSidebar({
     }, 700); // debounce to stop POST-spam
 
     return () => clearTimeout(t);
-  }, [settings]);
+  }, [settings, user]);
 
   const {
     plan,
