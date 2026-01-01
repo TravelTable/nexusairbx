@@ -2169,33 +2169,37 @@ useEffect(() => {
                             )}
                             <div className="mb-2 mt-3">
                               <ScriptLoadingBarContainer
-                                filename={safeFile((currentScript?.title || "Script").trim() || "Script")}
+                                loading={m.pending}
+                                codeReady={!!(m.code || m.content)}
+                                filename={safeFile(currentScript?.title || "Script")}
                                 displayName={currentScript?.title || "Script"}
-                                version={m.versionNumber ? `v${getVN(m)}` : ""}
+                                version={m.versionNumber}
                                 language="lua"
-                                // Only the pending message should show "generating/error" stage and loading state.
-                                // Completed messages should not be affected by global generation UI.
-                                loading={!!m.pending}
-                                codeReady={!m.pending && !!resolvedCode}
+                                onView={() => {
+                                  const resolvedCode =
+                                    (m.code && m.code.trim()) ||
+                                    (m.content && m.content.trim()) ||
+                                    "";
+
+                                  if (!resolvedCode) {
+                                    console.warn("[View] No code to display");
+                                    return;
+                                  }
+
+                                  setSelectedVersion({
+                                    id: m.versionId || cryptoRandomId(),
+                                    code: resolvedCode,
+                                    explanation: m.explanation || "",
+                                    versionNumber: m.versionNumber || null,
+                                    projectId: currentScriptId || null,
+                                    title: currentScript?.title || "Script",
+                                    createdAt: Date.now(),
+                                  });
+                                }}
                                 estimatedLines={resolvedCode ? resolvedCode.split("\n").length : null}
                                 saved={!!ver?.code}
                                 onSave={async () => {}}
                                 previewSnippet={previewSnippet}
-                                onView={() => {
-                                  if (ver) {
-                                    setSelectedVersion(ver);
-                                    return;
-                                  }
-                                  if (resolvedCode) {
-                                    setSelectedVersion({
-                                      id: m.versionId || m.id,
-                                      code: resolvedCode,
-                                      explanation: resolvedExplanation,
-                                      title: currentScript?.title || "Script",
-                                      versionNumber: m.versionNumber || null,
-                                    });
-                                  }
-                                }}
                                 onCancel={() => {
                                   if (jobAbortRef.current?.abortJob) {
                                     jobAbortRef.current.abortJob();
