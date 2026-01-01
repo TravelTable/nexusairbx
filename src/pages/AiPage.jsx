@@ -16,7 +16,7 @@ import {
   ChevronRight,
   Info,
   Copy,
-  Check,
+  Check, 
 } from "lucide-react";
 import { auth } from "./firebase";
 import { onAuthStateChanged, signInAnonymously } from "firebase/auth";
