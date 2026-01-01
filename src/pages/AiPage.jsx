@@ -1352,6 +1352,8 @@ const handleSubmit = async (e, opts = {}) => {
 
     // Extract code/explanation from root OR the version object
     const finalCode =
+      jobData.result?.code ||
+      jobData.result?.content ||
       jobData.code ||
       jobData.content ||
       finalVersion?.code ||
@@ -1359,6 +1361,7 @@ const handleSubmit = async (e, opts = {}) => {
       "";
 
     const finalExplanation =
+      jobData.result?.explanation ||
       jobData.explanation ||
       finalVersion?.explanation ||
       "";
