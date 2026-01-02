@@ -1350,7 +1350,23 @@ const handleSubmit = async (e, opts = {}) => {
       );
     }
 
-    // Extract code/explanation from root OR the version object
+    // Extract title/code/explanation from result or fallbacks
+    const resultTitle = jobData.result?.title || jobData.title || currentScript?.title || "Script";
+    if (resultTitle) {
+      setCurrentScript((prev) => ({
+        ...prev,
+        title: resultTitle,
+        id: jobData.projectId || prev?.id || currentScriptId,
+      }));
+      setScripts((prev) =>
+        Array.isArray(prev)
+          ? prev.map((s) =>
+              s.id === (jobData.projectId || currentScriptId) ? { ...s, title: resultTitle } : s
+            )
+          : prev
+      );
+    }
+
     const finalCode =
       jobData.result?.code ||
       jobData.result?.content ||
