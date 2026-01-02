@@ -120,21 +120,69 @@ function getUserInitials(email) {
     .slice(0, 2);
 }
 
+// --- Inline Text Formatter (Handles **bold**) ---
+function FormatText({ text }) {
+  if (!text) return null;
+  const parts = text.split(/(\*\*.*?\*\*)/g);
+  return (
+    <>
+      {parts.map((part, i) => {
+        if (part.startsWith("**") && part.endsWith("**")) {
+          return (
+            <strong key={i} className="text-[#00f5d4] font-bold">
+              {part.slice(2, -2)}
+            </strong>
+          );
+        }
+        return <React.Fragment key={i}>{part}</React.Fragment>;
+      })}
+    </>
+  );
+}
+
+// --- Enhanced Block Parser ---
 function getExplanationBlocks(explanation = "") {
   if (!explanation.trim()) return [];
+
   return explanation
     .split(/\n{2,}/)
     .map((block) => block.trim())
     .filter(Boolean)
     .map((block) => {
       const lines = block.split("\n").map((line) => line.trim()).filter(Boolean);
-      const isList = lines.length > 1 && lines.every((line) => /^[-*]\s+/.test(line));
-      if (isList) {
+
+      const isBulletList = lines.length > 0 && lines.every((line) => /^[-*•]\s+/.test(line));
+      const isNumberList = lines.length > 0 && lines.every((line) => /^\d+\.\s+/.test(line));
+
+      if (isBulletList) {
         return {
           type: "list",
-          items: lines.map((line) => line.replace(/^[-*]\s+/, "")),
+          ordered: false,
+          items: lines.map((line) => line.replace(/^[-*•]\s+/, "")),
         };
       }
+
+      if (isNumberList) {
+        return {
+          type: "list",
+          ordered: true,
+          items: lines.map((line) => line.replace(/^\d+\.\s+/, "")),
+        };
+      }
+
+      if (lines.length === 1) {
+        const line = lines[0];
+        if (line.startsWith("#")) {
+          return { type: "header", text: line.replace(/^#+\s*/, "") };
+        }
+        if (line.startsWith("**") && line.endsWith("**") && line.length < 60) {
+          return { type: "header", text: line.replace(/\*\*/g, "") };
+        }
+        if (/^[A-Z][a-zA-Z ]+:$/.test(line)) {
+          return { type: "header", text: line };
+        }
+      }
+
       return { type: "paragraph", text: block };
     });
 }
@@ -2185,27 +2233,43 @@ useEffect(() => {
                             </div>
                             {resolvedExplanation && (
                               <div className="mb-2">
-                                <div className="font-bold text-[#9b5de5] mb-2">Explanation</div>
-                                <div className="space-y-3 text-gray-200 text-base leading-relaxed">
+                                <div className="font-bold text-[#9b5de5] mb-3 text-sm uppercase tracking-wider opacity-80">
+                                  Explanation
+                                </div>
+                                <div className="space-y-4 text-gray-200 text-[15px] leading-relaxed">
                                   {getExplanationBlocks(resolvedExplanation).map((block, idx) => {
-                                    if (block.type === "list") {
+                                    if (block.type === "header") {
                                       return (
-                                        <ul
-                                          key={`exp-list-${idx}`}
-                                          className="list-disc pl-6 space-y-1 text-gray-200"
+                                        <h3
+                                          key={`exp-header-${idx}`}
+                                          className="text-lg font-bold text-white mt-5 mb-2 border-b border-gray-700 pb-1"
                                         >
-                                          {block.items.map((item, itemIdx) => (
-                                            <li key={`exp-item-${idx}-${itemIdx}`}>{item}</li>
-                                          ))}
-                                        </ul>
+                                          {block.text}
+                                        </h3>
                                       );
                                     }
+
+                                    if (block.type === "list") {
+                                      const ListTag = block.ordered ? "ol" : "ul";
+                                      return (
+                                        <ListTag
+                                          key={`exp-list-${idx}`}
+                                          className={`pl-5 space-y-2 marker:text-gray-500 ${
+                                            block.ordered ? "list-decimal" : "list-disc"
+                                          }`}
+                                        >
+                                          {block.items.map((item, itemIdx) => (
+                                            <li key={`exp-item-${idx}-${itemIdx}`} className="pl-1">
+                                              <FormatText text={item} />
+                                            </li>
+                                          ))}
+                                        </ListTag>
+                                      );
+                                    }
+
                                     return (
-                                      <p
-                                        key={`exp-paragraph-${idx}`}
-                                        className="whitespace-pre-line"
-                                      >
-                                        {block.text}
+                                      <p key={`exp-paragraph-${idx}`} className="whitespace-pre-line">
+                                        <FormatText text={block.text} />
                                       </p>
                                     );
                                   })}
