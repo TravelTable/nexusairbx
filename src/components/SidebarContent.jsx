@@ -487,7 +487,14 @@ export default function SidebarContent({
     const filtered = q
       ? list.filter((s) => (s.title || "").toLowerCase().includes(q))
       : list;
-    return filtered
+    const scoped = currentChatId
+      ? filtered.filter((s) => {
+          if (s.chatId) return s.chatId === currentChatId;
+          if (currentScriptId && s.id === currentScriptId) return true;
+          return false;
+        })
+      : [];
+    return scoped
       .slice()
       .sort((a, b) => {
         const au = Number(a.updatedAt) || 0;
@@ -498,7 +505,7 @@ export default function SidebarContent({
         if (bc !== ac) return bc - ac;
         return (a.title || "").localeCompare(b.title || "");
       });
-  }, [scripts, deferredScriptSearch]);
+  }, [scripts, deferredScriptSearch, currentChatId, currentScriptId]);
 
   // --- Memoized filtered/sorted chats (deferred search) ---
   const deferredChatSearch = useDeferredValue(chatSearch.trim().toLowerCase());

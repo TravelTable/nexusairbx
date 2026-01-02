@@ -1550,6 +1550,17 @@ const handleSubmit = async (e, opts = {}) => {
       finalVersion?.version ||
       null;
 
+    // Persist chat association on script so scripts tab scopes per chat
+    if (activeChatId && user) {
+      const targetProjectId = jobData.projectId || finalVersion?.id || currentScriptId;
+      if (targetProjectId) {
+        updateDoc(doc(db, "users", user.uid, "scripts", targetProjectId), {
+          chatId: activeChatId,
+          updatedAt: serverTimestamp(),
+        }).catch(() => {});
+      }
+    }
+
     // Persist assistant message to chat (so sidebar/history updates)
     if (activeChatId && user) {
       const finalCode =
@@ -2186,6 +2197,7 @@ useEffect(() => {
               }}
               setPrompt={setPrompt}
               scripts={scripts}
+              currentChatId={currentChatId}
               currentScriptId={currentScriptId}
               setCurrentScriptId={setCurrentScriptId}
               handleCreateScript={() => {}}
@@ -2285,6 +2297,7 @@ useEffect(() => {
             }}
             setPrompt={setPrompt}
             scripts={scripts}
+            currentChatId={currentChatId}
             currentScriptId={currentScriptId}
             setCurrentScriptId={setCurrentScriptId}
             handleCreateScript={() => {}}
