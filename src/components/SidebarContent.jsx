@@ -841,16 +841,6 @@ const versionHistoryWithLock = useMemo(() => {
           tabIndex={0}
         />
         <SidebarTab
-          label="History"
-          active={activeTab === "history"}
-          onClick={() => setActiveTab("history")}
-          role="tab"
-          aria-selected={activeTab === "history"}
-          aria-controls={`${tabId}-panel-history`}
-          id={`${tabId}-history`}
-          tabIndex={0}
-        />
-        <SidebarTab
           label="Chats"
           active={activeTab === "chats"}
           onClick={() => setActiveTab("chats")}
@@ -1074,6 +1064,115 @@ const versionHistoryWithLock = useMemo(() => {
                 </div>
               </Modal>
             )}
+
+            {/* Versions section */}
+            <div className="mt-6">
+              <div className="flex items-center justify-between mb-2">
+                <span className="font-bold text-lg text-[#00f5d4]">Versions</span>
+              </div>
+              {(!versionHistoryWithLock || versionHistoryWithLock.length === 0) && (
+                <div className="text-gray-400 text-sm">
+                  No versions for this script yet. Generate your first version by submitting a prompt on the AI Console.
+                </div>
+              )}
+              <div className="space-y-2" aria-live="polite">
+                {(versionHistoryWithLock ?? []).map((ver) => {
+                  const version = getVersionStr(ver);
+                  const saveKey = `${currentScriptId}__${version}`;
+                  const isSaved = savedVersionSet.has(saveKey);
+                  const isSelected =
+                    selectedVersionId === version ||
+                    selectedVersionId === ver.id ||
+                    selectedVersionId === saveKey;
+
+                  if (ver.isLocked) {
+                    return (
+                      <div
+                        key={keyForScript({ ...ver, id: currentScriptId })}
+                        className="w-full flex items-center justify-between px-3 py-2 border-b border-gray-800 last:border-b-0 rounded text-left group cursor-not-allowed opacity-60 bg-gray-900/60 relative"
+                        title="Upgrade to view older history"
+                      >
+                        <div className="flex-1 min-w-0 flex items-center gap-2">
+                          <Lock className="h-4 w-4 text-[#00f5d4]" />
+                          <span className="font-semibold text-gray-300 truncate max-w-[14rem]">
+                            Version {version} (locked)
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2 text-xs text-gray-400">
+                          <span className="px-2 py-0.5 rounded bg-[#9b5de5]/20 text-[#9b5de5]">
+                            Upgrade
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <button
+                      key={keyForScript({ ...ver, id: currentScriptId })}
+                      className={`w-full flex items-center justify-between px-3 py-2 border-b border-gray-800 last:border-b-0 rounded text-left group ${
+                        isSelected ? "bg-gray-800/60 border-[#00f5d4]" : "bg-gray-900/40 border-gray-700"
+                      }`}
+                      onClick={() => {
+                        window.dispatchEvent(
+                          new CustomEvent("nexus:openCodeDrawer", {
+                            detail: {
+                              scriptId: currentScriptId,
+                              code: ver.code,
+                              title: ver.title || currentScript?.title || "Script",
+                              versionNumber: ver.versionNumber || getVersionStr(ver),
+                              explanation: ver.explanation || "",
+                              savedScriptId: `${currentScriptId}__${getVersionStr(ver)}`,
+                            },
+                          })
+                        );
+                      }}
+                      aria-label={`Open version ${version}`}
+                    >
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold text-white truncate block max-w-[10rem] md:max-w-[14rem]">
+                            {ver.title || currentScript?.title || "Script"}
+                          </span>
+                          {version && (
+                            <span className="inline-block px-2 py-0.5 rounded bg-[#9b5de5]/20 text-[#9b5de5] text-xs font-semibold ml-2">
+                              v{version}
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-xs text-gray-400">
+                          {ver.createdAt ? new Date(ver.createdAt).toLocaleString() : ""}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          className="p-1 rounded hover:bg-gray-800"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (savedVersionSet.has(saveKey)) {
+                              handleUnsaveBySavedId(saveKey);
+                            } else {
+                              handleToggleSaveScript({
+                                id: currentScriptId,
+                                title: ver.title || currentScript?.title || "Script",
+                                versionNumber: ver.versionNumber,
+                              });
+                            }
+                          }}
+                          aria-label={isSaved ? "Unsave version" : "Save version"}
+                        >
+                          {isSaved ? (
+                            <BookmarkCheck className="h-4 w-4 text-[#00f5d4]" />
+                          ) : (
+                            <Bookmark className="h-4 w-4 text-gray-400" />
+                          )}
+                        </button>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
           </div>
         )}
 
