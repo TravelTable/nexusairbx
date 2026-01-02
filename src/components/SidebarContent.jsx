@@ -276,6 +276,8 @@ export default function SidebarContent({
   onRenameChat,
   onDeleteChat,
   selectedVersionId, // <-- pass from parent for version selection
+  onLoadMoreScripts,
+  hasMoreScripts,
 }) {
   // --- Billing ---
   const { plan, historyDays } = useBilling();
@@ -590,7 +592,7 @@ export default function SidebarContent({
     }
   };
 
-  // --- Optimistic Save/Unsave with rollback, prevent duplicate saves (scriptId + versionNumber) ---
+  // --- Save/Unsave with version awareness ---
   const handleToggleSaveScript = useCallback(
     async (script) => {
       const db = getFirestore();
@@ -598,58 +600,45 @@ export default function SidebarContent({
       const u = auth.currentUser;
       if (!u) return;
 
-      const version = getVersionStr(script);
-      const versionNumber = script.versionNumber || Number(version) || 1;
+      let versionNumber = script.versionNumber;
+      if (!versionNumber && script.latestVersion) {
+        versionNumber = script.latestVersion;
+      }
+      if (!versionNumber) versionNumber = 1;
+
+      const versionStr = String(versionNumber);
       const key = `${script.id}__${versionNumber}`;
       const wasSaved = savedVersionSet.has(key);
 
-      // optimistic: UI will update on snapshot
-      const revert = () => setSavedScripts((prev) => [...prev]);
-
       try {
         if (wasSaved) {
-          // Unsave: find the matching savedScript and delete
           const match = savedScripts.find(
             (s) =>
               s.scriptId === script.id &&
-              (s.versionNumber === versionNumber ||
-                getVersionStr(s) === String(versionNumber))
+              (String(s.versionNumber) === versionStr || getVersionStr(s) === versionStr)
           );
-          if (match)
+
+          if (match) {
             await deleteDoc(doc(db, "users", u.uid, "savedScripts", match.id));
-        } else {
-          // Prevent duplicate: check if already exists in Firestore
-          const q = query(
-            collection(db, "users", u.uid, "savedScripts"),
-            // Firestore doesn't support compound unique, so filter client-side
-          );
-          const snapshot = await getDocs(q);
-          const exists = snapshot.docs.some(
-            (docSnap) => {
-              const d = docSnap.data();
-              return (
-                d.scriptId === script.id &&
-                (d.versionNumber === versionNumber ||
-                  getVersionStr(d) === String(versionNumber))
-              );
-            }
-          );
-          if (exists) {
-            showToast("This version is already saved.");
-            return;
+            showToast("Script unsaved.");
+          } else {
+            showToast("Could not find saved reference to delete.");
           }
+        } else {
           await addDoc(collection(db, "users", u.uid, "savedScripts"), {
             scriptId: script.id,
             title: script.title || "Untitled",
-            version: version,
-            versionNumber: versionNumber,
+            version: versionStr,
+            versionNumber: Number(versionNumber),
             createdAt: serverTimestamp(),
             updatedAt: serverTimestamp(),
           });
+          showToast("Script saved!");
         }
-      } catch {
-        revert();
-        showToast("Failed to update saved scripts.");
+      } catch (err) {
+        console.error(err);
+        showToast("Failed to update saved status.");
+        setSavedScripts((prev) => [...prev]);
       }
     },
     [savedVersionSet, savedScripts, showToast]
@@ -988,6 +977,14 @@ const versionHistoryWithLock = useMemo(() => {
                     onRenameCancel={() => setRenamingScriptId(null)}
                   />
                 ))
+              )}
+              {hasMoreScripts && !localSearch && (
+                <button
+                  onClick={onLoadMoreScripts}
+                  className="w-full py-2 mt-2 text-xs font-bold text-[#00f5d4] border border-[#00f5d4]/30 rounded hover:bg-[#00f5d4]/10 transition-colors"
+                >
+                  Load More Scripts
+                </button>
               )}
             </div>
             {/* Add Script Modal */}

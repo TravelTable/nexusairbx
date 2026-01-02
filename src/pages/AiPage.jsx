@@ -47,6 +47,7 @@ import {
   query,
   orderBy,
   limitToLast,
+  limit,
   onSnapshot,
   serverTimestamp,
   writeBatch,
@@ -407,6 +408,7 @@ function AiPage() {
   // --- State for scripts and versions ---
   const [user, setUser] = useState(null);
   const [scripts, setScripts] = useState([]);
+  const [scriptsLimit, setScriptsLimit] = useState(50);
   const [currentScriptId, setCurrentScriptId] = useState(null);
   const [currentScript, setCurrentScript] = useState(null);
   const [versionHistory, setVersionHistory] = useState([]);
@@ -537,7 +539,7 @@ const isSubscriber = !!(tokens && tokens.entitlements && tokens.entitlements.inc
 ));
 const normalizedPlan = typeof plan === "string" ? plan.toLowerCase() : "free";
 const planKey = normalizedPlan === "team" ? "team" : normalizedPlan === "pro" ? "pro" : "free";
-const planInfo = PLAN_INFO[planKey];
+  const planInfo = PLAN_INFO[planKey];
   // --- Token State ---
   const [tokensLeft, setTokensLeft] = useState(null);
   const [tokensLimit, setTokensLimit] = useState(null);
@@ -566,21 +568,76 @@ const planInfo = PLAN_INFO[planKey];
   // --- Prompt Input Ref for focus ---
   const promptInputRef = useRef(null);
 
-  // --- Listen to scripts for sidebar updates ---
+  // --- Listen to scripts for sidebar updates (paginated) ---
   useEffect(() => {
-    if (!user) return;
+    if (!user) {
+      setScripts([]);
+      return;
+    }
     const db = getFirestore();
     const q = query(
       collection(db, "users", user.uid, "scripts"),
-      orderBy("updatedAt", "desc")
+      orderBy("updatedAt", "desc"),
+      limit(scriptsLimit)
     );
     const unsub = onSnapshot(q, (snap) => {
-      const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+      const list = snap.docs.map((d) => ({
+        id: d.id,
+        ...d.data(),
+        updatedAt: d.data().updatedAt?.toMillis?.() || Date.now(),
+        createdAt: d.data().createdAt?.toMillis?.() || Date.now(),
+      }));
       setScripts(list);
       safeSet("nexusrbx:scripts", list);
     });
     return () => unsub();
-  }, [user]);
+  }, [user, scriptsLimit]);
+
+  const handleLoadMoreScripts = useCallback(() => {
+    setScriptsLimit((prev) => prev + 50);
+  }, []);
+
+  const handleDeleteScript = useCallback(
+    async (scriptId) => {
+      if (!user || !scriptId) return;
+      try {
+        const token = await user.getIdToken();
+        await fetch(`${BACKEND_URL}/api/projects/${scriptId}`, {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setScripts((prev) => prev.filter((s) => s.id !== scriptId));
+        if (currentScriptId === scriptId) {
+          setCurrentScriptId(null);
+          setCurrentScript(null);
+        }
+        notify({ message: "Script deleted", type: "success" });
+      } catch (err) {
+        console.error(err);
+        notify({ message: "Failed to delete script", type: "error" });
+      }
+    },
+    [user, currentScriptId, notify]
+  );
+
+  const handleDeleteChat = useCallback(
+    async (chatId) => {
+      if (!user || !chatId) return;
+      try {
+        const db = getFirestore();
+        await deleteDoc(doc(db, "users", user.uid, "chats", chatId));
+        if (currentChatId === chatId) {
+          setCurrentChatId(null);
+          setMessages([]);
+        }
+        notify({ message: "Chat deleted", type: "success" });
+      } catch (err) {
+        console.error(err);
+        notify({ message: "Failed to delete chat", type: "error" });
+      }
+    },
+    [user, currentChatId, notify]
+  );
 
   // --- Polling ETA ---
   const pollingTimesRef = useRef([]);
@@ -1745,6 +1802,8 @@ function AssistantCodeBlock({ code }) {
     }
   };
 
+  const hasMoreScripts = scripts.length >= scriptsLimit;
+
   // --- Virtualized version list for long histories ---
   const renderVersionList = (props) => {
     if (versionHistory.length > 80) {
@@ -2124,7 +2183,7 @@ useEffect(() => {
               setCurrentScriptId={setCurrentScriptId}
               handleCreateScript={() => {}}
               handleRenameScript={() => {}}
-              handleDeleteScript={() => {}}
+              handleDeleteScript={handleDeleteScript}
               currentScript={currentScript}
               versionHistory={versionHistory}
               onVersionView={() => {}}
@@ -2133,10 +2192,12 @@ useEffect(() => {
               setPromptSearch={setPromptSearch}
               isMobile
               onRenameChat={() => {}}
-              onDeleteChat={() => {}}
+              onDeleteChat={handleDeleteChat}
               renderVersionList={renderVersionList}
               plan={planKey}
               planInfo={planInfo}
+              onLoadMoreScripts={handleLoadMoreScripts}
+              hasMoreScripts={hasMoreScripts}
             />
           <div className="border-t border-gray-800 px-4 py-2 text-xs text-gray-400 text-center">
             {!isSubscriber && planInfo.sidebarStrip}
@@ -2221,7 +2282,7 @@ useEffect(() => {
             setCurrentScriptId={setCurrentScriptId}
             handleCreateScript={() => {}}
             handleRenameScript={() => {}}
-            handleDeleteScript={() => {}}
+            handleDeleteScript={handleDeleteScript}
             currentScript={currentScript}
             versionHistory={versionHistory}
             onVersionView={() => {}}
@@ -2229,10 +2290,12 @@ useEffect(() => {
             promptSearch={promptSearch}
             setPromptSearch={setPromptSearch}
             onRenameChat={() => {}}
-            onDeleteChat={() => {}}
+            onDeleteChat={handleDeleteChat}
             renderVersionList={renderVersionList}
             plan={planKey}
             planInfo={planInfo}
+            onLoadMoreScripts={handleLoadMoreScripts}
+            hasMoreScripts={hasMoreScripts}
           />
           <div className="border-t border-gray-800 px-4 py-2 text-xs text-gray-400 text-center">
             {planInfo.sidebarStrip}
