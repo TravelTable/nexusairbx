@@ -1535,11 +1535,11 @@ const versionHistoryWithLock = useMemo(() => {
                       new CustomEvent("nexus:openCodeDrawer", {
                         detail: {
                           scriptId: row.scriptId,
-                          code: row.code,
+                          code: row.code || "-- No code found",
                           title: row.title,
                           versionNumber: getVersionStr(row),
                           explanation: row.explanation || "",
-                          savedScriptId: `${row.scriptId || ""}__${getVersionStr(row)}`,
+                          savedScriptId: row.id || `${row.scriptId || ""}__${getVersionStr(row)}`,
                         },
                       })
                     );
@@ -1553,11 +1553,11 @@ const versionHistoryWithLock = useMemo(() => {
                         new CustomEvent("nexus:openCodeDrawer", {
                           detail: {
                             scriptId: row.scriptId,
-                            code: row.code,
+                            code: row.code || "-- No code found",
                             title: row.title,
                             versionNumber: getVersionStr(row),
                             explanation: row.explanation || "",
-                            savedScriptId: `${row.scriptId || ""}__${getVersionStr(row)}`,
+                            savedScriptId: row.id || `${row.scriptId || ""}__${getVersionStr(row)}`,
                           },
                         })
                       );

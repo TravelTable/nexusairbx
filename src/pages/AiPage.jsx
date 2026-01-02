@@ -649,6 +649,7 @@ const planKey = normalizedPlan === "team" ? "team" : normalizedPlan === "pro" ? 
   const lastVersionsFetchRef = useRef(0);
   const versionsBackoffRef = useRef(0);
   const versionsEtagRef = useRef(null);
+  const lastFetchedScriptIdRef = useRef(null);
 
   // --- Local Persistence for chat/sidebar (throttled) ---
   const persist = useRef(0);
@@ -818,14 +819,16 @@ const planKey = normalizedPlan === "team" ? "team" : normalizedPlan === "pro" ? 
     if (selectedVersion && selectedVersion.projectId && selectedVersion.projectId !== currentScriptId) return;
 
     const now = Date.now();
-   const delay = 10000 + (versionsBackoffRef.current || 0);
-   if (now - lastVersionsFetchRef.current < delay) {
-     if (!selectedVersion && versionHistory.length > 0) {
-       setSelectedVersion(versionHistory[0]);
-     }
-     return;
-   }
-   lastVersionsFetchRef.current = now;
+    const delay = 10000 + (versionsBackoffRef.current || 0);
+    const isSameScript = lastFetchedScriptIdRef.current === currentScriptId;
+    if (isSameScript && now - lastVersionsFetchRef.current < delay) {
+      if (!selectedVersion && versionHistory.length > 0) {
+        setSelectedVersion(versionHistory[0]);
+      }
+      return;
+    }
+    lastVersionsFetchRef.current = now;
+    lastFetchedScriptIdRef.current = currentScriptId;
 
     user.getIdToken().then((idToken) => {
       const headers = { Authorization: `Bearer ${idToken}` };
