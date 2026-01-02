@@ -493,14 +493,9 @@ export default function SidebarContent({
     const filtered = q
       ? list.filter((s) => (s.title || "").toLowerCase().includes(q))
       : list;
-    const scoped = currentChatId
-      ? filtered.filter((s) => {
-          // Primary: match current chat
-          if (s.chatId) return s.chatId === currentChatId;
-          // Fallback: unassigned scripts stay visible so you can recover older items
-          return !s.chatId;
-        })
-      : filtered;
+    // Strict scoping: only scripts belonging to the current chat
+    if (!currentChatId) return [];
+    const scoped = filtered.filter((s) => s.chatId === currentChatId);
     return scoped
       .slice()
       .sort((a, b) => {
