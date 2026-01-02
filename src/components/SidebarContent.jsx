@@ -582,6 +582,9 @@ export default function SidebarContent({
   const handleScriptSelect = useCallback(
     (scriptId) => {
       setCurrentScriptId(scriptId);
+      window.dispatchEvent(
+        new CustomEvent("nexus:forceOpenScript", { detail: { scriptId } })
+      );
       if (isMobile && typeof onSelect === "function") onSelect();
     },
     [isMobile, setCurrentScriptId, onSelect]

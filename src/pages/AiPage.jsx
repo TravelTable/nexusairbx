@@ -785,9 +785,16 @@ const planKey = normalizedPlan === "team" ? "team" : normalizedPlan === "pro" ? 
         setCurrentScriptId(scriptId);
       }
     };
+    const onForceOpenScript = (e) => {
+      const { scriptId } = e.detail || {};
+      if (scriptId === currentScriptId && !selectedVersion && versionHistory.length > 0) {
+        setSelectedVersion(versionHistory[0]);
+      }
+    };
     window.addEventListener("nexus:openChat", onOpenChat);
     window.addEventListener("nexus:startDraft", onStartDraft);
     window.addEventListener("nexus:openCodeDrawer", onOpenCodeDrawer);
+    window.addEventListener("nexus:forceOpenScript", onForceOpenScript);
 
     // ESC closes mobile sidebars
     const onKey = (e) => e.key === "Escape" && closeAllMobileSidebars();
@@ -797,11 +804,12 @@ const planKey = normalizedPlan === "team" ? "team" : normalizedPlan === "pro" ? 
       window.removeEventListener("nexus:openChat", onOpenChat);
       window.removeEventListener("nexus:startDraft", onStartDraft);
        window.removeEventListener("nexus:openCodeDrawer", onOpenCodeDrawer);
+      window.removeEventListener("nexus:forceOpenScript", onForceOpenScript);
       window.removeEventListener("keydown", onKey);
       messagesUnsubRef.current?.();
       chatUnsubRef.current?.();
     };
-  }, [openChatById]);
+  }, [openChatById, currentScriptId, selectedVersion, versionHistory]);
 
   // --- Load Versions for Current Script from Backend (event-driven, skip if not current) ---
   useEffect(() => {
@@ -810,9 +818,14 @@ const planKey = normalizedPlan === "team" ? "team" : normalizedPlan === "pro" ? 
     if (selectedVersion && selectedVersion.projectId && selectedVersion.projectId !== currentScriptId) return;
 
     const now = Date.now();
-    const delay = 10000 + (versionsBackoffRef.current || 0);
-    if (now - lastVersionsFetchRef.current < delay) return;
-    lastVersionsFetchRef.current = now;
+   const delay = 10000 + (versionsBackoffRef.current || 0);
+   if (now - lastVersionsFetchRef.current < delay) {
+     if (!selectedVersion && versionHistory.length > 0) {
+       setSelectedVersion(versionHistory[0]);
+     }
+     return;
+   }
+   lastVersionsFetchRef.current = now;
 
     user.getIdToken().then((idToken) => {
       const headers = { Authorization: `Bearer ${idToken}` };
@@ -822,6 +835,9 @@ const planKey = normalizedPlan === "team" ? "team" : normalizedPlan === "pro" ? 
         .then(async (res) => {
           if (res.status === 304) {
             versionsBackoffRef.current = 0;
+            if (!selectedVersion && versionHistory.length > 0) {
+              setSelectedVersion(versionHistory[0]);
+            }
             return { versions: null, etag: versionsEtagRef.current };
           }
           if (res.status === 429) {
@@ -848,21 +864,21 @@ const planKey = normalizedPlan === "team" ? "team" : normalizedPlan === "pro" ? 
           const normalized = Array.isArray(data.versions)
             ? data.versions.map(normalizeServerVersion).sort(byVN)
             : [];
-          if (data.etag) versionsEtagRef.current = data.etag;
-          if (normalized.length === 0) return;
-          setCurrentScript((cs) => ({
-            id: currentScriptId,
-            title: normalized[0]?.title || cs?.title || "",
-            versions: normalized,
-          }));
-          setVersionHistory(normalized);
-          setSelectedVersion((sv) =>
-            sv ? normalized.find((v) => v.id === sv.id) || normalized[0] : normalized[0]
-          );
-        })
+         if (data.etag) versionsEtagRef.current = data.etag;
+         if (normalized.length === 0) return;
+         setCurrentScript((cs) => ({
+           id: currentScriptId,
+           title: normalized[0]?.title || cs?.title || "",
+           versions: normalized,
+         }));
+         setVersionHistory(normalized);
+         setSelectedVersion((sv) =>
+           sv ? normalized.find((v) => v.id === sv.id) || normalized[0] : normalized[0]
+         );
+       })
         .catch(() => setErrorMsg("Failed to load versions."));
     });
-  }, [user, currentScriptId, authReady, selectedVersion]);
+  }, [user, currentScriptId, authReady, selectedVersion, versionHistory]);
 
   // --- Prompt Char Count & Error ---
   useEffect(() => {
