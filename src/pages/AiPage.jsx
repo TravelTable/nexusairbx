@@ -2069,6 +2069,13 @@ useEffect(() => {
                 </button>
                 <button
                   type="button"
+                  onClick={() => navigate("/settings")}
+                  className="text-gray-300 hover:text-white transition-colors duration-300"
+                >
+                  Settings
+                </button>
+                <button
+                  type="button"
                   onClick={() =>
                     window.open(
                       "https://discord.com/invite/yourserver",
