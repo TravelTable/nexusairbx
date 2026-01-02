@@ -583,7 +583,7 @@ export default function SidebarContent({
     (scriptId) => {
       setCurrentScriptId(scriptId);
       window.dispatchEvent(
-        new CustomEvent("nexus:forceOpenScript", { detail: { scriptId } })
+        new CustomEvent("nexus:openCodeDrawer", { detail: { scriptId } })
       );
       if (isMobile && typeof onSelect === "function") onSelect();
     },
