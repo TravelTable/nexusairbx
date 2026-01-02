@@ -53,6 +53,7 @@ import {
   setDoc,
   updateDoc,
   deleteDoc,
+  addDoc,
 } from "firebase/firestore";
 import { FixedSizeList as List } from "react-window";
 
@@ -565,6 +566,22 @@ const planInfo = PLAN_INFO[planKey];
   // --- Prompt Input Ref for focus ---
   const promptInputRef = useRef(null);
 
+  // --- Listen to scripts for sidebar updates ---
+  useEffect(() => {
+    if (!user) return;
+    const db = getFirestore();
+    const q = query(
+      collection(db, "users", user.uid, "scripts"),
+      orderBy("updatedAt", "desc")
+    );
+    const unsub = onSnapshot(q, (snap) => {
+      const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+      setScripts(list);
+      safeSet("nexusrbx:scripts", list);
+    });
+    return () => unsub();
+  }, [user]);
+
   // --- Polling ETA ---
   const pollingTimesRef = useRef([]);
 
@@ -1058,6 +1075,41 @@ const handleSubmit = async (e, opts = {}) => {
   let jobId = null;
   let jobData = null;
   let retriedToken = false;
+  const db = getFirestore();
+  let activeChatId = currentChatId;
+
+  // Ensure chat exists and persist the user message
+  if (user) {
+    // Create chat if missing
+    if (!activeChatId) {
+      try {
+        const newChatRef = await addDoc(collection(db, "users", user.uid, "chats"), {
+          title: cleanedPrompt.slice(0, 30) + (cleanedPrompt.length > 30 ? "..." : ""),
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+          projectId: projectIdToSend || null,
+        });
+        activeChatId = newChatRef.id;
+        setCurrentChatId(activeChatId);
+      } catch (e) {
+        console.error("Failed to create chat:", e);
+      }
+    }
+
+    // Save user message
+    if (activeChatId) {
+      addDoc(collection(db, "users", user.uid, "chats", activeChatId, "messages"), {
+        role: "user",
+        content: cleanedPrompt,
+        createdAt: serverTimestamp(),
+      }).catch((e) => console.error("Failed to save user msg:", e));
+
+      updateDoc(doc(db, "users", user.uid, "chats", activeChatId), {
+        lastMessage: cleanedPrompt.slice(0, 50),
+        updatedAt: serverTimestamp(),
+      }).catch(() => {});
+    }
+  }
 
   try {
 
@@ -1440,6 +1492,40 @@ const handleSubmit = async (e, opts = {}) => {
       finalVersion?.versionNumber ||
       finalVersion?.version ||
       null;
+
+    // Persist assistant message to chat (so sidebar/history updates)
+    if (activeChatId && user) {
+      const finalCode =
+        jobData.result?.code ||
+        jobData.result?.content ||
+        jobData.code ||
+        jobData.content ||
+        finalVersion?.code ||
+        jobData.artifact?.code ||
+        "";
+      const finalExp =
+        jobData.result?.explanation ||
+        jobData.explanation ||
+        finalVersion?.explanation ||
+        "";
+
+      addDoc(collection(db, "users", user.uid, "chats", activeChatId, "messages"), {
+        role: "assistant",
+        content: "",
+        code: finalCode,
+        explanation: finalExp,
+        versionNumber: jobData.versionNumber || null,
+        createdAt: serverTimestamp(),
+      }).catch((e) => console.error("Failed to save assistant msg:", e));
+
+      if (jobData.result?.title) {
+        updateDoc(doc(db, "users", user.uid, "chats", activeChatId), {
+          title: jobData.result.title,
+          projectId: jobData.projectId || projectIdToSend || null,
+          updatedAt: serverTimestamp(),
+        }).catch(() => {});
+      }
+    }
 
     // 3. Messaging list integrity: remove only the pending you added
     setMessages((prev) =>
