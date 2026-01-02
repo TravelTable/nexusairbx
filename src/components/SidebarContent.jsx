@@ -260,6 +260,7 @@ export default function SidebarContent({
   handleClearChat,
   setPrompt,
   scripts = [],
+  currentChatId,
   currentScriptId,
   setCurrentScriptId,
   handleCreateScript,
@@ -278,6 +279,7 @@ export default function SidebarContent({
   selectedVersionId, // <-- pass from parent for version selection
   onLoadMoreScripts,
   hasMoreScripts,
+  onSelectChat,
 }) {
   // --- Billing ---
   const { plan, historyDays } = useBilling();
@@ -314,6 +316,10 @@ export default function SidebarContent({
   const [chatDeleteLoading, setChatDeleteLoading] = useState(false);
   const [chatCursor, setChatCursor] = useState(null);
   const [chatErr, setChatErr] = useState(null);
+
+  useEffect(() => {
+    if (currentChatId) setSelectedChatId(currentChatId);
+  }, [currentChatId]);
 
   // --- Toast for errors and notification ---
   const { toast, show: showToast, clear: clearToast } = useToast();
@@ -734,12 +740,16 @@ export default function SidebarContent({
   const handleOpenChat = useCallback(
     (chatId) => {
       setSelectedChatId(chatId);
-      window.dispatchEvent(
-        new CustomEvent("nexus:openChat", { detail: { id: chatId } })
-      );
+      if (typeof onSelectChat === "function") {
+        onSelectChat(chatId);
+      } else {
+        window.dispatchEvent(
+          new CustomEvent("nexus:openChat", { detail: { id: chatId } })
+        );
+      }
       if (isMobile && typeof onSelect === "function") onSelect();
     },
-    [isMobile, onSelect]
+    [isMobile, onSelect, onSelectChat]
   );
 
   // --- Keydown handler for list actions ---

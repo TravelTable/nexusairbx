@@ -2212,6 +2212,12 @@ useEffect(() => {
               isMobile
               onRenameChat={() => {}}
               onDeleteChat={handleDeleteChat}
+              onSelectChat={(chatId) => {
+                if (!chatId) return;
+                setCurrentChatId(chatId);
+                openChatById(chatId);
+                closeAllMobileSidebars();
+              }}
               renderVersionList={renderVersionList}
               plan={planKey}
               planInfo={planInfo}
@@ -2311,6 +2317,12 @@ useEffect(() => {
             setPromptSearch={setPromptSearch}
             onRenameChat={() => {}}
             onDeleteChat={handleDeleteChat}
+            onSelectChat={(chatId) => {
+              if (!chatId) return;
+              setCurrentChatId(chatId);
+              openChatById(chatId);
+              closeAllMobileSidebars();
+            }}
             renderVersionList={renderVersionList}
             plan={planKey}
             planInfo={planInfo}
