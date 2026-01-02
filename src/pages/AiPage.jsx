@@ -48,6 +48,8 @@ import {
   orderBy,
   limitToLast,
   limit,
+  where,
+  getDocs,
   onSnapshot,
   serverTimestamp,
   writeBatch,
@@ -773,17 +775,60 @@ const planKey = normalizedPlan === "team" ? "team" : normalizedPlan === "pro" ? 
     };
     const onOpenCodeDrawer = (e) => {
       const { scriptId, code, title, versionNumber, explanation, savedScriptId } = e.detail || {};
-      if (!code) return;
-      setSelectedVersion({
-        id: savedScriptId || scriptId || `temp-${Date.now()}`,
-        projectId: scriptId || null,
-        code,
-        title: title || "Script",
-        explanation: explanation || "",
-        versionNumber: versionNumber || null,
-      });
+
+      // If code is provided, open immediately
+      if (code && code !== "-- No code found") {
+        setSelectedVersion({
+          id: savedScriptId || `temp-${Date.now()}`,
+          projectId: scriptId || null,
+          code,
+          title: title || "Script",
+          explanation: explanation || "",
+          versionNumber: versionNumber || null,
+          isSavedView: true,
+        });
+        if (scriptId) setCurrentScriptId(scriptId);
+        return;
+      }
+
+      // If code missing but we have a scriptId, fetch latest (or specific) version
       if (scriptId) {
-        setCurrentScriptId(scriptId);
+        const fetchCode = async () => {
+          try {
+            const db = getFirestore();
+            const uid = user?.uid || auth.currentUser?.uid;
+            if (!uid) return;
+
+            const versionsRef = collection(db, "users", uid, "scripts", scriptId, "versions");
+            let q;
+            if (versionNumber) {
+              q = query(versionsRef, where("versionNumber", "==", Number(versionNumber)), limit(1));
+            } else {
+              q = query(versionsRef, orderBy("versionNumber", "desc"), limit(1));
+            }
+            const snap = await getDocs(q);
+            if (!snap.empty) {
+              const d = snap.docs[0];
+              const data = d.data();
+              setSelectedVersion({
+                id: d.id,
+                projectId: scriptId,
+                code: data.code || "",
+                title: data.title || title || "Script",
+                explanation: data.explanation || "",
+                versionNumber: data.versionNumber,
+                isSavedView: true,
+              });
+              setCurrentScriptId(scriptId);
+            } else {
+              notify({ message: "Script version content not found.", type: "error" });
+            }
+          } catch (err) {
+            console.error("Error fetching saved script code:", err);
+            notify({ message: "Failed to load script code.", type: "error" });
+          }
+        };
+        fetchCode();
       }
     };
     const onForceOpenScript = (e) => {
@@ -804,13 +849,13 @@ const planKey = normalizedPlan === "team" ? "team" : normalizedPlan === "pro" ? 
     return () => {
       window.removeEventListener("nexus:openChat", onOpenChat);
       window.removeEventListener("nexus:startDraft", onStartDraft);
-       window.removeEventListener("nexus:openCodeDrawer", onOpenCodeDrawer);
+      window.removeEventListener("nexus:openCodeDrawer", onOpenCodeDrawer);
       window.removeEventListener("nexus:forceOpenScript", onForceOpenScript);
       window.removeEventListener("keydown", onKey);
       messagesUnsubRef.current?.();
       chatUnsubRef.current?.();
     };
-  }, [openChatById, currentScriptId, selectedVersion, versionHistory]);
+  }, [openChatById, currentScriptId, selectedVersion, versionHistory, user, notify]);
 
   // --- Load Versions for Current Script from Backend (event-driven, skip if not current) ---
   useEffect(() => {
