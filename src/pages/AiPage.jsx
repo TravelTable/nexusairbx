@@ -801,12 +801,20 @@ const planKey = normalizedPlan === "team" ? "team" : normalizedPlan === "pro" ? 
 
             const versionsRef = collection(db, "users", uid, "scripts", scriptId, "versions");
             let q;
+            let snap = null;
             if (versionNumber) {
               q = query(versionsRef, where("versionNumber", "==", Number(versionNumber)), limit(1));
-            } else {
-              q = query(versionsRef, orderBy("versionNumber", "desc"), limit(1));
+              snap = await getDocs(q);
             }
-            const snap = await getDocs(q);
+            if (!snap || snap.empty) {
+              // fallback to latest by versionNumber then createdAt
+              q = query(versionsRef, orderBy("versionNumber", "desc"), limit(1));
+              snap = await getDocs(q);
+            }
+            if (snap.empty) {
+              q = query(versionsRef, orderBy("createdAt", "desc"), limit(1));
+              snap = await getDocs(q);
+            }
             if (!snap.empty) {
               const d = snap.docs[0];
               const data = d.data();
