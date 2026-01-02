@@ -1173,15 +1173,16 @@ const handleSubmit = async (e, opts = {}) => {
     // 17. Safer cleanup: track cancel
     setWasCanceled(false);
 
-    // Prepare request
-    const reqBody = {
-      prompt: cleanedPrompt,
-      model: settings.modelVersion,
-      creativity: settings.creativity,
-      codeStyle: settings.codeStyle,
-      projectId: projectIdToSend,
-      requestId,
-    };
+  // Prepare request
+  const reqBody = {
+    prompt: cleanedPrompt,
+    model: settings.modelVersion,
+    creativity: settings.creativity,
+    codeStyle: settings.codeStyle,
+    projectId: projectIdToSend,
+    requestId,
+    chatId: activeChatId,
+  };
 
     // 5. Streaming via POST SSE
     // 15. Guard against stale user: refresh token on 401

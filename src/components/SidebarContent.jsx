@@ -487,16 +487,18 @@ export default function SidebarContent({
 
   // --- Memoized filtered and sorted scripts (deferred search) ---
   const deferredScriptSearch = useDeferredValue(localSearch.trim().toLowerCase());
+  const chatScripts = useMemo(() => {
+    if (!currentChatId) return [];
+    return (Array.isArray(scripts) ? scripts : []).filter((s) => s.chatId === currentChatId);
+  }, [scripts, currentChatId]);
+
   const filteredScripts = useMemo(() => {
-    const list = Array.isArray(scripts) ? scripts : [];
+    const list = chatScripts;
     const q = deferredScriptSearch;
     const filtered = q
       ? list.filter((s) => (s.title || "").toLowerCase().includes(q))
       : list;
-    // Strict scoping: only scripts belonging to the current chat
-    if (!currentChatId) return [];
-    const scoped = filtered.filter((s) => s.chatId === currentChatId);
-    return scoped
+    return filtered
       .slice()
       .sort((a, b) => {
         const au = Number(a.updatedAt) || 0;
@@ -507,7 +509,7 @@ export default function SidebarContent({
         if (bc !== ac) return bc - ac;
         return (a.title || "").localeCompare(b.title || "");
       });
-  }, [scripts, deferredScriptSearch, currentChatId, currentScriptId]);
+  }, [chatScripts, deferredScriptSearch]);
 
   // --- Memoized filtered/sorted chats (deferred search) ---
   const deferredChatSearch = useDeferredValue(chatSearch.trim().toLowerCase());
@@ -912,28 +914,38 @@ const versionHistoryWithLock = useMemo(() => {
               tabIndex={-1}
               aria-live="polite"
             >
-              {scripts === undefined ? (
-                <>
-                  {renderSkeleton()}
-                  {renderSkeleton()}
-                </>
-              ) : filteredScripts.length === 0 && scripts.length > 0 ? (
-                <div className="text-gray-400 text-sm flex items-center gap-2">
-                  No scripts match your search.
-                  <button
-                    className="ml-2 px-2 py-1 rounded bg-[#00f5d4] text-black font-bold text-xs"
-                    onClick={() => {
-                      setPromptSearch("");
-                      setLocalSearch("");
-                    }}
-                  >
-                    Clear search
-                  </button>
-                </div>
-              ) : filteredScripts.length > 60 ? (
-                <List
-                  height={400}
-                  itemCount={filteredScripts.length}
+            {scripts === undefined ? (
+              <>
+                {renderSkeleton()}
+                {renderSkeleton()}
+              </>
+            ) : chatScripts.length === 0 ? (
+              <div className="text-gray-400 text-sm mb-2 flex items-center gap-2">
+                No scripts in this chat.
+                <button
+                  className="ml-2 px-2 py-1 rounded bg-[#00f5d4] text-black font-bold text-xs"
+                  onClick={handleNewScript}
+                >
+                  Create one
+                </button>
+              </div>
+            ) : filteredScripts.length === 0 ? (
+              <div className="text-gray-400 text-sm flex items-center gap-2">
+                No scripts match your search.
+                <button
+                  className="ml-2 px-2 py-1 rounded bg-[#00f5d4] text-black font-bold text-xs"
+                  onClick={() => {
+                    setPromptSearch("");
+                    setLocalSearch("");
+                  }}
+                >
+                  Clear search
+                </button>
+              </div>
+            ) : filteredScripts.length > 60 ? (
+              <List
+                height={400}
+                itemCount={filteredScripts.length}
                   itemSize={56}
                   width="100%"
                   style={{ background: "transparent" }}
