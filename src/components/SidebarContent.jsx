@@ -495,11 +495,12 @@ export default function SidebarContent({
       : list;
     const scoped = currentChatId
       ? filtered.filter((s) => {
+          // Primary: match current chat
           if (s.chatId) return s.chatId === currentChatId;
-          if (currentScriptId && s.id === currentScriptId) return true;
-          return false;
+          // Fallback: unassigned scripts stay visible so you can recover older items
+          return !s.chatId;
         })
-      : [];
+      : filtered;
     return scoped
       .slice()
       .sort((a, b) => {
