@@ -770,8 +770,24 @@ const planKey = normalizedPlan === "team" ? "team" : normalizedPlan === "pro" ? 
       setMessages([]);
       setSelectedVersion(null);
     };
+    const onOpenCodeDrawer = (e) => {
+      const { scriptId, code, title, versionNumber, explanation, savedScriptId } = e.detail || {};
+      if (!code) return;
+      setSelectedVersion({
+        id: savedScriptId || scriptId || `temp-${Date.now()}`,
+        projectId: scriptId || null,
+        code,
+        title: title || "Script",
+        explanation: explanation || "",
+        versionNumber: versionNumber || null,
+      });
+      if (scriptId) {
+        setCurrentScriptId(scriptId);
+      }
+    };
     window.addEventListener("nexus:openChat", onOpenChat);
     window.addEventListener("nexus:startDraft", onStartDraft);
+    window.addEventListener("nexus:openCodeDrawer", onOpenCodeDrawer);
 
     // ESC closes mobile sidebars
     const onKey = (e) => e.key === "Escape" && closeAllMobileSidebars();
@@ -780,6 +796,7 @@ const planKey = normalizedPlan === "team" ? "team" : normalizedPlan === "pro" ? 
     return () => {
       window.removeEventListener("nexus:openChat", onOpenChat);
       window.removeEventListener("nexus:startDraft", onStartDraft);
+       window.removeEventListener("nexus:openCodeDrawer", onOpenCodeDrawer);
       window.removeEventListener("keydown", onKey);
       messagesUnsubRef.current?.();
       chatUnsubRef.current?.();
