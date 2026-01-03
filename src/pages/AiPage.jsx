@@ -1255,19 +1255,42 @@ const handleSubmit = async (e, opts = {}) => {
       }
     }
 
-    // Save user message
-    if (activeChatId) {
-      addDoc(collection(db, "users", user.uid, "chats", activeChatId, "messages"), {
-        role: "user",
-        content: cleanedPrompt,
-        createdAt: serverTimestamp(),
-      }).catch((e) => console.error("Failed to save user msg:", e));
+    // If we still don't have a chatId, abort: sidebar Scripts/Versions rely on it.
+    if (!activeChatId) {
+      notify({
+        message:
+          "Couldn't create a chat thread, so this run can't be saved to Scripts/Versions. Please refresh and try again.",
+        type: "error",
+        duration: 7000,
+      });
 
-      updateDoc(doc(db, "users", user.uid, "chats", activeChatId), {
-        lastMessage: cleanedPrompt.slice(0, 50),
-        updatedAt: serverTimestamp(),
-      }).catch(() => {});
+      // Remove the pending assistant placeholder so the UI doesn't get stuck
+      setMessages((prev) => prev.filter((m) => m.id !== pendingMsgIdLocal));
+
+      setIsGenerating(false);
+      setGenerationStep("idle");
+      setLoadingBarVisible(false);
+      setLoadingBarData((prev) => ({
+        ...prev,
+        loading: false,
+        codeReady: false,
+        stage: "idle",
+        eta: null,
+      }));
+      return;
     }
+
+    // Save user message
+    addDoc(collection(db, "users", user.uid, "chats", activeChatId, "messages"), {
+      role: "user",
+      content: cleanedPrompt,
+      createdAt: serverTimestamp(),
+    }).catch((e) => console.error("Failed to save user msg:", e));
+
+    updateDoc(doc(db, "users", user.uid, "chats", activeChatId), {
+      lastMessage: cleanedPrompt.slice(0, 50),
+      updatedAt: serverTimestamp(),
+    }).catch(() => {});
   }
 
   try {
@@ -1610,9 +1633,8 @@ const handleSubmit = async (e, opts = {}) => {
       return;
     }
 
-    if (jobData.projectId && jobData.projectId !== currentScriptId) {
-      setCurrentScriptId(jobData.projectId);
-    }
+    // NOTE: currentScriptId is set from resolvedProjectId below (not just jobData.projectId),
+    // because the backend can return the id in multiple places depending on the path.
 
     // 11. Versioning: stable ordering & selection
     let normalizedVersions = [];
@@ -1629,18 +1651,33 @@ const handleSubmit = async (e, opts = {}) => {
       );
     }
 
+    const resolvedProjectId =
+      jobData.projectId ||
+      jobData.result?.projectId ||
+      jobData.result?.scriptId ||
+      jobData.scriptId ||
+      projectIdFromStream ||
+      projectIdToSend ||
+      currentScriptId ||
+      null;
+
+    // Make sure Versions/Scripts sidebar has a selected script id
+    if (resolvedProjectId && resolvedProjectId !== currentScriptId) {
+      setCurrentScriptId(resolvedProjectId);
+    }
+
     // Extract title/code/explanation from result or fallbacks
     const resultTitle = jobData.result?.title || jobData.title || currentScript?.title || "Script";
     if (resultTitle) {
       setCurrentScript((prev) => ({
         ...prev,
         title: resultTitle,
-        id: jobData.projectId || prev?.id || currentScriptId,
+        id: resolvedProjectId || prev?.id || currentScriptId,
       }));
       setScripts((prev) =>
         Array.isArray(prev)
           ? prev.map((s) =>
-              s.id === (jobData.projectId || currentScriptId) ? { ...s, title: resultTitle } : s
+              s.id === (resolvedProjectId || currentScriptId) ? { ...s, title: resultTitle } : s
             )
           : prev
       );
@@ -1671,16 +1708,6 @@ const handleSubmit = async (e, opts = {}) => {
       jobData.versionNumber ||
       finalVersion?.versionNumber ||
       finalVersion?.version ||
-      null;
-
-    const resolvedProjectId =
-      jobData.projectId ||
-      jobData.result?.projectId ||
-      jobData.result?.scriptId ||
-      jobData.scriptId ||
-      projectIdFromStream ||
-      projectIdToSend ||
-      currentScriptId ||
       null;
 
     // Persist chat <-> script linkage
