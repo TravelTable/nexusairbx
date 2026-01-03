@@ -59,7 +59,7 @@ const safeFile = (t) =>
 
 // Version string getter (always string)
 const getVersionStr = (v) =>
-  String(v?.versionNumber ?? v?.version ?? "");
+  String(v?.versionNumber ?? v?.version ?? v?.latestVersion ?? "");
 
 // Stable key for scripts/versions
 const keyForScript = (s) => `${s.id}__${getVersionStr(s)}`;
