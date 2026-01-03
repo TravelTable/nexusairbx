@@ -488,8 +488,11 @@ export default function SidebarContent({
   // --- Memoized filtered and sorted scripts (deferred search) ---
   const deferredScriptSearch = useDeferredValue(localSearch.trim().toLowerCase());
   const chatScripts = useMemo(() => {
-    if (!currentChatId) return [];
-    return (Array.isArray(scripts) ? scripts : []).filter((s) => s.chatId === currentChatId);
+    const list = Array.isArray(scripts) ? scripts : [];
+    // Backward compatible: if chatId is missing and no chat is selected, show all.
+    if (!currentChatId) return list;
+    // Otherwise show scripts tied to this chat, but also include untagged scripts so older data still appears.
+    return list.filter((s) => s.chatId === currentChatId || !s.chatId);
   }, [scripts, currentChatId]);
 
   const filteredScripts = useMemo(() => {
