@@ -488,10 +488,12 @@ export default function SidebarContent({
   // --- Memoized filtered and sorted scripts (deferred search) ---
   const deferredScriptSearch = useDeferredValue(localSearch.trim().toLowerCase());
 const chatScripts = useMemo(() => {
+  if (!currentChatId) return [];
   const list = Array.isArray(scripts) ? scripts : [];
-  if (!currentChatId) return list;
-  return list.filter((s) => s.chatId === currentChatId || !s.chatId);
-}, [scripts, currentChatId]);
+  return list.filter(
+    (s) => s.chatId === currentChatId || (!s.chatId && currentScriptId && s.id === currentScriptId)
+  );
+}, [scripts, currentChatId, currentScriptId]);
 
   const filteredScripts = useMemo(() => {
     const list = chatScripts;

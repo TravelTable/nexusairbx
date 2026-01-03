@@ -1660,49 +1660,43 @@ const handleSubmit = async (e, opts = {}) => {
       finalVersion?.version ||
       null;
 
-    // Persist chat association on script so scripts tab scopes per chat
+    const resolvedProjectId =
+      jobData.projectId ||
+      jobData.result?.projectId ||
+      jobData.result?.scriptId ||
+      jobData.scriptId ||
+      projectIdFromStream ||
+      projectIdToSend ||
+      currentScriptId ||
+      null;
+
+    // Persist chat <-> script linkage
     if (activeChatId && user) {
-      const targetProjectId = jobData.projectId || finalVersion?.id || currentScriptId;
-      if (targetProjectId) {
-        updateDoc(doc(db, "users", user.uid, "scripts", targetProjectId), {
+      if (resolvedProjectId) {
+        updateDoc(doc(db, "users", user.uid, "scripts", resolvedProjectId), {
           chatId: activeChatId,
           updatedAt: serverTimestamp(),
         }).catch(() => {});
       }
+
+      updateDoc(doc(db, "users", user.uid, "chats", activeChatId), {
+        ...(resultTitle ? { title: resultTitle } : {}),
+        ...(resolvedProjectId ? { projectId: resolvedProjectId } : {}),
+        updatedAt: serverTimestamp(),
+      }).catch(() => {});
     }
 
     // Persist assistant message to chat (so sidebar/history updates)
     if (activeChatId && user) {
-      const finalCode =
-        jobData.result?.code ||
-        jobData.result?.content ||
-        jobData.code ||
-        jobData.content ||
-        finalVersion?.code ||
-        jobData.artifact?.code ||
-        "";
-      const finalExp =
-        jobData.result?.explanation ||
-        jobData.explanation ||
-        finalVersion?.explanation ||
-        "";
-
       addDoc(collection(db, "users", user.uid, "chats", activeChatId, "messages"), {
         role: "assistant",
         content: "",
         code: finalCode,
-        explanation: finalExp,
-        versionNumber: jobData.versionNumber || null,
+        explanation: finalExplanation,
+        projectId: resolvedProjectId || null,
+        versionNumber: finalVersionNumber || null,
         createdAt: serverTimestamp(),
       }).catch((e) => console.error("Failed to save assistant msg:", e));
-
-      if (jobData.result?.title) {
-        updateDoc(doc(db, "users", user.uid, "chats", activeChatId), {
-          title: jobData.result.title,
-          projectId: jobData.projectId || projectIdToSend || null,
-          updatedAt: serverTimestamp(),
-        }).catch(() => {});
-      }
     }
 
     // 3. Messaging list integrity: remove only the pending you added
