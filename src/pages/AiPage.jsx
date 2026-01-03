@@ -1635,6 +1635,7 @@ const handleSubmit = async (e, opts = {}) => {
       null;
 
     const finalVersionNumber =
+      jobData.result?.versionNumber ||
       jobData.versionNumber ||
       finalVersion?.versionNumber ||
       finalVersion?.version ||
