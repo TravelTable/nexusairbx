@@ -599,6 +599,19 @@ const planKey = normalizedPlan === "team" ? "team" : normalizedPlan === "pro" ? 
     setScriptsLimit((prev) => prev + 50);
   }, []);
 
+  // Backfill chatId on scripts if missing (legacy data)
+  useEffect(() => {
+    if (!user || !currentChatId || !currentScriptId) return;
+    const target = scripts.find((s) => s.id === currentScriptId);
+    if (target && !target.chatId) {
+      const db = getFirestore();
+      updateDoc(doc(db, "users", user.uid, "scripts", currentScriptId), {
+        chatId: currentChatId,
+        updatedAt: serverTimestamp(),
+      }).catch(() => {});
+    }
+  }, [user, currentChatId, currentScriptId, scripts]);
+
   const handleDeleteScript = useCallback(
     async (scriptId) => {
       if (!user || !scriptId) return;
