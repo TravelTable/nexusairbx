@@ -1255,11 +1255,11 @@ const handleSubmit = async (e, opts = {}) => {
       }
     }
 
-    // If we still don't have a chatId, abort: sidebar Scripts/Versions rely on it.
+    // If we still don't have a chatId, abort: Scripts/Versions must be scoped to a chat.
     if (!activeChatId) {
       notify({
         message:
-          "Couldn't create a chat thread, so this run can't be saved to Scripts/Versions. Please refresh and try again.",
+          "Couldn't create/select a chat, so this run can't be saved to Scripts/Versions. Please refresh and try again.",
         type: "error",
         duration: 7000,
       });
@@ -1280,12 +1280,27 @@ const handleSubmit = async (e, opts = {}) => {
       return;
     }
 
-    // Save user message
-    addDoc(collection(db, "users", user.uid, "chats", activeChatId, "messages"), {
-      role: "user",
-      content: cleanedPrompt,
-      createdAt: serverTimestamp(),
-    }).catch((e) => console.error("Failed to save user msg:", e));
+    // Save user message (idempotent: avoids "Document already exists")
+    const userMsgRef = doc(
+      db,
+      "users",
+      user.uid,
+      "chats",
+      activeChatId,
+      "messages",
+      `${requestId}-user`
+    );
+
+    setDoc(
+      userMsgRef,
+      {
+        role: "user",
+        content: cleanedPrompt,
+        createdAt: serverTimestamp(),
+        requestId,
+      },
+      { merge: true }
+    ).catch((e) => console.error("Failed to save user msg:", e));
 
     updateDoc(doc(db, "users", user.uid, "chats", activeChatId), {
       lastMessage: cleanedPrompt.slice(0, 50),
@@ -1726,17 +1741,32 @@ const handleSubmit = async (e, opts = {}) => {
       }).catch(() => {});
     }
 
-    // Persist assistant message to chat (so sidebar/history updates)
+    // Persist assistant message to chat (idempotent)
     if (activeChatId && user) {
-      addDoc(collection(db, "users", user.uid, "chats", activeChatId, "messages"), {
-        role: "assistant",
-        content: "",
-        code: finalCode,
-        explanation: finalExplanation,
-        projectId: resolvedProjectId || null,
-        versionNumber: finalVersionNumber || null,
-        createdAt: serverTimestamp(),
-      }).catch((e) => console.error("Failed to save assistant msg:", e));
+      const assistantMsgRef = doc(
+        db,
+        "users",
+        user.uid,
+        "chats",
+        activeChatId,
+        "messages",
+        `${requestId}-assistant`
+      );
+
+      setDoc(
+        assistantMsgRef,
+        {
+          role: "assistant",
+          content: "",
+          code: finalCode,
+          explanation: finalExplanation,
+          projectId: resolvedProjectId || null,
+          versionNumber: finalVersionNumber || null,
+          createdAt: serverTimestamp(),
+          requestId,
+        },
+        { merge: true }
+      ).catch((e) => console.error("Failed to save assistant msg:", e));
     }
 
     // 3. Messaging list integrity: remove only the pending you added
