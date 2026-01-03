@@ -1262,6 +1262,24 @@ const handleSubmit = async (e, opts = {}) => {
     // 17. Safer cleanup: track cancel
     setWasCanceled(false);
 
+  // Prepare conversation context for the backend (so “look at chat” works)
+  let conversation = [...(messages || []), userMsg]
+    .filter((m) => (m.role === "user" || m.role === "assistant") && !m.pending)
+    .map((m) => ({
+      role: m.role,
+      content: String(m.content || "").trim(),
+    }))
+    .filter((m) => m.content)
+    .slice(-30);
+
+  if (
+    conversation.length &&
+    conversation[conversation.length - 1].role === "user" &&
+    conversation[conversation.length - 1].content === cleanedPrompt.trim()
+  ) {
+    conversation = conversation.slice(0, -1);
+  }
+
   // Prepare request
   const reqBody = {
     prompt: cleanedPrompt,
@@ -1271,6 +1289,7 @@ const handleSubmit = async (e, opts = {}) => {
     projectId: projectIdToSend,
     requestId,
     chatId: activeChatId,
+    conversation,
   };
 
     // 5. Streaming via POST SSE
