@@ -2,16 +2,16 @@
 import React, { useEffect, useRef, useState } from "react";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "./firebase";
-import { CanvasProvider, useCanvas } from "@/components/canvascomponents/CanvasContext";
-import CanvasGrid from "@/components/canvascomponents/CanvasGrid";
-import CanvasItem from "@/components/canvascomponents/CanvasItem";
+import { CanvasProvider, useCanvas } from "../components/canvascomponents/CanvasContext";
+import CanvasGrid from "../components/canvascomponents/CanvasGrid";
+import CanvasItem from "../components/canvascomponents/CanvasItem";
 import {
   listBoards,
   createBoard,
   getBoard,
   getSnapshot,
   createSnapshot,
-} from "@/lib/uiBuilderApi";
+} from "../lib/uiBuilderApi";
 
 export default function UiBuilderPage() {
   return (
