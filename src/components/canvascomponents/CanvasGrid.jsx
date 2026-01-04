@@ -12,8 +12,10 @@ import React from "react";
 
 const GRID_SIZE = 10;
 
-export default function CanvasGrid({ enabled = true }) {
+export default function CanvasGrid({ enabled = true, size = GRID_SIZE }) {
   if (!enabled) return null;
+
+  const grid = Number(size) > 0 ? Number(size) : GRID_SIZE;
 
   return (
     <div
@@ -33,7 +35,7 @@ export default function CanvasGrid({ enabled = true }) {
             transparent 1px
           )
         `,
-        backgroundSize: `${GRID_SIZE}px ${GRID_SIZE}px`,
+        backgroundSize: `${grid}px ${grid}px`,
         zIndex: 1,
       }}
     />

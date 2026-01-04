@@ -1,8 +1,17 @@
 // src/pages/UiBuilderPage.jsx
-import React, { useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
+import { onAuthStateChanged } from "firebase/auth";
+import { auth } from "./firebase";
 import { CanvasProvider, useCanvas } from "@/components/canvascomponents/CanvasContext";
 import CanvasGrid from "@/components/canvascomponents/CanvasGrid";
 import CanvasItem from "@/components/canvascomponents/CanvasItem";
+import {
+  listBoards,
+  createBoard,
+  getBoard,
+  getSnapshot,
+  createSnapshot,
+} from "@/lib/uiBuilderApi";
 
 export default function UiBuilderPage() {
   return (
@@ -14,22 +23,136 @@ export default function UiBuilderPage() {
 
 function UiBuilderPageInner() {
   const canvasRef = useRef(null);
+  const saveTimerRef = useRef(null);
+  const lastSavedStringRef = useRef("");
 
   const {
     canvasSize,
     setCanvasSize,
     items,
+    setItems,
     selectedId,
+    setSelectedId,
     selectedItem,
     showGrid,
     setShowGrid,
     snapToGrid,
     setSnapToGrid,
+    gridSize,
     addItem,
     clearSelection,
     onPointerMove,
     endPointerAction,
+    loadBoardState,
   } = useCanvas();
+
+  const [boards, setBoards] = useState([]);
+  const [loadingBoards, setLoadingBoards] = useState(false);
+  const [loadingBoard, setLoadingBoard] = useState(false);
+  const [selectedBoardId, setSelectedBoardId] = useState(null);
+  const [selectedBoard, setSelectedBoard] = useState(null);
+  const [user, setUser] = useState(null);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, (u) => setUser(u || null));
+    return () => unsub();
+  }, []);
+
+  useEffect(() => {
+    if (!user) {
+      setBoards([]);
+      setSelectedBoardId(null);
+      setSelectedBoard(null);
+      return;
+    }
+    (async () => {
+      setLoadingBoards(true);
+      try {
+        const token = await user.getIdToken();
+        const res = await listBoards({ token });
+        setBoards(res.boards || []);
+      } catch (e) {
+        console.error("Failed to list boards", e);
+      } finally {
+        setLoadingBoards(false);
+      }
+    })();
+  }, [user]);
+
+  useEffect(() => {
+    if (!user || !selectedBoardId) return;
+    (async () => {
+      setLoadingBoard(true);
+      try {
+        const token = await user.getIdToken();
+        const res = await getBoard({ token, boardId: selectedBoardId });
+        setSelectedBoard(res.board || null);
+
+        if (res.board?.latestSnapshotId) {
+          const snap = await getSnapshot({
+            token,
+            boardId: selectedBoardId,
+            snapshotId: res.board.latestSnapshotId,
+          });
+          if (snap?.snapshot?.boardState) {
+            loadBoardState(snap.snapshot.boardState);
+            lastSavedStringRef.current = JSON.stringify(snap.snapshot.boardState);
+          }
+        } else {
+          loadBoardState({
+            canvasSize: res.board?.canvasSize,
+            settings: res.board?.settings,
+            items: [],
+            selectedId: null,
+          });
+          lastSavedStringRef.current = JSON.stringify({});
+        }
+      } catch (e) {
+        console.error("Failed to load board", e);
+      } finally {
+        setLoadingBoard(false);
+      }
+    })();
+  }, [user, selectedBoardId, loadBoardState]);
+
+  useEffect(() => {
+    if (saveTimerRef.current) {
+      clearTimeout(saveTimerRef.current);
+      saveTimerRef.current = null;
+    }
+    if (!user || !selectedBoardId) return;
+
+    const state = {
+      canvasSize,
+      items,
+      selectedId,
+      settings: {
+        gridSize,
+        showGrid,
+        snapToGrid,
+      },
+    };
+    const serialized = JSON.stringify(state);
+    if (serialized === lastSavedStringRef.current) return;
+
+    saveTimerRef.current = setTimeout(async () => {
+      try {
+        setSaving(true);
+        const token = await user.getIdToken();
+        await createSnapshot({ token, boardId: selectedBoardId, boardState: state });
+        lastSavedStringRef.current = serialized;
+      } catch (e) {
+        console.error("Autosave failed", e);
+      } finally {
+        setSaving(false);
+      }
+    }, 800);
+
+    return () => {
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    };
+  }, [user, selectedBoardId, canvasSize, items, selectedId, showGrid, snapToGrid, gridSize]);
 
   const handlePointerMove = (e) => {
     const rect = canvasRef.current?.getBoundingClientRect();
@@ -71,11 +194,45 @@ function UiBuilderPageInner() {
     });
   }
 
+  async function handleCreateBoard() {
+    if (!user) return;
+    const title = window.prompt("New board title", "Roblox UI Board");
+    if (!title) return;
+    try {
+      setLoadingBoard(true);
+      const token = await user.getIdToken();
+      const res = await createBoard({ token, title: title.trim(), canvasSize, settings: { showGrid, snapToGrid, gridSize } });
+      setSelectedBoardId(res.boardId);
+      setSelectedBoard(res.board || null);
+      loadBoardState({
+        canvasSize: res.board?.canvasSize,
+        settings: res.board?.settings,
+        items: [],
+        selectedId: null,
+      });
+      lastSavedStringRef.current = JSON.stringify({});
+      const list = await listBoards({ token });
+      setBoards(list.boards || []);
+    } catch (e) {
+      console.error("Create board failed", e);
+    } finally {
+      setLoadingBoard(false);
+    }
+  }
+
   return (
     <div style={{ height: "100vh", display: "flex", flexDirection: "column", background: "#0b1020", color: "#e5e7eb" }}>
       {/* Top bar */}
       <div style={{ display: "flex", alignItems: "center", gap: 12, padding: 12, borderBottom: "1px solid rgba(148,163,184,0.2)" }}>
         <div style={{ fontWeight: 700, letterSpacing: 0.2 }}>Roblox UI Builder</div>
+        {selectedBoard && (
+          <div style={{ fontSize: 12, opacity: 0.85 }}>
+            Board: <b>{selectedBoard.title}</b> {selectedBoard.projectId ? `(Project ${selectedBoard.projectId})` : ""}
+          </div>
+        )}
+        <div style={{ fontSize: 12, opacity: 0.65, marginLeft: 8 }}>
+          {loadingBoard ? "Loading board..." : saving ? "Saving..." : ""}
+        </div>
 
         <div style={{ marginLeft: "auto", display: "flex", gap: 8, alignItems: "center" }}>
           <button onClick={() => setShowGrid((v) => !v)} style={btnStyle("secondary")}>
@@ -92,8 +249,41 @@ function UiBuilderPageInner() {
 
       {/* Main layout */}
       <div style={{ flex: 1, display: "grid", gridTemplateColumns: "260px 1fr 320px", minHeight: 0 }}>
-        {/* Left: Palette */}
-        <div style={{ borderRight: "1px solid rgba(148,163,184,0.2)", padding: 12, overflow: "auto" }}>
+        {/* Left: Boards + Palette */}
+        <div style={{ borderRight: "1px solid rgba(148,163,184,0.2)", padding: 12, overflow: "auto", display: "flex", flexDirection: "column", gap: 12 }}>
+          <Section title="Boards">
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              <button style={btnStyle("secondary")} onClick={handleCreateBoard} disabled={!user || loadingBoard}>
+                + New Board
+              </button>
+              <div style={{ fontSize: 12, opacity: 0.7 }}>
+                {loadingBoards ? "Loading boards..." : ""}
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                {boards.map((b) => (
+                  <button
+                    key={b.id}
+                    onClick={() => setSelectedBoardId(b.id)}
+                    style={{
+                      ...btnStyle("ghost"),
+                      textAlign: "left",
+                      border: b.id === selectedBoardId ? "1px solid rgba(59,130,246,0.65)" : "1px solid rgba(148,163,184,0.18)",
+                      background: b.id === selectedBoardId ? "rgba(59,130,246,0.10)" : "rgba(15,23,42,0.35)",
+                    }}
+                  >
+                    <div style={{ fontSize: 12, fontWeight: 800 }}>{b.title}</div>
+                    <div style={{ fontSize: 11, opacity: 0.7 }}>
+                      {b.updatedAt ? new Date(b.updatedAt).toLocaleString() : "—"}
+                    </div>
+                  </button>
+                ))}
+                {boards.length === 0 && !loadingBoards && (
+                  <div style={{ fontSize: 12, opacity: 0.65 }}>No boards yet.</div>
+                )}
+              </div>
+            </div>
+          </Section>
+
           <Section title="Palette">
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
               <button style={btnStyle("secondary")} onClick={() => addPrimitive("Frame")}>+ Frame</button>
@@ -135,7 +325,7 @@ function UiBuilderPageInner() {
               userSelect: "none",
             }}
           >
-            <CanvasGrid enabled={showGrid} />
+            <CanvasGrid enabled={showGrid} size={gridSize} />
 
             <div
               style={{
@@ -175,7 +365,7 @@ function UiBuilderPageInner() {
               <div style={{ fontSize: 12, opacity: 0.7 }}>Select an element on the canvas to edit properties.</div>
             ) : (
               <div style={{ fontSize: 12, opacity: 0.85 }}>
-                Selected: <b>{selectedItem.type}</b> — {selectedItem.name}
+                Selected: <b>{selectedItem.type}</b> - {selectedItem.name}
               </div>
             )}
           </Section>

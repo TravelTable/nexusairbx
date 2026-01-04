@@ -2,15 +2,16 @@ import React, { createContext, useCallback, useContext, useMemo, useRef, useStat
 
 const CanvasContext = createContext(null);
 
-const GRID = 10;
+const DEFAULT_GRID = 10;
 
 function clamp(n, min, max) {
   return Math.max(min, Math.min(max, n));
 }
 
-function snap(n, enabled) {
+function snap(n, enabled, grid = DEFAULT_GRID) {
   if (!enabled) return n;
-  return Math.round(n / GRID) * GRID;
+  const size = Number(grid) > 0 ? Number(grid) : DEFAULT_GRID;
+  return Math.round(n / size) * size;
 }
 
 function uid() {
@@ -27,6 +28,7 @@ export function CanvasProvider({
   const [selectedId, setSelectedId] = useState(null);
   const [showGrid, setShowGrid] = useState(true);
   const [snapToGrid, setSnapToGrid] = useState(true);
+  const [gridSize, setGridSize] = useState(DEFAULT_GRID);
 
   const dragRef = useRef({
     mode: null,
@@ -113,8 +115,8 @@ export function CanvasProvider({
         if (it.id !== st.id) return it;
 
         if (st.mode === "move") {
-          const nx = snap(st.origin.x + dx, snapToGrid);
-          const ny = snap(st.origin.y + dy, snapToGrid);
+          const nx = snap(st.origin.x + dx, snapToGrid, gridSize);
+          const ny = snap(st.origin.y + dy, snapToGrid, gridSize);
 
           return {
             ...it,
@@ -124,8 +126,8 @@ export function CanvasProvider({
         }
 
         if (st.mode === "resize") {
-          const nw = snap(st.origin.w + dx, snapToGrid);
-          const nh = snap(st.origin.h + dy, snapToGrid);
+          const nw = snap(st.origin.w + dx, snapToGrid, gridSize);
+          const nh = snap(st.origin.h + dy, snapToGrid, gridSize);
 
           return {
             ...it,
@@ -137,7 +139,7 @@ export function CanvasProvider({
         return it;
       })
     );
-  }, [canvasSize, snapToGrid]);
+  }, [canvasSize, snapToGrid, gridSize]);
 
   const endPointerAction = useCallback(() => {
     dragRef.current = {
@@ -169,6 +171,40 @@ export function CanvasProvider({
     });
   }, [selectedId]);
 
+  const loadBoardState = useCallback((boardState = {}) => {
+    if (!boardState || typeof boardState !== "object") return;
+
+    const nextCanvas = boardState.canvasSize;
+    if (
+      nextCanvas &&
+      Number.isFinite(Number(nextCanvas.w)) &&
+      Number.isFinite(Number(nextCanvas.h))
+    ) {
+      setCanvasSize({ w: Number(nextCanvas.w), h: Number(nextCanvas.h) });
+    } else {
+      setCanvasSize(initialCanvasSize);
+    }
+
+    const settings = boardState.settings || {};
+    setShowGrid(typeof settings.showGrid === "boolean" ? settings.showGrid : true);
+    setSnapToGrid(typeof settings.snapToGrid === "boolean" ? settings.snapToGrid : true);
+    if (Number.isFinite(Number(settings.gridSize)) && Number(settings.gridSize) > 0) {
+      setGridSize(Number(settings.gridSize));
+    } else {
+      setGridSize(DEFAULT_GRID);
+    }
+
+    const nextItems = Array.isArray(boardState.items) ? boardState.items : [];
+    setItems(nextItems);
+
+    const maybeSelected = boardState.selectedId;
+    if (maybeSelected && nextItems.some((it) => it.id === maybeSelected)) {
+      setSelectedId(maybeSelected);
+    } else {
+      setSelectedId(null);
+    }
+  }, [initialCanvasSize]);
+
   const value = {
     canvasSize,
     setCanvasSize,
@@ -176,11 +212,15 @@ export function CanvasProvider({
     setShowGrid,
     snapToGrid,
     setSnapToGrid,
+    gridSize,
+    setGridSize,
     items,
     addItem,
     updateItem,
     deleteSelected,
+    setItems,
     selectedId,
+    setSelectedId,
     selectedItem,
     selectItem,
     clearSelection,
@@ -190,6 +230,7 @@ export function CanvasProvider({
     endPointerAction,
     bringToFront,
     sendToBack,
+    loadBoardState,
   };
 
   return (
