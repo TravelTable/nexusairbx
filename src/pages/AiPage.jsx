@@ -428,6 +428,7 @@ function AiPage() {
   const messagesUnsubRef = useRef(null);
   const chatUnsubRef = useRef(null);
   const currentChatIdRef = useRef(null);
+  const lastCloseTimeRef = useRef(0);
   const userDismissedVersionRef = useRef(false);
   const lastOpenedScriptRef = useRef({ scriptId: null, version: null, ts: 0 });
   useEffect(() => {
@@ -791,6 +792,7 @@ const planKey = normalizedPlan === "team" ? "team" : normalizedPlan === "pro" ? 
       setMessages([]);
       setSelectedVersion(null);
       userDismissedVersionRef.current = false;
+      lastCloseTimeRef.current = 0;
     };
     const onOpenCodeDrawer = (e) => {
       const { scriptId, code, title, versionNumber, explanation, savedScriptId } = e.detail || {};
@@ -907,8 +909,9 @@ const planKey = normalizedPlan === "team" ? "team" : normalizedPlan === "pro" ? 
     const now = Date.now();
     const delay = 10000 + (versionsBackoffRef.current || 0);
     const isSameScript = lastFetchedScriptIdRef.current === currentScriptId;
+    const recentlyClosed = now - lastCloseTimeRef.current < 500;
     if (isSameScript && now - lastVersionsFetchRef.current < delay) {
-      if (!selectedVersion && versionHistory.length > 0 && !userDismissedVersionRef.current) {
+      if (!selectedVersion && versionHistory.length > 0 && !userDismissedVersionRef.current && !recentlyClosed) {
         userDismissedVersionRef.current = false;
         setSelectedVersion(versionHistory[0]);
       }
@@ -963,7 +966,7 @@ const planKey = normalizedPlan === "team" ? "team" : normalizedPlan === "pro" ? 
            versions: normalized,
          }));
          setVersionHistory(normalized);
-          if (!userDismissedVersionRef.current) {
+          if (!userDismissedVersionRef.current && !recentlyClosed) {
             userDismissedVersionRef.current = false;
             setSelectedVersion((sv) =>
               sv ? normalized.find((v) => v.id === sv.id) || normalized[0] : normalized[0]
@@ -2937,6 +2940,7 @@ useEffect(() => {
                 : ""
             }
             onClose={() => {
+              lastCloseTimeRef.current = Date.now();
               userDismissedVersionRef.current = true;
               setSelectedVersion(null);
             }}

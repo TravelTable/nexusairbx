@@ -1113,6 +1113,7 @@ function PlanComparisonTable() {
       <NexusRBXHeader
         navLinks={[
           { id: 1, text: "Home", href: "/", icon: Home },
+          { id: 6, text: "Planning Board", href: "/board" },
           { id: 2, text: "AI Console", href: "/ai" },
           { id: 3, text: "Docs", href: "/docs", icon: BookOpen },
           { id: 5, text: "Settings", href: "/settings", icon: Settings },

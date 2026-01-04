@@ -128,6 +128,7 @@ export default function NexusRBXHomepageContainer() {
 
   const navLinks = [
     { id: 1, text: "Docs", href: "/docs" },
+    { id: 5, text: "Planning Board", href: "/board" },
     { id: 3, text: "Ai Console", href: "/ai" },
     { id: 4, text: "Settings", href: "/settings" },
     { id: 2, text: "Discord", href: "https://discord.gg/", external: true },
