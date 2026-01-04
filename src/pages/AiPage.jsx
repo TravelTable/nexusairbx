@@ -427,6 +427,10 @@ function AiPage() {
   const [currentChatMeta, setCurrentChatMeta] = useState(null);
   const messagesUnsubRef = useRef(null);
   const chatUnsubRef = useRef(null);
+  const currentChatIdRef = useRef(null);
+  useEffect(() => {
+    currentChatIdRef.current = currentChatId;
+  }, [currentChatId]);
 
   const [activeTab, setActiveTab] = useState("scripts");
 
@@ -1674,14 +1678,16 @@ const handleSubmit = async (e, opts = {}) => {
       currentScriptId ||
       null;
 
+    const isSameChatContext = currentChatIdRef.current === activeChatId;
+
     // Make sure Versions/Scripts sidebar has a selected script id
-    if (resolvedProjectId && resolvedProjectId !== currentScriptId) {
+    if (resolvedProjectId && resolvedProjectId !== currentScriptId && isSameChatContext) {
       setCurrentScriptId(resolvedProjectId);
     }
 
     // Extract title/code/explanation from result or fallbacks
     const resultTitle = jobData.result?.title || jobData.title || currentScript?.title || "Script";
-    if (resultTitle) {
+    if (resultTitle && isSameChatContext) {
       setCurrentScript((prev) => ({
         ...prev,
         title: resultTitle,
