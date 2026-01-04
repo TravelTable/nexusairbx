@@ -133,7 +133,7 @@ export default function UiBuilderPage() {
   const canvasRef = useRef(null);
 
   // base canvas size (we’ll add presets later)
-  const [canvasSize, setCanvasSize] = useState({ w: 980, h: 560 });
+  const [canvasSize, setCanvasSize] = useState({ w: 1280, h: 720 });
 
   const [items, setItems] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
@@ -356,26 +356,31 @@ export default function UiBuilderPage() {
             </div>
           </Section>
 
-          <Section title="Canvas Presets (later)">
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-              <button
-                style={btnStyle("secondary")}
-                onClick={() => setCanvasSize({ w: 980, h: 560 })}
-              >
-                Desktop
+          <Section title="Roblox ScreenGui Sizes">
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+              <button style={btnStyle("secondary")} onClick={() => setCanvasSize({ w: 1280, h: 720 })}>
+                Desktop (1280×720)
               </button>
-              <button
-                style={btnStyle("secondary")}
-                onClick={() => setCanvasSize({ w: 760, h: 520 })}
-              >
-                Tablet
+              <button style={btnStyle("secondary")} onClick={() => setCanvasSize({ w: 1920, h: 1080 })}>
+                Desktop Large (1920×1080)
               </button>
-              <button
-                style={btnStyle("secondary")}
-                onClick={() => setCanvasSize({ w: 420, h: 740 })}
-              >
-                Mobile
+              <button style={btnStyle("secondary")} onClick={() => setCanvasSize({ w: 1366, h: 768 })}>
+                Laptop (1366×768)
               </button>
+              <button style={btnStyle("secondary")} onClick={() => setCanvasSize({ w: 1024, h: 768 })}>
+                Tablet (1024×768)
+              </button>
+              <button style={btnStyle("secondary")} onClick={() => setCanvasSize({ w: 375, h: 812 })}>
+                Mobile Portrait (375×812)
+              </button>
+              <button style={btnStyle("secondary")} onClick={() => setCanvasSize({ w: 812, h: 375 })}>
+                Mobile Landscape (812×375)
+              </button>
+            </div>
+
+            <div style={{ marginTop: 10, fontSize: 12, opacity: 0.75, lineHeight: 1.4 }}>
+              Canvas matches Roblox <b>ScreenGui AbsoluteSize</b>.  
+              Positioning is 1:1 with Studio pixels.
             </div>
           </Section>
 
@@ -433,6 +438,22 @@ export default function UiBuilderPage() {
             onPointerDown={onCanvasBackgroundDown}
           >
             <CanvasGrid enabled={showGrid} />
+            <div
+              style={{
+                position: "absolute",
+                top: 8,
+                right: 10,
+                fontSize: 11,
+                opacity: 0.75,
+                background: "rgba(2,6,23,0.65)",
+                padding: "6px 10px",
+                borderRadius: 999,
+                border: "1px solid rgba(148,163,184,0.25)",
+                pointerEvents: "none",
+              }}
+            >
+              ScreenGui {canvasSize.w}×{canvasSize.h}
+            </div>
 
             {/* Empty state */}
             {items.length === 0 && (
