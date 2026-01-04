@@ -428,6 +428,7 @@ function AiPage() {
   const messagesUnsubRef = useRef(null);
   const chatUnsubRef = useRef(null);
   const currentChatIdRef = useRef(null);
+  const userDismissedVersionRef = useRef(false);
   const lastOpenedScriptRef = useRef({ scriptId: null, version: null, ts: 0 });
   useEffect(() => {
     currentChatIdRef.current = currentChatId;
@@ -789,6 +790,7 @@ const planKey = normalizedPlan === "team" ? "team" : normalizedPlan === "pro" ? 
       setVersionHistory([]);
       setMessages([]);
       setSelectedVersion(null);
+      userDismissedVersionRef.current = false;
     };
     const onOpenCodeDrawer = (e) => {
       const { scriptId, code, title, versionNumber, explanation, savedScriptId } = e.detail || {};
@@ -806,6 +808,7 @@ const planKey = normalizedPlan === "team" ? "team" : normalizedPlan === "pro" ? 
         return;
       }
       lastOpenedScriptRef.current = { scriptId: scriptId || null, version: versionKey, ts: Date.now() };
+      userDismissedVersionRef.current = false;
 
       // If code is provided, open immediately (DO NOT change currentScriptId; scripts/versions must stay chat-local)
       if (code && code !== "-- No code found") {
@@ -905,7 +908,8 @@ const planKey = normalizedPlan === "team" ? "team" : normalizedPlan === "pro" ? 
     const delay = 10000 + (versionsBackoffRef.current || 0);
     const isSameScript = lastFetchedScriptIdRef.current === currentScriptId;
     if (isSameScript && now - lastVersionsFetchRef.current < delay) {
-      if (!selectedVersion && versionHistory.length > 0) {
+      if (!selectedVersion && versionHistory.length > 0 && !userDismissedVersionRef.current) {
+        userDismissedVersionRef.current = false;
         setSelectedVersion(versionHistory[0]);
       }
       return;
@@ -921,7 +925,8 @@ const planKey = normalizedPlan === "team" ? "team" : normalizedPlan === "pro" ? 
         .then(async (res) => {
           if (res.status === 304) {
             versionsBackoffRef.current = 0;
-            if (!selectedVersion && versionHistory.length > 0) {
+            if (!selectedVersion && versionHistory.length > 0 && !userDismissedVersionRef.current) {
+              userDismissedVersionRef.current = false;
               setSelectedVersion(versionHistory[0]);
             }
             return { versions: null, etag: versionsEtagRef.current };
@@ -958,9 +963,12 @@ const planKey = normalizedPlan === "team" ? "team" : normalizedPlan === "pro" ? 
            versions: normalized,
          }));
          setVersionHistory(normalized);
-         setSelectedVersion((sv) =>
-           sv ? normalized.find((v) => v.id === sv.id) || normalized[0] : normalized[0]
-         );
+          if (!userDismissedVersionRef.current) {
+            userDismissedVersionRef.current = false;
+            setSelectedVersion((sv) =>
+              sv ? normalized.find((v) => v.id === sv.id) || normalized[0] : normalized[0]
+            );
+          }
        })
         .catch(() => setErrorMsg("Failed to load versions."));
     });
@@ -1678,6 +1686,7 @@ const handleSubmit = async (e, opts = {}) => {
     let finalVersion = null;
     if (jobData.version) {
       finalVersion = normalizeServerVersion(jobData.version);
+      userDismissedVersionRef.current = false;
       setSelectedVersion(
         normalizedVersions.find((v) => v.id === finalVersion.id) || finalVersion
       );
@@ -2927,7 +2936,10 @@ useEffect(() => {
                 ? `v${getVN(selectedVersion)}`
                 : ""
             }
-            onClose={() => setSelectedVersion(null)}
+            onClose={() => {
+              userDismissedVersionRef.current = true;
+              setSelectedVersion(null);
+            }}
             onSaveScript={async () => {}}
             onLiveOpen={() => {}}
           />
