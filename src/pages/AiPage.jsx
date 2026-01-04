@@ -428,6 +428,7 @@ function AiPage() {
   const messagesUnsubRef = useRef(null);
   const chatUnsubRef = useRef(null);
   const currentChatIdRef = useRef(null);
+  const lastOpenedScriptRef = useRef({ scriptId: null, version: null, ts: 0 });
   useEffect(() => {
     currentChatIdRef.current = currentChatId;
   }, [currentChatId]);
@@ -791,6 +792,20 @@ const planKey = normalizedPlan === "team" ? "team" : normalizedPlan === "pro" ? 
     };
     const onOpenCodeDrawer = (e) => {
       const { scriptId, code, title, versionNumber, explanation, savedScriptId } = e.detail || {};
+      const versionKey = versionNumber ? Number(versionNumber) : null;
+      const alreadySelected =
+        scriptId &&
+        selectedVersion &&
+        selectedVersion.projectId === scriptId &&
+        (!versionKey || selectedVersion.versionNumber === versionKey);
+      const last = lastOpenedScriptRef.current;
+      if (
+        alreadySelected ||
+        (last.scriptId === scriptId && last.version === versionKey && Date.now() - last.ts < 300)
+      ) {
+        return;
+      }
+      lastOpenedScriptRef.current = { scriptId: scriptId || null, version: versionKey, ts: Date.now() };
 
       // If code is provided, open immediately (DO NOT change currentScriptId; scripts/versions must stay chat-local)
       if (code && code !== "-- No code found") {
