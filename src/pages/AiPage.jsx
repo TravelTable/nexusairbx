@@ -748,9 +748,8 @@ const planKey = normalizedPlan === "team" ? "team" : normalizedPlan === "pro" ? 
       chatUnsubRef.current = onSnapshot(chatDocRef, (snap) => {
         const data = snap.exists() ? { id: snap.id, ...snap.data() } : null;
         setCurrentChatMeta(data || null);
-        if (data?.projectId) {
-          setCurrentScriptId(data.projectId);
-        }
+        // CRITICAL: prevent previous chat/script selection from leaking into other chats
+        setCurrentScriptId(data?.projectId || null);
       });
 
       const msgsRef = collection(db, "users", u.uid, "chats", chatId, "messages");
@@ -789,7 +788,7 @@ const planKey = normalizedPlan === "team" ? "team" : normalizedPlan === "pro" ? 
     const onOpenCodeDrawer = (e) => {
       const { scriptId, code, title, versionNumber, explanation, savedScriptId } = e.detail || {};
 
-      // If code is provided, open immediately
+      // If code is provided, open immediately (DO NOT change currentScriptId; scripts/versions must stay chat-local)
       if (code && code !== "-- No code found") {
         setSelectedVersion({
           id: savedScriptId || `temp-${Date.now()}`,
@@ -800,7 +799,6 @@ const planKey = normalizedPlan === "team" ? "team" : normalizedPlan === "pro" ? 
           versionNumber: versionNumber || null,
           isSavedView: true,
         });
-        if (scriptId) setCurrentScriptId(scriptId);
         return;
       }
 
@@ -840,7 +838,7 @@ const planKey = normalizedPlan === "team" ? "team" : normalizedPlan === "pro" ? 
                 versionNumber: data.versionNumber,
                 isSavedView: true,
               });
-              setCurrentScriptId(scriptId);
+              // DO NOT setCurrentScriptId here; Saved view is global, but chat scripts/versions are local
             } else {
               notify({ message: "Script version content not found.", type: "error" });
             }
@@ -1725,13 +1723,19 @@ const handleSubmit = async (e, opts = {}) => {
       finalVersion?.version ||
       null;
 
-    // Persist chat <-> script linkage
+    // Persist chat <-> script linkage (chat-local scripts)
     if (activeChatId && user) {
       if (resolvedProjectId) {
-        updateDoc(doc(db, "users", user.uid, "scripts", resolvedProjectId), {
-          chatId: activeChatId,
-          updatedAt: serverTimestamp(),
-        }).catch(() => {});
+        // Use setDoc+merge so it works even if the script doc doesn't exist yet
+        setDoc(
+          doc(db, "users", user.uid, "scripts", resolvedProjectId),
+          {
+            chatId: activeChatId,
+            ...(resultTitle ? { title: resultTitle } : {}),
+            updatedAt: serverTimestamp(),
+          },
+          { merge: true }
+        ).catch(() => {});
       }
 
       updateDoc(doc(db, "users", user.uid, "chats", activeChatId), {
