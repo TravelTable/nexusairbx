@@ -6,9 +6,9 @@ import { auth } from "./firebase";
 import { CanvasProvider, useCanvas } from "../components/canvascomponents/CanvasContext";
 import CanvasGrid from "../components/canvascomponents/CanvasGrid";
 import CanvasItem from "../components/canvascomponents/CanvasItem";
-import NexusRBXHeader from "../components/NexusRBXHeader";
-import TokensCounterContainer from "../components/TokensCounterContainer";
 import { useBilling } from "../context/BillingContext";
+import PLAN_INFO from "../lib/planInfo";
+import { Info } from "lucide-react";
 import { listBoards, createBoard, getBoard, getSnapshot, createSnapshot, aiGenerateBoard, aiImportFromImage } from "../lib/uiBuilderApi";
 
 const MONETIZATION_KINDS = [
@@ -31,14 +31,6 @@ function UiBuilderPageInner() {
   const saveTimerRef = useRef(null);
   const lastSavedStringRef = useRef("");
   const navigate = useNavigate();
-
-  const navLinks = [
-    { id: "home", text: "Home", href: "/" },
-    { id: "ai", text: "AI", href: "/ai" },
-    { id: "docs", text: "Docs", href: "/docs" },
-    { id: "contact", text: "Contact", href: "/contact" },
-    { id: "subscribe", text: "Subscribe", href: "/subscribe" },
-  ];
 
   const {
     canvasSize,
@@ -107,10 +99,10 @@ function UiBuilderPageInner() {
 
   // Billing / tokens
   const billing = useBilling();
-  const tokenInfo = {
-    sub: { remaining: Math.max(0, Number(billing?.subRemaining ?? 0)), limit: Number(billing?.subRemaining ?? 0) },
-    payg: { remaining: Math.max(0, Number(billing?.paygRemaining ?? 0)) },
-  };
+  const tokensLeft = Math.max(0, Number(billing?.totalRemaining ?? (billing?.subRemaining ?? 0) + (billing?.paygRemaining ?? 0)));
+  const tokensLimit = PLAN_INFO[(billing?.plan || "free").toLowerCase()]?.cap ?? tokensLeft;
+  const tokenRefreshTime = billing?.resetsAt || null;
+  const tokenPlan = (billing?.plan || "free").toLowerCase();
   const tokenLoading = !!billing?.loading;
 
   useEffect(() => {
@@ -468,18 +460,9 @@ function UiBuilderPageInner() {
 
   return (
     <div style={styles.page}>
-      <NexusRBXHeader
-        navLinks={navLinks}
-        handleNavClick={() => {}}
-        navigate={navigate}
-        user={user}
-        handleLogin={() => navigate("/signin")}
-        tokenInfo={tokenInfo}
-        tokenLoading={tokenLoading}
-      />
       {/* Top bar */}
       <div style={styles.topbar}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           {selectedBoard && (
             <div style={styles.boardMeta}>
               Board: <b>{selectedBoard.title}</b> {selectedBoard.projectId ? `(Project ${selectedBoard.projectId})` : ""}
@@ -490,12 +473,9 @@ function UiBuilderPageInner() {
 
         <div style={styles.topbarActions}>
           {user && (
-            <TokensCounterContainer
-              tokens={tokenInfo}
-              isLoading={tokenLoading}
-              showRefreshButton={false}
-              className="!bg-transparent !border-none"
-            />
+            <div style={{ minWidth: 260 }}>
+              <TokenBar tokensLeft={tokensLeft} tokensLimit={tokensLimit} resetsAt={tokenRefreshTime} plan={tokenPlan} loading={tokenLoading} />
+            </div>
           )}
           <button onClick={() => setShowGrid((v) => !v)} style={btnStyle("secondary")}>
             {showGrid ? "Hide Grid" : "Show Grid"}
@@ -961,6 +941,71 @@ function Section({ title, children }) {
   );
 }
 
+function formatNumber(num) {
+  if (typeof num !== "number" || Number.isNaN(num)) return "0";
+  return num.toLocaleString();
+}
+
+function formatResetDate(date) {
+  const d = date instanceof Date ? date : new Date(date);
+  return d.toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
+// Token bar borrowed from AI page for visual consistency
+function TokenBar({ tokensLeft, tokensLimit, resetsAt, plan, loading }) {
+  const percent =
+    typeof tokensLeft === "number" && typeof tokensLimit === "number"
+      ? Math.max(0, Math.min(100, (tokensLeft / tokensLimit) * 100))
+      : 100;
+  const planInfo = PLAN_INFO[plan] || PLAN_INFO.free;
+
+  return (
+    <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: 6 }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div style={{ fontSize: 12, color: "#d1d5db", fontWeight: 600 }}>
+          Tokens:{" "}
+          <span style={{ color: "#fff", fontWeight: 800 }}>
+            {loading ? "..." : typeof tokensLeft === "number" ? formatNumber(tokensLeft) : "∞"}
+          </span>{" "}
+          <span style={{ color: "#9ca3af" }}>/ {formatNumber(tokensLimit)}</span>
+        </div>
+        <a
+          href="/docs#tokens"
+          style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, color: "#9b5de5", textDecoration: "underline" }}
+          title="How tokens work"
+        >
+          <Info size={16} />
+          How tokens work
+        </a>
+      </div>
+      <div style={{ width: "100%", height: 12, background: "#1f2937", borderRadius: 999, overflow: "hidden", position: "relative" }}>
+        <div
+          style={{
+            height: "100%",
+            borderRadius: 999,
+            width: `${percent}%`,
+            transition: "width 0.4s ease",
+            background:
+              plan === "team"
+                ? "linear-gradient(90deg, #00f5d4 0%, #9b5de5 100%)"
+                : plan === "pro"
+                ? "linear-gradient(90deg, #9b5de5 0%, #00f5d4 100%)"
+                : "#94a3b8",
+          }}
+        />
+      </div>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: 11, color: "#9ca3af" }}>
+        <span>{resetsAt ? `Resets on ${formatResetDate(resetsAt)}` : ""}</span>
+        <span>{planInfo.capText}</span>
+      </div>
+    </div>
+  );
+}
+
 function inputStyle() {
   return {
     width: "100%",
@@ -1028,7 +1073,6 @@ function btnStyle(variant, accent = "#3b82f6") {
 const styles = {
   page: { height: "100vh", display: "flex", flexDirection: "column", background: "#0b1020", color: "#e5e7eb" },
   topbar: { display: "flex", alignItems: "center", gap: 12, padding: 12, borderBottom: "1px solid rgba(148,163,184,0.2)" },
-  brand: { fontWeight: 700, letterSpacing: 0.2 },
   boardMeta: { fontSize: 12, opacity: 0.85 },
   status: { fontSize: 12, opacity: 0.65, marginLeft: 8 },
   topbarActions: { marginLeft: "auto", display: "flex", gap: 8, alignItems: "center" },
