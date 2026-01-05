@@ -30,6 +30,15 @@ function authHeaders(token) {
   };
 }
 
+/**
+ * For multipart/form-data uploads, do NOT set Content-Type manually (browser sets boundary).
+ */
+function authOnlyHeaders(token) {
+  return {
+    Authorization: `Bearer ${token}`,
+  };
+}
+
 export async function listBoards({ token }) {
   const res = await fetch(`${BACKEND_URL}/api/ui-builder/boards`, {
     headers: authHeaders(token),
@@ -74,6 +83,59 @@ export async function getSnapshot({ token, boardId, snapshotId }) {
     `${BACKEND_URL}/api/ui-builder/boards/${encodeURIComponent(boardId)}/snapshots/${encodeURIComponent(snapshotId)}`,
     { headers: authHeaders(token) }
   );
+  return handleResponse(res);
+}
+
+/**
+ * AI: Generate a full boardState JSON.
+ *
+ * IMPORTANT DESIGN RULE:
+ * - Backend returns a declarative "boardState" object (source-of-truth)
+ * - Frontend renders that boardState onto the canvas (no invented extra UI)
+ *
+ * "themeHint" helps align the generated UI with your site theme (colors, radius, font).
+ * Codex: you can expand themeHint by reading more tokens from the main AI page.
+ */
+export async function aiGenerateBoard({ token, prompt, canvasSize, themeHint, mode = "overwrite", maxItems = 40 }) {
+  const res = await fetch(`${BACKEND_URL}/api/ui-builder/ai/generate-board`, {
+    method: "POST",
+    headers: authHeaders(token),
+    body: JSON.stringify({ prompt, canvasSize, themeHint, mode, maxItems }),
+  });
+  return handleResponse(res);
+}
+
+/**
+ * AI: image/screenshot -> boardState JSON
+ *
+ * rightsMode:
+ * - "owned": user asserts permission; extract more details (still no asset IDs invented)
+ * - "reference": inspiration only; replace text/logos, apply site theme
+ */
+export async function aiImportFromImage({
+  token,
+  file,
+  canvasSize,
+  themeHint,
+  rightsMode = "reference",
+  prompt = "",
+  mode = "overwrite",
+  maxItems = 40,
+}) {
+  const form = new FormData();
+  form.append("image", file);
+  form.append("canvasSize", JSON.stringify(canvasSize));
+  form.append("themeHint", JSON.stringify(themeHint || {}));
+  form.append("rightsMode", rightsMode);
+  form.append("prompt", prompt || "");
+  form.append("mode", mode);
+  form.append("maxItems", String(maxItems));
+
+  const res = await fetch(`${BACKEND_URL}/api/ui-builder/ai/import-from-image`, {
+    method: "POST",
+    headers: authOnlyHeaders(token),
+    body: form,
+  });
   return handleResponse(res);
 }
 

@@ -5,7 +5,7 @@ import { auth } from "./firebase";
 import { CanvasProvider, useCanvas } from "../components/canvascomponents/CanvasContext";
 import CanvasGrid from "../components/canvascomponents/CanvasGrid";
 import CanvasItem from "../components/canvascomponents/CanvasItem";
-import { listBoards, createBoard, getBoard, getSnapshot, createSnapshot, aiGenerateBoard } from "../lib/uiBuilderApi";
+import { listBoards, createBoard, getBoard, getSnapshot, createSnapshot, aiGenerateBoard, aiImportFromImage } from "../lib/uiBuilderApi";
 
 const MONETIZATION_KINDS = [
   { value: "DevProduct", label: "Dev Product" },
@@ -76,11 +76,20 @@ function UiBuilderPageInner() {
   const [user, setUser] = useState(null);
   const [saving, setSaving] = useState(false);
   const [newPaletteHex, setNewPaletteHex] = useState("#");
-
-  // AI generate UI
-  const [showAiModal, setShowAiModal] = useState(false);
+  // --- AI prompt UI (keep in sidebar so it matches main site flow)
+  // Codex: could store prompt history per snapshot to build a timeline.
   const [aiPrompt, setAiPrompt] = useState("");
   const [aiGenerating, setAiGenerating] = useState(false);
+
+  // --- Screenshot/Image import (image -> UI)
+  const [refImageFile, setRefImageFile] = useState(null);
+  const [refImageUrl, setRefImageUrl] = useState("");
+  const [rightsMode, setRightsMode] = useState("reference"); // "owned" | "reference"
+  const [aiImporting, setAiImporting] = useState(false);
+
+  // Canvas overlay controls for matching screenshot to board while editing
+  const [showRefOverlay, setShowRefOverlay] = useState(true);
+  const [refOverlayOpacity, setRefOverlayOpacity] = useState(0.28);
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (u) => setUser(u || null));
@@ -276,120 +285,161 @@ function UiBuilderPageInner() {
   }
 
   // --- AI helpers ---
+  /**
+   * Extract theme tokens so AI output matches your site.
+   * Codex: point this at your main AI page wrapper (e.g., #ai-page-root) and ensure CSS vars exist.
+   */
+  function getSiteThemeHint() {
+    const el = document.documentElement;
+    const css = getComputedStyle(el);
+    const pick = (name, fallback) => (css.getPropertyValue(name) || "").trim() || fallback;
+    return {
+      bg: pick("--app-bg", "#0b1020"),
+      panel: pick("--card-bg", "rgba(15,23,42,0.35)"),
+      border: pick("--border", "rgba(148,163,184,0.20)"),
+      text: pick("--text", "#e5e7eb"),
+      primary: pick("--primary", "#3b82f6"),
+      radius: pick("--radius", "12px"),
+      font: pick("--font", "system-ui"),
+    };
+  }
+
+  /**
+   * Hard clamp to keep AI output renderable. Whitelist new props here if you extend CanvasItem.
+   */
   function sanitizeBoardState(maybeState) {
     const state = (maybeState && typeof maybeState === "object") ? maybeState : {};
     const safeCanvas = state.canvasSize && typeof state.canvasSize === "object"
       ? { w: Number(state.canvasSize.w) || canvasSize.w, h: Number(state.canvasSize.h) || canvasSize.h }
       : { w: canvasSize.w, h: canvasSize.h };
 
-    const safeSettings = state.settings && typeof state.settings === "object"
-      ? {
-          ...state.settings,
-          gridSize: Number(state.settings.gridSize) || gridSize,
-          snapToGrid: typeof state.settings.snapToGrid === "boolean" ? state.settings.snapToGrid : snapToGrid,
-          showGrid: typeof state.settings.showGrid === "boolean" ? state.settings.showGrid : showGrid,
-        }
-      : { gridSize, snapToGrid, showGrid };
-
+    const clamp = (n, min, max) => Math.max(min, Math.min(max, n));
+    const allowedTypes = new Set(["Frame", "TextLabel", "TextButton", "ImageLabel"]);
     const safeItems = Array.isArray(state.items) ? state.items : [];
 
-    // Keep only keys your renderer already understands
     const cleanedItems = safeItems
       .filter((it) => it && typeof it === "object")
-      .map((it) => ({
-        id: String(it.id || crypto.randomUUID()),
-        type: String(it.type || "Frame"),
-        name: String(it.name || it.type || "Item"),
-        x: Number(it.x) || 0,
-        y: Number(it.y) || 0,
-        w: Number(it.w) || 200,
-        h: Number(it.h) || 100,
-        zIndex: Number(it.zIndex) || 1,
-        fill: String(it.fill || "#111827"),
-        radius: Number(it.radius) || 12,
-        stroke: typeof it.stroke === "boolean" ? it.stroke : true,
-        strokeColor: String(it.strokeColor || "#334155"),
-        strokeWidth: Number(it.strokeWidth) || 2,
-        text: String(it.text || ""),
-        textColor: String(it.textColor || "#ffffff"),
-        fontSize: Number(it.fontSize) || 18,
-        imageId: String(it.imageId || ""),
-        locked: !!it.locked,
-      }));
+      .map((it, idx) => {
+        const w = Math.max(10, Number(it.w) || 200);
+        const h = Math.max(10, Number(it.h) || 100);
+        const x = clamp(Number(it.x) || 0, 0, Math.max(0, safeCanvas.w - w));
+        const y = clamp(Number(it.y) || 0, 0, Math.max(0, safeCanvas.h - h));
+        return {
+          id: String(it.id || `ai_${Date.now()}_${idx}`),
+          type: allowedTypes.has(it.type) ? it.type : "Frame",
+          name: String(it.name || it.type || "Item"),
+          x,
+          y,
+          w,
+          h,
+          zIndex: Number(it.zIndex) || 1,
+          fill: String(it.fill || "#111827"),
+          radius: Number(it.radius) || 12,
+          stroke: typeof it.stroke === "boolean" ? it.stroke : true,
+          strokeColor: String(it.strokeColor || "#334155"),
+          strokeWidth: Number(it.strokeWidth) || 2,
+          text: String(it.text || ""),
+          textColor: String(it.textColor || "#ffffff"),
+          fontSize: Number(it.fontSize) || 18,
+          imageId: String(it.imageId || ""),
+          locked: !!it.locked,
+          visible: typeof it.visible === "boolean" ? it.visible : true,
+        };
+      });
 
-    return {
-      canvasSize: safeCanvas,
-      settings: safeSettings,
-      items: cleanedItems,
-      selectedId: null,
-    };
+    return { canvasSize: safeCanvas, settings: state.settings || {}, items: cleanedItems, selectedId: null };
   }
 
-  async function promptForMissingAssets(boardState) {
-    // Ask for ImageIds for ImageLabels with empty/placeholder ImageId
+  /**
+   * Enforce: AI does NOT invent asset IDs. Prompt user if any ImageLabel is missing.
+   * Codex: swap window.prompt for your modal while keeping logic.
+   */
+  async function promptForMissingImageIds(boardState) {
     const itemsCopy = boardState.items.map((it) => ({ ...it }));
-
-    for (let i = 0; i < itemsCopy.length; i++) {
-      const it = itemsCopy[i];
-      const isImage = it.type === "ImageLabel";
-      const missing =
-        !it.imageId ||
-        it.imageId.trim() === "" ||
-        it.imageId.trim() === "rbxassetid://" ||
-        it.imageId.trim().endsWith("rbxassetid://");
-
-      if (isImage && missing) {
-        const val = window.prompt(
-          `Missing ImageId for "${it.name}" (ImageLabel).\n\nPaste a Roblox asset id like:\nrbxassetid://123456789`,
-          "rbxassetid://"
-        );
-        if (val && val.trim()) {
-          it.imageId = val.trim();
-        }
-      }
+    for (const it of itemsCopy) {
+      const needs = it.type === "ImageLabel" && (!it.imageId || it.imageId.trim() === "" || it.imageId.trim() === "rbxassetid://");
+      if (!needs) continue;
+      const val = window.prompt(
+        `Missing ImageId for "${it.name}" (ImageLabel).\n\nPaste a Roblox asset id like:\nrbxassetid://123456789`,
+        "rbxassetid://"
+      );
+      if (val && val.trim()) it.imageId = val.trim();
     }
-
     return { ...boardState, items: itemsCopy };
   }
 
-  async function handleAIGenerate() {
+  /**
+   * Text prompt -> UI. Codex: extend with "insert into selection" using selected bounds if needed.
+   */
+  async function handleAIGenerateFromPrompt() {
     if (!user) return;
-    if (!selectedBoardId) {
-      window.alert("Pick or create a board first.");
-      return;
-    }
-    if (!aiPrompt.trim()) {
-      window.alert("Type what UI you want first.");
-      return;
-    }
+    if (!selectedBoardId) return window.alert("Select or create a board first.");
+    if (!aiPrompt.trim()) return window.alert("Write a prompt first.");
 
     try {
       setAiGenerating(true);
       const token = await user.getIdToken();
+      const themeHint = getSiteThemeHint();
 
       const res = await aiGenerateBoard({
         token,
         prompt: aiPrompt.trim(),
         canvasSize,
+        themeHint,
+        mode: "overwrite",
+        maxItems: 45,
       });
 
       const sanitized = sanitizeBoardState(res?.boardState);
-      const hydrated = await promptForMissingAssets(sanitized);
-
-      // Apply to canvas immediately (board JSON is source of truth)
+      const hydrated = await promptForMissingImageIds(sanitized);
       loadBoardState(hydrated);
       lastSavedStringRef.current = JSON.stringify(hydrated);
-
-      // Optional: create a snapshot immediately so it’s not lost
       await createSnapshot({ token, boardId: selectedBoardId, boardState: hydrated });
-
-      setShowAiModal(false);
-      setAiPrompt("");
     } catch (e) {
-      console.error("AI generate failed", e);
+      console.error(e);
       window.alert(e?.message || "AI generate failed");
     } finally {
       setAiGenerating(false);
+    }
+  }
+
+  /**
+   * Screenshot/Image -> UI with rights-aware modes.
+   * rightsMode:
+   * - owned: extract more detail (still no invented asset IDs)
+   * - reference: structure inspiration only; replace text/logos; apply site theme
+   */
+  async function handleAIImportFromImage() {
+    if (!user) return;
+    if (!selectedBoardId) return window.alert("Select or create a board first.");
+    if (!refImageFile) return window.alert("Upload an image first.");
+
+    try {
+      setAiImporting(true);
+      const token = await user.getIdToken();
+      const themeHint = getSiteThemeHint();
+
+      const res = await aiImportFromImage({
+        token,
+        file: refImageFile,
+        canvasSize,
+        themeHint,
+        rightsMode,
+        prompt: aiPrompt.trim(),
+        mode: "overwrite",
+        maxItems: 55,
+      });
+
+      const sanitized = sanitizeBoardState(res?.boardState);
+      const hydrated = await promptForMissingImageIds(sanitized);
+      loadBoardState(hydrated);
+      lastSavedStringRef.current = JSON.stringify(hydrated);
+      await createSnapshot({ token, boardId: selectedBoardId, boardState: hydrated });
+    } catch (e) {
+      console.error(e);
+      window.alert(e?.message || "AI import failed");
+    } finally {
+      setAiImporting(false);
     }
   }
 
@@ -424,9 +474,9 @@ function UiBuilderPageInner() {
           </button>
           <button
             style={btnStyle("primary", uiAccent)}
-            onClick={() => setShowAiModal(true)}
+            onClick={handleAIGenerateFromPrompt}
             disabled={!user || !selectedBoardId || aiGenerating}
-            title={!selectedBoardId ? "Select a board first" : "Generate a full UI with AI"}
+            title={!selectedBoardId ? "Select a board first" : "Generate UI from your prompt"}
           >
             {aiGenerating ? "Generating..." : "Generate (AI)"}
           </button>
@@ -471,83 +521,119 @@ function UiBuilderPageInner() {
             </div>
           </Section>
 
-          <Section title="Colors">
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-              {palette.map((c) => (
-                <button
-                  key={c}
-                  onClick={() => setActiveColor(c)}
-                  title={c}
-                  style={{
-                    width: 28,
-                    height: 28,
-                    borderRadius: 10,
-                    background: c,
-                    border: c === activeColor ? `2px solid ${uiAccent}` : "1px solid rgba(148,163,184,0.30)",
-                    boxShadow: c === activeColor ? `0 0 0 3px rgba(59,130,246,0.18)` : "none",
-                    cursor: "pointer",
-                  }}
-                />
-              ))}
-            </div>
-
-            <div style={{ marginTop: 10, display: "grid", gridTemplateColumns: "1fr auto", gap: 8 }}>
-              <input
-                value={newPaletteHex}
-                onChange={(e) => setNewPaletteHex(e.target.value)}
-                placeholder="#rrggbb"
-                style={inputStyle()}
+          <Section title="AI Prompt">
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              <textarea
+                value={aiPrompt}
+                onChange={(e) => setAiPrompt(e.target.value)}
+                placeholder='Describe UI. Example: "Main menu with Play, Settings, Shop. Currency top-right. Dark theme."'
+                style={{
+                  width: "100%",
+                  minHeight: 110,
+                  resize: "vertical",
+                  borderRadius: 12,
+                  border: "1px solid rgba(148,163,184,0.22)",
+                  background: "rgba(2,6,23,0.55)",
+                  color: "#e5e7eb",
+                  padding: 10,
+                  outline: "none",
+                  fontSize: 12,
+                  lineHeight: 1.35,
+                }}
               />
               <button
-                style={btnStyle("secondary")}
-                onClick={() => {
-                  const ok = addPaletteColor(newPaletteHex);
-                  if (!ok) alert("Invalid color. Use #rrggbb (or #rgb).");
-                  setNewPaletteHex("#");
-                }}
+                style={btnStyle("primary")}
+                onClick={handleAIGenerateFromPrompt}
+                disabled={!user || !selectedBoardId || aiGenerating || !aiPrompt.trim()}
+                title={!aiPrompt.trim() ? "Write a prompt first" : "Generate UI"}
               >
-                Add
-              </button>
-            </div>
-
-            <div style={{ marginTop: 10, display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
-              <button style={btnStyle("ghost")} disabled={!selectedItem} onClick={() => applyActiveColorToSelected("fill")}>
-                Apply Fill
-              </button>
-              <button style={btnStyle("ghost")} disabled={!selectedItem} onClick={() => applyActiveColorToSelected("stroke")}>
-                Apply Stroke
-              </button>
-              <button style={btnStyle("ghost")} disabled={!selectedItem} onClick={() => applyActiveColorToSelected("text")}>
-                Apply Text
-              </button>
-            </div>
-
-            <div style={{ marginTop: 10 }}>
-              <button
-                style={btnStyle("danger")}
-                disabled={!activeColor}
-                onClick={() => removePaletteColor(activeColor)}
-                title="Remove active color from palette"
-              >
-                Remove Active
+                {aiGenerating ? "Generating..." : "Generate from Prompt"}
               </button>
             </div>
           </Section>
 
-          <Section title="Builder UI">
-            <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 10 }}>
-              <div>
-                <div style={{ fontSize: 11, opacity: 0.75, marginBottom: 6 }}>Accent</div>
-                <input value={uiAccent} onChange={(e) => setUiAccent(e.target.value)} style={inputStyle()} />
+          <Section title="Screenshot → UI">
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => {
+                  const f = e.target.files?.[0] || null;
+                  setRefImageFile(f);
+                  if (refImageUrl) URL.revokeObjectURL(refImageUrl);
+                  setRefImageUrl(f ? URL.createObjectURL(f) : "");
+                }}
+                style={{ fontSize: 12 }}
+              />
+
+              <label style={{ fontSize: 12, opacity: 0.85 }}>
+                Mode
+                <select
+                  value={rightsMode}
+                  onChange={(e) => setRightsMode(e.target.value)}
+                  style={{
+                    width: "100%",
+                    marginTop: 6,
+                    padding: "10px 10px",
+                    borderRadius: 12,
+                    border: "1px solid rgba(148,163,184,0.20)",
+                    background: "rgba(2,6,23,0.45)",
+                    color: "#e5e7eb",
+                    fontSize: 12,
+                    fontWeight: 800,
+                  }}
+                >
+                  <option value="reference">Reference-only (inspired layout)</option>
+                  <option value="owned">Owned/Permitted (more faithful import)</option>
+                </select>
+              </label>
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                <button
+                  style={btnStyle("secondary")}
+                  onClick={() => setShowRefOverlay((v) => !v)}
+                  disabled={!refImageUrl}
+                  title="Overlay is only for alignment while editing"
+                >
+                  {showRefOverlay ? "Hide Overlay" : "Show Overlay"}
+                </button>
+
+                <button
+                  style={btnStyle("primary")}
+                  onClick={handleAIImportFromImage}
+                  disabled={!user || !selectedBoardId || aiImporting || !refImageFile}
+                  title={!refImageFile ? "Upload an image first" : "Convert screenshot into board UI"}
+                >
+                  {aiImporting ? "Importing..." : "Generate from Screenshot"}
+                </button>
               </div>
 
-              <div>
-                <div style={{ fontSize: 11, opacity: 0.75, marginBottom: 6 }}>Density</div>
-                <select value={uiDensity} onChange={(e) => setUiDensity(e.target.value)} style={inputStyle()}>
-                  <option value="comfortable">Comfortable</option>
-                  <option value="compact">Compact</option>
-                </select>
+              <label style={{ fontSize: 12, opacity: 0.85 }}>
+                Overlay opacity ({Math.round(refOverlayOpacity * 100)}%)
+                <input
+                  type="range"
+                  min="0"
+                  max="0.75"
+                  step="0.01"
+                  value={refOverlayOpacity}
+                  onChange={(e) => setRefOverlayOpacity(Number(e.target.value))}
+                  disabled={!refImageUrl}
+                  style={{ width: "100%" }}
+                />
+              </label>
+
+              <div style={{ fontSize: 11, opacity: 0.7 }}>
+                Reference-only mode avoids copying text/logos. Owned mode imports more detail.
               </div>
+            </div>
+          </Section>
+
+          <Section title="Elements">
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+              <button style={btnStyle("secondary")} onClick={() => addPrimitive("Frame")}>+ Frame</button>
+              <button style={btnStyle("secondary")} onClick={() => addPrimitive("TextLabel")}>+ TextLabel</button>
+              <button style={btnStyle("secondary")} onClick={() => addPrimitive("TextButton")}>+ TextButton</button>
+              <button style={btnStyle("secondary")} onClick={() => addPrimitive("ImageLabel")}>+ ImageLabel</button>
             </div>
           </Section>
           <Section title="Monetization (Robux)">
@@ -592,7 +678,25 @@ function UiBuilderPageInner() {
             onPointerDown={clearSelection}
             style={{ ...styles.canvas, width: canvasSize.w, height: canvasSize.h }}
           >
-            <CanvasGrid enabled={showGrid} size={gridSize} />
+          <CanvasGrid enabled={showGrid} size={gridSize} />
+
+          {/* Screenshot overlay for alignment (view-only; not persisted) */}
+          {refImageUrl && showRefOverlay && (
+            <img
+              src={refImageUrl}
+              alt="Reference overlay"
+              style={{
+                position: "absolute",
+                inset: 0,
+                width: "100%",
+                height: "100%",
+                objectFit: "fill",
+                opacity: refOverlayOpacity,
+                pointerEvents: "none",
+                filter: "saturate(0.95) contrast(1.02)",
+              }}
+            />
+          )}
 
             <div style={styles.canvasBadge}>ScreenGui {canvasSize.w}×{canvasSize.h}</div>
 
@@ -798,76 +902,6 @@ function UiBuilderPageInner() {
           </Section>
         </div>
       </div>
-
-      {/* AI Modal */}
-      {showAiModal && (
-        <div
-          onMouseDown={() => setShowAiModal(false)}
-          style={{
-            position: "fixed",
-            inset: 0,
-            background: "rgba(0,0,0,0.55)",
-            display: "grid",
-            placeItems: "center",
-            zIndex: 999999,
-            padding: 16,
-          }}
-        >
-          <div
-            onMouseDown={(e) => e.stopPropagation()}
-            style={{
-              width: "min(720px, 96vw)",
-              borderRadius: 16,
-              border: "1px solid rgba(148,163,184,0.22)",
-              background: "rgba(15,23,42,0.92)",
-              boxShadow: "0 30px 80px rgba(0,0,0,0.55)",
-              padding: 14,
-            }}
-          >
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <div style={{ fontWeight: 900, letterSpacing: 0.2 }}>Generate UI with AI</div>
-              <div style={{ marginLeft: "auto" }}>
-                <button style={btnStyle("ghost")} onClick={() => setShowAiModal(false)}>
-                  Close
-                </button>
-              </div>
-            </div>
-
-            <div style={{ fontSize: 12, opacity: 0.75, marginTop: 8 }}>
-              Describe what you want. Example: “A main menu with Play, Settings, Shop, and a currency counter top-right.”
-            </div>
-
-            <textarea
-              value={aiPrompt}
-              onChange={(e) => setAiPrompt(e.target.value)}
-              placeholder='e.g. "Shop UI with 6 item cards, buy buttons, and a Robux badge. Use dark theme."'
-              style={{
-                marginTop: 10,
-                width: "100%",
-                minHeight: 110,
-                resize: "vertical",
-                borderRadius: 12,
-                border: "1px solid rgba(148,163,184,0.25)",
-                background: "rgba(2,6,23,0.55)",
-                color: "#e5e7eb",
-                padding: 12,
-                outline: "none",
-                fontSize: 13,
-                lineHeight: 1.35,
-              }}
-            />
-
-            <div style={{ display: "flex", gap: 10, marginTop: 12, justifyContent: "flex-end" }}>
-              <button style={btnStyle("secondary")} onClick={() => setShowAiModal(false)} disabled={aiGenerating}>
-                Cancel
-              </button>
-              <button style={btnStyle("primary")} onClick={handleAIGenerate} disabled={aiGenerating || !aiPrompt.trim()}>
-                {aiGenerating ? "Generating..." : "Generate onto Board"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
