@@ -92,6 +92,8 @@ function UiBuilderPageInner() {
   const [refImageUrl, setRefImageUrl] = useState("");
   const [rightsMode, setRightsMode] = useState("reference"); // "owned" | "reference"
   const [aiImporting, setAiImporting] = useState(false);
+  const aiBusy = aiGenerating || aiImporting;
+  const aiStatusText = aiGenerating ? "Generating UI from prompt..." : aiImporting ? "Importing from screenshot..." : "";
 
   // Canvas overlay controls for matching screenshot to board while editing
   const [showRefOverlay, setShowRefOverlay] = useState(true);
@@ -480,10 +482,10 @@ function UiBuilderPageInner() {
             </div>
           )}
           <div style={styles.status}>{loadingBoard ? "Loading..." : saving ? "Saving..." : ""}</div>
-          {aiGenerating && (
+          {aiBusy && (
             <div style={styles.loadingPill}>
               <Spinner />
-              <span>Generating...</span>
+              <span>{aiStatusText || "Working..."}</span>
             </div>
           )}
         </div>
@@ -522,10 +524,10 @@ function UiBuilderPageInner() {
           <button
             style={btnStyle("primary", uiAccent)}
             onClick={handleAIGenerateFromPrompt}
-            disabled={!user || !selectedBoardId || aiGenerating}
-            title={!selectedBoardId ? "Select a board first" : "Generate UI from your prompt"}
+            disabled={!user || !selectedBoardId || aiBusy}
+            title={!selectedBoardId ? "Select a board first" : aiBusy ? "AI request in progress" : "Generate UI from your prompt"}
           >
-            {aiGenerating ? "Generating..." : "Generate (AI)"}
+            {aiBusy ? "Working..." : "Generate (AI)"}
           </button>
         </div>
       </div>
@@ -693,10 +695,10 @@ function UiBuilderPageInner() {
                 <button
                   style={btnStyle("primary")}
                   onClick={handleAIImportFromImage}
-                  disabled={!user || !selectedBoardId || aiImporting || !refImageFile}
-                  title={!refImageFile ? "Upload an image first" : "Convert screenshot into board UI"}
+                  disabled={!user || !selectedBoardId || aiBusy || !refImageFile}
+                  title={!refImageFile ? "Upload an image first" : aiBusy ? "AI request in progress" : "Convert screenshot into board UI"}
                 >
-                  {aiImporting ? "Importing..." : "Generate from Screenshot"}
+                  {aiImporting ? "Importing..." : aiGenerating ? "Waiting for AI..." : "Generate from Screenshot"}
                 </button>
               </div>
 
@@ -798,6 +800,34 @@ function UiBuilderPageInner() {
               .map((it) => (
                 <CanvasItem key={it.id} item={it} selected={!previewMode && it.id === selectedId} canvasRef={canvasRef} />
               ))}
+
+            {aiBusy && (
+              <div
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 10,
+                  background: "rgba(0,0,0,0.42)",
+                  backdropFilter: "blur(2px)",
+                  borderRadius: 14,
+                  zIndex: 50,
+                  pointerEvents: "auto",
+                  color: "#e5e7eb",
+                  textAlign: "center",
+                  padding: 16,
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: 10, fontWeight: 800 }}>
+                  <Spinner size={22} thickness={3} />
+                  <div>{aiStatusText || "Talking to AI..."}</div>
+                </div>
+                <div style={{ fontSize: 12, opacity: 0.82 }}>Request sent to the backend. Hang tight.</div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -1024,13 +1054,15 @@ function TokenBar({ tokensLeft, tokensLimit, resetsAt, plan, loading }) {
 }
 
 // Simple inline spinner (CSS animation via inline style)
-function Spinner() {
+function Spinner({ size = 14, thickness = 2 }) {
+  const dim = Math.max(8, size);
+  const ring = Math.max(1, thickness);
   return (
     <div
       style={{
-        width: 14,
-        height: 14,
-        border: "2px solid rgba(255,255,255,0.25)",
+        width: dim,
+        height: dim,
+        border: `${ring}px solid rgba(255,255,255,0.25)`,
         borderTopColor: "#ffffff",
         borderRadius: "50%",
         animation: "spin 0.9s linear infinite",

@@ -1,4 +1,4 @@
-let BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+let BACKEND_URL = process.env.REACT_APP_BACKEND_URL || process.env.REACT_APP_API_ORIGIN;
 if (!BACKEND_URL) {
   BACKEND_URL = "https://nexusrbx-backend-production.up.railway.app";
 }
