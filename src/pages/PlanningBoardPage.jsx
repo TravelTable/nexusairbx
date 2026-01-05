@@ -480,6 +480,12 @@ function UiBuilderPageInner() {
             </div>
           )}
           <div style={styles.status}>{loadingBoard ? "Loading..." : saving ? "Saving..." : ""}</div>
+          {aiGenerating && (
+            <div style={styles.loadingPill}>
+              <Spinner />
+              <span>Generating...</span>
+            </div>
+          )}
         </div>
 
         <div style={styles.topbarActions}>
@@ -1017,6 +1023,22 @@ function TokenBar({ tokensLeft, tokensLimit, resetsAt, plan, loading }) {
   );
 }
 
+// Simple inline spinner (CSS animation via inline style)
+function Spinner() {
+  return (
+    <div
+      style={{
+        width: 14,
+        height: 14,
+        border: "2px solid rgba(255,255,255,0.25)",
+        borderTopColor: "#ffffff",
+        borderRadius: "50%",
+        animation: "spin 0.9s linear infinite",
+      }}
+    />
+  );
+}
+
 function inputStyle() {
   return {
     width: "100%",
@@ -1087,6 +1109,17 @@ const styles = {
   boardMeta: { fontSize: 12, opacity: 0.85 },
   status: { fontSize: 12, opacity: 0.65, marginLeft: 8 },
   topbarActions: { marginLeft: "auto", display: "flex", gap: 8, alignItems: "center" },
+  loadingPill: {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 6,
+    padding: "4px 8px",
+    borderRadius: 999,
+    border: "1px solid rgba(59,130,246,0.35)",
+    background: "rgba(59,130,246,0.10)",
+    fontSize: 12,
+    color: "#dbeafe",
+  },
 
   main: { flex: 1, display: "grid", gridTemplateColumns: "280px 1fr 360px", minHeight: 0 },
   left: { borderRight: "1px solid rgba(148,163,184,0.2)", padding: 12, overflow: "auto" },
