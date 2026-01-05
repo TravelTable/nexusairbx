@@ -386,14 +386,24 @@ function UiBuilderPageInner() {
    * Text prompt -> UI. Codex: extend with "insert into selection" using selected bounds if needed.
    */
   async function handleAIGenerateFromPrompt() {
-    if (!user) return;
-    if (!selectedBoardId) return window.alert("Select or create a board first.");
-    if (!aiPrompt.trim()) return window.alert("Write a prompt first.");
+    if (!user) {
+      window.alert("Please sign in before generating.");
+      return;
+    }
+    if (!selectedBoardId) {
+      window.alert("Select or create a board first.");
+      return;
+    }
+    if (!aiPrompt.trim()) {
+      window.alert("Write a prompt first.");
+      return;
+    }
 
     try {
       setAiGenerating(true);
       const token = await user.getIdToken();
       const themeHint = getSiteThemeHint();
+      console.info("[AI] generate start", { boardId: selectedBoardId, prompt: aiPrompt.trim(), canvasSize });
 
       const res = await aiGenerateBoard({
         token,
@@ -403,6 +413,7 @@ function UiBuilderPageInner() {
         mode: "overwrite",
         maxItems: 45,
       });
+      console.info("[AI] generate response", res);
 
       const sanitized = sanitizeBoardState(res?.boardState);
       const hydrated = await promptForMissingImageIds(sanitized);
