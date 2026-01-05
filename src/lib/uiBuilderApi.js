@@ -70,8 +70,19 @@ export async function createSnapshot({ token, boardId, boardState }) {
 }
 
 export async function getSnapshot({ token, boardId, snapshotId }) {
-  const res = await fetch(`${BACKEND_URL}/api/ui-builder/boards/${encodeURIComponent(boardId)}/snapshots/${encodeURIComponent(snapshotId)}`, {
+  const res = await fetch(
+    `${BACKEND_URL}/api/ui-builder/boards/${encodeURIComponent(boardId)}/snapshots/${encodeURIComponent(snapshotId)}`,
+    { headers: authHeaders(token) }
+  );
+  return handleResponse(res);
+}
+
+// AI: generate a full boardState JSON from a natural language prompt
+export async function aiGenerateBoard({ token, prompt, canvasSize }) {
+  const res = await fetch(`${BACKEND_URL}/api/ui-builder/ai/generate-board`, {
+    method: "POST",
     headers: authHeaders(token),
+    body: JSON.stringify({ prompt, canvasSize }),
   });
   return handleResponse(res);
 }

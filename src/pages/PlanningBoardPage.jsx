@@ -5,7 +5,7 @@ import { auth } from "./firebase";
 import { CanvasProvider, useCanvas } from "../components/canvascomponents/CanvasContext";
 import CanvasGrid from "../components/canvascomponents/CanvasGrid";
 import CanvasItem from "../components/canvascomponents/CanvasItem";
-import { listBoards, createBoard, getBoard, getSnapshot, createSnapshot } from "../lib/uiBuilderApi";
+import { listBoards, createBoard, getBoard, getSnapshot, createSnapshot, aiGenerateBoard } from "../lib/uiBuilderApi";
 
 const MONETIZATION_KINDS = [
   { value: "DevProduct", label: "Dev Product" },
@@ -76,6 +76,11 @@ function UiBuilderPageInner() {
   const [user, setUser] = useState(null);
   const [saving, setSaving] = useState(false);
   const [newPaletteHex, setNewPaletteHex] = useState("#");
+
+  // AI generate UI
+  const [showAiModal, setShowAiModal] = useState(false);
+  const [aiPrompt, setAiPrompt] = useState("");
+  const [aiGenerating, setAiGenerating] = useState(false);
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (u) => setUser(u || null));
@@ -255,7 +260,7 @@ function UiBuilderPageInner() {
         token,
         title: title.trim(),
         canvasSize,
-        settings: { showGrid, snapToGrid, gridSize, palette, activeColor },
+        settings: { showGrid, snapToGrid, gridSize },
       });
       setSelectedBoardId(res.boardId);
       setSelectedBoard(res.board || null);
@@ -267,6 +272,124 @@ function UiBuilderPageInner() {
       console.error("Create board failed", e);
     } finally {
       setLoadingBoard(false);
+    }
+  }
+
+  // --- AI helpers ---
+  function sanitizeBoardState(maybeState) {
+    const state = (maybeState && typeof maybeState === "object") ? maybeState : {};
+    const safeCanvas = state.canvasSize && typeof state.canvasSize === "object"
+      ? { w: Number(state.canvasSize.w) || canvasSize.w, h: Number(state.canvasSize.h) || canvasSize.h }
+      : { w: canvasSize.w, h: canvasSize.h };
+
+    const safeSettings = state.settings && typeof state.settings === "object"
+      ? {
+          ...state.settings,
+          gridSize: Number(state.settings.gridSize) || gridSize,
+          snapToGrid: typeof state.settings.snapToGrid === "boolean" ? state.settings.snapToGrid : snapToGrid,
+          showGrid: typeof state.settings.showGrid === "boolean" ? state.settings.showGrid : showGrid,
+        }
+      : { gridSize, snapToGrid, showGrid };
+
+    const safeItems = Array.isArray(state.items) ? state.items : [];
+
+    // Keep only keys your renderer already understands
+    const cleanedItems = safeItems
+      .filter((it) => it && typeof it === "object")
+      .map((it) => ({
+        id: String(it.id || crypto.randomUUID()),
+        type: String(it.type || "Frame"),
+        name: String(it.name || it.type || "Item"),
+        x: Number(it.x) || 0,
+        y: Number(it.y) || 0,
+        w: Number(it.w) || 200,
+        h: Number(it.h) || 100,
+        zIndex: Number(it.zIndex) || 1,
+        fill: String(it.fill || "#111827"),
+        radius: Number(it.radius) || 12,
+        stroke: typeof it.stroke === "boolean" ? it.stroke : true,
+        strokeColor: String(it.strokeColor || "#334155"),
+        strokeWidth: Number(it.strokeWidth) || 2,
+        text: String(it.text || ""),
+        textColor: String(it.textColor || "#ffffff"),
+        fontSize: Number(it.fontSize) || 18,
+        imageId: String(it.imageId || ""),
+        locked: !!it.locked,
+      }));
+
+    return {
+      canvasSize: safeCanvas,
+      settings: safeSettings,
+      items: cleanedItems,
+      selectedId: null,
+    };
+  }
+
+  async function promptForMissingAssets(boardState) {
+    // Ask for ImageIds for ImageLabels with empty/placeholder ImageId
+    const itemsCopy = boardState.items.map((it) => ({ ...it }));
+
+    for (let i = 0; i < itemsCopy.length; i++) {
+      const it = itemsCopy[i];
+      const isImage = it.type === "ImageLabel";
+      const missing =
+        !it.imageId ||
+        it.imageId.trim() === "" ||
+        it.imageId.trim() === "rbxassetid://" ||
+        it.imageId.trim().endsWith("rbxassetid://");
+
+      if (isImage && missing) {
+        const val = window.prompt(
+          `Missing ImageId for "${it.name}" (ImageLabel).\n\nPaste a Roblox asset id like:\nrbxassetid://123456789`,
+          "rbxassetid://"
+        );
+        if (val && val.trim()) {
+          it.imageId = val.trim();
+        }
+      }
+    }
+
+    return { ...boardState, items: itemsCopy };
+  }
+
+  async function handleAIGenerate() {
+    if (!user) return;
+    if (!selectedBoardId) {
+      window.alert("Pick or create a board first.");
+      return;
+    }
+    if (!aiPrompt.trim()) {
+      window.alert("Type what UI you want first.");
+      return;
+    }
+
+    try {
+      setAiGenerating(true);
+      const token = await user.getIdToken();
+
+      const res = await aiGenerateBoard({
+        token,
+        prompt: aiPrompt.trim(),
+        canvasSize,
+      });
+
+      const sanitized = sanitizeBoardState(res?.boardState);
+      const hydrated = await promptForMissingAssets(sanitized);
+
+      // Apply to canvas immediately (board JSON is source of truth)
+      loadBoardState(hydrated);
+      lastSavedStringRef.current = JSON.stringify(hydrated);
+
+      // Optional: create a snapshot immediately so it’s not lost
+      await createSnapshot({ token, boardId: selectedBoardId, boardState: hydrated });
+
+      setShowAiModal(false);
+      setAiPrompt("");
+    } catch (e) {
+      console.error("AI generate failed", e);
+      window.alert(e?.message || "AI generate failed");
+    } finally {
+      setAiGenerating(false);
     }
   }
 
@@ -299,8 +422,13 @@ function UiBuilderPageInner() {
           <button onClick={() => setSnapToGrid((v) => !v)} style={btnStyle("secondary")}>
             {snapToGrid ? "Snap: On" : "Snap: Off"}
           </button>
-          <button style={btnStyle("primary", uiAccent)} disabled title="Wire AI generation later">
-            Generate (AI)
+          <button
+            style={btnStyle("primary", uiAccent)}
+            onClick={() => setShowAiModal(true)}
+            disabled={!user || !selectedBoardId || aiGenerating}
+            title={!selectedBoardId ? "Select a board first" : "Generate a full UI with AI"}
+          >
+            {aiGenerating ? "Generating..." : "Generate (AI)"}
           </button>
         </div>
       </div>
@@ -485,7 +613,7 @@ function UiBuilderPageInner() {
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                 <div style={{ fontSize: 12, opacity: 0.9 }}>
-                  Selected: <b>{selectedItem.type}</b> ? {selectedItem.name}
+                  Selected: <b>{selectedItem.type}</b> — {selectedItem.name}
                 </div>
 
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
@@ -670,6 +798,76 @@ function UiBuilderPageInner() {
           </Section>
         </div>
       </div>
+
+      {/* AI Modal */}
+      {showAiModal && (
+        <div
+          onMouseDown={() => setShowAiModal(false)}
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.55)",
+            display: "grid",
+            placeItems: "center",
+            zIndex: 999999,
+            padding: 16,
+          }}
+        >
+          <div
+            onMouseDown={(e) => e.stopPropagation()}
+            style={{
+              width: "min(720px, 96vw)",
+              borderRadius: 16,
+              border: "1px solid rgba(148,163,184,0.22)",
+              background: "rgba(15,23,42,0.92)",
+              boxShadow: "0 30px 80px rgba(0,0,0,0.55)",
+              padding: 14,
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <div style={{ fontWeight: 900, letterSpacing: 0.2 }}>Generate UI with AI</div>
+              <div style={{ marginLeft: "auto" }}>
+                <button style={btnStyle("ghost")} onClick={() => setShowAiModal(false)}>
+                  Close
+                </button>
+              </div>
+            </div>
+
+            <div style={{ fontSize: 12, opacity: 0.75, marginTop: 8 }}>
+              Describe what you want. Example: “A main menu with Play, Settings, Shop, and a currency counter top-right.”
+            </div>
+
+            <textarea
+              value={aiPrompt}
+              onChange={(e) => setAiPrompt(e.target.value)}
+              placeholder='e.g. "Shop UI with 6 item cards, buy buttons, and a Robux badge. Use dark theme."'
+              style={{
+                marginTop: 10,
+                width: "100%",
+                minHeight: 110,
+                resize: "vertical",
+                borderRadius: 12,
+                border: "1px solid rgba(148,163,184,0.25)",
+                background: "rgba(2,6,23,0.55)",
+                color: "#e5e7eb",
+                padding: 12,
+                outline: "none",
+                fontSize: 13,
+                lineHeight: 1.35,
+              }}
+            />
+
+            <div style={{ display: "flex", gap: 10, marginTop: 12, justifyContent: "flex-end" }}>
+              <button style={btnStyle("secondary")} onClick={() => setShowAiModal(false)} disabled={aiGenerating}>
+                Cancel
+              </button>
+              <button style={btnStyle("primary")} onClick={handleAIGenerate} disabled={aiGenerating || !aiPrompt.trim()}>
+                {aiGenerating ? "Generating..." : "Generate onto Board"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
