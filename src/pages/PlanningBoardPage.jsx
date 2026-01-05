@@ -1,5 +1,5 @@
 ﻿// src/pages/UiBuilderPage.jsx
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { onAuthStateChanged } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
 import { auth } from "./firebase";
@@ -9,7 +9,9 @@ import CanvasItem from "../components/canvascomponents/CanvasItem";
 import { useBilling } from "../context/BillingContext";
 import PLAN_INFO from "../lib/planInfo";
 import { Info } from "lucide-react";
-import { listBoards, createBoard, getBoard, getSnapshot, createSnapshot, aiGenerateBoard, aiImportFromImage } from "../lib/uiBuilderApi";
+import { listBoards, getBoard, getSnapshot, listSnapshots, createSnapshot } from "../lib/uiBuilderApi";
+import { usePlanningBoard } from "../boards/usePlanningBoard";
+import { exportToRoblox } from "../lib/exportToRoblox";
 
 const MONETIZATION_KINDS = [
   { value: "DevProduct", label: "Dev Product" },
@@ -30,12 +32,14 @@ function UiBuilderPageInner() {
   const canvasRef = useRef(null);
   const saveTimerRef = useRef(null);
   const lastSavedStringRef = useRef("");
+  const skipAutosaveRef = useRef(false);
   const navigate = useNavigate();
 
   const {
     canvasSize,
     setCanvasSize,
     items,
+    setItems,
 
     selectedId,
     setSelectedId,
@@ -66,12 +70,17 @@ function UiBuilderPageInner() {
     onPointerMove,
     endPointerAction,
     loadBoardState,
+    undo,
+    redo,
+    canUndo,
+    canRedo,
 
     // Preview runtime
     previewMode,
     setPreviewMode,
     renderItems,
     resetPreview,
+    lastMutationKind,
   } = useCanvas();
 
   const [boards, setBoards] = useState([]);
@@ -79,9 +88,22 @@ function UiBuilderPageInner() {
   const [loadingBoard, setLoadingBoard] = useState(false);
   const [selectedBoardId, setSelectedBoardId] = useState(null);
   const [selectedBoard, setSelectedBoard] = useState(null);
+  const [snapshots, setSnapshots] = useState([]);
   const [user, setUser] = useState(null);
   const [saving, setSaving] = useState(false);
   const [newPaletteHex, setNewPaletteHex] = useState("#");
+  const {
+    boardId,
+    setBoardId,
+    loading: planningLoading,
+    initBoard,
+    generateWithAI,
+    importFromImage: importBoardFromImage,
+    saveSnapshot,
+  } = usePlanningBoard();
+  useEffect(() => {
+    if (selectedBoardId) setBoardId(selectedBoardId);
+  }, [selectedBoardId, setBoardId]);
   // --- AI prompt UI (keep in sidebar so it matches main site flow)
   // Codex: could store prompt history per snapshot to build a timeline.
   const [aiPrompt, setAiPrompt] = useState("");
@@ -112,11 +134,25 @@ function UiBuilderPageInner() {
     return () => unsub();
   }, []);
 
+  const refreshSnapshots = useCallback(async (boardIdToUse = null) => {
+    if (!user) return;
+    const targetId = boardIdToUse || selectedBoardId;
+    if (!targetId) return;
+    try {
+      const token = await user.getIdToken();
+      const res = await listSnapshots({ token, boardId: targetId });
+      setSnapshots(res.snapshots || []);
+    } catch (e) {
+      console.error("Failed to list snapshots", e);
+    }
+  }, [selectedBoardId, user]);
+
   useEffect(() => {
     if (!user) {
       setBoards([]);
       setSelectedBoardId(null);
       setSelectedBoard(null);
+      setBoardId(null);
       return;
     }
     (async () => {
@@ -152,13 +188,17 @@ function UiBuilderPageInner() {
           loadBoardState({ canvasSize: res.board?.canvasSize, settings: res.board?.settings, items: [], selectedId: null });
           lastSavedStringRef.current = JSON.stringify({});
         }
+        await refreshSnapshots(selectedBoardId);
       } catch (e) {
         console.error("Failed to load board", e);
       } finally {
         setLoadingBoard(false);
       }
     })();
-  }, [user, selectedBoardId, loadBoardState]);
+  }, [user, selectedBoardId, loadBoardState, refreshSnapshots]);
+  useEffect(() => {
+    if (!selectedBoardId) setSnapshots([]);
+  }, [selectedBoardId]);
 
   // Autosave snapshots
   useEffect(() => {
@@ -189,6 +229,11 @@ function UiBuilderPageInner() {
 
     const serialized = JSON.stringify(state);
     if (serialized === lastSavedStringRef.current) return;
+    if (lastMutationKind === "undo" || lastMutationKind === "redo") return;
+    if (skipAutosaveRef.current) {
+      skipAutosaveRef.current = false;
+      return;
+    }
 
     saveTimerRef.current = setTimeout(async () => {
       try {
@@ -196,6 +241,7 @@ function UiBuilderPageInner() {
         const token = await user.getIdToken();
         await createSnapshot({ token, boardId: selectedBoardId, boardState: state });
         lastSavedStringRef.current = serialized;
+        refreshSnapshots(selectedBoardId);
       } catch (e) {
         console.error("Autosave failed", e);
       } finally {
@@ -206,7 +252,7 @@ function UiBuilderPageInner() {
     return () => {
       if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     };
-  }, [user, selectedBoardId, canvasSize, items, selectedId, showGrid, snapToGrid, gridSize, palette, activeColor, uiAccent, uiDensity]);
+  }, [user, selectedBoardId, canvasSize, items, selectedId, showGrid, snapToGrid, gridSize, palette, activeColor, uiAccent, uiDensity, refreshSnapshots, lastMutationKind]);
 
   const handlePointerMove = (e) => {
     const rect = canvasRef.current?.getBoundingClientRect();
@@ -274,23 +320,43 @@ function UiBuilderPageInner() {
     });
   }
 
+  function handleExportLua() {
+    if (!items || !items.length) {
+      window.alert("Add at least one element before exporting.");
+      return;
+    }
+    const lua = exportToRoblox({ canvasSize, items });
+    downloadText("ui.lua", lua);
+  }
+
+  const handleUndo = () => {
+    skipAutosaveRef.current = true;
+    undo();
+  };
+
+  const handleRedo = () => {
+    skipAutosaveRef.current = true;
+    redo();
+  };
+
   async function handleCreateBoard() {
     if (!user) return;
     const title = window.prompt("New board title", "Roblox UI Board");
     if (!title) return;
     try {
       setLoadingBoard(true);
-      const token = await user.getIdToken();
-      const res = await createBoard({
-        token,
+      const res = await initBoard({
         title: title.trim(),
         canvasSize,
         settings: { showGrid, snapToGrid, gridSize },
       });
-      setSelectedBoardId(res.boardId);
+      const newId = res?.boardId || res?.board?.id || boardId;
+      setSelectedBoardId(newId);
+      setBoardId(newId || null);
       setSelectedBoard(res.board || null);
       loadBoardState({ canvasSize: res.board?.canvasSize, settings: res.board?.settings, items: [], selectedId: null });
       lastSavedStringRef.current = JSON.stringify({});
+      const token = await user.getIdToken();
       const list = await listBoards({ token });
       setBoards(list.boards || []);
     } catch (e) {
@@ -400,27 +466,30 @@ function UiBuilderPageInner() {
       window.alert("Write a prompt first.");
       return;
     }
+    if (tokensLeft <= 0) {
+      window.alert("AI token limit reached. Please upgrade or wait for reset.");
+      return;
+    }
 
     try {
       setAiGenerating(true);
-      const token = await user.getIdToken();
       const themeHint = getSiteThemeHint();
       console.info("[AI] generate start", { boardId: selectedBoardId, prompt: aiPrompt.trim(), canvasSize });
 
-      const res = await aiGenerateBoard({
-        token,
+      const boardState = await generateWithAI({
         prompt: aiPrompt.trim(),
         canvasSize,
         themeHint,
         mode: "overwrite",
         maxItems: 45,
       });
-      console.info("[AI] generate response", res);
 
-      const sanitized = sanitizeBoardState(res?.boardState);
+      const sanitized = sanitizeBoardState(boardState);
       const hydrated = await promptForMissingImageIds(sanitized);
-      loadBoardState(hydrated);
+      setCanvasSize(hydrated.canvasSize);
+      setItems(hydrated.items || [], { history: true });
       lastSavedStringRef.current = JSON.stringify(hydrated);
+      const token = await user.getIdToken();
       await createSnapshot({ token, boardId: selectedBoardId, boardState: hydrated });
     } catch (e) {
       console.error(e);
@@ -440,14 +509,16 @@ function UiBuilderPageInner() {
     if (!user) return;
     if (!selectedBoardId) return window.alert("Select or create a board first.");
     if (!refImageFile) return window.alert("Upload an image first.");
+    if (tokensLeft <= 0) {
+      window.alert("AI token limit reached. Please upgrade or wait for reset.");
+      return;
+    }
 
     try {
       setAiImporting(true);
-      const token = await user.getIdToken();
       const themeHint = getSiteThemeHint();
 
-      const res = await aiImportFromImage({
-        token,
+      const boardState = await importBoardFromImage({
         file: refImageFile,
         canvasSize,
         themeHint,
@@ -457,16 +528,44 @@ function UiBuilderPageInner() {
         maxItems: 55,
       });
 
-      const sanitized = sanitizeBoardState(res?.boardState);
+      const sanitized = sanitizeBoardState(boardState);
       const hydrated = await promptForMissingImageIds(sanitized);
-      loadBoardState(hydrated);
+      setCanvasSize(hydrated.canvasSize);
+      setItems(hydrated.items || [], { history: true });
       lastSavedStringRef.current = JSON.stringify(hydrated);
+      const token = await user.getIdToken();
       await createSnapshot({ token, boardId: selectedBoardId, boardState: hydrated });
     } catch (e) {
       console.error(e);
       window.alert(e?.message || "AI import failed");
     } finally {
       setAiImporting(false);
+    }
+  }
+
+  async function handleLoadSnapshot(snapshotId, { restore = false } = {}) {
+    if (!user || !selectedBoardId || !snapshotId) return;
+    try {
+      setLoadingBoard(true);
+      const token = await user.getIdToken();
+      const res = await getSnapshot({ token, boardId: selectedBoardId, snapshotId });
+      const boardState = res?.snapshot?.boardState;
+      if (!boardState) return window.alert("Snapshot has no board state");
+
+      const sanitized = sanitizeBoardState(boardState);
+      skipAutosaveRef.current = true;
+      setCanvasSize(sanitized.canvasSize);
+      setItems(sanitized.items || [], { history: !!restore });
+      lastSavedStringRef.current = JSON.stringify(sanitized);
+
+      if (restore) {
+        await createSnapshot({ token, boardId: selectedBoardId, boardState: sanitized });
+        refreshSnapshots(selectedBoardId);
+      }
+    } catch (e) {
+      console.error("Load snapshot failed", e);
+    } finally {
+      setLoadingBoard(false);
     }
   }
 
@@ -496,6 +595,12 @@ function UiBuilderPageInner() {
               <TokenBar tokensLeft={tokensLeft} tokensLimit={tokensLimit} resetsAt={tokenRefreshTime} plan={tokenPlan} loading={tokenLoading} />
             </div>
           )}
+          <button onClick={handleUndo} style={btnStyle("secondary")} disabled={!canUndo || aiBusy || loadingBoard}>
+            Undo
+          </button>
+          <button onClick={handleRedo} style={btnStyle("secondary")} disabled={!canRedo || aiBusy || loadingBoard}>
+            Redo
+          </button>
           <button onClick={() => setShowGrid((v) => !v)} style={btnStyle("secondary")}>
             {showGrid ? "Hide Grid" : "Show Grid"}
           </button>
@@ -529,6 +634,14 @@ function UiBuilderPageInner() {
           >
             {aiBusy ? "Working..." : "Generate (AI)"}
           </button>
+          <button
+            style={btnStyle("secondary")}
+            onClick={handleExportLua}
+            disabled={!items.length}
+            title="Export current canvas to a Roblox Lua script"
+          >
+            Export Lua
+          </button>
         </div>
       </div>
 
@@ -559,6 +672,53 @@ function UiBuilderPageInner() {
               ))}
               {boards.length === 0 && !loadingBoards && <div style={{ fontSize: 12, opacity: 0.65 }}>No boards yet.</div>}
             </div>
+          </Section>
+          <Section title="Versions">
+            {!selectedBoardId ? (
+              <div style={{ fontSize: 12, opacity: 0.7 }}>Select a board to view snapshots.</div>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {snapshots.length === 0 && <div style={{ fontSize: 12, opacity: 0.65 }}>No snapshots yet.</div>}
+                {snapshots.slice(0, 8).map((s) => (
+                  <div
+                    key={s.id}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      gap: 8,
+                      padding: "8px 10px",
+                      borderRadius: 10,
+                      border: "1px solid rgba(148,163,184,0.18)",
+                      background: "rgba(2,6,23,0.35)",
+                    }}
+                  >
+                    <div style={{ fontSize: 12 }}>
+                      <div style={{ fontWeight: 800 }}>v{s.snapshotNumber ?? "?"}</div>
+                      <div style={{ opacity: 0.7 }}>
+                        {s.createdAt ? new Date(s.createdAt).toLocaleString() : "—"}
+                      </div>
+                    </div>
+                    <div style={{ display: "flex", gap: 6 }}>
+                      <button
+                        style={btnStyle("ghost")}
+                        onClick={() => handleLoadSnapshot(s.id, { restore: false })}
+                        disabled={loadingBoard || aiBusy}
+                      >
+                        Load
+                      </button>
+                      <button
+                        style={btnStyle("secondary")}
+                        onClick={() => handleLoadSnapshot(s.id, { restore: true })}
+                        disabled={loadingBoard || aiBusy}
+                      >
+                        Restore
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </Section>
 
           <Section title="Layers">
@@ -1000,6 +1160,16 @@ function formatResetDate(date) {
     day: "numeric",
     year: "numeric",
   });
+}
+
+function downloadText(filename, content) {
+  const blob = new Blob([content], { type: "text/plain" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  link.click();
+  URL.revokeObjectURL(url);
 }
 
 // Token bar borrowed from AI page for visual consistency

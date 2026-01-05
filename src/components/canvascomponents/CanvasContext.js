@@ -60,7 +60,43 @@ export function CanvasProvider({
   initialCanvasSize = { w: 1280, h: 720 },
 }) {
   const [canvasSize, setCanvasSize] = useState(initialCanvasSize);
-  const [items, setItems] = useState([]);
+  const [items, _setItems] = useState([]);
+  const undoStack = useRef([]);
+  const redoStack = useRef([]);
+  const MAX_HISTORY = 50;
+  const lastMutationRef = useRef("init");
+
+  function setItems(next, { history = true } = {}) {
+    _setItems((prev) => {
+      if (history) {
+        undoStack.current.push(prev);
+        if (undoStack.current.length > MAX_HISTORY) {
+          undoStack.current.shift();
+        }
+        redoStack.current = [];
+      }
+      lastMutationRef.current = history ? "set" : "set-nohistory";
+      return typeof next === "function" ? next(prev) : next;
+    });
+  }
+
+  function undo() {
+    if (!undoStack.current.length) return;
+    _setItems((current) => {
+      redoStack.current.push(current);
+      lastMutationRef.current = "undo";
+      return undoStack.current.pop();
+    });
+  }
+
+  function redo() {
+    if (!redoStack.current.length) return;
+    _setItems((current) => {
+      undoStack.current.push(current);
+      lastMutationRef.current = "redo";
+      return redoStack.current.pop();
+    });
+  }
   const [selectedId, setSelectedId] = useState(null);
   const [showGrid, setShowGrid] = useState(true);
   const [snapToGrid, setSnapToGrid] = useState(true);
@@ -268,6 +304,8 @@ export function CanvasProvider({
   const loadBoardState = useCallback(
     (boardState = {}) => {
       if (!boardState || typeof boardState !== "object") return;
+      undoStack.current = [];
+      redoStack.current = [];
 
       const nextCanvas = boardState.canvasSize;
       if (
@@ -279,6 +317,7 @@ export function CanvasProvider({
       } else {
         setCanvasSize(initialCanvasSize);
       }
+      lastMutationRef.current = "load";
 
       const settings = boardState.settings || {};
       setShowGrid(typeof settings.showGrid === "boolean" ? settings.showGrid : true);
@@ -306,7 +345,7 @@ export function CanvasProvider({
       }
 
       const nextItems = Array.isArray(boardState.items) ? boardState.items : [];
-      setItems(nextItems);
+      setItems(nextItems, { history: false });
 
       // Clear preview runtime whenever a board loads so old overlay state doesn’t linger.
       setPreviewOverrides({ visibleById: {} });
@@ -433,6 +472,10 @@ export function CanvasProvider({
     updateItem,
     deleteSelected,
     setItems,
+    undo,
+    redo,
+    canUndo: undoStack.current.length > 0,
+    canRedo: redoStack.current.length > 0,
 
     selectedId,
     setSelectedId,
@@ -453,6 +496,8 @@ export function CanvasProvider({
     renderItems,
     triggerItem,
     resetPreview,
+
+    lastMutationKind: lastMutationRef.current,
   };
 
   return <CanvasContext.Provider value={value}>{children}</CanvasContext.Provider>;
