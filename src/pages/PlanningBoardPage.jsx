@@ -1,10 +1,13 @@
-// src/pages/UiBuilderPage.jsx
+ï»¿// src/pages/UiBuilderPage.jsx
 import React, { useEffect, useRef, useState } from "react";
 import { onAuthStateChanged } from "firebase/auth";
+import { useNavigate } from "react-router-dom";
 import { auth } from "./firebase";
 import { CanvasProvider, useCanvas } from "../components/canvascomponents/CanvasContext";
 import CanvasGrid from "../components/canvascomponents/CanvasGrid";
 import CanvasItem from "../components/canvascomponents/CanvasItem";
+import NexusRBXHeader from "../components/NexusRBXHeader";
+import TokensCounterContainer from "../components/TokensCounterContainer";
 import { listBoards, createBoard, getBoard, getSnapshot, createSnapshot, aiGenerateBoard, aiImportFromImage } from "../lib/uiBuilderApi";
 
 const MONETIZATION_KINDS = [
@@ -26,6 +29,15 @@ function UiBuilderPageInner() {
   const canvasRef = useRef(null);
   const saveTimerRef = useRef(null);
   const lastSavedStringRef = useRef("");
+  const navigate = useNavigate();
+
+  const navLinks = [
+    { id: "home", text: "Home", href: "/" },
+    { id: "ai", text: "AI", href: "/ai" },
+    { id: "docs", text: "Docs", href: "/docs" },
+    { id: "contact", text: "Contact", href: "/contact" },
+    { id: "subscribe", text: "Subscribe", href: "/subscribe" },
+  ];
 
   const {
     canvasSize,
@@ -91,6 +103,13 @@ function UiBuilderPageInner() {
   // Canvas overlay controls for matching screenshot to board while editing
   const [showRefOverlay, setShowRefOverlay] = useState(true);
   const [refOverlayOpacity, setRefOverlayOpacity] = useState(0.28);
+
+  // Token bar (placeholder values until hooked to backend billing)
+  const tokenInfo = {
+    sub: { remaining: 0, limit: 0 },
+    payg: { remaining: 0 },
+  };
+  const tokenLoading = false;
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (u) => setUser(u || null));
@@ -444,20 +463,38 @@ function UiBuilderPageInner() {
     }
   }
 
-  
+
   return (
     <div style={styles.page}>
+      <NexusRBXHeader
+        navLinks={navLinks}
+        handleNavClick={() => {}}
+        navigate={navigate}
+        user={user}
+        handleLogin={() => navigate("/signin")}
+        tokenInfo={tokenInfo}
+        tokenLoading={tokenLoading}
+      />
       {/* Top bar */}
       <div style={styles.topbar}>
-        <div style={styles.brand}>Roblox UI Builder</div>
-        {selectedBoard && (
-          <div style={styles.boardMeta}>
-            Board: <b>{selectedBoard.title}</b> {selectedBoard.projectId ? `(Project ${selectedBoard.projectId})` : ""}
-          </div>
-        )}
-        <div style={styles.status}>{loadingBoard ? "Loading..." : saving ? "Saving..." : ""}</div>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          {selectedBoard && (
+            <div style={styles.boardMeta}>
+              Board: <b>{selectedBoard.title}</b> {selectedBoard.projectId ? `(Project ${selectedBoard.projectId})` : ""}
+            </div>
+          )}
+          <div style={styles.status}>{loadingBoard ? "Loading..." : saving ? "Saving..." : ""}</div>
+        </div>
 
         <div style={styles.topbarActions}>
+          {user && (
+            <TokensCounterContainer
+              tokens={tokenInfo}
+              isLoading={tokenLoading}
+              showRefreshButton={false}
+              className="!bg-transparent !border-none"
+            />
+          )}
           <button onClick={() => setShowGrid((v) => !v)} style={btnStyle("secondary")}>
             {showGrid ? "Hide Grid" : "Show Grid"}
           </button>
@@ -847,7 +884,7 @@ function UiBuilderPageInner() {
                           outline: "none",
                         }}
                       >
-                        <option value="">— Select —</option>
+                        <option value="">ï¿½ Select ï¿½</option>
                         {items
                           .filter((it) => it.id !== selectedItem.id)
                           .map((it) => (
@@ -1042,3 +1079,4 @@ const styles = {
     lineHeight: "16px",
   },
 };
+
