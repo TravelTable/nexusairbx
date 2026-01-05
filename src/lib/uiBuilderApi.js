@@ -138,13 +138,3 @@ export async function aiImportFromImage({
   });
   return handleResponse(res);
 }
-
-// AI: generate a full boardState JSON from a natural language prompt
-export async function aiGenerateBoard({ token, prompt, canvasSize }) {
-  const res = await fetch(`${BACKEND_URL}/api/ui-builder/ai/generate-board`, {
-    method: "POST",
-    headers: authHeaders(token),
-    body: JSON.stringify({ prompt, canvasSize }),
-  });
-  return handleResponse(res);
-}
