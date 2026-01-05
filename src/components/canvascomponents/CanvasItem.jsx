@@ -11,11 +11,7 @@ import { useCanvas } from "./CanvasContext";
  * - All math/state lives in CanvasContext
  */
 export default function CanvasItem({ item, selected, canvasRef }) {
-  const {
-    selectItem,
-    beginMove,
-    beginResize,
-  } = useCanvas();
+  const { selectItem, beginMove, beginResize } = useCanvas();
 
   const {
     id,
@@ -36,6 +32,9 @@ export default function CanvasItem({ item, selected, canvasRef }) {
     imageId,
     locked,
     visible,
+    // Monetization metadata (optional)
+    monetizationKind,
+    monetizationId,
   } = item;
 
   if (!visible) return null;
@@ -82,6 +81,18 @@ export default function CanvasItem({ item, selected, canvasRef }) {
     e.currentTarget.setPointerCapture?.(e.pointerId);
   }
 
+  const isTextLike =
+    type === "TextLabel" || type === "TextButton" || type === "MonetizationButton";
+
+  const isImageLike = type === "ImageLabel";
+
+  const monetizationBadge =
+    type === "MonetizationButton"
+      ? `${monetizationKind || "Robux"}${
+          monetizationId ? ` • ${monetizationId}` : " • set id"
+        }`
+      : null;
+
   return (
     <div
       onPointerDown={handlePointerDown}
@@ -108,25 +119,48 @@ export default function CanvasItem({ item, selected, canvasRef }) {
       {selected && <SelectionOutline />}
 
       {/* Content */}
-      {type === "TextLabel" || type === "TextButton" ? (
+      {isTextLike ? (
         <div
           style={{
             width: "100%",
+            height: "100%",
             padding: 10,
             textAlign: "center",
             color: textColor,
             fontSize,
-            fontWeight: type === "TextButton" ? 800 : 700,
+            fontWeight: type === "TextButton" || type === "MonetizationButton" ? 800 : 700,
             pointerEvents: "none",
             lineHeight: 1.2,
             whiteSpace: "pre-wrap",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            position: "relative",
           }}
         >
-          {text || (type === "TextButton" ? "Button" : "TextLabel")}
+          {text || (type === "MonetizationButton" ? "Buy" : type === "TextButton" ? "Button" : "TextLabel")}
+
+          {monetizationBadge && (
+            <div
+              style={{
+                position: "absolute",
+                left: 8,
+                bottom: 8,
+                fontSize: 10,
+                opacity: 0.9,
+                background: "rgba(2,6,23,0.65)",
+                border: "1px solid rgba(148,163,184,0.25)",
+                borderRadius: 999,
+                padding: "3px 8px",
+              }}
+            >
+              {monetizationBadge}
+            </div>
+          )}
         </div>
       ) : null}
 
-      {type === "ImageLabel" ? (
+      {isImageLike ? (
         <div
           style={{
             width: "100%",
@@ -143,38 +177,34 @@ export default function CanvasItem({ item, selected, canvasRef }) {
               inset: 0,
               background:
                 "linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02))",
+            }}
+          />
+
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
               display: "grid",
               placeItems: "center",
+              fontSize: 12,
+              opacity: 0.85,
+              padding: 10,
+              textAlign: "center",
+              color: "rgba(226,232,240,0.9)",
             }}
           >
-            <div style={{ fontSize: 12, opacity: 0.85, textAlign: "center", padding: 10 }}>
-              <div style={{ fontWeight: 800 }}>ImageLabel</div>
-              <div style={{ opacity: 0.7, marginTop: 4 }}>
-                {imageId || "Missing ImageId"}
+            <div>
+              <div style={{ fontWeight: 900 }}>ImageLabel</div>
+              <div style={{ fontSize: 11, opacity: 0.8, marginTop: 6 }}>
+                {imageId ? imageId : "rbxassetid://"}
               </div>
             </div>
           </div>
         </div>
       ) : null}
 
-      {type === "Frame" ? (
-        <div
-          style={{
-            fontSize: 12,
-            opacity: 0.8,
-            pointerEvents: "none",
-            textAlign: "center",
-          }}
-        >
-          <div style={{ fontWeight: 800 }}>{name || "Frame"}</div>
-          <div style={{ opacity: 0.7 }}>Frame</div>
-        </div>
-      ) : null}
-
-      {/* Resize handle (only when selected + not locked) */}
-      {selected && !locked && (
-        <ResizeHandle onPointerDown={handleResizePointerDown} />
-      )}
+      {/* Resize handle */}
+      {selected && !locked && <ResizeHandle onPointerDown={handleResizePointerDown} />}
     </div>
   );
 }

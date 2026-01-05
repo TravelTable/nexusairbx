@@ -1,17 +1,18 @@
 // src/pages/UiBuilderPage.jsx
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "./firebase";
 import { CanvasProvider, useCanvas } from "../components/canvascomponents/CanvasContext";
 import CanvasGrid from "../components/canvascomponents/CanvasGrid";
 import CanvasItem from "../components/canvascomponents/CanvasItem";
-import {
-  listBoards,
-  createBoard,
-  getBoard,
-  getSnapshot,
-  createSnapshot,
-} from "../lib/uiBuilderApi";
+import { listBoards, createBoard, getBoard, getSnapshot, createSnapshot } from "../lib/uiBuilderApi";
+
+const MONETIZATION_KINDS = [
+  { value: "DevProduct", label: "Dev Product" },
+  { value: "GamePass", label: "Game Pass" },
+  { value: "Subscription", label: "Subscription" },
+  { value: "CatalogItem", label: "Catalog Item" },
+];
 
 export default function UiBuilderPage() {
   return (
@@ -30,16 +31,37 @@ function UiBuilderPageInner() {
     canvasSize,
     setCanvasSize,
     items,
-    setItems,
     selectedId,
     setSelectedId,
     selectedItem,
+
     showGrid,
     setShowGrid,
     snapToGrid,
     setSnapToGrid,
     gridSize,
+    setGridSize,
+
+    // Board palette
+    palette,
+    activeColor,
+    setActiveColor,
+    addPaletteColor,
+    removePaletteColor,
+    applyActiveColorToSelected,
+
+    // Builder UI (site)
+    uiAccent,
+    setUiAccent,
+    uiDensity,
+    setUiDensity,
+
     addItem,
+    updateItem,
+    deleteSelected,
+    bringToFront,
+    sendToBack,
+
     clearSelection,
     onPointerMove,
     endPointerAction,
@@ -53,6 +75,7 @@ function UiBuilderPageInner() {
   const [selectedBoard, setSelectedBoard] = useState(null);
   const [user, setUser] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [newPaletteHex, setNewPaletteHex] = useState("#");
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (u) => setUser(u || null));
@@ -90,22 +113,13 @@ function UiBuilderPageInner() {
         setSelectedBoard(res.board || null);
 
         if (res.board?.latestSnapshotId) {
-          const snap = await getSnapshot({
-            token,
-            boardId: selectedBoardId,
-            snapshotId: res.board.latestSnapshotId,
-          });
+          const snap = await getSnapshot({ token, boardId: selectedBoardId, snapshotId: res.board.latestSnapshotId });
           if (snap?.snapshot?.boardState) {
             loadBoardState(snap.snapshot.boardState);
             lastSavedStringRef.current = JSON.stringify(snap.snapshot.boardState);
           }
         } else {
-          loadBoardState({
-            canvasSize: res.board?.canvasSize,
-            settings: res.board?.settings,
-            items: [],
-            selectedId: null,
-          });
+          loadBoardState({ canvasSize: res.board?.canvasSize, settings: res.board?.settings, items: [], selectedId: null });
           lastSavedStringRef.current = JSON.stringify({});
         }
       } catch (e) {
@@ -116,6 +130,7 @@ function UiBuilderPageInner() {
     })();
   }, [user, selectedBoardId, loadBoardState]);
 
+  // Autosave snapshots
   useEffect(() => {
     if (saveTimerRef.current) {
       clearTimeout(saveTimerRef.current);
@@ -131,8 +146,17 @@ function UiBuilderPageInner() {
         gridSize,
         showGrid,
         snapToGrid,
+
+        // Palette
+        palette,
+        activeColor,
+
+        // Builder UI (site)
+        uiAccent,
+        uiDensity,
       },
     };
+
     const serialized = JSON.stringify(state);
     if (serialized === lastSavedStringRef.current) return;
 
@@ -152,7 +176,7 @@ function UiBuilderPageInner() {
     return () => {
       if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     };
-  }, [user, selectedBoardId, canvasSize, items, selectedId, showGrid, snapToGrid, gridSize]);
+  }, [user, selectedBoardId, canvasSize, items, selectedId, showGrid, snapToGrid, gridSize, palette, activeColor, uiAccent, uiDensity]);
 
   const handlePointerMove = (e) => {
     const rect = canvasRef.current?.getBoundingClientRect();
@@ -161,8 +185,11 @@ function UiBuilderPageInner() {
     onPointerMove(px, py);
   };
 
-  const handlePointerUp = () => {
-    endPointerAction();
+  const handlePointerUp = () => endPointerAction();
+
+  const patchSelected = (patch) => {
+    if (!selectedItem) return;
+    updateItem(selectedItem.id, patch);
   };
 
   function addPrimitive(type) {
@@ -194,6 +221,29 @@ function UiBuilderPageInner() {
     });
   }
 
+  function addMonetization(kind, preset = {}) {
+    const w = 240;
+    const h = 64;
+    addItem({
+      type: "MonetizationButton",
+      name: "MonetizationButton",
+      x: Math.round((canvasSize.w - w) / 2),
+      y: Math.round((canvasSize.h - h) / 2),
+      w,
+      h,
+      fill: "#14532d",
+      radius: 12,
+      stroke: true,
+      strokeColor: "#22c55e",
+      strokeWidth: 2,
+      text: preset.text || `Buy (${kind})`,
+      textColor: "#ffffff",
+      fontSize: 18,
+      monetizationKind: kind,
+      monetizationId: preset.monetizationId ?? "",
+    });
+  }
+
   async function handleCreateBoard() {
     if (!user) return;
     const title = window.prompt("New board title", "Roblox UI Board");
@@ -201,15 +251,15 @@ function UiBuilderPageInner() {
     try {
       setLoadingBoard(true);
       const token = await user.getIdToken();
-      const res = await createBoard({ token, title: title.trim(), canvasSize, settings: { showGrid, snapToGrid, gridSize } });
+      const res = await createBoard({
+        token,
+        title: title.trim(),
+        canvasSize,
+        settings: { showGrid, snapToGrid, gridSize, palette, activeColor },
+      });
       setSelectedBoardId(res.boardId);
       setSelectedBoard(res.board || null);
-      loadBoardState({
-        canvasSize: res.board?.canvasSize,
-        settings: res.board?.settings,
-        items: [],
-        selectedId: null,
-      });
+      loadBoardState({ canvasSize: res.board?.canvasSize, settings: res.board?.settings, items: [], selectedId: null });
       lastSavedStringRef.current = JSON.stringify({});
       const list = await listBoards({ token });
       setBoards(list.boards || []);
@@ -220,71 +270,71 @@ function UiBuilderPageInner() {
     }
   }
 
+  const selectedLabel = useMemo(() => {
+    if (!selectedItem) return "";
+    if (selectedItem.type === "MonetizationButton") {
+      const kind = selectedItem.monetizationKind || "Robux";
+      const id = selectedItem.monetizationId || "(missing id)";
+      return `${kind} • ${id}`;
+    }
+    return selectedItem.type;
+  }, [selectedItem]);
+
   return (
-    <div style={{ height: "100vh", display: "flex", flexDirection: "column", background: "#0b1020", color: "#e5e7eb" }}>
+    <div style={styles.page}>
       {/* Top bar */}
-      <div style={{ display: "flex", alignItems: "center", gap: 12, padding: 12, borderBottom: "1px solid rgba(148,163,184,0.2)" }}>
-        <div style={{ fontWeight: 700, letterSpacing: 0.2 }}>Roblox UI Builder</div>
+      <div style={styles.topbar}>
+        <div style={styles.brand}>Roblox UI Builder</div>
         {selectedBoard && (
-          <div style={{ fontSize: 12, opacity: 0.85 }}>
+          <div style={styles.boardMeta}>
             Board: <b>{selectedBoard.title}</b> {selectedBoard.projectId ? `(Project ${selectedBoard.projectId})` : ""}
           </div>
         )}
-        <div style={{ fontSize: 12, opacity: 0.65, marginLeft: 8 }}>
-          {loadingBoard ? "Loading board..." : saving ? "Saving..." : ""}
-        </div>
+        <div style={styles.status}>{loadingBoard ? "Loading..." : saving ? "Saving..." : ""}</div>
 
-        <div style={{ marginLeft: "auto", display: "flex", gap: 8, alignItems: "center" }}>
+        <div style={styles.topbarActions}>
           <button onClick={() => setShowGrid((v) => !v)} style={btnStyle("secondary")}>
             {showGrid ? "Hide Grid" : "Show Grid"}
           </button>
           <button onClick={() => setSnapToGrid((v) => !v)} style={btnStyle("secondary")}>
             {snapToGrid ? "Snap: On" : "Snap: Off"}
           </button>
-          <button style={btnStyle("primary")} disabled title="Wire AI generation later">
+          <button style={btnStyle("primary", uiAccent)} disabled title="Wire AI generation later">
             Generate (AI)
           </button>
         </div>
       </div>
 
-      {/* Main layout */}
-      <div style={{ flex: 1, display: "grid", gridTemplateColumns: "260px 1fr 320px", minHeight: 0 }}>
-        {/* Left: Boards + Palette */}
-        <div style={{ borderRight: "1px solid rgba(148,163,184,0.2)", padding: 12, overflow: "auto", display: "flex", flexDirection: "column", gap: 12 }}>
+      {/* Main */}
+      <div style={styles.main}>
+        {/* Left */}
+        <div style={styles.left}>
           <Section title="Boards">
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              <button style={btnStyle("secondary")} onClick={handleCreateBoard} disabled={!user || loadingBoard}>
-                + New Board
-              </button>
-              <div style={{ fontSize: 12, opacity: 0.7 }}>
-                {loadingBoards ? "Loading boards..." : ""}
-              </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                {boards.map((b) => (
-                  <button
-                    key={b.id}
-                    onClick={() => setSelectedBoardId(b.id)}
-                    style={{
-                      ...btnStyle("ghost"),
-                      textAlign: "left",
-                      border: b.id === selectedBoardId ? "1px solid rgba(59,130,246,0.65)" : "1px solid rgba(148,163,184,0.18)",
-                      background: b.id === selectedBoardId ? "rgba(59,130,246,0.10)" : "rgba(15,23,42,0.35)",
-                    }}
-                  >
-                    <div style={{ fontSize: 12, fontWeight: 800 }}>{b.title}</div>
-                    <div style={{ fontSize: 11, opacity: 0.7 }}>
-                      {b.updatedAt ? new Date(b.updatedAt).toLocaleString() : "—"}
-                    </div>
-                  </button>
-                ))}
-                {boards.length === 0 && !loadingBoards && (
-                  <div style={{ fontSize: 12, opacity: 0.65 }}>No boards yet.</div>
-                )}
-              </div>
+            <button style={btnStyle("secondary")} onClick={handleCreateBoard} disabled={!user || loadingBoard}>
+              + New Board
+            </button>
+            <div style={{ fontSize: 12, opacity: 0.7, marginTop: 8 }}>{loadingBoards ? "Loading boards..." : ""}</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 8 }}>
+              {boards.map((b) => (
+                <button
+                  key={b.id}
+                  onClick={() => setSelectedBoardId(b.id)}
+                  style={{
+                    ...btnStyle("ghost"),
+                    textAlign: "left",
+                    border: b.id === selectedBoardId ? "1px solid rgba(59,130,246,0.65)" : "1px solid rgba(148,163,184,0.18)",
+                    background: b.id === selectedBoardId ? "rgba(59,130,246,0.10)" : "rgba(15,23,42,0.35)",
+                  }}
+                >
+                  <div style={{ fontSize: 12, fontWeight: 800 }}>{b.title}</div>
+                  <div style={{ fontSize: 11, opacity: 0.7 }}>{b.updatedAt ? new Date(b.updatedAt).toLocaleString() : "—"}</div>
+                </button>
+              ))}
+              {boards.length === 0 && !loadingBoards && <div style={{ fontSize: 12, opacity: 0.65 }}>No boards yet.</div>}
             </div>
           </Section>
 
-          <Section title="Palette">
+          <Section title="Elements">
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
               <button style={btnStyle("secondary")} onClick={() => addPrimitive("Frame")}>+ Frame</button>
               <button style={btnStyle("secondary")} onClick={() => addPrimitive("TextLabel")}>+ TextLabel</button>
@@ -293,79 +343,328 @@ function UiBuilderPageInner() {
             </div>
           </Section>
 
-          <Section title="Roblox ScreenGui Sizes">
+          <Section title="Colors">
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+              {palette.map((c) => (
+                <button
+                  key={c}
+                  onClick={() => setActiveColor(c)}
+                  title={c}
+                  style={{
+                    width: 28,
+                    height: 28,
+                    borderRadius: 10,
+                    background: c,
+                    border: c === activeColor ? `2px solid ${uiAccent}` : "1px solid rgba(148,163,184,0.30)",
+                    boxShadow: c === activeColor ? `0 0 0 3px rgba(59,130,246,0.18)` : "none",
+                    cursor: "pointer",
+                  }}
+                />
+              ))}
+            </div>
+
+            <div style={{ marginTop: 10, display: "grid", gridTemplateColumns: "1fr auto", gap: 8 }}>
+              <input
+                value={newPaletteHex}
+                onChange={(e) => setNewPaletteHex(e.target.value)}
+                placeholder="#rrggbb"
+                style={inputStyle()}
+              />
+              <button
+                style={btnStyle("secondary")}
+                onClick={() => {
+                  const ok = addPaletteColor(newPaletteHex);
+                  if (!ok) alert("Invalid color. Use #rrggbb (or #rgb).");
+                  setNewPaletteHex("#");
+                }}
+              >
+                Add
+              </button>
+            </div>
+
+            <div style={{ marginTop: 10, display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
+              <button style={btnStyle("ghost")} disabled={!selectedItem} onClick={() => applyActiveColorToSelected("fill")}>
+                Apply Fill
+              </button>
+              <button style={btnStyle("ghost")} disabled={!selectedItem} onClick={() => applyActiveColorToSelected("stroke")}>
+                Apply Stroke
+              </button>
+              <button style={btnStyle("ghost")} disabled={!selectedItem} onClick={() => applyActiveColorToSelected("text")}>
+                Apply Text
+              </button>
+            </div>
+
+            <div style={{ marginTop: 10 }}>
+              <button
+                style={btnStyle("danger")}
+                disabled={!activeColor}
+                onClick={() => removePaletteColor(activeColor)}
+                title="Remove active color from palette"
+              >
+                Remove Active
+              </button>
+            </div>
+          </Section>
+
+          <Section title="Builder UI">
+            <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 10 }}>
+              <div>
+                <div style={{ fontSize: 11, opacity: 0.75, marginBottom: 6 }}>Accent</div>
+                <input value={uiAccent} onChange={(e) => setUiAccent(e.target.value)} style={inputStyle()} />
+              </div>
+
+              <div>
+                <div style={{ fontSize: 11, opacity: 0.75, marginBottom: 6 }}>Density</div>
+                <select value={uiDensity} onChange={(e) => setUiDensity(e.target.value)} style={inputStyle()}>
+                  <option value="comfortable">Comfortable</option>
+                  <option value="compact">Compact</option>
+                </select>
+              </div>
+            </div>
+          </Section>
+          <Section title="Monetization (Robux)">
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-              <button style={btnStyle("secondary")} onClick={() => setCanvasSize({ w: 1280, h: 720 })}>Desktop (1280x720)</button>
-              <button style={btnStyle("secondary")} onClick={() => setCanvasSize({ w: 1920, h: 1080 })}>Desktop Large (1920x1080)</button>
-              <button style={btnStyle("secondary")} onClick={() => setCanvasSize({ w: 1366, h: 768 })}>Laptop (1366x768)</button>
-              <button style={btnStyle("secondary")} onClick={() => setCanvasSize({ w: 1024, h: 768 })}>Tablet (1024x768)</button>
-              <button style={btnStyle("secondary")} onClick={() => setCanvasSize({ w: 375, h: 812 })}>Mobile Portrait (375x812)</button>
-              <button style={btnStyle("secondary")} onClick={() => setCanvasSize({ w: 812, h: 375 })}>Mobile Landscape (812x375)</button>
+              <button style={btnStyle("secondary")} onClick={() => addMonetization("DevProduct")}>+ Dev Product</button>
+              <button style={btnStyle("secondary")} onClick={() => addMonetization("GamePass")}>+ Game Pass</button>
+              <button style={btnStyle("secondary")} onClick={() => addMonetization("Subscription")}>+ Subscription</button>
+              <button style={btnStyle("secondary")} onClick={() => addMonetization("CatalogItem")}>+ Catalog Item</button>
+            </div>
+            <div style={{ fontSize: 11, opacity: 0.75, marginTop: 10, lineHeight: 1.3 }}>
+              IDs are required. Generator should hard-stop if a Robux button is missing its ID.
+            </div>
+            <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+              <button style={btnStyle("ghost")} onClick={() => addMonetization("DevProduct", { text: "Donate (10R$)" })}>+ Donate</button>
+              <button style={btnStyle("ghost")} onClick={() => addMonetization("GamePass", { text: "VIP Pass" })}>+ VIP</button>
+            </div>
+          </Section>
+
+          <Section title="ScreenGui Sizes">
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+              <button style={btnStyle("secondary")} onClick={() => setCanvasSize({ w: 1280, h: 720 })}>Desktop (1280×720)</button>
+              <button style={btnStyle("secondary")} onClick={() => setCanvasSize({ w: 1920, h: 1080 })}>Desktop (1920×1080)</button>
+              <button style={btnStyle("secondary")} onClick={() => setCanvasSize({ w: 1366, h: 768 })}>Laptop (1366×768)</button>
+              <button style={btnStyle("secondary")} onClick={() => setCanvasSize({ w: 1024, h: 768 })}>Tablet (1024×768)</button>
+              <button style={btnStyle("secondary")} onClick={() => setCanvasSize({ w: 375, h: 812 })}>Mobile (375×812)</button>
+              <button style={btnStyle("secondary")} onClick={() => setCanvasSize({ w: 812, h: 375 })}>Mobile (812×375)</button>
+            </div>
+            <div style={{ display: "flex", gap: 8, marginTop: 10, alignItems: "center" }}>
+              <div style={{ fontSize: 11, opacity: 0.75 }}>Grid size</div>
+              <input type="number" value={gridSize} onChange={(e) => setGridSize(Math.max(1, Number(e.target.value) || 1))} style={{ ...inputStyle(), width: 90 }} />
             </div>
           </Section>
         </div>
 
-        {/* Center: Canvas */}
-        <div style={{ padding: 16, overflow: "auto" }}>
+        {/* Center */}
+        <div style={styles.center}>
           <div
             ref={canvasRef}
             onPointerMove={handlePointerMove}
             onPointerUp={handlePointerUp}
             onPointerCancel={handlePointerUp}
             onPointerDown={clearSelection}
-            style={{
-              width: canvasSize.w,
-              height: canvasSize.h,
-              margin: "0 auto",
-              borderRadius: 14,
-              border: "1px solid rgba(148,163,184,0.25)",
-              background: "rgba(2,6,23,0.65)",
-              position: "relative",
-              boxShadow: "0 10px 40px rgba(0,0,0,0.35)",
-              userSelect: "none",
-            }}
+            style={{ ...styles.canvas, width: canvasSize.w, height: canvasSize.h }}
           >
             <CanvasGrid enabled={showGrid} size={gridSize} />
 
-            <div
-              style={{
-                position: "absolute",
-                top: 8,
-                right: 10,
-                fontSize: 11,
-                opacity: 0.75,
-                background: "rgba(2,6,23,0.65)",
-                padding: "6px 10px",
-                borderRadius: 999,
-                border: "1px solid rgba(148,163,184,0.25)",
-                pointerEvents: "none",
-              }}
-            >
-              ScreenGui {canvasSize.w}x{canvasSize.h}
-            </div>
+            <div style={styles.canvasBadge}>ScreenGui {canvasSize.w}×{canvasSize.h}</div>
 
             {items
               .slice()
               .sort((a, b) => (a.zIndex || 1) - (b.zIndex || 1))
               .map((it) => (
-                <CanvasItem
-                  key={it.id}
-                  item={it}
-                  selected={it.id === selectedId}
-                  canvasRef={canvasRef}
-                />
+                <CanvasItem key={it.id} item={it} selected={it.id === selectedId} canvasRef={canvasRef} />
               ))}
           </div>
         </div>
 
-        {/* Right: Properties (placeholder uses selectedItem) */}
-        <div style={{ borderLeft: "1px solid rgba(148,163,184,0.2)", padding: 12, overflow: "auto" }}>
+        {/* Right */}
+        <div style={{ borderLeft: "1px solid rgba(148,163,184,0.2)", padding: uiDensity === "compact" ? 10 : 12, overflow: "auto" }}>
           <Section title="Properties">
             {!selectedItem ? (
               <div style={{ fontSize: 12, opacity: 0.7 }}>Select an element on the canvas to edit properties.</div>
             ) : (
-              <div style={{ fontSize: 12, opacity: 0.85 }}>
-                Selected: <b>{selectedItem.type}</b> - {selectedItem.name}
+              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                <div style={{ fontSize: 12, opacity: 0.9 }}>
+                  Selected: <b>{selectedItem.type}</b> ? {selectedItem.name}
+                </div>
+
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  <button style={btnStyle("ghost")} onClick={bringToFront}>Bring Front</button>
+                  <button style={btnStyle("ghost")} onClick={sendToBack}>Send Back</button>
+                  <button style={btnStyle("danger")} onClick={deleteSelected}>Delete</button>
+                </div>
+
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                  <label style={labelStyle()}>
+                    Name
+                    <input
+                      value={selectedItem.name || ""}
+                      onChange={(e) => updateItem(selectedItem.id, { name: e.target.value })}
+                      style={inputStyle()}
+                    />
+                  </label>
+
+                  <label style={labelStyle()}>
+                    ZIndex
+                    <input
+                      type="number"
+                      value={Number(selectedItem.zIndex || 1)}
+                      onChange={(e) => updateItem(selectedItem.id, { zIndex: Number(e.target.value || 1) })}
+                      style={inputStyle()}
+                    />
+                  </label>
+                </div>
+
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                  <label style={labelStyle()}>
+                    X
+                    <input
+                      type="number"
+                      value={Number(selectedItem.x || 0)}
+                      onChange={(e) => updateItem(selectedItem.id, { x: Number(e.target.value || 0) })}
+                      style={inputStyle()}
+                    />
+                  </label>
+                  <label style={labelStyle()}>
+                    Y
+                    <input
+                      type="number"
+                      value={Number(selectedItem.y || 0)}
+                      onChange={(e) => updateItem(selectedItem.id, { y: Number(e.target.value || 0) })}
+                      style={inputStyle()}
+                    />
+                  </label>
+                  <label style={labelStyle()}>
+                    W
+                    <input
+                      type="number"
+                      value={Number(selectedItem.w || 0)}
+                      onChange={(e) => updateItem(selectedItem.id, { w: Number(e.target.value || 0) })}
+                      style={inputStyle()}
+                    />
+                  </label>
+                  <label style={labelStyle()}>
+                    H
+                    <input
+                      type="number"
+                      value={Number(selectedItem.h || 0)}
+                      onChange={(e) => updateItem(selectedItem.id, { h: Number(e.target.value || 0) })}
+                      style={inputStyle()}
+                    />
+                  </label>
+                </div>
+
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                  <button
+                    style={btnStyle(selectedItem.visible === false ? "danger" : "secondary")}
+                    onClick={() => updateItem(selectedItem.id, { visible: !(selectedItem.visible !== false) })}
+                  >
+                    {selectedItem.visible === false ? "Hidden" : "Visible"}
+                  </button>
+
+                  <button
+                    style={btnStyle(selectedItem.locked ? "danger" : "secondary")}
+                    onClick={() => updateItem(selectedItem.id, { locked: !selectedItem.locked })}
+                  >
+                    {selectedItem.locked ? "Locked" : "Unlocked"}
+                  </button>
+                </div>
+
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                  <label style={labelStyle()}>
+                    Fill
+                    <input
+                      value={selectedItem.fill || ""}
+                      onChange={(e) => updateItem(selectedItem.id, { fill: e.target.value })}
+                      style={inputStyle()}
+                    />
+                  </label>
+
+                  <label style={labelStyle()}>
+                    Radius
+                    <input
+                      type="number"
+                      value={Number(selectedItem.radius || 0)}
+                      onChange={(e) => updateItem(selectedItem.id, { radius: Number(e.target.value || 0) })}
+                      style={inputStyle()}
+                    />
+                  </label>
+                </div>
+
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                  <button
+                    style={btnStyle(selectedItem.stroke ? "secondary" : "ghost")}
+                    onClick={() => updateItem(selectedItem.id, { stroke: !selectedItem.stroke })}
+                  >
+                    {selectedItem.stroke ? "Stroke: On" : "Stroke: Off"}
+                  </button>
+
+                  <label style={labelStyle()}>
+                    Stroke Width
+                    <input
+                      type="number"
+                      value={Number(selectedItem.strokeWidth || 0)}
+                      onChange={(e) => updateItem(selectedItem.id, { strokeWidth: Number(e.target.value || 0), stroke: true })}
+                      style={inputStyle()}
+                    />
+                  </label>
+
+                  <label style={labelStyle()}>
+                    Stroke Color
+                    <input
+                      value={selectedItem.strokeColor || ""}
+                      onChange={(e) => updateItem(selectedItem.id, { strokeColor: e.target.value, stroke: true })}
+                      style={inputStyle()}
+                    />
+                  </label>
+
+                  <div />
+                </div>
+
+                {(selectedItem.type === "TextLabel" || selectedItem.type === "TextButton") && (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    <label style={labelStyle()}>
+                      Text
+                      <input
+                        value={selectedItem.text || ""}
+                        onChange={(e) => updateItem(selectedItem.id, { text: e.target.value })}
+                        style={inputStyle()}
+                      />
+                    </label>
+
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                      <label style={labelStyle()}>
+                        Text Color
+                        <input
+                          value={selectedItem.textColor || ""}
+                          onChange={(e) => updateItem(selectedItem.id, { textColor: e.target.value })}
+                          style={inputStyle()}
+                        />
+                      </label>
+
+                      <label style={labelStyle()}>
+                        Font Size
+                        <input
+                          type="number"
+                          value={Number(selectedItem.fontSize || 18)}
+                          onChange={(e) => updateItem(selectedItem.id, { fontSize: Number(e.target.value || 18) })}
+                          style={inputStyle()}
+                        />
+                      </label>
+                    </div>
+                  </div>
+                )}
+
+                {selectedItem.type === "ImageLabel" && (
+                  <label style={labelStyle()}>
+                    ImageId
+                    <input
+                      value={selectedItem.imageId || ""}
+                      onChange={(e) => updateItem(selectedItem.id, { imageId: e.target.value })}
+                      style={inputStyle()}
+                    />
+                  </label>
+                )}
               </div>
             )}
           </Section>
@@ -378,24 +677,106 @@ function UiBuilderPageInner() {
 function Section({ title, children }) {
   return (
     <div style={{ marginBottom: 14 }}>
-      <div style={{ fontSize: 12, fontWeight: 900, letterSpacing: 0.4, opacity: 0.9, marginBottom: 10 }}>
-        {title}
-      </div>
-      <div
-        style={{
-          border: "1px solid rgba(148,163,184,0.18)",
-          background: "rgba(15,23,42,0.35)",
-          borderRadius: 14,
-          padding: 12,
-        }}
-      >
-        {children}
-      </div>
+      <div style={{ fontSize: 12, fontWeight: 900, letterSpacing: 0.4, opacity: 0.9, marginBottom: 10 }}>{title}</div>
+      <div style={styles.card}>{children}</div>
     </div>
   );
 }
 
-function btnStyle(variant) {
+function Group({ title, children }) {
+  return (
+    <div style={styles.group}>
+      <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 0.4, opacity: 0.85, marginBottom: 10 }}>{title}</div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>{children}</div>
+    </div>
+  );
+}
+
+function Row({ label, children }) {
+  return (
+    <div style={{ display: "grid", gridTemplateColumns: "120px 1fr", alignItems: "center", gap: 10 }}>
+      <div style={{ fontSize: 11, opacity: 0.75, fontWeight: 800 }}>{label}</div>
+      <div>{children}</div>
+    </div>
+  );
+}
+
+function NumberInput({ value, onChange, min = -99999, max = 99999 }) {
+  return (
+    <input
+      type="number"
+      value={Number.isFinite(Number(value)) ? Number(value) : 0}
+      min={min}
+      max={max}
+      onChange={(e) => {
+        const n = Number(e.target.value);
+        if (!Number.isFinite(n)) return;
+        onChange?.(n);
+      }}
+      style={inputStyle()}
+    />
+  );
+}
+
+function ColorInput({ value, onChange }) {
+  const safe = isHex(value) ? value : "#111827";
+  return (
+    <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+      <input type="color" value={safe} onChange={(e) => onChange?.(e.target.value)} style={styles.colorChip} />
+      <input value={value || ""} onChange={(e) => onChange?.(e.target.value)} style={inputStyle()} />
+    </div>
+  );
+}
+
+function isHex(v) {
+  return typeof v === "string" && /^#[0-9a-fA-F]{6}$/.test(v.trim());
+}
+
+function labelStyle() {
+  return { display: "flex", flexDirection: "column", gap: 6, fontSize: 11, opacity: 0.9 };
+}
+
+function inputStyle() {
+  return {
+    width: "100%",
+    padding: "9px 10px",
+    borderRadius: 12,
+    border: "1px solid rgba(148,163,184,0.20)",
+    background: "rgba(2,6,23,0.35)",
+    color: "#e5e7eb",
+    outline: "none",
+    fontSize: 12,
+    fontWeight: 700,
+  };
+}
+
+function textareaStyle() {
+  return {
+    ...inputStyle(),
+    resize: "vertical",
+    minHeight: 60,
+    fontFamily: "inherit",
+  };
+}
+
+function selectStyle() {
+  return {
+    ...inputStyle(),
+    cursor: "pointer",
+  };
+}
+
+function toggleStyle() {
+  return {
+    display: "flex",
+    alignItems: "center",
+    fontSize: 12,
+    fontWeight: 800,
+    opacity: 0.9,
+  };
+}
+
+function btnStyle(variant, accent = "#3b82f6") {
   const base = {
     padding: "10px 10px",
     borderRadius: 12,
@@ -409,24 +790,70 @@ function btnStyle(variant) {
   };
 
   if (variant === "primary") {
-    return {
-      ...base,
-      background: "rgba(59,130,246,0.85)",
-      border: "1px solid rgba(59,130,246,0.55)",
-    };
+    return { ...base, background: accent, border: `1px solid ${accent}` };
   }
   if (variant === "danger") {
-    return {
-      ...base,
-      background: "rgba(239,68,68,0.85)",
-      border: "1px solid rgba(239,68,68,0.55)",
-    };
+    return { ...base, background: "rgba(239,68,68,0.85)", border: "1px solid rgba(239,68,68,0.55)" };
   }
   if (variant === "ghost") {
-    return {
-      ...base,
-      background: "rgba(2,6,23,0.20)",
-    };
+    return { ...base, background: "rgba(2,6,23,0.20)" };
   }
   return base;
 }
+
+const styles = {
+  page: { height: "100vh", display: "flex", flexDirection: "column", background: "#0b1020", color: "#e5e7eb" },
+  topbar: { display: "flex", alignItems: "center", gap: 12, padding: 12, borderBottom: "1px solid rgba(148,163,184,0.2)" },
+  brand: { fontWeight: 700, letterSpacing: 0.2 },
+  boardMeta: { fontSize: 12, opacity: 0.85 },
+  status: { fontSize: 12, opacity: 0.65, marginLeft: 8 },
+  topbarActions: { marginLeft: "auto", display: "flex", gap: 8, alignItems: "center" },
+
+  main: { flex: 1, display: "grid", gridTemplateColumns: "280px 1fr 360px", minHeight: 0 },
+  left: { borderRight: "1px solid rgba(148,163,184,0.2)", padding: 12, overflow: "auto" },
+  center: { padding: 16, overflow: "auto" },
+  right: { borderLeft: "1px solid rgba(148,163,184,0.2)", padding: 12, overflow: "auto" },
+
+  card: { border: "1px solid rgba(148,163,184,0.18)", background: "rgba(15,23,42,0.35)", borderRadius: 14, padding: 12 },
+  group: { border: "1px solid rgba(148,163,184,0.18)", background: "rgba(2,6,23,0.25)", borderRadius: 14, padding: 12 },
+
+  canvas: {
+    margin: "0 auto",
+    borderRadius: 14,
+    border: "1px solid rgba(148,163,184,0.25)",
+    background: "rgba(2,6,23,0.65)",
+    position: "relative",
+    boxShadow: "0 10px 40px rgba(0,0,0,0.35)",
+    userSelect: "none",
+  },
+  canvasBadge: {
+    position: "absolute",
+    top: 8,
+    right: 10,
+    fontSize: 11,
+    opacity: 0.75,
+    background: "rgba(2,6,23,0.65)",
+    padding: "6px 10px",
+    borderRadius: 999,
+    border: "1px solid rgba(148,163,184,0.25)",
+    pointerEvents: "none",
+  },
+
+  colorChip: { width: 44, height: 36, border: "none", background: "transparent", padding: 0, cursor: "pointer" },
+  swatchGrid: { marginTop: 10, display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 8 },
+  removeSwatch: {
+    position: "absolute",
+    top: -6,
+    right: -6,
+    width: 18,
+    height: 18,
+    borderRadius: 999,
+    border: "1px solid rgba(148,163,184,0.35)",
+    background: "rgba(2,6,23,0.85)",
+    color: "rgba(226,232,240,0.9)",
+    fontWeight: 900,
+    fontSize: 11,
+    cursor: "pointer",
+    lineHeight: "16px",
+  },
+};

@@ -1,8 +1,18 @@
-import React, { createContext, useCallback, useContext, useMemo, useRef, useState } from "react";
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
 const CanvasContext = createContext(null);
 
 const DEFAULT_GRID = 10;
+
+// Deterministic, small default palette. Stored as hex strings on the board.
+const DEFAULT_PALETTE = ["#111827", "#1f2937", "#334155", "#3b82f6", "#22c55e", "#ef4444", "#ffffff"];
 
 function clamp(n, min, max) {
   return Math.max(min, Math.min(max, n));
@@ -19,6 +29,32 @@ function uid() {
   return `id_${Math.random().toString(16).slice(2)}_${Date.now()}`;
 }
 
+function normalizeHex(input) {
+  if (typeof input !== "string") return null;
+  let s = input.trim();
+  if (!s) return null;
+  if (!s.startsWith("#")) s = `#${s}`;
+  if (/^#[0-9a-fA-F]{3}$/.test(s)) {
+    const r = s[1], g = s[2], b = s[3];
+    s = `#${r}${r}${g}${g}${b}${b}`;
+  }
+  if (!/^#[0-9a-fA-F]{6}$/.test(s)) return null;
+  return s.toLowerCase();
+}
+
+function uniqHexList(list, limit = 64) {
+  if (!Array.isArray(list)) return [];
+  const out = [];
+  for (const raw of list) {
+    const c = normalizeHex(raw);
+    if (!c) continue;
+    if (out.includes(c)) continue;
+    out.push(c);
+    if (out.length >= limit) break;
+  }
+  return out;
+}
+
 export function CanvasProvider({
   children,
   initialCanvasSize = { w: 1280, h: 720 },
@@ -29,6 +65,14 @@ export function CanvasProvider({
   const [showGrid, setShowGrid] = useState(true);
   const [snapToGrid, setSnapToGrid] = useState(true);
   const [gridSize, setGridSize] = useState(DEFAULT_GRID);
+
+  // Board-level palette (used for Roblox UI colors)
+  const [palette, setPalette] = useState(DEFAULT_PALETTE);
+  const [activeColor, setActiveColor] = useState("#3b82f6");
+
+  // Builder UI (this site) customization
+  const [uiAccent, setUiAccent] = useState("#3b82f6");
+  const [uiDensity, setUiDensity] = useState("comfortable"); // "comfortable" | "compact"
 
   const dragRef = useRef({
     mode: null,
@@ -77,69 +121,106 @@ export function CanvasProvider({
     [items, selectedId]
   );
 
-  const beginMove = useCallback((id, startX, startY) => {
-    const it = items.find((x) => x.id === id);
-    if (!it || it.locked) return;
+  const addPaletteColor = useCallback((hex) => {
+    const c = normalizeHex(hex);
+    if (!c) return false;
+    setPalette((prev) => uniqHexList([c, ...prev]));
+    setActiveColor(c);
+    return true;
+  }, []);
 
-    dragRef.current = {
-      mode: "move",
-      id,
-      startX,
-      startY,
-      origin: { x: it.x, y: it.y, w: it.w, h: it.h },
-    };
-  }, [items]);
+  const removePaletteColor = useCallback((hex) => {
+    const c = normalizeHex(hex);
+    if (!c) return;
+    setPalette((prev) => prev.filter((x) => x !== c));
+    setActiveColor((prev) => (prev === c ? "#3b82f6" : prev));
+  }, []);
 
-  const beginResize = useCallback((id, startX, startY) => {
-    const it = items.find((x) => x.id === id);
-    if (!it || it.locked) return;
+  const applyActiveColorToSelected = useCallback(
+    (target) => {
+      if (!selectedId) return;
+      const c = normalizeHex(activeColor);
+      if (!c) return;
 
-    dragRef.current = {
-      mode: "resize",
-      id,
-      startX,
-      startY,
-      origin: { x: it.x, y: it.y, w: it.w, h: it.h },
-    };
-  }, [items]);
+      if (target === "fill") updateItem(selectedId, { fill: c });
+      if (target === "stroke") updateItem(selectedId, { strokeColor: c, stroke: true });
+      if (target === "text") updateItem(selectedId, { textColor: c });
+    },
+    [selectedId, activeColor, updateItem]
+  );
 
-  const onPointerMove = useCallback((x, y) => {
-    const st = dragRef.current;
-    if (!st.mode || !st.id) return;
+  const beginMove = useCallback(
+    (id, startX, startY) => {
+      const it = items.find((x) => x.id === id);
+      if (!it || it.locked) return;
 
-    const dx = x - st.startX;
-    const dy = y - st.startY;
+      dragRef.current = {
+        mode: "move",
+        id,
+        startX,
+        startY,
+        origin: { x: it.x, y: it.y, w: it.w, h: it.h },
+      };
+    },
+    [items]
+  );
 
-    setItems((prev) =>
-      prev.map((it) => {
-        if (it.id !== st.id) return it;
+  const beginResize = useCallback(
+    (id, startX, startY) => {
+      const it = items.find((x) => x.id === id);
+      if (!it || it.locked) return;
 
-        if (st.mode === "move") {
-          const nx = snap(st.origin.x + dx, snapToGrid, gridSize);
-          const ny = snap(st.origin.y + dy, snapToGrid, gridSize);
+      dragRef.current = {
+        mode: "resize",
+        id,
+        startX,
+        startY,
+        origin: { x: it.x, y: it.y, w: it.w, h: it.h },
+      };
+    },
+    [items]
+  );
 
-          return {
-            ...it,
-            x: clamp(nx, 0, canvasSize.w - it.w),
-            y: clamp(ny, 0, canvasSize.h - it.h),
-          };
-        }
+  const onPointerMove = useCallback(
+    (x, y) => {
+      const st = dragRef.current;
+      if (!st.mode || !st.id) return;
 
-        if (st.mode === "resize") {
-          const nw = snap(st.origin.w + dx, snapToGrid, gridSize);
-          const nh = snap(st.origin.h + dy, snapToGrid, gridSize);
+      const dx = x - st.startX;
+      const dy = y - st.startY;
 
-          return {
-            ...it,
-            w: clamp(nw, 60, canvasSize.w - it.x),
-            h: clamp(nh, 40, canvasSize.h - it.y),
-          };
-        }
+      setItems((prev) =>
+        prev.map((it) => {
+          if (it.id !== st.id) return it;
 
-        return it;
-      })
-    );
-  }, [canvasSize, snapToGrid, gridSize]);
+          if (st.mode === "move") {
+            const nx = snap(st.origin.x + dx, snapToGrid, gridSize);
+            const ny = snap(st.origin.y + dy, snapToGrid, gridSize);
+
+            return {
+              ...it,
+              x: clamp(nx, 0, canvasSize.w - it.w),
+              y: clamp(ny, 0, canvasSize.h - it.h),
+            };
+          }
+
+          if (st.mode === "resize") {
+            const nw = snap(st.origin.w + dx, snapToGrid, gridSize);
+            const nh = snap(st.origin.h + dy, snapToGrid, gridSize);
+
+            return {
+              ...it,
+              w: clamp(nw, 60, canvasSize.w - it.x),
+              h: clamp(nh, 40, canvasSize.h - it.y),
+            };
+          }
+
+          return it;
+        })
+      );
+    },
+    [canvasSize, snapToGrid, gridSize]
+  );
 
   const endPointerAction = useCallback(() => {
     dragRef.current = {
@@ -171,49 +252,85 @@ export function CanvasProvider({
     });
   }, [selectedId]);
 
-  const loadBoardState = useCallback((boardState = {}) => {
-    if (!boardState || typeof boardState !== "object") return;
+  const loadBoardState = useCallback(
+    (boardState = {}) => {
+      if (!boardState || typeof boardState !== "object") return;
 
-    const nextCanvas = boardState.canvasSize;
-    if (
-      nextCanvas &&
-      Number.isFinite(Number(nextCanvas.w)) &&
-      Number.isFinite(Number(nextCanvas.h))
-    ) {
-      setCanvasSize({ w: Number(nextCanvas.w), h: Number(nextCanvas.h) });
-    } else {
-      setCanvasSize(initialCanvasSize);
-    }
+      const nextCanvas = boardState.canvasSize;
+      if (
+        nextCanvas &&
+        Number.isFinite(Number(nextCanvas.w)) &&
+        Number.isFinite(Number(nextCanvas.h))
+      ) {
+        setCanvasSize({ w: Number(nextCanvas.w), h: Number(nextCanvas.h) });
+      } else {
+        setCanvasSize(initialCanvasSize);
+      }
 
-    const settings = boardState.settings || {};
-    setShowGrid(typeof settings.showGrid === "boolean" ? settings.showGrid : true);
-    setSnapToGrid(typeof settings.snapToGrid === "boolean" ? settings.snapToGrid : true);
-    if (Number.isFinite(Number(settings.gridSize)) && Number(settings.gridSize) > 0) {
-      setGridSize(Number(settings.gridSize));
-    } else {
-      setGridSize(DEFAULT_GRID);
-    }
+      const settings = boardState.settings || {};
+      setShowGrid(typeof settings.showGrid === "boolean" ? settings.showGrid : true);
+      setSnapToGrid(typeof settings.snapToGrid === "boolean" ? settings.snapToGrid : true);
 
-    const nextItems = Array.isArray(boardState.items) ? boardState.items : [];
-    setItems(nextItems);
+      if (Number.isFinite(Number(settings.gridSize)) && Number(settings.gridSize) > 0) {
+        setGridSize(Number(settings.gridSize));
+      } else {
+        setGridSize(DEFAULT_GRID);
+      }
 
-    const maybeSelected = boardState.selectedId;
-    if (maybeSelected && nextItems.some((it) => it.id === maybeSelected)) {
-      setSelectedId(maybeSelected);
-    } else {
-      setSelectedId(null);
-    }
-  }, [initialCanvasSize]);
+      // Palette + active color
+      const nextPalette = uniqHexList(settings.palette);
+      if (nextPalette.length) setPalette(nextPalette);
+
+      const nextActive = normalizeHex(settings.activeColor);
+      if (nextActive) setActiveColor(nextActive);
+
+      // Builder UI
+      const nextAccent = normalizeHex(settings.uiAccent);
+      if (nextAccent) setUiAccent(nextAccent);
+
+      if (settings.uiDensity === "compact" || settings.uiDensity === "comfortable") {
+        setUiDensity(settings.uiDensity);
+      }
+
+      const nextItems = Array.isArray(boardState.items) ? boardState.items : [];
+      setItems(nextItems);
+
+      const maybeSelected = boardState.selectedId;
+      if (maybeSelected && nextItems.some((it) => it.id === maybeSelected)) {
+        setSelectedId(maybeSelected);
+      } else {
+        setSelectedId(null);
+      }
+    },
+    [initialCanvasSize]
+  );
 
   const value = {
     canvasSize,
     setCanvasSize,
+
     showGrid,
     setShowGrid,
     snapToGrid,
     setSnapToGrid,
     gridSize,
     setGridSize,
+
+    // Board colors
+    palette,
+    setPalette,
+    activeColor,
+    setActiveColor,
+    addPaletteColor,
+    removePaletteColor,
+    applyActiveColorToSelected,
+
+    // Builder UI (site)
+    uiAccent,
+    setUiAccent,
+    uiDensity,
+    setUiDensity,
+
     items,
     addItem,
     updateItem,
@@ -233,11 +350,7 @@ export function CanvasProvider({
     loadBoardState,
   };
 
-  return (
-    <CanvasContext.Provider value={value}>
-      {children}
-    </CanvasContext.Provider>
-  );
+  return <CanvasContext.Provider value={value}>{children}</CanvasContext.Provider>;
 }
 
 export function useCanvas() {
