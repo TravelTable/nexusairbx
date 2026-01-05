@@ -1,5 +1,5 @@
 // src/pages/UiBuilderPage.jsx
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "./firebase";
 import { CanvasProvider, useCanvas } from "../components/canvascomponents/CanvasContext";
@@ -31,6 +31,7 @@ function UiBuilderPageInner() {
     canvasSize,
     setCanvasSize,
     items,
+
     selectedId,
     setSelectedId,
     selectedItem,
@@ -45,16 +46,10 @@ function UiBuilderPageInner() {
     // Board palette
     palette,
     activeColor,
-    setActiveColor,
-    addPaletteColor,
-    removePaletteColor,
-    applyActiveColorToSelected,
 
     // Builder UI (site)
     uiAccent,
-    setUiAccent,
     uiDensity,
-    setUiDensity,
 
     addItem,
     updateItem,
@@ -66,6 +61,12 @@ function UiBuilderPageInner() {
     onPointerMove,
     endPointerAction,
     loadBoardState,
+
+    // Preview runtime
+    previewMode,
+    setPreviewMode,
+    renderItems,
+    resetPreview,
   } = useCanvas();
 
   const [boards, setBoards] = useState([]);
@@ -211,7 +212,7 @@ function UiBuilderPageInner() {
       type === "TextLabel"
         ? { w: 220, h: 60, text: "TextLabel" }
         : type === "TextButton"
-        ? { w: 200, h: 60, text: "Button" }
+        ? { w: 200, h: 60, text: "Button", onClick: null }
         : type === "ImageLabel"
         ? { w: 240, h: 140, imageId: "rbxassetid://" }
         : { w: 240, h: 140 };
@@ -443,16 +444,7 @@ function UiBuilderPageInner() {
     }
   }
 
-  const selectedLabel = useMemo(() => {
-    if (!selectedItem) return "";
-    if (selectedItem.type === "MonetizationButton") {
-      const kind = selectedItem.monetizationKind || "Robux";
-      const id = selectedItem.monetizationId || "(missing id)";
-      return `${kind} â€¢ ${id}`;
-    }
-    return selectedItem.type;
-  }, [selectedItem]);
-
+  
   return (
     <div style={styles.page}>
       {/* Top bar */}
@@ -471,6 +463,25 @@ function UiBuilderPageInner() {
           </button>
           <button onClick={() => setSnapToGrid((v) => !v)} style={btnStyle("secondary")}>
             {snapToGrid ? "Snap: On" : "Snap: Off"}
+          </button>
+          <button
+            onClick={() => {
+              setPreviewMode((v) => !v);
+              resetPreview?.();
+              clearSelection?.();
+            }}
+            style={btnStyle(previewMode ? "primary" : "secondary")}
+            title="Preview Mode lets you click buttons and see interactions without editing the board."
+          >
+            {previewMode ? "Preview: On" : "Preview: Off"}
+          </button>
+          <button
+            onClick={() => resetPreview?.()}
+            style={btnStyle("secondary")}
+            disabled={!previewMode}
+            title="Reset preview runtime back to the designed state"
+          >
+            Reset Preview
           </button>
           <button
             style={btnStyle("primary", uiAccent)}
@@ -512,12 +523,57 @@ function UiBuilderPageInner() {
             </div>
           </Section>
 
-          <Section title="Elements">
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-              <button style={btnStyle("secondary")} onClick={() => addPrimitive("Frame")}>+ Frame</button>
-              <button style={btnStyle("secondary")} onClick={() => addPrimitive("TextLabel")}>+ TextLabel</button>
-              <button style={btnStyle("secondary")} onClick={() => addPrimitive("TextButton")}>+ TextButton</button>
-              <button style={btnStyle("secondary")} onClick={() => addPrimitive("ImageLabel")}>+ ImageLabel</button>
+          <Section title="Layers">
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              {items
+                .slice()
+                .sort((a, b) => (b.zIndex || 1) - (a.zIndex || 1))
+                .map((it) => (
+                  <button
+                    key={it.id}
+                    onClick={() => {
+                      if (previewMode) return;
+                      setSelectedId(it.id);
+                    }}
+                    style={{
+                      ...btnStyle("ghost"),
+                      textAlign: "left",
+                      border: it.id === selectedId ? "1px solid rgba(59,130,246,0.65)" : "1px solid rgba(148,163,184,0.18)",
+                      background: it.id === selectedId ? "rgba(59,130,246,0.10)" : "rgba(15,23,42,0.35)",
+                      opacity: it.visible === false ? 0.55 : 1,
+                    }}
+                    title={`zIndex: ${it.zIndex || 1}`}
+                  >
+                    <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
+                      <div style={{ fontSize: 12, fontWeight: 800 }}>
+                        {it.name || it.type}
+                        <span style={{ fontSize: 11, opacity: 0.7, marginLeft: 8 }}>({it.type})</span>
+                      </div>
+                      <div style={{ fontSize: 11, opacity: 0.7 }}>z {it.zIndex || 1}</div>
+                    </div>
+                  </button>
+                ))}
+
+              {items.length === 0 && <div style={{ fontSize: 12, opacity: 0.65 }}>No items yet.</div>}
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginTop: 10 }}>
+              <button
+                style={btnStyle("secondary")}
+                disabled={!selectedId || previewMode}
+                onClick={() => bringToFront?.()}
+                title="Bring selected item forward"
+              >
+                Bring Front
+              </button>
+              <button
+                style={btnStyle("secondary")}
+                disabled={!selectedId || previewMode}
+                onClick={() => sendToBack?.()}
+                title="Send selected item backward"
+              >
+                Send Back
+              </button>
             </div>
           </Section>
 
@@ -678,33 +734,33 @@ function UiBuilderPageInner() {
             onPointerDown={clearSelection}
             style={{ ...styles.canvas, width: canvasSize.w, height: canvasSize.h }}
           >
-          <CanvasGrid enabled={showGrid} size={gridSize} />
+            <CanvasGrid enabled={showGrid} size={gridSize} />
 
-          {/* Screenshot overlay for alignment (view-only; not persisted) */}
-          {refImageUrl && showRefOverlay && (
-            <img
-              src={refImageUrl}
-              alt="Reference overlay"
-              style={{
-                position: "absolute",
-                inset: 0,
-                width: "100%",
-                height: "100%",
-                objectFit: "fill",
-                opacity: refOverlayOpacity,
-                pointerEvents: "none",
-                filter: "saturate(0.95) contrast(1.02)",
-              }}
-            />
-          )}
+            {/* Screenshot overlay for alignment (view-only; not persisted) */}
+            {refImageUrl && showRefOverlay && (
+              <img
+                src={refImageUrl}
+                alt="Reference overlay"
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "fill",
+                  opacity: refOverlayOpacity,
+                  pointerEvents: "none",
+                  filter: "saturate(0.95) contrast(1.02)",
+                }}
+              />
+            )}
 
             <div style={styles.canvasBadge}>ScreenGui {canvasSize.w}Ã—{canvasSize.h}</div>
 
-            {items
+            {(previewMode ? renderItems : items)
               .slice()
               .sort((a, b) => (a.zIndex || 1) - (b.zIndex || 1))
               .map((it) => (
-                <CanvasItem key={it.id} item={it} selected={it.id === selectedId} canvasRef={canvasRef} />
+                <CanvasItem key={it.id} item={it} selected={!previewMode && it.id === selectedId} canvasRef={canvasRef} />
               ))}
           </div>
         </div>
@@ -712,8 +768,14 @@ function UiBuilderPageInner() {
         {/* Right */}
         <div style={{ borderLeft: "1px solid rgba(148,163,184,0.2)", padding: uiDensity === "compact" ? 10 : 12, overflow: "auto" }}>
           <Section title="Properties">
-            {!selectedItem ? (
-              <div style={{ fontSize: 12, opacity: 0.7 }}>Select an element on the canvas to edit properties.</div>
+            {previewMode ? (
+              <div style={{ fontSize: 12, opacity: 0.75 }}>
+                Preview Mode is ON. Turn it off to edit properties.
+              </div>
+            ) : !selectedItem ? (
+              <div style={{ fontSize: 12, opacity: 0.7 }}>
+                Select an element on the canvas to edit properties.
+              </div>
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                 <div style={{ fontSize: 12, opacity: 0.9 }}>
@@ -726,177 +788,122 @@ function UiBuilderPageInner() {
                   <button style={btnStyle("danger")} onClick={deleteSelected}>Delete</button>
                 </div>
 
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-                  <label style={labelStyle()}>
-                    Name
-                    <input
-                      value={selectedItem.name || ""}
-                      onChange={(e) => updateItem(selectedItem.id, { name: e.target.value })}
-                      style={inputStyle()}
-                    />
-                  </label>
-
-                  <label style={labelStyle()}>
-                    ZIndex
-                    <input
-                      type="number"
-                      value={Number(selectedItem.zIndex || 1)}
-                      onChange={(e) => updateItem(selectedItem.id, { zIndex: Number(e.target.value || 1) })}
-                      style={inputStyle()}
-                    />
-                  </label>
-                </div>
-
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-                  <label style={labelStyle()}>
-                    X
-                    <input
-                      type="number"
-                      value={Number(selectedItem.x || 0)}
-                      onChange={(e) => updateItem(selectedItem.id, { x: Number(e.target.value || 0) })}
-                      style={inputStyle()}
-                    />
-                  </label>
-                  <label style={labelStyle()}>
-                    Y
-                    <input
-                      type="number"
-                      value={Number(selectedItem.y || 0)}
-                      onChange={(e) => updateItem(selectedItem.id, { y: Number(e.target.value || 0) })}
-                      style={inputStyle()}
-                    />
-                  </label>
-                  <label style={labelStyle()}>
-                    W
-                    <input
-                      type="number"
-                      value={Number(selectedItem.w || 0)}
-                      onChange={(e) => updateItem(selectedItem.id, { w: Number(e.target.value || 0) })}
-                      style={inputStyle()}
-                    />
-                  </label>
-                  <label style={labelStyle()}>
-                    H
-                    <input
-                      type="number"
-                      value={Number(selectedItem.h || 0)}
-                      onChange={(e) => updateItem(selectedItem.id, { h: Number(e.target.value || 0) })}
-                      style={inputStyle()}
-                    />
-                  </label>
-                </div>
-
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-                  <button
-                    style={btnStyle(selectedItem.visible === false ? "danger" : "secondary")}
-                    onClick={() => updateItem(selectedItem.id, { visible: !(selectedItem.visible !== false) })}
-                  >
-                    {selectedItem.visible === false ? "Hidden" : "Visible"}
-                  </button>
-
-                  <button
-                    style={btnStyle(selectedItem.locked ? "danger" : "secondary")}
-                    onClick={() => updateItem(selectedItem.id, { locked: !selectedItem.locked })}
-                  >
-                    {selectedItem.locked ? "Locked" : "Unlocked"}
-                  </button>
-                </div>
-
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-                  <label style={labelStyle()}>
-                    Fill
-                    <input
-                      value={selectedItem.fill || ""}
-                      onChange={(e) => updateItem(selectedItem.id, { fill: e.target.value })}
-                      style={inputStyle()}
-                    />
-                  </label>
-
-                  <label style={labelStyle()}>
-                    Radius
-                    <input
-                      type="number"
-                      value={Number(selectedItem.radius || 0)}
-                      onChange={(e) => updateItem(selectedItem.id, { radius: Number(e.target.value || 0) })}
-                      style={inputStyle()}
-                    />
-                  </label>
-                </div>
-
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-                  <button
-                    style={btnStyle(selectedItem.stroke ? "secondary" : "ghost")}
-                    onClick={() => updateItem(selectedItem.id, { stroke: !selectedItem.stroke })}
-                  >
-                    {selectedItem.stroke ? "Stroke: On" : "Stroke: Off"}
-                  </button>
-
-                  <label style={labelStyle()}>
-                    Stroke Width
-                    <input
-                      type="number"
-                      value={Number(selectedItem.strokeWidth || 0)}
-                      onChange={(e) => updateItem(selectedItem.id, { strokeWidth: Number(e.target.value || 0), stroke: true })}
-                      style={inputStyle()}
-                    />
-                  </label>
-
-                  <label style={labelStyle()}>
-                    Stroke Color
-                    <input
-                      value={selectedItem.strokeColor || ""}
-                      onChange={(e) => updateItem(selectedItem.id, { strokeColor: e.target.value, stroke: true })}
-                      style={inputStyle()}
-                    />
-                  </label>
-
-                  <div />
-                </div>
-
-                {(selectedItem.type === "TextLabel" || selectedItem.type === "TextButton") && (
+                {/* MVP behavior wiring: only TextButton gets onClick rules */}
+                {selectedItem.type === "TextButton" && (
                   <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                    <label style={labelStyle()}>
-                      Text
-                      <input
-                        value={selectedItem.text || ""}
-                        onChange={(e) => updateItem(selectedItem.id, { text: e.target.value })}
-                        style={inputStyle()}
-                      />
+                    <div style={{ fontSize: 12, fontWeight: 900, opacity: 0.9 }}>Interaction (OnClick)</div>
+
+                    <label style={{ fontSize: 12, opacity: 0.85 }}>
+                      Action
+                      <select
+                        value={selectedItem.onClick?.type || ""}
+                        onChange={(e) => {
+                          const nextType = e.target.value || "";
+                          updateItem(selectedItem.id, {
+                            onClick: nextType ? { ...(selectedItem.onClick || {}), type: nextType } : null,
+                          });
+                        }}
+                        style={{
+                          width: "100%",
+                          marginTop: 6,
+                          padding: "10px 10px",
+                          borderRadius: 12,
+                          border: "1px solid rgba(148,163,184,0.20)",
+                          background: "rgba(2,6,23,0.45)",
+                          color: "#e5e7eb",
+                          fontSize: 12,
+                          fontWeight: 800,
+                          outline: "none",
+                        }}
+                      >
+                        <option value="">None</option>
+                        <option value="ToggleVisible">Toggle Visible</option>
+                        <option value="SetVisible">Set Visible (true)</option>
+                        <option value="SetHidden">Set Visible (false)</option>
+                      </select>
                     </label>
 
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-                      <label style={labelStyle()}>
-                        Text Color
-                        <input
-                          value={selectedItem.textColor || ""}
-                          onChange={(e) => updateItem(selectedItem.id, { textColor: e.target.value })}
-                          style={inputStyle()}
-                        />
-                      </label>
+                    <label style={{ fontSize: 12, opacity: 0.85 }}>
+                      Target Element
+                      <select
+                        value={selectedItem.onClick?.targetId || ""}
+                        onChange={(e) => {
+                          const targetId = e.target.value || "";
+                          const existing = selectedItem.onClick || {};
+                          updateItem(selectedItem.id, {
+                            onClick: existing?.type ? { ...existing, targetId } : null,
+                          });
+                        }}
+                        style={{
+                          width: "100%",
+                          marginTop: 6,
+                          padding: "10px 10px",
+                          borderRadius: 12,
+                          border: "1px solid rgba(148,163,184,0.20)",
+                          background: "rgba(2,6,23,0.45)",
+                          color: "#e5e7eb",
+                          fontSize: 12,
+                          fontWeight: 800,
+                          outline: "none",
+                        }}
+                      >
+                        <option value="">— Select —</option>
+                        {items
+                          .filter((it) => it.id !== selectedItem.id)
+                          .map((it) => (
+                            <option key={it.id} value={it.id}>
+                              {it.name || it.type} ({it.type})
+                            </option>
+                          ))}
+                      </select>
+                    </label>
 
-                      <label style={labelStyle()}>
-                        Font Size
-                        <input
-                          type="number"
-                          value={Number(selectedItem.fontSize || 18)}
-                          onChange={(e) => updateItem(selectedItem.id, { fontSize: Number(e.target.value || 18) })}
-                          style={inputStyle()}
-                        />
-                      </label>
+                    <div style={{ fontSize: 11, opacity: 0.7 }}>
+                      Tip: Make a modal by setting it Hidden first, then ToggleVisible it from a button.
                     </div>
+
+                    <button
+                      style={btnStyle("secondary")}
+                      onClick={() => {
+                        const r = selectedItem.onClick;
+                        if (!r) return;
+                        if (r.type === "SetHidden") {
+                          updateItem(selectedItem.id, { onClick: { type: "SetVisible", targetId: r.targetId, value: false } });
+                        } else if (r.type === "SetVisible" && r.value === undefined) {
+                          updateItem(selectedItem.id, { onClick: { ...r, value: true } });
+                        }
+                      }}
+                    >
+                      Normalize Rule
+                    </button>
                   </div>
                 )}
 
-                {selectedItem.type === "ImageLabel" && (
-                  <label style={labelStyle()}>
-                    ImageId
-                    <input
-                      value={selectedItem.imageId || ""}
-                      onChange={(e) => updateItem(selectedItem.id, { imageId: e.target.value })}
-                      style={inputStyle()}
-                    />
-                  </label>
-                )}
+                {/* Prompt-linked notes (constraints for AI edits) */}
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  <div style={{ fontSize: 12, fontWeight: 900, opacity: 0.9 }}>AI Notes (constraints)</div>
+                  <textarea
+                    value={selectedItem.aiNote || ""}
+                    onChange={(e) => updateItem(selectedItem.id, { aiNote: e.target.value })}
+                    placeholder='Example: "OnClick should open the Shop modal and play a click sound. Ask for SoundId if missing."'
+                    style={{
+                      width: "100%",
+                      minHeight: 90,
+                      resize: "vertical",
+                      borderRadius: 12,
+                      border: "1px solid rgba(148,163,184,0.22)",
+                      background: "rgba(2,6,23,0.55)",
+                      color: "#e5e7eb",
+                      padding: 10,
+                      outline: "none",
+                      fontSize: 12,
+                      lineHeight: 1.35,
+                    }}
+                  />
+                  <div style={{ fontSize: 11, opacity: 0.7 }}>
+                    These notes will be passed to AI later as constraints for this element.
+                  </div>
+                </div>
               </div>
             )}
           </Section>
@@ -915,59 +922,6 @@ function Section({ title, children }) {
   );
 }
 
-function Group({ title, children }) {
-  return (
-    <div style={styles.group}>
-      <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 0.4, opacity: 0.85, marginBottom: 10 }}>{title}</div>
-      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>{children}</div>
-    </div>
-  );
-}
-
-function Row({ label, children }) {
-  return (
-    <div style={{ display: "grid", gridTemplateColumns: "120px 1fr", alignItems: "center", gap: 10 }}>
-      <div style={{ fontSize: 11, opacity: 0.75, fontWeight: 800 }}>{label}</div>
-      <div>{children}</div>
-    </div>
-  );
-}
-
-function NumberInput({ value, onChange, min = -99999, max = 99999 }) {
-  return (
-    <input
-      type="number"
-      value={Number.isFinite(Number(value)) ? Number(value) : 0}
-      min={min}
-      max={max}
-      onChange={(e) => {
-        const n = Number(e.target.value);
-        if (!Number.isFinite(n)) return;
-        onChange?.(n);
-      }}
-      style={inputStyle()}
-    />
-  );
-}
-
-function ColorInput({ value, onChange }) {
-  const safe = isHex(value) ? value : "#111827";
-  return (
-    <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-      <input type="color" value={safe} onChange={(e) => onChange?.(e.target.value)} style={styles.colorChip} />
-      <input value={value || ""} onChange={(e) => onChange?.(e.target.value)} style={inputStyle()} />
-    </div>
-  );
-}
-
-function isHex(v) {
-  return typeof v === "string" && /^#[0-9a-fA-F]{6}$/.test(v.trim());
-}
-
-function labelStyle() {
-  return { display: "flex", flexDirection: "column", gap: 6, fontSize: 11, opacity: 0.9 };
-}
-
 function inputStyle() {
   return {
     width: "100%",
@@ -979,32 +933,6 @@ function inputStyle() {
     outline: "none",
     fontSize: 12,
     fontWeight: 700,
-  };
-}
-
-function textareaStyle() {
-  return {
-    ...inputStyle(),
-    resize: "vertical",
-    minHeight: 60,
-    fontFamily: "inherit",
-  };
-}
-
-function selectStyle() {
-  return {
-    ...inputStyle(),
-    cursor: "pointer",
-  };
-}
-
-function toggleStyle() {
-  return {
-    display: "flex",
-    alignItems: "center",
-    fontSize: 12,
-    fontWeight: 800,
-    opacity: 0.9,
   };
 }
 
@@ -1022,14 +950,39 @@ function btnStyle(variant, accent = "#3b82f6") {
   };
 
   if (variant === "primary") {
-    return { ...base, background: accent, border: `1px solid ${accent}` };
+    return {
+      ...base,
+      background: accent,
+      border: `1px solid ${accent}`,
+    };
   }
-  if (variant === "danger") {
-    return { ...base, background: "rgba(239,68,68,0.85)", border: "1px solid rgba(239,68,68,0.55)" };
+
+  if (variant === "secondary") {
+    return {
+      ...base,
+      background: "rgba(59,130,246,0.09)",
+      border: "1px solid rgba(59,130,246,0.4)",
+    };
   }
+
   if (variant === "ghost") {
-    return { ...base, background: "rgba(2,6,23,0.20)" };
+    return {
+      ...base,
+      background: "rgba(2,6,23,0.25)",
+      border: "1px solid rgba(148,163,184,0.15)",
+      color: "#cbd5e1",
+    };
   }
+
+  if (variant === "danger") {
+    return {
+      ...base,
+      background: "rgba(239,68,68,0.18)",
+      border: "1px solid rgba(239,68,68,0.55)",
+      color: "#fecdd3",
+    };
+  }
+
   return base;
 }
 

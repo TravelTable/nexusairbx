@@ -66,6 +66,13 @@ export function CanvasProvider({
   const [snapToGrid, setSnapToGrid] = useState(true);
   const [gridSize, setGridSize] = useState(DEFAULT_GRID);
 
+  // --- Preview Runtime (MVP) ---
+  // Preview shows “live” interactions without mutating the board JSON.
+  const [previewMode, setPreviewMode] = useState(false);
+  const [previewOverrides, setPreviewOverrides] = useState(() => ({
+    visibleById: {},
+  }));
+
   // Board-level palette (used for Roblox UI colors)
   const [palette, setPalette] = useState(DEFAULT_PALETTE);
   const [activeColor, setActiveColor] = useState("#3b82f6");
@@ -151,6 +158,9 @@ export function CanvasProvider({
 
   const beginMove = useCallback(
     (id, startX, startY) => {
+      // In Preview Mode, the canvas is “live” and should not allow dragging.
+      if (previewMode) return;
+
       const it = items.find((x) => x.id === id);
       if (!it || it.locked) return;
 
@@ -162,11 +172,14 @@ export function CanvasProvider({
         origin: { x: it.x, y: it.y, w: it.w, h: it.h },
       };
     },
-    [items]
+    [items, previewMode]
   );
 
   const beginResize = useCallback(
     (id, startX, startY) => {
+      // Resizing is edit-only; disable in Preview Mode.
+      if (previewMode) return;
+
       const it = items.find((x) => x.id === id);
       if (!it || it.locked) return;
 
@@ -178,7 +191,7 @@ export function CanvasProvider({
         origin: { x: it.x, y: it.y, w: it.w, h: it.h },
       };
     },
-    [items]
+    [items, previewMode]
   );
 
   const onPointerMove = useCallback(
@@ -295,6 +308,9 @@ export function CanvasProvider({
       const nextItems = Array.isArray(boardState.items) ? boardState.items : [];
       setItems(nextItems);
 
+      // Clear preview runtime whenever a board loads so old overlay state doesn’t linger.
+      setPreviewOverrides({ visibleById: {} });
+
       const maybeSelected = boardState.selectedId;
       if (maybeSelected && nextItems.some((it) => it.id === maybeSelected)) {
         setSelectedId(maybeSelected);
@@ -304,6 +320,86 @@ export function CanvasProvider({
     },
     [initialCanvasSize]
   );
+
+  /**
+   * Apply preview overrides (visibility) without mutating source items.
+   */
+  const renderItems = useMemo(() => {
+    if (!previewMode) return items;
+
+    const vis = previewOverrides.visibleById || {};
+    return items.map((it) => {
+      if (Object.prototype.hasOwnProperty.call(vis, it.id)) {
+        return { ...it, visible: !!vis[it.id] };
+      }
+      return it;
+    });
+  }, [items, previewMode, previewOverrides]);
+
+  const resetPreview = useCallback(() => {
+    setPreviewOverrides({ visibleById: {} });
+  }, []);
+
+  /**
+   * Minimal interaction handler (MVP): supports onClick rules on items.
+   * Rules:
+   *   { type: "ToggleVisible", targetId }
+   *   { type: "SetVisible", targetId, value: boolean }
+   */
+  const triggerItem = useCallback(
+    (sourceId, trigger) => {
+      if (!previewMode) return;
+      if (trigger !== "OnClick") return;
+
+      const src = items.find((x) => x.id === sourceId);
+      if (!src) return;
+
+      const rule = src.onClick;
+      if (!rule || typeof rule !== "object") return;
+      const { type, targetId } = rule;
+      if (!targetId) return;
+
+      if (type === "ToggleVisible") {
+        setPreviewOverrides((prev) => {
+          const oldVis = prev.visibleById || {};
+          const current = Object.prototype.hasOwnProperty.call(oldVis, targetId)
+            ? !!oldVis[targetId]
+            : !!(items.find((x) => x.id === targetId)?.visible);
+
+          return {
+            ...prev,
+            visibleById: {
+              ...oldVis,
+              [targetId]: !current,
+            },
+          };
+        });
+        return;
+      }
+
+    if (type === "SetVisible") {
+      const value = rule.value === undefined ? true : !!rule.value;
+      setPreviewOverrides((prev) => ({
+        ...prev,
+        visibleById: {
+          ...(prev.visibleById || {}),
+          [targetId]: value,
+        },
+      }));
+    }
+
+    if (type === "SetHidden") {
+      setPreviewOverrides((prev) => ({
+        ...prev,
+        visibleById: {
+          ...(prev.visibleById || {}),
+          [targetId]: false,
+        },
+      }));
+    }
+  },
+  [items, previewMode]
+);
 
   const value = {
     canvasSize,
@@ -331,11 +427,13 @@ export function CanvasProvider({
     uiDensity,
     setUiDensity,
 
+    // Board truth
     items,
     addItem,
     updateItem,
     deleteSelected,
     setItems,
+
     selectedId,
     setSelectedId,
     selectedItem,
@@ -348,6 +446,13 @@ export function CanvasProvider({
     bringToFront,
     sendToBack,
     loadBoardState,
+
+    // Preview runtime
+    previewMode,
+    setPreviewMode,
+    renderItems,
+    triggerItem,
+    resetPreview,
   };
 
   return <CanvasContext.Provider value={value}>{children}</CanvasContext.Provider>;

@@ -11,7 +11,15 @@ import { useCanvas } from "./CanvasContext";
  * - All math/state lives in CanvasContext
  */
 export default function CanvasItem({ item, selected, canvasRef }) {
-  const { selectItem, beginMove, beginResize } = useCanvas();
+  const {
+    selectItem,
+    beginMove,
+    beginResize,
+
+    // Preview runtime
+    previewMode,
+    triggerItem,
+  } = useCanvas();
 
   const {
     id,
@@ -53,6 +61,14 @@ export default function CanvasItem({ item, selected, canvasRef }) {
     e.preventDefault();
     e.stopPropagation();
     if (locked) return;
+
+    // Preview Mode: treat UI as “live” (no drag/resize)
+    if (previewMode) {
+      if (type === "TextButton") {
+        triggerItem?.(id, "OnClick");
+      }
+      return;
+    }
 
     // select first
     selectItem(id, e);
@@ -204,7 +220,7 @@ export default function CanvasItem({ item, selected, canvasRef }) {
       ) : null}
 
       {/* Resize handle */}
-      {selected && !locked && <ResizeHandle onPointerDown={handleResizePointerDown} />}
+      {!previewMode && selected && !locked && <ResizeHandle onPointerDown={handleResizePointerDown} />}
     </div>
   );
 }
