@@ -8,6 +8,7 @@ import CanvasGrid from "../components/canvascomponents/CanvasGrid";
 import CanvasItem from "../components/canvascomponents/CanvasItem";
 import NexusRBXHeader from "../components/NexusRBXHeader";
 import TokensCounterContainer from "../components/TokensCounterContainer";
+import { useBilling } from "../context/BillingContext";
 import { listBoards, createBoard, getBoard, getSnapshot, createSnapshot, aiGenerateBoard, aiImportFromImage } from "../lib/uiBuilderApi";
 
 const MONETIZATION_KINDS = [
@@ -104,12 +105,13 @@ function UiBuilderPageInner() {
   const [showRefOverlay, setShowRefOverlay] = useState(true);
   const [refOverlayOpacity, setRefOverlayOpacity] = useState(0.28);
 
-  // Token bar (placeholder values until hooked to backend billing)
+  // Billing / tokens
+  const billing = useBilling();
   const tokenInfo = {
-    sub: { remaining: 0, limit: 0 },
-    payg: { remaining: 0 },
+    sub: { remaining: Math.max(0, Number(billing?.subRemaining ?? 0)), limit: Number(billing?.subRemaining ?? 0) },
+    payg: { remaining: Math.max(0, Number(billing?.paygRemaining ?? 0)) },
   };
-  const tokenLoading = false;
+  const tokenLoading = !!billing?.loading;
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (u) => setUser(u || null));
