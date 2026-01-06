@@ -468,76 +468,77 @@ function UiBuilderPageInner() {
     };
   }
 
-  function sanitizeBoardState(input) {
-    const clamp = (n, lo, hi) => Math.max(lo, Math.min(hi, n));
-    const snap = (n, grid = 8) => Math.round(Number(n || 0) / grid) * grid;
+  function sanitizeBoardState(maybeState) {
+    // ---- Roblox Style Pack v1 (hard constraints) ----
+    const ROBLOX_STYLE = {
+      grid: 8,
+      buttonH: 48,
+      radius: { card: 16, button: 14, row: 12, chip: 10 },
+      stroke: { width: 2, cardAlpha: 0.65, controlAlpha: 0.72 },
+      alpha: {
+        cardBgMax: 0.35,
+        cardBgMin: 0.15,
+        buttonBgMax: 0.55,
+        buttonBgMin: 0.05,
+        controlBgMax: 0.60,
+        controlBgMin: 0.18,
+        textMax: 0.12,
+        mutedText: 0.25,
+        strokeMax: 0.80,
+        strokeMin: 0.45,
+      },
+      textSizes: { h1: 34, h2: 24, body: 18, small: 16, caption: 14 },
+      buttonH: 48,
+    };
 
-    function normalizeRadius(r) {
-      if (Array.isArray(r)) {
-        const nums = r.map((x) => Number(x)).filter((x) => Number.isFinite(x));
-        return nums.length ? clamp(Math.max(...nums), 0, 200) : 12;
-      }
-      if (r && typeof r === "object") {
-        const nums = ["tl", "tr", "br", "bl"]
-          .map((k) => Number(r[k]))
-          .filter((x) => Number.isFinite(x));
-        return nums.length ? clamp(Math.max(...nums), 0, 200) : 12;
-      }
-      const n = Number(r);
-      return Number.isFinite(n) ? clamp(n, 0, 200) : 12;
-    }
+    const state = (maybeState && typeof maybeState === "object") ? maybeState : {};
 
-    function normalizeStroke(it) {
-      const strokeThickness = it.strokeThickness ?? it.strokeWidth ?? 2;
-      const strokeWidth = clamp(Number(strokeThickness) || 2, 0, 20);
-
-      if (typeof it.stroke === "string") {
-        return {
-          stroke: true,
-          strokeColor: it.stroke,
-          strokeWidth,
-        };
-      }
-
-      const strokeBool =
-        typeof it.stroke === "boolean"
-          ? it.stroke
-          : !!it.strokeColor;
-
-      return {
-        stroke: strokeBool,
-        strokeColor: String(it.strokeColor || "rgba(148,163,184,0.22)"),
-        strokeWidth,
-      };
-    }
-
-    function normalizeType(t, it) {
-      const type = String(t || "").trim();
-      if (type === "ImageButton") return "TextButton";
-
-      const allowed = new Set([
-        "Frame",
-        "TextLabel",
-        "TextButton",
-        "ImageLabel",
-        "Rectangle",
-        "Circle",
-        "Line",
-        "Group",
-        "Spacer",
-        "MonetizationButton",
-      ]);
-
-      return allowed.has(type) ? type : "Frame";
-    }
-
-    const state = (input && typeof input === "object") ? input : {};
     const safeCanvas = state.canvasSize && typeof state.canvasSize === "object"
-      ? {
-          w: clamp(Number(state.canvasSize.w) || 1280, 320, 4096),
-          h: clamp(Number(state.canvasSize.h) || 720, 240, 4096),
-        }
-      : { w: 1280, h: 720 };
+      ? { w: Number(state.canvasSize.w) || canvasSize.w, h: Number(state.canvasSize.h) || canvasSize.h }
+      : { w: canvasSize.w, h: canvasSize.h };
+
+    const clamp = (n, lo, hi) => Math.max(lo, Math.min(hi, n));
+    const snap = (n, grid = ROBLOX_STYLE.grid) => Math.round(Number(n || 0) / grid) * grid;
+
+    const parseColor = (input) => {
+      const s = String(input || "").trim();
+      if (!s || s === "transparent") return { rgb: "#ffffff", a: 0 };
+
+      const m = s.match(/^rgba?\(\s*([0-9.]+)\s*,\s*([0-9.]+)\s*,\s*([0-9.]+)\s*(?:,\s*([0-9.]+)\s*)?\)$/i);
+      if (m) {
+        const r = clamp(Number(m[1]) || 0, 0, 255);
+        const g = clamp(Number(m[2]) || 0, 0, 255);
+        const b = clamp(Number(m[3]) || 0, 0, 255);
+        const a = m[4] === undefined ? 1 : clamp(Number(m[4]) || 1, 0, 1);
+        const hex = "#" + [r, g, b].map((v) => Math.round(v).toString(16).padStart(2, "0")).join("");
+        return { rgb: hex, a };
+      }
+
+      if (/^#([0-9a-f]{6})$/i.test(s)) return { rgb: s, a: 1 };
+      return { rgb: s, a: 1 };
+    };
+
+    const clampFill = (fill, kind) => {
+      const { rgb, a } = parseColor(fill);
+      let minA = 0.4;
+      let maxA = 1;
+      if (kind === "card") {
+        minA = 1 - ROBLOX_STYLE.alpha.cardBgMax;
+        maxA = 1 - ROBLOX_STYLE.alpha.cardBgMin;
+      } else if (kind === "button") {
+        minA = 1 - ROBLOX_STYLE.alpha.buttonBgMax;
+        maxA = 1 - ROBLOX_STYLE.alpha.buttonBgMin;
+      } else {
+        minA = 1 - ROBLOX_STYLE.alpha.controlBgMax;
+        maxA = 1 - ROBLOX_STYLE.alpha.controlBgMin;
+      }
+      const alpha = clamp(a, minA, maxA);
+      const hex = rgb.startsWith("#") ? rgb : "#111827";
+      const r = parseInt(hex.slice(1, 3), 16);
+      const g = parseInt(hex.slice(3, 5), 16);
+      const b = parseInt(hex.slice(5, 7), 16);
+      return `rgba(${r},${g},${b},${alpha.toFixed(3)})`;
+    };
 
     const normalizeRobloxImage = (val) => {
       if (val == null) return "";
@@ -550,65 +551,126 @@ function UiBuilderPageInner() {
       return s;
     };
 
+    function normalizeRadius(r, isCard, isButton) {
+      if (Array.isArray(r)) {
+        const nums = r.map((x) => Number(x)).filter((x) => Number.isFinite(x));
+        r = nums.length ? Math.max(...nums) : undefined;
+      } else if (r && typeof r === "object") {
+        const nums = ["tl", "tr", "br", "bl"].map((k) => Number(r[k])).filter((x) => Number.isFinite(x));
+        r = nums.length ? Math.max(...nums) : undefined;
+      }
+      if (!Number.isFinite(r)) {
+        r = isCard ? ROBLOX_STYLE.radius.card : (isButton ? ROBLOX_STYLE.radius.button : ROBLOX_STYLE.radius.row);
+      }
+      return clamp(Number(r) || 0, 0, 40);
+    }
+
+    const normalizeStroke = (it) => {
+      const strokeThickness = it.strokeThickness ?? it.strokeWidth ?? ROBLOX_STYLE.stroke.width;
+      let strokeWidth = clamp(Number(strokeThickness) || ROBLOX_STYLE.stroke.width, 0, 10);
+
+      let stroke = !!it.stroke;
+      let strokeColor = String(it.strokeColor || "rgba(148,163,184,0.22)");
+      if (typeof it.stroke === "string") {
+        stroke = true;
+        strokeColor = it.stroke;
+      }
+
+      const sc = parseColor(strokeColor);
+      const strokeAlpha = clamp(sc.a, 1 - ROBLOX_STYLE.alpha.strokeMax, 1 - ROBLOX_STYLE.alpha.strokeMin);
+      const sr = parseInt(sc.rgb.slice(1, 3), 16);
+      const sg = parseInt(sc.rgb.slice(3, 5), 16);
+      const sb = parseInt(sc.rgb.slice(5, 7), 16);
+      strokeColor = `rgba(${sr},${sg},${sb},${strokeAlpha.toFixed(3)})`;
+
+      return { stroke, strokeColor, strokeWidth };
+    };
+
+    const normalizeType = (t) => {
+      const type = String(t || "").trim();
+      if (type === "ImageButton") return "TextButton";
+      const allowed = new Set([
+        "Frame",
+        "TextLabel",
+        "TextButton",
+        "ImageLabel",
+        "Rectangle",
+        "Circle",
+        "Line",
+        "Group",
+        "Spacer",
+        "MonetizationButton",
+      ]);
+      return allowed.has(type) ? type : "Frame";
+    };
+
     const itemsIn = Array.isArray(state.items) ? state.items : [];
 
     const items = itemsIn
       .filter((it) => it && typeof it === "object")
       .map((it, idx) => {
         const id = String(it.id || `it_${Date.now()}_${idx}`);
-        const type = normalizeType(it.type, it);
+        const type = normalizeType(it.type);
 
-        const w = snap(Math.max(10, Number(it.w) || 200), 8);
-        const h = snap(Math.max(10, Number(it.h) || 60), 8);
-        const x = clamp(snap(Number(it.x) || 0, 8), 0, safeCanvas.w - w);
-        const y = clamp(snap(Number(it.y) || 0, 8), 0, safeCanvas.h - h);
+        const w = snap(Math.max(10, Number(it.w) || 200));
+        const h = snap(Math.max(10, Number(it.h) || 100));
+        const x = clamp(snap(Number(it.x) || 0), 0, Math.max(0, safeCanvas.w - w));
+        const y = clamp(snap(Number(it.y) || 0), 0, Math.max(0, safeCanvas.h - h));
 
-        const radius = normalizeRadius(it.radius);
+        const isButton = type === "TextButton" || type === "MonetizationButton";
+        const isCard = type === "Frame" && w >= 320 && h >= 220;
+
+        const fill = clampFill(
+          it.fill || "#111827",
+          isCard ? "card" : (isButton ? "button" : "control")
+        );
+
+        const radius = normalizeRadius(it.radius, isCard, isButton);
+
         const strokeBits = normalizeStroke(it);
-        const textColor = String(it.textColor || it.color || "#e5e7eb");
-        const fill = String(it.fill ?? "#111827");
+
+        let textColor = String(it.textColor || it.color || "#e5e7eb");
+        const tc = parseColor(textColor);
+        const textAlpha = clamp(tc.a, 1 - ROBLOX_STYLE.alpha.textMax, 1);
+        textColor = `rgba(${parseInt(tc.rgb.slice(1, 3), 16)},${parseInt(tc.rgb.slice(3, 5), 16)},${parseInt(tc.rgb.slice(5, 7), 16)},${textAlpha.toFixed(3)})`;
 
         let text = String(it.text || "");
-        let fontSize = Number(it.fontSize) || 18;
+        let fontSize = Number(it.fontSize);
+        if (!Number.isFinite(fontSize)) fontSize = ROBLOX_STYLE.textSizes.body;
+        const allowedTextSizes = new Set(Object.values(ROBLOX_STYLE.textSizes));
+        if (!allowedTextSizes.has(fontSize)) fontSize = ROBLOX_STYLE.textSizes.body;
+
         if (String(it.type) === "ImageButton") {
           text = "×";
           fontSize = 22;
         }
 
+        const opacity = it.opacity === undefined ? undefined : clamp(Number(it.opacity) || 1, 0, 1);
+
         return {
           id,
           type,
           name: String(it.name || type),
-
           x,
           y,
           w,
           h,
           zIndex: Number(it.zIndex) || 1,
-
           fill,
           radius,
-
           ...strokeBits,
-
           text,
           textColor,
           fontSize,
-
           imageId: normalizeRobloxImage(it.imageId || ""),
-
           visible: typeof it.visible === "boolean" ? it.visible : true,
           locked: typeof it.locked === "boolean" ? it.locked : false,
-
-          opacity: it.opacity === undefined ? undefined : clamp(Number(it.opacity) || 1, 0, 1),
-
+          opacity,
           parentId: it.parentId ? String(it.parentId) : null,
           role: it.role ? String(it.role) : undefined,
           export: typeof it.export === "boolean" ? it.export : undefined,
-
           animations: Array.isArray(it.animations) ? it.animations.slice(0, 12) : undefined,
           interactions: (it.interactions && typeof it.interactions === "object") ? it.interactions : undefined,
-
           monetizationKind: it.monetizationKind ? String(it.monetizationKind) : undefined,
           monetizationId: it.monetizationId ? String(it.monetizationId) : undefined,
         };
