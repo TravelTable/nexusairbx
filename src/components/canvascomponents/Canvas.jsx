@@ -1,6 +1,7 @@
 import React, { useMemo, useRef } from "react";
 import CanvasGrid from "./CanvasGrid";
 import CanvasItem from "./CanvasItem";
+import { useCanvas } from "./CanvasContext";
 
 /**
  * Canvas
@@ -33,6 +34,7 @@ export default function Canvas({
   onPointerUp,
 }) {
   const canvasRef = useRef(null);
+  const { setSelectedImageId, selectedItem } = useCanvas();
 
   // Sort by ZIndex (Roblox-style layering)
   const sortedItems = useMemo(() => {
@@ -41,6 +43,42 @@ export default function Canvas({
 
   function handleBackgroundPointerDown() {
     onClearSelection?.();
+  }
+
+  function handleKeyDown(e) {
+    const isMac = navigator.platform.toLowerCase().includes("mac");
+    const mod = isMac ? e.metaKey : e.ctrlKey;
+
+    if (mod && (e.key === "i" || e.key === "I")) {
+      e.preventDefault();
+      if (!selectedItem || selectedItem.type !== "ImageLabel") {
+        alert("Select an ImageLabel first.");
+        return;
+      }
+      const current = selectedItem.imageId || "";
+      const raw = prompt(
+        "Paste Roblox Image ID or URL (examples: 12345, rbxassetid://12345, https://www.roblox.com/asset/?id=12345)",
+        current
+      );
+      if (raw == null) return;
+      setSelectedImageId(raw);
+    }
+  }
+
+  function handlePaste(e) {
+    if (!selectedItem || selectedItem.type !== "ImageLabel") return;
+    const text = e.clipboardData?.getData("text/plain");
+    if (!text) return;
+    const t = text.trim();
+    const looksRelevant =
+      /^\d+$/.test(t) ||
+      t.startsWith("rbxassetid://") ||
+      t.includes("roblox.com") ||
+      t.includes("asset/?id=") ||
+      t.includes("id=");
+    if (!looksRelevant) return;
+    e.preventDefault();
+    setSelectedImageId(t);
   }
 
   return (
@@ -54,6 +92,9 @@ export default function Canvas({
     >
       <div
         ref={canvasRef}
+        tabIndex={0}
+        onKeyDown={handleKeyDown}
+        onPaste={handlePaste}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
         onPointerCancel={onPointerUp}
@@ -68,13 +109,11 @@ export default function Canvas({
           border: "1px solid rgba(148,163,184,0.25)",
           boxShadow: "0 10px 40px rgba(0,0,0,0.35)",
           userSelect: "none",
+          outline: "none",
         }}
       >
         {/* Grid overlay */}
-        <CanvasGrid
-          enabled={showGrid}
-          snap={snapToGrid}
-        />
+        <CanvasGrid enabled={showGrid} snap={snapToGrid} />
 
         {/* ScreenGui size badge */}
         <div
@@ -107,11 +146,12 @@ export default function Canvas({
             }}
           >
             <div style={{ textAlign: "center" }}>
-              <div style={{ fontWeight: 900, fontSize: 18 }}>
-                Roblox UI Canvas
-              </div>
+              <div style={{ fontWeight: 900, fontSize: 18 }}>Roblox UI Canvas</div>
               <div style={{ fontSize: 12, opacity: 0.75, marginTop: 6 }}>
                 Add UI elements to place them exactly like Studio.
+              </div>
+              <div style={{ fontSize: 12, opacity: 0.75, marginTop: 10 }}>
+                Tip: Select an ImageLabel and press <b>Ctrl/Cmd + I</b> or paste an ID.
               </div>
             </div>
           </div>

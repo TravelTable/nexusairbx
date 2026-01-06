@@ -55,6 +55,17 @@ function uniqHexList(list, limit = 64) {
   return out;
 }
 
+function normalizeRobloxImage(input) {
+  if (input == null) return "";
+  const s = String(input).trim();
+  if (!s) return "";
+  if (/^\d+$/.test(s)) return `rbxassetid://${s}`;
+  if (s.startsWith("rbxassetid://")) return s;
+  const m = s.match(/asset\/\?id=(\d+)/i) || s.match(/id=(\d+)/i);
+  if (m?.[1]) return `rbxassetid://${m[1]}`;
+  return s;
+}
+
 export function CanvasProvider({
   children,
   initialCanvasSize = { w: 1280, h: 720 },
@@ -220,6 +231,18 @@ export function CanvasProvider({
   const selectedItem = useMemo(
     () => items.find((i) => i.id === selectedId) || null,
     [items, selectedId]
+  );
+
+  const setSelectedImageId = useCallback(
+    (raw) => {
+      if (!selectedId) return false;
+      const it = items.find((x) => x.id === selectedId);
+      if (!it || it.type !== "ImageLabel") return false;
+      const normalized = normalizeRobloxImage(raw);
+      updateItem(selectedId, { imageId: normalized });
+      return true;
+    },
+    [items, selectedId, updateItem]
   );
 
   const addPaletteColor = useCallback((hex) => {
@@ -565,6 +588,7 @@ export function CanvasProvider({
     updateItem,
     deleteSelected,
     setItems,
+    setSelectedImageId,
     undo,
     redo,
     canUndo: undoStack.current.length > 0,

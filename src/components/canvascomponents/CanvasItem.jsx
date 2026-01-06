@@ -147,6 +147,8 @@ export default function CanvasItem({ item, selected, canvasRef }) {
     type === "TextLabel" || type === "TextButton" || type === "MonetizationButton";
 
   const isImageLike = type === "ImageLabel";
+  const assetIdMatch = String(imageId || "").match(/(\d{5,})/);
+  const imageSrc = assetIdMatch ? `/api/roblox/thumbnail?assetId=${assetIdMatch[1]}&size=420x420` : null;
 
   const monetizationBadge =
     type === "MonetizationButton"
@@ -266,13 +268,31 @@ export default function CanvasItem({ item, selected, canvasRef }) {
             pointerEvents: "none",
           }}
         >
-          {/* Placeholder preview (later we can render actual images) */}
+          {imageSrc ? (
+            <img
+              src={imageSrc}
+              alt={name || "ImageLabel"}
+              style={{
+                position: "absolute",
+                inset: 0,
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
+                opacity: 0.96,
+              }}
+              onError={(e) => {
+                e.currentTarget.style.display = "none";
+              }}
+            />
+          ) : null}
+
           <div
             style={{
               position: "absolute",
               inset: 0,
               background:
                 "linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02))",
+              opacity: imageSrc ? 0.25 : 1,
             }}
           />
 
@@ -283,7 +303,7 @@ export default function CanvasItem({ item, selected, canvasRef }) {
               display: "grid",
               placeItems: "center",
               fontSize: 12,
-              opacity: 0.85,
+              opacity: imageSrc ? 0.0 : 0.85,
               padding: 10,
               textAlign: "center",
               color: "rgba(226,232,240,0.9)",

@@ -146,3 +146,31 @@ export async function aiImportFromImage({
   });
   return handleResponse(res);
 }
+
+/**
+ * AI: Suggest search keywords for missing ImageLabel image IDs.
+ * Backend returns keywords only (never IDs).
+ */
+export async function aiSuggestImageQueries({ token, items, boardPrompt = "" }) {
+  const res = await fetch(`${BACKEND_URL}/api/ui-builder/ai/suggest-image-queries`, {
+    method: "POST",
+    headers: authHeaders(token),
+    body: JSON.stringify({ items, boardPrompt }),
+  });
+  return handleResponse(res);
+}
+
+// --- Roblox helpers (no auth; backend proxies Roblox endpoints) ---
+export function robloxThumbnailUrl({ assetId, size = "420x420" }) {
+  const id = String(assetId || "").trim();
+  return `${BACKEND_URL}/api/roblox/thumbnail?assetId=${encodeURIComponent(id)}&size=${encodeURIComponent(size)}`;
+}
+
+export async function robloxCatalogSearch({ keyword, limit = 10 }) {
+  const q = String(keyword || "").trim();
+  const lim = Math.max(1, Math.min(30, Number(limit || 10)));
+  const res = await fetch(
+    `${BACKEND_URL}/api/roblox/catalog/search?keyword=${encodeURIComponent(q)}&limit=${encodeURIComponent(String(lim))}`
+  );
+  return handleResponse(res);
+}

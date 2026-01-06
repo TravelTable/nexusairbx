@@ -9,7 +9,7 @@ import CanvasItem from "../components/canvascomponents/CanvasItem";
 import { useBilling } from "../context/BillingContext";
 import PLAN_INFO from "../lib/planInfo";
 import { Info } from "lucide-react";
-import { listBoards, getBoard, getSnapshot, listSnapshots, createSnapshot, deleteBoard } from "../lib/uiBuilderApi";
+import { listBoards, getBoard, getSnapshot, listSnapshots, createSnapshot, deleteBoard, aiSuggestImageQueries, robloxCatalogSearch } from "../lib/uiBuilderApi";
 import { usePlanningBoard } from "../boards/usePlanningBoard";
 import { exportToRoblox } from "../lib/exportToRoblox";
 import LayersPanel from "../components/canvascomponents/LayersPanel";
@@ -118,8 +118,10 @@ function UiBuilderPageInner() {
   const [refImageUrl, setRefImageUrl] = useState("");
   const [rightsMode, setRightsMode] = useState("reference"); // "owned" | "reference"
   const [aiImporting, setAiImporting] = useState(false);
-  const aiBusy = aiGenerating || aiImporting;
-  const aiStatusText = aiGenerating ? "Generating UI from prompt..." : aiImporting ? "Importing from screenshot..." : "";
+  const [aiSuggesting, setAiSuggesting] = useState(false);
+  const [aiStatusMessage, setAiStatusMessage] = useState("");
+  const aiBusy = aiGenerating || aiImporting || aiSuggesting;
+  const aiStatusText = aiStatusMessage || (aiGenerating ? "Generating UI from prompt..." : aiImporting ? "Importing from screenshot..." : aiSuggesting ? "Suggesting image IDs..." : "");
   const [scaffoldOnly, setScaffoldOnly] = useState(false);
 
   // Canvas overlay controls for matching screenshot to board while editing
@@ -267,6 +269,51 @@ function UiBuilderPageInner() {
   };
 
   const handlePointerUp = () => endPointerAction();
+
+  // --- Drag/drop: drop a Roblox image asset id onto the canvas to create an ImageLabel ---
+  const handleCanvasDragOver = (e) => {
+    if (previewMode) return;
+    e.preventDefault();
+    try {
+      e.dataTransfer.dropEffect = "copy";
+    } catch {}
+  };
+
+  const handleCanvasDrop = (e) => {
+    if (previewMode) return;
+    e.preventDefault();
+    const raw = e.dataTransfer?.getData("text/plain") || e.dataTransfer?.getData("text") || "";
+    const m = String(raw).match(/(\d{5,})/);
+    if (!m) return;
+    const assetId = m[1];
+
+    const rect = canvasRef.current?.getBoundingClientRect();
+    const px = e.clientX - (rect?.left || 0);
+    const py = e.clientY - (rect?.top || 0);
+
+    const w = 240;
+    const h = 140;
+    const x = Math.round(Math.max(0, Math.min(canvasSize.w - w, px - w / 2)));
+    const y = Math.round(Math.max(0, Math.min(canvasSize.h - h, py - h / 2)));
+
+    addItem({
+      type: "ImageLabel",
+      name: "ImageLabel",
+      x,
+      y,
+      w,
+      h,
+      fill: "#111827",
+      radius: 12,
+      stroke: true,
+      strokeColor: "#334155",
+      strokeWidth: 2,
+      text: "",
+      textColor: "#ffffff",
+      fontSize: 18,
+      imageId: `rbxassetid://${assetId}`,
+    });
+  };
 
   const patchSelected = (patch) => {
     if (!selectedItem) return;
@@ -426,6 +473,17 @@ function UiBuilderPageInner() {
       ? { w: Number(state.canvasSize.w) || canvasSize.w, h: Number(state.canvasSize.h) || canvasSize.h }
       : { w: canvasSize.w, h: canvasSize.h };
 
+    const normalizeRobloxImage = (input) => {
+      if (input == null) return "";
+      const s = String(input).trim();
+      if (!s) return "";
+      if (/^\\d+$/.test(s)) return `rbxassetid://${s}`;
+      if (s.startsWith("rbxassetid://")) return s;
+      const m = s.match(/asset\\/\\?id=(\\d+)/i) || s.match(/id=(\\d+)/i);
+      if (m?.[1]) return `rbxassetid://${m[1]}`;
+      return s;
+    };
+
     const clamp = (n, min, max) => Math.max(min, Math.min(max, n));
     const allowedTypes = new Set([
       "Frame",
@@ -483,7 +541,7 @@ function UiBuilderPageInner() {
           text: String(it.text || appearance.text || ""),
           textColor: String(it.textColor || appearance.textColor || "#ffffff"),
           fontSize: Number(it.fontSize || appearance.fontSize) || 18,
-          imageId: String(it.imageId || ""),
+          imageId: normalizeRobloxImage(it.imageId || ""),
           opacity,
           role,
           export: exportable,
@@ -606,6 +664,77 @@ function UiBuilderPageInner() {
       window.alert(e?.message || "AI import failed");
     } finally {
       setAiImporting(false);
+    }
+  }
+
+  async function handleAISuggestAssetIdsForPlaceholders() {
+    if (!user) return window.alert("Please sign in.");
+    if (!items || !items.length) return window.alert("Add some UI first.");
+
+    try {
+      setAiSuggesting(true);
+      setAiStatusMessage("Asking AI for search keywords...");
+
+      const token = await user.getIdToken();
+
+      const out = await aiSuggestImageQueries({
+        token,
+        items,
+        boardPrompt: aiPrompt || "",
+      });
+
+      const suggestions = Array.isArray(out?.suggestions) ? out.suggestions : [];
+      if (!suggestions.length) {
+        window.alert("No ImageLabel placeholders found.");
+        return;
+      }
+
+      for (const s of suggestions) {
+        const itemId = String(s?.itemId || "");
+        const queries = Array.isArray(s?.queries) ? s.queries : [];
+        if (!itemId || !queries.length) continue;
+
+        const target = items.find((it) => String(it.id) === itemId);
+        if (!target) continue;
+
+        let picked = null;
+        for (const q of queries) {
+          setAiStatusMessage(`Searching catalog: ${q}`);
+          const search = await robloxCatalogSearch({ keyword: q, limit: 10 });
+          const results = Array.isArray(search?.results) ? search.results : [];
+          if (!results.length) continue;
+
+          const lines = results
+            .slice(0, 10)
+            .map((it, idx) => `${idx + 1}. ${it.name} (id: ${it.id})`)
+            .join("\n");
+
+          const answer = window.prompt(
+            `Pick an image for:\n${target.name || "ImageLabel"}\n\nSearch: ${q}\n\n${lines}\n\nEnter 1-10 to apply, or Cancel to skip:`,
+            "1"
+          );
+
+          if (!answer) {
+            picked = null;
+            break;
+          }
+          const n = Number(answer);
+          if (Number.isFinite(n) && n >= 1 && n <= Math.min(10, results.length)) {
+            picked = results[n - 1];
+            break;
+          }
+        }
+
+        if (picked?.id) {
+          updateItem(itemId, { imageId: `rbxassetid://${picked.id}` });
+        }
+      }
+    } catch (e) {
+      console.error(e);
+      window.alert(e?.message || "Suggest image IDs failed");
+    } finally {
+      setAiSuggesting(false);
+      setAiStatusMessage("");
     }
   }
 
@@ -894,6 +1023,22 @@ function UiBuilderPageInner() {
               >
                 {aiGenerating ? "Generating..." : "Generate from Prompt"}
               </button>
+              <button
+                style={btnStyle("secondary")}
+                onClick={handleAISuggestAssetIdsForPlaceholders}
+                disabled={
+                  !user ||
+                  aiBusy ||
+                  !items.some(
+                    (it) =>
+                      it.type === "ImageLabel" &&
+                      (!it.imageId || it.imageId.trim() === "" || it.imageId.trim() === "rbxassetid://")
+                  )
+                }
+                title="AI suggests Roblox catalog items, then you choose which ID to apply"
+              >
+                {aiBusy ? "Working..." : "Suggest Image IDs (AI)"}
+              </button>
             </div>
           </Section>
 
@@ -1021,6 +1166,8 @@ function UiBuilderPageInner() {
             onPointerUp={handlePointerUp}
             onPointerCancel={handlePointerUp}
             onPointerDown={clearSelection}
+            onDragOver={handleCanvasDragOver}
+            onDrop={handleCanvasDrop}
             style={{ ...styles.canvas, width: canvasSize.w, height: canvasSize.h }}
           >
             <CanvasGrid enabled={previewMode ? false : showGrid} size={gridSize} />
@@ -1110,6 +1257,81 @@ function UiBuilderPageInner() {
                 </div>
 
                 {/* MVP behavior wiring: only TextButton gets onClick rules */}
+                {/* ImageLabel: Roblox Image ID */}
+                {selectedItem.type === "ImageLabel" && (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    <div style={{ fontSize: 12, fontWeight: 900, opacity: 0.9 }}>
+                      Roblox Image
+                    </div>
+
+                    <label style={{ fontSize: 12, opacity: 0.85 }}>
+                      Image Asset ID
+                      <input
+                        type="text"
+                        value={selectedItem.imageId || ""}
+                        placeholder="rbxassetid://123456789"
+                        onChange={(e) => {
+                          const raw = e.target.value;
+                          const s = String(raw || "").trim();
+                          let normalized = "";
+
+                          if (/^\\d+$/.test(s)) normalized = `rbxassetid://${s}`;
+                          else if (s.startsWith("rbxassetid://")) normalized = s;
+                          else {
+                            const m =
+                              s.match(/asset\\/\\?id=(\\d+)/i) ||
+                              s.match(/id=(\\d+)/i);
+                            if (m?.[1]) normalized = `rbxassetid://${m[1]}`;
+                            else normalized = s;
+                          }
+
+                          updateItem(selectedItem.id, { imageId: normalized });
+                        }}
+                        style={{
+                          width: "100%",
+                          marginTop: 6,
+                          padding: "10px 10px",
+                          borderRadius: 12,
+                          border: "1px solid rgba(148,163,184,0.20)",
+                          background: "rgba(2,6,23,0.45)",
+                          color: "#e5e7eb",
+                          fontSize: 12,
+                          fontWeight: 800,
+                          outline: "none",
+                        }}
+                      />
+                    </label>
+
+                    <div style={{ fontSize: 11, opacity: 0.7, lineHeight: 1.35 }}>
+                      Paste a Roblox asset ID or URL.
+                      <br />
+                      Examples:
+                      <br />
+                      <code>123456789</code>
+                      <br />
+                      <code>rbxassetid://123456789</code>
+                      <br />
+                      <code>https://www.roblox.com/asset/?id=123456789</code>
+                    </div>
+
+                    {(!selectedItem.imageId ||
+                      selectedItem.imageId === "rbxassetid://") && (
+                      <div
+                        style={{
+                          fontSize: 11,
+                          padding: "6px 8px",
+                          borderRadius: 8,
+                          background: "rgba(239,68,68,0.12)",
+                          border: "1px solid rgba(239,68,68,0.35)",
+                          color: "#fecaca",
+                        }}
+                      >
+                        This ImageLabel has no valid image ID yet.
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {selectedItem.type === "TextButton" && (
                   <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                     <div style={{ fontSize: 12, fontWeight: 900, opacity: 0.9 }}>Interaction (OnClick)</div>
