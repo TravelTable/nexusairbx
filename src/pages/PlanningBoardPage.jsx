@@ -575,16 +575,59 @@ function UiBuilderPageInner() {
     return { ...boardState, items: itemsCopy };
   }
 
+  async function ensureBoardForAI() {
+    if (selectedBoardId) return selectedBoardId;
+    if (!user) return null;
+
+    try {
+      setLoadingBoard(true);
+      const title = aiPrompt.trim() ? aiPrompt.trim().slice(0, 60) : "AI Board";
+      const res = await initBoard({
+        title,
+        canvasSize,
+        settings: { showGrid, snapToGrid, gridSize },
+      });
+
+      const newId = res?.boardId || res?.board?.id || boardId;
+      if (newId) {
+        setSelectedBoardId(newId);
+        setBoardId(newId);
+        setSelectedBoard(res.board || null);
+        loadBoardState({
+          canvasSize: res.board?.canvasSize || canvasSize,
+          settings: res.board?.settings || {},
+          items: [],
+          selectedId: null,
+        });
+        lastSavedStringRef.current = JSON.stringify({});
+        skipAutosaveRef.current = true;
+      }
+
+      // Refresh board list for sidebar
+      try {
+        const token = await user.getIdToken();
+        const list = await listBoards({ token });
+        setBoards(list.boards || []);
+      } catch (e) {
+        console.error("List boards after auto-create failed", e);
+      }
+
+      return newId;
+    } catch (e) {
+      console.error("Auto-create board for AI failed", e);
+      window.alert(e?.message || "Failed to create a board for AI");
+      return null;
+    } finally {
+      setLoadingBoard(false);
+    }
+  }
+
   /**
    * Text prompt -> UI. Codex: extend with "insert into selection" using selected bounds if needed.
    */
   async function handleAIGenerateFromPrompt() {
     if (!user) {
       window.alert("Please sign in before generating.");
-      return;
-    }
-    if (!selectedBoardId) {
-      window.alert("Select or create a board first.");
       return;
     }
     if (!aiPrompt.trim()) {
@@ -598,6 +641,11 @@ function UiBuilderPageInner() {
 
     try {
       setAiGenerating(true);
+      const ensuredId = await ensureBoardForAI();
+      if (!ensuredId) {
+        setAiGenerating(false);
+        return;
+      }
       const themeHint = getSiteThemeHint();
       console.info("[AI] generate start", { boardId: selectedBoardId, prompt: aiPrompt.trim(), canvasSize });
 
