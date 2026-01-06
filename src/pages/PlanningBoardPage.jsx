@@ -103,6 +103,7 @@ function UiBuilderPageInner() {
     initBoard,
     generateWithAI,
     importFromImage: importBoardFromImage,
+    enhanceBoard,
     saveSnapshot,
   } = usePlanningBoard();
   useEffect(() => {
@@ -623,6 +624,52 @@ function UiBuilderPageInner() {
     }
   }
 
+  async function handleAIEnhanceCurrent() {
+    if (!user) {
+      window.alert("Please sign in before enhancing.");
+      return;
+    }
+    if (!selectedBoardId) {
+      window.alert("Select or create a board first.");
+      return;
+    }
+    if (!items || !items.length) {
+      window.alert("Add some UI first.");
+      return;
+    }
+
+    try {
+      setAiGenerating(true);
+      const themeHint = getSiteThemeHint();
+      const current = {
+        canvasSize,
+        settings: {},
+        items,
+      };
+
+      const improved = await enhanceBoard({
+        boardState: current,
+        prompt: aiPrompt?.trim()
+          ? `Enhance this UI: ${aiPrompt.trim()}`
+          : "Make it feel more premium and polished",
+        themeHint,
+      });
+
+      if (!improved) return;
+      const sanitized = sanitizeBoardState(improved);
+      setCanvasSize(sanitized.canvasSize);
+      setItems(sanitized.items || [], { history: true });
+      lastSavedStringRef.current = JSON.stringify(sanitized);
+      const token = await user.getIdToken();
+      await createSnapshot({ token, boardId: selectedBoardId, boardState: sanitized });
+    } catch (e) {
+      console.error(e);
+      window.alert(e?.message || "AI enhance failed");
+    } finally {
+      setAiGenerating(false);
+    }
+  }
+
   /**
    * Screenshot/Image -> UI with rights-aware modes.
    * rightsMode:
@@ -829,6 +876,14 @@ function UiBuilderPageInner() {
           >
             {aiBusy ? "Working..." : "Generate (AI)"}
           </button>
+          <button
+            style={btnStyle("secondary")}
+            onClick={handleAIEnhanceCurrent}
+            disabled={!user || !selectedBoardId || aiBusy || !items.length}
+            title="Polish the current UI (spacing, hierarchy, styles) while keeping item IDs unchanged"
+          >
+            {aiBusy ? "Working..." : "Enhance (AI)"}
+          </button>
           <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "#d1d5db" }}>
             <input
               type="checkbox"
@@ -1022,6 +1077,14 @@ function UiBuilderPageInner() {
                 title={!aiPrompt.trim() ? "Write a prompt first" : "Generate UI"}
               >
                 {aiGenerating ? "Generating..." : "Generate from Prompt"}
+              </button>
+              <button
+                style={btnStyle("secondary")}
+                onClick={handleAIEnhanceCurrent}
+                disabled={!user || !selectedBoardId || aiGenerating || !items.length}
+                title="Polish the current UI layout/spacing without changing IDs"
+              >
+                {aiGenerating ? "Working..." : "Enhance Current UI"}
               </button>
               <button
                 style={btnStyle("secondary")}

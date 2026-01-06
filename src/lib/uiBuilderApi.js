@@ -160,6 +160,18 @@ export async function aiSuggestImageQueries({ token, items, boardPrompt = "" }) 
   return handleResponse(res);
 }
 
+/**
+ * AI: Enhance an existing boardState (polish spacing/hierarchy without changing IDs or image assets).
+ */
+export async function aiEnhanceBoard({ token, boardState, prompt = "Make it feel more premium and polished", themeHint }) {
+  const res = await fetch(`${BACKEND_URL}/api/ui-builder/ai/enhance-board`, {
+    method: "POST",
+    headers: authHeaders(token),
+    body: JSON.stringify({ boardState, prompt, themeHint }),
+  });
+  return handleResponse(res);
+}
+
 // --- Roblox helpers (no auth; backend proxies Roblox endpoints) ---
 export function robloxThumbnailUrl({ assetId, size = "420x420" }) {
   const id = String(assetId || "").trim();

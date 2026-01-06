@@ -3,6 +3,7 @@ import { getAuth } from "firebase/auth";
 import {
   aiGenerateBoard,
   aiImportFromImage,
+  aiEnhanceBoard,
   createBoard,
   createSnapshot,
 } from "../lib/uiBuilderApi";
@@ -123,6 +124,29 @@ export function usePlanningBoard(initialBoardId = null) {
     [getToken]
   );
 
+  const enhanceBoard = useCallback(
+    async ({
+      boardState,
+      prompt = "Make it feel more premium and polished",
+      themeHint = DEFAULT_THEME,
+    }) => {
+      setLoading(true);
+      try {
+        const token = await getToken();
+        const result = await aiEnhanceBoard({
+          token,
+          boardState,
+          prompt,
+          themeHint: themeHint || DEFAULT_THEME,
+        });
+        return result?.boardState || null;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [getToken]
+  );
+
   const saveSnapshot = useCallback(
     async (boardState) => {
       if (!boardId) return;
@@ -143,6 +167,7 @@ export function usePlanningBoard(initialBoardId = null) {
     initBoard,
     generateWithAI,
     importFromImage,
+    enhanceBoard,
     saveSnapshot,
   };
 }
