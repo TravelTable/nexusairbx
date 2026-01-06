@@ -12,6 +12,7 @@ import { Info } from "lucide-react";
 import { listBoards, getBoard, getSnapshot, listSnapshots, createSnapshot } from "../lib/uiBuilderApi";
 import { usePlanningBoard } from "../boards/usePlanningBoard";
 import { exportToRoblox } from "../lib/exportToRoblox";
+import LayersPanel from "../components/canvascomponents/LayersPanel";
 
 const MONETIZATION_KINDS = [
   { value: "DevProduct", label: "Dev Product" },
@@ -116,6 +117,7 @@ function UiBuilderPageInner() {
   const [aiImporting, setAiImporting] = useState(false);
   const aiBusy = aiGenerating || aiImporting;
   const aiStatusText = aiGenerating ? "Generating UI from prompt..." : aiImporting ? "Importing from screenshot..." : "";
+  const [scaffoldOnly, setScaffoldOnly] = useState(false);
 
   // Canvas overlay controls for matching screenshot to board while editing
   const [showRefOverlay, setShowRefOverlay] = useState(true);
@@ -515,7 +517,7 @@ function UiBuilderPageInner() {
         prompt: aiPrompt.trim(),
         canvasSize,
         themeHint,
-        mode: "overwrite",
+        mode: scaffoldOnly ? "scaffold" : "overwrite",
         maxItems: 45,
       });
 
@@ -669,6 +671,15 @@ function UiBuilderPageInner() {
           >
             {aiBusy ? "Working..." : "Generate (AI)"}
           </button>
+          <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "#d1d5db" }}>
+            <input
+              type="checkbox"
+              checked={scaffoldOnly}
+              onChange={(e) => setScaffoldOnly(e.target.checked)}
+              style={{ width: 14, height: 14 }}
+            />
+            Scaffolding only
+          </label>
           <button
             style={btnStyle("secondary")}
             onClick={handleExportLua}
@@ -757,57 +768,7 @@ function UiBuilderPageInner() {
           </Section>
 
           <Section title="Layers">
-            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-              {items
-                .slice()
-                .sort((a, b) => (b.zIndex || 1) - (a.zIndex || 1))
-                .map((it) => (
-                  <button
-                    key={it.id}
-                    onClick={() => {
-                      if (previewMode) return;
-                      setSelectedId(it.id);
-                    }}
-                    style={{
-                      ...btnStyle("ghost"),
-                      textAlign: "left",
-                      border: it.id === selectedId ? "1px solid rgba(59,130,246,0.65)" : "1px solid rgba(148,163,184,0.18)",
-                      background: it.id === selectedId ? "rgba(59,130,246,0.10)" : "rgba(15,23,42,0.35)",
-                      opacity: it.visible === false ? 0.55 : 1,
-                    }}
-                    title={`zIndex: ${it.zIndex || 1}`}
-                  >
-                    <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
-                      <div style={{ fontSize: 12, fontWeight: 800 }}>
-                        {it.name || it.type}
-                        <span style={{ fontSize: 11, opacity: 0.7, marginLeft: 8 }}>({it.type})</span>
-                      </div>
-                      <div style={{ fontSize: 11, opacity: 0.7 }}>z {it.zIndex || 1}</div>
-                    </div>
-                  </button>
-                ))}
-
-              {items.length === 0 && <div style={{ fontSize: 12, opacity: 0.65 }}>No items yet.</div>}
-            </div>
-
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginTop: 10 }}>
-              <button
-                style={btnStyle("secondary")}
-                disabled={!selectedId || previewMode}
-                onClick={() => bringToFront?.()}
-                title="Bring selected item forward"
-              >
-                Bring Front
-              </button>
-              <button
-                style={btnStyle("secondary")}
-                disabled={!selectedId || previewMode}
-                onClick={() => sendToBack?.()}
-                title="Send selected item backward"
-              >
-                Send Back
-              </button>
-            </div>
+            <LayersPanel />
           </Section>
 
           <Section title="AI Prompt">

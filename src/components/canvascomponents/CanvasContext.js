@@ -126,17 +126,74 @@ export function CanvasProvider({
   });
 
   const addItem = useCallback((item) => {
+    const newId = item?.id || uid();
     setItems((prev) => [
       ...prev,
       {
-        id: uid(),
+        id: newId,
         zIndex: prev.length + 1,
         visible: true,
         locked: false,
         ...item,
       },
     ]);
+    return newId;
   }, []);
+
+  const setItemVisible = useCallback((id, visible) => {
+    setItems((prev) => prev.map((it) => (it.id === id ? { ...it, visible } : it)));
+  }, []);
+
+  const setItemLocked = useCallback((id, locked) => {
+    setItems((prev) => prev.map((it) => (it.id === id ? { ...it, locked } : it)));
+  }, []);
+
+  const setItemParent = useCallback((id, parentId) => {
+    if (!id || id === parentId) return;
+    setItems((prev) =>
+      prev.map((it) => (it.id === id ? { ...it, parentId: parentId || null } : it))
+    );
+  }, []);
+
+  const [collapsedGroups, setCollapsedGroups] = useState({});
+  const toggleGroupCollapsed = useCallback((groupId) => {
+    if (!groupId) return;
+    setCollapsedGroups((prev) => ({ ...prev, [groupId]: !prev[groupId] }));
+  }, []);
+
+  const createGroup = useCallback(
+    (name = "Group") => {
+      const newId = uid();
+      setItems((prev) => {
+        const group = {
+          id: newId,
+          type: "Group",
+          name,
+          x: 40,
+          y: 40,
+          w: 240,
+          h: 160,
+          fill: "rgba(59,130,246,0.08)",
+          stroke: true,
+          strokeColor: "rgba(59,130,246,0.35)",
+          strokeWidth: 1,
+          opacity: 0.1,
+          role: "layout",
+          export: false,
+          visible: true,
+          locked: false,
+          zIndex: prev.length + 1,
+        };
+        const next = prev.map((it) =>
+          selectedId && it.id === selectedId ? { ...it, parentId: newId } : it
+        );
+        return [...next, group];
+      });
+      setSelectedId(newId);
+      return newId;
+    },
+    [selectedId]
+  );
 
   const updateItem = useCallback((id, patch) => {
     setItems((prev) =>
@@ -306,6 +363,7 @@ export function CanvasProvider({
       if (!boardState || typeof boardState !== "object") return;
       undoStack.current = [];
       redoStack.current = [];
+      setCollapsedGroups({});
 
       const nextCanvas = boardState.canvasSize;
       if (
@@ -476,6 +534,12 @@ export function CanvasProvider({
     redo,
     canUndo: undoStack.current.length > 0,
     canRedo: redoStack.current.length > 0,
+    setItemVisible,
+    setItemLocked,
+    setItemParent,
+    createGroup,
+    collapsedGroups,
+    toggleGroupCollapsed,
 
     selectedId,
     setSelectedId,
