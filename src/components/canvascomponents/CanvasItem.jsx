@@ -1,7 +1,42 @@
-import React from "react";
+import React, { useState } from "react";
 import SelectionOutline from "./SelectionOutline";
 import ResizeHandle from "./ResizeHandle";
 import { useCanvas } from "./CanvasContext";
+
+function applyAnimations(baseStyle, animations, state) {
+  if (!Array.isArray(animations) || !animations.length) return baseStyle;
+  let style = { ...baseStyle };
+
+  animations.forEach((anim) => {
+    if (!anim || typeof anim !== "object") return;
+    const trigger = anim.trigger || anim.event || "";
+    const props = anim.props || {};
+
+    if (trigger === "OnHover" && state.hovered) {
+      if (props.scale) {
+        style.transform = `scale(${props.scale})`;
+        const dur = props.duration || 0.18;
+        style.transition = `transform ${dur}s ease-out`;
+      }
+      if (props.opacity !== undefined) {
+        style.opacity = props.opacity;
+      }
+    }
+
+    if (trigger === "OnClick" && state.pressed) {
+      if (props.scale) {
+        style.transform = `scale(${props.scale})`;
+        const dur = props.duration || 0.1;
+        style.transition = `transform ${dur}s ease-out`;
+      }
+      if (props.opacity !== undefined) {
+        style.opacity = props.opacity;
+      }
+    }
+  });
+
+  return style;
+}
 
 /**
  * CanvasItem
@@ -40,12 +75,18 @@ export default function CanvasItem({ item, selected, canvasRef }) {
     imageId,
     locked,
     visible,
+    opacity,
+    role,
+    animations,
+    interactions,
     // Monetization metadata (optional)
     monetizationKind,
     monetizationId,
   } = item;
 
   if (!visible) return null;
+  const [hovered, setHovered] = useState(false);
+  const [pressed, setPressed] = useState(false);
 
   function getLocalPoint(e) {
     const rect = canvasRef?.current?.getBoundingClientRect();
@@ -62,16 +103,17 @@ export default function CanvasItem({ item, selected, canvasRef }) {
     e.stopPropagation();
     if (locked) return;
 
-    // Preview Mode: treat UI as “live” (no drag/resize)
+    // Preview Mode: treat UI as live (click triggers interaction)
     if (previewMode) {
-      if (type === "TextButton") {
-        triggerItem?.(id, "OnClick");
-      }
+      const hasClick = (interactions && interactions.OnClick) || item.onClick || type === "TextButton";
+      setPressed(true);
+      if (hasClick) triggerItem?.(id, "OnClick");
       return;
     }
 
     // select first
     selectItem(id, e);
+    setPressed(true);
 
     // start move using canvas-local pointer coords
     const { px, py } = getLocalPoint(e);
@@ -109,27 +151,61 @@ export default function CanvasItem({ item, selected, canvasRef }) {
         }`
       : null;
 
+  const isLayout = role === "layout";
+  const isSpacer = type === "Spacer";
+  const isGroup = type === "Group";
+  const isCircle = type === "Circle";
+  const isLine = type === "Line";
+
+  const baseStyle = {
+    position: "absolute",
+    left: x,
+    top: y,
+    width: w,
+    height: h,
+    background: fill || "transparent",
+    borderRadius: isCircle ? Math.min(w, h) / 2 : radius,
+    border:
+      isLayout || stroke
+        ? `${strokeWidth || 1}px ${isLayout ? "dashed" : "solid"} ${strokeColor || "rgba(148,163,184,0.45)"}`
+        : "none",
+    boxSizing: "border-box",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    cursor: locked ? "not-allowed" : "grab",
+    userSelect: "none",
+    touchAction: "none",
+    opacity: opacity ?? 1,
+  };
+
+  if (isSpacer || isGroup) {
+    baseStyle.background = "transparent";
+    baseStyle.border =
+      isLayout || stroke
+        ? `${strokeWidth || 1}px dashed ${strokeColor || "rgba(148,163,184,0.45)"}`
+        : "none";
+  }
+
+  if (isLine) {
+    baseStyle.height = strokeWidth || 2;
+    baseStyle.borderRadius = strokeWidth || 2;
+  }
+
+  const animatedStyle = applyAnimations(baseStyle, animations, { hovered, pressed });
+
   return (
     <div
       onPointerDown={handlePointerDown}
-      title={`${type} • ${name}`}
-      style={{
-        position: "absolute",
-        left: x,
-        top: y,
-        width: w,
-        height: h,
-        background: fill,
-        borderRadius: radius,
-        border: stroke ? `${strokeWidth}px solid ${strokeColor}` : "none",
-        boxSizing: "border-box",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        cursor: locked ? "not-allowed" : "grab",
-        userSelect: "none",
-        touchAction: "none", // important for pointer drag on touch devices
+      onPointerEnter={() => setHovered(true)}
+      onPointerLeave={() => {
+        setHovered(false);
+        setPressed(false);
       }}
+      onPointerUp={() => setPressed(false)}
+      onPointerCancel={() => setPressed(false)}
+      title={`${type} • ${name}`}
+      style={animatedStyle}
     >
       {/* Selection outline */}
       {selected && <SelectionOutline />}

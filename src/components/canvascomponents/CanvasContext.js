@@ -393,8 +393,8 @@ export function CanvasProvider({
       const src = items.find((x) => x.id === sourceId);
       if (!src) return;
 
-      const rule = src.onClick;
-      if (!rule || typeof rule !== "object") return;
+    const rule = (src.interactions && src.interactions.OnClick) || src.onClick;
+    if (!rule || typeof rule !== "object") return;
       const { type, targetId } = rule;
       if (!targetId) return;
 

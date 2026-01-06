@@ -396,7 +396,18 @@ function UiBuilderPageInner() {
       : { w: canvasSize.w, h: canvasSize.h };
 
     const clamp = (n, min, max) => Math.max(min, Math.min(max, n));
-    const allowedTypes = new Set(["Frame", "TextLabel", "TextButton", "ImageLabel"]);
+    const allowedTypes = new Set([
+      "Frame",
+      "TextLabel",
+      "TextButton",
+      "ImageLabel",
+      "Rectangle",
+      "Circle",
+      "Line",
+      "Spacer",
+      "Group",
+      "MonetizationButton",
+    ]);
     const safeItems = Array.isArray(state.items) ? state.items : [];
 
     const cleanedItems = safeItems
@@ -406,6 +417,24 @@ function UiBuilderPageInner() {
         const h = Math.max(10, Number(it.h) || 100);
         const x = clamp(Number(it.x) || 0, 0, Math.max(0, safeCanvas.w - w));
         const y = clamp(Number(it.y) || 0, 0, Math.max(0, safeCanvas.h - h));
+        const appearance = typeof it.appearance === "object" ? it.appearance : {};
+        const role = ["ui", "layout", "background"].includes(it.role) ? it.role : "ui";
+        const exportable = it.export === false ? false : !(role === "layout" || role === "background");
+        const opacity = Number.isFinite(Number(it.opacity)) ? Math.min(1, Math.max(0, Number(it.opacity))) : 1;
+        const animations = Array.isArray(it.animations)
+          ? it.animations
+              .filter((a) => a && typeof a === "object")
+              .map((a) => ({
+                trigger: String(a.trigger || ""),
+                type: String(a.type || ""),
+                props: typeof a.props === "object" ? a.props : {},
+              }))
+          : [];
+        let interactions = it.interactions && typeof it.interactions === "object" ? it.interactions : undefined;
+        if (!interactions && it.onClick && typeof it.onClick === "object") {
+          interactions = { OnClick: it.onClick };
+        }
+
         return {
           id: String(it.id || `ai_${Date.now()}_${idx}`),
           type: allowedTypes.has(it.type) ? it.type : "Frame",
@@ -415,15 +444,21 @@ function UiBuilderPageInner() {
           w,
           h,
           zIndex: Number(it.zIndex) || 1,
-          fill: String(it.fill || "#111827"),
-          radius: Number(it.radius) || 12,
+          fill: String(it.fill || appearance.fill || "#111827"),
+          radius: Number(it.radius || appearance.radius) || 12,
           stroke: typeof it.stroke === "boolean" ? it.stroke : true,
-          strokeColor: String(it.strokeColor || "#334155"),
-          strokeWidth: Number(it.strokeWidth) || 2,
-          text: String(it.text || ""),
-          textColor: String(it.textColor || "#ffffff"),
-          fontSize: Number(it.fontSize) || 18,
+          strokeColor: String(it.strokeColor || appearance.strokeColor || "#334155"),
+          strokeWidth: Number(it.strokeWidth || appearance.strokeWidth) || 2,
+          text: String(it.text || appearance.text || ""),
+          textColor: String(it.textColor || appearance.textColor || "#ffffff"),
+          fontSize: Number(it.fontSize || appearance.fontSize) || 18,
           imageId: String(it.imageId || ""),
+          opacity,
+          role,
+          export: exportable,
+          notes: typeof it.notes === "string" ? it.notes : undefined,
+          animations,
+          interactions: interactions || undefined,
           locked: !!it.locked,
           visible: typeof it.visible === "boolean" ? it.visible : true,
         };
