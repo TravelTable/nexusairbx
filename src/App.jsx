@@ -6,6 +6,7 @@ import NexusRBXAIPageContainer from "./pages/AiPage";
 import NexusRBXContactPageContainer from "./pages/ContactPage";
 import NexusRBXPrivacyPageContainer from "./pages/PrivacyPage";
 import NexusRBXSubscribePageContainer from "./pages/SubscribePage";
+import { Analytics } from "@vercel/analytics/react";
 
 function App() {
   return (
@@ -19,6 +20,7 @@ function App() {
         <Route path="/subscribe" element={<NexusRBXSubscribePageContainer />} />
         {/* Optionally, add a catch-all 404 route here */}
       </Routes>
+      <Analytics />
     </Router>
   );
 }
