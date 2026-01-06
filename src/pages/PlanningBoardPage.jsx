@@ -90,6 +90,7 @@ function UiBuilderPageInner() {
   const [selectedBoardId, setSelectedBoardId] = useState(null);
   const [selectedBoard, setSelectedBoard] = useState(null);
   const [snapshots, setSnapshots] = useState([]);
+  const [showVersionsModal, setShowVersionsModal] = useState(false);
   const [user, setUser] = useState(null);
   const [saving, setSaving] = useState(false);
   const [newPaletteHex, setNewPaletteHex] = useState("#");
@@ -717,6 +718,88 @@ function UiBuilderPageInner() {
         </div>
       </div>
 
+      {showVersionsModal && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.55)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 2000,
+          }}
+        >
+          <div
+            style={{
+              width: "90%",
+              maxWidth: 560,
+              maxHeight: "80vh",
+              overflow: "auto",
+              background: "rgba(15,23,42,0.96)",
+              border: "1px solid rgba(148,163,184,0.35)",
+              borderRadius: 14,
+              padding: 16,
+              boxShadow: "0 18px 60px rgba(0,0,0,0.4)",
+            }}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+              <div style={{ fontWeight: 800, fontSize: 14 }}>Versions</div>
+              <button style={btnStyle("secondary")} onClick={() => setShowVersionsModal(false)}>
+                Close
+              </button>
+            </div>
+
+            {!selectedBoardId ? (
+              <div style={{ fontSize: 12, opacity: 0.75 }}>Select a board first.</div>
+            ) : snapshots.length === 0 ? (
+              <div style={{ fontSize: 12, opacity: 0.75 }}>No versions yet.</div>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {snapshots.map((s) => (
+                  <div
+                    key={s.id}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      gap: 8,
+                      padding: "8px 10px",
+                      borderRadius: 10,
+                      border: "1px solid rgba(148,163,184,0.2)",
+                      background: "rgba(2,6,23,0.45)",
+                    }}
+                  >
+                    <div style={{ fontSize: 12 }}>
+                      <div style={{ fontWeight: 800 }}>v{s.snapshotNumber ?? "?"}</div>
+                      <div style={{ opacity: 0.7 }}>
+                        {s.createdAt ? new Date(s.createdAt).toLocaleString() : "-"}
+                      </div>
+                    </div>
+                    <div style={{ display: "flex", gap: 6 }}>
+                      <button
+                        style={btnStyle("ghost")}
+                        onClick={() => handleLoadSnapshot(s.id, { restore: false })}
+                        disabled={loadingBoard || aiBusy}
+                      >
+                        Load
+                      </button>
+                      <button
+                        style={btnStyle("secondary")}
+                        onClick={() => handleLoadSnapshot(s.id, { restore: true })}
+                        disabled={loadingBoard || aiBusy}
+                      >
+                        Restore
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Main */}
       <div style={styles.main}>
         {/* Left */}
@@ -764,51 +847,17 @@ function UiBuilderPageInner() {
             </div>
           </Section>
           <Section title="Versions">
-            {!selectedBoardId ? (
-              <div style={{ fontSize: 12, opacity: 0.7 }}>Select a board to view snapshots.</div>
-            ) : (
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                {snapshots.length === 0 && <div style={{ fontSize: 12, opacity: 0.65 }}>No snapshots yet.</div>}
-                {snapshots.slice(0, 8).map((s) => (
-                  <div
-                    key={s.id}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      gap: 8,
-                      padding: "8px 10px",
-                      borderRadius: 10,
-                      border: "1px solid rgba(148,163,184,0.18)",
-                      background: "rgba(2,6,23,0.35)",
-                    }}
-                  >
-                    <div style={{ fontSize: 12 }}>
-                      <div style={{ fontWeight: 800 }}>v{s.snapshotNumber ?? "?"}</div>
-                      <div style={{ opacity: 0.7 }}>
-                        {s.createdAt ? new Date(s.createdAt).toLocaleString() : "—"}
-                      </div>
-                    </div>
-                    <div style={{ display: "flex", gap: 6 }}>
-                      <button
-                        style={btnStyle("ghost")}
-                        onClick={() => handleLoadSnapshot(s.id, { restore: false })}
-                        disabled={loadingBoard || aiBusy}
-                      >
-                        Load
-                      </button>
-                      <button
-                        style={btnStyle("secondary")}
-                        onClick={() => handleLoadSnapshot(s.id, { restore: true })}
-                        disabled={loadingBoard || aiBusy}
-                      >
-                        Restore
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
+            <button
+              style={btnStyle("secondary")}
+              onClick={() => setShowVersionsModal(true)}
+              disabled={!selectedBoardId || loadingBoard}
+              title={!selectedBoardId ? "Select a board first" : "View and restore versions"}
+            >
+              Open Versions
+            </button>
+            <div style={{ fontSize: 12, opacity: 0.7, marginTop: 6 }}>
+              {snapshots.length ? `${snapshots.length} versions` : "No versions yet"}
+            </div>
           </Section>
 
           <Section title="Layers">
