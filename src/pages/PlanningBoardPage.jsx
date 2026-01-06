@@ -465,18 +465,80 @@ function UiBuilderPageInner() {
     };
   }
 
-  /**
-   * Hard clamp to keep AI output renderable. Whitelist new props here if you extend CanvasItem.
-   */
-  function sanitizeBoardState(maybeState) {
-    const state = (maybeState && typeof maybeState === "object") ? maybeState : {};
-    const safeCanvas = state.canvasSize && typeof state.canvasSize === "object"
-      ? { w: Number(state.canvasSize.w) || canvasSize.w, h: Number(state.canvasSize.h) || canvasSize.h }
-      : { w: canvasSize.w, h: canvasSize.h };
+  function sanitizeBoardState(input) {
+    const clamp = (n, lo, hi) => Math.max(lo, Math.min(hi, n));
+    const snap = (n, grid = 8) => Math.round(Number(n || 0) / grid) * grid;
 
-    const normalizeRobloxImage = (input) => {
-      if (input == null) return "";
-      const s = String(input).trim();
+    function normalizeRadius(r) {
+      if (Array.isArray(r)) {
+        const nums = r.map((x) => Number(x)).filter((x) => Number.isFinite(x));
+        return nums.length ? clamp(Math.max(...nums), 0, 200) : 12;
+      }
+      if (r && typeof r === "object") {
+        const nums = ["tl", "tr", "br", "bl"]
+          .map((k) => Number(r[k]))
+          .filter((x) => Number.isFinite(x));
+        return nums.length ? clamp(Math.max(...nums), 0, 200) : 12;
+      }
+      const n = Number(r);
+      return Number.isFinite(n) ? clamp(n, 0, 200) : 12;
+    }
+
+    function normalizeStroke(it) {
+      const strokeThickness = it.strokeThickness ?? it.strokeWidth ?? 2;
+      const strokeWidth = clamp(Number(strokeThickness) || 2, 0, 20);
+
+      if (typeof it.stroke === "string") {
+        return {
+          stroke: true,
+          strokeColor: it.stroke,
+          strokeWidth,
+        };
+      }
+
+      const strokeBool =
+        typeof it.stroke === "boolean"
+          ? it.stroke
+          : !!it.strokeColor;
+
+      return {
+        stroke: strokeBool,
+        strokeColor: String(it.strokeColor || "rgba(148,163,184,0.22)"),
+        strokeWidth,
+      };
+    }
+
+    function normalizeType(t, it) {
+      const type = String(t || "").trim();
+      if (type === "ImageButton") return "TextButton";
+
+      const allowed = new Set([
+        "Frame",
+        "TextLabel",
+        "TextButton",
+        "ImageLabel",
+        "Rectangle",
+        "Circle",
+        "Line",
+        "Group",
+        "Spacer",
+        "MonetizationButton",
+      ]);
+
+      return allowed.has(type) ? type : "Frame";
+    }
+
+    const state = (input && typeof input === "object") ? input : {};
+    const safeCanvas = state.canvasSize && typeof state.canvasSize === "object"
+      ? {
+          w: clamp(Number(state.canvasSize.w) || 1280, 320, 4096),
+          h: clamp(Number(state.canvasSize.h) || 720, 240, 4096),
+        }
+      : { w: 1280, h: 720 };
+
+    const normalizeRobloxImage = (val) => {
+      if (val == null) return "";
+      const s = String(val).trim();
       if (!s) return "";
       if (/^\d+$/.test(s)) return `rbxassetid://${s}`;
       if (s.startsWith("rbxassetid://")) return s;
@@ -485,76 +547,75 @@ function UiBuilderPageInner() {
       return s;
     };
 
-    const clamp = (n, min, max) => Math.max(min, Math.min(max, n));
-    const allowedTypes = new Set([
-      "Frame",
-      "TextLabel",
-      "TextButton",
-      "ImageLabel",
-      "Rectangle",
-      "Circle",
-      "Line",
-      "Spacer",
-      "Group",
-      "MonetizationButton",
-    ]);
-    const safeItems = Array.isArray(state.items) ? state.items : [];
+    const itemsIn = Array.isArray(state.items) ? state.items : [];
 
-    const cleanedItems = safeItems
+    const items = itemsIn
       .filter((it) => it && typeof it === "object")
       .map((it, idx) => {
-        const w = Math.max(10, Number(it.w) || 200);
-        const h = Math.max(10, Number(it.h) || 100);
-        const x = clamp(Number(it.x) || 0, 0, Math.max(0, safeCanvas.w - w));
-        const y = clamp(Number(it.y) || 0, 0, Math.max(0, safeCanvas.h - h));
-        const appearance = typeof it.appearance === "object" ? it.appearance : {};
-        const role = ["ui", "layout", "background"].includes(it.role) ? it.role : "ui";
-        const exportable = it.export === false ? false : !(role === "layout" || role === "background");
-        const opacity = Number.isFinite(Number(it.opacity)) ? Math.min(1, Math.max(0, Number(it.opacity))) : 1;
-        const animations = Array.isArray(it.animations)
-          ? it.animations
-              .filter((a) => a && typeof a === "object")
-              .map((a) => ({
-                trigger: String(a.trigger || ""),
-                type: String(a.type || ""),
-                props: typeof a.props === "object" ? a.props : {},
-              }))
-          : [];
-        let interactions = it.interactions && typeof it.interactions === "object" ? it.interactions : undefined;
-        if (!interactions && it.onClick && typeof it.onClick === "object") {
-          interactions = { OnClick: it.onClick };
+        const id = String(it.id || `it_${Date.now()}_${idx}`);
+        const type = normalizeType(it.type, it);
+
+        const w = snap(Math.max(10, Number(it.w) || 200), 8);
+        const h = snap(Math.max(10, Number(it.h) || 60), 8);
+        const x = clamp(snap(Number(it.x) || 0, 8), 0, safeCanvas.w - w);
+        const y = clamp(snap(Number(it.y) || 0, 8), 0, safeCanvas.h - h);
+
+        const radius = normalizeRadius(it.radius);
+        const strokeBits = normalizeStroke(it);
+        const textColor = String(it.textColor || it.color || "#e5e7eb");
+        const fill = String(it.fill ?? "#111827");
+
+        let text = String(it.text || "");
+        let fontSize = Number(it.fontSize) || 18;
+        if (String(it.type) === "ImageButton") {
+          text = "×";
+          fontSize = 22;
         }
 
         return {
-          id: String(it.id || `ai_${Date.now()}_${idx}`),
-          type: allowedTypes.has(it.type) ? it.type : "Frame",
-          name: String(it.name || it.type || "Item"),
+          id,
+          type,
+          name: String(it.name || type),
+
           x,
           y,
           w,
           h,
           zIndex: Number(it.zIndex) || 1,
-          fill: String(it.fill || appearance.fill || "#111827"),
-          radius: Number(it.radius || appearance.radius) || 12,
-          stroke: typeof it.stroke === "boolean" ? it.stroke : true,
-          strokeColor: String(it.strokeColor || appearance.strokeColor || "#334155"),
-          strokeWidth: Number(it.strokeWidth || appearance.strokeWidth) || 2,
-          text: String(it.text || appearance.text || ""),
-          textColor: String(it.textColor || appearance.textColor || "#ffffff"),
-          fontSize: Number(it.fontSize || appearance.fontSize) || 18,
+
+          fill,
+          radius,
+
+          ...strokeBits,
+
+          text,
+          textColor,
+          fontSize,
+
           imageId: normalizeRobloxImage(it.imageId || ""),
-          opacity,
-          role,
-          export: exportable,
-          notes: typeof it.notes === "string" ? it.notes : undefined,
-          animations,
-          interactions: interactions || undefined,
-          locked: !!it.locked,
+
           visible: typeof it.visible === "boolean" ? it.visible : true,
+          locked: typeof it.locked === "boolean" ? it.locked : false,
+
+          opacity: it.opacity === undefined ? undefined : clamp(Number(it.opacity) || 1, 0, 1),
+
+          parentId: it.parentId ? String(it.parentId) : null,
+          role: it.role ? String(it.role) : undefined,
+          export: typeof it.export === "boolean" ? it.export : undefined,
+
+          animations: Array.isArray(it.animations) ? it.animations.slice(0, 12) : undefined,
+          interactions: (it.interactions && typeof it.interactions === "object") ? it.interactions : undefined,
+
+          monetizationKind: it.monetizationKind ? String(it.monetizationKind) : undefined,
+          monetizationId: it.monetizationId ? String(it.monetizationId) : undefined,
         };
       });
 
-    return { canvasSize: safeCanvas, settings: state.settings || {}, items: cleanedItems, selectedId: null };
+    return {
+      canvasSize: safeCanvas,
+      settings: (state.settings && typeof state.settings === "object") ? state.settings : {},
+      items,
+    };
   }
 
   /**
