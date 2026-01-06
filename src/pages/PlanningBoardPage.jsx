@@ -93,6 +93,8 @@ function UiBuilderPageInner() {
   const [selectedBoard, setSelectedBoard] = useState(null);
   const [snapshots, setSnapshots] = useState([]);
   const [showVersionsModal, setShowVersionsModal] = useState(false);
+  const [showLuaModal, setShowLuaModal] = useState(false);
+  const [luaText, setLuaText] = useState("");
   const [user, setUser] = useState(null);
   const [saving, setSaving] = useState(false);
   const [newPaletteHex, setNewPaletteHex] = useState("#");
@@ -379,7 +381,8 @@ function UiBuilderPageInner() {
       return;
     }
     const lua = exportToRoblox({ canvasSize, items });
-    downloadText("ui.lua", lua);
+    setLuaText(lua);
+    setShowLuaModal(true);
   }
 
   const handleUndo = () => {
@@ -1098,6 +1101,91 @@ function UiBuilderPageInner() {
                 ))}
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {showLuaModal && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.55)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 2200,
+          }}
+        >
+          <div
+            style={{
+              width: "94%",
+              maxWidth: 920,
+              maxHeight: "86vh",
+              overflow: "hidden",
+              background: "rgba(15,23,42,0.96)",
+              border: "1px solid rgba(148,163,184,0.35)",
+              borderRadius: 14,
+              boxShadow: "0 18px 60px rgba(0,0,0,0.4)",
+              display: "flex",
+              flexDirection: "column",
+            }}
+          >
+            <div
+              style={{
+                padding: 12,
+                borderBottom: "1px solid rgba(148,163,184,0.18)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: 10,
+              }}
+            >
+              <div style={{ fontWeight: 900, fontSize: 14 }}>Roblox LocalScript</div>
+              <div style={{ display: "flex", gap: 10 }}>
+                <button
+                  style={btnStyle("secondary")}
+                  onClick={() => {
+                    try {
+                      navigator.clipboard.writeText(luaText || "");
+                    } catch {}
+                  }}
+                >
+                  Copy
+                </button>
+                <button
+                  style={btnStyle("secondary")}
+                  onClick={() => downloadText("ui.lua", luaText || "")}
+                >
+                  Download
+                </button>
+                <button
+                  style={btnStyle("primary", uiAccent)}
+                  onClick={() => setShowLuaModal(false)}
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+
+            <textarea
+              value={luaText}
+              readOnly
+              spellCheck={false}
+              style={{
+                flex: 1,
+                width: "100%",
+                border: "none",
+                outline: "none",
+                resize: "none",
+                padding: 12,
+                background: "rgba(2,6,23,0.75)",
+                color: "#e5e7eb",
+                fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+                fontSize: 12,
+                lineHeight: 1.4,
+              }}
+            />
           </div>
         </div>
       )}
