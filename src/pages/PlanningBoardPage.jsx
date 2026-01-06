@@ -9,7 +9,7 @@ import CanvasItem from "../components/canvascomponents/CanvasItem";
 import { useBilling } from "../context/BillingContext";
 import PLAN_INFO from "../lib/planInfo";
 import { Info } from "lucide-react";
-import { listBoards, getBoard, getSnapshot, listSnapshots, createSnapshot } from "../lib/uiBuilderApi";
+import { listBoards, getBoard, getSnapshot, listSnapshots, createSnapshot, deleteBoard } from "../lib/uiBuilderApi";
 import { usePlanningBoard } from "../boards/usePlanningBoard";
 import { exportToRoblox } from "../lib/exportToRoblox";
 import LayersPanel from "../components/canvascomponents/LayersPanel";
@@ -368,6 +368,32 @@ function UiBuilderPageInner() {
     }
   }
 
+  async function handleDeleteBoard(boardIdToDelete) {
+    if (!user || !boardIdToDelete) return;
+    const ok = window.confirm("Delete this board? Snapshots will also be removed.");
+    if (!ok) return;
+    try {
+      setLoadingBoard(true);
+      const token = await user.getIdToken();
+      await deleteBoard({ token, boardId: boardIdToDelete });
+      setBoards((prev) => prev.filter((b) => b.id !== boardIdToDelete));
+
+      if (selectedBoardId === boardIdToDelete) {
+        setSelectedBoardId(null);
+        setBoardId(null);
+        setSelectedBoard(null);
+        setSnapshots([]);
+        loadBoardState({ canvasSize, settings: {}, items: [], selectedId: null });
+        lastSavedStringRef.current = JSON.stringify({});
+      }
+    } catch (e) {
+      console.error("Delete board failed", e);
+      window.alert(e?.message || "Failed to delete board");
+    } finally {
+      setLoadingBoard(false);
+    }
+  }
+
   // --- AI helpers ---
   /**
    * Extract theme tokens so AI output matches your site.
@@ -702,7 +728,7 @@ function UiBuilderPageInner() {
             <div style={{ fontSize: 12, opacity: 0.7, marginTop: 8 }}>{loadingBoards ? "Loading boards..." : ""}</div>
             <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 8 }}>
               {boards.map((b) => (
-                <button
+                <div
                   key={b.id}
                   onClick={() => setSelectedBoardId(b.id)}
                   style={{
@@ -710,11 +736,29 @@ function UiBuilderPageInner() {
                     textAlign: "left",
                     border: b.id === selectedBoardId ? "1px solid rgba(59,130,246,0.65)" : "1px solid rgba(148,163,184,0.18)",
                     background: b.id === selectedBoardId ? "rgba(59,130,246,0.10)" : "rgba(15,23,42,0.35)",
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    gap: 8,
+                    cursor: "pointer",
                   }}
                 >
-                  <div style={{ fontSize: 12, fontWeight: 800 }}>{b.title}</div>
-                  <div style={{ fontSize: 11, opacity: 0.7 }}>{b.updatedAt ? new Date(b.updatedAt).toLocaleString() : "—"}</div>
-                </button>
+                  <div>
+                    <div style={{ fontSize: 12, fontWeight: 800 }}>{b.title}</div>
+                    <div style={{ fontSize: 11, opacity: 0.7 }}>{b.updatedAt ? new Date(b.updatedAt).toLocaleString() : "-"}</div>
+                  </div>
+                  <button
+                    style={btnStyle("danger")}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeleteBoard(b.id);
+                    }}
+                    disabled={loadingBoard}
+                    title="Delete this board"
+                  >
+                    Delete
+                  </button>
+                </div>
               ))}
               {boards.length === 0 && !loadingBoards && <div style={{ fontSize: 12, opacity: 0.65 }}>No boards yet.</div>}
             </div>

@@ -62,6 +62,14 @@ export async function getBoard({ token, boardId }) {
   return handleResponse(res);
 }
 
+export async function deleteBoard({ token, boardId }) {
+  const res = await fetch(`${BACKEND_URL}/api/ui-builder/boards/${encodeURIComponent(boardId)}`, {
+    method: "DELETE",
+    headers: authHeaders(token),
+  });
+  return handleResponse(res);
+}
+
 export async function listSnapshots({ token, boardId }) {
   const res = await fetch(`${BACKEND_URL}/api/ui-builder/boards/${encodeURIComponent(boardId)}/snapshots`, {
     headers: authHeaders(token),
