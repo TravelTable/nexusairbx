@@ -84,9 +84,9 @@ export default function CanvasItem({ item, selected, canvasRef }) {
     monetizationId,
   } = item;
 
-  if (!visible) return null;
   const [hovered, setHovered] = useState(false);
   const [pressed, setPressed] = useState(false);
+  if (!visible) return null;
 
   function getLocalPoint(e) {
     const rect = canvasRef?.current?.getBoundingClientRect();
