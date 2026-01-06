@@ -695,7 +695,7 @@ function UiBuilderPageInner() {
         items,
       };
 
-      const improved = await enhanceBoard({
+      const enhancedBoardState = await enhanceBoard({
         boardState: current,
         prompt: aiPrompt?.trim()
           ? `Enhance this UI: ${aiPrompt.trim()}`
@@ -703,13 +703,20 @@ function UiBuilderPageInner() {
         themeHint,
       });
 
-      if (!improved) return;
-      const sanitized = sanitizeBoardState(improved);
+      if (!enhancedBoardState) return;
+
+      const sanitized = sanitizeBoardState(enhancedBoardState);
       setCanvasSize(sanitized.canvasSize);
       setItems(sanitized.items || [], { history: true });
+
       lastSavedStringRef.current = JSON.stringify(sanitized);
+
       const token = await user.getIdToken();
-      await createSnapshot({ token, boardId: selectedBoardId, boardState: sanitized });
+      await createSnapshot({
+        token,
+        boardId: selectedBoardId,
+        boardState: sanitized,
+      });
     } catch (e) {
       console.error(e);
       window.alert(e?.message || "AI enhance failed");

@@ -139,7 +139,13 @@ export function usePlanningBoard(initialBoardId = null) {
           prompt,
           themeHint: themeHint || DEFAULT_THEME,
         });
-        return result?.boardState || null;
+
+        const bs =
+          (result && result.boardState && result.boardState.boardState) ||
+          (result && result.boardState) ||
+          null;
+
+        return bs;
       } finally {
         setLoading(false);
       }
