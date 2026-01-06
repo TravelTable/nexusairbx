@@ -477,9 +477,9 @@ function UiBuilderPageInner() {
       if (input == null) return "";
       const s = String(input).trim();
       if (!s) return "";
-      if (/^\\d+$/.test(s)) return `rbxassetid://${s}`;
+      if (/^\d+$/.test(s)) return `rbxassetid://${s}`;
       if (s.startsWith("rbxassetid://")) return s;
-      const m = s.match(/asset\\/\\?id=(\\d+)/i) || s.match(/id=(\\d+)/i);
+      const m = s.match(/asset\/\?id=(\d+)/i) || s.match(/id=(\d+)/i);
       if (m?.[1]) return `rbxassetid://${m[1]}`;
       return s;
     };
@@ -1275,12 +1275,12 @@ function UiBuilderPageInner() {
                           const s = String(raw || "").trim();
                           let normalized = "";
 
-                          if (/^\\d+$/.test(s)) normalized = `rbxassetid://${s}`;
+                          if (/^\d+$/.test(s)) normalized = `rbxassetid://${s}`;
                           else if (s.startsWith("rbxassetid://")) normalized = s;
                           else {
                             const m =
-                              s.match(/asset\\/\\?id=(\\d+)/i) ||
-                              s.match(/id=(\\d+)/i);
+                              s.match(/asset\/\?id=(\d+)/i) ||
+                              s.match(/id=(\d+)/i);
                             if (m?.[1]) normalized = `rbxassetid://${m[1]}`;
                             else normalized = s;
                           }
