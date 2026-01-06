@@ -24,6 +24,8 @@ export default function Canvas({
   showGrid = true,
   snapToGrid = true,
 
+  overlay = null,
+
   onSelectItem,
   onClearSelection,
 
@@ -125,6 +127,9 @@ export default function Canvas({
             onSelect={onSelectItem}
           />
         ))}
+
+        {/* Overlay (preview modals etc) */}
+        {overlay}
       </div>
     </div>
   );

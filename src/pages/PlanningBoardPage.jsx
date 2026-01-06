@@ -82,6 +82,8 @@ function UiBuilderPageInner() {
     renderItems,
     resetPreview,
     lastMutationKind,
+    previewMockPurchase,
+    closeMockPurchase,
   } = useCanvas();
 
   const [boards, setBoards] = useState([]);
@@ -1021,7 +1023,7 @@ function UiBuilderPageInner() {
             onPointerDown={clearSelection}
             style={{ ...styles.canvas, width: canvasSize.w, height: canvasSize.h }}
           >
-            <CanvasGrid enabled={showGrid} size={gridSize} />
+            <CanvasGrid enabled={previewMode ? false : showGrid} size={gridSize} />
 
             {/* Screenshot overlay for alignment (view-only; not persisted) */}
             {refImageUrl && showRefOverlay && (
@@ -1043,12 +1045,12 @@ function UiBuilderPageInner() {
 
             <div style={styles.canvasBadge}>ScreenGui {canvasSize.w}×{canvasSize.h}</div>
 
-            {(previewMode ? renderItems : items)
-              .slice()
-              .sort((a, b) => (a.zIndex || 1) - (b.zIndex || 1))
-              .map((it) => (
-                <CanvasItem key={it.id} item={it} selected={!previewMode && it.id === selectedId} canvasRef={canvasRef} />
-              ))}
+      {(previewMode ? renderItems : items)
+        .slice()
+        .sort((a, b) => (a.zIndex || 1) - (b.zIndex || 1))
+        .map((it) => (
+          <CanvasItem key={it.id} item={it} selected={!previewMode && it.id === selectedId} canvasRef={canvasRef} />
+        ))}
 
             {aiBusy && (
               <div
@@ -1076,6 +1078,10 @@ function UiBuilderPageInner() {
                 </div>
                 <div style={{ fontSize: 12, opacity: 0.82 }}>Request sent to the backend. Hang tight.</div>
               </div>
+            )}
+
+            {previewMode && previewMockPurchase && (
+              <MockPurchaseModal data={previewMockPurchase} onClose={closeMockPurchase} />
             )}
           </div>
         </div>
@@ -1313,6 +1319,61 @@ function TokenBar({ tokensLeft, tokensLimit, resetsAt, plan, loading }) {
 }
 
 // Simple inline spinner (CSS animation via inline style)
+function MockPurchaseModal({ data, onClose }) {
+  if (!data) return null;
+
+  return (
+    <div
+      style={{
+        position: "absolute",
+        inset: 0,
+        background: "rgba(0,0,0,0.45)",
+        display: "grid",
+        placeItems: "center",
+        zIndex: 99999,
+      }}
+      onPointerDown={onClose}
+    >
+      <div
+        onPointerDown={(e) => e.stopPropagation()}
+        style={{
+          width: 360,
+          borderRadius: 14,
+          background: "rgba(2,6,23,0.92)",
+          border: "1px solid rgba(148,163,184,0.25)",
+          padding: 14,
+          boxShadow: "0 18px 60px rgba(0,0,0,0.5)",
+          color: "#e5e7eb",
+        }}
+      >
+        <div style={{ fontWeight: 900, fontSize: 14 }}>Mock Purchase</div>
+        <div style={{ fontSize: 12, opacity: 0.8, marginTop: 6 }}>
+          This is a testing overlay — it will NOT be exported and is NOT part of your UI.
+        </div>
+
+        <div style={{ marginTop: 12, fontSize: 12, opacity: 0.9 }}>
+          <div><b>Button:</b> {data.label}</div>
+          <div><b>Kind:</b> {data.kind}</div>
+          <div><b>ID:</b> {data.id || "(not set)"}</div>
+        </div>
+
+        <div style={{ display: "flex", gap: 10, marginTop: 14 }}>
+          <button onClick={onClose} style={{ flex: 1 }}>Cancel</button>
+          <button
+            onClick={() => {
+              onClose?.();
+              window.alert("Mock purchase success ✅ (no real transaction)");
+            }}
+            style={{ flex: 1, fontWeight: 800 }}
+          >
+            Confirm
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function Spinner({ size = 14, thickness = 2 }) {
   const dim = Math.max(8, size);
   const ring = Math.max(1, thickness);

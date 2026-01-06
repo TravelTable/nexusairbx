@@ -107,6 +107,7 @@ export function CanvasProvider({
   const [previewMode, setPreviewMode] = useState(false);
   const [previewOverrides, setPreviewOverrides] = useState(() => ({
     visibleById: {},
+    mockPurchase: null, // { kind, id, sourceId, label }
   }));
 
   // Board-level palette (used for Roblox UI colors)
@@ -433,8 +434,19 @@ export function CanvasProvider({
     });
   }, [items, previewMode, previewOverrides]);
 
+  const openMockPurchase = useCallback((payload) => {
+    setPreviewOverrides((prev) => ({
+      ...prev,
+      mockPurchase: payload || { kind: "Robux", id: "", sourceId: "", label: "Purchase" },
+    }));
+  }, []);
+
+  const closeMockPurchase = useCallback(() => {
+    setPreviewOverrides((prev) => ({ ...prev, mockPurchase: null }));
+  }, []);
+
   const resetPreview = useCallback(() => {
-    setPreviewOverrides({ visibleById: {} });
+    setPreviewOverrides({ visibleById: {}, mockPurchase: null });
   }, []);
 
   /**
@@ -451,8 +463,30 @@ export function CanvasProvider({
       const src = items.find((x) => x.id === sourceId);
       if (!src) return;
 
-    const rule = (src.interactions && src.interactions.OnClick) || src.onClick;
-    if (!rule || typeof rule !== "object") return;
+      // Monetization mock modal
+      const isMonetization =
+        src.type === "MonetizationButton" ||
+        !!src.monetizationKind ||
+        !!src.monetizationId;
+      if (isMonetization) {
+        setPreviewOverrides((prev) => ({
+          ...prev,
+          mockPurchase: {
+            kind: src.monetizationKind || "Robux",
+            id: src.monetizationId || "",
+            sourceId,
+            label: src.text || "Purchase",
+          },
+        }));
+        return;
+      }
+
+      const rule =
+        (src.interactions && src.interactions.OnClick) ||
+        src.onClick ||
+        null;
+      if (!rule || typeof rule !== "object") return;
+
       const { type, targetId } = rule;
       if (!targetId) return;
 
@@ -474,29 +508,30 @@ export function CanvasProvider({
         return;
       }
 
-    if (type === "SetVisible") {
-      const value = rule.value === undefined ? true : !!rule.value;
-      setPreviewOverrides((prev) => ({
-        ...prev,
-        visibleById: {
-          ...(prev.visibleById || {}),
-          [targetId]: value,
-        },
-      }));
-    }
+      if (type === "SetVisible") {
+        const value = rule.value === undefined ? true : !!rule.value;
+        setPreviewOverrides((prev) => ({
+          ...prev,
+          visibleById: {
+            ...(prev.visibleById || {}),
+            [targetId]: value,
+          },
+        }));
+        return;
+      }
 
-    if (type === "SetHidden") {
-      setPreviewOverrides((prev) => ({
-        ...prev,
-        visibleById: {
-          ...(prev.visibleById || {}),
-          [targetId]: false,
-        },
-      }));
-    }
-  },
-  [items, previewMode]
-);
+      if (type === "SetHidden") {
+        setPreviewOverrides((prev) => ({
+          ...prev,
+          visibleById: {
+            ...(prev.visibleById || {}),
+            [targetId]: false,
+          },
+        }));
+      }
+    },
+    [items, previewMode]
+  );
 
   const value = {
     canvasSize,
@@ -560,6 +595,9 @@ export function CanvasProvider({
     renderItems,
     triggerItem,
     resetPreview,
+    previewMockPurchase: previewOverrides.mockPurchase,
+    openMockPurchase,
+    closeMockPurchase,
 
     lastMutationKind: lastMutationRef.current,
   };

@@ -105,7 +105,11 @@ export default function CanvasItem({ item, selected, canvasRef }) {
 
     // Preview Mode: treat UI as live (click triggers interaction)
     if (previewMode) {
-      const hasClick = (interactions && interactions.OnClick) || item.onClick || type === "TextButton";
+      const hasClick =
+        (interactions && interactions.OnClick) ||
+        item.onClick ||
+        type === "TextButton" ||
+        type === "MonetizationButton";
       setPressed(true);
       if (hasClick) triggerItem?.(id, "OnClick");
       return;
@@ -208,7 +212,7 @@ export default function CanvasItem({ item, selected, canvasRef }) {
       style={animatedStyle}
     >
       {/* Selection outline */}
-      {selected && <SelectionOutline />}
+      {!previewMode && selected && <SelectionOutline />}
 
       {/* Content */}
       {isTextLike ? (
