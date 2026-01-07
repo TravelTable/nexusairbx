@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { onAuthStateChanged } from "firebase/auth";
 import LuaPreviewRenderer from "../preview/LuaPreviewRenderer";
 import { auth } from "./firebase";
@@ -9,6 +9,29 @@ export default function PlanningBoardPage() {
   const [loading, setLoading] = useState(false);
   const [user, setUser] = useState(null);
   const [error, setError] = useState("");
+
+  const API_BASE = useMemo(() => {
+    const envBase = process.env.REACT_APP_BACKEND_URL || process.env.REACT_APP_API_ORIGIN;
+    if (envBase && envBase.trim()) return envBase.replace(/\/+$/, "");
+    return "https://nexusrbx-backend-production.up.railway.app";
+  }, []);
+
+  async function handleResponse(res) {
+    const text = await res.text();
+    let data = null;
+    try {
+      data = text ? JSON.parse(text) : null;
+    } catch {
+      data = null;
+    }
+    if (!res.ok) {
+      const msg = data?.error || data?.message || `Request failed (${res.status})`;
+      const err = new Error(msg);
+      err.status = res.status;
+      throw err;
+    }
+    return data;
+  }
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (u) => setUser(u || null));
@@ -32,7 +55,7 @@ export default function PlanningBoardPage() {
       const token = await getToken();
 
       // Step 1: ask AI to build boardState JSON
-      const genRes = await fetch("/api/ui-builder/ai/generate-board", {
+      const genRes = await fetch(`${API_BASE}/api/ui-builder/ai/generate-board`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -40,14 +63,13 @@ export default function PlanningBoardPage() {
         },
         body: JSON.stringify({ prompt }),
       });
-      const genJson = await genRes.json();
-      if (!genRes.ok) throw new Error(genJson?.error || "Failed to generate UI");
+      const genJson = await handleResponse(genRes);
 
       const boardState = genJson.boardState || genJson;
       if (!boardState) throw new Error("No boardState returned from AI");
 
       // Step 2: finalize into Lua + systems
-      const finRes = await fetch("/api/ui-builder/ai/finalize-lua", {
+      const finRes = await fetch(`${API_BASE}/api/ui-builder/ai/finalize-lua`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -55,8 +77,7 @@ export default function PlanningBoardPage() {
         },
         body: JSON.stringify({ boardState, prompt }),
       });
-      const finJson = await finRes.json();
-      if (!finRes.ok) throw new Error(finJson?.error || "Failed to finalize Lua");
+      const finJson = await handleResponse(finRes);
 
       setLua(finJson.lua || "");
     } catch (e) {
@@ -73,7 +94,7 @@ export default function PlanningBoardPage() {
     setError("");
     try {
       const token = await getToken();
-      const res = await fetch("/api/ui-builder/ai/refine-lua", {
+      const res = await fetch(`${API_BASE}/api/ui-builder/ai/refine-lua`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -85,8 +106,7 @@ export default function PlanningBoardPage() {
         }),
       });
 
-      const json = await res.json();
-      if (!res.ok) throw new Error(json?.error || "Failed to refine Lua");
+      const json = await handleResponse(res);
       setLua(json.lua || lua);
     } catch (e) {
       console.error(e);
