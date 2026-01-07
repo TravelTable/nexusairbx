@@ -104,6 +104,7 @@ function UiBuilderPageInner() {
     loading: planningLoading,
     initBoard,
     generateWithAI,
+    generateWithAIPipeline,
     importFromImage: importBoardFromImage,
     enhanceBoard,
     saveSnapshot,
@@ -115,6 +116,9 @@ function UiBuilderPageInner() {
   // Codex: could store prompt history per snapshot to build a timeline.
   const [aiPrompt, setAiPrompt] = useState("");
   const [aiGenerating, setAiGenerating] = useState(false);
+  const [aiPlan, setAiPlan] = useState(null);
+  const [aiAnalysis, setAiAnalysis] = useState(null);
+  const [aiLua, setAiLua] = useState("");
 
   // --- Screenshot/Image import (image -> UI)
   const [refImageFile, setRefImageFile] = useState(null);
@@ -265,13 +269,17 @@ function UiBuilderPageInner() {
   }, [user, selectedBoardId, canvasSize, items, selectedId, showGrid, snapToGrid, gridSize, palette, activeColor, uiAccent, uiDensity, refreshSnapshots, lastMutationKind]);
 
   const handlePointerMove = (e) => {
+    if (aiGenerating) return;
     const rect = canvasRef.current?.getBoundingClientRect();
     const px = e.clientX - (rect?.left || 0);
     const py = e.clientY - (rect?.top || 0);
     onPointerMove(px, py);
   };
 
-  const handlePointerUp = () => endPointerAction();
+  const handlePointerUp = () => {
+    if (aiGenerating) return;
+    endPointerAction();
+  };
 
   // --- Drag/drop: drop a Roblox image asset id onto the canvas to create an ImageLabel ---
   const handleCanvasDragOver = (e) => {
@@ -775,13 +783,21 @@ function UiBuilderPageInner() {
       const themeHint = getSiteThemeHint();
       console.info("[AI] generate start", { boardId: selectedBoardId, prompt: aiPrompt.trim(), canvasSize });
 
-      const boardState = await generateWithAI({
+      const result = await generateWithAIPipeline({
         prompt: aiPrompt.trim(),
         canvasSize,
         themeHint,
-        mode: scaffoldOnly ? "scaffold" : "overwrite",
         maxItems: 45,
       });
+
+      const boardState = result?.boardState;
+      const lua = result?.lua || "";
+      const plan = result?.plan || null;
+      const analysis = result?.analysis || null;
+
+      setAiPlan(plan);
+      setAiAnalysis(analysis);
+      setAiLua(lua);
 
       const sanitized = sanitizeBoardState(boardState);
       const hydrated = await promptForMissingImageIds(sanitized);
@@ -790,6 +806,10 @@ function UiBuilderPageInner() {
       lastSavedStringRef.current = JSON.stringify(hydrated);
       const token = await user.getIdToken();
       await createSnapshot({ token, boardId: selectedBoardId, boardState: hydrated });
+
+      if (lua) {
+        downloadText("ui.lua", lua);
+      }
     } catch (e) {
       console.error(e);
       window.alert(e?.message || "AI generate failed");
@@ -1050,12 +1070,16 @@ function UiBuilderPageInner() {
             Reset Preview
           </button>
           <button
-            style={btnStyle("primary", uiAccent)}
+            style={{
+              ...btnStyle("primary", uiAccent),
+              background: "linear-gradient(180deg, #3b82f6, #2563eb)",
+              border: "none",
+            }}
             onClick={handleAIGenerateFromPrompt}
-            disabled={!user || !selectedBoardId || aiBusy}
-            title={!selectedBoardId ? "Select a board first" : aiBusy ? "AI request in progress" : "Generate UI from your prompt"}
+            disabled={aiGenerating || !aiPrompt.trim()}
+            title={!aiPrompt.trim() ? "Write a prompt first" : "Finalize the design and generate Lua"}
           >
-            {aiBusy ? "Working..." : "Generate (AI)"}
+            {aiGenerating ? "Finalizing…" : "Finalize & Generate Lua"}
           </button>
           <button
             style={btnStyle("secondary")}

@@ -147,6 +147,15 @@ export async function aiImportFromImage({
   return handleResponse(res);
 }
 
+export async function aiPipeline({ token, prompt, canvasSize, themeHint, maxItems = 45 }) {
+  const res = await fetch(`${BACKEND_URL}/api/ui-builder/ai/pipeline`, {
+    method: "POST",
+    headers: authHeaders(token),
+    body: JSON.stringify({ prompt, canvasSize, themeHint, maxItems }),
+  });
+  return handleResponse(res);
+}
+
 /**
  * AI: Suggest search keywords for missing ImageLabel image IDs.
  * Backend returns keywords only (never IDs).

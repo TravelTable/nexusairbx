@@ -4,6 +4,7 @@ import {
   aiGenerateBoard,
   aiImportFromImage,
   aiEnhanceBoard,
+  aiPipeline,
   createBoard,
   createSnapshot,
 } from "../lib/uiBuilderApi";
@@ -93,6 +94,31 @@ export function usePlanningBoard(initialBoardId = null) {
     [getToken]
   );
 
+  const generateWithAIPipeline = useCallback(
+    async ({
+      prompt,
+      canvasSize = DEFAULT_CANVAS,
+      themeHint = DEFAULT_THEME,
+      maxItems = 45,
+    }) => {
+      setLoading(true);
+      try {
+        const token = await getToken();
+        const result = await aiPipeline({
+          token,
+          prompt,
+          canvasSize: ensureCanvasSize(canvasSize),
+          themeHint: themeHint || DEFAULT_THEME,
+          maxItems,
+        });
+        return result || null;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [getToken]
+  );
+
   const importFromImage = useCallback(
     async ({
       file,
@@ -172,6 +198,7 @@ export function usePlanningBoard(initialBoardId = null) {
     loading,
     initBoard,
     generateWithAI,
+    generateWithAIPipeline,
     importFromImage,
     enhanceBoard,
     saveSnapshot,
