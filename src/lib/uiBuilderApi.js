@@ -147,6 +147,24 @@ export async function aiImportFromImage({
   return handleResponse(res);
 }
 
+export async function aiPreview({ token, prompt, canvasSize, themeHint, mode = "overwrite", maxItems = 45 }) {
+  const res = await fetch(`${BACKEND_URL}/api/ui-builder/ai/preview`, {
+    method: "POST",
+    headers: authHeaders(token),
+    body: JSON.stringify({ prompt, canvasSize, themeHint, mode, maxItems }),
+  });
+  return handleResponse(res);
+}
+
+export async function aiFinalizeLua({ token, boardState }) {
+  const res = await fetch(`${BACKEND_URL}/api/ui-builder/ai/finalize-lua`, {
+    method: "POST",
+    headers: authHeaders(token),
+    body: JSON.stringify({ boardState }),
+  });
+  return handleResponse(res);
+}
+
 export async function aiPipeline({ token, prompt, canvasSize, themeHint, maxItems = 45 }) {
   const res = await fetch(`${BACKEND_URL}/api/ui-builder/ai/pipeline`, {
     method: "POST",

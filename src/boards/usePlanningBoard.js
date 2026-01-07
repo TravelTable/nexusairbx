@@ -3,6 +3,8 @@ import { getAuth } from "firebase/auth";
 import {
   aiGenerateBoard,
   aiImportFromImage,
+  aiPreview,
+  aiFinalizeLua,
   aiEnhanceBoard,
   aiPipeline,
   createBoard,
@@ -119,6 +121,41 @@ export function usePlanningBoard(initialBoardId = null) {
     [getToken]
   );
 
+  const previewWithAI = useCallback(
+    async ({ prompt, canvasSize = DEFAULT_CANVAS, themeHint = DEFAULT_THEME, mode = "overwrite", maxItems = 45 }) => {
+      setLoading(true);
+      try {
+        const token = await getToken();
+        const result = await aiPreview({
+          token,
+          prompt,
+          canvasSize: ensureCanvasSize(canvasSize),
+          themeHint: themeHint || DEFAULT_THEME,
+          mode,
+          maxItems,
+        });
+        return result || null;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [getToken]
+  );
+
+  const finalizeToLua = useCallback(
+    async ({ boardState }) => {
+      setLoading(true);
+      try {
+        const token = await getToken();
+        const result = await aiFinalizeLua({ token, boardState });
+        return result?.lua || "";
+      } finally {
+        setLoading(false);
+      }
+    },
+    [getToken]
+  );
+
   const importFromImage = useCallback(
     async ({
       file,
@@ -198,6 +235,8 @@ export function usePlanningBoard(initialBoardId = null) {
     loading,
     initBoard,
     generateWithAI,
+    previewWithAI,
+    finalizeToLua,
     generateWithAIPipeline,
     importFromImage,
     enhanceBoard,

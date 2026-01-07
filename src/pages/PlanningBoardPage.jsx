@@ -104,7 +104,8 @@ function UiBuilderPageInner() {
     loading: planningLoading,
     initBoard,
     generateWithAI,
-    generateWithAIPipeline,
+    previewWithAI,
+    finalizeToLua,
     importFromImage: importBoardFromImage,
     enhanceBoard,
     saveSnapshot,
@@ -116,6 +117,7 @@ function UiBuilderPageInner() {
   // Codex: could store prompt history per snapshot to build a timeline.
   const [aiPrompt, setAiPrompt] = useState("");
   const [aiGenerating, setAiGenerating] = useState(false);
+  const [aiFinalizing, setAiFinalizing] = useState(false);
   const [aiPlan, setAiPlan] = useState(null);
   const [aiAnalysis, setAiAnalysis] = useState(null);
   const [aiLua, setAiLua] = useState("");
@@ -127,7 +129,7 @@ function UiBuilderPageInner() {
   const [aiImporting, setAiImporting] = useState(false);
   const [aiSuggesting, setAiSuggesting] = useState(false);
   const [aiStatusMessage, setAiStatusMessage] = useState("");
-  const aiBusy = aiGenerating || aiImporting || aiSuggesting;
+  const aiBusy = aiGenerating || aiImporting || aiSuggesting || aiFinalizing;
   const aiStatusText = aiStatusMessage || (aiGenerating ? "Generating UI from prompt..." : aiImporting ? "Importing from screenshot..." : aiSuggesting ? "Suggesting image IDs..." : "");
   const [scaffoldOnly, setScaffoldOnly] = useState(false);
 
@@ -269,7 +271,7 @@ function UiBuilderPageInner() {
   }, [user, selectedBoardId, canvasSize, items, selectedId, showGrid, snapToGrid, gridSize, palette, activeColor, uiAccent, uiDensity, refreshSnapshots, lastMutationKind]);
 
   const handlePointerMove = (e) => {
-    if (aiGenerating) return;
+    if (aiBusy) return;
     const rect = canvasRef.current?.getBoundingClientRect();
     const px = e.clientX - (rect?.left || 0);
     const py = e.clientY - (rect?.top || 0);
@@ -277,7 +279,7 @@ function UiBuilderPageInner() {
   };
 
   const handlePointerUp = () => {
-    if (aiGenerating) return;
+    if (aiBusy) return;
     endPointerAction();
   };
 
@@ -391,6 +393,29 @@ function UiBuilderPageInner() {
     const lua = exportToRoblox({ canvasSize, items });
     setLuaText(lua);
     setShowLuaModal(true);
+  }
+
+  async function handleFinalizeGenerateLua() {
+    if (!user) return window.alert("Please sign in first.");
+    if (!selectedBoardId) return window.alert("Select or create a board first.");
+    if (!items?.length) return window.alert("Add at least one element before finalizing.");
+
+    try {
+      setAiFinalizing(true);
+      const current = sanitizeBoardState({ canvasSize, settings: {}, items });
+      const lua = await finalizeToLua({ boardState: current });
+      setAiLua(lua || "");
+      if (lua) {
+        downloadText("ui.lua", lua);
+      } else {
+        window.alert("Finalize returned empty Lua. Check backend logs.");
+      }
+    } catch (e) {
+      console.error(e);
+      window.alert(e?.message || "Finalize failed");
+    } finally {
+      setAiFinalizing(false);
+    }
   }
 
   const handleUndo = () => {
@@ -783,21 +808,21 @@ function UiBuilderPageInner() {
       const themeHint = getSiteThemeHint();
       console.info("[AI] generate start", { boardId: selectedBoardId, prompt: aiPrompt.trim(), canvasSize });
 
-      const result = await generateWithAIPipeline({
+      const result = await previewWithAI({
         prompt: aiPrompt.trim(),
         canvasSize,
         themeHint,
+        mode: scaffoldOnly ? "scaffold" : "overwrite",
         maxItems: 45,
       });
 
       const boardState = result?.boardState;
-      const lua = result?.lua || "";
       const plan = result?.plan || null;
       const analysis = result?.analysis || null;
 
       setAiPlan(plan);
       setAiAnalysis(analysis);
-      setAiLua(lua);
+      setAiLua("");
 
       const sanitized = sanitizeBoardState(boardState);
       const hydrated = await promptForMissingImageIds(sanitized);
@@ -806,10 +831,6 @@ function UiBuilderPageInner() {
       lastSavedStringRef.current = JSON.stringify(hydrated);
       const token = await user.getIdToken();
       await createSnapshot({ token, boardId: selectedBoardId, boardState: hydrated });
-
-      if (lua) {
-        downloadText("ui.lua", lua);
-      }
     } catch (e) {
       console.error(e);
       window.alert(e?.message || "AI generate failed");
@@ -1070,16 +1091,24 @@ function UiBuilderPageInner() {
             Reset Preview
           </button>
           <button
+            style={btnStyle("secondary")}
+            onClick={handleAIGenerateFromPrompt}
+            disabled={!user || !selectedBoardId || aiBusy}
+            title={!selectedBoardId ? "Select a board first" : aiBusy ? "AI request in progress" : "Generate a preview design (AI)"}
+          >
+            {aiGenerating ? "Previewing..." : "Preview (AI)"}
+          </button>
+          <button
             style={{
               ...btnStyle("primary", uiAccent),
               background: "linear-gradient(180deg, #3b82f6, #2563eb)",
               border: "none",
             }}
-            onClick={handleAIGenerateFromPrompt}
-            disabled={aiGenerating || !aiPrompt.trim()}
-            title={!aiPrompt.trim() ? "Write a prompt first" : "Finalize the design and generate Lua"}
+            onClick={handleFinalizeGenerateLua}
+            disabled={!items.length || !selectedBoardId || aiBusy}
+            title="Finalize the current design (manual) and generate Lua"
           >
-            {aiGenerating ? "Finalizing…" : "Finalize & Generate Lua"}
+            {aiFinalizing ? "Finalizing..." : "Finalize & Generate Lua"}
           </button>
           <button
             style={btnStyle("secondary")}
@@ -1366,7 +1395,7 @@ function UiBuilderPageInner() {
                 disabled={!user || !selectedBoardId || aiGenerating || !aiPrompt.trim()}
                 title={!aiPrompt.trim() ? "Write a prompt first" : "Generate UI"}
               >
-                {aiGenerating ? "Generating..." : "Generate from Prompt"}
+                {aiGenerating ? "Previewing..." : "Preview from Prompt"}
               </button>
               <button
                 style={btnStyle("secondary")}
