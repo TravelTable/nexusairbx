@@ -116,6 +116,17 @@ export default function PlanningBoardPage() {
     }
   }
 
+  function downloadLua() {
+    if (!lua) return;
+    const blob = new Blob([lua], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "generated_ui.lua";
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   return (
     <div className="h-screen grid grid-cols-[420px_1fr] bg-black text-zinc-100">
       {/* LEFT: AI CONTROL */}
@@ -151,6 +162,14 @@ export default function PlanningBoardPage() {
           className="bg-zinc-800 rounded px-4 py-2 disabled:opacity-60 disabled:cursor-not-allowed"
         >
           Refine: Readability
+        </button>
+
+        <button
+          onClick={downloadLua}
+          disabled={!lua}
+          className="bg-emerald-600 rounded px-4 py-2 font-semibold disabled:opacity-60 disabled:cursor-not-allowed"
+        >
+          Download Lua
         </button>
 
         {error ? <div className="text-sm text-red-400">{error}</div> : null}
