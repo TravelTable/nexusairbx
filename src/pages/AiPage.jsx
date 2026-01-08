@@ -32,7 +32,7 @@ import CelebrationAnimation from "../components/CelebrationAnimation";
 import OnboardingContainer from "../components/OnboardingContainer";
 import FancyLoadingOverlay from "../components/FancyLoadingOverlay";
 import NotificationToast from "../components/NotificationToast";
-import LuaPreviewRenderer from "../preview/LuaPreviewRenderer";
+import UiPreviewDrawer from "../components/UiPreviewDrawer";
 import { sha256 } from "../lib/hash"; // You need a hash util for duplicate detection
 import { v4 as uuidv4 } from "uuid";
 import {
@@ -437,10 +437,10 @@ function AiPage() {
   const [uiGenerations, setUiGenerations] = useState([]); // newest first
   const [activeUiId, setActiveUiId] = useState(null);
   const [uiIsGenerating, setUiIsGenerating] = useState(false);
+  const [uiDrawerOpen, setUiDrawerOpen] = useState(false);
 
   const activeUi =
     uiGenerations.find((g) => g.id === activeUiId) || uiGenerations[0] || null;
-  const showUiPreview = !!activeUi;
 
   // --- Chat state + listener refs ---
   const [currentChatId, setCurrentChatId] = useState(null);
@@ -558,6 +558,7 @@ async function handleGenerateUiPreview() {
 
     setUiGenerations((prev) => [entry, ...(prev || [])]);
     setActiveUiId(id);
+    setUiDrawerOpen(true);
     notify({ message: "UI preview generated.", type: "success" });
   } catch (e) {
     notify({ message: e?.message || "UI generation failed", type: "error" });
@@ -2997,18 +2998,30 @@ useEffect(() => {
       </div>
 
       <div className="flex items-center justify-between">
-        <button
-          type="button"
-          onClick={handleGenerateUiPreview}
-          disabled={uiIsGenerating || !prompt.trim() || !user}
-          className={`px-3 py-2 rounded text-sm font-semibold ${
-            uiIsGenerating || !prompt.trim() || !user
-              ? "bg-gray-700 text-gray-400 cursor-not-allowed"
-              : "bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-white hover:scale-[1.02]"
-          }`}
-        >
-          {uiIsGenerating ? "Generating UI..." : "Generate UI Preview"}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={handleGenerateUiPreview}
+            disabled={uiIsGenerating || !prompt.trim() || !user}
+            className={`px-3 py-2 rounded text-sm font-semibold ${
+              uiIsGenerating || !prompt.trim() || !user
+                ? "bg-gray-700 text-gray-400 cursor-not-allowed"
+                : "bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-white hover:scale-[1.02]"
+            }`}
+          >
+            {uiIsGenerating ? "Generating UI..." : "Generate UI Preview"}
+          </button>
+
+          {activeUi?.lua ? (
+            <button
+              type="button"
+              onClick={() => setUiDrawerOpen(true)}
+              className="px-3 py-2 rounded bg-gray-800 hover:bg-gray-700 text-sm text-gray-100"
+            >
+              Open UI Preview
+            </button>
+          ) : null}
+        </div>
 
         <div className="text-xs text-gray-500">Uses UI Builder pipeline</div>
       </div>
@@ -3043,47 +3056,6 @@ useEffect(() => {
               </div>
             </div>
           </section>
-          {showUiPreview && (
-            <section className="hidden md:flex min-w-0 flex-col border-l border-gray-800 bg-black/20">
-              <div className="p-3 border-b border-gray-800 flex items-center justify-between">
-                <div className="font-semibold text-gray-200">UI Preview</div>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    className="px-2 py-1 rounded bg-gray-800 hover:bg-gray-700 text-xs"
-                    onClick={() => downloadLuaFile(activeUi?.lua, "generated_ui.lua")}
-                  >
-                    Download Lua
-                  </button>
-                </div>
-              </div>
-
-              <div className="p-2 border-b border-gray-800">
-                <div className="text-xs text-gray-400 mb-2">Newest first</div>
-                <div className="flex flex-col gap-1 max-h-28 overflow-auto">
-                  {uiGenerations.map((g) => (
-                    <button
-                      key={g.id}
-                      type="button"
-                      onClick={() => setActiveUiId(g.id)}
-                      className={`text-left text-xs px-2 py-1 rounded ${
-                        g.id === activeUiId
-                          ? "bg-[#9b5de5]/20 border border-[#9b5de5]"
-                          : "hover:bg-gray-800"
-                      }`}
-                      title={g.prompt}
-                    >
-                      {(g.prompt || "").slice(0, 64)}{g.prompt?.length > 64 ? "..." : ""}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="flex-1 overflow-auto p-3">
-                <LuaPreviewRenderer lua={activeUi?.lua || ""} />
-              </div>
-            </section>
-          )}
           {/* Right Sidebar */}
           <aside
             className="hidden md:flex w-80 bg-gray-900 border-l border-gray-800 flex-col sticky top-[64px] h-[calc(100vh-64px)]"
@@ -3129,6 +3101,28 @@ useEffect(() => {
           </main>
         </div>
         {/* --- Code Drawer Integration --- */}
+        <UiPreviewDrawer
+          open={uiDrawerOpen}
+          onClose={() => setUiDrawerOpen(false)}
+          lua={activeUi?.lua || ""}
+          prompt={activeUi?.prompt || ""}
+          history={uiGenerations}
+          activeId={activeUiId}
+          onSelectHistory={(id) => setActiveUiId(id)}
+          onDownload={() => {
+            if (!activeUi?.lua) return;
+            downloadLuaFile(activeUi.lua, "generated_ui.lua");
+          }}
+          onViewCode={() => {
+            if (!activeUi?.lua) return;
+            setSelectedVersion({
+              title: "Generated UI",
+              code: activeUi.lua,
+              explanation: activeUi.prompt || "",
+              versionNumber: null,
+            });
+          }}
+        />
         {selectedVersion && (
           <SimpleCodeDrawer
             open={!!selectedVersion}

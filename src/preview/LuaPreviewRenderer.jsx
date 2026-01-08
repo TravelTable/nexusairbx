@@ -1,7 +1,7 @@
 import React, { useLayoutEffect, useRef, useState } from "react";
 import { extractUiManifestFromLua } from "../lib/extractUiManifestFromLua";
 
-export default function LuaPreviewRenderer({ lua }) {
+export default function LuaPreviewRenderer({ lua, interactive = false, onAction }) {
   const outerRef = useRef(null);
   const [box, setBox] = useState({ w: 0, h: 0 });
 
@@ -40,34 +40,32 @@ export default function LuaPreviewRenderer({ lua }) {
   const canvasH = board.canvasSize?.h || 720;
   const scale = box.w && box.h ? Math.min(box.w / canvasW, box.h / canvasH, 1) : 1;
 
-  const scaledW = Math.floor(canvasW * scale);
-  const scaledH = Math.floor(canvasH * scale);
-
   return (
-    <div
-      ref={outerRef}
-      className="w-full h-full flex items-center justify-center bg-zinc-950 border border-zinc-800 rounded-lg overflow-hidden"
-    >
-      <div style={{ width: scaledW, height: scaledH }}>
-        <div
-          className="relative bg-zinc-900 overflow-hidden rounded-md"
-          style={{
-            width: canvasW,
-            height: canvasH,
-            transform: `scale(${scale})`,
-            transformOrigin: "top left",
-          }}
-        >
-          {items.map((item) => (
-            <PreviewNode key={item.id} item={item} />
-          ))}
-        </div>
+    <div ref={outerRef} className="w-full h-full flex items-center justify-center">
+      <div
+        className="relative bg-zinc-900 overflow-hidden"
+        style={{
+          width: canvasW,
+          height: canvasH,
+          transform: `scale(${scale})`,
+          transformOrigin: "top left",
+          borderRadius: 12,
+        }}
+      >
+        {items.map((item) => (
+          <PreviewNode
+            key={item.id}
+            item={item}
+            interactive={interactive}
+            onAction={onAction}
+          />
+        ))}
       </div>
     </div>
   );
 }
 
-function PreviewNode({ item }) {
+function PreviewNode({ item, interactive, onAction }) {
   const style = {
     position: "absolute",
     left: item.x,
@@ -84,7 +82,7 @@ function PreviewNode({ item }) {
     display: item.visible === false ? "none" : "flex",
     alignItems: "center",
     justifyContent: "center",
-    pointerEvents: "none",
+    pointerEvents: interactive ? "auto" : "none",
     userSelect: "none",
   };
 
@@ -94,9 +92,48 @@ function PreviewNode({ item }) {
 
   if (item.type === "TextButton") {
     return (
-      <div style={{ ...style, cursor: "pointer" }}>
+      <button
+        type="button"
+        style={{
+          ...style,
+          cursor: interactive ? "pointer" : "default",
+          transition: "transform 120ms ease",
+        }}
+        onClick={() => {
+          if (!interactive) return;
+          onAction?.({
+            type: "click",
+            id: item.id,
+            label: item.text || "Button",
+          });
+        }}
+      >
         {item.text || "Button"}
-      </div>
+      </button>
+    );
+  }
+
+  if (item.type === "TextBox") {
+    return (
+      <input
+        style={{
+          ...style,
+          justifyContent: "flex-start",
+          padding: 8,
+          outline: "none",
+        }}
+        disabled={!interactive}
+        placeholder={item.placeholder || "Type..."}
+        onChange={(e) => {
+          if (!interactive) return;
+          onAction?.({
+            type: "input",
+            id: item.id,
+            label: item.placeholder || "TextBox",
+            value: e.target.value,
+          });
+        }}
+      />
     );
   }
 
