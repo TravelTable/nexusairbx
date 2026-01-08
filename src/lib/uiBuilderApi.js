@@ -179,11 +179,42 @@ export async function aiPipeline({
   maxItems = 45,
   gameSpec = "",
   maxSystemsTokens = 2500,
+  catalog = [],
+  animations = "",
+  customTheme = null,
 }) {
   const res = await fetch(`${BACKEND_URL}/api/ui-builder/ai/pipeline`, {
     method: "POST",
     headers: authHeaders(token),
-    body: JSON.stringify({ prompt, canvasSize, themeHint, maxItems, gameSpec, maxSystemsTokens }),
+    body: JSON.stringify({ 
+      prompt, 
+      canvasSize, 
+      themeHint, 
+      maxItems, 
+      gameSpec, 
+      maxSystemsTokens,
+      catalog,
+      animations,
+      customTheme
+    }),
+  });
+  return handleResponse(res);
+}
+
+export async function aiRefineLua({ token, lua, instruction }) {
+  const res = await fetch(`${BACKEND_URL}/api/ui-builder/ai/refine-lua`, {
+    method: "POST",
+    headers: authHeaders(token),
+    body: JSON.stringify({ lua, instruction }),
+  });
+  return handleResponse(res);
+}
+
+export async function aiGenerateFunctionality({ token, lua, prompt, gameSpec = "" }) {
+  const res = await fetch(`${BACKEND_URL}/api/ui-builder/ai/generate-functionality`, {
+    method: "POST",
+    headers: authHeaders(token),
+    body: JSON.stringify({ lua, prompt, gameSpec }),
   });
   return handleResponse(res);
 }

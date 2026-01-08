@@ -426,6 +426,13 @@ function AiPage() {
   );
   const [mode, setMode] = useState("ui"); // "ui" | "chat"
   const [showGameContextModal, setShowGameContextModal] = useState(false);
+  const [showUiSpecModal, setShowUiSpecModal] = useState(false);
+  const [uiSpecs, setUiSpecs] = useState({
+    theme: { bg: "#020617", primary: "#00f5d4", secondary: "#9b5de5", accent: "#f15bb5" },
+    catalog: [],
+    animations: "",
+  });
+
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -513,13 +520,20 @@ function AiPage() {
   URL.revokeObjectURL(url);
 }
 
-async function handleGenerateUiPreview() {
+async function handleGenerateUiPreview(specs = null) {
   if (!prompt.trim()) {
     notify({ message: "Describe the UI you want first.", type: "error" });
     return;
   }
   if (!user) {
-    notify({ message: "Sign in to generate UI.", type: "error" });
+    notify({ message: "Sign in required.", type: "error", duration: 2000 });
+    navigate("/signin");
+    return;
+  }
+
+  // If specs not provided, open modal first
+  if (!specs && mode === "ui") {
+    setShowUiSpecModal(true);
     return;
   }
 
@@ -574,6 +588,9 @@ async function handleGenerateUiPreview() {
       maxItems,
       gameSpec: settings.gameSpec || "",
       maxSystemsTokens: settings.uiMaxSystemsTokens,
+      catalog: specs?.catalog || [],
+      animations: specs?.animations || "",
+      customTheme: specs?.theme || null,
     });
 
     const boardState = pipe?.boardState;
@@ -3287,6 +3304,32 @@ useEffect(() => {
             if (!activeUi?.lua) return;
             downloadLuaFile(activeUi.lua, "generated_ui.lua");
           }}
+          userEmail={user?.email}
+          gameSpec={settings.gameSpec}
+          onRefine={async (instruction) => {
+            if (!activeUi?.lua) return;
+            setUiIsGenerating(true);
+            try {
+              const token = await user.getIdToken();
+              const res = await fetch(`${BACKEND_URL}/api/ui-builder/ai/refine-lua`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+                body: JSON.stringify({ lua: activeUi.lua, instruction }),
+              });
+              const data = await res.json();
+              if (data.lua) {
+                const id = cryptoRandomId();
+                const entry = { id, lua: data.lua, prompt: `Refine: ${instruction}`, createdAt: Date.now() };
+                setUiGenerations(prev => [entry, ...prev]);
+                setActiveUiId(id);
+                notify({ message: "UI refined successfully", type: "success" });
+              }
+            } catch (e) {
+              notify({ message: "Refinement failed", type: "error" });
+            } finally {
+              setUiIsGenerating(false);
+            }
+          }}
         />
         {selectedVersion && (
           <SimpleCodeDrawer
@@ -3310,6 +3353,18 @@ useEffect(() => {
             }}
             onSaveScript={async () => {}}
             onLiveOpen={() => {}}
+          />
+        )}
+        {/* UI Specification Modal */}
+        {showUiSpecModal && (
+          <UiSpecificationModal
+            onClose={() => setShowUiSpecModal(false)}
+            onConfirm={(specs) => {
+              setUiSpecs(specs);
+              setShowUiSpecModal(false);
+              handleGenerateUiPreview(specs);
+            }}
+            initialSpecs={uiSpecs}
           />
         )}
         {/* Game Context Modal */}
@@ -3383,6 +3438,169 @@ useEffect(() => {
         </style>
       </div>
     </React.Fragment>
+  );
+}
+
+function UiSpecificationModal({ onClose, onConfirm, initialSpecs }) {
+  const [tab, setTab] = useState("theme"); // "theme" | "catalog" | "animations"
+  const [specs, setSpecs] = useState(initialSpecs);
+
+  const addCatalogItem = () => {
+    setSpecs(prev => ({
+      ...prev,
+      catalog: [...prev.catalog, { name: "", price: "0", currency: "Robux", iconId: "" }]
+    }));
+  };
+
+  const updateCatalogItem = (idx, field, val) => {
+    const next = [...specs.catalog];
+    next[idx] = { ...next[idx], [field]: val };
+    setSpecs(prev => ({ ...prev, catalog: next }));
+  };
+
+  const removeCatalogItem = (idx) => {
+    setSpecs(prev => ({ ...prev, catalog: prev.catalog.filter((_, i) => i !== idx) }));
+  };
+
+  return (
+    <Modal onClose={onClose} title="UI Specification">
+      <div className="flex border-b border-gray-800 mb-4">
+        {["theme", "catalog", "animations"].map(t => (
+          <button
+            key={t}
+            onClick={() => setTab(t)}
+            className={`px-4 py-2 text-sm font-bold capitalize transition-colors ${
+              tab === t ? "text-[#00f5d4] border-b-2 border-[#00f5d4]" : "text-gray-400 hover:text-white"
+            }`}
+          >
+            {t}
+          </button>
+        ))}
+      </div>
+
+      <div className="min-h-[300px] max-h-[500px] overflow-y-auto pr-2">
+        {tab === "theme" && (
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-xs text-gray-400 block mb-1">Primary Color</label>
+                <input
+                  type="color"
+                  className="w-full h-10 bg-gray-800 border border-gray-700 rounded"
+                  value={specs.theme.primary}
+                  onChange={e => setSpecs(prev => ({ ...prev, theme: { ...prev.theme, primary: e.target.value } }))}
+                />
+              </div>
+              <div>
+                <label className="text-xs text-gray-400 block mb-1">Background</label>
+                <input
+                  type="color"
+                  className="w-full h-10 bg-gray-800 border border-gray-700 rounded"
+                  value={specs.theme.bg}
+                  onChange={e => setSpecs(prev => ({ ...prev, theme: { ...prev.theme, bg: e.target.value } }))}
+                />
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <button 
+                className="px-3 py-1 rounded bg-blue-600 text-xs text-white font-bold"
+                onClick={() => setSpecs(prev => ({ ...prev, theme: { bg: "#020617", primary: "#3b82f6", secondary: "#ffffff", accent: "#60a5fa" } }))}
+              >
+                Blue & White
+              </button>
+              <button 
+                className="px-3 py-1 rounded bg-gray-700 text-xs text-white font-bold"
+                onClick={() => setSpecs(prev => ({ ...prev, theme: { bg: "#0d0d0d", primary: "#00f5d4", secondary: "#9b5de5", accent: "#f15bb5" } }))}
+              >
+                Nexus Dark
+              </button>
+            </div>
+          </div>
+        )}
+
+        {tab === "catalog" && (
+          <div className="space-y-3">
+            <p className="text-xs text-gray-400">Add items to your shop catalog. The AI will create a grid with these items.</p>
+            {specs.catalog.map((item, idx) => (
+              <div key={idx} className="p-3 bg-gray-900/60 border border-gray-800 rounded-lg space-y-2 relative">
+                <button 
+                  onClick={() => removeCatalogItem(idx)}
+                  className="absolute top-2 right-2 text-gray-500 hover:text-red-400"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+                <div className="grid grid-cols-2 gap-2">
+                  <input
+                    placeholder="Item Name"
+                    className="bg-gray-800 border border-gray-700 rounded px-2 py-1 text-sm text-white"
+                    value={item.name}
+                    onChange={e => updateCatalogItem(idx, "name", e.target.value)}
+                  />
+                  <input
+                    placeholder="Price"
+                    className="bg-gray-800 border border-gray-700 rounded px-2 py-1 text-sm text-white"
+                    value={item.price}
+                    onChange={e => updateCatalogItem(idx, "price", e.target.value)}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <select
+                    className="bg-gray-800 border border-gray-700 rounded px-2 py-1 text-sm text-white"
+                    value={item.currency}
+                    onChange={e => updateCatalogItem(idx, "currency", e.target.value)}
+                  >
+                    <option>Robux</option>
+                    <option>Coins</option>
+                    <option>Gems</option>
+                    <option>Custom</option>
+                  </select>
+                  <input
+                    placeholder="Icon Asset ID"
+                    className="bg-gray-800 border border-gray-700 rounded px-2 py-1 text-sm text-white"
+                    value={item.iconId}
+                    onChange={e => updateCatalogItem(idx, "iconId", e.target.value)}
+                  />
+                </div>
+              </div>
+            ))}
+            <button
+              onClick={addCatalogItem}
+              className="w-full py-2 border-2 border-dashed border-gray-800 rounded-lg text-gray-500 hover:text-[#00f5d4] hover:border-[#00f5d4] transition-all flex items-center justify-center gap-2"
+            >
+              <Plus className="h-4 w-4" />
+              Add Item
+            </button>
+          </div>
+        )}
+
+        {tab === "animations" && (
+          <div className="space-y-2">
+            <label className="text-xs text-gray-400 block">Animation Style</label>
+            <textarea
+              className="w-full h-40 bg-gray-800 border border-gray-700 rounded-lg p-3 text-white text-sm focus:border-[#00f5d4] outline-none"
+              placeholder="e.g. Buttons should spring when hovered. The main panel should slide in from the left. Pulsing effect on the buy button."
+              value={specs.animations}
+              onChange={e => setSpecs(prev => ({ ...prev, animations: e.target.value }))}
+            />
+          </div>
+        )}
+      </div>
+
+      <div className="mt-6 flex justify-end gap-3">
+        <button
+          className="px-4 py-2 rounded-lg bg-gray-800 text-white font-bold hover:bg-gray-700"
+          onClick={onClose}
+        >
+          Cancel
+        </button>
+        <button
+          className="px-6 py-2 rounded-lg bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-white font-bold hover:scale-[1.02] transition-transform"
+          onClick={() => onConfirm(specs)}
+        >
+          Generate with Specs
+        </button>
+      </div>
+    </Modal>
   );
 }
 
