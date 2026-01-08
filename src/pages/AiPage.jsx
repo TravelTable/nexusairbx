@@ -20,6 +20,8 @@ import {
   Gamepad2,
   MessageSquare,
   Layout,
+  Plus,
+  X,
 } from "lucide-react";
 import { auth } from "./firebase";
 import { onAuthStateChanged, signInAnonymously } from "firebase/auth";
@@ -1801,7 +1803,7 @@ const handleSubmit = async (e, opts = {}) => {
           ...prev,
           loading: true,
           stage,
-          eta: null,
+          eta,
         }));
       },
       { signal: streamAbortController.signal }
@@ -2671,7 +2673,7 @@ useEffect(() => {
           {/* Sidebar */}
           <aside
             className={`fixed top-0 right-0 h-full bg-gray-900 border-l border-gray-800 w-[80vw] max-w-xs z-[101] shadow-2xl transition-transform duration-300 ${
-              mobileRightSidebarOpen ? "translate-x-0" : "translate-x-full"
+              mobileRightSidebarOpen ? "translate-x-0" : "-translate-x-full"
             }`}
           >
             <div className="flex items-center justify-between px-4 py-4 border-b border-gray-800">
@@ -3605,3 +3607,80 @@ function UiSpecificationModal({ onClose, onConfirm, initialSpecs }) {
 }
 
 export default AiPage;
+
+</file_content>
+
+Now that you have the latest state of the file, try the operation again with fewer, more precise SEARCH blocks. For large files especially, it may be prudent to try to limit yourself to <5 SEARCH/REPLACE blocks at a time, then wait for the user to respond with the result of the operation before following up with another replace_in_file call to make additional edits.
+(If you run into this error 3 times in a row, you may use the write_to_file tool as a fallback.)
+</error>
+
+# TODO LIST CREATION REQUIRED - ACT MODE ACTIVATED
+
+
+
+**You've just switched from PLAN MODE to ACT MODE!**
+
+
+
+** IMMEDIATE ACTION REQUIRED:**
+
+1. Create a comprehensive todo list in your NEXT tool call
+
+2. Use the task_progress parameter to provide the list
+
+3. Format each item using markdown checklist syntax:
+
+	- [ ] For tasks to be done
+
+	- [x] For any tasks already completed
+
+
+
+**Your todo list should include:**
+
+   - All major implementation steps
+
+   - Testing and validation tasks
+
+   - Documentation updates if needed
+
+   - Final verification steps
+
+
+
+**Example format:**
+   - [ ] Set up project structure
+
+   - [ ] Implement core functionality
+
+   - [ ] Add error handling
+-
+   - [ ] Write tests
+
+   - [ ] Test implementation
+
+   - [ ] Document changes
+
+
+
+**Remember:** Keeping the todo list updated helps track progress and ensures nothing is missed.<environment_details>
+# VSCode Visible Files
+src/pages/AiPage.jsx
+
+# VSCode Open Tabs
+../generated_ui (3).lua
+src/components/SidebarContent.jsx
+../nexusrbx-backend/server.js
+src/lib/uiBuilderApi.js
+src/components/UiPreviewDrawer.jsx
+src/pages/AiPage.jsx
+
+# Current Time
+1/9/2026, 4:11:38 AM (Australia/Sydney, UTC+11:00)
+
+# Context Window Usage
+785,544 / 1,048.576K tokens used (75%)
+
+# Current Mode
+ACT MODE
+</environment_details>
