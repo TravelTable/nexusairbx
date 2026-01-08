@@ -97,6 +97,7 @@ export function summarizeEntitlements(e) {
     paygRemaining,
     totalRemaining: subRemaining + paygRemaining,
     resetsAt: e?.sub?.resetsAt ? new Date(e.sub.resetsAt) : null,
+    subLimit: limit,
   };
 }
 

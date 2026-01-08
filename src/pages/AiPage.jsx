@@ -298,6 +298,18 @@ function PlanBadge({ plan }) {
 }
 
 function AiPage() {
+  const { plan, totalRemaining, subLimit, resetsAt } = useBilling();
+  const planKey = plan?.toLowerCase() || "free";
+  const tokensLeft = totalRemaining;
+  const tokensLimit = subLimit;
+  const tokenRefreshTime = resetsAt;
+
+  const [settings, setSettings] = useState(() => safeGet("nexusrbx:aiSettings", defaultSettings));
+
+  useEffect(() => {
+    safeSet("nexusrbx:aiSettings", settings);
+  }, [settings]);
+
   const [showOnboarding, setShowOnboarding] = useState(localStorage.getItem("nexusrbx:onboardingComplete") !== "true");
   const [mode, setMode] = useState("ui"); 
   const [showGameContextModal, setShowGameContextModal] = useState(false);
