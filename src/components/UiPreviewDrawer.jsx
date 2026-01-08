@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { X, Code2, Download } from "lucide-react";
+import { X, Download } from "lucide-react";
 import LuaPreviewRenderer from "../preview/LuaPreviewRenderer";
 
 export default function UiPreviewDrawer({
@@ -7,7 +7,6 @@ export default function UiPreviewDrawer({
   onClose,
   lua,
   prompt,
-  onViewCode,
   onDownload,
   history = [],
   activeId = null,
@@ -34,7 +33,7 @@ export default function UiPreviewDrawer({
       />
 
       <div
-        className={`absolute right-0 top-0 h-full w-full sm:w-[75vw] max-w-[1200px] bg-[#0b1220] border-l border-gray-800 shadow-2xl transition-transform ${
+        className={`absolute right-0 top-0 h-full w-full sm:w-[85vw] max-w-[1350px] bg-[#0b1220] border-l border-gray-800 shadow-2xl transition-transform ${
           open ? "translate-x-0" : "translate-x-full"
         }`}
       >
@@ -54,17 +53,6 @@ export default function UiPreviewDrawer({
             >
               <Download className="w-4 h-4" />
               Download
-            </button>
-
-            <button
-              type="button"
-              className="px-2 py-1 rounded bg-gray-800 hover:bg-gray-700 text-xs text-gray-100 inline-flex items-center gap-1"
-              onClick={onViewCode}
-              disabled={!lua}
-              title="View code"
-            >
-              <Code2 className="w-4 h-4" />
-              View Code
             </button>
 
             <button

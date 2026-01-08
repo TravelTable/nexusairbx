@@ -495,6 +495,54 @@ function handleModelChange(e) {
             setSettings((prev) => ({ ...prev, uiMaxSystemsTokens: Number(e.target.value) || 2500 }))
           }
         />
+
+        <div className="mt-4 font-semibold text-gray-200 mb-2">UI Theme</div>
+
+        <div className="grid grid-cols-3 gap-2">
+          <div>
+            <label className="text-xs text-gray-400">Primary</label>
+            <input
+              type="color"
+              className="w-full mt-1 h-9 bg-gray-900/60 border border-gray-700 rounded"
+              value={settings.uiThemePrimary || "#00f5d4"}
+              onChange={(e) =>
+                setSettings((prev) => ({ ...prev, uiThemePrimary: e.target.value }))
+              }
+            />
+          </div>
+          <div>
+            <label className="text-xs text-gray-400">Secondary</label>
+            <input
+              type="color"
+              className="w-full mt-1 h-9 bg-gray-900/60 border border-gray-700 rounded"
+              value={settings.uiThemeSecondary || "#9b5de5"}
+              onChange={(e) =>
+                setSettings((prev) => ({ ...prev, uiThemeSecondary: e.target.value }))
+              }
+            />
+          </div>
+          <div>
+            <label className="text-xs text-gray-400">Accent</label>
+            <input
+              type="color"
+              className="w-full mt-1 h-9 bg-gray-900/60 border border-gray-700 rounded"
+              value={settings.uiThemeAccent || "#f15bb5"}
+              onChange={(e) =>
+                setSettings((prev) => ({ ...prev, uiThemeAccent: e.target.value }))
+              }
+            />
+          </div>
+        </div>
+
+        <label className="text-xs text-gray-400 mt-3 block">Font</label>
+        <input
+          type="text"
+          className="w-full mt-1 bg-gray-900/60 border border-gray-700 rounded p-2 text-sm"
+          value={settings.uiThemeFont || "Poppins, Roboto, sans-serif"}
+          onChange={(e) =>
+            setSettings((prev) => ({ ...prev, uiThemeFont: e.target.value }))
+          }
+        />
       </div>
 
       {/* Template Quota Meter */}

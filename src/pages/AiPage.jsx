@@ -41,7 +41,7 @@ import {
   nextVersionNumber,
   cryptoRandomId,
 } from "../lib/versioning";
-import { aiPipeline, aiFinalizeLua } from "../lib/uiBuilderApi";
+import { aiPipeline } from "../lib/uiBuilderApi";
 import {
   getFirestore,
   doc,
@@ -105,6 +105,11 @@ const defaultSettings = {
   uiCanvasSize: { w: 1280, h: 720 },
   uiMaxItems: 45,
   uiMaxSystemsTokens: 2500,
+  uiThemePrimary: "#00f5d4",
+  uiThemeSecondary: "#9b5de5",
+  uiThemeAccent: "#f15bb5",
+  uiThemeMuted: "#a1a1aa",
+  uiThemeFont: "Poppins, Roboto, sans-serif",
 };
 
 // --- Gravatar Helper ---
@@ -524,10 +529,12 @@ async function handleGenerateUiPreview() {
       panel: "#0b1220",
       border: "#334155",
       text: "#e5e7eb",
-      muted: "#cbd5e1",
-      primary: "#00f5d4",
+      muted: settings.uiThemeMuted || "#a1a1aa",
+      primary: settings.uiThemePrimary || "#00f5d4",
+      secondary: settings.uiThemeSecondary || "#9b5de5",
+      accent: settings.uiThemeAccent || "#f15bb5",
       radius: "12px",
-      font: "system-ui",
+      font: settings.uiThemeFont || "Poppins, Roboto, sans-serif",
     };
 
     const pipe = await aiPipeline({
@@ -537,20 +544,13 @@ async function handleGenerateUiPreview() {
       themeHint,
       maxItems,
       gameSpec: settings.gameSpec || "",
+      maxSystemsTokens: settings.uiMaxSystemsTokens,
     });
 
     const boardState = pipe?.boardState;
     if (!boardState) throw new Error("No boardState returned");
 
-    const fin = await aiFinalizeLua({
-      token,
-      boardState,
-      prompt: prompt.trim(),
-      gameSpec: settings.gameSpec || "",
-      maxSystemsTokens: settings.uiMaxSystemsTokens,
-    });
-
-    const lua = fin?.lua || "";
+    const lua = pipe?.lua || "";
     if (!lua) throw new Error("No Lua returned");
 
     const id = cryptoRandomId();
@@ -3003,28 +3003,15 @@ useEffect(() => {
           <button
             type="button"
             onClick={handleGenerateUiPreview}
-            disabled={uiIsGenerating || !prompt.trim() || !user}
+            disabled={uiIsGenerating || isGenerating || !prompt.trim() || !user}
             className={`px-3 py-2 rounded text-sm font-semibold ${
-              uiIsGenerating || !prompt.trim() || !user
+              uiIsGenerating || isGenerating || !prompt.trim() || !user
                 ? "bg-gray-700 text-gray-400 cursor-not-allowed"
                 : "bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-white hover:scale-[1.02]"
             }`}
           >
-            {uiIsGenerating ? "Generating UI..." : "Generate UI Preview"}
+            {uiIsGenerating ? "Generating..." : "Generate UI & Code"}
           </button>
-
-          {activeUi?.lua ? (
-            <button
-              type="button"
-              onClick={() => {
-                setSelectedVersion(null);
-                setUiDrawerOpen(true);
-              }}
-              className="px-3 py-2 rounded bg-gray-800 hover:bg-gray-700 text-sm text-gray-100"
-            >
-              Open UI Preview
-            </button>
-          ) : null}
         </div>
 
         <div className="text-xs text-gray-500">Uses UI Builder pipeline</div>
@@ -3116,15 +3103,6 @@ useEffect(() => {
           onDownload={() => {
             if (!activeUi?.lua) return;
             downloadLuaFile(activeUi.lua, "generated_ui.lua");
-          }}
-          onViewCode={() => {
-            if (!activeUi?.lua) return;
-            setSelectedVersion({
-              title: "Generated UI",
-              code: activeUi.lua,
-              explanation: activeUi.prompt || "",
-              versionNumber: null,
-            });
           }}
         />
         {selectedVersion && (

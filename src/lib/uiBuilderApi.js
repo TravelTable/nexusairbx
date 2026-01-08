@@ -171,11 +171,19 @@ export async function aiFinalizeLua({
   return handleResponse(res);
 }
 
-export async function aiPipeline({ token, prompt, canvasSize, themeHint, maxItems = 45, gameSpec = "" }) {
+export async function aiPipeline({
+  token,
+  prompt,
+  canvasSize,
+  themeHint,
+  maxItems = 45,
+  gameSpec = "",
+  maxSystemsTokens = 2500,
+}) {
   const res = await fetch(`${BACKEND_URL}/api/ui-builder/ai/pipeline`, {
     method: "POST",
     headers: authHeaders(token),
-    body: JSON.stringify({ prompt, canvasSize, themeHint, maxItems, gameSpec }),
+    body: JSON.stringify({ prompt, canvasSize, themeHint, maxItems, gameSpec, maxSystemsTokens }),
   });
   return handleResponse(res);
 }
