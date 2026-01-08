@@ -2777,7 +2777,7 @@ useEffect(() => {
             <div className="flex-grow overflow-y-auto px-4 md:px-6 py-6">
               <div className="w-full max-w-5xl mx-auto space-y-6">
                 {/* Welcome State */}
-                {messages.length === 0 && !isGenerating && mode === "chat" ? (
+                {messages.length === 0 && !isGenerating ? (
                   <div className="min-h-[55vh] flex items-center justify-center">
                     <div className="w-full max-w-4xl">
                       <PlanWelcomeCard
@@ -2786,34 +2786,74 @@ useEffect(() => {
                         planInfo={planInfo}
                       />
 
-                      <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-3">
-                        <button
-                          type="button"
-                          className="px-4 py-3 rounded-lg bg-gray-900/60 border border-gray-800 hover:border-[#9b5de5] hover:bg-gray-900 transition text-left"
-                          onClick={() => setPrompt("Build a main menu UI for my game with Play, Settings, Shop.")}
-                        >
-                          <div className="font-semibold text-white">Main Menu</div>
-                          <div className="text-xs text-gray-400 mt-1">Clean menu with navigation</div>
-                        </button>
+                      {mode === "ui" ? (
+                        <div className="mt-8 text-center space-y-4">
+                          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#00f5d4]/10 border border-[#00f5d4]/20 text-[#00f5d4] text-sm font-medium">
+                            <Layout className="h-4 w-4" />
+                            UI Builder Mode Active
+                          </div>
+                          <h2 className="text-3xl font-bold text-white">What UI should we build today?</h2>
+                          <p className="text-gray-400 max-w-lg mx-auto">
+                            Describe any interface—from main menus to complex inventory systems. 
+                            I'll generate the layout, theme, and Roblox Lua code for you.
+                          </p>
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-6">
+                            <button
+                              type="button"
+                              className="px-4 py-3 rounded-lg bg-gray-900/60 border border-gray-800 hover:border-[#00f5d4] hover:bg-gray-900 transition text-left"
+                              onClick={() => setPrompt("Military themed main menu with Play, Settings, Shop, and a Credits button.")}
+                            >
+                              <div className="font-semibold text-white">Military Menu</div>
+                              <div className="text-xs text-gray-400 mt-1">Tactical & clean</div>
+                            </button>
+                            <button
+                              type="button"
+                              className="px-4 py-3 rounded-lg bg-gray-900/60 border border-gray-800 hover:border-[#00f5d4] hover:bg-gray-900 transition text-left"
+                              onClick={() => setPrompt("Fantasy RPG HUD with health/mana orbs, XP bar, and a minimap.")}
+                            >
+                              <div className="font-semibold text-white">RPG HUD</div>
+                              <div className="text-xs text-gray-400 mt-1">Immersive gameplay UI</div>
+                            </button>
+                            <button
+                              type="button"
+                              className="px-4 py-3 rounded-lg bg-gray-900/60 border border-gray-800 hover:border-[#00f5d4] hover:bg-gray-900 transition text-left"
+                              onClick={() => setPrompt("Modern shop UI with item categories, currency display, and buy buttons.")}
+                            >
+                              <div className="font-semibold text-white">Modern Shop</div>
+                              <div className="text-xs text-gray-400 mt-1">Clean & functional</div>
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                          <button
+                            type="button"
+                            className="px-4 py-3 rounded-lg bg-gray-900/60 border border-gray-800 hover:border-[#9b5de5] hover:bg-gray-900 transition text-left"
+                            onClick={() => setPrompt("Build a main menu UI for my game with Play, Settings, Shop.")}
+                          >
+                            <div className="font-semibold text-white">Main Menu</div>
+                            <div className="text-xs text-gray-400 mt-1">Clean menu with navigation</div>
+                          </button>
 
-                        <button
-                          type="button"
-                          className="px-4 py-3 rounded-lg bg-gray-900/60 border border-gray-800 hover:border-[#00f5d4] hover:bg-gray-900 transition text-left"
-                          onClick={() => setPrompt("Create a HUD: health bar, stamina bar, coins counter, and a minimap placeholder.")}
-                        >
-                          <div className="font-semibold text-white">HUD</div>
-                          <div className="text-xs text-gray-400 mt-1">Gameplay overlay UI</div>
-                        </button>
+                          <button
+                            type="button"
+                            className="px-4 py-3 rounded-lg bg-gray-900/60 border border-gray-800 hover:border-[#00f5d4] hover:bg-gray-900 transition text-left"
+                            onClick={() => setPrompt("Create a HUD: health bar, stamina bar, coins counter, and a minimap placeholder.")}
+                          >
+                            <div className="font-semibold text-white">HUD</div>
+                            <div className="text-xs text-gray-400 mt-1">Gameplay overlay UI</div>
+                          </button>
 
-                        <button
-                          type="button"
-                          className="px-4 py-3 rounded-lg bg-gray-900/60 border border-gray-800 hover:border-[#9b5de5] hover:bg-gray-900 transition text-left"
-                          onClick={() => setPrompt("Make an inventory UI with item grid, item details panel, and equip button.")}
-                        >
-                          <div className="font-semibold text-white">Inventory</div>
-                          <div className="text-xs text-gray-400 mt-1">Grid + details + actions</div>
-                        </button>
-                      </div>
+                          <button
+                            type="button"
+                            className="px-4 py-3 rounded-lg bg-gray-900/60 border border-gray-800 hover:border-[#9b5de5] hover:bg-gray-900 transition text-left"
+                            onClick={() => setPrompt("Make an inventory UI with item grid, item details panel, and equip button.")}
+                          >
+                            <div className="font-semibold text-white">Inventory</div>
+                            <div className="text-xs text-gray-400 mt-1">Grid + details + actions</div>
+                          </button>
+                        </div>
+                      )}
 
                       <div className="mt-4 text-sm text-gray-400 text-center">
                         Pick a preset or type your own prompt below.
