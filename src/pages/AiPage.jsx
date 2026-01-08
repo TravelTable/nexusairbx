@@ -6,6 +6,7 @@ import React, {
   useDeferredValue,
 } from "react";
 import { useBilling } from "../context/BillingContext";
+import { useSettings } from "../context/SettingsContext";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   Send,
@@ -299,16 +300,11 @@ function PlanBadge({ plan }) {
 
 function AiPage() {
   const { plan, totalRemaining, subLimit, resetsAt } = useBilling();
+  const { settings, updateSettings } = useSettings();
   const planKey = plan?.toLowerCase() || "free";
   const tokensLeft = totalRemaining;
   const tokensLimit = subLimit;
   const tokenRefreshTime = resetsAt;
-
-  const [settings, setSettings] = useState(() => safeGet("nexusrbx:aiSettings", defaultSettings));
-
-  useEffect(() => {
-    safeSet("nexusrbx:aiSettings", settings);
-  }, [settings]);
 
   const [showOnboarding, setShowOnboarding] = useState(localStorage.getItem("nexusrbx:onboardingComplete") !== "true");
   const [mode, setMode] = useState("ui"); 
@@ -676,7 +672,11 @@ function AiPage() {
       {showGameContextModal && (
         <Modal onClose={() => setShowGameContextModal(false)} title="Game Context">
           <div className="space-y-4">
-            <textarea className="w-full h-40 bg-gray-800 border border-gray-700 rounded-lg p-3 text-white text-sm outline-none" value={settings.gameSpec} onChange={(e) => setSettings(prev => ({ ...prev, gameSpec: e.target.value }))} />
+            <textarea 
+              className="w-full h-40 bg-gray-800 border border-gray-700 rounded-lg p-3 text-white text-sm outline-none" 
+              value={settings.gameSpec} 
+              onChange={(e) => updateSettings({ gameSpec: e.target.value })} 
+            />
             <button className="w-full py-2 rounded-lg bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-white font-bold" onClick={() => setShowGameContextModal(false)}>Save Context</button>
           </div>
         </Modal>

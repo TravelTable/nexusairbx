@@ -45,6 +45,10 @@ function NexusRBXHeader({
     return current === link;
   };
 
+  const finalNavLinks = navLinks.map(link => 
+    link.href === "/settings" ? { ...link, text: "Dashboard" } : link
+  );
+
   return (
     <header className="border-b border-gray-800 bg-black/30 backdrop-blur-md sticky top-0 z-50">
       <div className="container mx-auto px-4 py-4 flex justify-between items-center">
@@ -59,7 +63,7 @@ function NexusRBXHeader({
         </div>
         <nav className="hidden md:flex items-center">
           <div className="flex items-center gap-8">
-            {navLinks.map((link, idx) => (
+            {finalNavLinks.map((link, idx) => (
               <React.Fragment key={link.id}>
                 {link.external ? (
                   <a
@@ -168,7 +172,7 @@ function NexusRBXHeader({
       {mobileMenuOpen && (
         <div className="md:hidden bg-black/90 border-b border-gray-800 px-4 py-4 mobile-menu" id="mobile-menu">
           <nav className="flex flex-col space-y-4">
-            {navLinks.map((link, idx) => (
+            {finalNavLinks.map((link, idx) => (
               <React.Fragment key={link.id}>
                 {link.external ? (
                   <a
