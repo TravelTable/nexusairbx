@@ -392,6 +392,111 @@ function handleModelChange(e) {
         </div>
       </div>
 
+      {/* Game Spec (persistent context) */}
+      <div>
+        <div className="font-semibold text-gray-200 mb-2 flex items-center gap-2">
+          Game Spec
+          <Info className="h-4 w-4 text-gray-400" />
+        </div>
+        <textarea
+          className="w-full h-28 bg-gray-900/60 border border-gray-700 rounded p-2 text-sm"
+          placeholder="Short persistent context: game genre, core loop, currency, screens, etc."
+          value={settings.gameSpec || ""}
+          onChange={(e) => setSettings((prev) => ({ ...prev, gameSpec: e.target.value }))}
+        />
+        <div className="text-xs text-gray-500 mt-1">
+          This is sent as project context to reduce repeated prompting + token waste.
+        </div>
+      </div>
+
+      {/* Output + UI builder controls */}
+      <div>
+        <div className="font-semibold text-gray-200 mb-2">AI Output</div>
+
+        <label className="text-xs text-gray-400">Verbosity</label>
+        <select
+          className="w-full mt-1 bg-gray-900/60 border border-gray-700 rounded p-2 text-sm"
+          value={settings.verbosity || "concise"}
+          onChange={(e) => setSettings((prev) => ({ ...prev, verbosity: e.target.value }))}
+        >
+          <option value="concise">Concise</option>
+          <option value="detailed">Detailed</option>
+        </select>
+
+        <label className="text-xs text-gray-400 mt-3 block">Max Output Tokens</label>
+        <input
+          type="number"
+          min={800}
+          max={16000}
+          className="w-full mt-1 bg-gray-900/60 border border-gray-700 rounded p-2 text-sm"
+          value={settings.maxOutputTokens ?? 8000}
+          onChange={(e) =>
+            setSettings((prev) => ({ ...prev, maxOutputTokens: Number(e.target.value) || 8000 }))
+          }
+        />
+
+        <div className="mt-4 font-semibold text-gray-200 mb-2">UI Builder</div>
+
+        <div className="grid grid-cols-2 gap-2">
+          <div>
+            <label className="text-xs text-gray-400">Canvas W</label>
+            <input
+              type="number"
+              className="w-full mt-1 bg-gray-900/60 border border-gray-700 rounded p-2 text-sm"
+              value={settings.uiCanvasSize?.w ?? 1280}
+              onChange={(e) =>
+                setSettings((prev) => ({
+                  ...prev,
+                  uiCanvasSize: {
+                    ...(prev.uiCanvasSize || { w: 1280, h: 720 }),
+                    w: Number(e.target.value) || 1280,
+                  },
+                }))
+              }
+            />
+          </div>
+          <div>
+            <label className="text-xs text-gray-400">Canvas H</label>
+            <input
+              type="number"
+              className="w-full mt-1 bg-gray-900/60 border border-gray-700 rounded p-2 text-sm"
+              value={settings.uiCanvasSize?.h ?? 720}
+              onChange={(e) =>
+                setSettings((prev) => ({
+                  ...prev,
+                  uiCanvasSize: {
+                    ...(prev.uiCanvasSize || { w: 1280, h: 720 }),
+                    h: Number(e.target.value) || 720,
+                  },
+                }))
+              }
+            />
+          </div>
+        </div>
+
+        <label className="text-xs text-gray-400 mt-3 block">Max Items</label>
+        <input
+          type="number"
+          min={10}
+          max={200}
+          className="w-full mt-1 bg-gray-900/60 border border-gray-700 rounded p-2 text-sm"
+          value={settings.uiMaxItems ?? 45}
+          onChange={(e) => setSettings((prev) => ({ ...prev, uiMaxItems: Number(e.target.value) || 45 }))}
+        />
+
+        <label className="text-xs text-gray-400 mt-3 block">Systems Token Cap</label>
+        <input
+          type="number"
+          min={400}
+          max={6000}
+          className="w-full mt-1 bg-gray-900/60 border border-gray-700 rounded p-2 text-sm"
+          value={settings.uiMaxSystemsTokens ?? 2500}
+          onChange={(e) =>
+            setSettings((prev) => ({ ...prev, uiMaxSystemsTokens: Number(e.target.value) || 2500 }))
+          }
+        />
+      </div>
+
       {/* Template Quota Meter */}
       <div>
         <div className="flex items-center justify-between mb-2">

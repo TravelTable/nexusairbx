@@ -4,7 +4,6 @@ import React, {
   useRef,
   useCallback,
   useDeferredValue,
-  useMemo,
 } from "react";
 import { useBilling } from "../context/BillingContext";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -42,7 +41,7 @@ import {
   nextVersionNumber,
   cryptoRandomId,
 } from "../lib/versioning";
-import { aiPipeline } from "../lib/uiBuilderApi";
+import { aiPipeline, aiFinalizeLua } from "../lib/uiBuilderApi";
 import {
   getFirestore,
   doc,
@@ -96,6 +95,16 @@ const defaultSettings = {
   modelVersion: "nexus-3",
   creativity: 0.7,
   codeStyle: "optimized",
+
+  // NEW: backend behavior controls
+  verbosity: "concise", // "concise" | "detailed"
+  maxOutputTokens: 8000, // cap for /api/generate output
+  gameSpec: "", // persistent context about the user's game
+
+  // NEW: UI builder defaults
+  uiCanvasSize: { w: 1280, h: 720 },
+  uiMaxItems: 45,
+  uiMaxSystemsTokens: 2500,
 };
 
 // --- Gravatar Helper ---
@@ -425,23 +434,13 @@ function AiPage() {
   // --- Prompt state (move to top so setPrompt is defined for all hooks below) ---
   const [prompt, setPrompt] = useState("");
 
-  // --- UI Builder: generations + preview (newest first) ---
   const [uiGenerations, setUiGenerations] = useState([]); // newest first
   const [activeUiId, setActiveUiId] = useState(null);
-  const [uiPreviewOpen, setUiPreviewOpen] = useState(false);
-  const [uiGenLoading, setUiGenLoading] = useState(false);
-  const [uiGenError, setUiGenError] = useState("");
+  const [uiIsGenerating, setUiIsGenerating] = useState(false);
 
-  const activeUi = useMemo(
-    () =>
-      uiGenerations.find((g) => g.id === activeUiId) || uiGenerations[0] || null,
-    [uiGenerations, activeUiId]
-  );
-
-  const showUiPreviewDesktop = useMemo(
-    () => uiPreviewOpen && !!activeUi?.lua,
-    [uiPreviewOpen, activeUi]
-  );
+  const activeUi =
+    uiGenerations.find((g) => g.id === activeUiId) || uiGenerations[0] || null;
+  const showUiPreview = !!activeUi;
 
   // --- Chat state + listener refs ---
   const [currentChatId, setCurrentChatId] = useState(null);
@@ -493,77 +492,79 @@ function AiPage() {
     [setNotifications]
   );
 
-  const downloadLua = useCallback((luaText, filename = "GeneratedUI.lua") => {
-    const blob = new Blob([luaText], { type: "text/plain;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = filename;
-    a.click();
-    URL.revokeObjectURL(url);
-  }, []);
+  function downloadLuaFile(lua, name = "generated_ui.lua") {
+  if (!lua) return;
+  const blob = new Blob([lua], { type: "text/plain;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = name;
+  a.click();
+  URL.revokeObjectURL(url);
+}
 
-  const handleGenerateUi = useCallback(async () => {
-    const cleaned = (prompt || "").replace(/\s+/g, " ").trim();
+async function handleGenerateUiPreview() {
+  if (!prompt.trim()) {
+    notify({ message: "Describe the UI you want first.", type: "error" });
+    return;
+  }
+  if (!user) {
+    notify({ message: "Sign in to generate UI.", type: "error" });
+    return;
+  }
 
-    if (!cleaned) {
-      setPromptError("Please enter a prompt.");
-      return;
-    }
-    if (!user) {
-      notify({ message: "Sign in required.", type: "error", duration: 2000 });
-      navigate("/signin");
-      return;
-    }
+  setUiIsGenerating(true);
+  try {
+    const token = await user.getIdToken();
+    const canvasSize = settings.uiCanvasSize || { w: 1280, h: 720 };
+    const maxItems = Number(settings.uiMaxItems || 45);
 
-    setUiGenLoading(true);
-    setUiGenError("");
+    const themeHint = {
+      bg: "#020617",
+      panel: "#0b1220",
+      border: "#334155",
+      text: "#e5e7eb",
+      muted: "#cbd5e1",
+      primary: "#00f5d4",
+      radius: "12px",
+      font: "system-ui",
+    };
 
-    try {
-      const token = await user.getIdToken();
+    const pipe = await aiPipeline({
+      token,
+      prompt: prompt.trim(),
+      canvasSize,
+      themeHint,
+      maxItems,
+      gameSpec: settings.gameSpec || "",
+    });
 
-      const data = await aiPipeline({
-        token,
-        prompt: cleaned,
-        canvasSize: { w: 1280, h: 720 },
-        themeHint: {
-          bg: "#020617",
-          panel: "#0b1220",
-          border: "#334155",
-          text: "#e5e7eb",
-          muted: "#cbd5e1",
-          primary: "#9b5de5",
-          radius: "14px",
-          font: "system-ui",
-        },
-        maxItems: 45,
-      });
+    const boardState = pipe?.boardState;
+    if (!boardState) throw new Error("No boardState returned");
 
-      const gen = {
-        id: cryptoRandomId(),
-        prompt: cleaned,
-        lua: data?.lua || "",
-        createdAt: Date.now(),
-      };
+    const fin = await aiFinalizeLua({
+      token,
+      boardState,
+      prompt: prompt.trim(),
+      gameSpec: settings.gameSpec || "",
+      maxSystemsTokens: settings.uiMaxSystemsTokens,
+    });
 
-      // NEWEST FIRST
-      setUiGenerations((prev) => [gen, ...prev].slice(0, 10));
-      setActiveUiId(gen.id);
-      setUiPreviewOpen(true);
+    const lua = fin?.lua || "";
+    if (!lua) throw new Error("No Lua returned");
 
-      notify({
-        message: "UI generated — preview opened.",
-        type: "success",
-        duration: 2500,
-      });
-    } catch (e) {
-      const msg = e?.message || "Failed to generate UI.";
-      setUiGenError(msg);
-      notify({ message: msg, type: "error", duration: 6000 });
-    } finally {
-      setUiGenLoading(false);
-    }
-  }, [prompt, user, notify, navigate]);
+    const id = cryptoRandomId();
+    const entry = { id, createdAt: Date.now(), prompt: prompt.trim(), boardState, lua };
+
+    setUiGenerations((prev) => [entry, ...(prev || [])]);
+    setActiveUiId(id);
+    notify({ message: "UI preview generated.", type: "success" });
+  } catch (e) {
+    notify({ message: e?.message || "UI generation failed", type: "error" });
+  } finally {
+    setUiIsGenerating(false);
+  }
+}
 
   // Hide onboarding when finished (listen for reload or localStorage change)
   useEffect(() => {
@@ -1455,13 +1456,20 @@ const handleSubmit = async (e, opts = {}) => {
   // Prepare request
   const reqBody = {
     prompt: cleanedPrompt,
-    model: settings.modelVersion,
-    creativity: settings.creativity,
-    codeStyle: settings.codeStyle,
     projectId: projectIdToSend,
     requestId,
     chatId: activeChatId,
     conversation,
+
+    // backend reads settings from this object
+    settings: {
+      model: settings.modelVersion,
+      temperature: settings.creativity,
+      codeStyle: settings.codeStyle,
+      verbosity: settings.verbosity,
+      maxOutputTokens: settings.maxOutputTokens,
+      gameSpec: settings.gameSpec,
+    },
   };
 
     // 5. Streaming via POST SSE
@@ -2639,14 +2647,12 @@ useEffect(() => {
         </aside>
         {/* Main Content */}
         <main
-          className={`flex-grow flex flex-col md:grid relative ${
-            showUiPreviewDesktop
-              ? "md:grid-cols-[minmax(0,1fr)_minmax(360px,40vw)_20rem]"
-              : "md:grid-cols-[minmax(0,1fr)_20rem]"
-          }`}
+          className={`flex-grow grid grid-cols-1 ${
+            showUiPreview ? "md:grid-cols-[1fr_420px_320px]" : "md:grid-cols-[1fr_320px]"
+          } relative`}
         >
           {/* Main chat area */}
-          <section className="flex-grow flex flex-col md:w-2/3 h-full relative z-10">
+          <section className="min-w-0 flex flex-col h-full relative z-10">
             <div className="flex-grow overflow-y-auto px-2 md:px-4 py-6 flex flex-col items-center">
               <div className="w-full mx-auto space-y-6">
                 {/* Welcome State */}
@@ -2911,33 +2917,6 @@ useEffect(() => {
   /* Prompt form */
   <form onSubmit={handleSubmit} className="w-full max-w-2xl mx-auto" autoComplete="off">
     <div className="relative">
-      <div className="flex items-center gap-2 mb-2">
-        <button
-          type="button"
-          onClick={handleGenerateUi}
-          disabled={uiGenLoading || isGenerating || !prompt.trim()}
-          className={`px-3 py-2 rounded text-sm font-semibold shadow ${
-            uiGenLoading || isGenerating || !prompt.trim()
-              ? "bg-gray-700 text-gray-300 cursor-not-allowed"
-              : "bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-white hover:shadow-xl"
-          }`}
-        >
-          {uiGenLoading ? "Generating UI…" : "Generate UI Preview"}
-        </button>
-
-        {uiGenerations.length > 0 && !uiPreviewOpen && (
-          <button
-            type="button"
-            onClick={() => setUiPreviewOpen(true)}
-            className="px-3 py-2 rounded text-sm bg-gray-800 hover:bg-gray-700 text-gray-100"
-          >
-            Show Preview
-          </button>
-        )}
-      </div>
-
-      {uiGenError && <div className="mb-2 text-xs text-red-400">{uiGenError}</div>}
-
       <textarea
         ref={promptInputRef}
         value={prompt}
@@ -2945,7 +2924,7 @@ useEffect(() => {
         onKeyDown={handlePromptKeyDown}
         placeholder={
           planInfo?.promptPlaceholder ||
-          "Describe the UI you want for your game (menus, HUD, shop, inventory, etc.)…"
+          "Describe the UI + gameplay system you want (HUD, shop, inventory, settings, etc.)."
         }
         className={`w-full rounded-lg bg-gray-900/60 border border-gray-700 focus:border-[#9b5de5] focus:ring-2 focus:ring-[#9b5de5]/50 transition-all duration-300 py-3 px-4 pr-14 resize-none shadow-lg ${
           promptError ? "border-red-500" : ""
@@ -2955,6 +2934,23 @@ useEffect(() => {
         disabled={isGenerating}
         aria-label="Prompt input"
       ></textarea>
+
+      <div className="flex items-center justify-between mt-2">
+        <button
+          type="button"
+          onClick={handleGenerateUiPreview}
+          disabled={uiIsGenerating || !prompt.trim() || !user}
+          className={`px-3 py-2 rounded text-sm font-semibold ${
+            uiIsGenerating || !prompt.trim() || !user
+              ? "bg-gray-700 text-gray-400 cursor-not-allowed"
+              : "bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-white hover:scale-[1.02]"
+          }`}
+        >
+          {uiIsGenerating ? "Generating UI..." : "Generate UI Preview"}
+        </button>
+
+        <div className="text-xs text-gray-500">Uses UI Builder pipeline</div>
+      </div>
 
       <button
         type="submit"
@@ -3011,70 +3007,50 @@ useEffect(() => {
               </div>
             </div>
           </section>
-          {showUiPreviewDesktop && (
-            <aside className="hidden md:flex flex-col border-l border-gray-800 bg-gray-950/40 sticky top-[64px] h-[calc(100vh-64px)]">
-              <div className="p-3 border-b border-gray-800 flex items-center justify-between gap-3">
-                <div className="min-w-0">
-                  <div className="font-semibold text-white">UI Preview</div>
-                  <div className="text-xs text-gray-400 truncate">
-                    {activeUi?.prompt || ""}
-                  </div>
-                </div>
-
+          {showUiPreview && (
+            <section className="hidden md:flex min-w-0 flex-col border-l border-gray-800 bg-black/20">
+              <div className="p-3 border-b border-gray-800 flex items-center justify-between">
+                <div className="font-semibold text-gray-200">UI Preview</div>
                 <div className="flex items-center gap-2">
-                  {activeUi?.lua && (
-                    <button
-                      type="button"
-                      className="px-2 py-1 rounded bg-gray-800 hover:bg-gray-700 text-xs text-gray-100"
-                      onClick={() => downloadLua(activeUi.lua, "GeneratedUI.lua")}
-                    >
-                      Download
-                    </button>
-                  )}
                   <button
                     type="button"
-                    className="px-2 py-1 rounded bg-gray-800 hover:bg-gray-700 text-xs text-gray-100"
-                    onClick={() => setUiPreviewOpen(false)}
+                    className="px-2 py-1 rounded bg-gray-800 hover:bg-gray-700 text-xs"
+                    onClick={() => downloadLuaFile(activeUi?.lua, "generated_ui.lua")}
                   >
-                    Close
+                    Download Lua
                   </button>
+                </div>
+              </div>
+
+              <div className="p-2 border-b border-gray-800">
+                <div className="text-xs text-gray-400 mb-2">Newest first</div>
+                <div className="flex flex-col gap-1 max-h-28 overflow-auto">
+                  {uiGenerations.map((g) => (
+                    <button
+                      key={g.id}
+                      type="button"
+                      onClick={() => setActiveUiId(g.id)}
+                      className={`text-left text-xs px-2 py-1 rounded ${
+                        g.id === activeUiId
+                          ? "bg-[#9b5de5]/20 border border-[#9b5de5]"
+                          : "hover:bg-gray-800"
+                      }`}
+                      title={g.prompt}
+                    >
+                      {(g.prompt || "").slice(0, 64)}{g.prompt?.length > 64 ? "..." : ""}
+                    </button>
+                  ))}
                 </div>
               </div>
 
               <div className="flex-1 overflow-auto p-3">
                 <LuaPreviewRenderer lua={activeUi?.lua || ""} />
               </div>
-
-              <div className="border-t border-gray-800 p-2">
-                <div className="text-xs font-semibold text-gray-300 mb-2">
-                  Recent (newest first)
-                </div>
-                <div className="space-y-1">
-                  {uiGenerations.slice(0, 6).map((g) => (
-                    <button
-                      key={g.id}
-                      type="button"
-                      onClick={() => {
-                        setActiveUiId(g.id);
-                        setUiPreviewOpen(true);
-                      }}
-                      className={`w-full text-left px-2 py-1 rounded border ${
-                        g.id === activeUiId
-                          ? "border-[#9b5de5] bg-[#9b5de5]/10"
-                          : "border-gray-800 hover:bg-gray-900"
-                      }`}
-                      title={g.prompt}
-                    >
-                      <div className="text-xs text-gray-200 truncate">{g.prompt}</div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </aside>
+            </section>
           )}
           {/* Right Sidebar */}
           <aside
-            className="hidden md:flex w-80 bg-gray-900 border-l border-gray-800 flex-col sticky top-[64px] h-[calc(100vh-64px)]"
+            className="hidden md:flex w-80 bg-gray-900 border-l border-gray-800 flex-col sticky top-[64px] z-30 h-[calc(100vh-64px)]"
             style={{
               minHeight: "calc(100vh - 64px)",
               maxHeight: "calc(100vh - 64px)",

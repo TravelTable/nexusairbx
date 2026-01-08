@@ -156,20 +156,26 @@ export async function aiPreview({ token, prompt, canvasSize, themeHint, mode = "
   return handleResponse(res);
 }
 
-export async function aiFinalizeLua({ token, boardState }) {
+export async function aiFinalizeLua({
+  token,
+  boardState,
+  prompt = "",
+  gameSpec = "",
+  maxSystemsTokens,
+}) {
   const res = await fetch(`${BACKEND_URL}/api/ui-builder/ai/finalize-lua`, {
     method: "POST",
     headers: authHeaders(token),
-    body: JSON.stringify({ boardState }),
+    body: JSON.stringify({ boardState, prompt, gameSpec, maxSystemsTokens }),
   });
   return handleResponse(res);
 }
 
-export async function aiPipeline({ token, prompt, canvasSize, themeHint, maxItems = 45 }) {
+export async function aiPipeline({ token, prompt, canvasSize, themeHint, maxItems = 45, gameSpec = "" }) {
   const res = await fetch(`${BACKEND_URL}/api/ui-builder/ai/pipeline`, {
     method: "POST",
     headers: authHeaders(token),
-    body: JSON.stringify({ prompt, canvasSize, themeHint, maxItems }),
+    body: JSON.stringify({ prompt, canvasSize, themeHint, maxItems, gameSpec }),
   });
   return handleResponse(res);
 }
