@@ -3,6 +3,7 @@ import ReactDOM from "react-dom/client";
 import App from "./App";
 import "./index.css";
 import { initAnalytics } from "./firebase";
+import { SettingsProvider } from "./context/SettingsContext";
 import { BillingProvider } from "./context/BillingContext";
 
 // Suppress ResizeObserver loop error (Monaco Editor/Chrome bug)
@@ -31,7 +32,11 @@ if (typeof window !== "undefined") {
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(
   <React.StrictMode>
-    <App />
+    <BillingProvider>
+      <SettingsProvider>
+        <App />
+      </SettingsProvider>
+    </BillingProvider>
   </React.StrictMode>
 );
 
