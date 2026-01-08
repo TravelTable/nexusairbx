@@ -2592,61 +2592,62 @@ useEffect(() => {
             />
           </aside>
         </div>
-        {/* Sidebar (desktop) */}
-        <aside
-          className="hidden md:flex w-80 bg-gray-900 border-r border-gray-800 flex-col sticky top-[64px] left-0 z-30 h-[calc(100vh-64px)]"
-          style={{
-            minHeight: "calc(100vh - 64px)",
-            maxHeight: "calc(100vh - 64px)",
-          }}
-        >
-          <SidebarContent
-            activeTab={activeTab}
-            setActiveTab={setActiveTab}
-            handleClearChat={() => {
-              if (!window.confirm("Clear this chat?")) return;
-              setCurrentScript(null);
-              setVersionHistory([]);
-              setMessages([]);
-              setSelectedVersion(null);
-              setCurrentScriptId(null);
-              setCurrentChatId(null);
-              setCurrentChatMeta(null);
+        <div className="flex flex-1 min-h-0">
+          {/* Sidebar (desktop) */}
+          <aside
+            className="hidden md:flex w-80 bg-gray-900 border-r border-gray-800 flex-col sticky top-[64px] left-0 z-30 h-[calc(100vh-64px)]"
+            style={{
+              minHeight: "calc(100vh - 64px)",
+              maxHeight: "calc(100vh - 64px)",
             }}
-            setPrompt={setPrompt}
-            scripts={scripts}
-            currentChatId={currentChatId}
-            currentScriptId={currentScriptId}
-            setCurrentScriptId={setCurrentScriptId}
-            handleCreateScript={() => {}}
-            handleRenameScript={() => {}}
-            handleDeleteScript={handleDeleteScript}
-            currentScript={currentScript}
-            versionHistory={versionHistory}
-            onVersionView={() => {}}
-            onVersionDownload={() => {}}
-            promptSearch={promptSearch}
-            setPromptSearch={setPromptSearch}
-            onRenameChat={() => {}}
-            onDeleteChat={handleDeleteChat}
-            onSelectChat={(chatId) => {
-              if (!chatId) return;
-              setCurrentChatId(chatId);
-              openChatById(chatId);
-              closeAllMobileSidebars();
-            }}
-            renderVersionList={renderVersionList}
-            plan={planKey}
-            planInfo={planInfo}
-            onLoadMoreScripts={handleLoadMoreScripts}
-            hasMoreScripts={hasMoreScripts}
-          />
-          <div className="border-t border-gray-800 px-4 py-2 text-xs text-gray-400 text-center">
-            {planInfo.sidebarStrip}
-          </div>
-        </aside>
-        {/* Main Content */}
-        <main className="flex-grow flex flex-col md:flex-row">
+          >
+            <SidebarContent
+              activeTab={activeTab}
+              setActiveTab={setActiveTab}
+              handleClearChat={() => {
+                if (!window.confirm("Clear this chat?")) return;
+                setCurrentScript(null);
+                setVersionHistory([]);
+                setMessages([]);
+                setSelectedVersion(null);
+                setCurrentScriptId(null);
+                setCurrentChatId(null);
+                setCurrentChatMeta(null);
+              }}
+              setPrompt={setPrompt}
+              scripts={scripts}
+              currentChatId={currentChatId}
+              currentScriptId={currentScriptId}
+              setCurrentScriptId={setCurrentScriptId}
+              handleCreateScript={() => {}}
+              handleRenameScript={() => {}}
+              handleDeleteScript={handleDeleteScript}
+              currentScript={currentScript}
+              versionHistory={versionHistory}
+              onVersionView={() => {}}
+              onVersionDownload={() => {}}
+              promptSearch={promptSearch}
+              setPromptSearch={setPromptSearch}
+              onRenameChat={() => {}}
+              onDeleteChat={handleDeleteChat}
+              onSelectChat={(chatId) => {
+                if (!chatId) return;
+                setCurrentChatId(chatId);
+                openChatById(chatId);
+                closeAllMobileSidebars();
+              }}
+              renderVersionList={renderVersionList}
+              plan={planKey}
+              planInfo={planInfo}
+              onLoadMoreScripts={handleLoadMoreScripts}
+              hasMoreScripts={hasMoreScripts}
+            />
+            <div className="border-t border-gray-800 px-4 py-2 text-xs text-gray-400 text-center">
+              {planInfo.sidebarStrip}
+            </div>
+          </aside>
+          {/* Main Content */}
+          <main className="flex-1 min-h-0 flex flex-col md:flex-row">
           {/* Main chat area */}
           <section className="flex-1 min-w-0 flex flex-col h-full">
             <div className="flex-grow overflow-y-auto px-4 md:px-6 py-6">
@@ -3123,7 +3124,8 @@ useEffect(() => {
               />
             </div>
           </aside>
-        </main>
+          </main>
+        </div>
         {/* --- Code Drawer Integration --- */}
         {selectedVersion && (
           <SimpleCodeDrawer
