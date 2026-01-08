@@ -16,7 +16,10 @@ import {
   ChevronRight,
   Info,
   Copy,
-  Check, 
+  Check,
+  Gamepad2,
+  MessageSquare,
+  Layout,
 } from "lucide-react";
 import { auth } from "./firebase";
 import { onAuthStateChanged, signInAnonymously } from "firebase/auth";
@@ -421,6 +424,8 @@ function AiPage() {
   const [showOnboarding, setShowOnboarding] = useState(
     localStorage.getItem("nexusrbx:onboardingComplete") !== "true"
   );
+  const [mode, setMode] = useState("ui"); // "ui" | "chat"
+  const [showGameContextModal, setShowGameContextModal] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -519,6 +524,10 @@ async function handleGenerateUiPreview() {
   }
 
   setUiIsGenerating(true);
+  const db = getFirestore();
+  let activeChatId = currentChatId;
+  const requestId = uuidv4();
+
   try {
     const token = await user.getIdToken();
     const canvasSize = settings.uiCanvasSize || { w: 1280, h: 720 };
@@ -537,6 +546,26 @@ async function handleGenerateUiPreview() {
       font: settings.uiThemeFont || "Poppins, Roboto, sans-serif",
     };
 
+    // 1. Create chat if missing
+    if (!activeChatId) {
+      const newChatRef = await addDoc(collection(db, "users", user.uid, "chats"), {
+        title: prompt.trim().slice(0, 30) + (prompt.length > 30 ? "..." : ""),
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
+      activeChatId = newChatRef.id;
+      setCurrentChatId(activeChatId);
+    }
+
+    // 2. Save user message
+    const userMsgRef = doc(db, "users", user.uid, "chats", activeChatId, "messages", `${requestId}-user`);
+    await setDoc(userMsgRef, {
+      role: "user",
+      content: prompt.trim(),
+      createdAt: serverTimestamp(),
+      requestId,
+    });
+
     const pipe = await aiPipeline({
       token,
       prompt: prompt.trim(),
@@ -553,14 +582,47 @@ async function handleGenerateUiPreview() {
     const lua = pipe?.lua || "";
     if (!lua) throw new Error("No Lua returned");
 
-    const id = cryptoRandomId();
-    const entry = { id, createdAt: Date.now(), prompt: prompt.trim(), boardState, lua };
+    const scriptId = cryptoRandomId();
+    const resultTitle = prompt.trim().slice(0, 30) + " (UI)";
 
+    // 3. Save script
+    await setDoc(doc(db, "users", user.uid, "scripts", scriptId), {
+      title: resultTitle,
+      chatId: activeChatId,
+      type: "ui",
+      updatedAt: serverTimestamp(),
+      createdAt: serverTimestamp(),
+    });
+
+    // 4. Save version
+    const versionId = uuidv4();
+    await setDoc(doc(db, "users", user.uid, "scripts", scriptId, "versions", versionId), {
+      code: lua,
+      title: resultTitle,
+      versionNumber: 1,
+      createdAt: serverTimestamp(),
+    });
+
+    // 5. Save assistant message
+    const assistantMsgRef = doc(db, "users", user.uid, "chats", activeChatId, "messages", `${requestId}-assistant`);
+    await setDoc(assistantMsgRef, {
+      role: "assistant",
+      content: "",
+      code: lua,
+      projectId: scriptId,
+      versionNumber: 1,
+      metadata: { type: "ui" },
+      createdAt: serverTimestamp(),
+      requestId,
+    });
+
+    const entry = { id: scriptId, createdAt: Date.now(), prompt: prompt.trim(), boardState, lua };
     setUiGenerations((prev) => [entry, ...(prev || [])]);
-    setActiveUiId(id);
+    setActiveUiId(scriptId);
     setSelectedVersion(null);
     setUiDrawerOpen(true);
-    notify({ message: "UI preview generated.", type: "success" });
+    setPrompt("");
+    notify({ message: "UI generated and saved.", type: "success" });
   } catch (e) {
     notify({ message: e?.message || "UI generation failed", type: "error" });
   } finally {
@@ -892,6 +954,36 @@ const planKey = normalizedPlan === "team" ? "team" : normalizedPlan === "pro" ? 
     };
     const onOpenCodeDrawer = (e) => {
       const { scriptId, code, title, versionNumber, explanation, savedScriptId } = e.detail || {};
+      
+      // Check if this is a UI script
+      const script = scripts.find(s => s.id === scriptId);
+      if (script?.type === "ui") {
+        // Open UI Preview instead
+        const fetchUiCode = async () => {
+          try {
+            const db = getFirestore();
+            const uid = user?.uid || auth.currentUser?.uid;
+            if (!uid) return;
+            const versionsRef = collection(db, "users", uid, "scripts", scriptId, "versions");
+            const q = query(versionsRef, orderBy("versionNumber", "desc"), limit(1));
+            const snap = await getDocs(q);
+            if (!snap.empty) {
+              const data = snap.docs[0].data();
+              setActiveUiId(scriptId);
+              setUiGenerations(prev => {
+                if (prev.some(g => g.id === scriptId)) return prev;
+                return [{ id: scriptId, lua: data.code, prompt: script.title, createdAt: Date.now() }, ...prev];
+              });
+              setUiDrawerOpen(true);
+            }
+          } catch (err) {
+            console.error(err);
+          }
+        };
+        fetchUiCode();
+        return;
+      }
+
       const versionKey = versionNumber ? Number(versionNumber) : null;
       const alreadySelected =
         scriptId &&
@@ -2537,6 +2629,7 @@ useEffect(() => {
               planInfo={planInfo}
               onLoadMoreScripts={handleLoadMoreScripts}
               hasMoreScripts={hasMoreScripts}
+              onOpenGameContext={() => setShowGameContextModal(true)}
             />
           <div className="border-t border-gray-800 px-4 py-2 text-xs text-gray-400 text-center">
             {!isSubscriber && planInfo.sidebarStrip}
@@ -2643,6 +2736,7 @@ useEffect(() => {
               planInfo={planInfo}
               onLoadMoreScripts={handleLoadMoreScripts}
               hasMoreScripts={hasMoreScripts}
+              onOpenGameContext={() => setShowGameContextModal(true)}
             />
             <div className="border-t border-gray-800 px-4 py-2 text-xs text-gray-400 text-center">
               {planInfo.sidebarStrip}
@@ -2652,10 +2746,38 @@ useEffect(() => {
           <main className="flex-1 min-h-0 flex flex-col md:flex-row">
           {/* Main chat area */}
           <section className="flex-1 min-w-0 flex flex-col h-full">
+            {/* Mode Toggle */}
+            <div className="px-4 md:px-6 pt-4 flex justify-center">
+              <div className="bg-gray-900/80 border border-gray-800 rounded-full p-1 flex items-center gap-1 shadow-lg">
+                <button
+                  onClick={() => setMode("ui")}
+                  className={`px-4 py-1.5 rounded-full text-sm font-bold flex items-center gap-2 transition-all ${
+                    mode === "ui"
+                      ? "bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-white shadow-md"
+                      : "text-gray-400 hover:text-white"
+                  }`}
+                >
+                  <Layout className="h-4 w-4" />
+                  UI Builder
+                </button>
+                <button
+                  onClick={() => setMode("chat")}
+                  className={`px-4 py-1.5 rounded-full text-sm font-bold flex items-center gap-2 transition-all ${
+                    mode === "chat"
+                      ? "bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-white shadow-md"
+                      : "text-gray-400 hover:text-white"
+                  }`}
+                >
+                  <MessageSquare className="h-4 w-4" />
+                  Chat Mode
+                </button>
+              </div>
+            </div>
+
             <div className="flex-grow overflow-y-auto px-4 md:px-6 py-6">
               <div className="w-full max-w-5xl mx-auto space-y-6">
                 {/* Welcome State */}
-                {messages.length === 0 && !isGenerating ? (
+                {messages.length === 0 && !isGenerating && mode === "chat" ? (
                   <div className="min-h-[55vh] flex items-center justify-center">
                     <div className="w-full max-w-4xl">
                       <PlanWelcomeCard
@@ -2904,7 +3026,6 @@ useEffect(() => {
             </div>
             {/* Input Area */}
             <div
-            
               className="border-t border-gray-800 bg-black/30 px-2 md:px-4 py-4 flex flex-col items-center shadow-inner"
               aria-busy={isGenerating}
             >
@@ -2951,71 +3072,93 @@ useEffect(() => {
   </div>
 ) : (
   /* Prompt form */
-  <form onSubmit={handleSubmit} className="w-full max-w-5xl mx-auto" autoComplete="off">
+  <form 
+    onSubmit={mode === "ui" ? (e) => { e.preventDefault(); handleGenerateUiPreview(); } : handleSubmit} 
+    className="w-full max-w-5xl mx-auto" 
+    autoComplete="off"
+  >
     <div className="flex flex-col gap-2">
       <div className="relative">
         <textarea
           ref={promptInputRef}
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
-          onKeyDown={handlePromptKeyDown}
+          onKeyDown={(e) => {
+            if (e.isComposing) return;
+            if (e.key === "Enter" && !e.shiftKey) {
+              e.preventDefault();
+              if (mode === "ui") handleGenerateUiPreview();
+              else handleSubmit(e);
+            }
+          }}
           placeholder={
-            planInfo?.promptPlaceholder ||
-            "Describe the UI + gameplay system you want (HUD, shop, inventory, settings, etc.)."
+            mode === "ui" 
+              ? "Describe the UI you want to build (e.g. 'Military themed main menu with Play, Settings, Shop')."
+              : (planInfo?.promptPlaceholder || "Describe the script or system you want.")
           }
           className={`w-full rounded-lg bg-gray-900/60 border border-gray-700 focus:border-[#9b5de5] focus:ring-2 focus:ring-[#9b5de5]/50 transition-all duration-300 py-3 px-4 pr-14 resize-none shadow-lg ${
             promptError ? "border-red-500" : ""
           }`}
           rows="3"
           maxLength={planInfo?.promptCap ?? 2000}
-          disabled={isGenerating}
+          disabled={isGenerating || uiIsGenerating}
           aria-label="Prompt input"
         ></textarea>
-        <button
-          type="submit"
-          disabled={
-            isGenerating ||
-            !prompt.trim() ||
-            (planInfo?.promptCap ? prompt.length > planInfo.promptCap : false) ||
-            (typeof tokensLeft === "number" && tokensLeft <= 0)
-          }
-          className={`absolute right-3 bottom-3 p-3 rounded-full shadow-lg focus:outline-none focus:ring-2 focus:ring-[#9b5de5] ${
-            isGenerating ||
-            !prompt.trim() ||
-            (planInfo?.promptCap ? prompt.length > planInfo.promptCap : false) ||
-            (typeof tokensLeft === "number" && tokensLeft <= 0)
-              ? "bg-gray-700 text-gray-400 cursor-not-allowed"
-              : "bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-white hover:shadow-xl hover:scale-110"
-          }`}
-          aria-label="Send prompt"
-          title={
-            typeof tokensLeft === "number" && tokensLeft <= 0
-              ? "Out of tokens - upgrade to continue."
-              : "Enter to send - Shift+Enter for newline"
-          }
-        >
-          {isGenerating ? <Loader className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
-        </button>
+        
+        {mode === "chat" && (
+          <button
+            type="submit"
+            disabled={
+              isGenerating ||
+              !prompt.trim() ||
+              (planInfo?.promptCap ? prompt.length > planInfo.promptCap : false) ||
+              (typeof tokensLeft === "number" && tokensLeft <= 0)
+            }
+            className={`absolute right-3 bottom-3 p-3 rounded-full shadow-lg focus:outline-none focus:ring-2 focus:ring-[#9b5de5] ${
+              isGenerating ||
+              !prompt.trim() ||
+              (planInfo?.promptCap ? prompt.length > planInfo.promptCap : false) ||
+              (typeof tokensLeft === "number" && tokensLeft <= 0)
+                ? "bg-gray-700 text-gray-400 cursor-not-allowed"
+                : "bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-white hover:shadow-xl hover:scale-110"
+            }`}
+            aria-label="Send prompt"
+          >
+            {isGenerating ? <Loader className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
+          </button>
+        )}
       </div>
 
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
+      {mode === "ui" && (
+        <div className="flex flex-col items-center gap-3">
           <button
             type="button"
             onClick={handleGenerateUiPreview}
-            disabled={uiIsGenerating || isGenerating || !prompt.trim() || !user}
-            className={`px-3 py-2 rounded text-sm font-semibold ${
-              uiIsGenerating || isGenerating || !prompt.trim() || !user
+            disabled={uiIsGenerating || isGenerating || !prompt.trim() || !user || (typeof tokensLeft === "number" && tokensLeft <= 0)}
+            className={`w-full max-w-md py-3 rounded-xl text-lg font-bold shadow-xl transition-all transform hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-3 ${
+              uiIsGenerating || isGenerating || !prompt.trim() || !user || (typeof tokensLeft === "number" && tokensLeft <= 0)
                 ? "bg-gray-700 text-gray-400 cursor-not-allowed"
-                : "bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-white hover:scale-[1.02]"
+                : "bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-white hover:shadow-[#9b5de5]/20"
             }`}
           >
-            {uiIsGenerating ? "Generating..." : "Generate UI & Code"}
+            {uiIsGenerating ? (
+              <>
+                <Loader className="h-6 w-6 animate-spin" />
+                Generating UI...
+              </>
+            ) : (
+              <>
+                <Layout className="h-6 w-6" />
+                Generate UI & Preview
+              </>
+            )}
           </button>
+          <div className="text-xs text-gray-500 flex items-center gap-1">
+            <Info className="h-3 w-3" />
+            Generates a full UI manifest and Lua code for Roblox.
+          </div>
         </div>
-
-        <div className="text-xs text-gray-500">Uses UI Builder pipeline</div>
-      </div>
+      )}
     </div>
 
 
@@ -3128,6 +3271,33 @@ useEffect(() => {
             onSaveScript={async () => {}}
             onLiveOpen={() => {}}
           />
+        )}
+        {/* Game Context Modal */}
+        {showGameContextModal && (
+          <Modal
+            onClose={() => setShowGameContextModal(false)}
+            title="Game Context"
+          >
+            <div className="space-y-4">
+              <p className="text-sm text-gray-400">
+                Describe your game's theme, genre, and core mechanics. This context is sent with every request to ensure the AI stays consistent with your game's style.
+              </p>
+              <textarea
+                className="w-full h-40 bg-gray-800 border border-gray-700 rounded-lg p-3 text-white text-sm focus:border-[#00f5d4] outline-none transition-colors"
+                placeholder="e.g. A military-themed FPS with a focus on realism. The game features a leveling system, weapon skins, and a tactical HUD."
+                value={settings.gameSpec || ""}
+                onChange={(e) => setSettings(prev => ({ ...prev, gameSpec: e.target.value }))}
+              />
+              <div className="flex justify-end">
+                <button
+                  className="px-6 py-2 rounded-lg bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-white font-bold hover:scale-[1.02] transition-transform"
+                  onClick={() => setShowGameContextModal(false)}
+                >
+                  Save Context
+                </button>
+              </div>
+            </div>
+          </Modal>
         )}
         {/* Celebration Animation */}
         {showCelebration && <CelebrationAnimation />}
