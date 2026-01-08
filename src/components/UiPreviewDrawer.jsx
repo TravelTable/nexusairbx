@@ -17,9 +17,41 @@ export default function UiPreviewDrawer({
   history = [],
   activeId = null,
   onSelectHistory,
+  userEmail,
+  gameSpec,
+  onRefine,
 }) {
-  const [tab, setTab] = useState("preview"); // "preview" | "code" | "history"
+  const [tab, setTab] = useState("preview"); // "preview" | "code" | "functionality" | "history"
   const [lastEvent, setLastEvent] = useState(null);
+  const [refineInput, setRefineInput] = useState("");
+  const [isRefining, setIsRefining] = useState(false);
+  
+  // Functionality state
+  const [funcPrompt, setFuncPrompt] = useState("");
+  const [funcPlan, setFuncPlan] = useState("");
+  const [funcScripts, setFuncScripts] = useState([]);
+  const [isGeneratingFunc, setIsGeneratingFunc] = useState(false);
+
+  const isDeveloper = userEmail === "jackt1263@gmail.com";
+
+  const handleGenerateFunctionality = async () => {
+    if (!funcPrompt.trim()) return;
+    setIsGeneratingFunc(true);
+    try {
+      const res = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/ui-builder/ai/generate-functionality`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${await window.firebaseAuth.currentUser.getIdToken()}` },
+        body: JSON.stringify({ lua, prompt: funcPrompt, gameSpec }),
+      });
+      const data = await res.json();
+      setFuncPlan(data.plan);
+      setFuncScripts(data.scripts);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsGeneratingFunc(false);
+    }
+  };
   const [copySuccess, setCopySuccess] = useState(false);
 
   useEffect(() => {
@@ -133,6 +165,17 @@ export default function UiPreviewDrawer({
             </button>
             <button
               type="button"
+              onClick={() => setTab("functionality")}
+              className={`px-3 py-2 rounded text-sm border ${
+                tab === "functionality"
+                  ? "border-[#f15bb5] bg-[#f15bb5]/10 text-white"
+                  : "border-gray-800 bg-black/20 text-gray-300 hover:bg-black/30"
+              }`}
+            >
+              Functionality
+            </button>
+            <button
+              type="button"
               onClick={() => setTab("history")}
               className={`px-3 py-2 rounded text-sm border ${
                 tab === "history"
@@ -163,10 +206,83 @@ export default function UiPreviewDrawer({
                 />
               </div>
 
+              <div className="flex items-center gap-2 mt-auto">
+                <input
+                  className="flex-1 bg-gray-900 border border-gray-800 rounded-lg px-3 py-2 text-sm text-white focus:border-[#00f5d4] outline-none"
+                  placeholder="Refine this UI (e.g. 'Make it more blue', 'Add a close button')"
+                  value={refineInput}
+                  onChange={e => setRefineInput(e.target.value)}
+                  onKeyDown={e => e.key === "Enter" && onRefine(refineInput)}
+                />
+                <button
+                  className="px-4 py-2 rounded-lg bg-[#00f5d4] text-black font-bold text-sm hover:scale-[1.02] transition-transform disabled:opacity-50"
+                  onClick={() => onRefine(refineInput)}
+                  disabled={!refineInput.trim()}
+                >
+                  Refine
+                </button>
+              </div>
+
               <div className="text-[11px] text-gray-500">
                 Note: This previews the UI manifest inside the Lua and simulates interactions.
                 Full gameplay logic should be tested in Roblox Studio.
               </div>
+            </div>
+          ) : tab === "functionality" ? (
+            <div className="h-full flex flex-col gap-4 overflow-hidden">
+              {!isDeveloper ? (
+                <div className="flex-1 flex flex-col items-center justify-center text-center space-y-4 bg-black/40 rounded-xl border border-dashed border-gray-800">
+                  <div className="p-4 rounded-full bg-[#f15bb5]/10 text-[#f15bb5]">
+                    <X className="w-12 h-12" />
+                  </div>
+                  <h3 className="text-xl font-bold text-white">Functionality Builder</h3>
+                  <p className="text-gray-400 max-w-xs">
+                    This feature is currently in private beta. Coming soon for all users!
+                  </p>
+                </div>
+              ) : (
+                <div className="flex-1 flex flex-col gap-4 overflow-hidden">
+                  <div className="flex-1 overflow-y-auto space-y-4 pr-2">
+                    {funcPlan && (
+                      <div className="p-4 bg-gray-900/60 border border-gray-800 rounded-xl">
+                        <h4 className="text-[#f15bb5] font-bold mb-2 uppercase text-xs tracking-widest">Implementation Plan</h4>
+                        <div className="text-sm text-gray-200 whitespace-pre-wrap leading-relaxed">{funcPlan}</div>
+                      </div>
+                    )}
+                    {funcScripts.map((s, idx) => (
+                      <div key={idx} className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-bold text-gray-400">{s.name} ({s.location})</span>
+                        </div>
+                        <div className="bg-[#181825] rounded-xl border border-gray-800 overflow-hidden">
+                          <SyntaxHighlighter
+                            language="lua"
+                            style={atomOneDark}
+                            customStyle={{ background: "transparent", padding: "1rem", fontSize: "12px" }}
+                          >
+                            {s.code}
+                          </SyntaxHighlighter>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="flex items-center gap-2 pt-2 border-t border-gray-800">
+                    <input
+                      className="flex-1 bg-gray-900 border border-gray-800 rounded-lg px-3 py-2 text-sm text-white focus:border-[#f15bb5] outline-none"
+                      placeholder="What functionality do you need? (e.g. 'Handle buying items', 'Open/Close logic')"
+                      value={funcPrompt}
+                      onChange={e => setFuncPrompt(e.target.value)}
+                    />
+                    <button
+                      className="px-4 py-2 rounded-lg bg-[#f15bb5] text-white font-bold text-sm hover:scale-[1.02] transition-transform disabled:opacity-50"
+                      onClick={handleGenerateFunctionality}
+                      disabled={isGeneratingFunc || !funcPrompt.trim()}
+                    >
+                      {isGeneratingFunc ? "Generating..." : "Generate Scripts"}
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           ) : tab === "code" ? (
             <div className="h-full flex flex-col gap-3">
