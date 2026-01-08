@@ -513,8 +513,6 @@ function AiPage() {
     };
   }, [openChatById, scripts, user]);
 
-  const [loadingBarData, setLoadingBarData] = useState({ stage: "idle", eta: null });
-
   const handleSubmit = async (e) => {
     if (e) e.preventDefault();
     if (!prompt.trim() || isGenerating) return;
