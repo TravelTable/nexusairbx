@@ -34,7 +34,7 @@ export default function UiPreviewDrawer({
       />
 
       <div
-        className={`absolute right-0 top-0 h-full w-full sm:w-[520px] bg-[#0b1220] border-l border-gray-800 shadow-2xl transition-transform ${
+        className={`absolute right-0 top-0 h-full w-full sm:w-[75vw] max-w-[1200px] bg-[#0b1220] border-l border-gray-800 shadow-2xl transition-transform ${
           open ? "translate-x-0" : "translate-x-full"
         }`}
       >

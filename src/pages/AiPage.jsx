@@ -558,6 +558,7 @@ async function handleGenerateUiPreview() {
 
     setUiGenerations((prev) => [entry, ...(prev || [])]);
     setActiveUiId(id);
+    setSelectedVersion(null);
     setUiDrawerOpen(true);
     notify({ message: "UI preview generated.", type: "success" });
   } catch (e) {
@@ -3015,7 +3016,10 @@ useEffect(() => {
           {activeUi?.lua ? (
             <button
               type="button"
-              onClick={() => setUiDrawerOpen(true)}
+              onClick={() => {
+                setSelectedVersion(null);
+                setUiDrawerOpen(true);
+              }}
               className="px-3 py-2 rounded bg-gray-800 hover:bg-gray-700 text-sm text-gray-100"
             >
               Open UI Preview
