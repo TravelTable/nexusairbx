@@ -21,6 +21,7 @@ import {
   Bookmark,
   BookmarkCheck,
   Lock,
+  Gamepad2,
 } from "lucide-react";
 import SidebarTab from "./SidebarTab";
 import Modal from "./Modal";
@@ -280,6 +281,7 @@ export default function SidebarContent({
   onLoadMoreScripts,
   hasMoreScripts,
   onSelectChat,
+  onOpenGameContext,
 }) {
   // --- Billing ---
   const { plan, historyDays } = useBilling();
@@ -872,14 +874,24 @@ const versionHistoryWithLock = useMemo(() => {
           >
             <div className="flex items-center justify-between mb-2">
               <span className="font-bold text-lg text-[#00f5d4]">Your Scripts</span>
-              <button
-                className="p-1 rounded hover:bg-gray-800 transition"
-                title="New Script"
-                onClick={handleNewScript}
-                aria-label="Create new script"
-              >
-                <Plus className="h-5 w-5 text-[#9b5de5]" />
-              </button>
+              <div className="flex items-center gap-1">
+                <button
+                  className="p-1 rounded hover:bg-gray-800 transition flex items-center gap-1 text-xs text-gray-400 hover:text-[#00f5d4]"
+                  title="Game Context"
+                  onClick={onOpenGameContext}
+                >
+                  <Gamepad2 className="h-4 w-4" />
+                  <span className="hidden sm:inline">Context</span>
+                </button>
+                <button
+                  className="p-1 rounded hover:bg-gray-800 transition"
+                  title="New Script"
+                  onClick={handleNewScript}
+                  aria-label="Create new script"
+                >
+                  <Plus className="h-5 w-5 text-[#9b5de5]" />
+                </button>
+              </div>
             </div>
             {scripts.length === 0 && (
               <div className="text-gray-400 text-sm mb-2 flex items-center gap-2">
