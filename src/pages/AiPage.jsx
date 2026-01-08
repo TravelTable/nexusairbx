@@ -2646,22 +2646,55 @@ useEffect(() => {
           </div>
         </aside>
         {/* Main Content */}
-        <main
-          className={`flex-grow grid grid-cols-1 ${
-            showUiPreview ? "md:grid-cols-[1fr_420px_320px]" : "md:grid-cols-[1fr_320px]"
-          } relative`}
-        >
+        <main className="flex-grow flex flex-col md:flex-row">
           {/* Main chat area */}
-          <section className="min-w-0 flex flex-col h-full relative z-10">
-            <div className="flex-grow overflow-y-auto px-2 md:px-4 py-6 flex flex-col items-center">
-              <div className="w-full mx-auto space-y-6">
+          <section className="flex-1 min-w-0 flex flex-col h-full">
+            <div className="flex-grow overflow-y-auto px-4 md:px-6 py-6">
+              <div className="w-full max-w-5xl mx-auto space-y-6">
                 {/* Welcome State */}
                 {messages.length === 0 && !isGenerating ? (
-                  <PlanWelcomeCard
-                    isSubscriber={isSubscriber}
-                    planKey={planKey}
-                    planInfo={planInfo}
-                  />
+                  <div className="min-h-[55vh] flex items-center justify-center">
+                    <div className="w-full max-w-4xl">
+                      <PlanWelcomeCard
+                        isSubscriber={isSubscriber}
+                        planKey={planKey}
+                        planInfo={planInfo}
+                      />
+
+                      <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <button
+                          type="button"
+                          className="px-4 py-3 rounded-lg bg-gray-900/60 border border-gray-800 hover:border-[#9b5de5] hover:bg-gray-900 transition text-left"
+                          onClick={() => setPrompt("Build a main menu UI for my game with Play, Settings, Shop.")}
+                        >
+                          <div className="font-semibold text-white">Main Menu</div>
+                          <div className="text-xs text-gray-400 mt-1">Clean menu with navigation</div>
+                        </button>
+
+                        <button
+                          type="button"
+                          className="px-4 py-3 rounded-lg bg-gray-900/60 border border-gray-800 hover:border-[#00f5d4] hover:bg-gray-900 transition text-left"
+                          onClick={() => setPrompt("Create a HUD: health bar, stamina bar, coins counter, and a minimap placeholder.")}
+                        >
+                          <div className="font-semibold text-white">HUD</div>
+                          <div className="text-xs text-gray-400 mt-1">Gameplay overlay UI</div>
+                        </button>
+
+                        <button
+                          type="button"
+                          className="px-4 py-3 rounded-lg bg-gray-900/60 border border-gray-800 hover:border-[#9b5de5] hover:bg-gray-900 transition text-left"
+                          onClick={() => setPrompt("Make an inventory UI with item grid, item details panel, and equip button.")}
+                        >
+                          <div className="font-semibold text-white">Inventory</div>
+                          <div className="text-xs text-gray-400 mt-1">Grid + details + actions</div>
+                        </button>
+                      </div>
+
+                      <div className="mt-4 text-sm text-gray-400 text-center">
+                        Pick a preset or type your own prompt below.
+                      </div>
+                    </div>
+                  </div>
                 ) : (
                   <>
                     {/* Chat timeline driven by `messages` */}
@@ -2873,7 +2906,7 @@ useEffect(() => {
               aria-busy={isGenerating}
             >
               {/* Token meter */}
-<div className="w-full max-w-2xl mx-auto mb-4">
+<div className="w-full max-w-5xl mx-auto mb-4">
   <TokenBar
     tokensLeft={tokensLeft}
     tokensLimit={tokensLimit}
@@ -2915,7 +2948,7 @@ useEffect(() => {
   </div>
 ) : (
   /* Prompt form */
-  <form onSubmit={handleSubmit} className="w-full max-w-2xl mx-auto" autoComplete="off">
+  <form onSubmit={handleSubmit} className="w-full max-w-5xl mx-auto" autoComplete="off">
     <div className="relative">
       <textarea
         ref={promptInputRef}
@@ -2993,7 +3026,7 @@ useEffect(() => {
   </form>
 )}
               {/* Fancy Loading Overlay */}
-              <div className="w-full max-w-2xl mx-auto">
+              <div className="w-full max-w-5xl mx-auto">
                 <FancyLoadingOverlay
                   visible={
                     isGenerating &&
@@ -3050,7 +3083,7 @@ useEffect(() => {
           )}
           {/* Right Sidebar */}
           <aside
-            className="hidden md:flex w-80 bg-gray-900 border-l border-gray-800 flex-col sticky top-[64px] z-30 h-[calc(100vh-64px)]"
+            className="hidden md:flex w-80 bg-gray-900 border-l border-gray-800 flex-col sticky top-[64px] h-[calc(100vh-64px)]"
             style={{
               minHeight: "calc(100vh - 64px)",
               maxHeight: "calc(100vh - 64px)",
@@ -3072,21 +3105,23 @@ useEffect(() => {
                 </div>
               )}
             </div>
-            <RightSidebar
-              settings={settings}
-              setSettings={setSettings}
-              modelOptions={modelOptions}
-              creativityOptions={creativityOptions}
-              codeStyleOptions={codeStyleOptions}
-              messages={messages}
-              setPrompt={setPrompt}
-              userPromptTemplates={userPromptTemplates}
-              setUserPromptTemplates={setUserPromptTemplates}
-              promptSuggestions={promptSuggestions}
-              promptSuggestionLoading={promptSuggestionLoading}
-              plan={planKey}
-              planInfo={planInfo}
-            />
+            <div className="flex-1 overflow-y-auto">
+              <RightSidebar
+                settings={settings}
+                setSettings={setSettings}
+                modelOptions={modelOptions}
+                creativityOptions={creativityOptions}
+                codeStyleOptions={codeStyleOptions}
+                messages={messages}
+                setPrompt={setPrompt}
+                userPromptTemplates={userPromptTemplates}
+                setUserPromptTemplates={setUserPromptTemplates}
+                promptSuggestions={promptSuggestions}
+                promptSuggestionLoading={promptSuggestionLoading}
+                plan={planKey}
+                planInfo={planInfo}
+              />
+            </div>
           </aside>
         </main>
         {/* --- Code Drawer Integration --- */}

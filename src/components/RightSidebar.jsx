@@ -283,7 +283,7 @@ function handleModelChange(e) {
 
   // --- UI ---
   return (
-    <div className="flex flex-col h-full px-4 py-6 space-y-8">
+    <div className="flex flex-col h-full px-4 py-5 space-y-6">
       {/* Model Picker */}
       <div>
         <div className="font-semibold text-gray-200 mb-2 flex items-center">
