@@ -2950,26 +2950,53 @@ useEffect(() => {
 ) : (
   /* Prompt form */
   <form onSubmit={handleSubmit} className="w-full max-w-5xl mx-auto" autoComplete="off">
-    <div className="relative">
-      <textarea
-        ref={promptInputRef}
-        value={prompt}
-        onChange={(e) => setPrompt(e.target.value)}
-        onKeyDown={handlePromptKeyDown}
-        placeholder={
-          planInfo?.promptPlaceholder ||
-          "Describe the UI + gameplay system you want (HUD, shop, inventory, settings, etc.)."
-        }
-        className={`w-full rounded-lg bg-gray-900/60 border border-gray-700 focus:border-[#9b5de5] focus:ring-2 focus:ring-[#9b5de5]/50 transition-all duration-300 py-3 px-4 pr-14 resize-none shadow-lg ${
-          promptError ? "border-red-500" : ""
-        }`}
-        rows="3"
-        maxLength={planInfo?.promptCap ?? 2000}
-        disabled={isGenerating}
-        aria-label="Prompt input"
-      ></textarea>
+    <div className="flex flex-col gap-2">
+      <div className="relative">
+        <textarea
+          ref={promptInputRef}
+          value={prompt}
+          onChange={(e) => setPrompt(e.target.value)}
+          onKeyDown={handlePromptKeyDown}
+          placeholder={
+            planInfo?.promptPlaceholder ||
+            "Describe the UI + gameplay system you want (HUD, shop, inventory, settings, etc.)."
+          }
+          className={`w-full rounded-lg bg-gray-900/60 border border-gray-700 focus:border-[#9b5de5] focus:ring-2 focus:ring-[#9b5de5]/50 transition-all duration-300 py-3 px-4 pr-14 resize-none shadow-lg ${
+            promptError ? "border-red-500" : ""
+          }`}
+          rows="3"
+          maxLength={planInfo?.promptCap ?? 2000}
+          disabled={isGenerating}
+          aria-label="Prompt input"
+        ></textarea>
+        <button
+          type="submit"
+          disabled={
+            isGenerating ||
+            !prompt.trim() ||
+            (planInfo?.promptCap ? prompt.length > planInfo.promptCap : false) ||
+            (typeof tokensLeft === "number" && tokensLeft <= 0)
+          }
+          className={`absolute right-3 bottom-3 p-3 rounded-full shadow-lg focus:outline-none focus:ring-2 focus:ring-[#9b5de5] ${
+            isGenerating ||
+            !prompt.trim() ||
+            (planInfo?.promptCap ? prompt.length > planInfo.promptCap : false) ||
+            (typeof tokensLeft === "number" && tokensLeft <= 0)
+              ? "bg-gray-700 text-gray-400 cursor-not-allowed"
+              : "bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-white hover:shadow-xl hover:scale-110"
+          }`}
+          aria-label="Send prompt"
+          title={
+            typeof tokensLeft === "number" && tokensLeft <= 0
+              ? "Out of tokens - upgrade to continue."
+              : "Enter to send - Shift+Enter for newline"
+          }
+        >
+          {isGenerating ? <Loader className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
+        </button>
+      </div>
 
-      <div className="flex items-center justify-between mt-2">
+      <div className="flex items-center justify-between">
         <button
           type="button"
           onClick={handleGenerateUiPreview}
@@ -2985,33 +3012,8 @@ useEffect(() => {
 
         <div className="text-xs text-gray-500">Uses UI Builder pipeline</div>
       </div>
-
-      <button
-        type="submit"
-        disabled={
-          isGenerating ||
-          !prompt.trim() ||
-          (planInfo?.promptCap ? prompt.length > planInfo.promptCap : false) ||
-          (typeof tokensLeft === "number" && tokensLeft <= 0)
-        }
-        className={`absolute right-3 bottom-3 p-3 rounded-full shadow-lg focus:outline-none focus:ring-2 focus:ring-[#9b5de5] ${
-          isGenerating ||
-          !prompt.trim() ||
-          (planInfo?.promptCap ? prompt.length > planInfo.promptCap : false) ||
-          (typeof tokensLeft === "number" && tokensLeft <= 0)
-            ? "bg-gray-700 text-gray-400 cursor-not-allowed"
-            : "bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-white hover:shadow-xl hover:scale-110"
-        }`}
-        aria-label="Send prompt"
-        title={
-          typeof tokensLeft === "number" && tokensLeft <= 0
-            ? "Out of tokens — upgrade to continue."
-            : "Enter to send • Shift+Enter for newline"
-        }
-      >
-        {isGenerating ? <Loader className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
-      </button>
     </div>
+
 
     <div className="flex justify-between items-center mt-2 text-xs text-gray-500">
       <div>
