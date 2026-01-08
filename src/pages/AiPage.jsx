@@ -4,6 +4,7 @@ import React, {
   useRef,
   useCallback,
   useDeferredValue,
+  useMemo,
 } from "react";
 import { useBilling } from "../context/BillingContext";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -32,6 +33,7 @@ import CelebrationAnimation from "../components/CelebrationAnimation";
 import OnboardingContainer from "../components/OnboardingContainer";
 import FancyLoadingOverlay from "../components/FancyLoadingOverlay";
 import NotificationToast from "../components/NotificationToast";
+import LuaPreviewRenderer from "../preview/LuaPreviewRenderer";
 import { sha256 } from "../lib/hash"; // You need a hash util for duplicate detection
 import { v4 as uuidv4 } from "uuid";
 import {
@@ -40,6 +42,7 @@ import {
   nextVersionNumber,
   cryptoRandomId,
 } from "../lib/versioning";
+import { aiPipeline } from "../lib/uiBuilderApi";
 import {
   getFirestore,
   doc,
@@ -422,6 +425,24 @@ function AiPage() {
   // --- Prompt state (move to top so setPrompt is defined for all hooks below) ---
   const [prompt, setPrompt] = useState("");
 
+  // --- UI Builder: generations + preview (newest first) ---
+  const [uiGenerations, setUiGenerations] = useState([]); // newest first
+  const [activeUiId, setActiveUiId] = useState(null);
+  const [uiPreviewOpen, setUiPreviewOpen] = useState(false);
+  const [uiGenLoading, setUiGenLoading] = useState(false);
+  const [uiGenError, setUiGenError] = useState("");
+
+  const activeUi = useMemo(
+    () =>
+      uiGenerations.find((g) => g.id === activeUiId) || uiGenerations[0] || null,
+    [uiGenerations, activeUiId]
+  );
+
+  const showUiPreviewDesktop = useMemo(
+    () => uiPreviewOpen && !!activeUi?.lua,
+    [uiPreviewOpen, activeUi]
+  );
+
   // --- Chat state + listener refs ---
   const [currentChatId, setCurrentChatId] = useState(null);
   const [currentChatMeta, setCurrentChatMeta] = useState(null);
@@ -471,6 +492,78 @@ function AiPage() {
     },
     [setNotifications]
   );
+
+  const downloadLua = useCallback((luaText, filename = "GeneratedUI.lua") => {
+    const blob = new Blob([luaText], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+  }, []);
+
+  const handleGenerateUi = useCallback(async () => {
+    const cleaned = (prompt || "").replace(/\s+/g, " ").trim();
+
+    if (!cleaned) {
+      setPromptError("Please enter a prompt.");
+      return;
+    }
+    if (!user) {
+      notify({ message: "Sign in required.", type: "error", duration: 2000 });
+      navigate("/signin");
+      return;
+    }
+
+    setUiGenLoading(true);
+    setUiGenError("");
+
+    try {
+      const token = await user.getIdToken();
+
+      const data = await aiPipeline({
+        token,
+        prompt: cleaned,
+        canvasSize: { w: 1280, h: 720 },
+        themeHint: {
+          bg: "#020617",
+          panel: "#0b1220",
+          border: "#334155",
+          text: "#e5e7eb",
+          muted: "#cbd5e1",
+          primary: "#9b5de5",
+          radius: "14px",
+          font: "system-ui",
+        },
+        maxItems: 45,
+      });
+
+      const gen = {
+        id: cryptoRandomId(),
+        prompt: cleaned,
+        lua: data?.lua || "",
+        createdAt: Date.now(),
+      };
+
+      // NEWEST FIRST
+      setUiGenerations((prev) => [gen, ...prev].slice(0, 10));
+      setActiveUiId(gen.id);
+      setUiPreviewOpen(true);
+
+      notify({
+        message: "UI generated — preview opened.",
+        type: "success",
+        duration: 2500,
+      });
+    } catch (e) {
+      const msg = e?.message || "Failed to generate UI.";
+      setUiGenError(msg);
+      notify({ message: msg, type: "error", duration: 6000 });
+    } finally {
+      setUiGenLoading(false);
+    }
+  }, [prompt, user, notify, navigate]);
 
   // Hide onboarding when finished (listen for reload or localStorage change)
   useEffect(() => {
@@ -2545,7 +2638,13 @@ useEffect(() => {
           </div>
         </aside>
         {/* Main Content */}
-        <main className="flex-grow flex flex-col md:flex-row relative md:pr-80">
+        <main
+          className={`flex-grow flex flex-col md:grid relative ${
+            showUiPreviewDesktop
+              ? "md:grid-cols-[minmax(0,1fr)_minmax(360px,40vw)_20rem]"
+              : "md:grid-cols-[minmax(0,1fr)_20rem]"
+          }`}
+        >
           {/* Main chat area */}
           <section className="flex-grow flex flex-col md:w-2/3 h-full relative z-10">
             <div className="flex-grow overflow-y-auto px-2 md:px-4 py-6 flex flex-col items-center">
@@ -2812,12 +2911,42 @@ useEffect(() => {
   /* Prompt form */
   <form onSubmit={handleSubmit} className="w-full max-w-2xl mx-auto" autoComplete="off">
     <div className="relative">
+      <div className="flex items-center gap-2 mb-2">
+        <button
+          type="button"
+          onClick={handleGenerateUi}
+          disabled={uiGenLoading || isGenerating || !prompt.trim()}
+          className={`px-3 py-2 rounded text-sm font-semibold shadow ${
+            uiGenLoading || isGenerating || !prompt.trim()
+              ? "bg-gray-700 text-gray-300 cursor-not-allowed"
+              : "bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-white hover:shadow-xl"
+          }`}
+        >
+          {uiGenLoading ? "Generating UI…" : "Generate UI Preview"}
+        </button>
+
+        {uiGenerations.length > 0 && !uiPreviewOpen && (
+          <button
+            type="button"
+            onClick={() => setUiPreviewOpen(true)}
+            className="px-3 py-2 rounded text-sm bg-gray-800 hover:bg-gray-700 text-gray-100"
+          >
+            Show Preview
+          </button>
+        )}
+      </div>
+
+      {uiGenError && <div className="mb-2 text-xs text-red-400">{uiGenError}</div>}
+
       <textarea
         ref={promptInputRef}
         value={prompt}
         onChange={(e) => setPrompt(e.target.value)}
         onKeyDown={handlePromptKeyDown}
-        placeholder={planInfo?.promptPlaceholder || "Describe the Roblox script you want..."}
+        placeholder={
+          planInfo?.promptPlaceholder ||
+          "Describe the UI you want for your game (menus, HUD, shop, inventory, etc.)…"
+        }
         className={`w-full rounded-lg bg-gray-900/60 border border-gray-700 focus:border-[#9b5de5] focus:ring-2 focus:ring-[#9b5de5]/50 transition-all duration-300 py-3 px-4 pr-14 resize-none shadow-lg ${
           promptError ? "border-red-500" : ""
         }`}
@@ -2882,9 +3011,70 @@ useEffect(() => {
               </div>
             </div>
           </section>
+          {showUiPreviewDesktop && (
+            <aside className="hidden md:flex flex-col border-l border-gray-800 bg-gray-950/40 sticky top-[64px] h-[calc(100vh-64px)]">
+              <div className="p-3 border-b border-gray-800 flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="font-semibold text-white">UI Preview</div>
+                  <div className="text-xs text-gray-400 truncate">
+                    {activeUi?.prompt || ""}
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  {activeUi?.lua && (
+                    <button
+                      type="button"
+                      className="px-2 py-1 rounded bg-gray-800 hover:bg-gray-700 text-xs text-gray-100"
+                      onClick={() => downloadLua(activeUi.lua, "GeneratedUI.lua")}
+                    >
+                      Download
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    className="px-2 py-1 rounded bg-gray-800 hover:bg-gray-700 text-xs text-gray-100"
+                    onClick={() => setUiPreviewOpen(false)}
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex-1 overflow-auto p-3">
+                <LuaPreviewRenderer lua={activeUi?.lua || ""} />
+              </div>
+
+              <div className="border-t border-gray-800 p-2">
+                <div className="text-xs font-semibold text-gray-300 mb-2">
+                  Recent (newest first)
+                </div>
+                <div className="space-y-1">
+                  {uiGenerations.slice(0, 6).map((g) => (
+                    <button
+                      key={g.id}
+                      type="button"
+                      onClick={() => {
+                        setActiveUiId(g.id);
+                        setUiPreviewOpen(true);
+                      }}
+                      className={`w-full text-left px-2 py-1 rounded border ${
+                        g.id === activeUiId
+                          ? "border-[#9b5de5] bg-[#9b5de5]/10"
+                          : "border-gray-800 hover:bg-gray-900"
+                      }`}
+                      title={g.prompt}
+                    >
+                      <div className="text-xs text-gray-200 truncate">{g.prompt}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </aside>
+          )}
           {/* Right Sidebar */}
           <aside
-            className="hidden md:flex w-80 bg-gray-900 border-l border-gray-800 flex-col fixed right-0 top-[64px] z-30 h-[calc(100vh-64px)]"
+            className="hidden md:flex w-80 bg-gray-900 border-l border-gray-800 flex-col sticky top-[64px] h-[calc(100vh-64px)]"
             style={{
               minHeight: "calc(100vh - 64px)",
               maxHeight: "calc(100vh - 64px)",
