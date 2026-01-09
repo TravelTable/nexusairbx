@@ -55,6 +55,12 @@ export default function LuaPreviewRenderer({ lua, interactive = false, onAction 
         <div className="text-[11px] opacity-70 max-w-[220px]">
           The Lua code is missing a valid UI manifest or the JSON is malformed.
         </div>
+        <button 
+          onClick={() => console.log("RAW LUA:", lua)}
+          className="mt-4 px-3 py-1 text-[10px] bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 rounded uppercase tracking-wider font-bold"
+        >
+          Log Raw Lua to Console
+        </button>
       </div>
     );
   }
@@ -67,6 +73,17 @@ export default function LuaPreviewRenderer({ lua, interactive = false, onAction 
         <div className="font-bold mb-1 text-sm">Empty UI Manifest</div>
         <div className="text-[11px] opacity-70 max-w-[220px]">
           The Lua code contains a manifest, but it has no UI elements to display.
+        </div>
+        <div className="mt-4 p-2 bg-black/40 rounded border border-white/5 text-[10px] font-mono text-left max-w-full overflow-auto">
+          <div className="text-zinc-500 mb-1">// Debug Info</div>
+          <div className="text-zinc-300">Canvas: {board.canvasSize?.w}x{board.canvasSize?.h}</div>
+          <div className="text-zinc-300">Items: {items.length}</div>
+          <button 
+            onClick={() => console.log("MANIFEST DATA:", board)}
+            className="mt-2 text-[#00f5d4] hover:underline"
+          >
+            Inspect Manifest in Console
+          </button>
         </div>
       </div>
     );

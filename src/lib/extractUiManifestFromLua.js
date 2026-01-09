@@ -62,12 +62,71 @@ export function extractUiManifestFromLua(lua) {
   // 4. Strip trailing commas (very common AI mistake that breaks JSON.parse)
   jsonText = jsonText.replace(/,\s*([\]}])/g, "$1");
 
-  // 5. Attempt to parse, with a recovery loop for truncated JSON
+  // 5. Attempt to parse, with a robust recovery for truncated JSON
   try {
     return attemptParse(jsonText);
   } catch (e) {
-    console.warn("Initial JSON parse failed, attempting recovery...", e);
-    return attemptRecoverTruncatedJson(jsonText);
+    console.warn("Initial JSON parse failed, attempting robust recovery...", e);
+    return balanceAndParseJson(jsonText);
+  }
+}
+
+/**
+ * Balances unclosed braces and brackets in a truncated JSON string.
+ */
+function balanceAndParseJson(text) {
+  let clean = text.trim();
+  
+  // If it's obviously truncated (ends with a comma or property name)
+  // try to find the last valid object/array boundary
+  const lastComma = clean.lastIndexOf(",");
+  const lastOpenBrace = clean.lastIndexOf("{");
+  const lastOpenBracket = clean.lastIndexOf("[");
+  
+  // If it ends mid-property or mid-value, back up to the last comma or brace
+  if (clean.match(/[:"a-zA-Z0-9]$/)) {
+    const backupIndex = Math.max(lastComma, lastOpenBrace, lastOpenBracket);
+    if (backupIndex !== -1) {
+      clean = clean.slice(0, backupIndex);
+    }
+  }
+
+  const stack = [];
+  for (let i = 0; i < clean.length; i++) {
+    const char = clean[i];
+    if (char === '{') stack.push('}');
+    else if (char === '[') stack.push(']');
+    else if (char === '}') {
+      if (stack[stack.length - 1] === '}') stack.pop();
+    } else if (char === ']') {
+      if (stack[stack.length - 1] === ']') stack.pop();
+    }
+  }
+
+  // Close everything in reverse order
+  let recoveredText = clean;
+  while (stack.length > 0) {
+    recoveredText += stack.pop();
+  }
+
+  try {
+    return attemptParse(recoveredText);
+  } catch (e) {
+    // Final fallback: try to extract any valid items array we can find
+    try {
+      const itemsMatch = recoveredText.match(/"items"\s*:\s*\[([\s\S]*?)\]/);
+      if (itemsMatch) {
+        const itemsJson = "[" + itemsMatch[1].replace(/,\s*$/, "") + "]";
+        const items = JSON.parse(itemsJson);
+        return {
+          canvasSize: { w: 1280, h: 720 },
+          items: Array.isArray(items) ? items : []
+        };
+      }
+    } catch (e2) {
+      console.error("Manifest recovery failed completely", e2);
+    }
+    return null;
   }
 }
 
@@ -97,26 +156,4 @@ function attemptParse(text) {
   } catch (e) {
     throw e;
   }
-}
-
-function attemptRecoverTruncatedJson(text) {
-  let currentText = text.trim();
-  // Limit attempts to prevent infinite loops
-  for (let i = 0; i < 10; i++) {
-    try {
-      // Try adding a closing brace
-      const recovered = attemptParse(currentText + "}");
-      if (recovered) return recovered;
-    } catch {
-      try {
-        // Try adding a closing bracket then brace
-        const recovered = attemptParse(currentText + "]}");
-        if (recovered) return recovered;
-      } catch {
-        // Remove the last character and try again in the next iteration
-        currentText += "}"; 
-      }
-    }
-  }
-  return null;
 }
