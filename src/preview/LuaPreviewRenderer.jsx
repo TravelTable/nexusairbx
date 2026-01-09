@@ -60,6 +60,17 @@ export default function LuaPreviewRenderer({ lua, interactive = false, onAction 
   }
 
   const items = Array.isArray(board.items) ? board.items : [];
+
+  if (items.length === 0) {
+    return (
+      <div className="h-full flex flex-col items-center justify-center text-zinc-400 p-6 text-center bg-zinc-500/5 rounded-lg border border-zinc-500/10">
+        <div className="font-bold mb-1 text-sm">Empty UI Manifest</div>
+        <div className="text-[11px] opacity-70 max-w-[220px]">
+          The Lua code contains a manifest, but it has no UI elements to display.
+        </div>
+      </div>
+    );
+  }
   
   // Sort items by ZIndex to ensure correct stacking (higher ZIndex on top)
   const sortedItems = [...items].sort((a, b) => (Number(a.zIndex) || 0) - (Number(b.zIndex) || 0));
@@ -78,7 +89,7 @@ export default function LuaPreviewRenderer({ lua, interactive = false, onAction 
   return (
     <div ref={outerRef} className="w-full h-full flex items-center justify-center bg-[#050505] overflow-hidden relative min-h-[300px]">
       <div
-        className={`relative bg-[#0D0D0D] shadow-[0_0_80px_rgba(0,0,0,0.8)] transition-all duration-700 ${isReady ? 'opacity-100 scale-100' : 'opacity-30 scale-90'}`}
+        className={`relative bg-[#0D0D0D] shadow-[0_0_80px_rgba(0,0,0,0.8)] transition-all duration-700 ${isReady ? 'opacity-100 scale-100' : 'opacity-60 scale-95'}`}
         style={{
           width: canvasW,
           height: canvasH,

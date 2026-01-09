@@ -8,7 +8,7 @@ export function extractUiManifestFromLua(lua) {
 
   // 1. Flexible match for Roblox long strings: --[==[UI_BUILDER_JSON ... ]==]
   // Matches any number of '=' signs, and handles variations in the tag name.
-  const longStringRegex = /--\[(=*)\[(?:UI_BUILDER_JSON|UI_MANIFEST|BOARD_STATE)\s*([\s\S]*?)\s*\]\1\]/i;
+  const longStringRegex = /--\[(=*)\[(?:UI_BUILDER_JSON|UI_MANIFEST|BOARD_STATE|JSON)\s*([\s\S]*?)\s*\]\1\]/i;
   const match = lua.match(longStringRegex);
   
   let jsonText = "";
@@ -28,7 +28,18 @@ export function extractUiManifestFromLua(lua) {
       if (lastDitchMatch && lastDitchMatch[0].includes('"items"')) {
         jsonText = lastDitchMatch[0].trim();
       } else {
-        return null;
+        // Check for boardState wrapper specifically
+        if (lua.includes('"boardState"')) {
+           const boardStateRegex = /\{[\s\S]*?"boardState"[\s\S]*?\}/;
+           const boardStateMatch = lua.match(boardStateRegex);
+           if (boardStateMatch) {
+             jsonText = boardStateMatch[0].trim();
+           } else {
+             return null;
+           }
+        } else {
+          return null;
+        }
       }
     }
   }
