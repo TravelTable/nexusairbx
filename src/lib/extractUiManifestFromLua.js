@@ -61,9 +61,31 @@ export function extractUiManifestFromLua(lua) {
 }
 
 function attemptParse(text) {
-  const parsed = JSON.parse(text);
-  // The manifest might be wrapped in { "boardState": ... } or be the boardState itself
-  return parsed?.boardState || (parsed?.items ? parsed : null);
+  try {
+    const parsed = JSON.parse(text);
+    
+    // 1. Standard boardState wrapper
+    if (parsed?.boardState && Array.isArray(parsed.boardState.items)) {
+      return parsed.boardState;
+    }
+    
+    // 2. Direct boardState object
+    if (parsed?.items && Array.isArray(parsed.items)) {
+      return parsed;
+    }
+    
+    // 3. Raw array of items
+    if (Array.isArray(parsed)) {
+      return {
+        canvasSize: { w: 1280, h: 720 },
+        items: parsed
+      };
+    }
+    
+    return null;
+  } catch (e) {
+    throw e;
+  }
 }
 
 function attemptRecoverTruncatedJson(text) {

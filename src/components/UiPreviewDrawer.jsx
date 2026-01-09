@@ -24,6 +24,7 @@ export default function UiPreviewDrawer({
   const [tab, setTab] = useState("preview"); // "preview" | "code" | "functionality" | "history"
   const [lastEvent, setLastEvent] = useState(null);
   const [previewError, setPreviewError] = useState(null);
+  const [manifestInfo, setManifestInfo] = useState(null);
   const [refineInput, setRefineInput] = useState("");
   const [isRefining, setIsRefining] = useState(false);
   
@@ -199,13 +200,20 @@ export default function UiPreviewDrawer({
                   : "Click a button in the preview to test interactions."}
               </div>
 
-              <div className="flex-1 min-h-0 border border-gray-800 rounded-lg overflow-hidden bg-black/20 relative">
+              <div className="flex-1 min-h-0 border border-gray-800 rounded-lg overflow-hidden bg-black/20 relative group">
                 <LuaPreviewRenderer
                   lua={lua}
                   interactive
                   onAction={(evt) => setLastEvent(evt)}
                 />
-                {/* Error Overlay if manifest fails */}
+                
+                {/* Status Overlay */}
+                <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                  <div className="bg-black/60 backdrop-blur-md border border-white/10 rounded px-2 py-1 text-[10px] text-gray-400 font-mono">
+                    {lua ? "Manifest Active" : "No Manifest"}
+                  </div>
+                </div>
+
                 {!lua && (
                   <div className="absolute inset-0 flex items-center justify-center bg-[#0b1220]/80 backdrop-blur-sm text-gray-400 text-sm">
                     Waiting for Lua code...
