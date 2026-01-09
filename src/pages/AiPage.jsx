@@ -384,7 +384,8 @@ function AiPage() {
           ...prev,
         ]);
         setActiveUiId(id);
-        notify({ message: "UI refined successfully", type: "success" });
+        const tokenMsg = data.tokensConsumed ? ` (${formatNumber(data.tokensConsumed)} tokens used)` : "";
+        notify({ message: `UI refined successfully${tokenMsg}`, type: "success" });
       }
     } catch (e) {
       notify({ message: "Refinement failed", type: "error" });
@@ -575,7 +576,8 @@ function AiPage() {
       setSelectedVersion(null);
       setUiDrawerOpen(true);
       setPrompt("");
-      notify({ message: "UI generated and saved.", type: "success" });
+      const tokenMsg = pipe?.tokensConsumed ? ` (${formatNumber(pipe.tokensConsumed)} tokens used)` : "";
+      notify({ message: `UI generated and saved.${tokenMsg}`, type: "success" });
     } catch (e) {
       notify({ message: e?.message || "UI generation failed", type: "error" });
     } finally {
