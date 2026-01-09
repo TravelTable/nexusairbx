@@ -88,6 +88,11 @@ export default function LuaPreviewRenderer({ lua, interactive = false, onAction 
 
   return (
     <div ref={outerRef} className="w-full h-full flex items-center justify-center bg-[#050505] overflow-hidden relative min-h-[300px]">
+      {/* Debug Info */}
+      <div className="absolute top-2 left-2 text-[10px] text-white/20 pointer-events-none z-10">
+        {items.length} items | {canvasW}x{canvasH}
+      </div>
+
       <div
         className={`relative bg-[#0D0D0D] shadow-[0_0_80px_rgba(0,0,0,0.8)] transition-all duration-700 ${isReady ? 'opacity-100 scale-100' : 'opacity-60 scale-95'}`}
         style={{
@@ -115,10 +120,12 @@ export default function LuaPreviewRenderer({ lua, interactive = false, onAction 
 }
 
 function PreviewNode({ item, interactive, onAction }) {
-  const x = Number(item.x) || 0;
-  const y = Number(item.y) || 0;
-  const w = Number(item.w) || 0;
-  const h = Number(item.h) || 0;
+  const x = parseFloat(item.x) || 0;
+  const y = parseFloat(item.y) || 0;
+  const w = parseFloat(item.w) || 0;
+  const h = parseFloat(item.h) || 0;
+
+  const type = String(item.type || "").toLowerCase();
 
   const style = {
     position: "absolute",
@@ -128,10 +135,10 @@ function PreviewNode({ item, interactive, onAction }) {
     height: h,
     zIndex: Number(item.zIndex) || 1,
     borderRadius: Number(item.radius) || 0,
-    background: item.fill || "#111827",
+    background: item.fill || (type === "frame" ? "rgba(255,255,255,0.05)" : "#111827"),
     border: item.stroke
       ? `${Number(item.strokeWidth) || 1}px solid ${item.strokeColor || "rgba(255,255,255,0.2)"}`
-      : "none",
+      : (type === "frame" ? "1px solid rgba(255,255,255,0.1)" : "none"),
     color: item.textColor || "#ffffff",
     display: item.visible === false ? "none" : "flex",
     alignItems: "center",
@@ -143,14 +150,15 @@ function PreviewNode({ item, interactive, onAction }) {
     textAlign: "center",
     padding: 4,
     boxSizing: "border-box",
-    boxShadow: item.type === "TextButton" ? "0 2px 10px rgba(0,0,0,0.3)" : "none",
+    boxShadow: type === "textbutton" ? "0 2px 10px rgba(0,0,0,0.3)" : "none",
+    opacity: item.opacity !== undefined ? Number(item.opacity) : 1,
   };
 
-  if (item.type === "TextLabel") {
+  if (type === "textlabel") {
     return <div style={style}>{item.text}</div>;
   }
 
-  if (item.type === "Frame" || item.type === "ScrollingFrame") {
+  if (type === "frame" || type === "scrollingframe") {
     return (
       <div style={{ ...style, alignItems: "flex-start", justifyContent: "flex-start" }}>
         {/* Frames are containers */}
@@ -158,7 +166,7 @@ function PreviewNode({ item, interactive, onAction }) {
     );
   }
 
-  if (item.type === "TextButton") {
+  if (type === "textbutton" || type === "monetizationbutton") {
     return (
       <button
         type="button"
