@@ -350,8 +350,17 @@ function AiPage() {
     if (location?.state?.initialPrompt) {
       setPrompt(location.state.initialPrompt);
       window.history.replaceState({}, document.title);
+    } else {
+      const saved = localStorage.getItem("nexusrbx:prompt_draft");
+      if (saved) setPrompt(saved);
     }
   }, [location]);
+
+  useEffect(() => {
+    if (prompt) {
+      localStorage.setItem("nexusrbx:prompt_draft", prompt);
+    }
+  }, [prompt]);
 
   const [promptCharCount, setPromptCharCount] = useState(0);
   const [promptError, setPromptError] = useState("");
@@ -523,27 +532,73 @@ function AiPage() {
 
   const handleSubmit = async (e) => {
     if (e) e.preventDefault();
-    if (!prompt.trim() || isGenerating) return;
+    const content = prompt.trim();
+    if (!content || isGenerating) return;
     if (!user) { notify({ message: "Sign in required.", type: "error" }); return; }
 
     setIsGenerating(true);
-    const requestId = uuidv4();
-    const userMsg = { id: uuidv4(), role: "user", content: prompt.trim(), createdAt: Date.now() };
-    setMessages(prev => [...prev, userMsg]);
     setPrompt("");
+    localStorage.removeItem("nexusrbx:prompt_draft");
+
+    const db = getFirestore();
+    let activeChatId = currentChatId;
+    const requestId = uuidv4();
 
     try {
+      // 1. Ensure we have a chat
+      if (!activeChatId) {
+        const newChatRef = await addDoc(collection(db, "users", user.uid, "chats"), {
+          title: content.slice(0, 30) + (content.length > 30 ? "..." : ""),
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        });
+        activeChatId = newChatRef.id;
+        setCurrentChatId(activeChatId);
+      }
+
+      // 2. Save User Message
+      const userMsgRef = doc(db, "users", user.uid, "chats", activeChatId, "messages", `${requestId}-user`);
+      await setDoc(userMsgRef, {
+        role: "user",
+        content: content,
+        createdAt: serverTimestamp(),
+        requestId,
+      });
+
+      // 3. Generate Code/Response
       const token = await user.getIdToken();
       const res = await fetch(`${BACKEND_URL}/api/generate-code`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ prompt: userMsg.content, settings }),
+        body: JSON.stringify({ 
+          prompt: content, 
+          settings,
+          conversation: messages.slice(-10).map(m => ({ role: m.role, content: m.content || m.explanation }))
+        }),
       });
+      
       const data = await res.json();
-      if (data.code) {
-        setMessages(prev => [...prev, { id: uuidv4(), role: "assistant", code: data.code, explanation: data.explanation, createdAt: Date.now() }]);
+      
+      if (data.code || data.explanation) {
+        // 4. Save Assistant Message
+        const assistantMsgRef = doc(db, "users", user.uid, "chats", activeChatId, "messages", `${requestId}-assistant`);
+        await setDoc(assistantMsgRef, {
+          role: "assistant",
+          content: "",
+          explanation: data.explanation || "",
+          code: data.code || "",
+          createdAt: serverTimestamp(),
+          requestId,
+        });
+
+        // Update chat timestamp
+        await updateDoc(doc(db, "users", user.uid, "chats", activeChatId), {
+          updatedAt: serverTimestamp(),
+          lastMessage: content.slice(0, 50),
+        });
       }
     } catch (e) {
+      console.error(e);
       notify({ message: "Generation failed", type: "error" });
     } finally {
       setIsGenerating(false);
@@ -600,12 +655,61 @@ function AiPage() {
                 </div>
               ) : (
                 messages.map((m) => (
-                  <div key={m.id} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'} gap-3`}>
+                  <div key={m.id} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'} gap-3 group`}>
                     {m.role === 'assistant' && <NexusRBXAvatar />}
-                    <div className={`max-w-[80%] p-4 rounded-2xl ${m.role === 'user' ? 'bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-white' : 'bg-gray-900/80 border border-gray-800'}`}>
-                      {m.explanation && <div className="text-sm whitespace-pre-wrap mb-4">{m.explanation}</div>}
-                      {m.code && <AssistantCodeBlock code={m.code} />}
+                    <div className={`max-w-[85%] ${m.role === 'user' ? 'order-1' : 'order-2'}`}>
+                      <div className={`p-4 rounded-2xl ${m.role === 'user' ? 'bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-white shadow-lg' : 'bg-gray-900/80 border border-gray-800'}`}>
+                        {m.explanation && <div className="text-sm whitespace-pre-wrap">{m.explanation}</div>}
+                        {m.role === 'assistant' && m.code && (
+                          <div className="mt-4">
+                            <ScriptLoadingBarContainer
+                              filename={m.title || "Generated_Script.lua"}
+                              codeReady={!!m.code}
+                              loading={false}
+                              onView={() => {
+                                const entry = { 
+                                  id: m.id, 
+                                  lua: m.code, 
+                                  prompt: m.content || "Chat Generated UI", 
+                                  createdAt: m.createdAt 
+                                };
+                                setUiGenerations(prev => prev.some(g => g.id === m.id) ? prev : [entry, ...prev]);
+                                setActiveUiId(m.id);
+                                setUiDrawerOpen(true);
+                              }}
+                            />
+                          </div>
+                        )}
+                      </div>
+                      {m.role === 'assistant' && !m.code && isGenerating && m === messages[messages.length - 1] && (
+                        <div className="mt-2 flex items-center gap-2 text-xs text-gray-500 italic">
+                          <Loader className="w-3 h-3 animate-spin" /> Nexus is thinking...
+                        </div>
+                      )}
+                      {m.role === 'assistant' && m.code && (
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          {["Make it more blue", "Add a close button", "Make it mobile friendly", "Add animations"].map((chip) => (
+                            <button
+                              key={chip}
+                              onClick={() => {
+                                setPrompt(chip);
+                                // Optionally trigger refinement immediately if in UI mode
+                                if (mode === "ui") {
+                                  const entry = { id: m.id, lua: m.code, prompt: m.content, createdAt: m.createdAt };
+                                  setUiGenerations(prev => prev.some(g => g.id === m.id) ? prev : [entry, ...prev]);
+                                  setActiveUiId(m.id);
+                                  onRefine(chip);
+                                }
+                              }}
+                              className="px-3 py-1 rounded-full bg-gray-800 border border-gray-700 text-[11px] text-gray-400 hover:border-[#00f5d4] hover:text-white transition-colors"
+                            >
+                              {chip}
+                            </button>
+                          ))}
+                        </div>
+                      )}
                     </div>
+                    {m.role === 'user' && <UserAvatar email={user?.email} />}
                   </div>
                 ))
               )}
@@ -763,6 +867,29 @@ function AssistantCodeBlock({ code }) {
   );
 }
 
-const NexusRBXAvatar = () => <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-lg overflow-hidden"><img src="/logo.png" alt="NexusRBX" className="w-8 h-8 object-contain" /></div>;
+const NexusRBXAvatar = () => (
+  <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-lg overflow-hidden flex-shrink-0">
+    <img src="/logo.png" alt="NexusRBX" className="w-8 h-8 object-contain" />
+  </div>
+);
+
+const UserAvatar = ({ email }) => {
+  const url = getGravatarUrl(email);
+  const initials = getUserInitials(email);
+  return (
+    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#9b5de5] to-[#00f5d4] flex items-center justify-center shadow-lg overflow-hidden flex-shrink-0 border-2 border-white/10">
+      {url ? (
+        <img
+          src={url}
+          alt="User"
+          className="w-full h-full object-cover"
+          onError={(e) => (e.target.style.display = "none")}
+        />
+      ) : (
+        <span className="text-white font-bold text-sm">{initials}</span>
+      )}
+    </div>
+  );
+};
 
 export default AiPage;
