@@ -208,18 +208,20 @@ export default function UiPreviewDrawer({
 
               <div className="flex items-center gap-2 mt-auto">
                 <input
-                  className="flex-1 bg-gray-900 border border-gray-800 rounded-lg px-3 py-2 text-sm text-white focus:border-[#00f5d4] outline-none"
+                  className="flex-1 bg-gray-900 border border-gray-800 rounded-lg px-3 py-2 text-sm text-white focus:border-[#00f5d4] outline-none disabled:opacity-50"
                   placeholder="Refine this UI (e.g. 'Make it more blue', 'Add a close button')"
                   value={refineInput}
                   onChange={e => setRefineInput(e.target.value)}
-                  onKeyDown={e => e.key === "Enter" && onRefine(refineInput)}
+                  onKeyDown={e => e.key === "Enter" && !isRefining && onRefine(refineInput)}
+                  disabled={isRefining}
                 />
                 <button
-                  className="px-4 py-2 rounded-lg bg-[#00f5d4] text-black font-bold text-sm hover:scale-[1.02] transition-transform disabled:opacity-50"
+                  className="px-4 py-2 rounded-lg bg-[#00f5d4] text-black font-bold text-sm hover:scale-[1.02] transition-transform disabled:opacity-50 disabled:scale-100 flex items-center gap-2"
                   onClick={() => onRefine(refineInput)}
-                  disabled={!refineInput.trim()}
+                  disabled={!refineInput.trim() || isRefining}
                 >
-                  Refine
+                  {isRefining ? <Check className="w-4 h-4 animate-spin" /> : null}
+                  {isRefining ? "Refining..." : "Refine"}
                 </button>
               </div>
 
@@ -268,16 +270,18 @@ export default function UiPreviewDrawer({
                   </div>
                   <div className="flex items-center gap-2 pt-2 border-t border-gray-800">
                     <input
-                      className="flex-1 bg-gray-900 border border-gray-800 rounded-lg px-3 py-2 text-sm text-white focus:border-[#f15bb5] outline-none"
+                      className="flex-1 bg-gray-900 border border-gray-800 rounded-lg px-3 py-2 text-sm text-white focus:border-[#f15bb5] outline-none disabled:opacity-50"
                       placeholder="What functionality do you need? (e.g. 'Handle buying items', 'Open/Close logic')"
                       value={funcPrompt}
                       onChange={e => setFuncPrompt(e.target.value)}
+                      disabled={isGeneratingFunc}
                     />
                     <button
-                      className="px-4 py-2 rounded-lg bg-[#f15bb5] text-white font-bold text-sm hover:scale-[1.02] transition-transform disabled:opacity-50"
+                      className="px-4 py-2 rounded-lg bg-[#f15bb5] text-white font-bold text-sm hover:scale-[1.02] transition-transform disabled:opacity-50 disabled:scale-100 flex items-center gap-2"
                       onClick={handleGenerateFunctionality}
                       disabled={isGeneratingFunc || !funcPrompt.trim()}
                     >
+                      {isGeneratingFunc ? <Check className="w-4 h-4 animate-spin" /> : null}
                       {isGeneratingFunc ? "Generating..." : "Generate Scripts"}
                     </button>
                   </div>

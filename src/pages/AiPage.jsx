@@ -617,19 +617,38 @@ function AiPage() {
               <TokenBar tokensLeft={tokensLeft} tokensLimit={tokensLimit} resetsAt={tokenRefreshTime} plan={planKey} />
               <div className="relative">
                 <textarea
-                  className="w-full bg-gray-900/60 border border-gray-700 rounded-xl p-4 pr-16 resize-none focus:border-[#9b5de5] outline-none"
+                  className="w-full bg-gray-900/60 border border-gray-700 rounded-xl p-4 pr-16 resize-none focus:border-[#9b5de5] outline-none disabled:opacity-50 disabled:cursor-not-allowed"
                   rows="3" placeholder={mode === "ui" ? "Describe the UI you want to build..." : "Ask anything about Roblox development..."}
                   value={prompt} onChange={(e) => setPrompt(e.target.value)}
+                  disabled={isGenerating || uiIsGenerating}
                 />
                 {mode === "chat" && (
-                  <button onClick={handleSubmit} className="absolute right-4 bottom-4 p-3 rounded-full bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-white hover:scale-110 transition-transform">
-                    <Send className="h-5 w-5" />
+                  <button 
+                    onClick={handleSubmit} 
+                    disabled={isGenerating || uiIsGenerating || !prompt.trim()}
+                    className="absolute right-4 bottom-4 p-3 rounded-full bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-white hover:scale-110 transition-transform disabled:opacity-50 disabled:scale-100 disabled:cursor-not-allowed"
+                  >
+                    {isGenerating ? <Loader className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
                   </button>
                 )}
               </div>
               {mode === "ui" && (
-                <button onClick={() => handleGenerateUiPreview()} className="w-full py-3 rounded-xl bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-white font-bold text-lg flex items-center justify-center gap-2 hover:scale-[1.01] transition-transform">
-                  <Layout className="h-5 w-5" /> Generate UI & Preview
+                <button 
+                  onClick={() => handleGenerateUiPreview()} 
+                  disabled={isGenerating || uiIsGenerating || !prompt.trim()}
+                  className="w-full py-3 rounded-xl bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-white font-bold text-lg flex items-center justify-center gap-2 hover:scale-[1.01] transition-transform disabled:opacity-50 disabled:scale-100 disabled:cursor-not-allowed"
+                >
+                  {uiIsGenerating ? (
+                    <>
+                      <Loader className="h-5 w-5 animate-spin" />
+                      Generating UI...
+                    </>
+                  ) : (
+                    <>
+                      <Layout className="h-5 w-5" /> 
+                      Generate UI & Preview
+                    </>
+                  )}
                 </button>
               )}
             </div>
