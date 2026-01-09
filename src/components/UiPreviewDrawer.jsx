@@ -208,15 +208,19 @@ export default function UiPreviewDrawer({
                 />
                 
                 {/* Status Overlay */}
-                <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                  <div className="bg-black/60 backdrop-blur-md border border-white/10 rounded px-2 py-1 text-[10px] text-gray-400 font-mono">
-                    {lua ? "Manifest Active" : "No Manifest"}
+                <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none">
+                  <div className="flex items-center gap-2 bg-black/80 backdrop-blur-xl border border-white/10 rounded-full px-3 py-1.5 shadow-2xl">
+                    <div className={`w-2 h-2 rounded-full ${lua ? 'bg-[#00f5d4] animate-pulse' : 'bg-red-500'}`} />
+                    <span className="text-[10px] text-gray-300 font-bold uppercase tracking-widest">
+                      {lua ? "Manifest Active" : "No Manifest"}
+                    </span>
                   </div>
                 </div>
 
                 {!lua && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-[#0b1220]/80 backdrop-blur-sm text-gray-400 text-sm">
-                    Waiting for Lua code...
+                  <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#0b1220]/90 backdrop-blur-md text-gray-400 text-sm gap-3">
+                    <Loader className="w-6 h-6 animate-spin text-[#9b5de5]" />
+                    <span className="font-medium tracking-wide">Waiting for Lua Engine...</span>
                   </div>
                 )}
               </div>

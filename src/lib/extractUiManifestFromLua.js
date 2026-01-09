@@ -94,16 +94,15 @@ function attemptRecoverTruncatedJson(text) {
   for (let i = 0; i < 10; i++) {
     try {
       // Try adding a closing brace
-      const recovered = JSON.parse(currentText + "}");
-      return recovered?.boardState || (recovered?.items ? recovered : null);
+      const recovered = attemptParse(currentText + "}");
+      if (recovered) return recovered;
     } catch {
       try {
         // Try adding a closing bracket then brace
-        const recovered = JSON.parse(currentText + "]}");
-        return recovered?.boardState || (recovered?.items ? recovered : null);
+        const recovered = attemptParse(currentText + "]}");
+        if (recovered) return recovered;
       } catch {
         // Remove the last character and try again in the next iteration
-        // (or just keep appending if we think it's just missing ends)
         currentText += "}"; 
       }
     }
