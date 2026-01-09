@@ -28,28 +28,31 @@ export default function LuaPreviewRenderer({ lua, interactive = false, onAction 
   const board = extractUiManifestFromLua(lua);
   if (!board) {
     return (
-      <div className="h-full flex items-center justify-center text-red-500">
-        Invalid Lua (no UI manifest)
+      <div className="h-full flex items-center justify-center text-red-500 p-4 text-center">
+        Invalid Lua (no UI manifest found or malformed JSON)
       </div>
     );
   }
 
   const items = Array.isArray(board.items) ? board.items : [];
 
-  const canvasW = board.canvasSize?.w || 1280;
-  const canvasH = board.canvasSize?.h || 720;
+  const canvasW = Number(board.canvasSize?.w) || 1280;
+  const canvasH = Number(board.canvasSize?.h) || 720;
+  
+  // Robust scaling: center the canvas and scale it to fit the container
   const scale = box.w && box.h ? Math.min(box.w / canvasW, box.h / canvasH, 1) : 1;
 
   return (
-    <div ref={outerRef} className="w-full h-full flex items-center justify-center">
+    <div ref={outerRef} className="w-full h-full flex items-center justify-center bg-black/40 overflow-hidden relative">
       <div
-        className="relative bg-zinc-900 overflow-hidden"
+        className="relative bg-zinc-900 shadow-2xl"
         style={{
           width: canvasW,
           height: canvasH,
           transform: `scale(${scale})`,
-          transformOrigin: "top left",
+          transformOrigin: "center center", // Changed from top left to center center
           borderRadius: 12,
+          flexShrink: 0,
         }}
       >
         {items.map((item) => (
@@ -66,17 +69,23 @@ export default function LuaPreviewRenderer({ lua, interactive = false, onAction 
 }
 
 function PreviewNode({ item, interactive, onAction }) {
+  // Ensure coordinates and dimensions are numbers
+  const x = Number(item.x) || 0;
+  const y = Number(item.y) || 0;
+  const w = Number(item.w) || 0;
+  const h = Number(item.h) || 0;
+
   const style = {
     position: "absolute",
-    left: item.x,
-    top: item.y,
-    width: item.w,
-    height: item.h,
-    zIndex: item.zIndex || 1,
-    borderRadius: item.radius || 0,
+    left: x,
+    top: y,
+    width: w,
+    height: h,
+    zIndex: Number(item.zIndex) || 1,
+    borderRadius: Number(item.radius) || 0,
     background: item.fill || "#111827",
     border: item.stroke
-      ? `${item.strokeWidth || 1}px solid ${item.strokeColor || "#334155"}`
+      ? `${Number(item.strokeWidth) || 1}px solid ${item.strokeColor || "#334155"}`
       : "none",
     color: item.textColor || "#e5e7eb",
     display: item.visible === false ? "none" : "flex",
@@ -84,6 +93,10 @@ function PreviewNode({ item, interactive, onAction }) {
     justifyContent: "center",
     pointerEvents: interactive ? "auto" : "none",
     userSelect: "none",
+    fontSize: Number(item.fontSize) || 14,
+    overflow: "hidden",
+    textAlign: "center",
+    padding: 4,
   };
 
   if (item.type === "TextLabel") {
@@ -97,7 +110,7 @@ function PreviewNode({ item, interactive, onAction }) {
         style={{
           ...style,
           cursor: interactive ? "pointer" : "default",
-          transition: "transform 120ms ease",
+          transition: "transform 120ms ease, background-color 120ms ease",
         }}
         onClick={() => {
           if (!interactive) return;
