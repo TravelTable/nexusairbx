@@ -103,7 +103,7 @@ const defaultSettings = {
   gameSpec: "",
   uiCanvasSize: { w: 1280, h: 720 },
   uiMaxItems: 45,
-  uiMaxSystemsTokens: 2500,
+  uiMaxSystemsTokens: 8000,
   uiThemePrimary: "#00f5d4",
   uiThemeSecondary: "#9b5de5",
   uiThemeAccent: "#f15bb5",
