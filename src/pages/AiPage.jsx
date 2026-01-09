@@ -334,6 +334,33 @@ function AiPage() {
 
   const activeUi = uiGenerations.find((g) => g.id === activeUiId) || uiGenerations[0] || null;
 
+  const handleRefine = useCallback(async (instruction) => {
+    if (!activeUi?.lua) return;
+    setUiIsGenerating(true);
+    try {
+      const token = await user.getIdToken();
+      const res = await fetch(`${BACKEND_URL}/api/ui-builder/ai/refine-lua`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ lua: activeUi.lua, instruction }),
+      });
+      const data = await res.json();
+      if (data.lua) {
+        const id = cryptoRandomId();
+        setUiGenerations((prev) => [
+          { id, lua: data.lua, prompt: `Refine: ${instruction}`, createdAt: Date.now() },
+          ...prev,
+        ]);
+        setActiveUiId(id);
+        notify({ message: "UI refined successfully", type: "success" });
+      }
+    } catch (e) {
+      notify({ message: "Refinement failed", type: "error" });
+    } finally {
+      setUiIsGenerating(false);
+    }
+  }, [activeUi, user, notify]);
+
   const [currentChatId, setCurrentChatId] = useState(null);
   const [currentChatMeta, setCurrentChatMeta] = useState(null);
   const messagesUnsubRef = useRef(null);
@@ -698,7 +725,7 @@ function AiPage() {
                                   const entry = { id: m.id, lua: m.code, prompt: m.content, createdAt: m.createdAt };
                                   setUiGenerations(prev => prev.some(g => g.id === m.id) ? prev : [entry, ...prev]);
                                   setActiveUiId(m.id);
-                                  onRefine(chip);
+                                  handleRefine(chip);
                                 }
                               }}
                               className="px-3 py-1 rounded-full bg-gray-800 border border-gray-700 text-[11px] text-gray-400 hover:border-[#00f5d4] hover:text-white transition-colors"
@@ -765,23 +792,7 @@ function AiPage() {
         history={uiGenerations} activeId={activeUiId} onSelectHistory={(id) => setActiveUiId(id)}
         onDownload={() => downloadLuaFile(activeUi?.lua, "generated_ui.lua")}
         userEmail={user?.email} gameSpec={settings.gameSpec}
-        onRefine={async (instruction) => {
-          if (!activeUi?.lua) return; setUiIsGenerating(true);
-          try {
-            const token = await user.getIdToken();
-            const res = await fetch(`${BACKEND_URL}/api/ui-builder/ai/refine-lua`, {
-              method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-              body: JSON.stringify({ lua: activeUi.lua, instruction }),
-            });
-            const data = await res.json();
-            if (data.lua) {
-              const id = cryptoRandomId();
-              setUiGenerations(prev => [{ id, lua: data.lua, prompt: `Refine: ${instruction}`, createdAt: Date.now() }, ...prev]);
-              setActiveUiId(id); notify({ message: "UI refined successfully", type: "success" });
-            }
-          } catch (e) { notify({ message: "Refinement failed", type: "error" }); }
-          finally { setUiIsGenerating(false); }
-        }}
+        onRefine={handleRefine}
       />
 
       {showUiSpecModal && (
