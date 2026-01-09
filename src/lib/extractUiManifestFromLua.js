@@ -7,41 +7,55 @@ export function extractUiManifestFromLua(lua) {
   if (!lua || typeof lua !== "string") return null;
 
   // 1. Flexible match for Roblox long strings: --[==[UI_BUILDER_JSON ... ]==]
-  // Matches any number of '=' signs.
-  const longStringRegex = /--\[(=*)\[UI_BUILDER_JSON\s*([\s\S]*?)\s*\]\1\]/;
+  // Matches any number of '=' signs, and handles variations in the tag name.
+  const longStringRegex = /--\[(=*)\[(?:UI_BUILDER_JSON|UI_MANIFEST|BOARD_STATE)\s*([\s\S]*?)\s*\]\1\]/i;
   const match = lua.match(longStringRegex);
   
   let jsonText = "";
   if (match && match[2]) {
     jsonText = match[2].trim();
   } else {
-    // Fallback: Search for anything that looks like the manifest if the tag is missing
-    const fallbackRegex = /\{[\s\S]*"canvasSize"[\s\S]*"items"[\s\S]*\}/;
+    // Fallback: Search for anything that looks like the manifest if the tag is missing.
+    // We look for the core structure: canvasSize and items.
+    const fallbackRegex = /\{[\s\S]*?"canvasSize"[\s\S]*?"items"[\s\S]*?\}/;
     const fallbackMatch = lua.match(fallbackRegex);
     if (fallbackMatch) {
       jsonText = fallbackMatch[0].trim();
     } else {
-      return null;
+      // Last ditch effort: find the largest JSON-like block
+      const lastDitchRegex = /\{[\s\S]*\}/;
+      const lastDitchMatch = lua.match(lastDitchRegex);
+      if (lastDitchMatch && lastDitchMatch[0].includes('"items"')) {
+        jsonText = lastDitchMatch[0].trim();
+      } else {
+        return null;
+      }
     }
   }
 
-  // 2. Cleanup: Remove markdown code fences if the AI accidentally included them
-  jsonText = jsonText.replace(/^```json\s*/i, "").replace(/```$/, "");
+  // 2. Cleanup: Remove markdown code fences and normalize quotes
+  jsonText = jsonText
+    .replace(/^```(?:json)?\s*/i, "")
+    .replace(/```$/, "")
+    .replace(/[\u201C\u201D]/g, '"') // Normalize smart double quotes
+    .replace(/[\u2018\u2019]/g, "'"); // Normalize smart single quotes
 
   // 3. Handle missing outer braces
   if (jsonText.includes('"canvasSize"') && !jsonText.startsWith("{")) {
-    jsonText = "{" + jsonText + "}";
+    jsonText = "{" + jsonText;
+  }
+  if (jsonText.includes('"items"') && !jsonText.endsWith("}")) {
+    jsonText = jsonText + "}";
   }
 
   // 4. Strip trailing commas (very common AI mistake that breaks JSON.parse)
-  // This regex handles commas before closing braces or brackets, even with whitespace/newlines
   jsonText = jsonText.replace(/,\s*([\]}])/g, "$1");
 
   // 5. Attempt to parse, with a recovery loop for truncated JSON
   try {
     return attemptParse(jsonText);
   } catch (e) {
-    // If it failed, it might be truncated. Try to "close" it.
+    console.warn("Initial JSON parse failed, attempting recovery...", e);
     return attemptRecoverTruncatedJson(jsonText);
   }
 }

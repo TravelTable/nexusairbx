@@ -1,5 +1,6 @@
 import React, { useLayoutEffect, useRef, useState } from "react";
 import { extractUiManifestFromLua } from "../lib/extractUiManifestFromLua";
+import { robloxThumbnailUrl } from "../lib/uiBuilderApi";
 
 export default function LuaPreviewRenderer({ lua, interactive = false, onAction }) {
   const outerRef = useRef(null);
@@ -39,20 +40,23 @@ export default function LuaPreviewRenderer({ lua, interactive = false, onAction 
   const canvasW = Number(board.canvasSize?.w) || 1280;
   const canvasH = Number(board.canvasSize?.h) || 720;
   
-  // Robust scaling: center the canvas and scale it to fit the container
-  const scale = box.w && box.h ? Math.min(box.w / canvasW, box.h / canvasH, 1) : 1;
+  // Robust scaling: center the canvas and scale it to fit the container.
+  // We use a small delay or check to ensure box dimensions are ready.
+  const scale = box.w > 0 && box.h > 0 ? Math.min(box.w / canvasW, box.h / canvasH, 0.95) : 0.1;
+  const isReady = box.w > 0 && box.h > 0;
 
   return (
-    <div ref={outerRef} className="w-full h-full flex items-center justify-center bg-black/40 overflow-hidden relative">
+    <div ref={outerRef} className="w-full h-full flex items-center justify-center bg-[#050505] overflow-hidden relative">
       <div
-        className="relative bg-zinc-900 shadow-2xl"
+        className={`relative bg-[#0D0D0D] shadow-[0_0_50px_rgba(0,0,0,0.5)] transition-all duration-500 ${isReady ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}`}
         style={{
           width: canvasW,
           height: canvasH,
           transform: `scale(${scale})`,
-          transformOrigin: "center center", // Changed from top left to center center
+          transformOrigin: "center center",
           borderRadius: 12,
           flexShrink: 0,
+          border: "1px solid rgba(255,255,255,0.05)"
         }}
       >
         {items.map((item) => (
@@ -101,6 +105,14 @@ function PreviewNode({ item, interactive, onAction }) {
 
   if (item.type === "TextLabel") {
     return <div style={style}>{item.text}</div>;
+  }
+
+  if (item.type === "Frame" || item.type === "ScrollingFrame") {
+    return (
+      <div style={{ ...style, alignItems: "flex-start", justifyContent: "flex-start" }}>
+        {/* Frames can have children in Roblox, but our flat manifest usually lists them separately with parentId */}
+      </div>
+    );
   }
 
   if (item.type === "TextButton") {
@@ -152,13 +164,18 @@ function PreviewNode({ item, interactive, onAction }) {
 
   if (item.type === "ImageLabel" && item.imageId) {
     const match = String(item.imageId || "").match(/(\d{5,})/);
-    const src = match
-      ? `https://www.roblox.com/asset-thumbnail/image?assetId=${match[1]}&width=420&height=420&format=png`
-      : null;
+    const src = match ? robloxThumbnailUrl({ assetId: match[1] }) : null;
     return (
       <div style={style}>
         {src ? (
-          <img src={src} alt="" className="w-full h-full object-contain" />
+          <img 
+            src={src} 
+            alt="" 
+            className="w-full h-full object-contain" 
+            onError={(e) => {
+              e.target.style.display = 'none';
+            }}
+          />
         ) : null}
       </div>
     );
