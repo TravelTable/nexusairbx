@@ -299,25 +299,13 @@ function PlanBadge({ plan }) {
 }
 
 function AiPage() {
+  // 1. External Hooks
   const { plan, totalRemaining, subLimit, resetsAt } = useBilling();
   const { settings, updateSettings } = useSettings();
-  const planKey = plan?.toLowerCase() || "free";
-  const tokensLeft = totalRemaining;
-  const tokensLimit = subLimit;
-  const tokenRefreshTime = resetsAt;
-
-  const [showOnboarding, setShowOnboarding] = useState(localStorage.getItem("nexusrbx:onboardingComplete") !== "true");
-  const [mode, setMode] = useState("ui"); 
-  const [showGameContextModal, setShowGameContextModal] = useState(false);
-  const [showUiSpecModal, setShowUiSpecModal] = useState(false);
-  const [uiSpecs, setUiSpecs] = useState({
-    theme: { bg: "#020617", primary: "#00f5d4", secondary: "#9b5de5", accent: "#f15bb5" },
-    catalog: [],
-    animations: "",
-  });
-
   const navigate = useNavigate();
   const location = useLocation();
+
+  // 2. State Variables
   const [user, setUser] = useState(null);
   const [scripts, setScripts] = useState([]);
   const [scriptsLimit, setScriptsLimit] = useState(50);
@@ -331,8 +319,49 @@ function AiPage() {
   const [activeUiId, setActiveUiId] = useState(null);
   const [uiIsGenerating, setUiIsGenerating] = useState(false);
   const [uiDrawerOpen, setUiDrawerOpen] = useState(false);
+  const [currentChatId, setCurrentChatId] = useState(null);
+  const [currentChatMeta, setCurrentChatMeta] = useState(null);
+  const [activeTab, setActiveTab] = useState("scripts");
+  const [showOnboarding, setShowOnboarding] = useState(localStorage.getItem("nexusrbx:onboardingComplete") !== "true");
+  const [mode, setMode] = useState("ui"); 
+  const [showGameContextModal, setShowGameContextModal] = useState(false);
+  const [showUiSpecModal, setShowUiSpecModal] = useState(false);
+  const [uiSpecs, setUiSpecs] = useState({
+    theme: { bg: "#020617", primary: "#00f5d4", secondary: "#9b5de5", accent: "#f15bb5" },
+    catalog: [],
+    animations: "",
+  });
+  const [notifications, setNotifications] = useState([]);
+  const [promptCharCount, setPromptCharCount] = useState(0);
+  const [promptError, setPromptError] = useState("");
+  const [errorMsg, setErrorMsg] = useState("");
+  const [successMsg, setSuccessMsg] = useState("");
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generationStep, setGenerationStep] = useState("idle");
+  const [showCelebration, setShowCelebration] = useState(false);
 
+  // 3. Derived State
+  const planKey = plan?.toLowerCase() || "free";
+  const tokensLeft = totalRemaining;
+  const tokensLimit = subLimit;
+  const tokenRefreshTime = resetsAt;
   const activeUi = uiGenerations.find((g) => g.id === activeUiId) || uiGenerations[0] || null;
+
+  // 4. Refs
+  const messagesUnsubRef = useRef(null);
+  const chatUnsubRef = useRef(null);
+  const currentChatIdRef = useRef(null);
+  const lastCloseTimeRef = useRef(0);
+  const userDismissedVersionRef = useRef(false);
+  const lastOpenedScriptRef = useRef({ scriptId: null, version: null, ts: 0 });
+
+  // 5. Callbacks
+  const notify = useCallback(({ message, type = "info", duration = 4000, cta, secondary, children }) => {
+    setNotifications((prev) => {
+      if (prev.some((n) => n.message === message && n.type === type)) return prev;
+      return [...prev, { id: uuidv4(), message, type, duration, cta, secondary, children }];
+    });
+  }, []);
 
   const handleRefine = useCallback(async (instruction) => {
     if (!activeUi?.lua) return;
@@ -361,17 +390,24 @@ function AiPage() {
     }
   }, [activeUi, user, notify]);
 
-  const [currentChatId, setCurrentChatId] = useState(null);
-  const [currentChatMeta, setCurrentChatMeta] = useState(null);
-  const messagesUnsubRef = useRef(null);
-  const chatUnsubRef = useRef(null);
-  const currentChatIdRef = useRef(null);
-  const lastCloseTimeRef = useRef(0);
-  const userDismissedVersionRef = useRef(false);
-  const lastOpenedScriptRef = useRef({ scriptId: null, version: null, ts: 0 });
-  useEffect(() => { currentChatIdRef.current = currentChatId; }, [currentChatId]);
+  const openChatById = useCallback((chatId) => {
+    const db = getFirestore(); const u = auth.currentUser;
+    if (!u || !chatId) return;
+    messagesUnsubRef.current?.(); chatUnsubRef.current?.();
+    setCurrentChatId(chatId);
+    chatUnsubRef.current = onSnapshot(doc(db, "users", u.uid, "chats", chatId), (snap) => {
+      const data = snap.exists() ? { id: snap.id, ...snap.data() } : null;
+      setCurrentChatMeta(data || null);
+      setCurrentScriptId(data?.projectId || null);
+    });
+    messagesUnsubRef.current = onSnapshot(query(collection(db, "users", u.uid, "chats", chatId, "messages"), orderBy("createdAt", "asc"), limitToLast(200)), (snap) => {
+      const arr = []; snap.forEach((d) => arr.push({ id: d.id, ...d.data() }));
+      setMessages(arr);
+    });
+  }, []);
 
-  const [activeTab, setActiveTab] = useState("scripts");
+  // 6. Effects
+  useEffect(() => { currentChatIdRef.current = currentChatId; }, [currentChatId]);
 
   useEffect(() => {
     if (location?.state?.initialPrompt) {
@@ -389,22 +425,58 @@ function AiPage() {
     }
   }, [prompt]);
 
-  const [promptCharCount, setPromptCharCount] = useState(0);
-  const [promptError, setPromptError] = useState("");
-  const [errorMsg, setErrorMsg] = useState("");
-  const [successMsg, setSuccessMsg] = useState("");
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [generationStep, setGenerationStep] = useState("idle");
-  const [showCelebration, setShowCelebration] = useState(false);
-  const [notifications, setNotifications] = useState([]);
-
-  const notify = useCallback(({ message, type = "info", duration = 4000, cta, secondary, children }) => {
-    setNotifications((prev) => {
-      if (prev.some((n) => n.message === message && n.type === type)) return prev;
-      return [...prev, { id: uuidv4(), message, type, duration, cta, secondary, children }];
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      if (firebaseUser) setUser(firebaseUser);
+      else signInAnonymously(auth).then((res) => setUser(res.user)).catch(() => setUser(null));
     });
+    return () => unsubscribe();
   }, []);
 
+  useEffect(() => {
+    if (!user) { setScripts([]); return; }
+    const db = getFirestore();
+    const q = query(collection(db, "users", user.uid, "scripts"), orderBy("updatedAt", "desc"), limit(scriptsLimit));
+    const unsub = onSnapshot(q, (snap) => {
+      const list = snap.docs.map((d) => ({ id: d.id, ...d.data(), updatedAt: d.data().updatedAt?.toMillis?.() || Date.now(), createdAt: d.data().createdAt?.toMillis?.() || Date.now() }));
+      setScripts(list);
+    });
+    return () => unsub();
+  }, [user, scriptsLimit]);
+
+  useEffect(() => {
+    const onOpenChat = (e) => e?.detail?.id && openChatById(e.detail.id);
+    const onStartDraft = () => { setCurrentChatId(null); setCurrentChatMeta(null); setCurrentScriptId(null); setCurrentScript(null); setVersionHistory([]); setMessages([]); setSelectedVersion(null); };
+    const onOpenCodeDrawer = (e) => {
+      const { scriptId, code, title, versionNumber, explanation, savedScriptId } = e.detail || {};
+      const script = scripts.find(s => s.id === scriptId);
+      if (script?.type === "ui") {
+        const fetchUiCode = async () => {
+          const db = getFirestore(); const uid = user?.uid || auth.currentUser?.uid; if (!uid) return;
+          const snap = await getDocs(query(collection(db, "users", uid, "scripts", scriptId, "versions"), orderBy("versionNumber", "desc"), limit(1)));
+          if (!snap.empty) {
+            const data = snap.docs[0].data(); setActiveUiId(scriptId);
+            setUiGenerations(prev => prev.some(g => g.id === scriptId) ? prev : [{ id: scriptId, lua: data.code, prompt: script.title, createdAt: Date.now() }, ...prev]);
+            setUiDrawerOpen(true);
+          }
+        };
+        fetchUiCode(); return;
+      }
+      if (code && code !== "-- No code found") {
+        setSelectedVersion({ id: savedScriptId || `temp-${Date.now()}`, projectId: scriptId || null, code, title: title || "Script", explanation: explanation || "", versionNumber: versionNumber || null, isSavedView: true });
+      }
+    };
+    window.addEventListener("nexus:openChat", onOpenChat);
+    window.addEventListener("nexus:startDraft", onStartDraft);
+    window.addEventListener("nexus:openCodeDrawer", onOpenCodeDrawer);
+    return () => {
+      window.removeEventListener("nexus:openChat", onOpenChat);
+      window.removeEventListener("nexus:startDraft", onStartDraft);
+      window.removeEventListener("nexus:openCodeDrawer", onOpenCodeDrawer);
+    };
+  }, [openChatById, scripts, user]);
+
+  // 7. Helper Functions
   function downloadLuaFile(lua, name = "generated_ui.lua") {
     if (!lua) return;
     const blob = new Blob([lua], { type: "text/plain;charset=utf-8" });
@@ -489,73 +561,6 @@ function AiPage() {
       setUiIsGenerating(false);
     }
   }
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      if (firebaseUser) setUser(firebaseUser);
-      else signInAnonymously(auth).then((res) => setUser(res.user)).catch(() => setUser(null));
-    });
-    return () => unsubscribe();
-  }, []);
-
-  useEffect(() => {
-    if (!user) { setScripts([]); return; }
-    const db = getFirestore();
-    const q = query(collection(db, "users", user.uid, "scripts"), orderBy("updatedAt", "desc"), limit(scriptsLimit));
-    const unsub = onSnapshot(q, (snap) => {
-      const list = snap.docs.map((d) => ({ id: d.id, ...d.data(), updatedAt: d.data().updatedAt?.toMillis?.() || Date.now(), createdAt: d.data().createdAt?.toMillis?.() || Date.now() }));
-      setScripts(list);
-    });
-    return () => unsub();
-  }, [user, scriptsLimit]);
-
-  const openChatById = useCallback((chatId) => {
-    const db = getFirestore(); const u = auth.currentUser;
-    if (!u || !chatId) return;
-    messagesUnsubRef.current?.(); chatUnsubRef.current?.();
-    setCurrentChatId(chatId);
-    chatUnsubRef.current = onSnapshot(doc(db, "users", u.uid, "chats", chatId), (snap) => {
-      const data = snap.exists() ? { id: snap.id, ...snap.data() } : null;
-      setCurrentChatMeta(data || null);
-      setCurrentScriptId(data?.projectId || null);
-    });
-    messagesUnsubRef.current = onSnapshot(query(collection(db, "users", u.uid, "chats", chatId, "messages"), orderBy("createdAt", "asc"), limitToLast(200)), (snap) => {
-      const arr = []; snap.forEach((d) => arr.push({ id: d.id, ...d.data() }));
-      setMessages(arr);
-    });
-  }, []);
-
-  useEffect(() => {
-    const onOpenChat = (e) => e?.detail?.id && openChatById(e.detail.id);
-    const onStartDraft = () => { setCurrentChatId(null); setCurrentChatMeta(null); setCurrentScriptId(null); setCurrentScript(null); setVersionHistory([]); setMessages([]); setSelectedVersion(null); };
-    const onOpenCodeDrawer = (e) => {
-      const { scriptId, code, title, versionNumber, explanation, savedScriptId } = e.detail || {};
-      const script = scripts.find(s => s.id === scriptId);
-      if (script?.type === "ui") {
-        const fetchUiCode = async () => {
-          const db = getFirestore(); const uid = user?.uid || auth.currentUser?.uid; if (!uid) return;
-          const snap = await getDocs(query(collection(db, "users", uid, "scripts", scriptId, "versions"), orderBy("versionNumber", "desc"), limit(1)));
-          if (!snap.empty) {
-            const data = snap.docs[0].data(); setActiveUiId(scriptId);
-            setUiGenerations(prev => prev.some(g => g.id === scriptId) ? prev : [{ id: scriptId, lua: data.code, prompt: script.title, createdAt: Date.now() }, ...prev]);
-            setUiDrawerOpen(true);
-          }
-        };
-        fetchUiCode(); return;
-      }
-      if (code && code !== "-- No code found") {
-        setSelectedVersion({ id: savedScriptId || `temp-${Date.now()}`, projectId: scriptId || null, code, title: title || "Script", explanation: explanation || "", versionNumber: versionNumber || null, isSavedView: true });
-      }
-    };
-    window.addEventListener("nexus:openChat", onOpenChat);
-    window.addEventListener("nexus:startDraft", onStartDraft);
-    window.addEventListener("nexus:openCodeDrawer", onOpenCodeDrawer);
-    return () => {
-      window.removeEventListener("nexus:openChat", onOpenChat);
-      window.removeEventListener("nexus:startDraft", onStartDraft);
-      window.removeEventListener("nexus:openCodeDrawer", onOpenCodeDrawer);
-    };
-  }, [openChatById, scripts, user]);
 
   const handleSubmit = async (e) => {
     if (e) e.preventDefault();
