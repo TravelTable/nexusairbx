@@ -48,7 +48,7 @@ import {
   nextVersionNumber,
   cryptoRandomId,
 } from "../lib/versioning";
-import { aiPipeline } from "../lib/uiBuilderApi";
+import { aiPipeline, aiRefineLua } from "../lib/uiBuilderApi";
 import {
   getFirestore,
   doc,
@@ -374,12 +374,19 @@ function AiPage() {
     setUiIsGenerating(true);
     try {
       const token = await user.getIdToken();
-      const res = await fetch(`${BACKEND_URL}/api/ui-builder/ai/refine-lua`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ lua: activeUi.lua, instruction }),
+      
+      // Enhancement: If the Lua contains real asset IDs, tell the AI to preserve them
+      let enhancedInstruction = instruction;
+      if (activeUi.lua.includes("rbxassetid://") && !activeUi.lua.includes("rbxassetid://0")) {
+        enhancedInstruction += " (IMPORTANT: Preserve all existing rbxassetid links, do not revert them to placeholders)";
+      }
+
+      const data = await aiRefineLua({
+        token,
+        lua: activeUi.lua,
+        instruction: enhancedInstruction,
       });
-      const data = await res.json();
+
       if (data.lua) {
         const id = cryptoRandomId();
         setUiGenerations((prev) => [
@@ -395,7 +402,7 @@ function AiPage() {
     } finally {
       setUiIsGenerating(false);
     }
-  }, [activeUi, user, notify]);
+  }, [activeUi, user, notify, settings.gameSpec]);
 
   const openChatById = useCallback((chatId) => {
     const db = getFirestore(); const u = auth.currentUser;
@@ -931,11 +938,22 @@ function AiPage() {
       </div>
 
       <UiPreviewDrawer
-        open={uiDrawerOpen} onClose={() => setUiDrawerOpen(false)} lua={activeUi?.lua || ""} prompt={activeUi?.prompt || ""}
-        history={uiGenerations} activeId={activeUiId} onSelectHistory={(id) => setActiveUiId(id)}
+        open={uiDrawerOpen}
+        onClose={() => setUiDrawerOpen(false)}
+        lua={activeUi?.lua || ""}
+        prompt={activeUi?.prompt || ""}
+        history={uiGenerations}
+        activeId={activeUiId}
+        onSelectHistory={(id) => setActiveUiId(id)}
         onDownload={() => downloadLuaFile(activeUi?.lua, "generated_ui.lua")}
-        userEmail={user?.email} gameSpec={settings.gameSpec}
+        user={user}
+        settings={settings}
         onRefine={handleRefine}
+        onUpdateLua={(newLua) => {
+          if (activeUiId) {
+            setUiGenerations(prev => prev.map(g => g.id === activeUiId ? { ...g, lua: newLua } : g));
+          }
+        }}
       />
 
       {showUiSpecModal && (
