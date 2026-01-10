@@ -301,9 +301,16 @@ function NexusRBXHomepage({
               fetchpriority="high"
               className="mx-auto rounded-2xl border border-gray-800 shadow-lg w-full max-w-4xl mt-4"
             />
+            <div className="max-w-2xl mx-auto mt-8">
+              <img
+                src="/ai-preview.png"
+                alt="AI Generation Preview"
+                className="w-full rounded-xl border border-gray-800 shadow-2xl animate-fade-in"
+              />
+            </div>
             <form
               onSubmit={handleSubmit}
-              className="mt-8 flex flex-col md:flex-row gap-3 max-w-2xl mx-auto"
+              className="mt-6 flex flex-col md:flex-row gap-3 max-w-2xl mx-auto"
             >
               <input
                 type="text"
