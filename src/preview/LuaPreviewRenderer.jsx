@@ -94,11 +94,37 @@ export default function LuaPreviewRenderer({ lua, interactive = false, onAction 
 
   const canvasW = Number(board.canvasSize?.w) || 1280;
   const canvasH = Number(board.canvasSize?.h) || 720;
-  
-  // Robust scaling: center the canvas and scale it to fit the container.
-  // If box is not ready, we use a fallback scale but keep it visible.
+
+  // --- SMART ZOOM LOGIC ---
+  // Calculate the bounding box of all visible items to "zoom in" on the content
+  const bounds = useMemo(() => {
+    if (items.length === 0) return { x: 0, y: 0, w: canvasW, h: canvasH };
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    items.forEach(it => {
+      if (it.visible === false) return;
+      const ix = parseFloat(it.x) || 0;
+      const iy = parseFloat(it.y) || 0;
+      const iw = parseFloat(it.w) || 0;
+      const ih = parseFloat(it.h) || 0;
+      minX = Math.min(minX, ix);
+      minY = Math.min(minY, iy);
+      maxX = Math.max(maxX, ix + iw);
+      maxY = Math.max(maxY, iy + ih);
+    });
+    
+    // Add some padding around the content (40px)
+    const padding = 40;
+    const bx = Math.max(0, minX - padding);
+    const by = Math.max(0, minY - padding);
+    const bw = Math.min(canvasW, (maxX - minX) + (padding * 2));
+    const bh = Math.min(canvasH, (maxY - minY) + (padding * 2));
+    
+    return { x: bx, y: by, w: bw, h: bh };
+  }, [items, canvasW, canvasH]);
+
+  // Scale based on the content bounds instead of the full canvas
   const scale = box.w > 0 && box.h > 0 
-    ? Math.min(box.w / canvasW, box.h / canvasH, 0.95) 
+    ? Math.min(box.w / bounds.w, box.h / bounds.h, 1.0) 
     : 0.5; 
   
   const isReady = box.w > 0 && box.h > 0;
@@ -107,7 +133,7 @@ export default function LuaPreviewRenderer({ lua, interactive = false, onAction 
     <div ref={outerRef} className="w-full h-full flex items-center justify-center bg-[#050505] overflow-hidden relative min-h-[300px]">
       {/* Debug Info */}
       <div className="absolute top-2 left-2 text-[10px] text-white/20 pointer-events-none z-10">
-        {items.length} items | {canvasW}x{canvasH}
+        {items.length} items | {canvasW}x{canvasH} | Zoom: {Math.round(scale * 100)}%
       </div>
 
       <div
@@ -115,7 +141,8 @@ export default function LuaPreviewRenderer({ lua, interactive = false, onAction 
         style={{
           width: canvasW,
           height: canvasH,
-          transform: `scale(${scale})`,
+          // Center the content bounds in the view
+          transform: `scale(${scale}) translate(${(canvasW / 2 - (bounds.x + bounds.w / 2))}px, ${(canvasH / 2 - (bounds.y + bounds.h / 2))}px)`,
           transformOrigin: "center center",
           borderRadius: 12,
           flexShrink: 0,
@@ -136,6 +163,34 @@ export default function LuaPreviewRenderer({ lua, interactive = false, onAction 
   );
 }
 
+/**
+ * Helper to convert Roblox-style color strings or hex to CSS colors
+ */
+function parseColor(color) {
+  if (!color) return null;
+  const s = String(color).trim();
+  
+  // Handle Color3.fromRGB(r, g, b)
+  const rgbMatch = s.match(/fromRGB\s*\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)/i);
+  if (rgbMatch) {
+    return `rgb(${rgbMatch[1]}, ${rgbMatch[2]}, ${rgbMatch[3]})`;
+  }
+  
+  // Handle Color3.new(r, g, b)
+  const newMatch = s.match(/new\s*\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)\s*\)/i);
+  if (newMatch) {
+    return `rgb(${Math.round(parseFloat(newMatch[1]) * 255)}, ${Math.round(parseFloat(newMatch[2]) * 255)}, ${Math.round(parseFloat(newMatch[3]) * 255)})`;
+  }
+
+  // Handle rgba(r, g, b, a)
+  if (s.startsWith("rgba")) return s;
+  
+  // Handle hex
+  if (s.startsWith("#")) return s;
+  
+  return s;
+}
+
 function PreviewNode({ item, interactive, onAction }) {
   const x = parseFloat(item.x) || 0;
   const y = parseFloat(item.y) || 0;
@@ -143,6 +198,9 @@ function PreviewNode({ item, interactive, onAction }) {
   const h = parseFloat(item.h) || 0;
 
   const type = String(item.type || "").toLowerCase();
+  const fillColor = parseColor(item.fill);
+  const strokeColor = parseColor(item.strokeColor);
+  const textColor = parseColor(item.textColor);
 
   const style = {
     position: "absolute",
@@ -152,11 +210,11 @@ function PreviewNode({ item, interactive, onAction }) {
     height: h,
     zIndex: Number(item.zIndex) || 1,
     borderRadius: Number(item.radius) || 0,
-    background: item.fill || (type === "frame" ? "rgba(255,255,255,0.05)" : "#111827"),
+    background: fillColor || (type === "frame" ? "rgba(255,255,255,0.05)" : "#111827"),
     border: item.stroke
-      ? `${Number(item.strokeWidth) || 1}px solid ${item.strokeColor || "rgba(255,255,255,0.2)"}`
+      ? `${Number(item.strokeWidth) || 1}px solid ${strokeColor || "rgba(255,255,255,0.2)"}`
       : (type === "frame" ? "1px solid rgba(255,255,255,0.1)" : "none"),
-    color: item.textColor || "#ffffff",
+    color: textColor || "#ffffff",
     display: item.visible === false ? "none" : "flex",
     alignItems: "center",
     justifyContent: "center",

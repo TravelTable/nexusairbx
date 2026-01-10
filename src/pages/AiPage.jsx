@@ -330,6 +330,7 @@ function AiPage() {
     theme: { bg: "#020617", primary: "#00f5d4", secondary: "#9b5de5", accent: "#f15bb5" },
     catalog: [],
     animations: "",
+    platforms: ["pc"], // Default to PC
   });
   const [notifications, setNotifications] = useState([]);
   const [promptCharCount, setPromptCharCount] = useState(0);
@@ -542,6 +543,7 @@ function AiPage() {
         token, prompt: content, canvasSize, themeHint, maxItems,
         gameSpec: settings.gameSpec || "", maxSystemsTokens: settings.uiMaxSystemsTokens,
         catalog: specs?.catalog || [], animations: specs?.animations || "", customTheme: specs?.theme || null,
+        platforms: specs?.platforms || ["pc"],
       });
 
       clearTimeout(stageTimer);
@@ -950,10 +952,21 @@ function UiSpecificationModal({ onClose, onConfirm, initialSpecs }) {
   const [specs, setSpecs] = useState(initialSpecs);
   const updateCatalogItem = (idx, field, val) => { const next = [...specs.catalog]; next[idx] = { ...next[idx], [field]: val }; setSpecs(prev => ({ ...prev, catalog: next })); };
 
+  const togglePlatform = (p) => {
+    setSpecs(prev => {
+      const platforms = prev.platforms || [];
+      if (platforms.includes(p)) {
+        return { ...prev, platforms: platforms.filter(x => x !== p) };
+      } else {
+        return { ...prev, platforms: [...platforms, p] };
+      }
+    });
+  };
+
   return (
     <Modal onClose={onClose} title="UI Specification">
       <div className="flex border-b border-gray-800 mb-4">
-        {["theme", "catalog", "animations"].map(t => (
+        {["theme", "platforms", "catalog", "animations"].map(t => (
           <button key={t} onClick={() => setTab(t)} className={`px-4 py-2 text-sm font-bold capitalize ${tab === t ? "text-[#00f5d4] border-b-2 border-[#00f5d4]" : "text-gray-400"}`}>{t}</button>
         ))}
       </div>
@@ -963,6 +976,34 @@ function UiSpecificationModal({ onClose, onConfirm, initialSpecs }) {
             <div className="grid grid-cols-2 gap-4">
               <div><label className="text-xs text-gray-400">Primary</label><input type="color" className="w-full h-10 bg-gray-800 rounded" value={specs.theme.primary} onChange={e => setSpecs(prev => ({ ...prev, theme: { ...prev.theme, primary: e.target.value } }))} /></div>
               <div><label className="text-xs text-gray-400">Background</label><input type="color" className="w-full h-10 bg-gray-800 rounded" value={specs.theme.bg} onChange={e => setSpecs(prev => ({ ...prev, theme: { ...prev.theme, bg: e.target.value } }))} /></div>
+            </div>
+          </div>
+        )}
+        {tab === "platforms" && (
+          <div className="space-y-4 p-2">
+            <p className="text-xs text-gray-400 mb-4">Select target platforms for the AI to optimize for:</p>
+            <div className="grid grid-cols-1 gap-3">
+              {[
+                { id: "mobile", label: "Mobile (Touch Friendly, Large Buttons)", icon: "📱" },
+                { id: "pc", label: "PC / Desktop (Mouse & Keyboard)", icon: "💻" },
+                { id: "laptop", label: "Laptop (Compact Desktop)", icon: "📟" }
+              ].map(p => (
+                <button
+                  key={p.id}
+                  onClick={() => togglePlatform(p.id)}
+                  className={`flex items-center justify-between p-4 rounded-xl border transition-all ${
+                    specs.platforms?.includes(p.id)
+                      ? "border-[#00f5d4] bg-[#00f5d4]/10 text-white"
+                      : "border-gray-800 bg-gray-900/40 text-gray-400 hover:border-gray-700"
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="text-xl">{p.icon}</span>
+                    <span className="font-bold">{p.label}</span>
+                  </div>
+                  {specs.platforms?.includes(p.id) && <Check className="w-5 h-5 text-[#00f5d4]" />}
+                </button>
+              ))}
             </div>
           </div>
         )}

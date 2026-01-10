@@ -182,6 +182,7 @@ export async function aiPipeline({
   catalog = [],
   animations = "",
   customTheme = null,
+  platforms = ["pc"],
 }) {
   const res = await fetch(`${BACKEND_URL}/api/ui-builder/ai/pipeline`, {
     method: "POST",
@@ -195,7 +196,8 @@ export async function aiPipeline({
       maxSystemsTokens,
       catalog,
       animations,
-      customTheme
+      customTheme,
+      platforms
     }),
   });
   return handleResponse(res);
