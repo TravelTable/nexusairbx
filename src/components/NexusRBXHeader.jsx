@@ -48,7 +48,7 @@ function NexusRBXHeader({
   const finalNavLinks = navLinks
     .filter(link => link.href !== "/board")
     .map(link => 
-      link.href === "/settings" ? { ...link, text: "Dashboard" } : link
+      link.href === "/settings" ? { ...link, text: "Account" } : link
     );
 
   return (

@@ -228,7 +228,7 @@ function NexusRBXPrivacyPage({
                     If you have any questions about our privacy practices, please contact our privacy team.
                   </p>
                   <a
-                    href="mailto:privacy@nexusrbx.com"
+                    href="mailto:support@nexusrbx.com"
                     className="text-sm px-4 py-2 rounded-md bg-[#9b5de5]/20 border border-[#9b5de5]/30 text-[#9b5de5] hover:bg-[#9b5de5]/30 transition-colors duration-300 inline-block"
                   >
                     Contact Privacy Team
@@ -439,7 +439,7 @@ function OverviewContent({ lastUpdated }) {
             <Mail className="h-5 w-5 text-[#9b5de5] mr-2" />
             <h3 className="font-medium">Privacy Team</h3>
           </div>
-          <p className="text-gray-400 mb-1">Email: <a href="mailto:privacy@nexusrbx.com" className="text-[#9b5de5] hover:underline">privacy@nexusrbx.com</a></p>
+          <p className="text-gray-400 mb-1">Email: <a href="mailto:support@nexusrbx.com" className="text-[#9b5de5] hover:underline">support@nexusrbx.com</a></p>
           <p className="text-gray-400 mb-1">Address: 123 Tech Plaza, Suite 400, San Francisco, CA 94107</p>
           <p className="text-gray-400">Response Time: We aim to respond to all privacy-related inquiries within 5 business days.</p>
         </div>
@@ -631,7 +631,7 @@ function CollectionContent() {
           Our services are not intended for children under 13 years of age, and we do not knowingly collect personal information from children under 13. If we learn that we have collected personal information from a child under 13, we will promptly delete that information.
         </p>
         <p className="text-gray-300 mb-4">
-          If you are a parent or guardian and believe that your child has provided us with personal information without your consent, please contact us at <a href="mailto:privacy@nexusrbx.com" className="text-[#9b5de5] hover:underline">privacy@nexusrbx.com</a>.
+          If you are a parent or guardian and believe that your child has provided us with personal information without your consent, please contact us at <a href="mailto:support@nexusrbx.com" className="text-[#9b5de5] hover:underline">support@nexusrbx.com</a>.
         </p>
         <div className="p-4 bg-[#f15bb5]/10 border border-[#f15bb5]/30 rounded-lg">
           <div className="flex items-center mb-2">
@@ -758,7 +758,7 @@ function UseContent() {
           </p>
           <div className="mt-3 p-3 bg-gray-800/50 border border-gray-700 rounded-md">
             <p className="text-sm text-gray-300">
-              <strong>Opt-out option:</strong> You can opt out of having your data used for AI training by adjusting your privacy settings in your account or by contacting us at <a href="mailto:privacy@nexusrbx.com" className="text-[#9b5de5] hover:underline">privacy@nexusrbx.com</a>. Opting out will not affect your ability to use our services.
+              <strong>Opt-out option:</strong> You can opt out of having your data used for AI training by adjusting your privacy settings in your account or by contacting us at <a href="mailto:support@nexusrbx.com" className="text-[#9b5de5] hover:underline">support@nexusrbx.com</a>. Opting out will not affect your ability to use our services.
             </p>
           </div>
         </div>
@@ -1199,7 +1199,7 @@ function SecurityContent() {
             <Mail className="h-5 w-5 text-[#9b5de5] mr-2" />
             <h3 className="font-medium">Security Contact Information</h3>
           </div>
-          <p className="text-gray-400 mb-1">Email: <a href="mailto:security@nexusrbx.com" className="text-[#9b5de5] hover:underline">security@nexusrbx.com</a></p>
+          <p className="text-gray-400 mb-1">Email: <a href="mailto:support@nexusrbx.com" className="text-[#9b5de5] hover:underline">support@nexusrbx.com</a></p>
           <p className="text-gray-400 mb-3">Response Time: We aim to acknowledge security reports within 24 hours.</p>
           <div className="p-3 bg-gray-800/50 border border-gray-700 rounded-md">
             <p className="text-sm text-gray-300">
@@ -1242,7 +1242,7 @@ function RightsContent() {
             </ul>
             <div className="mt-3 p-3 bg-gray-800/50 border border-gray-700 rounded-md">
               <p className="text-sm text-gray-300">
-                <strong>How to exercise this right:</strong> You can access much of your information directly through your account settings. For additional information, you can submit a request to <a href="mailto:privacy@nexusrbx.com" className="text-[#9b5de5] hover:underline">privacy@nexusrbx.com</a>.
+                <strong>How to exercise this right:</strong> You can access much of your information directly through your account settings. For additional information, you can submit a request to <a href="mailto:support@nexusrbx.com" className="text-[#9b5de5] hover:underline">support@nexusrbx.com</a>.
               </p>
             </div>
           </div>
@@ -1259,7 +1259,7 @@ function RightsContent() {
             </ul>
             <div className="mt-3 p-3 bg-gray-800/50 border border-gray-700 rounded-md">
               <p className="text-sm text-gray-300">
-                <strong>How to exercise this right:</strong> You can update most of your account information directly through your account settings. For information that cannot be updated through your account, contact us at <a href="mailto:privacy@nexusrbx.com" className="text-[#9b5de5] hover:underline">privacy@nexusrbx.com</a>.
+                <strong>How to exercise this right:</strong> You can update most of your account information directly through your account settings. For information that cannot be updated through your account, contact us at <a href="mailto:support@nexusrbx.com" className="text-[#9b5de5] hover:underline">support@nexusrbx.com</a>.
               </p>
             </div>
           </div>
@@ -1277,7 +1277,7 @@ function RightsContent() {
             </ul>
             <div className="mt-3 p-3 bg-gray-800/50 border border-gray-700 rounded-md">
               <p className="text-sm text-gray-300">
-                <strong>How to exercise this right:</strong> You can delete your account and associated data through your account settings or by contacting us at <a href="mailto:privacy@nexusrbx.com" className="text-[#9b5de5] hover:underline">privacy@nexusrbx.com</a>. Please note that some information may be retained for legal or legitimate business purposes.
+                <strong>How to exercise this right:</strong> You can delete your account and associated data through your account settings or by contacting us at <a href="mailto:support@nexusrbx.com" className="text-[#9b5de5] hover:underline">support@nexusrbx.com</a>. Please note that some information may be retained for legal or legitimate business purposes.
               </p>
             </div>
           </div>
@@ -1295,7 +1295,7 @@ function RightsContent() {
             </ul>
             <div className="mt-3 p-3 bg-gray-800/50 border border-gray-700 rounded-md">
               <p className="text-sm text-gray-300">
-                <strong>How to exercise this right:</strong> To request restriction of processing, contact us at <a href="mailto:privacy@nexusrbx.com" className="text-[#9b5de5] hover:underline">privacy@nexusrbx.com</a> with details of your request.
+                <strong>How to exercise this right:</strong> To request restriction of processing, contact us at <a href="mailto:support@nexusrbx.com" className="text-[#9b5de5] hover:underline">support@nexusrbx.com</a> with details of your request.
               </p>
             </div>
           </div>
@@ -1312,7 +1312,7 @@ function RightsContent() {
             </ul>
             <div className="mt-3 p-3 bg-gray-800/50 border border-gray-700 rounded-md">
               <p className="text-sm text-gray-300">
-                <strong>How to exercise this right:</strong> To request data portability, contact us at <a href="mailto:privacy@nexusrbx.com" className="text-[#9b5de5] hover:underline">privacy@nexusrbx.com</a>. We will provide your data in a standard, machine-readable format.
+                <strong>How to exercise this right:</strong> To request data portability, contact us at <a href="mailto:support@nexusrbx.com" className="text-[#9b5de5] hover:underline">support@nexusrbx.com</a>. We will provide your data in a standard, machine-readable format.
               </p>
             </div>
           </div>
@@ -1329,7 +1329,7 @@ function RightsContent() {
             </ul>
             <div className="mt-3 p-3 bg-gray-800/50 border border-gray-700 rounded-md">
               <p className="text-sm text-gray-300">
-                <strong>How to exercise this right:</strong> You can object to marketing by using the unsubscribe link in our emails or adjusting your communication preferences. For other objections, contact us at <a href="mailto:privacy@nexusrbx.com" className="text-[#9b5de5] hover:underline">privacy@nexusrbx.com</a>.
+                <strong>How to exercise this right:</strong> You can object to marketing by using the unsubscribe link in our emails or adjusting your communication preferences. For other objections, contact us at <a href="mailto:support@nexusrbx.com" className="text-[#9b5de5] hover:underline">support@nexusrbx.com</a>.
               </p>
             </div>
           </div>
@@ -1357,7 +1357,7 @@ function RightsContent() {
             </ul>
             <div className="mt-3 p-3 bg-gray-800/50 border border-gray-700 rounded-md">
               <p className="text-sm text-gray-300">
-                <strong>Note:</strong> NexusRBX does not sell personal information as defined by the CCPA/CPRA. For more information or to exercise your rights, contact us at <a href="mailto:privacy@nexusrbx.com" className="text-[#9b5de5] hover:underline">privacy@nexusrbx.com</a>.
+                <strong>Note:</strong> NexusRBX does not sell personal information as defined by the CCPA/CPRA. For more information or to exercise your rights, contact us at <a href="mailto:support@nexusrbx.com" className="text-[#9b5de5] hover:underline">support@nexusrbx.com</a>.
               </p>
             </div>
           </div>
@@ -1374,7 +1374,7 @@ function RightsContent() {
             </ul>
             <div className="mt-3 p-3 bg-gray-800/50 border border-gray-700 rounded-md">
               <p className="text-sm text-gray-300">
-                <strong>Data Protection Officer:</strong> For GDPR-related inquiries, you can contact our Data Protection Officer at <a href="mailto:dpo@nexusrbx.com" className="text-[#9b5de5] hover:underline">dpo@nexusrbx.com</a>.
+                <strong>Data Protection Officer:</strong> For GDPR-related inquiries, you can contact our Data Protection Officer at <a href="mailto:support@nexusrbx.com" className="text-[#9b5de5] hover:underline">support@nexusrbx.com</a>.
               </p>
             </div>
           </div>
@@ -1390,7 +1390,7 @@ function RightsContent() {
         <div className="bg-gray-900/20 border border-gray-800 rounded-lg p-5">
           <h3 className="text-lg font-medium mb-3">Request Process</h3>
           <ol className="list-decimal list-inside text-gray-400 space-y-1 mb-3">
-            <li>Submit your request by emailing <a href="mailto:privacy@nexusrbx.com" className="text-[#9b5de5] hover:underline">privacy@nexusrbx.com</a></li>
+            <li>Submit your request by emailing <a href="mailto:support@nexusrbx.com" className="text-[#9b5de5] hover:underline">support@nexusrbx.com</a></li>
             <li>Include "Privacy Rights Request" in the subject line</li>
             <li>Specify which right(s) you wish to exercise</li>
             <li>Provide information to verify your identity (to protect your privacy)</li>
@@ -1599,7 +1599,7 @@ function RetentionContent() {
           <ul className="list-disc list-inside text-gray-400 space-y-1 mb-3">
             <li>Delete specific scripts or data through your account settings</li>
             <li>Close your account through the account settings page</li>
-            <li>Contact us at <a href="mailto:privacy@nexusrbx.com" className="text-[#9b5de5] hover:underline">privacy@nexusrbx.com</a> with specific deletion requests</li>
+            <li>Contact us at <a href="mailto:support@nexusrbx.com" className="text-[#9b5de5] hover:underline">support@nexusrbx.com</a> with specific deletion requests</li>
           </ul>
           <div className="mt-3 p-3 bg-gray-800/50 border border-gray-700 rounded-md">
             <p className="text-sm text-gray-300">
@@ -1783,7 +1783,7 @@ function ChangesContent() {
           </div>
           <div className="mt-4">
             <p className="text-gray-400 text-sm">
-              For access to previous versions of our Privacy Policy, please contact us at <a href="mailto:privacy@nexusrbx.com" className="text-[#9b5de5] hover:underline">privacy@nexusrbx.com</a>.
+              For access to previous versions of our Privacy Policy, please contact us at <a href="mailto:support@nexusrbx.com" className="text-[#9b5de5] hover:underline">support@nexusrbx.com</a>.
             </p>
           </div>
         </div>

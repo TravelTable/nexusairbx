@@ -18,6 +18,13 @@ import {
   History,
   Settings as SettingsIcon,
   Globe,
+  Terminal,
+  Users,
+  Database,
+  PlusCircle,
+  Code,
+  MessageCircle,
+  X,
 } from "lucide-react";
 import { useSettings } from "../context/SettingsContext";
 import { useBilling } from "../context/BillingContext";
@@ -26,10 +33,6 @@ import { signOut } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
 import ConfirmationModal from "../components/ConfirmationModal";
 import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
@@ -38,7 +41,11 @@ import {
   PieChart,
   Pie,
   Cell,
+  XAxis,
+  YAxis,
 } from "recharts";
+
+const DEV_EMAIL = "jackt1263@gmail.com";
 
 const TABS = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -50,27 +57,119 @@ const TABS = [
 
 const SettingsPage = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
-  const { settings, updateSettings, loading: settingsLoading } = useSettings();
-  const { plan, totalRemaining, subLimit, resetsAt, refresh: refreshBilling, portal } = useBilling();
+  const user = auth.currentUser;
+  const isDev = user?.email === DEV_EMAIL;
+
+  const finalTabs = useMemo(() => {
+    if (isDev) {
+      return [...TABS, { id: "developer", label: "Developer", icon: Terminal }];
+    }
+    return TABS;
+  }, [isDev]);
+
+  const { settings, updateSettings } = useSettings();
+  const { plan, totalRemaining, subLimit, resetsAt, portal } = useBilling();
   const [usageData, setUsageData] = useState({ logs: [], chartData: [] });
-  const [usageLoading, setUsageLoading] = useState(false);
+  const [devStats, setDevStats] = useState(null);
+  const [devUsers, setDevUsers] = useState([]);
+  const [devLoading, setDevLoading] = useState(false);
+  const [tokenForm, setTokenForm] = useState({ uid: "", amount: 10000, reason: "" });
+  const [inspectorUser, setInspectorUser] = useState(null);
+  const [inspectorData, setInspectorData] = useState(null);
+  const [showRawJson, setShowRawJson] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [pendingAction, setPendingAction] = useState(null);
   const [successMsg, setSuccessMsg] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
 
   const navigate = useNavigate();
-  const user = auth.currentUser;
 
   useEffect(() => {
     if (activeTab === "usage" || activeTab === "dashboard") {
       fetchUsage();
     }
-  }, [activeTab]);
+    if (activeTab === "developer" && isDev) {
+      fetchDevData();
+    }
+  }, [activeTab, isDev]);
+
+  const fetchDevData = async () => {
+    if (!user || !isDev) return;
+    setDevLoading(true);
+    try {
+      const token = await user.getIdToken();
+      const headers = { Authorization: `Bearer ${token}` };
+      const baseUrl = process.env.REACT_APP_BACKEND_URL || "https://nexusrbx-backend-production.up.railway.app";
+      
+      const [statsRes, usersRes] = await Promise.all([
+        fetch(`${baseUrl}/api/dev/stats`, { headers }),
+        fetch(`${baseUrl}/api/dev/users`, { headers })
+      ]);
+
+      if (statsRes.ok) setDevStats(await statsRes.json());
+      if (usersRes.ok) {
+        const data = await usersRes.json();
+        setDevUsers(data.users || []);
+      }
+    } catch (e) {
+      console.error("Failed to fetch dev data", e);
+    } finally {
+      setDevLoading(false);
+    }
+  };
+
+  const fetchInspectorData = async (uid) => {
+    setDevLoading(true);
+    try {
+      const token = await user.getIdToken();
+      const res = await fetch(`${process.env.REACT_APP_BACKEND_URL || "https://nexusrbx-backend-production.up.railway.app"}/api/dev/user-inspector/${uid}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setInspectorData(data);
+      }
+    } catch (e) {
+      console.error("Failed to fetch inspector data", e);
+    } finally {
+      setDevLoading(false);
+    }
+  };
+
+  const handleAdjustTokens = async (e) => {
+    e.preventDefault();
+    if (!tokenForm.uid || !tokenForm.amount) return;
+    setDevLoading(true);
+    try {
+      const token = await user.getIdToken();
+      const res = await fetch(`${process.env.REACT_APP_BACKEND_URL || "https://nexusrbx-backend-production.up.railway.app"}/api/dev/adjust-tokens`, {
+        method: "POST",
+        headers: { 
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(tokenForm)
+      });
+      if (res.ok) {
+        setSuccessMsg(`Successfully added ${tokenForm.amount} tokens to user.`);
+        setTokenForm({ uid: "", amount: 10000, reason: "" });
+        fetchDevData();
+        setTimeout(() => setSuccessMsg(""), 5000);
+      } else {
+        const err = await res.json();
+        setErrorMsg(err.error || "Failed to adjust tokens");
+        setTimeout(() => setErrorMsg(""), 5000);
+      }
+    } catch (e) {
+      setErrorMsg("Network error");
+      setTimeout(() => setErrorMsg(""), 5000);
+    } finally {
+      setDevLoading(false);
+    }
+  };
 
   const fetchUsage = async () => {
     if (!user) return;
-    setUsageLoading(true);
     try {
       const token = await user.getIdToken();
       const res = await fetch(`${process.env.REACT_APP_BACKEND_URL || "https://nexusrbx-backend-production.up.railway.app"}/api/user/usage?days=30`, {
@@ -82,8 +181,6 @@ const SettingsPage = () => {
       }
     } catch (e) {
       console.error("Failed to fetch usage", e);
-    } finally {
-      setUsageLoading(false);
     }
   };
 
@@ -341,6 +438,150 @@ const SettingsPage = () => {
           </div>
         );
 
+      case "developer":
+        return (
+          <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <StatCard title="Total Users" value={devStats?.totalUsers || "..."} icon={Users} color="text-blue-400" />
+              <StatCard title="Global Tokens Used" value={devStats?.totalTokensUsed?.toLocaleString() || "..."} icon={Database} color="text-purple-400" />
+              <StatCard title="Total Page Views" value={devStats?.pageViews?.toLocaleString() || "..."} icon={Globe} color="text-emerald-400" />
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Token Injector */}
+              <div className="bg-gray-900/50 border border-gray-800 rounded-2xl p-6 backdrop-blur-xl">
+                <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                  <PlusCircle className="w-5 h-5 text-pink-400" />
+                  Token Injector
+                </h3>
+                <form onSubmit={handleAdjustTokens} className="space-y-4">
+                  <div>
+                    <label className="text-xs text-gray-500 uppercase font-bold mb-1 block">User ID (UID)</label>
+                    <input 
+                      type="text" 
+                      value={tokenForm.uid}
+                      onChange={e => setTokenForm({...tokenForm, uid: e.target.value})}
+                      placeholder="Paste Firebase UID here..."
+                      className="w-full bg-black border border-gray-800 rounded-xl p-3 text-white outline-none focus:border-pink-500 transition-colors"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-xs text-gray-500 uppercase font-bold mb-1 block">Amount</label>
+                      <input 
+                        type="number" 
+                        value={tokenForm.amount}
+                        onChange={e => setTokenForm({...tokenForm, amount: parseInt(e.target.value)})}
+                        className="w-full bg-black border border-gray-800 rounded-xl p-3 text-white outline-none focus:border-pink-500 transition-colors"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-500 uppercase font-bold mb-1 block">Reason</label>
+                      <input 
+                        type="text" 
+                        value={tokenForm.reason}
+                        onChange={e => setTokenForm({...tokenForm, reason: e.target.value})}
+                        placeholder="Support, Gift, etc."
+                        className="w-full bg-black border border-gray-800 rounded-xl p-3 text-white outline-none focus:border-pink-500 transition-colors"
+                      />
+                    </div>
+                  </div>
+                  <button 
+                    type="submit"
+                    disabled={devLoading}
+                    className="w-full py-3 rounded-xl bg-pink-600 hover:bg-pink-500 text-white font-bold transition-colors flex items-center justify-center gap-2"
+                  >
+                    {devLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Inject Tokens"}
+                  </button>
+                </form>
+              </div>
+
+              {/* System Health */}
+              <div className="bg-gray-900/50 border border-gray-800 rounded-2xl p-6 backdrop-blur-xl">
+                <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                  <Activity className="w-5 h-5 text-cyan-400" />
+                  System Status
+                </h3>
+                <div className="space-y-3">
+                  <div className="flex justify-between p-3 rounded-xl bg-black/40 border border-gray-800">
+                    <span className="text-gray-400">Backend API</span>
+                    <span className="text-green-400 font-bold flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></div> Operational</span>
+                  </div>
+                  <div className="flex justify-between p-3 rounded-xl bg-black/40 border border-gray-800">
+                    <span className="text-gray-400">Database (Firestore)</span>
+                    <span className="text-green-400 font-bold flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></div> Connected</span>
+                  </div>
+                  <div className="flex justify-between p-3 rounded-xl bg-black/40 border border-gray-800">
+                    <span className="text-gray-400">AI Models (Comet)</span>
+                    <span className="text-green-400 font-bold flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></div> Online</span>
+                  </div>
+                  <div className="p-3 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-300 text-xs">
+                    Developer Email: <span className="font-mono">{DEV_EMAIL}</span> (Infinite Tokens Active)
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* User List */}
+            <div className="bg-gray-900/50 border border-gray-800 rounded-2xl overflow-hidden backdrop-blur-xl">
+              <div className="p-6 border-b border-gray-800 flex justify-between items-center">
+                <h3 className="text-lg font-bold text-white">User Directory (Recent 100)</h3>
+                <button onClick={fetchDevData} className="text-purple-400 hover:text-purple-300 text-sm flex items-center gap-1">
+                  <History className="w-4 h-4" /> Refresh
+                </button>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left">
+                  <thead>
+                    <tr className="text-gray-500 text-sm border-b border-gray-800">
+                      <th className="px-6 py-4 font-medium">User</th>
+                      <th className="px-6 py-4 font-medium">Plan</th>
+                      <th className="px-6 py-4 font-medium">Used</th>
+                      <th className="px-6 py-4 font-medium">Joined</th>
+                      <th className="px-6 py-4 font-medium">UID</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-800">
+                    {devUsers.map((u) => (
+                      <tr 
+                        key={u.uid} 
+                        className="text-gray-300 hover:bg-white/5 transition-colors text-sm cursor-pointer group"
+                        onClick={() => {
+                          setInspectorUser(u);
+                          fetchInspectorData(u.uid);
+                        }}
+                      >
+                        <td className="px-6 py-4">
+                          <div className="font-bold text-white group-hover:text-purple-400 transition-colors">{u.email || "Anonymous"}</div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${u.plan === 'PRO' ? 'bg-purple-500/20 text-purple-400' : 'bg-gray-500/20 text-gray-400'}`}>
+                            {u.plan || 'FREE'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 font-mono">{(u.subUsed || 0).toLocaleString()}</td>
+                        <td className="px-6 py-4 text-gray-500">{u.createdAt ? new Date(u.createdAt).toLocaleDateString() : "N/A"}</td>
+                        <td className="px-6 py-4">
+                          <button 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setTokenForm({...tokenForm, uid: u.uid});
+                              window.scrollTo({ top: 0, behavior: 'smooth' });
+                            }}
+                            className="text-[10px] font-mono text-gray-600 hover:text-pink-400 transition-colors"
+                          >
+                            {u.uid}
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        );
+
       case "account":
         return (
           <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -402,6 +643,175 @@ const SettingsPage = () => {
 
   return (
     <div className="min-h-screen bg-[#0D0D0D] text-gray-200 flex flex-col md:flex-row">
+      {/* User Inspector Modal */}
+      {inspectorUser && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-300">
+          <div className="bg-gray-900 border border-gray-800 rounded-3xl w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl">
+            <div className="p-6 border-b border-gray-800 flex justify-between items-center bg-gray-900/50">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-cyan-500 flex items-center justify-center text-xl font-bold text-white">
+                  {inspectorUser.email?.[0].toUpperCase() || "?"}
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-white">{inspectorUser.email || "Anonymous User"}</h3>
+                  <p className="text-xs text-gray-500 font-mono">{inspectorUser.uid}</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => { setInspectorUser(null); setInspectorData(null); setShowRawJson(false); }}
+                className="p-2 hover:bg-white/5 rounded-full transition-colors"
+              >
+                <X className="w-6 h-6 text-gray-400" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-6 space-y-8">
+              {devLoading && !inspectorData ? (
+                <div className="h-64 flex flex-col items-center justify-center gap-4">
+                  <Loader2 className="w-10 h-10 text-purple-500 animate-spin" />
+                  <p className="text-gray-500 animate-pulse">Crawling Firebase collections...</p>
+                </div>
+              ) : inspectorData ? (
+                <>
+                  <div className="flex justify-end">
+                    <button 
+                      onClick={() => setShowRawJson(!showRawJson)}
+                      className="text-xs font-bold px-3 py-1.5 rounded-lg border border-gray-800 text-gray-400 hover:text-white hover:border-gray-600 transition-all"
+                    >
+                      {showRawJson ? "View Formatted" : "View Raw JSON"}
+                    </button>
+                  </div>
+
+                  {showRawJson ? (
+                    <pre className="bg-black/50 p-6 rounded-2xl border border-gray-800 text-[10px] font-mono text-cyan-400 overflow-x-auto">
+                      {JSON.stringify(inspectorData, null, 2)}
+                    </pre>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {/* Profile & Billing */}
+                      <div className="space-y-6">
+                        <div className="bg-black/30 border border-gray-800 rounded-2xl p-5">
+                          <h4 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                            <User className="w-4 h-4" /> Account Profile
+                          </h4>
+                          <div className="space-y-3 text-sm">
+                            <div className="flex justify-between"><span className="text-gray-500">Plan</span><span className="text-purple-400 font-bold">{inspectorData.profile?.plan || "FREE"}</span></div>
+                            <div className="flex justify-between"><span className="text-gray-500">Sub Used</span><span className="text-white">{inspectorData.profile?.subUsed?.toLocaleString() || 0}</span></div>
+                            <div className="flex justify-between"><span className="text-gray-500">Sub Limit</span><span className="text-white">{inspectorData.profile?.subLimit?.toLocaleString() || 0}</span></div>
+                            <div className="flex justify-between"><span className="text-gray-500">PAYG Balance</span><span className="text-cyan-400 font-bold">{inspectorData.tokens?.balance?.toLocaleString() || 0}</span></div>
+                          </div>
+                        </div>
+
+                        <div className="bg-black/30 border border-gray-800 rounded-2xl p-5">
+                          <h4 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                            <CreditCard className="w-4 h-4" /> Stripe Data
+                          </h4>
+                          {inspectorData.stripe ? (
+                            <div className="space-y-3 text-sm">
+                              <div className="flex justify-between"><span className="text-gray-500">Customer ID</span><span className="text-white font-mono text-xs">{inspectorData.stripe.stripeId || "N/A"}</span></div>
+                              <div className="flex justify-between"><span className="text-gray-500">Status</span><span className="text-green-400 font-bold">Active</span></div>
+                            </div>
+                          ) : (
+                            <p className="text-xs text-gray-600 italic">No Stripe customer record found.</p>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Activity Summary */}
+                      <div className="space-y-6">
+                        <div className="bg-black/30 border border-gray-800 rounded-2xl p-5">
+                          <h4 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                            <Activity className="w-4 h-4" /> Activity Summary
+                          </h4>
+                          <div className="grid grid-cols-3 gap-4 text-center">
+                            <div className="p-3 rounded-xl bg-gray-800/50">
+                              <div className="text-xl font-bold text-white">{inspectorData.projects?.length || 0}</div>
+                              <div className="text-[10px] text-gray-500 uppercase">Projects</div>
+                            </div>
+                            <div className="p-3 rounded-xl bg-gray-800/50">
+                              <div className="text-xl font-bold text-white">{inspectorData.scripts?.length || 0}</div>
+                              <div className="text-[10px] text-gray-500 uppercase">Scripts</div>
+                            </div>
+                            <div className="p-3 rounded-xl bg-gray-800/50">
+                              <div className="text-xl font-bold text-white">{inspectorData.chats?.length || 0}</div>
+                              <div className="text-[10px] text-gray-500 uppercase">Chats</div>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="bg-black/30 border border-gray-800 rounded-2xl p-5 max-h-64 overflow-y-auto">
+                          <h4 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                            <History className="w-4 h-4" /> Recent Usage Logs
+                          </h4>
+                          <div className="space-y-2">
+                            {inspectorData.usageLogs?.map(log => (
+                              <div key={log.id} className="flex justify-between items-center p-2 rounded-lg bg-white/5 text-[10px]">
+                                <span className="text-gray-400 truncate max-w-[120px]">{log.reason || "AI Generation"}</span>
+                                <span className="text-pink-400 font-mono">-{log.tokens?.toLocaleString()}</span>
+                              </div>
+                            ))}
+                            {(!inspectorData.usageLogs || inspectorData.usageLogs.length === 0) && <p className="text-xs text-gray-600 italic">No usage logs found.</p>}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </>
+              ) : null}
+            </div>
+
+            <div className="p-6 border-t border-gray-800 bg-gray-900/50 flex flex-col gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="bg-black/20 p-4 rounded-xl border border-gray-800">
+                  <h5 className="text-[10px] font-bold text-gray-500 uppercase mb-2 flex items-center gap-1"><Code className="w-3 h-3" /> Recent Projects</h5>
+                  <div className="space-y-1">
+                    {inspectorData?.projects?.slice(0, 3).map(p => (
+                      <div key={p.id} className="text-[10px] text-gray-300 truncate">{p.title || "Untitled"}</div>
+                    ))}
+                    {(!inspectorData?.projects || inspectorData.projects.length === 0) && <div className="text-[10px] text-gray-600 italic">None</div>}
+                  </div>
+                </div>
+                <div className="bg-black/20 p-4 rounded-xl border border-gray-800">
+                  <h5 className="text-[10px] font-bold text-gray-500 uppercase mb-2 flex items-center gap-1"><MessageCircle className="w-3 h-3" /> Recent Chats</h5>
+                  <div className="space-y-1">
+                    {inspectorData?.chats?.slice(0, 3).map(c => (
+                      <div key={c.id} className="text-[10px] text-gray-300 truncate">{c.title || "Chat Session"}</div>
+                    ))}
+                    {(!inspectorData?.chats || inspectorData.chats.length === 0) && <div className="text-[10px] text-gray-600 italic">None</div>}
+                  </div>
+                </div>
+                <div className="bg-black/20 p-4 rounded-xl border border-gray-800">
+                  <h5 className="text-[10px] font-bold text-gray-500 uppercase mb-2 flex items-center gap-1"><Database className="w-3 h-3" /> Recent Scripts</h5>
+                  <div className="space-y-1">
+                    {inspectorData?.scripts?.slice(0, 3).map(s => (
+                      <div key={s.id} className="text-[10px] text-gray-300 truncate">{s.title || "Script"}</div>
+                    ))}
+                    {(!inspectorData?.scripts || inspectorData.scripts.length === 0) && <div className="text-[10px] text-gray-600 italic">None</div>}
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex justify-between items-center">
+                <div className="flex gap-3">
+                  <button 
+                    onClick={() => { setTokenForm({...tokenForm, uid: inspectorUser.uid}); setInspectorUser(null); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                    className="px-4 py-2 rounded-xl bg-pink-600/20 text-pink-400 border border-pink-500/30 text-sm font-bold hover:bg-pink-600/30 transition-all"
+                  >
+                    Inject Tokens
+                  </button>
+                </div>
+                <button 
+                  onClick={() => { setInspectorUser(null); setInspectorData(null); }}
+                  className="px-6 py-2 rounded-xl bg-gray-800 text-white text-sm font-bold hover:bg-gray-700 transition-all"
+                >
+                  Close Inspector
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Sidebar Navigation */}
       <aside className="w-full md:w-72 bg-gray-900/50 border-r border-gray-800 p-6 flex flex-col gap-8 backdrop-blur-2xl">
         <div className="flex items-center gap-3 px-2">
@@ -412,7 +822,7 @@ const SettingsPage = () => {
         </div>
 
         <nav className="flex flex-col gap-1">
-          {TABS.map((tab) => (
+          {finalTabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
@@ -441,7 +851,7 @@ const SettingsPage = () => {
           {/* Header */}
           <div className="mb-8 flex justify-between items-end">
             <div>
-              <h2 className="text-2xl font-bold text-white mb-1">{TABS.find(t => t.id === activeTab)?.label}</h2>
+              <h2 className="text-2xl font-bold text-white mb-1">{finalTabs.find(t => t.id === activeTab)?.label}</h2>
               <p className="text-sm text-gray-500">Manage your NexusRBX experience and account data.</p>
             </div>
             {activeTab === "dashboard" && (

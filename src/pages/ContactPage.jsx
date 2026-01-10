@@ -81,7 +81,7 @@ export default function NexusRBXContactPageContainer() {
     {
       id: "general",
       title: "General Inquiries",
-      email: "info@nexusrbx.com",
+      email: "support@nexusrbx.com",
       icon: MessageSquare,
       description: "For general questions about NexusRBX and our services."
     },
@@ -213,7 +213,7 @@ function NexusRBXContactPage({
                     <Mail className="h-5 w-5 text-[#00f5d4] mt-1 mr-3" />
                     <div>
                       <h3 className="font-medium mb-1">Email</h3>
-                      <p className="text-gray-400 text-sm">info@nexusrbx.com</p>
+                      <p className="text-gray-400 text-sm">support@nexusrbx.com</p>
                     </div>
                   </div>
                   

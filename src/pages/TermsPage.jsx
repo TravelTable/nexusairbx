@@ -378,7 +378,7 @@ function TermsOfServiceContent({ lastUpdated }) {
       <section id="contact-us">
         <h2 className="text-2xl font-bold mb-4 bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-transparent bg-clip-text">9. Contact Us</h2>
         <p className="text-gray-300">
-          If you have any questions about these Terms, please contact us at <a href="mailto:legal@nexusrbx.com" className="text-[#9b5de5] hover:underline">legal@nexusrbx.com</a>.
+          If you have any questions about these Terms, please contact us at <a href="mailto:support@nexusrbx.com" className="text-[#9b5de5] hover:underline">support@nexusrbx.com</a>.
         </p>
       </section>
 
@@ -438,7 +438,7 @@ function PrivacyPolicyContent({ lastUpdated }) {
       </ul>
       <h2 id="privacy-rights" className="text-2xl font-bold mb-3">Your Rights</h2>
       <ul className="list-disc list-inside text-gray-300 space-y-2 mb-4">
-        <li>Request access or deletion of your data by contacting <a href="mailto:privacy@nexusrbx.com" className="text-[#9b5de5]">privacy@nexusrbx.com</a></li>
+        <li>Request access or deletion of your data by contacting <a href="mailto:support@nexusrbx.com" className="text-[#9b5de5]">support@nexusrbx.com</a></li>
         <li>We retain data as required by law and for legitimate business purposes</li>
       </ul>
       <h2 id="privacy-subprocessors" className="text-2xl font-bold mb-3">Sub-processors & Storage</h2>
@@ -448,7 +448,7 @@ function PrivacyPolicyContent({ lastUpdated }) {
       </ul>
       <h2 id="privacy-contact" className="text-2xl font-bold mb-3">Contact</h2>
       <p className="text-gray-300">
-        For privacy questions, email <a href="mailto:privacy@nexusrbx.com" className="text-[#9b5de5]">privacy@nexusrbx.com</a>.
+        For privacy questions, email <a href="mailto:support@nexusrbx.com" className="text-[#9b5de5]">support@nexusrbx.com</a>.
       </p>
     </div>
   );
@@ -479,7 +479,7 @@ function AcceptableUseContent({ lastUpdated }) {
       </p>
       <h2 id="aup-reporting" className="text-2xl font-bold mb-3">Reporting</h2>
       <p className="text-gray-300">
-        Report abuse to <a href="mailto:abuse@nexusrbx.com" className="text-[#9b5de5]">abuse@nexusrbx.com</a>.
+        Report abuse to <a href="mailto:support@nexusrbx.com" className="text-[#9b5de5]">support@nexusrbx.com</a>.
       </p>
     </div>
   );
@@ -512,7 +512,7 @@ function LicensingContent({ lastUpdated }) {
       </ul>
       <h2 id="licensing-contact" className="text-2xl font-bold mb-3">Contact</h2>
       <p className="text-gray-300">
-        For licensing questions, email <a href="mailto:legal@nexusrbx.com" className="text-[#9b5de5]">legal@nexusrbx.com</a>.
+        For licensing questions, email <a href="mailto:support@nexusrbx.com" className="text-[#9b5de5]">support@nexusrbx.com</a>.
       </p>
     </div>
   );
