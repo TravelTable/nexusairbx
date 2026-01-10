@@ -97,35 +97,26 @@ function NexusRBXHeader({
           </div>
           <div className="flex items-center gap-3 ml-8">
             {user && (
-              <>
-                <TokensCounterContainer
-                  tokens={{
-                    sub: {
-                      remaining:
-                        typeof tokenInfo?.sub?.limit === "number" && typeof tokenInfo?.sub?.used === "number"
-                          ? tokenInfo.sub.limit - tokenInfo.sub.used
-                          : 0,
-                      limit: tokenInfo?.sub?.limit ?? 0,
-                    },
-                  }}
-                  isLoading={tokenLoading}
-                  showRefreshButton={false}
-                  className="!bg-transparent !border-none !shadow-none p-0"
-                />
-                <TokensCounterContainer
-                  tokens={{
-                    payg: {
-                      remaining:
-                        typeof tokenInfo?.payg?.remaining === "number"
-                          ? tokenInfo.payg.remaining
-                          : 0,
-                    },
-                  }}
-                  isLoading={tokenLoading}
-                  showRefreshButton={false}
-                  className="!bg-transparent !border-none !shadow-none p-0"
-                />
-              </>
+              <TokensCounterContainer
+                tokens={{
+                  sub: {
+                    remaining:
+                      typeof tokenInfo?.sub?.limit === "number" && typeof tokenInfo?.sub?.used === "number"
+                        ? tokenInfo.sub.limit - tokenInfo.sub.used
+                        : 0,
+                    limit: tokenInfo?.sub?.limit ?? 0,
+                  },
+                  payg: {
+                    remaining:
+                      typeof tokenInfo?.payg?.remaining === "number"
+                        ? tokenInfo.payg.remaining
+                        : 0,
+                  },
+                }}
+                isLoading={tokenLoading}
+                showRefreshButton={false}
+                variant="header"
+              />
             )}
             {!user ? (
               <button
@@ -208,7 +199,7 @@ function NexusRBXHeader({
               </React.Fragment>
             ))}
             {user && (
-              <div className="flex flex-col gap-1 px-3 py-1 rounded bg-gray-800 border border-gray-700 text-xs text-gray-200">
+              <div className="px-2">
                 <TokensCounterContainer
                   tokens={{
                     sub: {
@@ -218,13 +209,6 @@ function NexusRBXHeader({
                           : 0,
                       limit: tokenInfo?.sub?.limit ?? 0,
                     },
-                  }}
-                  isLoading={tokenLoading}
-                  showRefreshButton={false}
-                  className="!bg-transparent !border-none !shadow-none p-0"
-                />
-                <TokensCounterContainer
-                  tokens={{
                     payg: {
                       remaining:
                         typeof tokenInfo?.payg?.remaining === "number"
@@ -234,7 +218,8 @@ function NexusRBXHeader({
                   }}
                   isLoading={tokenLoading}
                   showRefreshButton={false}
-                  className="!bg-transparent !border-none !shadow-none p-0"
+                  variant="header"
+                  className="w-full justify-between"
                 />
               </div>
             )}

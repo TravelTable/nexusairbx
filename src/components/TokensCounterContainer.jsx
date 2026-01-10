@@ -14,16 +14,21 @@ export default function TokensCounterContainer({
   onRefresh = null,
   showRefreshButton = false,
   lowTokenThreshold = 100,
-  className = ""
+  className = "",
+  variant = "default"
 }) {
-  // If tokens is an object with sub/payg, render both counters stacked
+  // If tokens is an object with sub/payg, render both counters
   if (
     tokens &&
     typeof tokens === "object" &&
     (tokens.sub || tokens.payg)
   ) {
+    const containerClasses = variant === "header" 
+      ? `flex items-center gap-2 bg-white/5 backdrop-blur-sm border border-white/10 rounded-full px-1 py-1 ${className}`
+      : `flex flex-col gap-1 ${className}`;
+
     return (
-      <div className={`flex flex-col gap-1 ${className}`}>
+      <div className={containerClasses}>
         {tokens.sub && (
           <SingleTokenCounter
             label="Subscription"
@@ -33,6 +38,7 @@ export default function TokensCounterContainer({
             onRefresh={onRefresh}
             showRefreshButton={showRefreshButton}
             lowTokenThreshold={lowTokenThreshold}
+            variant={variant}
           />
         )}
         {tokens.payg && (
@@ -44,6 +50,7 @@ export default function TokensCounterContainer({
             onRefresh={onRefresh}
             showRefreshButton={showRefreshButton}
             lowTokenThreshold={lowTokenThreshold}
+            variant={variant}
           />
         )}
       </div>
@@ -74,6 +81,7 @@ function SingleTokenCounter({
   lowTokenThreshold = 100,
   className = "",
   label = null,
+  variant = "default"
 }) {
   const [isAnimating, setIsAnimating] = useState(false);
   const prevTokensRef = useRef(tokens);
@@ -109,14 +117,18 @@ function SingleTokenCounter({
     return num.toLocaleString();
   };
 
+  const isHeader = variant === "header";
+
   return (
     <div className={`flex items-center gap-1.5 ${className}`}>
-      <div className={`flex items-center gap-1.5 bg-gray-800 rounded-md px-2.5 py-1 border ${
-        isLowTokens ? "border-amber-700/50" : "border-gray-700"
+      <div className={`flex items-center gap-1.5 rounded-md px-2.5 py-1 transition-all duration-300 ${
+        isHeader 
+          ? `bg-transparent border-none ${isLowTokens ? "bg-amber-500/10" : ""}`
+          : `bg-gray-800 border ${isLowTokens ? "border-amber-700/50" : "border-gray-700"}`
       }`}>
         <div className={`relative ${isAnimating ? "animate-bounce" : ""}`}>
           <Coins 
-            className="h-4 w-4 text-yellow-300 drop-shadow-sm" 
+            className={`${isHeader ? "h-3.5 w-3.5" : "h-4 w-4"} text-yellow-300 drop-shadow-sm`} 
             style={{
               filter: "drop-shadow(0 1px 1px rgba(0,0,0,0.3))",
               color: "#fcd34d"
@@ -132,23 +144,25 @@ function SingleTokenCounter({
         </div>
         <div className="flex items-baseline">
           {label && (
-            <span className="font-medium text-xs text-white mr-1">{label}:</span>
+            <span className={`font-medium text-white mr-1 ${isHeader ? "text-[10px] uppercase tracking-wider opacity-60" : "text-xs"}`}>
+              {label}:
+            </span>
           )}
           {isLoading ? (
             <div className="w-10 h-4 bg-gray-700 animate-pulse rounded"></div>
           ) : (
-            <span className={`font-mono text-sm ${
+            <span className={`font-mono ${isHeader ? "text-xs" : "text-sm"} ${
               isAnimating ? "text-green-400" : isLowTokens ? "text-amber-400" : "text-gray-200"
             } transition-colors duration-300`}>
               {formatNumber(tokens)}
               {maxTokens !== null && (
-                <span className="text-gray-400 text-xs ml-0.5">/{formatNumber(maxTokens)}</span>
+                <span className="text-gray-400 text-[10px] ml-0.5">/{formatNumber(maxTokens)}</span>
               )}
             </span>
           )}
         </div>
         {isLowTokens && (
-          <AlertCircle className="h-3.5 w-3.5 text-amber-400 ml-1" />
+          <AlertCircle className={`${isHeader ? "h-3 w-3" : "h-3.5 w-3.5"} text-amber-400 ml-1`} />
         )}
       </div>
       {showRefreshButton && (
