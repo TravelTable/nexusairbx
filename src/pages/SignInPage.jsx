@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import {
   Home,
   Mail,
@@ -24,6 +25,10 @@ import {
 
 // Container Component
 export default function NexusRBXSignInPageContainer() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const from = location.state?.from?.pathname || "/";
+
   const [formData, setFormData] = useState({
     email: "",
     password: ""
@@ -110,7 +115,7 @@ export default function NexusRBXSignInPageContainer() {
         message: "Sign in successful! Redirecting..."
       });
       setTimeout(() => {
-        window.location.href = "/";
+        navigate(from, { replace: true });
       }, 1500);
     } catch (error) {
       setFormStatus({
@@ -134,7 +139,7 @@ export default function NexusRBXSignInPageContainer() {
         message: "Google sign in successful! Redirecting..."
       });
       setTimeout(() => {
-        window.location.href = "/";
+        navigate(from, { replace: true });
       }, 1500);
     } catch (error) {
       setFormStatus({
@@ -158,7 +163,7 @@ export default function NexusRBXSignInPageContainer() {
         message: "GitHub sign in successful! Redirecting..."
       });
       setTimeout(() => {
-        window.location.href = "/";
+        navigate(from, { replace: true });
       }, 1500);
     } catch (error) {
       setFormStatus({

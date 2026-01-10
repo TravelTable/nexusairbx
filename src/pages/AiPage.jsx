@@ -39,7 +39,8 @@ import OnboardingContainer from "../components/OnboardingContainer";
 import FancyLoadingOverlay from "../components/FancyLoadingOverlay";
 import NotificationToast from "../components/NotificationToast";
 import UiPreviewDrawer from "../components/UiPreviewDrawer";
-import { sha256 } from "../lib/hash"; 
+import SignInNudgeModal from "../components/SignInNudgeModal";
+import { sha256 } from "../lib/hash";
 import { v4 as uuidv4 } from "uuid";
 import {
   normalizeServerVersion,
@@ -342,6 +343,7 @@ function AiPage() {
   const [showCelebration, setShowCelebration] = useState(false);
   const [pendingMessage, setPendingMessage] = useState(null);
   const [generationStage, setGenerationStage] = useState("");
+  const [showSignInNudge, setShowSignInNudge] = useState(false);
 
   // 3. Derived State
   const planKey = plan?.toLowerCase() || "free";
@@ -432,11 +434,30 @@ function AiPage() {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      if (firebaseUser) setUser(firebaseUser);
-      else signInAnonymously(auth).then((res) => setUser(res.user)).catch(() => setUser(null));
+      if (firebaseUser) {
+        setUser(firebaseUser);
+      } else {
+        signInAnonymously(auth)
+          .then((res) => setUser(res.user))
+          .catch(() => setUser(null));
+      }
     });
     return () => unsubscribe();
   }, []);
+
+  // Show Sign-In Nudge for anonymous users on Free plan
+  useEffect(() => {
+    if (user && user.isAnonymous && planKey === "free") {
+      const hasShownNudge = sessionStorage.getItem("nexusrbx:signInNudgeShown");
+      if (!hasShownNudge) {
+        const timer = setTimeout(() => {
+          setShowSignInNudge(true);
+          sessionStorage.setItem("nexusrbx:signInNudgeShown", "true");
+        }, 1500); // Slight delay for better UX
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [user, planKey]);
 
   useEffect(() => {
     if (!user) { setScripts([]); return; }
@@ -500,7 +521,13 @@ function AiPage() {
   async function handleGenerateUiPreview(specs = null) {
     const content = prompt.trim();
     if (!content) { notify({ message: "Describe the UI you want first.", type: "error" }); return; }
-    if (!user) { notify({ message: "Sign in required.", type: "error", duration: 2000 }); navigate("/signin"); return; }
+    
+    // Hard gate for anonymous users
+    if (!user || user.isAnonymous) {
+      setShowSignInNudge(true);
+      return;
+    }
+
     if (!specs && mode === "ui") { setShowUiSpecModal(true); return; }
 
     setUiIsGenerating(true);
@@ -593,7 +620,12 @@ function AiPage() {
     if (e) e.preventDefault();
     const content = prompt.trim();
     if (!content || isGenerating) return;
-    if (!user) { notify({ message: "Sign in required.", type: "error" }); return; }
+
+    // Hard gate for anonymous users
+    if (!user || user.isAnonymous) {
+      setShowSignInNudge(true);
+      return;
+    }
 
     setIsGenerating(true);
     setPendingMessage({ role: "assistant", content: "", type: "chat", prompt: content });
@@ -926,6 +958,11 @@ function AiPage() {
           </div>
         </Modal>
       )}
+
+      <SignInNudgeModal 
+        isOpen={showSignInNudge} 
+        onClose={() => setShowSignInNudge(false)} 
+      />
 
       <style>{`
         @keyframes shimmer {
