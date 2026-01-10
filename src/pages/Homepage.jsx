@@ -1,7 +1,8 @@
 // IMPORTS BLOCK (with Helmet import added)
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { Github, Zap, Settings, Shield, ChevronRight, Loader, Star, DollarSign, Layout } from "lucide-react";
+import { Github, Zap, Settings, Shield, ChevronRight, Loader, Star, DollarSign, Layout, Users } from "lucide-react";
+import { motion, useScroll, useTransform, useSpring, useInView } from "framer-motion";
 import TokensCounterContainer from "../components/TokensCounterContainer";
 import NexusRBXHeader from "../components/NexusRBXHeader";
 import NexusRBXFooter from "../components/NexusRBXFooter";
@@ -222,9 +223,31 @@ function NexusRBXHomepage({
   tokenInfo,
   tokenLoading
 }) {
+  const containerRef = useRef(null);
+
+  const randomUsers = [
+    { letter: "J", color: "from-purple-500 to-indigo-500" },
+    { letter: "A", color: "from-cyan-500 to-blue-500" },
+    { letter: "T", color: "from-pink-500 to-rose-500" },
+    { letter: "K", color: "from-emerald-500 to-teal-500" },
+    { letter: "S", color: "from-orange-500 to-amber-500" },
+  ];
+
   return (
     // OPENING OF TOP-LEVEL CONTAINER WITH <Helmet> INSERTED
-    <div className="min-h-screen bg-[#0D0D0D] text-white font-sans flex flex-col">
+    <div ref={containerRef} className="min-h-screen bg-[#0D0D0D] text-white font-sans flex flex-col relative">
+      {/* Side Decorations */}
+      <div className="fixed inset-y-0 left-0 w-1 bg-gradient-to-b from-transparent via-[#9b5de5]/20 to-transparent z-20" />
+      <div className="fixed inset-y-0 right-0 w-1 bg-gradient-to-b from-transparent via-[#00f5d4]/20 to-transparent z-20" />
+      
+      <div className="fixed inset-y-0 left-4 w-px bg-white/5 z-0 hidden lg:block" />
+      <div className="fixed inset-y-0 right-4 w-px bg-white/5 z-0 hidden lg:block" />
+
+      {/* Background Blobs */}
+      <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-[#9b5de5]/10 blur-[120px] animate-pulse" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-[#00f5d4]/10 blur-[120px] animate-pulse" style={{ animationDelay: '2s' }} />
+      </div>
       <Helmet>
         <title>NexusRBX — AI Roblox UI Builder & Script Generator</title>
         <meta name="description" content="NexusRBX is the ultimate AI-powered Roblox UI builder and script generator. Design stunning interfaces and complex game logic in seconds with artificial intelligence. Try our AI UI Engine today." />
@@ -283,24 +306,66 @@ function NexusRBXHomepage({
 
       <main className="flex-grow">
         {/* HERO SECTION BLOCK WITH H1 + PARAGRAPH CHANGES AND HERO IMAGE PLACEHOLDER */}
-        <section className="min-h-[60vh] flex items-center justify-center py-12 px-4">
-          <div className="max-w-6xl mx-auto text-center space-y-6 animate-fade-in">
-            <h1 className="text-3xl md:text-5xl font-bold bg-gradient-to-r from-[#9b5de5] via-[#f15bb5] to-[#00f5d4] text-transparent bg-clip-text">
-              The Ultimate AI UI Builder & Script Generator for Roblox
+        <section className="min-h-[70vh] flex items-center justify-center py-20 px-4 relative z-10">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, ease: "easeOut" }}
+            className="max-w-6xl mx-auto text-center space-y-8"
+          >
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-sm font-medium text-[#00f5d4] mb-4">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#00f5d4] opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-[#00f5d4]"></span>
+              </span>
+              Nexus-4 AI Engine Now Live
+            </div>
+
+            <h1 className="text-4xl md:text-7xl font-bold tracking-tight bg-gradient-to-r from-[#9b5de5] via-[#f15bb5] to-[#00f5d4] text-transparent bg-clip-text leading-tight">
+              The Ultimate AI UI Builder <br className="hidden md:block" /> & Script Generator
             </h1>
-            <p className="text-lg md:text-xl text-gray-300 max-w-3xl mx-auto">
-              Design stunning interfaces and complex game logic in seconds. NexusRBX uses advanced AI to turn your ideas into production-ready <a href="/ai" className="underline decoration-[#9b5de5]/60 hover:decoration-[#9b5de5]">Luau code</a> for Roblox Studio.
+            <p className="text-lg md:text-2xl text-gray-400 max-w-3xl mx-auto leading-relaxed">
+              Design stunning interfaces and complex game logic in seconds. NexusRBX turns your ideas into production-ready <a href="/ai" className="underline decoration-[#9b5de5]/60 hover:decoration-[#9b5de5] text-white">Lua code</a> for Roblox Studio.
             </p>
-            <div className="max-w-2xl mx-auto mt-12">
+
+            {/* Social Proof Spot */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.5 }}
+              className="flex flex-col items-center gap-4 pt-4"
+            >
+              <div className="flex -space-x-3">
+                {randomUsers.map((u, i) => (
+                  <div key={i} className={`w-10 h-10 rounded-full border-2 border-[#0D0D0D] bg-gradient-to-br ${u.color} flex items-center justify-center text-xs font-bold shadow-lg`}>
+                    {u.letter}
+                  </div>
+                ))}
+                <div className="w-10 h-10 rounded-full border-2 border-[#0D0D0D] bg-gray-800 flex items-center justify-center text-[10px] font-bold text-gray-400 shadow-lg">
+                  +5k
+                </div>
+              </div>
+              <p className="text-sm font-medium text-gray-400">
+                Helping <span className="text-white font-bold">5,000+</span> Roblox Developers
+              </p>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.3, duration: 0.8 }}
+              className="max-w-4xl mx-auto mt-12 relative group"
+            >
+              <div className="absolute -inset-1 bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] rounded-2xl blur opacity-20 group-hover:opacity-40 transition duration-1000 group-hover:duration-200"></div>
               <img
                 src="/ai-preview.png"
                 alt="AI Generation Preview"
-                className="w-full rounded-xl border border-gray-800 shadow-2xl animate-fade-in"
+                className="relative w-full rounded-2xl border border-white/10 shadow-2xl"
               />
-            </div>
+            </motion.div>
             <form
               onSubmit={handleSubmit}
-              className="mt-6 flex flex-col md:flex-row gap-3 max-w-2xl mx-auto"
+              className="mt-12 flex flex-col md:flex-row gap-3 max-w-2xl mx-auto relative z-20"
             >
               <input
                 type="text"
@@ -343,19 +408,31 @@ function NexusRBXHomepage({
             <div className="text-sm text-gray-500 mt-2">
               <span>Describe your idea and press <b>Enter</b> or click "Generate with AI"</span>
             </div>
-          </div>
+          </motion.div>
         </section>
 
         {/* FEATURES SECTION OPENING WITH H2 AND SAMPLE CARD WITH IMAGE PLACEHOLDER */}
-        <section className="py-12 px-4">
-          <h2 className="text-xl md:text-2xl font-bold text-center mb-8 bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-transparent bg-clip-text">
-            Powerful AI Tools for Roblox Creators
-          </h2>
-          <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6">
-            {featureCards.map((card) => (
-              <article
+        <section className="py-24 px-4 relative z-10">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+          >
+            <h2 className="text-3xl md:text-4xl font-bold text-center mb-16 bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-transparent bg-clip-text">
+              Powerful AI Tools for Roblox Creators
+            </h2>
+          </motion.div>
+          <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
+            {featureCards.map((card, index) => (
+              <motion.article
                 key={card.id}
-                className="relative overflow-hidden rounded-xl bg-gray-900/40 backdrop-blur-sm border border-gray-800 p-6 hover:border-gray-700 transition-all duration-500 group flex flex-col"
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: index * 0.1 }}
+                whileHover={{ y: -5 }}
+                className="relative overflow-hidden rounded-2xl bg-white/[0.02] backdrop-blur-md border border-white/10 p-8 hover:border-white/20 transition-all duration-500 group flex flex-col"
                 itemScope
                 itemType="https://schema.org/Service"
               >
@@ -426,46 +503,11 @@ function NexusRBXHomepage({
                     </>
                   )}
                 </div>
-              </article>
+              </motion.article>
             ))}
           </div>
         </section>
 
-        {/* Example Output Feed */}
-        <section className="py-16 px-4 bg-black/30">
-          <div className="max-w-6xl mx-auto">
-            <h2 className="text-2xl md:text-3xl font-bold text-center mb-12 bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-transparent bg-clip-text">
-              See What NexusRBX Can Generate
-            </h2>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {exampleOutputs.map((example, index) => (
-                <section
-                  key={example.id}
-                  className={`rounded-xl bg-gray-900/40 backdrop-blur-sm border border-gray-800 overflow-hidden transition-all duration-500 transform ${
-                    index <= currentTypewriterIndex
-                      ? "opacity-100 translate-y-0"
-                      : "opacity-0 translate-y-8"
-                  }`}
-                  aria-label={`Example Roblox script output: ${example.prompt}`}
-                >
-                  <header className="p-4 border-b border-gray-800 bg-black/40">
-                    <p className="text-gray-300 font-medium">
-                      "{example.prompt}"
-                    </p>
-                  </header>
-                  <div className="p-4">
-                    <pre className="text-sm text-gray-400 font-mono whitespace-pre-wrap overflow-x-auto">
-                      <code className={`language-${example.language}`}>
-                        {index <= currentTypewriterIndex ? example.output : ""}
-                      </code>
-                    </pre>
-                  </div>
-                </section>
-              ))}
-            </div>
-          </div>
-        </section>
 
         {/* Community Creations (Coming Soon) */}
         <section className="py-24 px-4 relative overflow-hidden">
