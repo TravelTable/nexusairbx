@@ -320,7 +320,7 @@ export default function SidebarContent({
   const [chatErr, setChatErr] = useState(null);
 
   useEffect(() => {
-    if (currentChatId) setSelectedChatId(currentChatId);
+    setSelectedChatId(currentChatId);
   }, [currentChatId]);
 
   // --- Toast for errors and notification ---

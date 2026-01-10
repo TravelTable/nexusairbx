@@ -484,6 +484,12 @@ function AiPage() {
   }, [messages, pendingMessage]);
 
   useEffect(() => {
+    if (currentChatId) {
+      openChatById(currentChatId);
+    }
+  }, [currentChatId, openChatById]);
+
+  useEffect(() => {
     const onOpenChat = (e) => e?.detail?.id && openChatById(e.detail.id);
     const onStartDraft = () => { setCurrentChatId(null); setCurrentChatMeta(null); setCurrentScriptId(null); setCurrentScript(null); setVersionHistory([]); setMessages([]); setSelectedVersion(null); };
     const onOpenCodeDrawer = (e) => {
@@ -709,6 +715,39 @@ function AiPage() {
     }
   };
 
+  const handleDeleteChat = async (chatId) => {
+    if (!user || !chatId) return;
+    const db = getFirestore();
+    try {
+      await deleteDoc(doc(db, "users", user.uid, "chats", chatId));
+      if (currentChatId === chatId) {
+        setCurrentChatId(null);
+        setCurrentChatMeta(null);
+        setMessages([]);
+      }
+      notify({ message: "Chat deleted successfully", type: "success" });
+    } catch (err) {
+      notify({ message: "Failed to delete chat: " + err.message, type: "error" });
+    }
+  };
+
+  const handleClearChat = async () => {
+    if (!user || !currentChatId) return;
+    const db = getFirestore();
+    try {
+      const msgsSnap = await getDocs(collection(db, "users", user.uid, "chats", currentChatId, "messages"));
+      const batch = writeBatch(db);
+      msgsSnap.forEach((d) => batch.delete(d.ref));
+      await batch.commit();
+      setMessages([]);
+      notify({ message: "Conversation cleared", type: "success" });
+    } catch (err) {
+      notify({ message: "Failed to clear conversation: " + err.message, type: "error" });
+    }
+  };
+
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
   return (
     <div className="min-h-screen bg-[#050505] text-white font-sans flex flex-col relative overflow-hidden">
       {/* Background Glows */}
@@ -729,23 +768,49 @@ function AiPage() {
       </header>
 
       <div className="flex flex-1 min-h-0">
-        <aside className="hidden md:flex w-80 bg-gray-900 border-r border-gray-800 flex-col">
+        <aside className={`fixed inset-y-0 left-0 z-40 w-72 bg-gray-900 border-r border-gray-800 flex flex-col transform transition-transform duration-300 ease-in-out md:relative md:translate-x-0 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}`}>
+          <div className="flex items-center justify-between p-4 border-b border-gray-800 md:hidden">
+            <span className="font-bold text-[#00f5d4]">NexusRBX</span>
+            <button onClick={() => setSidebarOpen(false)} className="p-1 text-gray-400 hover:text-white">
+              <X className="h-6 w-6" />
+            </button>
+          </div>
           <SidebarContent
-            activeTab={activeTab} setActiveTab={setActiveTab} scripts={scripts} currentChatId={currentChatId} currentScriptId={currentScriptId}
-            onSelectChat={(id) => openChatById(id)} onOpenGameContext={() => setShowGameContextModal(true)}
+            activeTab={activeTab} 
+            setActiveTab={setActiveTab} 
+            scripts={scripts} 
+            currentChatId={currentChatId} 
+            currentScriptId={currentScriptId}
+            onSelectChat={(id) => { openChatById(id); setSidebarOpen(false); }} 
+            onOpenGameContext={() => setShowGameContextModal(true)}
+            onDeleteChat={handleDeleteChat}
+            handleClearChat={handleClearChat}
           />
         </aside>
 
-        <main className="flex-1 flex flex-col relative">
-          <div className="flex-grow overflow-y-auto px-4 py-8 scrollbar-hide">
-            <div className="w-full max-w-4xl mx-auto space-y-8">
+        {sidebarOpen && (
+          <div 
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-30 md:hidden"
+            onClick={() => setSidebarOpen(false)}
+          />
+        )}
+
+        <main className="flex-1 flex flex-col relative min-w-0">
+          <div className="md:hidden flex items-center p-4 border-b border-white/5 bg-black/40 backdrop-blur-xl sticky top-0 z-20">
+            <button onClick={() => setSidebarOpen(true)} className="p-2 -ml-2 text-gray-400 hover:text-white">
+              <Menu className="h-6 w-6" />
+            </button>
+            <span className="ml-2 font-bold bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-transparent bg-clip-text">NexusRBX Console</span>
+          </div>
+          <div className="flex-grow overflow-y-auto px-4 py-6 scrollbar-hide">
+            <div className="w-full max-w-5xl mx-auto space-y-6">
               {messages.length === 0 && !isGenerating ? (
-                <div className="min-h-[55vh] flex items-center justify-center">
-                  <div className="w-full max-w-4xl text-center space-y-6">
-                    <h2 className="text-4xl font-bold">Welcome back, {user?.email?.split('@')[0] || 'Developer'}</h2>
+                <div className="min-h-[50vh] flex items-center justify-center">
+                  <div className="w-full max-w-4xl text-center space-y-4">
+                    <h2 className="text-3xl font-bold">Welcome back, {user?.email?.split('@')[0] || 'Developer'}</h2>
                     {mode === "ui" ? (
-                      <div className="space-y-4">
-                        <p className="text-gray-400">Describe any interface—from main menus to complex inventory systems.</p>
+                      <div className="space-y-3">
+                        <p className="text-sm text-gray-400">Describe any interface—from main menus to complex inventory systems.</p>
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                           <button onClick={() => setPrompt("Military themed main menu with Play, Settings, Shop")} className="p-4 rounded-xl bg-gray-900/60 border border-gray-800 hover:border-[#00f5d4] text-left">
                             <div className="font-bold">Military Menu</div><div className="text-xs text-gray-500">Tactical & clean</div>
@@ -766,11 +831,12 @@ function AiPage() {
                   {messages.map((m) => (
                     <div key={m.id} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'} gap-4 group animate-in fade-in slide-in-from-bottom-4 duration-500`}>
                       {m.role === 'assistant' && <NexusRBXAvatar />}
-                      <div className={`max-w-[80%] ${m.role === 'user' ? 'order-1' : 'order-2'}`}>
-                        <div className={`p-5 rounded-2xl ${m.role === 'user' 
+                      <div className={`max-w-[85%] md:max-w-[80%] ${m.role === 'user' ? 'order-1' : 'order-2'}`}>
+                        <div className={`p-4 md:p-5 rounded-2xl ${m.role === 'user' 
                           ? 'bg-gradient-to-br from-[#9b5de5] to-[#00f5d4] text-white shadow-[0_8px_32px_rgba(155,93,229,0.2)] border border-white/10' 
                           : 'bg-[#121212] border border-white/5 backdrop-blur-md shadow-xl'}`}>
-                          {m.explanation && <div className="text-[15px] whitespace-pre-wrap leading-relaxed text-gray-100"><FormatText text={m.explanation} /></div>}
+                          {m.content && m.role === 'user' && <div className="text-[14px] md:text-[15px] whitespace-pre-wrap leading-relaxed text-white">{m.content}</div>}
+                          {m.explanation && <div className="text-[14px] md:text-[15px] whitespace-pre-wrap leading-relaxed text-gray-100"><FormatText text={m.explanation} /></div>}
                           {m.role === 'assistant' && m.code && (
                             <div className="mt-4">
                               <ScriptLoadingBarContainer
@@ -880,8 +946,8 @@ function AiPage() {
             </div>
           </div>
 
-          <div className="p-6 bg-gradient-to-t from-black via-black/80 to-transparent">
-            <div className="max-w-4xl mx-auto space-y-6">
+          <div className="p-4 bg-gradient-to-t from-black via-black/80 to-transparent">
+            <div className="max-w-5xl mx-auto space-y-4">
               <div className="px-2">
                 <TokenBar tokensLeft={tokensLeft} tokensLimit={tokensLimit} resetsAt={tokenRefreshTime} plan={planKey} />
               </div>
@@ -890,8 +956,8 @@ function AiPage() {
                 <div className="absolute -inset-0.5 bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] rounded-2xl blur opacity-20 group-focus-within:opacity-40 transition duration-500" />
                 <div className="relative bg-[#121212] border border-white/10 rounded-2xl p-2 shadow-2xl">
                   <textarea
-                    className="w-full bg-transparent border-none rounded-xl p-4 pr-16 resize-none focus:ring-0 text-gray-100 placeholder-gray-500 text-[15px] leading-relaxed disabled:opacity-50"
-                    rows="3" placeholder={mode === "ui" ? "Describe the UI you want to build..." : "Ask anything about Roblox development..."}
+                    className="w-full bg-transparent border-none rounded-xl p-3 pr-16 resize-none focus:ring-0 text-gray-100 placeholder-gray-500 text-[14px] leading-relaxed disabled:opacity-50"
+                    rows="2" placeholder={mode === "ui" ? "Describe the UI you want to build..." : "Ask anything about Roblox development..."}
                     value={prompt} onChange={(e) => setPrompt(e.target.value)}
                     disabled={isGenerating || uiIsGenerating}
                     onKeyDown={(e) => {

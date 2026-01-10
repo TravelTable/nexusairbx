@@ -34,7 +34,6 @@ const NexusRBXSignInPageContainer = lazy(() => import("./pages/SignInPage"));
 const NexusRBXSignUpPageContainer = lazy(() => import("./pages/SignUpPage"));
 const NexusRBXTermsPageContainer = lazy(() => import("./pages/TermsPage"));
 const NexusRBXSettingsPageContainer = lazy(() => import("./pages/SettingsPage"));
-const PlanningBoardPage = lazy(() => import("./pages/PlanningBoardPage"));
 const NexusRBXNotFoundPage = lazy(() => import("./pages/NotFoundPage"));
 const CodeModal = lazy(() => import("./CodeModal"));
 
@@ -136,7 +135,6 @@ function App() {
           <Route path="/" element={<NexusRBXHomepageContainer />} />
           <Route path="/docs" element={<NexusRBXDocsPageContainer />} />
           <Route path="/ai" element={<NexusRBXAIPageContainer />} />
-          <Route path="/board" element={<PlanningBoardPage />} />
           <Route path="/settings" element={<NexusRBXSettingsPageContainer />} />
           <Route path="/billing" element={<NexusRBXBillingPageContainer />} />
           <Route path="/contact" element={<NexusRBXContactPageContainer />} />

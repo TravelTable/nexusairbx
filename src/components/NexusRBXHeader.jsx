@@ -45,9 +45,11 @@ function NexusRBXHeader({
     return current === link;
   };
 
-  const finalNavLinks = navLinks.map(link => 
-    link.href === "/settings" ? { ...link, text: "Dashboard" } : link
-  );
+  const finalNavLinks = navLinks
+    .filter(link => link.href !== "/board")
+    .map(link => 
+      link.href === "/settings" ? { ...link, text: "Dashboard" } : link
+    );
 
   return (
     <header className="border-b border-gray-800 bg-black/30 backdrop-blur-md sticky top-0 z-50">

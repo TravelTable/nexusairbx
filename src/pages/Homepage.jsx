@@ -128,7 +128,6 @@ export default function NexusRBXHomepageContainer() {
 
   const navLinks = [
     { id: 1, text: "Docs", href: "/docs" },
-    { id: 5, text: "Planning Board", href: "/board" },
     { id: 3, text: "Ai Console", href: "/ai" },
     { id: 4, text: "Dashboard", href: "/settings" },
     { id: 2, text: "Discord (Soon)", href: "#", external: false },
@@ -284,12 +283,12 @@ function NexusRBXHomepage({
 
       <main className="flex-grow">
         {/* HERO SECTION BLOCK WITH H1 + PARAGRAPH CHANGES AND HERO IMAGE PLACEHOLDER */}
-        <section className="min-h-[70vh] flex items-center justify-center py-16 px-4">
-          <div className="max-w-4xl mx-auto text-center space-y-8 animate-fade-in">
-            <h1 className="text-4xl md:text-6xl font-bold bg-gradient-to-r from-[#9b5de5] via-[#f15bb5] to-[#00f5d4] text-transparent bg-clip-text">
+        <section className="min-h-[60vh] flex items-center justify-center py-12 px-4">
+          <div className="max-w-6xl mx-auto text-center space-y-6 animate-fade-in">
+            <h1 className="text-3xl md:text-5xl font-bold bg-gradient-to-r from-[#9b5de5] via-[#f15bb5] to-[#00f5d4] text-transparent bg-clip-text">
               The Ultimate AI UI Builder & Script Generator for Roblox
             </h1>
-            <p className="text-xl md:text-2xl text-gray-300 max-w-3xl mx-auto">
+            <p className="text-lg md:text-xl text-gray-300 max-w-3xl mx-auto">
               Design stunning interfaces and complex game logic in seconds. NexusRBX uses advanced AI to turn your ideas into production-ready <a href="/ai" className="underline decoration-[#9b5de5]/60 hover:decoration-[#9b5de5]">Luau code</a> for Roblox Studio.
             </p>
             <img
@@ -300,7 +299,7 @@ function NexusRBXHomepage({
               loading="eager"
               decoding="async"
               fetchpriority="high"
-              className="mx-auto rounded-2xl border border-gray-800 shadow-lg w-full max-w-5xl mt-6"
+              className="mx-auto rounded-2xl border border-gray-800 shadow-lg w-full max-w-4xl mt-4"
             />
             <form
               onSubmit={handleSubmit}
@@ -351,11 +350,11 @@ function NexusRBXHomepage({
         </section>
 
         {/* FEATURES SECTION OPENING WITH H2 AND SAMPLE CARD WITH IMAGE PLACEHOLDER */}
-        <section className="py-16 px-4">
-          <h2 className="text-2xl md:text-3xl font-bold text-center mb-12 bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-transparent bg-clip-text">
+        <section className="py-12 px-4">
+          <h2 className="text-xl md:text-2xl font-bold text-center mb-8 bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-transparent bg-clip-text">
             Powerful AI Tools for Roblox Creators
           </h2>
-          <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6">
             {featureCards.map((card) => (
               <article
                 key={card.id}

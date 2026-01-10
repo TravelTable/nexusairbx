@@ -281,14 +281,14 @@ export default function SubscribePage() {
 
       <main className="flex-grow relative z-10">
         {/* Hero Section */}
-        <section className="pt-20 pb-12 px-4">
-          <div className="max-w-4xl mx-auto text-center space-y-6">
+        <section className="pt-12 pb-8 px-4">
+          <div className="max-w-5xl mx-auto text-center space-y-4">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 text-[#00f5d4] text-sm font-bold"
+              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-[#00f5d4] text-xs font-bold"
             >
-              <Sparkles className="w-4 h-4" />
+              <Sparkles className="w-3 h-3" />
               <span>Simple, Usage-Based Pricing</span>
             </motion.div>
             
@@ -296,7 +296,7 @@ export default function SubscribePage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
-              className="text-5xl md:text-7xl font-black tracking-tight"
+              className="text-4xl md:text-6xl font-black tracking-tight"
             >
               Build Faster with <br />
               <span className="bg-gradient-to-r from-[#9b5de5] via-[#00f5d4] to-[#9b5de5] text-transparent bg-clip-text bg-[length:200%_auto] animate-[shimmer_4s_linear_infinite]">
@@ -308,7 +308,7 @@ export default function SubscribePage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
-              className="text-gray-400 text-xl max-w-2xl mx-auto leading-relaxed"
+              className="text-gray-400 text-lg max-w-2xl mx-auto leading-relaxed"
             >
               Unlock the full potential of AI-powered Roblox development. Choose the plan that fits your workflow.
             </motion.p>
@@ -512,7 +512,7 @@ function PricingCard({ plan, cycle, delay, isCurrent, onSelect }) {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay }}
-      className={`relative p-8 rounded-[2.5rem] bg-[#0f1117] border transition-all duration-500 flex flex-col group ${
+      className={`relative p-6 rounded-[2rem] bg-[#0f1117] border transition-all duration-500 flex flex-col group ${
         plan.highlight 
           ? 'border-[#9b5de5] shadow-[0_0_50px_rgba(155,93,229,0.15)] scale-105 z-20' 
           : 'border-white/10 hover:border-white/20 z-10'

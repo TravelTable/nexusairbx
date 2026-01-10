@@ -436,13 +436,13 @@ const SettingsPage = () => {
       </aside>
 
       {/* Main Content Area */}
-      <main className="flex-1 p-6 md:p-12 overflow-y-auto">
-        <div className="max-w-4xl mx-auto">
+      <main className="flex-1 p-4 md:p-8 overflow-y-auto">
+        <div className="max-w-5xl mx-auto">
           {/* Header */}
-          <div className="mb-10 flex justify-between items-end">
+          <div className="mb-8 flex justify-between items-end">
             <div>
-              <h2 className="text-3xl font-bold text-white mb-2">{TABS.find(t => t.id === activeTab)?.label}</h2>
-              <p className="text-gray-500">Manage your NexusRBX experience and account data.</p>
+              <h2 className="text-2xl font-bold text-white mb-1">{TABS.find(t => t.id === activeTab)?.label}</h2>
+              <p className="text-sm text-gray-500">Manage your NexusRBX experience and account data.</p>
             </div>
             {activeTab === "dashboard" && (
               <div className="hidden md:block px-4 py-2 rounded-full bg-green-500/10 border border-green-500/20 text-green-400 text-xs font-bold flex items-center gap-2">
@@ -485,14 +485,14 @@ const SettingsPage = () => {
 };
 
 const StatCard = ({ title, value, icon: Icon, color }) => (
-  <div className="bg-gray-900/50 border border-gray-800 rounded-2xl p-6 backdrop-blur-xl hover:border-gray-700 transition-colors group">
-    <div className="flex justify-between items-start mb-4">
-      <div className={`p-3 rounded-xl bg-gray-800 group-hover:scale-110 transition-transform ${color}`}>
-        <Icon className="w-6 h-6" />
+  <div className="bg-gray-900/50 border border-gray-800 rounded-2xl p-5 backdrop-blur-xl hover:border-gray-700 transition-colors group">
+    <div className="flex justify-between items-start mb-3">
+      <div className={`p-2 rounded-xl bg-gray-800 group-hover:scale-110 transition-transform ${color}`}>
+        <Icon className="w-5 h-5" />
       </div>
     </div>
-    <p className="text-gray-500 text-sm font-medium mb-1">{title}</p>
-    <h4 className="text-2xl font-bold text-white">{value}</h4>
+    <p className="text-gray-500 text-xs font-medium mb-1">{title}</p>
+    <h4 className="text-xl font-bold text-white">{value}</h4>
   </div>
 );
 
