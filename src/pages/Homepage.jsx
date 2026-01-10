@@ -291,17 +291,7 @@ function NexusRBXHomepage({
             <p className="text-lg md:text-xl text-gray-300 max-w-3xl mx-auto">
               Design stunning interfaces and complex game logic in seconds. NexusRBX uses advanced AI to turn your ideas into production-ready <a href="/ai" className="underline decoration-[#9b5de5]/60 hover:decoration-[#9b5de5]">Luau code</a> for Roblox Studio.
             </p>
-            <img
-              src="/hero-placeholder.webp"
-              alt="AI Roblox UI builder and script generator interface"
-              width="1600"
-              height="900"
-              loading="eager"
-              decoding="async"
-              fetchpriority="high"
-              className="mx-auto rounded-2xl border border-gray-800 shadow-lg w-full max-w-4xl mt-4"
-            />
-            <div className="max-w-2xl mx-auto mt-8">
+            <div className="max-w-2xl mx-auto mt-12">
               <img
                 src="/ai-preview.png"
                 alt="AI Generation Preview"
