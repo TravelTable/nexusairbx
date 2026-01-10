@@ -521,12 +521,17 @@ export default function UiPreviewDrawer({
                               key={asset.id}
                               onClick={() => selectedImageNode && applyImageId(selectedImageNode.id, asset.id)}
                               className="group relative aspect-square bg-gray-900 rounded-lg border border-gray-800 hover:border-[#00f5d4] overflow-hidden transition-all"
-                              title={asset.name}
+                              title={`${asset.name} by ${asset.creatorName || 'Unknown'}`}
                             >
                               <img 
-                                src={robloxThumbnailUrl({ assetId: asset.id, size: "150x150" })} 
+                                src={asset.thumbnailUrl || robloxThumbnailUrl({ assetId: asset.id, size: "150x150" })} 
                                 alt={asset.name}
                                 className="w-full h-full object-contain p-1"
+                                onError={(e) => {
+                                  if (asset.thumbnailUrl) {
+                                    e.target.src = robloxThumbnailUrl({ assetId: asset.id, size: "150x150" });
+                                  }
+                                }}
                               />
                               <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
                                 <Plus className="w-5 h-5 text-[#00f5d4]" />
