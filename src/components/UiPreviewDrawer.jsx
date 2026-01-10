@@ -73,8 +73,9 @@ export default function UiPreviewDrawer({
     if (!query.trim()) return;
     setIsSearchingImages(true);
     try {
-      const results = await robloxCatalogSearch({ keyword: query, limit: 12 });
-      setImageSearchResults(results?.data || []);
+      const response = await robloxCatalogSearch({ keyword: query, limit: 12 });
+      // Backend now returns both 'results' and 'data' for safety
+      setImageSearchResults(response?.results || response?.data || []);
     } catch (e) {
       console.error(e);
     } finally {
@@ -112,8 +113,11 @@ export default function UiPreviewDrawer({
     onUpdateLua(newLines.join('\n'));
   };
 
-  const applyImageId = (nodeId, assetId) => {
+  const applyImageId = async (nodeId, assetId) => {
+    // Roblox Decal IDs are often 1 digit away from the actual Image ID.
+    // The Toolbox API returns the AssetId which usually works directly.
     updateNodeProperty(nodeId, 'Image', `rbxassetid://${assetId}`);
+    console.log(`Applied Asset ID: ${assetId} to node: ${nodeId}`);
   };
   const [copySuccess, setCopySuccess] = useState(false);
 
@@ -450,7 +454,18 @@ export default function UiPreviewDrawer({
 
                     {selectedImageNode && (
                       <div className="p-4 bg-[#00f5d4]/5 border border-[#00f5d4]/20 rounded-xl space-y-3">
-                        <h4 className="text-[10px] font-bold text-[#00f5d4] uppercase tracking-widest">Advanced Properties</h4>
+                        <div className="flex items-center justify-between">
+                          <h4 className="text-[10px] font-bold text-[#00f5d4] uppercase tracking-widest">Advanced Properties</h4>
+                          {selectedImageNode.imageId && !selectedImageNode.imageId.includes('//0') && (
+                            <div className="w-8 h-8 rounded bg-black/40 border border-white/10 overflow-hidden">
+                              <img 
+                                src={robloxThumbnailUrl({ assetId: selectedImageNode.imageId.match(/\d+/)?.[0] })} 
+                                className="w-full h-full object-contain"
+                                alt="Preview"
+                              />
+                            </div>
+                          )}
+                        </div>
                         <div className="grid grid-cols-2 gap-2">
                           <div className="space-y-1">
                             <label className="text-[10px] text-gray-500 uppercase">Rect Offset</label>
