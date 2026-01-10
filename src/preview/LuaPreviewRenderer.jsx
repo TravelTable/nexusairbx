@@ -39,61 +39,10 @@ export default function LuaPreviewRenderer({ lua, interactive = false, onAction 
   }, []);
 
   const board = useMemo(() => extractUiManifestFromLua(lua), [lua]);
-
-  if (!lua) {
-    return (
-      <div className="h-full flex items-center justify-center text-zinc-500 font-medium">
-        No UI generated yet
-      </div>
-    );
-  }
-
-  if (!board) {
-    return (
-      <div className="h-full flex flex-col items-center justify-center text-red-400 p-6 text-center bg-red-500/5 rounded-lg border border-red-500/20">
-        <div className="font-bold mb-1 text-sm">Preview Unavailable</div>
-        <div className="text-[11px] opacity-70 max-w-[220px]">
-          The Lua code is missing a valid UI manifest or the JSON is malformed.
-        </div>
-        <button 
-          onClick={() => console.log("RAW LUA:", lua)}
-          className="mt-4 px-3 py-1 text-[10px] bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 rounded uppercase tracking-wider font-bold"
-        >
-          Log Raw Lua to Console
-        </button>
-      </div>
-    );
-  }
-
-  const items = Array.isArray(board.items) ? board.items : [];
-
-  if (items.length === 0) {
-    return (
-      <div className="h-full flex flex-col items-center justify-center text-zinc-400 p-6 text-center bg-zinc-500/5 rounded-lg border border-zinc-500/10">
-        <div className="font-bold mb-1 text-sm">Empty UI Manifest</div>
-        <div className="text-[11px] opacity-70 max-w-[220px]">
-          The Lua code contains a manifest, but it has no UI elements to display.
-        </div>
-        <div className="mt-4 p-2 bg-black/40 rounded border border-white/5 text-[10px] font-mono text-left max-w-full overflow-auto">
-          <div className="text-zinc-500 mb-1">// Debug Info</div>
-          <div className="text-zinc-300">Canvas: {board.canvasSize?.w}x{board.canvasSize?.h}</div>
-          <div className="text-zinc-300">Items: {items.length}</div>
-          <button 
-            onClick={() => console.log("MANIFEST DATA:", board)}
-            className="mt-2 text-[#00f5d4] hover:underline"
-          >
-            Inspect Manifest in Console
-          </button>
-        </div>
-      </div>
-    );
-  }
+  const items = useMemo(() => (Array.isArray(board?.items) ? board.items : []), [board]);
   
-  // Sort items by ZIndex to ensure correct stacking (higher ZIndex on top)
-  const sortedItems = [...items].sort((a, b) => (Number(a.zIndex) || 0) - (Number(b.zIndex) || 0));
-
-  const canvasW = Number(board.canvasSize?.w) || 1280;
-  const canvasH = Number(board.canvasSize?.h) || 720;
+  const canvasW = Number(board?.canvasSize?.w) || 1280;
+  const canvasH = Number(board?.canvasSize?.h) || 720;
 
   // --- SMART ZOOM LOGIC ---
   // Calculate the bounding box of all visible items to "zoom in" on the content
@@ -121,6 +70,56 @@ export default function LuaPreviewRenderer({ lua, interactive = false, onAction 
     
     return { x: bx, y: by, w: bw, h: bh };
   }, [items, canvasW, canvasH]);
+
+  if (!lua) {
+    return (
+      <div className="h-full flex items-center justify-center text-zinc-500 font-medium">
+        No UI generated yet
+      </div>
+    );
+  }
+
+  if (!board) {
+    return (
+      <div className="h-full flex flex-col items-center justify-center text-red-400 p-6 text-center bg-red-500/5 rounded-lg border border-red-500/20">
+        <div className="font-bold mb-1 text-sm">Preview Unavailable</div>
+        <div className="text-[11px] opacity-70 max-w-[220px]">
+          The Lua code is missing a valid UI manifest or the JSON is malformed.
+        </div>
+        <button 
+          onClick={() => console.log("RAW LUA:", lua)}
+          className="mt-4 px-3 py-1 text-[10px] bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 rounded uppercase tracking-wider font-bold"
+        >
+          Log Raw Lua to Console
+        </button>
+      </div>
+    );
+  }
+
+  if (items.length === 0) {
+    return (
+      <div className="h-full flex flex-col items-center justify-center text-zinc-400 p-6 text-center bg-zinc-500/5 rounded-lg border border-zinc-500/10">
+        <div className="font-bold mb-1 text-sm">Empty UI Manifest</div>
+        <div className="text-[11px] opacity-70 max-w-[220px]">
+          The Lua code contains a manifest, but it has no UI elements to display.
+        </div>
+        <div className="mt-4 p-2 bg-black/40 rounded border border-white/5 text-[10px] font-mono text-left max-w-full overflow-auto">
+          <div className="text-zinc-500 mb-1">// Debug Info</div>
+          <div className="text-zinc-300">Canvas: {board.canvasSize?.w}x{board.canvasSize?.h}</div>
+          <div className="text-zinc-300">Items: {items.length}</div>
+          <button 
+            onClick={() => console.log("MANIFEST DATA:", board)}
+            className="mt-2 text-[#00f5d4] hover:underline"
+          >
+            Inspect Manifest in Console
+          </button>
+        </div>
+      </div>
+    );
+  }
+  
+  // Sort items by ZIndex to ensure correct stacking (higher ZIndex on top)
+  const sortedItems = [...items].sort((a, b) => (Number(a.zIndex) || 0) - (Number(b.zIndex) || 0));
 
   // Scale based on the content bounds instead of the full canvas
   const scale = box.w > 0 && box.h > 0 
