@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect, useCallback } from "react";
-import { X, Download, Copy, Check, Loader, Search, Image as ImageIcon, AlertCircle, ExternalLink } from "lucide-react";
+import { X, Download, Copy, Check, Loader, Search, Image as ImageIcon, AlertCircle, ExternalLink, Plus } from "lucide-react";
 import LuaPreviewRenderer from "../preview/LuaPreviewRenderer";
 import { Light as SyntaxHighlighter } from "react-syntax-highlighter";
 import luaLang from "react-syntax-highlighter/dist/esm/languages/hljs/lua";
