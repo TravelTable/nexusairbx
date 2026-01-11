@@ -8,6 +8,7 @@ import {
   Zap,
   MessageSquare,
   X,
+  Sparkles,
 } from "lucide-react";
 
 // Main Onboarding Modal Container
