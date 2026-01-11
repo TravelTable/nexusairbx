@@ -36,6 +36,7 @@ import PlanWelcomeCard from "../components/PlanWelcomeCard";
 import PLAN_INFO from "../lib/planInfo";
 import CelebrationAnimation from "../components/CelebrationAnimation";
 import OnboardingContainer from "../components/OnboardingContainer";
+import AiTour from "../components/AiTour";
 import FancyLoadingOverlay from "../components/FancyLoadingOverlay";
 import NotificationToast from "../components/NotificationToast";
 import UiPreviewDrawer from "../components/UiPreviewDrawer";
@@ -323,7 +324,8 @@ function AiPage() {
   const [currentChatId, setCurrentChatId] = useState(null);
   const [currentChatMeta, setCurrentChatMeta] = useState(null);
   const [activeTab, setActiveTab] = useState("scripts");
-  const [showOnboarding, setShowOnboarding] = useState(localStorage.getItem("nexusrbx:onboardingComplete") !== "true");
+  const [showTour, setShowTour] = useState(localStorage.getItem("nexusrbx:tourComplete") !== "true");
+  const [showOnboarding, setShowOnboarding] = useState(false);
   const [mode, setMode] = useState("ui"); 
   const [showGameContextModal, setShowGameContextModal] = useState(false);
   const [showUiSpecModal, setShowUiSpecModal] = useState(false);
@@ -758,7 +760,7 @@ function AiPage() {
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="text-2xl font-bold bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-transparent bg-clip-text cursor-pointer" onClick={() => navigate("/")}>NexusRBX</div>
           <div className="flex items-center gap-4">
-            <div className="bg-gray-900/80 border border-gray-800 rounded-full p-1 flex items-center gap-1">
+            <div id="tour-mode-toggle" className="bg-gray-900/80 border border-gray-800 rounded-full p-1 flex items-center gap-1">
               <button onClick={() => setMode("ui")} className={`px-4 py-1.5 rounded-full text-sm font-bold flex items-center gap-2 transition-all ${mode === "ui" ? "bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-white shadow-md" : "text-gray-400 hover:text-white"}`}><Layout className="h-4 w-4" />UI Builder</button>
               <button onClick={() => setMode("chat")} className={`px-4 py-1.5 rounded-full text-sm font-bold flex items-center gap-2 transition-all ${mode === "chat" ? "bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-white shadow-md" : "text-gray-400 hover:text-white"}`}><MessageSquare className="h-4 w-4" />Chat Mode</button>
             </div>
@@ -768,7 +770,7 @@ function AiPage() {
       </header>
 
       <div className="flex flex-1 min-h-0">
-        <aside className={`fixed inset-y-0 left-0 z-40 w-72 bg-gray-900 border-r border-gray-800 flex flex-col transform transition-transform duration-300 ease-in-out md:relative md:translate-x-0 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}`}>
+        <aside id="tour-sidebar" className={`fixed inset-y-0 left-0 z-40 w-72 bg-gray-900 border-r border-gray-800 flex flex-col transform transition-transform duration-300 ease-in-out md:relative md:translate-x-0 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}`}>
           <div className="flex items-center justify-between p-4 border-b border-gray-800 md:hidden">
             <span className="font-bold text-[#00f5d4]">NexusRBX</span>
             <button onClick={() => setSidebarOpen(false)} className="p-1 text-gray-400 hover:text-white">
@@ -948,11 +950,11 @@ function AiPage() {
 
           <div className="p-4 bg-gradient-to-t from-black via-black/80 to-transparent">
             <div className="max-w-5xl mx-auto space-y-4">
-              <div className="px-2">
+              <div id="tour-token-bar" className="px-2">
                 <TokenBar tokensLeft={tokensLeft} tokensLimit={tokensLimit} resetsAt={tokenRefreshTime} plan={planKey} />
               </div>
               
-              <div className="relative group">
+              <div id="tour-prompt-box" className="relative group">
                 <div className="absolute -inset-0.5 bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] rounded-2xl blur opacity-20 group-focus-within:opacity-40 transition duration-500" />
                 <div className="relative bg-[#121212] border border-white/10 rounded-2xl p-2 shadow-2xl">
                   <textarea
@@ -981,6 +983,7 @@ function AiPage() {
 
               {mode === "ui" && (
                 <button 
+                  id="tour-generate-button"
                   onClick={() => handleGenerateUiPreview()} 
                   disabled={isGenerating || uiIsGenerating || !prompt.trim()}
                   className="w-full py-4 rounded-2xl bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-white font-bold text-lg flex items-center justify-center gap-3 hover:shadow-[0_0_30px_rgba(0,245,212,0.3)] transition-all active:scale-[0.98] disabled:opacity-50 disabled:grayscale"
@@ -1047,6 +1050,28 @@ function AiPage() {
         isOpen={showSignInNudge} 
         onClose={() => setShowSignInNudge(false)} 
       />
+
+      {showTour && (
+        <AiTour 
+          onComplete={() => {
+            localStorage.setItem("nexusrbx:tourComplete", "true");
+            localStorage.setItem("nexusrbx:onboardingComplete", "true");
+            setShowTour(false);
+          }}
+          onSkip={() => {
+            localStorage.setItem("nexusrbx:tourComplete", "true");
+            setShowTour(false);
+            setShowOnboarding(true);
+          }}
+        />
+      )}
+
+      {showOnboarding && (
+        <OnboardingContainer 
+          forceShow={true} 
+          onComplete={() => setShowOnboarding(false)} 
+        />
+      )}
 
       <style>{`
         @keyframes shimmer {

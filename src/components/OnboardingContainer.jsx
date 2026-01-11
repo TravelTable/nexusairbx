@@ -11,16 +11,20 @@ import {
 } from "lucide-react";
 
 // Main Onboarding Modal Container
-export default function OnboardingContainer() {
+export default function OnboardingContainer({ forceShow = false, onComplete }) {
   const [currentStep, setCurrentStep] = useState(1);
-  const [show, setShow] = useState(false);
-  const totalSteps = 5;
+  const [show, setShow] = useState(forceShow);
+  const totalSteps = 1; // Simplified for "Welcome" fallback
 
   // Show onboarding only if not completed
   useEffect(() => {
+    if (forceShow) {
+      setShow(true);
+      return;
+    }
     const completed = localStorage.getItem("nexusrbx:onboardingComplete");
     if (!completed || completed === "false") setShow(true);
-  }, []);
+  }, [forceShow]);
 
   const handleNext = () => {
     if (currentStep < totalSteps) {
@@ -37,12 +41,14 @@ export default function OnboardingContainer() {
   const handleFinish = () => {
     localStorage.setItem("nexusrbx:onboardingComplete", "true");
     setShow(false);
-    setTimeout(() => window.location.reload(), 300); // Give time for modal to fade out
+    if (onComplete) onComplete();
+    // setTimeout(() => window.location.reload(), 300); // Removed reload for smoother flow
   };
 
   const handleClose = () => {
     localStorage.setItem("nexusrbx:onboardingComplete", "true");
     setShow(false);
+    if (onComplete) onComplete();
   };
 
   // Listen for dev-panel trigger to show onboarding
@@ -130,11 +136,7 @@ function OnboardingFlow({
 
         <div className="p-4 sm:p-6 md:p-8 overflow-y-auto flex-1" style={{ maxHeight: "calc(95vh - 48px)" }}>
           {/* Step content */}
-          {currentStep === 1 && <WelcomeStep />}
-          {currentStep === 2 && <PromptingTipsStep />}
-          {currentStep === 3 && <EditCustomizeStep />}
-          {currentStep === 4 && <PrivacyStep />}
-          {currentStep === 5 && <FinalStep />}
+          <WelcomeStep />
 
           {/* Navigation buttons */}
           <div className="flex flex-col-reverse sm:flex-row justify-between mt-8 items-center gap-4 sm:gap-0">
@@ -184,34 +186,27 @@ function WelcomeStep() {
   return (
     <div className="space-y-6">
       <div className="flex items-center space-x-3">
-        <div className="bg-blue-900 bg-opacity-50 p-2 rounded-lg">
-          <Info className="w-6 h-6 text-blue-400" />
+        <div className="bg-gradient-to-br from-[#9b5de5] to-[#00f5d4] p-2 rounded-lg">
+          <Sparkles className="w-6 h-6 text-white" />
         </div>
         <h2 className="text-2xl font-bold text-white">
-          Step 1: Welcome to NexusRBX AI Console (Beta)
+          Welcome to Nexus Console
         </h2>
       </div>
 
-      <h3 className="text-xl font-semibold text-blue-300">Welcome to NexusRBX!</h3>
-
-      <p className="text-gray-300">
-        You're about to experience the next generation of Roblox scripting. NexusRBX AI Console is your personal AI assistant for generating, editing, and improving Roblox scripts—no advanced coding skills required.
+      <p className="text-gray-300 leading-relaxed">
+        Nexus is your AI-powered Roblox development assistant. You can build full UIs, complex scripts, and get coding help instantly.
       </p>
 
-      <div className="bg-yellow-900 bg-opacity-30 border-l-4 border-yellow-600 p-4 rounded-r-lg">
-        <h4 className="font-semibold text-yellow-400">Beta Notice:</h4>
-        <p className="text-yellow-200">
-          This platform is currently in Beta. That means you may encounter bugs, unfinished features, or unexpected results. We're working hard to improve every day, and your feedback is invaluable.
+      <div className="bg-[#9b5de5]/10 border-l-4 border-[#9b5de5] p-4 rounded-r-lg">
+        <p className="text-gray-200 text-sm">
+          Since you skipped the tour, remember you can always find the tutorial again in your <span className="text-[#00f5d4] font-bold">Settings</span> if you need a refresher.
         </p>
       </div>
 
-      <div className="bg-blue-900 bg-opacity-30 p-4 rounded-lg flex items-start">
-        <div className="text-blue-400 mr-3 mt-1">
-          <MessageSquare className="w-5 h-5" />
-        </div>
-        <p className="text-blue-300">
-          <span className="font-semibold">Tip:</span> If you have suggestions or run into issues, please let us know through the feedback button or our Discord community.
-        </p>
+      <div className="bg-gradient-to-r from-[#9b5de5]/20 to-[#00f5d4]/20 p-6 rounded-xl text-center border border-white/10">
+        <h3 className="text-white text-xl font-bold mb-2">Happy hacking!</h3>
+        <p className="text-gray-400 text-sm">Click Finish to get started.</p>
       </div>
     </div>
   );

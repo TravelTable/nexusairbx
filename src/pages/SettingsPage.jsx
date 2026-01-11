@@ -26,6 +26,8 @@ import {
   MessageCircle,
   X,
   Search,
+  Sparkles,
+  Info,
 } from "lucide-react";
 import { useSettings } from "../context/SettingsContext";
 import { useBilling } from "../context/BillingContext";
@@ -66,6 +68,7 @@ const TABS = [
   { id: "usage", label: "Usage & Analytics", icon: Activity },
   { id: "ai", label: "AI Configuration", icon: Bot },
   { id: "account", label: "Account", icon: User },
+  { id: "help", label: "Help & Tutorials", icon: MessageCircle },
 ];
 
 const SettingsPage = () => {
@@ -612,6 +615,68 @@ const SettingsPage = () => {
                     ))}
                   </tbody>
                 </table>
+              </div>
+            </div>
+          </div>
+        );
+
+      case "help":
+        return (
+          <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="bg-gray-900/50 border border-gray-800 rounded-2xl p-8 backdrop-blur-xl">
+              <h3 className="text-xl font-bold text-white mb-2 flex items-center gap-2">
+                <Sparkles className="w-6 h-6 text-[#00f5d4]" />
+                Tutorials & Onboarding
+              </h3>
+              <p className="text-gray-400 mb-8">Need a refresher on how to use the Nexus AI Console? You can replay the interactive tour or the welcome guide at any time.</p>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <button 
+                  onClick={() => {
+                    localStorage.removeItem("nexusrbx:tourComplete");
+                    localStorage.removeItem("nexusrbx:onboardingComplete");
+                    setSuccessMsg("Tutorials reset! Visit the AI Console to see them.");
+                    setTimeout(() => setSuccessMsg(""), 5000);
+                  }}
+                  className="p-6 rounded-2xl bg-black border border-gray-800 hover:border-[#9b5de5] transition-all text-left group"
+                >
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="font-bold text-white group-hover:text-[#9b5de5] transition-colors">Replay Interactive Tour</span>
+                    <Zap className="w-5 h-5 text-gray-600 group-hover:text-[#9b5de5]" />
+                  </div>
+                  <p className="text-xs text-gray-500">Reset the step-by-step spotlight tour of the AI interface.</p>
+                </button>
+
+                <button 
+                  onClick={() => {
+                    localStorage.removeItem("nexusrbx:onboardingComplete");
+                    setSuccessMsg("Welcome guide reset! Visit the AI Console to see it.");
+                    setTimeout(() => setSuccessMsg(""), 5000);
+                  }}
+                  className="p-6 rounded-2xl bg-black border border-gray-800 hover:border-[#00f5d4] transition-all text-left group"
+                >
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="font-bold text-white group-hover:text-[#00f5d4] transition-colors">Replay Welcome Guide</span>
+                    <Info className="w-5 h-5 text-gray-600 group-hover:text-[#00f5d4]" />
+                  </div>
+                  <p className="text-xs text-gray-500">Reset the high-level welcome modal for the AI Console.</p>
+                </button>
+              </div>
+            </div>
+
+            <div className="bg-gray-900/50 border border-gray-800 rounded-2xl p-8 backdrop-blur-xl">
+              <h3 className="text-xl font-bold text-white mb-2 flex items-center gap-2">
+                <MessageCircle className="w-6 h-6 text-purple-400" />
+                Community & Support
+              </h3>
+              <p className="text-gray-400 mb-6">Join our community to get help, share your creations, and stay updated on new features.</p>
+              <div className="flex flex-wrap gap-4">
+                <a href="https://discord.gg/" target="_blank" rel="noreferrer" className="px-6 py-3 rounded-xl bg-[#5865F2] text-white font-bold flex items-center gap-2 hover:scale-105 transition-transform">
+                  Join Discord
+                </a>
+                <a href="/contact" className="px-6 py-3 rounded-xl bg-gray-800 text-white font-bold hover:bg-gray-700 transition-colors">
+                  Contact Support
+                </a>
               </div>
             </div>
           </div>
