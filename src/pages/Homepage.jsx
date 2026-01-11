@@ -131,6 +131,7 @@ export default function NexusRBXHomepageContainer() {
     { id: 1, text: "Docs", href: "/docs" },
     { id: 3, text: "Ai Console", href: "/ai" },
     { id: 4, text: "Account", href: "/settings" },
+    { id: 5, text: "API (Soon)", href: "#", comingSoon: true },
     { id: 2, text: "Discord (Soon)", href: "#", external: false },
   ];
 

@@ -45,11 +45,14 @@ function NexusRBXHeader({
     return current === link;
   };
 
-  const finalNavLinks = navLinks
-    .filter(link => link.href !== "/board")
-    .map(link => 
-      link.href === "/settings" ? { ...link, text: "Account" } : link
-    );
+  const finalNavLinks = [
+    ...navLinks
+      .filter(link => link.href !== "/board")
+      .map(link => 
+        link.href === "/settings" ? { ...link, text: "Account" } : link
+      ),
+    { id: "api-soon", text: "API", href: "#", comingSoon: true }
+  ];
 
   return (
     <header className="border-b border-gray-800 bg-black/30 backdrop-blur-md sticky top-0 z-50">
@@ -79,10 +82,10 @@ function NexusRBXHeader({
                 ) : (
                   <button
                     type="button"
-                    onClick={() => navigate(link.href)}
-                    className={`text-gray-300 hover:text-white transition-colors duration-300 bg-transparent border-none outline-none cursor-pointer font-sans text-base ${
+                    onClick={() => !link.comingSoon && navigate(link.href)}
+                    className={`text-gray-300 hover:text-white transition-colors duration-300 bg-transparent border-none outline-none cursor-pointer font-sans text-base flex items-center gap-1.5 ${
                       isActive(link.href) ? "font-bold underline underline-offset-4 text-white" : ""
-                    }`}
+                    } ${link.comingSoon ? "opacity-60 cursor-not-allowed" : ""}`}
                     aria-current={isActive(link.href) ? "page" : undefined}
                     tabIndex={0}
                     style={{
@@ -92,6 +95,9 @@ function NexusRBXHeader({
                     }}
                   >
                     {link.text}
+                    {link.comingSoon && (
+                      <span className="px-1.5 py-0.5 rounded-md bg-[#9b5de5] text-white text-[8px] font-black uppercase tracking-tighter">Soon</span>
+                    )}
                   </button>
                 )}
               </React.Fragment>

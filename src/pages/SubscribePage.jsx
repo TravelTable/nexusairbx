@@ -78,7 +78,7 @@ const plans = [
       { text: "Script history (unlimited)", included: true },
       { text: "Custom templates (up to 10)", included: true },
       { text: "Roblox Studio plugin", included: true },
-      { text: "API access (rate-limited)", included: true },
+      { text: "Public API Access (Coming Soon)", included: true },
     ],
     cta: "Upgrade to Pro",
     popular: true,
@@ -101,7 +101,7 @@ const plans = [
       { text: "Team collaboration tools", included: true },
       { text: "Priority support", included: true },
       { text: "Custom templates (unlimited)", included: true },
-      { text: "Full API access", included: true },
+      { text: "Full Public API Access (Coming Soon)", included: true },
       { text: "Optional custom fine‑tuning add‑on", included: true },
       { text: "Dedicated account manager (add‑on)", included: false },
     ],
@@ -149,7 +149,7 @@ const faqs = [
     id: "api",
     question: "Is API access included?",
     answer:
-      "Pro includes rate‑limited API access with your token balance. Team increases limits and supports service accounts.",
+      "Public API access is coming soon! Pro will include rate‑limited API access with your token balance. Team will increase limits and support service accounts.",
   },
 ];
 

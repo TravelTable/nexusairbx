@@ -43,9 +43,9 @@ const SUBSCRIPTION_PLANS = [
     features: [
       "500,000 tokens/month",
       "GPT-5.2 AI Access",
+      "Public API Access (Soon)",
       "Priority support",
       "Advanced features",
-      "Personal use",
     ],
     highlight: false,
   },
@@ -61,10 +61,10 @@ const SUBSCRIPTION_PLANS = [
     features: [
       "1,500,000 tokens/month",
       "GPT-5.2 AI Access",
+      "Full Public API Access (Soon)",
       "Team management",
       "Priority support",
       "Advanced features",
-      "For teams/orgs",
     ],
     highlight: true,
   },

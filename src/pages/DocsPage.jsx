@@ -16,7 +16,9 @@ import {
   Settings,
   HelpCircle,
   FileText,
-  Home
+  Home,
+  X,
+  Lock
 } from "lucide-react";
 
 // Container Component
@@ -118,8 +120,9 @@ export default function NexusRBXDocsPageContainer() {
     },
     {
       id: "api-reference",
-      title: "API Reference",
+      title: "API Reference (Soon)",
       icon: Terminal,
+      comingSoon: true,
       items: [
         { id: "script-api", title: "Script API", href: "#script-api" },
         { id: "simulation-api", title: "Simulation API", href: "#simulation-api" },
@@ -472,11 +475,24 @@ function NexusRBXDocsPage({
               )}
               
               {activeSection === "api-reference" && (
-                <APIReferenceContent 
-                  codeSnippets={codeSnippets} 
-                  copiedSnippet={copiedSnippet} 
-                  handleCopyCode={handleCopyCode} 
-                />
+                <div className="relative">
+                  <div className="absolute inset-0 z-10 bg-[#0D0D0D]/80 backdrop-blur-sm flex items-center justify-center rounded-2xl border border-white/5">
+                    <div className="text-center p-8">
+                      <div className="w-16 h-16 bg-[#9b5de5]/20 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-[#9b5de5]/30">
+                        <Lock className="w-8 h-8 text-[#9b5de5]" />
+                      </div>
+                      <h2 className="text-2xl font-bold mb-2">Public API Coming Soon</h2>
+                      <p className="text-gray-400 max-w-xs mx-auto">We are currently finalizing our public REST API for external developers. Documentation will be available shortly.</p>
+                    </div>
+                  </div>
+                  <div className="opacity-20 pointer-events-none select-none">
+                    <APIReferenceContent 
+                      codeSnippets={codeSnippets} 
+                      copiedSnippet={copiedSnippet} 
+                      handleCopyCode={handleCopyCode} 
+                    />
+                  </div>
+                </div>
               )}
               
               {activeSection === "advanced-usage" && (
@@ -1456,26 +1472,5 @@ function SecurityContent({ codeSnippets, copiedSnippet, handleCopyCode }) {
         </div>
       </section>
     </div>
-  );
-}
-
-// Helper component for X icon
-function X(props) {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      {...props}
-    >
-      <path d="M18 6 6 18" />
-      <path d="m6 6 12 12" />
-    </svg>
   );
 }
