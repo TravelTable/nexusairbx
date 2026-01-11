@@ -82,9 +82,9 @@ if (BACKEND_URL.endsWith("/")) {
 const DEV_EMAIL = process.env.REACT_APP_DEV_EMAIL?.toLowerCase() || "dev@example.com";
 
 const modelOptions = [
-  { value: "nexus-3", label: "Nexus-3 (Legacy, Default)" },
-  { value: "nexus-4", label: "Nexus-4 (Fast, Accurate)" },
-  { value: "nexus-2", label: "Nexus-2 (GPT-3.5 Turbo)" },
+  { value: "nexus-4", label: "Nexus-5 (GPT-5.2, High Accuracy)" },
+  { value: "nexus-3", label: "Nexus-4 (Legacy, Fast)" },
+  { value: "nexus-2", label: "Nexus-2 (Legacy)" },
 ];
 const creativityOptions = [
   { value: 0.3, label: "Low (Precise)" },

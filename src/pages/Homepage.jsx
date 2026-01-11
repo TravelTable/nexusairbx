@@ -146,7 +146,7 @@ export default function NexusRBXHomepageContainer() {
     {
       id: 2,
       title: "Premium",
-      description: "Unlock Nexus-4 AI, unlimited generations, and priority support. Access exclusive UI components and advanced scripting features.",
+      description: "Unlock Nexus-5 (GPT-5.2) AI, high-limit generations, and priority support. Access exclusive UI components and advanced scripting features.",
       icon: null,
       gradient: "from-cyan-500 to-blue-600",
       button: { text: "Subscribe", href: "/subscribe" },
@@ -318,7 +318,7 @@ function NexusRBXHomepage({
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#00f5d4] opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-[#00f5d4]"></span>
               </span>
-              Nexus-4 AI Engine Now Live
+              Nexus-5 (GPT-5.2) Engine Now Live
             </div>
 
             <h1 className="text-4xl md:text-7xl font-bold tracking-tight bg-gradient-to-r from-[#9b5de5] via-[#f15bb5] to-[#00f5d4] text-transparent bg-clip-text leading-tight">

@@ -12,7 +12,7 @@ function PlanWelcomeCard({ isSubscriber, planKey, planInfo }) {
           <PlanBadge plan={planKey} />
         </div>
         <div className="text-2xl font-bold mb-2 bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-transparent bg-clip-text">
-          Welcome back — you have 500k tokens this month.
+          {planInfo.welcome}
         </div>
         <div className="text-gray-300 mb-4">{planInfo.welcomeTokens}</div>
       </div>

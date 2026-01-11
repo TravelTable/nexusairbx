@@ -291,7 +291,7 @@ function handleModelChange(e) {
           <span className="ml-2 text-xs text-gray-400">
             {plan === "free" && (
               <span className="bg-[#9b5de5]/10 text-[#9b5de5] px-2 py-0.5 rounded-full">
-                Pro tip: Try Nexus-4 for faster scripts
+                Pro tip: Try Nexus-5 (GPT-5.2) for better scripts
               </span>
             )}
           </span>

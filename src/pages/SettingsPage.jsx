@@ -429,8 +429,8 @@ const SettingsPage = () => {
                     onChange={(e) => updateSettings({ modelVersion: e.target.value })}
                     className="w-full bg-black border border-gray-800 rounded-xl p-3 text-white outline-none focus:border-purple-500 transition-colors"
                   >
-                    <option value="nexus-4">Nexus-4 (High Accuracy)</option>
-                    <option value="nexus-3">Nexus-3 (Fast)</option>
+                    <option value="nexus-4">Nexus-5 (GPT-5.2, High Accuracy)</option>
+                    <option value="nexus-3">Nexus-4 (Legacy, Fast)</option>
                   </select>
                 </div>
                 <div className="space-y-2">

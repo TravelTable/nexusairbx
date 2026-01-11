@@ -61,7 +61,7 @@ function SubscribeTabUI({
           </div>
           <div className="flex items-center gap-2">
             <Check className="h-4 w-4 text-green-400 flex-shrink-0" />
-            <span className="text-gray-300 text-sm">Unlimited script generations</span>
+            <span className="text-gray-300 text-sm">High-limit script generations</span>
           </div>
           <div className="flex items-center gap-2">
             <Check className="h-4 w-4 text-green-400 flex-shrink-0" />

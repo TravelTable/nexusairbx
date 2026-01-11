@@ -42,6 +42,7 @@ const SUBSCRIPTION_PLANS = [
     tokens: 500_000,
     features: [
       "500,000 tokens/month",
+      "GPT-5.2 AI Access",
       "Priority support",
       "Advanced features",
       "Personal use",
@@ -59,6 +60,7 @@ const SUBSCRIPTION_PLANS = [
     tokens: 1_500_000,
     features: [
       "1,500,000 tokens/month",
+      "GPT-5.2 AI Access",
       "Team management",
       "Priority support",
       "Advanced features",
