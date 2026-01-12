@@ -27,7 +27,11 @@ import { getEntitlements } from "../lib/billing";
 import NexusRBXHeader from "../components/NexusRBXHeader";
 import NexusRBXFooter from "../components/NexusRBXFooter";
 
-const API_BASE = (process.env.REACT_APP_BACKEND_URL || "https://nexusrbx-backend-production.up.railway.app").replace(/\/+$/, "");
+const API_BASE = (
+  window.location.hostname === "localhost" 
+    ? "http://localhost:3000" 
+    : (process.env.REACT_APP_BACKEND_URL || "https://nexusrbx-backend-production.up.railway.app")
+).replace(/\/+$/, "");
 
 export default function IconsMarketPage() {
   const [user, setUser] = useState(null);
@@ -98,12 +102,15 @@ export default function IconsMarketPage() {
       if (loadMore && lastDocId) params.append("lastDocId", lastDocId);
       
       const res = await fetch(`${API_BASE}/api/icons/market?${params.toString()}`);
+      if (!res.ok) throw new Error(`Server responded with ${res.status}`);
       const data = await res.json();
       
+      const newIcons = Array.isArray(data.icons) ? data.icons : [];
+
       if (loadMore) {
-        setIcons(prev => [...prev, ...data.icons]);
+        setIcons(prev => [...prev, ...newIcons]);
       } else {
-        setIcons(data.icons);
+        setIcons(newIcons);
       }
       
       setLastDocId(data.lastDocId);
@@ -360,9 +367,14 @@ export default function IconsMarketPage() {
                 <div className="space-y-6 mb-12">
                   <div className="flex items-start gap-3 p-4 rounded-2xl bg-white/5 border border-white/10">
                     <Info className="h-5 w-5 text-[#00f5d4] shrink-0 mt-0.5" />
-                    <p className="text-xs text-gray-400 leading-relaxed">
-                      This icon is optimized for Roblox Studio. It features a centered composition and high-contrast lighting for maximum visibility in-game.
-                    </p>
+                    <div className="space-y-2">
+                      <p className="text-xs text-gray-400 leading-relaxed">
+                        This icon is optimized for Roblox Studio. It features a centered composition and high-contrast lighting for maximum visibility in-game.
+                      </p>
+                      <p className="text-[10px] text-gray-500 italic">
+                        Click "Post to Roblox" to copy a Luau snippet. Paste it into a LocalScript in Studio to instantly preview the icon.
+                      </p>
+                    </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
