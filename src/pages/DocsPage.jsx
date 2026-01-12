@@ -365,16 +365,21 @@ function GettingStartedContent() {
         </ul>
       </section>
 
-      <section id="plugin-install" className="scroll-mt-16 mt-12">
-        <h2 className="text-2xl font-bold mb-4 text-[#9b5de5]">Installing the Studio Plugin</h2>
-        <p className="text-gray-300 mb-4">The official Roblox Studio Plugin allows you to generate and insert scripts directly into your game.</p>
-        <div className="bg-gray-900/50 p-5 rounded-xl border border-gray-800">
-          <ol className="list-decimal list-inside text-sm text-gray-400 space-y-2">
-            <li>Open Roblox Studio and go to the <strong>Plugins</strong> tab.</li>
+      <section id="plugin-install" className="scroll-mt-16 mt-12 relative overflow-hidden">
+        <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px] z-10 flex items-center justify-center rounded-2xl">
+          <div className="px-6 py-3 rounded-xl bg-[#9b5de5] text-white font-black uppercase tracking-widest shadow-xl transform -rotate-2">
+            Coming Soon
+          </div>
+        </div>
+        <h2 className="text-2xl font-bold mb-4 text-[#9b5de5] opacity-40">Installing the Studio Plugin</h2>
+        <div className="bg-white/5 border border-white/10 rounded-2xl p-6 opacity-40">
+          <p className="text-gray-400 mb-4">The NexusRBX Studio Plugin allows you to import your generated UI boards directly into Roblox Studio with a single click.</p>
+          <ul className="list-decimal list-inside space-y-3 text-gray-300">
             <li>Search for <strong>"NexusRBX"</strong> in the Plugin Marketplace.</li>
             <li>Install the plugin and open the NexusRBX panel.</li>
             <li>Enter your <strong>API Key</strong> to authenticate.</li>
-          </ol>
+            <li>Select a board from your account and click <strong>"Import"</strong>.</li>
+          </ul>
         </div>
       </section>
 

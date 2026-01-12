@@ -875,6 +875,21 @@ const versionHistoryWithLock = useMemo(() => {
           id={`${tabId}-market`}
           tabIndex={0}
         />
+        <SidebarTab
+          label="Plugin"
+          active={activeTab === "plugin"}
+          onClick={() => {
+            setNotification({
+              message: "Roblox Studio Plugin is coming soon!",
+              cta: "Notify Me",
+              onCta: () => setNotification(null)
+            });
+          }}
+          role="tab"
+          aria-selected={activeTab === "plugin"}
+          id={`${tabId}-plugin`}
+          tabIndex={0}
+        />
       </div>
       <div className="flex-grow overflow-y-auto">
         {activeTab === "scripts" && (

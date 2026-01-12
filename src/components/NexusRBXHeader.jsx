@@ -83,6 +83,13 @@ function NexusRBXHeader({
       icon: Activity,
       href: "#",
       comingSoon: true
+    },
+    {
+      name: "Roblox Plugin",
+      description: "Import UI directly into Studio",
+      icon: Download,
+      href: "#",
+      comingSoon: true
     }
   ];
 

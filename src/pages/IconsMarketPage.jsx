@@ -542,7 +542,7 @@ icon.Parent = game.Players.LocalPlayer.PlayerGui:FindFirstChildOfClass("ScreenGu
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: (index % 20) * 0.02 }}
-                  onClick={() => setSelectedIcon(icon)}
+                  onClick={() => navigate(`/icons/${icon.id}`)}
                   className="group relative bg-white/[0.02] border border-white/10 rounded-2xl p-4 hover:bg-white/[0.05] hover:border-[#9b5de5]/50 transition-all cursor-pointer overflow-hidden"
                 >
                   {icon.isPro && (
