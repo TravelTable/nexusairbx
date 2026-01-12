@@ -144,7 +144,9 @@ export default function IconsMarketPage() {
 
   const handleDownload = async (icon) => {
     try {
-      const response = await fetch(icon.imageUrl);
+      // Use backend proxy to bypass CORS
+      const proxyUrl = `${API_BASE}/api/tools/download-proxy?url=${encodeURIComponent(icon.imageUrl)}`;
+      const response = await fetch(proxyUrl);
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
