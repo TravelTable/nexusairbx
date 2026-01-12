@@ -6,3 +6,12 @@
 body > .resize-observer-error {
   display: none !important;
 }
+
+/* Custom Scrollbar for History */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

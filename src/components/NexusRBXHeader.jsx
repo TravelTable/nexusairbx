@@ -1,110 +1,163 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { 
+  ChevronDown, 
+  Sparkles, 
+  Volume2, 
+  Activity, 
+  User, 
+  LogOut, 
+  Settings, 
+  Menu,
+  X,
+  Zap,
+  Layout,
+  Code,
+  ShieldCheck
+} from "lucide-react";
 import TokensCounterContainer from "./TokensCounterContainer";
 import { useLocation } from "react-router-dom";
+import { auth } from "../firebase";
+import { signOut } from "firebase/auth";
 
 /**
- * NexusRBXHeader
- * - Uses <a> for external links (with target="_blank" etc)
- * - Uses <button> for internal navigation, calling navigate() for SPA routing
- * - Highlights active link for internal routes
+ * NexusRBXHeader - Upgraded Floating Glass UI
  */
 function NexusRBXHeader({
-  navLinks,
-  handleNavClick,
   navigate,
   user,
   handleLogin,
   tokenInfo,
   tokenLoading
 }) {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isToolsOpen, setIsToolsOpen] = useState(false);
+  const [isAccountOpen, setIsAccountOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const location = useLocation();
+  const toolsRef = useRef(null);
+  const accountRef = useRef(null);
 
-  useEffect(() => {
-    if (!mobileMenuOpen) return;
-    const handleKeyDown = (e) => {
-      if (e.key === "Escape") setMobileMenuOpen(false);
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [mobileMenuOpen]);
+  const isActive = (path) => location.pathname === path;
 
-  useEffect(() => {
-    if (!mobileMenuOpen) return;
-    const firstFocusable = document.querySelector(".mobile-menu a, .mobile-menu button");
-    if (firstFocusable) firstFocusable.focus();
-  }, [mobileMenuOpen]);
-
-  // Helper: is this link active? (for internal links)
-  const isActive = (href) => {
-    // Only for internal links (not starting with http)
-    if (/^https?:\/\//.test(href)) return false;
-    // Remove trailing slash for comparison
-    const current = location.pathname.replace(/\/$/, "");
-    const link = href.replace(/\/$/, "");
-    return current === link;
+  const handleLogout = async () => {
+    await signOut(auth);
+    navigate("/signin");
   };
 
-  const finalNavLinks = [
-    ...navLinks
-      .filter(link => link.href !== "/board")
-      .map(link => 
-        link.href === "/settings" ? { ...link, text: "Account" } : link
-      ),
-    { id: "api-soon", text: "API", href: "#", comingSoon: true }
+  // Close dropdowns on click outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (toolsRef.current && !toolsRef.current.contains(event.target)) setIsToolsOpen(false);
+      if (accountRef.current && !accountRef.current.contains(event.target)) setIsAccountOpen(false);
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const tools = [
+    {
+      name: "Icon Generator",
+      description: "AI-powered Roblox game assets",
+      icon: Sparkles,
+      href: "/tools/icon-generator",
+      premium: true,
+      badge: "PRO"
+    },
+    {
+      name: "SFX Generator",
+      description: "Custom audio for your game",
+      icon: Volume2,
+      href: "#",
+      comingSoon: true
+    },
+    {
+      name: "Code Doctor",
+      description: "Optimize your Luau scripts",
+      icon: Activity,
+      href: "#",
+      comingSoon: true
+    }
   ];
 
   return (
-    <header className="border-b border-gray-800 bg-black/30 backdrop-blur-md sticky top-0 z-50">
-      <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-        <div
-          className="text-2xl font-bold bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-transparent bg-clip-text cursor-pointer"
+    <div className="fixed top-4 left-0 right-0 z-50 px-4 flex justify-center pointer-events-none">
+      <header className="w-full max-w-6xl bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl px-6 py-2.5 flex items-center justify-between pointer-events-auto shadow-2xl">
+        {/* Logo */}
+        <div 
+          className="text-xl font-black bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-transparent bg-clip-text cursor-pointer flex items-center gap-2"
           onClick={() => navigate("/")}
-          tabIndex={0}
-          aria-label="Go to homepage"
-          onKeyDown={e => { if (e.key === "Enter") navigate("/"); }}
         >
-          NexusRBX
+          <Zap className="h-5 w-5 text-[#00f5d4] fill-[#00f5d4]" />
+          <span className="hidden sm:inline">NexusRBX</span>
         </div>
-        <nav className="hidden md:flex items-center">
-          <div className="flex items-center gap-8">
-            {finalNavLinks.map((link, idx) => (
-              <React.Fragment key={link.id}>
-                {link.external ? (
-                  <a
-                    href={link.href}
-                    className="text-gray-300 hover:text-white transition-colors duration-300"
-                    rel="noopener noreferrer"
-                    target="_blank"
-                  >
-                    {link.text}
-                  </a>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => !link.comingSoon && navigate(link.href)}
-                    className={`text-gray-300 hover:text-white transition-colors duration-300 bg-transparent border-none outline-none cursor-pointer font-sans text-base flex items-center gap-1.5 ${
-                      isActive(link.href) ? "font-bold underline underline-offset-4 text-white" : ""
-                    } ${link.comingSoon ? "opacity-60 cursor-not-allowed" : ""}`}
-                    aria-current={isActive(link.href) ? "page" : undefined}
-                    tabIndex={0}
-                    style={{
-                      background: "none",
-                      padding: 0,
-                      margin: 0,
-                    }}
-                  >
-                    {link.text}
-                    {link.comingSoon && (
-                      <span className="px-1.5 py-0.5 rounded-md bg-[#9b5de5] text-white text-[8px] font-black uppercase tracking-tighter">Soon</span>
-                    )}
-                  </button>
-                )}
-              </React.Fragment>
-            ))}
+
+        {/* Desktop Nav */}
+        <nav className="hidden md:flex items-center gap-1">
+          <NavButton label="Ai Console" active={isActive("/ai")} onClick={() => navigate("/ai")} icon={Code} />
+          
+          {/* Tools Dropdown */}
+          <div className="relative" ref={toolsRef}>
+            <button 
+              onMouseEnter={() => setIsToolsOpen(true)}
+              onClick={() => setIsToolsOpen(!isToolsOpen)}
+              className={`px-4 py-2 rounded-xl text-sm font-medium transition-all flex items-center gap-1.5 ${isToolsOpen ? 'bg-white/10 text-white' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
+            >
+              Tools
+              <ChevronDown className={`h-4 w-4 transition-transform duration-300 ${isToolsOpen ? 'rotate-180' : ''}`} />
+            </button>
+
+            <AnimatePresence>
+              {isToolsOpen && (
+                <motion.div 
+                  initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                  onMouseLeave={() => setIsToolsOpen(false)}
+                  className="absolute top-full left-0 mt-2 w-72 bg-[#0D0D0D] border border-white/10 rounded-2xl p-2 shadow-2xl overflow-hidden"
+                >
+                  <div className="grid gap-1">
+                    {tools.map((tool) => (
+                      <button
+                        key={tool.name}
+                        disabled={tool.comingSoon}
+                        onClick={() => {
+                          if (!tool.comingSoon) {
+                            navigate(tool.href);
+                            setIsToolsOpen(false);
+                          }
+                        }}
+                        className={`w-full flex items-start gap-3 p-3 rounded-xl transition-all text-left group ${tool.comingSoon ? 'opacity-50 cursor-not-allowed' : 'hover:bg-white/5'}`}
+                      >
+                        <div className={`p-2 rounded-lg bg-gradient-to-br ${tool.comingSoon ? 'from-gray-800 to-gray-900' : 'from-[#9b5de5]/20 to-[#00f5d4]/20 group-hover:from-[#9b5de5]/30 group-hover:to-[#00f5d4]/30'}`}>
+                          <tool.icon className={`h-4 w-4 ${tool.comingSoon ? 'text-gray-500' : 'text-[#00f5d4]'}`} />
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-bold text-white">{tool.name}</span>
+                            {tool.badge && (
+                              <span className="text-[10px] font-black px-1.5 py-0.5 rounded bg-[#9b5de5] text-white">{tool.badge}</span>
+                            )}
+                            {tool.comingSoon && (
+                              <span className="text-[8px] font-black px-1.5 py-0.5 rounded bg-gray-800 text-gray-500 uppercase">Soon</span>
+                            )}
+                          </div>
+                          <p className="text-[11px] text-gray-500 mt-0.5">{tool.description}</p>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
-          <div className="flex items-center gap-3 ml-8">
-            {user && (
+
+          <NavButton label="Docs" active={isActive("/docs")} onClick={() => navigate("/docs")} icon={Layout} />
+        </nav>
+
+        {/* Right Side: Tokens & Account */}
+        <div className="flex items-center gap-4">
+          {user && (
+            <div className="hidden lg:block">
               <TokensCounterContainer
                 tokens={{
                   sub: {
@@ -125,136 +178,130 @@ function NexusRBXHeader({
                 showRefreshButton={false}
                 variant="header"
               />
-            )}
-            {!user ? (
-              <button
-                onClick={handleLogin}
-                className="text-gray-300 hover:text-white transition-colors duration-300 font-sans text-base"
-                type="button"
-                aria-label="Login"
-                style={{
-                  background: "none",
-                  border: "none",
-                  padding: 0,
-                  margin: 0,
-                  cursor: "pointer"
-                }}
+            </div>
+          )}
+
+          {user ? (
+            <div className="relative" ref={accountRef}>
+              <button 
+                onClick={() => setIsAccountOpen(!isAccountOpen)}
+                className="h-9 w-9 rounded-full bg-gradient-to-br from-[#9b5de5] to-[#00f5d4] p-0.5 transition-transform hover:scale-105 active:scale-95"
               >
-                Login
+                <div className="h-full w-full rounded-full bg-[#0D0D0D] flex items-center justify-center text-sm font-bold text-white">
+                  {user.email?.[0].toUpperCase()}
+                </div>
               </button>
-            ) : null}
-          </div>
-        </nav>
-        <button
-          className="md:hidden text-gray-300"
-          onClick={() => setMobileMenuOpen((v) => !v)}
-          aria-label={mobileMenuOpen ? "Close navigation menu" : "Open navigation menu"}
-          aria-expanded={mobileMenuOpen}
-          aria-controls="mobile-menu"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-6 w-6"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d={mobileMenuOpen ? "M6 18L18 6M6 6l12 12" : "M4 6h16M4 12h16M4 18h16"}
-            />
-          </svg>
-        </button>
-      </div>
-      {mobileMenuOpen && (
-        <div className="md:hidden bg-black/90 border-b border-gray-800 px-4 py-4 mobile-menu" id="mobile-menu">
-          <nav className="flex flex-col space-y-4">
-            {finalNavLinks.map((link, idx) => (
-              <React.Fragment key={link.id}>
-                {link.external ? (
-                  <a
-                    href={link.href}
-                    tabIndex={0}
-                    className="text-gray-300 hover:text-white transition-colors duration-300"
-                    rel="noopener noreferrer"
-                    target="_blank"
+
+              <AnimatePresence>
+                {isAccountOpen && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                    className="absolute top-full right-0 mt-2 w-56 bg-[#0D0D0D] border border-white/10 rounded-2xl p-2 shadow-2xl"
                   >
-                    {link.text}
-                  </a>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setMobileMenuOpen(false);
-                      navigate(link.href);
-                    }}
-                    className={`text-gray-300 hover:text-white transition-colors duration-300 bg-transparent border-none outline-none cursor-pointer font-sans text-base text-left ${
-                      isActive(link.href) ? "font-bold underline underline-offset-4 text-white" : ""
-                    }`}
-                    aria-current={isActive(link.href) ? "page" : undefined}
-                    tabIndex={0}
-                    style={{
-                      background: "none",
-                      padding: 0,
-                      margin: 0,
-                    }}
-                  >
-                    {link.text}
-                  </button>
+                    <div className="px-3 py-2 border-b border-white/5 mb-1">
+                      <p className="text-xs text-gray-500 truncate">{user.email}</p>
+                    </div>
+                    <AccountMenuItem icon={User} label="Account" onClick={() => { navigate("/settings"); setIsAccountOpen(false); }} />
+                    <AccountMenuItem icon={ShieldCheck} label="Billing" onClick={() => { navigate("/billing"); setIsAccountOpen(false); }} />
+                    <div className="h-px bg-white/5 my-1" />
+                    <AccountMenuItem icon={LogOut} label="Logout" onClick={handleLogout} danger />
+                  </motion.div>
                 )}
-              </React.Fragment>
-            ))}
-            {user && (
-              <div className="px-2">
-                <TokensCounterContainer
-                  tokens={{
-                    sub: {
-                      remaining:
-                        typeof tokenInfo?.sub?.limit === "number" && typeof tokenInfo?.sub?.used === "number"
-                          ? tokenInfo.sub.limit - tokenInfo.sub.used
-                          : 0,
-                      limit: tokenInfo?.sub?.limit ?? 0,
-                    },
-                    payg: {
-                      remaining:
-                        typeof tokenInfo?.payg?.remaining === "number"
-                          ? tokenInfo.payg.remaining
-                          : 0,
-                    },
-                  }}
-                  isLoading={tokenLoading}
-                  showRefreshButton={false}
-                  variant="header"
-                  className="w-full justify-between"
-                />
-              </div>
-            )}
-            {!user ? (
-              <button
-                onClick={() => {
-                  setMobileMenuOpen(false);
-                  handleLogin();
-                }}
-                className="text-gray-300 hover:text-white transition-colors duration-300 font-sans text-base"
-                type="button"
-                aria-label="Login"
-                style={{
-                  background: "none",
-                  border: "none",
-                  padding: 0,
-                  margin: 0,
-                  cursor: "pointer"
-                }}
-              >
-                Login
-              </button>
-            ) : null}
-          </nav>
+              </AnimatePresence>
+            </div>
+          ) : (
+            <button 
+              onClick={handleLogin}
+              className="px-5 py-2 rounded-xl bg-white text-black text-sm font-bold hover:bg-gray-200 transition-colors"
+            >
+              Login
+            </button>
+          )}
+
+          {/* Mobile Menu Toggle */}
+          <button 
+            className="md:hidden p-2 text-gray-400 hover:text-white"
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          >
+            {isMobileMenuOpen ? <X /> : <Menu />}
+          </button>
         </div>
+      </header>
+
+      {/* Mobile Menu */}
+      <AnimatePresence>
+        {isMobileMenuOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="fixed inset-0 z-40 bg-black/95 backdrop-blur-2xl md:hidden pt-24 px-6"
+          >
+            <nav className="flex flex-col gap-2">
+              <MobileNavButton label="Ai Console" active={isActive("/ai")} onClick={() => { navigate("/ai"); setIsMobileMenuOpen(false); }} />
+              <div className="h-px bg-white/5 my-2" />
+              <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest px-4 mb-2">Tools</p>
+              {tools.map(tool => (
+                <MobileNavButton 
+                  key={tool.name}
+                  label={tool.name} 
+                  active={isActive(tool.href)} 
+                  onClick={() => { if(!tool.comingSoon) { navigate(tool.href); setIsMobileMenuOpen(false); } }}
+                  disabled={tool.comingSoon}
+                  badge={tool.badge || (tool.comingSoon ? "Soon" : null)}
+                />
+              ))}
+              <div className="h-px bg-white/5 my-2" />
+              <MobileNavButton label="Docs" active={isActive("/docs")} onClick={() => { navigate("/docs"); setIsMobileMenuOpen(false); }} />
+              <MobileNavButton label="Account" active={isActive("/settings")} onClick={() => { navigate("/settings"); setIsMobileMenuOpen(false); }} />
+            </nav>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+function NavButton({ label, active, onClick, icon: Icon }) {
+  return (
+    <button 
+      onClick={onClick}
+      className={`px-4 py-2 rounded-xl text-sm font-medium transition-all flex items-center gap-2 ${active ? 'bg-white/10 text-white' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
+    >
+      {Icon && <Icon className="h-4 w-4" />}
+      {label}
+    </button>
+  );
+}
+
+function MobileNavButton({ label, active, onClick, disabled, badge }) {
+  return (
+    <button 
+      onClick={onClick}
+      disabled={disabled}
+      className={`w-full flex items-center justify-between px-4 py-4 rounded-2xl text-lg font-bold transition-all ${active ? 'bg-white/10 text-white' : 'text-gray-400'} ${disabled ? 'opacity-50' : ''}`}
+    >
+      {label}
+      {badge && (
+        <span className={`text-[10px] font-black px-2 py-1 rounded ${badge === 'Soon' ? 'bg-gray-800 text-gray-500' : 'bg-[#9b5de5] text-white'}`}>
+          {badge}
+        </span>
       )}
-    </header>
+    </button>
+  );
+}
+
+function AccountMenuItem({ icon: Icon, label, onClick, danger }) {
+  return (
+    <button 
+      onClick={onClick}
+      className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm transition-all ${danger ? 'text-red-400 hover:bg-red-400/10' : 'text-gray-400 hover:bg-white/5 hover:text-white'}`}
+    >
+      <Icon className="h-4 w-4" />
+      {label}
+    </button>
   );
 }
 

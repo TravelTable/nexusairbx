@@ -491,7 +491,15 @@ export default function SubscribePage() {
         </section>
       </main>
 
-      <NexusRBXFooter navigate={navigate} />
+      <NexusRBXFooter 
+        footerLinks={[
+          { id: 1, text: "Terms of Service", href: "/terms" },
+          { id: 2, text: "Privacy Policy", href: "/privacy" },
+          { id: 3, text: "Contact", href: "/contact" },
+          { id: 4, text: "Docs", href: "/docs" },
+        ]}
+        navigate={navigate} 
+      />
 
       <style>{`
         @keyframes shimmer {

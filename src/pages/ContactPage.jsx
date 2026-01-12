@@ -116,12 +116,12 @@ export default function NexusRBXContactPageContainer() {
   ];
   
   const companyInfo = {
-    address: "123 Tech Plaza, Suite 400, San Francisco, CA 94107",
-    phone: "+1 (555) 123-4567",
-    hours: "Monday - Friday: 9AM - 6PM PST",
+    address: "Sydney, New South Wales, Australia",
+    phone: "Contact via Email",
+    hours: "Monday - Friday: 9AM - 5PM AEST",
     socialLinks: [
       { name: "Twitter", url: "https://twitter.com/nexusrbx", icon: Twitter },
-      { name: "GitHub", url: "https://github.com/nexusrbx", icon: Github }
+      { name: "GitHub", url: "https://github.com/TravelTable/nexusairbx", icon: Github }
     ]
   };
   
@@ -463,7 +463,7 @@ function NexusRBXContactPage({
             <a href="/privacy" className="text-gray-400 hover:text-white transition-colors duration-300">Privacy</a>
             <a href="/contact" className="text-white transition-colors duration-300">Contact</a>
             <a 
-              href="#" 
+              href="https://github.com/TravelTable/nexusairbx" 
               className="text-gray-400 hover:text-white transition-colors duration-300 flex items-center gap-2"
             >
               <Github className="h-4 w-4" />
@@ -472,7 +472,7 @@ function NexusRBXContactPage({
           </div>
         </div>
         <div className="max-w-6xl mx-auto mt-4 text-center text-gray-500 text-sm">
-          © 2023 NexusRBX. All rights reserved.
+          © 2026 NexusRBX. All rights reserved.
         </div>
       </footer>
     </div>

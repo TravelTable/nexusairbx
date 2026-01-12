@@ -1,8 +1,8 @@
 // IMPORTS BLOCK (with Helmet import added)
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { Github, Zap, Settings, Shield, ChevronRight, Loader, Star, DollarSign, Layout, Users } from "lucide-react";
-import { motion, useScroll, useTransform, useSpring, useInView } from "framer-motion";
+import { Github, Zap, Settings, Shield, ChevronRight, Loader, Star, DollarSign, Layout, Users, Code, Cpu, Download } from "lucide-react";
+import { motion, useScroll, useTransform, useSpring, useInView, AnimatePresence } from "framer-motion";
 import TokensCounterContainer from "../components/TokensCounterContainer";
 import NexusRBXHeader from "../components/NexusRBXHeader";
 import NexusRBXFooter from "../components/NexusRBXFooter";
@@ -167,7 +167,7 @@ export default function NexusRBXHomepageContainer() {
     { id: 1, text: "Terms of Service", href: "/terms" },
     { id: 2, text: "Privacy Policy", href: "/privacy" },
     { id: 3, text: "Contact", href: "/contact" },
-    { id: 4, text: "Discord (Soon)", href: "#" },
+    { id: 4, text: "Docs", href: "/docs" },
   ];
 
   const handleNavClick = (href, external) => (e) => {
@@ -203,6 +203,40 @@ export default function NexusRBXHomepageContainer() {
   );
 }
 
+// Floating Tool Card Component
+const FloatingToolCard = ({ tool }) => (
+  <motion.div
+    initial={{ opacity: 0, x: tool.position.includes('-left') ? -40 : 40 }}
+    animate={{ 
+      opacity: 1, 
+      x: 0,
+      y: [0, -15, 0],
+    }}
+    transition={{ 
+      opacity: { duration: 0.6, delay: tool.delay },
+      x: { duration: 0.6, delay: tool.delay },
+      y: {
+        duration: 5,
+        repeat: Infinity,
+        ease: "easeInOut",
+        delay: tool.delay
+      }
+    }}
+    className={`absolute ${tool.position} hidden lg:flex flex-col gap-3 p-4 rounded-xl bg-white/[0.02] backdrop-blur-xl border border-white/10 w-56 xl:w-64 z-20 hover:border-[#00f5d4]/40 transition-colors group shadow-2xl`}
+  >
+    <div className="flex items-center gap-3">
+      <div className="p-2 rounded-lg bg-gradient-to-br from-[#9b5de5]/10 to-[#00f5d4]/10 group-hover:from-[#9b5de5]/20 group-hover:to-[#00f5d4]/20 transition-colors">
+        <tool.icon className="h-4 w-4 xl:h-5 xl:w-5 text-[#00f5d4]" />
+      </div>
+      <h3 className="font-bold text-xs xl:text-sm text-white tracking-tight">{tool.title}</h3>
+    </div>
+    <p className="text-[10px] xl:text-[11px] text-gray-400 leading-relaxed">
+      {tool.description}
+    </p>
+    <div className="absolute -bottom-px left-4 right-4 h-px bg-gradient-to-r from-transparent via-[#00f5d4]/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+  </motion.div>
+);
+
 // UI Component
 function NexusRBXHomepage({
   inputValue,
@@ -225,6 +259,41 @@ function NexusRBXHomepage({
   tokenLoading
 }) {
   const containerRef = useRef(null);
+
+  const advertisedTools = [
+    {
+      id: 1,
+      title: "Pro-Grade UI Engine",
+      description: "Generates production-ready hierarchies using UIAspectRatioConstraints and CanvasGroups. Optimized for AutomaticSize responsiveness.",
+      icon: Layout,
+      position: "top-[5%] -left-8 xl:-left-32",
+      delay: 0.2,
+    },
+    {
+      id: 2,
+      title: "Deep Luau Integration",
+      description: "Implements Strict Type Checking and the modern Task library. Built-in support for Signal patterns and ProfileService.",
+      icon: Code,
+      position: "top-[20%] -right-8 xl:-right-32",
+      delay: 0.4,
+    },
+    {
+      id: 3,
+      title: "Nexus-5 Neural Core",
+      description: "Powered by GPT-5.2, fine-tuned for Parallel Luau and Actor patterns. Mastery of complex CFrame math and Spatial Queries.",
+      icon: Cpu,
+      position: "bottom-[15%] -left-4 xl:-left-24",
+      delay: 0.6,
+    },
+    {
+      id: 4,
+      title: "Studio-Ready Workflow",
+      description: "Instant JSON manifest extraction for Rojo or direct Luau injection. Handles AssetId mapping and TweenService easing.",
+      icon: Download,
+      position: "bottom-[0%] -right-4 xl:-right-24",
+      delay: 0.8,
+    },
+  ];
 
   const randomUsers = [
     { letter: "J", color: "from-purple-500 to-indigo-500" },
@@ -307,13 +376,19 @@ function NexusRBXHomepage({
 
       <main className="flex-grow">
         {/* HERO SECTION BLOCK WITH H1 + PARAGRAPH CHANGES AND HERO IMAGE PLACEHOLDER */}
-        <section className="min-h-[70vh] flex items-center justify-center py-20 px-4 relative z-10">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, ease: "easeOut" }}
-            className="max-w-6xl mx-auto text-center space-y-8"
-          >
+        <section className="min-h-[80vh] flex items-center justify-center py-20 px-4 relative z-10 overflow-visible">
+          <div className="max-w-6xl mx-auto relative w-full">
+            {/* Floating Advertisement Boxes */}
+            {advertisedTools.map((tool) => (
+              <FloatingToolCard key={tool.id} tool={tool} />
+            ))}
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, ease: "easeOut" }}
+              className="text-center space-y-8 relative z-10"
+            >
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-sm font-medium text-[#00f5d4] mb-4">
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#00f5d4] opacity-75"></span>
@@ -410,6 +485,7 @@ function NexusRBXHomepage({
               <span>Describe your idea and press <b>Enter</b> or click "Generate with AI"</span>
             </div>
           </motion.div>
+          </div>
         </section>
 
         {/* FEATURES SECTION OPENING WITH H2 AND SAMPLE CARD WITH IMAGE PLACEHOLDER */}
@@ -550,7 +626,7 @@ function NexusRBXHomepage({
       />
 
       {/* CSS Animations */}
-      <style jsx>{`
+      <style>{`
         @keyframes fadeIn {
           from {
             opacity: 0;

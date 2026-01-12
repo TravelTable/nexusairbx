@@ -81,7 +81,7 @@ export default function NexusRBXFooter({
         </div>
       </div>
       <div className="max-w-6xl mx-auto mt-6 text-center text-gray-500 text-sm">
-        © 2023 NexusRBX. All rights reserved.
+        © 2026 NexusRBX. All rights reserved.
       </div>
     </footer>
   );

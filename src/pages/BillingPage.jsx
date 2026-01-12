@@ -693,9 +693,7 @@ export default function BillingPage() {
                 </span>
               )}
               <a
-                href="https://docs.nexusrbx.com/tokens"
-                target="_blank"
-                rel="noopener noreferrer"
+                href="/docs"
                 className="flex items-center gap-1 text-xs text-purple-400 hover:text-teal-400 underline ml-2"
               >
                 <Info className="h-3 w-3" />
