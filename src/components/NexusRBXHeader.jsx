@@ -64,6 +64,13 @@ function NexusRBXHeader({
       badge: "PRO"
     },
     {
+      name: "Icons Market",
+      description: "Browse professional game icons",
+      icon: Layout,
+      href: "/icons-market",
+      premium: false
+    },
+    {
       name: "SFX Generator",
       description: "Custom audio for your game",
       icon: Volume2,

@@ -35,6 +35,7 @@ const NexusRBXSignUpPageContainer = lazy(() => import("./pages/SignUpPage"));
 const NexusRBXTermsPageContainer = lazy(() => import("./pages/TermsPage"));
 const NexusRBXSettingsPageContainer = lazy(() => import("./pages/SettingsPage"));
 const NexusRBXIconGeneratorPage = lazy(() => import("./pages/IconGeneratorPage"));
+const NexusRBXIconsMarketPage = lazy(() => import("./pages/IconsMarketPage"));
 const NexusRBXNotFoundPage = lazy(() => import("./pages/NotFoundPage"));
 const CodeModal = lazy(() => import("./CodeModal"));
 
@@ -145,6 +146,7 @@ function App() {
           <Route path="/signup" element={<NexusRBXSignUpPageContainer />} />
           <Route path="/terms" element={<NexusRBXTermsPageContainer />} />
           <Route path="/tools/icon-generator" element={<NexusRBXIconGeneratorPage />} />
+          <Route path="/icons-market" element={<NexusRBXIconsMarketPage />} />
           <Route path="/script/:id" element={<ScriptShareModalWrapper />} />
           {/* NEW: on-screen entitlements debugger */}
           <Route path="/debug/entitlements" element={<DebugEntitlementsPage />} />

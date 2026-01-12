@@ -863,6 +863,18 @@ const versionHistoryWithLock = useMemo(() => {
           id={`${tabId}-saved`}
           tabIndex={0}
         />
+        <SidebarTab
+          label="Market"
+          active={activeTab === "market"}
+          onClick={() => {
+            setActiveTab("market");
+            window.location.href = "/icons-market";
+          }}
+          role="tab"
+          aria-selected={activeTab === "market"}
+          id={`${tabId}-market`}
+          tabIndex={0}
+        />
       </div>
       <div className="flex-grow overflow-y-auto">
         {activeTab === "scripts" && (
