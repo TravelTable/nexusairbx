@@ -447,9 +447,10 @@ function NexusRBXSignInPage({
                       name="email"
                       value={formData.email}
                       onChange={handleInputChange}
+                      autoComplete="email"
                       className="w-full pl-12 pr-4 py-3.5 bg-black/40 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9b5de5]/20 focus:border-[#9b5de5] transition-all duration-300 text-sm"
                       placeholder="your.email@example.com"
-                      disabled={formStatus.status === "submitting" || formStatus.status === "success"}
+                      disabled={formStatus.status === "submitting"}
                       required
                     />
                   </div>
@@ -473,9 +474,10 @@ function NexusRBXSignInPage({
                       name="password"
                       value={formData.password}
                       onChange={handleInputChange}
+                      autoComplete="current-password"
                       className="w-full pl-12 pr-12 py-3.5 bg-black/40 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9b5de5]/20 focus:border-[#9b5de5] transition-all duration-300 text-sm"
                       placeholder="••••••••"
-                      disabled={formStatus.status === "submitting" || formStatus.status === "success"}
+                      disabled={formStatus.status === "submitting"}
                       required
                     />
                     <button

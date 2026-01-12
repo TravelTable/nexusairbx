@@ -431,6 +431,7 @@ function NexusRBXSignUpPage({
                         name="name"
                         value={formData.name}
                         onChange={handleInputChange}
+                        autoComplete="name"
                         className="w-full pl-12 pr-4 py-3.5 bg-black/40 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9b5de5]/20 focus:border-[#9b5de5] transition-all duration-300 text-sm"
                         placeholder="John Doe"
                         disabled={formStatus.status === "submitting" || formStatus.status === "success"}
@@ -452,6 +453,7 @@ function NexusRBXSignUpPage({
                         name="email"
                         value={formData.email}
                         onChange={handleInputChange}
+                        autoComplete="email"
                         className="w-full pl-12 pr-4 py-3.5 bg-black/40 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9b5de5]/20 focus:border-[#9b5de5] transition-all duration-300 text-sm"
                         placeholder="your.email@example.com"
                         disabled={formStatus.status === "submitting" || formStatus.status === "success"}
@@ -475,6 +477,7 @@ function NexusRBXSignUpPage({
                         name="password"
                         value={formData.password}
                         onChange={handleInputChange}
+                        autoComplete="new-password"
                         className="w-full pl-12 pr-12 py-3.5 bg-black/40 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9b5de5]/20 focus:border-[#9b5de5] transition-all duration-300 text-sm"
                         placeholder="••••••••"
                         disabled={formStatus.status === "submitting" || formStatus.status === "success"}
@@ -539,8 +542,8 @@ function NexusRBXSignUpPage({
                         type={showConfirmPassword ? "text" : "password"}
                         id="confirmPassword"
                         name="confirmPassword"
-                        value={formData.confirmPassword}
                         onChange={handleInputChange}
+                        autoComplete="new-password"
                         className={`w-full pl-12 pr-12 py-3.5 bg-black/40 border rounded-xl focus:outline-none focus:ring-2 transition-all duration-300 text-sm ${
                           formData.confirmPassword && formData.password !== formData.confirmPassword
                             ? "border-red-600 focus:ring-red-600/20 focus:border-red-600"
