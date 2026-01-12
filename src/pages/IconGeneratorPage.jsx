@@ -15,7 +15,11 @@ import {
   ChevronRight,
   Image as ImageIcon,
   AlertCircle,
-  ShieldCheck
+  ShieldCheck,
+  Upload,
+  Wand2,
+  Layers,
+  X
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { auth } from "../firebase";
@@ -36,12 +40,17 @@ export default function IconGeneratorPage() {
   const [history, setHistory] = useState([]);
   const [copied, setCopied] = useState(false);
   const [isPremium, setIsPremium] = useState(false);
+  const [enhancing, setEnhancing] = useState(false);
+  const [referenceImage, setReferenceImage] = useState(null);
+  const [noBackground, setNoBackground] = useState(false);
   
   const [filters, setFilters] = useState({
     style: "3D Rendered",
     subject: "",
     colorMood: "Vibrant",
-    extraDetails: ""
+    extraDetails: "",
+    customStyle: "",
+    customMood: ""
   });
 
   const navigate = useNavigate();
@@ -57,7 +66,21 @@ export default function IconGeneratorPage() {
   useEffect(() => {
     if (!user) return;
     fetchTokens();
+    fetchHistory();
   }, [user]);
+
+  const fetchHistory = async () => {
+    try {
+      const token = await user.getIdToken();
+      const res = await fetch(`${API_BASE}/api/tools/icon-history`, {
+        headers: { "Authorization": `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (data.history) setHistory(data.history);
+    } catch (e) {
+      console.error("Failed to fetch history", e);
+    }
+  };
 
   const fetchTokens = async () => {
     setTokenLoading(true);
@@ -73,9 +96,9 @@ export default function IconGeneratorPage() {
     }
   };
 
-  const handleGenerate = async () => {
-    if (!filters.subject) {
-      setError("Please describe what you want the icon to be (e.g., 'A flaming sword').");
+  const handleGenerate = async (variationImg = null) => {
+    if (!filters.subject && !referenceImage && !variationImg) {
+      setError("Please describe what you want the icon to be or upload a reference image.");
       return;
     }
     
@@ -90,20 +113,61 @@ export default function IconGeneratorPage() {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${token}`
         },
-        body: JSON.stringify(filters)
+        body: JSON.stringify({
+          ...filters,
+          style: filters.style === "Custom" ? filters.customStyle : filters.style,
+          colorMood: filters.colorMood === "Custom" ? filters.customMood : filters.colorMood,
+          noBackground,
+          referenceImage: variationImg || referenceImage,
+          isVariation: !!variationImg
+        })
       });
 
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Generation failed");
 
       setGeneratedImage(data.imageUrl);
-      setHistory(prev => [data.imageUrl, ...prev].slice(0, 10));
-      fetchTokens(); // Refresh token count
+      if (data.entitlements) setTokenInfo(data.entitlements);
+      fetchHistory();
     } catch (e) {
       setError(e.message);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleEnhancePrompt = async () => {
+    if (!filters.subject) return;
+    setEnhancing(true);
+    try {
+      const token = await user.getIdToken();
+      const res = await fetch(`${API_BASE}/api/tools/enhance-prompt`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({ subject: filters.subject, style: filters.style })
+      });
+      const data = await res.json();
+      if (data.enhancedPrompt) {
+        setFilters(prev => ({ ...prev, subject: data.enhancedPrompt }));
+      }
+    } catch (e) {
+      console.error("Enhancement failed", e);
+    } finally {
+      setEnhancing(false);
+    }
+  };
+
+  const handleImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setReferenceImage(reader.result);
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleDownload = async () => {
@@ -123,8 +187,8 @@ export default function IconGeneratorPage() {
     }
   };
 
-  const styles = ["3D Rendered", "Flat Vector", "Cartoonish", "Cyberpunk", "Hand-Drawn", "Minimalist"];
-  const moods = ["Vibrant", "Dark & Moody", "Pastel", "Neon", "Monochrome", "Golden Hour"];
+  const styles = ["3D Rendered", "Flat Vector", "Cartoonish", "Cyberpunk", "Hand-Drawn", "Minimalist", "Anime", "Oil Painting", "Custom"];
+  const moods = ["Vibrant", "Dark & Moody", "Pastel", "Neon", "Monochrome", "Golden Hour", "Glassmorphism", "Custom"];
 
   return (
     <div className="min-h-screen bg-[#0D0D0D] text-white font-sans flex flex-col relative overflow-hidden">
@@ -167,7 +231,17 @@ export default function IconGeneratorPage() {
                 <div className="space-y-6">
                   {/* Subject */}
                   <div>
-                    <label className="block text-xs font-bold text-gray-400 mb-2 uppercase">Icon Subject</label>
+                    <div className="flex justify-between items-center mb-2">
+                      <label className="block text-xs font-bold text-gray-400 uppercase">Icon Subject</label>
+                      <button 
+                        onClick={handleEnhancePrompt}
+                        disabled={enhancing || !filters.subject}
+                        className="text-[10px] font-black text-[#9b5de5] hover:text-[#00f5d4] transition-colors flex items-center gap-1 disabled:opacity-50"
+                      >
+                        {enhancing ? <Loader2 className="h-3 w-3 animate-spin" /> : <Wand2 className="h-3 w-3" />}
+                        Magic Enhance
+                      </button>
+                    </div>
                     <textarea 
                       value={filters.subject}
                       onChange={(e) => setFilters({...filters, subject: e.target.value})}
@@ -176,36 +250,76 @@ export default function IconGeneratorPage() {
                     />
                   </div>
 
+                  {/* Reference Image */}
+                  <div>
+                    <label className="block text-xs font-bold text-gray-400 mb-2 uppercase">Reference Image (Optional)</label>
+                    {referenceImage ? (
+                      <div className="relative w-full h-32 rounded-xl overflow-hidden border border-white/10">
+                        <img src={referenceImage} alt="Reference" className="w-full h-full object-cover" />
+                        <button 
+                          onClick={() => setReferenceImage(null)}
+                          className="absolute top-2 right-2 p-1 bg-black/60 rounded-full hover:bg-red-500 transition-colors"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+                    ) : (
+                      <label className="flex flex-col items-center justify-center w-full h-32 bg-black/40 border-2 border-dashed border-white/10 rounded-xl cursor-pointer hover:border-[#9b5de5]/50 transition-all">
+                        <Upload className="h-6 w-6 text-gray-500 mb-2" />
+                        <span className="text-[10px] font-bold text-gray-500">Upload Reference</span>
+                        <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} />
+                      </label>
+                    )}
+                  </div>
+
                   {/* Style Grid */}
                   <div>
                     <label className="block text-xs font-bold text-gray-400 mb-2 uppercase">Visual Style</label>
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-3 gap-2">
                       {styles.map(s => (
                         <button
                           key={s}
                           onClick={() => setFilters({...filters, style: s})}
-                          className={`px-3 py-2 rounded-lg text-[11px] font-bold border transition-all ${filters.style === s ? 'bg-[#9b5de5]/20 border-[#9b5de5] text-white' : 'bg-white/5 border-transparent text-gray-500 hover:text-gray-300'}`}
+                          className={`px-2 py-2 rounded-lg text-[10px] font-bold border transition-all ${filters.style === s ? 'bg-[#9b5de5]/20 border-[#9b5de5] text-white' : 'bg-white/5 border-transparent text-gray-500 hover:text-gray-300'}`}
                         >
                           {s}
                         </button>
                       ))}
                     </div>
+                    {filters.style === "Custom" && (
+                      <input 
+                        type="text"
+                        value={filters.customStyle}
+                        onChange={(e) => setFilters({...filters, customStyle: e.target.value})}
+                        placeholder="Enter custom style..."
+                        className="w-full mt-2 bg-black/40 border border-white/10 rounded-lg p-2 text-xs focus:border-[#9b5de5] outline-none"
+                      />
+                    )}
                   </div>
 
                   {/* Mood */}
                   <div>
                     <label className="block text-xs font-bold text-gray-400 mb-2 uppercase">Color Mood</label>
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-3 gap-2">
                       {moods.map(m => (
                         <button
                           key={m}
                           onClick={() => setFilters({...filters, colorMood: m})}
-                          className={`px-3 py-2 rounded-lg text-[11px] font-bold border transition-all ${filters.colorMood === m ? 'bg-[#00f5d4]/20 border-[#00f5d4] text-white' : 'bg-white/5 border-transparent text-gray-500 hover:text-gray-300'}`}
+                          className={`px-2 py-2 rounded-lg text-[10px] font-bold border transition-all ${filters.colorMood === m ? 'bg-[#00f5d4]/20 border-[#00f5d4] text-white' : 'bg-white/5 border-transparent text-gray-500 hover:text-gray-300'}`}
                         >
                           {m}
                         </button>
                       ))}
                     </div>
+                    {filters.colorMood === "Custom" && (
+                      <input 
+                        type="text"
+                        value={filters.customMood}
+                        onChange={(e) => setFilters({...filters, customMood: e.target.value})}
+                        placeholder="Enter custom mood..."
+                        className="w-full mt-2 bg-black/40 border border-white/10 rounded-lg p-2 text-xs focus:border-[#00f5d4] outline-none"
+                      />
+                    )}
                   </div>
 
                   {/* Extra Details */}
@@ -218,6 +332,20 @@ export default function IconGeneratorPage() {
                       placeholder="e.g. glowing particles, cinematic fog"
                       className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-sm focus:border-[#9b5de5] outline-none transition-all"
                     />
+                  </div>
+
+                  {/* No Background Toggle */}
+                  <div className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/10">
+                    <div className="flex items-center gap-2">
+                      <Layers className="h-4 w-4 text-[#00f5d4]" />
+                      <span className="text-xs font-bold text-gray-300">Remove Background</span>
+                    </div>
+                    <button 
+                      onClick={() => setNoBackground(!noBackground)}
+                      className={`w-10 h-5 rounded-full transition-all relative ${noBackground ? 'bg-[#00f5d4]' : 'bg-gray-700'}`}
+                    >
+                      <div className={`absolute top-1 w-3 h-3 rounded-full bg-white transition-all ${noBackground ? 'left-6' : 'left-1'}`} />
+                    </button>
                   </div>
 
                   <button
@@ -319,6 +447,13 @@ export default function IconGeneratorPage() {
                           {copied ? <Check className="h-4 w-4 text-green-400" /> : <Copy className="h-4 w-4" />}
                           {copied ? "Copied URL" : "Copy URL"}
                         </button>
+                        <button 
+                          onClick={() => handleGenerate(generatedImage)}
+                          disabled={loading}
+                          className="px-6 py-3 rounded-xl bg-[#9b5de5]/10 border border-[#9b5de5]/20 text-[#9b5de5] font-bold text-sm flex items-center gap-2 hover:bg-[#9b5de5]/20 transition-all disabled:opacity-50"
+                        >
+                          <Sparkles className="h-4 w-4" /> Create Variation
+                        </button>
                       </div>
 
                       <div className="p-4 rounded-2xl bg-blue-500/5 border border-blue-500/10 flex items-start gap-3 max-w-md">
@@ -354,13 +489,13 @@ export default function IconGeneratorPage() {
                     <History className="h-4 w-4" /> Recent Generations
                   </h3>
                   <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
-                    {history.map((img, i) => (
+                    {history.map((item, i) => (
                       <button 
-                        key={i} 
-                        onClick={() => setGeneratedImage(img)}
-                        className={`shrink-0 w-24 h-24 rounded-xl border-2 transition-all overflow-hidden ${generatedImage === img ? 'border-[#9b5de5]' : 'border-transparent opacity-60 hover:opacity-100'}`}
+                        key={item.id || i} 
+                        onClick={() => setGeneratedImage(item.imageUrl)}
+                        className={`shrink-0 w-24 h-24 rounded-xl border-2 transition-all overflow-hidden ${generatedImage === item.imageUrl ? 'border-[#9b5de5]' : 'border-transparent opacity-60 hover:opacity-100'}`}
                       >
-                        <img src={img} alt="History" className="w-full h-full object-cover" />
+                        <img src={item.imageUrl} alt="History" className="w-full h-full object-cover" />
                       </button>
                     ))}
                   </div>
