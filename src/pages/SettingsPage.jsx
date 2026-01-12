@@ -98,6 +98,8 @@ const SettingsPage = () => {
   const [pendingAction, setPendingAction] = useState(null);
   const [successMsg, setSuccessMsg] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
+  const [syncCode, setSyncCode] = useState("");
+  const [syncLoading, setSyncLoading] = useState(false);
 
   const navigate = useNavigate();
 
@@ -230,6 +232,26 @@ const SettingsPage = () => {
     }
     setModalOpen(false);
     setPendingAction(null);
+  };
+
+  const handleGenerateSyncCode = async () => {
+    if (!user) return;
+    setSyncLoading(true);
+    try {
+      const token = await user.getIdToken();
+      const res = await fetch(`${process.env.REACT_APP_BACKEND_URL || "https://nexusrbx-backend-production.up.railway.app"}/api/plugin/sync-code`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setSyncCode(data.syncCode);
+      }
+    } catch (e) {
+      setErrorMsg("Failed to generate sync code.");
+    } finally {
+      setSyncLoading(false);
+    }
   };
 
   const pieData = useMemo(() => [
@@ -702,6 +724,32 @@ const SettingsPage = () => {
               >
                 <LogOut className="w-5 h-5" /> Sign Out
               </button>
+            </div>
+
+            {/* Roblox Plugin Sync */}
+            <div className="bg-gray-900/50 border border-gray-800 rounded-2xl p-6 backdrop-blur-xl">
+              <h3 className="text-lg font-bold text-white mb-2 flex items-center gap-2">
+                <Zap className="w-5 h-5 text-purple-400" />
+                Roblox Studio Plugin
+              </h3>
+              <p className="text-sm text-gray-500 mb-6">Sync your NexusRBX account with the Roblox Studio plugin to import your UI boards directly.</p>
+              
+              {syncCode ? (
+                <div className="p-6 rounded-xl bg-black/40 border border-purple-500/30 text-center">
+                  <p className="text-xs text-gray-500 uppercase font-bold mb-2">Your Sync Code</p>
+                  <div className="text-4xl font-black tracking-[0.5em] text-white mb-4">{syncCode}</div>
+                  <p className="text-xs text-purple-400">Enter this code in the NexusRBX Roblox Plugin. Expires in 5 minutes.</p>
+                </div>
+              ) : (
+                <button 
+                  onClick={handleGenerateSyncCode}
+                  disabled={syncLoading}
+                  className="w-full py-4 rounded-xl bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-white font-bold hover:scale-[1.02] transition-all flex items-center justify-center gap-2"
+                >
+                  {syncLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Sparkles className="w-5 h-5" />}
+                  Generate Sync Code
+                </button>
+              )}
             </div>
 
             <div className="bg-red-500/5 border border-red-500/20 rounded-2xl p-6 backdrop-blur-xl">
