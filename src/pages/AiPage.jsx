@@ -546,6 +546,30 @@ function AiPage() {
     if (!specs && mode === "ui") { setShowUiSpecModal(true); return; }
 
     setUiIsGenerating(true);
+
+    // Fetch contextual icons from Firestore
+    let contextualCatalog = specs?.catalog || [];
+    try {
+      const params = new URLSearchParams();
+      params.append("search", content.split(' ').slice(0, 3).join(' ')); // Use first 3 words of prompt for search
+      params.append("limit", "15");
+      const res = await fetch(`${BACKEND_URL}/api/icons/market?${params.toString()}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.icons && data.icons.length > 0) {
+          const firestoreIcons = data.icons.map(icon => ({
+            name: icon.name,
+            iconId: icon.imageUrl, // Use URL as temporary ID
+            style: icon.style,
+            category: icon.category
+          }));
+          contextualCatalog = [...contextualCatalog, ...firestoreIcons];
+        }
+      }
+    } catch (e) {
+      console.warn("Failed to fetch contextual icons:", e);
+    }
+
     setPendingMessage({ role: "assistant", content: "", type: "ui", prompt: content });
     setGenerationStage("Planning Layout...");
     setPrompt("");
@@ -582,9 +606,11 @@ function AiPage() {
       const stageTimer = setTimeout(() => setGenerationStage("Writing Luau Code..."), 3000);
 
       const pipe = await aiPipeline({
-        token, prompt: content, canvasSize, themeHint, maxItems,
+        token, 
+        prompt: `${content} (IMPORTANT: Use the provided icons from the catalog where appropriate. If an icon from the catalog fits a UI element, use its iconId as the Image property.)`, 
+        canvasSize, themeHint, maxItems,
         gameSpec: settings.gameSpec || "", maxSystemsTokens: settings.uiMaxSystemsTokens,
-        catalog: specs?.catalog || [], animations: specs?.animations || "", customTheme: specs?.theme || null,
+        catalog: contextualCatalog, animations: specs?.animations || "", customTheme: specs?.theme || null,
         platforms: specs?.platforms || ["pc"],
       });
 

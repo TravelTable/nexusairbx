@@ -288,8 +288,18 @@ function PreviewNode({ item, interactive, onAction }) {
   }
 
   if (item.type === "ImageLabel" && item.imageId) {
-    const match = String(item.imageId || "").match(/(\d{5,})/);
-    const src = match ? robloxThumbnailUrl({ assetId: match[1] }) : null;
+    const imageIdStr = String(item.imageId || "");
+    let src = null;
+    
+    if (imageIdStr.startsWith("http")) {
+      // Direct URL (temporary asset from Firestore/AI)
+      src = imageIdStr;
+    } else {
+      // Roblox Asset ID
+      const match = imageIdStr.match(/(\d{5,})/);
+      src = match ? robloxThumbnailUrl({ assetId: match[1] }) : null;
+    }
+
     return (
       <div style={style}>
         {src ? (
