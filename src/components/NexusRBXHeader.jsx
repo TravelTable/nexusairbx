@@ -13,7 +13,8 @@ import {
   Zap,
   Layout,
   Code,
-  ShieldCheck
+  ShieldCheck,
+  Download
 } from "lucide-react";
 import TokensCounterContainer from "./TokensCounterContainer";
 import { useLocation } from "react-router-dom";
