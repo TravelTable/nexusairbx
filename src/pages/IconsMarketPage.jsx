@@ -27,11 +27,7 @@ import { getEntitlements } from "../lib/billing";
 import NexusRBXHeader from "../components/NexusRBXHeader";
 import NexusRBXFooter from "../components/NexusRBXFooter";
 
-const API_BASE = (
-  window.location.hostname === "localhost" 
-    ? "http://localhost:3000" 
-    : (process.env.REACT_APP_BACKEND_URL || "https://nexusrbx-backend-production.up.railway.app")
-).replace(/\/+$/, "");
+const API_BASE = (process.env.REACT_APP_BACKEND_URL || "https://nexusrbx-backend-production.up.railway.app").replace(/\/+$/, "");
 
 export default function IconsMarketPage() {
   const [user, setUser] = useState(null);
