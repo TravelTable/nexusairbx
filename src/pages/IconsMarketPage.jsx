@@ -131,7 +131,7 @@ export default function IconsMarketPage() {
   };
 
   const styles = ["3D Rendered", "Flat Vector", "Cartoonish", "Outline"];
-  const categories = ["Egg", "UI Element"];
+  const categories = ["Egg", "UI Element", "UI Component"];
 
   return (
     <div className="min-h-screen bg-[#0D0D0D] text-white font-sans flex flex-col relative overflow-hidden">
