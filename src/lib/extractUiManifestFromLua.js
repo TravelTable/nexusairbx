@@ -16,8 +16,8 @@ export function extractUiManifestFromLua(lua) {
     jsonText = match[2].trim();
   } else {
     // Fallback: Search for anything that looks like the manifest if the tag is missing.
-    // We look for the core structure: canvasSize and items.
-    const fallbackRegex = /\{[\s\S]*?"canvasSize"[\s\S]*?"items"[\s\S]*?\}/;
+    // We look for the core structure: canvasSize/width and items/elements.
+    const fallbackRegex = /\{[\s\S]*?(?:"canvasSize"|"width")[\s\S]*?(?:"items"|"elements")[\s\S]*?\}/;
     const fallbackMatch = lua.match(fallbackRegex);
     if (fallbackMatch) {
       jsonText = fallbackMatch[0].trim();
@@ -25,7 +25,7 @@ export function extractUiManifestFromLua(lua) {
       // Last ditch effort: find the largest JSON-like block
       const lastDitchRegex = /\{[\s\S]*\}/;
       const lastDitchMatch = lua.match(lastDitchRegex);
-      if (lastDitchMatch && lastDitchMatch[0].includes('"items"')) {
+      if (lastDitchMatch && (lastDitchMatch[0].includes('"items"') || lastDitchMatch[0].includes('"elements"'))) {
         jsonText = lastDitchMatch[0].trim();
       } else {
         // Check for boardState wrapper specifically
@@ -52,10 +52,10 @@ export function extractUiManifestFromLua(lua) {
     .replace(/[\u2018\u2019]/g, "'"); // Normalize smart single quotes
 
   // 3. Handle missing outer braces
-  if (jsonText.includes('"canvasSize"') && !jsonText.startsWith("{")) {
+  if ((jsonText.includes('"canvasSize"') || jsonText.includes('"width"')) && !jsonText.startsWith("{")) {
     jsonText = "{" + jsonText;
   }
-  if (jsonText.includes('"items"') && !jsonText.endsWith("}")) {
+  if ((jsonText.includes('"items"') || jsonText.includes('"elements"')) && !jsonText.endsWith("}")) {
     jsonText = jsonText + "}";
   }
 
@@ -114,14 +114,11 @@ function balanceAndParseJson(text) {
   } catch (e) {
     // Final fallback: try to extract any valid items array we can find
     try {
-      const itemsMatch = recoveredText.match(/"items"\s*:\s*\[([\s\S]*?)\]/);
+      const itemsMatch = recoveredText.match(/"(?:items|elements)"\s*:\s*\[([\s\S]*?)\]/);
       if (itemsMatch) {
         const itemsJson = "[" + itemsMatch[1].replace(/,\s*$/, "") + "]";
         const items = JSON.parse(itemsJson);
-        return {
-          canvasSize: { w: 1280, h: 720 },
-          items: Array.isArray(items) ? items : []
-        };
+        return attemptParse(JSON.stringify({ items }));
       }
     } catch (e2) {
       console.error("Manifest recovery failed completely", e2);
@@ -130,36 +127,57 @@ function balanceAndParseJson(text) {
   }
 }
 
+function normalizeItems(items) {
+  if (!Array.isArray(items)) return [];
+  return items.map(item => ({
+    ...item,
+    w: item.w ?? item.width,
+    h: item.h ?? item.height
+  }));
+}
+
 function attemptParse(text) {
   try {
     const parsed = JSON.parse(text);
-    
+    if (!parsed) return null;
+
+    const normalize = (obj) => {
+      const items = obj.items || obj.elements;
+      if (!Array.isArray(items)) return null;
+      
+      return {
+        items: normalizeItems(items),
+        canvasSize: obj.canvasSize || { 
+          w: obj.w ?? obj.width ?? 1280, 
+          h: obj.h ?? obj.height ?? 720 
+        },
+        catalog: obj.catalog || []
+      };
+    };
+
     // 1. Standard boardState wrapper
-    if (parsed?.boardState) {
+    if (parsed.boardState) {
       // Handle double nesting: { boardState: { boardState: { items: [] }, canvasSize: {} } }
-      if (parsed.boardState.boardState && Array.isArray(parsed.boardState.boardState.items)) {
-        const inner = parsed.boardState.boardState;
-        return {
-          items: inner.items,
-          canvasSize: parsed.boardState.canvasSize || { w: inner.width || 1280, h: inner.height || 720 },
-          catalog: inner.catalog || []
-        };
-      }
-      if (Array.isArray(parsed.boardState.items)) {
-        return parsed.boardState;
+      const innerBS = parsed.boardState.boardState || parsed.boardState;
+      const result = normalize(innerBS);
+      if (result) {
+        // If the outer wrapper had canvasSize, prefer it
+        if (parsed.boardState.canvasSize) {
+          result.canvasSize = parsed.boardState.canvasSize;
+        }
+        return result;
       }
     }
 
     // 2. Direct boardState object
-    if (parsed?.items && Array.isArray(parsed.items)) {
-      return parsed;
-    }
+    const result = normalize(parsed);
+    if (result) return result;
     
     // 3. Raw array of items
     if (Array.isArray(parsed)) {
       return {
         canvasSize: { w: 1280, h: 720 },
-        items: parsed
+        items: normalizeItems(parsed)
       };
     }
     
