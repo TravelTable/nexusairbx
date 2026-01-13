@@ -4,7 +4,7 @@ import ScriptLoadingBarContainer from "../ScriptLoadingBarContainer";
 import GenerationStatusBar from "./GenerationStatusBar";
 import { MessageSquare, Zap, Bug, Rocket } from "lucide-react";
 import { FixedSizeList as List } from "react-window";
-import AutoSizer from "react-virtualized-auto-sizer";
+import { AutoSizer } from "react-virtualized-auto-sizer";
 
 const quickStarts = [
   { icon: <Zap className="w-4 h-4 text-yellow-400" />, label: "Optimize Script", prompt: "Can you optimize this Luau script for better performance?" },

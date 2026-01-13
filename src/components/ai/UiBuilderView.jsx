@@ -4,7 +4,7 @@ import ScriptLoadingBarContainer from "../ScriptLoadingBarContainer";
 import GenerationStatusBar from "./GenerationStatusBar";
 import { Layout, Palette, MousePointer2, Sparkles } from "lucide-react";
 import { FixedSizeList as List } from "react-window";
-import AutoSizer from "react-virtualized-auto-sizer";
+import { AutoSizer } from "react-virtualized-auto-sizer";
 
 const uiQuickStarts = [
   { icon: <Layout className="w-4 h-4 text-[#00f5d4]" />, label: "Main Menu", prompt: "Military themed main menu with Play, Settings, Shop" },
