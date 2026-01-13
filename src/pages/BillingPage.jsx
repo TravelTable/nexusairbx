@@ -653,7 +653,8 @@ export default function BillingPage() {
                   setError("");
                   setNote("Refreshing subscription status…");
                   try {
-                    setEntitlements(await getEntitlements({ noCache: true }));
+                    const data = await getEntitlements({ noCache: true });
+                    setEntitlements(data);
                   } catch (e) {
                     setError(e?.message || "Could not load billing info.");
                   } finally {

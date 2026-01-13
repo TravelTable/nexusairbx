@@ -150,7 +150,7 @@ const safeFile = (title) =>
 
 function AiPage() {
   // 1. External Hooks
-  const { plan, totalRemaining, subLimit, resetsAt } = useBilling();
+  const { plan, totalRemaining, subLimit, resetsAt, refresh: refreshBilling } = useBilling();
   const { settings, updateSettings } = useSettings();
   const navigate = useNavigate();
   const location = useLocation();
@@ -246,6 +246,7 @@ function AiPage() {
         setActiveUiId(id);
         const tokenMsg = data.tokensConsumed ? ` (${formatNumber(data.tokensConsumed)} tokens used)` : "";
         notify({ message: `UI refined successfully${tokenMsg}`, type: "success" });
+        refreshBilling();
       }
     } catch (e) {
       notify({ message: "Refinement failed", type: "error" });
@@ -496,6 +497,7 @@ function AiPage() {
       setPrompt("");
       const tokenMsg = pipe?.tokensConsumed ? ` (${formatNumber(pipe.tokensConsumed)} tokens used)` : "";
       notify({ message: `UI generated and saved.${tokenMsg}`, type: "success" });
+      refreshBilling();
     } catch (e) {
       notify({ message: e?.message || "UI generation failed", type: "error" });
     } finally {
@@ -580,6 +582,7 @@ function AiPage() {
           updatedAt: serverTimestamp(),
           lastMessage: content.slice(0, 50),
         });
+        refreshBilling();
       }
     } catch (e) {
       console.error(e);

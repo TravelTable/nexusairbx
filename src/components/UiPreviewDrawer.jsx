@@ -7,6 +7,7 @@ import luaLang from "react-syntax-highlighter/dist/esm/languages/hljs/lua";
 import { atomOneDark } from "react-syntax-highlighter/dist/esm/styles/hljs";
 import { aiGenerateFunctionality, robloxCatalogSearch, robloxThumbnailUrl } from "../lib/uiBuilderApi";
 import { extractUiManifestFromLua } from "../lib/extractUiManifestFromLua";
+import { useBilling } from "../context/BillingContext";
 import PreviewTab from "./UiPreview/PreviewTab";
 import CodeTab from "./UiPreview/CodeTab";
 import FunctionalityTab from "./UiPreview/FunctionalityTab";
@@ -31,6 +32,7 @@ export default function UiPreviewDrawer({
   onRefine,
   onUpdateLua,
 }) {
+  const { refresh: refreshBilling } = useBilling();
   const [tab, setTab] = useState("preview"); // "preview" | "code" | "functionality" | "history" | "assets"
   const [lastEvent, setLastEvent] = useState(null);
   const [refineInput, setRefineInput] = useState("");
@@ -143,6 +145,7 @@ export default function UiPreviewDrawer({
       });
       setFuncPlan(data.plan);
       setFuncScripts(data.scripts || []);
+      refreshBilling();
     } catch (e) {
       console.error(e);
     } finally {

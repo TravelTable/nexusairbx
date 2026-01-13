@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import {
   X, Copy, Check, Download, Star, StarOff, Trash2, Edit, Save, Loader, Share2, Tag, Plus, ChevronDown, ChevronUp, Wand2, Info, ListChecks
 } from "lucide-react";
+import { useBilling } from "./context/BillingContext";
 import { motion, AnimatePresence } from "framer-motion";
 import { Light as SyntaxHighlighter } from "react-syntax-highlighter";
 import lua from "react-syntax-highlighter/dist/esm/languages/hljs/lua";
@@ -72,6 +73,7 @@ export default function CodeModal({
   user,
   readOnly = false // If true, disables editing/deleting/favoriting/tagging
 }) {
+  const { refresh: refreshBilling } = useBilling();
   const [loading, setLoading] = useState(true);
   const [script, setScript] = useState(null);
   const [error, setError] = useState("");
@@ -294,6 +296,7 @@ const handleEditSave = async () => {
       .then(res => {
         setAiResult(res.improved || res.explanation || res.lint || "No result.");
         setAiLoading(false);
+        refreshBilling();
       })
       .catch(() => {
         setAiResult("Failed to get result.");

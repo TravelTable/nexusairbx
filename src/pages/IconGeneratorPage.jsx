@@ -24,7 +24,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import { auth } from "../firebase";
 import { onAuthStateChanged } from "firebase/auth";
-import { getEntitlements } from "../lib/billing";
+import { getEntitlements, summarizeEntitlements } from "../lib/billing";
 import NexusRBXHeader from "../components/NexusRBXHeader";
 import NexusRBXFooter from "../components/NexusRBXFooter";
 
@@ -86,6 +86,7 @@ export default function IconGeneratorPage() {
     setTokenLoading(true);
     try {
       const data = await getEntitlements();
+      const summary = summarizeEntitlements(data);
       setTokenInfo(data);
       const premium = data.entitlements?.includes("pro") || data.entitlements?.includes("team");
       setIsPremium(premium);
@@ -128,6 +129,7 @@ export default function IconGeneratorPage() {
 
       setGeneratedImage(data.imageUrl);
       if (data.entitlements) setTokenInfo(data.entitlements);
+      fetchTokens();
       fetchHistory();
     } catch (e) {
       setError(e.message);
