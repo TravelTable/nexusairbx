@@ -103,29 +103,25 @@ export default function UiPreviewDrawer({
     URL.revokeObjectURL(url);
   };
 
-  const handleFinalizeAssets = () => {
-    if (!lua) return;
+  const handleFinalizeAssets = async () => {
+    if (!manifest?.boardState) return;
     setIsFinalizing(true);
     
-    let newLua = lua;
+    const newBoardState = JSON.parse(JSON.stringify(manifest.boardState));
     let replacedCount = 0;
 
-    Object.entries(assetIds).forEach(([tempUrl, robloxId]) => {
-      if (robloxId && robloxId.trim()) {
-        const cleanId = robloxId.replace(/\D/g, "");
+    newBoardState.items.forEach(item => {
+      if (item.imageId && assetIds[item.imageId]) {
+        const cleanId = assetIds[item.imageId].replace(/\D/g, "");
         if (cleanId) {
-          const rbxAssetId = `rbxassetid://${cleanId}`;
-          // Replace in Lua code (both in the Instance properties and the JSON manifest)
-          // We use a global regex to replace all occurrences of the temp URL
-          const escapedUrl = tempUrl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-          newLua = newLua.replace(new RegExp(escapedUrl, 'g'), rbxAssetId);
+          item.imageId = `rbxassetid://${cleanId}`;
           replacedCount++;
         }
       }
     });
 
     if (replacedCount > 0) {
-      onUpdateLua(newLua);
+      await onUpdateLua(newBoardState);
       setTab("preview");
       setShowWorkflowModal(false);
     }
@@ -167,41 +163,20 @@ export default function UiPreviewDrawer({
     }
   };
 
-  const updateNodeProperty = (nodeId, property, value) => {
-    if (!lua || !nodeId) return;
+  const updateNodeProperty = async (nodeId, property, value) => {
+    if (!manifest?.boardState || !nodeId) return;
     
-    const lines = lua.split('\n');
-    let inTargetNode = false;
-    let inManifest = false;
-    
-    const newLines = lines.map(line => {
-      // Handle Lua Instance part
-      if (line.includes(`nodes["${nodeId}"]`)) inTargetNode = true;
-      if (inTargetNode && line.includes(`node.${property} =`)) {
-        inTargetNode = false;
-        const formattedValue = typeof value === 'string' ? `"${value}"` : value;
-        return line.replace(new RegExp(`node\\.${property}\\s*=\\s*.*`), `node.${property} = ${formattedValue}`);
-      }
-
-      // Handle Manifest JSON part
-      if (line.includes(`"id": "${nodeId}"`)) inManifest = true;
+    const newBoardState = JSON.parse(JSON.stringify(manifest.boardState));
+    const item = newBoardState.items.find(it => it.id === nodeId);
+    if (item) {
       const jsonProp = property.charAt(0).toLowerCase() + property.slice(1);
-      if (inManifest && line.includes(`"${jsonProp}":`)) {
-        inManifest = false;
-        const formattedValue = typeof value === 'string' ? `"${value}"` : value;
-        return line.replace(new RegExp(`"${jsonProp}":\\s*.*`), `"${jsonProp}": ${formattedValue},`);
-      }
-      return line;
-    });
-
-    onUpdateLua(newLines.join('\n'));
+      item[jsonProp] = value;
+      await onUpdateLua(newBoardState);
+    }
   };
 
   const applyImageId = async (nodeId, assetId) => {
-    // Roblox Decal IDs are often 1 digit away from the actual Image ID.
-    // The Toolbox API returns the AssetId which usually works directly.
-    updateNodeProperty(nodeId, 'Image', `rbxassetid://${assetId}`);
-    console.log(`Applied Asset ID: ${assetId} to node: ${nodeId}`);
+    await updateNodeProperty(nodeId, 'ImageId', `rbxassetid://${assetId}`);
   };
   const [copySuccess, setCopySuccess] = useState(false);
 

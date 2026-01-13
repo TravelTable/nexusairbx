@@ -212,6 +212,15 @@ export async function aiRefineLua({ token, lua, instruction }) {
   return handleResponse(res);
 }
 
+export async function exportLua({ token, boardState }) {
+  const res = await fetch(`${BACKEND_URL}/api/ui-builder/export-lua`, {
+    method: "POST",
+    headers: authHeaders(token),
+    body: JSON.stringify({ boardState }),
+  });
+  return handleResponse(res);
+}
+
 export async function aiGenerateFunctionality({ token, lua, prompt, gameSpec = "" }) {
   const res = await fetch(`${BACKEND_URL}/api/ui-builder/ai/generate-functionality`, {
     method: "POST",

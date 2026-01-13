@@ -1,8 +1,10 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { NexusRBXAvatar, UserAvatar, FormatText } from "./AiComponents";
 import ScriptLoadingBarContainer from "../ScriptLoadingBarContainer";
 import GenerationStatusBar from "./GenerationStatusBar";
 import { Layout, Palette, MousePointer2, Sparkles } from "lucide-react";
+import { FixedSizeList as List } from "react-window";
+import AutoSizer from "react-virtualized-auto-sizer";
 
 const uiQuickStarts = [
   { icon: <Layout className="w-4 h-4 text-[#00f5d4]" />, label: "Main Menu", prompt: "Military themed main menu with Play, Settings, Shop" },
@@ -19,10 +21,43 @@ export default function UiBuilderView({
   onQuickStart,
   chatEndRef 
 }) {
-  const uiMessages = messages.filter(m => m.metadata?.type === "ui" || m.type === "ui" || (m.role === 'assistant' && m.code));
+  const uiMessages = useMemo(() => 
+    messages.filter(m => m.metadata?.type === "ui" || m.type === "ui" || (m.role === 'assistant' && m.code)),
+    [messages]
+  );
+
+  const Row = ({ index, style }) => {
+    const m = uiMessages[index];
+    return (
+      <div style={style} className="pb-6">
+        <div className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'} gap-4 group`}>
+          {m.role === 'assistant' && <NexusRBXAvatar />}
+          <div className={`max-w-[85%] md:max-w-[80%] ${m.role === 'user' ? 'order-1' : 'order-2'}`}>
+            <div className={`p-4 md:p-5 rounded-2xl ${m.role === 'user' 
+              ? 'bg-gradient-to-br from-[#00f5d4] to-[#9b5de5] text-white shadow-lg border border-white/10' 
+              : 'bg-[#121212] border border-white/5 backdrop-blur-md shadow-xl'}`}>
+              {m.content && m.role === 'user' && <div className="text-[14px] md:text-[15px] whitespace-pre-wrap leading-relaxed text-white">{m.content}</div>}
+              {m.explanation && <div className="text-[14px] md:text-[15px] whitespace-pre-wrap leading-relaxed text-gray-100"><FormatText text={m.explanation} /></div>}
+              {m.role === 'assistant' && m.code && (
+                <div className="mt-4">
+                  <ScriptLoadingBarContainer
+                    filename={m.title || "Generated_UI.lua"}
+                    codeReady={!!m.code}
+                    loading={false}
+                    onView={() => onViewUi(m)}
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+          {m.role === 'user' && <UserAvatar email={user?.email} />}
+        </div>
+      </div>
+    );
+  };
 
   return (
-    <div className="w-full max-w-5xl mx-auto space-y-6">
+    <div className="w-full max-w-5xl mx-auto h-full flex flex-col">
       {uiMessages.length === 0 && !pendingMessage ? (
         <div className="min-h-[50vh] flex flex-col items-center justify-center text-center space-y-8">
           <div className="space-y-2">
@@ -52,31 +87,20 @@ export default function UiBuilderView({
           </div>
         </div>
       ) : (
-        <>
-          {uiMessages.map((m) => (
-            <div key={m.id} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'} gap-4 group animate-in fade-in slide-in-from-bottom-4 duration-500`}>
-              {m.role === 'assistant' && <NexusRBXAvatar />}
-              <div className={`max-w-[85%] md:max-w-[80%] ${m.role === 'user' ? 'order-1' : 'order-2'}`}>
-                <div className={`p-4 md:p-5 rounded-2xl ${m.role === 'user' 
-                  ? 'bg-gradient-to-br from-[#00f5d4] to-[#9b5de5] text-white shadow-lg border border-white/10' 
-                  : 'bg-[#121212] border border-white/5 backdrop-blur-md shadow-xl'}`}>
-                  {m.content && m.role === 'user' && <div className="text-[14px] md:text-[15px] whitespace-pre-wrap leading-relaxed text-white">{m.content}</div>}
-                  {m.explanation && <div className="text-[14px] md:text-[15px] whitespace-pre-wrap leading-relaxed text-gray-100"><FormatText text={m.explanation} /></div>}
-                  {m.role === 'assistant' && m.code && (
-                    <div className="mt-4">
-                      <ScriptLoadingBarContainer
-                        filename={m.title || "Generated_UI.lua"}
-                        codeReady={!!m.code}
-                        loading={false}
-                        onView={() => onViewUi(m)}
-                      />
-                    </div>
-                  )}
-                </div>
-              </div>
-              {m.role === 'user' && <UserAvatar email={user?.email} />}
-            </div>
-          ))}
+        <div className="flex-1 min-h-0">
+          <AutoSizer>
+            {({ height, width }) => (
+              <List
+                height={height}
+                itemCount={uiMessages.length}
+                itemSize={150}
+                width={width}
+                className="scrollbar-hide"
+              >
+                {Row}
+              </List>
+            )}
+          </AutoSizer>
 
           {pendingMessage && pendingMessage.type === "ui" && (
             <>
@@ -98,7 +122,7 @@ export default function UiBuilderView({
             </>
           )}
           <div ref={chatEndRef} />
-        </>
+        </div>
       )}
     </div>
   );

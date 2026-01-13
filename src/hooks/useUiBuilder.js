@@ -8,7 +8,7 @@ import {
   addDoc 
 } from "firebase/firestore";
 import { v4 as uuidv4 } from "uuid";
-import { aiPipeline, aiRefineLua } from "../lib/uiBuilderApi";
+import { aiPipeline, aiRefineLua, exportLua } from "../lib/uiBuilderApi";
 import { cryptoRandomId } from "../lib/versioning";
 import { formatNumber } from "../lib/aiUtils";
 
@@ -23,6 +23,19 @@ export function useUiBuilder(user, settings, refreshBilling, notify) {
   const [pendingMessage, setPendingMessage] = useState(null);
 
   const activeUi = uiGenerations.find((g) => g.id === activeUiId) || uiGenerations[0] || null;
+
+  const refreshLua = useCallback(async (boardState) => {
+    if (!user || !boardState) return;
+    try {
+      const token = await user.getIdToken();
+      const data = await exportLua({ token, boardState });
+      if (data.lua && activeUiId) {
+        setUiGenerations(prev => prev.map(g => g.id === activeUiId ? { ...g, lua: data.lua, boardState } : g));
+      }
+    } catch (e) {
+      notify({ message: "Failed to update Lua code", type: "error" });
+    }
+  }, [user, activeUiId, notify]);
 
   const handleRefine = useCallback(async (instruction) => {
     if (!activeUi?.lua || !user) return;
@@ -185,6 +198,7 @@ export function useUiBuilder(user, settings, refreshBilling, notify) {
     pendingMessage,
     activeUi,
     handleRefine,
-    handleGenerateUiPreview
+    handleGenerateUiPreview,
+    refreshLua
   };
 }
