@@ -10,9 +10,9 @@ import { extractUiManifestFromLua } from "../lib/extractUiManifestFromLua";
 import PreviewTab from "./UiPreview/PreviewTab";
 import CodeTab from "./UiPreview/CodeTab";
 import FunctionalityTab from "./UiPreview/FunctionalityTab";
-import ImagesTab from "./UiPreview/ImagesTab";
 import AssetsTab from "./UiPreview/AssetsTab";
 import HistoryTab from "./UiPreview/HistoryTab";
+import IconWorkflowModal from "./UiPreview/IconWorkflowModal";
 
 // Register lua highlighting
 SyntaxHighlighter.registerLanguage("lua", luaLang);
@@ -31,7 +31,7 @@ export default function UiPreviewDrawer({
   onRefine,
   onUpdateLua,
 }) {
-  const [tab, setTab] = useState("preview"); // "preview" | "code" | "functionality" | "history" | "images" | "assets"
+  const [tab, setTab] = useState("preview"); // "preview" | "code" | "functionality" | "history" | "assets"
   const [lastEvent, setLastEvent] = useState(null);
   const [refineInput, setRefineInput] = useState("");
   const [isRefining, setIsRefining] = useState(false);
@@ -59,6 +59,7 @@ export default function UiPreviewDrawer({
   // Asset Management State
   const [assetIds, setAssetIds] = useState({}); // { [tempUrl]: robloxId }
   const [isFinalizing, setIsFinalizing] = useState(false);
+  const [showWorkflowModal, setShowWorkflowModal] = useState(false);
 
   const uniqueAssets = useMemo(() => {
     const assets = new Map();
@@ -124,7 +125,7 @@ export default function UiPreviewDrawer({
     if (replacedCount > 0) {
       onUpdateLua(newLua);
       setTab("preview");
-      // notify is not available here, but we can use a local state or just rely on the preview update
+      setShowWorkflowModal(false);
     }
     setIsFinalizing(false);
   };
@@ -207,6 +208,16 @@ export default function UiPreviewDrawer({
       return () => clearTimeout(timer);
     }
   }, [copySuccess]);
+
+  // Automatically show workflow modal if new UI has temporary icons
+  useEffect(() => {
+    if (open && uniqueAssets.length > 0) {
+      const hasUnfilledIds = uniqueAssets.some(a => !assetIds[a.url]);
+      if (hasUnfilledIds) {
+        setShowWorkflowModal(true);
+      }
+    }
+  }, [open, uniqueAssets.length]);
 
   const handleCopy = async () => {
     try {
@@ -323,20 +334,6 @@ export default function UiPreviewDrawer({
             </button>
             <button
               type="button"
-              onClick={() => setTab("images")}
-              className={`px-3 py-2 rounded text-sm border whitespace-nowrap relative ${
-                tab === "images"
-                  ? "border-[#00f5d4] bg-[#00f5d4]/10 text-white"
-                  : "border-gray-800 bg-black/20 text-gray-300 hover:bg-black/30"
-              }`}
-            >
-              Images
-              {imageNodes.some(n => !n.imageId || n.imageId.includes('//0')) && (
-                <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse" />
-              )}
-            </button>
-            <button
-              type="button"
               onClick={() => setTab("assets")}
               className={`px-3 py-2 rounded text-sm border whitespace-nowrap relative ${
                 tab === "assets"
@@ -344,7 +341,7 @@ export default function UiPreviewDrawer({
                   : "border-gray-800 bg-black/20 text-gray-300 hover:bg-black/30"
               }`}
             >
-              Assets
+              Icons & Assets
               {uniqueAssets.length > 0 && !uniqueAssets.every(a => assetIds[a.url]) && (
                 <span className="absolute -top-1 -right-1 w-2 h-2 bg-[#00f5d4] rounded-full animate-pulse" />
               )}
@@ -395,20 +392,6 @@ export default function UiPreviewDrawer({
               handleGenerateFunctionality={handleGenerateFunctionality}
             />
           )}
-          {tab === "images" && (
-            <ImagesTab
-              imageNodes={imageNodes}
-              selectedImageNode={selectedImageNode}
-              setSelectedImageNode={setSelectedImageNode}
-              imageSearchQuery={imageSearchQuery}
-              setImageSearchQuery={setImageSearchQuery}
-              handleImageSearch={handleImageSearch}
-              isSearchingImages={isSearchingImages}
-              imageSearchResults={imageSearchResults}
-              applyImageId={applyImageId}
-              updateNodeProperty={updateNodeProperty}
-            />
-          )}
           {tab === "assets" && (
             <AssetsTab
               uniqueAssets={uniqueAssets}
@@ -428,6 +411,17 @@ export default function UiPreviewDrawer({
           )}
         </div>
       </div>
+
+      <IconWorkflowModal
+        isOpen={showWorkflowModal}
+        onClose={() => setShowWorkflowModal(false)}
+        uniqueAssets={uniqueAssets}
+        assetIds={assetIds}
+        setAssetIds={setAssetIds}
+        onFinalize={handleFinalizeAssets}
+        isFinalizing={isFinalizing}
+        handleDownloadAllAssets={handleDownloadAllAssets}
+      />
     </div>
   );
 }
