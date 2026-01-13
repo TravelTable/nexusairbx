@@ -11,6 +11,9 @@ import { onAuthStateChanged, signOut } from "firebase/auth";
 import { getEntitlements } from "../lib/billing";
 import SubscribeTabContainer from "../components/SubscribeTabContainer";
 import { Helmet } from "react-helmet";
+import HeroSection from "../components/home/HeroSection";
+import FeaturesSection from "../components/home/FeaturesSection";
+import CommunityCreationsSection from "../components/home/CommunityCreationsSection";
 
 // Container Component
 export default function NexusRBXHomepageContainer() {
@@ -204,40 +207,6 @@ export default function NexusRBXHomepageContainer() {
   );
 }
 
-// Floating Tool Card Component
-const FloatingToolCard = ({ tool }) => (
-  <motion.div
-    initial={{ opacity: 0, x: tool.position.includes('-left') ? -40 : 40 }}
-    animate={{ 
-      opacity: 1, 
-      x: 0,
-      y: [0, -15, 0],
-    }}
-    transition={{ 
-      opacity: { duration: 0.6, delay: tool.delay },
-      x: { duration: 0.6, delay: tool.delay },
-      y: {
-        duration: 5,
-        repeat: Infinity,
-        ease: "easeInOut",
-        delay: tool.delay
-      }
-    }}
-    className={`absolute ${tool.position} hidden lg:flex flex-col gap-3 p-4 rounded-xl bg-white/[0.02] backdrop-blur-xl border border-white/10 w-56 xl:w-64 z-20 hover:border-[#00f5d4]/40 transition-colors group shadow-2xl`}
-  >
-    <div className="flex items-center gap-3">
-      <div className="p-2 rounded-lg bg-gradient-to-br from-[#9b5de5]/10 to-[#00f5d4]/10 group-hover:from-[#9b5de5]/20 group-hover:to-[#00f5d4]/20 transition-colors">
-        <tool.icon className="h-4 w-4 xl:h-5 xl:w-5 text-[#00f5d4]" />
-      </div>
-      <h3 className="font-bold text-xs xl:text-sm text-white tracking-tight">{tool.title}</h3>
-    </div>
-    <p className="text-[10px] xl:text-[11px] text-gray-400 leading-relaxed">
-      {tool.description}
-    </p>
-    <div className="absolute -bottom-px left-4 right-4 h-px bg-gradient-to-r from-transparent via-[#00f5d4]/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-  </motion.div>
-);
-
 // UI Component
 function NexusRBXHomepage({
   inputValue,
@@ -376,247 +345,22 @@ function NexusRBXHomepage({
       />
 
       <main className="flex-grow">
-        {/* HERO SECTION BLOCK WITH H1 + PARAGRAPH CHANGES AND HERO IMAGE PLACEHOLDER */}
-        <section className="min-h-[80vh] flex items-center justify-center py-20 px-4 relative z-10 overflow-visible">
-          <div className="max-w-6xl mx-auto relative w-full">
-            {/* Floating Advertisement Boxes */}
-            {advertisedTools.map((tool) => (
-              <FloatingToolCard key={tool.id} tool={tool} />
-            ))}
+        <HeroSection
+          advertisedTools={advertisedTools}
+          randomUsers={randomUsers}
+          handleSubmit={handleSubmit}
+          inputValue={inputValue}
+          handleInputChange={handleInputChange}
+          loading={loading}
+          error={error}
+        />
 
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, ease: "easeOut" }}
-              className="text-center space-y-8 relative z-10"
-            >
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-sm font-medium text-[#00f5d4] mb-4">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#00f5d4] opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-[#00f5d4]"></span>
-              </span>
-              Nexus-5 (GPT-5.2) Engine Now Live
-            </div>
+        <FeaturesSection
+          featureCards={featureCards}
+          navigate={navigate}
+        />
 
-            <h1 className="text-4xl md:text-7xl font-bold tracking-tight bg-gradient-to-r from-[#9b5de5] via-[#f15bb5] to-[#00f5d4] text-transparent bg-clip-text leading-tight">
-              The Ultimate AI UI Builder <br className="hidden md:block" /> & Script Generator
-            </h1>
-            <p className="text-lg md:text-2xl text-gray-400 max-w-3xl mx-auto leading-relaxed">
-              Design stunning interfaces and complex game logic in seconds. NexusRBX turns your ideas into production-ready <a href="/ai" className="underline decoration-[#9b5de5]/60 hover:decoration-[#9b5de5] text-white">Lua code</a> for Roblox Studio.
-            </p>
-
-            {/* Social Proof Spot */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.5 }}
-              className="flex flex-col items-center gap-4 pt-4"
-            >
-              <div className="flex -space-x-3">
-                {randomUsers.map((u, i) => (
-                  <div key={i} className={`w-10 h-10 rounded-full border-2 border-[#0D0D0D] bg-gradient-to-br ${u.color} flex items-center justify-center text-xs font-bold shadow-lg`}>
-                    {u.letter}
-                  </div>
-                ))}
-                <div className="w-10 h-10 rounded-full border-2 border-[#0D0D0D] bg-gray-800 flex items-center justify-center text-[10px] font-bold text-gray-400 shadow-lg">
-                  +5k
-                </div>
-              </div>
-              <p className="text-sm font-medium text-gray-400">
-                Helping <span className="text-white font-bold">5,000+</span> Roblox Developers
-              </p>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.3, duration: 0.8 }}
-              className="max-w-4xl mx-auto mt-12 relative group"
-            >
-              <div className="absolute -inset-1 bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] rounded-2xl blur opacity-20 group-hover:opacity-40 transition duration-1000 group-hover:duration-200"></div>
-              <img
-                src="/ai-preview.png"
-                alt="AI Generation Preview"
-                className="relative w-full rounded-2xl border border-white/10 shadow-2xl"
-              />
-            </motion.div>
-            <form
-              onSubmit={handleSubmit}
-              className="mt-12 flex flex-col md:flex-row gap-3 max-w-2xl mx-auto relative z-20"
-            >
-              <input
-                type="text"
-                value={inputValue}
-                onChange={handleInputChange}
-                placeholder="Describe a UI or script idea..."
-                className="flex-grow px-4 py-3 rounded-lg bg-gray-900/60 border border-gray-700 focus:border-[#9b5de5] focus:outline-none focus:ring-2 focus:ring-[#9b5de5]/50 transition-all duration-300"
-                disabled={loading}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault();
-                  }
-                }}
-                aria-label="Type your Roblox UI or script idea"
-                autoComplete="off"
-                name="roblox-idea"
-              />
-              <button
-                type="submit"
-                className="px-6 py-3 rounded-lg bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-white font-medium hover:shadow-lg hover:shadow-[#9b5de5]/20 transform hover:translate-y-[-2px] transition-all duration-300 flex items-center justify-center"
-                disabled={!inputValue.trim() || loading}
-                aria-label="Generate with AI"
-              >
-                {loading ? (
-                  <>
-                    <Loader className="mr-2 h-5 w-5 animate-spin" />
-                    Generating...
-                  </>
-                ) : (
-                  <>
-                    Generate with AI
-                    <ChevronRight className="ml-2 h-5 w-5" />
-                  </>
-                )}
-              </button>
-            </form>
-            {error && (
-              <div className="text-red-400 mt-2" role="alert">{error}</div>
-            )}
-            <div className="text-sm text-gray-500 mt-2">
-              <span>Describe your idea and press <b>Enter</b> or click "Generate with AI"</span>
-            </div>
-          </motion.div>
-          </div>
-        </section>
-
-        {/* FEATURES SECTION OPENING WITH H2 AND SAMPLE CARD WITH IMAGE PLACEHOLDER */}
-        <section className="py-24 px-4 relative z-10">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-          >
-            <h2 className="text-3xl md:text-4xl font-bold text-center mb-16 bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-transparent bg-clip-text">
-              Powerful AI Tools for Roblox Creators
-            </h2>
-          </motion.div>
-          <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
-            {featureCards.map((card, index) => (
-              <motion.article
-                key={card.id}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
-                whileHover={{ y: -5 }}
-                className="relative overflow-hidden rounded-2xl bg-white/[0.02] backdrop-blur-md border border-white/10 p-8 hover:border-white/20 transition-all duration-500 group flex flex-col"
-                itemScope
-                itemType="https://schema.org/Service"
-              >
-                <div
-                  className={`absolute inset-0 bg-gradient-to-br ${card.gradient} opacity-0 group-hover:opacity-10 transition-opacity duration-500`}
-                ></div>
-                <div className="absolute -inset-1 bg-gradient-to-r from-transparent via-[#9b5de5]/20 to-transparent opacity-0 group-hover:opacity-100 blur-xl transition-opacity duration-500"></div>
-
-                <div className="relative flex-1">
-                  {card.isSubscribeTab ? (
-                    <>
-                      <SubscribeTabContainer
-                        onSubscribe={() => navigate("/subscribe")}
-                        isSubscribed={false}
-                        className="!bg-transparent !border-none !shadow-none p-0"
-                      />
-                      <img
-                        src="/feature-premium.webp"
-                        alt="Premium AI features for Roblox development"
-                        width="800"
-                        height="600"
-                        loading="lazy"
-                        decoding="async"
-                        className="rounded-lg border border-gray-800 mb-4 w-full"
-                      />
-                    </>
-                  ) : (
-                    <>
-                      <div
-                        className={`w-12 h-12 rounded-full bg-gradient-to-br ${card.gradient} flex items-center justify-center mb-4`}
-                      >
-                        {card.icon && <card.icon className="h-6 w-6 text-white" />}
-                      </div>
-                      {/* Optional image placeholder for Script AI and Secure Testing */}
-                      {card.id === 1 && (
-                        <img
-                          src="/feature-script-ai.webp"
-                          alt="Roblox script generator preview"
-                          width="800"
-                          height="600"
-                          loading="lazy"
-                          decoding="async"
-                          className="rounded-lg border border-gray-800 mb-4 w-full"
-                        />
-                      )}
-                      {card.id === 3 && (
-                        <img
-                          src="/feature-secure.webp"
-                          alt="Secure testing environment for Roblox mods"
-                          width="800"
-                          height="600"
-                          loading="lazy"
-                          decoding="async"
-                          className="rounded-lg border border-gray-800 mb-4 w-full"
-                        />
-                      )}
-                      <h3 className="text-xl font-bold mb-2" itemProp="name">{card.title}</h3>
-                      <p className="text-gray-400" itemProp="description">{card.description}</p>
-                      <button
-                        className="mt-6 px-4 py-2 rounded-lg bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-white font-medium hover:shadow-lg hover:shadow-[#9b5de5]/20 transform hover:translate-y-[-2px] transition-all duration-300 flex items-center justify-center"
-                        onClick={() => navigate(card.button.href)}
-                        type="button"
-                        aria-label={`Learn more about ${card.title} for Roblox scripting`}
-                      >
-                        {card.button.text}
-                        <ChevronRight className="ml-2 h-4 w-4" />
-                      </button>
-                    </>
-                  )}
-                </div>
-              </motion.article>
-            ))}
-          </div>
-        </section>
-
-
-        {/* Community Creations (Coming Soon) */}
-        <section className="py-24 px-4 relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#9b5de5]/5 to-transparent pointer-events-none" />
-          <div className="max-w-6xl mx-auto relative">
-            <div className="text-center mb-16">
-              <h2 className="text-3xl md:text-4xl font-bold mb-4 bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-transparent bg-clip-text">
-                Community Creations
-              </h2>
-              <p className="text-gray-400 text-lg max-w-2xl mx-auto">
-                A curated gallery of the most impressive UIs and scripts built by the NexusRBX community.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 opacity-40 grayscale pointer-events-none select-none">
-              {[1, 2, 3, 4].map((i) => (
-                <div key={i} className="aspect-video rounded-xl bg-gray-900 border border-gray-800 flex items-center justify-center">
-                  <Layout className="w-8 h-8 text-gray-700" />
-                </div>
-              ))}
-            </div>
-
-            <div className="absolute inset-0 flex items-center justify-center pt-20">
-              <div className="px-8 py-4 rounded-2xl bg-black/60 backdrop-blur-xl border border-white/10 shadow-2xl transform rotate-[-2deg]">
-                <span className="text-2xl md:text-3xl font-black tracking-tighter bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-transparent bg-clip-text uppercase">
-                  Coming Soon
-                </span>
-              </div>
-            </div>
-          </div>
-        </section>
+        <CommunityCreationsSection />
       </main>
 
       {/* Footer */}

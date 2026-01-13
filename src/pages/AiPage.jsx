@@ -41,6 +41,19 @@ import FancyLoadingOverlay from "../components/FancyLoadingOverlay";
 import NotificationToast from "../components/NotificationToast";
 import UiPreviewDrawer from "../components/UiPreviewDrawer";
 import SignInNudgeModal from "../components/SignInNudgeModal";
+import {
+  FormatText,
+  TokenBar,
+  PlanBadge,
+  NexusRBXAvatar,
+  UserAvatar,
+} from "../components/ai/AiComponents";
+import UiSpecificationModal from "../components/ai/UiSpecificationModal";
+import {
+  getExplanationBlocks,
+  authedFetch,
+  formatNumber,
+} from "../lib/aiUtils";
 import { sha256 } from "../lib/hash";
 import { v4 as uuidv4 } from "uuid";
 import {
@@ -113,94 +126,8 @@ const defaultSettings = {
   uiThemeFont: "Poppins, Roboto, sans-serif",
 };
 
-function getGravatarUrl(email, size = 40) {
-  if (!email) return null;
-  function fallbackMd5(str) {
-    let hash = 0, i, chr;
-    if (str.length === 0) return hash;
-    for (i = 0; i < str.length; i++) {
-      chr = str.charCodeAt(i);
-      hash = (hash << 5) - hash + chr;
-      hash |= 0;
-    }
-    return Math.abs(hash).toString(16);
-  }
-  const hash = fallbackMd5(email.trim().toLowerCase());
-  return `https://www.gravatar.com/avatar/${hash}?d=identicon&s=${size}`;
-}
-
-function getUserInitials(email) {
-  if (!email) return "U";
-  const parts = email.split("@")[0].split(/[._]/);
-  return parts.map((p) => p[0]?.toUpperCase()).join("").slice(0, 2);
-}
-
-function FormatText({ text }) {
-  if (!text) return null;
-  const parts = text.split(/(\*\*.*?\*\*)/g);
-  return (
-    <>
-      {parts.map((part, i) => {
-        if (part.startsWith("**") && part.endsWith("**")) {
-          return (
-            <strong key={i} className="text-[#00f5d4] font-bold">
-              {part.slice(2, -2)}
-            </strong>
-          );
-        }
-        return <React.Fragment key={i}>{part}</React.Fragment>;
-      })}
-    </>
-  );
-}
-
-function getExplanationBlocks(explanation = "") {
-  if (!explanation.trim()) return [];
-  return explanation
-    .split(/\n{2,}/)
-    .map((block) => block.trim())
-    .filter(Boolean)
-    .map((block) => {
-      const lines = block.split("\n").map((line) => line.trim()).filter(Boolean);
-      const isBulletList = lines.length > 0 && lines.every((line) => /^[-*•]\s+/.test(line));
-      const isNumberList = lines.length > 0 && lines.every((line) => /^\d+\.\s+/.test(line));
-      if (isBulletList) {
-        return { type: "list", ordered: false, items: lines.map((line) => line.replace(/^[-*•]\s+/, "")) };
-      }
-      if (isNumberList) {
-        return { type: "list", ordered: true, items: lines.map((line) => line.replace(/^\d+\.\s+/, "")) };
-      }
-      if (lines.length === 1) {
-        const line = lines[0];
-        if (line.startsWith("#")) return { type: "header", text: line.replace(/^#+\s*/, "") };
-        if (line.startsWith("**") && line.endsWith("**") && line.length < 60) return { type: "header", text: line.replace(/\*\*/g, "") };
-        if (/^[A-Z][a-zA-Z ]+:$/.test(line)) return { type: "header", text: line };
-      }
-      return { type: "paragraph", text: block };
-    });
-}
-
 const getVN = (v) => Number(v?.versionNumber ?? v?.version ?? 0);
 const byVN = (a, b) => getVN(b) - getVN(a);
-
-async function authedFetch(user, url, init = {}, retry = true) {
-  let idToken = await user.getIdToken();
-  let res = await fetch(url, {
-    ...init,
-    headers: { ...(init.headers || {}), Authorization: `Bearer ${idToken}` },
-    signal: init.signal,
-  });
-  if (res.status === 401 && retry) {
-    await user.getIdToken(true);
-    idToken = await user.getIdToken();
-    res = await fetch(url, {
-      ...init,
-      headers: { ...(init.headers || {}), Authorization: `Bearer ${idToken}` },
-      signal: init.signal,
-    });
-  }
-  return res;
-}
 
 function useDebounce(value, delay) {
   const [debounced, setDebounced] = useState(value);
@@ -220,85 +147,6 @@ const toLocalTime = (ts) => {
 const safeFile = (title) =>
   ((title || "Script").replace(/[^a-zA-Z0-9_\- ]/g, "").replace(/\s+/g, "_").slice(0, 40) || "Script") + ".lua";
 
-async function pollJob(user, jobId, onTick, { signal }) {
-  let delay = 1200;
-  while (true) {
-    if (signal?.aborted) throw new Error("Aborted");
-    const res = await authedFetch(user, `${BACKEND_URL}/api/jobs/${jobId}`, { method: "GET", signal });
-    if (res.status === 429) {
-      const ra = Number(res.headers.get("Retry-After")) || 2;
-      await new Promise((r) => setTimeout(r, ra * 1000));
-      continue;
-    }
-    const data = await res.json();
-    onTick?.(data);
-    if (data.status === "succeeded" || data.status === "failed") return data;
-    await new Promise((r) => setTimeout(r, delay));
-    delay = Math.min(delay + 300, 3000);
-  }
-}
-
-function safeGet(key, fallback = null) {
-  try { return JSON.parse(localStorage.getItem(key)) ?? fallback; } catch { return fallback; }
-}
-function safeSet(key, val) {
-  try { localStorage.setItem(key, JSON.stringify(val)); } catch {}
-}
-
-function getAiBubbleSizing(text = "") {
-  const len = text.length;
-  if (len < 240) return { wrapClass: "max-w-2xl", bubbleClass: "text-base px-5 py-4" };
-  if (len < 1200) return { wrapClass: "max-w-3xl", bubbleClass: "text-[15px] leading-6 px-6 py-5" };
-  return { wrapClass: "max-w-4xl", bubbleClass: "text-[14px] leading-7 px-7 py-6" };
-}
-
-function formatNumber(n) {
-  if (typeof n !== "number") return n;
-  return n.toLocaleString();
-}
-
-function formatResetDate(date) {
-  if (!date) return "";
-  const d = typeof date === "string" ? new Date(date) : date;
-  return d.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
-}
-
-function TokenBar({ tokensLeft, tokensLimit, resetsAt, plan }) {
-  const percent = typeof tokensLeft === "number" && typeof tokensLimit === "number"
-      ? Math.max(0, Math.min(100, (tokensLeft / tokensLimit) * 100))
-      : 100;
-  const planInfo = PLAN_INFO[plan] || PLAN_INFO.free;
-  return (
-    <div className="w-full flex flex-col gap-1">
-      <div className="flex items-center justify-between mb-1">
-        <div className="text-xs text-gray-300 font-medium">
-          Tokens: <span className="text-white font-bold">{typeof tokensLeft === "number" ? formatNumber(tokensLeft) : "∞"}</span>{" "}
-          <span className="text-gray-400">/ {formatNumber(tokensLimit)}</span>
-        </div>
-        <a href="/docs#tokens" className="flex items-center gap-1 text-xs text-[#9b5de5] hover:text-[#00f5d4] underline" title="How tokens work">
-          <Info className="w-4 h-4" /> How tokens work
-        </a>
-      </div>
-      <div className="w-full h-3 bg-gray-800 rounded-full overflow-hidden relative">
-        <div className={`h-full rounded-full transition-all duration-500 ${plan === "team" ? "bg-gradient-to-r from-[#00f5d4] to-[#9b5de5]" : plan === "pro" ? "bg-gradient-to-r from-[#9b5de5] to-[#00f5d4]" : "bg-gray-400"}`} style={{ width: `${percent}%` }}></div>
-      </div>
-      <div className="flex items-center justify-between mt-1 text-xs text-gray-400">
-        <span>{typeof resetsAt === "string" || resetsAt instanceof Date ? `Resets on ${formatResetDate(resetsAt)}` : ""}</span>
-        <span className="text-gray-500">{planInfo.capText}</span>
-      </div>
-    </div>
-  );
-}
-
-function PlanBadge({ plan }) {
-  const planInfo = PLAN_INFO[plan] || PLAN_INFO.free;
-  return (
-    <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold mr-2 ${planInfo.badgeClass}`} style={{ background: plan === "pro" ? "linear-gradient(90deg, #9b5de5 0%, #00f5d4 100%)" : plan === "team" ? "linear-gradient(90deg, #00f5d4 0%, #9b5de5 100%)" : undefined, color: plan === "team" ? "#222" : undefined }}>
-      {planInfo.label}
-      <span className="ml-2 text-xs font-normal opacity-80">• {planInfo.capText}</span>
-    </span>
-  );
-}
 
 function AiPage() {
   // 1. External Hooks
@@ -1119,127 +967,5 @@ function AiPage() {
   );
 }
 
-function UiSpecificationModal({ onClose, onConfirm, initialSpecs }) {
-  const [tab, setTab] = useState("theme");
-  const [specs, setSpecs] = useState(initialSpecs);
-  const updateCatalogItem = (idx, field, val) => { const next = [...specs.catalog]; next[idx] = { ...next[idx], [field]: val }; setSpecs(prev => ({ ...prev, catalog: next })); };
-
-  const togglePlatform = (p) => {
-    setSpecs(prev => {
-      const platforms = prev.platforms || [];
-      if (platforms.includes(p)) {
-        return { ...prev, platforms: platforms.filter(x => x !== p) };
-      } else {
-        return { ...prev, platforms: [...platforms, p] };
-      }
-    });
-  };
-
-  return (
-    <Modal onClose={onClose} title="UI Specification">
-      <div className="flex border-b border-gray-800 mb-4">
-        {["theme", "platforms", "catalog", "animations"].map(t => (
-          <button key={t} onClick={() => setTab(t)} className={`px-4 py-2 text-sm font-bold capitalize ${tab === t ? "text-[#00f5d4] border-b-2 border-[#00f5d4]" : "text-gray-400"}`}>{t}</button>
-        ))}
-      </div>
-      <div className="min-h-[300px] max-h-[500px] overflow-y-auto">
-        {tab === "theme" && (
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div><label className="text-xs text-gray-400">Primary</label><input type="color" className="w-full h-10 bg-gray-800 rounded" value={specs.theme.primary} onChange={e => setSpecs(prev => ({ ...prev, theme: { ...prev.theme, primary: e.target.value } }))} /></div>
-              <div><label className="text-xs text-gray-400">Background</label><input type="color" className="w-full h-10 bg-gray-800 rounded" value={specs.theme.bg} onChange={e => setSpecs(prev => ({ ...prev, theme: { ...prev.theme, bg: e.target.value } }))} /></div>
-            </div>
-          </div>
-        )}
-        {tab === "platforms" && (
-          <div className="space-y-4 p-2">
-            <p className="text-xs text-gray-400 mb-4">Select target platforms for the AI to optimize for:</p>
-            <div className="grid grid-cols-1 gap-3">
-              {[
-                { id: "mobile", label: "Mobile (Touch Friendly, Large Buttons)", icon: "📱" },
-                { id: "pc", label: "PC / Desktop (Mouse & Keyboard)", icon: "💻" },
-                { id: "laptop", label: "Laptop (Compact Desktop)", icon: "📟" }
-              ].map(p => (
-                <button
-                  key={p.id}
-                  onClick={() => togglePlatform(p.id)}
-                  className={`flex items-center justify-between p-4 rounded-xl border transition-all ${
-                    specs.platforms?.includes(p.id)
-                      ? "border-[#00f5d4] bg-[#00f5d4]/10 text-white"
-                      : "border-gray-800 bg-gray-900/40 text-gray-400 hover:border-gray-700"
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="text-xl">{p.icon}</span>
-                    <span className="font-bold">{p.label}</span>
-                  </div>
-                  {specs.platforms?.includes(p.id) && <Check className="w-5 h-5 text-[#00f5d4]" />}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-        {tab === "catalog" && (
-          <div className="space-y-3">
-            {specs.catalog.map((item, idx) => (
-              <div key={idx} className="p-3 bg-gray-900/60 border border-gray-800 rounded-lg space-y-2">
-                <input placeholder="Item Name" className="w-full bg-gray-800 rounded px-2 py-1 text-sm" value={item.name} onChange={e => updateCatalogItem(idx, "name", e.target.value)} />
-                <div className="grid grid-cols-2 gap-2">
-                  <input placeholder="Price" className="bg-gray-800 rounded px-2 py-1 text-sm" value={item.price} onChange={e => updateCatalogItem(idx, "price", e.target.value)} />
-                  <input placeholder="Icon ID" className="bg-gray-800 rounded px-2 py-1 text-sm" value={item.iconId} onChange={e => updateCatalogItem(idx, "iconId", e.target.value)} />
-                </div>
-              </div>
-            ))}
-            <button onClick={() => setSpecs(prev => ({ ...prev, catalog: [...prev.catalog, { name: "", price: "0", currency: "Robux", iconId: "" }] }))} className="w-full py-2 border-2 border-dashed border-gray-800 rounded-lg text-gray-500">+ Add Item</button>
-          </div>
-        )}
-        {tab === "animations" && <textarea className="w-full h-40 bg-gray-800 rounded-lg p-3 text-sm" placeholder="Describe animations..." value={specs.animations} onChange={e => setSpecs(prev => ({ ...prev, animations: e.target.value }))} />}
-      </div>
-      <div className="mt-6 flex justify-end gap-3">
-        <button className="px-4 py-2 rounded-lg bg-gray-800" onClick={onClose}>Cancel</button>
-        <button className="px-6 py-2 rounded-lg bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] font-bold" onClick={() => onConfirm(specs)}>Generate</button>
-      </div>
-    </Modal>
-  );
-}
-
-function AssistantCodeBlock({ code }) {
-  const [copied, setCopied] = useState(false);
-  const handleCopy = () => { navigator.clipboard.writeText(code); setCopied(true); setTimeout(() => setCopied(false), 1500); };
-  return (
-    <div className="mt-4 border border-gray-800 rounded-lg bg-black/30 overflow-hidden">
-      <div className="flex items-center justify-between px-4 py-2 border-b border-gray-800">
-        <span className="text-xs text-[#00f5d4] font-semibold uppercase">Code</span>
-        <button onClick={handleCopy} className="text-xs text-white px-2 py-1 rounded bg-gray-800">{copied ? "Copied" : "Copy"}</button>
-      </div>
-      <pre className="p-4 text-xs font-mono overflow-x-auto">{code}</pre>
-    </div>
-  );
-}
-
-const NexusRBXAvatar = ({ isThinking = false }) => (
-  <div className={`w-12 h-12 rounded-2xl bg-white flex items-center justify-center shadow-2xl overflow-hidden flex-shrink-0 border-2 ${isThinking ? 'border-[#00f5d4] animate-pulse' : 'border-white/10'}`}>
-    <img src="/logo.png" alt="NexusRBX" className={`w-9 h-9 object-contain ${isThinking ? 'animate-bounce' : ''}`} />
-  </div>
-);
-
-const UserAvatar = ({ email }) => {
-  const url = getGravatarUrl(email);
-  const initials = getUserInitials(email);
-  return (
-    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#9b5de5] to-[#00f5d4] flex items-center justify-center shadow-2xl overflow-hidden flex-shrink-0 border-2 border-white/20">
-      {url ? (
-        <img
-          src={url}
-          alt="User"
-          className="w-full h-full object-cover"
-          onError={(e) => (e.target.style.display = "none")}
-        />
-      ) : (
-        <span className="text-white font-bold text-sm">{initials}</span>
-      )}
-    </div>
-  );
-};
 
 export default AiPage;
