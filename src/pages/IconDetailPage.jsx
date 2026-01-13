@@ -21,6 +21,7 @@ import { Helmet } from "react-helmet";
 import { auth } from "../firebase";
 import { onAuthStateChanged } from "firebase/auth";
 import { getEntitlements } from "../lib/billing";
+import { exportIcon } from "../lib/uiBuilderApi";
 import NexusRBXHeader from "../components/NexusRBXHeader";
 import NexusRBXFooter from "../components/NexusRBXFooter";
 import ProNudgeModal from "../components/ProNudgeModal";
@@ -120,27 +121,28 @@ export default function IconDetailPage() {
     }
   };
 
-  const handlePostToRoblox = () => {
+  const handlePostToRoblox = async () => {
     if (icon.isPro && !isPremium) {
       setShowProNudge(true);
       return;
     }
 
-    const luaSnippet = `-- NexusRBX Icon Export
--- Optimized for: ${icon.name}
-local icon = Instance.new("ImageLabel")
-icon.Name = "${icon.name.replace(/\s+/g, '_')}"
-icon.Image = "${icon.imageUrl}"
-icon.Size = UDim2.fromOffset(100, 100)
-icon.BackgroundTransparency = 1
-icon.ScaleType = Enum.ScaleType.Fit
-icon.ImageColor3 = Color3.fromHex("${tintColor}")
-icon.Parent = game.Players.LocalPlayer.PlayerGui:FindFirstChildOfClass("ScreenGui") or Instance.new("ScreenGui", game.Players.LocalPlayer.PlayerGui)
-`;
+    try {
+      const token = await user.getIdToken();
+      const data = await exportIcon({
+        token,
+        iconId: icon.id,
+        tintColor
+      });
 
-    navigator.clipboard.writeText(luaSnippet);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+      if (data && data.combined) {
+        navigator.clipboard.writeText(data.combined);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      }
+    } catch (e) {
+      console.error("Failed to export icon", e);
+    }
   };
 
   if (loading) {

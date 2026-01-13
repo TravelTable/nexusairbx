@@ -30,6 +30,7 @@ import { useNavigate } from "react-router-dom";
 import { auth } from "../firebase";
 import { onAuthStateChanged } from "firebase/auth";
 import { getEntitlements } from "../lib/billing";
+import { exportIcon } from "../lib/uiBuilderApi";
 import NexusRBXHeader from "../components/NexusRBXHeader";
 import NexusRBXFooter from "../components/NexusRBXFooter";
 
@@ -161,110 +162,27 @@ export default function IconsMarketPage() {
     }
   };
 
-  const handlePostToRoblox = (icon) => {
+  const handlePostToRoblox = async (icon) => {
     if (icon.isPro && !isPremium) {
       navigate("/subscribe");
       return;
     }
 
-    let luaSnippet = "";
-    
-    if (icon.category === "UI Component" && icon.name.includes("Bar")) {
-      luaSnippet = `-- NexusRBX Progress Bar Export
--- Optimized for: ${icon.name}
-local bar = Instance.new("Frame")
-bar.Name = "${icon.name.replace(/\s+/g, '_')}"
-bar.Size = UDim2.fromOffset(300, 40)
-bar.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-bar.BorderSizePixel = 0
+    try {
+      const token = await user.getIdToken();
+      const data = await exportIcon({
+        token,
+        iconId: icon.id
+      });
 
-local corner = Instance.new("UICorner")
-corner.CornerRadius = UDim.new(0, 8)
-corner.Parent = bar
-
-local fill = Instance.new("ImageLabel")
-fill.Name = "Fill"
-fill.Size = UDim2.fromScale(0, 1)
-fill.Image = "${icon.imageUrl}"
-fill.BackgroundTransparency = 1
-fill.ScaleType = Enum.ScaleType.Slice
-fill.SliceCenter = Rect.new(10, 10, 10, 10)
-fill.Parent = bar
-
-local fillCorner = Instance.new("UICorner")
-fillCorner.CornerRadius = UDim.new(0, 8)
-fillCorner.Parent = fill
-
--- Helper function to update progress
-local function setProgress(percent)
-    local clamped = math.clamp(percent, 0, 1)
-    game:GetService("TweenService"):Create(fill, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-        Size = UDim2.fromScale(clamped, 1)
-    }):Play()
-end
-
--- Example usage:
--- setProgress(0.75)
-
-bar.Parent = game.Players.LocalPlayer.PlayerGui:FindFirstChildOfClass("ScreenGui") or Instance.new("ScreenGui", game.Players.LocalPlayer.PlayerGui)
-`;
-    } else if (icon.category === "UI Component" && icon.name.includes("Button")) {
-      luaSnippet = `-- NexusRBX Button Export
--- Optimized for: ${icon.name}
-local btn = Instance.new("ImageButton")
-btn.Name = "${icon.name.replace(/\s+/g, '_')}"
-btn.Size = UDim2.fromOffset(200, 60)
-btn.Image = "${icon.imageUrl}"
-btn.BackgroundTransparency = 1
-btn.ScaleType = Enum.ScaleType.Stretch
-
-local function animate(targetSize, targetColor)
-    game:GetService("TweenService"):Create(btn, TweenInfo.new(0.15, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
-        Size = targetSize,
-        ImageColor3 = targetColor
-    }):Play()
-end
-
-btn.MouseEnter:Connect(function()
-    animate(UDim2.fromOffset(210, 65), Color3.fromRGB(230, 230, 230))
-end)
-
-btn.MouseLeave:Connect(function()
-    animate(UDim2.fromOffset(200, 60), Color3.fromRGB(255, 255, 255))
-end)
-
-btn.MouseButton1Down:Connect(function()
-    animate(UDim2.fromOffset(190, 55), Color3.fromRGB(200, 200, 200))
-end)
-
-btn.MouseButton1Up:Connect(function()
-    animate(UDim2.fromOffset(210, 65), Color3.fromRGB(230, 230, 230))
-end)
-
-btn.Parent = game.Players.LocalPlayer.PlayerGui:FindFirstChildOfClass("ScreenGui") or Instance.new("ScreenGui", game.Players.LocalPlayer.PlayerGui)
-`;
-    } else {
-      luaSnippet = `-- NexusRBX Icon Export
--- Optimized for: ${icon.name}
-local icon = Instance.new("ImageLabel")
-icon.Name = "${icon.name.replace(/\s+/g, '_')}"
-icon.Image = "${icon.imageUrl}"
-icon.Size = UDim2.fromOffset(100, 100)
-icon.BackgroundTransparency = 1
-icon.ScaleType = Enum.ScaleType.Fit
-icon.ResampleMode = Enum.ResamplerMode.Pixelated -- Good for cartoon styles
-
-local corner = Instance.new("UICorner")
-corner.CornerRadius = UDim.new(0, 12)
-corner.Parent = icon
-
-icon.Parent = game.Players.LocalPlayer.PlayerGui:FindFirstChildOfClass("ScreenGui") or Instance.new("ScreenGui", game.Players.LocalPlayer.PlayerGui)
-`;
+      if (data && data.combined) {
+        navigator.clipboard.writeText(data.combined);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      }
+    } catch (e) {
+      console.error("Failed to export icon", e);
     }
-
-    navigator.clipboard.writeText(luaSnippet);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
   };
 
   const handleGenerateVariation = (icon) => {

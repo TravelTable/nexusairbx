@@ -260,3 +260,12 @@ export async function robloxCatalogSearch({ keyword, limit = 10 }) {
   );
   return handleResponse(res);
 }
+
+export async function exportIcon({ token, iconId, tintColor, customName }) {
+  const res = await fetch(`${BACKEND_URL}/api/icons/${encodeURIComponent(iconId)}/export`, {
+    method: "POST",
+    headers: authHeaders(token),
+    body: JSON.stringify({ tintColor, customName }),
+  });
+  return handleResponse(res);
+}
