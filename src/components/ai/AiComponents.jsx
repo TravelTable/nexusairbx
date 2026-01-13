@@ -3,7 +3,7 @@ import { Info, Loader } from "lucide-react";
 import PLAN_INFO from "../../lib/planInfo";
 import { getGravatarUrl, getUserInitials, formatNumber, formatResetDate } from "../../lib/aiUtils";
 
-export function FormatText({ text }) {
+export const FormatText = React.memo(({ text }) => {
   if (!text) return null;
   const parts = text.split(/(\*\*.*?\*\*)/g);
   return (
@@ -20,7 +20,7 @@ export function FormatText({ text }) {
       })}
     </>
   );
-}
+});
 
 export function TokenBar({ tokensLeft, tokensLimit, resetsAt, plan }) {
   const percent = typeof tokensLeft === "number" && typeof tokensLimit === "number"
@@ -73,13 +73,13 @@ export function AssistantCodeBlock({ code }) {
   );
 }
 
-export const NexusRBXAvatar = ({ isThinking = false }) => (
+export const NexusRBXAvatar = React.memo(({ isThinking = false }) => (
   <div className={`w-12 h-12 rounded-2xl bg-white flex items-center justify-center shadow-2xl overflow-hidden flex-shrink-0 border-2 ${isThinking ? 'border-[#00f5d4] animate-pulse' : 'border-white/10'}`}>
     <img src="/logo.png" alt="NexusRBX" className={`w-9 h-9 object-contain ${isThinking ? 'animate-bounce' : ''}`} />
   </div>
-);
+));
 
-export const UserAvatar = ({ email }) => {
+export const UserAvatar = React.memo(({ email }) => {
   const url = getGravatarUrl(email);
   const initials = getUserInitials(email);
   return (
@@ -96,4 +96,4 @@ export const UserAvatar = ({ email }) => {
       )}
     </div>
   );
-};
+});
