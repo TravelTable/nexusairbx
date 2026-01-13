@@ -230,6 +230,7 @@ function AiPage() {
             onOpenGameContext={() => game.setShowWizard(true)}
             onDeleteChat={chat.handleDeleteChat}
             handleClearChat={chat.handleClearChat}
+            gameProfile={game.profile}
             onVersionView={(ver) => {
               if (ver.code) {
                 setSelectedVersion({
