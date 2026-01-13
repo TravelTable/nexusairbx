@@ -287,7 +287,7 @@ function PreviewNode({ item, interactive, onAction }) {
     );
   }
 
-  if (item.type === "ImageLabel" && item.imageId) {
+  if ((item.type === "ImageLabel" || item.type === "ImageButton") && item.imageId) {
     const imageIdStr = String(item.imageId || "");
     let src = null;
     
@@ -301,7 +301,21 @@ function PreviewNode({ item, interactive, onAction }) {
     }
 
     return (
-      <div style={style}>
+      <div 
+        style={{
+          ...style,
+          cursor: item.type === "ImageButton" && interactive ? "pointer" : "default"
+        }}
+        onClick={() => {
+          if (item.type === "ImageButton" && interactive) {
+            onAction?.({
+              type: "click",
+              id: item.id,
+              label: item.name || "ImageButton",
+            });
+          }
+        }}
+      >
         {src ? (
           <img 
             src={src} 

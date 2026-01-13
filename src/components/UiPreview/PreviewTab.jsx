@@ -24,11 +24,11 @@ export default function PreviewTab({
         </div>
         {imageNodes.some(n => !n.imageId || n.imageId.includes('//0')) && (
           <button 
-            onClick={() => setTab("images")}
+            onClick={() => setTab("assets")}
             className="flex items-center gap-1.5 text-[10px] font-bold text-red-400 hover:text-red-300 uppercase tracking-wider animate-pulse"
           >
             <AlertCircle className="w-3 h-3" />
-            Missing Image IDs
+            Missing Icon IDs
           </button>
         )}
       </div>
