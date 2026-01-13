@@ -47,7 +47,7 @@ export function extractUiManifestFromLua(lua) {
   // 2. Cleanup: Remove markdown code fences and normalize quotes
   jsonText = jsonText
     .replace(/^```(?:json)?\s*/i, "")
-    .replace(/```$/, "")
+    .replace(/```\s*$/, "")
     .replace(/[\u201C\u201D]/g, '"') // Normalize smart double quotes
     .replace(/[\u2018\u2019]/g, "'"); // Normalize smart single quotes
 
@@ -135,10 +135,21 @@ function attemptParse(text) {
     const parsed = JSON.parse(text);
     
     // 1. Standard boardState wrapper
-    if (parsed?.boardState && Array.isArray(parsed.boardState.items)) {
-      return parsed.boardState;
+    if (parsed?.boardState) {
+      // Handle double nesting: { boardState: { boardState: { items: [] }, canvasSize: {} } }
+      if (parsed.boardState.boardState && Array.isArray(parsed.boardState.boardState.items)) {
+        const inner = parsed.boardState.boardState;
+        return {
+          items: inner.items,
+          canvasSize: parsed.boardState.canvasSize || { w: inner.width || 1280, h: inner.height || 720 },
+          catalog: inner.catalog || []
+        };
+      }
+      if (Array.isArray(parsed.boardState.items)) {
+        return parsed.boardState;
+      }
     }
-    
+
     // 2. Direct boardState object
     if (parsed?.items && Array.isArray(parsed.items)) {
       return parsed;
