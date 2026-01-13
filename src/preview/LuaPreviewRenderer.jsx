@@ -201,6 +201,26 @@ function PreviewNode({ item, interactive, onAction }) {
   const strokeColor = parseColor(item.strokeColor);
   const textColor = parseColor(item.textColor);
 
+  // Font Mapping
+  const fontMap = {
+    "Gotham": "'Inter', sans-serif",
+    "GothamBold": "'Inter', sans-serif",
+    "GothamBlack": "'Inter', sans-serif",
+    "FredokaOne": "'Fredoka One', cursive",
+    "LuckiestGuy": "'Luckiest Guy', cursive",
+    "Bangers": "'Bangers', cursive",
+    "Arcade": "'Press Start 2P', cursive"
+  };
+  const fontFamily = fontMap[item.font] || fontMap["Gotham"];
+
+  // Gradient Support
+  let background = fillColor || (type === "frame" ? "rgba(255,255,255,0.05)" : "#111827");
+  if (item.gradient && item.gradient.color1 && item.gradient.color2) {
+    const c1 = parseColor(item.gradient.color1);
+    const c2 = parseColor(item.gradient.color2);
+    background = `linear-gradient(180deg, ${c1} 0%, ${c2} 100%)`;
+  }
+
   const style = {
     position: "absolute",
     left: x,
@@ -209,7 +229,7 @@ function PreviewNode({ item, interactive, onAction }) {
     height: h,
     zIndex: Number(item.zIndex) || 1,
     borderRadius: Number(item.radius) || 0,
-    background: fillColor || (type === "frame" ? "rgba(255,255,255,0.05)" : "#111827"),
+    background: background,
     border: item.stroke
       ? `${Number(item.strokeWidth) || 1}px solid ${strokeColor || "rgba(255,255,255,0.2)"}`
       : (type === "frame" ? "1px solid rgba(255,255,255,0.1)" : "none"),
@@ -220,11 +240,13 @@ function PreviewNode({ item, interactive, onAction }) {
     pointerEvents: interactive ? "auto" : "none",
     userSelect: "none",
     fontSize: Number(item.fontSize) || 14,
+    fontFamily: fontFamily,
+    fontWeight: item.font?.includes("Bold") ? "bold" : "normal",
     overflow: "hidden",
     textAlign: "center",
     padding: 4,
     boxSizing: "border-box",
-    boxShadow: type === "textbutton" ? "0 2px 10px rgba(0,0,0,0.3)" : "none",
+    boxShadow: type === "textbutton" ? "0 4px 14px rgba(0,0,0,0.4)" : "none",
     opacity: item.opacity !== undefined ? Number(item.opacity) : 1,
   };
 
