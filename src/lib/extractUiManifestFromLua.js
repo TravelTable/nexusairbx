@@ -16,8 +16,8 @@ export function extractUiManifestFromLua(lua) {
     jsonText = match[2].trim();
   } else {
     // Fallback: Search for anything that looks like the manifest if the tag is missing.
-    // We look for the core structure: canvasSize/width and items/elements.
-    const fallbackRegex = /\{[\s\S]*?(?:"canvasSize"|"width")[\s\S]*?(?:"items"|"elements")[\s\S]*?\}/;
+    // We look for the core structure: canvasSize/width and items/elements/boardState.
+    const fallbackRegex = /\{[\s\S]*?(?:"canvasSize"|"width")[\s\S]*?(?:"items"|"elements"|"boardState")[\s\S]*?\}/;
     const fallbackMatch = lua.match(fallbackRegex);
     if (fallbackMatch) {
       jsonText = fallbackMatch[0].trim();
@@ -25,7 +25,7 @@ export function extractUiManifestFromLua(lua) {
       // Last ditch effort: find the largest JSON-like block
       const lastDitchRegex = /\{[\s\S]*\}/;
       const lastDitchMatch = lua.match(lastDitchRegex);
-      if (lastDitchMatch && (lastDitchMatch[0].includes('"items"') || lastDitchMatch[0].includes('"elements"'))) {
+      if (lastDitchMatch && (lastDitchMatch[0].includes('"items"') || lastDitchMatch[0].includes('"elements"') || lastDitchMatch[0].includes('"boardState"'))) {
         jsonText = lastDitchMatch[0].trim();
       } else {
         // Check for boardState wrapper specifically
@@ -52,10 +52,10 @@ export function extractUiManifestFromLua(lua) {
     .replace(/[\u2018\u2019]/g, "'"); // Normalize smart single quotes
 
   // 3. Handle missing outer braces
-  if ((jsonText.includes('"canvasSize"') || jsonText.includes('"width"')) && !jsonText.startsWith("{")) {
+  if ((jsonText.includes('"canvasSize"') || jsonText.includes('"width"')) && !jsonText.startsWith("{") && !jsonText.startsWith("[")) {
     jsonText = "{" + jsonText;
   }
-  if ((jsonText.includes('"items"') || jsonText.includes('"elements"')) && !jsonText.endsWith("}")) {
+  if ((jsonText.includes('"items"') || jsonText.includes('"elements"') || jsonText.includes('"boardState"')) && !jsonText.endsWith("}") && !jsonText.endsWith("]")) {
     jsonText = jsonText + "}";
   }
 
@@ -131,6 +131,7 @@ function normalizeItems(items) {
   if (!Array.isArray(items)) return [];
   return items.map(item => ({
     ...item,
+    id: item.id ?? item.name,
     w: item.w ?? item.width,
     h: item.h ?? item.height
   }));
@@ -141,17 +142,25 @@ function attemptParse(text) {
     const parsed = JSON.parse(text);
     if (!parsed) return null;
 
-    const normalize = (obj) => {
-      const items = obj.items || obj.elements;
+    const normalize = (obj, parent = null) => {
+      let items = obj.items || obj.elements;
+      
+      // Handle case where boardState is the array itself
+      if (!items && Array.isArray(obj.boardState)) {
+        items = obj.boardState;
+      } else if (!items && Array.isArray(obj)) {
+        items = obj;
+      }
+
       if (!Array.isArray(items)) return null;
       
       return {
         items: normalizeItems(items),
-        canvasSize: obj.canvasSize || { 
-          w: obj.w ?? obj.width ?? 1280, 
-          h: obj.h ?? obj.height ?? 720 
+        canvasSize: obj.canvasSize || (parent && parent.canvasSize) || { 
+          w: obj.w ?? obj.width ?? (parent && (parent.w ?? parent.width)) ?? 1280, 
+          h: obj.h ?? obj.height ?? (parent && (parent.h ?? parent.height)) ?? 720 
         },
-        catalog: obj.catalog || []
+        catalog: obj.catalog || (parent && parent.catalog) || []
       };
     };
 
@@ -159,12 +168,8 @@ function attemptParse(text) {
     if (parsed.boardState) {
       // Handle double nesting: { boardState: { boardState: { items: [] }, canvasSize: {} } }
       const innerBS = parsed.boardState.boardState || parsed.boardState;
-      const result = normalize(innerBS);
+      const result = normalize(innerBS, parsed.boardState);
       if (result) {
-        // If the outer wrapper had canvasSize, prefer it
-        if (parsed.boardState.canvasSize) {
-          result.canvasSize = parsed.boardState.canvasSize;
-        }
         return result;
       }
     }
