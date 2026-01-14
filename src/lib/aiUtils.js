@@ -1,4 +1,4 @@
-import { auth } from "../pages/firebase";
+import { auth } from "../firebase";
 
 export function getGravatarUrl(email, size = 40) {
   if (!email) return null;

@@ -19,7 +19,7 @@ import {
   Gamepad2,
   Sparkles,
 } from "lucide-react";
-import { auth } from "./firebase";
+import { auth } from "../firebase";
 import { onAuthStateChanged, signInAnonymously } from "firebase/auth";
 import SidebarContent from "../components/SidebarContent";
 import Modal from "../components/Modal";

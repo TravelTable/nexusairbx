@@ -1,7 +1,7 @@
 // src/context/BillingContext.jsx
 import React, { createContext, useContext, useEffect, useMemo, useState, useCallback } from "react";
 import { onAuthStateChanged } from "firebase/auth";
-import { auth } from "../pages/firebase"; // keep your existing init
+import { auth } from "../firebase"; // keep your existing init
 import { getEntitlements, summarizeEntitlements, startCheckout, openPortal } from "../lib/billing";
 
 const BillingCtx = createContext(null);

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Lock, Plus, Info } from "lucide-react";
 import { useBilling } from "../context/BillingContext";
-import { auth } from "../pages/firebase"; // Make sure this path is correct for your project
+import { auth } from "../firebase"; // Make sure this path is correct for your project
 import { onAuthStateChanged } from "firebase/auth";
 
 /**

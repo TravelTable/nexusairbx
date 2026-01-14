@@ -16,7 +16,7 @@ import {
   getDocs
 } from "firebase/firestore";
 import { v4 as uuidv4 } from "uuid";
-import { auth } from "../pages/firebase";
+import { auth } from "../firebase";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || "https://nexusrbx-backend-production.up.railway.app";
 
