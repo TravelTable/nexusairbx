@@ -231,6 +231,7 @@ function AiPage() {
             onDeleteChat={chat.handleDeleteChat}
             handleClearChat={chat.handleClearChat}
             gameProfile={game.profile}
+            user={user}
             onVersionView={(ver) => {
               if (ver.code) {
                 setSelectedVersion({

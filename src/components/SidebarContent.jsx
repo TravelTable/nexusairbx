@@ -41,22 +41,13 @@ import {
 } from "../lib/sidebarUtils";
 import {
   getFirestore,
-  collection,
-  addDoc,
   doc,
   updateDoc,
   deleteDoc,
-  setDoc,
-  onSnapshot,
-  query,
-  orderBy,
   serverTimestamp,
-  getDocs,
-  limit,
-  startAfter,
 } from "firebase/firestore";
-import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { useBilling } from "../context/BillingContext";
+import { useAiLibrary } from "../hooks/useAiLibrary";
 
 // --- Toast Hook for Error Surfaces ---
 function useToast() {
@@ -95,9 +86,11 @@ export default function SidebarContent({
   onSelectChat = () => {},
   onOpenGameContext = () => {},
   gameProfile = null,
+  user = null,
 }) {
   // --- Billing ---
   const { plan, historyDays } = useBilling();
+  const { chats, savedScripts, loading: libraryLoading } = useAiLibrary(user);
 
   // --- State ---
   const tabId = useId();
@@ -116,25 +109,12 @@ export default function SidebarContent({
   useEffect(() => setPromptSearch(deferredSearch), [deferredSearch, setPromptSearch]);
   useEffect(() => setLocalSearch(promptSearch || ""), [promptSearch]);
 
-  // --- Saved Scripts state ---
-  const [savedScripts, setSavedScripts] = useState([]);
-  const [savedSearch, setSavedSearch] = useState("");
-  const [savedErr, setSavedErr] = useState(null);
-
-  // --- Chats state (Firestore) ---
-  const [chats, setChats] = useState([]);
-  const [selectedChatId, setSelectedChatId] = useState(null);
+  // --- Chats state ---
   const [chatSearch, setChatSearch] = useState("");
   const [renamingChatId, setRenamingChatId] = useState(null);
   const [renameChatTitle, setRenameChatTitle] = useState("");
   const [deleteChatId, setDeleteChatId] = useState(null);
   const [chatDeleteLoading, setChatDeleteLoading] = useState(false);
-  const [chatCursor, setChatCursor] = useState(null);
-  const [chatErr, setChatErr] = useState(null);
-
-  useEffect(() => {
-    setSelectedChatId(currentChatId);
-  }, [currentChatId]);
 
   // --- Toast for errors and notification ---
   const { toast, show: showToast, clear: clearToast } = useToast();
@@ -142,171 +122,13 @@ export default function SidebarContent({
   // --- NotificationToast for upgrade nudges ---
   const [notification, setNotification] = useState(null);
 
-  // --- Firestore: subscribe to chats for current user (paginated) ---
-  useEffect(() => {
-    const db = getFirestore();
-    const auth = getAuth();
-    let unsubSnapshot = null;
-    let unsubAuth = null;
-
-    unsubAuth = onAuthStateChanged(auth, (u) => {
-      if (unsubSnapshot) {
-        unsubSnapshot();
-        unsubSnapshot = null;
-      }
-      if (!u) {
-        setChats([]);
-        setChatCursor(null);
-        return;
-      }
-
-      let qRef = query(
-        collection(db, "users", u.uid, "chats"),
-        orderBy("updatedAt", "desc"),
-        limit(50),
-        ...(chatCursor ? [startAfter(chatCursor)] : [])
-      );
-
-      unsubSnapshot = onSnapshot(
-        qRef,
-        (snap) => {
-          const arr = snap.docs.map((d) => ({
-            id: d.id,
-            ...d.data(),
-            updatedAt: toMs(d.data().updatedAt),
-            createdAt: toMs(d.data().createdAt),
-          }));
-          setChats(arr);
-          setChatCursor(snap.docs[snap.docs.length - 1]);
-        },
-        (err) => setChatErr(err.message)
-      );
-    });
-
-    return () => {
-      if (unsubSnapshot) unsubSnapshot();
-      if (unsubAuth) unsubAuth();
-    };
-    // eslint-disable-next-line
-  }, []);
-
-  // --- Firestore: subscribe to saved scripts (event-listener leak fixed) ---
-  useEffect(() => {
-    const db = getFirestore();
-    const auth = getAuth();
-    let unsubSnapshot = null;
-    let handler = null;
-    let unsubAuth = null;
-
-    unsubAuth = onAuthStateChanged(auth, (u) => {
-      if (unsubSnapshot) {
-        unsubSnapshot();
-        unsubSnapshot = null;
-      }
-      if (handler) {
-        window.removeEventListener("nexus:sidebarSaveScript", handler);
-        handler = null;
-      }
-      if (!u) {
-        setSavedScripts([]);
-        return;
-      }
-
-      const savedRef = collection(db, "users", u.uid, "savedScripts");
-      const qSaved = query(savedRef, orderBy("updatedAt", "desc"));
-      unsubSnapshot = onSnapshot(
-        qSaved,
-        (snap) => {
-          const arr = [];
-          snap.forEach((docSnap) =>
-            arr.push({
-              id: docSnap.id,
-              ...docSnap.data(),
-              updatedAt: toMs(docSnap.data().updatedAt),
-              createdAt: toMs(docSnap.data().createdAt),
-              versionNumber: getVersionStr(docSnap.data()),
-            })
-          );
-          setSavedScripts(arr);
-        },
-        (err) => setSavedErr(err.message)
-      );
-
-      handler = async (e) => {
-        const { code, title, version, language, scriptId, chatId } = e.detail || {};
-        if (!code) return;
-        try {
-          await addDoc(collection(db, "users", u.uid, "savedScripts"), {
-            scriptId: scriptId ?? null,
-            chatId: chatId ?? null,
-            code,
-            title: title || "Untitled",
-            version: version || "",
-            language: language || "lua",
-            createdAt: serverTimestamp(),
-            updatedAt: serverTimestamp(),
-          });
-        } catch (err) {
-          showToast("Failed to save script: " + err.message);
-        }
-      };
-      window.addEventListener("nexus:sidebarSaveScript", handler);
-    });
-
-    return () => {
-      if (unsubSnapshot) unsubSnapshot();
-      if (unsubAuth) unsubAuth();
-      if (handler) window.removeEventListener("nexus:sidebarSaveScript", handler);
-    };
-    // eslint-disable-next-line
-  }, []);
-
-  // --- Writer: upsert chats on activity ---
-  useEffect(() => {
-    const db = getFirestore();
-    const auth = getAuth();
-
-    const onActivity = async (e) => {
-      const { id, title, lastMessage } = e.detail || {};
-      const u = auth.currentUser;
-      if (!id || !u) return;
-
-      const chatRef = doc(db, "users", u.uid, "chats", id);
-      const updates = {
-        ...(title !== undefined
-          ? { title: (title ?? "").trim() || "Untitled chat" }
-          : {}),
-        ...(lastMessage !== undefined ? { lastMessage } : {}),
-        updatedAt: serverTimestamp(),
-      };
-
-      try {
-        await updateDoc(chatRef, updates);
-      } catch (err) {
-        await setDoc(
-          chatRef,
-          {
-            title: (title ?? "").trim() || "Untitled chat",
-            lastMessage: lastMessage ?? "",
-            createdAt: serverTimestamp(),
-            ...updates,
-          },
-          { merge: true }
-        );
-      }
-    };
-
-    window.addEventListener("nexus:chatActivity", onActivity);
-    return () => window.removeEventListener("nexus:chatActivity", onActivity);
-  }, []);
-
   // --- Memoized filtered and sorted scripts (deferred search) ---
   const deferredScriptSearch = useDeferredValue(localSearch.trim().toLowerCase());
-const chatScripts = useMemo(() => {
-  if (!currentChatId) return [];
-  const list = Array.isArray(scripts) ? scripts : [];
-  return list.filter((s) => s.chatId === currentChatId);
-}, [scripts, currentChatId]);
+  const chatScripts = useMemo(() => {
+    if (!currentChatId) return [];
+    const list = Array.isArray(scripts) ? scripts : [];
+    return list.filter((s) => s.chatId === currentChatId);
+  }, [scripts, currentChatId]);
 
   const filteredScripts = useMemo(() => {
     const list = chatScripts;
@@ -349,6 +171,7 @@ const chatScripts = useMemo(() => {
   }, [chats, deferredChatSearch]);
 
   // --- Memoized filtered/sorted saved scripts (deferred search, unique per scriptId+versionNumber) ---
+  const [savedSearch, setSavedSearch] = useState("");
   const deferredSavedSearch = useDeferredValue(savedSearch.trim().toLowerCase());
   const filteredSavedScripts = useMemo(() => {
     const list = Array.isArray(savedScripts) ? savedScripts : [];
@@ -422,20 +245,11 @@ const chatScripts = useMemo(() => {
     }
   };
 
-  // --- Save/Unsave with version awareness ---
   const handleToggleSaveScript = useCallback(
     async (script) => {
+      if (!user) return;
       const db = getFirestore();
-      const auth = getAuth();
-      const u = auth.currentUser;
-      if (!u) return;
-
-      let versionNumber = script.versionNumber;
-      if (!versionNumber && script.latestVersion) {
-        versionNumber = script.latestVersion;
-      }
-      if (!versionNumber) versionNumber = 1;
-
+      let versionNumber = script.versionNumber || 1;
       const versionStr = String(versionNumber);
       const key = `${script.id}__${versionNumber}`;
       const wasSaved = savedVersionSet.has(key);
@@ -447,15 +261,12 @@ const chatScripts = useMemo(() => {
               s.scriptId === script.id &&
               (String(s.versionNumber) === versionStr || getVersionStr(s) === versionStr)
           );
-
           if (match) {
-            await deleteDoc(doc(db, "users", u.uid, "savedScripts", match.id));
+            await deleteDoc(doc(db, "users", user.uid, "savedScripts", match.id));
             showToast("Script unsaved.");
-          } else {
-            showToast("Could not find saved reference to delete.");
           }
         } else {
-          await addDoc(collection(db, "users", u.uid, "savedScripts"), {
+          await addDoc(collection(db, "users", user.uid, "savedScripts"), {
             scriptId: script.id,
             title: script.title || "Untitled",
             version: versionStr,
@@ -466,97 +277,55 @@ const chatScripts = useMemo(() => {
           showToast("Script saved!");
         }
       } catch (err) {
-        console.error(err);
         showToast("Failed to update saved status.");
-        setSavedScripts((prev) => [...prev]);
       }
     },
-    [savedVersionSet, savedScripts, showToast]
+    [savedVersionSet, savedScripts, showToast, user]
   );
+
   const handleUnsaveBySavedId = useCallback(
     async (savedDocId) => {
+      if (!user) return;
       const db = getFirestore();
-      const auth = getAuth();
-      if (!auth.currentUser) return;
-      const userId = auth.currentUser.uid;
       try {
-        await deleteDoc(doc(db, "users", userId, "savedScripts", savedDocId));
+        await deleteDoc(doc(db, "users", user.uid, "savedScripts", savedDocId));
       } catch (err) {
         showToast("Failed to unsave script: " + err.message);
       }
     },
-    [showToast]
+    [showToast, user]
   );
 
   const handleCreateChatLocal = useCallback(() => {
     window.dispatchEvent(new CustomEvent("nexus:startDraft"));
-    setSelectedChatId(null);
     if (isMobile && typeof onSelect === "function") onSelect();
   }, [isMobile, onSelect]);
 
   const handleRenameChatCommit = useCallback(
     async (id, title) => {
+      if (!user) return;
       const t = (title || "").trim();
       if (!t) return;
-
-      if (onRenameChat) {
-        await onRenameChat(id, t);
-        return;
-      }
-
       const db = getFirestore();
-      const auth = getAuth();
-      if (!auth.currentUser) return;
-
-      await updateDoc(doc(db, "users", auth.currentUser.uid, "chats", id), {
+      await updateDoc(doc(db, "users", user.uid, "chats", id), {
         title: t,
         updatedAt: serverTimestamp(),
       });
     },
-    [onRenameChat]
+    [user]
   );
 
   const handleDeleteChatConfirm = useCallback(async () => {
+    if (!user || !deleteChatId) return;
     setChatDeleteLoading(true);
-
     const db = getFirestore();
-    const auth = getAuth();
-    const userId = auth.currentUser?.uid;
-
-    if (onDeleteChat && deleteChatId) {
-      await onDeleteChat(deleteChatId);
-    } else if (userId && deleteChatId) {
-      await deleteDoc(doc(db, "users", userId, "chats", deleteChatId));
-    }
-
-    // Delete all scripts associated with this chat (but DO NOT delete savedScripts)
-    if (userId && deleteChatId) {
-      const scriptsRef = collection(db, "users", userId, "scripts");
-      const scriptsQuery = query(scriptsRef);
-      const scriptsSnap = await getDocs(scriptsQuery);
-      const scriptIdsToDelete = [];
-      scriptsSnap.forEach((docSnap) => {
-        const data = docSnap.data();
-        if (data.chatId === deleteChatId) {
-          scriptIdsToDelete.push(docSnap.id);
-        }
-      });
-
-      await Promise.all(
-        scriptIdsToDelete.map((scriptId) =>
-          deleteDoc(doc(db, "users", userId, "scripts", scriptId))
-        )
-      );
-    }
-
+    await deleteDoc(doc(db, "users", user.uid, "chats", deleteChatId));
     setChatDeleteLoading(false);
-    if (selectedChatId === deleteChatId) setSelectedChatId(null);
     setDeleteChatId(null);
-  }, [onDeleteChat, deleteChatId, selectedChatId, savedScripts]);
+  }, [user, deleteChatId]);
 
   const handleOpenChat = useCallback(
     (chatId) => {
-      setSelectedChatId(chatId);
       if (typeof onSelectChat === "function") {
         onSelectChat(chatId);
       } else {
@@ -607,40 +376,6 @@ const chatScripts = useMemo(() => {
       </div>
     </div>
   );
-
-// --- Version History Filtering and Locking ---
-// Only show info bar and lock history if plan is free and historyDays is set
-const showHistoryInfoBar = plan === "free" && !!historyDays;
-const lockHistory = plan === "free" && !!historyDays;
-
-// Compute cutoff timestamp (ms)
-const historyCutoffMs =
-  historyDays && Number.isFinite(Number(historyDays))
-    ? Date.now() - Number(historyDays) * 24 * 60 * 60 * 1000
-    : null;
-
-// Partition versionHistory into unlocked and locked
-const versionHistoryWithLock = useMemo(() => {
-  if (!Array.isArray(versionHistory)) return [];
-  return versionHistory.map((ver) => {
-    const createdAtMs = toMs(ver.createdAt);
-    const isLocked =
-      lockHistory && historyCutoffMs !== null && createdAtMs < historyCutoffMs;
-    return { ...ver, isLocked, createdAtMs };
-  });
-}, [versionHistory, lockHistory, historyCutoffMs]);
-
-  // --- Notification handler for locked history ---
-  const handleLockedHistoryClick = useCallback(() => {
-    setNotification({
-      message: "Older history is a Pro feature.",
-      cta: "Upgrade to view",
-      onCta: () => {
-        setNotification(null);
-        window.location.href = "/subscribe";
-      },
-    });
-  }, []);
 
   // --- Chronological Grouping Logic ---
   const groupItemsByDate = useCallback((items) => {
@@ -864,13 +599,13 @@ const versionHistoryWithLock = useMemo(() => {
               <div className="flex items-center justify-between mb-2">
                 <span className="font-bold text-lg text-[#00f5d4]">Versions</span>
               </div>
-              {(!versionHistoryWithLock || versionHistoryWithLock.length === 0) && (
+              {(!versionHistory || versionHistory.length === 0) && (
                 <div className="text-gray-400 text-sm">
                   No versions for this script yet. Generate your first version by submitting a prompt on the AI Console.
                 </div>
               )}
               <div className="space-y-2" aria-live="polite">
-                {(versionHistoryWithLock ?? []).map((ver) => {
+                {(versionHistory ?? []).map((ver) => {
                   const version = getVersionStr(ver);
                   const saveKey = `${currentScriptId}__${version}`;
                   const isSaved = savedVersionSet.has(saveKey);
@@ -878,28 +613,6 @@ const versionHistoryWithLock = useMemo(() => {
                     selectedVersionId === version ||
                     selectedVersionId === ver.id ||
                     selectedVersionId === saveKey;
-
-                  if (ver.isLocked) {
-                    return (
-                      <div
-                        key={keyForScript({ ...ver, id: currentScriptId })}
-                        className="w-full flex items-center justify-between px-3 py-2 border-b border-gray-800 last:border-b-0 rounded text-left group cursor-not-allowed opacity-60 bg-gray-900/60 relative"
-                        title="Upgrade to view older history"
-                      >
-                        <div className="flex-1 min-w-0 flex items-center gap-2">
-                          <Lock className="h-4 w-4 text-[#00f5d4]" />
-                          <span className="font-semibold text-gray-300 truncate max-w-[14rem]">
-                            Version {version} (locked)
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2 text-xs text-gray-400">
-                          <span className="px-2 py-0.5 rounded bg-[#9b5de5]/20 text-[#9b5de5]">
-                            Upgrade
-                          </span>
-                        </div>
-                      </div>
-                    );
-                  }
 
                   return (
                     <button
@@ -1000,13 +713,13 @@ const versionHistoryWithLock = useMemo(() => {
                         <div
                           key={c.id}
                           className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl border transition-all duration-300 text-left group cursor-pointer relative overflow-hidden ${
-                            selectedChatId === c.id
+                            currentChatId === c.id
                               ? "border-[#9b5de5]/50 bg-[#9b5de5]/5 shadow-[0_0_20px_rgba(155,93,229,0.05)]"
                               : "border-white/5 bg-white/[0.02] hover:bg-white/[0.05] hover:border-white/10"
                           }`}
                           onClick={() => handleOpenChat(c.id)}
                         >
-                          {selectedChatId === c.id && (
+                          {currentChatId === c.id && (
                             <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#9b5de5] shadow-[0_0_10px_#9b5de5]" />
                           )}
                           <div className="flex-1 min-w-0">
@@ -1034,7 +747,7 @@ const versionHistoryWithLock = useMemo(() => {
                               />
                             ) : (
                               <div className="flex flex-col gap-0.5">
-                                <span className={`font-bold text-sm truncate ${selectedChatId === c.id ? "text-white" : "text-gray-300 group-hover:text-white"}`}>
+                                <span className={`font-bold text-sm truncate ${currentChatId === c.id ? "text-white" : "text-gray-300 group-hover:text-white"}`}>
                                   {c.title || "Untitled chat"}
                                 </span>
                                 <span className="text-[10px] text-gray-500 truncate">
@@ -1093,61 +806,29 @@ const versionHistoryWithLock = useMemo(() => {
         )}
 
         {activeTab === "saved" && (
-          <div
-            className="p-4"
-            role="tabpanel"
-            id={`${tabId}-panel-saved`}
-            aria-labelledby={`${tabId}-saved`}
-          >
-            <div className="flex items-center justify-between mb-2">
-              <span className="font-bold text-lg text-[#00f5d4]">
-                Saved Scripts
-              </span>
-            </div>
-
-            {savedScripts.length === 0 && (
-              <div className="text-gray-400 text-sm mb-2">
-                You haven't saved any scripts yet. Open the Scripts tab and click the bookmark icon to save one.
-              </div>
-            )}
-
-            <div className="mb-2 flex items-center gap-2">
-              <Search className="h-4 w-4 text-gray-400" />
+          <div className="space-y-6">
+            <div className="relative group">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-500 group-focus-within:text-[#00f5d4] transition-colors" />
               <input
-                className="flex-1 rounded bg-gray-800 border border-gray-700 px-2 py-1 text-sm text-white"
+                className="w-full rounded-xl bg-white/[0.03] border border-white/5 px-9 py-2 text-xs text-white outline-none focus:border-[#00f5d4]/30 focus:bg-white/[0.05] transition-all"
                 placeholder="Search saved scripts..."
                 value={savedSearch}
                 onChange={(e) => setSavedSearch(e.target.value)}
-                aria-label="Search saved scripts"
               />
             </div>
 
-            <div className="space-y-2" aria-live="polite">
-              {(filteredSavedScripts ?? []).map((row) => (
-                <button
-                  key={`${row.scriptId || ""}__${getVersionStr(row)}`}
-                  type="button"
-                  className="w-full flex items-center justify-between px-3 py-2 rounded-lg border border-gray-700 bg-gray-900/40 transition-colors group hover:border-[#00f5d4] hover:bg-gray-800/60 focus:outline-none"
-                  title={row.title || "Untitled"}
-                  onClick={() => {
-                    window.dispatchEvent(
-                      new CustomEvent("nexus:openCodeDrawer", {
-                        detail: {
-                          scriptId: row.scriptId,
-                          code: row.code || "-- No code found",
-                          title: row.title,
-                          versionNumber: getVersionStr(row),
-                          explanation: row.explanation || "",
-                          savedScriptId: row.id || `${row.scriptId || ""}__${getVersionStr(row)}`,
-                        },
-                      })
-                    );
-                  }}
-                  tabIndex={0}
-                  aria-label={`Open saved script ${row.title || "Untitled"} v${getVersionStr(row)}`}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                      e.preventDefault();
+            <div className="space-y-2">
+              {savedScripts.length === 0 ? (
+                <div className="text-center py-8 px-4 rounded-2xl bg-white/[0.02] border border-dashed border-white/5">
+                  <Bookmark className="w-8 h-8 text-gray-700 mx-auto mb-2" />
+                  <p className="text-xs text-gray-500">No saved scripts yet.</p>
+                </div>
+              ) : (
+                filteredSavedScripts.map((row) => (
+                  <div
+                    key={row.id}
+                    className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl border border-white/5 bg-white/[0.02] hover:bg-white/[0.05] hover:border-white/10 transition-all duration-300 text-left group cursor-pointer"
+                    onClick={() => {
                       window.dispatchEvent(
                         new CustomEvent("nexus:openCodeDrawer", {
                           detail: {
@@ -1156,71 +837,38 @@ const versionHistoryWithLock = useMemo(() => {
                             title: row.title,
                             versionNumber: getVersionStr(row),
                             explanation: row.explanation || "",
-                            savedScriptId: row.id || `${row.scriptId || ""}__${getVersionStr(row)}`,
+                            savedScriptId: row.id,
                           },
                         })
                       );
-                    }
-                  }}
-                >
-                  <div className="flex-1 min-w-0 flex flex-col">
-                    <div className="flex items-center gap-2">
-                      <span
-                        className="font-semibold text-white truncate block max-w-[10rem] md:max-w-[14rem]"
-                        title={row.title || "Untitled"}
-                      >
-                        {row.title || "Untitled"}
-                      </span>
-                      {getVersionStr(row) && (
-                        <span className="inline-block px-2 py-0.5 rounded bg-[#9b5de5]/20 text-[#9b5de5] text-xs font-semibold ml-2">
-                          v{getVersionStr(row)}
+                    }}
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div className="flex flex-col gap-0.5">
+                        <span className="font-bold text-sm text-gray-300 group-hover:text-white truncate">
+                          {row.title || "Untitled"}
                         </span>
-                      )}
-                    </div>
-                    <div className="text-xs text-gray-400">
-                      {row.updatedAt && (
-                        <span title={new Date(row.updatedAt).toLocaleString()}>
+                        <span className="text-[10px] text-gray-500">
                           Saved {fromNow(row.updatedAt)}
                         </span>
-                      )}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1 ml-2 opacity-0 group-hover:opacity-100 transition-all translate-x-2 group-hover:translate-x-0">
+                      <button
+                        className="p-1.5 rounded-lg text-[#00f5d4] bg-[#00f5d4]/10"
+                        onClick={(e) => { e.stopPropagation(); handleUnsaveBySavedId(row.id); }}
+                      >
+                        <Bookmark className="w-3.5 h-3.5 fill-current" />
+                      </button>
                     </div>
                   </div>
-                  <div className="flex items-center gap-1 ml-2">
-                    <button
-                      className="p-1 rounded hover:bg-gray-700"
-                      title="Unsave"
-                      tabIndex={-1}
-                      aria-label="Unsave script"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleUnsaveBySavedId(row.id);
-                      }}
-                    >
-                      <Bookmark className="h-4 w-4 text-[#00f5d4]" />
-                    </button>
-                  </div>
-                </button>
-              ))}
+                ))
+              )}
             </div>
           </div>
         )}
       </div>
-      <div className="mt-8 mb-8 flex flex-col items-center">
-        <motion.div
-          key="subscribe-bounce"
-          initial={false}
-          animate={{ y: [0, -40, 0] }}
-          transition={{
-            repeat: Infinity,
-            repeatType: "loop",
-            duration: 1.4,
-            ease: "easeInOut",
-          }}
-          className="w-full flex justify-center"
-        >
-          {/* You can import and use SubscribeButtonInline here if needed */}
-        </motion.div>
-      </div>
+
       {/* Toast for errors */}
       {toast && toast.msg && (
         <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-red-700 text-white px-4 py-2 rounded shadow-lg z-50">
@@ -1228,37 +876,12 @@ const versionHistoryWithLock = useMemo(() => {
           <button
             className="ml-4 text-white underline"
             onClick={clearToast}
-            aria-label="Dismiss error"
           >
             Dismiss
           </button>
         </div>
       )}
-      {/* Firestore error surfaces */}
-      {savedErr && (
-        <div className="fixed bottom-16 left-1/2 transform -translate-x-1/2 bg-red-700 text-white px-4 py-2 rounded shadow-lg z-50">
-          Error loading saved scripts: {savedErr}
-          <button
-            className="ml-4 text-white underline"
-            onClick={() => window.location.reload()}
-            aria-label="Retry"
-          >
-            Retry
-          </button>
-        </div>
-      )}
-      {chatErr && (
-        <div className="fixed bottom-24 left-1/2 transform -translate-x-1/2 bg-red-700 text-white px-4 py-2 rounded shadow-lg z-50">
-          Error loading chats: {chatErr}
-          <button
-            className="ml-4 text-white underline"
-            onClick={() => window.location.reload()}
-            aria-label="Retry"
-          >
-            Retry
-          </button>
-        </div>
-      )}
+
       {/* NotificationToast for upgrade nudges */}
       <NotificationToast
         open={!!notification}
