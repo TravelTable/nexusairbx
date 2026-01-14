@@ -1,10 +1,8 @@
-import React, { useMemo } from "react";
+import React from "react";
 import { NexusRBXAvatar, UserAvatar, FormatText } from "./AiComponents";
 import ScriptLoadingBarContainer from "../ScriptLoadingBarContainer";
 import GenerationStatusBar from "./GenerationStatusBar";
 import { MessageSquare, Zap, Bug, Rocket } from "lucide-react";
-import { FixedSizeList as List } from "react-window";
-import { AutoSizer } from "react-virtualized-auto-sizer";
 
 const quickStarts = [
   { icon: <Zap className="w-4 h-4 text-yellow-400" />, label: "Optimize Script", prompt: "Can you optimize this Luau script for better performance?" },
@@ -21,36 +19,6 @@ export default function ChatView({
   onQuickStart,
   chatEndRef 
 }) {
-  const Row = ({ index, style }) => {
-    const m = messages[index];
-    return (
-      <div style={style} className="pb-6">
-        <div className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'} gap-4 group`}>
-          {m.role === 'assistant' && <NexusRBXAvatar />}
-          <div className={`max-w-[85%] md:max-w-[80%] ${m.role === 'user' ? 'order-1' : 'order-2'}`}>
-            <div className={`p-4 md:p-5 rounded-2xl ${m.role === 'user' 
-              ? 'bg-gradient-to-br from-[#9b5de5] to-[#00f5d4] text-white shadow-lg border border-white/10' 
-              : 'bg-[#121212] border border-white/5 backdrop-blur-md shadow-xl'}`}>
-              {m.content && m.role === 'user' && <div className="text-[14px] md:text-[15px] whitespace-pre-wrap leading-relaxed text-white">{m.content}</div>}
-              {m.explanation && <div className="text-[14px] md:text-[15px] whitespace-pre-wrap leading-relaxed text-gray-100"><FormatText text={m.explanation} /></div>}
-              {m.role === 'assistant' && m.code && (
-                <div className="mt-4">
-                  <ScriptLoadingBarContainer
-                    filename={m.title || "Generated_Script.lua"}
-                    codeReady={!!m.code}
-                    loading={false}
-                    onView={() => onViewUi(m)}
-                  />
-                </div>
-              )}
-            </div>
-          </div>
-          {m.role === 'user' && <UserAvatar email={user?.email} />}
-        </div>
-      </div>
-    );
-  };
-
   return (
     <div className="w-full max-w-5xl mx-auto h-full flex flex-col">
       {messages.length === 0 && !pendingMessage ? (
@@ -77,20 +45,31 @@ export default function ChatView({
           </div>
         </div>
       ) : (
-        <div className="flex-1 min-h-0">
-          <AutoSizer>
-            {({ height, width }) => (
-              <List
-                height={height}
-                itemCount={messages.length}
-                itemSize={150} // Estimated size, VariableSizeList would be better but more complex
-                width={width}
-                className="scrollbar-hide"
-              >
-                {Row}
-              </List>
-            )}
-          </AutoSizer>
+        <div className="flex-1 overflow-y-auto scrollbar-hide space-y-6">
+          {messages.map((m) => (
+            <div key={m.id} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'} gap-4 group animate-in fade-in slide-in-from-bottom-4 duration-500`}>
+              {m.role === 'assistant' && <NexusRBXAvatar />}
+              <div className={`max-w-[85%] md:max-w-[80%] ${m.role === 'user' ? 'order-1' : 'order-2'}`}>
+                <div className={`p-4 md:p-5 rounded-2xl ${m.role === 'user' 
+                  ? 'bg-gradient-to-br from-[#9b5de5] to-[#00f5d4] text-white shadow-lg border border-white/10' 
+                  : 'bg-[#121212] border border-white/5 backdrop-blur-md shadow-xl'}`}>
+                  {m.content && m.role === 'user' && <div className="text-[14px] md:text-[15px] whitespace-pre-wrap leading-relaxed text-white">{m.content}</div>}
+                  {m.explanation && <div className="text-[14px] md:text-[15px] whitespace-pre-wrap leading-relaxed text-gray-100"><FormatText text={m.explanation} /></div>}
+                  {m.role === 'assistant' && m.code && (
+                    <div className="mt-4">
+                      <ScriptLoadingBarContainer
+                        filename={m.title || "Generated_Script.lua"}
+                        codeReady={!!m.code}
+                        loading={false}
+                        onView={() => onViewUi(m)}
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+              {m.role === 'user' && <UserAvatar email={user?.email} />}
+            </div>
+          ))}
 
           {pendingMessage && pendingMessage.type === "chat" && (
             <>
