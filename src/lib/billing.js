@@ -21,7 +21,6 @@ export async function authedFetch(path, init = {}) {
   let res = await fetch(url.toString(), {
     ...init,
     method: init.method || "GET",
-    credentials: "include",
     mode: "cors",
     cache: "no-store",
     headers: {
@@ -39,7 +38,6 @@ export async function authedFetch(path, init = {}) {
     res = await fetch(url.toString(), {
       ...init,
       method: init.method || "GET",
-      credentials: "include",
       mode: "cors",
       cache: "no-store",
       headers: {

@@ -19,7 +19,6 @@ export default function DebugEntitlementsPage() {
           "Cache-Control": "no-store",
           "Pragma": "no-cache",
         },
-        credentials: "include",
         mode: "cors",
       });
       const text = await res.text();
