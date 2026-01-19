@@ -28,7 +28,7 @@ export function TokenBar({ tokensLeft, tokensLimit, resetsAt, plan }) {
       : 100;
   const planInfo = PLAN_INFO[plan] || PLAN_INFO.free;
   return (
-    <div id="tour-token-bar" className="w-full flex flex-col gap-1">
+    <div id="tour-token-bar" className="w-full flex flex-col gap-1 relative z-10">
       <div className="flex items-center justify-between mb-1">
         <div className="text-xs text-gray-300 font-medium">
           Tokens: <span className="text-white font-bold">{typeof tokensLeft === "number" ? formatNumber(tokensLeft) : "∞"}</span>{" "}
@@ -38,7 +38,7 @@ export function TokenBar({ tokensLeft, tokensLimit, resetsAt, plan }) {
           <Info className="w-4 h-4" /> How tokens work
         </a>
       </div>
-      <div className="w-full h-3 bg-gray-800 rounded-full overflow-hidden relative">
+      <div className="w-full h-3 bg-gray-800/50 rounded-full overflow-hidden relative border border-white/5">
         <div className={`h-full rounded-full transition-all duration-500 ${plan === "team" ? "bg-gradient-to-r from-[#00f5d4] to-[#9b5de5]" : plan === "pro" ? "bg-gradient-to-r from-[#9b5de5] to-[#00f5d4]" : "bg-gray-400"}`} style={{ width: `${percent}%` }}></div>
       </div>
       <div className="flex items-center justify-between mt-1 text-xs text-gray-400">
