@@ -42,6 +42,8 @@ import {
 import {
   getFirestore,
   doc,
+  collection,
+  addDoc,
   updateDoc,
   deleteDoc,
   serverTimestamp,
