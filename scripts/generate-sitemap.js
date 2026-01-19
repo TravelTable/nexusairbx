@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const https = require('https');
 
 const BASE_URL = 'https://nexusrbx.com';
 const BACKEND_URL = 'https://nexusrbx-backend-production.up.railway.app';
@@ -15,18 +16,26 @@ const staticRoutes = [
   '/icons-market',
 ];
 
-async function fetchIconIds() {
-  try {
+function fetchIconIds() {
+  return new Promise((resolve) => {
     console.log('Fetching icons from backend...');
-    // We fetch a large limit to get as many as possible for the sitemap
-    // If there are thousands, we might need pagination, but starting with 1000
-    const response = await fetch(`${BACKEND_URL}/api/icons/market?limit=1000`);
-    const data = await response.json();
-    return data.icons.map(icon => icon.id);
-  } catch (error) {
-    console.error('Error fetching icons:', error);
-    return [];
-  }
+    https.get(`${BACKEND_URL}/api/icons/market?limit=1000`, (res) => {
+      let data = '';
+      res.on('data', (chunk) => { data += chunk; });
+      res.on('end', () => {
+        try {
+          const json = JSON.parse(data);
+          resolve(json.icons.map(icon => icon.id));
+        } catch (e) {
+          console.error('Error parsing icons:', e);
+          resolve([]);
+        }
+      });
+    }).on('error', (err) => {
+      console.error('Error fetching icons:', err);
+      resolve([]);
+    });
+  });
 }
 
 async function generate() {

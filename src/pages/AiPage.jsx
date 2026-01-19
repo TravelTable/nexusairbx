@@ -135,7 +135,7 @@ function AiPage() {
     if (e) e.preventDefault();
     if (!prompt.trim()) return;
 
-    if (!user || user.isAnonymous) {
+    if (!user) {
       setShowSignInNudge(true);
       return;
     }
