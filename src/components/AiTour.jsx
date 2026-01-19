@@ -39,15 +39,18 @@ export default function AiTour({ onComplete, onSkip }) {
   const [currentStep, setCurrentStep] = useState(0);
   const [coords, setCoords] = useState({ top: 0, left: 0, width: 0, height: 0 });
   const [isVisible, setIsVisible] = useState(false);
+  const tooltipRef = React.useRef(null);
+  const [adjustedPos, setAdjustedPos] = useState({ top: 0, left: 0, actualPosition: "top" });
 
   const updateCoords = useCallback(() => {
     const step = TOUR_STEPS[currentStep];
     const element = document.getElementById(step.target);
     if (element && element.offsetParent !== null) {
       const rect = element.getBoundingClientRect();
+      // Use viewport-relative coordinates since the container is fixed inset-0
       setCoords({
-        top: rect.top + window.scrollY,
-        left: rect.left + window.scrollX,
+        top: rect.top,
+        left: rect.left,
         width: rect.width,
         height: rect.height
       });
@@ -76,6 +79,64 @@ export default function AiTour({ onComplete, onSkip }) {
       window.removeEventListener("scroll", updateCoords);
     };
   }, [updateCoords]);
+
+  // Calculate adjusted position based on viewport boundaries
+  useLayoutEffect(() => {
+    if (!isVisible || !coords.width) return;
+
+    const step = TOUR_STEPS[currentStep];
+    const padding = 20;
+    const tooltipWidth = tooltipRef.current?.offsetWidth || 320;
+    const tooltipHeight = tooltipRef.current?.offsetHeight || 200;
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+
+    let top = 0;
+    let left = 0;
+    let actualPosition = step.position;
+
+    // Initial positioning based on preferred position
+    if (step.position === "bottom") {
+      top = coords.top + coords.height + padding;
+      left = coords.left + coords.width / 2;
+      // Flip to top if not enough room at bottom
+      if (top + tooltipHeight > viewportHeight - padding) {
+        top = coords.top - padding - tooltipHeight;
+        actualPosition = "top";
+      }
+    } else if (step.position === "top") {
+      top = coords.top - padding - tooltipHeight;
+      left = coords.left + coords.width / 2;
+      // Flip to bottom if not enough room at top
+      if (top < padding) {
+        top = coords.top + coords.height + padding;
+        actualPosition = "bottom";
+      }
+    } else if (step.position === "right") {
+      top = coords.top + coords.height / 2 - tooltipHeight / 2;
+      left = coords.left + coords.width + padding;
+      // Flip to left if not enough room at right (though we don't have "left" logic yet, we can just center it)
+      if (left + tooltipWidth > viewportWidth - padding) {
+        left = viewportWidth - tooltipWidth - padding;
+      }
+    }
+
+    // Horizontal clamping
+    const halfWidth = tooltipWidth / 2;
+    if (actualPosition === "top" || actualPosition === "bottom") {
+      if (left - halfWidth < padding) {
+        left = halfWidth + padding;
+      } else if (left + halfWidth > viewportWidth - padding) {
+        left = viewportWidth - halfWidth - padding;
+      }
+    }
+
+    // Vertical clamping
+    if (top < padding) top = padding;
+    if (top + tooltipHeight > viewportHeight - padding) top = viewportHeight - tooltipHeight - padding;
+
+    setAdjustedPos({ top, left, actualPosition });
+  }, [isVisible, coords, currentStep]);
 
   const handleNext = () => {
     if (currentStep < TOUR_STEPS.length - 1) {
@@ -109,19 +170,17 @@ export default function AiTour({ onComplete, onSkip }) {
         {isVisible && (
           <motion.div
             key={currentStep}
+            ref={tooltipRef}
             initial={{ opacity: 0, scale: 0.9, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 10 }}
-            className="absolute pointer-events-auto z-[101] w-80"
+            className="absolute pointer-events-auto z-[101] w-[calc(100vw-40px)] max-w-[320px]"
             style={{
-              top: step.position === "bottom" ? coords.top + coords.height + 20 : 
-                   step.position === "top" ? coords.top - 20 : 
-                   coords.top + coords.height / 2,
-              left: step.position === "right" ? coords.left + coords.width + 20 :
-                    coords.left + coords.width / 2,
-              transform: step.position === "top" ? "translate(-50%, -100%)" :
-                         step.position === "bottom" ? "translateX(-50%)" :
-                         step.position === "right" ? "translateY(-50%)" : "translate(-50%, -50%)"
+              top: adjustedPos.top,
+              left: adjustedPos.left,
+              transform: (adjustedPos.actualPosition === "top" || adjustedPos.actualPosition === "bottom") 
+                ? "translateX(-50%)" 
+                : "none"
             }}
           >
             <div className="bg-gray-900/95 backdrop-blur-xl border border-white/10 rounded-2xl p-6 shadow-[0_0_40px_rgba(0,0,0,0.5)] relative overflow-hidden group">
@@ -168,10 +227,14 @@ export default function AiTour({ onComplete, onSkip }) {
             
             {/* Arrow */}
             <div className={`absolute w-4 h-4 bg-gray-900 border-white/10 rotate-45 z-0 ${
-              step.position === "bottom" ? "-top-2 left-1/2 -translate-x-1/2 border-t border-l" :
-              step.position === "top" ? "-bottom-2 left-1/2 -translate-x-1/2 border-b border-r" :
-              step.position === "right" ? "top-1/2 -left-2 -translate-y-1/2 border-b border-l" : ""
-            }`} />
+              adjustedPos.actualPosition === "bottom" ? "-top-2 left-1/2 -translate-x-1/2 border-t border-l" :
+              adjustedPos.actualPosition === "top" ? "-bottom-2 left-1/2 -translate-x-1/2 border-b border-r" :
+              adjustedPos.actualPosition === "right" ? "top-1/2 -left-2 -translate-y-1/2 border-b border-l" : ""
+            }`} 
+            style={{
+              left: adjustedPos.actualPosition === "right" ? "-8px" : `calc(50% + ${coords.left + coords.width/2 - adjustedPos.left}px)`
+            }}
+            />
           </motion.div>
         )}
       </AnimatePresence>
