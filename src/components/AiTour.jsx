@@ -43,7 +43,7 @@ export default function AiTour({ onComplete, onSkip }) {
   const updateCoords = useCallback(() => {
     const step = TOUR_STEPS[currentStep];
     const element = document.getElementById(step.target);
-    if (element) {
+    if (element && element.offsetParent !== null) {
       const rect = element.getBoundingClientRect();
       setCoords({
         top: rect.top + window.scrollY,
@@ -54,8 +54,18 @@ export default function AiTour({ onComplete, onSkip }) {
       setIsVisible(true);
     } else {
       setIsVisible(false);
+      // If element is missing, try to skip to next step after a short delay
+      // to prevent getting stuck behind the overlay
+      const timer = setTimeout(() => {
+        if (currentStep < TOUR_STEPS.length - 1) {
+          setCurrentStep(prev => prev + 1);
+        } else {
+          onComplete();
+        }
+      }, 100);
+      return () => clearTimeout(timer);
     }
-  }, [currentStep]);
+  }, [currentStep, onComplete]);
 
   useLayoutEffect(() => {
     updateCoords();
@@ -79,10 +89,20 @@ export default function AiTour({ onComplete, onSkip }) {
 
   return (
     <div className="fixed inset-0 z-[100] pointer-events-none">
-      {/* Spotlight Overlay */}
-      <div className="absolute inset-0 bg-black/70 pointer-events-auto" style={{
-        clipPath: `polygon(0% 0%, 0% 100%, ${coords.left}px 100%, ${coords.left}px ${coords.top}px, ${coords.left + coords.width}px ${coords.top}px, ${coords.left + coords.width}px ${coords.top + coords.height}px, ${coords.left}px ${coords.top + coords.height}px, ${coords.left}px 100%, 100% 100%, 100% 0%)`
-      }} />
+      {/* Spotlight Overlay - Only show if tooltip is visible */}
+      <AnimatePresence>
+        {isVisible && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 bg-black/70 pointer-events-auto" 
+            style={{
+              clipPath: `polygon(0% 0%, 0% 100%, ${coords.left}px 100%, ${coords.left}px ${coords.top}px, ${coords.left + coords.width}px ${coords.top}px, ${coords.left + coords.width}px ${coords.top + coords.height}px, ${coords.left}px ${coords.top + coords.height}px, ${coords.left}px 100%, 100% 100%, 100% 0%)`
+            }} 
+          />
+        )}
+      </AnimatePresence>
 
       {/* Tooltip */}
       <AnimatePresence mode="wait">

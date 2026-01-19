@@ -28,7 +28,7 @@ export function TokenBar({ tokensLeft, tokensLimit, resetsAt, plan }) {
       : 100;
   const planInfo = PLAN_INFO[plan] || PLAN_INFO.free;
   return (
-    <div className="w-full flex flex-col gap-1">
+    <div id="tour-token-bar" className="w-full flex flex-col gap-1">
       <div className="flex items-center justify-between mb-1">
         <div className="text-xs text-gray-300 font-medium">
           Tokens: <span className="text-white font-bold">{typeof tokensLeft === "number" ? formatNumber(tokensLeft) : "∞"}</span>{" "}

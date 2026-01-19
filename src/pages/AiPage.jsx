@@ -98,11 +98,21 @@ function AiPage() {
       } else {
         signInAnonymously(auth)
           .then((res) => setUser(res.user))
-          .catch(() => setUser(null));
+          .catch((err) => {
+            console.error("Firebase Anonymous Auth Error:", err);
+            setUser(null);
+            // If it's a 400 error, it likely means Anonymous Auth is disabled in Firebase Console
+            if (err.code === 'auth/operation-not-allowed') {
+              notify({ 
+                message: "Anonymous sign-in is disabled. Please enable it in Firebase Console or sign in manually.", 
+                type: "error" 
+              });
+            }
+          });
       }
     });
     return () => unsubscribe();
-  }, []);
+  }, [notify]);
 
   useEffect(() => {
     if (!user) {
@@ -186,7 +196,7 @@ function AiPage() {
           <div className="flex items-center gap-8">
             <div className="text-2xl font-bold bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-transparent bg-clip-text cursor-pointer" onClick={() => navigate("/")}>NexusRBX</div>
             
-            <nav className="hidden md:flex items-center bg-gray-900/50 border border-gray-800 rounded-xl p-1">
+            <nav id="tour-mode-toggle" className="hidden md:flex items-center bg-gray-900/50 border border-gray-800 rounded-xl p-1">
               <button 
                 onClick={() => setActiveTab("ui")} 
                 className={`px-4 py-1.5 rounded-lg text-sm font-bold flex items-center gap-2 transition-all ${activeTab === "ui" ? "bg-gray-800 text-[#00f5d4] shadow-sm" : "text-gray-400 hover:text-white"}`}
@@ -222,7 +232,7 @@ function AiPage() {
       </header>
 
       <div className="flex flex-1 min-h-0">
-        <aside className={`fixed inset-y-0 left-0 z-40 w-72 bg-gray-900 border-r border-gray-800 flex flex-col transform transition-transform duration-300 ease-in-out md:relative md:translate-x-0 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}`}>
+        <aside id="tour-sidebar" className={`fixed inset-y-0 left-0 z-40 w-72 bg-gray-900 border-r border-gray-800 flex flex-col transform transition-transform duration-300 ease-in-out md:relative md:translate-x-0 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}`}>
           <SidebarContent
             activeTab={activeTab === "ui" ? "scripts" : "chats"} 
             setActiveTab={() => {}} 
@@ -322,6 +332,7 @@ function AiPage() {
                   <div className="absolute -inset-0.5 bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] rounded-2xl blur opacity-20 group-focus-within:opacity-40 transition duration-500" />
                   <div className="relative bg-[#121212] border border-white/10 rounded-2xl p-2 shadow-2xl flex items-center gap-2">
                     <textarea
+                      id="tour-prompt-box"
                       className="flex-1 bg-transparent border-none rounded-xl p-3 resize-none focus:ring-0 text-gray-100 placeholder-gray-500 text-[14px] leading-relaxed disabled:opacity-50"
                       rows="1" 
                       placeholder={activeTab === "ui" ? "Describe the UI you want to build..." : "Ask anything about Roblox development..."}
@@ -336,6 +347,7 @@ function AiPage() {
                       }}
                     />
                     <button 
+                      id="tour-generate-button"
                       onClick={handlePromptSubmit} 
                       disabled={chat.isGenerating || ui.uiIsGenerating || !prompt.trim()}
                       className={`p-3 rounded-xl transition-all disabled:opacity-50 ${
