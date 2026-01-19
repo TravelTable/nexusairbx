@@ -200,12 +200,6 @@ export default function SidebarContent({
   }, [savedScripts]);
 
   // --- Handlers ---
-  const handleNewScript = useCallback(() => {
-    setCurrentScriptId(null);
-    window.dispatchEvent(new CustomEvent("nexus:startDraft"));
-    if (isMobile && typeof onSelect === "function") onSelect();
-  }, [setCurrentScriptId, isMobile, onSelect]);
-
   const handleScriptSelect = useCallback(
     (scriptId) => {
       setCurrentScriptId(scriptId);
