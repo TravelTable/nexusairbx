@@ -1,6 +1,5 @@
 import { useState, useRef, useCallback } from "react";
 import { 
-  getFirestore, 
   doc, 
   collection, 
   query, 
@@ -16,7 +15,7 @@ import {
   getDocs
 } from "firebase/firestore";
 import { v4 as uuidv4 } from "uuid";
-import { auth } from "../firebase";
+import { auth, db } from "../firebase";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || "https://nexusrbx-backend-production.up.railway.app";
 
@@ -32,7 +31,6 @@ export function useAiChat(user, settings, refreshBilling, notify) {
   const chatUnsubRef = useRef(null);
 
   const openChatById = useCallback((chatId) => {
-    const db = getFirestore();
     const u = user || auth.currentUser;
     if (!u || !chatId) return;
 
@@ -41,10 +39,17 @@ export function useAiChat(user, settings, refreshBilling, notify) {
 
     setCurrentChatId(chatId);
 
-    chatUnsubRef.current = onSnapshot(doc(db, "users", u.uid, "chats", chatId), (snap) => {
-      const data = snap.exists() ? { id: snap.id, ...snap.data() } : null;
-      setCurrentChatMeta(data || null);
-    });
+    chatUnsubRef.current = onSnapshot(
+      doc(db, "users", u.uid, "chats", chatId),
+      (snap) => {
+        const data = snap.exists() ? { id: snap.id, ...snap.data() } : null;
+        setCurrentChatMeta(data || null);
+      },
+      (err) => {
+        console.error("Firestore chat meta subscription error:", err);
+        notify?.({ message: "Failed to sync chat details", type: "error" });
+      }
+    );
 
     messagesUnsubRef.current = onSnapshot(
       query(
@@ -56,9 +61,13 @@ export function useAiChat(user, settings, refreshBilling, notify) {
         const arr = [];
         snap.forEach((d) => arr.push({ id: d.id, ...d.data() }));
         setMessages(arr);
+      },
+      (err) => {
+        console.error("Firestore messages subscription error:", err);
+        notify?.({ message: "Failed to sync messages", type: "error" });
       }
     );
-  }, [user]);
+  }, [user, notify]);
 
   const handleSubmit = async (prompt) => {
     const content = prompt.trim();
@@ -68,7 +77,6 @@ export function useAiChat(user, settings, refreshBilling, notify) {
     setPendingMessage({ role: "assistant", content: "", type: "chat", prompt: content });
     setGenerationStage("Analyzing Request...");
 
-    const db = getFirestore();
     let activeChatId = currentChatId;
     const requestId = uuidv4();
 
@@ -135,7 +143,6 @@ export function useAiChat(user, settings, refreshBilling, notify) {
 
   const handleDeleteChat = async (chatId) => {
     if (!user || !chatId) return;
-    const db = getFirestore();
     try {
       await deleteDoc(doc(db, "users", user.uid, "chats", chatId));
       if (currentChatId === chatId) {
@@ -151,7 +158,6 @@ export function useAiChat(user, settings, refreshBilling, notify) {
 
   const handleClearChat = async () => {
     if (!user || !currentChatId) return;
-    const db = getFirestore();
     try {
       const msgsSnap = await getDocs(collection(db, "users", user.uid, "chats", currentChatId, "messages"));
       const batch = writeBatch(db);

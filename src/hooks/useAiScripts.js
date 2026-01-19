@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
 import { 
-  getFirestore, 
   doc, 
   collection, 
   query, 
@@ -10,6 +9,7 @@ import {
   deleteDoc, 
   serverTimestamp 
 } from "firebase/firestore";
+import { db } from "../firebase";
 
 export function useAiScripts(user, notify) {
   const [currentScriptId, setCurrentScriptId] = useState(null);
@@ -24,23 +24,43 @@ export function useAiScripts(user, notify) {
       return;
     }
 
-    const db = getFirestore();
     const scriptRef = doc(db, "users", user.uid, "scripts", currentScriptId);
-    
-    const unsubScript = onSnapshot(scriptRef, (snap) => {
-      if (snap.exists()) {
-        setCurrentScript({ id: snap.id, ...snap.data() });
-      }
-    });
 
-    const versionsRef = collection(db, "users", user.uid, "scripts", currentScriptId, "versions");
+    const unsubScript = onSnapshot(
+      scriptRef,
+      (snap) => {
+        if (snap.exists()) {
+          setCurrentScript({ id: snap.id, ...snap.data() });
+        }
+      },
+      (err) => {
+        console.error("Firestore script subscription error:", err);
+        notify?.({ message: "Failed to sync script details", type: "error" });
+      }
+    );
+
+    const versionsRef = collection(
+      db,
+      "users",
+      user.uid,
+      "scripts",
+      currentScriptId,
+      "versions"
+    );
     const qVersions = query(versionsRef, orderBy("versionNumber", "desc"));
-    
-    const unsubVersions = onSnapshot(qVersions, (snap) => {
-      const arr = [];
-      snap.forEach((d) => arr.push({ id: d.id, ...d.data() }));
-      setVersionHistory(arr);
-    });
+
+    const unsubVersions = onSnapshot(
+      qVersions,
+      (snap) => {
+        const arr = [];
+        snap.forEach((d) => arr.push({ id: d.id, ...d.data() }));
+        setVersionHistory(arr);
+      },
+      (err) => {
+        console.error("Firestore versions subscription error:", err);
+        notify?.({ message: "Failed to sync version history", type: "error" });
+      }
+    );
 
     return () => {
       unsubScript();
@@ -50,7 +70,6 @@ export function useAiScripts(user, notify) {
 
   const handleRenameScript = useCallback(async (id, title) => {
     if (!user || !id) return;
-    const db = getFirestore();
     try {
       await updateDoc(doc(db, "users", user.uid, "scripts", id), {
         title,
@@ -64,7 +83,6 @@ export function useAiScripts(user, notify) {
 
   const handleDeleteScript = useCallback(async (id) => {
     if (!user || !id) return;
-    const db = getFirestore();
     try {
       await deleteDoc(doc(db, "users", user.uid, "scripts", id));
       if (currentScriptId === id) {

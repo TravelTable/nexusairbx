@@ -1,12 +1,12 @@
 import { useState, useCallback } from "react";
 import { 
-  getFirestore, 
   doc, 
   collection, 
   setDoc, 
   serverTimestamp, 
   addDoc 
 } from "firebase/firestore";
+import { db } from "../firebase";
 import { v4 as uuidv4 } from "uuid";
 import { aiPipeline, aiRefineLua, exportLua } from "../lib/uiBuilderApi";
 import { cryptoRandomId } from "../lib/versioning";
@@ -80,7 +80,6 @@ export function useUiBuilder(user, settings, refreshBilling, notify) {
     setPendingMessage({ role: "assistant", content: "", type: "ui", prompt: content });
     setGenerationStage("Planning Layout...");
     
-    const db = getFirestore();
     let activeChatId = currentChatId;
     const requestId = uuidv4();
 

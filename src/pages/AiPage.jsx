@@ -17,7 +17,7 @@ import {
   Gamepad2,
   Sparkles,
 } from "lucide-react";
-import { auth } from "../firebase";
+import { auth, db } from "../firebase";
 import { onAuthStateChanged, signInAnonymously } from "firebase/auth";
 import SidebarContent from "../components/SidebarContent";
 import PlanBadge from "../components/PlanBadge";
@@ -30,7 +30,6 @@ import {
 } from "../components/ai/AiComponents";
 import UiSpecificationModal from "../components/ai/UiSpecificationModal";
 import {
-  getFirestore,
   collection,
   query,
   orderBy,
@@ -106,15 +105,33 @@ function AiPage() {
   }, []);
 
   useEffect(() => {
-    if (!user) { setScripts([]); return; }
-    const db = getFirestore();
-    const q = query(collection(db, "users", user.uid, "scripts"), orderBy("updatedAt", "desc"), limit(scriptsLimit));
-    const unsub = onSnapshot(q, (snap) => {
-      const list = snap.docs.map((d) => ({ id: d.id, ...d.data(), updatedAt: d.data().updatedAt?.toMillis?.() || Date.now(), createdAt: d.data().createdAt?.toMillis?.() || Date.now() }));
-      setScripts(list);
-    });
+    if (!user) {
+      setScripts([]);
+      return;
+    }
+    const q = query(
+      collection(db, "users", user.uid, "scripts"),
+      orderBy("updatedAt", "desc"),
+      limit(scriptsLimit)
+    );
+    const unsub = onSnapshot(
+      q,
+      (snap) => {
+        const list = snap.docs.map((d) => ({
+          id: d.id,
+          ...d.data(),
+          updatedAt: d.data().updatedAt?.toMillis?.() || Date.now(),
+          createdAt: d.data().createdAt?.toMillis?.() || Date.now(),
+        }));
+        setScripts(list);
+      },
+      (err) => {
+        console.error("Firestore scripts subscription error:", err);
+        notify({ message: "Failed to sync scripts library", type: "error" });
+      }
+    );
     return () => unsub();
-  }, [user, scriptsLimit]);
+  }, [user, scriptsLimit, notify]);
 
   useEffect(() => {
     if (location?.state?.initialPrompt) {
@@ -143,7 +160,6 @@ function AiPage() {
 
   const handleOpenScript = async (script) => {
     if (script.type === "ui") {
-      const db = getFirestore();
       const uid = user?.uid;
       if (!uid) return;
       const snap = await getDocs(query(collection(db, "users", uid, "scripts", script.id, "versions"), orderBy("versionNumber", "desc"), limit(1)));
