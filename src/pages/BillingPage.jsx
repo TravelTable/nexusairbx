@@ -20,7 +20,6 @@ import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
 import { getFirestore, doc, onSnapshot } from "firebase/firestore";
 import { PRICE } from "../lib/prices";
-import TokensCounterContainer from "../components/TokensCounterContainer";
 
 const PAYG_TOKENS_BY_PRICE_ID = {
   [PRICE.payg.pack100k]: 100000,

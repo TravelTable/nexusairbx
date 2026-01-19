@@ -21,10 +21,7 @@ export default function ScriptLoadingBarContainer({
   onCancel = null,
 }) {
   const [progress, setProgress] = useState(0);
-  const [internalSaved, setInternalSaved] = useState(saved);
-  const [saving, setSaving] = useState(false);
   const [canceled, setCanceled] = useState(false);
-  const [saveError, setSaveError] = useState("");
 
   const effectiveStage = jobStage ?? stage ?? null;
   const effectiveEta = etaSeconds ?? eta ?? null;
@@ -41,7 +38,6 @@ export default function ScriptLoadingBarContainer({
   useEffect(() => {
     if (loading && !codeReady) {
       setProgress(0);
-      setInternalSaved(false);
       setCanceled(false);
     }
   }, [loading, codeReady]);
@@ -91,12 +87,6 @@ export default function ScriptLoadingBarContainer({
     if (ready && !canceled) setProgress(100);
   }, [ready, canceled]);
 
-  // Sync saved flag from parent
-  useEffect(() => setInternalSaved(saved), [saved]);
-  useEffect(() => {
-    if (loading && !ready) setInternalSaved(false);
-  }, [loading, ready]);
-
   const handleCancel = useCallback(() => {
     if (typeof onCancel === "function" && loading && !ready) {
       onCancel();
@@ -142,7 +132,6 @@ export default function ScriptLoadingBarContainer({
                     <span className="text-yellow-400">This may take a few minutes depending on script complexity...</span>
                   )}
                   {canceled && <span className="text-red-400">Generation was canceled. No further progress.</span>}
-                  {saveError && <span className="text-xs text-red-400">{saveError}</span>}
                 </div>
                 {previewSnippet && ready && (
                   <div className="mt-2 text-xs text-gray-400 font-mono whitespace-pre-wrap max-h-16 overflow-hidden">

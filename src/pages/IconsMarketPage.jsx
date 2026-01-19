@@ -3,11 +3,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { 
   Search, 
   Filter, 
-  Zap, 
   Download, 
   ExternalLink, 
-  Copy, 
-  Check, 
   Loader2, 
   Grid, 
   X,

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import {
   User,
   Bot,
@@ -103,7 +103,7 @@ const SettingsPage = () => {
 
   const navigate = useNavigate();
 
-  const fetchUsage = async () => {
+  const fetchUsage = useCallback(async () => {
     if (!user) return;
     try {
       const token = await user.getIdToken();
@@ -117,9 +117,9 @@ const SettingsPage = () => {
     } catch (e) {
       console.error("Failed to fetch usage", e);
     }
-  };
+  }, [user]);
 
-  const fetchDevData = async () => {
+  const fetchDevData = useCallback(async () => {
     if (!user || !isDev) return;
     setDevLoading(true);
     try {
@@ -142,7 +142,7 @@ const SettingsPage = () => {
     } finally {
       setDevLoading(false);
     }
-  };
+  }, [isDev, user]);
 
   useEffect(() => {
     if (activeTab === "usage" || activeTab === "dashboard") {
@@ -151,7 +151,7 @@ const SettingsPage = () => {
     if (activeTab === "developer" && isDev) {
       fetchDevData();
     }
-  }, [activeTab, isDev, user]);
+  }, [activeTab, fetchDevData, fetchUsage, isDev]);
 
   const fetchInspectorData = async (uid) => {
     setDevLoading(true);

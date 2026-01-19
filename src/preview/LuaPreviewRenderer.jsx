@@ -104,7 +104,7 @@ export default function LuaPreviewRenderer({ lua, interactive = false, onAction 
           The Lua code contains a manifest, but it has no UI elements to display.
         </div>
         <div className="mt-4 p-2 bg-black/40 rounded border border-white/5 text-[10px] font-mono text-left max-w-full overflow-auto">
-          <div className="text-zinc-500 mb-1">// Debug Info</div>
+          <div className="text-zinc-500 mb-1">Debug Info</div>
           <div className="text-zinc-300">Canvas: {board.canvasSize?.w}x{board.canvasSize?.h}</div>
           <div className="text-zinc-300">Items: {items.length}</div>
           <button 

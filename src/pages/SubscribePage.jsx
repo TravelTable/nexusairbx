@@ -3,7 +3,6 @@ import {
   Home,
   Check,
   CreditCard,
-  Shield,
   Zap,
   Settings,
   BookOpen,
@@ -21,13 +20,6 @@ import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
 import { getFirestore, doc, onSnapshot } from "firebase/firestore";
 import { PRICE } from "../lib/prices";
-
-// PAYG tokens by price ID
-const PAYG_TOKENS_BY_PRICE_ID = {
-  [PRICE.payg.pack100k]: 100000,
-  [PRICE.payg.pack500k]: 500000,
-  [PRICE.payg.pack1m]: 1000000,
-};
 
 // Subscription plan definitions
 const plans = [
@@ -149,7 +141,6 @@ export default function SubscribePage() {
   const [billingCycle, setBillingCycle] = useState("monthly");
   const [showFaq, setShowFaq] = useState({});
   const [user, setUser] = useState(null);
-  const [error, setError] = useState("");
   const [portalLoading, setPortalLoading] = useState(false);
   const [authReady, setAuthReady] = useState(false);
   const [entitlements, setEntitlements] = useState(null);
@@ -182,7 +173,7 @@ export default function SubscribePage() {
         resetsAt: apiEnt?.sub?.resetsAt || null,
       });
     } catch (e) {
-      setError(e.message);
+      console.error(e);
     }
   }, [user]);
 
@@ -207,13 +198,13 @@ export default function SubscribePage() {
           const data = snap.data();
           if (data?.url) window.location.href = data.url;
           if (data?.error) {
-            setError(data.error.message);
+            console.error(data.error.message);
           }
         });
         sessionUnsubs.current.push(unsub);
       }
     } catch (e) {
-      setError(e.message);
+      console.error(e);
     }
   };
 
@@ -232,7 +223,7 @@ export default function SubscribePage() {
         portalUnsubs.current.push(unsub);
       }
     } catch (e) {
-      setError(e.message);
+      console.error(e);
     } finally {
       setPortalLoading(false);
     }

@@ -20,8 +20,6 @@ import {
 import { auth } from "../firebase";
 import { onAuthStateChanged, signInAnonymously } from "firebase/auth";
 import SidebarContent from "../components/SidebarContent";
-import Modal from "../components/Modal";
-import ScriptLoadingBarContainer from "../components/ScriptLoadingBarContainer";
 import PlanBadge from "../components/PlanBadge";
 import AiTour from "../components/AiTour";
 import OnboardingContainer from "../components/OnboardingContainer";
@@ -33,7 +31,6 @@ import {
 import UiSpecificationModal from "../components/ai/UiSpecificationModal";
 import {
   getFirestore,
-  doc,
   collection,
   query,
   orderBy,
@@ -78,7 +75,6 @@ function AiPage() {
     animations: "",
     platforms: ["pc"],
   });
-  const [selectedVersion, setSelectedVersion] = useState(null);
 
   // 3. Custom Hooks
   const notify = useCallback(({ message, type = "info" }) => {
@@ -231,15 +227,16 @@ function AiPage() {
             user={user}
             onVersionView={(ver) => {
               if (ver.code) {
-                setSelectedVersion({
-                  id: `${scriptManager.currentScriptId}__${ver.versionNumber}`,
-                  projectId: scriptManager.currentScriptId,
-                  code: ver.code,
-                  title: ver.title || scriptManager.currentScript?.title || "Script",
-                  explanation: ver.explanation || "",
-                  versionNumber: ver.versionNumber,
-                  isSavedView: true
-                });
+                window.dispatchEvent(
+                  new CustomEvent("nexus:openCodeDrawer", {
+                    detail: {
+                      code: ver.code,
+                      title: ver.title || scriptManager.currentScript?.title || "Script",
+                      explanation: ver.explanation || "",
+                      versionNumber: ver.versionNumber,
+                    },
+                  })
+                );
               }
             }}
             onVersionDownload={(ver) => {

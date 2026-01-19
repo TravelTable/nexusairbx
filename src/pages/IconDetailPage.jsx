@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { 
   ArrowLeft, 
@@ -13,7 +13,7 @@ import {
   Box,
   Upload
 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { Helmet } from "react-helmet";
 import { auth } from "../firebase";
 import { onAuthStateChanged } from "firebase/auth";
@@ -43,6 +43,17 @@ export default function IconDetailPage() {
   const [previewBg, setPreviewBg] = useState("dark"); // dark, light, transparent, scene
   const [tintColor, setTintColor] = useState("#ffffff");
   const [relatedIcons, setRelatedIcons] = useState([]);
+
+  const fetchRelated = useCallback(async (category, style) => {
+    try {
+      const params = new URLSearchParams({ category, style, limit: 6 });
+      const res = await fetch(`${API_BASE}/api/icons/market?${params.toString()}`);
+      const data = await res.json();
+      setRelatedIcons(data.icons?.filter((i) => i.id !== id) || []);
+    } catch (e) {
+      console.error("Failed to fetch related icons", e);
+    }
+  }, [id]);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (u) => {
@@ -83,18 +94,7 @@ export default function IconDetailPage() {
 
     fetchIcon();
     fetchTokens();
-  }, [id]);
-
-  const fetchRelated = async (category, style) => {
-    try {
-      const params = new URLSearchParams({ category, style, limit: 6 });
-      const res = await fetch(`${API_BASE}/api/icons/market?${params.toString()}`);
-      const data = await res.json();
-      setRelatedIcons(data.icons?.filter(i => i.id !== id) || []);
-    } catch (e) {
-      console.error("Failed to fetch related icons", e);
-    }
-  };
+  }, [fetchRelated, id]);
 
 
   const handleDownload = async () => {

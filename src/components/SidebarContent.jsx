@@ -4,10 +4,8 @@ import React, {
   useCallback,
   useEffect,
   useRef,
-  useId,
   useDeferredValue,
 } from "react";
-import { motion } from "framer-motion";
 import {
   Plus,
   Edit,
@@ -24,7 +22,6 @@ import Modal from "./Modal";
 import ScriptRow from "./sidebar/ScriptRow";
 import NotificationToast from "./sidebar/NotificationToast";
 import {
-  toMs,
   getVersionStr,
   keyForScript,
   fromNow,
@@ -38,7 +35,6 @@ import {
   deleteDoc,
   serverTimestamp,
 } from "firebase/firestore";
-import { useBilling } from "../context/BillingContext";
 import { useAiLibrary } from "../hooks/useAiLibrary";
 
 // --- Toast Hook for Error Surfaces ---
@@ -81,8 +77,7 @@ export default function SidebarContent({
   user = null,
 }) {
   // --- Billing ---
-  const { plan, historyDays } = useBilling();
-  const { chats, savedScripts, loading: libraryLoading } = useAiLibrary(user);
+  const { chats, savedScripts } = useAiLibrary(user);
 
   // --- State ---
 

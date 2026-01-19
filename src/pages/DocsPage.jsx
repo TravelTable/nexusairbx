@@ -3,9 +3,6 @@ import { useState, useEffect, useRef } from "react";
 import { 
   Search, 
   ChevronDown, 
-  ExternalLink, 
-  Copy, 
-  Check, 
   BookOpen,
   Code,
   Terminal,

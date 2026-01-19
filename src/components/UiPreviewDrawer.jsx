@@ -3,7 +3,6 @@ import { X, Download, Copy, Check } from "lucide-react";
 import JSZip from "jszip";
 import { Light as SyntaxHighlighter } from "react-syntax-highlighter";
 import luaLang from "react-syntax-highlighter/dist/esm/languages/hljs/lua";
-import { atomOneDark } from "react-syntax-highlighter/dist/esm/styles/hljs";
 import { aiGenerateFunctionality } from "../lib/uiBuilderApi";
 import { extractUiManifestFromLua } from "../lib/extractUiManifestFromLua";
 import { useBilling } from "../context/BillingContext";
@@ -141,18 +140,6 @@ export default function UiPreviewDrawer({
       console.error(e);
     } finally {
       setIsGeneratingFunc(false);
-    }
-  };
-
-  const updateNodeProperty = async (nodeId, property, value) => {
-    if (!manifest?.boardState || !nodeId) return;
-    
-    const newBoardState = JSON.parse(JSON.stringify(manifest.boardState));
-    const item = newBoardState.items.find(it => it.id === nodeId);
-    if (item) {
-      const jsonProp = property.charAt(0).toLowerCase() + property.slice(1);
-      item[jsonProp] = value;
-      await onUpdateLua(newBoardState);
     }
   };
 
