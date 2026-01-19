@@ -133,7 +133,9 @@ export default function AiTour({ onComplete, onSkip }) {
 
     // Vertical clamping
     if (top < padding) top = padding;
-    if (top + tooltipHeight > viewportHeight - padding) top = viewportHeight - tooltipHeight - padding;
+    if (top + tooltipHeight > viewportHeight - padding) {
+      top = viewportHeight - tooltipHeight - padding;
+    }
 
     setAdjustedPos({ top, left, actualPosition });
   }, [isVisible, coords, currentStep]);
@@ -232,7 +234,9 @@ export default function AiTour({ onComplete, onSkip }) {
               adjustedPos.actualPosition === "right" ? "top-1/2 -left-2 -translate-y-1/2 border-b border-l" : ""
             }`} 
             style={{
-              left: adjustedPos.actualPosition === "right" ? "-8px" : `calc(50% + ${coords.left + coords.width/2 - adjustedPos.left}px)`
+              left: adjustedPos.actualPosition === "right" 
+                ? "-8px" 
+                : `clamp(20px, calc(50% + ${coords.left + coords.width/2 - adjustedPos.left}px), calc(100% - 20px))`
             }}
             />
           </motion.div>
