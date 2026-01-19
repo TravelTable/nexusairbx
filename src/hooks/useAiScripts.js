@@ -66,7 +66,7 @@ export function useAiScripts(user, notify) {
       unsubScript();
       unsubVersions();
     };
-  }, [user, currentScriptId]);
+  }, [user, currentScriptId, notify]);
 
   const handleRenameScript = useCallback(async (id, title) => {
     if (!user || !id) return;
