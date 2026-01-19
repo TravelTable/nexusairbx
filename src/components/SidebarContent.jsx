@@ -423,14 +423,26 @@ export default function SidebarContent({
           </div>
         </button>
 
-        {/* 2. Unified Primary Action Button */}
-        <button
-          onClick={activeTab === "chats" ? handleCreateChatLocal : handleNewScript}
-          className="w-full mt-4 py-3 rounded-xl bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-black font-bold text-sm flex items-center justify-center gap-2 shadow-lg hover:shadow-[#00f5d4]/20 transition-all active:scale-[0.98]"
-        >
-          <Plus className="w-4 h-4" />
-          {activeTab === "chats" ? "New Chat Session" : "Create New Script"}
-        </button>
+      {/* 2. Unified Primary Action Button */}
+      <button
+        onClick={() => {
+          if (activeTab === "chats") {
+            handleCreateChatLocal();
+            setActiveTab("chats"); // Ensure we stay/go to chats
+          } else if (activeTab === "scripts") {
+            handleNewScript();
+            setActiveTab("scripts");
+          } else {
+            // If in "saved", default to new chat
+            handleCreateChatLocal();
+            setActiveTab("chats");
+          }
+        }}
+        className="w-full mt-4 py-3 rounded-xl bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-black font-bold text-sm flex items-center justify-center gap-2 shadow-lg hover:shadow-[#00f5d4]/20 transition-all active:scale-[0.98]"
+      >
+        <Plus className="w-4 h-4" />
+        {activeTab === "scripts" ? "Create New Script" : "New Chat Session"}
+      </button>
       </div>
 
       {/* 3. Modern Pill Navigation */}

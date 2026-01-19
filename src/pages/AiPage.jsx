@@ -62,6 +62,13 @@ function AiPage() {
   const [scripts, setScripts] = useState([]);
   const [scriptsLimit] = useState(50);
   const [activeTab, setActiveTab] = useState("ui"); // "ui" | "chat" | "library"
+
+  // Map sidebar tabs to main tabs
+  const handleSidebarTabChange = (sidebarTab) => {
+    if (sidebarTab === "scripts") setActiveTab("ui");
+    else if (sidebarTab === "chats") setActiveTab("chat");
+    else if (sidebarTab === "saved") setActiveTab("library");
+  };
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [prompt, setPrompt] = useState("");
   const [showTour, setShowTour] = useState(localStorage.getItem("nexusrbx:tourComplete") !== "true");
@@ -163,13 +170,19 @@ function AiPage() {
     if (activeTab === "ui") {
       setShowUiSpecModal(true);
     } else {
+      // If we are in library/saved, switch to chat to see the response
+      if (activeTab === "library") {
+        setActiveTab("chat");
+      }
       chat.handleSubmit(prompt);
       setPrompt("");
     }
   };
 
   const handleOpenScript = async (script) => {
+    // Switch to UI tab if it's a UI script, or Chat if it's a regular script
     if (script.type === "ui") {
+      setActiveTab("ui");
       const uid = user?.uid;
       if (!uid) return;
       const snap = await getDocs(query(collection(db, "users", uid, "scripts", script.id, "versions"), orderBy("versionNumber", "desc"), limit(1)));
@@ -180,6 +193,7 @@ function AiPage() {
         ui.setUiDrawerOpen(true);
       }
     } else {
+      setActiveTab("chat");
       // Handle regular script opening (e.g. open in a code modal)
       notify({ message: "Opening script...", type: "info" });
     }
@@ -234,8 +248,8 @@ function AiPage() {
       <div className="flex flex-1 min-h-0">
         <aside id="tour-sidebar" className={`fixed inset-y-0 left-0 z-40 w-72 bg-gray-900 border-r border-gray-800 flex flex-col transform transition-transform duration-300 ease-in-out md:relative md:translate-x-0 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}`}>
           <SidebarContent
-            activeTab={activeTab === "ui" ? "scripts" : "chats"} 
-            setActiveTab={() => {}} 
+            activeTab={activeTab === "ui" ? "scripts" : activeTab === "chat" ? "chats" : "saved"} 
+            setActiveTab={handleSidebarTabChange} 
             scripts={scripts} 
             currentChatId={chat.currentChatId} 
             currentScriptId={scriptManager.currentScriptId}
@@ -321,46 +335,44 @@ function AiPage() {
             )}
           </div>
 
-          {activeTab !== "library" && (
-            <div className="p-4 bg-gradient-to-t from-black via-black/80 to-transparent">
-              <div className="max-w-5xl mx-auto space-y-4">
-                <div className="px-2">
-                  <TokenBar tokensLeft={totalRemaining} tokensLimit={subLimit} resetsAt={resetsAt} plan={planKey} />
-                </div>
-                
-                <div className="relative group">
-                  <div className="absolute -inset-0.5 bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] rounded-2xl blur opacity-20 group-focus-within:opacity-40 transition duration-500" />
-                  <div className="relative bg-[#121212] border border-white/10 rounded-2xl p-2 shadow-2xl flex items-center gap-2">
-                    <textarea
-                      id="tour-prompt-box"
-                      className="flex-1 bg-transparent border-none rounded-xl p-3 resize-none focus:ring-0 text-gray-100 placeholder-gray-500 text-[14px] leading-relaxed disabled:opacity-50"
-                      rows="1" 
-                      placeholder={activeTab === "ui" ? "Describe the UI you want to build..." : "Ask anything about Roblox development..."}
-                      value={prompt} 
-                      onChange={(e) => setPrompt(e.target.value)}
-                      disabled={chat.isGenerating || ui.uiIsGenerating}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' && !e.shiftKey) {
-                          e.preventDefault();
-                          handlePromptSubmit();
-                        }
-                      }}
-                    />
-                    <button 
-                      id="tour-generate-button"
-                      onClick={handlePromptSubmit} 
-                      disabled={chat.isGenerating || ui.uiIsGenerating || !prompt.trim()}
-                      className={`p-3 rounded-xl transition-all disabled:opacity-50 ${
-                        activeTab === "ui" ? "bg-[#00f5d4] text-black hover:shadow-[0_0_20px_rgba(0,245,212,0.4)]" : "bg-[#9b5de5] text-white hover:shadow-[0_0_20px_rgba(155,93,229,0.4)]"
-                      }`}
-                    >
-                      {chat.isGenerating || ui.uiIsGenerating ? <Loader className="h-5 w-5 animate-spin" /> : (activeTab === "ui" ? <Sparkles className="h-5 w-5" /> : <Send className="h-5 w-5" />)}
-                    </button>
-                  </div>
+          <div className="p-4 bg-gradient-to-t from-black via-black/80 to-transparent">
+            <div className="max-w-5xl mx-auto space-y-4">
+              <div className="px-2">
+                <TokenBar tokensLeft={totalRemaining} tokensLimit={subLimit} resetsAt={resetsAt} plan={planKey} />
+              </div>
+              
+              <div className="relative group">
+                <div className="absolute -inset-0.5 bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] rounded-2xl blur opacity-20 group-focus-within:opacity-40 transition duration-500" />
+                <div className="relative bg-[#121212] border border-white/10 rounded-2xl p-2 shadow-2xl flex items-center gap-2">
+                  <textarea
+                    id="tour-prompt-box"
+                    className="flex-1 bg-transparent border-none rounded-xl p-3 resize-none focus:ring-0 text-gray-100 placeholder-gray-500 text-[14px] leading-relaxed disabled:opacity-50"
+                    rows="1" 
+                    placeholder={activeTab === "ui" ? "Describe the UI you want to build..." : "Ask anything about Roblox development..."}
+                    value={prompt} 
+                    onChange={(e) => setPrompt(e.target.value)}
+                    disabled={chat.isGenerating || ui.uiIsGenerating}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        handlePromptSubmit();
+                      }
+                    }}
+                  />
+                  <button 
+                    id="tour-generate-button"
+                    onClick={handlePromptSubmit} 
+                    disabled={chat.isGenerating || ui.uiIsGenerating || !prompt.trim()}
+                    className={`p-3 rounded-xl transition-all disabled:opacity-50 ${
+                      activeTab === "ui" ? "bg-[#00f5d4] text-black hover:shadow-[0_0_20px_rgba(0,245,212,0.4)]" : "bg-[#9b5de5] text-white hover:shadow-[0_0_20px_rgba(155,93,229,0.4)]"
+                    }`}
+                  >
+                    {chat.isGenerating || ui.uiIsGenerating ? <Loader className="h-5 w-5 animate-spin" /> : (activeTab === "ui" ? <Sparkles className="h-5 w-5" /> : <Send className="h-5 w-5" />)}
+                  </button>
                 </div>
               </div>
             </div>
-          )}
+          </div>
         </main>
       </div>
 
