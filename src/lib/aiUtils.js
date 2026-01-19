@@ -1,5 +1,3 @@
-import { auth } from "../firebase";
-
 export function getGravatarUrl(email, size = 40) {
   if (!email) return null;
   function fallbackMd5(str) {
@@ -80,7 +78,10 @@ export async function pollJob(user, jobId, onTick, { signal, backendUrl }) {
     const data = await res.json();
     onTick?.(data);
     if (data.status === "succeeded" || data.status === "failed") return data;
-    await new Promise((r) => setTimeout(r, delay));
+    
+    // Use a local variable to avoid no-loop-func warning
+    const currentDelay = delay;
+    await new Promise((r) => setTimeout(r, currentDelay));
     delay = Math.min(delay + 300, 3000);
   }
 }

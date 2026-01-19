@@ -2,13 +2,12 @@ import { useState, useEffect } from "react";
 import {
   ChevronLeft,
   ChevronRight,
-  Info,
-  Shield,
-  Code,
-  Zap,
-  MessageSquare,
   X,
   Sparkles,
+  MessageSquare,
+  Code,
+  Shield,
+  Zap,
 } from "lucide-react";
 
 // Main Onboarding Modal Container

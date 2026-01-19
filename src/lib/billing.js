@@ -4,10 +4,6 @@ import { getAuth } from "firebase/auth";
 // Backend origin (hardcoded OK if that’s your deploy)
 const API_ORIGIN = "https://nexusrbx-backend-production.up.railway.app";
 
-function buildUrl(path) {
-  return new URL(path, API_ORIGIN).toString();
-}
-
 async function getIdToken({ force = false } = {}) {
   const user = getAuth().currentUser;
   if (!user) throw new Error("Not signed in");

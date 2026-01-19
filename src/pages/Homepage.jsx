@@ -1,9 +1,8 @@
 // IMPORTS BLOCK (with Helmet import added)
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { Github, Zap, Settings, Shield, ChevronRight, Loader, Star, DollarSign, Layout, Users, Code, Cpu, Download } from "lucide-react";
+import { Zap, Layout, Code, Cpu, Download } from "lucide-react";
 import { motion, useScroll, useTransform, useSpring, useInView, AnimatePresence } from "framer-motion";
-import TokensCounterContainer from "../components/TokensCounterContainer";
 import NexusRBXHeader from "../components/NexusRBXHeader";
 import NexusRBXFooter from "../components/NexusRBXFooter";
 import { auth } from "../firebase";
@@ -20,7 +19,7 @@ export default function NexusRBXHomepageContainer() {
   const [inputValue, setInputValue] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const [currentTypewriterIndex, setCurrentTypewriterIndex] = useState(0);
-  const [loading, setLoading] = useState(false);
+  const [loading] = useState(false);
   const [error, setError] = useState("");
   const [user, setUser] = useState(null);
   const [tokenInfo, setTokenInfo] = useState(null);

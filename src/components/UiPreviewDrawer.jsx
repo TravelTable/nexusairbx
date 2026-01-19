@@ -1,11 +1,10 @@
-import React, { useMemo, useState, useEffect, useCallback } from "react";
-import { X, Download, Copy, Check, Loader, Search, Image as ImageIcon, AlertCircle, ExternalLink, Plus, Upload, Package, CheckCircle2 } from "lucide-react";
+import React, { useMemo, useState, useEffect } from "react";
+import { X, Download, Copy, Check } from "lucide-react";
 import JSZip from "jszip";
-import LuaPreviewRenderer from "../preview/LuaPreviewRenderer";
 import { Light as SyntaxHighlighter } from "react-syntax-highlighter";
 import luaLang from "react-syntax-highlighter/dist/esm/languages/hljs/lua";
 import { atomOneDark } from "react-syntax-highlighter/dist/esm/styles/hljs";
-import { aiGenerateFunctionality, robloxCatalogSearch, robloxThumbnailUrl } from "../lib/uiBuilderApi";
+import { aiGenerateFunctionality } from "../lib/uiBuilderApi";
 import { extractUiManifestFromLua } from "../lib/extractUiManifestFromLua";
 import { useBilling } from "../context/BillingContext";
 import PreviewTab from "./UiPreview/PreviewTab";
@@ -31,12 +30,12 @@ export default function UiPreviewDrawer({
   settings,
   onRefine,
   onUpdateLua,
+  isRefining,
 }) {
   const { refresh: refreshBilling } = useBilling();
   const [tab, setTab] = useState("preview"); // "preview" | "code" | "functionality" | "history" | "assets"
   const [lastEvent, setLastEvent] = useState(null);
   const [refineInput, setRefineInput] = useState("");
-  const [isRefining, setIsRefining] = useState(false);
   
   // Functionality state
   const [funcPrompt, setFuncPrompt] = useState("");
@@ -45,10 +44,6 @@ export default function UiPreviewDrawer({
   const [isGeneratingFunc, setIsGeneratingFunc] = useState(false);
 
   // Image Assistant state
-  const [imageSearchQuery, setImageSearchQuery] = useState("");
-  const [imageSearchResults, setImageSearchResults] = useState([]);
-  const [isSearchingImages, setIsSearchingImages] = useState(false);
-  const [selectedImageNode, setSelectedImageNode] = useState(null);
 
   const manifest = useMemo(() => extractUiManifestFromLua(lua), [lua]);
   const imageNodes = useMemo(() => {
@@ -149,20 +144,6 @@ export default function UiPreviewDrawer({
     }
   };
 
-  const handleImageSearch = async (query) => {
-    if (!query.trim()) return;
-    setIsSearchingImages(true);
-    try {
-      const response = await robloxCatalogSearch({ keyword: query, limit: 12 });
-      // Backend now returns both 'results' and 'data' for safety
-      setImageSearchResults(response?.results || response?.data || []);
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setIsSearchingImages(false);
-    }
-  };
-
   const updateNodeProperty = async (nodeId, property, value) => {
     if (!manifest?.boardState || !nodeId) return;
     
@@ -175,9 +156,6 @@ export default function UiPreviewDrawer({
     }
   };
 
-  const applyImageId = async (nodeId, assetId) => {
-    await updateNodeProperty(nodeId, 'ImageId', `rbxassetid://${assetId}`);
-  };
   const [copySuccess, setCopySuccess] = useState(false);
 
   useEffect(() => {
@@ -195,7 +173,7 @@ export default function UiPreviewDrawer({
         setShowWorkflowModal(true);
       }
     }
-  }, [open, uniqueAssets.length]);
+  }, [open, uniqueAssets, assetIds]);
 
   const handleCopy = async () => {
     try {

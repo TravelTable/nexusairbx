@@ -1,5 +1,5 @@
 import React from "react";
-import { Package, Image as ImageIcon, Download, Upload, CheckCircle2, Loader, ExternalLink } from "lucide-react";
+import { Package, Image as ImageIcon, Download, Upload, CheckCircle2, Loader } from "lucide-react";
 
 export default function AssetsTab({
   uniqueAssets,

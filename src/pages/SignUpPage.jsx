@@ -15,7 +15,6 @@ import {
   Info,
   Shield,
   Zap,
-  ShieldCheck,
   Sparkles
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";

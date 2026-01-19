@@ -5,21 +5,13 @@ import {
   CreditCard,
   Shield,
   Zap,
-  Code,
   Settings,
-  Users,
   BookOpen,
   ChevronDown,
   Sparkles,
   Loader2,
-  AlertTriangle,
-  DollarSign,
-  ExternalLink,
-  ArrowUpRight,
   CheckCircle,
-  Lock,
   ArrowRight,
-  Star,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import NexusRBXHeader from "../components/NexusRBXHeader";
@@ -153,19 +145,14 @@ const faqs = [
   },
 ];
 
-const API_ORIGIN = process.env.REACT_APP_API_ORIGIN || process.env.VITE_API_ORIGIN;
-
 export default function SubscribePage() {
   const [billingCycle, setBillingCycle] = useState("monthly");
   const [showFaq, setShowFaq] = useState({});
   const [user, setUser] = useState(null);
-  const [note, setNote] = useState("");
   const [error, setError] = useState("");
-  const [checkoutState, setCheckoutState] = useState("idle");
   const [portalLoading, setPortalLoading] = useState(false);
   const [authReady, setAuthReady] = useState(false);
   const [entitlements, setEntitlements] = useState(null);
-  const [entStatus, setEntStatus] = useState("loading");
 
   const navigate = useNavigate();
   const sessionUnsubs = useRef([]);
@@ -181,10 +168,8 @@ export default function SubscribePage() {
 
   const refreshEntitlements = useCallback(async () => {
     if (!user) {
-      setEntStatus("ready");
       return;
     }
-    setEntStatus("loading");
     try {
       const apiEnt = await getEntitlements({ noCache: true });
       setEntitlements({
@@ -196,9 +181,7 @@ export default function SubscribePage() {
         paygRemaining: apiEnt?.payg?.remaining || 0,
         resetsAt: apiEnt?.sub?.resetsAt || null,
       });
-      setEntStatus("ready");
     } catch (e) {
-      setEntStatus("error");
       setError(e.message);
     }
   }, [user]);
@@ -212,7 +195,6 @@ export default function SubscribePage() {
       navigate("/signin", { state: { from: { pathname: "/subscribe" } } });
       return;
     }
-    setCheckoutState("starting");
     try {
       const r = await startCheckout(priceId, mode);
       if (r?.url) {
@@ -226,14 +208,12 @@ export default function SubscribePage() {
           if (data?.url) window.location.href = data.url;
           if (data?.error) {
             setError(data.error.message);
-            setCheckoutState("error");
           }
         });
         sessionUnsubs.current.push(unsub);
       }
     } catch (e) {
       setError(e.message);
-      setCheckoutState("error");
     }
   };
 

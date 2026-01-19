@@ -2,7 +2,7 @@ import React from "react";
 import { NexusRBXAvatar, UserAvatar, FormatText } from "./AiComponents";
 import ScriptLoadingBarContainer from "../ScriptLoadingBarContainer";
 import GenerationStatusBar from "./GenerationStatusBar";
-import { MessageSquare, Zap, Bug, Rocket } from "lucide-react";
+import { Zap, Bug, Rocket } from "lucide-react";
 
 const quickStarts = [
   { icon: <Zap className="w-4 h-4 text-yellow-400" />, label: "Optimize Script", prompt: "Can you optimize this Luau script for better performance?" },

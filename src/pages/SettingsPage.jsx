@@ -103,14 +103,21 @@ const SettingsPage = () => {
 
   const navigate = useNavigate();
 
-  useEffect(() => {
-    if (activeTab === "usage" || activeTab === "dashboard") {
-      fetchUsage();
+  const fetchUsage = async () => {
+    if (!user) return;
+    try {
+      const token = await user.getIdToken();
+      const res = await fetch(`${process.env.REACT_APP_BACKEND_URL || "https://nexusrbx-backend-production.up.railway.app"}/api/user/usage?days=30`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setUsageData(data);
+      }
+    } catch (e) {
+      console.error("Failed to fetch usage", e);
     }
-    if (activeTab === "developer" && isDev) {
-      fetchDevData();
-    }
-  }, [activeTab, isDev]);
+  };
 
   const fetchDevData = async () => {
     if (!user || !isDev) return;
@@ -136,6 +143,15 @@ const SettingsPage = () => {
       setDevLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (activeTab === "usage" || activeTab === "dashboard") {
+      fetchUsage();
+    }
+    if (activeTab === "developer" && isDev) {
+      fetchDevData();
+    }
+  }, [activeTab, isDev, user]);
 
   const fetchInspectorData = async (uid) => {
     setDevLoading(true);
@@ -187,21 +203,6 @@ const SettingsPage = () => {
     }
   };
 
-  const fetchUsage = async () => {
-    if (!user) return;
-    try {
-      const token = await user.getIdToken();
-      const res = await fetch(`${process.env.REACT_APP_BACKEND_URL || "https://nexusrbx-backend-production.up.railway.app"}/api/user/usage?days=30`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setUsageData(data);
-      }
-    } catch (e) {
-      console.error("Failed to fetch usage", e);
-    }
-  };
 
   const handleLogout = async () => {
     await signOut(auth);

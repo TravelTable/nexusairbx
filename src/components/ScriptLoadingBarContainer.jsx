@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback, useMemo } from "react";
-import { FileCode, Save, Check, XCircle } from "lucide-react";
+import { FileCode, XCircle } from "lucide-react";
 
 export default function ScriptLoadingBarContainer({
   filename = "Script.lua",
@@ -24,7 +24,6 @@ export default function ScriptLoadingBarContainer({
   const [internalSaved, setInternalSaved] = useState(saved);
   const [saving, setSaving] = useState(false);
   const [canceled, setCanceled] = useState(false);
-  const [saveSuccess, setSaveSuccess] = useState(false);
   const [saveError, setSaveError] = useState("");
 
   const effectiveStage = jobStage ?? stage ?? null;
@@ -97,60 +96,6 @@ export default function ScriptLoadingBarContainer({
   useEffect(() => {
     if (loading && !ready) setInternalSaved(false);
   }, [loading, ready]);
-
-  const handleSave = useCallback(async () => {
-  setSaveError("");
-  if (saving || internalSaved) return;
-  setSaving(true);
-  try {
-    // Prevent duplicate save if already marked as saved
-    if (internalSaved) {
-      setSaveSuccess(true);
-      setTimeout(() => setSaveSuccess(false), 2000);
-      setSaving(false);
-      return;
-    }
-    let result = false;
-    if (typeof onSave === "function") {
-      result = await onSave();
-    } else {
-      // fallback: fire a global event for sidebar to handle saving
-      window.dispatchEvent(
-        new CustomEvent("nexus:saveScript", {
-          detail: {
-            code: typeof window !== "undefined" && window.nexusCurrentCode ? window.nexusCurrentCode : "",
-            title: displayName || filename || "Script",
-            version: version,
-            language: language,
-          },
-        })
-      );
-      result = true;
-    }
-    // Also fire a global event for sidebar to handle saving (for sidebar "Saved" tab)
-    window.dispatchEvent(
-      new CustomEvent("nexus:sidebarSaveScript", {
-        detail: {
-          code: typeof window !== "undefined" && window.nexusCurrentCode ? window.nexusCurrentCode : "",
-          title: displayName || filename || "Script",
-          version: version,
-          language: language,
-        },
-      })
-    );
-    if (result !== false) {
-      setInternalSaved(true);
-      setSaveSuccess(true);
-      setTimeout(() => setSaveSuccess(false), 2000);
-    } else {
-      setSaveError("Failed to save script.");
-    }
-  } catch (e) {
-    setSaveError("Save error: " + (e?.message || String(e)));
-  } finally {
-    setSaving(false);
-  }
-}, [saving, internalSaved, onSave, displayName, filename, version, language]);
 
   const handleCancel = useCallback(() => {
     if (typeof onCancel === "function" && loading && !ready) {

@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useLayoutEffect } from "react";
+import React, { useState, useCallback, useLayoutEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronRight, X, Sparkles, Info } from "lucide-react";
+import { ChevronRight, X, Sparkles } from "lucide-react";
 
 const TOUR_STEPS = [
   {
@@ -40,7 +40,7 @@ export default function AiTour({ onComplete, onSkip }) {
   const [coords, setCoords] = useState({ top: 0, left: 0, width: 0, height: 0 });
   const [isVisible, setIsVisible] = useState(false);
 
-  const updateCoords = () => {
+  const updateCoords = useCallback(() => {
     const step = TOUR_STEPS[currentStep];
     const element = document.getElementById(step.target);
     if (element) {
@@ -55,7 +55,7 @@ export default function AiTour({ onComplete, onSkip }) {
     } else {
       setIsVisible(false);
     }
-  };
+  }, [currentStep]);
 
   useLayoutEffect(() => {
     updateCoords();
@@ -65,7 +65,7 @@ export default function AiTour({ onComplete, onSkip }) {
       window.removeEventListener("resize", updateCoords);
       window.removeEventListener("scroll", updateCoords);
     };
-  }, [currentStep]);
+  }, [updateCoords]);
 
   const handleNext = () => {
     if (currentStep < TOUR_STEPS.length - 1) {

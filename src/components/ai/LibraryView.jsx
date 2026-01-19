@@ -1,5 +1,5 @@
 import React from "react";
-import { FileCode, Clock, Search, ChevronRight, Layout, MessageSquare } from "lucide-react";
+import { FileCode, Clock, Search, ChevronRight, Layout } from "lucide-react";
 import { toLocalTime } from "../../lib/aiUtils";
 
 export default function LibraryView({ scripts, onOpenScript }) {

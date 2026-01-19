@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
 import {
-  X, Copy, Check, Download, Star, StarOff, Trash2, Edit, Save, Loader, Share2, Tag, Plus, ChevronDown, ChevronUp, Wand2, Info, ListChecks
+  X, Copy, Check, Download, Star, StarOff, Trash2, Edit, Save, Loader, Share2, Plus, Wand2, Info, ListChecks
 } from "lucide-react";
 import { useBilling } from "./context/BillingContext";
 import { motion, AnimatePresence } from "framer-motion";

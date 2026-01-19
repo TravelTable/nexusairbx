@@ -1,5 +1,5 @@
 import React from "react";
-import { Loader, CheckCircle2, Circle } from "lucide-react";
+import { Loader } from "lucide-react";
 
 const stages = [
   { id: "planning", label: "Planning Layout", match: ["Planning Layout..."] },

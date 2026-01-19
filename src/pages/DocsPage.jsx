@@ -2,26 +2,20 @@ import React from 'react';
 import { useState, useEffect, useRef } from "react";
 import { 
   Search, 
-  ChevronRight, 
   ChevronDown, 
   ExternalLink, 
   Copy, 
   Check, 
-  Github,
   BookOpen,
   Code,
   Terminal,
   Shield,
   Zap,
   Settings,
-  HelpCircle,
-  FileText,
   Home,
   X,
-  Lock,
   AlertCircle,
   Cpu,
-  Layers,
   Wand2
 } from "lucide-react";
 

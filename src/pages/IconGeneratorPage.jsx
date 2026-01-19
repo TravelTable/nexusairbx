@@ -7,12 +7,10 @@ import {
   Copy, 
   Check, 
   Loader2, 
-  Palette, 
   Box, 
   Zap,
   Info,
   History,
-  ChevronRight,
   Image as ImageIcon,
   AlertCircle,
   ShieldCheck,
@@ -24,7 +22,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import { auth } from "../firebase";
 import { onAuthStateChanged } from "firebase/auth";
-import { getEntitlements, summarizeEntitlements } from "../lib/billing";
+import { getEntitlements } from "../lib/billing";
 import NexusRBXHeader from "../components/NexusRBXHeader";
 import NexusRBXFooter from "../components/NexusRBXFooter";
 
@@ -64,6 +62,19 @@ export default function IconGeneratorPage() {
   }, [navigate]);
 
   useEffect(() => {
+    const fetchHistory = async () => {
+      try {
+        const token = await user.getIdToken();
+        const res = await fetch(`${API_BASE}/api/tools/icon-history`, {
+          headers: { "Authorization": `Bearer ${token}` }
+        });
+        const data = await res.json();
+        if (data.history) setHistory(data.history);
+      } catch (e) {
+        console.error("Failed to fetch history", e);
+      }
+    };
+
     if (!user) return;
     fetchTokens();
     fetchHistory();
@@ -86,7 +97,6 @@ export default function IconGeneratorPage() {
     setTokenLoading(true);
     try {
       const data = await getEntitlements();
-      const summary = summarizeEntitlements(data);
       setTokenInfo(data);
       const premium = data.entitlements?.includes("pro") || data.entitlements?.includes("team");
       setIsPremium(premium);

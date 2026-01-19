@@ -11,8 +11,6 @@ import {
   FileText,
   Mail,
   BookOpen,
-  Github,
-  AlertTriangle,
   UserCheck,
   Clock,
   Cookie,

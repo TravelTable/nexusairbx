@@ -11,8 +11,6 @@ import {
   Send,
   Loader,
   Menu,
-  Settings,
-  X,
   MessageSquare,
   Layout,
   Library,
@@ -66,7 +64,7 @@ function AiPage() {
   // 2. Local State
   const [user, setUser] = useState(null);
   const [scripts, setScripts] = useState([]);
-  const [scriptsLimit, setScriptsLimit] = useState(50);
+  const [scriptsLimit] = useState(50);
   const [activeTab, setActiveTab] = useState("ui"); // "ui" | "chat" | "library"
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [prompt, setPrompt] = useState("");
@@ -80,7 +78,6 @@ function AiPage() {
     animations: "",
     platforms: ["pc"],
   });
-  const [notifications, setNotifications] = useState([]);
   const [selectedVersion, setSelectedVersion] = useState(null);
 
   // 3. Custom Hooks
@@ -365,6 +362,7 @@ function AiPage() {
             ui.setUiGenerations(prev => prev.map(g => g.id === ui.activeUiId ? { ...g, lua: newLua } : g));
           }
         }}
+        isRefining={ui.uiIsGenerating}
       />
 
       {showUiSpecModal && (

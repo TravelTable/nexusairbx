@@ -4,13 +4,10 @@ import {
   ArrowLeft, 
   Download, 
   ExternalLink, 
-  Copy, 
-  Check, 
   Loader2, 
   Info, 
   ShieldCheck, 
   Sparkles,
-  Eye,
   Palette,
   Maximize2,
   Box,
@@ -55,24 +52,38 @@ export default function IconDetailPage() {
   }, []);
 
   useEffect(() => {
+    const fetchIcon = async () => {
+      setLoading(true);
+      try {
+        const res = await fetch(`${API_BASE}/api/icons/${id}`);
+        if (!res.ok) throw new Error("Icon not found");
+        const data = await res.json();
+        setIcon(data);
+        fetchRelated(data.category, data.style);
+      } catch (e) {
+        setError(e.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    const fetchTokens = async () => {
+      setTokenLoading(true);
+      try {
+        const data = await getEntitlements();
+        setTokenInfo(data);
+        const premium = data.entitlements?.includes("pro") || data.entitlements?.includes("team");
+        setIsPremium(premium);
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setTokenLoading(false);
+      }
+    };
+
     fetchIcon();
     fetchTokens();
   }, [id]);
-
-  const fetchIcon = async () => {
-    setLoading(true);
-    try {
-      const res = await fetch(`${API_BASE}/api/icons/${id}`);
-      if (!res.ok) throw new Error("Icon not found");
-      const data = await res.json();
-      setIcon(data);
-      fetchRelated(data.category, data.style);
-    } catch (e) {
-      setError(e.message);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const fetchRelated = async (category, style) => {
     try {
@@ -85,19 +96,6 @@ export default function IconDetailPage() {
     }
   };
 
-  const fetchTokens = async () => {
-    setTokenLoading(true);
-    try {
-      const data = await getEntitlements();
-      setTokenInfo(data);
-      const premium = data.entitlements?.includes("pro") || data.entitlements?.includes("team");
-      setIsPremium(premium);
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setTokenLoading(false);
-    }
-  };
 
   const handleDownload = async () => {
     if (icon.isPro && !isPremium) {

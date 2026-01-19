@@ -1,5 +1,5 @@
-import React, { Suspense, lazy, useState } from 'react';
-import { BrowserRouter as Router, Routes, Route, useParams, useNavigate } from "react-router-dom";
+import React, { Suspense, lazy } from 'react';
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 
 // Suppress ResizeObserver loop error (Monaco Editor/Chrome bug) AND expose auth for console tests
 import { getAuth } from "firebase/auth";
@@ -14,7 +14,6 @@ if (typeof window !== "undefined") {
 
   // Expose Firebase Auth to the console for quick manual tests
   try {
-    const auth = getAuth();
     // Attach once; won’t throw if run before Firebase init, it’ll attach later on first call
     Object.defineProperty(window, "firebaseAuth", {
       get() { return getAuth(); },

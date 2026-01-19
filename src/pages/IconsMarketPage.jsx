@@ -14,7 +14,6 @@ import {
   Info,
   ShieldCheck,
   ArrowRight,
-  Layers,
   Palette,
   Box,
   Plus,
@@ -57,62 +56,7 @@ export default function IconsMarketPage() {
   const [newCollectionName, setNewCollectionName] = useState("");
   
   const observer = useRef();
-  const lastIconElementRef = useCallback(node => {
-    if (loading) return;
-    if (observer.current) observer.current.disconnect();
-    observer.current = new IntersectionObserver(entries => {
-      if (entries[0].isIntersecting && hasMore) {
-        fetchIcons(true);
-      }
-    });
-    if (node) observer.current.observe(node);
-  }, [loading, hasMore]);
-
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (u) => {
-      setUser(u);
-      if (!u) navigate("/signin");
-    });
-    return () => unsubscribe();
-  }, [navigate]);
-
-  useEffect(() => {
-    if (!user) return;
-    fetchTokens();
-    fetchIcons();
-    fetchCollections();
-  }, [user, search, style, category, isPro]);
-
-  const fetchCollections = async () => {
-    try {
-      const token = await user.getIdToken();
-      const res = await fetch(`${API_BASE}/api/collections`, {
-        headers: { "Authorization": `Bearer ${token}` }
-      });
-      const data = await res.json();
-      if (data.collections) setCollections(data.collections);
-    } catch (e) {
-      console.error("Failed to fetch collections", e);
-    }
-  };
-
-  const fetchTokens = async () => {
-    setTokenLoading(true);
-    try {
-      const data = await getEntitlements();
-      setTokenInfo(data);
-      const premium = data.entitlements?.includes("pro") || data.entitlements?.includes("team");
-      setIsPremium(premium);
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setTokenLoading(false);
-    }
-  };
-
-  const fetchIcons = async (loadMore = false) => {
+  const fetchIcons = useCallback(async (loadMore = false) => {
     setLoading(true);
     try {
       const params = new URLSearchParams();
@@ -141,7 +85,76 @@ export default function IconsMarketPage() {
     } finally {
       setLoading(false);
     }
+  }, [search, style, category, isPro, lastDocId]);
+
+  const lastIconElementRef = useCallback(node => {
+    if (loading) return;
+    if (observer.current) observer.current.disconnect();
+    observer.current = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting && hasMore) {
+        fetchIcons(true);
+      }
+    });
+    if (node) observer.current.observe(node);
+  }, [loading, hasMore, fetchIcons]);
+
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (u) => {
+      setUser(u);
+      if (!u) navigate("/signin");
+    });
+    return () => unsubscribe();
+  }, [navigate]);
+
+  useEffect(() => {
+    const fetchCollections = async () => {
+      try {
+        const token = await user.getIdToken();
+        const res = await fetch(`${API_BASE}/api/collections`, {
+          headers: { "Authorization": `Bearer ${token}` }
+        });
+        const data = await res.json();
+        if (data.collections) setCollections(data.collections);
+      } catch (e) {
+        console.error("Failed to fetch collections", e);
+      }
+    };
+
+    if (!user) return;
+    fetchTokens();
+    fetchIcons();
+    fetchCollections();
+  }, [user, search, style, category, isPro, fetchIcons]);
+
+  const fetchCollections = async () => {
+    try {
+      const token = await user.getIdToken();
+      const res = await fetch(`${API_BASE}/api/collections`, {
+        headers: { "Authorization": `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (data.collections) setCollections(data.collections);
+    } catch (e) {
+      console.error("Failed to fetch collections", e);
+    }
   };
+
+  const fetchTokens = async () => {
+    setTokenLoading(true);
+    try {
+      const data = await getEntitlements();
+      setTokenInfo(data);
+      const premium = data.entitlements?.includes("pro") || data.entitlements?.includes("team");
+      setIsPremium(premium);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setTokenLoading(false);
+    }
+  };
+
 
   const handleDownload = async (icon) => {
     try {

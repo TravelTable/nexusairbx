@@ -15,7 +15,6 @@ import {
   getEntitlements,
   startCheckout,
   openPortal,
-  summarizeEntitlements,
 } from "../lib/billing";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
@@ -93,7 +92,6 @@ export default function BillingPage() {
   const subRemaining =
     Math.max(0, (entitlements?.sub?.limit || 0) - (entitlements?.sub?.used || 0));
   const subLimit = entitlements?.sub?.limit || 0;
-  const subUsed = entitlements?.sub?.used || 0;
   const subPercent = subLimit > 0 ? Math.round((subRemaining / subLimit) * 100) : 0;
 
   // For sticky mobile bar

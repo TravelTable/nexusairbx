@@ -2,8 +2,7 @@
 // Switch by env. For Vite use VITE_STRIPE_MODE; for CRA use REACT_APP_STRIPE_MODE.
 
 const MODE =
-  (import.meta?.env?.VITE_STRIPE_MODE ||
-    process.env.REACT_APP_STRIPE_MODE ||
+  (process.env.REACT_APP_STRIPE_MODE ||
     "test").toLowerCase();
 
 // LIVE price IDs (from your Stripe dashboard)

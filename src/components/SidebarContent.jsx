@@ -9,25 +9,15 @@ import React, {
 } from "react";
 import { motion } from "framer-motion";
 import {
-  X,
   Plus,
   Edit,
   Trash2,
-  Download,
-  Eye,
   Search,
-  Check,
-  MessageCircle,
   Bookmark,
   BookmarkCheck,
-  Lock,
   Gamepad2,
-  Clock,
-  Sparkles,
   MessageSquare,
   Layout,
-  History,
-  ChevronRight,
 } from "lucide-react";
 import SidebarTab from "./SidebarTab";
 import Modal from "./Modal";
@@ -95,7 +85,9 @@ export default function SidebarContent({
   const { chats, savedScripts, loading: libraryLoading } = useAiLibrary(user);
 
   // --- State ---
-  const tabId = useId();
+
+  // Notification state for upgrade nudges
+  const [notification, setNotification] = useState(null);
 
   // Script management state
   const [showAddScriptModal, setShowAddScriptModal] = useState(false);
@@ -122,7 +114,6 @@ export default function SidebarContent({
   const { toast, show: showToast, clear: clearToast } = useToast();
 
   // --- NotificationToast for upgrade nudges ---
-  const [notification, setNotification] = useState(null);
 
   // --- Memoized filtered and sorted scripts (deferred search) ---
   const deferredScriptSearch = useDeferredValue(localSearch.trim().toLowerCase());

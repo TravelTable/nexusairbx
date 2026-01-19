@@ -7,7 +7,6 @@ import {
   Activity, 
   User, 
   LogOut, 
-  Settings, 
   Menu,
   X,
   Zap,

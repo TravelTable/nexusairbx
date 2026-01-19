@@ -106,10 +106,6 @@ function SingleTokenCounter({
   const isLowTokens =
     (maxTokens !== null && tokens <= lowTokenThreshold) ||
     (maxTokens === null && tokens <= lowTokenThreshold);
-  const tokenPercentage =
-    maxTokens !== null && maxTokens > 0
-      ? (tokens / maxTokens) * 100
-      : null;
 
   // Format large numbers with commas
   const formatNumber = (num) => {

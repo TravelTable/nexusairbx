@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Info, Loader } from "lucide-react";
+import { Info } from "lucide-react";
 import PLAN_INFO from "../../lib/planInfo";
 import { getGravatarUrl, getUserInitials, formatNumber, formatResetDate } from "../../lib/aiUtils";
 

@@ -95,7 +95,7 @@ function SubscribeTabUI({
 
         {/* Terms - smaller text */}
         <p className="text-gray-500 text-xs text-center mt-3">
-          Cancel anytime. <a href="#" className="text-indigo-400 hover:underline">Terms apply</a>.
+          Cancel anytime. <span className="text-indigo-400 hover:underline cursor-pointer">Terms apply</span>.
         </p>
       </div>
     </div>
