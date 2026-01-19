@@ -5,6 +5,7 @@ import {
   query, 
   orderBy, 
   onSnapshot, 
+  addDoc,
   updateDoc, 
   deleteDoc, 
   serverTimestamp 
@@ -81,6 +82,25 @@ export function useAiScripts(user, notify) {
     }
   }, [user, notify]);
 
+  const handleCreateScript = useCallback(async (title, chatId) => {
+    if (!user) return;
+    try {
+      const docRef = await addDoc(collection(db, "users", user.uid, "scripts"), {
+        title: title || "New Script",
+        chatId: chatId || null,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+        type: "chat",
+      });
+      setCurrentScriptId(docRef.id);
+      notify({ message: "Script created", type: "success" });
+      return docRef.id;
+    } catch (err) {
+      console.error("Error creating script:", err);
+      notify({ message: "Failed to create script", type: "error" });
+    }
+  }, [user, notify]);
+
   const handleDeleteScript = useCallback(async (id) => {
     if (!user || !id) return;
     try {
@@ -101,6 +121,7 @@ export function useAiScripts(user, notify) {
     versionHistory,
     selectedVersionId,
     setSelectedVersionId,
+    handleCreateScript,
     handleRenameScript,
     handleDeleteScript
   };

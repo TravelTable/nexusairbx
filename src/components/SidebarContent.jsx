@@ -430,7 +430,7 @@ export default function SidebarContent({
             handleCreateChatLocal();
             setActiveTab("chats"); // Ensure we stay/go to chats
           } else if (activeTab === "scripts") {
-            handleNewScript();
+            setShowAddScriptModal(true);
             setActiveTab("scripts");
           } else {
             // If in "saved", default to new chat

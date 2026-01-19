@@ -254,6 +254,7 @@ function AiPage() {
             currentChatId={chat.currentChatId} 
             currentScriptId={scriptManager.currentScriptId}
             setCurrentScriptId={scriptManager.setCurrentScriptId}
+            handleCreateScript={scriptManager.handleCreateScript}
             handleRenameScript={scriptManager.handleRenameScript}
             handleDeleteScript={scriptManager.handleDeleteScript}
             currentScript={scriptManager.currentScript}
