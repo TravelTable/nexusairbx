@@ -7,7 +7,6 @@ import { auth } from "../../firebase";
 export default function LibraryView({ scripts, onOpenScript }) {
   const [activeSubTab, setActiveSubTab] = useState("scripts"); // "scripts" | "favorites"
   const [favorites, setFavorites] = useState([]);
-  const [isLoadingFavs, setIsLoadingFavs] = useState(false);
 
   useEffect(() => {
     if (activeSubTab === "favorites") {
@@ -18,15 +17,12 @@ export default function LibraryView({ scripts, onOpenScript }) {
   const loadFavorites = async () => {
     const user = auth.currentUser;
     if (!user) return;
-    setIsLoadingFavs(true);
     try {
       const token = await user.getIdToken();
       const data = await listFavorites({ token });
       setFavorites(data.favorites || []);
     } catch (e) {
       console.error(e);
-    } finally {
-      setIsLoadingFavs(false);
     }
   };
 
