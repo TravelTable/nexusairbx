@@ -330,8 +330,11 @@ export function useUiBuilder(user, settings, refreshBilling, notify) {
       setUiGenerations((prev) => [entry, ...(prev || [])]);
       setActiveUiId(scriptId);
       
-      // Ensure we stay in chat and scroll to the new UI card
-      setUiDrawerOpen(false); 
+      // Only close drawer if we're not already in it, or if it's a brand new generation from the main chat
+      // Actually, let's keep it open if it was already open to allow continuous refinement
+      if (!uiDrawerOpen) {
+        setUiDrawerOpen(false); 
+      }
       
       const tokenMsg = pipe?.tokensConsumed ? ` (${formatNumber(pipe.tokensConsumed)} tokens used)` : "";
       notify({ message: `UI generated and saved.${tokenMsg}`, type: "success" });
@@ -345,19 +348,28 @@ export function useUiBuilder(user, settings, refreshBilling, notify) {
     }
   };
 
+  const updateActiveLua = useCallback((newLua) => {
+    if (!activeUiId) return;
+    setUiGenerations(prev => prev.map(g => g.id === activeUiId ? { ...g, lua: newLua } : g));
+  }, [activeUiId]);
+
   return {
     uiGenerations,
     setUiGenerations,
     activeUiId,
     setActiveUiId,
     uiIsGenerating,
+    setUiIsGenerating,
     uiDrawerOpen,
     setUiDrawerOpen,
     generationStage,
+    setGenerationStage,
     pendingMessage,
+    setPendingMessage,
     activeUi,
     handleRefine,
     handleGenerateUiPreview,
-    refreshLua
+    refreshLua,
+    updateActiveLua
   };
 }

@@ -1,5 +1,5 @@
 import React from "react";
-import { Image as ImageIcon, Copy, Loader } from "lucide-react";
+import { Image as ImageIcon, Copy, Loader, Zap } from "lucide-react";
 import { Light as SyntaxHighlighter } from "react-syntax-highlighter";
 import { atomOneDark } from "react-syntax-highlighter/dist/esm/styles/hljs";
 
@@ -9,7 +9,8 @@ export default function FunctionalityTab({
   isGeneratingFunc,
   funcPrompt,
   setFuncPrompt,
-  handleGenerateFunctionality
+  handleGenerateFunctionality,
+  mainScriptUpdated // New prop to show if main script was refactored
 }) {
   return (
     <div className="h-full flex flex-col gap-4 overflow-hidden">
@@ -17,7 +18,14 @@ export default function FunctionalityTab({
         <div className="flex-1 overflow-y-auto space-y-4 pr-2 scrollbar-hide">
           {funcPlan && (
             <div className="p-4 bg-gray-900/60 border border-gray-800 rounded-xl">
-              <h4 className="text-[#f15bb5] font-bold mb-2 uppercase text-xs tracking-widest">Implementation Plan</h4>
+              <div className="flex items-center justify-between mb-2">
+                <h4 className="text-[#f15bb5] font-bold uppercase text-xs tracking-widest">Implementation Plan</h4>
+                {mainScriptUpdated && (
+                  <span className="flex items-center gap-1 px-2 py-0.5 rounded bg-[#00f5d4]/10 text-[#00f5d4] text-[10px] font-bold uppercase tracking-tighter border border-[#00f5d4]/20">
+                    <Zap className="w-3 h-3" /> Main Script Refactored
+                  </span>
+                )}
+              </div>
               <div className="text-sm text-gray-200 whitespace-pre-wrap leading-relaxed">{funcPlan}</div>
             </div>
           )}

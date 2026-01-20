@@ -41,6 +41,7 @@ export default function UiPreviewDrawer({
   const [funcPlan, setFuncPlan] = useState("");
   const [funcScripts, setFuncScripts] = useState([]);
   const [isGeneratingFunc, setIsGeneratingFunc] = useState(false);
+  const [mainScriptUpdated, setMainScriptUpdated] = useState(false);
 
   // Image Assistant state
 
@@ -125,6 +126,7 @@ export default function UiPreviewDrawer({
   const handleGenerateFunctionality = async () => {
     if (!funcPrompt.trim() || !user) return;
     setIsGeneratingFunc(true);
+    setMainScriptUpdated(false);
     try {
       const token = await user.getIdToken();
       const data = await aiGenerateFunctionality({
@@ -135,6 +137,12 @@ export default function UiPreviewDrawer({
       });
       setFuncPlan(data.plan);
       setFuncScripts(data.scripts || []);
+      
+      if (data.updatedMainLua) {
+        onUpdateLua(data.updatedMainLua);
+        setMainScriptUpdated(true);
+      }
+      
       refreshBilling();
     } catch (e) {
       console.error(e);
@@ -337,6 +345,7 @@ export default function UiPreviewDrawer({
               funcPrompt={funcPrompt}
               setFuncPrompt={setFuncPrompt}
               handleGenerateFunctionality={handleGenerateFunctionality}
+              mainScriptUpdated={mainScriptUpdated}
             />
           )}
           {tab === "assets" && (

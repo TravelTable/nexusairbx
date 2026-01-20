@@ -164,6 +164,14 @@ function AiPage() {
     // Smarter routing: do deterministic routing first, use agent only when unclear
     try {
       const requestId = uuidv4();
+      
+      // Set a temporary pending message so the user sees immediate feedback
+      chat.setPendingMessage({ 
+        role: "assistant", 
+        content: "", 
+        type: "chat", 
+        prompt: currentPrompt 
+      });
       const p = currentPrompt.toLowerCase();
 
       const looksLikeUi =
@@ -186,6 +194,7 @@ function AiPage() {
 
       // If user wants UI and it's obvious, skip agent
       if (looksLikeUi && !looksLikeRefine) {
+        if (!ui.uiDrawerOpen) ui.setUiDrawerOpen(false); // Only close if not already open (to avoid flicker)
         await ui.handleGenerateUiPreview(
           currentPrompt.replace(/^\/ui\s*/i, ""),
           chat.currentChatId,
@@ -222,6 +231,7 @@ function AiPage() {
       );
 
       if (data?.action === "pipeline") {
+        if (!ui.uiDrawerOpen) ui.setUiDrawerOpen(false);
         await ui.handleGenerateUiPreview(
           data.parameters?.prompt || currentPrompt,
           chat.currentChatId,
@@ -439,7 +449,7 @@ function AiPage() {
             {activeTab === "chat" && (
               <ChatView 
                 messages={chat.messages} 
-                pendingMessage={chat.pendingMessage || ui.pendingMessage} 
+                pendingMessage={chat.pendingMessage || ui.pendingMessage || (agent.isThinking ? { role: "assistant", content: "", thought: "Nexus is thinking...", prompt: "" } : null)} 
                 generationStage={chat.generationStage || ui.generationStage || (agent.isThinking ? "Nexus is thinking..." : "")} 
                 user={user} 
                 onViewUi={(m) => { ui.setActiveUiId(m.projectId); ui.setUiDrawerOpen(true); }}
