@@ -69,7 +69,7 @@ export function useAiChat(user, settings, refreshBilling, notify) {
     );
   }, [user, notify]);
 
-  const handleSubmit = async (prompt) => {
+  const handleSubmit = async (prompt, existingChatId = null, existingRequestId = null) => {
     const content = prompt.trim();
     if (!content || isGenerating || !user) return;
 
@@ -77,8 +77,8 @@ export function useAiChat(user, settings, refreshBilling, notify) {
     setPendingMessage({ role: "assistant", content: "", type: "chat", prompt: content });
     setGenerationStage("Analyzing Request...");
 
-    let activeChatId = currentChatId;
-    const requestId = uuidv4();
+    let activeChatId = existingChatId || currentChatId;
+    const requestId = existingRequestId || uuidv4();
 
     try {
       if (!activeChatId) {
@@ -91,13 +91,15 @@ export function useAiChat(user, settings, refreshBilling, notify) {
         setCurrentChatId(activeChatId);
       }
 
-      const userMsgRef = doc(db, "users", user.uid, "chats", activeChatId, "messages", `${requestId}-user`);
-      await setDoc(userMsgRef, {
-        role: "user",
-        content: content,
-        createdAt: serverTimestamp(),
-        requestId,
-      });
+      if (!existingRequestId) {
+        const userMsgRef = doc(db, "users", user.uid, "chats", activeChatId, "messages", `${requestId}-user`);
+        await setDoc(userMsgRef, {
+          role: "user",
+          content: content,
+          createdAt: serverTimestamp(),
+          requestId,
+        });
+      }
 
       setGenerationStage("Generating Response...");
       const token = await user.getIdToken();

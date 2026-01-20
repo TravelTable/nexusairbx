@@ -420,22 +420,13 @@ export default function SidebarContent({
       {/* 2. Unified Primary Action Button */}
       <button
         onClick={() => {
-          if (activeTab === "chats") {
-            handleCreateChatLocal();
-            setActiveTab("chats"); // Ensure we stay/go to chats
-          } else if (activeTab === "scripts") {
-            setShowAddScriptModal(true);
-            setActiveTab("scripts");
-          } else {
-            // If in "saved", default to new chat
-            handleCreateChatLocal();
-            setActiveTab("chats");
-          }
+          handleCreateChatLocal();
+          setActiveTab("chats");
         }}
         className="w-full mt-4 py-3 rounded-xl bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-black font-bold text-sm flex items-center justify-center gap-2 shadow-lg hover:shadow-[#00f5d4]/20 transition-all active:scale-[0.98]"
       >
         <Plus className="w-4 h-4" />
-        {activeTab === "scripts" ? "Create New Script" : "New Chat Session"}
+        New Chat Session
       </button>
       </div>
 
@@ -443,19 +434,13 @@ export default function SidebarContent({
       <div className="px-4 py-3">
         <div className="flex bg-gray-900/50 border border-white/5 rounded-2xl p-1" role="tablist">
           <SidebarTab
-            label="Scripts"
-            active={activeTab === "scripts"}
-            onClick={() => setActiveTab("scripts")}
-            icon={Layout}
-          />
-          <SidebarTab
-            label="Chats"
-            active={activeTab === "chats"}
+            label="History"
+            active={activeTab === "chats" || activeTab === "scripts"}
             onClick={() => setActiveTab("chats")}
             icon={MessageSquare}
           />
           <SidebarTab
-            label="Saved"
+            label="Library"
             active={activeTab === "saved"}
             onClick={() => setActiveTab("saved")}
             icon={Bookmark}

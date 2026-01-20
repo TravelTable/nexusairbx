@@ -2,11 +2,11 @@ import React from "react";
 import { NexusRBXAvatar, UserAvatar, FormatText } from "./AiComponents";
 import ScriptLoadingBarContainer from "../ScriptLoadingBarContainer";
 import GenerationStatusBar from "./GenerationStatusBar";
-import { Zap, Bug, Rocket } from "lucide-react";
+import { Zap, Bug, Rocket, Layout, Sparkles, Eye, Download } from "lucide-react";
 
 const quickStarts = [
+  { icon: <Layout className="w-4 h-4 text-[#00f5d4]" />, label: "Build UI", prompt: "Build a modern shop UI with categories and a clean layout." },
   { icon: <Zap className="w-4 h-4 text-yellow-400" />, label: "Optimize Script", prompt: "Can you optimize this Luau script for better performance?" },
-  { icon: <Bug className="w-4 h-4 text-red-400" />, label: "Debug Error", prompt: "I'm getting an error in my script, can you help me debug it?" },
   { icon: <Rocket className="w-4 h-4 text-blue-400" />, label: "Generate System", prompt: "Generate a basic DataStore system with leaderboards." },
 ];
 
@@ -54,15 +54,52 @@ export default function ChatView({
                   ? 'bg-gradient-to-br from-[#9b5de5] to-[#00f5d4] text-white shadow-lg border border-white/10' 
                   : 'bg-[#121212] border border-white/5 backdrop-blur-md shadow-xl'}`}>
                   {m.content && m.role === 'user' && <div className="text-[14px] md:text-[15px] whitespace-pre-wrap leading-relaxed text-white">{m.content}</div>}
-                  {m.explanation && <div className="text-[14px] md:text-[15px] whitespace-pre-wrap leading-relaxed text-gray-100"><FormatText text={m.explanation} /></div>}
+                  {m.explanation ? (
+                    <div className="text-[14px] md:text-[15px] whitespace-pre-wrap leading-relaxed text-gray-100"><FormatText text={m.explanation} /></div>
+                  ) : (
+                    m.role === 'assistant' && m.content && <div className="text-[14px] md:text-[15px] whitespace-pre-wrap leading-relaxed text-gray-400 italic"><FormatText text={m.content} /></div>
+                  )}
+                  
+                  {m.role === 'assistant' && m.action && m.action !== 'chat' && (
+                    <div className="mt-3 pt-3 border-t border-white/5 flex items-center gap-2 text-[10px] font-bold text-[#00f5d4] uppercase tracking-widest">
+                      <Sparkles className="w-3 h-3" />
+                      Nexus Action: {m.action}
+                    </div>
+                  )}
+
                   {m.role === 'assistant' && m.code && (
-                    <div className="mt-4">
-                      <ScriptLoadingBarContainer
-                        filename={m.title || "Generated_Script.lua"}
-                        codeReady={!!m.code}
-                        loading={false}
-                        onView={() => onViewUi(m)}
-                      />
+                    <div className="mt-4 space-y-3">
+                      {m.metadata?.type === 'ui' || m.projectId ? (
+                        <div className="relative group/card overflow-hidden rounded-xl border border-white/10 bg-black/40 hover:border-[#00f5d4]/50 transition-all">
+                          <div className="aspect-video bg-gradient-to-br from-gray-900 to-black flex items-center justify-center relative">
+                            <Layout className="w-12 h-12 text-white/10 group-hover/card:text-[#00f5d4]/20 transition-colors" />
+                            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover/card:opacity-100 transition-opacity flex items-center justify-center gap-3">
+                              <button 
+                                onClick={() => onViewUi(m)}
+                                className="px-4 py-2 rounded-lg bg-[#00f5d4] text-black font-bold text-sm flex items-center gap-2 hover:scale-105 transition-transform"
+                              >
+                                <Eye className="w-4 h-4" /> Preview
+                              </button>
+                            </div>
+                          </div>
+                          <div className="p-3 flex items-center justify-between bg-white/5">
+                            <div className="min-w-0">
+                              <div className="text-xs font-bold text-white truncate">{m.title || "Generated UI"}</div>
+                              <div className="text-[10px] text-gray-500 uppercase tracking-tighter">Luau Interface Component</div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                               <Sparkles className="w-4 h-4 text-[#00f5d4] animate-pulse" />
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <ScriptLoadingBarContainer
+                          filename={m.title || "Generated_Script.lua"}
+                          codeReady={!!m.code}
+                          loading={false}
+                          onView={() => onViewUi(m)}
+                        />
+                      )}
                     </div>
                   )}
                 </div>
@@ -71,12 +108,12 @@ export default function ChatView({
             </div>
           ))}
 
-          {pendingMessage && pendingMessage.type === "chat" && (
+          {pendingMessage && (
             <>
               <div className="flex justify-end gap-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
                 <div className="max-w-[80%] order-1">
-                  <div className="p-5 rounded-2xl bg-gradient-to-br from-[#9b5de5]/60 to-[#00f5d4]/60 text-white shadow-lg border border-white/10 backdrop-blur-sm">
-                    <div className="text-[15px] whitespace-pre-wrap">{pendingMessage.prompt}</div>
+                  <div className={`p-5 rounded-2xl bg-gradient-to-br ${pendingMessage.type === 'ui' ? 'from-[#00f5d4]/60 to-[#9b5de5]/60' : 'from-[#9b5de5]/60 to-[#00f5d4]/60'} text-white shadow-lg border border-white/10 backdrop-blur-sm`}>
+                    <div className="text-[15px] whitespace-pre-wrap">{pendingMessage.prompt || pendingMessage.content}</div>
                   </div>
                 </div>
                 <UserAvatar email={user?.email} />
@@ -85,7 +122,7 @@ export default function ChatView({
               <div className="flex justify-start gap-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
                 <NexusRBXAvatar isThinking={true} />
                 <div className="max-w-[80%] order-2">
-                  <GenerationStatusBar currentStage={generationStage} />
+                  <GenerationStatusBar currentStage={generationStage || "Nexus is working..."} />
                 </div>
               </div>
             </>

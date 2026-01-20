@@ -1,18 +1,42 @@
 import { useState, useCallback } from "react";
 import { BACKEND_URL } from "../lib/uiBuilderApi";
+import { doc, setDoc, serverTimestamp, collection, addDoc } from "firebase/firestore";
+import { db } from "../firebase";
+import { v4 as uuidv4 } from "uuid";
 
 export function useAgent(user, notify, refreshBilling) {
   const [messages, setMessages] = useState([]);
   const [isThinking, setIsThinking] = useState(false);
 
-  const sendMessage = useCallback(async (goal) => {
+  const sendMessage = useCallback(async (goal, chatId, setChatId, existingRequestId = null) => {
     if (!user || !goal) return;
 
     setIsThinking(true);
-    const userMsg = { role: "user", content: goal, createdAt: Date.now() };
-    setMessages(prev => [...prev, userMsg]);
+    const requestId = existingRequestId || uuidv4();
+    let activeChatId = chatId;
 
     try {
+      // 1. Ensure we have a chat
+      if (!activeChatId && setChatId) {
+        const newChatRef = await addDoc(collection(db, "users", user.uid, "chats"), {
+          title: goal.slice(0, 30) + (goal.length > 30 ? "..." : ""),
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        });
+        activeChatId = newChatRef.id;
+        setChatId(activeChatId);
+      }
+
+      // 2. Save User Message to Firestore
+      if (activeChatId) {
+        await setDoc(doc(db, "users", user.uid, "chats", activeChatId, "messages", `${requestId}-user`), {
+          role: "user",
+          content: goal,
+          createdAt: serverTimestamp(),
+          requestId,
+        });
+      }
+
       const token = await user.getIdToken();
       const res = await fetch(`${BACKEND_URL}/api/ui-builder/ai/agent`, {
         method: "POST",
@@ -21,7 +45,7 @@ export function useAgent(user, notify, refreshBilling) {
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          history: messages,
+          history: messages.slice(-5), // Send recent history for context
           goal,
         }),
       });
@@ -29,18 +53,22 @@ export function useAgent(user, notify, refreshBilling) {
       if (!res.ok) throw new Error("Agent request failed");
       const data = await res.json();
 
-      const assistantMsg = {
-        role: "assistant",
-        content: data.thought || "I've processed your request.",
-        action: data.action,
-        parameters: data.parameters,
-        createdAt: Date.now(),
-      };
+      // 3. Save Assistant Thought to Firestore
+      if (activeChatId) {
+        await setDoc(doc(db, "users", user.uid, "chats", activeChatId, "messages", `${requestId}-agent`), {
+          role: "assistant",
+          content: data.thought || "I've processed your request.",
+          action: data.action || "chat",
+          parameters: data.parameters || {},
+          createdAt: serverTimestamp(),
+          requestId,
+        });
+      }
 
-      setMessages(prev => [...prev, assistantMsg]);
       refreshBilling();
       return data;
     } catch (e) {
+      console.error("Agent Error:", e);
       notify({ message: "Agent failed to respond", type: "error" });
     } finally {
       setIsThinking(false);

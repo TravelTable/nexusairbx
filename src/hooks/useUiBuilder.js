@@ -72,7 +72,7 @@ export function useUiBuilder(user, settings, refreshBilling, notify) {
     }
   }, [activeUi, user, notify, refreshBilling]);
 
-  const handleGenerateUiPreview = async (prompt, currentChatId, setCurrentChatId, specs = null) => {
+  const handleGenerateUiPreview = async (prompt, currentChatId, setCurrentChatId, specs = null, existingRequestId = null) => {
     const content = prompt.trim();
     if (!content || !user) return;
 
@@ -81,7 +81,7 @@ export function useUiBuilder(user, settings, refreshBilling, notify) {
     setGenerationStage("Planning Layout...");
     
     let activeChatId = currentChatId;
-    const requestId = uuidv4();
+    const requestId = existingRequestId || uuidv4();
 
     try {
       const token = await user.getIdToken();
@@ -138,8 +138,10 @@ export function useUiBuilder(user, settings, refreshBilling, notify) {
         setCurrentChatId(activeChatId);
       }
 
-      const userMsgRef = doc(db, "users", user.uid, "chats", activeChatId, "messages", `${requestId}-user`);
-      await setDoc(userMsgRef, { role: "user", content: content, createdAt: serverTimestamp(), requestId });
+      if (!existingRequestId) {
+        const userMsgRef = doc(db, "users", user.uid, "chats", activeChatId, "messages", `${requestId}-user`);
+        await setDoc(userMsgRef, { role: "user", content: content, createdAt: serverTimestamp(), requestId });
+      }
 
       setGenerationStage("Analyzing Components...");
       const stageTimer = setTimeout(() => setGenerationStage("Writing Luau Code..."), 3000);
@@ -198,7 +200,7 @@ export function useUiBuilder(user, settings, refreshBilling, notify) {
       const entry = { id: scriptId, createdAt: Date.now(), prompt: content, boardState, lua, variations: otherVariations };
       setUiGenerations((prev) => [entry, ...(prev || [])]);
       setActiveUiId(scriptId);
-      setUiDrawerOpen(true);
+      // setUiDrawerOpen(true); // Stay in chat as per user request
       
       const tokenMsg = pipe?.tokensConsumed ? ` (${formatNumber(pipe.tokensConsumed)} tokens used)` : "";
       notify({ message: `UI generated and saved.${tokenMsg}`, type: "success" });

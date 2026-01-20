@@ -8,15 +8,11 @@ import { useBilling } from "../context/BillingContext";
 import { useSettings } from "../context/SettingsContext";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
-  Send,
   Loader,
   Menu,
-  MessageSquare,
-  Layout,
   Library,
   Gamepad2,
   Sparkles,
-  Bot,
 } from "lucide-react";
 import { auth, db } from "../firebase";
 import { onAuthStateChanged, signInAnonymously } from "firebase/auth";
@@ -29,7 +25,6 @@ import SignInNudgeModal from "../components/SignInNudgeModal";
 import {
   TokenBar,
 } from "../components/ai/AiComponents";
-import UiSpecificationModal from "../components/ai/UiSpecificationModal";
 import {
   collection,
   query,
@@ -38,6 +33,7 @@ import {
   onSnapshot,
   getDocs,
 } from "firebase/firestore";
+import { v4 as uuidv4 } from "uuid";
 
 // Hooks
 import { useAiChat } from "../hooks/useAiChat";
@@ -48,10 +44,8 @@ import { useAgent } from "../hooks/useAgent";
 
 // Components
 import ChatView from "../components/ai/ChatView";
-import UiBuilderView from "../components/ai/UiBuilderView";
 import LibraryView from "../components/ai/LibraryView";
 import GameProfileWizard from "../components/ai/GameProfileWizard";
-import AgentView from "../components/ai/AgentView";
 
 function AiPage() {
   // 1. External Hooks
@@ -64,27 +58,18 @@ function AiPage() {
   const [user, setUser] = useState(null);
   const [scripts, setScripts] = useState([]);
   const [scriptsLimit] = useState(50);
-  const [activeTab, setActiveTab] = useState("ui"); // "ui" | "chat" | "library" | "agent"
+  const [activeTab, setActiveTab] = useState("chat"); // "chat" | "library"
 
   // Map sidebar tabs to main tabs
   const handleSidebarTabChange = (sidebarTab) => {
-    if (sidebarTab === "scripts") setActiveTab("ui");
-    else if (sidebarTab === "chats") setActiveTab("chat");
+    if (sidebarTab === "scripts" || sidebarTab === "chats" || sidebarTab === "agent") setActiveTab("chat");
     else if (sidebarTab === "saved") setActiveTab("library");
-    else if (sidebarTab === "agent") setActiveTab("agent");
   };
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [prompt, setPrompt] = useState("");
   const [showTour, setShowTour] = useState(localStorage.getItem("nexusrbx:tourComplete") !== "true");
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showSignInNudge, setShowSignInNudge] = useState(false);
-  const [showUiSpecModal, setShowUiSpecModal] = useState(false);
-  const [uiSpecs, setUiSpecs] = useState({
-    theme: { bg: "#020617", primary: "#00f5d4", secondary: "#9b5de5", accent: "#f15bb5" },
-    catalog: [],
-    animations: "",
-    platforms: ["pc"],
-  });
 
   // 3. Custom Hooks
   const notify = useCallback(({ message, type = "info" }) => {
@@ -163,41 +148,49 @@ function AiPage() {
   }, [location]);
 
   // 6. Handlers
-  const handlePromptSubmit = (e) => {
-    if (e) e.preventDefault();
-    if (!prompt.trim()) return;
-
-    if (!user) {
-      setShowSignInNudge(true);
+  const handlePromptSubmit = async (e, overridePrompt = null) => {
+    if (e && typeof e.preventDefault === 'function') e.preventDefault();
+    const currentPrompt = (overridePrompt || prompt).trim();
+    if (!currentPrompt || !user) {
+      if (!user) setShowSignInNudge(true);
       return;
     }
 
-    if (activeTab === "ui") {
-      setShowUiSpecModal(true);
-    } else if (activeTab === "agent") {
-      agent.sendMessage(prompt).then(data => {
-        if (data?.action === 'pipeline') {
-          setActiveTab("ui");
-          ui.handleGenerateUiPreview(data.parameters?.prompt || prompt, chat.currentChatId, chat.setCurrentChatId);
-        } else if (data?.action === 'refine') {
-          ui.handleRefine(data.parameters?.instruction || prompt);
-        }
-      });
-      setPrompt("");
-    } else {
-      // If we are in library/saved, switch to chat to see the response
-      if (activeTab === "library") {
-        setActiveTab("chat");
+    setPrompt("");
+    if (activeTab !== "chat") setActiveTab("chat");
+
+    // Use Agent to route the request
+    try {
+      const requestId = uuidv4();
+      const data = await agent.sendMessage(currentPrompt, chat.currentChatId, chat.setCurrentChatId, requestId);
+      
+      if (data?.action === 'pipeline') {
+        // Automatically trigger UI Builder
+        await ui.handleGenerateUiPreview(
+          data.parameters?.prompt || currentPrompt, 
+          chat.currentChatId, 
+          chat.setCurrentChatId,
+          data.parameters?.specs || null,
+          requestId
+        );
+      } else if (data?.action === 'refine') {
+        // Automatically trigger Refinement
+        await ui.handleRefine(data.parameters?.instruction || currentPrompt);
+      } else {
+        // Default to standard chat if no specific action
+        await chat.handleSubmit(currentPrompt, chat.currentChatId, requestId);
       }
-      chat.handleSubmit(prompt);
-      setPrompt("");
+    } catch (err) {
+      console.error("Routing error:", err);
+      // Fallback to standard chat
+      await chat.handleSubmit(currentPrompt);
     }
   };
 
   const handleOpenScript = async (script) => {
     // Switch to UI tab if it's a UI script, or Chat if it's a regular script
     if (script.type === "ui") {
-      setActiveTab("ui");
+      setActiveTab("chat");
       const uid = user?.uid;
       if (!uid) return;
       const snap = await getDocs(query(collection(db, "users", uid, "scripts", script.id, "versions"), orderBy("versionNumber", "desc"), limit(1)));
@@ -227,22 +220,10 @@ function AiPage() {
             
             <nav id="tour-mode-toggle" className="hidden md:flex items-center bg-gray-900/50 border border-gray-800 rounded-xl p-1">
               <button 
-                onClick={() => setActiveTab("ui")} 
-                className={`px-4 py-1.5 rounded-lg text-sm font-bold flex items-center gap-2 transition-all ${activeTab === "ui" ? "bg-gray-800 text-[#00f5d4] shadow-sm" : "text-gray-400 hover:text-white"}`}
-              >
-                <Layout className="h-4 w-4" /> UI Builder
-              </button>
-              <button 
-                onClick={() => setActiveTab("agent")} 
-                className={`px-4 py-1.5 rounded-lg text-sm font-bold flex items-center gap-2 transition-all ${activeTab === "agent" ? "bg-gray-800 text-[#00f5d4] shadow-sm" : "text-gray-400 hover:text-white"}`}
-              >
-                <Bot className="h-4 w-4" /> Agent
-              </button>
-              <button 
                 onClick={() => setActiveTab("chat")} 
-                className={`px-4 py-1.5 rounded-lg text-sm font-bold flex items-center gap-2 transition-all ${activeTab === "chat" ? "bg-gray-800 text-[#9b5de5] shadow-sm" : "text-gray-400 hover:text-white"}`}
+                className={`px-4 py-1.5 rounded-lg text-sm font-bold flex items-center gap-2 transition-all ${activeTab === "chat" ? "bg-gray-800 text-[#00f5d4] shadow-sm" : "text-gray-400 hover:text-white"}`}
               >
-                <MessageSquare className="h-4 w-4" /> AI Chat
+                <Sparkles className="h-4 w-4" /> Nexus AI
               </button>
               <button 
                 onClick={() => setActiveTab("library")} 
@@ -269,7 +250,7 @@ function AiPage() {
       <div className="flex flex-1 min-h-0">
         <aside id="tour-sidebar" className={`fixed inset-y-0 left-0 z-40 w-72 bg-gray-900 border-r border-gray-800 flex flex-col transform transition-transform duration-300 ease-in-out md:relative md:translate-x-0 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}`}>
           <SidebarContent
-            activeTab={activeTab === "ui" ? "scripts" : activeTab === "chat" ? "chats" : "saved"} 
+            activeTab={activeTab === "chat" ? "chats" : "saved"} 
             setActiveTab={handleSidebarTabChange} 
             scripts={scripts} 
             currentChatId={chat.currentChatId} 
@@ -320,52 +301,20 @@ function AiPage() {
               <Menu className="h-6 w-6" />
             </button>
             <div className="flex bg-gray-900 rounded-lg p-1">
-              <button onClick={() => setActiveTab("ui")} className={`p-1.5 rounded ${activeTab === "ui" ? "bg-gray-800 text-[#00f5d4]" : "text-gray-500"}`}><Layout className="w-4 h-4" /></button>
-              <button onClick={() => setActiveTab("chat")} className={`p-1.5 rounded ${activeTab === "chat" ? "bg-gray-800 text-[#9b5de5]" : "text-gray-500"}`}><MessageSquare className="w-4 h-4" /></button>
+              <button onClick={() => setActiveTab("chat")} className={`p-1.5 rounded ${activeTab === "chat" ? "bg-gray-800 text-[#00f5d4]" : "text-gray-500"}`}><Sparkles className="w-4 h-4" /></button>
               <button onClick={() => setActiveTab("library")} className={`p-1.5 rounded ${activeTab === "library" ? "bg-gray-800 text-white" : "text-gray-500"}`}><Library className="w-4 h-4" /></button>
             </div>
           </div>
 
           <div className="flex-grow overflow-y-auto px-4 py-6 scrollbar-hide">
-            {activeTab === "ui" && (
-              <UiBuilderView 
-                messages={chat.messages} 
-                pendingMessage={ui.pendingMessage} 
-                generationStage={ui.generationStage} 
-                user={user} 
-                onViewUi={(m) => { ui.setActiveUiId(m.projectId); ui.setUiDrawerOpen(true); }}
-                onQuickStart={(p) => { setPrompt(p); setShowUiSpecModal(true); }}
-                chatEndRef={chatEndRef}
-              />
-            )}
             {activeTab === "chat" && (
               <ChatView 
                 messages={chat.messages} 
-                pendingMessage={chat.pendingMessage} 
-                generationStage={chat.generationStage} 
+                pendingMessage={chat.pendingMessage || ui.pendingMessage} 
+                generationStage={chat.generationStage || ui.generationStage || (agent.isThinking ? "Nexus is thinking..." : "")} 
                 user={user} 
                 onViewUi={(m) => { ui.setActiveUiId(m.projectId); ui.setUiDrawerOpen(true); }}
-                onQuickStart={(p) => chat.handleSubmit(p)}
-                chatEndRef={chatEndRef}
-              />
-            )}
-            {activeTab === "agent" && (
-              <AgentView 
-                messages={agent.messages} 
-                isThinking={agent.isThinking} 
-                user={user} 
-                onQuickStart={(p) => {
-                  setPrompt(p);
-                  agent.sendMessage(p).then(data => {
-                    if (data?.action === 'pipeline') {
-                      setActiveTab("ui");
-                      ui.handleGenerateUiPreview(data.parameters?.prompt || p, chat.currentChatId, chat.setCurrentChatId);
-                    } else if (data?.action === 'refine') {
-                      ui.handleRefine(data.parameters?.instruction || p);
-                    }
-                  });
-                  setPrompt("");
-                }}
+                onQuickStart={(p) => handlePromptSubmit(null, p)}
                 chatEndRef={chatEndRef}
               />
             )}
@@ -390,7 +339,7 @@ function AiPage() {
                     id="tour-prompt-box"
                     className="flex-1 bg-transparent border-none rounded-xl p-3 resize-none focus:ring-0 text-gray-100 placeholder-gray-500 text-[14px] leading-relaxed disabled:opacity-50"
                     rows="1" 
-                    placeholder={activeTab === "ui" ? "Describe the UI you want to build..." : activeTab === "agent" ? "Tell the agent what to do..." : "Ask anything about Roblox development..."}
+                    placeholder="Ask Nexus to build a UI, write a script, or answer a question..."
                     value={prompt} 
                     onChange={(e) => setPrompt(e.target.value)}
                     disabled={chat.isGenerating || ui.uiIsGenerating || agent.isThinking}
@@ -405,11 +354,9 @@ function AiPage() {
                     id="tour-generate-button"
                     onClick={handlePromptSubmit} 
                     disabled={chat.isGenerating || ui.uiIsGenerating || agent.isThinking || !prompt.trim()}
-                    className={`p-3 rounded-xl transition-all disabled:opacity-50 ${
-                      activeTab === "ui" || activeTab === "agent" ? "bg-[#00f5d4] text-black hover:shadow-[0_0_20px_rgba(0,245,212,0.4)]" : "bg-[#9b5de5] text-white hover:shadow-[0_0_20px_rgba(155,93,229,0.4)]"
-                    }`}
+                    className="p-3 rounded-xl transition-all disabled:opacity-50 bg-[#00f5d4] text-black hover:shadow-[0_0_20px_rgba(0,245,212,0.4)]"
                   >
-                    {chat.isGenerating || ui.uiIsGenerating || agent.isThinking ? <Loader className="h-5 w-5 animate-spin" /> : (activeTab === "ui" || activeTab === "agent" ? <Sparkles className="h-5 w-5" /> : <Send className="h-5 w-5" />)}
+                    {chat.isGenerating || ui.uiIsGenerating || agent.isThinking ? <Loader className="h-5 w-5 animate-spin" /> : <Sparkles className="h-5 w-5" />}
                   </button>
                 </div>
               </div>
@@ -443,19 +390,6 @@ function AiPage() {
         }}
         isRefining={ui.uiIsGenerating}
       />
-
-      {showUiSpecModal && (
-        <UiSpecificationModal
-          onClose={() => setShowUiSpecModal(false)}
-          initialSpecs={uiSpecs}
-          onConfirm={(specs) => { 
-            setUiSpecs(specs); 
-            setShowUiSpecModal(false); 
-            ui.handleGenerateUiPreview(prompt, chat.currentChatId, chat.setCurrentChatId, specs);
-            setPrompt("");
-          }}
-        />
-      )}
 
       <GameProfileWizard 
         isOpen={game.showWizard}
