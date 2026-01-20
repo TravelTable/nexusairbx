@@ -122,6 +122,7 @@ export function useAiChat(user, settings, refreshBilling, notify) {
           role: "assistant",
           content: "",
           explanation: data.explanation || "",
+          thought: data.thought || "",
           code: data.code || "",
           createdAt: serverTimestamp(),
           requestId,

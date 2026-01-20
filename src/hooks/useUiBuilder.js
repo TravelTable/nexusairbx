@@ -329,7 +329,9 @@ export function useUiBuilder(user, settings, refreshBilling, notify) {
       const entry = { id: scriptId, createdAt: Date.now(), prompt: content, boardState, lua, variations: otherVariations };
       setUiGenerations((prev) => [entry, ...(prev || [])]);
       setActiveUiId(scriptId);
-      // setUiDrawerOpen(true); // Stay in chat as per user request
+      
+      // Ensure we stay in chat and scroll to the new UI card
+      setUiDrawerOpen(false); 
       
       const tokenMsg = pipe?.tokensConsumed ? ` (${formatNumber(pipe.tokensConsumed)} tokens used)` : "";
       notify({ message: `UI generated and saved.${tokenMsg}`, type: "success" });

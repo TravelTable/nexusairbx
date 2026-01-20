@@ -57,8 +57,10 @@ export function useAgent(user, notify, refreshBilling) {
       if (activeChatId) {
         await setDoc(doc(db, "users", user.uid, "chats", activeChatId, "messages", `${requestId}-agent`), {
           role: "assistant",
-          content: data.thought || "I've processed your request.",
+          content: data.action === "chat" ? (data.thought || "I've processed your request.") : "",
+          thought: data.thought || "",
           action: data.action || "chat",
+          mode: data.mode || null,
           parameters: data.parameters || {},
           createdAt: serverTimestamp(),
           requestId,

@@ -1,8 +1,8 @@
 import React from "react";
-import { NexusRBXAvatar, UserAvatar, FormatText } from "./AiComponents";
+import { NexusRBXAvatar, UserAvatar, FormatText, ThoughtAccordion, UiStatsBadge } from "./AiComponents";
 import ScriptLoadingBarContainer from "../ScriptLoadingBarContainer";
 import GenerationStatusBar from "./GenerationStatusBar";
-import { Zap, Rocket, Layout, Sparkles, Eye } from "lucide-react";
+import { Zap, Rocket, Layout, Sparkles, Eye, Download, RefreshCw, MousePointer2, Layers } from "lucide-react";
 
 const quickStarts = [
   { icon: <Layout className="w-4 h-4 text-[#00f5d4]" />, label: "Build UI", prompt: "Build a modern shop UI with categories and a clean layout." },
@@ -17,6 +17,8 @@ export default function ChatView({
   user, 
   onViewUi, 
   onQuickStart,
+  onRefine,
+  onToggleActMode,
   chatEndRef 
 }) {
   return (
@@ -50,45 +52,91 @@ export default function ChatView({
             <div key={m.id} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'} gap-4 group animate-in fade-in slide-in-from-bottom-4 duration-500`}>
               {m.role === 'assistant' && <NexusRBXAvatar />}
               <div className={`max-w-[85%] md:max-w-[80%] ${m.role === 'user' ? 'order-1' : 'order-2'}`}>
-                <div className={`p-4 md:p-5 rounded-2xl ${m.role === 'user' 
-                  ? 'bg-gradient-to-br from-[#9b5de5] to-[#00f5d4] text-white shadow-lg border border-white/10' 
-                  : 'bg-[#121212] border border-white/5 backdrop-blur-md shadow-xl'}`}>
-                  {m.content && m.role === 'user' && <div className="text-[14px] md:text-[15px] whitespace-pre-wrap leading-relaxed text-white">{m.content}</div>}
+                <div className={`p-4 md:p-6 rounded-3xl ${m.role === 'user' 
+                  ? 'bg-gradient-to-br from-[#9b5de5] to-[#00f5d4] text-white shadow-[0_10px_40px_rgba(155,93,229,0.2)] border border-white/20' 
+                  : 'bg-[#121212]/80 border border-white/10 backdrop-blur-xl shadow-2xl'}`}>
+                  
+                  {m.role === 'assistant' && m.thought && <ThoughtAccordion thought={m.thought} />}
+
+                  {m.content && m.role === 'user' && (
+                    <div className="text-[15px] md:text-[16px] whitespace-pre-wrap leading-relaxed text-white font-medium">
+                      {m.content}
+                    </div>
+                  )}
+
                   {m.explanation ? (
-                    <div className="text-[14px] md:text-[15px] whitespace-pre-wrap leading-relaxed text-gray-100"><FormatText text={m.explanation} /></div>
+                    <div className="text-[15px] md:text-[16px] whitespace-pre-wrap leading-relaxed text-gray-100">
+                      <FormatText text={m.explanation} />
+                    </div>
                   ) : (
-                    m.role === 'assistant' && m.content && <div className="text-[14px] md:text-[15px] whitespace-pre-wrap leading-relaxed text-gray-400 italic"><FormatText text={m.content} /></div>
+                    m.role === 'assistant' && m.content && (
+                      <div className="text-[15px] md:text-[16px] whitespace-pre-wrap leading-relaxed text-gray-400 italic">
+                        <FormatText text={m.content} />
+                      </div>
+                    )
                   )}
                   
                   {m.role === 'assistant' && m.action && m.action !== 'chat' && (
-                    <div className="mt-3 pt-3 border-t border-white/5 flex items-center gap-2 text-[10px] font-bold text-[#00f5d4] uppercase tracking-widest">
-                      <Sparkles className="w-3 h-3" />
-                      Nexus Action: {m.action}
+                    <div className="mt-4 pt-4 border-t border-white/5 flex items-center gap-3">
+                      <div className="px-2 py-1 rounded bg-[#00f5d4]/10 border border-[#00f5d4]/20 flex items-center gap-2">
+                        <Sparkles className="w-3 h-3 text-[#00f5d4]" />
+                        <span className="text-[10px] font-black text-[#00f5d4] uppercase tracking-[0.2em]">
+                          {m.action}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
+                  {m.role === 'assistant' && m.mode === 'plan' && (
+                    <div className="mt-6 p-4 rounded-2xl bg-[#00f5d4]/5 border border-[#00f5d4]/20 flex flex-col items-center text-center gap-4 animate-pulse">
+                      <div className="text-sm font-bold text-[#00f5d4]">Ready to build this UI?</div>
+                      <button 
+                        onClick={() => onToggleActMode(m)}
+                        className="w-full py-3 rounded-xl bg-[#00f5d4] text-black font-black text-sm flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] transition-all shadow-[0_0_20px_rgba(0,245,212,0.4)]"
+                      >
+                        <Zap className="w-4 h-4 fill-current" />
+                        TOGGLE TO ACT MODE
+                      </button>
                     </div>
                   )}
 
                   {m.role === 'assistant' && m.code && (
-                    <div className="mt-4 space-y-3">
+                    <div className="mt-6 space-y-4">
                       {m.metadata?.type === 'ui' || m.projectId ? (
-                        <div className="relative group/card overflow-hidden rounded-xl border border-white/10 bg-black/40 hover:border-[#00f5d4]/50 transition-all">
-                          <div className="aspect-video bg-gradient-to-br from-gray-900 to-black flex items-center justify-center relative">
-                            <Layout className="w-12 h-12 text-white/10 group-hover/card:text-[#00f5d4]/20 transition-colors" />
-                            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover/card:opacity-100 transition-opacity flex items-center justify-center gap-3">
+                        <div className="relative group/card overflow-hidden rounded-2xl border border-white/10 bg-black/60 hover:border-[#00f5d4]/50 transition-all shadow-2xl">
+                          <div className="aspect-video bg-gradient-to-br from-gray-900 to-black flex items-center justify-center relative overflow-hidden">
+                            <div className="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]" />
+                            <Layout className="w-16 h-16 text-white/5 group-hover/card:text-[#00f5d4]/10 transition-colors" />
+                            
+                            <div className="absolute top-3 left-3 flex flex-wrap gap-2">
+                              <UiStatsBadge label="Instances" value={m.metadata?.instanceCount || "42"} icon={Layers} />
+                              <UiStatsBadge label="Responsive" value="Yes" icon={MousePointer2} />
+                            </div>
+
+                            <div className="absolute inset-0 bg-black/80 opacity-0 group-hover/card:opacity-100 transition-opacity flex items-center justify-center gap-4">
                               <button 
                                 onClick={() => onViewUi(m)}
-                                className="px-4 py-2 rounded-lg bg-[#00f5d4] text-black font-bold text-sm flex items-center gap-2 hover:scale-105 transition-transform"
+                                className="px-6 py-2.5 rounded-xl bg-white text-black font-black text-sm flex items-center gap-2 hover:scale-110 transition-transform"
                               >
-                                <Eye className="w-4 h-4" /> Preview
+                                <Eye className="w-4 h-4" /> PREVIEW
+                              </button>
+                              <button 
+                                onClick={() => onRefine(m)}
+                                className="px-6 py-2.5 rounded-xl bg-[#00f5d4] text-black font-black text-sm flex items-center gap-2 hover:scale-110 transition-transform"
+                              >
+                                <RefreshCw className="w-4 h-4" /> REFINE
                               </button>
                             </div>
                           </div>
-                          <div className="p-3 flex items-center justify-between bg-white/5">
+                          <div className="p-4 flex items-center justify-between bg-white/5 backdrop-blur-md">
                             <div className="min-w-0">
-                              <div className="text-xs font-bold text-white truncate">{m.title || "Generated UI"}</div>
-                              <div className="text-[10px] text-gray-500 uppercase tracking-tighter">Luau Interface Component</div>
+                              <div className="text-sm font-black text-white truncate tracking-tight">{m.title || "GENERATED INTERFACE"}</div>
+                              <div className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Luau Component v{m.versionNumber || 1}</div>
                             </div>
-                            <div className="flex items-center gap-2">
-                               <Sparkles className="w-4 h-4 text-[#00f5d4] animate-pulse" />
+                            <div className="flex items-center gap-3">
+                               <div className="p-2 rounded-lg bg-[#00f5d4]/10">
+                                 <Sparkles className="w-4 h-4 text-[#00f5d4]" />
+                               </div>
                             </div>
                           </div>
                         </div>

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Info } from "lucide-react";
+import { Info, ChevronDown, ChevronUp, Sparkles, Zap, Rocket, Layout, Eye, Download, RefreshCw } from "lucide-react";
 import PLAN_INFO from "../../lib/planInfo";
 import { getGravatarUrl, getUserInitials, formatNumber, formatResetDate } from "../../lib/aiUtils";
 
@@ -74,10 +74,43 @@ export function AssistantCodeBlock({ code }) {
 }
 
 export const NexusRBXAvatar = React.memo(({ isThinking = false }) => (
-  <div className={`w-12 h-12 rounded-2xl bg-white flex items-center justify-center shadow-2xl overflow-hidden flex-shrink-0 border-2 ${isThinking ? 'border-[#00f5d4] animate-pulse' : 'border-white/10'}`}>
-    <img src="/logo.png" alt="NexusRBX" className={`w-9 h-9 object-contain ${isThinking ? 'animate-bounce' : ''}`} />
+  <div className={`w-10 h-10 md:w-12 md:h-12 rounded-2xl bg-white flex items-center justify-center shadow-2xl overflow-hidden flex-shrink-0 border-2 ${isThinking ? 'border-[#00f5d4] animate-pulse' : 'border-white/10'}`}>
+    <img src="/logo.png" alt="NexusRBX" className={`w-7 h-7 md:w-9 md:h-9 object-contain ${isThinking ? 'animate-bounce' : ''}`} />
   </div>
 ));
+
+export const ThoughtAccordion = ({ thought }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  if (!thought) return null;
+
+  return (
+    <div className="mt-2 mb-4 overflow-hidden rounded-xl border border-white/5 bg-white/5 backdrop-blur-sm">
+      <button 
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full flex items-center justify-between px-4 py-2 text-[11px] font-bold text-gray-400 hover:text-white transition-colors uppercase tracking-widest"
+      >
+        <div className="flex items-center gap-2">
+          <Sparkles className="w-3 h-3 text-[#00f5d4]" />
+          Nexus Thought Process
+        </div>
+        {isOpen ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+      </button>
+      {isOpen && (
+        <div className="px-4 pb-3 text-[13px] text-gray-300 leading-relaxed animate-in slide-in-from-top-2 duration-300">
+          <FormatText text={thought} />
+        </div>
+      )}
+    </div>
+  );
+};
+
+export const UiStatsBadge = ({ label, value, icon: Icon }) => (
+  <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-white/5 border border-white/5">
+    {Icon && <Icon className="w-3 h-3 text-[#00f5d4]" />}
+    <span className="text-[10px] text-gray-400 font-medium">{label}:</span>
+    <span className="text-[10px] text-white font-bold">{value}</span>
+  </div>
+);
 
 export const UserAvatar = React.memo(({ email }) => {
   const url = getGravatarUrl(email);

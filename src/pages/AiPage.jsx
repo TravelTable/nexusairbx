@@ -444,6 +444,22 @@ function AiPage() {
                 user={user} 
                 onViewUi={(m) => { ui.setActiveUiId(m.projectId); ui.setUiDrawerOpen(true); }}
                 onQuickStart={(p) => handlePromptSubmit(null, p)}
+                onRefine={(m) => { 
+                  setPrompt(`Refine this UI: `);
+                  const el = document.getElementById("tour-prompt-box");
+                  if (el) el.focus();
+                }}
+                onToggleActMode={async (m) => {
+                  // Logic to transition from Plan to Act
+                  const requestId = uuidv4();
+                  await ui.handleGenerateUiPreview(
+                    m.parameters?.prompt || m.content || "",
+                    chat.currentChatId,
+                    chat.setCurrentChatId,
+                    m.parameters?.specs || null,
+                    requestId
+                  );
+                }}
                 chatEndRef={chatEndRef}
               />
             )}
@@ -463,30 +479,38 @@ function AiPage() {
               
               <div className="relative group">
                 <div className="absolute -inset-0.5 bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] rounded-2xl blur opacity-20 group-focus-within:opacity-40 transition duration-500" />
-                <div className="relative bg-[#121212] border border-white/10 rounded-2xl p-2 shadow-2xl flex items-center gap-2">
-                  <textarea
-                    id="tour-prompt-box"
-                    className="flex-1 bg-transparent border-none rounded-xl p-3 resize-none focus:ring-0 text-gray-100 placeholder-gray-500 text-[14px] leading-relaxed disabled:opacity-50"
-                    rows="1" 
-                    placeholder="Ask Nexus to build a UI, write a script, or answer a question..."
-                    value={prompt} 
-                    onChange={(e) => setPrompt(e.target.value)}
-                    disabled={chat.isGenerating || ui.uiIsGenerating || agent.isThinking}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' && !e.shiftKey) {
-                        e.preventDefault();
-                        handlePromptSubmit();
-                      }
-                    }}
-                  />
-                  <button 
-                    id="tour-generate-button"
-                    onClick={handlePromptSubmit} 
-                    disabled={chat.isGenerating || ui.uiIsGenerating || agent.isThinking || !prompt.trim()}
-                    className="p-3 rounded-xl transition-all disabled:opacity-50 bg-[#00f5d4] text-black hover:shadow-[0_0_20px_rgba(0,245,212,0.4)]"
-                  >
-                    {chat.isGenerating || ui.uiIsGenerating || agent.isThinking ? <Loader className="h-5 w-5 animate-spin" /> : <Sparkles className="h-5 w-5" />}
-                  </button>
+                <div className="relative bg-[#121212] border border-white/10 rounded-2xl p-2 shadow-2xl flex flex-col gap-2">
+                  <div className="flex items-center gap-2 px-2 pt-2">
+                    <div className={`px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest transition-all ${agent.isThinking || ui.uiIsGenerating || chat.isGenerating ? 'bg-[#00f5d4] text-black animate-pulse' : 'bg-white/5 text-gray-500'}`}>
+                      {agent.isThinking ? 'Thinking' : ui.uiIsGenerating ? 'Building' : chat.isGenerating ? 'Responding' : 'Ready'}
+                    </div>
+                    <div className="h-px flex-1 bg-white/5" />
+                  </div>
+                  <div className="flex items-center gap-2 p-2 pt-0">
+                    <textarea
+                      id="tour-prompt-box"
+                      className="flex-1 bg-transparent border-none rounded-xl p-3 resize-none focus:ring-0 text-gray-100 placeholder-gray-500 text-[14px] md:text-[15px] leading-relaxed disabled:opacity-50"
+                      rows="1" 
+                      placeholder="Ask Nexus to build a UI, write a script, or answer a question..."
+                      value={prompt} 
+                      onChange={(e) => setPrompt(e.target.value)}
+                      disabled={chat.isGenerating || ui.uiIsGenerating || agent.isThinking}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault();
+                          handlePromptSubmit();
+                        }
+                      }}
+                    />
+                    <button 
+                      id="tour-generate-button"
+                      onClick={handlePromptSubmit} 
+                      disabled={chat.isGenerating || ui.uiIsGenerating || agent.isThinking || !prompt.trim()}
+                      className="p-3 rounded-xl transition-all disabled:opacity-50 bg-[#00f5d4] text-black hover:shadow-[0_0_20px_rgba(0,245,212,0.4)] active:scale-95"
+                    >
+                      {chat.isGenerating || ui.uiIsGenerating || agent.isThinking ? <Loader className="h-5 w-5 animate-spin" /> : <Sparkles className="h-5 w-5" />}
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
