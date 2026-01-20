@@ -9,6 +9,27 @@ export default function AssetsTab({
   isFinalizing,
   handleFinalizeAssets
 }) {
+  const [excludedAssets, setExcludedAssets] = React.useState(new Set());
+
+  const toggleExclude = (url) => {
+    const newExcluded = new Set(excludedAssets);
+    if (newExcluded.has(url)) {
+      newExcluded.delete(url);
+    } else {
+      newExcluded.add(url);
+    }
+    setExcludedAssets(newExcluded);
+  };
+
+  const onFinalize = () => {
+    // Filter out excluded assets before calling handleFinalizeAssets
+    const filteredAssetIds = { ...assetIds };
+    excludedAssets.forEach(url => {
+      delete filteredAssetIds[url];
+    });
+    handleFinalizeAssets(filteredAssetIds);
+  };
+
   return (
     <div className="h-full flex flex-col gap-4 overflow-hidden">
       <div className="flex items-center justify-between">
@@ -62,9 +83,21 @@ export default function AssetsTab({
           </div>
         ) : (
           uniqueAssets.map((asset, idx) => (
-            <div key={idx} className="p-3 rounded-2xl bg-gray-900/40 border border-gray-800 flex flex-col sm:flex-row items-center gap-4 group hover:border-gray-700 transition-all">
-              <div className="w-14 h-14 rounded-xl bg-black/40 border border-white/5 flex-shrink-0 overflow-hidden p-1">
-                <img src={asset.url} alt={asset.name} className="w-full h-full object-contain" />
+            <div key={idx} className={`p-3 rounded-2xl border flex flex-col sm:flex-row items-center gap-4 group transition-all ${
+              excludedAssets.has(asset.url) 
+                ? "bg-black/20 border-gray-900 opacity-50" 
+                : "bg-gray-900/40 border-gray-800 hover:border-gray-700"
+            }`}>
+              <div className="flex items-center gap-3">
+                <input 
+                  type="checkbox" 
+                  checked={!excludedAssets.has(asset.url)}
+                  onChange={() => toggleExclude(asset.url)}
+                  className="w-4 h-4 rounded border-gray-700 bg-black text-[#00f5d4] focus:ring-[#00f5d4]"
+                />
+                <div className="w-14 h-14 rounded-xl bg-black/40 border border-white/5 flex-shrink-0 overflow-hidden p-1">
+                  <img src={asset.url} alt={asset.name} className="w-full h-full object-contain" />
+                </div>
               </div>
               
               <div className="flex-1 min-w-0 text-center sm:text-left">
@@ -115,12 +148,12 @@ export default function AssetsTab({
       {uniqueAssets.length > 0 && (
         <div className="pt-4 border-t border-gray-800">
           <button
-            onClick={handleFinalizeAssets}
-            disabled={isFinalizing || !Object.values(assetIds).some(id => id && id.trim())}
+            onClick={onFinalize}
+            disabled={isFinalizing || !Object.entries(assetIds).some(([url, id]) => id && id.trim() && !excludedAssets.has(url))}
             className="w-full py-4 rounded-2xl bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-white font-black text-sm shadow-lg hover:shadow-[#00f5d4]/20 transition-all disabled:opacity-50 disabled:grayscale flex items-center justify-center gap-2"
           >
             {isFinalizing ? <Loader className="w-5 h-5 animate-spin" /> : <CheckCircle2 className="w-5 h-5" />}
-            Apply All Roblox IDs to UI
+            Apply Selected Roblox IDs to UI
           </button>
         </div>
       )}

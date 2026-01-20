@@ -187,10 +187,13 @@ export default function UiPreviewDrawer({
     <div
       className={`fixed inset-0 z-[60] ${open ? "pointer-events-auto" : "pointer-events-none"}`}
       aria-hidden={!open}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="drawer-title"
     >
       <div
         onClick={onClose}
-        className={`absolute inset-0 bg-black/60 transition-opacity ${
+        className={`absolute inset-0 bg-black/70 transition-opacity ${
           open ? "opacity-100" : "opacity-0"
         }`}
       />
@@ -202,8 +205,8 @@ export default function UiPreviewDrawer({
       >
         <div className="p-3 border-b border-gray-800 flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <div className="text-white font-semibold">UI Preview</div>
-            <div className="text-xs text-gray-400 truncate">{activeTitle}</div>
+            <h2 id="drawer-title" className="text-white font-bold text-lg">UI Preview</h2>
+            <div className="text-xs text-gray-300 truncate font-medium">{activeTitle}</div>
           </div>
 
           <div className="flex items-center gap-2">

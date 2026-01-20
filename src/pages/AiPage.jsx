@@ -16,6 +16,7 @@ import {
   Library,
   Gamepad2,
   Sparkles,
+  Bot,
 } from "lucide-react";
 import { auth, db } from "../firebase";
 import { onAuthStateChanged, signInAnonymously } from "firebase/auth";
@@ -43,12 +44,14 @@ import { useAiChat } from "../hooks/useAiChat";
 import { useUiBuilder } from "../hooks/useUiBuilder";
 import { useGameProfile } from "../hooks/useGameProfile";
 import { useAiScripts } from "../hooks/useAiScripts";
+import { useAgent } from "../hooks/useAgent";
 
 // Components
 import ChatView from "../components/ai/ChatView";
 import UiBuilderView from "../components/ai/UiBuilderView";
 import LibraryView from "../components/ai/LibraryView";
 import GameProfileWizard from "../components/ai/GameProfileWizard";
+import AgentView from "../components/ai/AgentView";
 
 function AiPage() {
   // 1. External Hooks
@@ -61,13 +64,14 @@ function AiPage() {
   const [user, setUser] = useState(null);
   const [scripts, setScripts] = useState([]);
   const [scriptsLimit] = useState(50);
-  const [activeTab, setActiveTab] = useState("ui"); // "ui" | "chat" | "library"
+  const [activeTab, setActiveTab] = useState("ui"); // "ui" | "chat" | "library" | "agent"
 
   // Map sidebar tabs to main tabs
   const handleSidebarTabChange = (sidebarTab) => {
     if (sidebarTab === "scripts") setActiveTab("ui");
     else if (sidebarTab === "chats") setActiveTab("chat");
     else if (sidebarTab === "saved") setActiveTab("library");
+    else if (sidebarTab === "agent") setActiveTab("agent");
   };
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [prompt, setPrompt] = useState("");
@@ -92,6 +96,7 @@ function AiPage() {
   const ui = useUiBuilder(user, settings, refreshBilling, notify);
   const game = useGameProfile(settings, updateSettings);
   const scriptManager = useAiScripts(user, notify);
+  const agent = useAgent(user, notify, refreshBilling);
 
   // 4. Derived State
   const planKey = plan?.toLowerCase() || "free";
@@ -169,6 +174,16 @@ function AiPage() {
 
     if (activeTab === "ui") {
       setShowUiSpecModal(true);
+    } else if (activeTab === "agent") {
+      agent.sendMessage(prompt).then(data => {
+        if (data?.action === 'pipeline') {
+          setActiveTab("ui");
+          ui.handleGenerateUiPreview(data.parameters?.prompt || prompt, chat.currentChatId, chat.setCurrentChatId);
+        } else if (data?.action === 'refine') {
+          ui.handleRefine(data.parameters?.instruction || prompt);
+        }
+      });
+      setPrompt("");
     } else {
       // If we are in library/saved, switch to chat to see the response
       if (activeTab === "library") {
@@ -216,6 +231,12 @@ function AiPage() {
                 className={`px-4 py-1.5 rounded-lg text-sm font-bold flex items-center gap-2 transition-all ${activeTab === "ui" ? "bg-gray-800 text-[#00f5d4] shadow-sm" : "text-gray-400 hover:text-white"}`}
               >
                 <Layout className="h-4 w-4" /> UI Builder
+              </button>
+              <button 
+                onClick={() => setActiveTab("agent")} 
+                className={`px-4 py-1.5 rounded-lg text-sm font-bold flex items-center gap-2 transition-all ${activeTab === "agent" ? "bg-gray-800 text-[#00f5d4] shadow-sm" : "text-gray-400 hover:text-white"}`}
+              >
+                <Bot className="h-4 w-4" /> Agent
               </button>
               <button 
                 onClick={() => setActiveTab("chat")} 
@@ -328,6 +349,26 @@ function AiPage() {
                 chatEndRef={chatEndRef}
               />
             )}
+            {activeTab === "agent" && (
+              <AgentView 
+                messages={agent.messages} 
+                isThinking={agent.isThinking} 
+                user={user} 
+                onQuickStart={(p) => {
+                  setPrompt(p);
+                  agent.sendMessage(p).then(data => {
+                    if (data?.action === 'pipeline') {
+                      setActiveTab("ui");
+                      ui.handleGenerateUiPreview(data.parameters?.prompt || p, chat.currentChatId, chat.setCurrentChatId);
+                    } else if (data?.action === 'refine') {
+                      ui.handleRefine(data.parameters?.instruction || p);
+                    }
+                  });
+                  setPrompt("");
+                }}
+                chatEndRef={chatEndRef}
+              />
+            )}
             {activeTab === "library" && (
               <LibraryView 
                 scripts={scripts} 
@@ -349,10 +390,10 @@ function AiPage() {
                     id="tour-prompt-box"
                     className="flex-1 bg-transparent border-none rounded-xl p-3 resize-none focus:ring-0 text-gray-100 placeholder-gray-500 text-[14px] leading-relaxed disabled:opacity-50"
                     rows="1" 
-                    placeholder={activeTab === "ui" ? "Describe the UI you want to build..." : "Ask anything about Roblox development..."}
+                    placeholder={activeTab === "ui" ? "Describe the UI you want to build..." : activeTab === "agent" ? "Tell the agent what to do..." : "Ask anything about Roblox development..."}
                     value={prompt} 
                     onChange={(e) => setPrompt(e.target.value)}
-                    disabled={chat.isGenerating || ui.uiIsGenerating}
+                    disabled={chat.isGenerating || ui.uiIsGenerating || agent.isThinking}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' && !e.shiftKey) {
                         e.preventDefault();
@@ -363,12 +404,12 @@ function AiPage() {
                   <button 
                     id="tour-generate-button"
                     onClick={handlePromptSubmit} 
-                    disabled={chat.isGenerating || ui.uiIsGenerating || !prompt.trim()}
+                    disabled={chat.isGenerating || ui.uiIsGenerating || agent.isThinking || !prompt.trim()}
                     className={`p-3 rounded-xl transition-all disabled:opacity-50 ${
-                      activeTab === "ui" ? "bg-[#00f5d4] text-black hover:shadow-[0_0_20px_rgba(0,245,212,0.4)]" : "bg-[#9b5de5] text-white hover:shadow-[0_0_20px_rgba(155,93,229,0.4)]"
+                      activeTab === "ui" || activeTab === "agent" ? "bg-[#00f5d4] text-black hover:shadow-[0_0_20px_rgba(0,245,212,0.4)]" : "bg-[#9b5de5] text-white hover:shadow-[0_0_20px_rgba(155,93,229,0.4)]"
                     }`}
                   >
-                    {chat.isGenerating || ui.uiIsGenerating ? <Loader className="h-5 w-5 animate-spin" /> : (activeTab === "ui" ? <Sparkles className="h-5 w-5" /> : <Send className="h-5 w-5" />)}
+                    {chat.isGenerating || ui.uiIsGenerating || agent.isThinking ? <Loader className="h-5 w-5 animate-spin" /> : (activeTab === "ui" || activeTab === "agent" ? <Sparkles className="h-5 w-5" /> : <Send className="h-5 w-5" />)}
                   </button>
                 </div>
               </div>

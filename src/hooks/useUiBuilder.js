@@ -90,8 +90,8 @@ export function useUiBuilder(user, settings, refreshBilling, notify) {
       let contextualCatalog = specs?.catalog || [];
       try {
         const params = new URLSearchParams();
-        params.append("search", content.split(' ').slice(0, 3).join(' '));
-        params.append("limit", "15");
+        params.append("search", content.split(' ').slice(0, 5).join(' '));
+        params.append("limit", "25");
         const res = await fetch(`${BACKEND_URL}/api/icons/market?${params.toString()}`);
         if (res.ok) {
           const data = await res.json();
@@ -99,19 +99,30 @@ export function useUiBuilder(user, settings, refreshBilling, notify) {
             const firestoreIcons = data.icons.map(icon => ({
               name: icon.name,
               iconId: icon.imageUrl,
+              url: icon.imageUrl, // Ensure url is present for backend
               style: icon.style,
               category: icon.category
             }));
             contextualCatalog = [...contextualCatalog, ...firestoreIcons];
           }
         }
+        
+        // Deduplicate by iconId/url and shuffle
+        const seen = new Set();
+        contextualCatalog = contextualCatalog.filter(icon => {
+          const id = icon.iconId || icon.url;
+          if (seen.has(id)) return false;
+          seen.add(id);
+          return true;
+        }).sort(() => Math.random() - 0.5);
+
       } catch (e) {
         console.warn("Failed to fetch contextual icons:", e);
       }
 
       const canvasSize = settings.uiCanvasSize || { w: 1280, h: 720 };
       const maxItems = Number(settings.uiMaxItems || 45);
-      const themeHint = {
+      let themeHint = {
         bg: "#020617", panel: "#0b1220", border: "#334155", text: "#e5e7eb",
         muted: settings.uiThemeMuted || "#a1a1aa", primary: settings.uiThemePrimary || "#00f5d4",
         secondary: settings.uiThemeSecondary || "#9b5de5", accent: settings.uiThemeAccent || "#f15bb5",
@@ -140,14 +151,30 @@ export function useUiBuilder(user, settings, refreshBilling, notify) {
         gameSpec: settings.gameSpec || "", maxSystemsTokens: settings.uiMaxSystemsTokens,
         catalog: contextualCatalog, animations: specs?.animations || "", customTheme: specs?.theme || null,
         platforms: specs?.platforms || ["pc"],
+        variations: settings.uiVariations || 1,
       });
+
+      // Handle variations if returned
+      const mainResult = pipe.variations ? pipe.variations[0] : pipe;
+      const otherVariations = pipe.variations ? pipe.variations.slice(1) : [];
+
+      // Update themeHint with dynamic colors if available
+      const specColors = mainResult?.plan?.colors || mainResult?.boardState?.colors;
+      if (specColors) {
+        themeHint = {
+          ...themeHint,
+          bg: specColors.primary || themeHint.bg,
+          panel: specColors.secondary || themeHint.panel,
+          accent: specColors.accent || themeHint.accent,
+        };
+      }
 
       clearTimeout(stageTimer);
       setGenerationStage("Finalizing UI...");
 
-      const boardState = pipe?.boardState;
+      const boardState = mainResult?.boardState;
       if (!boardState) throw new Error("No boardState returned");
-      const lua = pipe?.lua || "";
+      const lua = mainResult?.lua || "";
       if (!lua) throw new Error("No Lua returned");
 
       const scriptId = cryptoRandomId();
@@ -165,10 +192,10 @@ export function useUiBuilder(user, settings, refreshBilling, notify) {
       const assistantMsgRef = doc(db, "users", user.uid, "chats", activeChatId, "messages", `${requestId}-assistant`);
       await setDoc(assistantMsgRef, {
         role: "assistant", content: "", code: lua, projectId: scriptId, versionNumber: 1,
-        metadata: { type: "ui" }, createdAt: serverTimestamp(), requestId,
+        metadata: { type: "ui", variations: otherVariations }, createdAt: serverTimestamp(), requestId,
       });
 
-      const entry = { id: scriptId, createdAt: Date.now(), prompt: content, boardState, lua };
+      const entry = { id: scriptId, createdAt: Date.now(), prompt: content, boardState, lua, variations: otherVariations };
       setUiGenerations((prev) => [entry, ...(prev || [])]);
       setActiveUiId(scriptId);
       setUiDrawerOpen(true);

@@ -278,3 +278,28 @@ export async function exportIcon({ token, iconId, tintColor, customName }) {
   });
   return handleResponse(res);
 }
+
+// --- Favorites ---
+export async function listFavorites({ token }) {
+  const res = await fetch(`${BACKEND_URL}/api/ui-builder/favorites`, {
+    headers: authHeaders(token),
+  });
+  return handleResponse(res);
+}
+
+export async function addFavorite({ token, component, name }) {
+  const res = await fetch(`${BACKEND_URL}/api/ui-builder/favorites`, {
+    method: "POST",
+    headers: authHeaders(token),
+    body: JSON.stringify({ component, name }),
+  });
+  return handleResponse(res);
+}
+
+export async function deleteFavorite({ token, id }) {
+  const res = await fetch(`${BACKEND_URL}/api/ui-builder/favorites/${encodeURIComponent(id)}`, {
+    method: "DELETE",
+    headers: authHeaders(token),
+  });
+  return handleResponse(res);
+}
