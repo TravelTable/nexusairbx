@@ -2,7 +2,6 @@ import React from "react";
 import { AlertCircle, Loader, Settings2, Sliders, Grid3X3, Heart } from "lucide-react";
 import LuaPreviewRenderer from "../../preview/LuaPreviewRenderer";
 import { addFavorite } from "../../lib/uiBuilderApi";
-import { useAuth } from "../../hooks/useAuth"; // Assuming useAuth exists or we can use user from props
 
 export default function PreviewTab({
   lua,

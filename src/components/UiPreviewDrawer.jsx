@@ -318,6 +318,7 @@ export default function UiPreviewDrawer({
               setRefineInput={setRefineInput}
               isRefining={isRefining}
               onRefine={onRefine}
+              user={user}
             />
           )}
           {tab === "code" && (

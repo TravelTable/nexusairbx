@@ -66,13 +66,19 @@ export default function UiBuilderView({
                   {m.content && m.role === 'user' && <div className="text-[14px] md:text-[15px] whitespace-pre-wrap leading-relaxed text-white">{m.content}</div>}
                   {m.explanation && <div className="text-[14px] md:text-[15px] whitespace-pre-wrap leading-relaxed text-gray-100"><FormatText text={m.explanation} /></div>}
                   {m.role === 'assistant' && m.code && (
-                    <div className="mt-4">
+                    <div className="mt-4 space-y-3">
                       <ScriptLoadingBarContainer
                         filename={m.title || "Generated_UI.lua"}
                         codeReady={!!m.code}
                         loading={false}
                         onView={() => onViewUi(m)}
                       />
+                      {m.metadata?.variations?.length > 0 && (
+                        <div className="flex items-center gap-2 text-[10px] font-bold text-[#f59e0b] uppercase tracking-widest">
+                          <Sparkles className="w-3 h-3" />
+                          {m.metadata.variations.length} Layout Variations Available
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
