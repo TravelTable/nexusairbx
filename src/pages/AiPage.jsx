@@ -159,30 +159,91 @@ function AiPage() {
     setPrompt("");
     if (activeTab !== "chat") setActiveTab("chat");
 
-    // Use Agent to route the request
+    // Smarter routing: do deterministic routing first, use agent only when unclear
     try {
       const requestId = uuidv4();
-      const data = await agent.sendMessage(currentPrompt, chat.currentChatId, chat.setCurrentChatId, requestId);
-      
-      if (data?.action === 'pipeline') {
-        // Automatically trigger UI Builder
+      const p = currentPrompt.toLowerCase();
+
+      const looksLikeUi =
+        p.startsWith("/ui") ||
+        p.includes("build ui") ||
+        p.includes("menu") ||
+        p.includes("screen") ||
+        p.includes("hud") ||
+        p.includes("shop") ||
+        p.includes("onboarding") ||
+        p.includes("layout") ||
+        p.includes("buttons") ||
+        p.includes("frame");
+
+      const looksLikeRefine =
+        p.startsWith("refine:") ||
+        p.startsWith("tweak:") ||
+        p.includes("refine ui") ||
+        p.includes("make the ui");
+
+      // If user wants UI and it's obvious, skip agent
+      if (looksLikeUi && !looksLikeRefine) {
         await ui.handleGenerateUiPreview(
-          data.parameters?.prompt || currentPrompt, 
-          chat.currentChatId, 
+          currentPrompt.replace(/^\/ui\s*/i, ""),
+          chat.currentChatId,
+          chat.setCurrentChatId,
+          null,
+          requestId
+        );
+        return;
+      }
+
+      // Refine only if there's actually an active UI
+      if (looksLikeRefine) {
+        if (!ui.activeUi?.lua) {
+          // No UI to refine => generate instead
+          await ui.handleGenerateUiPreview(
+            currentPrompt.replace(/^refine:\s*/i, "").replace(/^tweak:\s*/i, ""),
+            chat.currentChatId,
+            chat.setCurrentChatId,
+            null,
+            requestId
+          );
+          return;
+        }
+        await ui.handleRefine(currentPrompt.replace(/^refine:\s*/i, "").replace(/^tweak:\s*/i, ""));
+        return;
+      }
+
+      // Otherwise, ask agent to route
+      const data = await agent.sendMessage(
+        currentPrompt,
+        chat.currentChatId,
+        chat.setCurrentChatId,
+        requestId
+      );
+
+      if (data?.action === "pipeline") {
+        await ui.handleGenerateUiPreview(
+          data.parameters?.prompt || currentPrompt,
+          chat.currentChatId,
           chat.setCurrentChatId,
           data.parameters?.specs || null,
           requestId
         );
-      } else if (data?.action === 'refine') {
-        // Automatically trigger Refinement
-        await ui.handleRefine(data.parameters?.instruction || currentPrompt);
+      } else if (data?.action === "refine") {
+        if (!ui.activeUi?.lua) {
+          await ui.handleGenerateUiPreview(
+            data.parameters?.instruction || currentPrompt,
+            chat.currentChatId,
+            chat.setCurrentChatId,
+            data.parameters?.specs || null,
+            requestId
+          );
+        } else {
+          await ui.handleRefine(data.parameters?.instruction || currentPrompt);
+        }
       } else {
-        // Default to standard chat if no specific action
         await chat.handleSubmit(currentPrompt, chat.currentChatId, requestId);
       }
     } catch (err) {
       console.error("Routing error:", err);
-      // Fallback to standard chat
       await chat.handleSubmit(currentPrompt);
     }
   };

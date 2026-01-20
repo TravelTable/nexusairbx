@@ -12,7 +12,101 @@ import { aiPipeline, aiRefineLua, exportLua } from "../lib/uiBuilderApi";
 import { cryptoRandomId } from "../lib/versioning";
 import { formatNumber } from "../lib/aiUtils";
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || "https://nexusrbx-backend-production.up.railway.app";
+const BACKEND_URL =
+  process.env.REACT_APP_BACKEND_URL || "https://nexusrbx-backend-production.up.railway.app";
+
+/**
+ * Deterministic utils (so the same prompt/requestId produces the same catalog order)
+ */
+function hashStringToSeed(str) {
+  // FNV-1a 32-bit
+  let h = 2166136261;
+  for (let i = 0; i < str.length; i++) {
+    h ^= str.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 0;
+}
+
+function mulberry32(seed) {
+  return function () {
+    let t = (seed += 0x6d2b79f5);
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function seededShuffle(arr, seedStr) {
+  const a = Array.isArray(arr) ? [...arr] : [];
+  const rng = mulberry32(hashStringToSeed(String(seedStr || "")));
+  // Fisher–Yates
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function isPlainObject(v) {
+  return !!v && typeof v === "object" && !Array.isArray(v);
+}
+
+function sanitizeBoardState(raw, { maxItems = 45 } = {}) {
+  let bs = raw;
+
+  // Unwrap if nested like { boardState: {...} }
+  if (isPlainObject(bs) && isPlainObject(bs.boardState)) bs = bs.boardState;
+
+  const warnings = [];
+  if (!isPlainObject(bs)) {
+    return { boardState: { items: [] }, warnings: ["boardState is not an object"] };
+  }
+
+  const items = Array.isArray(bs.items) ? bs.items : [];
+  if (!Array.isArray(bs.items)) warnings.push("boardState.items was not an array");
+
+  const cleanedItems = [];
+  for (const it of items) {
+    if (!isPlainObject(it)) continue;
+
+    // Minimal required shape
+    const hasId = typeof it.id === "string" && it.id.trim().length > 0;
+    const hasType = typeof it.type === "string" && it.type.trim().length > 0;
+
+    // Coordinates: allow either numbers (scale or pixels). Just require finite.
+    const coords = ["x", "y", "w", "h"];
+    const coordsOk = coords.every((k) => Number.isFinite(Number(it[k])));
+
+    if (!hasId || !hasType || !coordsOk) continue;
+
+    // Normalize numbers
+    const normalized = {
+      ...it,
+      id: it.id.trim(),
+      type: it.type.trim(),
+      x: Number(it.x),
+      y: Number(it.y),
+      w: Number(it.w),
+      h: Number(it.h),
+    };
+
+    cleanedItems.push(normalized);
+    if (cleanedItems.length >= maxItems) break;
+  }
+
+  if (cleanedItems.length !== items.length) {
+    warnings.push(`Dropped ${items.length - cleanedItems.length} invalid item(s)`);
+  }
+
+  return {
+    boardState: {
+      ...bs,
+      items: cleanedItems,
+    },
+    warnings,
+  };
+}
 
 export function useUiBuilder(user, settings, refreshBilling, notify) {
   const [uiGenerations, setUiGenerations] = useState([]);
@@ -107,14 +201,18 @@ export function useUiBuilder(user, settings, refreshBilling, notify) {
           }
         }
         
-        // Deduplicate by iconId/url and shuffle
+        // Deduplicate by iconId/url and shuffle deterministically (seeded)
         const seen = new Set();
-        contextualCatalog = contextualCatalog.filter(icon => {
+        contextualCatalog = contextualCatalog.filter((icon) => {
           const id = icon.iconId || icon.url;
+          if (!id) return false;
           if (seen.has(id)) return false;
           seen.add(id);
           return true;
-        }).sort(() => Math.random() - 0.5);
+        });
+
+        // Stable shuffle per request so “same requestId => same icons order”
+        contextualCatalog = seededShuffle(contextualCatalog, requestId);
 
       } catch (e) {
         console.warn("Failed to fetch contextual icons:", e);
@@ -174,10 +272,21 @@ export function useUiBuilder(user, settings, refreshBilling, notify) {
       clearTimeout(stageTimer);
       setGenerationStage("Finalizing UI...");
 
-      const boardState = mainResult?.boardState;
+      let boardState = mainResult?.boardState;
       if (!boardState) throw new Error("No boardState returned");
+
       const lua = mainResult?.lua || "";
       if (!lua) throw new Error("No Lua returned");
+
+      // Sanitize boardState so we don't persist garbage
+      const sanitized = sanitizeBoardState(boardState, { maxItems });
+      boardState = sanitized.boardState;
+
+      if (!Array.isArray(boardState.items) || boardState.items.length === 0) {
+        throw new Error(
+          `Generated UI is invalid/empty after validation. ${sanitized.warnings.join(" ")}`
+        );
+      }
 
       const scriptId = cryptoRandomId();
       const resultTitle = content.slice(0, 30) + " (UI)";
@@ -193,8 +302,19 @@ export function useUiBuilder(user, settings, refreshBilling, notify) {
 
       const assistantMsgRef = doc(db, "users", user.uid, "chats", activeChatId, "messages", `${requestId}-assistant`);
       await setDoc(assistantMsgRef, {
-        role: "assistant", content: "", code: lua, projectId: scriptId, versionNumber: 1,
-        metadata: { type: "ui", variations: otherVariations }, createdAt: serverTimestamp(), requestId,
+        role: "assistant",
+        content: "",
+        code: lua,
+        projectId: scriptId,
+        versionNumber: 1,
+        metadata: {
+          type: "ui",
+          variations: otherVariations,
+          seed: requestId,
+          validationWarnings: sanitized?.warnings || [],
+        },
+        createdAt: serverTimestamp(),
+        requestId,
       });
 
       const entry = { id: scriptId, createdAt: Date.now(), prompt: content, boardState, lua, variations: otherVariations };
