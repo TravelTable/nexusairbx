@@ -35,6 +35,8 @@ import {
 } from "firebase/firestore";
 import { v4 as uuidv4 } from "uuid";
 
+import { BACKEND_URL } from "../lib/uiBuilderApi";
+
 // Hooks
 import { useAiChat } from "../hooks/useAiChat";
 import { useUiBuilder } from "../hooks/useUiBuilder";
@@ -239,6 +241,72 @@ function AiPage() {
         } else {
           await ui.handleRefine(data.parameters?.instruction || currentPrompt);
         }
+      } else if (data?.action === "suggest_assets") {
+        // Suggest Roblox catalog queries for placeholders (or for the current UI prompt)
+        try {
+          const token = await user.getIdToken();
+          const res = await fetch(`${BACKEND_URL}/api/ui-builder/ai/suggest-image-queries`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+              items: ui.activeUi?.boardState?.items || [],
+              boardPrompt: data.parameters?.prompt || currentPrompt,
+            }),
+          });
+
+          if (res.ok) {
+            const out = await res.json();
+            const suggestions = out?.suggestions || [];
+            const msg =
+              suggestions.length > 0
+                ? suggestions
+                    .map((s) => `${s.itemId}: ${Array.isArray(s.queries) ? s.queries.join(", ") : ""}`)
+                    .join(" | ")
+                : "No suggestions returned.";
+            notify({ message: msg, type: "info" });
+          } else {
+            notify({ message: "Asset suggestion request failed", type: "error" });
+          }
+        } catch (err) {
+          notify({ message: "Asset suggestion failed", type: "error" });
+        }
+
+        await chat.handleSubmit(currentPrompt, chat.currentChatId, requestId);
+      } else if (data?.action === "lint") {
+        // Audit UI for UX/accessibility issues (contrast, tap targets, hierarchy, consistency)
+        try {
+          const token = await user.getIdToken();
+          const res = await fetch(`${BACKEND_URL}/api/ui-builder/ai/audit`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+              boardState: ui.activeUi?.boardState || null,
+            }),
+          });
+
+          if (res.ok) {
+            const out = await res.json();
+            const score = out?.audit?.score;
+            const issues = out?.audit?.issues || [];
+            const msg =
+              typeof score === "number"
+                ? `Audit score: ${score}. Issues: ${issues.map((i) => i.message).join(" | ")}`
+                : "Audit returned no score.";
+            notify({ message: msg, type: "info" });
+          } else {
+            notify({ message: "Audit request failed", type: "error" });
+          }
+        } catch (err) {
+          notify({ message: "Audit failed", type: "error" });
+        }
+
+        await chat.handleSubmit(currentPrompt, chat.currentChatId, requestId);
       } else {
         await chat.handleSubmit(currentPrompt, chat.currentChatId, requestId);
       }
