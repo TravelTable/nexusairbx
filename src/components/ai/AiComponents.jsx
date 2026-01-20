@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Info, ChevronDown, ChevronUp, Sparkles, Zap, Rocket, Layout, Eye, Download, RefreshCw } from "lucide-react";
+import { Info, ChevronDown, ChevronUp, Sparkles } from "lucide-react";
 import PLAN_INFO from "../../lib/planInfo";
 import { getGravatarUrl, getUserInitials, formatNumber, formatResetDate } from "../../lib/aiUtils";
 
