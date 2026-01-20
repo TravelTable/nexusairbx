@@ -2,7 +2,7 @@ import React from "react";
 import { NexusRBXAvatar, UserAvatar, FormatText } from "./AiComponents";
 import ScriptLoadingBarContainer from "../ScriptLoadingBarContainer";
 import GenerationStatusBar from "./GenerationStatusBar";
-import { Zap, Bug, Rocket, Layout, Sparkles, Eye, Download } from "lucide-react";
+import { Zap, Rocket, Layout, Sparkles, Eye } from "lucide-react";
 
 const quickStarts = [
   { icon: <Layout className="w-4 h-4 text-[#00f5d4]" />, label: "Build UI", prompt: "Build a modern shop UI with categories and a clean layout." },
