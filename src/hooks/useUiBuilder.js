@@ -245,13 +245,22 @@ export function useUiBuilder(user, settings, refreshBilling, notify) {
       const stageTimer = setTimeout(() => setGenerationStage("Writing Luau Code..."), 3000);
 
       const pipe = await aiPipeline({
-        token, 
-        prompt: `${content} (IMPORTANT: Use the provided icons from the catalog where appropriate.)`, 
-        canvasSize, themeHint, maxItems,
-        gameSpec: settings.gameSpec || "", maxSystemsTokens: settings.uiMaxSystemsTokens,
-        catalog: contextualCatalog, animations: specs?.animations || "", customTheme: specs?.theme || null,
+        token,
+        prompt: `${content} (IMPORTANT: Use the provided icons from the catalog where appropriate.)`,
+        canvasSize,
+        themeHint,
+        maxItems,
+        gameSpec: settings.gameSpec || "",
+        maxSystemsTokens: settings.uiMaxSystemsTokens,
+        catalog: contextualCatalog,
+        animations: specs?.animations || "",
+        customTheme: specs?.theme || null,
         platforms: specs?.platforms || ["pc"],
         variations: settings.uiVariations || 1,
+
+        // NEW: multi-pass polish loop to fight bland first drafts
+        refinerPasses: Number(settings.uiRefinerPasses ?? 2),
+        refinerStyle: settings.uiRefinerStyle || "punchy",
       });
 
       // Handle variations if returned
