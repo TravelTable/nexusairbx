@@ -17,7 +17,7 @@ import {
 import { v4 as uuidv4 } from "uuid";
 import { auth, db } from "../firebase";
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || "https://nexusrbx-backend-production.up.railway.app";
+const BACKEND_URL = "https://nexusrbx-backend-production.up.railway.app";
 
 export function useAiChat(user, settings, refreshBilling, notify) {
   const [messages, setMessages] = useState([]);
@@ -104,10 +104,16 @@ export function useAiChat(user, settings, refreshBilling, notify) {
       setGenerationStage("Preparing Job...");
       const token = await user.getIdToken();
       
+      const idemKey = `chat-${requestId}`;
+      
       // 1. Create Artifact Job
       const jobRes = await fetch(`${BACKEND_URL}/api/generate/artifact`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        headers: { 
+          "Content-Type": "application/json", 
+          Authorization: `Bearer ${token}`,
+          "Idempotency-Key": idemKey
+        },
         body: JSON.stringify({ 
           prompt: content, 
           settings,
@@ -121,7 +127,8 @@ export function useAiChat(user, settings, refreshBilling, notify) {
         throw new Error(errData.error || "Failed to create generation job");
       }
       
-      const { jobId } = await jobRes.json();
+      const jobData = await jobRes.json();
+      const jobId = jobData.jobId;
       if (!jobId) throw new Error("Failed to create generation job");
 
       setGenerationStage("Generating...");
@@ -138,45 +145,52 @@ export function useAiChat(user, settings, refreshBilling, notify) {
             try {
               const { chunk } = JSON.parse(e.data);
               fullText += chunk;
-              setPendingMessage(prev => ({ ...prev, content: fullText }));
+              setPendingMessage(prev => ({ ...prev, content: fullText, type: "chat" }));
             } catch (err) {
               console.error("Failed to parse chunk:", err);
             }
           });
 
-        es.addEventListener("done", async (e) => {
-          try {
-            const data = JSON.parse(e.data);
-            es.close();
-            
-            setGenerationStage("Finalizing...");
-            const assistantMsgRef = doc(db, "users", user.uid, "chats", activeChatId, "messages", `${requestId}-assistant`);
-            await setDoc(assistantMsgRef, {
-              role: "assistant",
-              content: "",
-              explanation: data.explanation || "",
-              thought: data.thought || "",
-              code: data.content || "", // Backend sends 'content' for code in stream
-              createdAt: serverTimestamp(),
-              requestId,
-              jobId,
-              artifactId: data.artifactId
-            });
+          es.addEventListener("done", async (e) => {
+            try {
+              const data = JSON.parse(e.data);
+              es.close();
+              
+              setGenerationStage("Finalizing...");
+              const assistantMsgRef = doc(db, "users", user.uid, "chats", activeChatId, "messages", `${requestId}-assistant`);
+              await setDoc(assistantMsgRef, {
+                role: "assistant",
+                content: "",
+                explanation: data.explanation || "",
+                thought: data.thought || "",
+                code: data.content || "", // Backend sends 'content' for code in stream
+                projectId: data.projectId || null,
+                versionNumber: data.versionNumber || 1,
+                createdAt: serverTimestamp(),
+                requestId,
+                jobId,
+                artifactId: data.artifactId
+              });
 
-            await updateDoc(doc(db, "users", user.uid, "chats", activeChatId), {
-              updatedAt: serverTimestamp(),
-              lastMessage: content.slice(0, 50),
-            });
-            
-            refreshBilling();
-            setIsGenerating(false);
-            setPendingMessage(null);
-            setGenerationStage("");
-            resolve();
-          } catch (err) {
-            reject(err);
-          }
-        });
+              await updateDoc(doc(db, "users", user.uid, "chats", activeChatId), {
+                updatedAt: serverTimestamp(),
+                lastMessage: content.slice(0, 50),
+              });
+              
+              // Notify UI hook if this was a UI generation
+              if (data.projectId) {
+                window.dispatchEvent(new CustomEvent("nexus:uiGenerated", { detail: data }));
+              }
+
+              refreshBilling();
+              setIsGenerating(false);
+              setPendingMessage(null);
+              setGenerationStage("");
+              resolve();
+            } catch (err) {
+              reject(err);
+            }
+          });
 
           es.addEventListener("error", (e) => {
             es.close();
@@ -257,6 +271,7 @@ export function useAiChat(user, settings, refreshBilling, notify) {
     handleDeleteChat,
     handleClearChat,
     startNewChat,
-    setPendingMessage
+    setPendingMessage,
+    setCurrentChatId
   };
 }

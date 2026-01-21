@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { 
   doc, 
   collection, 
@@ -12,8 +12,7 @@ import { aiPipeline, aiRefineLua, exportLua } from "../lib/uiBuilderApi";
 import { cryptoRandomId } from "../lib/versioning";
 import { formatNumber } from "../lib/aiUtils";
 
-const BACKEND_URL =
-  process.env.REACT_APP_BACKEND_URL || "https://nexusrbx-backend-production.up.railway.app";
+const BACKEND_URL = "https://nexusrbx-backend-production.up.railway.app";
 
 /**
  * Deterministic utils (so the same prompt/requestId produces the same catalog order)
@@ -115,6 +114,27 @@ export function useUiBuilder(user, settings, refreshBilling, notify) {
   const [uiDrawerOpen, setUiDrawerOpen] = useState(false);
   const [generationStage, setGenerationStage] = useState("");
   const [pendingMessage, setPendingMessage] = useState(null);
+
+  // Listen for UI generation completion from the chat stream
+  useEffect(() => {
+    const handleUiGenerated = (e) => {
+      const data = e.detail;
+      if (data.projectId) {
+        const entry = { 
+          id: data.projectId, 
+          createdAt: Date.now(), 
+          prompt: data.title || "Generated UI", 
+          lua: data.content,
+          versionNumber: data.versionNumber 
+        };
+        setUiGenerations((prev) => [entry, ...(prev || [])]);
+        setActiveUiId(data.projectId);
+        setUiDrawerOpen(true);
+      }
+    };
+    window.addEventListener("nexus:uiGenerated", handleUiGenerated);
+    return () => window.removeEventListener("nexus:uiGenerated", handleUiGenerated);
+  }, []);
 
   const activeUi = uiGenerations.find((g) => g.id === activeUiId) || uiGenerations[0] || null;
 
@@ -241,6 +261,9 @@ export function useUiBuilder(user, settings, refreshBilling, notify) {
         await setDoc(userMsgRef, { role: "user", content: content, createdAt: serverTimestamp(), requestId });
       }
 
+      // Use the same idempotency key as chat to share the job
+      const idemKey = `chat-${requestId}`;
+
       setGenerationStage("Analyzing Components...");
       const stageTimer = setTimeout(() => setGenerationStage("Writing Luau Code..."), 3000);
 
@@ -261,6 +284,7 @@ export function useUiBuilder(user, settings, refreshBilling, notify) {
         // NEW: multi-pass polish loop to fight bland first drafts
         refinerPasses: Number(settings.uiRefinerPasses ?? 2),
         refinerStyle: settings.uiRefinerStyle || "punchy",
+        idempotencyKey: idemKey,
       });
 
       // Handle variations if returned

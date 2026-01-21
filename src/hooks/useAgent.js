@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { BACKEND_URL } from "../lib/uiBuilderApi";
+const BACKEND_URL = "https://nexusrbx-backend-production.up.railway.app";
 import { doc, setDoc, serverTimestamp, collection, addDoc } from "firebase/firestore";
 import { db } from "../firebase";
 import { v4 as uuidv4 } from "uuid";

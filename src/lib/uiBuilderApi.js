@@ -1,10 +1,4 @@
-export let BACKEND_URL = process.env.REACT_APP_BACKEND_URL || process.env.REACT_APP_API_ORIGIN;
-if (!BACKEND_URL) {
-  BACKEND_URL = "https://nexusrbx-backend-production.up.railway.app";
-}
-if (BACKEND_URL.endsWith("/")) {
-  BACKEND_URL = BACKEND_URL.replace(/\/+$/, "");
-}
+export let BACKEND_URL = "https://nexusrbx-backend-production.up.railway.app";
 
 async function handleResponse(res) {
   const text = await res.text();
@@ -183,10 +177,14 @@ export async function aiPipeline({
   animations = "",
   customTheme = null,
   platforms = ["pc"],
+  idempotencyKey,
 }) {
+  const headers = authHeaders(token);
+  if (idempotencyKey) headers["Idempotency-Key"] = idempotencyKey;
+
   const res = await fetch(`${BACKEND_URL}/api/ui-builder/ai/pipeline`, {
     method: "POST",
-    headers: authHeaders(token),
+    headers,
     body: JSON.stringify({ 
       prompt, 
       canvasSize, 

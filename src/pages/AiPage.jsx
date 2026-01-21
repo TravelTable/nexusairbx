@@ -195,13 +195,18 @@ function AiPage() {
       // If user wants UI and it's obvious, skip agent
       if (looksLikeUi && !looksLikeRefine) {
         if (!ui.uiDrawerOpen) ui.setUiDrawerOpen(false); // Only close if not already open (to avoid flicker)
-        await ui.handleGenerateUiPreview(
+        
+        // Trigger both chat (for streaming) and UI builder
+        const uiPromise = ui.handleGenerateUiPreview(
           currentPrompt.replace(/^\/ui\s*/i, ""),
           chat.currentChatId,
           chat.setCurrentChatId,
           null,
           requestId
         );
+        const chatPromise = chat.handleSubmit(currentPrompt, chat.currentChatId, requestId);
+        
+        await Promise.all([uiPromise, chatPromise]);
         return;
       }
 
@@ -232,13 +237,17 @@ function AiPage() {
 
       if (data?.action === "pipeline") {
         if (!ui.uiDrawerOpen) ui.setUiDrawerOpen(false);
-        await ui.handleGenerateUiPreview(
+        
+        const uiPromise = ui.handleGenerateUiPreview(
           data.parameters?.prompt || currentPrompt,
           chat.currentChatId,
           chat.setCurrentChatId,
           data.parameters?.specs || null,
           requestId
         );
+        const chatPromise = chat.handleSubmit(currentPrompt, chat.currentChatId, requestId);
+        
+        await Promise.all([uiPromise, chatPromise]);
       } else if (data?.action === "refine") {
         if (!ui.activeUi?.lua) {
           await ui.handleGenerateUiPreview(
