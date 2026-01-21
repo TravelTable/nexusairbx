@@ -1,5 +1,6 @@
 import React from "react";
 import { NexusRBXAvatar, UserAvatar, FormatText, ThoughtAccordion, UiStatsBadge } from "./AiComponents";
+import LiveCodeViewer from "./LiveCodeViewer";
 import ScriptLoadingBarContainer from "../ScriptLoadingBarContainer";
 import GenerationStatusBar from "./GenerationStatusBar";
 import { Zap, Rocket, Layout, Sparkles, Eye, RefreshCw, MousePointer2, Layers } from "lucide-react";
@@ -173,12 +174,7 @@ export default function ChatView({
                   <GenerationStatusBar currentStage={generationStage || "Nexus is working..."} />
                   
                   {pendingMessage.content && (
-                    <div className="p-4 md:p-6 rounded-3xl bg-[#121212]/80 border border-white/10 backdrop-blur-xl shadow-2xl animate-in zoom-in-95 duration-300">
-                      <div className="text-[15px] md:text-[16px] whitespace-pre-wrap leading-relaxed text-gray-100">
-                        <FormatText text={pendingMessage.content} />
-                        <span className="inline-block w-1.5 h-4 ml-1 bg-[#00f5d4] animate-pulse align-middle" />
-                      </div>
-                    </div>
+                    <LiveCodeViewer content={pendingMessage.content} />
                   )}
                 </div>
               </div>

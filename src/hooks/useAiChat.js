@@ -123,23 +123,26 @@ export function useAiChat(user, settings, refreshBilling, notify) {
       
       // 2. Connect to Stream
       return new Promise((resolve, reject) => {
-        const eventSource = new EventSource(`${BACKEND_URL}/api/generate/stream?jobId=${jobId}&token=${token}`);
+        let eventSource = new EventSource(`${BACKEND_URL}/api/generate/stream?jobId=${jobId}&token=${token}`);
         let fullText = "";
+        let retryCount = 0;
+        const maxRetries = 3;
 
-        eventSource.addEventListener("chunk", (e) => {
-          try {
-            const { chunk } = JSON.parse(e.data);
-            fullText += chunk;
-            setPendingMessage(prev => ({ ...prev, content: fullText }));
-          } catch (err) {
-            console.error("Failed to parse chunk:", err);
-          }
-        });
+        const setupListeners = (es) => {
+          es.addEventListener("chunk", (e) => {
+            try {
+              const { chunk } = JSON.parse(e.data);
+              fullText += chunk;
+              setPendingMessage(prev => ({ ...prev, content: fullText }));
+            } catch (err) {
+              console.error("Failed to parse chunk:", err);
+            }
+          });
 
-        eventSource.addEventListener("done", async (e) => {
+        es.addEventListener("done", async (e) => {
           try {
             const data = JSON.parse(e.data);
-            eventSource.close();
+            es.close();
             
             setGenerationStage("Finalizing...");
             const assistantMsgRef = doc(db, "users", user.uid, "chats", activeChatId, "messages", `${requestId}-assistant`);
@@ -170,15 +173,27 @@ export function useAiChat(user, settings, refreshBilling, notify) {
           }
         });
 
-        eventSource.addEventListener("error", (e) => {
-          eventSource.close();
-          let errorMsg = "Generation failed";
-          try {
-            const data = JSON.parse(e.data);
-            if (data.error) errorMsg = data.error;
-          } catch (err) {}
-          reject(new Error(errorMsg));
-        });
+          es.addEventListener("error", (e) => {
+            es.close();
+            if (retryCount < maxRetries && !fullText) {
+              retryCount++;
+              console.log(`Retrying connection (${retryCount}/${maxRetries})...`);
+              setTimeout(() => {
+                eventSource = new EventSource(`${BACKEND_URL}/api/generate/stream?jobId=${jobId}&token=${token}`);
+                setupListeners(eventSource);
+              }, 1000 * retryCount);
+            } else {
+              let errorMsg = "Generation failed";
+              try {
+                const data = JSON.parse(e.data);
+                if (data.error) errorMsg = data.error;
+              } catch (err) {}
+              reject(new Error(errorMsg));
+            }
+          });
+        };
+
+        setupListeners(eventSource);
       });
 
     } catch (e) {
