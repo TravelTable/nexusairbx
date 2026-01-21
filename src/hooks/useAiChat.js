@@ -101,43 +101,89 @@ export function useAiChat(user, settings, refreshBilling, notify) {
         });
       }
 
-      setGenerationStage("Generating Response...");
+      setGenerationStage("Preparing Job...");
       const token = await user.getIdToken();
-      const res = await fetch(`${BACKEND_URL}/api/generate-code`, {
+      
+      // 1. Create Artifact Job
+      const jobRes = await fetch(`${BACKEND_URL}/api/generate/artifact`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ 
           prompt: content, 
           settings,
+          chatId: activeChatId,
           conversation: messages.slice(-10).map(m => ({ role: m.role, content: m.content || m.explanation }))
         }),
       });
       
-      setGenerationStage("Finalizing...");
-      const data = await res.json();
+      const { jobId } = await jobRes.json();
+      if (!jobId) throw new Error("Failed to create generation job");
+
+      setGenerationStage("Generating...");
       
-      if (data.code || data.explanation) {
-        const assistantMsgRef = doc(db, "users", user.uid, "chats", activeChatId, "messages", `${requestId}-assistant`);
-        await setDoc(assistantMsgRef, {
-          role: "assistant",
-          content: "",
-          explanation: data.explanation || "",
-          thought: data.thought || "",
-          code: data.code || "",
-          createdAt: serverTimestamp(),
-          requestId,
+      // 2. Connect to Stream
+      return new Promise((resolve, reject) => {
+        const eventSource = new EventSource(`${BACKEND_URL}/api/generate/stream?jobId=${jobId}&token=${token}`);
+        let fullText = "";
+
+        eventSource.addEventListener("chunk", (e) => {
+          try {
+            const { chunk } = JSON.parse(e.data);
+            fullText += chunk;
+            setPendingMessage(prev => ({ ...prev, content: fullText }));
+          } catch (err) {
+            console.error("Failed to parse chunk:", err);
+          }
         });
 
-        await updateDoc(doc(db, "users", user.uid, "chats", activeChatId), {
-          updatedAt: serverTimestamp(),
-          lastMessage: content.slice(0, 50),
+        eventSource.addEventListener("done", async (e) => {
+          try {
+            const data = JSON.parse(e.data);
+            eventSource.close();
+            
+            setGenerationStage("Finalizing...");
+            const assistantMsgRef = doc(db, "users", user.uid, "chats", activeChatId, "messages", `${requestId}-assistant`);
+            await setDoc(assistantMsgRef, {
+              role: "assistant",
+              content: "",
+              explanation: data.explanation || "",
+              thought: data.thought || "",
+              code: data.content || "", // Backend sends 'content' for code in stream
+              createdAt: serverTimestamp(),
+              requestId,
+              jobId,
+              artifactId: data.artifactId
+            });
+
+            await updateDoc(doc(db, "users", user.uid, "chats", activeChatId), {
+              updatedAt: serverTimestamp(),
+              lastMessage: content.slice(0, 50),
+            });
+            
+            refreshBilling();
+            setIsGenerating(false);
+            setPendingMessage(null);
+            setGenerationStage("");
+            resolve();
+          } catch (err) {
+            reject(err);
+          }
         });
-        refreshBilling();
-      }
+
+        eventSource.addEventListener("error", (e) => {
+          eventSource.close();
+          let errorMsg = "Generation failed";
+          try {
+            const data = JSON.parse(e.data);
+            if (data.error) errorMsg = data.error;
+          } catch (err) {}
+          reject(new Error(errorMsg));
+        });
+      });
+
     } catch (e) {
       console.error(e);
-      notify({ message: "Generation failed", type: "error" });
-    } finally {
+      notify({ message: e.message || "Generation failed", type: "error" });
       setIsGenerating(false);
       setPendingMessage(null);
       setGenerationStage("");

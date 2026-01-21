@@ -169,8 +169,17 @@ export default function ChatView({
 
               <div className="flex justify-start gap-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
                 <NexusRBXAvatar isThinking={true} />
-                <div className="max-w-[80%] order-2">
+                <div className="max-w-[85%] md:max-w-[80%] order-2 space-y-4">
                   <GenerationStatusBar currentStage={generationStage || "Nexus is working..."} />
+                  
+                  {pendingMessage.content && (
+                    <div className="p-4 md:p-6 rounded-3xl bg-[#121212]/80 border border-white/10 backdrop-blur-xl shadow-2xl animate-in zoom-in-95 duration-300">
+                      <div className="text-[15px] md:text-[16px] whitespace-pre-wrap leading-relaxed text-gray-100">
+                        <FormatText text={pendingMessage.content} />
+                        <span className="inline-block w-1.5 h-4 ml-1 bg-[#00f5d4] animate-pulse align-middle" />
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </>
