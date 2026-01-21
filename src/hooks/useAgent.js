@@ -1,8 +1,9 @@
 import { useState, useCallback } from "react";
-const BACKEND_URL = "https://nexusrbx-backend-production.up.railway.app";
 import { doc, setDoc, serverTimestamp, collection, addDoc } from "firebase/firestore";
 import { db } from "../firebase";
 import { v4 as uuidv4 } from "uuid";
+
+const BACKEND_URL = "https://nexusrbx-backend-production.up.railway.app";
 
 export function useAgent(user, notify, refreshBilling) {
   const [messages, setMessages] = useState([]);
