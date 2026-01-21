@@ -116,6 +116,11 @@ export function useAiChat(user, settings, refreshBilling, notify) {
         }),
       });
       
+      if (!jobRes.ok) {
+        const errData = await jobRes.json();
+        throw new Error(errData.error || "Failed to create generation job");
+      }
+      
       const { jobId } = await jobRes.json();
       if (!jobId) throw new Error("Failed to create generation job");
 
