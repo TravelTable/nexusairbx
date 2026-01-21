@@ -190,6 +190,7 @@ export function useAiChat(user, settings, refreshBilling, notify) {
     handleSubmit,
     handleDeleteChat,
     handleClearChat,
-    startNewChat
+    startNewChat,
+    setPendingMessage
   };
 }
