@@ -8,7 +8,7 @@ import {
 } from "firebase/firestore";
 import { db } from "../firebase";
 import { v4 as uuidv4 } from "uuid";
-import { aiPipelineStream, aiRefineLua, exportLua } from "../lib/uiBuilderApi";
+import { aiPipeline, aiRefineLua, exportLua } from "../lib/uiBuilderApi";
 import { cryptoRandomId } from "../lib/versioning";
 import { formatNumber } from "../lib/aiUtils";
 
@@ -121,76 +121,55 @@ export function useUiBuilder(user, settings, refreshBilling, notify) {
         await setDoc(userMsgRef, { role: "user", content: content, createdAt: serverTimestamp(), requestId });
       }
 
-      await aiPipelineStream({
+      const data = await aiPipeline({
         token,
         prompt: content,
         canvasSize,
         maxItems,
         gameSpec: settings.gameSpec || "",
         maxSystemsTokens: settings.uiMaxSystemsTokens,
-        onStage: (data) => {
-          setGenerationStage(data.message);
-        },
-        onBoardState: (bs) => {
-          // Update preview immediately when boardState is available
-          setUiGenerations(prev => {
-            const existing = prev.find(g => g.requestId === requestId);
-            if (existing) {
-              return prev.map(g => g.requestId === requestId ? { ...g, boardState: bs } : g);
-            }
-            return [{ id: `temp-${requestId}`, requestId, createdAt: Date.now(), prompt: content, boardState: bs, lua: "" }, ...prev];
-          });
-          setActiveUiId(`temp-${requestId}`);
-        },
-        onDone: async (data) => {
-          const { boardState, lua, tokensConsumed, warnings } = data;
-          
-          const scriptId = cryptoRandomId();
-          const resultTitle = content.slice(0, 30) + " (UI)";
-
-          await setDoc(doc(db, "users", user.uid, "scripts", scriptId), {
-            title: resultTitle, chatId: activeChatId, type: "ui", updatedAt: serverTimestamp(), createdAt: serverTimestamp(),
-          });
-
-          const versionId = uuidv4();
-          await setDoc(doc(db, "users", user.uid, "scripts", scriptId, "versions", versionId), {
-            code: lua, title: resultTitle, versionNumber: 1, createdAt: serverTimestamp(),
-          });
-
-          const assistantMsgRef = doc(db, "users", user.uid, "chats", activeChatId, "messages", `${requestId}-assistant`);
-          await setDoc(assistantMsgRef, {
-            role: "assistant",
-            content: "",
-            code: lua,
-            projectId: scriptId,
-            versionNumber: 1,
-            metadata: {
-              type: "ui",
-              seed: requestId,
-              validationWarnings: warnings || [],
-            },
-            createdAt: serverTimestamp(),
-            requestId,
-          });
-
-          const entry = { id: scriptId, requestId, createdAt: Date.now(), prompt: content, boardState, lua };
-          setUiGenerations((prev) => [entry, ...prev.filter(g => g.requestId !== requestId)]);
-          setActiveUiId(scriptId);
-          
-          const tokenMsg = tokensConsumed ? ` (${formatNumber(tokensConsumed)} tokens used)` : "";
-          notify({ message: `UI generated and saved.${tokenMsg}`, type: "success" });
-          refreshBilling();
-          setUiIsGenerating(false);
-          setPendingMessage(null);
-          setGenerationStage("");
-        },
-        onError: (err) => {
-          notify({ message: err.message || "UI generation failed", type: "error" });
-          setUiIsGenerating(false);
-          setPendingMessage(null);
-          setGenerationStage("");
-        }
       });
+
+      const { boardState, lua, tokensConsumed, warnings } = data;
+      
+      const scriptId = cryptoRandomId();
+      const resultTitle = content.slice(0, 30) + " (UI)";
+
+      await setDoc(doc(db, "users", user.uid, "scripts", scriptId), {
+        title: resultTitle, chatId: activeChatId, type: "ui", updatedAt: serverTimestamp(), createdAt: serverTimestamp(),
+      });
+
+      const versionId = uuidv4();
+      await setDoc(doc(db, "users", user.uid, "scripts", scriptId, "versions", versionId), {
+        code: lua, title: resultTitle, versionNumber: 1, createdAt: serverTimestamp(),
+      });
+
+      const assistantMsgRef = doc(db, "users", user.uid, "chats", activeChatId, "messages", `${requestId}-assistant`);
+      await setDoc(assistantMsgRef, {
+        role: "assistant",
+        content: "",
+        code: lua,
+        projectId: scriptId,
+        versionNumber: 1,
+        metadata: {
+          type: "ui",
+          seed: requestId,
+          validationWarnings: warnings || [],
+        },
+        createdAt: serverTimestamp(),
+        requestId,
+      });
+
+      const entry = { id: scriptId, requestId, createdAt: Date.now(), prompt: content, boardState, lua };
+      setUiGenerations((prev) => [entry, ...prev.filter(g => g.requestId !== requestId)]);
+      setActiveUiId(scriptId);
+      
+      const tokenMsg = tokensConsumed ? ` (${formatNumber(tokensConsumed)} tokens used)` : "";
+      notify({ message: `UI generated and saved.${tokenMsg}`, type: "success" });
+      refreshBilling();
+      setUiIsGenerating(false);
+      setPendingMessage(null);
+      setGenerationStage("");
 
     } catch (e) {
       notify({ message: e?.message || "UI generation failed", type: "error" });
