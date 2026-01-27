@@ -11,7 +11,9 @@ export function extractUiManifestFromLua(lua) {
   const v1Match = lua.match(v1Regex);
   if (v1Match && v1Match[2]) {
     try {
-      const decoded = atob(v1Match[2]);
+      // Use a more robust decoding for large strings if needed, 
+      // but atob is generally fine for standard base64.
+      const decoded = atob(v1Match[2].trim());
       return attemptParse(decoded);
     } catch (e) {
       console.warn("Failed to decode Base64 manifest", e);
