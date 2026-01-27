@@ -90,6 +90,13 @@ function AiPage() {
     }
   }, [chat.activeMode, chatMode]);
 
+  // Update hook's activeMode when local chatMode changes (e.g. via selector)
+  useEffect(() => {
+    if (chatMode && chat.activeMode !== chatMode) {
+      chat.updateChatMode(chat.currentChatId, chatMode);
+    }
+  }, [chatMode, chat.activeMode, chat.currentChatId, chat.updateChatMode]);
+
   const ui = useUiBuilder(user, settings, refreshBilling, notify);
   const game = useGameProfile(settings, updateSettings);
   const scriptManager = useAiScripts(user, notify);
@@ -204,8 +211,8 @@ function AiPage() {
         p.includes("refine ui") ||
         p.includes("make the ui");
 
-      // If user wants UI and it's obvious, skip agent
-      if (looksLikeUi && !looksLikeRefine) {
+      // If user wants UI and it's obvious OR mode is UI, skip agent
+      if ((looksLikeUi || chatMode === "ui") && !looksLikeRefine) {
         // Trigger both chat (for streaming) and UI builder
         const uiPromise = ui.handleGenerateUiPreview(
           currentPrompt.replace(/^\/ui\s*/i, ""),
@@ -546,14 +553,30 @@ function AiPage() {
                         }
                       }}
                     />
-                    <button 
-                      id="tour-generate-button"
-                      onClick={handlePromptSubmit} 
-                      disabled={chat.isGenerating || ui.uiIsGenerating || agent.isThinking || !prompt.trim()}
-                      className="p-3 rounded-xl transition-all disabled:opacity-50 bg-[#00f5d4] text-black hover:shadow-[0_0_20px_rgba(0,245,212,0.4)] active:scale-95"
-                    >
-                      {chat.isGenerating || ui.uiIsGenerating || agent.isThinking ? <Loader className="h-5 w-5 animate-spin" /> : <Sparkles className="h-5 w-5" />}
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button 
+                        onClick={() => {
+                          // Cycle through modes or open a menu? 
+                          // For now, let's just cycle through the first 4 main ones for simplicity in this chip
+                          const modeIds = CHAT_MODES.map(m => m.id);
+                          const currentIndex = modeIds.indexOf(chatMode);
+                          const nextIndex = (currentIndex + 1) % modeIds.length;
+                          setChatMode(modeIds[nextIndex]);
+                        }}
+                        className={`hidden sm:flex items-center gap-1.5 px-2 py-1.5 rounded-lg border border-white/10 text-[10px] font-black uppercase tracking-widest transition-all hover:bg-white/5 ${activeModeData.color}`}
+                        title="Change Mode"
+                      >
+                        {activeModeData.icon}
+                      </button>
+                      <button 
+                        id="tour-generate-button"
+                        onClick={handlePromptSubmit} 
+                        disabled={chat.isGenerating || ui.uiIsGenerating || agent.isThinking || !prompt.trim()}
+                        className="p-3 rounded-xl transition-all disabled:opacity-50 bg-[#00f5d4] text-black hover:shadow-[0_0_20px_rgba(0,245,212,0.4)] active:scale-95"
+                      >
+                        {chat.isGenerating || ui.uiIsGenerating || agent.isThinking ? <Loader className="h-5 w-5 animate-spin" /> : <Sparkles className="h-5 w-5" />}
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>

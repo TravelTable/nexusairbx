@@ -21,6 +21,7 @@ export function useAgent(user, notify, refreshBilling) {
       if (!activeChatId && setChatId) {
         const newChatRef = await addDoc(collection(db, "users", user.uid, "chats"), {
           title: goal.slice(0, 30) + (goal.length > 30 ? "..." : ""),
+          activeMode: chatMode,
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
         });

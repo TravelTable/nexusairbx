@@ -73,7 +73,7 @@ export function useAiChat(user, settings, refreshBilling, notify) {
     );
   }, [user, notify]);
 
-  const handleSubmit = async (prompt, existingChatId = null, existingRequestId = null) => {
+  const handleSubmit = async (prompt, existingChatId = null, existingRequestId = null, modeOverride = null) => {
     const content = prompt.trim();
     if (!content || isGenerating || !user) return;
 
@@ -83,12 +83,13 @@ export function useAiChat(user, settings, refreshBilling, notify) {
 
     let activeChatId = existingChatId || currentChatId;
     const requestId = existingRequestId || uuidv4();
+    const chatMode = modeOverride || activeMode || settings.chatMode || "general";
 
     try {
       if (!activeChatId) {
         const newChatRef = await addDoc(collection(db, "users", user.uid, "chats"), {
           title: content.slice(0, 30) + (content.length > 30 ? "..." : ""),
-          activeMode: settings.chatMode || "general",
+          activeMode: chatMode,
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
         });
@@ -123,7 +124,7 @@ export function useAiChat(user, settings, refreshBilling, notify) {
           prompt: content, 
           settings,
           chatId: activeChatId,
-          chatMode: settings.chatMode || "general", // Pass chatMode from settings or default
+          chatMode: chatMode,
           conversation: messages.slice(-10).map(m => ({ role: m.role, content: m.content || m.explanation }))
         }),
       });
@@ -270,7 +271,26 @@ export function useAiChat(user, settings, refreshBilling, notify) {
     setCurrentChatId(null);
     setCurrentChatMeta(null);
     setMessages([]);
+    setActiveMode("general");
   }, []);
+
+  const updateChatMode = async (chatId, mode) => {
+    const u = user || auth.currentUser;
+    if (!u || !chatId) {
+      setActiveMode(mode);
+      return;
+    }
+    try {
+      await updateDoc(doc(db, "users", u.uid, "chats", chatId), {
+        activeMode: mode,
+        updatedAt: serverTimestamp(),
+      });
+      setActiveMode(mode);
+    } catch (err) {
+      console.error("Failed to update chat mode:", err);
+      notify?.({ message: "Failed to update chat mode", type: "error" });
+    }
+  };
 
   return {
     messages,
@@ -287,6 +307,7 @@ export function useAiChat(user, settings, refreshBilling, notify) {
     setPendingMessage,
     setCurrentChatId,
     activeMode,
-    setActiveMode
+    setActiveMode,
+    updateChatMode
   };
 }

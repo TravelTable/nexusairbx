@@ -17,7 +17,9 @@ import {
   Activity, 
   ShieldAlert, 
   Move, 
-  MessageSquare 
+  MessageSquare,
+  Copy,
+  Check
 } from "lucide-react";
 import { auth } from "../../firebase";
 
@@ -32,7 +34,8 @@ export const CHAT_MODES = [
     bg: "bg-gray-400/10",
     border: "hover:border-gray-400/50",
     description: "General Roblox help, debugging, and documentation.",
-    placeholder: "Ask anything about Roblox development..."
+    placeholder: "Ask anything about Roblox development...",
+    type: "pure persona"
   },
   { 
     id: "ui", 
@@ -42,7 +45,8 @@ export const CHAT_MODES = [
     bg: "bg-[#00f5d4]/10",
     border: "hover:border-[#00f5d4]/50",
     description: "Specialized in building and refining Roblox UI manifests.",
-    placeholder: "Describe the UI you want to build (e.g. 'A modern shop menu')..."
+    placeholder: "Describe the UI you want to build (e.g. 'A modern shop menu')...",
+    type: "tool-routing"
   },
   { 
     id: "logic", 
@@ -52,7 +56,8 @@ export const CHAT_MODES = [
     bg: "bg-[#9b5de5]/10",
     border: "hover:border-[#9b5de5]/50",
     description: "Focused on clean, optimized Luau scripting and bug fixing.",
-    placeholder: "Paste code to optimize or describe a logic problem..."
+    placeholder: "Paste code to optimize or describe a logic problem...",
+    type: "pure persona"
   },
   { 
     id: "system", 
@@ -62,7 +67,8 @@ export const CHAT_MODES = [
     bg: "bg-blue-400/10",
     border: "hover:border-blue-400/50",
     description: "Architecting DataStores, Networking, and Game Loops.",
-    placeholder: "Describe a system (e.g. 'A global leaderboard with DataStores')..."
+    placeholder: "Describe a system (e.g. 'A global leaderboard with DataStores')...",
+    type: "pure persona"
   },
   { 
     id: "animator", 
@@ -72,7 +78,8 @@ export const CHAT_MODES = [
     bg: "bg-pink-400/10",
     border: "hover:border-pink-400/50",
     description: "Tweens, AnimationControllers, and procedural motion.",
-    placeholder: "Describe an animation or tween sequence..."
+    placeholder: "Describe an animation or tween sequence...",
+    type: "pure persona"
   },
   { 
     id: "data", 
@@ -82,7 +89,8 @@ export const CHAT_MODES = [
     bg: "bg-yellow-400/10",
     border: "hover:border-yellow-400/50",
     description: "DataStore v2, Caching, Pagination, and Analytics.",
-    placeholder: "Ask about DataStore patterns or data management..."
+    placeholder: "Ask about DataStore patterns or data management...",
+    type: "pure persona"
   },
   { 
     id: "performance", 
@@ -92,7 +100,8 @@ export const CHAT_MODES = [
     bg: "bg-emerald-400/10",
     border: "hover:border-emerald-400/50",
     description: "Diagnosing bottlenecks and micro-optimizations.",
-    placeholder: "Paste code to audit for performance issues..."
+    placeholder: "Paste code to audit for performance issues...",
+    type: "pure persona"
   },
   { 
     id: "security", 
@@ -102,7 +111,8 @@ export const CHAT_MODES = [
     bg: "bg-red-400/10",
     border: "hover:border-red-400/50",
     description: "RemoteEvent security and anti-exploit patterns.",
-    placeholder: "Audit your Remotes or ask about anti-exploit best practices..."
+    placeholder: "Audit your Remotes or ask about anti-exploit best practices...",
+    type: "pure persona"
   },
 ];
 
@@ -121,6 +131,13 @@ export default function ChatView({
 }) {
   const currentUser = auth.currentUser;
   const isDev = currentUser?.email === DEV_EMAIL;
+  const [copiedId, setCopiedId] = React.useState(null);
+
+  const handleCopy = (text, id) => {
+    navigator.clipboard.writeText(text);
+    setCopiedId(id);
+    setTimeout(() => setCopiedId(null), 2000);
+  };
 
   return (
     <div className="w-full max-w-5xl mx-auto h-full flex flex-col">
@@ -213,6 +230,25 @@ export default function ChatView({
 
                   {m.role === 'assistant' && (m.uiModuleLua || m.code) && (
                     <div className="mt-6 space-y-4">
+                      <div className="flex items-center gap-2 mb-2">
+                        <button 
+                          onClick={() => handleCopy(m.uiModuleLua || m.code, m.id)}
+                          className={`px-3 py-1.5 rounded-lg border text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 ${copiedId === m.id ? 'bg-green-500/10 border-green-500/50 text-green-500' : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10 hover:text-white'}`}
+                        >
+                          {copiedId === m.id ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                          {copiedId === m.id ? 'Copied!' : 'Copy Code'}
+                        </button>
+                        {m.projectId && (
+                          <button 
+                            onClick={() => onViewUi(m)}
+                            className="px-3 py-1.5 rounded-lg bg-[#00f5d4]/10 border border-[#00f5d4]/20 text-[10px] font-black text-[#00f5d4] uppercase tracking-widest hover:bg-[#00f5d4]/20 transition-all flex items-center gap-2"
+                          >
+                            <Eye className="w-3 h-3" />
+                            Open Preview
+                          </button>
+                        )}
+                      </div>
+
                       {m.metadata?.type === 'ui' || m.projectId ? (
                         <div className="relative group/card overflow-hidden rounded-2xl border border-white/10 bg-black/60 hover:border-[#00f5d4]/50 transition-all shadow-2xl">
                           <div className="aspect-video bg-gradient-to-br from-gray-900 to-black flex items-center justify-center relative overflow-hidden">
