@@ -88,7 +88,7 @@ function AiPage() {
     if (chat.activeMode && chat.activeMode !== chatMode) {
       setChatMode(chat.activeMode);
     }
-  }, [chat.activeMode]);
+  }, [chat.activeMode, chatMode]);
 
   const ui = useUiBuilder(user, settings, refreshBilling, notify);
   const game = useGameProfile(settings, updateSettings);
