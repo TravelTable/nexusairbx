@@ -541,6 +541,7 @@ function AiPage() {
         open={ui.uiDrawerOpen}
         onClose={() => ui.setUiDrawerOpen(false)}
         lua={ui.activeUi?.lua || ""}
+        boardState={ui.activeUi?.boardState || null}
         prompt={ui.activeUi?.prompt || ""}
         history={ui.uiGenerations}
         activeId={ui.activeUiId}

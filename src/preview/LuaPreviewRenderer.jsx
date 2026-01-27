@@ -2,7 +2,7 @@ import React, { useLayoutEffect, useRef, useState, useMemo } from "react";
 import { extractUiManifestFromLua } from "../lib/extractUiManifestFromLua";
 import { robloxThumbnailUrl } from "../lib/uiBuilderApi";
 
-export default function LuaPreviewRenderer({ lua, interactive = false, onAction }) {
+export default function LuaPreviewRenderer({ lua, boardState, interactive = false, onAction }) {
   const outerRef = useRef(null);
   const [box, setBox] = useState({ w: 0, h: 0 });
 
@@ -38,7 +38,11 @@ export default function LuaPreviewRenderer({ lua, interactive = false, onAction 
     };
   }, []);
 
-  const board = useMemo(() => extractUiManifestFromLua(lua), [lua]);
+  const board = useMemo(() => {
+    if (boardState) return boardState;
+    return extractUiManifestFromLua(lua);
+  }, [lua, boardState]);
+
   const items = useMemo(() => (Array.isArray(board?.items) ? board.items : []), [board]);
   
   const canvasW = Number(board?.canvasSize?.w) || 1280;
@@ -71,7 +75,7 @@ export default function LuaPreviewRenderer({ lua, interactive = false, onAction 
     return { x: bx, y: by, w: bw, h: bh };
   }, [items, canvasW, canvasH]);
 
-  if (!lua) {
+  if (!lua && !boardState) {
     return (
       <div className="h-full flex items-center justify-center text-zinc-500 font-medium">
         No UI generated yet

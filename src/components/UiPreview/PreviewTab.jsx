@@ -5,6 +5,7 @@ import { addFavorite } from "../../lib/uiBuilderApi";
 
 export default function PreviewTab({
   lua,
+  boardState,
   lastEvent,
   setLastEvent,
   imageNodes,
@@ -47,6 +48,7 @@ export default function PreviewTab({
         <div className={`h-full w-full ${showGrid ? 'bg-[radial-gradient(#334155_1px,transparent_1px)] [background-size:16px_16px]' : ''}`}>
           <LuaPreviewRenderer
             lua={lua}
+            boardState={boardState}
             interactive
             onAction={(evt) => setLastEvent(evt)}
           />
@@ -69,9 +71,9 @@ export default function PreviewTab({
             <Grid3X3 className="w-4 h-4" />
           </button>
           <div className="flex items-center gap-2 bg-black/80 backdrop-blur-xl border border-white/10 rounded-full px-3 py-1.5 shadow-2xl pointer-events-none">
-            <div className={`w-2 h-2 rounded-full ${lua ? 'bg-[#00f5d4] animate-pulse' : 'bg-red-500'}`} />
+            <div className={`w-2 h-2 rounded-full ${boardState || lua ? 'bg-[#00f5d4] animate-pulse' : 'bg-red-500'}`} />
             <span className="text-[10px] text-gray-300 font-bold uppercase tracking-widest">
-              {lua ? "Manifest Active" : "No Manifest"}
+              {boardState ? "Live Preview" : lua ? "Manifest Active" : "No Manifest"}
             </span>
           </div>
         </div>
@@ -102,7 +104,7 @@ export default function PreviewTab({
           </div>
         )}
 
-        {!lua && (
+        {!lua && !boardState && (
           <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#0b1220]/90 backdrop-blur-md text-gray-400 text-sm gap-3">
             <Loader className="w-6 h-6 animate-spin text-[#9b5de5]" />
             <span className="font-medium tracking-wide">Waiting for Lua Engine...</span>

@@ -201,6 +201,53 @@ export async function aiPipeline({
   return handleResponse(res);
 }
 
+export async function aiPipelineStream({
+  token,
+  prompt,
+  canvasSize,
+  maxItems = 45,
+  gameSpec = "",
+  maxSystemsTokens = 2500,
+  onStage,
+  onBoardState,
+  onDone,
+  onError
+}) {
+  const params = new URLSearchParams({
+    prompt,
+    canvasSize: JSON.stringify(canvasSize),
+    maxItems: String(maxItems),
+    gameSpec,
+    maxSystemsTokens: String(maxSystemsTokens)
+  });
+
+  const eventSource = new EventSource(`${BACKEND_URL}/api/ui-builder/ai/pipeline/stream?${params.toString()}&token=${token}`);
+
+  eventSource.addEventListener("stage", (e) => {
+    const data = JSON.parse(e.data);
+    onStage?.(data);
+  });
+
+  eventSource.addEventListener("boardState", (e) => {
+    const data = JSON.parse(e.data);
+    onBoardState?.(data.boardState);
+  });
+
+  eventSource.addEventListener("done", (e) => {
+    const data = JSON.parse(e.data);
+    onDone?.(data);
+    eventSource.close();
+  });
+
+  eventSource.addEventListener("error", (e) => {
+    const data = JSON.parse(e.data);
+    onError?.(data);
+    eventSource.close();
+  });
+
+  return () => eventSource.close();
+}
+
 export async function aiRefineLua({ token, lua, instruction }) {
   const res = await fetch(`${BACKEND_URL}/api/ui-builder/ai/refine-lua`, {
     method: "POST",

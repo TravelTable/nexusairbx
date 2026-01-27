@@ -6,7 +6,19 @@
 export function extractUiManifestFromLua(lua) {
   if (!lua || typeof lua !== "string") return null;
 
-  // 1. Flexible match for Roblox long strings: --[==[UI_BUILDER_JSON ... ]==]
+  // 1. Check for versioned Base64 manifest (NEXUS_UI_MANIFEST_V1)
+  const v1Regex = /--\[(=*)\[NEXUS_UI_MANIFEST_V1:([A-Za-z0-9+/=]+)\]\1\]/;
+  const v1Match = lua.match(v1Regex);
+  if (v1Match && v1Match[2]) {
+    try {
+      const decoded = atob(v1Match[2]);
+      return attemptParse(decoded);
+    } catch (e) {
+      console.warn("Failed to decode Base64 manifest", e);
+    }
+  }
+
+  // 2. Flexible match for Roblox long strings: --[==[UI_BUILDER_JSON ... ]==]
   // Matches any number of '=' signs, and handles variations in the tag name.
   const longStringRegex = /--\[(=*)\[(?:UI_BUILDER_JSON|UI_MANIFEST|BOARD_STATE|JSON)\s*([\s\S]*?)\s*\]\1\]/i;
   const match = lua.match(longStringRegex);

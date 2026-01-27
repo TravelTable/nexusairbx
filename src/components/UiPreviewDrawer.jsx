@@ -20,6 +20,7 @@ export default function UiPreviewDrawer({
   open,
   onClose,
   lua,
+  boardState,
   prompt,
   onDownload,
   history = [],
@@ -45,7 +46,11 @@ export default function UiPreviewDrawer({
 
   // Image Assistant state
 
-  const manifest = useMemo(() => extractUiManifestFromLua(lua), [lua]);
+  const manifest = useMemo(() => {
+    if (boardState) return boardState;
+    return extractUiManifestFromLua(lua);
+  }, [lua, boardState]);
+
   const imageNodes = useMemo(() => {
     if (!manifest?.items) return [];
     return manifest.items.filter(item => 
@@ -318,6 +323,7 @@ export default function UiPreviewDrawer({
           {tab === "preview" && (
             <PreviewTab
               lua={lua}
+              boardState={boardState}
               lastEvent={lastEvent}
               setLastEvent={setLastEvent}
               imageNodes={imageNodes}

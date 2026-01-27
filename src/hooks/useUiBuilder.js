@@ -8,7 +8,7 @@ import {
 } from "firebase/firestore";
 import { db } from "../firebase";
 import { v4 as uuidv4 } from "uuid";
-import { aiPipeline, aiRefineLua, exportLua } from "../lib/uiBuilderApi";
+import { aiPipeline, aiPipelineStream, aiRefineLua, exportLua } from "../lib/uiBuilderApi";
 import { cryptoRandomId } from "../lib/versioning";
 import { formatNumber } from "../lib/aiUtils";
 
@@ -199,53 +199,8 @@ export function useUiBuilder(user, settings, refreshBilling, notify) {
 
     try {
       const token = await user.getIdToken();
-      
-      // Fetch contextual icons
-      let contextualCatalog = specs?.catalog || [];
-      try {
-        const params = new URLSearchParams();
-        params.append("search", content.split(' ').slice(0, 5).join(' '));
-        params.append("limit", "25");
-        const res = await fetch(`${BACKEND_URL}/api/icons/market?${params.toString()}`);
-        if (res.ok) {
-          const data = await res.json();
-          if (data.icons && data.icons.length > 0) {
-            const firestoreIcons = data.icons.map(icon => ({
-              name: icon.name,
-              iconId: icon.imageUrl,
-              url: icon.imageUrl, // Ensure url is present for backend
-              style: icon.style,
-              category: icon.category
-            }));
-            contextualCatalog = [...contextualCatalog, ...firestoreIcons];
-          }
-        }
-        
-        // Deduplicate by iconId/url and shuffle deterministically (seeded)
-        const seen = new Set();
-        contextualCatalog = contextualCatalog.filter((icon) => {
-          const id = icon.iconId || icon.url;
-          if (!id) return false;
-          if (seen.has(id)) return false;
-          seen.add(id);
-          return true;
-        });
-
-        // Stable shuffle per request so “same requestId => same icons order”
-        contextualCatalog = seededShuffle(contextualCatalog, requestId);
-
-      } catch (e) {
-        console.warn("Failed to fetch contextual icons:", e);
-      }
-
       const canvasSize = settings.uiCanvasSize || { w: 1280, h: 720 };
       const maxItems = Number(settings.uiMaxItems || 45);
-      let themeHint = {
-        bg: "#020617", panel: "#0b1220", border: "#334155", text: "#e5e7eb",
-        muted: settings.uiThemeMuted || "#a1a1aa", primary: settings.uiThemePrimary || "#00f5d4",
-        secondary: settings.uiThemeSecondary || "#9b5de5", accent: settings.uiThemeAccent || "#f15bb5",
-        radius: "12px", font: settings.uiThemeFont || "Poppins, Roboto, sans-serif",
-      };
 
       if (!activeChatId) {
         const newChatRef = await addDoc(collection(db, "users", user.uid, "chats"), {
@@ -261,111 +216,79 @@ export function useUiBuilder(user, settings, refreshBilling, notify) {
         await setDoc(userMsgRef, { role: "user", content: content, createdAt: serverTimestamp(), requestId });
       }
 
-      // Use the same idempotency key as chat to share the job
-      const idemKey = `chat-${requestId}`;
-
-      setGenerationStage("Analyzing Components...");
-      const stageTimer = setTimeout(() => setGenerationStage("Writing Luau Code..."), 3000);
-
-      const pipe = await aiPipeline({
+      await aiPipelineStream({
         token,
-        prompt: `${content} (IMPORTANT: Use the provided icons from the catalog where appropriate.)`,
+        prompt: content,
         canvasSize,
-        themeHint,
         maxItems,
         gameSpec: settings.gameSpec || "",
         maxSystemsTokens: settings.uiMaxSystemsTokens,
-        catalog: contextualCatalog,
-        animations: specs?.animations || "",
-        customTheme: specs?.theme || null,
-        platforms: specs?.platforms || ["pc"],
-        variations: settings.uiVariations || 1,
-
-        // NEW: multi-pass polish loop to fight bland first drafts
-        refinerPasses: Number(settings.uiRefinerPasses ?? 2),
-        refinerStyle: settings.uiRefinerStyle || "punchy",
-        idempotencyKey: idemKey,
-      });
-
-      // Handle variations if returned
-      const mainResult = pipe.variations ? pipe.variations[0] : pipe;
-      const otherVariations = pipe.variations ? pipe.variations.slice(1) : [];
-
-      // Update themeHint with dynamic colors if available
-      const specColors = mainResult?.plan?.colors || mainResult?.boardState?.colors;
-      if (specColors) {
-        themeHint = {
-          ...themeHint,
-          bg: specColors.primary || themeHint.bg,
-          panel: specColors.secondary || themeHint.panel,
-          accent: specColors.accent || themeHint.accent,
-        };
-      }
-
-      clearTimeout(stageTimer);
-      setGenerationStage("Finalizing UI...");
-
-      let boardState = mainResult?.boardState;
-      if (!boardState) throw new Error("No boardState returned");
-
-      const lua = mainResult?.lua || "";
-      if (!lua) throw new Error("No Lua returned");
-
-      // Sanitize boardState so we don't persist garbage
-      const sanitized = sanitizeBoardState(boardState, { maxItems });
-      boardState = sanitized.boardState;
-
-      if (!Array.isArray(boardState.items) || boardState.items.length === 0) {
-        throw new Error(
-          `Generated UI is invalid/empty after validation. ${sanitized.warnings.join(" ")}`
-        );
-      }
-
-      const scriptId = cryptoRandomId();
-      const resultTitle = content.slice(0, 30) + " (UI)";
-
-      await setDoc(doc(db, "users", user.uid, "scripts", scriptId), {
-        title: resultTitle, chatId: activeChatId, type: "ui", updatedAt: serverTimestamp(), createdAt: serverTimestamp(),
-      });
-
-      const versionId = uuidv4();
-      await setDoc(doc(db, "users", user.uid, "scripts", scriptId, "versions", versionId), {
-        code: lua, title: resultTitle, versionNumber: 1, createdAt: serverTimestamp(),
-      });
-
-      const assistantMsgRef = doc(db, "users", user.uid, "chats", activeChatId, "messages", `${requestId}-assistant`);
-      await setDoc(assistantMsgRef, {
-        role: "assistant",
-        content: "",
-        code: lua,
-        projectId: scriptId,
-        versionNumber: 1,
-        metadata: {
-          type: "ui",
-          variations: otherVariations,
-          seed: requestId,
-          validationWarnings: sanitized?.warnings || [],
+        onStage: (data) => {
+          setGenerationStage(data.message);
         },
-        createdAt: serverTimestamp(),
-        requestId,
+        onBoardState: (bs) => {
+          // Update preview immediately when boardState is available
+          setUiGenerations(prev => {
+            const existing = prev.find(g => g.requestId === requestId);
+            if (existing) {
+              return prev.map(g => g.requestId === requestId ? { ...g, boardState: bs } : g);
+            }
+            return [{ id: `temp-${requestId}`, requestId, createdAt: Date.now(), prompt: content, boardState: bs, lua: "" }, ...prev];
+          });
+          setActiveUiId(`temp-${requestId}`);
+        },
+        onDone: async (data) => {
+          const { boardState, lua, tokensConsumed, warnings } = data;
+          
+          const scriptId = cryptoRandomId();
+          const resultTitle = content.slice(0, 30) + " (UI)";
+
+          await setDoc(doc(db, "users", user.uid, "scripts", scriptId), {
+            title: resultTitle, chatId: activeChatId, type: "ui", updatedAt: serverTimestamp(), createdAt: serverTimestamp(),
+          });
+
+          const versionId = uuidv4();
+          await setDoc(doc(db, "users", user.uid, "scripts", scriptId, "versions", versionId), {
+            code: lua, title: resultTitle, versionNumber: 1, createdAt: serverTimestamp(),
+          });
+
+          const assistantMsgRef = doc(db, "users", user.uid, "chats", activeChatId, "messages", `${requestId}-assistant`);
+          await setDoc(assistantMsgRef, {
+            role: "assistant",
+            content: "",
+            code: lua,
+            projectId: scriptId,
+            versionNumber: 1,
+            metadata: {
+              type: "ui",
+              seed: requestId,
+              validationWarnings: warnings || [],
+            },
+            createdAt: serverTimestamp(),
+            requestId,
+          });
+
+          const entry = { id: scriptId, requestId, createdAt: Date.now(), prompt: content, boardState, lua };
+          setUiGenerations((prev) => [entry, ...prev.filter(g => g.requestId !== requestId)]);
+          setActiveUiId(scriptId);
+          
+          const tokenMsg = tokensConsumed ? ` (${formatNumber(tokensConsumed)} tokens used)` : "";
+          notify({ message: `UI generated and saved.${tokenMsg}`, type: "success" });
+          refreshBilling();
+          setUiIsGenerating(false);
+          setPendingMessage(null);
+          setGenerationStage("");
+        },
+        onError: (err) => {
+          notify({ message: err.message || "UI generation failed", type: "error" });
+          setUiIsGenerating(false);
+          setPendingMessage(null);
+          setGenerationStage("");
+        }
       });
 
-      const entry = { id: scriptId, createdAt: Date.now(), prompt: content, boardState, lua, variations: otherVariations };
-      setUiGenerations((prev) => [entry, ...(prev || [])]);
-      setActiveUiId(scriptId);
-      
-      // Only close drawer if we're not already in it, or if it's a brand new generation from the main chat
-      // Actually, let's keep it open if it was already open to allow continuous refinement
-      if (!uiDrawerOpen) {
-        setUiDrawerOpen(false); 
-      }
-      
-      const tokenMsg = pipe?.tokensConsumed ? ` (${formatNumber(pipe.tokensConsumed)} tokens used)` : "";
-      notify({ message: `UI generated and saved.${tokenMsg}`, type: "success" });
-      refreshBilling();
     } catch (e) {
       notify({ message: e?.message || "UI generation failed", type: "error" });
-    } finally {
       setUiIsGenerating(false);
       setPendingMessage(null);
       setGenerationStage("");
