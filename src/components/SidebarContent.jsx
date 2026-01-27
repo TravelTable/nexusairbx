@@ -16,10 +16,13 @@ import {
   Gamepad2,
   MessageSquare,
   Layout,
+  ChevronRight,
 } from "lucide-react";
 import SidebarTab from "./SidebarTab";
 import Modal from "./Modal";
 import ScriptRow from "./sidebar/ScriptRow";
+import ChatRow from "./sidebar/ChatRow";
+import ChatHistoryModal from "./sidebar/ChatHistoryModal";
 import NotificationToast from "./sidebar/NotificationToast";
 import {
   getVersionStr,
@@ -104,6 +107,7 @@ export default function SidebarContent({
   const [renameChatTitle, setRenameChatTitle] = useState("");
   const [deleteChatId, setDeleteChatId] = useState(null);
   const [chatDeleteLoading, setChatDeleteLoading] = useState(false);
+  const [showChatHistoryModal, setShowChatHistoryModal] = useState(false);
 
   // --- Toast for errors and notification ---
   const { toast, show: showToast, clear: clearToast } = useToast();
@@ -681,81 +685,74 @@ export default function SidebarContent({
                   <p className="text-xs text-gray-500">No chat history yet.</p>
                 </div>
               ) : (
-                groupItemsByDate(filteredChats).map(([group, items]) => (
-                  <div key={group} className="space-y-2">
-                    <div className="flex items-center gap-2 px-1">
-                      <span className="text-[10px] font-bold text-gray-600 uppercase tracking-widest">{group}</span>
-                      <div className="h-px flex-1 bg-white/5" />
+                <>
+                  {groupItemsByDate(filteredChats.slice(0, 5)).map(([group, items]) => (
+                    <div key={group} className="space-y-2">
+                      <div className="flex items-center gap-2 px-1">
+                        <span className="text-[10px] font-bold text-gray-600 uppercase tracking-widest">{group}</span>
+                        <div className="h-px flex-1 bg-white/5" />
+                      </div>
+                      <div className="space-y-1">
+                        {items.map((c) => (
+                          <ChatRow
+                            key={c.id}
+                            chat={c}
+                            currentChatId={currentChatId}
+                            onOpenChat={handleOpenChat}
+                            renamingChatId={renamingChatId}
+                            renameChatTitle={renameChatTitle}
+                            setRenameChatTitle={setRenameChatTitle}
+                            onRenameStart={(id, title) => {
+                              setRenamingChatId(id);
+                              setRenameChatTitle(title);
+                            }}
+                            onRenameCommit={async (id, title) => {
+                              await handleRenameChatCommit(id, title);
+                              setRenamingChatId(null);
+                            }}
+                            onRenameCancel={() => setRenamingChatId(null)}
+                            onDeleteClick={setDeleteChatId}
+                          />
+                        ))}
+                      </div>
                     </div>
-                    <div className="space-y-1">
-                      {items.map((c) => (
-                        <div
-                          key={c.id}
-                          className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl border transition-all duration-300 text-left group cursor-pointer relative overflow-hidden ${
-                            currentChatId === c.id
-                              ? "border-[#9b5de5]/50 bg-[#9b5de5]/5 shadow-[0_0_20px_rgba(155,93,229,0.05)]"
-                              : "border-white/5 bg-white/[0.02] hover:bg-white/[0.05] hover:border-white/10"
-                          }`}
-                          onClick={() => handleOpenChat(c.id)}
-                        >
-                          {currentChatId === c.id && (
-                            <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#9b5de5] shadow-[0_0_10px_#9b5de5]" />
-                          )}
-                          <div className="flex-1 min-w-0">
-                            {renamingChatId === c.id ? (
-                              <input
-                                className="bg-gray-800 border border-[#9b5de5] rounded-lg px-2 py-1 text-xs text-white w-full outline-none"
-                                value={renameChatTitle}
-                                onChange={(e) => setRenameChatTitle(e.target.value)}
-                                autoFocus
-                                onKeyDown={(e) => {
-                                  if (e.key === "Enter") {
-                                    e.stopPropagation();
-                                    handleRenameChatCommit(c.id, renameChatTitle);
-                                    setRenamingChatId(null);
-                                  }
-                                  if (e.key === "Escape") {
-                                    e.stopPropagation();
-                                    setRenamingChatId(null);
-                                  }
-                                }}
-                                onBlur={() => {
-                                  handleRenameChatCommit(renamingChatId, renameChatTitle);
-                                  setRenamingChatId(null);
-                                }}
-                              />
-                            ) : (
-                              <div className="flex flex-col gap-0.5">
-                                <span className={`font-bold text-sm truncate ${currentChatId === c.id ? "text-white" : "text-gray-300 group-hover:text-white"}`}>
-                                  {c.title || "Untitled chat"}
-                                </span>
-                                <span className="text-[10px] text-gray-500 truncate">
-                                  {c.lastMessage || "No messages yet"}
-                                </span>
-                              </div>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-1 ml-2 opacity-0 group-hover:opacity-100 transition-all translate-x-2 group-hover:translate-x-0">
-                            <button
-                              className="p-1.5 rounded-lg text-gray-500 hover:text-white hover:bg-white/5"
-                              onClick={(e) => { e.stopPropagation(); setRenamingChatId(c.id); setRenameChatTitle(c.title || ""); }}
-                            >
-                              <Edit className="w-3.5 h-3.5" />
-                            </button>
-                            <button
-                              className="p-1.5 rounded-lg text-gray-500 hover:text-red-400 hover:bg-red-400/10"
-                              onClick={(e) => { e.stopPropagation(); setDeleteChatId(c.id); }}
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ))
+                  ))}
+
+                  {filteredChats.length > 5 && (
+                    <button
+                      onClick={() => setShowChatHistoryModal(true)}
+                      className="w-full py-3 px-4 rounded-xl border border-white/5 bg-white/[0.02] hover:bg-white/[0.05] hover:border-white/10 transition-all group flex items-center justify-between"
+                    >
+                      <span className="text-xs font-bold text-gray-400 group-hover:text-white transition-colors">
+                        Load More History
+                      </span>
+                      <ChevronRight className="w-4 h-4 text-gray-600 group-hover:text-[#9b5de5] transition-all group-hover:translate-x-0.5" />
+                    </button>
+                  )}
+                </>
               )}
             </div>
+
+            <ChatHistoryModal
+              isOpen={showChatHistoryModal}
+              onClose={() => setShowChatHistoryModal(false)}
+              chats={filteredChats}
+              currentChatId={currentChatId}
+              onOpenChat={handleOpenChat}
+              renamingChatId={renamingChatId}
+              renameChatTitle={renameChatTitle}
+              setRenameChatTitle={setRenameChatTitle}
+              onRenameStart={(id, title) => {
+                setRenamingChatId(id);
+                setRenameChatTitle(title);
+              }}
+              onRenameCommit={async (id, title) => {
+                await handleRenameChatCommit(id, title);
+                setRenamingChatId(null);
+              }}
+              onRenameCancel={() => setRenamingChatId(null)}
+              onDeleteClick={setDeleteChatId}
+            />
 
             {/* Delete Chat Modal */}
             {deleteChatId && (
