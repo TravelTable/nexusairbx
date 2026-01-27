@@ -284,5 +284,17 @@ export function exportToRoblox({ canvasSize, items }) {
   lines.push(`-- Canvas reference: ${w}x${h}`);
   lines.push(``);
 
+  // Build a manifest object with the canvas size and all exported items.
+  const manifest = {
+    canvasSize: { w, h },
+    items: srcItems,
+  };
+
+  // Emit the manifest inside a long-string comment so the UI preview can extract it.
+  lines.push(`--[==[UI_BUILDER_JSON`);
+  lines.push(JSON.stringify(manifest, null, 2));
+  lines.push(`]==]`);
+  lines.push(``);
+
   return lines.join("\n");
 }
