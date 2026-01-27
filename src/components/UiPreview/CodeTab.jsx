@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Light as SyntaxHighlighter } from "react-syntax-highlighter";
 import { atomOneDark } from "react-syntax-highlighter/dist/esm/styles/hljs";
-import { ChevronDown, ChevronRight, FileCode, Cpu, Copy, Check } from "lucide-react";
+import { FileCode, Cpu, Copy, Check } from "lucide-react";
 
 export default function CodeTab({
   uiModuleLua,
