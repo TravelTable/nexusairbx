@@ -1,5 +1,6 @@
 import React, { Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { Analytics } from '@vercel/analytics/react';
 
 // Suppress ResizeObserver loop error (Monaco Editor/Chrome bug) AND expose auth for console tests
 import { getAuth } from "firebase/auth";
@@ -65,6 +66,7 @@ function App() {
           <Route path="*" element={<NexusRBXNotFoundPage />} />
         </Routes>
       </Suspense>
+      <Analytics />
     </Router>
   );
 }
