@@ -34,7 +34,7 @@ export function useUiBuilder(user, settings, refreshBilling, notify) {
         };
         setUiGenerations((prev) => [entry, ...(prev || [])]);
         setActiveUiId(data.projectId);
-        setUiDrawerOpen(true);
+        // setUiDrawerOpen(true); // Removed to prevent premature opening
       }
     };
     window.addEventListener("nexus:uiGenerated", handleUiGenerated);
@@ -170,6 +170,7 @@ export function useUiBuilder(user, settings, refreshBilling, notify) {
       setUiIsGenerating(false);
       setPendingMessage(null);
       setGenerationStage("");
+      setUiDrawerOpen(true); // Open drawer only when fully finished
 
     } catch (e) {
       notify({ message: e?.message || "UI generation failed", type: "error" });

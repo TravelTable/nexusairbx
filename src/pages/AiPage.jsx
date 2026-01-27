@@ -194,8 +194,6 @@ function AiPage() {
 
       // If user wants UI and it's obvious, skip agent
       if (looksLikeUi && !looksLikeRefine) {
-        if (!ui.uiDrawerOpen) ui.setUiDrawerOpen(false); // Only close if not already open (to avoid flicker)
-        
         // Trigger both chat (for streaming) and UI builder
         const uiPromise = ui.handleGenerateUiPreview(
           currentPrompt.replace(/^\/ui\s*/i, ""),
@@ -236,8 +234,6 @@ function AiPage() {
       );
 
       if (data?.action === "pipeline") {
-        if (!ui.uiDrawerOpen) ui.setUiDrawerOpen(false);
-        
         const uiPromise = ui.handleGenerateUiPreview(
           data.parameters?.prompt || currentPrompt,
           chat.currentChatId,
