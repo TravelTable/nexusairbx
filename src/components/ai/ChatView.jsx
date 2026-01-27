@@ -1,5 +1,13 @@
 import React from "react";
-import { NexusRBXAvatar, UserAvatar, FormatText, ThoughtAccordion, UiStatsBadge } from "./AiComponents";
+import { 
+  NexusRBXAvatar, 
+  UserAvatar, 
+  FormatText, 
+  ThoughtAccordion, 
+  UiStatsBadge,
+  SecurityReport,
+  PerformanceAudit
+} from "./AiComponents";
 import LiveCodeViewer from "./LiveCodeViewer";
 import ScriptLoadingBarContainer from "../ScriptLoadingBarContainer";
 import GenerationStatusBar from "./GenerationStatusBar";
@@ -19,7 +27,12 @@ import {
   Move, 
   MessageSquare,
   Copy,
-  Check
+  Check,
+  Settings2,
+  Plus,
+  Users,
+  Globe,
+  Loader
 } from "lucide-react";
 import { auth } from "../../firebase";
 
@@ -122,7 +135,11 @@ export default function ChatView({
   generationStage, 
   user, 
   activeMode = "general",
+  customModes = [],
   onModeChange,
+  onCreateCustomMode,
+  onEditCustomMode,
+  onInstallCommunityMode,
   onViewUi, 
   onQuickStart,
   onRefine,
@@ -132,6 +149,24 @@ export default function ChatView({
   const currentUser = auth.currentUser;
   const isDev = currentUser?.email === DEV_EMAIL;
   const [copiedId, setCopiedId] = React.useState(null);
+  const [modeTab, setModeTab] = React.useState("official"); // "official" | "custom" | "community"
+  const [communityModes, setCommunityModes] = React.useState([]);
+  const [loadingCommunity, setLoadingCommunity] = React.useState(false);
+
+  const fetchCommunityModes = React.useCallback(async () => {
+    setLoadingCommunity(true);
+    try {
+      const { collection, getDocs, query, limit, orderBy } = await import("firebase/firestore");
+      const { db } = await import("../../firebase");
+      const q = query(collection(db, "community_modes"), orderBy("updatedAt", "desc"), limit(20));
+      const snap = await getDocs(q);
+      setCommunityModes(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    } catch (err) {
+      console.error("Failed to fetch community modes:", err);
+    } finally {
+      setLoadingCommunity(false);
+    }
+  }, []);
 
   const handleCopy = (text, id) => {
     navigator.clipboard.writeText(text);
@@ -151,9 +186,30 @@ export default function ChatView({
             <h2 className="text-4xl font-black text-white tracking-tighter">How can Nexus help today?</h2>
             <p className="text-gray-400 max-w-md mx-auto text-sm font-medium">Choose a specialized mode to get the most accurate and optimized results for your task.</p>
           </div>
+
+          <div className="flex items-center gap-1 bg-gray-900/50 border border-gray-800 rounded-xl p-1 w-fit mx-auto">
+            <button 
+              onClick={() => setModeTab("official")}
+              className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${modeTab === "official" ? "bg-gray-800 text-[#00f5d4]" : "text-gray-500 hover:text-white"}`}
+            >
+              Official
+            </button>
+            <button 
+              onClick={() => setModeTab("custom")}
+              className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${modeTab === "custom" ? "bg-gray-800 text-[#9b5de5]" : "text-gray-500 hover:text-white"}`}
+            >
+              My Experts
+            </button>
+            <button 
+              onClick={() => { setModeTab("community"); fetchCommunityModes(); }}
+              className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${modeTab === "community" ? "bg-gray-800 text-cyan-400" : "text-gray-500 hover:text-white"}`}
+            >
+              Community
+            </button>
+          </div>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
-            {CHAT_MODES.map((mode) => (
+            {modeTab === "official" && CHAT_MODES.map((mode) => (
               <button
                 key={mode.id}
                 onClick={() => onModeChange(mode.id)}
@@ -172,13 +228,104 @@ export default function ChatView({
                 <div className="text-[11px] text-gray-500 leading-relaxed line-clamp-2">{mode.description}</div>
               </button>
             ))}
+
+            {modeTab === "custom" && (
+              <>
+                {customModes.map((mode) => (
+                  <button
+                    key={mode.id}
+                    onClick={() => onModeChange(mode.id)}
+                    className={`p-5 rounded-2xl bg-gray-900/40 border transition-all text-left group relative overflow-hidden ${activeMode === mode.id ? `border-white/20 ring-2 ring-offset-2 ring-offset-black ring-white/10` : `border-gray-800 hover:border-white/20`}`}
+                  >
+                    {activeMode === mode.id && (
+                      <div className="absolute inset-0 opacity-10" style={{ backgroundColor: mode.color }} />
+                    )}
+                    <div className="mb-3 p-2 rounded-lg w-fit group-hover:scale-110 transition-transform bg-white/5" style={{ color: mode.color }}>
+                      <Settings2 className="w-4 h-4" />
+                    </div>
+                    <div className="font-bold text-white mb-1 text-sm flex items-center justify-between">
+                      {mode.label}
+                      <div className="flex items-center gap-2">
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); onEditCustomMode(mode); }}
+                          className="p-1 rounded hover:bg-white/10 text-gray-500 hover:text-white transition-colors"
+                        >
+                          <Settings2 className="w-3 h-3" />
+                        </button>
+                        {activeMode === mode.id && <div className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />}
+                      </div>
+                    </div>
+                    <div className="text-[11px] text-gray-500 leading-relaxed line-clamp-2">{mode.description || "Custom AI Expert"}</div>
+                  </button>
+                ))}
+
+                <button
+                  onClick={onCreateCustomMode}
+                  className="p-5 rounded-2xl bg-white/5 border border-dashed border-white/10 hover:border-[#00f5d4]/50 hover:bg-[#00f5d4]/5 transition-all text-center group flex flex-col items-center justify-center gap-3"
+                >
+                  <div className="p-3 rounded-full bg-white/5 group-hover:bg-[#00f5d4]/20 group-hover:text-[#00f5d4] transition-all">
+                    <Plus className="w-5 h-5" />
+                  </div>
+                  <div className="text-xs font-black text-gray-400 group-hover:text-white uppercase tracking-widest transition-colors">Create Expert</div>
+                </button>
+              </>
+            )}
+
+            {modeTab === "community" && (
+              <>
+                {loadingCommunity ? (
+                  <div className="col-span-full py-12 flex flex-col items-center gap-4">
+                    <Loader className="w-8 h-8 text-cyan-400 animate-spin" />
+                    <p className="text-xs text-gray-500 font-bold uppercase tracking-widest">Browsing Community Experts...</p>
+                  </div>
+                ) : communityModes.length === 0 ? (
+                  <div className="col-span-full py-12 text-center">
+                    <p className="text-xs text-gray-500 font-bold uppercase tracking-widest">No community experts found yet.</p>
+                  </div>
+                ) : (
+                  communityModes.map((mode) => (
+                    <button
+                      key={mode.id}
+                      onClick={() => onModeChange(mode.id)}
+                      className={`p-5 rounded-2xl bg-gray-900/40 border transition-all text-left group relative overflow-hidden ${activeMode === mode.id ? `border-white/20 ring-2 ring-offset-2 ring-offset-black ring-white/10` : `border-gray-800 hover:border-white/20`}`}
+                    >
+                      {activeMode === mode.id && (
+                        <div className="absolute inset-0 opacity-10" style={{ backgroundColor: mode.color }} />
+                      )}
+                      <div className="mb-3 p-2 rounded-lg w-fit group-hover:scale-110 transition-transform bg-white/5" style={{ color: mode.color }}>
+                        <Users className="w-4 h-4" />
+                      </div>
+                      <div className="font-bold text-white mb-1 text-sm flex items-center justify-between">
+                        {mode.label}
+                        {activeMode === mode.id && <div className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />}
+                      </div>
+                      <div className="text-[11px] text-gray-500 leading-relaxed line-clamp-2 mb-3">{mode.description || "Community Expert"}</div>
+                      <div className="flex items-center justify-between pt-3 border-t border-white/5">
+                        <div className="flex items-center gap-1.5">
+                          <div className="w-4 h-4 rounded-full bg-gradient-to-br from-[#9b5de5] to-[#00f5d4] flex items-center justify-center text-[8px] font-bold text-white">
+                            {mode.authorName?.[0] || "?"}
+                          </div>
+                          <span className="text-[9px] text-gray-500 font-bold">{mode.authorName || "Anonymous"}</span>
+                        </div>
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); onInstallCommunityMode(mode); }}
+                          className="px-2 py-1 rounded bg-cyan-500/10 text-cyan-400 text-[8px] font-black uppercase tracking-widest hover:bg-cyan-500/20 transition-all"
+                        >
+                          Install
+                        </button>
+                      </div>
+                    </button>
+                  ))
+                )}
+              </>
+            )}
           </div>
         </div>
       ) : (
         <div className="flex-1 overflow-y-auto scrollbar-hide space-y-6">
           {messages.map((m) => (
             <div key={m.id} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'} gap-4 group animate-in fade-in slide-in-from-bottom-4 duration-500`}>
-              {m.role === 'assistant' && <NexusRBXAvatar />}
+              {m.role === 'assistant' && <NexusRBXAvatar mode={activeMode} />}
               <div className={`max-w-[85%] md:max-w-[80%] ${m.role === 'user' ? 'order-1' : 'order-2'}`}>
                 <div className={`p-4 md:p-6 rounded-3xl ${m.role === 'user' 
                   ? 'bg-gradient-to-br from-[#9b5de5] to-[#00f5d4] text-white shadow-[0_10px_40px_rgba(155,93,229,0.2)] border border-white/20' 
@@ -228,8 +375,46 @@ export default function ChatView({
                     </div>
                   )}
 
+                  {m.role === 'assistant' && m.suggestedMode && (
+                    <div className="mt-6 p-4 rounded-2xl bg-[#9b5de5]/5 border border-[#9b5de5]/20 flex flex-col items-center text-center gap-4">
+                      <div className="text-sm font-bold text-[#9b5de5]">Switch to {CHAT_MODES.find(mode => mode.id === m.suggestedMode)?.label || m.suggestedMode}?</div>
+                      <p className="text-[11px] text-gray-400">Nexus detected you might need specialized tools for this task.</p>
+                      <button 
+                        onClick={() => onModeChange(m.suggestedMode)}
+                        className="w-full py-3 rounded-xl bg-[#9b5de5] text-white font-black text-sm flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] transition-all shadow-[0_0_20px_rgba(155,93,229,0.4)]"
+                      >
+                        <RefreshCw className="w-4 h-4" />
+                        SWITCH TO {m.suggestedMode.toUpperCase()} MODE
+                      </button>
+                    </div>
+                  )}
+
                   {m.role === 'assistant' && (m.uiModuleLua || m.code) && (
                     <div className="mt-6 space-y-4">
+                      {m.metadata?.structuredData?.report && (
+                        <SecurityReport 
+                          report={m.metadata.structuredData.report} 
+                          onFix={() => {
+                            // Logic to apply patchedCode
+                            window.dispatchEvent(new CustomEvent("nexus:applyCodePatch", { 
+                              detail: { code: m.metadata.structuredData.patchedCode || m.code, messageId: m.id } 
+                            }));
+                          }}
+                        />
+                      )}
+
+                      {m.metadata?.structuredData?.audit && (
+                        <PerformanceAudit 
+                          audit={m.metadata.structuredData.audit} 
+                          onOptimize={() => {
+                            // Logic to apply optimizedCode
+                            window.dispatchEvent(new CustomEvent("nexus:applyCodePatch", { 
+                              detail: { code: m.metadata.structuredData.optimizedCode || m.code, messageId: m.id } 
+                            }));
+                          }}
+                        />
+                      )}
+
                       <div className="flex items-center gap-2 mb-2">
                         <button 
                           onClick={() => handleCopy(m.uiModuleLua || m.code, m.id)}
@@ -279,7 +464,7 @@ export default function ChatView({
                               </button>
                               <button 
                                 onClick={() => onRefine(m)}
-                                className="px-6 py-2.5 rounded-xl bg-[#00f5d4] text-black font-black text-sm flex items-center gap-2 hover:scale-110 transition-transform"
+                                className="px-6 py-2.5 rounded-xl bg-[#00f5d4] text-black font-black text-sm flex items-center justify-center gap-2 hover:scale-110 transition-transform"
                               >
                                 <RefreshCw className="w-4 h-4" /> REFINE
                               </button>
@@ -325,7 +510,7 @@ export default function ChatView({
               </div>
 
               <div className="flex justify-start gap-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                <NexusRBXAvatar isThinking={true} />
+                <NexusRBXAvatar isThinking={true} mode={activeMode} />
                 <div className="max-w-[85%] md:max-w-[80%] order-2 space-y-4">
                   <GenerationStatusBar currentStage={generationStage || "Nexus is working..."} />
                   

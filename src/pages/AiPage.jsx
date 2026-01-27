@@ -25,6 +25,7 @@ import UiPreviewDrawer from "../components/UiPreviewDrawer";
 import SignInNudgeModal from "../components/SignInNudgeModal";
 import {
   TokenBar,
+  CustomModeModal,
 } from "../components/ai/AiComponents";
 import {
   collection,
@@ -74,6 +75,8 @@ function AiPage() {
   const [showTour, setShowTour] = useState(localStorage.getItem("nexusrbx:tourComplete") !== "true");
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showSignInNudge, setShowSignInNudge] = useState(false);
+  const [customModeModalOpen, setCustomModeModalOpen] = useState(false);
+  const [editingCustomMode, setEditingCustomMode] = useState(null);
 
   // 3. Custom Hooks
   const notify = useCallback(({ message, type = "info" }) => {
@@ -107,6 +110,58 @@ function AiPage() {
   const chatEndRef = useRef(null);
 
   const activeModeData = CHAT_MODES.find(m => m.id === chatMode) || CHAT_MODES[0];
+
+  // Mode-specific theme colors for background glows
+  const modeColors = {
+    general: { primary: "#9b5de5", secondary: "#00f5d4" },
+    ui: { primary: "#00f5d4", secondary: "#9b5de5" },
+    logic: { primary: "#9b5de5", secondary: "#f15bb5" },
+    system: { primary: "#00bbf9", secondary: "#00f5d4" },
+    animator: { primary: "#f15bb5", secondary: "#fee440" },
+    data: { primary: "#fee440", secondary: "#00f5d4" },
+    performance: { primary: "#00f5d4", secondary: "#00bbf9" },
+    security: { primary: "#ff006e", secondary: "#8338ec" },
+  };
+  const currentTheme = modeColors[chatMode] || modeColors.general;
+
+  // Mode-specific quick actions
+  const quickActions = {
+    ui: [
+      { label: "✨ Generate Layout", prompt: "/ui Generate a modern layout for a " },
+      { label: "🎨 Glassmorphism", prompt: "Apply a glassmorphism theme to this UI" },
+    ],
+    security: [
+      { label: "🛡️ Audit Remotes", prompt: "Audit my RemoteEvents for vulnerabilities: " },
+      { label: "🔑 Check Scopes", prompt: "Check my DataStore scopes for security issues" },
+    ],
+    logic: [
+      { label: "⚡ Optimize Loop", prompt: "Optimize this loop for performance: " },
+      { label: "🛠️ Convert to Module", prompt: "Convert this script into a modular Luau component" },
+    ],
+    performance: [
+      { label: "📊 Memory Audit", prompt: "Audit this code for potential memory leaks: " },
+      { label: "🚀 Speed Up", prompt: "Suggest micro-optimizations to speed up this function: " },
+    ],
+  };
+  const currentActions = quickActions[chatMode] || [];
+
+  // Mode-specific power tools
+  const powerTools = {
+    ui: [
+      { label: "Simulator Style", prompt: "Apply a high-quality Simulator style to this UI (bright colors, thick strokes, playful fonts)" },
+      { label: "Glassmorphism", prompt: "Apply a modern Glassmorphism style to this UI (transparency, blur, thin white strokes)" },
+      { label: "Minimalist", prompt: "Apply a clean, professional Minimalist style to this UI (flat colors, ample whitespace, sharp corners)" },
+    ],
+    animator: [
+      { label: "Smooth Fade", prompt: "Add a smooth fade-in/out animation to this UI using TweenService" },
+      { label: "Spring Bounce", prompt: "Add a juicy spring bounce effect to the buttons" },
+    ],
+    logic: [
+      { label: "Convert to OOP", prompt: "Refactor this code to use an Object-Oriented Programming (OOP) pattern" },
+      { label: "Add Type-Checking", prompt: "Add strict Luau type-checking to this script" },
+    ],
+  };
+  const currentPowerTools = powerTools[chatMode] || [];
 
   // 5. Effects
   useEffect(() => {
@@ -169,6 +224,61 @@ function AiPage() {
   }, [location]);
 
   // 6. Handlers
+  const handleInstallCommunityMode = async (mode) => {
+    if (!user) return;
+    try {
+      const modeId = `custom_${uuidv4().slice(0, 8)}`;
+      await setDoc(doc(db, "users", user.uid, "custom_modes", modeId), {
+        ...mode,
+        id: modeId,
+        isPublic: false, // Installed modes are private by default
+        authorId: mode.authorId,
+        authorName: mode.authorName,
+        updatedAt: serverTimestamp(),
+        createdAt: serverTimestamp(),
+      });
+      notify({ message: `Expert "${mode.label}" installed!`, type: "success" });
+    } catch (err) {
+      console.error("Failed to install community mode:", err);
+      notify({ message: "Failed to install expert", type: "error" });
+    }
+  };
+
+  const handleSaveCustomMode = async (data) => {
+    if (!user) return;
+    try {
+      const modeId = editingCustomMode?.id || `custom_${uuidv4().slice(0, 8)}`;
+      const payload = {
+        ...data,
+        authorId: user.uid,
+        authorName: user.displayName || "Anonymous",
+        updatedAt: serverTimestamp(),
+        createdAt: editingCustomMode?.createdAt || serverTimestamp(),
+      };
+
+      // Save to user's private collection
+      await setDoc(doc(db, "users", user.uid, "custom_modes", modeId), payload);
+
+      // If public, also save to global community collection
+      if (data.isPublic) {
+        await setDoc(doc(db, "community_modes", modeId), payload);
+      } else {
+        // If it was public but now private, remove from community
+        try {
+          const { deleteDoc } = await import("firebase/firestore");
+          await deleteDoc(doc(db, "community_modes", modeId));
+        } catch (e) {}
+      }
+
+      notify({ message: "Custom expert saved!", type: "success" });
+      setCustomModeModalOpen(false);
+      setEditingCustomMode(null);
+    } catch (err) {
+      console.error("Failed to save custom mode:", err);
+      notify({ message: "Failed to save custom expert", type: "error" });
+    }
+  };
+
   const handlePromptSubmit = async (e, overridePrompt = null) => {
     if (e && typeof e.preventDefault === 'function') e.preventDefault();
     const currentPrompt = (overridePrompt || prompt).trim();
@@ -179,6 +289,22 @@ function AiPage() {
 
     setPrompt("");
     if (activeTab !== "chat") setActiveTab("chat");
+
+    // Smart Routing: Auto-switch mode based on commands
+    let effectiveMode = chatMode;
+    if (currentPrompt.startsWith("/ui")) {
+      effectiveMode = "ui";
+      setChatMode("ui");
+    } else if (currentPrompt.startsWith("/audit")) {
+      effectiveMode = "security";
+      setChatMode("security");
+    } else if (currentPrompt.startsWith("/optimize")) {
+      effectiveMode = "performance";
+      setChatMode("performance");
+    } else if (currentPrompt.startsWith("/logic")) {
+      effectiveMode = "logic";
+      setChatMode("logic");
+    }
 
     // Smarter routing: do deterministic routing first, use agent only when unclear
     try {
@@ -212,7 +338,7 @@ function AiPage() {
         p.includes("make the ui");
 
       // If user wants UI and it's obvious OR mode is UI, skip agent
-      if ((looksLikeUi || chatMode === "ui") && !looksLikeRefine) {
+      if ((looksLikeUi || effectiveMode === "ui") && !looksLikeRefine) {
         // Trigger both chat (for streaming) and UI builder
         const uiPromise = ui.handleGenerateUiPreview(
           currentPrompt.replace(/^\/ui\s*/i, ""),
@@ -250,7 +376,7 @@ function AiPage() {
       chat.currentChatId,
       chat.setCurrentChatId,
       requestId,
-      chatMode
+      effectiveMode
     );
 
       if (data?.action === "pipeline") {
@@ -381,8 +507,14 @@ function AiPage() {
   return (
     <div className="min-h-screen bg-[#050505] text-white font-sans flex flex-col relative overflow-hidden">
       {/* Background Glows */}
-      <div className="fixed top-[-10%] left-[-10%] w-[40%] h-[40%] bg-[#9b5de5]/10 blur-[120px] rounded-full pointer-events-none" />
-      <div className="fixed bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-[#00f5d4]/10 blur-[120px] rounded-full pointer-events-none" />
+      <div 
+        className="fixed top-[-10%] left-[-10%] w-[40%] h-[40%] blur-[120px] rounded-full pointer-events-none transition-colors duration-1000" 
+        style={{ backgroundColor: `${currentTheme.primary}1a` }}
+      />
+      <div 
+        className="fixed bottom-[-10%] right-[-10%] w-[40%] h-[40%] blur-[120px] rounded-full pointer-events-none transition-colors duration-1000" 
+        style={{ backgroundColor: `${currentTheme.secondary}1a` }}
+      />
 
       <header className="border-b border-white/5 bg-black/40 backdrop-blur-xl sticky top-0 z-50">
         <div className="container mx-auto px-4 py-3 flex items-center justify-between">
@@ -488,7 +620,11 @@ function AiPage() {
                 generationStage={chat.generationStage || ui.generationStage || (agent.isThinking ? "Nexus is thinking..." : "")} 
                 user={user} 
                 activeMode={chatMode}
+                customModes={chat.customModes}
                 onModeChange={setChatMode}
+                onCreateCustomMode={() => { setEditingCustomMode(null); setCustomModeModalOpen(true); }}
+                onEditCustomMode={(mode) => { setEditingCustomMode(mode); setCustomModeModalOpen(true); }}
+                onInstallCommunityMode={handleInstallCommunityMode}
                 onViewUi={(m) => { ui.setActiveUiId(m.projectId); ui.setUiDrawerOpen(true); }}
                 onQuickStart={(p) => handlePromptSubmit(null, p)}
                 onRefine={(m) => { 
@@ -520,12 +656,44 @@ function AiPage() {
 
           <div className="p-4 bg-gradient-to-t from-black via-black/80 to-transparent">
             <div className="max-w-5xl mx-auto space-y-4">
+              {currentPowerTools.length > 0 && (
+                <div className="flex items-center gap-2 px-2 overflow-x-auto scrollbar-hide pb-1 border-b border-white/5 mb-2">
+                  <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest mr-2">Power Tools:</span>
+                  {currentPowerTools.map((tool, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => handlePromptSubmit(null, tool.prompt)}
+                      className="whitespace-nowrap px-3 py-1.5 rounded-lg bg-[#00f5d4]/5 border border-[#00f5d4]/10 text-[9px] font-black text-[#00f5d4] uppercase tracking-widest hover:bg-[#00f5d4]/20 transition-all"
+                    >
+                      {tool.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {currentActions.length > 0 && (
+                <div className="flex items-center gap-2 px-2 overflow-x-auto scrollbar-hide pb-1">
+                  {currentActions.map((action, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => setPrompt(action.prompt)}
+                      className="whitespace-nowrap px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-[10px] font-black text-gray-400 uppercase tracking-widest hover:bg-white/10 hover:text-white transition-all"
+                    >
+                      {action.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+
               <div className="px-2">
                 <TokenBar tokensLeft={totalRemaining} tokensLimit={subLimit} resetsAt={resetsAt} plan={planKey} />
               </div>
               
               <div className="relative group">
-                <div className="absolute -inset-0.5 bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] rounded-2xl blur opacity-20 group-focus-within:opacity-40 transition duration-500" />
+                <div 
+                  className="absolute -inset-0.5 rounded-2xl blur opacity-20 group-focus-within:opacity-40 transition duration-500" 
+                  style={{ background: `linear-gradient(to r, ${currentTheme.primary}, ${currentTheme.secondary})` }}
+                />
                 <div className="relative bg-[#121212] border border-white/10 rounded-2xl p-2 shadow-2xl flex flex-col gap-2">
                   <div className="flex items-center gap-2 px-2 pt-2">
                     <div className={`px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest transition-all ${agent.isThinking || ui.uiIsGenerating || chat.isGenerating ? 'bg-[#00f5d4] text-black animate-pulse' : 'bg-white/5 text-gray-500'}`}>
@@ -556,17 +724,18 @@ function AiPage() {
                     <div className="flex items-center gap-2">
                       <button 
                         onClick={() => {
-                          // Cycle through modes or open a menu? 
-                          // For now, let's just cycle through the first 4 main ones for simplicity in this chip
-                          const modeIds = CHAT_MODES.map(m => m.id);
+                          const allModes = [...CHAT_MODES, ...chat.customModes];
+                          const modeIds = allModes.map(m => m.id);
                           const currentIndex = modeIds.indexOf(chatMode);
                           const nextIndex = (currentIndex + 1) % modeIds.length;
                           setChatMode(modeIds[nextIndex]);
                         }}
-                        className={`hidden sm:flex items-center gap-1.5 px-2 py-1.5 rounded-lg border border-white/10 text-[10px] font-black uppercase tracking-widest transition-all hover:bg-white/5 ${activeModeData.color}`}
-                        title="Change Mode"
+                        className={`hidden sm:flex items-center gap-2 px-3 py-2 rounded-xl border border-white/5 text-[10px] font-black uppercase tracking-widest transition-all hover:bg-white/5 ${activeModeData.bg} ${activeModeData.color}`}
+                        style={chatMode.startsWith('custom_') ? { color: activeModeData.color || '#9b5de5' } : {}}
+                        title={`Current Mode: ${activeModeData.label}. Click to cycle.`}
                       >
                         {activeModeData.icon}
+                        <span className="hidden lg:inline">{activeModeData.label}</span>
                       </button>
                       <button 
                         id="tour-generate-button"
@@ -624,6 +793,13 @@ function AiPage() {
       <SignInNudgeModal 
         isOpen={showSignInNudge} 
         onClose={() => setShowSignInNudge(false)} 
+      />
+
+      <CustomModeModal 
+        isOpen={customModeModalOpen}
+        onClose={() => setCustomModeModalOpen(false)}
+        onSave={handleSaveCustomMode}
+        initialData={editingCustomMode}
       />
 
       {showTour && (

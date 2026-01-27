@@ -31,6 +31,7 @@ import {
 } from "lucide-react";
 import { useSettings } from "../context/SettingsContext";
 import { useBilling } from "../context/BillingContext";
+import { CHAT_MODES } from "../components/ai/ChatView";
 import { auth } from "../firebase";
 import { signOut } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
@@ -466,6 +467,18 @@ const SettingsPage = () => {
                     <option value="0.3">Strict (Code Optimized)</option>
                     <option value="0.7">Balanced</option>
                     <option value="1.0">Creative</option>
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm text-gray-400">Default Chat Mode</label>
+                  <select 
+                    value={settings.chatMode || "general"}
+                    onChange={(e) => updateSettings({ chatMode: e.target.value })}
+                    className="w-full bg-black border border-gray-800 rounded-xl p-3 text-white outline-none focus:border-purple-500 transition-colors"
+                  >
+                    {CHAT_MODES.map(mode => (
+                      <option key={mode.id} value={mode.id}>{mode.label}</option>
+                    ))}
                   </select>
                 </div>
               </div>

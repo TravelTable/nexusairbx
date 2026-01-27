@@ -64,6 +64,7 @@ export function useAgent(user, notify, refreshBilling) {
           thought: data.thought || "",
           action: data.action || "chat",
           mode: data.mode || null,
+          suggestedMode: data.suggestedMode || null,
           parameters: data.parameters || {},
           createdAt: serverTimestamp(),
           requestId,

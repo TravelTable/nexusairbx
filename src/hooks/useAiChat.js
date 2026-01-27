@@ -24,12 +24,53 @@ export function useAiChat(user, settings, refreshBilling, notify) {
   const [currentChatId, setCurrentChatId] = useState(null);
   const [currentChatMeta, setCurrentChatMeta] = useState(null);
   const [activeMode, setActiveMode] = useState("general");
+  const [customModes, setCustomModes] = useState([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [pendingMessage, setPendingMessage] = useState(null);
   const [generationStage, setGenerationStage] = useState("");
 
+  // Listen for code patches (Security/Performance fixes)
+  useEffect(() => {
+    const handleApplyPatch = async (e) => {
+      const { code, messageId } = e.detail;
+      const u = user || auth.currentUser;
+      if (!u || !currentChatId || !messageId) return;
+
+      try {
+        const msgRef = doc(db, "users", u.uid, "chats", currentChatId, "messages", messageId);
+        await updateDoc(msgRef, {
+          code: code,
+          updatedAt: serverTimestamp(),
+          patchApplied: true
+        });
+        notify?.({ message: "Optimization applied successfully!", type: "success" });
+      } catch (err) {
+        console.error("Failed to apply patch:", err);
+        notify?.({ message: "Failed to apply optimization", type: "error" });
+      }
+    };
+    window.addEventListener("nexus:applyCodePatch", handleApplyPatch);
+    return () => window.removeEventListener("nexus:applyCodePatch", handleApplyPatch);
+  }, [user, currentChatId, notify]);
+
   const messagesUnsubRef = useRef(null);
   const chatUnsubRef = useRef(null);
+  const customModesUnsubRef = useRef(null);
+
+  // Load custom modes
+  useEffect(() => {
+    const u = user || auth.currentUser;
+    if (!u) return;
+
+    customModesUnsubRef.current = onSnapshot(
+      collection(db, "users", u.uid, "custom_modes"),
+      (snap) => {
+        const arr = snap.docs.map(d => ({ id: d.id, ...d.data(), isCustom: true }));
+        setCustomModes(arr);
+      }
+    );
+    return () => customModesUnsubRef.current?.();
+  }, [user]);
 
   const openChatById = useCallback((chatId) => {
     const u = user || auth.currentUser;
@@ -308,6 +349,7 @@ export function useAiChat(user, settings, refreshBilling, notify) {
     setCurrentChatId,
     activeMode,
     setActiveMode,
-    updateChatMode
+    updateChatMode,
+    customModes
   };
 }

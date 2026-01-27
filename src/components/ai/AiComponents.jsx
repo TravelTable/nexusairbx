@@ -1,5 +1,24 @@
 import React, { useState } from "react";
-import { Info, ChevronDown, ChevronUp, Sparkles } from "lucide-react";
+import { 
+  Info, 
+  ChevronDown, 
+  ChevronUp, 
+  Sparkles, 
+  ShieldAlert, 
+  ShieldCheck, 
+  Zap, 
+  Activity, 
+  AlertTriangle, 
+  CheckCircle2, 
+  ArrowRight,
+  Cpu,
+  Database,
+  Plus,
+  X,
+  Settings2,
+  Palette,
+  Type
+} from "lucide-react";
 import PLAN_INFO from "../../lib/planInfo";
 import { getGravatarUrl, getUserInitials, formatNumber, formatResetDate } from "../../lib/aiUtils";
 
@@ -73,11 +92,28 @@ export function AssistantCodeBlock({ code }) {
   );
 }
 
-export const NexusRBXAvatar = React.memo(({ isThinking = false }) => (
-  <div className={`w-10 h-10 md:w-12 md:h-12 rounded-2xl bg-white flex items-center justify-center shadow-2xl overflow-hidden flex-shrink-0 border-2 ${isThinking ? 'border-[#00f5d4] animate-pulse' : 'border-white/10'}`}>
-    <img src="/logo.png" alt="NexusRBX" className={`w-7 h-7 md:w-9 md:h-9 object-contain ${isThinking ? 'animate-bounce' : ''}`} />
-  </div>
-));
+export const NexusRBXAvatar = React.memo(({ isThinking = false, mode = "general" }) => {
+  const modeColors = {
+    general: "#00f5d4",
+    ui: "#00f5d4",
+    logic: "#9b5de5",
+    system: "#00bbf9",
+    animator: "#f15bb5",
+    data: "#fee440",
+    performance: "#00f5d4",
+    security: "#ff006e",
+  };
+  const color = modeColors[mode] || modeColors.general;
+
+  return (
+    <div 
+      className={`w-10 h-10 md:w-12 md:h-12 rounded-2xl bg-white flex items-center justify-center shadow-2xl overflow-hidden flex-shrink-0 border-2 transition-colors duration-500 ${isThinking ? 'animate-pulse' : ''}`}
+      style={{ borderColor: isThinking ? color : 'rgba(255,255,255,0.1)' }}
+    >
+      <img src="/logo.png" alt="NexusRBX" className={`w-7 h-7 md:w-9 md:h-9 object-contain ${isThinking ? 'animate-bounce' : ''}`} />
+    </div>
+  );
+});
 
 export const ThoughtAccordion = ({ thought }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -130,3 +166,257 @@ export const UserAvatar = React.memo(({ email }) => {
     </div>
   );
 });
+
+export const SecurityReport = ({ report, onFix }) => {
+  if (!report) return null;
+  const { vulnerabilities = [], riskScore = 0 } = report;
+
+  return (
+    <div className="mt-4 rounded-2xl border border-red-500/20 bg-red-500/5 overflow-hidden">
+      <div className="px-4 py-3 border-b border-red-500/20 flex items-center justify-between bg-red-500/10">
+        <div className="flex items-center gap-2 text-red-400">
+          <ShieldAlert className="w-4 h-4" />
+          <span className="text-xs font-black uppercase tracking-widest">Security Audit Report</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] text-red-400/60 font-bold uppercase">Risk Score:</span>
+          <span className={`text-xs font-black ${riskScore > 70 ? 'text-red-500' : riskScore > 30 ? 'text-yellow-500' : 'text-green-500'}`}>
+            {riskScore}/100
+          </span>
+        </div>
+      </div>
+      <div className="p-4 space-y-3">
+        {vulnerabilities.map((v, i) => (
+          <div key={i} className="p-3 rounded-xl bg-black/40 border border-white/5 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded ${v.severity === 'high' ? 'bg-red-500 text-white' : v.severity === 'medium' ? 'bg-yellow-500 text-black' : 'bg-blue-500 text-white'}`}>
+                {v.severity} severity
+              </span>
+              <span className="text-[10px] text-gray-500 font-bold">{v.type}</span>
+            </div>
+            <p className="text-xs text-gray-300 leading-relaxed">{v.description}</p>
+            <div className="pt-2 flex items-center justify-between border-t border-white/5">
+              <div className="flex items-center gap-1.5 text-[10px] text-[#00f5d4] font-bold italic">
+                <ShieldCheck className="w-3 h-3" />
+                Recommended Fix: {v.fix}
+              </div>
+            </div>
+          </div>
+        ))}
+        <button 
+          onClick={onFix}
+          className="w-full py-2.5 rounded-xl bg-red-500 text-white font-black text-xs flex items-center justify-center gap-2 hover:bg-red-600 transition-all shadow-lg shadow-red-500/20"
+        >
+          <Zap className="w-3 h-3 fill-current" />
+          APPLY SECURITY PATCHES
+        </button>
+      </div>
+    </div>
+  );
+};
+
+export const PerformanceAudit = ({ audit, onOptimize }) => {
+  if (!audit) return null;
+  const { score = 0, bottlenecks = [], estimatedSavings = {} } = audit;
+
+  return (
+    <div className="mt-4 rounded-2xl border border-emerald-500/20 bg-emerald-500/5 overflow-hidden">
+      <div className="px-4 py-3 border-b border-emerald-500/20 flex items-center justify-between bg-emerald-500/10">
+        <div className="flex items-center gap-2 text-emerald-400">
+          <Activity className="w-4 h-4" />
+          <span className="text-xs font-black uppercase tracking-widest">Performance Audit</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] text-emerald-400/60 font-bold uppercase">Efficiency:</span>
+          <span className="text-xs font-black text-emerald-400">{score}%</span>
+        </div>
+      </div>
+      <div className="p-4 space-y-4">
+        <div className="grid grid-cols-2 gap-3">
+          <div className="p-3 rounded-xl bg-black/40 border border-white/5 flex flex-col gap-1">
+            <div className="flex items-center gap-2 text-blue-400 mb-1">
+              <Database className="w-3 h-3" />
+              <span className="text-[10px] font-black uppercase">Memory</span>
+            </div>
+            <span className="text-xs text-white font-bold">-{estimatedSavings.memory || '0MB'}</span>
+          </div>
+          <div className="p-3 rounded-xl bg-black/40 border border-white/5 flex flex-col gap-1">
+            <div className="flex items-center gap-2 text-yellow-400 mb-1">
+              <Cpu className="w-3 h-3" />
+              <span className="text-[10px] font-black uppercase">CPU Time</span>
+            </div>
+            <span className="text-xs text-white font-bold">-{estimatedSavings.cpu || '0ms'}</span>
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <span className="text-[10px] text-gray-500 font-black uppercase tracking-widest px-1">Bottlenecks Detected</span>
+          {bottlenecks.map((b, i) => (
+            <div key={i} className="flex items-start gap-3 p-2 rounded-lg hover:bg-white/5 transition-colors">
+              <div className={`mt-0.5 p-1 rounded ${b.impact === 'high' ? 'bg-red-500/20 text-red-400' : 'bg-yellow-500/20 text-yellow-400'}`}>
+                <AlertTriangle className="w-3 h-3" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-[11px] text-white font-bold">{b.type}</div>
+                <div className="text-[10px] text-gray-400 line-clamp-1">{b.description}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <button 
+          onClick={onOptimize}
+          className="w-full py-2.5 rounded-xl bg-emerald-500 text-black font-black text-xs flex items-center justify-center gap-2 hover:bg-emerald-400 transition-all shadow-lg shadow-emerald-500/20"
+        >
+          <Zap className="w-3 h-3 fill-current" />
+          APPLY OPTIMIZATIONS
+        </button>
+      </div>
+    </div>
+  );
+};
+
+export const CustomModeModal = ({ isOpen, onClose, onSave, initialData = null }) => {
+  const [name, setName] = useState(initialData?.label || "");
+  const [description, setDescription] = useState(initialData?.description || "");
+  const [systemPrompt, setSystemPrompt] = useState(initialData?.systemPrompt || "");
+  const [temperature, setTemperature] = useState(initialData?.temperature || 0.7);
+  const [color, setColor] = useState(initialData?.color || "#9b5de5");
+  const [isPublic, setIsPublic] = useState(initialData?.isPublic || false);
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-300">
+      <div className="w-full max-w-2xl bg-[#121212] border border-white/10 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+        <div className="px-6 py-4 border-b border-white/5 flex items-center justify-between bg-white/5">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-xl bg-[#9b5de5]/20 text-[#9b5de5]">
+              <Settings2 className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="text-lg font-black text-white tracking-tight">
+                {initialData ? "Edit Custom Mode" : "Create Custom Mode"}
+              </h3>
+              <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Define your own AI expert</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="p-2 rounded-full hover:bg-white/5 text-gray-400 hover:text-white transition-colors">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-6 space-y-6 scrollbar-hide">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest px-1">Mode Name</label>
+              <div className="relative group">
+                <Type className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 group-focus-within:text-[#00f5d4] transition-colors" />
+                <input 
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="e.g. UI Specialist"
+                  className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-sm text-white focus:border-[#00f5d4] focus:ring-1 focus:ring-[#00f5d4] transition-all outline-none"
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest px-1">Theme Color</label>
+              <div className="flex items-center gap-3">
+                <input 
+                  type="color"
+                  value={color}
+                  onChange={(e) => setColor(e.target.value)}
+                  className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 p-1 cursor-pointer"
+                />
+                <div className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-xs text-gray-400 font-mono">
+                  {color.toUpperCase()}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest px-1">Short Description</label>
+            <textarea 
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="What does this expert specialize in?"
+              rows="2"
+              className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-sm text-white focus:border-[#00f5d4] focus:ring-1 focus:ring-[#00f5d4] transition-all outline-none resize-none"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <div className="flex items-center justify-between px-1">
+              <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest">System Prompt (The "Brain")</label>
+              <span className="text-[9px] text-[#9b5de5] font-bold italic">Advanced users only</span>
+            </div>
+            <textarea 
+              value={systemPrompt}
+              onChange={(e) => setSystemPrompt(e.target.value)}
+              placeholder="You are an expert in... Your goal is to... Always prioritize..."
+              rows="6"
+              className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-sm text-white font-mono focus:border-[#00f5d4] focus:ring-1 focus:ring-[#00f5d4] transition-all outline-none resize-none"
+            />
+          </div>
+
+          <div className="space-y-4">
+            <div className="flex items-center justify-between px-1">
+              <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Creativity (Temperature)</label>
+              <span className="text-xs font-bold text-[#00f5d4]">{temperature}</span>
+            </div>
+            <input 
+              type="range"
+              min="0"
+              max="1"
+              step="0.1"
+              value={temperature}
+              onChange={(e) => setTemperature(parseFloat(e.target.value))}
+              className="w-full h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer accent-[#00f5d4]"
+            />
+            <div className="flex justify-between text-[9px] text-gray-500 font-bold uppercase tracking-tighter">
+              <span>Precise (0.0)</span>
+              <span>Balanced (0.5)</span>
+              <span>Creative (1.0)</span>
+            </div>
+          </div>
+
+          <div className="p-4 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className={`p-2 rounded-lg ${isPublic ? 'bg-[#00f5d4]/20 text-[#00f5d4]' : 'bg-gray-800 text-gray-500'}`}>
+                <Globe className="w-4 h-4" />
+              </div>
+              <div>
+                <div className="text-xs font-bold text-white">Publish to Community</div>
+                <div className="text-[10px] text-gray-500">Allow other developers to use this expert</div>
+              </div>
+            </div>
+            <button 
+              onClick={() => setIsPublic(!isPublic)}
+              className={`w-12 h-6 rounded-full transition-all relative ${isPublic ? 'bg-[#00f5d4]' : 'bg-gray-700'}`}
+            >
+              <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${isPublic ? 'left-7' : 'left-1'}`} />
+            </button>
+          </div>
+        </div>
+
+        <div className="p-6 bg-white/5 border-t border-white/5 flex items-center gap-3">
+          <button 
+            onClick={onClose}
+            className="flex-1 py-3 rounded-xl bg-white/5 border border-white/10 text-white font-black text-xs uppercase tracking-widest hover:bg-white/10 transition-all"
+          >
+            Cancel
+          </button>
+          <button 
+            onClick={() => onSave({ label: name, description, systemPrompt, temperature, color, isPublic })}
+            disabled={!name || !systemPrompt}
+            className="flex-[2] py-3 rounded-xl bg-[#00f5d4] text-black font-black text-xs uppercase tracking-widest hover:bg-[#00f5d4]/80 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-[#00f5d4]/20"
+          >
+            Save Custom Mode
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
