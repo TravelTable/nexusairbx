@@ -23,6 +23,7 @@ export function useAiChat(user, settings, refreshBilling, notify) {
   const [messages, setMessages] = useState([]);
   const [currentChatId, setCurrentChatId] = useState(null);
   const [currentChatMeta, setCurrentChatMeta] = useState(null);
+  const [activeMode, setActiveMode] = useState("general");
   const [isGenerating, setIsGenerating] = useState(false);
   const [pendingMessage, setPendingMessage] = useState(null);
   const [generationStage, setGenerationStage] = useState("");
@@ -44,6 +45,9 @@ export function useAiChat(user, settings, refreshBilling, notify) {
       (snap) => {
         const data = snap.exists() ? { id: snap.id, ...snap.data() } : null;
         setCurrentChatMeta(data || null);
+        if (data?.activeMode) {
+          setActiveMode(data.activeMode);
+        }
       },
       (err) => {
         console.error("Firestore chat meta subscription error:", err);
@@ -84,6 +88,7 @@ export function useAiChat(user, settings, refreshBilling, notify) {
       if (!activeChatId) {
         const newChatRef = await addDoc(collection(db, "users", user.uid, "chats"), {
           title: content.slice(0, 30) + (content.length > 30 ? "..." : ""),
+          activeMode: settings.chatMode || "general",
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
         });
@@ -118,6 +123,7 @@ export function useAiChat(user, settings, refreshBilling, notify) {
           prompt: content, 
           settings,
           chatId: activeChatId,
+          chatMode: settings.chatMode || "general", // Pass chatMode from settings or default
           conversation: messages.slice(-10).map(m => ({ role: m.role, content: m.content || m.explanation }))
         }),
       });
@@ -279,6 +285,8 @@ export function useAiChat(user, settings, refreshBilling, notify) {
     handleClearChat,
     startNewChat,
     setPendingMessage,
-    setCurrentChatId
+    setCurrentChatId,
+    activeMode,
+    setActiveMode
   };
 }

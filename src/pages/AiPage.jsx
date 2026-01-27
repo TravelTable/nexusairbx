@@ -46,7 +46,7 @@ import { useAiScripts } from "../hooks/useAiScripts";
 import { useAgent } from "../hooks/useAgent";
 
 // Components
-import ChatView from "../components/ai/ChatView";
+import ChatView, { CHAT_MODES } from "../components/ai/ChatView";
 import LibraryView from "../components/ai/LibraryView";
 import GameProfileWizard from "../components/ai/GameProfileWizard";
 
@@ -70,6 +70,7 @@ function AiPage() {
   };
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [prompt, setPrompt] = useState("");
+  const [chatMode, setChatMode] = useState("general"); // "general" | "ui" | "logic" | "system" | "animator" | "data" | "performance" | "security"
   const [showTour, setShowTour] = useState(localStorage.getItem("nexusrbx:tourComplete") !== "true");
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showSignInNudge, setShowSignInNudge] = useState(false);
@@ -81,6 +82,14 @@ function AiPage() {
   }, []);
 
   const chat = useAiChat(user, settings, refreshBilling, notify);
+  
+  // Sync local chatMode with hook's activeMode
+  useEffect(() => {
+    if (chat.activeMode && chat.activeMode !== chatMode) {
+      setChatMode(chat.activeMode);
+    }
+  }, [chat.activeMode]);
+
   const ui = useUiBuilder(user, settings, refreshBilling, notify);
   const game = useGameProfile(settings, updateSettings);
   const scriptManager = useAiScripts(user, notify);
@@ -89,6 +98,8 @@ function AiPage() {
   // 4. Derived State
   const planKey = plan?.toLowerCase() || "free";
   const chatEndRef = useRef(null);
+
+  const activeModeData = CHAT_MODES.find(m => m.id === chatMode) || CHAT_MODES[0];
 
   // 5. Effects
   useEffect(() => {
@@ -226,13 +237,14 @@ function AiPage() {
         return;
       }
 
-      // Otherwise, ask agent to route
-      const data = await agent.sendMessage(
-        currentPrompt,
-        chat.currentChatId,
-        chat.setCurrentChatId,
-        requestId
-      );
+    // Otherwise, ask agent to route
+    const data = await agent.sendMessage(
+      currentPrompt,
+      chat.currentChatId,
+      chat.setCurrentChatId,
+      requestId,
+      chatMode
+    );
 
       if (data?.action === "pipeline") {
         const uiPromise = ui.handleGenerateUiPreview(
@@ -468,6 +480,8 @@ function AiPage() {
                 pendingMessage={chat.pendingMessage || ui.pendingMessage || (agent.isThinking ? { role: "assistant", content: "", thought: "Nexus is thinking...", prompt: "" } : null)} 
                 generationStage={chat.generationStage || ui.generationStage || (agent.isThinking ? "Nexus is thinking..." : "")} 
                 user={user} 
+                activeMode={chatMode}
+                onModeChange={setChatMode}
                 onViewUi={(m) => { ui.setActiveUiId(m.projectId); ui.setUiDrawerOpen(true); }}
                 onQuickStart={(p) => handlePromptSubmit(null, p)}
                 onRefine={(m) => { 
@@ -511,13 +525,17 @@ function AiPage() {
                       {agent.isThinking ? 'Thinking' : ui.uiIsGenerating ? 'Building' : chat.isGenerating ? 'Responding' : 'Ready'}
                     </div>
                     <div className="h-px flex-1 bg-white/5" />
+                    <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest border border-white/5 ${activeModeData.bg} ${activeModeData.color}`}>
+                      {activeModeData.icon}
+                      {activeModeData.label}
+                    </div>
                   </div>
                   <div className="flex items-center gap-2 p-2 pt-0">
                     <textarea
                       id="tour-prompt-box"
                       className="flex-1 bg-transparent border-none rounded-xl p-3 resize-none focus:ring-0 text-gray-100 placeholder-gray-500 text-[14px] md:text-[15px] leading-relaxed disabled:opacity-50"
                       rows="1" 
-                      placeholder="Ask Nexus to build a UI, write a script, or answer a question..."
+                      placeholder={activeModeData.placeholder}
                       value={prompt} 
                       onChange={(e) => setPrompt(e.target.value)}
                       disabled={chat.isGenerating || ui.uiIsGenerating || agent.isThinking}

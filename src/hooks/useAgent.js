@@ -9,7 +9,7 @@ export function useAgent(user, notify, refreshBilling) {
   const [messages, setMessages] = useState([]);
   const [isThinking, setIsThinking] = useState(false);
 
-  const sendMessage = useCallback(async (goal, chatId, setChatId, existingRequestId = null) => {
+  const sendMessage = useCallback(async (goal, chatId, setChatId, existingRequestId = null, chatMode = "general") => {
     if (!user || !goal) return;
 
     setIsThinking(true);
@@ -48,6 +48,7 @@ export function useAgent(user, notify, refreshBilling) {
         body: JSON.stringify({
           history: messages.slice(-5), // Send recent history for context
           goal,
+          chatMode,
         }),
       });
 

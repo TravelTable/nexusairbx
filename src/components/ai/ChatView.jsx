@@ -3,15 +3,107 @@ import { NexusRBXAvatar, UserAvatar, FormatText, ThoughtAccordion, UiStatsBadge 
 import LiveCodeViewer from "./LiveCodeViewer";
 import ScriptLoadingBarContainer from "../ScriptLoadingBarContainer";
 import GenerationStatusBar from "./GenerationStatusBar";
-import { Zap, Rocket, Layout, Sparkles, Eye, RefreshCw, MousePointer2, Layers } from "lucide-react";
+import { 
+  Zap, 
+  Rocket, 
+  Layout, 
+  Sparkles, 
+  Eye, 
+  RefreshCw, 
+  MousePointer2, 
+  Layers, 
+  Code2, 
+  Database, 
+  Activity, 
+  ShieldAlert, 
+  Move, 
+  MessageSquare 
+} from "lucide-react";
 import { auth } from "../../firebase";
 
 const DEV_EMAIL = "jackt1263@gmail.com";
 
-const quickStarts = [
-  { icon: <Layout className="w-4 h-4 text-[#00f5d4]" />, label: "Build UI", prompt: "Build a modern shop UI with categories and a clean layout." },
-  { icon: <Zap className="w-4 h-4 text-yellow-400" />, label: "Optimize Script", prompt: "Can you optimize this Luau script for better performance?" },
-  { icon: <Rocket className="w-4 h-4 text-blue-400" />, label: "Generate System", prompt: "Generate a basic DataStore system with leaderboards." },
+export const CHAT_MODES = [
+  { 
+    id: "general", 
+    label: "General Assistant", 
+    icon: <MessageSquare className="w-4 h-4" />, 
+    color: "text-gray-400", 
+    bg: "bg-gray-400/10",
+    border: "hover:border-gray-400/50",
+    description: "General Roblox help, debugging, and documentation.",
+    placeholder: "Ask anything about Roblox development..."
+  },
+  { 
+    id: "ui", 
+    label: "UI Architect", 
+    icon: <Layout className="w-4 h-4" />, 
+    color: "text-[#00f5d4]", 
+    bg: "bg-[#00f5d4]/10",
+    border: "hover:border-[#00f5d4]/50",
+    description: "Specialized in building and refining Roblox UI manifests.",
+    placeholder: "Describe the UI you want to build (e.g. 'A modern shop menu')..."
+  },
+  { 
+    id: "logic", 
+    label: "Logic Engineer", 
+    icon: <Code2 className="w-4 h-4" />, 
+    color: "text-[#9b5de5]", 
+    bg: "bg-[#9b5de5]/10",
+    border: "hover:border-[#9b5de5]/50",
+    description: "Focused on clean, optimized Luau scripting and bug fixing.",
+    placeholder: "Paste code to optimize or describe a logic problem..."
+  },
+  { 
+    id: "system", 
+    label: "System Designer", 
+    icon: <Rocket className="w-4 h-4" />, 
+    color: "text-blue-400", 
+    bg: "bg-blue-400/10",
+    border: "hover:border-blue-400/50",
+    description: "Architecting DataStores, Networking, and Game Loops.",
+    placeholder: "Describe a system (e.g. 'A global leaderboard with DataStores')..."
+  },
+  { 
+    id: "animator", 
+    label: "Animator", 
+    icon: <Move className="w-4 h-4" />, 
+    color: "text-pink-400", 
+    bg: "bg-pink-400/10",
+    border: "hover:border-pink-400/50",
+    description: "Tweens, AnimationControllers, and procedural motion.",
+    placeholder: "Describe an animation or tween sequence..."
+  },
+  { 
+    id: "data", 
+    label: "Data Specialist", 
+    icon: <Database className="w-4 h-4" />, 
+    color: "text-yellow-400", 
+    bg: "bg-yellow-400/10",
+    border: "hover:border-yellow-400/50",
+    description: "DataStore v2, Caching, Pagination, and Analytics.",
+    placeholder: "Ask about DataStore patterns or data management..."
+  },
+  { 
+    id: "performance", 
+    label: "Performance Tuner", 
+    icon: <Activity className="w-4 h-4" />, 
+    color: "text-emerald-400", 
+    bg: "bg-emerald-400/10",
+    border: "hover:border-emerald-400/50",
+    description: "Diagnosing bottlenecks and micro-optimizations.",
+    placeholder: "Paste code to audit for performance issues..."
+  },
+  { 
+    id: "security", 
+    label: "Security Auditor", 
+    icon: <ShieldAlert className="w-4 h-4" />, 
+    color: "text-red-400", 
+    bg: "bg-red-400/10",
+    border: "hover:border-red-400/50",
+    description: "RemoteEvent security and anti-exploit patterns.",
+    placeholder: "Audit your Remotes or ask about anti-exploit best practices..."
+  },
 ];
 
 export default function ChatView({ 
@@ -19,6 +111,8 @@ export default function ChatView({
   pendingMessage, 
   generationStage, 
   user, 
+  activeMode = "general",
+  onModeChange,
   onViewUi, 
   onQuickStart,
   onRefine,
@@ -31,24 +125,34 @@ export default function ChatView({
   return (
     <div className="w-full max-w-5xl mx-auto h-full flex flex-col">
       {messages.length === 0 && !pendingMessage ? (
-        <div className="min-h-[50vh] flex flex-col items-center justify-center text-center space-y-8">
-          <div className="space-y-2">
-            <h2 className="text-3xl font-bold text-white">AI Coding Assistant</h2>
-            <p className="text-gray-400 max-w-md">Ask anything about Roblox development, from debugging to complex systems.</p>
+        <div className="min-h-[60vh] flex flex-col items-center justify-center text-center space-y-10 py-12">
+          <div className="space-y-3">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-2">
+              <Sparkles className="w-3 h-3 text-[#00f5d4]" />
+              Select Assistant Mode
+            </div>
+            <h2 className="text-4xl font-black text-white tracking-tighter">How can Nexus help today?</h2>
+            <p className="text-gray-400 max-w-md mx-auto text-sm font-medium">Choose a specialized mode to get the most accurate and optimized results for your task.</p>
           </div>
           
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full max-w-3xl">
-            {quickStarts.map((qs, i) => (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
+            {CHAT_MODES.map((mode) => (
               <button
-                key={i}
-                onClick={() => onQuickStart(qs.prompt)}
-                className="p-6 rounded-2xl bg-gray-900/40 border border-gray-800 hover:border-[#9b5de5] hover:bg-gray-900/60 transition-all text-left group"
+                key={mode.id}
+                onClick={() => onModeChange(mode.id)}
+                className={`p-5 rounded-2xl bg-gray-900/40 border transition-all text-left group relative overflow-hidden ${activeMode === mode.id ? `border-white/20 ring-2 ring-offset-2 ring-offset-black ring-white/10` : `border-gray-800 ${mode.border}`}`}
               >
-                <div className="mb-3 p-2 rounded-lg bg-gray-800 w-fit group-hover:scale-110 transition-transform">
-                  {qs.icon}
+                {activeMode === mode.id && (
+                  <div className={`absolute inset-0 opacity-10 ${mode.bg}`} />
+                )}
+                <div className={`mb-3 p-2 rounded-lg w-fit group-hover:scale-110 transition-transform ${mode.bg} ${mode.color}`}>
+                  {mode.icon}
                 </div>
-                <div className="font-bold text-white mb-1">{qs.label}</div>
-                <div className="text-xs text-gray-500 line-clamp-2">{qs.prompt}</div>
+                <div className="font-bold text-white mb-1 text-sm flex items-center justify-between">
+                  {mode.label}
+                  {activeMode === mode.id && <div className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />}
+                </div>
+                <div className="text-[11px] text-gray-500 leading-relaxed line-clamp-2">{mode.description}</div>
               </button>
             ))}
           </div>
