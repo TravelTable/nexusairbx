@@ -315,23 +315,28 @@ export function useAiChat(user, settings, refreshBilling, notify) {
     setActiveMode("general");
   }, []);
 
-  const updateChatMode = async (chatId, mode) => {
+  const updateChatMode = useCallback(async (chatId, mode) => {
     const u = user || auth.currentUser;
-    if (!u || !chatId) {
+    if (!u) {
       setActiveMode(mode);
       return;
     }
-    try {
-      await updateDoc(doc(db, "users", u.uid, "chats", chatId), {
-        activeMode: mode,
-        updatedAt: serverTimestamp(),
-      });
-      setActiveMode(mode);
-    } catch (err) {
-      console.error("Failed to update chat mode:", err);
-      notify?.({ message: "Failed to update chat mode", type: "error" });
+    
+    // Update local state immediately for snappy UI
+    setActiveMode(mode);
+
+    if (chatId) {
+      try {
+        await updateDoc(doc(db, "users", u.uid, "chats", chatId), {
+          activeMode: mode,
+          updatedAt: serverTimestamp(),
+        });
+      } catch (err) {
+        console.error("Failed to update chat mode in Firestore:", err);
+        notify?.({ message: "Failed to persist chat mode", type: "error" });
+      }
     }
-  };
+  }, [user, notify]);
 
   return {
     messages,

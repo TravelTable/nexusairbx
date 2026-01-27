@@ -75,7 +75,6 @@ function AiPage() {
   };
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [prompt, setPrompt] = useState("");
-  const [chatMode, setChatMode] = useState("general"); // "general" | "ui" | "logic" | "system" | "animator" | "data" | "performance" | "security"
   const [showTour, setShowTour] = useState(localStorage.getItem("nexusrbx:tourComplete") !== "true");
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showSignInNudge, setShowSignInNudge] = useState(false);
@@ -89,20 +88,6 @@ function AiPage() {
   }, []);
 
   const chat = useAiChat(user, settings, refreshBilling, notify);
-  
-  // Sync local chatMode with hook's activeMode
-  useEffect(() => {
-    if (chat.activeMode && chat.activeMode !== chatMode) {
-      setChatMode(chat.activeMode);
-    }
-  }, [chat.activeMode, chatMode]);
-
-  // Update hook's activeMode when local chatMode changes (e.g. via selector)
-  useEffect(() => {
-    if (chatMode && chat.activeMode !== chatMode) {
-      chat.updateChatMode(chat.currentChatId, chatMode);
-    }
-  }, [chatMode, chat]);
 
   const ui = useUiBuilder(user, settings, refreshBilling, notify);
   const game = useGameProfile(settings, updateSettings);
@@ -113,7 +98,7 @@ function AiPage() {
   const planKey = plan?.toLowerCase() || "free";
   const chatEndRef = useRef(null);
 
-  const activeModeData = CHAT_MODES.find(m => m.id === chatMode) || CHAT_MODES[0];
+  const activeModeData = CHAT_MODES.find(m => m.id === chat.activeMode) || CHAT_MODES[0];
 
   // Mode-specific theme colors for background glows
   const modeColors = {
@@ -126,7 +111,7 @@ function AiPage() {
     performance: { primary: "#00f5d4", secondary: "#00bbf9" },
     security: { primary: "#ff006e", secondary: "#8338ec" },
   };
-  const currentTheme = modeColors[chatMode] || modeColors.general;
+  const currentTheme = modeColors[chat.activeMode] || modeColors.general;
 
   // Mode-specific quick actions
   const quickActions = {
@@ -147,7 +132,7 @@ function AiPage() {
       { label: "🚀 Speed Up", prompt: "Suggest micro-optimizations to speed up this function: " },
     ],
   };
-  const currentActions = quickActions[chatMode] || [];
+  const currentActions = quickActions[chat.activeMode] || [];
 
   // Mode-specific power tools
   const powerTools = {
@@ -165,7 +150,7 @@ function AiPage() {
       { label: "Add Type-Checking", prompt: "Add strict Luau type-checking to this script" },
     ],
   };
-  const currentPowerTools = powerTools[chatMode] || [];
+  const currentPowerTools = powerTools[chat.activeMode] || [];
 
   // 5. Effects
   useEffect(() => {
@@ -294,19 +279,19 @@ function AiPage() {
     if (activeTab !== "chat") setActiveTab("chat");
 
     // Smart Routing: Auto-switch mode based on commands
-    let effectiveMode = chatMode;
+    let effectiveMode = chat.activeMode;
     if (currentPrompt.startsWith("/ui")) {
       effectiveMode = "ui";
-      setChatMode("ui");
+      chat.updateChatMode(chat.currentChatId, "ui");
     } else if (currentPrompt.startsWith("/audit")) {
       effectiveMode = "security";
-      setChatMode("security");
+      chat.updateChatMode(chat.currentChatId, "security");
     } else if (currentPrompt.startsWith("/optimize")) {
       effectiveMode = "performance";
-      setChatMode("performance");
+      chat.updateChatMode(chat.currentChatId, "performance");
     } else if (currentPrompt.startsWith("/logic")) {
       effectiveMode = "logic";
-      setChatMode("logic");
+      chat.updateChatMode(chat.currentChatId, "logic");
     }
 
     // Smarter routing: do deterministic routing first, use agent only when unclear
@@ -622,9 +607,9 @@ function AiPage() {
                 pendingMessage={chat.pendingMessage || ui.pendingMessage || (agent.isThinking ? { role: "assistant", content: "", thought: "Nexus is thinking...", prompt: "" } : null)} 
                 generationStage={chat.generationStage || ui.generationStage || (agent.isThinking ? "Nexus is thinking..." : "")} 
                 user={user} 
-                activeMode={chatMode}
+                activeMode={chat.activeMode}
                 customModes={chat.customModes}
-                onModeChange={setChatMode}
+                onModeChange={(mode) => chat.updateChatMode(chat.currentChatId, mode)}
                 onCreateCustomMode={() => { setEditingCustomMode(null); setCustomModeModalOpen(true); }}
                 onEditCustomMode={(mode) => { setEditingCustomMode(mode); setCustomModeModalOpen(true); }}
                 onInstallCommunityMode={handleInstallCommunityMode}
@@ -729,12 +714,12 @@ function AiPage() {
                         onClick={() => {
                           const allModes = [...CHAT_MODES, ...chat.customModes];
                           const modeIds = allModes.map(m => m.id);
-                          const currentIndex = modeIds.indexOf(chatMode);
+                          const currentIndex = modeIds.indexOf(chat.activeMode);
                           const nextIndex = (currentIndex + 1) % modeIds.length;
-                          setChatMode(modeIds[nextIndex]);
+                          chat.updateChatMode(chat.currentChatId, modeIds[nextIndex]);
                         }}
                         className={`hidden sm:flex items-center gap-2 px-3 py-2 rounded-xl border border-white/5 text-[10px] font-black uppercase tracking-widest transition-all hover:bg-white/5 ${activeModeData.bg} ${activeModeData.color}`}
-                        style={chatMode.startsWith('custom_') ? { color: activeModeData.color || '#9b5de5' } : {}}
+                        style={chat.activeMode.startsWith('custom_') ? { color: activeModeData.color || '#9b5de5' } : {}}
                         title={`Current Mode: ${activeModeData.label}. Click to cycle.`}
                       >
                         {activeModeData.icon}
