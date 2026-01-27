@@ -4,6 +4,9 @@ import LiveCodeViewer from "./LiveCodeViewer";
 import ScriptLoadingBarContainer from "../ScriptLoadingBarContainer";
 import GenerationStatusBar from "./GenerationStatusBar";
 import { Zap, Rocket, Layout, Sparkles, Eye, RefreshCw, MousePointer2, Layers } from "lucide-react";
+import { auth } from "../../firebase";
+
+const DEV_EMAIL = "jackt1263@gmail.com";
 
 const quickStarts = [
   { icon: <Layout className="w-4 h-4 text-[#00f5d4]" />, label: "Build UI", prompt: "Build a modern shop UI with categories and a clean layout." },
@@ -22,6 +25,9 @@ export default function ChatView({
   onToggleActMode,
   chatEndRef 
 }) {
+  const currentUser = auth.currentUser;
+  const isDev = currentUser?.email === DEV_EMAIL;
+
   return (
     <div className="w-full max-w-5xl mx-auto h-full flex flex-col">
       {messages.length === 0 && !pendingMessage ? (
@@ -112,6 +118,16 @@ export default function ChatView({
                             <div className="absolute top-3 left-3 flex flex-wrap gap-2">
                               <UiStatsBadge label="Instances" value={m.metadata?.instanceCount || "42"} icon={Layers} />
                               <UiStatsBadge label="Responsive" value="Yes" icon={MousePointer2} />
+                            </div>
+
+                            {/* Coming Soon Badge for Chat Preview */}
+                            <div className="absolute top-3 right-3">
+                              <div className={`px-2 py-1 rounded-md border backdrop-blur-md flex items-center gap-1.5 ${isDev ? 'bg-[#9b5de5]/20 border-[#9b5de5]/30 text-[#9b5de5]' : 'bg-[#00f5d4]/10 border-[#00f5d4]/20 text-[#00f5d4]'}`}>
+                                <Sparkles className="w-3 h-3 animate-pulse" />
+                                <span className="text-[9px] font-black uppercase tracking-widest">
+                                  {isDev ? "Dev Preview" : "Coming Soon"}
+                                </span>
+                              </div>
                             </div>
 
                             <div className="absolute inset-0 bg-black/80 opacity-0 group-hover/card:opacity-100 transition-opacity flex items-center justify-center gap-4">

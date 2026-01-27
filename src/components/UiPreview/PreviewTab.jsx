@@ -1,7 +1,10 @@
 import React from "react";
-import { AlertCircle, Loader, Settings2, Sliders, Grid3X3, Heart } from "lucide-react";
+import { AlertCircle, Loader, Settings2, Sliders, Grid3X3, Heart, Sparkles } from "lucide-react";
 import LuaPreviewRenderer from "../../preview/LuaPreviewRenderer";
 import { addFavorite } from "../../lib/uiBuilderApi";
+import { auth } from "../../firebase";
+
+const DEV_EMAIL = "jackt1263@gmail.com";
 
 export default function PreviewTab({
   lua,
@@ -14,7 +17,7 @@ export default function PreviewTab({
   setRefineInput,
   isRefining,
   onRefine,
-  user // Ensure user is passed down
+  user: propUser // Rename to avoid shadowing
 }) {
   const [showGrid, setShowGrid] = React.useState(false);
   const [showTweaks, setShowTweaks] = React.useState(false);
@@ -23,6 +26,9 @@ export default function PreviewTab({
     strokeThickness: 2,
     transparency: 0
   });
+
+  const currentUser = auth.currentUser || propUser;
+  const isDev = currentUser?.email === DEV_EMAIL;
 
   return (
     <div className="h-full flex flex-col gap-3">
@@ -53,6 +59,36 @@ export default function PreviewTab({
             onAction={(evt) => setLastEvent(evt)}
           />
         </div>
+
+        {/* Coming Soon Overlay */}
+        {!isDev ? (
+          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black/60 backdrop-blur-[2px] p-6 text-center">
+            <div className="bg-gradient-to-br from-[#9b5de5] to-[#00f5d4] p-0.5 rounded-2xl shadow-[0_0_30px_rgba(155,93,229,0.3)]">
+              <div className="bg-[#0b1220] rounded-[14px] px-8 py-6 flex flex-col items-center gap-4">
+                <div className="w-12 h-12 rounded-full bg-[#9b5de5]/20 flex items-center justify-center">
+                  <Sparkles className="w-6 h-6 text-[#9b5de5]" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-black text-white uppercase tracking-tighter">Coming Soon</h3>
+                  <p className="text-gray-400 text-xs font-medium max-w-[200px] mt-1">
+                    The Live Preview engine is currently in private beta.
+                  </p>
+                </div>
+                <div className="px-4 py-1.5 rounded-full bg-white/5 border border-white/10 text-[10px] font-bold text-gray-500 uppercase tracking-widest">
+                  Stay Tuned
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="absolute top-0 left-0 right-0 z-10 bg-gradient-to-r from-[#9b5de5]/80 to-[#00f5d4]/80 backdrop-blur-md py-1 px-4 flex items-center justify-between border-b border-white/10">
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-3 h-3 text-white animate-pulse" />
+              <span className="text-[10px] font-black text-white uppercase tracking-[0.2em]">Developer Preview Mode</span>
+            </div>
+            <span className="text-[9px] font-bold text-white/80 bg-black/20 px-2 py-0.5 rounded">Coming Soon (Public)</span>
+          </div>
+        )}
         
         {/* Status Overlay */}
         <div className="absolute top-3 right-3 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300">
@@ -83,9 +119,9 @@ export default function PreviewTab({
           <div className="absolute bottom-3 left-3 animate-in fade-in slide-in-from-left-4 duration-300">
             <button
               onClick={async () => {
-                if (!user) return;
+                if (!currentUser) return;
                 try {
-                  const token = await user.getIdToken();
+                  const token = await currentUser.getIdToken();
                   await addFavorite({
                     token,
                     name: lastEvent.label || lastEvent.id,
