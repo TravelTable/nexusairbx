@@ -9,14 +9,10 @@ import {
   Zap, 
   Activity, 
   AlertTriangle, 
-  CheckCircle2, 
-  ArrowRight,
   Cpu,
   Database,
-  Plus,
   X,
   Settings2,
-  Palette,
   Type,
   Globe
 } from "lucide-react";

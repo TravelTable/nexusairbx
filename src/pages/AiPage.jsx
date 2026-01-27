@@ -102,7 +102,7 @@ function AiPage() {
     if (chatMode && chat.activeMode !== chatMode) {
       chat.updateChatMode(chat.currentChatId, chatMode);
     }
-  }, [chatMode, chat.activeMode, chat.currentChatId, chat.updateChatMode]);
+  }, [chatMode, chat]);
 
   const ui = useUiBuilder(user, settings, refreshBilling, notify);
   const game = useGameProfile(settings, updateSettings);
@@ -269,7 +269,6 @@ function AiPage() {
       } else {
         // If it was public but now private, remove from community
         try {
-          const { deleteDoc } = await import("firebase/firestore");
           await deleteDoc(doc(db, "community_modes", modeId));
         } catch (e) {}
       }

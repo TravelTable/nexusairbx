@@ -31,7 +31,6 @@ import {
   Settings2,
   Plus,
   Users,
-  Globe,
   Loader
 } from "lucide-react";
 import { auth } from "../../firebase";
