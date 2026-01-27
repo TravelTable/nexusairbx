@@ -101,7 +101,7 @@ export default function ChatView({
                     </div>
                   )}
 
-                  {m.role === 'assistant' && m.code && (
+                  {m.role === 'assistant' && (m.uiModuleLua || m.code) && (
                     <div className="mt-6 space-y-4">
                       {m.metadata?.type === 'ui' || m.projectId ? (
                         <div className="relative group/card overflow-hidden rounded-2xl border border-white/10 bg-black/60 hover:border-[#00f5d4]/50 transition-all shadow-2xl">
@@ -144,7 +144,7 @@ export default function ChatView({
                       ) : (
                         <ScriptLoadingBarContainer
                           filename={m.title || "Generated_Script.lua"}
-                          codeReady={!!m.code}
+                          codeReady={!!(m.uiModuleLua || m.code)}
                           loading={false}
                           onView={() => onViewUi(m)}
                         />

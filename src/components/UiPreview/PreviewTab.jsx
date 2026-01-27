@@ -71,9 +71,9 @@ export default function PreviewTab({
             <Grid3X3 className="w-4 h-4" />
           </button>
           <div className="flex items-center gap-2 bg-black/80 backdrop-blur-xl border border-white/10 rounded-full px-3 py-1.5 shadow-2xl pointer-events-none">
-            <div className={`w-2 h-2 rounded-full ${boardState || lua ? 'bg-[#00f5d4] animate-pulse' : 'bg-red-500'}`} />
+            <div className={`w-2 h-2 rounded-full ${boardState ? 'bg-[#00f5d4] animate-pulse' : lua ? 'bg-yellow-500' : 'bg-red-500'}`} />
             <span className="text-[10px] text-gray-300 font-bold uppercase tracking-widest">
-              {boardState ? "Live Preview" : lua ? "Manifest Active" : "No Manifest"}
+              {boardState ? "Live Preview" : lua ? "Lua Fallback" : "No Manifest"}
             </span>
           </div>
         </div>

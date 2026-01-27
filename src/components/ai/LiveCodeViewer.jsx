@@ -23,6 +23,16 @@ export default function LiveCodeViewer({ content = "" }) {
       code = rawCode.split("</code>")[0].trim();
     }
 
+    // Support for new UI module format in stream
+    if (!code) {
+      const uiModuleMatch = content.match(/<uiModuleLua>([\s\S]*?)<\/uiModuleLua>/i);
+      if (uiModuleMatch) code = uiModuleMatch[1].trim();
+      else {
+        const rawUiModule = content.split("<uiModuleLua>")[1] || "";
+        code = rawUiModule.split("</uiModuleLua>")[0].trim();
+      }
+    }
+
     return { title, explanation, code };
   }, [content]);
 

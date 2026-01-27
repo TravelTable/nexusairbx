@@ -179,7 +179,14 @@ export function useAiChat(user, settings, refreshBilling, notify) {
               
               // Notify UI hook if this was a UI generation
               if (data.projectId) {
-                window.dispatchEvent(new CustomEvent("nexus:uiGenerated", { detail: data }));
+                // Ensure we pass the new format if available
+                window.dispatchEvent(new CustomEvent("nexus:uiGenerated", { 
+                  detail: {
+                    ...data,
+                    uiModuleLua: data.uiModuleLua || data.content,
+                    systemsLua: data.systemsLua || ""
+                  } 
+                }));
               }
 
               refreshBilling();

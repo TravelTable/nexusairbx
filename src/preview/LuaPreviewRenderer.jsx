@@ -40,6 +40,7 @@ export default function LuaPreviewRenderer({ lua, boardState, interactive = fals
 
   const board = useMemo(() => {
     if (boardState) return boardState;
+    // Fallback to parsing Lua only if boardState is missing
     return extractUiManifestFromLua(lua);
   }, [lua, boardState]);
 

@@ -29,12 +29,12 @@ export function useUiBuilder(user, settings, refreshBilling, notify) {
           id: data.projectId, 
           createdAt: Date.now(), 
           prompt: data.title || "Generated UI", 
-          lua: data.content,
+          uiModuleLua: data.uiModuleLua || data.content, // Fallback for old data
+          systemsLua: data.systemsLua || "",
           versionNumber: data.versionNumber 
         };
         setUiGenerations((prev) => [entry, ...(prev || [])]);
         setActiveUiId(data.projectId);
-        // setUiDrawerOpen(true); // Removed to prevent premature opening
       }
     };
     window.addEventListener("nexus:uiGenerated", handleUiGenerated);
@@ -49,7 +49,7 @@ export function useUiBuilder(user, settings, refreshBilling, notify) {
       const token = await user.getIdToken();
       const data = await exportLua({ token, boardState });
       if (data.lua && activeUiId) {
-        setUiGenerations(prev => prev.map(g => g.id === activeUiId ? { ...g, lua: data.lua, boardState } : g));
+        setUiGenerations(prev => prev.map(g => g.id === activeUiId ? { ...g, uiModuleLua: data.lua, boardState } : g));
       }
     } catch (e) {
       notify({ message: "Failed to update Lua code", type: "error" });
@@ -57,26 +57,34 @@ export function useUiBuilder(user, settings, refreshBilling, notify) {
   }, [user, activeUiId, notify]);
 
   const handleRefine = useCallback(async (instruction) => {
-    if (!activeUi?.lua || !user) return;
+    if (!activeUi?.uiModuleLua || !user) return;
     setUiIsGenerating(true);
     try {
       const token = await user.getIdToken();
       
       let enhancedInstruction = instruction;
-      if (activeUi.lua.includes("rbxassetid://") && !activeUi.lua.includes("rbxassetid://0")) {
+      if (activeUi.uiModuleLua.includes("rbxassetid://") && !activeUi.uiModuleLua.includes("rbxassetid://0")) {
         enhancedInstruction += " (IMPORTANT: Preserve all existing rbxassetid links, do not revert them to placeholders)";
       }
 
       const data = await aiRefineLua({
         token,
-        lua: activeUi.lua,
+        lua: activeUi.uiModuleLua,
         instruction: enhancedInstruction,
+        boardState: activeUi.boardState
       });
 
-      if (data.lua) {
+      if (data.uiModuleLua || data.lua) {
         const id = cryptoRandomId();
         setUiGenerations((prev) => [
-          { id, lua: data.lua, prompt: `Refine: ${instruction}`, createdAt: Date.now() },
+          { 
+            id, 
+            uiModuleLua: data.uiModuleLua || data.lua, 
+            systemsLua: data.systemsLua || "",
+            boardState: data.boardState || activeUi.boardState,
+            prompt: `Refine: ${instruction}`, 
+            createdAt: Date.now() 
+          },
           ...prev,
         ]);
         setActiveUiId(id);
@@ -130,13 +138,10 @@ export function useUiBuilder(user, settings, refreshBilling, notify) {
         maxSystemsTokens: settings.uiMaxSystemsTokens,
       });
 
-      const { boardState, lua, systemsLua, tokensConsumed, warnings } = data;
+      const { boardState, uiModuleLua, systemsLua, tokensConsumed, warnings } = data;
       
       const scriptId = cryptoRandomId();
       const resultTitle = content.slice(0, 30) + " (UI)";
-
-      // Combine main Lua and systems Lua for storage, but keep them clean
-      const fullLua = systemsLua ? `${lua}\n\n-- SYSTEMS\n${systemsLua}` : lua;
 
       await setDoc(doc(db, "users", user.uid, "scripts", scriptId), {
         title: resultTitle, chatId: activeChatId, type: "ui", updatedAt: serverTimestamp(), createdAt: serverTimestamp(),
@@ -144,14 +149,19 @@ export function useUiBuilder(user, settings, refreshBilling, notify) {
 
       const versionId = uuidv4();
       await setDoc(doc(db, "users", user.uid, "scripts", scriptId, "versions", versionId), {
-        code: fullLua, title: resultTitle, versionNumber: 1, createdAt: serverTimestamp(),
+        uiModuleLua,
+        systemsLua,
+        title: resultTitle,
+        versionNumber: 1,
+        createdAt: serverTimestamp(),
       });
 
       const assistantMsgRef = doc(db, "users", user.uid, "chats", activeChatId, "messages", `${requestId}-assistant`);
       await setDoc(assistantMsgRef, {
         role: "assistant",
         content: "",
-        code: fullLua,
+        uiModuleLua,
+        systemsLua,
         projectId: scriptId,
         versionNumber: 1,
         metadata: {
@@ -163,7 +173,7 @@ export function useUiBuilder(user, settings, refreshBilling, notify) {
         requestId,
       });
 
-      const entry = { id: scriptId, requestId, createdAt: Date.now(), prompt: content, boardState, lua: fullLua };
+      const entry = { id: scriptId, requestId, createdAt: Date.now(), prompt: content, boardState, uiModuleLua, systemsLua };
       setUiGenerations((prev) => [entry, ...prev.filter(g => g.requestId !== requestId)]);
       setActiveUiId(scriptId);
       
@@ -173,7 +183,7 @@ export function useUiBuilder(user, settings, refreshBilling, notify) {
       setUiIsGenerating(false);
       setPendingMessage(null);
       setGenerationStage("");
-      setUiDrawerOpen(true); // Open drawer only when fully finished
+      setUiDrawerOpen(true);
 
     } catch (e) {
       notify({ message: e?.message || "UI generation failed", type: "error" });
@@ -183,9 +193,18 @@ export function useUiBuilder(user, settings, refreshBilling, notify) {
     }
   };
 
-  const updateActiveLua = useCallback((newLua) => {
+  const updateActiveLua = useCallback((newBoardStateOrLua) => {
     if (!activeUiId) return;
-    setUiGenerations(prev => prev.map(g => g.id === activeUiId ? { ...g, lua: newLua } : g));
+    setUiGenerations(prev => prev.map(g => {
+      if (g.id === activeUiId) {
+        if (typeof newBoardStateOrLua === "string") {
+          return { ...g, uiModuleLua: newBoardStateOrLua };
+        } else {
+          return { ...g, boardState: newBoardStateOrLua };
+        }
+      }
+      return g;
+    }));
   }, [activeUiId]);
 
   return {

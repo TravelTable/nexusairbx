@@ -342,7 +342,14 @@ function AiPage() {
       if (!snap.empty) {
         const data = snap.docs[0].data();
         ui.setActiveUiId(script.id);
-        ui.setUiGenerations(prev => prev.some(g => g.id === script.id) ? prev : [{ id: script.id, lua: data.code, prompt: script.title, createdAt: Date.now() }, ...prev]);
+        ui.setUiGenerations(prev => prev.some(g => g.id === script.id) ? prev : [{ 
+          id: script.id, 
+          uiModuleLua: data.uiModuleLua || data.code, 
+          systemsLua: data.systemsLua || "",
+          boardState: data.boardState || null,
+          prompt: script.title, 
+          createdAt: Date.now() 
+        }, ...prev]);
         ui.setUiDrawerOpen(true);
       }
     } else {
@@ -540,6 +547,8 @@ function AiPage() {
       <UiPreviewDrawer
         open={ui.uiDrawerOpen}
         onClose={() => ui.setUiDrawerOpen(false)}
+        uiModuleLua={ui.activeUi?.uiModuleLua || ""}
+        systemsLua={ui.activeUi?.systemsLua || ""}
         lua={ui.activeUi?.lua || ""}
         boardState={ui.activeUi?.boardState || null}
         prompt={ui.activeUi?.prompt || ""}

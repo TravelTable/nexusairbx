@@ -19,7 +19,9 @@ SyntaxHighlighter.registerLanguage("lua", luaLang);
 export default function UiPreviewDrawer({
   open,
   onClose,
-  lua,
+  uiModuleLua,
+  systemsLua,
+  lua, // Fallback for old data
   boardState,
   prompt,
   onDownload,
@@ -48,8 +50,8 @@ export default function UiPreviewDrawer({
 
   const manifest = useMemo(() => {
     if (boardState) return boardState;
-    return extractUiManifestFromLua(lua);
-  }, [lua, boardState]);
+    return extractUiManifestFromLua(uiModuleLua || lua);
+  }, [uiModuleLua, lua, boardState]);
 
   const imageNodes = useMemo(() => {
     if (!manifest?.items) return [];
@@ -77,28 +79,39 @@ export default function UiPreviewDrawer({
     return Array.from(assets.values());
   }, [imageNodes]);
 
-  const handleDownloadAllAssets = async () => {
-    if (uniqueAssets.length === 0) return;
+  const handleDownloadFiles = async () => {
     const zip = new JSZip();
-    const folder = zip.folder("ui_assets");
     
-    const promises = uniqueAssets.map(async (asset, index) => {
-      try {
-        const response = await fetch(asset.url);
-        const blob = await response.blob();
-        const fileName = `${asset.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_${index}.png`;
-        folder.file(fileName, blob);
-      } catch (e) {
-        console.error("Failed to download asset:", asset.url, e);
-      }
-    });
+    // 1. UI Module
+    const uiCode = uiModuleLua || lua || "-- No UI code";
+    zip.file("UI.module.lua", uiCode);
 
-    await Promise.all(promises);
+    // 2. Systems Logic
+    if (systemsLua) {
+      zip.file("Systems.server.lua", systemsLua);
+    }
+
+    // 3. Assets (if any)
+    if (uniqueAssets.length > 0) {
+      const assetFolder = zip.folder("assets");
+      const promises = uniqueAssets.map(async (asset, index) => {
+        try {
+          const response = await fetch(asset.url);
+          const blob = await response.blob();
+          const fileName = `${asset.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_${index}.png`;
+          assetFolder.file(fileName, blob);
+        } catch (e) {
+          console.error("Failed to download asset:", asset.url, e);
+        }
+      });
+      await Promise.all(promises);
+    }
+
     const content = await zip.generateAsync({ type: "blob" });
     const url = URL.createObjectURL(content);
     const link = document.createElement("a");
     link.href = url;
-    link.download = "nexus_ui_assets.zip";
+    link.download = "nexus_ui_package.zip";
     link.click();
     URL.revokeObjectURL(url);
   };
@@ -322,7 +335,7 @@ export default function UiPreviewDrawer({
         <div className="p-3 h-[calc(100vh-128px)] overflow-hidden">
           {tab === "preview" && (
             <PreviewTab
-              lua={lua}
+              lua={uiModuleLua || lua}
               boardState={boardState}
               lastEvent={lastEvent}
               setLastEvent={setLastEvent}
@@ -337,10 +350,12 @@ export default function UiPreviewDrawer({
           )}
           {tab === "code" && (
             <CodeTab
+              uiModuleLua={uiModuleLua}
+              systemsLua={systemsLua}
               lua={lua}
               copySuccess={copySuccess}
               handleCopy={handleCopy}
-              onDownload={onDownload}
+              onDownload={handleDownloadFiles}
             />
           )}
           {tab === "functionality" && (
