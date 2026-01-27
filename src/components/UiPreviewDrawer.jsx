@@ -372,7 +372,7 @@ export default function UiPreviewDrawer({
           {tab === "assets" && (
             <AssetsTab
               uniqueAssets={uniqueAssets}
-              handleDownloadAllAssets={handleDownloadAllAssets}
+              handleDownloadAllAssets={handleDownloadFiles}
               assetIds={assetIds}
               setAssetIds={setAssetIds}
               isFinalizing={isFinalizing}
@@ -397,7 +397,7 @@ export default function UiPreviewDrawer({
         setAssetIds={setAssetIds}
         onFinalize={handleFinalizeAssets}
         isFinalizing={isFinalizing}
-        handleDownloadAllAssets={handleDownloadAllAssets}
+        handleDownloadAllAssets={handleDownloadFiles}
       />
     </div>
   );
