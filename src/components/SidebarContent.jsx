@@ -8,8 +8,6 @@ import React, {
 } from "react";
 import {
   Plus,
-  Edit,
-  Trash2,
   Search,
   Bookmark,
   BookmarkCheck,

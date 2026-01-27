@@ -133,6 +133,11 @@ export default function LuaPreviewRenderer({ lua, boardState, interactive = fals
   
   const isReady = box.w > 0 && box.h > 0;
 
+  // Calculate centering translation
+  // We want the center of the 'bounds' to be at the center of the 'box'
+  const translateX = isReady ? (canvasW / 2 - (bounds.x + bounds.w / 2)) : 0;
+  const translateY = isReady ? (canvasH / 2 - (bounds.y + bounds.h / 2)) : 0;
+
   return (
     <div ref={outerRef} className="w-full h-full flex items-center justify-center bg-[#050505] overflow-hidden relative min-h-[300px]">
       {/* Debug Info */}
@@ -146,7 +151,7 @@ export default function LuaPreviewRenderer({ lua, boardState, interactive = fals
           width: canvasW,
           height: canvasH,
           // Center the content bounds in the view
-          transform: `scale(${scale}) translate(${(canvasW / 2 - (bounds.x + bounds.w / 2))}px, ${(canvasH / 2 - (bounds.y + bounds.h / 2))}px)`,
+          transform: `scale(${scale}) translate(${translateX}px, ${translateY}px)`,
           transformOrigin: "center center",
           borderRadius: 12,
           flexShrink: 0,
@@ -201,6 +206,8 @@ function PreviewNode({ item, interactive, onAction }) {
   const w = parseFloat(item.w) || 0;
   const h = parseFloat(item.h) || 0;
 
+  const isScale = item.useScale === true;
+
   const type = String(item.type || "").toLowerCase();
   const fillColor = parseColor(item.fill);
   const strokeColor = parseColor(item.strokeColor);
@@ -228,10 +235,10 @@ function PreviewNode({ item, interactive, onAction }) {
 
   const style = {
     position: "absolute",
-    left: x,
-    top: y,
-    width: w,
-    height: h,
+    left: isScale ? `${x * 100}%` : x,
+    top: isScale ? `${y * 100}%` : y,
+    width: isScale ? `${w * 100}%` : w,
+    height: isScale ? `${h * 100}%` : h,
     zIndex: Number(item.zIndex) || 1,
     borderRadius: Number(item.radius) || 0,
     background: background,
