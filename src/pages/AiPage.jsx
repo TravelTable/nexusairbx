@@ -18,6 +18,7 @@ import { auth, db } from "../firebase";
 import { onAuthStateChanged, signInAnonymously } from "firebase/auth";
 import SidebarContent from "../components/SidebarContent";
 import PlanBadge from "../components/PlanBadge";
+import BetaBadge from "../components/BetaBadge";
 import AiTour from "../components/AiTour";
 import OnboardingContainer from "../components/OnboardingContainer";
 import UiPreviewDrawer from "../components/UiPreviewDrawer";
@@ -360,7 +361,10 @@ function AiPage() {
       <header className="border-b border-white/5 bg-black/40 backdrop-blur-xl sticky top-0 z-50">
         <div className="container mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-8">
-            <div className="text-2xl font-bold bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-transparent bg-clip-text cursor-pointer" onClick={() => navigate("/")}>NexusRBX</div>
+            <div className="flex items-center gap-2">
+              <div className="text-2xl font-bold bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-transparent bg-clip-text cursor-pointer" onClick={() => navigate("/")}>NexusRBX</div>
+              <BetaBadge className="mt-1" />
+            </div>
             
             <nav id="tour-mode-toggle" className="hidden md:flex items-center bg-gray-900/50 border border-gray-800 rounded-xl p-1">
               <button 

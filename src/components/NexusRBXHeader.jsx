@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import BetaBadge from "./BetaBadge";
 import { 
   ChevronDown, 
   Sparkles, 
@@ -102,7 +103,10 @@ function NexusRBXHeader({
           onClick={() => navigate("/")}
         >
           <Zap className="h-5 w-5 text-[#00f5d4] fill-[#00f5d4]" />
-          <span className="hidden sm:inline">NexusRBX</span>
+          <div className="flex items-center gap-1.5">
+            <span className="hidden sm:inline">NexusRBX</span>
+            <BetaBadge className="mt-0.5" />
+          </div>
         </div>
 
         {/* Desktop Nav */}

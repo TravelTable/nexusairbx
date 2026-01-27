@@ -2,6 +2,7 @@ import React from "react";
 import { motion } from "framer-motion";
 import { Loader, ChevronRight } from "lucide-react";
 import FloatingToolCard from "./FloatingToolCard";
+import BetaBadge from "../BetaBadge";
 
 export default function HeroSection({
   advertisedTools,
@@ -32,6 +33,8 @@ export default function HeroSection({
               <span className="relative inline-flex rounded-full h-2 w-2 bg-[#00f5d4]"></span>
             </span>
             Nexus-5 (GPT-5.2) Engine Now Live
+            <div className="h-3 w-px bg-white/20 mx-1" />
+            <BetaBadge />
           </div>
 
           <h1 className="text-4xl md:text-7xl font-bold tracking-tight bg-gradient-to-r from-[#9b5de5] via-[#f15bb5] to-[#00f5d4] text-transparent bg-clip-text leading-tight">

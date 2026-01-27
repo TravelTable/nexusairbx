@@ -80,8 +80,11 @@ export default function NexusRBXFooter({
           </a>
         </div>
       </div>
-      <div className="max-w-6xl mx-auto mt-6 text-center text-gray-500 text-sm">
-        © 2026 NexusRBX. All rights reserved.
+      <div className="max-w-6xl mx-auto mt-6 text-center text-gray-500 text-sm flex flex-col items-center gap-2">
+        <p>© 2026 NexusRBX. All rights reserved.</p>
+        <p className="text-[10px] opacity-60 max-w-md">
+          NexusRBX is currently in <span className="text-[#9b5de5] font-bold">Beta</span>. Features and AI models are subject to frequent updates and improvements. We appreciate your feedback as we build the future of Roblox development.
+        </p>
       </div>
     </footer>
   );
