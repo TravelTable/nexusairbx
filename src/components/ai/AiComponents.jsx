@@ -17,7 +17,8 @@ import {
   X,
   Settings2,
   Palette,
-  Type
+  Type,
+  Globe
 } from "lucide-react";
 import PLAN_INFO from "../../lib/planInfo";
 import { getGravatarUrl, getUserInitials, formatNumber, formatResetDate } from "../../lib/aiUtils";
