@@ -13,8 +13,13 @@ export function extractUiManifestFromLua(lua) {
     try {
       // Use a more robust decoding for large strings if needed, 
       // but atob is generally fine for standard base64.
-      const decoded = atob(v1Match[2].trim());
-      return attemptParse(decoded);
+      const decodedText = atob(v1Match[2].trim());
+      const decoded = JSON.parse(decodedText);
+      
+      // Robustly unwrap the manifest shape
+      const boardState = decoded?.boardState ?? decoded;
+      
+      return attemptParse(JSON.stringify(boardState));
     } catch (e) {
       console.warn("Failed to decode Base64 manifest", e);
     }

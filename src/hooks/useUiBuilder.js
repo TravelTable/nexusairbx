@@ -130,10 +130,13 @@ export function useUiBuilder(user, settings, refreshBilling, notify) {
         maxSystemsTokens: settings.uiMaxSystemsTokens,
       });
 
-      const { boardState, lua, tokensConsumed, warnings } = data;
+      const { boardState, lua, systemsLua, tokensConsumed, warnings } = data;
       
       const scriptId = cryptoRandomId();
       const resultTitle = content.slice(0, 30) + " (UI)";
+
+      // Combine main Lua and systems Lua for storage, but keep them clean
+      const fullLua = systemsLua ? `${lua}\n\n-- SYSTEMS\n${systemsLua}` : lua;
 
       await setDoc(doc(db, "users", user.uid, "scripts", scriptId), {
         title: resultTitle, chatId: activeChatId, type: "ui", updatedAt: serverTimestamp(), createdAt: serverTimestamp(),
@@ -141,14 +144,14 @@ export function useUiBuilder(user, settings, refreshBilling, notify) {
 
       const versionId = uuidv4();
       await setDoc(doc(db, "users", user.uid, "scripts", scriptId, "versions", versionId), {
-        code: lua, title: resultTitle, versionNumber: 1, createdAt: serverTimestamp(),
+        code: fullLua, title: resultTitle, versionNumber: 1, createdAt: serverTimestamp(),
       });
 
       const assistantMsgRef = doc(db, "users", user.uid, "chats", activeChatId, "messages", `${requestId}-assistant`);
       await setDoc(assistantMsgRef, {
         role: "assistant",
         content: "",
-        code: lua,
+        code: fullLua,
         projectId: scriptId,
         versionNumber: 1,
         metadata: {
@@ -160,7 +163,7 @@ export function useUiBuilder(user, settings, refreshBilling, notify) {
         requestId,
       });
 
-      const entry = { id: scriptId, requestId, createdAt: Date.now(), prompt: content, boardState, lua };
+      const entry = { id: scriptId, requestId, createdAt: Date.now(), prompt: content, boardState, lua: fullLua };
       setUiGenerations((prev) => [entry, ...prev.filter(g => g.requestId !== requestId)]);
       setActiveUiId(scriptId);
       
