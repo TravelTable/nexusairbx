@@ -34,10 +34,6 @@ import {
   Users,
   Loader
 } from "lucide-react";
-import { auth } from "../../firebase";
-
-const DEV_EMAIL = "jackt1263@gmail.com";
-
 export const CHAT_MODES = [
   { 
     id: "general", 
