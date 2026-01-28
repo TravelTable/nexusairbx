@@ -1,5 +1,5 @@
 import React, { useMemo } from "react";
-import { Bookmark, Edit, Trash2, Monitor, Smartphone } from "lucide-react";
+import { Edit, Trash2, Monitor, Smartphone } from "lucide-react";
 import { getVersionStr, fromNow } from "../../lib/sidebarUtils";
 
 const ScriptRow = React.memo(function ScriptRow({
@@ -8,8 +8,6 @@ const ScriptRow = React.memo(function ScriptRow({
   onSelect,
   onRename,
   onDelete,
-  onToggleSave,
-  isSaved,
   renaming,
   renameValue,
   setRenameValue,
@@ -108,19 +106,6 @@ const ScriptRow = React.memo(function ScriptRow({
       </div>
 
       <div className="flex items-center gap-1 ml-2 opacity-0 group-hover:opacity-100 transition-all duration-200 translate-x-2 group-hover:translate-x-0">
-        <button
-          className={`p-1.5 rounded-lg transition-colors ${isSaved ? "text-[#00f5d4] bg-[#00f5d4]/10" : "text-gray-500 hover:text-white hover:bg-white/5"}`}
-          title={isSaved ? "Unsave" : "Save"}
-          tabIndex={-1}
-          aria-label={isSaved ? "Unsave script" : "Save script"}
-          onClick={(e) => {
-            e.stopPropagation();
-            onToggleSave(script);
-          }}
-        >
-          <Bookmark className={`w-3.5 h-3.5 ${isSaved ? "fill-current" : ""}`} />
-        </button>
-        
         {!renaming && (
           <button
             className="p-1.5 rounded-lg text-gray-500 hover:text-white hover:bg-white/5 transition-colors"

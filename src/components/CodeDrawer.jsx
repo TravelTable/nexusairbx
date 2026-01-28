@@ -7,7 +7,7 @@ import React, {
   forwardRef,
 } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Copy, Download, Search, Minus, Plus, ArrowRight } from "lucide-react";
+import { X, Copy, Download, Search, Minus, Plus, ArrowRight, Bookmark } from "lucide-react";
 import { Light as SyntaxHighlighter } from "react-syntax-highlighter";
 import lua from "react-syntax-highlighter/dist/esm/languages/hljs/lua";
 import { atomOneDark } from "react-syntax-highlighter/dist/esm/styles/hljs";
@@ -905,6 +905,17 @@ function CodeDrawerUI({
         </div>
         {/* Bottom Buttons */}
         <div className="flex flex-wrap items-center gap-2 sm:gap-3 justify-end p-4 border-t border-gray-800 bg-[#161622] sticky bottom-0 z-10">
+          {!isSavedScript && (
+            <GlowButton
+              onClick={onSaveScript}
+              icon={Bookmark}
+              aria-label="Save to Library"
+              locked={saveSuccess}
+              glowColor="from-[#00f5d4] to-[#9b5de5]"
+            >
+              {saveSuccess ? "Saved!" : "Save to Library"}
+            </GlowButton>
+          )}
           <GlowButton
             onClick={onCopy}
             icon={Copy}

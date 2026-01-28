@@ -17,7 +17,6 @@ export function BillingProvider({ children, pollMs = 60_000 }) {
     paygRemaining: 0,
     totalRemaining: 0,
     resetsAt: null,
-    showCelebration: false,
   });
 
   useEffect(() => {
@@ -45,13 +44,11 @@ export function BillingProvider({ children, pollMs = 60_000 }) {
       const summary = summarizeEntitlements(ent);
       
       setState(prev => {
-        const upgraded = prev.plan === "FREE" && summary.plan !== "FREE";
         return { 
           ...prev, 
           loading: false, 
           error: null, 
           ...summary,
-          showCelebration: upgraded || prev.showCelebration
         };
       });
     } catch (err) {
@@ -67,7 +64,6 @@ export function BillingProvider({ children, pollMs = 60_000 }) {
 
   const actions = useMemo(() => ({
     refresh,
-    dismissCelebration: () => setState(s => ({ ...s, showCelebration: false })),
     checkout: async (priceId, mode) => user && startCheckout(priceId, mode),
     portal: async () => user && openPortal(),
   }), [user, refresh]);

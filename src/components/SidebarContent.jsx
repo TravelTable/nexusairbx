@@ -10,11 +10,11 @@ import {
   Plus,
   Search,
   Bookmark,
-  BookmarkCheck,
   Gamepad2,
   MessageSquare,
   Layout,
   ChevronRight,
+  FileCode,
 } from "lucide-react";
 import SidebarTab from "./SidebarTab";
 import Modal from "./Modal";
@@ -30,21 +30,11 @@ import {
 import {
   getFirestore,
   doc,
-  collection,
-  addDoc,
-  updateDoc,
   deleteDoc,
+  updateDoc,
   serverTimestamp,
 } from "firebase/firestore";
 import { useAiLibrary } from "../hooks/useAiLibrary";
-
-// --- Toast Hook for Error Surfaces ---
-function useToast() {
-  const [toast, setToast] = useState(null);
-  const show = (msg, opts = {}) => setToast({ msg, ...opts });
-  const clear = () => setToast(null);
-  return { toast, show, clear };
-}
 
 // --- SidebarContent component ---
 export default function SidebarContent({
@@ -77,15 +67,11 @@ export default function SidebarContent({
   gameProfile = null,
   user = null,
 }) {
-  // --- Billing ---
-  const { chats, savedScripts } = useAiLibrary(user);
+  // --- Library Data ---
+  const { chats } = useAiLibrary(user);
 
   // --- State ---
-
-  // Notification state for upgrade nudges
   const [notification, setNotification] = useState(null);
-
-  // Script management state
   const [showAddScriptModal, setShowAddScriptModal] = useState(false);
   const [newScriptTitle, setNewScriptTitle] = useState("");
   const [renamingScriptId, setRenamingScriptId] = useState(null);
@@ -107,12 +93,10 @@ export default function SidebarContent({
   const [chatDeleteLoading, setChatDeleteLoading] = useState(false);
   const [showChatHistoryModal, setShowChatHistoryModal] = useState(false);
 
-  // --- Toast for errors and notification ---
-  const { toast, show: showToast, clear: clearToast } = useToast();
+  // --- Library Search ---
+  const [savedSearch, setSavedSearch] = useState("");
 
-  // --- NotificationToast for upgrade nudges ---
-
-  // --- Memoized filtered and sorted scripts (deferred search) ---
+  // --- Memoized filtered and sorted scripts for current chat ---
   const deferredScriptSearch = useDeferredValue(localSearch.trim().toLowerCase());
   const chatScripts = useMemo(() => {
     if (!currentChatId) return [];
@@ -132,14 +116,11 @@ export default function SidebarContent({
         const au = Number(a.updatedAt) || 0;
         const bu = Number(b.updatedAt) || 0;
         if (bu !== au) return bu - au;
-        const ac = Number(a.createdAt) || 0;
-        const bc = Number(b.createdAt) || 0;
-        if (bc !== ac) return bc - ac;
         return (a.title || "").localeCompare(b.title || "");
       });
   }, [chatScripts, deferredScriptSearch]);
 
-  // --- Memoized filtered/sorted chats (deferred search) ---
+  // --- Memoized filtered/sorted chats ---
   const deferredChatSearch = useDeferredValue(chatSearch.trim().toLowerCase());
   const filteredChats = useMemo(() => {
     const list = Array.isArray(chats) ? chats : [];
@@ -159,47 +140,6 @@ export default function SidebarContent({
         return bu - au;
       });
   }, [chats, deferredChatSearch]);
-
-  // --- Memoized filtered/sorted saved scripts (deferred search, unique per scriptId+versionNumber) ---
-  const [savedSearch, setSavedSearch] = useState("");
-  const deferredSavedSearch = useDeferredValue(savedSearch.trim().toLowerCase());
-  const filteredSavedScripts = useMemo(() => {
-    const list = Array.isArray(savedScripts) ? savedScripts : [];
-    const q = deferredSavedSearch;
-    // Remove duplicates: only one per scriptId+versionNumber
-    const uniqueMap = new Map();
-    for (const s of list) {
-      const key = `${s.scriptId}__${s.versionNumber || getVersionStr(s)}`;
-      if (!uniqueMap.has(key)) uniqueMap.set(key, s);
-    }
-    const uniqueList = Array.from(uniqueMap.values());
-    const filtered = q
-      ? uniqueList.filter(
-          (s) =>
-            (s.title || "").toLowerCase().includes(q) ||
-            getVersionStr(s).toLowerCase().includes(q)
-        )
-      : uniqueList;
-    return filtered
-      .slice()
-      .sort((a, b) => {
-        const au = Number(a.updatedAt || a.createdAt || 0) || 0;
-        const bu = Number(b.updatedAt || b.createdAt || 0) || 0;
-        if (bu !== au) return bu - au;
-        const at = (a.title || "").localeCompare(b.title || "");
-        if (at !== 0) return at;
-        return getVersionStr(a).localeCompare(getVersionStr(b));
-      });
-  }, [savedScripts, deferredSavedSearch]);
-
-  // --- Saved version set (single source of truth) ---
-  const savedVersionSet = useMemo(() => {
-    const s = new Set();
-    for (const row of savedScripts) {
-      if (row.scriptId) s.add(keyForScript(row));
-    }
-    return s;
-  }, [savedScripts]);
 
   // --- Handlers ---
   const handleScriptSelect = useCallback(
@@ -228,57 +168,6 @@ export default function SidebarContent({
       setCurrentScriptId(null);
     }
   };
-
-  const handleToggleSaveScript = useCallback(
-    async (script) => {
-      if (!user) return;
-      const db = getFirestore();
-      let versionNumber = script.versionNumber || 1;
-      const versionStr = String(versionNumber);
-      const key = `${script.id}__${versionNumber}`;
-      const wasSaved = savedVersionSet.has(key);
-
-      try {
-        if (wasSaved) {
-          const match = savedScripts.find(
-            (s) =>
-              s.scriptId === script.id &&
-              (String(s.versionNumber) === versionStr || getVersionStr(s) === versionStr)
-          );
-          if (match) {
-            await deleteDoc(doc(db, "users", user.uid, "savedScripts", match.id));
-            showToast("Script unsaved.");
-          }
-        } else {
-          await addDoc(collection(db, "users", user.uid, "savedScripts"), {
-            scriptId: script.id,
-            title: script.title || "Untitled",
-            version: versionStr,
-            versionNumber: Number(versionNumber),
-            createdAt: serverTimestamp(),
-            updatedAt: serverTimestamp(),
-          });
-          showToast("Script saved!");
-        }
-      } catch (err) {
-        showToast("Failed to update saved status.");
-      }
-    },
-    [savedVersionSet, savedScripts, showToast, user]
-  );
-
-  const handleUnsaveBySavedId = useCallback(
-    async (savedDocId) => {
-      if (!user) return;
-      const db = getFirestore();
-      try {
-        await deleteDoc(doc(db, "users", user.uid, "savedScripts", savedDocId));
-      } catch (err) {
-        showToast("Failed to unsave script: " + err.message);
-      }
-    },
-    [showToast, user]
-  );
 
   const handleCreateChatLocal = useCallback(() => {
     window.dispatchEvent(new CustomEvent("nexus:startDraft"));
@@ -322,45 +211,6 @@ export default function SidebarContent({
     [isMobile, onSelect, onSelectChat]
   );
 
-  // --- Keydown handler for list actions ---
-  const scriptsContainerRef = useRef(null);
-  useEffect(() => {
-    const el = scriptsContainerRef.current;
-    if (!el) return;
-    const onKey = (e) => {
-      const active = document.activeElement;
-      if (!active || !el.contains(active)) return;
-      const id = active.getAttribute("data-id");
-      if (!id) return;
-      if (e.key === "F2") {
-        e.preventDefault();
-        setRenamingScriptId(id);
-        const script = filteredScripts.find((s) => s.id === id);
-        setRenameScriptTitle(script?.title || "");
-      }
-      if (e.key === "Delete") {
-        e.preventDefault();
-        setDeleteScriptId(id);
-      }
-    };
-    el.addEventListener("keydown", onKey);
-    return () => el.removeEventListener("keydown", onKey);
-  }, [filteredScripts]);
-
-  // --- Render skeleton shimmer ---
-  const renderSkeleton = () => (
-    <div className="animate-pulse flex items-center justify-between px-3 py-2 rounded-lg border border-gray-700 bg-gray-900/40">
-      <div className="flex-1 min-w-0">
-        <div className="h-4 bg-gray-700 rounded w-24 mb-1"></div>
-        <div className="h-3 bg-gray-800 rounded w-16"></div>
-      </div>
-      <div className="flex items-center gap-1 ml-2">
-        <div className="h-4 w-4 bg-gray-700 rounded"></div>
-        <div className="h-4 w-4 bg-gray-700 rounded"></div>
-      </div>
-    </div>
-  );
-
   // --- Chronological Grouping Logic ---
   const groupItemsByDate = useCallback((items) => {
     const groups = {
@@ -383,7 +233,6 @@ export default function SidebarContent({
     return Object.entries(groups).filter(([_, list]) => list.length > 0);
   }, []);
 
-  // --- Main Render ---
   return (
     <div className="flex flex-col h-full bg-[#050505]/50 backdrop-blur-xl">
       {/* 1. Active Context Header */}
@@ -463,10 +312,8 @@ export default function SidebarContent({
               />
             </div>
 
-            <div ref={scriptsContainerRef} className="space-y-6">
-              {scripts === undefined ? (
-                <div className="space-y-2">{renderSkeleton()}{renderSkeleton()}</div>
-              ) : chatScripts.length === 0 ? (
+            <div className="space-y-6">
+              {chatScripts.length === 0 ? (
                 <div className="text-center py-8 px-4 rounded-2xl bg-white/[0.02] border border-dashed border-white/5">
                   <Layout className="w-8 h-8 text-gray-700 mx-auto mb-2" />
                   <p className="text-xs text-gray-500">No scripts in this chat yet.</p>
@@ -481,7 +328,7 @@ export default function SidebarContent({
                     <div className="space-y-1">
                       {items.map((script) => (
                         <ScriptRow
-                          key={keyForScript(script)}
+                          key={script.id}
                           script={script}
                           isSelected={currentScriptId === script.id}
                           onSelect={() => handleScriptSelect(script.id)}
@@ -490,8 +337,6 @@ export default function SidebarContent({
                             setRenameScriptTitle(title);
                           }}
                           onDelete={setDeleteScriptId}
-                          onToggleSave={handleToggleSaveScript}
-                          isSaved={savedVersionSet.has(keyForScript(script))}
                           renaming={renamingScriptId === script.id}
                           renameValue={renameScriptTitle}
                           setRenameValue={setRenameScriptTitle}
@@ -506,74 +351,7 @@ export default function SidebarContent({
                   </div>
                 ))
               )}
-              {hasMoreScripts && !localSearch && (
-                <button
-                  onClick={onLoadMoreScripts}
-                  className="w-full py-2 mt-2 text-xs font-bold text-[#00f5d4] border border-[#00f5d4]/30 rounded hover:bg-[#00f5d4]/10 transition-colors"
-                >
-                  Load More Scripts
-                </button>
-              )}
             </div>
-            {/* Add Script Modal */}
-            {showAddScriptModal && (
-              <Modal
-                onClose={() => setShowAddScriptModal(false)}
-                title="Create New Script"
-              >
-                <div className="mb-4">
-                  <input
-                    className="w-full rounded bg-gray-800 border border-gray-700 px-2 py-2 text-white"
-                    placeholder="Script title"
-                    value={newScriptTitle}
-                    onChange={(e) => setNewScriptTitle(e.target.value)}
-                    autoFocus
-                  />
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    className="flex-1 py-2 rounded bg-[#00f5d4] text-black font-bold"
-                    onClick={handleCreateScriptClick}
-                    disabled={!newScriptTitle.trim()}
-                  >
-                    Create
-                  </button>
-                  <button
-                    className="flex-1 py-2 rounded bg-gray-700 text-gray-200 font-bold"
-                    onClick={() => setShowAddScriptModal(false)}
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </Modal>
-            )}
-            {/* Delete Script Modal */}
-            {deleteScriptId && (
-              <Modal
-                onClose={() => setDeleteScriptId(null)}
-                title="Delete Script"
-              >
-                <div className="mb-4 text-gray-200">
-                  Are you sure you want to delete this script? This cannot be undone.
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    className="flex-1 py-2 rounded bg-red-600 text-white font-bold disabled:opacity-60"
-                    onClick={handleDeleteScriptConfirm}
-                    disabled={deleteLoading}
-                  >
-                    {deleteLoading ? "Deleting..." : "Delete"}
-                  </button>
-                  <button
-                    className="flex-1 py-2 rounded bg-gray-700 text-gray-200 font-bold"
-                    onClick={() => setDeleteScriptId(null)}
-                    disabled={deleteLoading}
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </Modal>
-            )}
 
             {/* Versions section */}
             <div className="mt-6">
@@ -582,22 +360,17 @@ export default function SidebarContent({
               </div>
               {(!versionHistory || versionHistory.length === 0) && (
                 <div className="text-gray-400 text-sm">
-                  No versions for this script yet. Generate your first version by submitting a prompt on the AI Console.
+                  No versions for this script yet.
                 </div>
               )}
-              <div className="space-y-2" aria-live="polite">
+              <div className="space-y-2">
                 {(versionHistory ?? []).map((ver) => {
                   const version = getVersionStr(ver);
-                  const saveKey = `${currentScriptId}__${version}`;
-                  const isSaved = savedVersionSet.has(saveKey);
-                  const isSelected =
-                    selectedVersionId === version ||
-                    selectedVersionId === ver.id ||
-                    selectedVersionId === saveKey;
+                  const isSelected = selectedVersionId === version || selectedVersionId === ver.id;
 
                   return (
                     <button
-                      key={keyForScript({ ...ver, id: currentScriptId })}
+                      key={ver.id}
                       className={`w-full flex items-center justify-between px-3 py-2 border-b border-gray-800 last:border-b-0 rounded text-left group ${
                         isSelected ? "bg-gray-800/60 border-[#00f5d4]" : "bg-gray-900/40 border-gray-700"
                       }`}
@@ -610,51 +383,23 @@ export default function SidebarContent({
                               title: ver.title || currentScript?.title || "Script",
                               versionNumber: ver.versionNumber || getVersionStr(ver),
                               explanation: ver.explanation || "",
-                              savedScriptId: `${currentScriptId}__${getVersionStr(ver)}`,
                             },
                           })
                         );
                       }}
-                      aria-label={`Open version ${version}`}
                     >
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                          <span className="font-semibold text-white truncate block max-w-[10rem] md:max-w-[14rem]">
+                          <span className="font-semibold text-white truncate block">
                             {ver.title || currentScript?.title || "Script"}
                           </span>
-                          {version && (
-                            <span className="inline-block px-2 py-0.5 rounded bg-[#9b5de5]/20 text-[#9b5de5] text-xs font-semibold ml-2">
-                              v{version}
-                            </span>
-                          )}
+                          <span className="inline-block px-2 py-0.5 rounded bg-[#9b5de5]/20 text-[#9b5de5] text-xs font-semibold ml-2">
+                            v{version}
+                          </span>
                         </div>
                         <div className="text-xs text-gray-400">
                           {ver.createdAt ? new Date(ver.createdAt).toLocaleString() : ""}
                         </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <button
-                          className="p-1 rounded hover:bg-gray-800"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (savedVersionSet.has(saveKey)) {
-                              handleUnsaveBySavedId(saveKey);
-                            } else {
-                              handleToggleSaveScript({
-                                id: currentScriptId,
-                                title: ver.title || currentScript?.title || "Script",
-                                versionNumber: ver.versionNumber,
-                              });
-                            }
-                          }}
-                          aria-label={isSaved ? "Unsave version" : "Save version"}
-                        >
-                          {isSaved ? (
-                            <BookmarkCheck className="h-4 w-4 text-[#00f5d4]" />
-                          ) : (
-                            <Bookmark className="h-4 w-4 text-gray-400" />
-                          )}
-                        </button>
                       </div>
                     </button>
                   );
@@ -785,56 +530,38 @@ export default function SidebarContent({
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-500 group-focus-within:text-[#00f5d4] transition-colors" />
               <input
                 className="w-full rounded-xl bg-white/[0.03] border border-white/5 px-9 py-2 text-xs text-white outline-none focus:border-[#00f5d4]/30 focus:bg-white/[0.05] transition-all"
-                placeholder="Search saved scripts..."
+                placeholder="Search library..."
                 value={savedSearch}
                 onChange={(e) => setSavedSearch(e.target.value)}
               />
             </div>
 
             <div className="space-y-2">
-              {savedScripts.length === 0 ? (
+              {scripts.length === 0 ? (
                 <div className="text-center py-8 px-4 rounded-2xl bg-white/[0.02] border border-dashed border-white/5">
-                  <Bookmark className="w-8 h-8 text-gray-700 mx-auto mb-2" />
-                  <p className="text-xs text-gray-500">No saved scripts yet.</p>
+                  <FileCode className="w-8 h-8 text-gray-700 mx-auto mb-2" />
+                  <p className="text-xs text-gray-500">Your library is empty.</p>
                 </div>
               ) : (
-                filteredSavedScripts.map((row) => (
+                scripts
+                  .filter(s => !savedSearch || (s.title || "").toLowerCase().includes(savedSearch.toLowerCase()))
+                  .map((script) => (
                   <div
-                    key={row.id}
+                    key={script.id}
                     className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl border border-white/5 bg-white/[0.02] hover:bg-white/[0.05] hover:border-white/10 transition-all duration-300 text-left group cursor-pointer"
-                    onClick={() => {
-                      window.dispatchEvent(
-                        new CustomEvent("nexus:openCodeDrawer", {
-                          detail: {
-                            scriptId: row.scriptId,
-                            code: row.code || "-- No code found",
-                            title: row.title,
-                            versionNumber: getVersionStr(row),
-                            explanation: row.explanation || "",
-                            savedScriptId: row.id,
-                          },
-                        })
-                      );
-                    }}
+                    onClick={() => handleScriptSelect(script.id)}
                   >
                     <div className="flex-1 min-w-0">
                       <div className="flex flex-col gap-0.5">
                         <span className="font-bold text-sm text-gray-300 group-hover:text-white truncate">
-                          {row.title || "Untitled"}
+                          {script.title || "Untitled Script"}
                         </span>
                         <span className="text-[10px] text-gray-500">
-                          Saved {fromNow(row.updatedAt)}
+                          {script.type || 'logic'} • {fromNow(script.updatedAt)}
                         </span>
                       </div>
                     </div>
-                    <div className="flex items-center gap-1 ml-2 opacity-0 group-hover:opacity-100 transition-all translate-x-2 group-hover:translate-x-0">
-                      <button
-                        className="p-1.5 rounded-lg text-[#00f5d4] bg-[#00f5d4]/10"
-                        onClick={(e) => { e.stopPropagation(); handleUnsaveBySavedId(row.id); }}
-                      >
-                        <Bookmark className="w-3.5 h-3.5 fill-current" />
-                      </button>
-                    </div>
+                    <ChevronRight className="w-4 h-4 text-gray-700 group-hover:text-white transition-colors" />
                   </div>
                 ))
               )}
@@ -842,19 +569,6 @@ export default function SidebarContent({
           </div>
         )}
       </div>
-
-      {/* Toast for errors */}
-      {toast && toast.msg && (
-        <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-red-700 text-white px-4 py-2 rounded shadow-lg z-50">
-          {toast.msg}
-          <button
-            className="ml-4 text-white underline"
-            onClick={clearToast}
-          >
-            Dismiss
-          </button>
-        </div>
-      )}
 
       {/* NotificationToast for upgrade nudges */}
       <NotificationToast

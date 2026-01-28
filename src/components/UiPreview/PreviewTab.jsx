@@ -1,7 +1,6 @@
 import React, { useState } from "react";
-import { AlertCircle, Loader, Settings2, Sliders, Grid3X3, Heart, Sparkles, Smartphone, Tablet, Monitor, MousePointer2, Move } from "lucide-react";
+import { AlertCircle, Loader, Settings2, Sliders, Grid3X3, Sparkles, Smartphone, Tablet, Monitor, MousePointer2, Move } from "lucide-react";
 import LuaPreviewRenderer, { PREVIEW_DEVICES } from "../../preview/LuaPreviewRenderer";
-import { addFavorite } from "../../lib/uiBuilderApi";
 import { auth } from "../../firebase";
 
 const DEV_EMAIL = "jackt1263@gmail.com";
@@ -143,31 +142,6 @@ export default function PreviewTab({
           </div>
         </div>
 
-        {/* Favorite Button */}
-        {lastEvent && (
-          <div className="absolute bottom-3 left-3 animate-in fade-in slide-in-from-left-4 duration-300">
-            <button
-              onClick={async () => {
-                if (!currentUser) return;
-                try {
-                  const token = await currentUser.getIdToken();
-                  await addFavorite({
-                    token,
-                    name: lastEvent.label || lastEvent.id,
-                    component: lastEvent
-                  });
-                  alert("Added to favorites!");
-                } catch (e) {
-                  console.error(e);
-                }
-              }}
-              className="flex items-center gap-2 bg-black/80 backdrop-blur-xl border border-white/10 rounded-full px-4 py-2 shadow-2xl text-white hover:text-red-400 transition-colors group/fav"
-            >
-              <Heart className="w-4 h-4 group-hover/fav:fill-red-400" />
-              <span className="text-xs font-bold">Favorite Component</span>
-            </button>
-          </div>
-        )}
 
         {!lua && !boardState && (
           <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#0b1220]/90 backdrop-blur-md text-gray-400 text-sm gap-3">

@@ -23,7 +23,6 @@ import SidebarContent from "../components/SidebarContent";
 import NexusRBXHeader from "../components/NexusRBXHeader";
 import AiTour from "../components/AiTour";
 import OnboardingContainer from "../components/OnboardingContainer";
-import CelebrationAnimation from "../components/CelebrationAnimation";
 import UiPreviewDrawer from "../components/UiPreviewDrawer";
 import CodeDrawer from "../components/CodeDrawer";
 import SignInNudgeModal from "../components/SignInNudgeModal";
@@ -64,7 +63,7 @@ import GameProfileWizard from "../components/ai/GameProfileWizard";
 
 function AiPage() {
   // 1. External Hooks
-  const { plan, totalRemaining, subLimit, resetsAt, refresh: refreshBilling, showCelebration, dismissCelebration } = useBilling();
+  const { plan, totalRemaining, subLimit, resetsAt, refresh: refreshBilling } = useBilling();
   const { settings, updateSettings } = useSettings();
   const navigate = useNavigate();
   const location = useLocation();
@@ -1058,14 +1057,6 @@ function AiPage() {
         <OnboardingContainer 
           forceShow={true} 
           onComplete={() => setShowOnboarding(false)} 
-        />
-      )}
-
-      {showCelebration && (
-        <CelebrationAnimation 
-          onComplete={dismissCelebration}
-          title="Welcome to Nexus Pro!"
-          subtitle="Your token limit has been increased and GPT-5.2 is now active."
         />
       )}
 

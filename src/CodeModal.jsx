@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
 import {
-  X, Copy, Check, Download, Star, StarOff, Trash2, Edit, Save, Loader, Share2, Plus, Wand2, Info, ListChecks
+  X, Copy, Check, Download, Bookmark, Trash2, Edit, Save, Loader, Share2, Plus, Wand2, Info, ListChecks
 } from "lucide-react";
 import { useBilling } from "./context/BillingContext";
 import { motion, AnimatePresence } from "framer-motion";
@@ -19,15 +19,6 @@ async function fetchScript(id) {
 async function fetchVersions(baseScriptId) {
   const res = await fetch(`${API_BASE}/scripts/${baseScriptId}/versions`);
   if (!res.ok) throw new Error("Failed to fetch versions");
-  return await res.json();
-}
-async function updateFavorite(id, favorite) {
-  const res = await fetch(`${API_BASE}/scripts/${id}/favorite`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ favorite })
-  });
-  if (!res.ok) throw new Error("Failed to update favorite");
   return await res.json();
 }
 async function updateTags(id, tags) {
@@ -78,8 +69,6 @@ export default function CodeModal({
   const [script, setScript] = useState(null);
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
-const [favorite, setFavorite] = useState(false);
-const [favoriteLoading, setFavoriteLoading] = useState(false);
 const [tags, setTags] = useState([]);
 const [tagInput, setTagInput] = useState("");
 const [tagEdit, setTagEdit] = useState(false);
@@ -105,11 +94,10 @@ useEffect(() => {
   setScript(null);
   setAllVersions([]);
   setSelectedVersion(null);
-  fetchScript(scriptId)
-    .then(res => {
-      setScript(res);
-      setFavorite(res.favorite || false);
-      setTags(res.tags || []);
+    fetchScript(scriptId)
+      .then(res => {
+        setScript(res);
+        setTags(res.tags || []);
       setSelectedVersion(res);
       if (res.baseScriptId) {
         setVersionLoading(true);
@@ -155,24 +143,6 @@ useEffect(() => {
     setTimeout(() => setShareCopied(false), 1500);
   };
 
-  // Favorite
-const handleFavorite = async () => {
-  setFavoriteLoading(true);
-  setActionError("");
-  setActionSuccess("");
-  setFavorite(fav => !fav);
-  try {
-    const updated = await updateFavorite(selectedVersion.id, !favorite);
-    setFavorite(updated.favorite);
-    setSelectedVersion(sv => ({ ...sv, favorite: updated.favorite }));
-    setScript(s => ({ ...s, favorite: updated.favorite }));
-    setActionSuccess(updated.favorite ? "Marked as favorite!" : "Removed from favorites.");
-  } catch {
-    setFavorite(favorite);
-    setActionError("Failed to update favorite.");
-  }
-  setFavoriteLoading(false);
-};
 
   // Tagging
 const handleAddTag = async () => {
@@ -234,7 +204,6 @@ const handleDelete = async () => {
   // Version switch
 const handleVersionSwitch = (ver) => {
   setSelectedVersion(ver);
-  setFavorite(ver.favorite || false);
   setTags(ver.tags || []);
   setEditMode(false);
   setAiResult("");
@@ -259,7 +228,6 @@ const handleEditSave = async () => {
       code: editCode,
       language: script.language,
       tags: tags,
-      favorite: favorite,
       baseScriptId: script.baseScriptId || script.id
     };
     const res = await fetch(`${API_BASE}/scripts`, {
@@ -338,9 +306,6 @@ const handleEditSave = async () => {
               <div className="flex items-center gap-2">
                 <span className="font-bold text-lg text-[#9b5de5]">{selectedVersion?.title || "Script"}</span>
                 <span className="text-xs text-[#00f5d4]">v{selectedVersion?.version || 1}</span>
-                {favorite && (
-                  <Star className="h-5 w-5 text-[#fbbf24] ml-2" fill="#fbbf24" />
-                )}
               </div>
               <div className="flex flex-wrap gap-2 mt-1">
                 {tags.map(tag => (
@@ -435,18 +400,6 @@ const handleEditSave = async () => {
   </button>
   {!readOnly && (
     <>
-      <button
-        className={`flex items-center gap-1 px-3 py-1 rounded text-xs font-bold ${
-          favorite
-            ? "bg-[#fbbf24]/20 text-[#fbbf24] hover:bg-[#fbbf24]/40"
-            : "bg-gray-800 text-gray-400 hover:bg-gray-700"
-        }`}
-        onClick={handleFavorite}
-        disabled={favoriteLoading || loading}
-      >
-        {favoriteLoading ? <Loader className="h-4 w-4 animate-spin" /> : (favorite ? <Star className="h-4 w-4" fill="#fbbf24" /> : <StarOff className="h-4 w-4" />)}
-        {favorite ? "Unfavorite" : "Favorite"}
-      </button>
       <button
         className="flex items-center gap-1 px-3 py-1 rounded bg-gray-800 text-gray-400 hover:bg-gray-700 text-xs font-bold"
         onClick={handleEdit}

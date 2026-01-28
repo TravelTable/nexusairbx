@@ -36,7 +36,8 @@ import {
   Loader,
   Send,
   X,
-  ChevronRight
+  ChevronRight,
+  Bookmark
 } from "lucide-react";
 export const CHAT_MODES = [
   { 
@@ -532,6 +533,7 @@ export default function ChatView({
                           qaReport={m.metadata?.qaReport}
                           actions={[
                             { label: "Push to Studio", icon: <Send className="w-4 h-4" />, onClick: () => onPushToStudio(m.artifactId, "script", { code: m.uiModuleLua || m.code, title: m.title }) },
+                            { label: "Save to Library", icon: <Bookmark className="w-4 h-4" />, onClick: () => window.dispatchEvent(new CustomEvent("nexus:saveScript", { detail: { name: m.title || "Security Audit", code: m.uiModuleLua || m.code } })) },
                             { label: "Share with Team", icon: <Users className="w-4 h-4" />, onClick: () => setSharingId(m.id) },
                             { label: "Copy Code", icon: copiedId === m.id ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />, onClick: () => handleCopy(m.uiModuleLua || m.code, m.id), primary: copiedId === m.id }
                           ]}
@@ -554,6 +556,7 @@ export default function ChatView({
                           qaReport={m.metadata?.qaReport}
                           actions={[
                             { label: "Push to Studio", icon: <Send className="w-4 h-4" />, onClick: () => onPushToStudio(m.artifactId, "script", { code: m.uiModuleLua || m.code, title: m.title }) },
+                            { label: "Save to Library", icon: <Bookmark className="w-4 h-4" />, onClick: () => window.dispatchEvent(new CustomEvent("nexus:saveScript", { detail: { name: m.title || "Performance Audit", code: m.uiModuleLua || m.code } })) },
                             { label: "Share with Team", icon: <Users className="w-4 h-4" />, onClick: () => setSharingId(m.id) },
                             { label: "Copy Code", icon: copiedId === m.id ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />, onClick: () => handleCopy(m.uiModuleLua || m.code, m.id), primary: copiedId === m.id }
                           ]}
@@ -611,6 +614,7 @@ export default function ChatView({
                           qaReport={m.metadata?.qaReport}
                           actions={[
                             { label: "Push to Studio", icon: <Send className="w-4 h-4" />, onClick: () => onPushToStudio(m.artifactId, "script", { code: m.uiModuleLua || m.code, title: m.title }) },
+                            { label: "Save to Library", icon: <Bookmark className="w-4 h-4" />, onClick: () => window.dispatchEvent(new CustomEvent("nexus:saveScript", { detail: { name: m.title || "Generated Script", code: m.uiModuleLua || m.code } })) },
                             { label: "Share with Team", icon: <Users className="w-4 h-4" />, onClick: () => setSharingId(m.id) },
                             { label: "Copy Code", icon: copiedId === m.id ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />, onClick: () => handleCopy(m.uiModuleLua || m.code, m.id), primary: true }
                           ]}

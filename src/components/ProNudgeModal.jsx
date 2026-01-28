@@ -1,6 +1,6 @@
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Zap, ShieldCheck, Star, Download, ExternalLink } from "lucide-react";
+import { X, Zap, ShieldCheck, Bookmark, Download, ExternalLink } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 export default function ProNudgeModal({ isOpen, onClose, reason = "this icon" }) {
@@ -55,9 +55,9 @@ export default function ProNudgeModal({ isOpen, onClose, reason = "this icon" })
 
             <div className="space-y-3 mb-8">
               <BenefitItem 
-                icon={Star} 
-                title="Unlimited Pro Icons" 
-                desc="Access our entire library of 5,000+ premium assets."
+                icon={Bookmark} 
+                title="Saved Scripts Library" 
+                desc="Save and organize your AI-generated code snippets."
                 color="text-[#9b5de5]"
               />
               <BenefitItem 
