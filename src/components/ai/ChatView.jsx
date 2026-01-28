@@ -33,7 +33,10 @@ import {
   Settings2,
   Plus,
   Users,
-  Loader
+  Loader,
+  Send,
+  X,
+  ChevronRight
 } from "lucide-react";
 export const CHAT_MODES = [
   { 
