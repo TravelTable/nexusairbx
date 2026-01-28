@@ -351,6 +351,24 @@ export default function ChatView({
                     />
                   )}
 
+                  {m.role === 'assistant' && m.options && m.options.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mt-4 mb-2">
+                      {m.options.map((opt, idx) => (
+                        <button
+                          key={idx}
+                          onClick={() => {
+                            if (opt.mode) onModeChange(opt.mode);
+                            if (opt.prompt) onQuickStart(opt.prompt);
+                          }}
+                          className="px-4 py-2 rounded-xl bg-[#00f5d4]/10 border border-[#00f5d4]/20 text-[#00f5d4] text-xs font-black uppercase tracking-widest hover:bg-[#00f5d4]/20 transition-all flex items-center gap-2 group"
+                        >
+                          {opt.label}
+                          <ChevronRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
                   {m.content && m.role === 'user' && (
                     <div className="text-[15px] md:text-[16px] whitespace-pre-wrap leading-relaxed text-white font-medium">
                       {m.content}
@@ -409,7 +427,38 @@ export default function ChatView({
 
                   {m.role === 'assistant' && (m.uiModuleLua || m.code) && (
                     <div className="mt-6 space-y-4">
-                      {m.metadata?.structuredData?.report ? (
+                      {activeMode === 'general' && !m.metadata?.structuredData ? (
+                        <div className="p-4 rounded-2xl bg-black/40 border border-white/5 space-y-3">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <Code2 className="w-4 h-4 text-gray-500" />
+                              <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Generated Luau Code</span>
+                            </div>
+                            <button 
+                              onClick={() => {
+                                window.dispatchEvent(new CustomEvent("nexus:openCodeDrawer", {
+                                  detail: {
+                                    code: m.uiModuleLua || m.code,
+                                    title: m.title || "Generated Script",
+                                    explanation: m.explanation || "",
+                                    versionNumber: m.versionNumber || 1
+                                  }
+                                }));
+                              }}
+                              className="px-3 py-1 rounded-lg bg-white/5 border border-white/10 text-[10px] font-black text-white uppercase tracking-widest hover:bg-white/10 transition-all"
+                            >
+                              View Full Code
+                            </button>
+                          </div>
+                          <div className="relative group">
+                            <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[#121212] pointer-events-none" />
+                            <pre className="text-[12px] font-mono text-gray-400 overflow-hidden max-h-[100px] leading-relaxed">
+                              { (m.uiModuleLua || m.code).split('\n').slice(0, 5).join('\n') }
+                              { (m.uiModuleLua || m.code).split('\n').length > 5 && '\n...' }
+                            </pre>
+                          </div>
+                        </div>
+                      ) : m.metadata?.structuredData?.report ? (
                         <ArtifactCard
                           title="Security Audit"
                           subtitle="Vulnerability Scan Results"
@@ -531,7 +580,15 @@ export default function ChatView({
               <div className="flex justify-start gap-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
                 <NexusRBXAvatar isThinking={true} mode={activeMode} />
                 <div className="max-w-[85%] md:max-w-[80%] order-2 space-y-4">
-                  {pendingMessage.content && (
+                  {!pendingMessage.content ? (
+                    <div className="p-6 rounded-3xl bg-[#121212]/80 border border-white/10 backdrop-blur-xl shadow-2xl w-full min-w-[300px]">
+                      <div className="flex flex-col gap-4">
+                        <div className="h-4 w-3/4 bg-white/5 rounded-full animate-pulse" />
+                        <div className="h-4 w-1/2 bg-white/5 rounded-full animate-pulse" />
+                        <div className="h-20 w-full bg-white/5 rounded-2xl animate-pulse mt-2" />
+                      </div>
+                    </div>
+                  ) : (
                     <LiveCodeViewer content={pendingMessage.content} />
                   )}
                 </div>

@@ -22,6 +22,7 @@ import BetaBadge from "../components/BetaBadge";
 import AiTour from "../components/AiTour";
 import OnboardingContainer from "../components/OnboardingContainer";
 import UiPreviewDrawer from "../components/UiPreviewDrawer";
+import CodeDrawer from "../components/CodeDrawer";
 import SignInNudgeModal from "../components/SignInNudgeModal";
 import {
   TokenBar,
@@ -84,6 +85,10 @@ function AiPage() {
   const [editingCustomMode, setEditingCustomMode] = useState(null);
   const [projectContext, setProjectContext] = useState(null);
   const [teams, setTeams] = useState([]);
+
+  // Code Drawer State
+  const [codeDrawerOpen, setCodeDrawerOpen] = useState(false);
+  const [codeDrawerData, setCodeDrawerData] = useState({ code: "", title: "", explanation: "" });
 
   // 3. Custom Hooks
   const notify = useCallback(({ message, type = "info" }) => {
@@ -222,6 +227,17 @@ function AiPage() {
     }
   }, [location]);
 
+  // Listen for Code Drawer events
+  useEffect(() => {
+    const handleOpenCodeDrawer = (e) => {
+      const { code, title, explanation } = e.detail;
+      setCodeDrawerData({ code, title, explanation });
+      setCodeDrawerOpen(true);
+    };
+    window.addEventListener("nexus:openCodeDrawer", handleOpenCodeDrawer);
+    return () => window.removeEventListener("nexus:openCodeDrawer", handleOpenCodeDrawer);
+  }, []);
+
   // Load Project Context & Teams
   useEffect(() => {
     if (!user) return;
@@ -334,6 +350,10 @@ function AiPage() {
     try {
       const requestId = uuidv4();
       
+      // 1. Start a new chat session for this prompt
+      chat.startNewChat();
+      chat.updateChatMode(null, effectiveMode);
+
       // Set a temporary pending message so the user sees immediate feedback
       chat.setPendingMessage({ 
         role: "assistant", 
@@ -864,6 +884,18 @@ function AiPage() {
           </div>
         </main>
       </div>
+
+      <CodeDrawer
+        open={codeDrawerOpen}
+        onClose={() => setCodeDrawerOpen(false)}
+        code={codeDrawerData.code}
+        title={codeDrawerData.title}
+        explanation={codeDrawerData.explanation}
+        onSaveScript={async (title, code) => {
+          await scriptManager.handleCreateScript(title, code, "logic");
+          notify({ message: "Script saved to library!", type: "success" });
+        }}
+      />
 
       <UiPreviewDrawer
         open={ui.uiDrawerOpen}

@@ -221,7 +221,8 @@ export function useAiChat(user, settings, refreshBilling, notify) {
               
               setGenerationStage("Finalizing...");
               const assistantMsgRef = doc(db, "users", user.uid, "chats", activeChatId, "messages", `${requestId}-assistant`);
-              await setDoc(assistantMsgRef, {
+              
+              const msgPayload = {
                 role: "assistant",
                 content: "",
                 explanation: data.explanation || "",
@@ -234,7 +235,12 @@ export function useAiChat(user, settings, refreshBilling, notify) {
                 jobId,
                 artifactId: data.artifactId,
                 metadata: data.metadata || (data.qaReport ? { qaReport: data.qaReport } : null)
-              });
+              };
+
+              // If in general mode, we might want to include options if the backend provided them
+              if (data.options) msgPayload.options = data.options;
+
+              await setDoc(assistantMsgRef, msgPayload);
 
               await updateDoc(doc(db, "users", user.uid, "chats", activeChatId), {
                 updatedAt: serverTimestamp(),
