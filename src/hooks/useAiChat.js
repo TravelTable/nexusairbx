@@ -200,105 +200,64 @@ export function useAiChat(user, settings, refreshBilling, notify) {
 
       setGenerationStage("Generating...");
       
-      // 2. Connect to Stream
-      return new Promise((resolve, reject) => {
-        let eventSource = new EventSource(`${BACKEND_URL}/api/generate/stream?jobId=${jobId}&token=${token}&mode=${currentMode}`);
-        let fullText = "";
-        let retryCount = 0;
-        const maxRetries = 3;
-
-        const setupListeners = (es) => {
-          es.addEventListener("chunk", (e) => {
-            try {
-              const { chunk } = JSON.parse(e.data);
-              fullText += chunk;
-              setPendingMessage(prev => ({ ...prev, content: fullText, type: "chat" }));
-            } catch (err) {
-              console.error("Failed to parse chunk:", err);
-            }
-          });
-
-          es.addEventListener("done", async (e) => {
-            try {
-              const data = JSON.parse(e.data);
-              es.close();
-              
-              setGenerationStage("Finalizing...");
-              const assistantMsgRef = doc(db, "users", user.uid, "chats", activeChatId, "messages", `${requestId}-assistant`);
-              
-              const msgPayload = {
-                role: "assistant",
-                content: "",
-                explanation: data.explanation || "",
-                thought: data.thought || "",
-                code: data.content || "", // Backend sends 'content' for code in stream
-                projectId: data.projectId || null,
-                versionNumber: data.versionNumber || 1,
-                createdAt: serverTimestamp(),
-                requestId,
-                jobId,
-                artifactId: data.artifactId,
-                metadata: {
-                  ...(data.metadata || {}),
-                  mode: currentMode,
-                  qaReport: data.qaReport || null
-                }
-              };
-
-              // If in general mode, we might want to include options if the backend provided them
-              if (data.options) msgPayload.options = data.options;
-
-              await setDoc(assistantMsgRef, msgPayload);
-
-              await updateDoc(doc(db, "users", user.uid, "chats", activeChatId), {
-                updatedAt: serverTimestamp(),
-                lastMessage: content.slice(0, 50),
-              });
-              
-              // Notify UI hook if this was a UI generation
-              if (data.projectId) {
-                // Ensure we pass the new format if available
-                window.dispatchEvent(new CustomEvent("nexus:uiGenerated", { 
-                  detail: {
-                    ...data,
-                    uiModuleLua: data.uiModuleLua || data.content,
-                    systemsLua: data.systemsLua || ""
-                  } 
-                }));
-              }
-
-              refreshBilling();
-              setIsGenerating(false);
-              setPendingMessage(null);
-              setGenerationStage("");
-              resolve();
-            } catch (err) {
-              reject(err);
-            }
-          });
-
-          es.addEventListener("error", (e) => {
-            es.close();
-            if (retryCount < maxRetries && !fullText) {
-              retryCount++;
-              console.log(`Retrying connection (${retryCount}/${maxRetries})...`);
-              setTimeout(() => {
-                eventSource = new EventSource(`${BACKEND_URL}/api/generate/stream?jobId=${jobId}&token=${token}`);
-                setupListeners(eventSource);
-              }, 1000 * retryCount);
-            } else {
-              let errorMsg = "Generation failed";
-              try {
-                const data = JSON.parse(e.data);
-                if (data.error) errorMsg = data.error;
-              } catch (err) {}
-              reject(new Error(errorMsg));
-            }
-          });
-        };
-
-        setupListeners(eventSource);
+      // 2. Fetch Full Response (No Streaming)
+      const streamRes = await fetch(`${BACKEND_URL}/api/generate/stream?jobId=${jobId}&token=${token}&mode=${currentMode}&stream=false`, {
+        headers: { Authorization: `Bearer ${token}` }
       });
+
+      if (!streamRes.ok) {
+        throw new Error("Generation failed");
+      }
+
+      const data = await streamRes.json();
+      
+      setGenerationStage("Finalizing...");
+      const assistantMsgRef = doc(db, "users", user.uid, "chats", activeChatId, "messages", `${requestId}-assistant`);
+      
+      const msgPayload = {
+        role: "assistant",
+        content: "",
+        explanation: data.explanation || "",
+        thought: data.thought || "",
+        code: data.content || "", 
+        projectId: data.projectId || null,
+        versionNumber: data.versionNumber || 1,
+        createdAt: serverTimestamp(),
+        requestId,
+        jobId,
+        artifactId: data.artifactId,
+        metadata: {
+          ...(data.metadata || {}),
+          mode: currentMode,
+          qaReport: data.qaReport || null
+        }
+      };
+
+      if (data.options) msgPayload.options = data.options;
+      if (data.plan) msgPayload.plan = data.plan;
+
+      await setDoc(assistantMsgRef, msgPayload);
+
+      await updateDoc(doc(db, "users", user.uid, "chats", activeChatId), {
+        updatedAt: serverTimestamp(),
+        lastMessage: content.slice(0, 50),
+      });
+      
+      if (data.projectId) {
+        window.dispatchEvent(new CustomEvent("nexus:uiGenerated", { 
+          detail: {
+            ...data,
+            uiModuleLua: data.uiModuleLua || data.content,
+            systemsLua: data.systemsLua || ""
+          } 
+        }));
+      }
+
+      refreshBilling();
+      setIsGenerating(false);
+      setPendingMessage(null);
+      setGenerationStage("");
+      return;
 
     } catch (e) {
       console.error(e);

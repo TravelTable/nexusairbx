@@ -292,9 +292,16 @@ export const UnifiedStatusBar = ({ stage, isGenerating, mode = "general" }) => {
           <div className="w-2 h-2 rounded-full animate-ping absolute inset-0" style={{ backgroundColor: color }} />
           <div className="w-2 h-2 rounded-full relative" style={{ backgroundColor: color }} />
         </div>
-        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white">
-          {stage || "Nexus is working..."}
-        </span>
+        <div className="flex flex-col">
+          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white">
+            {stage || "Nexus is working..."}
+          </span>
+          {isGenerating && (
+            <span className="text-[8px] font-bold text-gray-500 uppercase tracking-widest">
+              Complex generations may take up to 5 minutes
+            </span>
+          )}
+        </div>
       </div>
       <div className="flex items-center gap-2">
         <div className="h-1 w-24 bg-white/10 rounded-full overflow-hidden">

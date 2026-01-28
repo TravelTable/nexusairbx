@@ -504,6 +504,18 @@ const SettingsPage = () => {
                     ))}
                   </select>
                 </div>
+                <div className="space-y-2">
+                  <label className="text-sm text-gray-400">Game Profile Wizard</label>
+                  <div className="flex items-center justify-between p-3 bg-black border border-gray-800 rounded-xl">
+                    <span className="text-xs text-gray-500">Enable the step-by-step game setup wizard</span>
+                    <button 
+                      onClick={() => updateSettings({ enableGameWizard: !settings.enableGameWizard })}
+                      className={`w-12 h-6 rounded-full transition-all relative ${settings.enableGameWizard !== false ? 'bg-[#00f5d4]' : 'bg-gray-700'}`}
+                    >
+                      <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${settings.enableGameWizard !== false ? 'left-7' : 'left-1'}`} />
+                    </button>
+                  </div>
+                </div>
               </div>
 
               <div className="mt-8 space-y-2">

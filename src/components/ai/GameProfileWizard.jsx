@@ -189,7 +189,7 @@ export default function GameProfileWizard({ isOpen, onClose, profile, onUpdate }
           onClick={step === 4 ? onClose : handleNext}
           className="px-8 py-2 rounded-lg bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-white font-bold text-sm shadow-lg hover:shadow-[#00f5d4]/20 transition-all flex items-center gap-2"
         >
-          {step === 4 ? "Finish" : "Next"}
+          {step === 4 ? "Finish" : "Skip / Next"}
           {step !== 4 && <ChevronRight className="w-4 h-4" />}
         </button>
       </div>

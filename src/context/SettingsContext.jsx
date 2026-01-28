@@ -11,6 +11,7 @@ const DEFAULT_SETTINGS = {
   verbosity: "concise",
   gameSpec: "",
   theme: "dark",
+  enableGameWizard: true,
 };
 
 export function SettingsProvider({ children }) {

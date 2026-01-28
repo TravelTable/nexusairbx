@@ -112,6 +112,16 @@ function AiPage() {
     if (el) el.focus();
   }, [chat.activeMode, chat.currentChatId]);
 
+  // Listen for startDraft event
+  useEffect(() => {
+    const handleStartDraft = () => {
+      chat.startNewChat();
+      setActiveTab("chat");
+    };
+    window.addEventListener("nexus:startDraft", handleStartDraft);
+    return () => window.removeEventListener("nexus:startDraft", handleStartDraft);
+  }, [chat]);
+
   // 4. Derived State
   const planKey = plan?.toLowerCase() || "free";
   const chatEndRef = useRef(null);
@@ -356,6 +366,9 @@ function AiPage() {
 
       // 1. Start a new chat session for this prompt if it's the first message
       if (!activeChatId) {
+        const expert = CHAT_MODES.find(m => m.id === effectiveMode) || CHAT_MODES[0];
+        const initialContext = `[SYSTEM CONTEXT: User has selected the ${expert.label} expert. ${expert.description}]`;
+
         const newChatRef = await addDoc(collection(db, "users", user.uid, "chats"), {
           title: currentPrompt.slice(0, 30) + (currentPrompt.length > 30 ? "..." : ""),
           activeMode: effectiveMode,
@@ -364,6 +377,9 @@ function AiPage() {
         });
         activeChatId = newChatRef.id;
         chat.setCurrentChatId(activeChatId);
+
+        // Save initial context as a hidden system message or just prepend to first prompt
+        // For now, we'll just ensure the Agent knows the mode.
       }
 
       // Set a temporary pending message so the user sees immediate feedback
@@ -371,7 +387,8 @@ function AiPage() {
         role: "assistant", 
         content: "", 
         type: "chat", 
-        prompt: currentPrompt 
+        prompt: currentPrompt,
+        mode: chat.chatMode
       });
       const p = currentPrompt.toLowerCase();
 
@@ -838,7 +855,14 @@ function AiPage() {
                     <Search className="w-3 h-3" /> Plan
                   </button>
                   <button 
-                    onClick={() => chat.setChatMode("act")}
+                    onClick={async () => {
+                      chat.setChatMode("act");
+                      // If we have a previous message that was a plan, auto-trigger act
+                      const lastMsg = chat.messages[chat.messages.length - 1];
+                      if (lastMsg && lastMsg.role === 'assistant' && (lastMsg.plan || lastMsg.explanation?.includes('<plan>'))) {
+                        await handlePromptSubmit(null, lastMsg.prompt || chat.messages[chat.messages.length - 2]?.content);
+                      }
+                    }}
                     className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 ${chat.chatMode === "act" ? "bg-gray-800 text-orange-400 shadow-sm" : "text-gray-500 hover:text-white"}`}
                   >
                     <Zap className="w-3 h-3" /> Act
@@ -948,12 +972,14 @@ function AiPage() {
         isRefining={ui.uiIsGenerating}
       />
 
-      <GameProfileWizard 
-        isOpen={game.showWizard}
-        onClose={() => game.setShowWizard(false)}
-        profile={game.profile}
-        onUpdate={game.updateProfile}
-      />
+      {settings.enableGameWizard !== false && (
+        <GameProfileWizard 
+          isOpen={game.showWizard}
+          onClose={() => game.setShowWizard(false)}
+          profile={game.profile}
+          onUpdate={game.updateProfile}
+        />
+      )}
 
       <SignInNudgeModal 
         isOpen={showSignInNudge} 
