@@ -6,7 +6,9 @@ import {
   ThoughtAccordion, 
   UiStatsBadge,
   SecurityReport,
-  PerformanceAudit
+  PerformanceAudit,
+  PlanTracker,
+  ArtifactCard
 } from "./AiComponents";
 import LiveCodeViewer from "./LiveCodeViewer";
 import ScriptLoadingBarContainer from "../ScriptLoadingBarContainer";
@@ -332,6 +334,10 @@ export default function ChatView({
                   
                   {m.role === 'assistant' && m.thought && <ThoughtAccordion thought={m.thought} />}
 
+                  {m.role === 'assistant' && m.explanation && m.explanation.includes('<plan>') && (
+                    <PlanTracker plan={m.explanation.match(/<plan>([\s\S]*?)<\/plan>/i)?.[1]} />
+                  )}
+
                   {m.content && m.role === 'user' && (
                     <div className="text-[15px] md:text-[16px] whitespace-pre-wrap leading-relaxed text-white font-medium">
                       {m.content}
@@ -390,104 +396,82 @@ export default function ChatView({
 
                   {m.role === 'assistant' && (m.uiModuleLua || m.code) && (
                     <div className="mt-6 space-y-4">
-                      {m.metadata?.structuredData?.report && (
-                        <SecurityReport 
-                          report={m.metadata.structuredData.report} 
-                          onFix={() => {
-                            // Logic to apply patchedCode
-                            window.dispatchEvent(new CustomEvent("nexus:applyCodePatch", { 
-                              detail: { code: m.metadata.structuredData.patchedCode || m.code, messageId: m.id } 
-                            }));
-                          }}
-                        />
-                      )}
-
-                      {m.metadata?.structuredData?.audit && (
-                        <PerformanceAudit 
-                          audit={m.metadata.structuredData.audit} 
-                          onOptimize={() => {
-                            // Logic to apply optimizedCode
-                            window.dispatchEvent(new CustomEvent("nexus:applyCodePatch", { 
-                              detail: { code: m.metadata.structuredData.optimizedCode || m.code, messageId: m.id } 
-                            }));
-                          }}
-                        />
-                      )}
-
-                      <div className="flex items-center gap-2 mb-2">
-                        <button 
-                          onClick={() => handleCopy(m.uiModuleLua || m.code, m.id)}
-                          className={`px-3 py-1.5 rounded-lg border text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 ${copiedId === m.id ? 'bg-green-500/10 border-green-500/50 text-green-500' : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10 hover:text-white'}`}
+                      {m.metadata?.structuredData?.report ? (
+                        <ArtifactCard
+                          title="Security Audit"
+                          subtitle="Vulnerability Scan Results"
+                          icon={ShieldAlert}
+                          type="report"
+                          actions={[
+                            { label: "Copy Code", icon: copiedId === m.id ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />, onClick: () => handleCopy(m.uiModuleLua || m.code, m.id), primary: copiedId === m.id }
+                          ]}
                         >
-                          {copiedId === m.id ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
-                          {copiedId === m.id ? 'Copied!' : 'Copy Code'}
-                        </button>
-                        {m.projectId && (
-                          <button 
-                            onClick={() => onViewUi(m)}
-                            className="px-3 py-1.5 rounded-lg bg-[#00f5d4]/10 border border-[#00f5d4]/20 text-[10px] font-black text-[#00f5d4] uppercase tracking-widest hover:bg-[#00f5d4]/20 transition-all flex items-center gap-2"
-                          >
-                            <Eye className="w-3 h-3" />
-                            Open Preview
-                          </button>
-                        )}
-                      </div>
-
-                      {m.metadata?.type === 'ui' || m.projectId ? (
-                        <div className="relative group/card overflow-hidden rounded-2xl border border-white/10 bg-black/60 hover:border-[#00f5d4]/50 transition-all shadow-2xl">
-                          <div className="aspect-video bg-gradient-to-br from-gray-900 to-black flex items-center justify-center relative overflow-hidden">
+                          <SecurityReport 
+                            report={m.metadata.structuredData.report} 
+                            onFix={() => {
+                              window.dispatchEvent(new CustomEvent("nexus:applyCodePatch", { 
+                                detail: { code: m.metadata.structuredData.patchedCode || m.code, messageId: m.id } 
+                              }));
+                            }}
+                          />
+                        </ArtifactCard>
+                      ) : m.metadata?.structuredData?.audit ? (
+                        <ArtifactCard
+                          title="Performance Audit"
+                          subtitle="Optimization Analysis"
+                          icon={Activity}
+                          type="report"
+                          actions={[
+                            { label: "Copy Code", icon: copiedId === m.id ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />, onClick: () => handleCopy(m.uiModuleLua || m.code, m.id), primary: copiedId === m.id }
+                          ]}
+                        >
+                          <PerformanceAudit 
+                            audit={m.metadata.structuredData.audit} 
+                            onOptimize={() => {
+                              window.dispatchEvent(new CustomEvent("nexus:applyCodePatch", { 
+                                detail: { code: m.metadata.structuredData.optimizedCode || m.code, messageId: m.id } 
+                              }));
+                            }}
+                          />
+                        </ArtifactCard>
+                      ) : m.metadata?.type === 'ui' || m.projectId ? (
+                        <ArtifactCard
+                          title={m.title || "GENERATED INTERFACE"}
+                          subtitle={`Luau Component v${m.versionNumber || 1}`}
+                          icon={Layout}
+                          type="ui"
+                          actions={[
+                            { label: "Preview", icon: <Eye className="w-4 h-4" />, onClick: () => onViewUi(m), primary: true },
+                            { label: "Refine", icon: <RefreshCw className="w-4 h-4" />, onClick: () => onRefine(m) },
+                            { label: "Copy Code", icon: copiedId === m.id ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />, onClick: () => handleCopy(m.uiModuleLua || m.code, m.id) }
+                          ]}
+                        >
+                          <div className="aspect-video bg-gradient-to-br from-gray-900 to-black flex items-center justify-center relative overflow-hidden rounded-b-2xl">
                             <div className="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]" />
-                            <Layout className="w-16 h-16 text-white/5 group-hover/card:text-[#00f5d4]/10 transition-colors" />
-                            
+                            <Layout className="w-16 h-16 text-white/5" />
                             <div className="absolute top-3 left-3 flex flex-wrap gap-2">
                               <UiStatsBadge label="Instances" value={m.metadata?.instanceCount || "42"} icon={Layers} />
                               <UiStatsBadge label="Responsive" value="Yes" icon={MousePointer2} />
                             </div>
-
-                            {/* Coming Soon Badge for Chat Preview */}
-                            <div className="absolute top-3 right-3">
-                              <div className={`px-2 py-1 rounded-md border backdrop-blur-md flex items-center gap-1.5 ${isDev ? 'bg-[#9b5de5]/20 border-[#9b5de5]/30 text-[#9b5de5]' : 'bg-[#00f5d4]/10 border-[#00f5d4]/20 text-[#00f5d4]'}`}>
-                                <Sparkles className="w-3 h-3 animate-pulse" />
-                                <span className="text-[9px] font-black uppercase tracking-widest">
-                                  {isDev ? "Dev Preview" : "Coming Soon"}
-                                </span>
-                              </div>
-                            </div>
-
-                            <div className="absolute inset-0 bg-black/80 opacity-0 group-hover/card:opacity-100 transition-opacity flex items-center justify-center gap-4">
-                              <button 
-                                onClick={() => onViewUi(m)}
-                                className="px-6 py-2.5 rounded-xl bg-white text-black font-black text-sm flex items-center gap-2 hover:scale-110 transition-transform"
-                              >
-                                <Eye className="w-4 h-4" /> PREVIEW
-                              </button>
-                              <button 
-                                onClick={() => onRefine(m)}
-                                className="px-6 py-2.5 rounded-xl bg-[#00f5d4] text-black font-black text-sm flex items-center justify-center gap-2 hover:scale-110 transition-transform"
-                              >
-                                <RefreshCw className="w-4 h-4" /> REFINE
-                              </button>
-                            </div>
                           </div>
-                          <div className="p-4 flex items-center justify-between bg-white/5 backdrop-blur-md">
-                            <div className="min-w-0">
-                              <div className="text-sm font-black text-white truncate tracking-tight">{m.title || "GENERATED INTERFACE"}</div>
-                              <div className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Luau Component v{m.versionNumber || 1}</div>
-                            </div>
-                            <div className="flex items-center gap-3">
-                               <div className="p-2 rounded-lg bg-[#00f5d4]/10">
-                                 <Sparkles className="w-4 h-4 text-[#00f5d4]" />
-                               </div>
-                            </div>
-                          </div>
-                        </div>
+                        </ArtifactCard>
                       ) : (
-                        <ScriptLoadingBarContainer
-                          filename={m.title || "Generated_Script.lua"}
-                          codeReady={!!(m.uiModuleLua || m.code)}
-                          loading={false}
-                          onView={() => onViewUi(m)}
-                        />
+                        <ArtifactCard
+                          title={m.title || "Generated Script"}
+                          subtitle="Luau Logic Module"
+                          icon={Code2}
+                          type="code"
+                          actions={[
+                            { label: "Copy Code", icon: copiedId === m.id ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />, onClick: () => handleCopy(m.uiModuleLua || m.code, m.id), primary: true }
+                          ]}
+                        >
+                          <ScriptLoadingBarContainer
+                            filename={m.title || "Generated_Script.lua"}
+                            codeReady={!!(m.uiModuleLua || m.code)}
+                            loading={false}
+                            onView={() => onViewUi(m)}
+                          />
+                        </ArtifactCard>
                       )}
                     </div>
                   )}
@@ -511,8 +495,6 @@ export default function ChatView({
               <div className="flex justify-start gap-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
                 <NexusRBXAvatar isThinking={true} mode={activeMode} />
                 <div className="max-w-[85%] md:max-w-[80%] order-2 space-y-4">
-                  <GenerationStatusBar currentStage={generationStage || "Nexus is working..."} />
-                  
                   {pendingMessage.content && (
                     <LiveCodeViewer content={pendingMessage.content} />
                   )}

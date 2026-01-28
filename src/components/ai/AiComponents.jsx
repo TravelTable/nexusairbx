@@ -4,6 +4,8 @@ import {
   ChevronDown, 
   ChevronUp, 
   Sparkles, 
+  ListTodo,
+  CheckCircle,
   ShieldAlert, 
   ShieldCheck, 
   Zap, 
@@ -145,11 +147,84 @@ export const UiStatsBadge = ({ label, value, icon: Icon }) => (
   </div>
 );
 
+export const PlanTracker = ({ plan }) => {
+  if (!plan) return null;
+  
+  // Parse bullet points from the plan text
+  const steps = plan.split('\n')
+    .map(line => line.replace(/^[•\-\d\.\s]+/, '').trim())
+    .filter(line => line.length > 0);
+
+  return (
+    <div className="mt-4 mb-6 rounded-2xl border border-white/10 bg-white/5 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-500">
+      <div className="px-4 py-3 border-b border-white/5 flex items-center gap-2 bg-white/5">
+        <ListTodo className="w-4 h-4 text-[#00f5d4]" />
+        <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">Execution Plan</span>
+      </div>
+      <div className="p-4 space-y-3">
+        {steps.map((step, i) => (
+          <div key={i} className="flex items-start gap-3 group">
+            <div className="mt-1 w-4 h-4 rounded-full border border-white/20 flex items-center justify-center group-hover:border-[#00f5d4] transition-colors">
+              <div className="w-1.5 h-1.5 rounded-full bg-white/10 group-hover:bg-[#00f5d4] transition-colors" />
+            </div>
+            <span className="text-xs text-gray-300 group-hover:text-white transition-colors leading-relaxed">{step}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+export const UnifiedStatusBar = ({ stage, isGenerating, mode = "general" }) => {
+  if (!isGenerating && !stage) return null;
+
+  const modeColors = {
+    general: "#00f5d4",
+    ui: "#00f5d4",
+    logic: "#9b5de5",
+    system: "#00bbf9",
+    animator: "#f15bb5",
+    data: "#fee440",
+    performance: "#00f5d4",
+    security: "#ff006e",
+  };
+  const color = modeColors[mode] || modeColors.general;
+
+  return (
+    <div className="w-full px-4 py-2 bg-black/40 backdrop-blur-md border-t border-white/5 flex items-center justify-between animate-in slide-in-from-bottom-2 duration-500">
+      <div className="flex items-center gap-3">
+        <div className="relative">
+          <div className="w-2 h-2 rounded-full animate-ping absolute inset-0" style={{ backgroundColor: color }} />
+          <div className="w-2 h-2 rounded-full relative" style={{ backgroundColor: color }} />
+        </div>
+        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white">
+          {stage || "Nexus is working..."}
+        </span>
+      </div>
+      <div className="flex items-center gap-2">
+        <div className="h-1 w-24 bg-white/10 rounded-full overflow-hidden">
+          <div className="h-full animate-progress-indeterminate rounded-full" style={{ backgroundColor: color }} />
+        </div>
+      </div>
+      <style>{`
+        @keyframes progress-indeterminate {
+          0% { transform: translateX(-100%); width: 30%; }
+          50% { transform: translateX(100%); width: 60%; }
+          100% { transform: translateX(400%); width: 30%; }
+        }
+        .animate-progress-indeterminate {
+          animation: progress-indeterminate 2s infinite linear;
+        }
+      `}</style>
+    </div>
+  );
+};
+
 export const UserAvatar = React.memo(({ email }) => {
   const url = getGravatarUrl(email);
   const initials = getUserInitials(email);
   return (
-    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#9b5de5] to-[#00f5d4] flex items-center justify-center shadow-2xl overflow-hidden flex-shrink-0 border-2 border-white/20">
+    <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#9b5de5] to-[#00f5d4] flex items-center justify-center shadow-2xl overflow-hidden flex-shrink-0 border border-white/20">
       {url ? (
         <img
           src={url}
@@ -163,6 +238,47 @@ export const UserAvatar = React.memo(({ email }) => {
     </div>
   );
 });
+
+export const ArtifactCard = ({ title, subtitle, icon: Icon, type = "code", children, actions = [] }) => {
+  const typeColors = {
+    code: "text-[#9b5de5] bg-[#9b5de5]/10 border-[#9b5de5]/20",
+    ui: "text-[#00f5d4] bg-[#00f5d4]/10 border-[#00f5d4]/20",
+    report: "text-red-400 bg-red-400/10 border-red-400/20",
+    system: "text-blue-400 bg-blue-400/10 border-blue-400/20",
+  };
+  const colorClass = typeColors[type] || typeColors.code;
+
+  return (
+    <div className="mt-6 rounded-2xl border border-white/10 bg-[#121212]/50 overflow-hidden shadow-2xl animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div className="px-5 py-4 border-b border-white/5 flex items-center justify-between bg-white/5">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className={`p-2 rounded-lg ${colorClass}`}>
+            <Icon className="w-4 h-4" />
+          </div>
+          <div className="min-w-0">
+            <h4 className="text-sm font-black text-white truncate tracking-tight uppercase">{title}</h4>
+            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">{subtitle}</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          {actions.map((action, i) => (
+            <button
+              key={i}
+              onClick={action.onClick}
+              className={`p-2 rounded-lg transition-all hover:scale-110 active:scale-95 ${action.primary ? 'bg-[#00f5d4] text-black' : 'bg-white/5 text-gray-400 hover:text-white'}`}
+              title={action.label}
+            >
+              {action.icon}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className="p-0">
+        {children}
+      </div>
+    </div>
+  );
+};
 
 export const SecurityReport = ({ report, onFix }) => {
   if (!report) return null;

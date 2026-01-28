@@ -26,6 +26,7 @@ import SignInNudgeModal from "../components/SignInNudgeModal";
 import {
   TokenBar,
   CustomModeModal,
+  UnifiedStatusBar,
 } from "../components/ai/AiComponents";
 import {
   collection,
@@ -93,6 +94,12 @@ function AiPage() {
   const game = useGameProfile(settings, updateSettings);
   const scriptManager = useAiScripts(user, notify);
   const agent = useAgent(user, notify, refreshBilling);
+
+  // Auto-focus prompt box on mode change or new chat
+  useEffect(() => {
+    const el = document.getElementById("tour-prompt-box");
+    if (el) el.focus();
+  }, [chat.activeMode, chat.currentChatId]);
 
   // 4. Derived State
   const planKey = plan?.toLowerCase() || "free";
@@ -644,6 +651,12 @@ function AiPage() {
 
           <div className="p-4 bg-gradient-to-t from-black via-black/80 to-transparent">
             <div className="max-w-5xl mx-auto space-y-4">
+              <UnifiedStatusBar 
+                isGenerating={chat.isGenerating || ui.uiIsGenerating || agent.isThinking}
+                stage={chat.generationStage || ui.generationStage || (agent.isThinking ? "Nexus is thinking..." : "")}
+                mode={chat.activeMode}
+              />
+
               {currentPowerTools.length > 0 && (
                 <div className="flex items-center gap-2 px-2 overflow-x-auto scrollbar-hide pb-1 border-b border-white/5 mb-2">
                   <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest mr-2">Power Tools:</span>
@@ -688,10 +701,6 @@ function AiPage() {
                       {agent.isThinking ? 'Thinking' : ui.uiIsGenerating ? 'Building' : chat.isGenerating ? 'Responding' : 'Ready'}
                     </div>
                     <div className="h-px flex-1 bg-white/5" />
-                    <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest border border-white/5 ${activeModeData.bg} ${activeModeData.color}`}>
-                      {activeModeData.icon}
-                      {activeModeData.label}
-                    </div>
                   </div>
                   <div className="flex items-center gap-2 p-2 pt-0">
                     <textarea
