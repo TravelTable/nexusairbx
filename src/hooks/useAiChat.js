@@ -121,14 +121,15 @@ export function useAiChat(user, settings, refreshBilling, notify) {
     const content = prompt.trim();
     if (!content || isGenerating || !user) return;
 
+    const currentMode = actNow ? "act" : chatMode;
+
     setIsGenerating(true);
-    setPendingMessage({ role: "assistant", content: "", type: "chat", prompt: content });
+    setPendingMessage({ role: "assistant", content: "", type: "chat", prompt: content, mode: currentMode });
     setGenerationStage("Analyzing Request...");
 
     let activeChatId = existingChatId || currentChatId;
     const requestId = existingRequestId || uuidv4();
     const expertMode = modeOverride || activeMode || settings.chatMode || "general";
-    const currentMode = actNow ? "act" : chatMode;
 
     try {
       if (!activeChatId) {

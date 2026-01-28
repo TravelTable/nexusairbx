@@ -593,9 +593,9 @@ export default function ChatView({
           {pendingMessage && (
             <>
               <div className="flex justify-end gap-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                <div className="max-w-[80%] order-1">
-                  <div className={`p-5 rounded-2xl bg-gradient-to-br ${pendingMessage.type === 'ui' ? 'from-[#00f5d4]/60 to-[#9b5de5]/60' : 'from-[#9b5de5]/60 to-[#00f5d4]/60'} text-white shadow-lg border border-white/10 backdrop-blur-sm`}>
-                    <div className="text-[15px] whitespace-pre-wrap">{pendingMessage.prompt || pendingMessage.content}</div>
+                <div className="max-w-[70%] md:max-w-[60%] order-1">
+                  <div className="p-4 md:p-5 rounded-3xl bg-[#121212]/80 border border-white/10 backdrop-blur-xl shadow-2xl text-gray-100">
+                    <div className="text-[15px] whitespace-pre-wrap">{pendingMessage.prompt}</div>
                   </div>
                 </div>
                 <UserAvatar email={user?.email} />
@@ -613,7 +613,17 @@ export default function ChatView({
                       </div>
                     </div>
                   ) : (
-                    <LiveCodeViewer content={pendingMessage.content} />
+                    <div className="p-4 md:p-6 rounded-3xl bg-[#121212]/80 border border-white/10 backdrop-blur-xl shadow-2xl">
+                      <div className="text-[15px] md:text-[16px] whitespace-pre-wrap leading-relaxed text-gray-100">
+                        <FormatText text={stripTags(pendingMessage.content)} />
+                      </div>
+                      {/* Only show LiveCodeViewer in Act mode and if it looks like code is coming */}
+                      {pendingMessage.mode === 'act' && pendingMessage.content.includes('<code>') && (
+                        <div className="mt-4">
+                          <LiveCodeViewer content={pendingMessage.content.split('<code>')[1] || ""} />
+                        </div>
+                      )}
+                    </div>
                   )}
                 </div>
               </div>
