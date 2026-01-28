@@ -28,6 +28,7 @@ import {
   Search,
   Sparkles,
   Info,
+  ArrowUpCircle,
 } from "lucide-react";
 import { useSettings } from "../context/SettingsContext";
 import { useBilling } from "../context/BillingContext";
@@ -112,7 +113,7 @@ const SettingsPage = () => {
     if (!user) return;
     try {
       const token = await user.getIdToken();
-      const res = await fetch(`${process.env.REACT_APP_BACKEND_URL || "https://nexusrbx-backend-production.up.railway.app"}/api/user/usage?days=30`, {
+      const res = await fetch(`${BACKEND_URL}/api/user/usage?days=30`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.ok) {
@@ -130,7 +131,7 @@ const SettingsPage = () => {
     try {
       const token = await user.getIdToken();
       const headers = { Authorization: `Bearer ${token}` };
-      const baseUrl = process.env.REACT_APP_BACKEND_URL || "https://nexusrbx-backend-production.up.railway.app";
+      const baseUrl = BACKEND_URL;
       
       const [statsRes, usersRes] = await Promise.all([
         fetch(`${baseUrl}/api/dev/stats`, { headers }),
@@ -181,7 +182,7 @@ const SettingsPage = () => {
     setDevLoading(true);
     try {
       const token = await user.getIdToken();
-      const res = await fetch(`${process.env.REACT_APP_BACKEND_URL || "https://nexusrbx-backend-production.up.railway.app"}/api/dev/user-inspector/${uid}`, {
+      const res = await fetch(`${BACKEND_URL}/api/dev/user-inspector/${uid}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.ok) {
@@ -201,7 +202,7 @@ const SettingsPage = () => {
     setDevLoading(true);
     try {
       const token = await user.getIdToken();
-      const res = await fetch(`${process.env.REACT_APP_BACKEND_URL || "https://nexusrbx-backend-production.up.railway.app"}/api/dev/adjust-tokens`, {
+      const res = await fetch(`${BACKEND_URL}/api/dev/adjust-tokens`, {
         method: "POST",
         headers: { 
           Authorization: `Bearer ${token}`,
@@ -243,7 +244,7 @@ const SettingsPage = () => {
     const endpoint = pendingAction === "chats" ? "chats" : "scripts";
     try {
       const token = await user.getIdToken();
-      const res = await fetch(`${process.env.REACT_APP_BACKEND_URL || "https://nexusrbx-backend-production.up.railway.app"}/api/user/data/${endpoint}`, {
+      const res = await fetch(`${BACKEND_URL}/api/user/data/${endpoint}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -264,7 +265,7 @@ const SettingsPage = () => {
     setSyncLoading(true);
     try {
       const token = await user.getIdToken();
-      const res = await fetch(`${process.env.REACT_APP_BACKEND_URL || "https://nexusrbx-backend-production.up.railway.app"}/api/plugin/sync-code`, {
+      const res = await fetch(`${BACKEND_URL}/api/plugin/sync-code`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -343,22 +344,34 @@ const SettingsPage = () => {
                 <Zap className="w-32 h-32 text-purple-400" />
               </div>
               <div className="relative z-10">
-                <h3 className="text-2xl font-bold text-white mb-2">{plan || "FREE"} Plan</h3>
-                <p className="text-gray-400 mb-6">Your subscription resets on {resetsAt ? new Date(resetsAt).toLocaleDateString() : "N/A"}</p>
+                <div className="flex items-center gap-3 mb-2">
+                  <h3 className="text-2xl font-bold text-white">{plan || "FREE"} Plan</h3>
+                  {plan === "FREE" && (
+                    <span className="px-2 py-0.5 rounded bg-purple-500/20 text-purple-400 text-[10px] font-black uppercase tracking-widest">Limited Access</span>
+                  )}
+                </div>
+                <p className="text-gray-400 mb-6">
+                  {plan === "FREE" 
+                    ? "Upgrade to Pro to unlock GPT-5.2, higher token limits, and advanced Roblox Studio integration."
+                    : `Your subscription resets on ${resetsAt ? new Date(resetsAt).toLocaleDateString() : "N/A"}`}
+                </p>
                 
                 <div className="flex flex-wrap gap-4">
-                  <button 
-                    onClick={portal}
-                    className="px-6 py-3 rounded-xl bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-white font-bold flex items-center gap-2 hover:scale-105 transition-transform"
-                  >
-                    <CreditCard className="w-5 h-5" />
-                    Manage Billing & Invoices
-                  </button>
+                  {plan !== "FREE" && (
+                    <button 
+                      onClick={portal}
+                      className="px-6 py-3 rounded-xl bg-white text-black font-bold flex items-center gap-2 hover:scale-105 transition-transform shadow-xl"
+                    >
+                      <CreditCard className="w-5 h-5" />
+                      Manage Billing & Invoices
+                    </button>
+                  )}
                   <button 
                     onClick={() => navigate("/subscribe")}
-                    className="px-6 py-3 rounded-xl bg-gray-800 text-white font-bold hover:bg-gray-700 transition-colors"
+                    className={`px-6 py-3 rounded-xl font-bold flex items-center gap-2 hover:scale-105 transition-transform ${plan === "FREE" ? 'bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-white shadow-[0_0_30px_rgba(155,93,229,0.3)]' : 'bg-gray-800 text-white hover:bg-gray-700'}`}
                   >
-                    Upgrade Plan
+                    <ArrowUpCircle className="w-5 h-5" />
+                    {plan === "FREE" ? "Upgrade to Pro" : "Change Plan"}
                   </button>
                 </div>
               </div>
@@ -729,7 +742,7 @@ const SettingsPage = () => {
                   onClick={async () => {
                     if (!newTeamName.trim()) return;
                     const token = await user.getIdToken();
-                    const res = await fetch(`${process.env.REACT_APP_BACKEND_URL || "https://nexusrbx-backend-production.up.railway.app"}/api/user/teams`, {
+                    const res = await fetch(`${BACKEND_URL}/api/user/teams`, {
                       method: "POST",
                       headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
                       body: JSON.stringify({ name: newTeamName })

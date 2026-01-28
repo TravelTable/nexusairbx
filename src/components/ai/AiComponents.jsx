@@ -46,6 +46,8 @@ export function TokenBar({ tokensLeft, tokensLimit, resetsAt, plan }) {
       ? Math.max(0, Math.min(100, (tokensLeft / tokensLimit) * 100))
       : 100;
   const planInfo = PLAN_INFO[plan] || PLAN_INFO.free;
+  const isLow = percent < 15;
+
   return (
     <div id="tour-token-bar" className="w-full flex flex-col gap-1 relative z-10">
       <div className="flex items-center justify-between mb-1">
@@ -53,12 +55,18 @@ export function TokenBar({ tokensLeft, tokensLimit, resetsAt, plan }) {
           Tokens: <span className="text-white font-bold">{typeof tokensLeft === "number" ? formatNumber(tokensLeft) : "∞"}</span>{" "}
           <span className="text-gray-400">/ {formatNumber(tokensLimit)}</span>
         </div>
-        <a href="/docs#tokens" className="flex items-center gap-1 text-xs text-[#9b5de5] hover:text-[#00f5d4] underline" title="How tokens work">
-          <Info className="w-4 h-4" /> How tokens work
-        </a>
+        {isLow && plan === "free" ? (
+          <a href="/subscribe" className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-[#00f5d4] hover:brightness-125 transition-all animate-pulse">
+            <Zap className="w-3 h-3 fill-current" /> Upgrade to Pro
+          </a>
+        ) : (
+          <a href="/docs#tokens" className="flex items-center gap-1 text-xs text-[#9b5de5] hover:text-[#00f5d4] underline" title="How tokens work">
+            <Info className="w-4 h-4" /> How tokens work
+          </a>
+        )}
       </div>
       <div className="w-full h-3 bg-gray-800/50 rounded-full overflow-hidden relative border border-white/5">
-        <div className={`h-full rounded-full transition-all duration-500 ${plan === "team" ? "bg-gradient-to-r from-[#00f5d4] to-[#9b5de5]" : plan === "pro" ? "bg-gradient-to-r from-[#9b5de5] to-[#00f5d4]" : "bg-gray-400"}`} style={{ width: `${percent}%` }}></div>
+        <div className={`h-full rounded-full transition-all duration-500 ${plan === "team" ? "bg-gradient-to-r from-[#00f5d4] to-[#9b5de5]" : plan === "pro" ? "bg-gradient-to-r from-[#9b5de5] to-[#00f5d4]" : "bg-gray-400"} ${isLow ? 'animate-pulse shadow-[0_0_10px_rgba(255,0,0,0.5)]' : ''}`} style={{ width: `${percent}%` }}></div>
       </div>
       <div className="flex items-center justify-between mt-1 text-xs text-gray-400">
         <span>{typeof resetsAt === "string" || resetsAt instanceof Date ? `Resets on ${formatResetDate(resetsAt)}` : ""}</span>
@@ -364,6 +372,23 @@ export const QaBadge = ({ score }) => {
     </div>
   );
 };
+
+export const SkeletonArtifact = ({ type = "code" }) => (
+  <div className="mt-6 rounded-2xl border border-white/5 bg-[#121212]/30 overflow-hidden animate-pulse">
+    <div className="px-5 py-4 border-b border-white/5 flex items-center justify-between">
+      <div className="flex items-center gap-3">
+        <div className="w-8 h-8 rounded-lg bg-white/5" />
+        <div className="space-y-2">
+          <div className="w-24 h-3 bg-white/10 rounded" />
+          <div className="w-16 h-2 bg-white/5 rounded" />
+        </div>
+      </div>
+    </div>
+    <div className="p-8 flex flex-col items-center justify-center gap-4">
+      <div className="w-full h-32 bg-white/5 rounded-xl" />
+    </div>
+  </div>
+);
 
 export const ArtifactCard = ({ title, subtitle, icon: Icon, type = "code", qaReport = null, children, actions = [] }) => {
   const typeColors = {

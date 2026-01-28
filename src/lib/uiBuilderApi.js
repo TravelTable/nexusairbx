@@ -1,4 +1,6 @@
-export let BACKEND_URL = "https://nexusrbx-backend-production.up.railway.app";
+import { BACKEND_URL as CONFIG_BACKEND_URL } from "../config";
+
+export const BACKEND_URL = CONFIG_BACKEND_URL;
 
 async function handleResponse(res) {
   const text = await res.text();

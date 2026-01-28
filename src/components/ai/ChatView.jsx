@@ -354,7 +354,7 @@ export default function ChatView({
                         plan={m.plan || m.explanation.match(/<plan>([\s\S]*?)<\/plan>/i)?.[1]} 
                         isExecuting={m.id === messages[messages.length - 1]?.id && (generationStage || pendingMessage)}
                       />
-                      {activeMode !== 'general' && (
+                      {activeMode !== 'general' && !m.isAutoExecuting && (
                         <div className="p-4 rounded-2xl bg-[#00f5d4]/5 border border-[#00f5d4]/20 flex flex-col items-center text-center gap-4 animate-in fade-in zoom-in duration-500">
                           <div className="text-sm font-bold text-[#00f5d4]">Ready to execute this plan?</div>
                           <button 
@@ -615,11 +615,14 @@ export default function ChatView({
                       </div>
                     </div>
                   ) : (
-                    <div className="p-4 md:p-6 rounded-3xl bg-[#121212]/80 border border-white/10 backdrop-blur-xl shadow-2xl">
-                      <div className="text-[15px] md:text-[16px] whitespace-pre-wrap leading-relaxed text-gray-100">
-                        <FormatText text={stripTags(pendingMessage.content)} />
+                    <div className="space-y-4">
+                      <div className="p-4 md:p-6 rounded-3xl bg-[#121212]/80 border border-white/10 backdrop-blur-xl shadow-2xl">
+                        <div className="text-[15px] md:text-[16px] whitespace-pre-wrap leading-relaxed text-gray-100">
+                          <FormatText text={stripTags(pendingMessage.content)} />
+                        </div>
                       </div>
-                      {/* No LiveCodeViewer while streaming, as per user request */}
+                      {pendingMessage.type === "ui" && <SkeletonArtifact type="ui" />}
+                      {pendingMessage.type === "chat" && pendingMessage.content.includes("```") && <SkeletonArtifact type="code" />}
                     </div>
                   )}
                 </div>

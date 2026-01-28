@@ -33,6 +33,7 @@ export default function UiPreviewDrawer({
   onRefine,
   onUpdateLua,
   isRefining,
+  inline = false,
 }) {
   const { refresh: refreshBilling } = useBilling();
   const [tab, setTab] = useState("preview"); // "preview" | "code" | "functionality" | "history" | "assets"
@@ -217,6 +218,134 @@ export default function UiPreviewDrawer({
     const p = String(prompt || "").trim();
     return p ? p.slice(0, 60) + (p.length > 60 ? "..." : "") : "UI Preview";
   }, [prompt]);
+
+  if (inline) {
+    return (
+      <div className="h-full flex flex-col bg-[#0b1220]">
+        <div className="px-3 pt-3">
+          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+            <button
+              type="button"
+              onClick={() => setTab("preview")}
+              className={`px-3 py-2 rounded text-sm border whitespace-nowrap ${
+                tab === "preview"
+                  ? "border-[#00f5d4] bg-[#00f5d4]/10 text-white"
+                  : "border-gray-800 bg-black/20 text-gray-300 hover:bg-black/30"
+              }`}
+            >
+              Preview
+            </button>
+            <button
+              type="button"
+              onClick={() => setTab("code")}
+              className={`px-3 py-2 rounded text-sm border whitespace-nowrap ${
+                tab === "code"
+                  ? "border-[#00f5d4] bg-[#00f5d4]/10 text-white"
+                  : "border-gray-800 bg-black/20 text-gray-300 hover:bg-black/30"
+              }`}
+            >
+              Code
+            </button>
+            <button
+              type="button"
+              onClick={() => setTab("functionality")}
+              className={`px-3 py-2 rounded text-sm border whitespace-nowrap ${
+                tab === "functionality"
+                  ? "border-[#f15bb5] bg-[#f15bb5]/10 text-white"
+                  : "border-gray-800 bg-black/20 text-gray-300 hover:bg-black/30"
+              }`}
+            >
+              Functionality
+            </button>
+            <button
+              type="button"
+              onClick={() => setTab("assets")}
+              className={`px-3 py-2 rounded text-sm border whitespace-nowrap relative ${
+                tab === "assets"
+                  ? "border-[#00f5d4] bg-[#00f5d4]/10 text-white"
+                  : "border-gray-800 bg-black/20 text-gray-300 hover:bg-black/30"
+              }`}
+            >
+              Icons & Assets
+              {uniqueAssets.length > 0 && !uniqueAssets.every(a => assetIds[a.url]) && (
+                <span className="absolute -top-1 -right-1 w-2 h-2 bg-[#00f5d4] rounded-full animate-pulse" />
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={() => setTab("history")}
+              className={`px-3 py-2 rounded text-sm border whitespace-nowrap ${
+                tab === "history"
+                  ? "border-[#9b5de5] bg-[#9b5de5]/10 text-white"
+                  : "border-gray-800 bg-black/20 text-gray-300 hover:bg-black/30"
+              }`}
+            >
+              History
+            </button>
+          </div>
+        </div>
+
+        <div className="p-3 flex-1 overflow-hidden">
+          {tab === "preview" && (
+            <PreviewTab
+              lua={uiModuleLua || lua}
+              boardState={boardState}
+              lastEvent={lastEvent}
+              setLastEvent={setLastEvent}
+              imageNodes={imageNodes}
+              setTab={setTab}
+              refineInput={refineInput}
+              setRefineInput={setRefineInput}
+              isRefining={isRefining}
+              onRefine={onRefine}
+              user={user}
+              onUpdateBoardState={(newBS) => {
+                onUpdateLua(newBS);
+              }}
+            />
+          )}
+          {tab === "code" && (
+            <CodeTab
+              uiModuleLua={uiModuleLua}
+              systemsLua={systemsLua}
+              lua={lua}
+              copySuccess={copySuccess}
+              handleCopy={handleCopy}
+              onDownload={handleDownloadFiles}
+            />
+          )}
+          {tab === "functionality" && (
+            <FunctionalityTab
+              funcPlan={funcPlan}
+              funcScripts={funcScripts}
+              isGeneratingFunc={isGeneratingFunc}
+              funcPrompt={funcPrompt}
+              setFuncPrompt={setFuncPrompt}
+              handleGenerateFunctionality={handleGenerateFunctionality}
+              mainScriptUpdated={mainScriptUpdated}
+            />
+          )}
+          {tab === "assets" && (
+            <AssetsTab
+              uniqueAssets={uniqueAssets}
+              handleDownloadAllAssets={handleDownloadFiles}
+              assetIds={assetIds}
+              setAssetIds={setAssetIds}
+              isFinalizing={isFinalizing}
+              handleFinalizeAssets={handleFinalizeAssets}
+            />
+          )}
+          {tab === "history" && (
+            <HistoryTab
+              history={history}
+              activeId={activeId}
+              onSelectHistory={onSelectHistory}
+            />
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div

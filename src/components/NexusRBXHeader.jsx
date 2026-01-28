@@ -29,7 +29,8 @@ function NexusRBXHeader({
   user,
   handleLogin,
   tokenInfo,
-  tokenLoading
+  tokenLoading,
+  variant = "default"
 }) {
   const [isToolsOpen, setIsToolsOpen] = useState(false);
   const [isAccountOpen, setIsAccountOpen] = useState(false);
@@ -72,6 +73,14 @@ function NexusRBXHeader({
       premium: false
     },
     {
+      name: "Roblox Plugin",
+      description: "Import UI directly into Studio",
+      icon: Download,
+      href: "/settings", // Direct to account for sync code
+      premium: true,
+      badge: "BETA"
+    },
+    {
       name: "SFX Generator",
       description: "Custom audio for your game",
       icon: Volume2,
@@ -84,19 +93,14 @@ function NexusRBXHeader({
       icon: Activity,
       href: "#",
       comingSoon: true
-    },
-    {
-      name: "Roblox Plugin",
-      description: "Import UI directly into Studio",
-      icon: Download,
-      href: "#",
-      comingSoon: true
     }
   ];
 
+  const isAiPage = variant === "ai";
+
   return (
-    <div className="fixed top-4 left-0 right-0 z-50 px-4 flex justify-center pointer-events-none">
-      <header className="w-full max-w-6xl bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl px-6 py-2.5 flex items-center justify-between pointer-events-auto shadow-2xl">
+    <div className={`fixed top-4 left-0 right-0 z-50 px-4 flex justify-center pointer-events-none ${isAiPage ? 'max-w-none' : ''}`}>
+      <header className={`${isAiPage ? 'w-full' : 'w-full max-w-6xl'} bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl px-6 py-2.5 flex items-center justify-between pointer-events-auto shadow-2xl transition-all duration-500`}>
         {/* Logo */}
         <div 
           className="text-xl font-black bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-transparent bg-clip-text cursor-pointer flex items-center gap-2"

@@ -16,8 +16,7 @@ import {
 } from "firebase/firestore";
 import { v4 as uuidv4 } from "uuid";
 import { auth, db } from "../firebase";
-
-const BACKEND_URL = "https://nexusrbx-backend-production.up.railway.app";
+import { BACKEND_URL } from "../config";
 
 export function useAiChat(user, settings, refreshBilling, notify) {
   const [messages, setMessages] = useState([]);
@@ -204,6 +203,7 @@ export function useAiChat(user, settings, refreshBilling, notify) {
       return new Promise((resolve, reject) => {
         let eventSource = new EventSource(`${BACKEND_URL}/api/generate/stream?jobId=${jobId}&token=${token}&mode=${currentMode}`);
         let fullText = "";
+        const isAutoExecuting = currentMode === "act";
         let retryCount = 0;
         const maxRetries = 3;
 
@@ -238,6 +238,7 @@ export function useAiChat(user, settings, refreshBilling, notify) {
                 requestId,
                 jobId,
                 artifactId: data.artifactId,
+                isAutoExecuting,
                 metadata: {
                   ...(data.metadata || {}),
                   mode: currentMode,

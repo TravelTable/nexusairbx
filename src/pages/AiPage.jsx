@@ -15,14 +15,18 @@ import {
   Sparkles,
   Search,
   Zap,
+  Layout,
+  X,
 } from "lucide-react";
 import { auth, db } from "../firebase";
 import { onAuthStateChanged, signInAnonymously } from "firebase/auth";
 import SidebarContent from "../components/SidebarContent";
+import NexusRBXHeader from "../components/NexusRBXHeader";
 import PlanBadge from "../components/PlanBadge";
 import BetaBadge from "../components/BetaBadge";
 import AiTour from "../components/AiTour";
 import OnboardingContainer from "../components/OnboardingContainer";
+import CelebrationAnimation from "../components/CelebrationAnimation";
 import UiPreviewDrawer from "../components/UiPreviewDrawer";
 import CodeDrawer from "../components/CodeDrawer";
 import SignInNudgeModal from "../components/SignInNudgeModal";
@@ -63,7 +67,7 @@ import GameProfileWizard from "../components/ai/GameProfileWizard";
 
 function AiPage() {
   // 1. External Hooks
-  const { plan, totalRemaining, subLimit, resetsAt, refresh: refreshBilling } = useBilling();
+  const { plan, totalRemaining, subLimit, resetsAt, refresh: refreshBilling, showCelebration, dismissCelebration } = useBilling();
   const { settings, updateSettings } = useSettings();
   const navigate = useNavigate();
   const location = useLocation();
@@ -73,13 +77,21 @@ function AiPage() {
   const [scripts, setScripts] = useState([]);
   const [scriptsLimit] = useState(50);
   const [activeTab, setActiveTab] = useState("chat"); // "chat" | "library"
+  const [mobileTab, setMobileTab] = useState("chat"); // "chat" | "preview"
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 1024);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   // Map sidebar tabs to main tabs
   const handleSidebarTabChange = (sidebarTab) => {
     if (sidebarTab === "scripts" || sidebarTab === "chats" || sidebarTab === "agent") setActiveTab("chat");
     else if (sidebarTab === "saved") setActiveTab("library");
   };
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth > 1024);
   const [prompt, setPrompt] = useState("");
   const [showTour, setShowTour] = useState(localStorage.getItem("nexusrbx:tourComplete") !== "true");
   const [showOnboarding, setShowOnboarding] = useState(false);
@@ -95,12 +107,10 @@ function AiPage() {
 
   // 3. Custom Hooks
   const notify = useCallback(({ message, type = "info" }) => {
-    // Simplified notification for now, can be expanded
     console.log(`[${type}] ${message}`);
   }, []);
 
   const chat = useAiChat(user, settings, refreshBilling, notify);
-
   const ui = useUiBuilder(user, settings, refreshBilling, notify);
   const game = useGameProfile(settings, updateSettings);
   const scriptManager = useAiScripts(user, notify);
@@ -191,7 +201,6 @@ function AiPage() {
           .catch((err) => {
             console.error("Firebase Anonymous Auth Error:", err);
             setUser(null);
-            // If it's a 400 error, it likely means Anonymous Auth is disabled in Firebase Console
             if (err.code === 'auth/operation-not-allowed') {
               notify({ 
                 message: "Anonymous sign-in is disabled. Please enable it in Firebase Console or sign in manually.", 
@@ -294,7 +303,7 @@ function AiPage() {
       await setDoc(doc(db, "users", user.uid, "custom_modes", modeId), {
         ...mode,
         id: modeId,
-        isPublic: false, // Installed modes are private by default
+        isPublic: false,
         authorId: mode.authorId,
         authorName: mode.authorName,
         updatedAt: serverTimestamp(),
@@ -319,14 +328,11 @@ function AiPage() {
         createdAt: editingCustomMode?.createdAt || serverTimestamp(),
       };
 
-      // Save to user's private collection
       await setDoc(doc(db, "users", user.uid, "custom_modes", modeId), payload);
 
-      // If public, also save to global community collection
       if (data.isPublic) {
         await setDoc(doc(db, "community_modes", modeId), payload);
       } else {
-        // If it was public but now private, remove from community
         try {
           await deleteDoc(doc(db, "community_modes", modeId));
         } catch (e) {}
@@ -352,7 +358,6 @@ function AiPage() {
     setPrompt("");
     if (activeTab !== "chat") setActiveTab("chat");
 
-    // 1. Smart Routing: Auto-switch mode based on commands
     let effectiveMode = chat.activeMode;
     const commandMap = { "/ui": "ui", "/audit": "security", "/optimize": "performance", "/logic": "logic" };
     for (const [cmd, mode] of Object.entries(commandMap)) {
@@ -367,7 +372,6 @@ function AiPage() {
       const requestId = uuidv4();
       let activeChatId = chat.currentChatId;
 
-      // 2. Initialize Chat Session if needed
       if (!activeChatId) {
         const newChatRef = await addDoc(collection(db, "users", user.uid, "chats"), {
           title: currentPrompt.slice(0, 30) + (currentPrompt.length > 30 ? "..." : ""),
@@ -379,12 +383,10 @@ function AiPage() {
         chat.setCurrentChatId(activeChatId);
       }
 
-      // 3. Set Pending State
       chat.setPendingMessage({ 
         role: "assistant", content: "", type: "chat", prompt: currentPrompt, mode: chat.chatMode
       });
 
-      // 4. Deterministic Routing (Skip Agent for obvious requests)
       const p = currentPrompt.toLowerCase();
       const isUiRequest = p.startsWith("/ui") || ["build ui", "menu", "screen", "hud", "shop", "layout", "frame"].some(k => p.includes(k));
       const isRefineRequest = p.startsWith("refine:") || p.startsWith("tweak:") || p.includes("refine ui");
@@ -405,11 +407,9 @@ function AiPage() {
         return;
       }
 
-      // 5. Agent-Based Routing
       const data = await agent.sendMessage(currentPrompt, activeChatId, chat.setCurrentChatId, requestId, effectiveMode, chat.chatMode);
       if (!data) return await chat.handleSubmit(currentPrompt, activeChatId, requestId);
 
-      // 6. Action Execution
       switch (data.action) {
         case "pipeline":
           await Promise.all([
@@ -445,7 +445,6 @@ function AiPage() {
     }
   };
 
-  // Helper for Asset Suggestions
   const handleSuggestAssets = async (promptContext) => {
     try {
       const token = await user.getIdToken();
@@ -464,7 +463,6 @@ function AiPage() {
     } catch (err) { notify({ message: "Asset suggestion failed", type: "error" }); }
   };
 
-  // Helper for UI Audits
   const handleUiAudit = async () => {
     try {
       const token = await user.getIdToken();
@@ -484,7 +482,6 @@ function AiPage() {
   };
 
   const handleOpenScript = async (script) => {
-    // Switch to UI tab if it's a UI script, or Chat if it's a regular script
     if (script.type === "ui") {
       setActiveTab("chat");
       const uid = user?.uid;
@@ -505,14 +502,12 @@ function AiPage() {
       }
     } else {
       setActiveTab("chat");
-      // Handle regular script opening (e.g. open in a code modal)
       notify({ message: "Opening script...", type: "info" });
     }
   };
 
   return (
     <div className="h-screen bg-[#050505] text-white font-sans flex flex-col relative overflow-hidden">
-      {/* Background Glows */}
       <div 
         className="fixed top-[-10%] left-[-10%] w-[40%] h-[40%] blur-[120px] rounded-full pointer-events-none transition-colors duration-1000" 
         style={{ backgroundColor: `${currentTheme.primary}1a` }}
@@ -522,345 +517,387 @@ function AiPage() {
         style={{ backgroundColor: `${currentTheme.secondary}1a` }}
       />
 
-      <header className="border-b border-white/5 bg-black/40 backdrop-blur-xl sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-8">
-            <div className="flex items-center gap-2 group cursor-pointer" onClick={() => navigate("/")}>
-              <div className="text-2xl font-bold bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-transparent bg-clip-text group-hover:brightness-125 transition-all">NexusRBX</div>
-              <BetaBadge className="mt-1 group-hover:scale-110 transition-transform" />
-            </div>
-            
-            <nav id="tour-mode-toggle" className="hidden md:flex items-center bg-gray-900/50 border border-gray-800 rounded-xl p-1 shadow-lg">
-              <button 
-                onClick={() => setActiveTab("chat")} 
-                className={`px-4 py-1.5 rounded-lg text-sm font-bold flex items-center gap-2 transition-all ${activeTab === "chat" ? "bg-gray-800 text-[#00f5d4] shadow-sm" : "text-gray-400 hover:text-white"}`}
-              >
-                <Sparkles className="h-4 w-4" /> Nexus AI
-              </button>
-              <button 
-                onClick={() => setActiveTab("library")} 
-                className={`px-4 py-1.5 rounded-lg text-sm font-bold flex items-center gap-2 transition-all ${activeTab === "library" ? "bg-gray-800 text-white shadow-sm" : "text-gray-400 hover:text-white"}`}
-              >
-                <Library className="h-4 w-4" /> Library
-              </button>
-            </nav>
-          </div>
+      <NexusRBXHeader 
+        variant="ai"
+        navigate={navigate}
+        user={user}
+        tokenInfo={{ sub: { limit: subLimit, used: subLimit - totalRemaining }, payg: { remaining: totalRemaining } }}
+        tokenLoading={false}
+      />
 
-          <div className="flex items-center gap-4">
-            <div className="hidden lg:block">
-              <ProjectContextStatus 
-                context={projectContext} 
-                onSync={async () => {
-                  notify({ message: "Please use the NexusRBX Studio Plugin to refresh context", type: "info" });
-                }} 
-              />
-            </div>
-            <button 
-              onClick={() => game.setShowWizard(true)}
-              className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-900 border border-gray-800 text-xs font-bold text-gray-300 hover:border-[#00f5d4] transition-all"
-            >
-              <Gamepad2 className="w-4 h-4 text-[#00f5d4]" />
-              Game Profile
-            </button>
-            <PlanBadge plan={planKey} />
+      <div className="flex flex-1 min-h-0 overflow-hidden pt-20">
+        <aside 
+          id="tour-sidebar" 
+          className={`fixed inset-y-0 left-0 z-40 w-72 bg-[#0D0D0D]/95 backdrop-blur-2xl border-r border-white/5 flex flex-col transform transition-all duration-500 ease-in-out ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} lg:relative lg:translate-x-0 ${sidebarOpen ? 'lg:w-72' : 'lg:w-0 lg:opacity-0 lg:pointer-events-none'}`}
+        >
+          <div className="flex-1 flex flex-col min-h-0">
+            <SidebarContent
+              activeTab={activeTab === "chat" ? "chats" : "saved"} 
+              setActiveTab={handleSidebarTabChange} 
+              scripts={scripts} 
+              currentChatId={chat.currentChatId} 
+              currentScriptId={scriptManager.currentScriptId}
+              setCurrentScriptId={scriptManager.setCurrentScriptId}
+              handleCreateScript={scriptManager.handleCreateScript}
+              handleRenameScript={scriptManager.handleRenameScript}
+              handleDeleteScript={scriptManager.handleDeleteScript}
+              currentScript={scriptManager.currentScript}
+              versionHistory={scriptManager.versionHistory}
+              selectedVersionId={scriptManager.selectedVersionId}
+              onSelectChat={(id) => { chat.openChatById(id); if(window.innerWidth < 1024) setSidebarOpen(false); setActiveTab("chat"); }} 
+              onOpenGameContext={() => game.setShowWizard(true)}
+              onDeleteChat={chat.handleDeleteChat}
+              handleClearChat={chat.handleClearChat}
+              gameProfile={game.profile}
+              user={user}
+              onVersionView={(ver) => {
+                if (ver.code) {
+                  window.dispatchEvent(
+                    new CustomEvent("nexus:openCodeDrawer", {
+                      detail: {
+                        code: ver.code,
+                        title: ver.title || scriptManager.currentScript?.title || "Script",
+                        explanation: ver.explanation || "",
+                        versionNumber: ver.versionNumber,
+                      },
+                    })
+                  );
+                }
+              }}
+              onVersionDownload={(ver) => {
+                if (!ver.code) return;
+                const blob = new Blob([ver.code], { type: "text/plain;charset=utf-8" });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = `${(ver.title || "script").replace(/\s+/g, "_")}.lua`;
+                a.click();
+                URL.revokeObjectURL(url);
+              }}
+            />
           </div>
-        </div>
-      </header>
-
-      <div className="flex flex-1 min-h-0 overflow-hidden">
-        <aside id="tour-sidebar" className={`fixed inset-y-0 left-0 z-40 w-72 bg-gray-900 border-r border-gray-800 flex flex-col transform transition-transform duration-300 ease-in-out md:relative md:translate-x-0 h-full ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}`}>
-          <SidebarContent
-            activeTab={activeTab === "chat" ? "chats" : "saved"} 
-            setActiveTab={handleSidebarTabChange} 
-            scripts={scripts} 
-            currentChatId={chat.currentChatId} 
-            currentScriptId={scriptManager.currentScriptId}
-            setCurrentScriptId={scriptManager.setCurrentScriptId}
-            handleCreateScript={scriptManager.handleCreateScript}
-            handleRenameScript={scriptManager.handleRenameScript}
-            handleDeleteScript={scriptManager.handleDeleteScript}
-            currentScript={scriptManager.currentScript}
-            versionHistory={scriptManager.versionHistory}
-            selectedVersionId={scriptManager.selectedVersionId}
-            onSelectChat={(id) => { chat.openChatById(id); setSidebarOpen(false); setActiveTab("chat"); }} 
-            onOpenGameContext={() => game.setShowWizard(true)}
-            onDeleteChat={chat.handleDeleteChat}
-            handleClearChat={chat.handleClearChat}
-            gameProfile={game.profile}
-            user={user}
-            onVersionView={(ver) => {
-              if (ver.code) {
-                window.dispatchEvent(
-                  new CustomEvent("nexus:openCodeDrawer", {
-                    detail: {
-                      code: ver.code,
-                      title: ver.title || scriptManager.currentScript?.title || "Script",
-                      explanation: ver.explanation || "",
-                      versionNumber: ver.versionNumber,
-                    },
-                  })
-                );
-              }
-            }}
-            onVersionDownload={(ver) => {
-              if (!ver.code) return;
-              const blob = new Blob([ver.code], { type: "text/plain;charset=utf-8" });
-              const url = URL.createObjectURL(blob);
-              const a = document.createElement("a");
-              a.href = url;
-              a.download = `${(ver.title || "script").replace(/\s+/g, "_")}.lua`;
-              a.click();
-              URL.revokeObjectURL(url);
-            }}
-          />
         </aside>
 
-        <main className="flex-1 flex flex-col relative min-w-0">
-          <div className="md:hidden flex items-center justify-between p-4 border-b border-white/5 bg-black/40 backdrop-blur-xl sticky top-0 z-20">
-            <button onClick={() => setSidebarOpen(true)} className="p-2 -ml-2 text-gray-400 hover:text-white">
-              <Menu className="h-6 w-6" />
-            </button>
-            <div className="flex bg-gray-900 rounded-lg p-1">
-              <button onClick={() => setActiveTab("chat")} className={`p-1.5 rounded ${activeTab === "chat" ? "bg-gray-800 text-[#00f5d4]" : "text-gray-500"}`}><Sparkles className="w-4 h-4" /></button>
-              <button onClick={() => setActiveTab("library")} className={`p-1.5 rounded ${activeTab === "library" ? "bg-gray-800 text-white" : "text-gray-500"}`}><Library className="w-4 h-4" /></button>
+        <main className="flex-1 flex flex-row relative min-w-0 overflow-hidden">
+          {/* Mobile Tab Switcher */}
+          {isMobile && ui.uiDrawerOpen && (
+            <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 bg-black/60 backdrop-blur-xl border border-white/10 rounded-full p-1.5 flex items-center gap-1 shadow-2xl">
+              <button 
+                onClick={() => setMobileTab("chat")}
+                className={`px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${mobileTab === "chat" ? "bg-[#00f5d4] text-black" : "text-gray-400 hover:text-white"}`}
+              >
+                Chat
+              </button>
+              <button 
+                onClick={() => setMobileTab("preview")}
+                className={`px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${mobileTab === "preview" ? "bg-[#00f5d4] text-black" : "text-gray-400 hover:text-white"}`}
+              >
+                Preview
+              </button>
             </div>
-          </div>
+          )}
 
-          <div className="flex-grow overflow-y-auto px-4 py-6 scrollbar-hide">
-            {activeTab === "chat" && (
-              <ChatView 
-                messages={chat.messages} 
-                pendingMessage={chat.pendingMessage || ui.pendingMessage || (agent.isThinking ? { role: "assistant", content: "", thought: "Nexus is thinking...", prompt: "" } : null)} 
-                generationStage={chat.generationStage || ui.generationStage || (agent.isThinking ? "Nexus is thinking..." : "")} 
-                user={user} 
-                activeMode={chat.activeMode}
-                customModes={chat.customModes}
-                onModeChange={(mode) => chat.updateChatMode(chat.currentChatId, mode)}
-                onCreateCustomMode={() => { setEditingCustomMode(null); setCustomModeModalOpen(true); }}
-                onEditCustomMode={(mode) => { setEditingCustomMode(mode); setCustomModeModalOpen(true); }}
-                onInstallCommunityMode={handleInstallCommunityMode}
-                onViewUi={(m) => { ui.setActiveUiId(m.projectId); ui.setUiDrawerOpen(true); }}
-                onQuickStart={(p) => handlePromptSubmit(null, p)}
-                onRefine={(m) => { 
-                  setPrompt(`Refine this UI: `);
-                  const el = document.getElementById("tour-prompt-box");
-                  if (el) el.focus();
-                }}
-                onToggleActMode={async (m) => {
-                  // Logic to transition from Plan to Act
-                  chat.setChatMode("act");
-                  await handlePromptSubmit(null, m.prompt || m.content);
-                }}
-                onPushToStudio={chat.handlePushToStudio}
-                onShareWithTeam={chat.handleShareWithTeam}
-                teams={teams}
-                onFixUiAudit={async (m) => {
-                  if (!m.boardState || !m.metadata?.qaReport?.issues) return;
-                  try {
-                    const token = await user.getIdToken();
-                    const res = await fetch(`${BACKEND_URL}/api/ui-builder/ai/audit/fix`, {
-                      method: "POST",
-                      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-                      body: JSON.stringify({
-                        boardState: m.boardState,
-                        issues: m.metadata.qaReport.issues
-                      })
-                    });
-                    if (res.ok) {
-                      const data = await res.json();
-                      // Update the UI in the history
-                      ui.setUiGenerations(prev => prev.map(g => g.id === m.id ? { ...g, boardState: data.boardState } : g));
-                      notify({ message: "UI fixes applied! Regenerating Lua...", type: "success" });
-                      // Trigger Lua finalization
-                      await ui.handleRefine("Finalize Lua for the updated layout", m.id);
-                    }
-                  } catch (err) {
-                    console.error("Fix UI Audit failed:", err);
-                    notify({ message: "Failed to apply UI fixes", type: "error" });
-                  }
-                }}
-                onExecuteTask={async (task) => {
-                  chat.setCurrentTaskId(task.id);
-                  const requestId = uuidv4();
-                  
-                  try {
-                    if (task.type === "pipeline") {
-                      await ui.handleGenerateUiPreview(
-                        task.prompt,
-                        chat.currentChatId,
-                        chat.setCurrentChatId,
-                        null,
-                        requestId
-                      );
-                    } else if (task.type === "generate_functionality") {
-                      // Logic for wiring up UI
+          <div className={`flex-1 flex flex-col min-w-0 transition-all duration-500 ${ui.uiDrawerOpen ? 'lg:max-w-[40%] border-r border-white/5' : 'w-full'} ${isMobile && ui.uiDrawerOpen && mobileTab !== "chat" ? "hidden" : "flex"}`}>
+            <div className="flex items-center justify-between p-4 border-b border-white/5 bg-black/20 backdrop-blur-md sticky top-0 z-20">
+              <div className="flex items-center gap-3">
+                <button 
+                  onClick={() => setSidebarOpen(!sidebarOpen)} 
+                  className={`p-2 rounded-xl transition-all ${sidebarOpen ? 'bg-[#00f5d4]/10 text-[#00f5d4]' : 'bg-white/5 text-gray-400 hover:text-white'}`}
+                  title="Toggle History"
+                >
+                  <Menu className="h-5 w-5" />
+                </button>
+                <div className="h-4 w-px bg-white/10 mx-1" />
+                <div className="flex bg-gray-900/50 rounded-xl p-1 border border-white/5">
+                  <button onClick={() => setActiveTab("chat")} className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === "chat" ? "bg-gray-800 text-[#00f5d4]" : "text-gray-500 hover:text-white"}`}>
+                    <Sparkles className="w-3.5 h-3.5 inline mr-1.5" /> Chat
+                  </button>
+                  <button onClick={() => setActiveTab("library")} className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === "library" ? "bg-gray-800 text-white" : "text-gray-500 hover:text-white"}`}>
+                    <Library className="w-3.5 h-3.5 inline mr-1.5" /> Library
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <ProjectContextStatus 
+                  context={projectContext} 
+                  onSync={async () => {
+                    notify({ message: "Please use the NexusRBX Studio Plugin to refresh context", type: "info" });
+                  }} 
+                />
+              </div>
+            </div>
+
+            <div className="flex-grow overflow-y-auto px-4 py-6 scrollbar-hide">
+              {activeTab === "chat" && (
+                <ChatView 
+                  messages={chat.messages} 
+                  pendingMessage={chat.pendingMessage || ui.pendingMessage || (agent.isThinking ? { role: "assistant", content: "", thought: "Nexus is thinking...", prompt: "" } : null)} 
+                  generationStage={chat.generationStage || ui.generationStage || (agent.isThinking ? "Nexus is thinking..." : "")} 
+                  user={user} 
+                  activeMode={chat.activeMode}
+                  customModes={chat.customModes}
+                  onModeChange={(mode) => chat.updateChatMode(chat.currentChatId, mode)}
+                  onCreateCustomMode={() => { setEditingCustomMode(null); setCustomModeModalOpen(true); }}
+                  onEditCustomMode={(mode) => { setEditingCustomMode(mode); setCustomModeModalOpen(true); }}
+                  onInstallCommunityMode={handleInstallCommunityMode}
+                  onViewUi={(m) => { ui.setActiveUiId(m.projectId); ui.setUiDrawerOpen(true); if(isMobile) setMobileTab("preview"); }}
+                  onQuickStart={(p) => handlePromptSubmit(null, p)}
+                  onRefine={(m) => { 
+                    setPrompt(`Refine this UI: `);
+                    const el = document.getElementById("tour-prompt-box");
+                    if (el) el.focus();
+                  }}
+                  onToggleActMode={async (m) => {
+                    chat.setChatMode("act");
+                    await handlePromptSubmit(null, m.prompt || m.content);
+                  }}
+                  onPushToStudio={chat.handlePushToStudio}
+                  onShareWithTeam={chat.handleShareWithTeam}
+                  teams={teams}
+                  onFixUiAudit={async (m) => {
+                    if (!m.boardState || !m.metadata?.qaReport?.issues) return;
+                    try {
                       const token = await user.getIdToken();
-                      const res = await fetch(`${BACKEND_URL}/api/ui-builder/ai/generate-functionality`, {
+                      const res = await fetch(`${BACKEND_URL}/api/ui-builder/ai/audit/fix`, {
                         method: "POST",
                         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
                         body: JSON.stringify({
-                          lua: ui.activeUi?.uiModuleLua || "",
-                          prompt: task.prompt,
-                          gameSpec: settings.gameSpec || ""
+                          boardState: m.boardState,
+                          issues: m.metadata.qaReport.issues
                         })
                       });
                       if (res.ok) {
                         const data = await res.json();
-                        // Save the new scripts
-                        for (const s of data.scripts) {
-                          await scriptManager.handleCreateScript(s.name, s.code, "logic");
-                        }
-                        notify({ message: `Generated ${data.scripts.length} scripts for ${task.label}`, type: "success" });
+                        ui.setUiGenerations(prev => prev.map(g => g.id === m.id ? { ...g, boardState: data.boardState } : g));
+                        notify({ message: "UI fixes applied! Regenerating Lua...", type: "success" });
+                        await ui.handleRefine("Finalize Lua for the updated layout", m.id);
                       }
+                    } catch (err) {
+                      console.error("Fix UI Audit failed:", err);
+                      notify({ message: "Failed to apply UI fixes", type: "error" });
                     }
-                    
-                    // Mark task as done
-                    chat.setTasks(prev => prev.map(t => t.id === task.id ? { ...t, status: 'done' } : t));
-                  } catch (err) {
-                    console.error("Task execution failed:", err);
-                    notify({ message: `Failed to execute ${task.label}`, type: "error" });
-                  } finally {
-                    chat.setCurrentTaskId(null);
-                  }
-                } }
-                currentTaskId={chat.currentTaskId}
-                chatEndRef={chatEndRef}
-              />
-            )}
-            {activeTab === "library" && (
-              <LibraryView 
-                scripts={scripts} 
-                onOpenScript={handleOpenScript} 
-              />
-            )}
-          </div>
-
-          <div className="p-4 bg-gradient-to-t from-black via-black/80 to-transparent">
-            <div className="max-w-5xl mx-auto space-y-4">
-              <UnifiedStatusBar 
-                isGenerating={chat.isGenerating || ui.uiIsGenerating || agent.isThinking}
-                stage={chat.generationStage || ui.generationStage || (agent.isThinking ? "Nexus is thinking..." : "")}
-                mode={chat.activeMode}
-              />
-
-              {currentPowerTools.length > 0 && (
-                <div className="flex items-center gap-2 px-2 overflow-x-auto scrollbar-hide pb-1 border-b border-white/5 mb-2">
-                  <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest mr-2">Power Tools:</span>
-                  {currentPowerTools.map((tool, idx) => (
-                    <button
-                      key={idx}
-                      onClick={() => handlePromptSubmit(null, tool.prompt)}
-                      className="whitespace-nowrap px-3 py-1.5 rounded-lg bg-[#00f5d4]/5 border border-[#00f5d4]/10 text-[9px] font-black text-[#00f5d4] uppercase tracking-widest hover:bg-[#00f5d4]/20 transition-all"
-                    >
-                      {tool.label}
-                    </button>
-                  ))}
-                </div>
-              )}
-
-              {currentActions.length > 0 && (
-                <div className="flex items-center gap-2 px-2 overflow-x-auto scrollbar-hide pb-1">
-                  {currentActions.map((action, idx) => (
-                    <button
-                      key={idx}
-                      onClick={() => setPrompt(action.prompt)}
-                      className="whitespace-nowrap px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-[10px] font-black text-gray-400 uppercase tracking-widest hover:bg-white/10 hover:text-white transition-all"
-                    >
-                      {action.label}
-                    </button>
-                  ))}
-                </div>
-              )}
-
-              <div className="px-2 flex items-center justify-between gap-4">
-                <TokenBar tokensLeft={totalRemaining} tokensLimit={subLimit} resetsAt={resetsAt} plan={planKey} />
-                
-                <div className="flex items-center bg-gray-900/50 border border-gray-800 rounded-xl p-1 shadow-inner">
-                  <button 
-                    onClick={() => chat.setChatMode("plan")}
-                    className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 ${chat.chatMode === "plan" ? "bg-gray-800 text-[#00f5d4] shadow-sm" : "text-gray-400 hover:text-white"}`}
-                  >
-                    <Search className="w-3 h-3" /> Plan
-                  </button>
-                  <button 
-                    onClick={async () => {
-                      chat.setChatMode("act");
-                      // If we have a previous message that was a plan, auto-trigger act
-                      const lastMsg = chat.messages[chat.messages.length - 1];
-                      if (lastMsg && lastMsg.role === 'assistant' && (lastMsg.plan || lastMsg.explanation?.includes('<plan>'))) {
-                        await handlePromptSubmit(null, lastMsg.prompt || chat.messages[chat.messages.length - 2]?.content);
+                  }}
+                  onExecuteTask={async (task) => {
+                    chat.setCurrentTaskId(task.id);
+                    const requestId = uuidv4();
+                    try {
+                      if (task.type === "pipeline") {
+                        await ui.handleGenerateUiPreview(task.prompt, chat.currentChatId, chat.setCurrentChatId, null, requestId);
+                      } else if (task.type === "generate_functionality") {
+                        const token = await user.getIdToken();
+                        const res = await fetch(`${BACKEND_URL}/api/ui-builder/ai/generate-functionality`, {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+                          body: JSON.stringify({
+                            lua: ui.activeUi?.uiModuleLua || "",
+                            prompt: task.prompt,
+                            gameSpec: settings.gameSpec || ""
+                          })
+                        });
+                        if (res.ok) {
+                          const data = await res.json();
+                          for (const s of data.scripts) {
+                            await scriptManager.handleCreateScript(s.name, s.code, "logic");
+                          }
+                          notify({ message: `Generated ${data.scripts.length} scripts for ${task.label}`, type: "success" });
+                        }
                       }
-                    }}
-                    className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 ${chat.chatMode === "act" ? "bg-gray-800 text-orange-400 shadow-sm" : "text-gray-500 hover:text-white"}`}
-                  >
-                    <Zap className="w-3 h-3" /> Act
-                  </button>
-                </div>
-              </div>
-              
-              <div className="relative group">
-                {chat.isGenerating && (
-                  <div className="absolute -top-6 left-0 right-0 flex justify-center animate-in fade-in slide-in-from-bottom-1 duration-500">
-                    <span className="text-[9px] font-bold text-gray-500 uppercase tracking-widest bg-black/40 backdrop-blur-md px-3 py-1 rounded-full border border-white/5">
-                      Complex generations may take up to 5 minutes
-                    </span>
+                      chat.setTasks(prev => prev.map(t => t.id === task.id ? { ...t, status: 'done' } : t));
+                    } catch (err) {
+                      console.error("Task execution failed:", err);
+                      notify({ message: `Failed to execute ${task.label}`, type: "error" });
+                    } finally {
+                      chat.setCurrentTaskId(null);
+                    }
+                  }}
+                  currentTaskId={chat.currentTaskId}
+                  chatEndRef={chatEndRef}
+                />
+              )}
+              {activeTab === "library" && (
+                <LibraryView 
+                  scripts={scripts} 
+                  onOpenScript={handleOpenScript} 
+                />
+              )}
+            </div>
+
+            <div className="p-4 bg-gradient-to-t from-black via-black/80 to-transparent">
+              <div className="max-w-5xl mx-auto space-y-4">
+                <UnifiedStatusBar 
+                  isGenerating={chat.isGenerating || ui.uiIsGenerating || agent.isThinking}
+                  stage={chat.generationStage || ui.generationStage || (agent.isThinking ? "Nexus is thinking..." : "")}
+                  mode={chat.activeMode}
+                />
+
+                {currentPowerTools.length > 0 && (
+                  <div className="flex items-center gap-2 px-2 overflow-x-auto scrollbar-hide pb-1 border-b border-white/5 mb-2">
+                    <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest mr-2">Power Tools:</span>
+                    {currentPowerTools.map((tool, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => handlePromptSubmit(null, tool.prompt)}
+                        className="whitespace-nowrap px-3 py-1.5 rounded-lg bg-[#00f5d4]/5 border border-[#00f5d4]/10 text-[9px] font-black text-[#00f5d4] uppercase tracking-widest hover:bg-[#00f5d4]/20 transition-all"
+                      >
+                        {tool.label}
+                      </button>
+                    ))}
                   </div>
                 )}
-                <div 
-                  className="absolute -inset-0.5 rounded-2xl blur opacity-20 group-focus-within:opacity-40 transition duration-500" 
-                  style={{ background: `linear-gradient(to r, ${currentTheme.primary}, ${currentTheme.secondary})` }}
-                />
-                <div className="relative bg-[#121212] border border-white/10 rounded-2xl p-2 shadow-2xl flex flex-col gap-2">
-                  <div className="flex items-center gap-2 px-2 pt-2">
-                    <div className={`px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest transition-all ${agent.isThinking || ui.uiIsGenerating || chat.isGenerating ? 'bg-[#00f5d4] text-black animate-pulse' : 'bg-white/5 text-gray-500'}`}>
-                      {agent.isThinking ? 'Thinking' : ui.uiIsGenerating ? 'Building' : chat.isGenerating ? 'Responding' : 'Ready'}
-                    </div>
-                    <div className="h-px flex-1 bg-white/5" />
+
+                {currentActions.length > 0 && (
+                  <div className="flex items-center gap-2 px-2 overflow-x-auto scrollbar-hide pb-1">
+                    {currentActions.map((action, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => setPrompt(action.prompt)}
+                        className="whitespace-nowrap px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-[10px] font-black text-gray-400 uppercase tracking-widest hover:bg-white/10 hover:text-white transition-all"
+                      >
+                        {action.label}
+                      </button>
+                    ))}
                   </div>
-                  <div className="flex items-center gap-2 p-2 pt-0">
-                    <textarea
-                      id="tour-prompt-box"
-                      className="flex-1 bg-transparent border-none rounded-xl p-3 resize-none focus:ring-0 text-gray-100 placeholder-gray-500 text-[14px] md:text-[15px] leading-relaxed disabled:opacity-50"
-                      rows="1" 
-                      placeholder={activeModeData.placeholder}
-                      value={prompt} 
-                      onChange={(e) => setPrompt(e.target.value)}
-                      disabled={chat.isGenerating || ui.uiIsGenerating || agent.isThinking}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' && !e.shiftKey) {
-                          e.preventDefault();
-                          handlePromptSubmit();
+                )}
+
+                <div className="px-2 flex items-center justify-between gap-4">
+                  <TokenBar tokensLeft={totalRemaining} tokensLimit={subLimit} resetsAt={resetsAt} plan={planKey} />
+                  
+                  <div className="flex items-center bg-gray-900/50 border border-gray-800 rounded-xl p-1 shadow-inner">
+                    <button 
+                      onClick={() => chat.setChatMode("plan")}
+                      className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 ${chat.chatMode === "plan" ? "bg-gray-800 text-[#00f5d4] shadow-sm" : "text-gray-400 hover:text-white"}`}
+                    >
+                      <Search className="w-3 h-3" /> Plan
+                    </button>
+                    <button 
+                      onClick={async () => {
+                        chat.setChatMode("act");
+                        const lastMsg = chat.messages[chat.messages.length - 1];
+                        if (lastMsg && lastMsg.role === 'assistant' && (lastMsg.plan || lastMsg.explanation?.includes('<plan>'))) {
+                          await handlePromptSubmit(null, lastMsg.prompt || chat.messages[chat.messages.length - 2]?.content);
                         }
                       }}
-                    />
-                    <div className="flex items-center gap-2">
-                      <button 
-                        onClick={() => {
-                          const allModes = [...CHAT_MODES, ...chat.customModes];
-                          const modeIds = allModes.map(m => m.id);
-                          const currentIndex = modeIds.indexOf(chat.activeMode);
-                          const nextIndex = (currentIndex + 1) % modeIds.length;
-                          chat.updateChatMode(chat.currentChatId, modeIds[nextIndex]);
+                      className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 ${chat.chatMode === "act" ? "bg-gray-800 text-orange-400 shadow-sm" : "text-gray-500 hover:text-white"}`}
+                    >
+                      <Zap className="w-3 h-3" /> Act
+                    </button>
+                  </div>
+                </div>
+                
+                <div className="relative group">
+                  {chat.isGenerating && (
+                    <div className="absolute -top-6 left-0 right-0 flex justify-center animate-in fade-in slide-in-from-bottom-1 duration-500">
+                      <span className="text-[9px] font-bold text-gray-500 uppercase tracking-widest bg-black/40 backdrop-blur-md px-3 py-1 rounded-full border border-white/5">
+                        Complex generations may take up to 5 minutes
+                      </span>
+                    </div>
+                  )}
+                  <div 
+                    className="absolute -inset-0.5 rounded-2xl blur opacity-20 group-focus-within:opacity-40 transition duration-500" 
+                    style={{ background: `linear-gradient(to r, ${currentTheme.primary}, ${currentTheme.secondary})` }}
+                  />
+                  <div className="relative bg-[#121212] border border-white/10 rounded-2xl p-2 shadow-2xl flex flex-col gap-2">
+                    <div className="flex items-center gap-2 px-2 pt-2">
+                      <div className={`px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest transition-all ${agent.isThinking || ui.uiIsGenerating || chat.isGenerating ? 'bg-[#00f5d4] text-black animate-pulse' : 'bg-white/5 text-gray-500'}`}>
+                        {agent.isThinking ? 'Thinking' : ui.uiIsGenerating ? 'Building' : chat.isGenerating ? 'Responding' : 'Ready'}
+                      </div>
+                      <div className="h-px flex-1 bg-white/5" />
+                    </div>
+                    <div className="flex items-center gap-2 p-2 pt-0">
+                      <textarea
+                        id="tour-prompt-box"
+                        className="flex-1 bg-transparent border-none rounded-xl p-3 resize-none focus:ring-0 text-gray-100 placeholder-gray-500 text-[14px] md:text-[15px] leading-relaxed disabled:opacity-50"
+                        rows="1" 
+                        placeholder={activeModeData.placeholder}
+                        value={prompt} 
+                        onChange={(e) => setPrompt(e.target.value)}
+                        disabled={chat.isGenerating || ui.uiIsGenerating || agent.isThinking}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && !e.shiftKey) {
+                            e.preventDefault();
+                            handlePromptSubmit();
+                          }
                         }}
-                        className={`hidden sm:flex items-center gap-2 px-3 py-2 rounded-xl border border-white/5 text-[10px] font-black uppercase tracking-widest transition-all hover:bg-white/5 ${activeModeData.bg} ${activeModeData.color}`}
-                        style={chat.activeMode.startsWith('custom_') ? { color: activeModeData.color || '#9b5de5' } : {}}
-                        title={`Current Mode: ${activeModeData.label}. Click to cycle.`}
-                      >
-                        {activeModeData.icon}
-                        <span className="hidden lg:inline">{activeModeData.label}</span>
-                      </button>
-                      <button 
-                        id="tour-generate-button"
-                        onClick={handlePromptSubmit} 
-                        disabled={chat.isGenerating || ui.uiIsGenerating || agent.isThinking || !prompt.trim()}
-                        className="p-3 rounded-xl transition-all disabled:opacity-50 bg-[#00f5d4] text-black hover:shadow-[0_0_20px_rgba(0,245,212,0.4)] active:scale-95"
-                      >
-                        {chat.isGenerating || ui.uiIsGenerating || agent.isThinking ? <Loader className="h-5 w-5 animate-spin" /> : <Sparkles className="h-5 w-5" />}
-                      </button>
+                      />
+                      <div className="flex items-center gap-2">
+                        <button 
+                          onClick={() => {
+                            const allModes = [...CHAT_MODES, ...chat.customModes];
+                            const modeIds = allModes.map(m => m.id);
+                            const currentIndex = modeIds.indexOf(chat.activeMode);
+                            const nextIndex = (currentIndex + 1) % modeIds.length;
+                            chat.updateChatMode(chat.currentChatId, modeIds[nextIndex]);
+                          }}
+                          className={`hidden sm:flex items-center gap-2 px-3 py-2 rounded-xl border border-white/5 text-[10px] font-black uppercase tracking-widest transition-all hover:bg-white/5 ${activeModeData.bg} ${activeModeData.color}`}
+                          style={chat.activeMode.startsWith('custom_') ? { color: activeModeData.color || '#9b5de5' } : {}}
+                          title={`Current Mode: ${activeModeData.label}. Click to cycle.`}
+                        >
+                          {activeModeData.icon}
+                          <span className="hidden lg:inline">{activeModeData.label}</span>
+                        </button>
+                        <button 
+                          id="tour-generate-button"
+                          onClick={handlePromptSubmit} 
+                          disabled={chat.isGenerating || ui.uiIsGenerating || agent.isThinking || !prompt.trim()}
+                          className="p-3 rounded-xl transition-all disabled:opacity-50 bg-[#00f5d4] text-black hover:shadow-[0_0_20px_rgba(0,245,212,0.4)] active:scale-95"
+                        >
+                          {chat.isGenerating || ui.uiIsGenerating || agent.isThinking ? <Loader className="h-5 w-5 animate-spin" /> : <Sparkles className="h-5 w-5" />}
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
+            </div>
+          </div>
+
+          {/* Right Side: Live Preview (Focus Mode) */}
+          <div className={`flex-1 bg-[#050505] flex-col min-w-0 transition-all duration-500 ${ui.uiDrawerOpen ? 'flex' : 'hidden'} ${isMobile && mobileTab !== "preview" ? "hidden" : "flex"}`}>
+            <div className="flex items-center justify-between p-4 border-b border-white/5 bg-black/20 backdrop-blur-md sticky top-0 z-20">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 rounded-lg bg-[#00f5d4]/10 text-[#00f5d4]">
+                  <Layout className="w-4 h-4" />
+                </div>
+                <span className="text-[10px] font-black uppercase tracking-widest text-white">Live Preview & Code</span>
+              </div>
+              <button 
+                onClick={() => { ui.setUiDrawerOpen(false); if(isMobile) setMobileTab("chat"); }}
+                className="p-2 rounded-lg hover:bg-white/5 text-gray-500 hover:text-white transition-all"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="flex-1 overflow-hidden">
+              <UiPreviewDrawer
+                open={true}
+                inline={true}
+                onClose={() => ui.setUiDrawerOpen(false)}
+                uiModuleLua={ui.activeUi?.uiModuleLua || ""}
+                systemsLua={ui.activeUi?.systemsLua || ""}
+                lua={ui.activeUi?.lua || ""}
+                boardState={ui.activeUi?.boardState || null}
+                prompt={ui.activeUi?.prompt || ""}
+                history={ui.uiGenerations}
+                activeId={ui.activeUiId}
+                onSelectHistory={(id) => ui.setActiveUiId(id)}
+                onDownload={() => {
+                  const blob = new Blob([ui.activeUi?.lua], { type: "text/plain;charset=utf-8" });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement("a");
+                  a.href = url; a.download = "generated_ui.lua"; a.click();
+                  URL.revokeObjectURL(url);
+                }}
+                user={user}
+                settings={settings}
+                onRefine={ui.handleRefine}
+                onUpdateLua={(newLua) => {
+                  if (ui.activeUiId) {
+                    ui.setUiGenerations(prev => prev.map(g => g.id === ui.activeUiId ? { ...g, lua: newLua } : g));
+                  }
+                }}
+                isRefining={ui.uiIsGenerating}
+              />
             </div>
           </div>
         </main>
@@ -876,35 +913,6 @@ function AiPage() {
           await scriptManager.handleCreateScript(title, code, "logic");
           notify({ message: "Script saved to library!", type: "success" });
         }}
-      />
-
-      <UiPreviewDrawer
-        open={ui.uiDrawerOpen}
-        onClose={() => ui.setUiDrawerOpen(false)}
-        uiModuleLua={ui.activeUi?.uiModuleLua || ""}
-        systemsLua={ui.activeUi?.systemsLua || ""}
-        lua={ui.activeUi?.lua || ""}
-        boardState={ui.activeUi?.boardState || null}
-        prompt={ui.activeUi?.prompt || ""}
-        history={ui.uiGenerations}
-        activeId={ui.activeUiId}
-        onSelectHistory={(id) => ui.setActiveUiId(id)}
-        onDownload={() => {
-          const blob = new Blob([ui.activeUi?.lua], { type: "text/plain;charset=utf-8" });
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement("a");
-          a.href = url; a.download = "generated_ui.lua"; a.click();
-          URL.revokeObjectURL(url);
-        }}
-        user={user}
-        settings={settings}
-        onRefine={ui.handleRefine}
-        onUpdateLua={(newLua) => {
-          if (ui.activeUiId) {
-            ui.setUiGenerations(prev => prev.map(g => g.id === ui.activeUiId ? { ...g, lua: newLua } : g));
-          }
-        }}
-        isRefining={ui.uiIsGenerating}
       />
 
       {settings.enableGameWizard !== false && (
@@ -947,6 +955,14 @@ function AiPage() {
         <OnboardingContainer 
           forceShow={true} 
           onComplete={() => setShowOnboarding(false)} 
+        />
+      )}
+
+      {showCelebration && (
+        <CelebrationAnimation 
+          onComplete={dismissCelebration}
+          title="Welcome to Nexus Pro!"
+          subtitle="Your token limit has been increased and GPT-5.2 is now active."
         />
       )}
 

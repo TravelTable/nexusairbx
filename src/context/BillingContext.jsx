@@ -17,6 +17,7 @@ export function BillingProvider({ children, pollMs = 60_000 }) {
     paygRemaining: 0,
     totalRemaining: 0,
     resetsAt: null,
+    showCelebration: false,
   });
 
   useEffect(() => {
@@ -40,9 +41,19 @@ export function BillingProvider({ children, pollMs = 60_000 }) {
     }
     setState(s => ({ ...s, loading: true, error: null }));
     try {
-      const ent = await getEntitlements();                 // ← no args
+      const ent = await getEntitlements();
       const summary = summarizeEntitlements(ent);
-      setState({ loading: false, error: null, ...summary });
+      
+      setState(prev => {
+        const upgraded = prev.plan === "FREE" && summary.plan !== "FREE";
+        return { 
+          ...prev, 
+          loading: false, 
+          error: null, 
+          ...summary,
+          showCelebration: upgraded || prev.showCelebration
+        };
+      });
     } catch (err) {
       setState(s => ({ ...s, loading: false, error: err?.message || "Failed to load billing" }));
     }
@@ -56,8 +67,9 @@ export function BillingProvider({ children, pollMs = 60_000 }) {
 
   const actions = useMemo(() => ({
     refresh,
-    checkout: async (priceId, mode) => user && startCheckout(priceId, mode), // ← no args
-    portal: async () => user && openPortal(),                                // ← no args
+    dismissCelebration: () => setState(s => ({ ...s, showCelebration: false })),
+    checkout: async (priceId, mode) => user && startCheckout(priceId, mode),
+    portal: async () => user && openPortal(),
   }), [user, refresh]);
 
   return (
