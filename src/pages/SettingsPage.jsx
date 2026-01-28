@@ -32,11 +32,10 @@ import {
 import { useSettings } from "../context/SettingsContext";
 import { useBilling } from "../context/BillingContext";
 import { CHAT_MODES } from "../components/ai/ChatView";
-import { auth, db } from "../firebase";
+import { auth } from "../firebase";
 import { signOut } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
 import ConfirmationModal from "../components/ConfirmationModal";
-import { doc, onSnapshot } from "firebase/firestore";
 import {
   CartesianGrid,
   Tooltip,

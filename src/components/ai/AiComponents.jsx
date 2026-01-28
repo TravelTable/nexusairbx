@@ -16,7 +16,6 @@ import {
   Settings2,
   Type,
   Globe,
-  Send,
   Rocket,
   RefreshCw
 } from "lucide-react";
@@ -195,7 +194,6 @@ export const TaskOrchestrator = ({ tasks, currentTaskId, onExecuteTask }) => {
         {tasks.map((task, i) => {
           const isCurrent = task.id === currentTaskId;
           const isDone = task.status === 'done';
-          const isPending = !isCurrent && !isDone;
 
           return (
             <div key={task.id} className={`flex items-center gap-4 p-3 rounded-xl border transition-all ${isCurrent ? 'bg-[#9b5de5]/20 border-[#9b5de5]/40 shadow-lg' : isDone ? 'bg-white/5 border-white/10 opacity-60' : 'bg-white/5 border-white/5'}`}>

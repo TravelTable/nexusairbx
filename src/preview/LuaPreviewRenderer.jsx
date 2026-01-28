@@ -1,4 +1,4 @@
-import React, { useLayoutEffect, useRef, useState, useMemo } from "react";
+import React, { useLayoutEffect, useRef, useState, useMemo, useCallback } from "react";
 import { extractUiManifestFromLua } from "../lib/extractUiManifestFromLua";
 import { robloxThumbnailUrl } from "../lib/uiBuilderApi";
 
@@ -237,7 +237,7 @@ function PreviewNode({ item, interactive, onAction, editMode, onUpdate, canvasSi
     setDragStart({ x: e.clientX, y: e.clientY });
   };
 
-  const handleMouseMove = (e) => {
+  const handleMouseMove = useCallback((e) => {
     if (!isDragging || !editMode) return;
     const dx = e.clientX - dragStart.x;
     const dy = e.clientY - dragStart.y;
@@ -248,11 +248,11 @@ function PreviewNode({ item, interactive, onAction, editMode, onUpdate, canvasSi
 
     onUpdate({ x: nx, y: ny });
     setDragStart({ x: e.clientX, y: e.clientY });
-  };
+  }, [isDragging, editMode, dragStart, isScale, x, y, canvasSize.w, canvasSize.h, onUpdate]);
 
-  const handleMouseUp = () => {
+  const handleMouseUp = useCallback(() => {
     setIsDragging(false);
-  };
+  }, []);
 
   React.useEffect(() => {
     if (isDragging) {
@@ -263,7 +263,7 @@ function PreviewNode({ item, interactive, onAction, editMode, onUpdate, canvasSi
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [isDragging, dragStart]);
+  }, [isDragging, handleMouseMove, handleMouseUp]);
 
   const type = String(item.type || "").toLowerCase();
   const fillColor = parseColor(item.fill);
@@ -298,12 +298,13 @@ function PreviewNode({ item, interactive, onAction, editMode, onUpdate, canvasSi
     height: isScale ? `${h * 100}%` : h,
     zIndex: Number(item.zIndex) || 1,
     cursor: editMode ? (isDragging ? "grabbing" : "grab") : (interactive ? "pointer" : "default"),
-    border: editMode ? "2px dashed #00f5d4" : undefined,
     borderRadius: Number(item.radius) || 0,
     background: background,
-    border: item.stroke
-      ? `${Number(item.strokeWidth) || 1}px solid ${strokeColor || "rgba(255,255,255,0.2)"}`
-      : (type === "frame" ? "1px solid rgba(255,255,255,0.1)" : "none"),
+    border: editMode
+      ? "2px dashed #00f5d4"
+      : item.stroke
+        ? `${Number(item.strokeWidth) || 1}px solid ${strokeColor || "rgba(255,255,255,0.2)"}`
+        : (type === "frame" ? "1px solid rgba(255,255,255,0.1)" : "none"),
     color: textColor || "#ffffff",
     display: item.visible === false ? "none" : "flex",
     alignItems: "center",
