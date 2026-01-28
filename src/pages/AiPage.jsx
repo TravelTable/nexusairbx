@@ -366,9 +366,6 @@ function AiPage() {
 
       // 1. Start a new chat session for this prompt if it's the first message
       if (!activeChatId) {
-        const expert = CHAT_MODES.find(m => m.id === effectiveMode) || CHAT_MODES[0];
-        const initialContext = `[SYSTEM CONTEXT: User has selected the ${expert.label} expert. ${expert.description}]`;
-
         const newChatRef = await addDoc(collection(db, "users", user.uid, "chats"), {
           title: currentPrompt.slice(0, 30) + (currentPrompt.length > 30 ? "..." : ""),
           activeMode: effectiveMode,
