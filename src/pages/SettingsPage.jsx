@@ -33,6 +33,7 @@ import {
 import { useSettings } from "../context/SettingsContext";
 import { useBilling } from "../context/BillingContext";
 import { CHAT_MODES } from "../components/ai/ChatView";
+import { BACKEND_URL } from "../config";
 import { auth } from "../firebase";
 import { signOut } from "firebase/auth";
 import { useNavigate } from "react-router-dom";

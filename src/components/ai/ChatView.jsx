@@ -9,7 +9,8 @@ import {
   PerformanceAudit,
   PlanTracker,
   TaskOrchestrator,
-  ArtifactCard
+  ArtifactCard,
+  SkeletonArtifact
 } from "./AiComponents";
 import ScriptLoadingBarContainer from "../ScriptLoadingBarContainer";
 import { 
