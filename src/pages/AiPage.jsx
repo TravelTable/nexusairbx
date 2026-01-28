@@ -349,10 +349,19 @@ function AiPage() {
     // Smarter routing: do deterministic routing first, use agent only when unclear
     try {
       const requestId = uuidv4();
-      
-      // 1. Start a new chat session for this prompt
-      chat.startNewChat();
-      chat.updateChatMode(null, effectiveMode);
+      let activeChatId = chat.currentChatId;
+
+      // 1. Start a new chat session for this prompt if it's the first message
+      if (!activeChatId) {
+        const newChatRef = await addDoc(collection(db, "users", user.uid, "chats"), {
+          title: currentPrompt.slice(0, 30) + (currentPrompt.length > 30 ? "..." : ""),
+          activeMode: effectiveMode,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        });
+        activeChatId = newChatRef.id;
+        chat.setCurrentChatId(activeChatId);
+      }
 
       // Set a temporary pending message so the user sees immediate feedback
       chat.setPendingMessage({ 
@@ -386,12 +395,12 @@ function AiPage() {
         // Trigger both chat (for streaming) and UI builder
         const uiPromise = ui.handleGenerateUiPreview(
           currentPrompt.replace(/^\/ui\s*/i, ""),
-          chat.currentChatId,
+          activeChatId,
           chat.setCurrentChatId,
           null,
           requestId
         );
-        const chatPromise = chat.handleSubmit(currentPrompt, chat.currentChatId, requestId);
+        const chatPromise = chat.handleSubmit(currentPrompt, activeChatId, requestId);
         
         await Promise.all([uiPromise, chatPromise]);
         return;
@@ -417,21 +426,22 @@ function AiPage() {
     // Otherwise, ask agent to route
     const data = await agent.sendMessage(
       currentPrompt,
-      chat.currentChatId,
+      activeChatId,
       chat.setCurrentChatId,
       requestId,
-      effectiveMode
+      effectiveMode,
+      chat.chatMode
     );
 
       if (data?.action === "pipeline") {
         const uiPromise = ui.handleGenerateUiPreview(
           data.parameters?.prompt || currentPrompt,
-          chat.currentChatId,
+          activeChatId,
           chat.setCurrentChatId,
           data.parameters?.specs || null,
           requestId
         );
-        const chatPromise = chat.handleSubmit(currentPrompt, chat.currentChatId, requestId);
+        const chatPromise = chat.handleSubmit(currentPrompt, activeChatId, requestId);
         
         await Promise.all([uiPromise, chatPromise]);
       } else if (data?.action === "refine") {
@@ -479,7 +489,7 @@ function AiPage() {
           notify({ message: "Asset suggestion failed", type: "error" });
         }
 
-        await chat.handleSubmit(currentPrompt, chat.currentChatId, requestId);
+        await chat.handleSubmit(currentPrompt, activeChatId, requestId);
       } else if (data?.action === "lint") {
         // Audit UI for UX/accessibility issues (contrast, tap targets, hierarchy, consistency)
         try {
@@ -511,13 +521,13 @@ function AiPage() {
           notify({ message: "Audit failed", type: "error" });
         }
 
-        await chat.handleSubmit(currentPrompt, chat.currentChatId, requestId);
+        await chat.handleSubmit(currentPrompt, activeChatId, requestId);
       } else if (data?.action === "plan") {
         // Multi-step plan received
         chat.setTasks(data.tasks || []);
-        await chat.handleSubmit(currentPrompt, chat.currentChatId, requestId);
+        await chat.handleSubmit(currentPrompt, activeChatId, requestId);
       } else {
-        await chat.handleSubmit(currentPrompt, chat.currentChatId, requestId);
+        await chat.handleSubmit(currentPrompt, activeChatId, requestId);
       }
     } catch (err) {
       console.error("Routing error:", err);
@@ -690,14 +700,8 @@ function AiPage() {
                 }}
                 onToggleActMode={async (m) => {
                   // Logic to transition from Plan to Act
-                  const requestId = uuidv4();
-                  await ui.handleGenerateUiPreview(
-                    m.parameters?.prompt || m.content || "",
-                    chat.currentChatId,
-                    chat.setCurrentChatId,
-                    m.parameters?.specs || null,
-                    requestId
-                  );
+                  chat.setChatMode("act");
+                  await handlePromptSubmit(null, m.prompt || m.content);
                 }}
                 onPushToStudio={chat.handlePushToStudio}
                 onShareWithTeam={chat.handleShareWithTeam}
@@ -820,8 +824,23 @@ function AiPage() {
                 </div>
               )}
 
-              <div className="px-2">
+              <div className="px-2 flex items-center justify-between gap-4">
                 <TokenBar tokensLeft={totalRemaining} tokensLimit={subLimit} resetsAt={resetsAt} plan={planKey} />
+                
+                <div className="flex items-center bg-gray-900/50 border border-gray-800 rounded-xl p-1 shadow-inner">
+                  <button 
+                    onClick={() => chat.setChatMode("plan")}
+                    className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 ${chat.chatMode === "plan" ? "bg-gray-800 text-[#00f5d4] shadow-sm" : "text-gray-400 hover:text-white"}`}
+                  >
+                    <Search className="w-3 h-3" /> Plan
+                  </button>
+                  <button 
+                    onClick={() => chat.setChatMode("act")}
+                    className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 ${chat.chatMode === "act" ? "bg-gray-800 text-orange-400 shadow-sm" : "text-gray-500 hover:text-white"}`}
+                  >
+                    <Zap className="w-3 h-3" /> Act
+                  </button>
+                </div>
               </div>
               
               <div className="relative group">

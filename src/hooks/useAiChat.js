@@ -30,6 +30,7 @@ export function useAiChat(user, settings, refreshBilling, notify) {
   const [generationStage, setGenerationStage] = useState("");
   const [tasks, setTasks] = useState([]);
   const [currentTaskId, setCurrentTaskId] = useState(null);
+  const [chatMode, setChatMode] = useState("plan"); // "plan" | "act"
 
   // Listen for code patches (Security/Performance fixes)
   useEffect(() => {
@@ -116,7 +117,7 @@ export function useAiChat(user, settings, refreshBilling, notify) {
     );
   }, [user, notify]);
 
-  const handleSubmit = async (prompt, existingChatId = null, existingRequestId = null, modeOverride = null) => {
+  const handleSubmit = async (prompt, existingChatId = null, existingRequestId = null, modeOverride = null, actNow = false) => {
     const content = prompt.trim();
     if (!content || isGenerating || !user) return;
 
@@ -126,7 +127,8 @@ export function useAiChat(user, settings, refreshBilling, notify) {
 
     let activeChatId = existingChatId || currentChatId;
     const requestId = existingRequestId || uuidv4();
-    const chatMode = modeOverride || activeMode || settings.chatMode || "general";
+    const expertMode = modeOverride || activeMode || settings.chatMode || "general";
+    const currentMode = actNow ? "act" : chatMode;
 
     try {
       if (!activeChatId) {
@@ -167,7 +169,8 @@ export function useAiChat(user, settings, refreshBilling, notify) {
           prompt: content, 
           settings,
           chatId: activeChatId,
-          chatMode: chatMode,
+          chatMode: expertMode,
+          mode: currentMode,
           conversation: messages.slice(-10).map(m => ({ role: m.role, content: m.content || m.explanation }))
         }),
       });
@@ -198,7 +201,7 @@ export function useAiChat(user, settings, refreshBilling, notify) {
       
       // 2. Connect to Stream
       return new Promise((resolve, reject) => {
-        let eventSource = new EventSource(`${BACKEND_URL}/api/generate/stream?jobId=${jobId}&token=${token}`);
+        let eventSource = new EventSource(`${BACKEND_URL}/api/generate/stream?jobId=${jobId}&token=${token}&mode=${currentMode}`);
         let fullText = "";
         let retryCount = 0;
         const maxRetries = 3;
@@ -384,6 +387,8 @@ export function useAiChat(user, settings, refreshBilling, notify) {
     setTasks,
     currentTaskId,
     setCurrentTaskId,
+    chatMode,
+    setChatMode,
     handlePushToStudio: async (artifactId, type, data) => {
       if (!user) return;
       try {

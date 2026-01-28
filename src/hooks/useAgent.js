@@ -9,7 +9,7 @@ export function useAgent(user, notify, refreshBilling) {
   const [messages, setMessages] = useState([]);
   const [isThinking, setIsThinking] = useState(false);
 
-  const sendMessage = useCallback(async (goal, chatId, setChatId, existingRequestId = null, chatMode = "general") => {
+  const sendMessage = useCallback(async (goal, chatId, setChatId, existingRequestId = null, expertMode = "general", currentMode = "plan") => {
     if (!user || !goal) return;
 
     setIsThinking(true);
@@ -21,7 +21,7 @@ export function useAgent(user, notify, refreshBilling) {
       if (!activeChatId && setChatId) {
         const newChatRef = await addDoc(collection(db, "users", user.uid, "chats"), {
           title: goal.slice(0, 30) + (goal.length > 30 ? "..." : ""),
-          activeMode: chatMode,
+          activeMode: expertMode,
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
         });
@@ -49,7 +49,8 @@ export function useAgent(user, notify, refreshBilling) {
         body: JSON.stringify({
           history: messages.slice(-5), // Send recent history for context
           goal,
-          chatMode,
+          chatMode: expertMode,
+          mode: currentMode,
           chatId: activeChatId
         }),
       });

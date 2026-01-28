@@ -339,8 +339,22 @@ export default function ChatView({
                   
                   {m.role === 'assistant' && m.thought && <ThoughtAccordion thought={m.thought} />}
 
-                  {m.role === 'assistant' && m.explanation && m.explanation.includes('<plan>') && (
-                    <PlanTracker plan={m.explanation.match(/<plan>([\s\S]*?)<\/plan>/i)?.[1]} />
+                  {m.role === 'assistant' && (m.plan || (m.explanation && m.explanation.includes('<plan>'))) && (
+                    <div className="space-y-4">
+                      <PlanTracker plan={m.plan || m.explanation.match(/<plan>([\s\S]*?)<\/plan>/i)?.[1]} />
+                      {activeMode !== 'general' && (
+                        <div className="p-4 rounded-2xl bg-[#00f5d4]/5 border border-[#00f5d4]/20 flex flex-col items-center text-center gap-4 animate-in fade-in zoom-in duration-500">
+                          <div className="text-sm font-bold text-[#00f5d4]">Ready to execute this plan?</div>
+                          <button 
+                            onClick={() => onToggleActMode(m)}
+                            className="w-full py-3 rounded-xl bg-[#00f5d4] text-black font-black text-sm flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] transition-all shadow-[0_0_20px_rgba(0,245,212,0.4)]"
+                          >
+                            <Zap className="w-4 h-4 fill-current" />
+                            CONFIRM & EXECUTE
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   )}
 
                   {m.role === 'assistant' && m.action === 'plan' && m.tasks && (
