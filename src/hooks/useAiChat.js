@@ -173,8 +173,21 @@ export function useAiChat(user, settings, refreshBilling, notify) {
       });
       
       if (!jobRes.ok) {
-        const errData = await jobRes.json();
-        throw new Error(errData.error || "Failed to create generation job");
+        let errorMsg = "Failed to create generation job";
+        try {
+          const contentType = jobRes.headers.get("content-type");
+          if (contentType && contentType.includes("application/json")) {
+            const errData = await jobRes.json();
+            errorMsg = errData.error || errorMsg;
+          } else {
+            const text = await jobRes.text();
+            console.error("Server returned non-JSON error:", text);
+            errorMsg = `Server Error (${jobRes.status})`;
+          }
+        } catch (e) {
+          console.error("Error parsing error response:", e);
+        }
+        throw new Error(errorMsg);
       }
       
       const jobData = await jobRes.json();

@@ -130,14 +130,20 @@ export function useUiBuilder(user, settings, refreshBilling, notify) {
         await setDoc(userMsgRef, { role: "user", content: content, createdAt: serverTimestamp(), requestId });
       }
 
-      const data = await aiPipeline({
-        token,
-        prompt: content,
-        canvasSize,
-        maxItems,
-        gameSpec: settings.gameSpec || "",
-        maxSystemsTokens: settings.uiMaxSystemsTokens,
-      });
+      let data;
+      try {
+        data = await aiPipeline({
+          token,
+          prompt: content,
+          canvasSize,
+          maxItems,
+          gameSpec: settings.gameSpec || "",
+          maxSystemsTokens: settings.uiMaxSystemsTokens,
+        });
+      } catch (err) {
+        console.error("AI Pipeline error:", err);
+        throw new Error(err.message || "UI generation request failed");
+      }
 
       const { boardState, uiModuleLua, systemsLua, tokensConsumed, warnings } = data;
       
