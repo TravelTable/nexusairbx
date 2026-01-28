@@ -16,7 +16,9 @@ import {
   Settings2,
   Type,
   Globe,
-  Send
+  Send,
+  Rocket,
+  RefreshCw
 } from "lucide-react";
 import PLAN_INFO from "../../lib/planInfo";
 import { getGravatarUrl, getUserInitials, formatNumber, formatResetDate } from "../../lib/aiUtils";
