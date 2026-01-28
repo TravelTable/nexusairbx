@@ -346,6 +346,9 @@ export default function UiPreviewDrawer({
               isRefining={isRefining}
               onRefine={onRefine}
               user={user}
+              onUpdateBoardState={(newBS) => {
+                onUpdateLua(newBS);
+              }}
             />
           )}
           {tab === "code" && (

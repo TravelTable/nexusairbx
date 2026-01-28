@@ -2,7 +2,22 @@ import React, { useLayoutEffect, useRef, useState, useMemo } from "react";
 import { extractUiManifestFromLua } from "../lib/extractUiManifestFromLua";
 import { robloxThumbnailUrl } from "../lib/uiBuilderApi";
 
-export default function LuaPreviewRenderer({ lua, boardState, interactive = false, onAction }) {
+export const PREVIEW_DEVICES = {
+  pc: { name: "PC / Console", w: 1280, h: 720, icon: "Monitor" },
+  tablet: { name: "Tablet", w: 1024, h: 768, icon: "Tablet" },
+  phone: { name: "Phone", w: 812, h: 375, icon: "Smartphone" },
+  portrait: { name: "Phone (Portrait)", w: 375, h: 812, icon: "Smartphone" },
+};
+
+export default function LuaPreviewRenderer({ 
+  lua, 
+  boardState, 
+  interactive = false, 
+  onAction,
+  device = "pc",
+  editMode = false,
+  onUpdateItem
+}) {
   const outerRef = useRef(null);
   const [box, setBox] = useState({ w: 0, h: 0 });
 
@@ -46,8 +61,9 @@ export default function LuaPreviewRenderer({ lua, boardState, interactive = fals
 
   const items = useMemo(() => (Array.isArray(board?.items) ? board.items : []), [board]);
   
-  const canvasW = Number(board?.canvasSize?.w) || 1280;
-  const canvasH = Number(board?.canvasSize?.h) || 720;
+  const deviceConfig = PREVIEW_DEVICES[device] || PREVIEW_DEVICES.pc;
+  const canvasW = deviceConfig.w;
+  const canvasH = deviceConfig.h;
 
   // --- SMART ZOOM LOGIC ---
   // Calculate the bounding box of all visible items to "zoom in" on the content
@@ -165,6 +181,9 @@ export default function LuaPreviewRenderer({ lua, boardState, interactive = fals
             item={item}
             interactive={interactive}
             onAction={onAction}
+            editMode={editMode}
+            onUpdate={(updates) => onUpdateItem?.(item.id, updates)}
+            canvasSize={{ w: canvasW, h: canvasH }}
           />
         ))}
       </div>
@@ -200,13 +219,51 @@ function parseColor(color) {
   return s;
 }
 
-function PreviewNode({ item, interactive, onAction }) {
+function PreviewNode({ item, interactive, onAction, editMode, onUpdate, canvasSize }) {
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+
   const x = parseFloat(item.x) || 0;
   const y = parseFloat(item.y) || 0;
   const w = parseFloat(item.w) || 0;
   const h = parseFloat(item.h) || 0;
 
   const isScale = item.useScale === true;
+
+  const handleMouseDown = (e) => {
+    if (!editMode) return;
+    e.stopPropagation();
+    setIsDragging(true);
+    setDragStart({ x: e.clientX, y: e.clientY });
+  };
+
+  const handleMouseMove = (e) => {
+    if (!isDragging || !editMode) return;
+    const dx = e.clientX - dragStart.x;
+    const dy = e.clientY - dragStart.y;
+
+    // Convert pixel delta to scale if needed
+    const nx = isScale ? x + (dx / canvasSize.w) : x + dx;
+    const ny = isScale ? y + (dy / canvasSize.h) : y + dy;
+
+    onUpdate({ x: nx, y: ny });
+    setDragStart({ x: e.clientX, y: e.clientY });
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  React.useEffect(() => {
+    if (isDragging) {
+      window.addEventListener('mousemove', handleMouseMove);
+      window.addEventListener('mouseup', handleMouseUp);
+    }
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isDragging, dragStart]);
 
   const type = String(item.type || "").toLowerCase();
   const fillColor = parseColor(item.fill);
@@ -240,6 +297,8 @@ function PreviewNode({ item, interactive, onAction }) {
     width: isScale ? `${w * 100}%` : w,
     height: isScale ? `${h * 100}%` : h,
     zIndex: Number(item.zIndex) || 1,
+    cursor: editMode ? (isDragging ? "grabbing" : "grab") : (interactive ? "pointer" : "default"),
+    border: editMode ? "2px dashed #00f5d4" : undefined,
     borderRadius: Number(item.radius) || 0,
     background: background,
     border: item.stroke
@@ -263,12 +322,12 @@ function PreviewNode({ item, interactive, onAction }) {
   };
 
   if (type === "textlabel") {
-    return <div style={style}>{item.text}</div>;
+    return <div style={style} onMouseDown={handleMouseDown}>{item.text}</div>;
   }
 
   if (type === "frame" || type === "scrollingframe") {
     return (
-      <div style={{ ...style, alignItems: "flex-start", justifyContent: "flex-start" }}>
+      <div style={{ ...style, alignItems: "flex-start", justifyContent: "flex-start" }} onMouseDown={handleMouseDown}>
         {/* Frames are containers */}
       </div>
     );

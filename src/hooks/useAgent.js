@@ -50,6 +50,7 @@ export function useAgent(user, notify, refreshBilling) {
           history: messages.slice(-5), // Send recent history for context
           goal,
           chatMode,
+          chatId: activeChatId
         }),
       });
 
@@ -65,6 +66,7 @@ export function useAgent(user, notify, refreshBilling) {
           action: data.action || "chat",
           mode: data.mode || null,
           suggestedMode: data.suggestedMode || null,
+          tasks: data.tasks || null,
           parameters: data.parameters || {},
           createdAt: serverTimestamp(),
           requestId,

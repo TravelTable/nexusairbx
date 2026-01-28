@@ -1,6 +1,6 @@
-import React from "react";
-import { AlertCircle, Loader, Settings2, Sliders, Grid3X3, Heart, Sparkles } from "lucide-react";
-import LuaPreviewRenderer from "../../preview/LuaPreviewRenderer";
+import React, { useState } from "react";
+import { AlertCircle, Loader, Settings2, Sliders, Grid3X3, Heart, Sparkles, Smartphone, Tablet, Monitor, MousePointer2, Move } from "lucide-react";
+import LuaPreviewRenderer, { PREVIEW_DEVICES } from "../../preview/LuaPreviewRenderer";
 import { addFavorite } from "../../lib/uiBuilderApi";
 import { auth } from "../../firebase";
 
@@ -21,6 +21,8 @@ export default function PreviewTab({
 }) {
   const [showGrid, setShowGrid] = React.useState(false);
   const [showTweaks, setShowTweaks] = React.useState(false);
+  const [device, setDevice] = useState("pc");
+  const [editMode, setEditMode] = useState(false);
   const [tweaks, setTweaks] = React.useState({
     radius: 12,
     strokeThickness: 2,
@@ -32,6 +34,31 @@ export default function PreviewTab({
 
   return (
     <div className="h-full flex flex-col gap-3">
+      <div className="flex items-center justify-between px-1">
+        <div className="flex items-center gap-1 bg-white/5 p-1 rounded-xl border border-white/10">
+          {Object.entries(PREVIEW_DEVICES).map(([id, cfg]) => (
+            <button
+              key={id}
+              onClick={() => setDevice(id)}
+              className={`p-2 rounded-lg transition-all ${device === id ? 'bg-[#00f5d4] text-black shadow-lg' : 'text-gray-500 hover:text-white'}`}
+              title={cfg.name}
+            >
+              {id === 'pc' && <Monitor className="w-4 h-4" />}
+              {id === 'tablet' && <Tablet className="w-4 h-4" />}
+              {(id === 'phone' || id === 'portrait') && <Smartphone className={`w-4 h-4 ${id === 'portrait' ? '' : 'rotate-90'}`} />}
+            </button>
+          ))}
+        </div>
+
+        <button
+          onClick={() => setEditMode(!editMode)}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all border ${editMode ? 'bg-[#00f5d4] text-black border-[#00f5d4]' : 'bg-white/5 text-gray-400 border-white/10 hover:border-white/20'}`}
+        >
+          {editMode ? <Move className="w-3.5 h-3.5" /> : <MousePointer2 className="w-3.5 h-3.5" />}
+          {editMode ? 'Exit Visual Edit' : 'Visual Nudge'}
+        </button>
+      </div>
+
       <div className="text-xs text-gray-400 border border-gray-800 rounded-lg p-2 bg-black/20 flex items-center justify-between">
         <div>
           <span className="text-gray-300 font-semibold">Test Log:</span>{" "}
@@ -55,13 +82,15 @@ export default function PreviewTab({
           <LuaPreviewRenderer
             lua={lua}
             boardState={boardState}
-            interactive
+            interactive={!editMode}
+            device={device}
+            editMode={editMode}
             onAction={(evt) => setLastEvent(evt)}
           />
         </div>
 
         {/* Coming Soon Overlay */}
-        {!isDev ? (
+        {!isDev && !editMode ? (
           <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black/60 backdrop-blur-[2px] p-6 text-center">
             <div className="bg-gradient-to-br from-[#9b5de5] to-[#00f5d4] p-0.5 rounded-2xl shadow-[0_0_30px_rgba(155,93,229,0.3)]">
               <div className="bg-[#0b1220] rounded-[14px] px-8 py-6 flex flex-col items-center gap-4">

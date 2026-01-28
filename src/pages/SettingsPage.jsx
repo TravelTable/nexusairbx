@@ -32,10 +32,11 @@ import {
 import { useSettings } from "../context/SettingsContext";
 import { useBilling } from "../context/BillingContext";
 import { CHAT_MODES } from "../components/ai/ChatView";
-import { auth } from "../firebase";
+import { auth, db } from "../firebase";
 import { signOut } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
 import ConfirmationModal from "../components/ConfirmationModal";
+import { doc, onSnapshot } from "firebase/firestore";
 import {
   CartesianGrid,
   Tooltip,
@@ -68,6 +69,7 @@ const TABS = [
   { id: "subscription", label: "Subscription", icon: CreditCard },
   { id: "usage", label: "Usage & Analytics", icon: Activity },
   { id: "ai", label: "AI Configuration", icon: Bot },
+  { id: "teams", label: "Teams", icon: Users },
   { id: "account", label: "Account", icon: User },
   { id: "help", label: "Help & Tutorials", icon: MessageCircle },
 ];
@@ -85,6 +87,7 @@ const SettingsPage = () => {
   }, [isDev]);
 
   const { settings, updateSettings } = useSettings();
+  const [codingStandards, setCodingStandards] = useState(settings.codingStandards || "");
   const { plan, totalRemaining, subLimit, resetsAt, portal } = useBilling();
   const [usageData, setUsageData] = useState({ logs: [], chartData: [] });
   const [devStats, setDevStats] = useState(null);
@@ -101,6 +104,8 @@ const SettingsPage = () => {
   const [errorMsg, setErrorMsg] = useState("");
   const [syncCode, setSyncCode] = useState("");
   const [syncLoading, setSyncLoading] = useState(false);
+  const [teams, setTeams] = useState([]);
+  const [newTeamName, setNewTeamName] = useState("");
 
   const navigate = useNavigate();
 
@@ -145,6 +150,22 @@ const SettingsPage = () => {
     }
   }, [isDev, user]);
 
+  const fetchTeams = useCallback(async () => {
+    if (!user) return;
+    try {
+      const token = await user.getIdToken();
+      const res = await fetch(`${process.env.REACT_APP_BACKEND_URL || "https://nexusrbx-backend-production.up.railway.app"}/api/user/teams`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setTeams(data.teams || []);
+      }
+    } catch (e) {
+      console.error("Failed to fetch teams", e);
+    }
+  }, [user]);
+
   useEffect(() => {
     if (activeTab === "usage" || activeTab === "dashboard") {
       fetchUsage();
@@ -152,7 +173,10 @@ const SettingsPage = () => {
     if (activeTab === "developer" && isDev) {
       fetchDevData();
     }
-  }, [activeTab, fetchDevData, fetchUsage, isDev]);
+    if (activeTab === "teams") {
+      fetchTeams();
+    }
+  }, [activeTab, fetchDevData, fetchUsage, fetchTeams, isDev]);
 
   const fetchInspectorData = async (uid) => {
     setDevLoading(true);
@@ -482,6 +506,23 @@ const SettingsPage = () => {
                   </select>
                 </div>
               </div>
+
+              <div className="mt-8 space-y-2">
+                <label className="text-sm text-gray-400 flex items-center gap-2">
+                  <Code className="w-4 h-4 text-purple-400" />
+                  Custom Coding Standards
+                </label>
+                <textarea 
+                  value={codingStandards}
+                  onChange={(e) => {
+                    setCodingStandards(e.target.value);
+                    updateSettings({ codingStandards: e.target.value });
+                  }}
+                  placeholder="e.g. Always use the Knit framework. Follow OOP patterns for modules. Use camelCase for variables."
+                  className="w-full h-32 bg-black border border-gray-800 rounded-xl p-4 text-white outline-none focus:border-purple-500 transition-colors resize-none font-mono text-sm"
+                />
+                <p className="text-[10px] text-gray-500 italic">These rules will be injected into every AI generation and QA audit.</p>
+              </div>
             </div>
 
             <div className="bg-gray-900/50 border border-gray-800 rounded-2xl p-6 backdrop-blur-xl">
@@ -651,6 +692,71 @@ const SettingsPage = () => {
                     ))}
                   </tbody>
                 </table>
+              </div>
+            </div>
+          </div>
+        );
+
+      case "teams":
+        return (
+          <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="bg-gray-900/50 border border-gray-800 rounded-2xl p-6 backdrop-blur-xl">
+              <h3 className="text-lg font-bold text-white mb-2 flex items-center gap-2">
+                <Users className="w-5 h-5 text-[#00f5d4]" />
+                Team Collaboration
+              </h3>
+              <p className="text-sm text-gray-500 mb-6">Create teams to share AI chats, scripts, and UI designs with your colleagues.</p>
+              
+              <div className="flex gap-3 mb-8">
+                <input 
+                  value={newTeamName}
+                  onChange={(e) => setNewTeamName(e.target.value)}
+                  placeholder="Enter team name..."
+                  className="flex-1 bg-black border border-gray-800 rounded-xl px-4 py-3 text-white outline-none focus:border-[#00f5d4] transition-all"
+                />
+                <button 
+                  onClick={async () => {
+                    if (!newTeamName.trim()) return;
+                    const token = await user.getIdToken();
+                    const res = await fetch(`${process.env.REACT_APP_BACKEND_URL || "https://nexusrbx-backend-production.up.railway.app"}/api/user/teams`, {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+                      body: JSON.stringify({ name: newTeamName })
+                    });
+                    if (res.ok) {
+                      setNewTeamName("");
+                      fetchTeams();
+                      setSuccessMsg("Team created successfully!");
+                    }
+                  }}
+                  className="px-6 py-3 rounded-xl bg-[#00f5d4] text-black font-bold hover:scale-105 transition-transform"
+                >
+                  Create Team
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {teams.map(team => (
+                  <div key={team.id} className="p-5 rounded-2xl bg-black border border-gray-800 flex items-center justify-between group hover:border-[#00f5d4]/50 transition-all">
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 rounded-xl bg-gray-800 flex items-center justify-center text-[#00f5d4] font-bold">
+                        {team.name[0].toUpperCase()}
+                      </div>
+                      <div>
+                        <div className="font-bold text-white">{team.name}</div>
+                        <div className="text-[10px] text-gray-500 uppercase tracking-widest">{team.members?.length || 1} Members</div>
+                      </div>
+                    </div>
+                    <button className="p-2 rounded-lg hover:bg-white/5 text-gray-500 hover:text-white transition-colors">
+                      <ChevronRight className="w-5 h-5" />
+                    </button>
+                  </div>
+                ))}
+                {teams.length === 0 && (
+                  <div className="col-span-full py-12 text-center border border-dashed border-gray-800 rounded-2xl">
+                    <p className="text-sm text-gray-500">You haven't joined any teams yet.</p>
+                  </div>
+                )}
               </div>
             </div>
           </div>

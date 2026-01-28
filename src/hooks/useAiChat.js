@@ -28,6 +28,8 @@ export function useAiChat(user, settings, refreshBilling, notify) {
   const [isGenerating, setIsGenerating] = useState(false);
   const [pendingMessage, setPendingMessage] = useState(null);
   const [generationStage, setGenerationStage] = useState("");
+  const [tasks, setTasks] = useState([]);
+  const [currentTaskId, setCurrentTaskId] = useState(null);
 
   // Listen for code patches (Security/Performance fixes)
   useEffect(() => {
@@ -217,7 +219,8 @@ export function useAiChat(user, settings, refreshBilling, notify) {
                 createdAt: serverTimestamp(),
                 requestId,
                 jobId,
-                artifactId: data.artifactId
+                artifactId: data.artifactId,
+                metadata: data.metadata || (data.qaReport ? { qaReport: data.qaReport } : null)
               });
 
               await updateDoc(doc(db, "users", user.uid, "chats", activeChatId), {
@@ -313,6 +316,8 @@ export function useAiChat(user, settings, refreshBilling, notify) {
     setCurrentChatMeta(null);
     setMessages([]);
     setActiveMode("general");
+    setTasks([]);
+    setCurrentTaskId(null);
   }, []);
 
   const updateChatMode = useCallback(async (chatId, mode) => {
@@ -355,6 +360,56 @@ export function useAiChat(user, settings, refreshBilling, notify) {
     activeMode,
     setActiveMode,
     updateChatMode,
-    customModes
+    customModes,
+    tasks,
+    setTasks,
+    currentTaskId,
+    setCurrentTaskId,
+    handlePushToStudio: async (artifactId, type, data) => {
+      if (!user) return;
+      try {
+        const token = await user.getIdToken();
+        const res = await fetch(`${BACKEND_URL}/api/plugin/push-queue`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ artifactId, type, data }),
+        });
+        if (res.ok) {
+          notify?.({ message: "Artifact queued for Studio push!", type: "success" });
+        } else {
+          const err = await res.json();
+          notify?.({ message: err.error || "Push failed", type: "error" });
+        }
+      } catch (err) {
+        console.error("Push error:", err);
+        notify?.({ message: "Failed to connect to push service", type: "error" });
+      }
+    },
+    handleShareWithTeam: async (artifactId, type, teamId) => {
+      if (!user) return;
+      try {
+        const token = await user.getIdToken();
+        const res = await fetch(`${BACKEND_URL}/api/user/share`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ artifactId, type, teamId }),
+        });
+        if (res.ok) {
+          notify?.({ message: "Artifact shared with team!", type: "success" });
+        } else {
+          const err = await res.json();
+          notify?.({ message: err.error || "Sharing failed", type: "error" });
+        }
+      } catch (err) {
+        console.error("Share error:", err);
+        notify?.({ message: "Failed to share artifact", type: "error" });
+      }
+    }
   };
 }

@@ -15,7 +15,8 @@ import {
   X,
   Settings2,
   Type,
-  Globe
+  Globe,
+  Send
 } from "lucide-react";
 import PLAN_INFO from "../../lib/planInfo";
 import { getGravatarUrl, getUserInitials, formatNumber, formatResetDate } from "../../lib/aiUtils";
@@ -174,6 +175,101 @@ export const PlanTracker = ({ plan }) => {
   );
 };
 
+export const TaskOrchestrator = ({ tasks, currentTaskId, onExecuteTask }) => {
+  if (!tasks || tasks.length === 0) return null;
+
+  return (
+    <div className="mt-4 mb-6 rounded-2xl border border-[#9b5de5]/20 bg-[#9b5de5]/5 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-500">
+      <div className="px-4 py-3 border-b border-[#9b5de5]/20 flex items-center justify-between bg-[#9b5de5]/10">
+        <div className="flex items-center gap-2">
+          <Zap className="w-4 h-4 text-[#9b5de5]" />
+          <span className="text-[10px] font-black uppercase tracking-widest text-white">Multi-Step Goal Orchestration</span>
+        </div>
+        <div className="text-[9px] font-bold text-[#9b5de5] uppercase tracking-widest">
+          {tasks.filter(t => t.status === 'done').length} / {tasks.length} Steps
+        </div>
+      </div>
+      <div className="p-4 space-y-4">
+        {tasks.map((task, i) => {
+          const isCurrent = task.id === currentTaskId;
+          const isDone = task.status === 'done';
+          const isPending = !isCurrent && !isDone;
+
+          return (
+            <div key={task.id} className={`flex items-center gap-4 p-3 rounded-xl border transition-all ${isCurrent ? 'bg-[#9b5de5]/20 border-[#9b5de5]/40 shadow-lg' : isDone ? 'bg-white/5 border-white/10 opacity-60' : 'bg-white/5 border-white/5'}`}>
+              <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black ${isDone ? 'bg-[#00f5d4] text-black' : isCurrent ? 'bg-[#9b5de5] text-white animate-pulse' : 'bg-gray-800 text-gray-500'}`}>
+                {isDone ? '✓' : i + 1}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className={`text-xs font-bold ${isCurrent ? 'text-white' : 'text-gray-400'}`}>{task.label}</div>
+                <div className="text-[10px] text-gray-500 truncate">{task.prompt}</div>
+              </div>
+              {isCurrent && (
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-[#9b5de5] animate-ping" />
+                  <span className="text-[9px] font-black text-[#9b5de5] uppercase tracking-widest">Active</span>
+                </div>
+              )}
+            </div>
+          );
+        })}
+        
+        {!currentTaskId && tasks.some(t => !t.status) && (
+          <button 
+            onClick={() => onExecuteTask(tasks.find(t => !t.status))}
+            className="w-full py-3 rounded-xl bg-[#9b5de5] text-white font-black text-sm flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] transition-all shadow-[0_0_20px_rgba(155,93,229,0.4)]"
+          >
+            <Rocket className="w-4 h-4" />
+            START AUTOMATED PIPELINE
+          </button>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export const ProjectContextStatus = ({ context, onSync }) => {
+  const [isSyncing, setIsSyncing] = useState(false);
+
+  const handleSync = async () => {
+    setIsSyncing(true);
+    await onSync();
+    setIsSyncing(false);
+  };
+
+  return (
+    <div className="flex items-center gap-3 px-3 py-2 rounded-xl bg-white/5 border border-white/10 backdrop-blur-md">
+      <div className="flex items-center gap-2">
+        <div className={`w-2 h-2 rounded-full ${context ? 'bg-[#00f5d4] shadow-[0_0_10px_rgba(0,245,212,0.5)]' : 'bg-gray-600'}`} />
+        <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">
+          {context ? 'Studio Linked' : 'Studio Offline'}
+        </span>
+      </div>
+      
+      {context && (
+        <div className="h-4 w-px bg-white/10" />
+      )}
+
+      {context && (
+        <div className="flex items-center gap-2">
+          <span className="text-[9px] font-bold text-gray-500 uppercase tracking-tighter">
+            {context.remoteEvents?.length || 0} Remotes • {context.modules?.length || 0} Modules
+          </span>
+        </div>
+      )}
+
+      <button 
+        onClick={handleSync}
+        disabled={isSyncing}
+        className={`p-1.5 rounded-lg hover:bg-white/10 transition-all ${isSyncing ? 'animate-spin text-[#00f5d4]' : 'text-gray-500 hover:text-white'}`}
+        title="Sync Context from Studio"
+      >
+        <RefreshCw className="w-3.5 h-3.5" />
+      </button>
+    </div>
+  );
+};
+
 export const UnifiedStatusBar = ({ stage, isGenerating, mode = "general" }) => {
   if (!isGenerating && !stage) return null;
 
@@ -238,7 +334,20 @@ export const UserAvatar = React.memo(({ email }) => {
   );
 });
 
-export const ArtifactCard = ({ title, subtitle, icon: Icon, type = "code", children, actions = [] }) => {
+export const QaBadge = ({ score }) => {
+  const color = score > 80 ? 'text-green-400' : score > 50 ? 'text-yellow-400' : 'text-red-400';
+  const bg = score > 80 ? 'bg-green-400/10' : score > 50 ? 'bg-yellow-400/10' : 'bg-red-400/10';
+  const border = score > 80 ? 'border-green-400/20' : score > 50 ? 'border-yellow-400/20' : 'border-red-400/20';
+
+  return (
+    <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded border ${bg} ${border} ${color}`}>
+      <ShieldCheck className="w-3 h-3" />
+      <span className="text-[10px] font-black uppercase tracking-widest">QA {score}%</span>
+    </div>
+  );
+};
+
+export const ArtifactCard = ({ title, subtitle, icon: Icon, type = "code", qaReport = null, children, actions = [] }) => {
   const typeColors = {
     code: "text-[#9b5de5] bg-[#9b5de5]/10 border-[#9b5de5]/20",
     ui: "text-[#00f5d4] bg-[#00f5d4]/10 border-[#00f5d4]/20",
@@ -246,6 +355,7 @@ export const ArtifactCard = ({ title, subtitle, icon: Icon, type = "code", child
     system: "text-blue-400 bg-blue-400/10 border-blue-400/20",
   };
   const colorClass = typeColors[type] || typeColors.code;
+  const [showQa, setShowQa] = useState(false);
 
   return (
     <div className="mt-6 rounded-2xl border border-white/10 bg-[#121212]/50 overflow-hidden shadow-2xl animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -255,7 +365,14 @@ export const ArtifactCard = ({ title, subtitle, icon: Icon, type = "code", child
             <Icon className="w-4 h-4" />
           </div>
           <div className="min-w-0">
-            <h4 className="text-sm font-black text-white truncate tracking-tight uppercase">{title}</h4>
+            <div className="flex items-center gap-2">
+              <h4 className="text-sm font-black text-white truncate tracking-tight uppercase">{title}</h4>
+              {qaReport && (
+                <button onClick={() => setShowQa(!showQa)}>
+                  <QaBadge score={qaReport.score} />
+                </button>
+              )}
+            </div>
             <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">{subtitle}</p>
           </div>
         </div>
@@ -272,6 +389,31 @@ export const ArtifactCard = ({ title, subtitle, icon: Icon, type = "code", child
           ))}
         </div>
       </div>
+      
+      {showQa && qaReport && (
+        <div className="p-4 bg-black/40 border-b border-white/5 space-y-3 animate-in slide-in-from-top-2 duration-300">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Automated QA Report</span>
+            <button onClick={() => setShowQa(false)} className="text-gray-500 hover:text-white"><X className="w-3 h-3" /></button>
+          </div>
+          <div className="space-y-2">
+            {qaReport.issues?.map((issue, i) => (
+              <div key={i} className="flex items-start gap-2 text-[11px]">
+                <div className={`mt-1 w-1.5 h-1.5 rounded-full flex-shrink-0 ${issue.severity === 'high' ? 'bg-red-500' : issue.severity === 'medium' ? 'bg-yellow-500' : 'bg-blue-500'}`} />
+                <span className="text-gray-300">{issue.message}</span>
+                {issue.line && <span className="text-gray-600 font-mono ml-auto">L{issue.line}</span>}
+              </div>
+            ))}
+            {(!qaReport.issues || qaReport.issues.length === 0) && (
+              <div className="text-green-400 text-[11px] font-bold flex items-center gap-2">
+                <ShieldCheck className="w-3 h-3" />
+                No issues detected. Code follows all best practices.
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       <div className="p-0">
         {children}
       </div>

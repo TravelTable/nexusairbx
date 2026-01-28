@@ -27,6 +27,7 @@ import {
   TokenBar,
   CustomModeModal,
   UnifiedStatusBar,
+  ProjectContextStatus,
 } from "../components/ai/AiComponents";
 import {
   collection,
@@ -81,6 +82,8 @@ function AiPage() {
   const [showSignInNudge, setShowSignInNudge] = useState(false);
   const [customModeModalOpen, setCustomModeModalOpen] = useState(false);
   const [editingCustomMode, setEditingCustomMode] = useState(null);
+  const [projectContext, setProjectContext] = useState(null);
+  const [teams, setTeams] = useState([]);
 
   // 3. Custom Hooks
   const notify = useCallback(({ message, type = "info" }) => {
@@ -218,6 +221,32 @@ function AiPage() {
       window.history.replaceState({}, document.title);
     }
   }, [location]);
+
+  // Load Project Context & Teams
+  useEffect(() => {
+    if (!user) return;
+    const unsub = onSnapshot(doc(db, "users", user.uid), (snap) => {
+      if (snap.exists()) {
+        setProjectContext(snap.data().projectContext || null);
+      }
+    });
+
+    const fetchTeams = async () => {
+      try {
+        const token = await user.getIdToken();
+        const res = await fetch(`${BACKEND_URL}/api/user/teams`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setTeams(data.teams || []);
+        }
+      } catch (e) {}
+    };
+    fetchTeams();
+
+    return () => unsub();
+  }, [user]);
 
   // 6. Handlers
   const handleInstallCommunityMode = async (mode) => {
@@ -463,6 +492,10 @@ function AiPage() {
         }
 
         await chat.handleSubmit(currentPrompt, chat.currentChatId, requestId);
+      } else if (data?.action === "plan") {
+        // Multi-step plan received
+        chat.setTasks(data.tasks || []);
+        await chat.handleSubmit(currentPrompt, chat.currentChatId, requestId);
       } else {
         await chat.handleSubmit(currentPrompt, chat.currentChatId, requestId);
       }
@@ -536,6 +569,14 @@ function AiPage() {
           </div>
 
           <div className="flex items-center gap-4">
+            <div className="hidden lg:block">
+              <ProjectContextStatus 
+                context={projectContext} 
+                onSync={async () => {
+                  notify({ message: "Please use the NexusRBX Studio Plugin to refresh context", type: "info" });
+                }} 
+              />
+            </div>
             <button 
               onClick={() => game.setShowWizard(true)}
               className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-900 border border-gray-800 text-xs font-bold text-gray-300 hover:border-[#00f5d4] transition-all"
@@ -638,6 +679,79 @@ function AiPage() {
                     requestId
                   );
                 }}
+                onPushToStudio={chat.handlePushToStudio}
+                onShareWithTeam={chat.handleShareWithTeam}
+                teams={teams}
+                onFixUiAudit={async (m) => {
+                  if (!m.boardState || !m.metadata?.qaReport?.issues) return;
+                  try {
+                    const token = await user.getIdToken();
+                    const res = await fetch(`${BACKEND_URL}/api/ui-builder/ai/audit/fix`, {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+                      body: JSON.stringify({
+                        boardState: m.boardState,
+                        issues: m.metadata.qaReport.issues
+                      })
+                    });
+                    if (res.ok) {
+                      const data = await res.json();
+                      // Update the UI in the history
+                      ui.setUiGenerations(prev => prev.map(g => g.id === m.id ? { ...g, boardState: data.boardState } : g));
+                      notify({ message: "UI fixes applied! Regenerating Lua...", type: "success" });
+                      // Trigger Lua finalization
+                      await ui.handleRefine("Finalize Lua for the updated layout", m.id);
+                    }
+                  } catch (err) {
+                    console.error("Fix UI Audit failed:", err);
+                    notify({ message: "Failed to apply UI fixes", type: "error" });
+                  }
+                }}
+                onExecuteTask={async (task) => {
+                  chat.setCurrentTaskId(task.id);
+                  const requestId = uuidv4();
+                  
+                  try {
+                    if (task.type === "pipeline") {
+                      await ui.handleGenerateUiPreview(
+                        task.prompt,
+                        chat.currentChatId,
+                        chat.setCurrentChatId,
+                        null,
+                        requestId
+                      );
+                    } else if (task.type === "generate_functionality") {
+                      // Logic for wiring up UI
+                      const token = await user.getIdToken();
+                      const res = await fetch(`${BACKEND_URL}/api/ui-builder/ai/generate-functionality`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+                        body: JSON.stringify({
+                          lua: ui.activeUi?.uiModuleLua || "",
+                          prompt: task.prompt,
+                          gameSpec: settings.gameSpec || ""
+                        })
+                      });
+                      if (res.ok) {
+                        const data = await res.json();
+                        // Save the new scripts
+                        for (const s of data.scripts) {
+                          await scriptManager.handleCreateScript(s.name, s.code, "logic");
+                        }
+                        notify({ message: `Generated ${data.scripts.length} scripts for ${task.label}`, type: "success" });
+                      }
+                    }
+                    
+                    // Mark task as done
+                    chat.setTasks(prev => prev.map(t => t.id === task.id ? { ...t, status: 'done' } : t));
+                  } catch (err) {
+                    console.error("Task execution failed:", err);
+                    notify({ message: `Failed to execute ${task.label}`, type: "error" });
+                  } finally {
+                    chat.setCurrentTaskId(null);
+                  }
+                } }
+                currentTaskId={chat.currentTaskId}
                 chatEndRef={chatEndRef}
               />
             )}

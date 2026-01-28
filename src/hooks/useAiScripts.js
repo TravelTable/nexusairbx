@@ -82,7 +82,7 @@ export function useAiScripts(user, notify) {
     }
   }, [user, notify]);
 
-  const handleCreateScript = useCallback(async (title, chatId) => {
+  const handleCreateScript = useCallback(async (title, code = "", type = "chat", chatId = null) => {
     if (!user) return;
     try {
       const docRef = await addDoc(collection(db, "users", user.uid, "scripts"), {
@@ -90,8 +90,18 @@ export function useAiScripts(user, notify) {
         chatId: chatId || null,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
-        type: "chat",
+        type: type,
       });
+
+      if (code) {
+        await addDoc(collection(db, "users", user.uid, "scripts", docRef.id, "versions"), {
+          versionNumber: 1,
+          code,
+          explanation: "Initial generation",
+          createdAt: serverTimestamp(),
+        });
+      }
+
       setCurrentScriptId(docRef.id);
       notify({ message: "Script created", type: "success" });
       return docRef.id;

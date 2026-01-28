@@ -8,6 +8,7 @@ import {
   SecurityReport,
   PerformanceAudit,
   PlanTracker,
+  TaskOrchestrator,
   ArtifactCard
 } from "./AiComponents";
 import LiveCodeViewer from "./LiveCodeViewer";
@@ -140,6 +141,12 @@ export default function ChatView({
   onQuickStart,
   onRefine,
   onToggleActMode,
+  onExecuteTask,
+  onPushToStudio,
+  onFixUiAudit,
+  onShareWithTeam,
+  teams = [],
+  currentTaskId,
   chatEndRef 
 }) {
   const [copiedId, setCopiedId] = React.useState(null);
@@ -167,6 +174,8 @@ export default function ChatView({
     setCopiedId(id);
     setTimeout(() => setCopiedId(null), 2000);
   };
+
+  const [sharingId, setSharingId] = React.useState(null);
 
   return (
     <div className="w-full max-w-5xl mx-auto h-full flex flex-col">
@@ -331,6 +340,14 @@ export default function ChatView({
                     <PlanTracker plan={m.explanation.match(/<plan>([\s\S]*?)<\/plan>/i)?.[1]} />
                   )}
 
+                  {m.role === 'assistant' && m.action === 'plan' && m.tasks && (
+                    <TaskOrchestrator 
+                      tasks={m.tasks} 
+                      currentTaskId={currentTaskId} 
+                      onExecuteTask={onExecuteTask} 
+                    />
+                  )}
+
                   {m.content && m.role === 'user' && (
                     <div className="text-[15px] md:text-[16px] whitespace-pre-wrap leading-relaxed text-white font-medium">
                       {m.content}
@@ -395,7 +412,10 @@ export default function ChatView({
                           subtitle="Vulnerability Scan Results"
                           icon={ShieldAlert}
                           type="report"
+                          qaReport={m.metadata?.qaReport}
                           actions={[
+                            { label: "Push to Studio", icon: <Send className="w-4 h-4" />, onClick: () => onPushToStudio(m.artifactId, "script", { code: m.uiModuleLua || m.code, title: m.title }) },
+                            { label: "Share with Team", icon: <Users className="w-4 h-4" />, onClick: () => setSharingId(m.id) },
                             { label: "Copy Code", icon: copiedId === m.id ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />, onClick: () => handleCopy(m.uiModuleLua || m.code, m.id), primary: copiedId === m.id }
                           ]}
                         >
@@ -414,7 +434,10 @@ export default function ChatView({
                           subtitle="Optimization Analysis"
                           icon={Activity}
                           type="report"
+                          qaReport={m.metadata?.qaReport}
                           actions={[
+                            { label: "Push to Studio", icon: <Send className="w-4 h-4" />, onClick: () => onPushToStudio(m.artifactId, "script", { code: m.uiModuleLua || m.code, title: m.title }) },
+                            { label: "Share with Team", icon: <Users className="w-4 h-4" />, onClick: () => setSharingId(m.id) },
                             { label: "Copy Code", icon: copiedId === m.id ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />, onClick: () => handleCopy(m.uiModuleLua || m.code, m.id), primary: copiedId === m.id }
                           ]}
                         >
@@ -433,12 +456,26 @@ export default function ChatView({
                           subtitle={`Luau Component v${m.versionNumber || 1}`}
                           icon={Layout}
                           type="ui"
+                          qaReport={m.metadata?.qaReport}
                           actions={[
+                            { label: "Push to Studio", icon: <Send className="w-4 h-4" />, onClick: () => onPushToStudio(m.projectId, "ui", { boardState: m.boardState, lua: m.uiModuleLua || m.code, title: m.title }) },
+                            { label: "Share with Team", icon: <Users className="w-4 h-4" />, onClick: () => setSharingId(m.id) },
                             { label: "Preview", icon: <Eye className="w-4 h-4" />, onClick: () => onViewUi(m), primary: true },
                             { label: "Refine", icon: <RefreshCw className="w-4 h-4" />, onClick: () => onRefine(m) },
                             { label: "Copy Code", icon: copiedId === m.id ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />, onClick: () => handleCopy(m.uiModuleLua || m.code, m.id) }
                           ]}
                         >
+                          {m.metadata?.qaReport?.issues?.length > 0 && (
+                            <div className="px-5 py-3 bg-red-500/5 border-b border-white/5 flex items-center justify-between">
+                              <span className="text-[10px] font-bold text-red-400 uppercase tracking-widest">UX Issues Detected</span>
+                              <button 
+                                onClick={() => onFixUiAudit(m)}
+                                className="px-3 py-1 rounded-lg bg-red-500 text-white text-[9px] font-black uppercase tracking-widest hover:bg-red-600 transition-all"
+                              >
+                                Apply Fixes
+                              </button>
+                            </div>
+                          )}
                           <div className="aspect-video bg-gradient-to-br from-gray-900 to-black flex items-center justify-center relative overflow-hidden rounded-b-2xl">
                             <div className="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]" />
                             <Layout className="w-16 h-16 text-white/5" />
@@ -454,7 +491,10 @@ export default function ChatView({
                           subtitle="Luau Logic Module"
                           icon={Code2}
                           type="code"
+                          qaReport={m.metadata?.qaReport}
                           actions={[
+                            { label: "Push to Studio", icon: <Send className="w-4 h-4" />, onClick: () => onPushToStudio(m.artifactId, "script", { code: m.uiModuleLua || m.code, title: m.title }) },
+                            { label: "Share with Team", icon: <Users className="w-4 h-4" />, onClick: () => setSharingId(m.id) },
                             { label: "Copy Code", icon: copiedId === m.id ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />, onClick: () => handleCopy(m.uiModuleLua || m.code, m.id), primary: true }
                           ]}
                         >
@@ -496,6 +536,43 @@ export default function ChatView({
             </>
           )}
           <div ref={chatEndRef} />
+        </div>
+      )}
+
+      {/* Team Share Modal */}
+      {sharingId && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-300">
+          <div className="bg-[#121212] border border-white/10 rounded-3xl w-full max-w-md overflow-hidden flex flex-col shadow-2xl">
+            <div className="p-6 border-b border-white/5 flex justify-between items-center">
+              <div className="flex items-center gap-3">
+                <Users className="w-5 h-5 text-[#00f5d4]" />
+                <h3 className="text-lg font-black text-white uppercase tracking-tight">Share with Team</h3>
+              </div>
+              <button onClick={() => setSharingId(null)} className="text-gray-500 hover:text-white"><X className="w-5 h-5" /></button>
+            </div>
+            <div className="p-6 space-y-3">
+              {teams.map(team => (
+                <button
+                  key={team.id}
+                  onClick={() => {
+                    const m = messages.find(msg => msg.id === sharingId);
+                    onShareWithTeam(m.artifactId || m.projectId, m.projectId ? "ui" : "script", team.id);
+                    setSharingId(null);
+                  }}
+                  className="w-full p-4 rounded-2xl bg-white/5 border border-white/10 hover:border-[#00f5d4]/50 hover:bg-[#00f5d4]/5 transition-all text-left flex items-center justify-between group"
+                >
+                  <span className="font-bold text-white group-hover:text-[#00f5d4] transition-colors">{team.name}</span>
+                  <ChevronRight className="w-4 h-4 text-gray-600 group-hover:text-[#00f5d4]" />
+                </button>
+              ))}
+              {teams.length === 0 && (
+                <div className="py-8 text-center">
+                  <p className="text-sm text-gray-500 mb-4">You need to create a team first.</p>
+                  <button onClick={() => { setSharingId(null); /* Navigate to settings */ }} className="text-[#00f5d4] text-xs font-black uppercase tracking-widest underline">Go to Settings</button>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       )}
     </div>
