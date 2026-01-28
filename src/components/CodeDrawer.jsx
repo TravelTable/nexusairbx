@@ -7,7 +7,7 @@ import React, {
   forwardRef,
 } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Copy, Download, Save, Search, Minus, Plus, ArrowRight } from "lucide-react";
+import { X, Copy, Download, Search, Minus, Plus, ArrowRight } from "lucide-react";
 import { Light as SyntaxHighlighter } from "react-syntax-highlighter";
 import lua from "react-syntax-highlighter/dist/esm/languages/hljs/lua";
 import { atomOneDark } from "react-syntax-highlighter/dist/esm/styles/hljs";
