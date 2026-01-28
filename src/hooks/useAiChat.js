@@ -351,11 +351,7 @@ export function useAiChat(user, settings, refreshBilling, notify) {
   const updateChatMode = useCallback(async (chatId, mode) => {
     const u = user || auth.currentUser;
     
-    // Pro restriction for specialized modes
-    const isProMode = ["security", "performance", "data", "system", "animator"].includes(mode);
-    // We can't easily trigger the nudge from here without passing more props, 
-    // but we can at least prevent the state change if not pro.
-    // However, the UI already has the logic to block the click.
+    // Pro restriction for specialized modes is enforced in the UI.
 
     if (!u) {
       setActiveMode(mode);

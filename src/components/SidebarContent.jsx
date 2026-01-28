@@ -71,7 +71,6 @@ export default function SidebarContent({
   const [notification, setNotification] = useState(null);
   const [renamingScriptId, setRenamingScriptId] = useState(null);
   const [renameScriptTitle, setRenameScriptTitle] = useState("");
-  const [deleteScriptId, setDeleteScriptId] = useState(null);
 
   // Debounced search state
   const [localSearch, setLocalSearch] = useState(promptSearch || "");
@@ -314,7 +313,12 @@ export default function SidebarContent({
                             setRenamingScriptId(id);
                             setRenameScriptTitle(title);
                           }}
-                          onDelete={setDeleteScriptId}
+                          onDelete={async (id) => {
+                            await handleDeleteScript(id);
+                            if (currentScriptId === id) {
+                              setCurrentScriptId(null);
+                            }
+                          }}
                           renaming={renamingScriptId === script.id}
                           renameValue={renameScriptTitle}
                           setRenameValue={setRenameScriptTitle}

@@ -89,7 +89,7 @@ const SettingsPage = () => {
 
   const { settings, updateSettings } = useSettings();
   const [codingStandards, setCodingStandards] = useState(settings.codingStandards || "");
-  const { plan, totalRemaining, subLimit, resetsAt, portal } = useBilling();
+  const { plan, totalRemaining, subLimit, resetsAt, portal, cancel } = useBilling();
   const [usageData, setUsageData] = useState({ logs: [], chartData: [] });
   const [devStats, setDevStats] = useState(null);
   const [devUsers, setDevUsers] = useState([]);
@@ -242,6 +242,21 @@ const SettingsPage = () => {
 
   const handleFinalConfirm = async () => {
     if (!user) return;
+
+    if (pendingAction === "cancel_sub") {
+      try {
+        await cancel();
+        setSuccessMsg("Your subscription has been set to cancel at the end of the current period.");
+        setTimeout(() => setSuccessMsg(""), 5000);
+      } catch (e) {
+        setErrorMsg("Failed to cancel subscription. Please try again.");
+        setTimeout(() => setErrorMsg(""), 5000);
+      }
+      setModalOpen(false);
+      setPendingAction(null);
+      return;
+    }
+
     const endpoint = pendingAction === "chats" ? "chats" : "scripts";
     try {
       const token = await user.getIdToken();
@@ -374,6 +389,15 @@ const SettingsPage = () => {
                     <ArrowUpCircle className="w-5 h-5" />
                     {plan === "FREE" ? "Upgrade to Pro" : "Change Plan"}
                   </button>
+                  {plan !== "FREE" && (
+                    <button 
+                      onClick={() => handleTriggerClear("cancel_sub")}
+                      className="px-6 py-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 font-bold flex items-center gap-2 hover:bg-red-500/20 transition-all"
+                    >
+                      <X className="w-5 h-5" />
+                      Cancel Subscription
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
@@ -1175,13 +1199,27 @@ const SettingsPage = () => {
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}
         onConfirm={handleFinalConfirm}
-        title={pendingAction === "chats" ? "Clear All Chats?" : "Delete All Scripts?"}
+        title={
+          pendingAction === "chats" 
+            ? "Clear All Chats?" 
+            : pendingAction === "cancel_sub" 
+              ? "Cancel Subscription?" 
+              : "Delete All Scripts?"
+        }
         message={
           pendingAction === "chats"
             ? "This will permanently remove your entire conversation history from the database. This action cannot be undone."
-            : "This will permanently delete all scripts you have saved to your library. You will lose access to them immediately."
+            : pendingAction === "cancel_sub"
+              ? "Are you sure you want to cancel? You will keep your Pro benefits until the end of your current billing period, but you won't be charged again."
+              : "This will permanently delete all scripts you have saved to your library. You will lose access to them immediately."
         }
-        warningKeyword={pendingAction === "chats" ? "DELETE CHATS" : "DELETE SCRIPTS"}
+        warningKeyword={
+          pendingAction === "chats" 
+            ? "DELETE CHATS" 
+            : pendingAction === "cancel_sub" 
+              ? "CANCEL" 
+              : "DELETE SCRIPTS"
+        }
       />
     </div>
   );

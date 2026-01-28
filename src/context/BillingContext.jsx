@@ -2,7 +2,7 @@
 import React, { createContext, useContext, useEffect, useMemo, useState, useCallback } from "react";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "../firebase"; // keep your existing init
-import { getEntitlements, summarizeEntitlements, startCheckout, openPortal } from "../lib/billing";
+import { getEntitlements, summarizeEntitlements, startCheckout, openPortal, cancelSubscription } from "../lib/billing";
 
 const BillingCtx = createContext(null);
 
@@ -66,6 +66,12 @@ export function BillingProvider({ children, pollMs = 60_000 }) {
     refresh,
     checkout: async (priceId, mode) => user && startCheckout(priceId, mode),
     portal: async () => user && openPortal(),
+    cancel: async () => {
+      if (!user) return;
+      const res = await cancelSubscription();
+      await refresh();
+      return res;
+    },
   }), [user, refresh]);
 
   return (

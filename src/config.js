@@ -9,8 +9,8 @@ export const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || "https://nexusrb
 export const CONFIG = {
   BACKEND_URL,
   IS_DEV: isDev,
-  STRIPE_PRO_PRICE_ID: "price_1Q...", // Should be in env
-  STRIPE_TEAM_PRICE_ID: "price_1Q...", // Should be in env
+  STRIPE_PRO_PRICE_ID: "price_1SucJPAu3NmqHUAuf44Zz9cy",
+  STRIPE_TEAM_PRICE_ID: "price_1SucGXAu3NmqHUAuDM99Hs1w",
 };
 
 export default CONFIG;

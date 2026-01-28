@@ -301,7 +301,7 @@ function AiPage() {
       window.removeEventListener("nexus:openCodeDrawer", handleOpenCodeDrawer);
       window.removeEventListener("nexus:saveScript", handleSaveScript);
     };
-  }, [scriptManager, notify]);
+  }, [scriptManager, notify, planKey]);
 
   // Load Project Context & Teams
   useEffect(() => {

@@ -8,15 +8,15 @@ const MODE =
 // LIVE price IDs (from your Stripe dashboard)
 const LIVE = {
   sub: {
-    proMonthly:  "price_1Rz8AsAu3NmqHUAu2X27DNPq",
-    proYearly:   "price_1Rz8CGAu3NmqHUAulBRTflg5",
-    teamMonthly: "price_1Rz8FWAu3NmqHUAuJXQXYqxZ",
-    teamYearly:  "price_1Rz8IrAu3NmqHUAu4YSpwuTP",
+    proMonthly:  "price_1SucJPAu3NmqHUAuf44Zz9cy",
+    proYearly:   "price_1SucJPAu3NmqHUAuPtYsDJp2",
+    teamMonthly: "price_1SucGXAu3NmqHUAuDM99Hs1w",
+    teamYearly:  "price_1SucGXAu3NmqHUAubiUt4tTV",
   },
   payg: {
-    pack100k: "price_1Ryxw6Au3NmqHUAuyZl1DyKw",
-    pack500k: "price_1RyxymAu3NmqHUAua7cZm7PH",
-    pack1m:   "price_1Ryy0kAu3NmqHUAudDjtBdeg",
+    pack100k: "price_1SucGjAu3NmqHUAuD7hUMi86",
+    pack500k: "price_1SucGhAu3NmqHUAu7s6DiP7Y",
+    pack1m:   "price_1SucGfAu3NmqHUAuJWfoBMX6",
   },
 };
 

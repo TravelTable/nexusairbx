@@ -127,6 +127,15 @@ export async function openPortal() {
   return r.json().catch(() => ({})); // {url} or {portalDocPath}
 }
 
+export async function cancelSubscription() {
+  const r = await authedFetch("/api/billing/cancel", { method: "POST" });
+  if (!r.ok) {
+    const text = await r.text();
+    throw new Error(`cancel ${r.status}: ${text}`);
+  }
+  return r.json();
+}
+
 export async function consumeTokens(payload) {
   const r = await authedFetch("/api/billing/consume", {
     method: "POST",
