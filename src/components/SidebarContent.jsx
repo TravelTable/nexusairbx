@@ -3,7 +3,6 @@ import React, {
   useMemo,
   useCallback,
   useEffect,
-  useRef,
   useDeferredValue,
 } from "react";
 import {
@@ -24,7 +23,6 @@ import ChatHistoryModal from "./sidebar/ChatHistoryModal";
 import NotificationToast from "./sidebar/NotificationToast";
 import {
   getVersionStr,
-  keyForScript,
   fromNow,
 } from "../lib/sidebarUtils";
 import {
@@ -46,7 +44,6 @@ export default function SidebarContent({
   currentChatId,
   currentScriptId,
   setCurrentScriptId = () => {},
-  handleCreateScript = () => {},
   handleRenameScript = () => {},
   handleDeleteScript = () => {},
   currentScript,
@@ -72,12 +69,9 @@ export default function SidebarContent({
 
   // --- State ---
   const [notification, setNotification] = useState(null);
-  const [showAddScriptModal, setShowAddScriptModal] = useState(false);
-  const [newScriptTitle, setNewScriptTitle] = useState("");
   const [renamingScriptId, setRenamingScriptId] = useState(null);
   const [renameScriptTitle, setRenameScriptTitle] = useState("");
   const [deleteScriptId, setDeleteScriptId] = useState(null);
-  const [deleteLoading, setDeleteLoading] = useState(false);
 
   // Debounced search state
   const [localSearch, setLocalSearch] = useState(promptSearch || "");
@@ -152,22 +146,6 @@ export default function SidebarContent({
     },
     [isMobile, setCurrentScriptId, onSelect]
   );
-
-  const handleCreateScriptClick = async () => {
-    await handleCreateScript(newScriptTitle || "New Script");
-    setShowAddScriptModal(false);
-    setNewScriptTitle("");
-  };
-
-  const handleDeleteScriptConfirm = async () => {
-    setDeleteLoading(true);
-    await handleDeleteScript(deleteScriptId);
-    setDeleteLoading(false);
-    setDeleteScriptId(null);
-    if (currentScriptId === deleteScriptId) {
-      setCurrentScriptId(null);
-    }
-  };
 
   const handleCreateChatLocal = useCallback(() => {
     window.dispatchEvent(new CustomEvent("nexus:startDraft"));
