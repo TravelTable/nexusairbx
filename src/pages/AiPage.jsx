@@ -26,6 +26,7 @@ import OnboardingContainer from "../components/OnboardingContainer";
 import UiPreviewDrawer from "../components/UiPreviewDrawer";
 import CodeDrawer from "../components/CodeDrawer";
 import SignInNudgeModal from "../components/SignInNudgeModal";
+import ProNudgeModal from "../components/ProNudgeModal";
 import {
   TokenBar,
   CustomModeModal,
