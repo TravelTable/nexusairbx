@@ -25,6 +25,7 @@ import { onAuthStateChanged } from "firebase/auth";
 import { getEntitlements } from "../lib/billing";
 import NexusRBXHeader from "../components/NexusRBXHeader";
 import NexusRBXFooter from "../components/NexusRBXFooter";
+import ProNudgeModal from "../components/ProNudgeModal";
 
 const API_BASE = (process.env.REACT_APP_BACKEND_URL || "https://nexusrbx-backend-production.up.railway.app").replace(/\/+$/, "");
 
@@ -38,6 +39,7 @@ export default function IconGeneratorPage() {
   const [history, setHistory] = useState([]);
   const [copied, setCopied] = useState(false);
   const [isPremium, setIsPremium] = useState(false);
+  const [showProNudge, setShowProNudge] = useState(false);
   const [enhancing, setEnhancing] = useState(false);
   const [referenceImage, setReferenceImage] = useState(null);
   const [noBackground, setNoBackground] = useState(false);
@@ -363,7 +365,7 @@ export default function IconGeneratorPage() {
                   <button
                     onClick={() => {
                       if (!isPremium) {
-                        navigate("/subscribe");
+                        setShowProNudge(true);
                         return;
                       }
                       handleGenerate();
@@ -519,6 +521,12 @@ export default function IconGeneratorPage() {
       </main>
 
       <NexusRBXFooter />
+
+      <ProNudgeModal 
+        isOpen={showProNudge}
+        onClose={() => setShowProNudge(false)}
+        reason="the AI Icon Generator"
+      />
     </div>
   );
 }

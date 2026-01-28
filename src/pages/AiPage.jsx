@@ -86,8 +86,16 @@ function AiPage() {
   // Map sidebar tabs to main tabs
   const handleSidebarTabChange = (sidebarTab) => {
     if (sidebarTab === "scripts" || sidebarTab === "chats" || sidebarTab === "agent") setActiveTab("chat");
-    else if (sidebarTab === "saved") setActiveTab("library");
+    else if (sidebarTab === "saved") {
+      if (planKey === "free") {
+        setProNudgeReason("Saved Scripts Library");
+        setShowProNudge(true);
+        return;
+      }
+      setActiveTab("library");
+    }
   };
+
   const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth > 1024);
   const [prompt, setPrompt] = useState("");
   const [showTour, setShowTour] = useState(localStorage.getItem("nexusrbx:tourComplete") !== "true");
@@ -95,6 +103,8 @@ function AiPage() {
   const [showSignInNudge, setShowSignInNudge] = useState(false);
   const [customModeModalOpen, setCustomModeModalOpen] = useState(false);
   const [editingCustomMode, setEditingCustomMode] = useState(null);
+  const [showProNudge, setShowProNudge] = useState(false);
+  const [proNudgeReason, setProNudgeReason] = useState("");
   const [projectContext, setProjectContext] = useState(null);
   const [teams, setTeams] = useState([]);
 
@@ -109,6 +119,28 @@ function AiPage() {
 
   const chat = useAiChat(user, settings, refreshBilling, notify);
   const ui = useUiBuilder(user, settings, refreshBilling, notify);
+
+  // Pro restriction for UI Builder (Initial Generation)
+  const originalHandleGenerateUiPreview = ui.handleGenerateUiPreview;
+  ui.handleGenerateUiPreview = async (...args) => {
+    if (planKey === "free") {
+      setProNudgeReason("AI UI Builder");
+      setShowProNudge(true);
+      return;
+    }
+    return originalHandleGenerateUiPreview(...args);
+  };
+
+  // Pro restriction for UI Refinement
+  const originalHandleRefine = ui.handleRefine;
+  ui.handleRefine = async (...args) => {
+    if (planKey === "free") {
+      setProNudgeReason("UI Refinement & Iteration");
+      setShowProNudge(true);
+      return;
+    }
+    return originalHandleRefine(...args);
+  };
   const game = useGameProfile(settings, updateSettings);
   const scriptManager = useAiScripts(user, notify);
   const agent = useAgent(user, notify, refreshBilling);
@@ -254,6 +286,11 @@ function AiPage() {
       setCodeDrawerOpen(true);
     };
     const handleSaveScript = async (e) => {
+      if (planKey === "free") {
+        setProNudgeReason("Saved Scripts Library");
+        setShowProNudge(true);
+        return;
+      }
       const { name, code } = e.detail;
       await scriptManager.handleCreateScript(name, code, "logic");
       notify({ message: `Saved ${name} to library!`, type: "success" });
@@ -479,6 +516,11 @@ function AiPage() {
   };
 
   const handleOpenScript = async (script) => {
+    if (planKey === "free") {
+      setProNudgeReason("Saved Scripts Library");
+      setShowProNudge(true);
+      return;
+    }
     if (script.type === "ui") {
       setActiveTab("chat");
       const uid = user?.uid;
@@ -618,7 +660,13 @@ function AiPage() {
               <div className="flex items-center gap-2">
                 <ProjectContextStatus 
                   context={projectContext} 
+                  plan={planKey}
                   onSync={async () => {
+                    if (planKey === "free") {
+                      setProNudgeReason("Project Context Sync");
+                      setShowProNudge(true);
+                      return;
+                    }
                     notify({ message: "Please use the NexusRBX Studio Plugin to refresh context", type: "info" });
                   }} 
                 />
@@ -641,18 +689,52 @@ function AiPage() {
                   onViewUi={(m) => { ui.setActiveUiId(m.projectId); ui.setUiDrawerOpen(true); if(isMobile) setMobileTab("preview"); }}
                   onQuickStart={(p) => handlePromptSubmit(null, p)}
                   onRefine={(m) => { 
+                    if (planKey === "free") {
+                      setProNudgeReason("UI Refinement & Iteration");
+                      setShowProNudge(true);
+                      return;
+                    }
                     setPrompt(`Refine this UI: `);
                     const el = document.getElementById("tour-prompt-box");
                     if (el) el.focus();
                   }}
                   onToggleActMode={async (m) => {
+                    if (planKey === "free") {
+                      setProNudgeReason("Act Mode (Auto-Execution)");
+                      setShowProNudge(true);
+                      return;
+                    }
                     chat.setChatMode("act");
-                    await handlePromptSubmit(null, m.prompt || m.content);
+                    // If it's a UI refinement, use handleRefine
+                    if (m.projectId && m.metadata?.type === 'ui') {
+                      await ui.handleRefine(m.prompt || m.content);
+                    } else {
+                      await handlePromptSubmit(null, m.prompt || m.content);
+                    }
                   }}
-                  onPushToStudio={chat.handlePushToStudio}
-                  onShareWithTeam={chat.handleShareWithTeam}
+                  onPushToStudio={(id, type, data) => {
+                    if (planKey === "free") {
+                      setProNudgeReason("One-Click Studio Push");
+                      setShowProNudge(true);
+                      return;
+                    }
+                    chat.handlePushToStudio(id, type, data);
+                  }}
+                  onShareWithTeam={(id, type, teamId) => {
+                    if (planKey === "free") {
+                      setProNudgeReason("Team Collaboration");
+                      setShowProNudge(true);
+                      return;
+                    }
+                    chat.handleShareWithTeam(id, type, teamId);
+                  }}
                   teams={teams}
                   onFixUiAudit={async (m) => {
+                    if (planKey === "free") {
+                      setProNudgeReason("UI Auto-Fix & Audit");
+                      setShowProNudge(true);
+                      return;
+                    }
                     if (!m.boardState || !m.metadata?.qaReport?.issues) return;
                     try {
                       const token = await user.getIdToken();
@@ -676,6 +758,11 @@ function AiPage() {
                     }
                   }}
                   onExecuteTask={async (task) => {
+                    if (planKey === "free") {
+                      setProNudgeReason("Multi-Step Goal Execution");
+                      setShowProNudge(true);
+                      return;
+                    }
                     chat.setCurrentTaskId(task.id);
                     const requestId = uuidv4();
                     try {
@@ -734,10 +821,18 @@ function AiPage() {
                     {currentPowerTools.map((tool, idx) => (
                       <button
                         key={idx}
-                        onClick={() => handlePromptSubmit(null, tool.prompt)}
-                        className="whitespace-nowrap px-3 py-1.5 rounded-lg bg-[#00f5d4]/5 border border-[#00f5d4]/10 text-[9px] font-black text-[#00f5d4] uppercase tracking-widest hover:bg-[#00f5d4]/20 transition-all"
+                        onClick={() => {
+                          if (planKey === "free") {
+                            setProNudgeReason("UI Power Tools & Styles");
+                            setShowProNudge(true);
+                            return;
+                          }
+                          handlePromptSubmit(null, tool.prompt);
+                        }}
+                        className="whitespace-nowrap px-3 py-1.5 rounded-lg bg-[#00f5d4]/5 border border-[#00f5d4]/10 text-[9px] font-black text-[#00f5d4] uppercase tracking-widest hover:bg-[#00f5d4]/20 transition-all flex items-center gap-1.5"
                       >
                         {tool.label}
+                        {planKey === "free" && <Zap className="w-2 h-2 text-[#9b5de5] fill-current" />}
                       </button>
                     ))}
                   </div>
@@ -769,6 +864,11 @@ function AiPage() {
                     </button>
                     <button 
                       onClick={async () => {
+                        if (planKey === "free") {
+                          setProNudgeReason("Act Mode (Auto-Execution)");
+                          setShowProNudge(true);
+                          return;
+                        }
                         chat.setChatMode("act");
                         const lastMsg = chat.messages[chat.messages.length - 1];
                         if (lastMsg && lastMsg.role === 'assistant' && (lastMsg.plan || lastMsg.explanation?.includes('<plan>'))) {
@@ -924,6 +1024,12 @@ function AiPage() {
       <SignInNudgeModal 
         isOpen={showSignInNudge} 
         onClose={() => setShowSignInNudge(false)} 
+      />
+
+      <ProNudgeModal
+        isOpen={showProNudge}
+        onClose={() => setShowProNudge(false)}
+        reason={proNudgeReason}
       />
 
       <CustomModeModal 

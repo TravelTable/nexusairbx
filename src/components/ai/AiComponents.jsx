@@ -195,11 +195,17 @@ export const PlanTracker = ({ plan, isExecuting = false }) => {
   );
 };
 
-export const TaskOrchestrator = ({ tasks, currentTaskId, onExecuteTask }) => {
+export const TaskOrchestrator = ({ tasks, currentTaskId, onExecuteTask, plan }) => {
   if (!tasks || tasks.length === 0) return null;
+  const isPro = plan === "pro" || plan === "team";
 
   return (
-    <div className="mt-4 mb-6 rounded-2xl border border-[#9b5de5]/20 bg-[#9b5de5]/5 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-500">
+    <div className={`mt-4 mb-6 rounded-2xl border border-[#9b5de5]/20 bg-[#9b5de5]/5 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-500 relative ${!isPro ? 'opacity-50' : ''}`}>
+      {!isPro && (
+        <div className="absolute top-3 right-3 z-20">
+          <Zap className="w-4 h-4 text-[#9b5de5] fill-current" />
+        </div>
+      )}
       <div className="px-4 py-3 border-b border-[#9b5de5]/20 flex items-center justify-between bg-[#9b5de5]/10">
         <div className="flex items-center gap-2">
           <Zap className="w-4 h-4 text-[#9b5de5]" />
@@ -247,7 +253,7 @@ export const TaskOrchestrator = ({ tasks, currentTaskId, onExecuteTask }) => {
   );
 };
 
-export const ProjectContextStatus = ({ context, onSync }) => {
+export const ProjectContextStatus = ({ context, onSync, plan }) => {
   const [isSyncing, setIsSyncing] = useState(false);
 
   const handleSync = async () => {
@@ -256,8 +262,15 @@ export const ProjectContextStatus = ({ context, onSync }) => {
     setIsSyncing(false);
   };
 
+  const isPro = plan === "pro" || plan === "team";
+
   return (
-    <div className="flex items-center gap-3 px-3 py-2 rounded-xl bg-white/5 border border-white/10 backdrop-blur-md">
+    <div className={`flex items-center gap-3 px-3 py-2 rounded-xl bg-white/5 border border-white/10 backdrop-blur-md relative ${!isPro ? 'opacity-50' : ''}`}>
+      {!isPro && (
+        <div className="absolute top-[-6px] right-[-6px] z-20">
+          <Zap className="w-3 h-3 text-[#9b5de5] fill-current" />
+        </div>
+      )}
       <div className="flex items-center gap-2">
         <div className={`w-2 h-2 rounded-full ${context ? 'bg-[#00f5d4] shadow-[0_0_10px_rgba(0,245,212,0.5)]' : 'bg-gray-600'}`} />
         <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">

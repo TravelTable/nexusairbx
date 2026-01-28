@@ -29,6 +29,7 @@ import { getEntitlements } from "../lib/billing";
 import { exportIcon } from "../lib/uiBuilderApi";
 import NexusRBXHeader from "../components/NexusRBXHeader";
 import NexusRBXFooter from "../components/NexusRBXFooter";
+import ProNudgeModal from "../components/ProNudgeModal";
 
 const API_BASE = (process.env.REACT_APP_BACKEND_URL || "https://nexusrbx-backend-production.up.railway.app").replace(/\/+$/, "");
 
@@ -47,6 +48,7 @@ export default function IconsMarketPage() {
   const [selectedIcon, setSelectedIcon] = useState(null);
   const [copied, setCopied] = useState(false);
   const [isPremium, setIsPremium] = useState(false);
+  const [showProNudge, setShowProNudge] = useState(false);
   const [collections, setCollections] = useState([]);
   const [activeMarketTab, setActiveMarketTab] = useState("browse"); // "browse" or "collections"
   const [showCreateCollection, setShowCreateCollection] = useState(false);
@@ -173,8 +175,8 @@ export default function IconsMarketPage() {
   };
 
   const handlePostToRoblox = async (icon) => {
-    if (icon.isPro && !isPremium) {
-      navigate("/subscribe");
+    if (!isPremium) {
+      setShowProNudge(true);
       return;
     }
 
@@ -701,6 +703,12 @@ export default function IconsMarketPage() {
       </AnimatePresence>
 
       <NexusRBXFooter />
+
+      <ProNudgeModal 
+        isOpen={showProNudge}
+        onClose={() => setShowProNudge(false)}
+        reason="this premium icon"
+      />
     </div>
   );
 }

@@ -228,9 +228,23 @@ export default function ChatView({
             {modeTab === "official" && CHAT_MODES.map((mode) => (
               <button
                 key={mode.id}
-                onClick={() => onModeChange(mode.id)}
+                onClick={() => {
+                  const isProMode = ["security", "performance", "data", "system", "animator"].includes(mode.id);
+                  if (isProMode && user?.plan !== "PRO" && user?.plan !== "TEAM") {
+                    // We'll let the parent handle the nudge if we want, 
+                    // but for now just call onModeChange and let the backend/logic block it
+                    onModeChange(mode.id);
+                  } else {
+                    onModeChange(mode.id);
+                  }
+                }}
                 className={`p-5 rounded-2xl bg-gray-900/40 border transition-all text-left group relative overflow-hidden ${activeMode === mode.id ? `border-white/20 ring-2 ring-offset-2 ring-offset-black ring-white/10` : `border-gray-800 ${mode.border}`}`}
               >
+                {["security", "performance", "data", "system", "animator"].includes(mode.id) && (
+                  <div className="absolute top-3 right-3 z-10">
+                    <Zap className="w-3 h-3 text-[#9b5de5] fill-current" />
+                  </div>
+                )}
                 {activeMode === mode.id && (
                   <div className={`absolute inset-0 opacity-10 ${mode.bg}`} />
                 )}
@@ -238,7 +252,12 @@ export default function ChatView({
                   {mode.icon}
                 </div>
                 <div className="font-bold text-white mb-1 text-sm flex items-center justify-between">
-                  {mode.label}
+                  <div className="flex items-center gap-2">
+                    {mode.label}
+                    {["security", "performance", "data", "system", "animator"].includes(mode.id) && (
+                      <span className="px-1.5 py-0.5 rounded bg-[#9b5de5]/20 text-[#9b5de5] text-[8px] font-black uppercase tracking-widest">Pro</span>
+                    )}
+                  </div>
                   {activeMode === mode.id && <div className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />}
                 </div>
                 <div className="text-[11px] text-gray-500 leading-relaxed line-clamp-2">{mode.description}</div>
@@ -276,9 +295,20 @@ export default function ChatView({
                 ))}
 
                 <button
-                  onClick={onCreateCustomMode}
-                  className="p-5 rounded-2xl bg-white/5 border border-dashed border-white/10 hover:border-[#00f5d4]/50 hover:bg-[#00f5d4]/5 transition-all text-center group flex flex-col items-center justify-center gap-3"
+                  onClick={() => {
+                    if (user?.plan !== "PRO" && user?.plan !== "TEAM") {
+                      onToggleActMode({ prompt: "Create Custom Expert" }); // Trigger nudge via existing handler
+                      return;
+                    }
+                    onCreateCustomMode();
+                  }}
+                  className="p-5 rounded-2xl bg-white/5 border border-dashed border-white/10 hover:border-[#00f5d4]/50 hover:bg-[#00f5d4]/5 transition-all text-center group relative flex flex-col items-center justify-center gap-3"
                 >
+                  {user?.plan !== "PRO" && user?.plan !== "TEAM" && (
+                    <div className="absolute top-3 right-3">
+                      <Zap className="w-3 h-3 text-[#9b5de5] fill-current" />
+                    </div>
+                  )}
                   <div className="p-3 rounded-full bg-white/5 group-hover:bg-[#00f5d4]/20 group-hover:text-[#00f5d4] transition-all">
                     <Plus className="w-5 h-5" />
                   </div>
@@ -363,7 +393,7 @@ export default function ChatView({
                             className="w-full py-3 rounded-xl bg-[#00f5d4] text-black font-black text-sm flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] transition-all shadow-[0_0_20px_rgba(0,245,212,0.4)]"
                           >
                             <Zap className="w-4 h-4 fill-current" />
-                            CONFIRM & EXECUTE
+                            {user?.plan === "PRO" || user?.plan === "TEAM" ? "CONFIRM & EXECUTE" : "UNLOCK AUTO-EXECUTION"}
                           </button>
                         </div>
                       )}
@@ -375,6 +405,7 @@ export default function ChatView({
                       tasks={m.tasks} 
                       currentTaskId={currentTaskId} 
                       onExecuteTask={onExecuteTask} 
+                      plan={user?.plan?.toLowerCase() || "free"}
                     />
                   )}
 
@@ -433,7 +464,7 @@ export default function ChatView({
                         className="w-full py-3 rounded-xl bg-[#00f5d4] text-black font-black text-sm flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] transition-all shadow-[0_0_20px_rgba(0,245,212,0.4)]"
                       >
                         <Zap className="w-4 h-4 fill-current" />
-                        TOGGLE TO ACT MODE
+                        {user?.plan === "PRO" || user?.plan === "TEAM" ? "TOGGLE TO ACT MODE" : "UNLOCK AUTO-BUILD"}
                       </button>
                     </div>
                   )}
@@ -443,7 +474,14 @@ export default function ChatView({
                       <div className="text-sm font-bold text-[#9b5de5]">Switch to {CHAT_MODES.find(mode => mode.id === m.suggestedMode)?.label || m.suggestedMode}?</div>
                       <p className="text-[11px] text-gray-400">Nexus detected you might need specialized tools for this task.</p>
                       <button 
-                        onClick={() => onModeChange(m.suggestedMode)}
+                        onClick={() => {
+                          const isProMode = ["security", "performance", "data", "system", "animator"].includes(m.suggestedMode);
+                          if (isProMode && user?.plan !== "PRO" && user?.plan !== "TEAM") {
+                            onToggleActMode({ prompt: `Switch to ${m.suggestedMode} Mode` });
+                            return;
+                          }
+                          onModeChange(m.suggestedMode);
+                        }}
                         className="w-full py-3 rounded-xl bg-[#9b5de5] text-white font-black text-sm flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] transition-all shadow-[0_0_20px_rgba(155,93,229,0.4)]"
                       >
                         <RefreshCw className="w-4 h-4" />
