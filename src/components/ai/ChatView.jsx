@@ -617,12 +617,7 @@ export default function ChatView({
                       <div className="text-[15px] md:text-[16px] whitespace-pre-wrap leading-relaxed text-gray-100">
                         <FormatText text={stripTags(pendingMessage.content)} />
                       </div>
-                      {/* Only show LiveCodeViewer in Act mode and if it looks like code is coming */}
-                      {pendingMessage.mode === 'act' && pendingMessage.content.includes('<code>') && (
-                        <div className="mt-4">
-                          <LiveCodeViewer content={pendingMessage.content.split('<code>')[1] || ""} />
-                        </div>
-                      )}
+                      {/* No LiveCodeViewer while streaming, as per user request */}
                     </div>
                   )}
                 </div>

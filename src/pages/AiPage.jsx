@@ -868,6 +868,13 @@ function AiPage() {
               </div>
               
               <div className="relative group">
+                {chat.isGenerating && (
+                  <div className="absolute -top-6 left-0 right-0 flex justify-center animate-in fade-in slide-in-from-bottom-1 duration-500">
+                    <span className="text-[9px] font-bold text-gray-500 uppercase tracking-widest bg-black/40 backdrop-blur-md px-3 py-1 rounded-full border border-white/5">
+                      Complex generations may take up to 5 minutes
+                    </span>
+                  </div>
+                )}
                 <div 
                   className="absolute -inset-0.5 rounded-2xl blur opacity-20 group-focus-within:opacity-40 transition duration-500" 
                   style={{ background: `linear-gradient(to r, ${currentTheme.primary}, ${currentTheme.secondary})` }}
