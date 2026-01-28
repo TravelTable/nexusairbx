@@ -11,7 +11,6 @@ import {
   Loader,
   Menu,
   Library,
-  Gamepad2,
   Sparkles,
   Search,
   Zap,
@@ -22,8 +21,6 @@ import { auth, db } from "../firebase";
 import { onAuthStateChanged, signInAnonymously } from "firebase/auth";
 import SidebarContent from "../components/SidebarContent";
 import NexusRBXHeader from "../components/NexusRBXHeader";
-import PlanBadge from "../components/PlanBadge";
-import BetaBadge from "../components/BetaBadge";
 import AiTour from "../components/AiTour";
 import OnboardingContainer from "../components/OnboardingContainer";
 import CelebrationAnimation from "../components/CelebrationAnimation";
@@ -257,7 +254,7 @@ function AiPage() {
       setCodeDrawerOpen(true);
     };
     const handleSaveScript = async (e) => {
-      const { name, code, location } = e.detail;
+      const { name, code } = e.detail;
       await scriptManager.handleCreateScript(name, code, "logic");
       notify({ message: `Saved ${name} to library!`, type: "success" });
     };
