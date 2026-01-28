@@ -5,7 +5,6 @@ import {
   ChevronUp, 
   Sparkles, 
   ListTodo,
-  CheckCircle,
   ShieldAlert, 
   ShieldCheck, 
   Zap, 
@@ -152,7 +151,7 @@ export const PlanTracker = ({ plan }) => {
   
   // Parse bullet points from the plan text
   const steps = plan.split('\n')
-    .map(line => line.replace(/^[•\-\d\.\s]+/, '').trim())
+    .map(line => line.replace(/^[•\-\d.\s]+/, '').trim())
     .filter(line => line.length > 0);
 
   return (

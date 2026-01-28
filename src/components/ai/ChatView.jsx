@@ -12,7 +12,6 @@ import {
 } from "./AiComponents";
 import LiveCodeViewer from "./LiveCodeViewer";
 import ScriptLoadingBarContainer from "../ScriptLoadingBarContainer";
-import GenerationStatusBar from "./GenerationStatusBar";
 import { 
   Zap, 
   Rocket, 
@@ -147,8 +146,6 @@ export default function ChatView({
   onToggleActMode,
   chatEndRef 
 }) {
-  const currentUser = auth.currentUser;
-  const isDev = currentUser?.email === DEV_EMAIL;
   const [copiedId, setCopiedId] = React.useState(null);
   const [modeTab, setModeTab] = React.useState("official"); // "official" | "custom" | "community"
   const [communityModes, setCommunityModes] = React.useState([]);
