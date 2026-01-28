@@ -240,16 +240,25 @@ function AiPage() {
     }
   }, [location]);
 
-  // Listen for Code Drawer events
+  // Listen for Code Drawer & Script Saving events
   useEffect(() => {
     const handleOpenCodeDrawer = (e) => {
       const { code, title, explanation } = e.detail;
       setCodeDrawerData({ code, title, explanation });
       setCodeDrawerOpen(true);
     };
+    const handleSaveScript = async (e) => {
+      const { name, code, location } = e.detail;
+      await scriptManager.handleCreateScript(name, code, "logic");
+      notify({ message: `Saved ${name} to library!`, type: "success" });
+    };
     window.addEventListener("nexus:openCodeDrawer", handleOpenCodeDrawer);
-    return () => window.removeEventListener("nexus:openCodeDrawer", handleOpenCodeDrawer);
-  }, []);
+    window.addEventListener("nexus:saveScript", handleSaveScript);
+    return () => {
+      window.removeEventListener("nexus:openCodeDrawer", handleOpenCodeDrawer);
+      window.removeEventListener("nexus:saveScript", handleSaveScript);
+    };
+  }, [scriptManager, notify]);
 
   // Load Project Context & Teams
   useEffect(() => {
@@ -343,28 +352,22 @@ function AiPage() {
     setPrompt("");
     if (activeTab !== "chat") setActiveTab("chat");
 
-    // Smart Routing: Auto-switch mode based on commands
+    // 1. Smart Routing: Auto-switch mode based on commands
     let effectiveMode = chat.activeMode;
-    if (currentPrompt.startsWith("/ui")) {
-      effectiveMode = "ui";
-      chat.updateChatMode(chat.currentChatId, "ui");
-    } else if (currentPrompt.startsWith("/audit")) {
-      effectiveMode = "security";
-      chat.updateChatMode(chat.currentChatId, "security");
-    } else if (currentPrompt.startsWith("/optimize")) {
-      effectiveMode = "performance";
-      chat.updateChatMode(chat.currentChatId, "performance");
-    } else if (currentPrompt.startsWith("/logic")) {
-      effectiveMode = "logic";
-      chat.updateChatMode(chat.currentChatId, "logic");
+    const commandMap = { "/ui": "ui", "/audit": "security", "/optimize": "performance", "/logic": "logic" };
+    for (const [cmd, mode] of Object.entries(commandMap)) {
+      if (currentPrompt.startsWith(cmd)) {
+        effectiveMode = mode;
+        chat.updateChatMode(chat.currentChatId, mode);
+        break;
+      }
     }
 
-    // Smarter routing: do deterministic routing first, use agent only when unclear
     try {
       const requestId = uuidv4();
       let activeChatId = chat.currentChatId;
 
-      // 1. Start a new chat session for this prompt if it's the first message
+      // 2. Initialize Chat Session if needed
       if (!activeChatId) {
         const newChatRef = await addDoc(collection(db, "users", user.uid, "chats"), {
           title: currentPrompt.slice(0, 30) + (currentPrompt.length > 30 ? "..." : ""),
@@ -374,182 +377,110 @@ function AiPage() {
         });
         activeChatId = newChatRef.id;
         chat.setCurrentChatId(activeChatId);
-
-        // Save initial context as a hidden system message or just prepend to first prompt
-        // For now, we'll just ensure the Agent knows the mode.
       }
 
-      // Set a temporary pending message so the user sees immediate feedback
+      // 3. Set Pending State
       chat.setPendingMessage({ 
-        role: "assistant", 
-        content: "", 
-        type: "chat", 
-        prompt: currentPrompt,
-        mode: chat.chatMode
+        role: "assistant", content: "", type: "chat", prompt: currentPrompt, mode: chat.chatMode
       });
+
+      // 4. Deterministic Routing (Skip Agent for obvious requests)
       const p = currentPrompt.toLowerCase();
+      const isUiRequest = p.startsWith("/ui") || ["build ui", "menu", "screen", "hud", "shop", "layout", "frame"].some(k => p.includes(k));
+      const isRefineRequest = p.startsWith("refine:") || p.startsWith("tweak:") || p.includes("refine ui");
 
-      const looksLikeUi =
-        p.startsWith("/ui") ||
-        p.includes("build ui") ||
-        p.includes("menu") ||
-        p.includes("screen") ||
-        p.includes("hud") ||
-        p.includes("shop") ||
-        p.includes("onboarding") ||
-        p.includes("layout") ||
-        p.includes("buttons") ||
-        p.includes("frame");
-
-      const looksLikeRefine =
-        p.startsWith("refine:") ||
-        p.startsWith("tweak:") ||
-        p.includes("refine ui") ||
-        p.includes("make the ui");
-
-      // If user wants UI and it's obvious OR mode is UI, skip agent
-      if ((looksLikeUi || effectiveMode === "ui") && !looksLikeRefine) {
-        // Trigger both chat (for streaming) and UI builder
-        const uiPromise = ui.handleGenerateUiPreview(
-          currentPrompt.replace(/^\/ui\s*/i, ""),
-          activeChatId,
-          chat.setCurrentChatId,
-          null,
-          requestId
-        );
+      if (isUiRequest && !isRefineRequest) {
+        const uiPromise = ui.handleGenerateUiPreview(currentPrompt.replace(/^\/ui\s*/i, ""), activeChatId, chat.setCurrentChatId, null, requestId);
         const chatPromise = chat.handleSubmit(currentPrompt, activeChatId, requestId);
-        
         await Promise.all([uiPromise, chatPromise]);
         return;
       }
 
-      // Refine only if there's actually an active UI
-      if (looksLikeRefine) {
+      if (isRefineRequest) {
         if (!ui.activeUi?.lua) {
-          // No UI to refine => generate instead
-          await ui.handleGenerateUiPreview(
-            currentPrompt.replace(/^refine:\s*/i, "").replace(/^tweak:\s*/i, ""),
-            chat.currentChatId,
-            chat.setCurrentChatId,
-            null,
-            requestId
-          );
-          return;
-        }
-        await ui.handleRefine(currentPrompt.replace(/^refine:\s*/i, "").replace(/^tweak:\s*/i, ""));
-        return;
-      }
-
-    // Otherwise, ask agent to route
-    const data = await agent.sendMessage(
-      currentPrompt,
-      activeChatId,
-      chat.setCurrentChatId,
-      requestId,
-      effectiveMode,
-      chat.chatMode
-    );
-
-      if (data?.action === "pipeline") {
-        const uiPromise = ui.handleGenerateUiPreview(
-          data.parameters?.prompt || currentPrompt,
-          activeChatId,
-          chat.setCurrentChatId,
-          data.parameters?.specs || null,
-          requestId
-        );
-        const chatPromise = chat.handleSubmit(currentPrompt, activeChatId, requestId);
-        
-        await Promise.all([uiPromise, chatPromise]);
-      } else if (data?.action === "refine") {
-        if (!ui.activeUi?.lua) {
-          await ui.handleGenerateUiPreview(
-            data.parameters?.instruction || currentPrompt,
-            chat.currentChatId,
-            chat.setCurrentChatId,
-            data.parameters?.specs || null,
-            requestId
-          );
+          await ui.handleGenerateUiPreview(currentPrompt.replace(/^(refine|tweak):\s*/i, ""), activeChatId, chat.setCurrentChatId, null, requestId);
         } else {
-          await ui.handleRefine(data.parameters?.instruction || currentPrompt);
+          await ui.handleRefine(currentPrompt.replace(/^(refine|tweak):\s*/i, ""));
         }
-      } else if (data?.action === "suggest_assets") {
-        // Suggest Roblox catalog queries for placeholders (or for the current UI prompt)
-        try {
-          const token = await user.getIdToken();
-          const res = await fetch(`${BACKEND_URL}/api/ui-builder/ai/suggest-image-queries`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify({
-              items: ui.activeUi?.boardState?.items || [],
-              boardPrompt: data.parameters?.prompt || currentPrompt,
-            }),
-          });
+        return;
+      }
 
-          if (res.ok) {
-            const out = await res.json();
-            const suggestions = out?.suggestions || [];
-            const msg =
-              suggestions.length > 0
-                ? suggestions
-                    .map((s) => `${s.itemId}: ${Array.isArray(s.queries) ? s.queries.join(", ") : ""}`)
-                    .join(" | ")
-                : "No suggestions returned.";
-            notify({ message: msg, type: "info" });
+      // 5. Agent-Based Routing
+      const data = await agent.sendMessage(currentPrompt, activeChatId, chat.setCurrentChatId, requestId, effectiveMode, chat.chatMode);
+      if (!data) return await chat.handleSubmit(currentPrompt, activeChatId, requestId);
+
+      // 6. Action Execution
+      switch (data.action) {
+        case "pipeline":
+          await Promise.all([
+            ui.handleGenerateUiPreview(data.parameters?.prompt || currentPrompt, activeChatId, chat.setCurrentChatId, data.parameters?.specs || null, requestId),
+            chat.handleSubmit(currentPrompt, activeChatId, requestId)
+          ]);
+          break;
+        case "refine":
+          if (!ui.activeUi?.lua) {
+            await ui.handleGenerateUiPreview(data.parameters?.instruction || currentPrompt, activeChatId, chat.setCurrentChatId, data.parameters?.specs || null, requestId);
           } else {
-            notify({ message: "Asset suggestion request failed", type: "error" });
+            await ui.handleRefine(data.parameters?.instruction || currentPrompt);
           }
-        } catch (err) {
-          notify({ message: "Asset suggestion failed", type: "error" });
-        }
-
-        await chat.handleSubmit(currentPrompt, activeChatId, requestId);
-      } else if (data?.action === "lint") {
-        // Audit UI for UX/accessibility issues (contrast, tap targets, hierarchy, consistency)
-        try {
-          const token = await user.getIdToken();
-          const res = await fetch(`${BACKEND_URL}/api/ui-builder/ai/audit`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify({
-              boardState: ui.activeUi?.boardState || null,
-            }),
-          });
-
-          if (res.ok) {
-            const out = await res.json();
-            const score = out?.audit?.score;
-            const issues = out?.audit?.issues || [];
-            const msg =
-              typeof score === "number"
-                ? `Audit score: ${score}. Issues: ${issues.map((i) => i.message).join(" | ")}`
-                : "Audit returned no score.";
-            notify({ message: msg, type: "info" });
-          } else {
-            notify({ message: "Audit request failed", type: "error" });
-          }
-        } catch (err) {
-          notify({ message: "Audit failed", type: "error" });
-        }
-
-        await chat.handleSubmit(currentPrompt, activeChatId, requestId);
-      } else if (data?.action === "plan") {
-        // Multi-step plan received
-        chat.setTasks(data.tasks || []);
-        await chat.handleSubmit(currentPrompt, activeChatId, requestId);
-      } else {
-        await chat.handleSubmit(currentPrompt, activeChatId, requestId);
+          break;
+        case "suggest_assets":
+          await handleSuggestAssets(data.parameters?.prompt || currentPrompt);
+          await chat.handleSubmit(currentPrompt, activeChatId, requestId);
+          break;
+        case "lint":
+          await handleUiAudit();
+          await chat.handleSubmit(currentPrompt, activeChatId, requestId);
+          break;
+        case "plan":
+          chat.setTasks(data.tasks || []);
+          await chat.handleSubmit(currentPrompt, activeChatId, requestId);
+          break;
+        default:
+          await chat.handleSubmit(currentPrompt, activeChatId, requestId);
       }
     } catch (err) {
       console.error("Routing error:", err);
       await chat.handleSubmit(currentPrompt);
     }
+  };
+
+  // Helper for Asset Suggestions
+  const handleSuggestAssets = async (promptContext) => {
+    try {
+      const token = await user.getIdToken();
+      const res = await fetch(`${BACKEND_URL}/api/ui-builder/ai/suggest-image-queries`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ items: ui.activeUi?.boardState?.items || [], boardPrompt: promptContext }),
+      });
+      if (res.ok) {
+        const out = await res.json();
+        const msg = out?.suggestions?.length > 0 
+          ? out.suggestions.map(s => `${s.itemId}: ${s.queries.join(", ")}`).join(" | ")
+          : "No suggestions returned.";
+        notify({ message: msg, type: "info" });
+      }
+    } catch (err) { notify({ message: "Asset suggestion failed", type: "error" }); }
+  };
+
+  // Helper for UI Audits
+  const handleUiAudit = async () => {
+    try {
+      const token = await user.getIdToken();
+      const res = await fetch(`${BACKEND_URL}/api/ui-builder/ai/audit`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ boardState: ui.activeUi?.boardState || null }),
+      });
+      if (res.ok) {
+        const out = await res.json();
+        const msg = out?.audit?.score !== undefined 
+          ? `Audit score: ${out.audit.score}. Issues: ${out.audit.issues.map(i => i.message).join(" | ")}`
+          : "Audit returned no score.";
+        notify({ message: msg, type: "info" });
+      }
+    } catch (err) { notify({ message: "Audit failed", type: "error" }); }
   };
 
   const handleOpenScript = async (script) => {
@@ -594,12 +525,12 @@ function AiPage() {
       <header className="border-b border-white/5 bg-black/40 backdrop-blur-xl sticky top-0 z-50">
         <div className="container mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-8">
-            <div className="flex items-center gap-2">
-              <div className="text-2xl font-bold bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-transparent bg-clip-text cursor-pointer" onClick={() => navigate("/")}>NexusRBX</div>
-              <BetaBadge className="mt-1" />
+            <div className="flex items-center gap-2 group cursor-pointer" onClick={() => navigate("/")}>
+              <div className="text-2xl font-bold bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-transparent bg-clip-text group-hover:brightness-125 transition-all">NexusRBX</div>
+              <BetaBadge className="mt-1 group-hover:scale-110 transition-transform" />
             </div>
             
-            <nav id="tour-mode-toggle" className="hidden md:flex items-center bg-gray-900/50 border border-gray-800 rounded-xl p-1">
+            <nav id="tour-mode-toggle" className="hidden md:flex items-center bg-gray-900/50 border border-gray-800 rounded-xl p-1 shadow-lg">
               <button 
                 onClick={() => setActiveTab("chat")} 
                 className={`px-4 py-1.5 rounded-lg text-sm font-bold flex items-center gap-2 transition-all ${activeTab === "chat" ? "bg-gray-800 text-[#00f5d4] shadow-sm" : "text-gray-400 hover:text-white"}`}

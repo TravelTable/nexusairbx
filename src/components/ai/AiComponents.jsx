@@ -107,8 +107,11 @@ export const NexusRBXAvatar = React.memo(({ isThinking = false, mode = "general"
 
   return (
     <div 
-      className={`w-10 h-10 md:w-12 md:h-12 rounded-2xl bg-white flex items-center justify-center shadow-2xl overflow-hidden flex-shrink-0 border-2 transition-colors duration-500 ${isThinking ? 'animate-pulse' : ''}`}
-      style={{ borderColor: isThinking ? color : 'rgba(255,255,255,0.1)' }}
+      className={`w-10 h-10 md:w-12 md:h-12 rounded-2xl bg-white flex items-center justify-center shadow-2xl overflow-hidden flex-shrink-0 border-2 transition-all duration-500 ${isThinking ? 'animate-pulse scale-110' : 'hover:scale-105'}`}
+      style={{ 
+        borderColor: isThinking ? color : 'rgba(255,255,255,0.1)',
+        boxShadow: isThinking ? `0 0 20px ${color}40` : 'none'
+      }}
     >
       <img src="/logo.png" alt="NexusRBX" className={`w-7 h-7 md:w-9 md:h-9 object-contain ${isThinking ? 'animate-bounce' : ''}`} />
     </div>
@@ -148,7 +151,7 @@ export const UiStatsBadge = ({ label, value, icon: Icon }) => (
   </div>
 );
 
-export const PlanTracker = ({ plan }) => {
+export const PlanTracker = ({ plan, isExecuting = false }) => {
   if (!plan) return null;
   
   // Parse bullet points from the plan text
@@ -157,18 +160,26 @@ export const PlanTracker = ({ plan }) => {
     .filter(line => line.length > 0);
 
   return (
-    <div className="mt-4 mb-6 rounded-2xl border border-white/10 bg-white/5 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-500">
-      <div className="px-4 py-3 border-b border-white/5 flex items-center gap-2 bg-white/5">
-        <ListTodo className="w-4 h-4 text-[#00f5d4]" />
-        <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">Execution Plan</span>
+    <div className={`mt-4 mb-6 rounded-2xl border overflow-hidden animate-in fade-in slide-in-from-top-2 duration-500 ${isExecuting ? 'border-[#00f5d4]/30 bg-[#00f5d4]/5 shadow-[0_0_30px_rgba(0,245,212,0.1)]' : 'border-white/10 bg-white/5'}`}>
+      <div className="px-4 py-3 border-b border-white/5 flex items-center justify-between bg-white/5">
+        <div className="flex items-center gap-2">
+          <ListTodo className={`w-4 h-4 ${isExecuting ? 'text-[#00f5d4] animate-pulse' : 'text-gray-400'}`} />
+          <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">Execution Plan</span>
+        </div>
+        {isExecuting && (
+          <div className="flex items-center gap-2">
+            <div className="w-1.5 h-1.5 rounded-full bg-[#00f5d4] animate-ping" />
+            <span className="text-[9px] font-black text-[#00f5d4] uppercase tracking-widest">Executing...</span>
+          </div>
+        )}
       </div>
       <div className="p-4 space-y-3">
         {steps.map((step, i) => (
           <div key={i} className="flex items-start gap-3 group">
-            <div className="mt-1 w-4 h-4 rounded-full border border-white/20 flex items-center justify-center group-hover:border-[#00f5d4] transition-colors">
-              <div className="w-1.5 h-1.5 rounded-full bg-white/10 group-hover:bg-[#00f5d4] transition-colors" />
+            <div className={`mt-1 w-4 h-4 rounded-full border flex items-center justify-center transition-all duration-500 ${isExecuting && i === 0 ? 'border-[#00f5d4] bg-[#00f5d4]/20' : 'border-white/20 group-hover:border-[#00f5d4]'}`}>
+              <div className={`w-1.5 h-1.5 rounded-full transition-all duration-500 ${isExecuting && i === 0 ? 'bg-[#00f5d4] scale-125' : 'bg-white/10 group-hover:bg-[#00f5d4]'}`} />
             </div>
-            <span className="text-xs text-gray-300 group-hover:text-white transition-colors leading-relaxed">{step}</span>
+            <span className={`text-xs transition-colors leading-relaxed ${isExecuting && i === 0 ? 'text-white font-bold' : 'text-gray-300 group-hover:text-white'}`}>{step}</span>
           </div>
         ))}
       </div>

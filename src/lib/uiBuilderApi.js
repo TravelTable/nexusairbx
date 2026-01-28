@@ -266,11 +266,11 @@ export async function exportLua({ token, boardState }) {
   return handleResponse(res);
 }
 
-export async function aiGenerateFunctionality({ token, lua, prompt, gameSpec = "" }) {
+export async function aiGenerateFunctionality({ token, uiModuleLua, systemsLua, prompt, gameSpec = "" }) {
   const res = await fetch(`${BACKEND_URL}/api/ui-builder/ai/generate-functionality`, {
     method: "POST",
     headers: authHeaders(token),
-    body: JSON.stringify({ lua, prompt, gameSpec }),
+    body: JSON.stringify({ uiModuleLua, systemsLua, prompt, gameSpec }),
   });
   return handleResponse(res);
 }

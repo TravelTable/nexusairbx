@@ -91,7 +91,15 @@ export default function UiPreviewDrawer({
       zip.file("Systems.server.lua", systemsLua);
     }
 
-    // 3. Assets (if any)
+    // 3. Functionality Scripts
+    if (funcScripts.length > 0) {
+      const funcFolder = zip.folder("functionality");
+      funcScripts.forEach(s => {
+        funcFolder.file(`${s.name}.lua`, s.code);
+      });
+    }
+
+    // 4. Assets (if any)
     if (uniqueAssets.length > 0) {
       const assetFolder = zip.folder("assets");
       const promises = uniqueAssets.map(async (asset, index) => {
@@ -149,7 +157,8 @@ export default function UiPreviewDrawer({
       const token = await user.getIdToken();
       const data = await aiGenerateFunctionality({
         token,
-        lua,
+        uiModuleLua: uiModuleLua || lua,
+        systemsLua: systemsLua || "",
         prompt: funcPrompt,
         gameSpec: settings?.gameSpec || ""
       });
@@ -157,7 +166,7 @@ export default function UiPreviewDrawer({
       setFuncScripts(data.scripts || []);
       
       if (data.updatedMainLua) {
-        onUpdateLua(data.updatedMainLua);
+        onUpdateLua({ systemsLua: data.updatedMainLua });
         setMainScriptUpdated(true);
       }
       

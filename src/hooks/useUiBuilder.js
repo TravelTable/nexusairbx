@@ -200,15 +200,11 @@ export function useUiBuilder(user, settings, refreshBilling, notify) {
     }
   };
 
-  const updateActiveLua = useCallback((newBoardStateOrLua) => {
+  const updateActiveUi = useCallback((updates) => {
     if (!activeUiId) return;
     setUiGenerations(prev => prev.map(g => {
       if (g.id === activeUiId) {
-        if (typeof newBoardStateOrLua === "string") {
-          return { ...g, uiModuleLua: newBoardStateOrLua };
-        } else {
-          return { ...g, boardState: newBoardStateOrLua };
-        }
+        return { ...g, ...updates };
       }
       return g;
     }));
@@ -231,6 +227,6 @@ export function useUiBuilder(user, settings, refreshBilling, notify) {
     handleRefine,
     handleGenerateUiPreview,
     refreshLua,
-    updateActiveLua
+    updateActiveUi
   };
 }

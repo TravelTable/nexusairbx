@@ -49,15 +49,25 @@ export default function FunctionalityTab({
                     {s.location || "StarterPlayerScripts"}
                   </span>
                 </div>
-                <button 
-                  onClick={() => {
-                    navigator.clipboard.writeText(s.code);
-                  }}
-                  className="p-1.5 rounded bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-white transition-colors"
-                  title="Copy Script"
-                >
-                  <Copy className="w-3.5 h-3.5" />
-                </button>
+                <div className="flex items-center gap-1.5">
+                  <button 
+                    onClick={() => {
+                      window.dispatchEvent(new CustomEvent("nexus:saveScript", { detail: s }));
+                    }}
+                    className="px-2 py-1 rounded bg-[#f15bb5]/10 hover:bg-[#f15bb5]/20 text-[#f15bb5] text-[10px] font-bold uppercase tracking-wider border border-[#f15bb5]/20 transition-colors"
+                  >
+                    Save to Library
+                  </button>
+                  <button 
+                    onClick={() => {
+                      navigator.clipboard.writeText(s.code);
+                    }}
+                    className="p-1.5 rounded bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-white transition-colors"
+                    title="Copy Script"
+                  >
+                    <Copy className="w-3.5 h-3.5" />
+                  </button>
+                </div>
               </div>
               <div className="bg-[#181825] rounded-xl border border-gray-800 overflow-hidden">
                 <SyntaxHighlighter

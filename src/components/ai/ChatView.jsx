@@ -350,7 +350,10 @@ export default function ChatView({
 
                   {m.role === 'assistant' && (m.plan || (m.explanation && m.explanation.includes('<plan>'))) && (
                     <div className="space-y-4">
-                      <PlanTracker plan={m.plan || m.explanation.match(/<plan>([\s\S]*?)<\/plan>/i)?.[1]} />
+                      <PlanTracker 
+                        plan={m.plan || m.explanation.match(/<plan>([\s\S]*?)<\/plan>/i)?.[1]} 
+                        isExecuting={m.id === messages[messages.length - 1]?.id && (generationStage || pendingMessage)}
+                      />
                       {activeMode !== 'general' && (
                         <div className="p-4 rounded-2xl bg-[#00f5d4]/5 border border-[#00f5d4]/20 flex flex-col items-center text-center gap-4 animate-in fade-in zoom-in duration-500">
                           <div className="text-sm font-bold text-[#00f5d4]">Ready to execute this plan?</div>
