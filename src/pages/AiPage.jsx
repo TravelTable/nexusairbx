@@ -566,7 +566,7 @@ function AiPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#050505] text-white font-sans flex flex-col relative overflow-hidden">
+    <div className="h-screen bg-[#050505] text-white font-sans flex flex-col relative overflow-hidden">
       {/* Background Glows */}
       <div 
         className="fixed top-[-10%] left-[-10%] w-[40%] h-[40%] blur-[120px] rounded-full pointer-events-none transition-colors duration-1000" 
@@ -622,8 +622,8 @@ function AiPage() {
         </div>
       </header>
 
-      <div className="flex flex-1 min-h-0">
-        <aside id="tour-sidebar" className={`fixed inset-y-0 left-0 z-40 w-72 bg-gray-900 border-r border-gray-800 flex flex-col transform transition-transform duration-300 ease-in-out md:relative md:translate-x-0 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}`}>
+      <div className="flex flex-1 min-h-0 overflow-hidden">
+        <aside id="tour-sidebar" className={`fixed inset-y-0 left-0 z-40 w-72 bg-gray-900 border-r border-gray-800 flex flex-col transform transition-transform duration-300 ease-in-out md:relative md:translate-x-0 h-full ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}`}>
           <SidebarContent
             activeTab={activeTab === "chat" ? "chats" : "saved"} 
             setActiveTab={handleSidebarTabChange} 
