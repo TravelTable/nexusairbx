@@ -13,6 +13,8 @@ import {
   Library,
   Gamepad2,
   Sparkles,
+  Search,
+  Zap,
 } from "lucide-react";
 import { auth, db } from "../firebase";
 import { onAuthStateChanged, signInAnonymously } from "firebase/auth";
@@ -38,6 +40,7 @@ import {
   onSnapshot,
   getDocs,
   setDoc,
+  addDoc,
   doc,
   serverTimestamp,
   deleteDoc,
