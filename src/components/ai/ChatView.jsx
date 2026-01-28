@@ -129,6 +129,16 @@ export const CHAT_MODES = [
   },
 ];
 
+const stripTags = (text) => {
+  if (!text) return "";
+  return text
+    .replace(/<title>[\s\S]*?<\/title>/gi, "")
+    .replace(/<plan>[\s\S]*?<\/plan>/gi, "")
+    .replace(/<explanation>([\s\S]*?)<\/explanation>/gi, "$1")
+    .replace(/<code>[\s\S]*?<\/code>/gi, "")
+    .trim();
+};
+
 export default function ChatView({ 
   messages, 
   pendingMessage, 
@@ -332,9 +342,9 @@ export default function ChatView({
           {messages.map((m) => (
             <div key={m.id} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'} gap-4 group animate-in fade-in slide-in-from-bottom-4 duration-500`}>
               {m.role === 'assistant' && <NexusRBXAvatar mode={activeMode} />}
-              <div className={`max-w-[85%] md:max-w-[80%] ${m.role === 'user' ? 'order-1' : 'order-2'}`}>
-                <div className={`p-4 md:p-6 rounded-3xl ${m.role === 'user' 
-                  ? 'bg-gradient-to-br from-[#9b5de5] to-[#00f5d4] text-white shadow-[0_10px_40px_rgba(155,93,229,0.2)] border border-white/20' 
+              <div className={`${m.role === 'user' ? 'max-w-[70%] md:max-w-[60%]' : 'max-w-[85%] md:max-w-[80%]'} ${m.role === 'user' ? 'order-1' : 'order-2'}`}>
+                <div className={`p-4 md:p-5 rounded-3xl ${m.role === 'user' 
+                  ? 'bg-[#121212]/80 border border-white/10 backdrop-blur-xl shadow-2xl text-gray-100' 
                   : 'bg-[#121212]/80 border border-white/10 backdrop-blur-xl shadow-2xl'}`}>
                   
                   {m.role === 'assistant' && m.thought && <ThoughtAccordion thought={m.thought} />}
@@ -391,12 +401,12 @@ export default function ChatView({
 
                   {m.explanation ? (
                     <div className="text-[15px] md:text-[16px] whitespace-pre-wrap leading-relaxed text-gray-100">
-                      <FormatText text={m.explanation} />
+                      <FormatText text={stripTags(m.explanation)} />
                     </div>
                   ) : (
                     m.role === 'assistant' && m.content && (
                       <div className="text-[15px] md:text-[16px] whitespace-pre-wrap leading-relaxed text-gray-400 italic">
-                        <FormatText text={m.content} />
+                        <FormatText text={stripTags(m.content)} />
                       </div>
                     )
                   )}
@@ -439,7 +449,7 @@ export default function ChatView({
                     </div>
                   )}
 
-                  {m.role === 'assistant' && (m.uiModuleLua || m.code) && (
+                  {m.role === 'assistant' && (m.uiModuleLua || m.code) && m.metadata?.mode !== 'plan' && (
                     <div className="mt-6 space-y-4">
                       {activeMode === 'general' && !m.metadata?.structuredData ? (
                         <div className="p-4 rounded-2xl bg-black/40 border border-white/5 space-y-3">

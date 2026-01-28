@@ -237,7 +237,11 @@ export function useAiChat(user, settings, refreshBilling, notify) {
                 requestId,
                 jobId,
                 artifactId: data.artifactId,
-                metadata: data.metadata || (data.qaReport ? { qaReport: data.qaReport } : null)
+                metadata: {
+                  ...(data.metadata || {}),
+                  mode: currentMode,
+                  qaReport: data.qaReport || null
+                }
               };
 
               // If in general mode, we might want to include options if the backend provided them
