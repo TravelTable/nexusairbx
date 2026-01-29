@@ -29,6 +29,7 @@ import {
   Sparkles,
   Info,
   ArrowUpCircle,
+  Skull,
 } from "lucide-react";
 import { useSettings } from "../context/SettingsContext";
 import { useBilling } from "../context/BillingContext";
@@ -38,6 +39,7 @@ import { auth } from "../firebase";
 import { signOut } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
 import ConfirmationModal from "../components/ConfirmationModal";
+import BrutalAuditor from "../components/ai/BrutalAuditor";
 import {
   CartesianGrid,
   Tooltip,
@@ -82,7 +84,11 @@ const SettingsPage = () => {
 
   const finalTabs = useMemo(() => {
     if (isDev) {
-      return [...TABS, { id: "developer", label: "Developer", icon: Terminal }];
+      return [
+        ...TABS, 
+        { id: "developer", label: "Developer", icon: Terminal },
+        { id: "brutal", label: "Brutal Audit", icon: Skull }
+      ];
     }
     return TABS;
   }, [isDev]);
@@ -589,6 +595,9 @@ const SettingsPage = () => {
             </div>
           </div>
         );
+
+      case "brutal":
+        return <BrutalAuditor />;
 
       case "developer":
         return (
