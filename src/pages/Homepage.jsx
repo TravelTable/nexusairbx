@@ -6,7 +6,7 @@ import NexusRBXHeader from "../components/NexusRBXHeader";
 import NexusRBXFooter from "../components/NexusRBXFooter";
 import { auth } from "../firebase";
 import { onAuthStateChanged, signOut } from "firebase/auth";
-import { getEntitlements } from "../lib/billing";
+import { getEntitlements, summarizeEntitlements } from "../lib/billing";
 import { Helmet } from "react-helmet";
 import HeroSection from "../components/home/HeroSection";
 import FeaturesSection from "../components/home/FeaturesSection";
@@ -42,13 +42,15 @@ export default function NexusRBXHomepageContainer() {
     setTokenLoading(true);
     getEntitlements()
       .then((data) => {
-        setTokenInfo(data);
+        setTokenInfo(summarizeEntitlements(data));
       })
       .catch(() => {
         setTokenInfo(null);
       })
       .finally(() => setTokenLoading(false));
   }, [user]);
+
+  const isPremium = tokenInfo?.plan === "PRO" || tokenInfo?.plan === "TEAM";
 
   const handleLogin = () => {
     navigate("/signin");
@@ -147,11 +149,13 @@ export default function NexusRBXHomepageContainer() {
     },
     {
       id: 2,
-      title: "Premium",
-      description: "Unlock Nexus-5 (GPT-5.2) AI, high-limit generations, and priority support. Access exclusive UI components and advanced scripting features.",
+      title: isPremium ? "Your Subscription" : "Premium",
+      description: isPremium 
+        ? `You are currently on the ${tokenInfo.plan} plan. Enjoy Nexus-5 (GPT-5.2) AI and high-limit generations.`
+        : "Unlock Nexus-5 (GPT-5.2) AI, high-limit generations, and priority support. Access exclusive UI components and advanced scripting features.",
       icon: null,
       gradient: "from-cyan-500 to-blue-600",
-      button: { text: "Subscribe", href: "/subscribe" },
+      button: { text: isPremium ? "Manage Plan" : "Subscribe", href: isPremium ? "/settings" : "/subscribe" },
       isSubscribeTab: true,
     },
     {

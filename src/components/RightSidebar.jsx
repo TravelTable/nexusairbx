@@ -289,7 +289,7 @@ function handleModelChange(e) {
         <div className="font-semibold text-gray-200 mb-2 flex items-center">
           Model
           <span className="ml-2 text-xs text-gray-400">
-            {plan === "free" && (
+            {!isProOrTeam && (
               <span className="bg-[#9b5de5]/10 text-[#9b5de5] px-2 py-0.5 rounded-full">
                 Pro tip: Try Nexus-5 (GPT-5.2) for better scripts
               </span>
@@ -617,10 +617,10 @@ function handleModelChange(e) {
           </button>
           {(atTemplateCap || templatesMax === 0) && (
             <button
-              className="ml-2 px-3 py-1 rounded bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-white text-xs font-semibold"
+              className={`ml-2 px-3 py-1 rounded text-white text-xs font-semibold ${entitlements.includes("pro") ? "bg-white/5 text-gray-400 hover:text-white" : "bg-gradient-to-r from-[#9b5de5] to-[#00f5d4]"}`}
               onClick={() => window.location.href = "/subscribe"}
             >
-              Upgrade
+              {entitlements.includes("pro") ? "Team" : "Upgrade"}
             </button>
           )}
         </div>
@@ -629,7 +629,7 @@ function handleModelChange(e) {
           <div className="mt-2 text-xs text-[#9b5de5] flex items-center gap-1">
             <Info className="w-4 h-4" />
             {templatesMax === 0
-              ? "Upgrade to add templates."
+              ? (entitlements.includes("pro") ? "Upgrade to Team for more templates." : "Upgrade to add templates.")
               : "Template limit reached. Upgrade for more."}
           </div>
         )}

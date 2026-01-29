@@ -33,6 +33,7 @@ import {
   serverTimestamp,
 } from "firebase/firestore";
 import { useAiLibrary } from "../hooks/useAiLibrary";
+import { useBilling } from "../context/BillingContext";
 
 // --- SidebarContent component ---
 export default function SidebarContent({
@@ -64,6 +65,9 @@ export default function SidebarContent({
   gameProfile = null,
   user = null,
 }) {
+  const { entitlements } = useBilling();
+  const isPremium = entitlements?.includes("pro") || entitlements?.includes("team");
+
   // --- Library Data ---
   const { chats } = useAiLibrary(user);
 
@@ -258,6 +262,31 @@ export default function SidebarContent({
         <Plus className="w-4 h-4" />
         New Chat Session
       </button>
+
+      {/* Subtle Team Upgrade for Pro Users */}
+      {!isPremium && (
+        <div className="mt-4 px-2">
+          <a 
+            href="/subscribe" 
+            className="flex items-center justify-center gap-2 py-2 rounded-xl bg-[#9b5de5]/10 border border-[#9b5de5]/20 text-[#9b5de5] text-[10px] font-black uppercase tracking-widest hover:bg-[#9b5de5]/20 transition-all"
+          >
+            <Zap className="w-3 h-3 fill-current" />
+            Upgrade to Pro
+          </a>
+        </div>
+      )}
+      
+      {entitlements?.includes("pro") && !entitlements?.includes("team") && (
+        <div className="mt-4 px-2">
+          <a 
+            href="/subscribe" 
+            className="flex items-center justify-center gap-2 py-2 rounded-xl bg-white/5 border border-white/10 text-gray-500 text-[10px] font-black uppercase tracking-widest hover:text-white hover:bg-white/10 transition-all"
+          >
+            <Users className="w-3 h-3" />
+            Explore Team Seats
+          </a>
+        </div>
+      )}
       </div>
 
       {/* 3. Modern Pill Navigation */}

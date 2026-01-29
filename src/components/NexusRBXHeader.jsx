@@ -20,6 +20,7 @@ import TokensCounterContainer from "./TokensCounterContainer";
 import { useLocation } from "react-router-dom";
 import { auth } from "../firebase";
 import { signOut } from "firebase/auth";
+import { useBilling } from "../context/BillingContext";
 
 /**
  * NexusRBXHeader - Upgraded Floating Glass UI
@@ -38,6 +39,8 @@ function NexusRBXHeader({
   const location = useLocation();
   const toolsRef = useRef(null);
   const accountRef = useRef(null);
+  const { entitlements } = useBilling();
+  const isPremium = entitlements?.includes("pro") || entitlements?.includes("team");
 
   const isActive = (path) => location.pathname === path;
 
@@ -156,7 +159,7 @@ function NexusRBXHeader({
                         <div className="flex-1">
                           <div className="flex items-center justify-between">
                             <span className="text-sm font-bold text-white">{tool.name}</span>
-                            {tool.badge && (
+                            {tool.badge && (!isPremium || tool.badge !== "PRO") && (
                               <span className="text-[10px] font-black px-1.5 py-0.5 rounded bg-[#9b5de5] text-white">{tool.badge}</span>
                             )}
                             {tool.comingSoon && (

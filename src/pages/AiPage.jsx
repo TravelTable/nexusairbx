@@ -66,7 +66,7 @@ import GameProfileWizard from "../components/ai/GameProfileWizard";
 
 function AiPage() {
   // 1. External Hooks
-  const { plan, totalRemaining, subLimit, resetsAt, refresh: refreshBilling } = useBilling();
+  const { plan, totalRemaining, subLimit, resetsAt, refresh: refreshBilling, entitlements } = useBilling();
   const { settings, updateSettings } = useSettings();
   const navigate = useNavigate();
   const location = useLocation();
@@ -85,11 +85,16 @@ function AiPage() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
+  // 4. Derived State
+  const isPremium = entitlements?.includes("pro") || entitlements?.includes("team");
+  const planKey = plan?.toLowerCase() || "free";
+  const chatEndRef = useRef(null);
+
   // Map sidebar tabs to main tabs
   const handleSidebarTabChange = (sidebarTab) => {
     if (sidebarTab === "scripts" || sidebarTab === "chats" || sidebarTab === "agent") setActiveTab("chat");
     else if (sidebarTab === "saved") {
-      if (planKey === "free") {
+      if (!isPremium) {
         setProNudgeReason("Saved Scripts Library");
         setShowProNudge(true);
         return;
@@ -142,10 +147,6 @@ function AiPage() {
     window.addEventListener("nexus:startDraft", handleStartDraft);
     return () => window.removeEventListener("nexus:startDraft", handleStartDraft);
   }, [chat]);
-
-  // 4. Derived State
-  const planKey = plan?.toLowerCase() || "free";
-  const chatEndRef = useRef(null);
 
   const activeModeData = CHAT_MODES.find(m => m.id === chat.activeMode) || CHAT_MODES[0];
 
@@ -258,7 +259,7 @@ function AiPage() {
       setCodeDrawerOpen(true);
     };
     const handleSaveScript = async (e) => {
-      if (planKey === "free") {
+      if (!isPremium) {
         setProNudgeReason("Saved Scripts Library");
         setShowProNudge(true);
         return;
@@ -273,7 +274,7 @@ function AiPage() {
       window.removeEventListener("nexus:openCodeDrawer", handleOpenCodeDrawer);
       window.removeEventListener("nexus:saveScript", handleSaveScript);
     };
-  }, [scriptManager, notify, planKey]);
+  }, [scriptManager, notify, isPremium]);
 
   // Load Project Context & Teams
   useEffect(() => {
@@ -511,7 +512,7 @@ function AiPage() {
   };
 
   const handleOpenScript = async (script) => {
-    if (planKey === "free") {
+    if (!isPremium) {
       setProNudgeReason("Saved Scripts Library");
       setShowProNudge(true);
       return;
@@ -657,7 +658,7 @@ function AiPage() {
                   context={projectContext} 
                   plan={planKey}
                   onSync={async () => {
-                    if (planKey === "free") {
+                    if (!isPremium) {
                       setProNudgeReason("Project Context Sync");
                       setShowProNudge(true);
                       return;
@@ -684,7 +685,7 @@ function AiPage() {
                   onViewUi={(m) => { ui.setActiveUiId(m.projectId); ui.setUiDrawerOpen(true); if(isMobile) setMobileTab("preview"); }}
                   onQuickStart={(p) => handlePromptSubmit(null, p)}
                   onRefine={(m) => { 
-                    if (planKey === "free") {
+                    if (!isPremium) {
                       setProNudgeReason("UI Refinement & Iteration");
                       setShowProNudge(true);
                       return;
@@ -726,7 +727,7 @@ function AiPage() {
                     }
                   }}
                   onPushToStudio={(id, type, data) => {
-                    if (planKey === "free") {
+                    if (!isPremium) {
                       setProNudgeReason("One-Click Studio Push");
                       setShowProNudge(true);
                       return;
@@ -734,7 +735,7 @@ function AiPage() {
                     chat.handlePushToStudio(id, type, data);
                   }}
                   onShareWithTeam={(id, type, teamId) => {
-                    if (planKey === "free") {
+                    if (!isPremium) {
                       setProNudgeReason("Team Collaboration");
                       setShowProNudge(true);
                       return;
@@ -743,7 +744,7 @@ function AiPage() {
                   }}
                   teams={teams}
                   onFixUiAudit={async (m) => {
-                    if (planKey === "free") {
+                    if (!isPremium) {
                       setProNudgeReason("UI Auto-Fix & Audit");
                       setShowProNudge(true);
                       return;
@@ -771,7 +772,7 @@ function AiPage() {
                     }
                   }}
                   onExecuteTask={async (task) => {
-                    if (planKey === "free") {
+                    if (!isPremium) {
                       setProNudgeReason("Multi-Step Goal Execution");
                       setShowProNudge(true);
                       return;
@@ -835,7 +836,7 @@ function AiPage() {
                       <button
                         key={idx}
                         onClick={() => {
-                          if (planKey === "free") {
+                          if (!isPremium) {
                             setProNudgeReason("UI Power Tools & Styles");
                             setShowProNudge(true);
                             return;
@@ -845,7 +846,7 @@ function AiPage() {
                         className="whitespace-nowrap px-3 py-1.5 rounded-lg bg-[#00f5d4]/5 border border-[#00f5d4]/10 text-[9px] font-black text-[#00f5d4] uppercase tracking-widest hover:bg-[#00f5d4]/20 transition-all flex items-center gap-1.5"
                       >
                         {tool.label}
-                        {planKey === "free" && <Zap className="w-2 h-2 text-[#9b5de5] fill-current" />}
+                        {!isPremium && <Zap className="w-2 h-2 text-[#9b5de5] fill-current" />}
                       </button>
                     ))}
                   </div>
@@ -877,7 +878,7 @@ function AiPage() {
                     </button>
                     <button 
                       onClick={async () => {
-                        if (planKey === "free") {
+                        if (!isPremium) {
                           setProNudgeReason("Act Mode (Auto-Execution)");
                           setShowProNudge(true);
                           return;

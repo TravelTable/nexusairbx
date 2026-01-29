@@ -1,4 +1,5 @@
 import React from "react";
+import { useBilling } from "../../context/BillingContext";
 import { 
   NexusRBXAvatar, 
   UserAvatar, 
@@ -163,6 +164,8 @@ export default function ChatView({
   currentTaskId,
   chatEndRef 
 }) {
+  const { entitlements } = useBilling();
+  const isPremium = entitlements?.includes("pro") || entitlements?.includes("team");
   const [copiedId, setCopiedId] = React.useState(null);
   const [modeTab, setModeTab] = React.useState("official"); // "official" | "custom" | "community"
   const [communityModes, setCommunityModes] = React.useState([]);
@@ -255,7 +258,7 @@ export default function ChatView({
                 <div className="font-bold text-white mb-1 text-sm flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     {mode.label}
-                    {["security", "performance", "data", "system", "animator"].includes(mode.id) && (
+                    {["security", "performance", "data", "system", "animator"].includes(mode.id) && !isPremium && (
                       <span className="px-1.5 py-0.5 rounded bg-[#9b5de5]/20 text-[#9b5de5] text-[8px] font-black uppercase tracking-widest">Pro</span>
                     )}
                   </div>

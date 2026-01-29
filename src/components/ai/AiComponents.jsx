@@ -59,6 +59,10 @@ export function TokenBar({ tokensLeft, tokensLimit, resetsAt, plan }) {
           <a href="/subscribe" className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-[#00f5d4] hover:brightness-125 transition-all animate-pulse">
             <Zap className="w-3 h-3 fill-current" /> Upgrade to Pro
           </a>
+        ) : isLow && plan === "pro" ? (
+          <a href="/subscribe" className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-[#9b5de5] hover:brightness-125 transition-all animate-pulse">
+            <Zap className="w-3 h-3 fill-current" /> Explore Team
+          </a>
         ) : (
           <a href="/docs#tokens" className="flex items-center gap-1 text-xs text-[#9b5de5] hover:text-[#00f5d4] underline" title="How tokens work">
             <Info className="w-4 h-4" /> How tokens work
@@ -76,10 +80,11 @@ export function TokenBar({ tokensLeft, tokensLimit, resetsAt, plan }) {
   );
 }
 
-export function PlanBadge({ plan }) {
+export function PlanBadge({ plan: planProp }) {
+  const plan = (planProp || "free").toLowerCase();
   const planInfo = PLAN_INFO[plan] || PLAN_INFO.free;
   return (
-    <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold mr-2 ${planInfo.badgeClass}`} style={{ background: plan === "pro" ? "linear-gradient(90deg, #9b5de5 0%, #00f5d4 100%)" : plan === "team" ? "linear-gradient(90deg, #00f5d4 0%, #9b5de5 100%)" : undefined, color: plan === "team" ? "#222" : undefined }}>
+    <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold mr-2 ${planInfo.badgeClass}`} style={{ background: (plan === "pro" || plan === "team") ? (plan === "team" ? "linear-gradient(90deg, #00f5d4 0%, #9b5de5 100%)" : "linear-gradient(90deg, #9b5de5 0%, #00f5d4 100%)") : undefined, color: plan === "team" ? "#222" : undefined }}>
       {planInfo.label}
       <span className="ml-2 text-xs font-normal opacity-80">• {planInfo.capText}</span>
     </span>
@@ -197,7 +202,7 @@ export const PlanTracker = ({ plan, isExecuting = false }) => {
 
 export const TaskOrchestrator = ({ tasks, currentTaskId, onExecuteTask, plan }) => {
   if (!tasks || tasks.length === 0) return null;
-  const isPro = plan === "pro" || plan === "team";
+  const isPro = plan === "pro" || plan === "team" || plan === "TEAM" || plan === "PRO";
 
   return (
     <div className={`mt-4 mb-6 rounded-2xl border border-[#9b5de5]/20 bg-[#9b5de5]/5 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-500 relative ${!isPro ? 'opacity-50' : ''}`}>
@@ -262,7 +267,7 @@ export const ProjectContextStatus = ({ context, onSync, plan }) => {
     setIsSyncing(false);
   };
 
-  const isPro = plan === "pro" || plan === "team";
+  const isPro = plan === "pro" || plan === "team" || plan === "TEAM" || plan === "PRO";
 
   return (
     <div className={`flex items-center gap-3 px-3 py-2 rounded-xl bg-white/5 border border-white/10 backdrop-blur-md relative ${!isPro ? 'opacity-50' : ''}`}>

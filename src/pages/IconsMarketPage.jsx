@@ -47,7 +47,8 @@ export default function IconsMarketPage() {
   const [hasMore, setHasMore] = useState(true);
   const [selectedIcon, setSelectedIcon] = useState(null);
   const [copied, setCopied] = useState(false);
-  const [isPremium, setIsPremium] = useState(false);
+  const { entitlements } = useBilling();
+  const isPremium = entitlements?.includes("pro") || entitlements?.includes("team");
   const [showProNudge, setShowProNudge] = useState(false);
   const [collections, setCollections] = useState([]);
   const [activeMarketTab, setActiveMarketTab] = useState("browse"); // "browse" or "collections"
@@ -475,7 +476,7 @@ export default function IconsMarketPage() {
                   onClick={() => navigate(`/icons/${icon.id}`)}
                   className="group relative bg-white/[0.02] border border-white/10 rounded-2xl p-4 hover:bg-white/[0.05] hover:border-[#9b5de5]/50 transition-all cursor-pointer overflow-hidden"
                 >
-                  {icon.isPro && (
+                  {icon.isPro && !isPremium && (
                     <div className="absolute top-2 right-2 z-20">
                       <div className="px-2 py-0.5 rounded bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-white text-[8px] font-black uppercase shadow-lg">
                         Pro
@@ -561,7 +562,7 @@ export default function IconsMarketPage() {
                 <div className="mb-8">
                   <div className="flex items-center gap-3 mb-2">
                     <h2 className="text-2xl font-black">{selectedIcon.name}</h2>
-                    {selectedIcon.isPro && (
+                    {selectedIcon.isPro && !isPremium && (
                       <span className="px-2 py-0.5 rounded bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-white text-[10px] font-black uppercase">Pro</span>
                     )}
                   </div>

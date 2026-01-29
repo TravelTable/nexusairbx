@@ -19,6 +19,7 @@ import { auth } from "../firebase";
 import { onAuthStateChanged } from "firebase/auth";
 import { getEntitlements } from "../lib/billing";
 import { exportIcon } from "../lib/uiBuilderApi";
+import { useBilling } from "../context/BillingContext";
 import NexusRBXHeader from "../components/NexusRBXHeader";
 import NexusRBXFooter from "../components/NexusRBXFooter";
 import ProNudgeModal from "../components/ProNudgeModal";
@@ -33,7 +34,8 @@ export default function IconDetailPage() {
   const [icon, setIcon] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [isPremium, setIsPremium] = useState(false);
+  const { entitlements } = useBilling();
+  const isPremium = entitlements?.includes("pro") || entitlements?.includes("team");
   const [tokenInfo, setTokenInfo] = useState(null);
   const [tokenLoading, setTokenLoading] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -242,7 +244,7 @@ export default function IconDetailPage() {
               <div className="mb-8">
                 <div className="flex items-center gap-3 mb-4">
                   <h1 className="text-4xl font-black tracking-tight">{icon.name}</h1>
-                  {icon.isPro && (
+                  {icon.isPro && !isPremium && (
                     <span className="px-3 py-1 rounded-full bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-white text-[10px] font-black uppercase shadow-lg">Pro</span>
                   )}
                 </div>

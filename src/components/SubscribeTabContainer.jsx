@@ -1,12 +1,16 @@
 import React, { useState } from "react";
 import { Crown, Check, ChevronRight } from "lucide-react";
+import { useBilling } from "../context/BillingContext";
 
 // Container component for business logic
 export default function SubscribeTabContainer({
   onSubscribe,
-  isSubscribed = false,
+  isSubscribed: isSubscribedProp = false,
   className = ""
 }) {
+  const { entitlements } = useBilling();
+  const isPremium = entitlements?.includes("pro") || entitlements?.includes("team");
+  const isSubscribed = isSubscribedProp || isPremium;
   const [isHovering, setIsHovering] = useState(false);
 
   const handleSubscribeClick = () => {
@@ -45,12 +49,16 @@ function SubscribeTabUI({
             <div className="bg-gradient-to-r from-purple-600 to-indigo-600 p-1.5 rounded-md mr-2">
               <Crown className="h-4 w-4 text-white" />
             </div>
-            <h3 className="text-base font-bold text-white">Premium Features</h3>
+            <h3 className="text-base font-bold text-white">
+              {isSubscribed ? "Your Subscription" : "Premium Features"}
+            </h3>
           </div>
-          <div className="flex items-baseline">
-            <span className="text-lg font-bold text-white">$14.99</span>
-            <span className="text-gray-400 text-xs ml-1">/month</span>
-          </div>
+          {!isSubscribed && (
+            <div className="flex items-baseline">
+              <span className="text-lg font-bold text-white">$14.99</span>
+              <span className="text-gray-400 text-xs ml-1">/month</span>
+            </div>
+          )}
         </div>
 
         {/* Features list - compact version */}
@@ -85,11 +93,23 @@ function SubscribeTabUI({
             <ChevronRight className={`h-4 w-4 transition-transform duration-300 ${isHovering ? 'translate-x-0.5' : ''}`} />
           </button>
         ) : (
-          <div className="bg-green-900/20 border border-green-800 rounded-md p-2 text-center">
-            <span className="text-green-400 text-sm font-medium flex items-center justify-center gap-1.5">
-              <Check className="h-4 w-4" />
-              You're subscribed to Premium
-            </span>
+          <div className="space-y-3">
+            <div className="bg-green-900/20 border border-green-800 rounded-md p-2 text-center">
+              <span className="text-green-400 text-sm font-medium flex items-center justify-center gap-1.5">
+                <Check className="h-4 w-4" />
+                Active Subscription
+              </span>
+            </div>
+            {/* Subtle Team Upgrade */}
+            {isSubscribed && !className.includes("team") && (
+              <button
+                onClick={onSubscribe}
+                className="w-full py-2 text-xs font-bold text-gray-500 hover:text-white transition-colors flex items-center justify-center gap-2"
+              >
+                <Users className="w-3 h-3" />
+                Upgrade to Team
+              </button>
+            )}
           </div>
         )}
 

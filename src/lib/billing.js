@@ -78,13 +78,27 @@ export async function getEntitlements({ noCache = true } = {}) {
   return r.json();
 }
 
+const DEV_EMAIL = "jackt1263@gmail.com";
+
 export function summarizeEntitlements(e) {
-  const plan = e?.plan || "FREE";
-  const cycle = e?.cycle || null;
-  const limit = Number(e?.sub?.limit ?? 0);
-  const used  = Number(e?.sub?.used ?? 0);
+  const user = getAuth().currentUser;
+  const isDev = user?.email === DEV_EMAIL;
+
+  let plan = e?.plan || "FREE";
+  let cycle = e?.cycle || null;
+  let limit = Number(e?.sub?.limit ?? 0);
+  let used  = Number(e?.sub?.used ?? 0);
+  let paygRemaining = Math.max(0, Number(e?.payg?.remaining ?? 0));
+
+  // Developer Override
+  if (isDev) {
+    plan = "TEAM";
+    limit = 999_999_999;
+    used = 0;
+    paygRemaining = 999_999_999;
+  }
+
   const subRemaining = Math.max(0, limit - used);
-  const paygRemaining = Math.max(0, Number(e?.payg?.remaining ?? 0));
   return {
     plan, cycle,
     subRemaining,
@@ -92,6 +106,8 @@ export function summarizeEntitlements(e) {
     totalRemaining: subRemaining + paygRemaining,
     resetsAt: e?.sub?.resetsAt ? new Date(e.sub.resetsAt) : null,
     subLimit: limit,
+    isDev,
+    entitlements: isDev ? ["pro", "team"] : (e?.entitlements || [])
   };
 }
 

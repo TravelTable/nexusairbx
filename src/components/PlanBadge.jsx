@@ -1,7 +1,8 @@
 import React from "react";
-import PLAN_INFO from "../lib/planInfo";// Or move PLAN_INFO to a shared location
+import PLAN_INFO from "../lib/planInfo";
 
-function PlanBadge({ plan }) {
+function PlanBadge({ plan: planProp }) {
+  const plan = (planProp || "free").toLowerCase();
   const planInfo = PLAN_INFO[plan] || PLAN_INFO.free;
   return (
     <span
@@ -10,10 +11,8 @@ function PlanBadge({ plan }) {
       }`}
       style={{
         background:
-          plan === "pro"
-            ? "linear-gradient(90deg, #9b5de5 0%, #00f5d4 100%)"
-            : plan === "team"
-            ? "linear-gradient(90deg, #00f5d4 0%, #9b5de5 100%)"
+          (plan === "pro" || plan === "team")
+            ? (plan === "team" ? "linear-gradient(90deg, #00f5d4 0%, #9b5de5 100%)" : "linear-gradient(90deg, #9b5de5 0%, #00f5d4 100%)")
             : undefined,
         color: plan === "team" ? "#222" : undefined,
       }}

@@ -26,6 +26,7 @@ import { getEntitlements } from "../lib/billing";
 import NexusRBXHeader from "../components/NexusRBXHeader";
 import NexusRBXFooter from "../components/NexusRBXFooter";
 import ProNudgeModal from "../components/ProNudgeModal";
+import { useBilling } from "../context/BillingContext";
 
 const API_BASE = (process.env.REACT_APP_BACKEND_URL || "https://nexusrbx-backend-production.up.railway.app").replace(/\/+$/, "");
 
@@ -38,7 +39,8 @@ export default function IconGeneratorPage() {
   const [generatedImage, setGeneratedImage] = useState(null);
   const [history, setHistory] = useState([]);
   const [copied, setCopied] = useState(false);
-  const [isPremium, setIsPremium] = useState(false);
+  const { entitlements } = useBilling();
+  const isPremium = entitlements?.includes("pro") || entitlements?.includes("team");
   const [showProNudge, setShowProNudge] = useState(false);
   const [enhancing, setEnhancing] = useState(false);
   const [referenceImage, setReferenceImage] = useState(null);
@@ -227,7 +229,9 @@ export default function IconGeneratorPage() {
                 <Sparkles className="h-6 w-6 text-[#9b5de5]" />
               </div>
               <h1 className="text-3xl font-black tracking-tight">Roblox Icon Generator</h1>
-              <span className="px-2 py-0.5 rounded bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-white text-[10px] font-black uppercase">Pro Feature</span>
+              {!isPremium && (
+                <span className="px-2 py-0.5 rounded bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-white text-[10px] font-black uppercase">Pro Feature</span>
+              )}
             </div>
             <p className="text-gray-400 max-w-2xl">
               Create high-end, professional game icons for your UI in seconds. Optimized for Roblox Studio with centered compositions and vibrant lighting.

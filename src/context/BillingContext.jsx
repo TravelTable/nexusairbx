@@ -17,6 +17,8 @@ export function BillingProvider({ children, pollMs = 60_000 }) {
     paygRemaining: 0,
     totalRemaining: 0,
     resetsAt: null,
+    isDev: false,
+    entitlements: [],
   });
 
   useEffect(() => {
