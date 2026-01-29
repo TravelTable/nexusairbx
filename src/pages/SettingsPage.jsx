@@ -368,8 +368,8 @@ const SettingsPage = () => {
                 </div>
                 <p className="text-gray-400 mb-6">
                   {plan === "FREE" 
-                    ? "Upgrade to Pro to unlock Smarter AI (GPT-5.2), 20,000 token context limits, and advanced Roblox Studio integration."
-                    : `Your Pro subscription includes Smarter AI (GPT-5.2) and a 20,000 token context limit. Resets on ${resetsAt ? new Date(resetsAt).toLocaleDateString() : "N/A"}`}
+                    ? "Upgrade to Pro to unlock Nexus-5 (GPT-5.2), 500,000 token monthly allowance, and advanced Roblox Studio integration."
+                    : `Your Pro subscription includes Nexus-5 (GPT-5.2) and a 500,000 token monthly allowance. Resets on ${resetsAt ? new Date(resetsAt).toLocaleDateString() : "N/A"}`}
                 </p>
                 
                 <div className="flex flex-wrap gap-4">

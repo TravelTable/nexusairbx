@@ -379,7 +379,7 @@ export default function IconGeneratorPage() {
                   </button>
 
                   <div className="flex items-center justify-center gap-2 text-[10px] text-gray-500 font-bold">
-                    <Zap className="h-3 w-3" /> Cost: 5,000 Tokens
+                    <Zap className="h-3 w-3" /> Cost: 1,000 Tokens
                   </div>
                 </div>
               </section>
