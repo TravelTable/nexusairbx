@@ -56,7 +56,7 @@ export function useUiBuilder(user, settings, refreshBilling, notify) {
     }
   }, [user, activeUiId, notify]);
 
-  const handleRefine = useCallback(async (instruction) => {
+  const handleRefine = useCallback(async (instruction, existingRequestId = null, attachments = []) => {
     if (!activeUi?.uiModuleLua || !user) return;
     setUiIsGenerating(true);
     try {
@@ -71,7 +71,8 @@ export function useUiBuilder(user, settings, refreshBilling, notify) {
         token,
         lua: activeUi.uiModuleLua,
         instruction: enhancedInstruction,
-        boardState: activeUi.boardState
+        boardState: activeUi.boardState,
+        attachments: attachments.map(a => ({ name: a.name, type: a.type, data: a.data, isImage: a.isImage }))
       });
 
       if (data.uiModuleLua || data.lua) {
@@ -99,9 +100,10 @@ export function useUiBuilder(user, settings, refreshBilling, notify) {
     }
   }, [activeUi, user, notify, refreshBilling]);
 
-  const handleGenerateUiPreview = async (prompt, currentChatId, setCurrentChatId, specs = null, existingRequestId = null) => {
+  const handleGenerateUiPreview = async (prompt, currentChatId, setCurrentChatId, specs = null, existingRequestId = null, attachments = []) => {
     const content = prompt.trim();
-    if (!content || !user) return;
+    if (!content && attachments.length === 0) return;
+    if (!user) return;
 
     setUiIsGenerating(true);
     setPendingMessage({ role: "assistant", content: "", type: "ui", prompt: content });
@@ -139,6 +141,7 @@ export function useUiBuilder(user, settings, refreshBilling, notify) {
           maxItems,
           gameSpec: settings.gameSpec || "",
           maxSystemsTokens: settings.uiMaxSystemsTokens,
+          attachments: attachments.map(a => ({ name: a.name, type: a.type, data: a.data, isImage: a.isImage }))
         });
       } catch (err) {
         console.error("AI Pipeline error:", err);

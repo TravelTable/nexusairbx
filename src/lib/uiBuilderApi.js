@@ -180,6 +180,7 @@ export async function aiPipeline({
   customTheme = null,
   platforms = ["pc"],
   idempotencyKey,
+  attachments = [],
 }) {
   const headers = authHeaders(token);
   if (idempotencyKey) headers["Idempotency-Key"] = idempotencyKey;
@@ -197,7 +198,8 @@ export async function aiPipeline({
       catalog,
       animations,
       customTheme,
-      platforms
+      platforms,
+      attachments
     }),
   });
   return handleResponse(res);
@@ -250,11 +252,11 @@ export async function aiPipelineStream({
   return () => eventSource.close();
 }
 
-export async function aiRefineLua({ token, lua, instruction }) {
+export async function aiRefineLua({ token, lua, instruction, attachments = [] }) {
   const res = await fetch(`${BACKEND_URL}/api/ui-builder/ai/refine-lua`, {
     method: "POST",
     headers: authHeaders(token),
-    body: JSON.stringify({ lua, instruction }),
+    body: JSON.stringify({ lua, instruction, attachments }),
   });
   return handleResponse(res);
 }

@@ -33,6 +33,7 @@ import {
   UnifiedStatusBar,
   ProjectContextStatus,
 } from "../components/ai/AiComponents";
+import NotificationToast from "../components/NotificationToast";
 import {
   collection,
   query,
@@ -107,6 +108,8 @@ function AiPage() {
   const [proNudgeReason, setProNudgeReason] = useState("");
   const [projectContext, setProjectContext] = useState(null);
   const [teams, setTeams] = useState([]);
+  const [attachments, setAttachments] = useState([]);
+  const [toast, setToast] = useState(null);
 
   // Code Drawer State
   const [codeDrawerOpen, setCodeDrawerOpen] = useState(false);
@@ -119,28 +122,6 @@ function AiPage() {
 
   const chat = useAiChat(user, settings, refreshBilling, notify);
   const ui = useUiBuilder(user, settings, refreshBilling, notify);
-
-  // Pro restriction for UI Builder (Initial Generation)
-  const originalHandleGenerateUiPreview = ui.handleGenerateUiPreview;
-  ui.handleGenerateUiPreview = async (...args) => {
-    if (planKey === "free") {
-      setProNudgeReason("AI UI Builder");
-      setShowProNudge(true);
-      return;
-    }
-    return originalHandleGenerateUiPreview(...args);
-  };
-
-  // Pro restriction for UI Refinement
-  const originalHandleRefine = ui.handleRefine;
-  ui.handleRefine = async (...args) => {
-    if (planKey === "free") {
-      setProNudgeReason("UI Refinement & Iteration");
-      setShowProNudge(true);
-      return;
-    }
-    return originalHandleRefine(...args);
-  };
   const game = useGameProfile(settings, updateSettings);
   const scriptManager = useAiScripts(user, notify);
   const agent = useAgent(user, notify, refreshBilling);
@@ -371,6 +352,27 @@ function AiPage() {
     }
   };
 
+  const handleFileUpload = (e) => {
+    const files = Array.from(e.target.files);
+    files.forEach(file => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setAttachments(prev => [...prev, {
+          name: file.name,
+          type: file.type,
+          size: file.size,
+          data: reader.result,
+          isImage: file.type.startsWith('image/')
+        }]);
+      };
+      if (file.type.startsWith('image/')) {
+        reader.readAsDataURL(file);
+      } else {
+        reader.readAsText(file);
+      }
+    });
+  };
+
   const handlePromptSubmit = async (e, overridePrompt = null) => {
     if (e && typeof e.preventDefault === 'function') e.preventDefault();
     const currentPrompt = (overridePrompt || prompt).trim();
@@ -379,7 +381,9 @@ function AiPage() {
       return;
     }
 
+    const currentAttachments = [...attachments];
     setPrompt("");
+    setAttachments([]);
     if (activeTab !== "chat") setActiveTab("chat");
 
     let effectiveMode = chat.activeMode;
@@ -408,7 +412,7 @@ function AiPage() {
       }
 
       chat.setPendingMessage({ 
-        role: "assistant", content: "", type: "chat", prompt: currentPrompt, mode: chat.chatMode
+        role: "assistant", content: "", type: "chat", prompt: currentPrompt, mode: chat.chatMode, attachments: currentAttachments
       });
 
       const p = currentPrompt.toLowerCase();
@@ -416,23 +420,23 @@ function AiPage() {
       const isRefineRequest = p.startsWith("refine:") || p.startsWith("tweak:") || p.includes("refine ui");
 
       if (isUiRequest && !isRefineRequest) {
-        const uiPromise = ui.handleGenerateUiPreview(currentPrompt.replace(/^\/ui\s*/i, ""), activeChatId, chat.setCurrentChatId, null, requestId);
-        const chatPromise = chat.handleSubmit(currentPrompt, activeChatId, requestId);
+        const uiPromise = ui.handleGenerateUiPreview(currentPrompt.replace(/^\/ui\s*/i, ""), activeChatId, chat.setCurrentChatId, null, requestId, currentAttachments);
+        const chatPromise = chat.handleSubmit(currentPrompt, activeChatId, requestId, null, false, currentAttachments);
         await Promise.all([uiPromise, chatPromise]);
         return;
       }
 
       if (isRefineRequest) {
         if (!ui.activeUi?.lua) {
-          await ui.handleGenerateUiPreview(currentPrompt.replace(/^(refine|tweak):\s*/i, ""), activeChatId, chat.setCurrentChatId, null, requestId);
+          await ui.handleGenerateUiPreview(currentPrompt.replace(/^(refine|tweak):\s*/i, ""), activeChatId, chat.setCurrentChatId, null, requestId, currentAttachments);
         } else {
-          await ui.handleRefine(currentPrompt.replace(/^(refine|tweak):\s*/i, ""));
+          await ui.handleRefine(currentPrompt.replace(/^(refine|tweak):\s*/i, ""), null, currentAttachments);
         }
         return;
       }
 
-      const data = await agent.sendMessage(currentPrompt, activeChatId, chat.setCurrentChatId, requestId, effectiveMode, chat.chatMode);
-      if (!data) return await chat.handleSubmit(currentPrompt, activeChatId, requestId);
+      const data = await agent.sendMessage(currentPrompt, activeChatId, chat.setCurrentChatId, requestId, effectiveMode, chat.chatMode, currentAttachments);
+      if (!data) return await chat.handleSubmit(currentPrompt, activeChatId, requestId, null, false, currentAttachments);
 
       switch (data.action) {
         case "pipeline":
@@ -689,17 +693,35 @@ function AiPage() {
                     if (el) el.focus();
                   }}
                   onToggleActMode={async (m) => {
-                    if (planKey === "free") {
-                      setProNudgeReason("Act Mode (Auto-Execution)");
-                      setShowProNudge(true);
-                      return;
-                    }
-                    chat.setChatMode("act");
-                    // If it's a UI refinement, use handleRefine
-                    if (m.projectId && m.metadata?.type === 'ui') {
-                      await ui.handleRefine(m.prompt || m.content);
+                    const isGeneral = chat.activeMode === 'general';
+                    let targetMode = chat.activeMode;
+                    
+                    if (isGeneral) {
+                      // Transfer context to a specialist
+                      const p = (m.prompt || m.content || "").toLowerCase();
+                      targetMode = (p.includes('ui') || p.includes('menu') || p.includes('layout')) ? 'ui' : 'logic';
+                      
+                      // Start new chat with context
+                      const context = chat.messages.map(msg => `${msg.role}: ${msg.content || msg.explanation}`).join('\n');
+                      chat.startNewChat();
+                      chat.setActiveMode(targetMode);
+                      chat.setChatMode("act");
+                      
+                      setToast({
+                        message: `Context transferred to ${CHAT_MODES.find(mode => mode.id === targetMode)?.label || targetMode}`,
+                        type: "success"
+                      });
+
+                      // Submit with transferred context and explicit mode command
+                      const cmd = targetMode === 'ui' ? '/ui ' : '/logic ';
+                      await handlePromptSubmit(null, `${cmd}[Transferred Context]\n${context}\n\n[Goal]\n${m.prompt || m.content}`);
                     } else {
-                      await handlePromptSubmit(null, m.prompt || m.content);
+                      chat.setChatMode("act");
+                      if (m.projectId && m.metadata?.type === 'ui') {
+                        await ui.handleRefine(m.prompt || m.content);
+                      } else {
+                        await handlePromptSubmit(null, m.prompt || m.content);
+                      }
                     }
                   }}
                   onPushToStudio={(id, type, data) => {
@@ -885,6 +907,26 @@ function AiPage() {
                     style={{ background: `linear-gradient(to r, ${currentTheme.primary}, ${currentTheme.secondary})` }}
                   />
                   <div className="relative bg-[#121212] border border-white/10 rounded-2xl p-2 shadow-2xl flex flex-col gap-2">
+                    {attachments.length > 0 && (
+                      <div className="flex flex-wrap gap-2 px-2 pt-2">
+                        {attachments.map((file, idx) => (
+                          <div key={idx} className="relative group/file bg-white/5 border border-white/10 rounded-lg p-2 flex items-center gap-2 pr-8">
+                            {file.isImage ? (
+                              <img src={file.data} alt={file.name} className="w-6 h-6 rounded object-cover" />
+                            ) : (
+                              <Layout className="w-4 h-4 text-gray-500" />
+                            )}
+                            <span className="text-[10px] font-bold text-gray-300 truncate max-w-[100px]">{file.name}</span>
+                            <button 
+                              onClick={() => setAttachments(prev => prev.filter((_, i) => i !== idx))}
+                              className="absolute right-1 top-1/2 -translate-y-1/2 p-1 text-gray-500 hover:text-red-400 transition-colors"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                     <div className="flex items-center gap-2 px-2 pt-2">
                       <div className={`px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest transition-all ${agent.isThinking || ui.uiIsGenerating || chat.isGenerating ? 'bg-[#00f5d4] text-black animate-pulse' : 'bg-white/5 text-gray-500'}`}>
                         {agent.isThinking ? 'Thinking' : ui.uiIsGenerating ? 'Building' : chat.isGenerating ? 'Responding' : 'Ready'}
@@ -892,6 +934,23 @@ function AiPage() {
                       <div className="h-px flex-1 bg-white/5" />
                     </div>
                     <div className="flex items-center gap-2 p-2 pt-0">
+                      <div className="relative">
+                        <input 
+                          type="file" 
+                          id="file-upload" 
+                          className="hidden" 
+                          multiple 
+                          onChange={handleFileUpload}
+                          accept="image/*,.lua,.txt,.json"
+                        />
+                        <label 
+                          htmlFor="file-upload"
+                          className="p-3 rounded-xl bg-white/5 text-gray-500 hover:text-white hover:bg-white/10 transition-all cursor-pointer flex items-center justify-center"
+                          title="Upload Image or File"
+                        >
+                          <Plus className="h-5 w-5" />
+                        </label>
+                      </div>
                       <textarea
                         id="tour-prompt-box"
                         className="flex-1 bg-transparent border-none rounded-xl p-3 resize-none focus:ring-0 text-gray-100 placeholder-gray-500 text-[14px] md:text-[15px] leading-relaxed disabled:opacity-50"
@@ -926,7 +985,7 @@ function AiPage() {
                         <button 
                           id="tour-generate-button"
                           onClick={handlePromptSubmit} 
-                          disabled={chat.isGenerating || ui.uiIsGenerating || agent.isThinking || !prompt.trim()}
+                          disabled={chat.isGenerating || ui.uiIsGenerating || agent.isThinking || (!prompt.trim() && attachments.length === 0)}
                           className="p-3 rounded-xl transition-all disabled:opacity-50 bg-[#00f5d4] text-black hover:shadow-[0_0_20px_rgba(0,245,212,0.4)] active:scale-95"
                         >
                           {chat.isGenerating || ui.uiIsGenerating || agent.isThinking ? <Loader className="h-5 w-5 animate-spin" /> : <Sparkles className="h-5 w-5" />}
@@ -1049,6 +1108,16 @@ function AiPage() {
           forceShow={true} 
           onComplete={() => setShowOnboarding(false)} 
         />
+      )}
+
+      {toast && (
+        <div className="fixed bottom-8 right-8 z-[100]">
+          <NotificationToast 
+            message={toast.message} 
+            type={toast.type} 
+            onClose={() => setToast(null)} 
+          />
+        </div>
       )}
 
       <style>{`

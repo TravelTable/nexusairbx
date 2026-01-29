@@ -2,15 +2,14 @@ import { useState, useCallback } from "react";
 import { doc, setDoc, serverTimestamp, collection, addDoc } from "firebase/firestore";
 import { db } from "../firebase";
 import { v4 as uuidv4 } from "uuid";
-
-const BACKEND_URL = "https://nexusrbx-backend-production.up.railway.app";
+import { BACKEND_URL } from "../config";
 
 export function useAgent(user, notify, refreshBilling) {
   const [messages, setMessages] = useState([]);
   const [isThinking, setIsThinking] = useState(false);
 
-  const sendMessage = useCallback(async (goal, chatId, setChatId, existingRequestId = null, expertMode = "general", currentMode = "plan") => {
-    if (!user || !goal) return;
+  const sendMessage = useCallback(async (goal, chatId, setChatId, existingRequestId = null, expertMode = "general", currentMode = "plan", attachments = []) => {
+    if (!user || (!goal && attachments.length === 0)) return;
 
     setIsThinking(true);
     const requestId = existingRequestId || uuidv4();
@@ -51,7 +50,8 @@ export function useAgent(user, notify, refreshBilling) {
           goal,
           chatMode: expertMode,
           mode: currentMode,
-          chatId: activeChatId
+          chatId: activeChatId,
+          attachments: attachments.map(a => ({ name: a.name, type: a.type, data: a.data, isImage: a.isImage }))
         }),
       });
 

@@ -116,9 +116,10 @@ export function useAiChat(user, settings, refreshBilling, notify) {
     );
   }, [user, notify]);
 
-  const handleSubmit = async (prompt, existingChatId = null, existingRequestId = null, modeOverride = null, actNow = false) => {
+  const handleSubmit = async (prompt, existingChatId = null, existingRequestId = null, modeOverride = null, actNow = false, attachments = []) => {
     const content = prompt.trim();
-    if (!content || isGenerating || !user) return;
+    if (!content && attachments.length === 0) return;
+    if (isGenerating || !user) return;
 
     const currentMode = actNow ? "act" : chatMode;
 
@@ -171,7 +172,8 @@ export function useAiChat(user, settings, refreshBilling, notify) {
           chatId: activeChatId,
           chatMode: expertMode,
           mode: currentMode,
-          conversation: messages.slice(-10).map(m => ({ role: m.role, content: m.content || m.explanation }))
+          conversation: messages.slice(-10).map(m => ({ role: m.role, content: m.content || m.explanation })),
+          attachments: attachments.map(a => ({ name: a.name, type: a.type, data: a.data, isImage: a.isImage }))
         }),
       });
       

@@ -386,15 +386,17 @@ export default function ChatView({
                         plan={m.plan || m.explanation.match(/<plan>([\s\S]*?)<\/plan>/i)?.[1]} 
                         isExecuting={m.id === messages[messages.length - 1]?.id && (generationStage || pendingMessage)}
                       />
-                      {activeMode !== 'general' && !m.isAutoExecuting && (
+                      {!m.isAutoExecuting && (
                         <div className="p-4 rounded-2xl bg-[#00f5d4]/5 border border-[#00f5d4]/20 flex flex-col items-center text-center gap-4 animate-in fade-in zoom-in duration-500">
-                          <div className="text-sm font-bold text-[#00f5d4]">Ready to execute this plan?</div>
+                          <div className="text-sm font-bold text-[#00f5d4]">
+                            {activeMode === 'general' ? "Ready to start this project?" : "Ready to execute this plan?"}
+                          </div>
                           <button 
                             onClick={() => onToggleActMode(m)}
                             className="w-full py-3 rounded-xl bg-[#00f5d4] text-black font-black text-sm flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] transition-all shadow-[0_0_20px_rgba(0,245,212,0.4)]"
                           >
                             <Zap className="w-4 h-4 fill-current" />
-                            {user?.plan === "PRO" || user?.plan === "TEAM" ? "CONFIRM & EXECUTE" : "UNLOCK AUTO-EXECUTION"}
+                            {activeMode === 'general' ? "START PROJECT" : "CONFIRM & EXECUTE"}
                           </button>
                         </div>
                       )}
@@ -465,7 +467,7 @@ export default function ChatView({
                         className="w-full py-3 rounded-xl bg-[#00f5d4] text-black font-black text-sm flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] transition-all shadow-[0_0_20px_rgba(0,245,212,0.4)]"
                       >
                         <Zap className="w-4 h-4 fill-current" />
-                        {user?.plan === "PRO" || user?.plan === "TEAM" ? "TOGGLE TO ACT MODE" : "UNLOCK AUTO-BUILD"}
+                        TOGGLE TO ACT MODE
                       </button>
                     </div>
                   )}
