@@ -11,6 +11,7 @@ import {
   Loader,
   Menu,
   Library,
+  Plus,
   Sparkles,
   Search,
   Zap,
