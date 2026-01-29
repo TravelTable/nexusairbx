@@ -18,7 +18,7 @@ import {
   X,
 } from "lucide-react";
 import { auth, db } from "../firebase";
-import { onAuthStateChanged, signInAnonymously } from "firebase/auth";
+import { onAuthStateChanged } from "firebase/auth";
 import SidebarContent from "../components/SidebarContent";
 import NexusRBXHeader from "../components/NexusRBXHeader";
 import AiTour from "../components/AiTour";
@@ -225,22 +225,12 @@ function AiPage() {
       if (firebaseUser) {
         setUser(firebaseUser);
       } else {
-        signInAnonymously(auth)
-          .then((res) => setUser(res.user))
-          .catch((err) => {
-            console.error("Firebase Anonymous Auth Error:", err);
-            setUser(null);
-            if (err.code === 'auth/operation-not-allowed') {
-              notify({ 
-                message: "Anonymous sign-in is disabled. Please enable it in Firebase Console or sign in manually.", 
-                type: "error" 
-              });
-            }
-          });
+        setUser(null);
+        navigate("/signin");
       }
     });
     return () => unsubscribe();
-  }, [notify]);
+  }, [navigate]);
 
   useEffect(() => {
     if (!user) {
