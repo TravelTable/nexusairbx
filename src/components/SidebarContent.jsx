@@ -12,6 +12,8 @@ import {
   Gamepad2,
   MessageSquare,
   Layout,
+  Zap,
+  Users,
   ChevronRight,
   FileCode,
 } from "lucide-react";

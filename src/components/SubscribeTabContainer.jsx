@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Crown, Check, ChevronRight } from "lucide-react";
+import { Crown, Check, ChevronRight, Users } from "lucide-react";
 import { useBilling } from "../context/BillingContext";
 
 // Container component for business logic

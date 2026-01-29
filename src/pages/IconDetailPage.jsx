@@ -35,7 +35,7 @@ export default function IconDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const { entitlements } = useBilling();
-  const isPremium = entitlements?.includes("pro") || entitlements?.includes("team");
+  const [isPremium, setIsPremium] = useState(false);
   const [tokenInfo, setTokenInfo] = useState(null);
   const [tokenLoading, setTokenLoading] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -97,6 +97,10 @@ export default function IconDetailPage() {
     fetchIcon();
     fetchTokens();
   }, [fetchRelated, id]);
+
+  useEffect(() => {
+    setIsPremium(entitlements?.includes("pro") || entitlements?.includes("team"));
+  }, [entitlements]);
 
 
   const handleDownload = async () => {

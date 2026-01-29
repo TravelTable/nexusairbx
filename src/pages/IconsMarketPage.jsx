@@ -30,6 +30,7 @@ import { exportIcon } from "../lib/uiBuilderApi";
 import NexusRBXHeader from "../components/NexusRBXHeader";
 import NexusRBXFooter from "../components/NexusRBXFooter";
 import ProNudgeModal from "../components/ProNudgeModal";
+import { useBilling } from "../context/BillingContext";
 
 const API_BASE = (process.env.REACT_APP_BACKEND_URL || "https://nexusrbx-backend-production.up.railway.app").replace(/\/+$/, "");
 
@@ -48,7 +49,7 @@ export default function IconsMarketPage() {
   const [selectedIcon, setSelectedIcon] = useState(null);
   const [copied, setCopied] = useState(false);
   const { entitlements } = useBilling();
-  const isPremium = entitlements?.includes("pro") || entitlements?.includes("team");
+  const [isPremium, setIsPremium] = useState(false);
   const [showProNudge, setShowProNudge] = useState(false);
   const [collections, setCollections] = useState([]);
   const [activeMarketTab, setActiveMarketTab] = useState("browse"); // "browse" or "collections"
@@ -107,6 +108,10 @@ export default function IconsMarketPage() {
     });
     return () => unsubscribe();
   }, [navigate]);
+
+  useEffect(() => {
+    setIsPremium(entitlements?.includes("pro") || entitlements?.includes("team"));
+  }, [entitlements]);
 
   useEffect(() => {
     const fetchCollections = async () => {
