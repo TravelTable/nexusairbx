@@ -15,6 +15,7 @@ export function useGameProfile(settings, updateSettings) {
     }
     return {
       isStructured: true,
+      enabled: true,
       genre: "",
       platforms: [],
       theme: "",
@@ -36,6 +37,7 @@ export function useGameProfile(settings, updateSettings) {
   }, [updateSettings]);
 
   const systemPrompt = useMemo(() => {
+    if (!profile.enabled) return "";
     if (!profile.genre && !profile.theme && !profile.customNotes) return "";
     
     return `

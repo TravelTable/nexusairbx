@@ -224,11 +224,13 @@ export default function SidebarContent({
           
           <div className="relative z-10">
             <div className="flex items-center gap-2 mb-2">
-              <div className="w-2 h-2 rounded-full bg-[#00f5d4] animate-pulse shadow-[0_0_8px_#00f5d4]" />
-              <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Active System</span>
+              <div className={`w-2 h-2 rounded-full animate-pulse ${gameProfile?.enabled ? 'bg-[#00f5d4] shadow-[0_0_8px_#00f5d4]' : 'bg-gray-600'}`} />
+              <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">
+                {gameProfile?.enabled ? 'Active System' : 'System Disabled'}
+              </span>
             </div>
             
-            <div className="font-bold text-white text-sm mb-1 truncate">
+            <div className={`font-bold text-sm mb-1 truncate ${gameProfile?.enabled ? 'text-white' : 'text-gray-500'}`}>
               {gameProfile?.genre || "No Genre Set"} • {gameProfile?.theme || "No Theme"}
             </div>
             

@@ -414,7 +414,7 @@ function AiPage() {
           updatedAt: serverTimestamp(),
         });
         activeChatId = newChatRef.id;
-        chat.setCurrentChatId(activeChatId);
+        chat.openChatById(activeChatId);
       }
 
       chat.setPendingMessage({ 

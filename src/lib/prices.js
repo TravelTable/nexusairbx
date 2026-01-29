@@ -38,9 +38,10 @@ const TEST = {
 export const PRICE = MODE === "live" ? LIVE : TEST;
 
 export const PLAN_LIMITS = {
-  FREE:  50_000,
+  FREE:  20_000,
   PRO:   500_000,
   TEAM:  1_500_000,
+  ANON:  5_000,
 };
 
 export const classifyPrice = (priceId) => {

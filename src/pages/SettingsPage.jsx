@@ -368,8 +368,8 @@ const SettingsPage = () => {
                 </div>
                 <p className="text-gray-400 mb-6">
                   {plan === "FREE" 
-                    ? "Upgrade to Pro to unlock GPT-5.2, higher token limits, and advanced Roblox Studio integration."
-                    : `Your subscription resets on ${resetsAt ? new Date(resetsAt).toLocaleDateString() : "N/A"}`}
+                    ? "Upgrade to Pro to unlock Smarter AI (GPT-5.2), 20,000 token context limits, and advanced Roblox Studio integration."
+                    : `Your Pro subscription includes Smarter AI (GPT-5.2) and a 20,000 token context limit. Resets on ${resetsAt ? new Date(resetsAt).toLocaleDateString() : "N/A"}`}
                 </p>
                 
                 <div className="flex flex-wrap gap-4">
@@ -514,7 +514,7 @@ const SettingsPage = () => {
                     onChange={(e) => updateSettings({ modelVersion: e.target.value })}
                     className="w-full bg-black border border-gray-800 rounded-xl p-3 text-white outline-none focus:border-purple-500 transition-colors"
                   >
-                    <option value="nexus-4">Nexus-5 (GPT-5.2, High Accuracy)</option>
+                    <option value="nexus-4">Nexus-5 (Smarter AI, GPT-5.2)</option>
                     <option value="nexus-3">Nexus-4 (Legacy, Fast)</option>
                   </select>
                 </div>

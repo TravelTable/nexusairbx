@@ -134,12 +134,12 @@ export function useAiChat(user, settings, refreshBilling, notify) {
       if (!activeChatId) {
         const newChatRef = await addDoc(collection(db, "users", user.uid, "chats"), {
           title: content.slice(0, 30) + (content.length > 30 ? "..." : ""),
-          activeMode: chatMode,
+          activeMode: expertMode,
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
         });
         activeChatId = newChatRef.id;
-        setCurrentChatId(activeChatId);
+        openChatById(activeChatId);
       }
 
       if (!existingRequestId) {
