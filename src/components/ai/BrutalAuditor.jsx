@@ -72,9 +72,10 @@ const BrutalAuditor = () => {
         }
       });
 
-      if (!res.ok) throw new Error("Audit failed");
-      
       const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || data.details || "Audit failed");
+      }
       
       addLog("Diagnostics received. Feeding data to the Auditor...", "info");
       addLog("Auditor is reviewing your life choices...", "warning");
