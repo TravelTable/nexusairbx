@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import Modal from "../Modal";
-import { ChevronRight, ChevronLeft, Check, Plus, X } from "lucide-react";
+import { ChevronRight, ChevronLeft, Check, Plus } from "lucide-react";
 
 const genres = ["RPG", "FPS", "Simulator", "Tycoon", "Obby", "Horror", "Social", "Racing", "Custom..."];
 const platforms = [
