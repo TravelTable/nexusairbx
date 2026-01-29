@@ -9,10 +9,8 @@ import {
   Flame, 
   Bug, 
   Code, 
-  ChevronRight, 
   Loader2,
   AlertTriangle,
-  CheckCircle2,
   RefreshCw
 } from 'lucide-react';
 import { BACKEND_URL } from '../../config';

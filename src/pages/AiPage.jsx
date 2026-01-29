@@ -94,6 +94,10 @@ function AiPage() {
   const handleSidebarTabChange = (sidebarTab) => {
     if (sidebarTab === "scripts" || sidebarTab === "chats" || sidebarTab === "agent") setActiveTab("chat");
     else if (sidebarTab === "saved") {
+      if (!user) {
+        setShowSignInNudge(true);
+        return;
+      }
       if (!isPremium) {
         setProNudgeReason("Saved Scripts Library");
         setShowProNudge(true);
@@ -209,11 +213,10 @@ function AiPage() {
         setUser(firebaseUser);
       } else {
         setUser(null);
-        navigate("/signin");
       }
     });
     return () => unsubscribe();
-  }, [navigate]);
+  }, []);
 
   useEffect(() => {
     if (!user) {
@@ -580,7 +583,13 @@ function AiPage() {
               versionHistory={scriptManager.versionHistory}
               selectedVersionId={scriptManager.selectedVersionId}
               onSelectChat={(id) => { chat.openChatById(id); if(window.innerWidth < 1024) setSidebarOpen(false); setActiveTab("chat"); }} 
-              onOpenGameContext={() => game.setShowWizard(true)}
+              onOpenGameContext={() => {
+                if (!user) {
+                  setShowSignInNudge(true);
+                  return;
+                }
+                game.setShowWizard(true);
+              }}
               onDeleteChat={chat.handleDeleteChat}
               handleClearChat={chat.handleClearChat}
               gameProfile={game.profile}
@@ -658,6 +667,10 @@ function AiPage() {
                   context={projectContext} 
                   plan={planKey}
                   onSync={async () => {
+                    if (!user) {
+                      setShowSignInNudge(true);
+                      return;
+                    }
                     if (!isPremium) {
                       setProNudgeReason("Project Context Sync");
                       setShowProNudge(true);
@@ -679,12 +692,30 @@ function AiPage() {
                   activeMode={chat.activeMode}
                   customModes={chat.customModes}
                   onModeChange={(mode) => chat.updateChatMode(chat.currentChatId, mode)}
-                  onCreateCustomMode={() => { setEditingCustomMode(null); setCustomModeModalOpen(true); }}
-                  onEditCustomMode={(mode) => { setEditingCustomMode(mode); setCustomModeModalOpen(true); }}
+                  onCreateCustomMode={() => {
+                    if (!user) {
+                      setShowSignInNudge(true);
+                      return;
+                    }
+                    setEditingCustomMode(null);
+                    setCustomModeModalOpen(true);
+                  }}
+                  onEditCustomMode={(mode) => {
+                    if (!user) {
+                      setShowSignInNudge(true);
+                      return;
+                    }
+                    setEditingCustomMode(mode);
+                    setCustomModeModalOpen(true);
+                  }}
                   onInstallCommunityMode={handleInstallCommunityMode}
                   onViewUi={(m) => { ui.setActiveUiId(m.projectId); ui.setUiDrawerOpen(true); if(isMobile) setMobileTab("preview"); }}
                   onQuickStart={(p) => handlePromptSubmit(null, p)}
                   onRefine={(m) => { 
+                    if (!user) {
+                      setShowSignInNudge(true);
+                      return;
+                    }
                     if (!isPremium) {
                       setProNudgeReason("UI Refinement & Iteration");
                       setShowProNudge(true);
@@ -727,6 +758,10 @@ function AiPage() {
                     }
                   }}
                   onPushToStudio={(id, type, data) => {
+                    if (!user) {
+                      setShowSignInNudge(true);
+                      return;
+                    }
                     if (!isPremium) {
                       setProNudgeReason("One-Click Studio Push");
                       setShowProNudge(true);
@@ -735,6 +770,10 @@ function AiPage() {
                     chat.handlePushToStudio(id, type, data);
                   }}
                   onShareWithTeam={(id, type, teamId) => {
+                    if (!user) {
+                      setShowSignInNudge(true);
+                      return;
+                    }
                     if (!isPremium) {
                       setProNudgeReason("Team Collaboration");
                       setShowProNudge(true);
@@ -744,6 +783,10 @@ function AiPage() {
                   }}
                   teams={teams}
                   onFixUiAudit={async (m) => {
+                    if (!user) {
+                      setShowSignInNudge(true);
+                      return;
+                    }
                     if (!isPremium) {
                       setProNudgeReason("UI Auto-Fix & Audit");
                       setShowProNudge(true);
@@ -772,6 +815,10 @@ function AiPage() {
                     }
                   }}
                   onExecuteTask={async (task) => {
+                    if (!user) {
+                      setShowSignInNudge(true);
+                      return;
+                    }
                     if (!isPremium) {
                       setProNudgeReason("Multi-Step Goal Execution");
                       setShowProNudge(true);
@@ -970,6 +1017,7 @@ function AiPage() {
                       />
                       <div className="flex items-center gap-2">
                         <button 
+                          id="tour-mode-toggle"
                           onClick={() => {
                             const allModes = [...CHAT_MODES, ...chat.customModes];
                             const modeIds = allModes.map(m => m.id);
