@@ -1,6 +1,6 @@
 import React from "react";
 import { motion } from "framer-motion";
-import { Loader, ChevronRight, Layout, Code, Cpu, Download } from "lucide-react";
+import { Loader, ChevronRight, Layout, Code, Cpu, Download, Users, Globe } from "lucide-react"; // Added Users and Globe icons
 import FloatingToolCard from "./FloatingToolCard";
 import BetaBadge from "../BetaBadge";
 
@@ -18,7 +18,7 @@ export default function HeroSection({
       title: "Pro-Grade UI Engine",
       description: "Generates production-ready hierarchies using UIAspectRatioConstraints and CanvasGroups. Optimized for AutomaticSize responsiveness.",
       icon: Layout,
-      position: "top-[5%] -left-32 xl:-left-60",
+      position: "top-[5%] -left-32 xl:-left-80", // Adjusted position
       delay: 0.2,
     },
     {
@@ -26,7 +26,7 @@ export default function HeroSection({
       title: "Deep Luau Integration",
       description: "Implements Strict Type Checking and the modern Task library. Built-in support for Signal patterns and ProfileService.",
       icon: Code,
-      position: "top-[20%] -right-32 xl:-right-60",
+      position: "top-[20%] -right-32 xl:-right-80", // Adjusted position
       delay: 0.4,
     },
     {
@@ -34,7 +34,7 @@ export default function HeroSection({
       title: "Nexus-5 Neural Core",
       description: "Powered by GPT-5.2, fine-tuned for Parallel Luau and Actor patterns. Mastery of complex CFrame math and Spatial Queries.",
       icon: Cpu,
-      position: "bottom-[15%] -left-24 xl:-left-48",
+      position: "bottom-[15%] -left-24 xl:-left-60", // Adjusted position
       delay: 0.6,
     },
     {
@@ -42,8 +42,24 @@ export default function HeroSection({
       title: "Studio-Ready Workflow",
       description: "Instant JSON manifest extraction for Rojo or direct Luau injection. Handles AssetId mapping and TweenService easing.",
       icon: Download,
-      position: "bottom-[0%] -right-24 xl:-right-48",
+      position: "bottom-[0%] -right-24 xl:-right-60", // Adjusted position
       delay: 0.8,
+    },
+    {
+      id: 5,
+      title: "AI Experts & Custom Modes",
+      description: "Leverage specialized AI experts or create your own custom modes for tailored development workflows.",
+      icon: Users,
+      position: "top-[40%] -left-24 xl:-left-60", // New position
+      delay: 1.0,
+    },
+    {
+      id: 6,
+      title: "Multi-Step AI Planning",
+      description: "Break down complex tasks into actionable steps and let the AI plan and execute them automatically.",
+      icon: Globe, // Changed icon to Globe for cross-platform
+      position: "bottom-[40%] -right-24 xl:-right-60", // New position
+      delay: 1.2,
     },
   ];
 
@@ -61,8 +77,8 @@ export default function HeroSection({
           transition={{ duration: 0.8, ease: "easeOut" }}
           className="relative z-10"
         >
-          <div className="flex flex-col lg:flex-row items-center lg:items-start justify-between gap-8 relative z-10 max-w-6xl mx-auto">
-            <div className="space-y-8 lg:w-1/2 text-center lg:text-left">
+          <div className="flex flex-col lg:flex-row items-center lg:items-start justify-center gap-8 relative z-10 max-w-6xl mx-auto"> {/* Adjusted justify-content */}
+            <div className="space-y-8 lg:w-2/5 text-center lg:text-left"> {/* Adjusted width */}
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-sm font-medium text-[#00f5d4] mb-4">
                 <span className="relative flex h-2 w-2">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#00f5d4] opacity-75"></span>
@@ -153,7 +169,7 @@ export default function HeroSection({
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.3, duration: 0.8 }}
-              className="lg:w-1/2 mt-12 lg:mt-0 relative group"
+              className="lg:w-3/5 mt-12 lg:mt-0 relative group"
             >
               <div className="absolute -inset-1 bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] rounded-2xl blur opacity-20 group-hover:opacity-40 transition duration-1000 group-hover:duration-200"></div>
               <img
