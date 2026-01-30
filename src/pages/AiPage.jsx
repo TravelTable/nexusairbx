@@ -409,7 +409,7 @@ function AiPage() {
     }
 
     const currentAttachments = [...attachments];
-    setPrompt("");
+    setPrompt(""); // Clear prompt immediately
     setAttachments([]);
     if (activeTab !== "chat") setActiveTab("chat");
 
@@ -945,7 +945,7 @@ function AiPage() {
                     >
                       <Search className="w-3 h-3" /> Plan
                     </button>
-                    <button 
+                  <button 
                       onClick={async () => {
                         if (!isPremium) {
                           setProNudgeReason("Act Mode (Auto-Execution)");
@@ -955,6 +955,7 @@ function AiPage() {
                         chat.setChatMode("act");
                         const lastMsg = chat.messages[chat.messages.length - 1];
                         if (lastMsg && lastMsg.role === 'assistant' && (lastMsg.plan || lastMsg.explanation?.includes('<plan>'))) {
+                          // Only submit if there's a plan to act on
                           await handlePromptSubmit(null, lastMsg.prompt || chat.messages[chat.messages.length - 2]?.content);
                         }
                       }}
@@ -965,6 +966,7 @@ function AiPage() {
                   </div>
                 </div>
                 
+                {/* Input box for chat */}
                 <div className="relative group">
                   {chat.isGenerating && (
                     <div className="absolute -top-6 left-0 right-0 flex justify-center animate-in fade-in slide-in-from-bottom-1 duration-500">
