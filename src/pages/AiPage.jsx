@@ -120,6 +120,7 @@ function AiPage() {
   const [teams, setTeams] = useState([]);
   const [attachments, setAttachments] = useState([]);
   const [toast, setToast] = useState(null);
+  const userId = user?.uid || null;
 
   // Code Drawer State
   const [codeDrawerOpen, setCodeDrawerOpen] = useState(false);
@@ -267,6 +268,10 @@ function AiPage() {
         setShowProNudge(true);
         return;
       }
+      if (!userId) {
+        setShowSignInNudge(true);
+        return;
+      }
       const { name, code, type, boardState, systemsLua } = e.detail;
       const scriptType = type || "logic"; // Default to logic if not specified
       const newScriptId = await scriptManager.handleCreateScript(name, code, scriptType, null, boardState, systemsLua);
@@ -277,7 +282,7 @@ function AiPage() {
         const messageToUpdate = chat.messages.find(m => m.projectId === e.detail.projectId);
         if (messageToUpdate) {
           await setDoc(
-            doc(db, "users", user.uid, "chats", chat.currentChatId, "messages", messageToUpdate.id),
+            doc(db, "users", userId, "chats", chat.currentChatId, "messages", messageToUpdate.id),
             {
               projectId: newScriptId,
               updatedAt: serverTimestamp(),
@@ -294,7 +299,7 @@ function AiPage() {
       window.removeEventListener("nexus:openCodeDrawer", handleOpenCodeDrawer);
       window.removeEventListener("nexus:saveScript", handleSaveScript);
     };
-  }, [scriptManager, notify, isPremium]);
+  }, [scriptManager, notify, isPremium, chat.currentChatId, chat.messages, userId]);
 
   // Load Project Context & Teams
   useEffect(() => {
