@@ -5,6 +5,7 @@ import "./index.css";
 import { initAnalytics } from "./firebase";
 import { SettingsProvider } from "./context/SettingsContext";
 import { BillingProvider } from "./context/BillingContext";
+import { AuthProvider } from "./context/AuthContext"; // Import AuthProvider
 
 // Suppress ResizeObserver loop error (Monaco Editor/Chrome bug)
 if (typeof window !== "undefined") {
@@ -32,11 +33,13 @@ if (typeof window !== "undefined") {
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(
   <React.StrictMode>
-    <BillingProvider>
-      <SettingsProvider>
-        <App />
-      </SettingsProvider>
-    </BillingProvider>
+    <AuthProvider> {/* Wrap with AuthProvider */}
+      <BillingProvider>
+        <SettingsProvider>
+          <App />
+        </SettingsProvider>
+      </BillingProvider>
+    </AuthProvider>
   </React.StrictMode>
 );
 

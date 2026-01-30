@@ -1,6 +1,9 @@
 import React, { Suspense, lazy, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { useBilling } from "./context/BillingContext";
+import { useAuth } from "./context/AuthContext"; // Import AuthContext
+import NotificationToast from "./components/NotificationToast"; // Assuming this is the global notification component
+import UpdateSubmissionBox from "./components/UpdateSubmissionBox"; // Import the new component
 
 // Suppress ResizeObserver loop error (Monaco Editor/Chrome bug) AND expose auth for console tests
 import { getAuth } from "firebase/auth";
@@ -43,10 +46,18 @@ const DebugEntitlementsPage = lazy(() => import("./pages/DebugEntitlementsPage")
 
 function App() {
   const { portal } = useBilling();
+  const { user } = useAuth(); // Get user from AuthContext
+  const [notification, setNotification] = useState(null); // State for notifications
 
   useEffect(() => {
     window.portal = portal;
   }, [portal]);
+
+  // Function to show notifications
+  const notify = useCallback(({ message, type = 'info', duration = 3000 }) => {
+    setNotification({ message, type });
+    setTimeout(() => setNotification(null), duration);
+  }, []);
 
   return (
     <Router>
@@ -71,6 +82,13 @@ function App() {
           <Route path="/debug/entitlements" element={<DebugEntitlementsPage />} />
           <Route path="*" element={<NexusRBXNotFoundPage />} />
         </Routes>
+        {/* Render UpdateSubmissionBox conditionally for developers */}
+        {/* Render UpdateSubmissionBox conditionally for developers */}
+        {user && user.email === "jackt1263@gmail.com" && <UpdateSubmissionBox notify={notify} />}
+        {/* Render UpdateLogDisplay for all users */}
+        <UpdateLogDisplay />
+        {/* Render NotificationToast */}
+        {notification && <NotificationToast message={notification.message} type={notification.type} />}
       </Suspense>
     </Router>
   );
