@@ -150,29 +150,13 @@ export function useUiBuilder(user, settings, refreshBilling, notify) {
 
       const { boardState, uiModuleLua, systemsLua, tokensConsumed, warnings } = data;
       
-      const scriptId = cryptoRandomId();
-      const resultTitle = content.slice(0, 30) + " (UI)";
-
-      await setDoc(doc(db, "users", user.uid, "scripts", scriptId), {
-        title: resultTitle, chatId: activeChatId, type: "ui", updatedAt: serverTimestamp(), createdAt: serverTimestamp(),
-      });
-
-      const versionId = uuidv4();
-      await setDoc(doc(db, "users", user.uid, "scripts", scriptId, "versions", versionId), {
-        uiModuleLua,
-        systemsLua,
-        title: resultTitle,
-        versionNumber: 1,
-        createdAt: serverTimestamp(),
-      });
-
       const assistantMsgRef = doc(db, "users", user.uid, "chats", activeChatId, "messages", `${requestId}-assistant`);
       await setDoc(assistantMsgRef, {
         role: "assistant",
         content: "",
         uiModuleLua,
         systemsLua,
-        projectId: scriptId,
+        projectId: requestId, // Use requestId as projectId for now, will be updated on manual save
         versionNumber: 1,
         metadata: {
           type: "ui",
@@ -183,12 +167,12 @@ export function useUiBuilder(user, settings, refreshBilling, notify) {
         requestId,
       });
 
-      const entry = { id: scriptId, requestId, createdAt: Date.now(), prompt: content, boardState, uiModuleLua, systemsLua };
+      const entry = { id: requestId, requestId, createdAt: Date.now(), prompt: content, boardState, uiModuleLua, systemsLua };
       setUiGenerations((prev) => [entry, ...prev.filter(g => g.requestId !== requestId)]);
-      setActiveUiId(scriptId);
+      setActiveUiId(requestId);
       
       const tokenMsg = tokensConsumed ? ` (${formatNumber(tokensConsumed)} tokens used)` : "";
-      notify({ message: `UI generated and saved.${tokenMsg}`, type: "success" });
+      notify({ message: `UI generated.${tokenMsg}`, type: "success" });
       refreshBilling();
       setUiIsGenerating(false);
       setPendingMessage(null);

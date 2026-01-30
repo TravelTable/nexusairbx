@@ -267,8 +267,21 @@ function AiPage() {
         setShowProNudge(true);
         return;
       }
-      const { name, code } = e.detail;
-      await scriptManager.handleCreateScript(name, code, "logic");
+      const { name, code, type, boardState, systemsLua } = e.detail;
+      const scriptType = type || "logic"; // Default to logic if not specified
+      const newScriptId = await scriptManager.handleCreateScript(name, code, scriptType, null, boardState, systemsLua);
+      if (newScriptId && scriptType === "ui") {
+        // Update the projectId in the chat message to the newly saved script ID
+        // This ensures that if the user later tries to refine this UI from the chat,
+        // it correctly links to the saved script in the library.
+        const messageToUpdate = chat.messages.find(m => m.projectId === e.detail.projectId);
+        if (messageToUpdate) {
+          await updateDoc(doc(db, "users", user.uid, "chats", chat.currentChatId, "messages", messageToUpdate.id), {
+            projectId: newScriptId,
+            updatedAt: serverTimestamp(),
+          });
+        }
+      }
       notify({ message: `Saved ${name} to library!`, type: "success" });
     };
     window.addEventListener("nexus:openCodeDrawer", handleOpenCodeDrawer);

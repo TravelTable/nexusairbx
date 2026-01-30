@@ -584,6 +584,7 @@ export default function ChatView({
                           qaReport={m.metadata?.qaReport}
                           actions={[
                             { label: "Push to Studio", icon: <Send className="w-4 h-4" />, onClick: () => onPushToStudio(m.projectId, "ui", { boardState: m.boardState, lua: m.uiModuleLua || m.code, title: m.title }) },
+                            { label: "Save to Library", icon: <Bookmark className="w-4 h-4" />, onClick: () => window.dispatchEvent(new CustomEvent("nexus:saveScript", { detail: { name: m.title || "Generated UI", code: m.uiModuleLua || m.code, type: "ui", boardState: m.boardState, systemsLua: m.systemsLua } })) },
                             { label: "Share with Team", icon: <Users className="w-4 h-4" />, onClick: () => setSharingId(m.id) },
                             { label: "Preview", icon: <Eye className="w-4 h-4" />, onClick: () => onViewUi(m), primary: true },
                             { label: "Refine", icon: <RefreshCw className="w-4 h-4" />, onClick: () => onRefine(m) },

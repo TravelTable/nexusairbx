@@ -82,7 +82,7 @@ export function useAiScripts(user, notify) {
     }
   }, [user, notify]);
 
-  const handleCreateScript = useCallback(async (title, code = "", type = "chat", chatId = null) => {
+  const handleCreateScript = useCallback(async (title, code = "", type = "chat", chatId = null, boardState = null, systemsLua = "") => {
     if (!user) return;
     try {
       const docRef = await addDoc(collection(db, "users", user.uid, "scripts"), {
@@ -94,12 +94,18 @@ export function useAiScripts(user, notify) {
       });
 
       if (code) {
-        await addDoc(collection(db, "users", user.uid, "scripts", docRef.id, "versions"), {
+        const versionPayload = {
           versionNumber: 1,
           code,
           explanation: "Initial generation",
           createdAt: serverTimestamp(),
-        });
+        };
+        if (type === "ui") {
+          versionPayload.boardState = boardState;
+          versionPayload.uiModuleLua = code;
+          versionPayload.systemsLua = systemsLua;
+        }
+        await addDoc(collection(db, "users", user.uid, "scripts", docRef.id, "versions"), versionPayload);
       }
 
       setCurrentScriptId(docRef.id);
