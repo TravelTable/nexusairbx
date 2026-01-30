@@ -270,9 +270,30 @@ export function useAiChat(user, settings, refreshBilling, notify) {
                 }));
               }
 
+              // Clear pending message before the Firestore listener adds the final message
+              setPendingMessage(null); 
+              
+              await setDoc(assistantMsgRef, msgPayload);
+
+              await updateDoc(doc(db, "users", user.uid, "chats", activeChatId), {
+                updatedAt: serverTimestamp(),
+                lastMessage: content.slice(0, 50),
+              });
+              
+              // Notify UI hook if this was a UI generation
+              if (data.projectId) {
+                // Ensure we pass the new format if available
+                window.dispatchEvent(new CustomEvent("nexus:uiGenerated", { 
+                  detail: {
+                    ...data,
+                    uiModuleLua: data.uiModuleLua || data.content,
+                    systemsLua: data.systemsLua || ""
+                  } 
+                }));
+              }
+
               refreshBilling();
               setIsGenerating(false);
-              setPendingMessage(null);
               setGenerationStage("");
               resolve();
             } catch (err) {
