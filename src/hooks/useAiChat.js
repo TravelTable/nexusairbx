@@ -404,13 +404,21 @@ export function useAiChat(user, settings, refreshBilling, notify) {
       if (!user) return;
       try {
         const token = await user.getIdToken();
+        const payloadData = { ...(data || {}) };
+        if (type === "ui") {
+          const defaultRootName = artifactId ? `NexusUI_${artifactId}` : `NexusUI_${Date.now()}`;
+          payloadData.applyPlan = {
+            uiRootName: payloadData.applyPlan?.uiRootName || defaultRootName,
+            uiService: payloadData.applyPlan?.uiService || "StarterGui",
+          };
+        }
         const res = await fetch(`${BACKEND_URL}/api/plugin/push-queue`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({ artifactId, type, data }),
+          body: JSON.stringify({ artifactId, type, data: payloadData }),
         });
         if (res.ok) {
           notify?.({ message: "Artifact queued for Studio push!", type: "success" });
