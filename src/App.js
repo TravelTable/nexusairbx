@@ -1,4 +1,4 @@
-import React, { Suspense, lazy, useEffect, useState, useCallback } from 'react';
+import React, { Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { useBilling } from "./context/BillingContext";
 import { useAuth } from "./context/AuthContext"; // Import AuthContext
@@ -48,14 +48,14 @@ const DebugEntitlementsPage = lazy(() => import("./pages/DebugEntitlementsPage")
 function App() {
   const { portal } = useBilling();
   const { user } = useAuth(); // Get user from AuthContext
-  const [notification, setNotification] = useState(null); // State for notifications
+  const [notification, setNotification] = React.useState(null); // State for notifications
 
-  useEffect(() => {
+  React.useEffect(() => {
     window.portal = portal;
   }, [portal]);
 
   // Function to show notifications
-  const notify = useCallback(({ message, type = 'info', duration = 3000 }) => {
+  const notify = React.useCallback(({ message, type = 'info', duration = 3000 }) => {
     setNotification({ message, type });
     setTimeout(() => setNotification(null), duration);
   }, []);
