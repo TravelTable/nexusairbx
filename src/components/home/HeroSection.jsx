@@ -77,8 +77,8 @@ export default function HeroSection({
           transition={{ duration: 0.8, ease: "easeOut" }}
           className="relative z-10"
         >
-          <div className="flex flex-col lg:flex-row items-center lg:items-start justify-center gap-8 relative z-10 max-w-6xl mx-auto"> {/* Adjusted justify-content */}
-            <div className="space-y-8 lg:w-2/5 text-center lg:text-left"> {/* Adjusted width */}
+          <div className="flex flex-col lg:flex-row items-center lg:items-start justify-center gap-8 relative z-10 max-w-6xl mx-auto">
+            <div className="space-y-8 lg:w-2/5 text-center lg:text-left">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-sm font-medium text-[#00f5d4] mb-4">
                 <span className="relative flex h-2 w-2">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#00f5d4] opacity-75"></span>
@@ -117,52 +117,6 @@ export default function HeroSection({
                   Helping <span className="text-white font-bold">5,000+</span> Roblox Developers
                 </p>
               </motion.div>
-
-              <form
-                onSubmit={handleSubmit}
-                className="mt-8 flex flex-col gap-3 relative z-20 p-4 bg-gray-900/60 rounded-lg border border-gray-700"
-              >
-                <input
-                  type="text"
-                  value={inputValue}
-                  onChange={handleInputChange}
-                  placeholder="Describe a UI or script idea..."
-                  className="flex-grow px-4 py-3 rounded-lg bg-gray-800 border border-gray-700 focus:border-[#00f5d4] focus:outline-none focus:ring-2 focus:ring-[#00f5d4]/50 transition-all duration-300 text-white"
-                  disabled={loading}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && !e.shiftKey) {
-                      e.preventDefault();
-                    }
-                  }}
-                  aria-label="Type your Roblox UI or script idea"
-                  autoComplete="off"
-                  name="roblox-idea"
-                />
-                <button
-                  type="submit"
-                  className="px-6 py-3 rounded-lg bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-white font-medium hover:shadow-lg hover:shadow-[#9b5de5]/20 transform hover:translate-y-[-2px] transition-all duration-300 flex items-center justify-center"
-                  disabled={!inputValue.trim() || loading}
-                  aria-label="Generate with AI"
-                >
-                  {loading ? (
-                    <>
-                      <Loader className="mr-2 h-5 w-5 animate-spin" />
-                      Generating...
-                    </>
-                  ) : (
-                    <>
-                      Generate with AI
-                      <ChevronRight className="ml-2 h-5 w-5" />
-                    </>
-                  )}
-                </button>
-                {error && (
-                  <div className="text-red-400 mt-2" role="alert">{error}</div>
-                )}
-                <div className="text-sm text-gray-500 mt-2">
-                  <span>Describe your idea and press <b>Enter</b> or click "Generate with AI"</span>
-                </div>
-              </form>
             </div>
 
             <motion.div
@@ -178,6 +132,52 @@ export default function HeroSection({
                 className="relative w-full rounded-2xl border border-white/10 shadow-2xl"
               />
             </motion.div>
+          </div>
+          {/* Moved prompt box outside the flex container to center it below */}
+          <form
+            onSubmit={handleSubmit}
+            className="mt-8 flex items-center gap-3 relative z-20 p-2 bg-gray-900/60 rounded-lg border border-gray-700 max-w-4xl mx-auto"
+          >
+            <input
+              type="text"
+              value={inputValue}
+              onChange={handleInputChange}
+              placeholder="Describe a UI or script idea..."
+              className="flex-grow px-4 py-2 rounded-lg bg-gray-800 border border-gray-700 focus:border-[#00f5d4] focus:outline-none focus:ring-2 focus:ring-[#00f5d4]/50 transition-all duration-300 text-white"
+              disabled={loading}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                }
+              }}
+              aria-label="Type your Roblox UI or script idea"
+              autoComplete="off"
+              name="roblox-idea"
+            />
+            <button
+              type="submit"
+              className="px-6 py-2 rounded-lg bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-white font-medium hover:shadow-lg hover:shadow-[#9b5de5]/20 transform hover:translate-y-[-2px] transition-all duration-300 flex items-center justify-center"
+              disabled={!inputValue.trim() || loading}
+              aria-label="Generate with AI"
+            >
+              {loading ? (
+                <>
+                  <Loader className="mr-2 h-5 w-5 animate-spin" />
+                  Generating...
+                </>
+              ) : (
+                <>
+                  Generate with AI
+                  <ChevronRight className="ml-2 h-5 w-5" />
+                </>
+              )}
+            </button>
+            {error && (
+              <div className="text-red-400 mt-2" role="alert">{error}</div>
+            )}
+          </form>
+          <div className="text-sm text-gray-500 mt-2 text-center">
+            <span>Describe your idea and press <b>Enter</b> or click "Generate with AI"</span>
           </div>
         </motion.div>
       </div>
