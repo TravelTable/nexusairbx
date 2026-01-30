@@ -1,4 +1,5 @@
 import { BACKEND_URL as CONFIG_BACKEND_URL } from "../config";
+import { safeParseJson } from "../../nexusrbx-backend/src/lib/ai"; // Import safeParseJson
 
 export const BACKEND_URL = CONFIG_BACKEND_URL;
 
@@ -6,8 +7,9 @@ async function handleResponse(res) {
   const text = await res.text();
   let data = null;
   try {
-    data = text ? JSON.parse(text) : null;
-  } catch {
+    data = text ? safeParseJson(text) : null; // Use safeParseJson
+  } catch (e) {
+    console.error("Error parsing JSON response:", e);
     data = null;
   }
   if (!res.ok) {
