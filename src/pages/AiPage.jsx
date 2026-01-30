@@ -276,10 +276,14 @@ function AiPage() {
         // it correctly links to the saved script in the library.
         const messageToUpdate = chat.messages.find(m => m.projectId === e.detail.projectId);
         if (messageToUpdate) {
-          await updateDoc(doc(db, "users", user.uid, "chats", chat.currentChatId, "messages", messageToUpdate.id), {
-            projectId: newScriptId,
-            updatedAt: serverTimestamp(),
-          });
+          await setDoc(
+            doc(db, "users", user.uid, "chats", chat.currentChatId, "messages", messageToUpdate.id),
+            {
+              projectId: newScriptId,
+              updatedAt: serverTimestamp(),
+            },
+            { merge: true }
+          );
         }
       }
       notify({ message: `Saved ${name} to library!`, type: "success" });
