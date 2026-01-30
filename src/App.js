@@ -1,9 +1,10 @@
-import React, { Suspense, lazy, useEffect } from 'react';
+import React, { Suspense, lazy, useEffect, useState, useCallback } from 'react';
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { useBilling } from "./context/BillingContext";
 import { useAuth } from "./context/AuthContext"; // Import AuthContext
 import NotificationToast from "./components/NotificationToast"; // Assuming this is the global notification component
 import UpdateSubmissionBox from "./components/UpdateSubmissionBox"; // Import the new component
+import UpdateLogDisplay from "./components/UpdateLogDisplay";
 
 // Suppress ResizeObserver loop error (Monaco Editor/Chrome bug) AND expose auth for console tests
 import { getAuth } from "firebase/auth";
