@@ -66,7 +66,7 @@ import GameProfileWizard from "../components/ai/GameProfileWizard";
 
 function AiPage() {
   // 1. External Hooks
-  const { plan, totalRemaining, subLimit, resetsAt, refresh: refreshBilling, entitlements } = useBilling();
+  const { plan, totalRemaining, subLimit, resetsAt, refresh: refreshBilling } = useBilling();
   const { settings, updateSettings } = useSettings();
   const navigate = useNavigate();
   const location = useLocation();
