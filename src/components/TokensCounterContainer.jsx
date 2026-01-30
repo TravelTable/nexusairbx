@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Coins, AlertCircle, RefreshCw } from "lucide-react";
 import { formatNumber } from "../lib/aiUtils"; // Import formatNumber from aiUtils
+import { useBilling } from "../context/BillingContext";
 
 // Container component for business logic
 /**
@@ -18,57 +19,35 @@ export default function TokensCounterContainer({
   className = "",
   variant = "default"
 }) {
-  // If tokens is an object with sub/payg, render both counters
-  if (
-    tokens &&
-    typeof tokens === "object" &&
-    (tokens.sub || tokens.payg)
-  ) {
-    const containerClasses = variant === "header" 
-      ? `flex items-center gap-2 bg-white/5 backdrop-blur-sm border border-white/10 rounded-full px-1 py-1 ${className}`
-      : `flex flex-col gap-1 ${className}`;
+  const { plan, subRemaining, subLimit, paygRemaining } = useBilling();
 
-    return (
-      <div className={containerClasses}>
-        {tokens.sub && (
-          <SingleTokenCounter
-            label="Subscription"
-            tokens={tokens.sub.remaining}
-            maxTokens={tokens.sub.limit}
-            isLoading={isLoading}
-            onRefresh={onRefresh}
-            showRefreshButton={showRefreshButton}
-            lowTokenThreshold={lowTokenThreshold}
-            variant={variant}
-          />
-        )}
-        {tokens.payg && (
-          <SingleTokenCounter
-            label="PAYG"
-            tokens={tokens.payg.remaining}
-            maxTokens={null}
-            isLoading={isLoading}
-            onRefresh={onRefresh}
-            showRefreshButton={showRefreshButton}
-            lowTokenThreshold={lowTokenThreshold}
-            variant={variant}
-          />
-        )}
-      </div>
-    );
-  }
+  const containerClasses = variant === "header" 
+    ? `flex items-center gap-2 bg-white/5 backdrop-blur-sm border border-white/10 rounded-full px-1 py-1 ${className}`
+    : `flex flex-col gap-1 ${className}`;
 
-  // Legacy: single counter
   return (
-    <SingleTokenCounter
-      tokens={tokens}
-      maxTokens={maxTokens}
-      isLoading={isLoading}
-      onRefresh={onRefresh}
-      showRefreshButton={showRefreshButton}
-      lowTokenThreshold={lowTokenThreshold}
-      className={className}
-    />
+    <div className={containerClasses}>
+      <SingleTokenCounter
+        label={plan.toUpperCase()}
+        tokens={subRemaining}
+        maxTokens={subLimit}
+        isLoading={isLoading}
+        onRefresh={onRefresh}
+        showRefreshButton={showRefreshButton}
+        lowTokenThreshold={lowTokenThreshold}
+        variant={variant}
+      />
+      <SingleTokenCounter
+        label="PAYG"
+        tokens={paygRemaining}
+        maxTokens={null}
+        isLoading={isLoading}
+        onRefresh={onRefresh}
+        showRefreshButton={showRefreshButton}
+        lowTokenThreshold={lowTokenThreshold}
+        variant={variant}
+      />
+    </div>
   );
 }
 
