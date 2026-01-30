@@ -13,7 +13,6 @@ import {
   ArtifactCard,
   SkeletonArtifact
 } from "./AiComponents";
-import ScriptLoadingBarContainer from "../ScriptLoadingBarContainer";
 import { 
   Zap, 
   Rocket, 
