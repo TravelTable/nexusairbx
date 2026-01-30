@@ -10,6 +10,7 @@ import {
   Zap, 
   Activity, 
   AlertTriangle, 
+  Code2,
   Cpu,
   Database,
   X,
