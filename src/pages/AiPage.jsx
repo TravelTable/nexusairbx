@@ -86,7 +86,7 @@ function AiPage() {
   }, []);
 
   // 4. Derived State
-  const isPremium = entitlements?.includes("pro") || entitlements?.includes("team");
+  const isPremium = true; // Temporarily set to true to allow free users access to all AI tools
   const planKey = plan?.toLowerCase() || "free";
   const chatEndRef = useRef(null);
 
