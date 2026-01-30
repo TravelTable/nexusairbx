@@ -1,5 +1,5 @@
 import { BACKEND_URL as CONFIG_BACKEND_URL } from "../config";
-import { safeParseJson } from "../../nexusrbx-backend/src/lib/ai"; // Import safeParseJson
+import { safeParseJson } from "./aiUtils"; // Import safeParseJson from local aiUtils
 
 export const BACKEND_URL = CONFIG_BACKEND_URL;
 

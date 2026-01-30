@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Coins, AlertCircle, RefreshCw } from "lucide-react";
+import { formatNumber } from "../lib/aiUtils"; // Import formatNumber from aiUtils
 
 // Container component for business logic
 /**
@@ -106,12 +107,6 @@ function SingleTokenCounter({
   const isLowTokens =
     (maxTokens !== null && tokens <= lowTokenThreshold) ||
     (maxTokens === null && tokens <= lowTokenThreshold);
-
-  // Format large numbers with commas
-  const formatNumber = (num) => {
-    if (typeof num !== "number" || isNaN(num)) return "0";
-    return num.toLocaleString();
-  };
 
   const isHeader = variant === "header";
 
