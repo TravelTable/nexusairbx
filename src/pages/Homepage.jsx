@@ -11,6 +11,7 @@ import { Helmet } from "react-helmet";
 import HeroSection from "../components/home/HeroSection";
 import FeaturesSection from "../components/home/FeaturesSection";
 import CommunityCreationsSection from "../components/home/CommunityCreationsSection";
+import { BACKEND_URL } from '../config'; // Import BACKEND_URL
 
 // Container Component
 export default function NexusRBXHomepageContainer() {
@@ -22,6 +23,9 @@ export default function NexusRBXHomepageContainer() {
   const [user, setUser] = useState(null);
   const [tokenInfo, setTokenInfo] = useState(null);
   const [tokenLoading, setTokenLoading] = useState(false);
+  const [updates, setUpdates] = useState([]); // Add updates state
+  const [updatesLoading, setUpdatesLoading] = useState(true); // Add updatesLoading state
+  const [updatesError, setUpdatesError] = useState(null); // Add updatesError state
 
   const navigate = useNavigate();
 
@@ -49,6 +53,31 @@ export default function NexusRBXHomepageContainer() {
       })
       .finally(() => setTokenLoading(false));
   }, [user]);
+
+  // Fetch updates for the homepage
+  useEffect(() => {
+    const fetchUpdates = async () => {
+      try {
+        const res = await fetch(`${BACKEND_URL}/api/updates/all`);
+        if (res.ok) {
+          const data = await res.json();
+          setUpdates(data);
+        } else {
+          const errorData = await res.json();
+          setUpdatesError(errorData.error || 'Failed to fetch updates');
+        }
+      } catch (err) {
+        console.error('Error fetching updates:', err);
+        setUpdatesError('Network error: Could not fetch updates');
+      } finally {
+        setUpdatesLoading(false);
+      }
+    };
+
+    fetchUpdates();
+    const interval = setInterval(fetchUpdates, 60000); // Refresh every minute
+    return () => clearInterval(interval);
+  }, []);
 
   const isPremium = tokenInfo?.plan === "PRO" || tokenInfo?.plan === "TEAM";
 
@@ -204,6 +233,9 @@ export default function NexusRBXHomepageContainer() {
       handleLogout={handleLogout}
       tokenInfo={tokenInfo}
       tokenLoading={tokenLoading}
+      updates={updates}
+      updatesLoading={updatesLoading}
+      updatesError={updatesError}
     />
   );
 }
@@ -227,7 +259,10 @@ function NexusRBXHomepage({
   handleLogin,
   handleLogout,
   tokenInfo,
-  tokenLoading
+  tokenLoading,
+  updates,
+  updatesLoading,
+  updatesError
 }) {
   const containerRef = useRef(null);
 
@@ -362,6 +397,32 @@ function NexusRBXHomepage({
         />
 
         <CommunityCreationsSection />
+
+        {/* Updates Section */}
+        {!updatesLoading && updates.length > 0 && (
+          <section className="relative z-10 py-16 bg-[#0D0D0D]">
+            <div className="container mx-auto px-4">
+              <h2 className="text-4xl font-bold text-center mb-12 bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-600">
+                Latest Updates
+              </h2>
+              {updatesError && (
+                <div className="text-red-500 text-center mb-4">{updatesError}</div>
+              )}
+              <div className="max-w-3xl mx-auto h-[400px] overflow-y-auto custom-scrollbar p-6 rounded-lg shadow-lg bg-gradient-to-br from-[#1a1a2e] to-[#16213e] border border-purple-500/20">
+                <div className="space-y-6">
+                  {updates.map((update) => (
+                    <div key={update.id} className="bg-[#20203a] p-4 rounded-md shadow-md border border-purple-400/10 transition-all duration-300 hover:scale-[1.01] hover:shadow-purple-500/20">
+                      <p className="text-white text-base font-medium mb-1">{update.message}</p>
+                      <p className="text-gray-400 text-xs">
+                        {new Date(update.createdAt._seconds * 1000).toLocaleString()}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </section>
+        )}
       </main>
 
       {/* Footer */}

@@ -4,7 +4,6 @@ import { useBilling } from "./context/BillingContext";
 import { useAuth } from "./context/AuthContext"; // Import AuthContext
 import NotificationToast from "./components/NotificationToast"; // Assuming this is the global notification component
 import UpdateSubmissionBox from "./components/UpdateSubmissionBox"; // Import the new component
-import UpdateLogDisplay from "./components/UpdateLogDisplay";
 
 // Suppress ResizeObserver loop error (Monaco Editor/Chrome bug) AND expose auth for console tests
 import { getAuth } from "firebase/auth";
@@ -86,8 +85,6 @@ function App() {
         {/* Render UpdateSubmissionBox conditionally for developers */}
         {/* Render UpdateSubmissionBox conditionally for developers */}
         {user && user.email === "jackt1263@gmail.com" && <UpdateSubmissionBox notify={notify} />}
-        {/* Render UpdateLogDisplay for all users */}
-        <UpdateLogDisplay />
         {/* Render NotificationToast */}
         {notification && <NotificationToast message={notification.message} type={notification.type} />}
       </Suspense>
