@@ -109,7 +109,7 @@ const faqs = [
     id: "tokens",
     question: "What are tokens and how are they used?",
     answer:
-      "We meter GPT-5.2 input + output tokens. Each request deducts the exact tokens used, with a 1,000-token minimum per request to prevent abuse.",
+      "We meter output tokens only. Text-only responses under 2,000 output tokens are free, while any code generation counts toward your balance.",
   },
   {
     id: "allowance",

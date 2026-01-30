@@ -528,7 +528,7 @@ function TroubleshootingContent() {
           </div>
           <div>
             <h4 className="font-bold text-white">What are tokens?</h4>
-            <p className="text-sm text-gray-400">Tokens measure AI usage. Both your prompt and the AI's response count towards your monthly limit.</p>
+            <p className="text-sm text-gray-400">Tokens measure AI usage. We only count output tokens for large text responses (over 2,000 tokens) or anything that generates code.</p>
           </div>
           <div>
             <h4 className="font-bold text-white">Do tokens roll over?</h4>
