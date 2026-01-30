@@ -408,7 +408,7 @@ export const SkeletonArtifact = ({ type = "code" }) => (
   </div>
 );
 
-export const ArtifactCard = ({ title, subtitle, icon: Icon, type = "code", qaReport = null, children, actions = [] }) => {
+export const ArtifactCard = ({ title, subtitle, icon: Icon, type = "code", qaReport = null, children, actions = [], code = "", systemsLua = "" }) => {
   const typeColors = {
     code: "text-[#9b5de5] bg-[#9b5de5]/10 border-[#9b5de5]/20",
     ui: "text-[#00f5d4] bg-[#00f5d4]/10 border-[#00f5d4]/20",
@@ -417,6 +417,22 @@ export const ArtifactCard = ({ title, subtitle, icon: Icon, type = "code", qaRep
   };
   const colorClass = typeColors[type] || typeColors.code;
   const [showQa, setShowQa] = useState(false);
+  const [showCode, setShowCode] = useState(false);
+  const [showSystemsLua, setShowSystemsLua] = useState(false);
+
+  const hasCode = !!code && code.trim() !== "";
+  const hasSystemsLua = !!systemsLua && systemsLua.trim() !== "";
+
+  const handleViewFullCode = (codeContent, codeTitle, explanation = "", versionNumber = 1) => {
+    window.dispatchEvent(new CustomEvent("nexus:openCodeDrawer", {
+      detail: {
+        code: codeContent,
+        title: codeTitle,
+        explanation: explanation,
+        versionNumber: versionNumber
+      }
+    }));
+  };
 
   return (
     <div className="mt-6 rounded-2xl border border-white/10 bg-[#121212]/50 overflow-hidden shadow-2xl animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -478,6 +494,70 @@ export const ArtifactCard = ({ title, subtitle, icon: Icon, type = "code", qaRep
       <div className="p-0">
         {children}
       </div>
+
+      {hasCode && (type === "code" || type === "report" || type === "ui") && (
+        <div className="p-4 rounded-2xl bg-black/40 border border-white/5 space-y-3 mt-4 mx-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Code2 className="w-4 h-4 text-gray-500" />
+              <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">
+                {type === "ui" ? "UI Layout Code" : "Generated Luau Code"}
+              </span>
+            </div>
+            <button 
+              onClick={() => handleViewFullCode(code, `${title} - UI Layout`)}
+              className="px-3 py-1 rounded-lg bg-white/5 border border-white/10 text-[10px] font-black text-white uppercase tracking-widest hover:bg-white/10 transition-all"
+            >
+              View Full Code
+            </button>
+          </div>
+          <div className="relative group">
+            <div className={`absolute inset-0 bg-gradient-to-b from-transparent to-[#121212] pointer-events-none transition-opacity ${showCode ? 'opacity-0' : 'opacity-100'}`} />
+            <pre className={`text-[12px] font-mono text-gray-400 overflow-hidden ${showCode ? 'max-h-full' : 'max-h-[100px]'} leading-relaxed transition-all duration-300`}>
+              {code}
+            </pre>
+            <button 
+              onClick={() => setShowCode(!showCode)}
+              className="absolute bottom-0 left-0 w-full py-2 bg-[#121212] text-gray-400 text-xs font-bold flex items-center justify-center gap-2 hover:text-white transition-colors"
+            >
+              {showCode ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+              {showCode ? "Collapse Code" : "Expand Code"}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {hasSystemsLua && (
+        <div className="p-4 rounded-2xl bg-black/40 border border-white/5 space-y-3 mt-4 mx-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Code2 className="w-4 h-4 text-gray-500" />
+              <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">
+                Systems Logic (Functionality)
+              </span>
+            </div>
+            <button 
+              onClick={() => handleViewFullCode(systemsLua, `${title} - Systems Logic`)}
+              className="px-3 py-1 rounded-lg bg-white/5 border border-white/10 text-[10px] font-black text-white uppercase tracking-widest hover:bg-white/10 transition-all"
+            >
+              View Full Code
+            </button>
+          </div>
+          <div className="relative group">
+            <div className={`absolute inset-0 bg-gradient-to-b from-transparent to-[#121212] pointer-events-none transition-opacity ${showSystemsLua ? 'opacity-0' : 'opacity-100'}`} />
+            <pre className={`text-[12px] font-mono text-gray-400 overflow-hidden ${showSystemsLua ? 'max-h-full' : 'max-h-[100px]'} leading-relaxed transition-all duration-300`}>
+              {systemsLua}
+            </pre>
+            <button 
+              onClick={() => setShowSystemsLua(!showSystemsLua)}
+              className="absolute bottom-0 left-0 w-full py-2 bg-[#121212] text-gray-400 text-xs font-bold flex items-center justify-center gap-2 hover:text-white transition-colors"
+            >
+              {showSystemsLua ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+              {showSystemsLua ? "Collapse Code" : "Expand Code"}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

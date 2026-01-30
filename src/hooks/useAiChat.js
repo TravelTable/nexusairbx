@@ -244,12 +244,19 @@ export function useAiChat(user, settings, refreshBilling, notify) {
                 metadata: {
                   ...(data.metadata || {}),
                   mode: currentMode,
-                  qaReport: data.qaReport || null
+                  qaReport: data.qaReport || null,
+                  type: data.metadata?.type || (data.projectId ? "ui" : (data.content ? "code" : "chat")) // Default type based on content
                 }
               };
 
+              // If the response contains boardState and systemsLua, store them directly
+              if (data.boardState) msgPayload.boardState = data.boardState;
+              if (data.systemsLua) msgPayload.systemsLua = data.systemsLua;
+              if (data.uiModuleLua) msgPayload.uiModuleLua = data.uiModuleLua; // For compatibility with older UI generation
+
               if (data.options) msgPayload.options = data.options;
               if (data.plan) msgPayload.plan = data.plan;
+              if (data.title) msgPayload.title = data.title;
 
               await setDoc(assistantMsgRef, msgPayload);
 
@@ -259,13 +266,17 @@ export function useAiChat(user, settings, refreshBilling, notify) {
               });
               
               // Notify UI hook if this was a UI generation
-              if (data.projectId) {
+              if (data.projectId || msgPayload.metadata?.type === "ui_with_logic") {
                 // Ensure we pass the new format if available
                 window.dispatchEvent(new CustomEvent("nexus:uiGenerated", { 
                   detail: {
                     ...data,
                     uiModuleLua: data.uiModuleLua || data.content,
-                    systemsLua: data.systemsLua || ""
+                    systemsLua: data.systemsLua || "",
+                    boardState: data.boardState || null,
+                    title: data.title || msgPayload.title,
+                    explanation: data.explanation || msgPayload.explanation,
+                    qaReport: data.qaReport || msgPayload.metadata?.qaReport
                   } 
                 }));
               }

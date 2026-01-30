@@ -496,39 +496,46 @@ export default function ChatView({
                     </div>
                   )}
 
-                  {m.role === 'assistant' && (m.uiModuleLua || m.code) && m.metadata?.mode !== 'plan' && (
+                  {m.role === 'assistant' && (m.uiModuleLua || m.code || m.boardState) && m.metadata?.mode !== 'plan' && (
                     <div className="mt-6 space-y-4">
-                      {activeMode === 'general' && !m.metadata?.structuredData ? (
-                        <div className="p-4 rounded-2xl bg-black/40 border border-white/5 space-y-3">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <Code2 className="w-4 h-4 text-gray-500" />
-                              <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Generated Luau Code</span>
+                      {m.metadata?.type === 'ui_with_logic' || m.projectId ? (
+                        <ArtifactCard
+                          title={m.title || "GENERATED INTERFACE"}
+                          subtitle={`Luau Component v${m.versionNumber || 1}`}
+                          icon={Layout}
+                          type="ui"
+                          qaReport={m.metadata?.qaReport}
+                          code={m.uiModuleLua || m.code} // Pass the UI Lua code to ArtifactCard
+                          systemsLua={m.systemsLua} // Pass the systems Lua code to ArtifactCard
+                          actions={[
+                            { label: "Push to Studio", icon: <Send className="w-4 h-4" />, onClick: () => onPushToStudio(m.projectId, "ui", { boardState: m.boardState, lua: m.uiModuleLua || m.code, systemsLua: m.systemsLua, title: m.title }) },
+                            { label: "Save to Library", icon: <Bookmark className="w-4 h-4" />, onClick: () => window.dispatchEvent(new CustomEvent("nexus:saveScript", { detail: { name: m.title || "Generated UI", code: m.uiModuleLua || m.code, type: "ui", boardState: m.boardState, systemsLua: m.systemsLua } })) },
+                            { label: "Share with Team", icon: <Users className="w-4 h-4" />, onClick: () => setSharingId(m.id) },
+                            { label: "Preview", icon: <Eye className="w-4 h-4" />, onClick: () => onViewUi(m), primary: true },
+                            { label: "Refine", icon: <RefreshCw className="w-4 h-4" />, onClick: () => onRefine(m) },
+                            { label: "Copy Code", icon: copiedId === m.id ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />, onClick: () => handleCopy(m.uiModuleLua || m.code, m.id) }
+                          ]}
+                        >
+                          {m.metadata?.qaReport?.issues?.length > 0 && (
+                            <div className="px-5 py-3 bg-red-500/5 border-b border-white/5 flex items-center justify-between">
+                              <span className="text-[10px] font-bold text-red-400 uppercase tracking-widest">UX Issues Detected</span>
+                              <button 
+                                onClick={() => onFixUiAudit(m)}
+                                className="px-3 py-1 rounded-lg bg-red-500 text-white text-[9px] font-black uppercase tracking-widest hover:bg-red-600 transition-all"
+                              >
+                                Apply Fixes
+                              </button>
                             </div>
-                            <button 
-                              onClick={() => {
-                                window.dispatchEvent(new CustomEvent("nexus:openCodeDrawer", {
-                                  detail: {
-                                    code: m.uiModuleLua || m.code,
-                                    title: m.title || "Generated Script",
-                                    explanation: m.explanation || "",
-                                    versionNumber: m.versionNumber || 1
-                                  }
-                                }));
-                              }}
-                              className="px-3 py-1 rounded-lg bg-white/5 border border-white/10 text-[10px] font-black text-white uppercase tracking-widest hover:bg-white/10 transition-all"
-                            >
-                              View Full Code
-                            </button>
+                          )}
+                          <div className="aspect-video bg-gradient-to-br from-gray-900 to-black flex items-center justify-center relative overflow-hidden rounded-b-2xl">
+                            <div className="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]" />
+                            <Layout className="w-16 h-16 text-white/5" />
+                            <div className="absolute top-3 left-3 flex flex-wrap gap-2">
+                              <UiStatsBadge label="Instances" value={m.metadata?.instanceCount || (m.boardState?.items?.length || "42")} icon={Layers} />
+                              <UiStatsBadge label="Responsive" value="Yes" icon={MousePointer2} />
+                            </div>
                           </div>
-                          <div className="relative group">
-                            <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[#121212] pointer-events-none" />
-                            <pre className="text-[12px] font-mono text-gray-400 overflow-hidden max-h-[100px] leading-relaxed">
-                              { (m.uiModuleLua || m.code).split('\n').slice(0, 5).join('\n') }
-                              { (m.uiModuleLua || m.code).split('\n').length > 5 && '\n...' }
-                            </pre>
-                          </div>
-                        </div>
+                        </ArtifactCard>
                       ) : m.metadata?.structuredData?.report ? (
                         <ArtifactCard
                           title="Security Audit"
@@ -536,6 +543,7 @@ export default function ChatView({
                           icon={ShieldAlert}
                           type="report"
                           qaReport={m.metadata?.qaReport}
+                          code={m.uiModuleLua || m.code}
                           actions={[
                             { label: "Push to Studio", icon: <Send className="w-4 h-4" />, onClick: () => onPushToStudio(m.artifactId, "script", { code: m.uiModuleLua || m.code, title: m.title }) },
                             { label: "Save to Library", icon: <Bookmark className="w-4 h-4" />, onClick: () => window.dispatchEvent(new CustomEvent("nexus:saveScript", { detail: { name: m.title || "Security Audit", code: m.uiModuleLua || m.code } })) },
@@ -559,6 +567,7 @@ export default function ChatView({
                           icon={Activity}
                           type="report"
                           qaReport={m.metadata?.qaReport}
+                          code={m.uiModuleLua || m.code}
                           actions={[
                             { label: "Push to Studio", icon: <Send className="w-4 h-4" />, onClick: () => onPushToStudio(m.artifactId, "script", { code: m.uiModuleLua || m.code, title: m.title }) },
                             { label: "Save to Library", icon: <Bookmark className="w-4 h-4" />, onClick: () => window.dispatchEvent(new CustomEvent("nexus:saveScript", { detail: { name: m.title || "Performance Audit", code: m.uiModuleLua || m.code } })) },
@@ -575,49 +584,15 @@ export default function ChatView({
                             }}
                           />
                         </ArtifactCard>
-                      ) : m.metadata?.type === 'ui' || m.projectId ? (
-                        <ArtifactCard
-                          title={m.title || "GENERATED INTERFACE"}
-                          subtitle={`Luau Component v${m.versionNumber || 1}`}
-                          icon={Layout}
-                          type="ui"
-                          qaReport={m.metadata?.qaReport}
-                          actions={[
-                            { label: "Push to Studio", icon: <Send className="w-4 h-4" />, onClick: () => onPushToStudio(m.projectId, "ui", { boardState: m.boardState, lua: m.uiModuleLua || m.code, title: m.title }) },
-                            { label: "Save to Library", icon: <Bookmark className="w-4 h-4" />, onClick: () => window.dispatchEvent(new CustomEvent("nexus:saveScript", { detail: { name: m.title || "Generated UI", code: m.uiModuleLua || m.code, type: "ui", boardState: m.boardState, systemsLua: m.systemsLua } })) },
-                            { label: "Share with Team", icon: <Users className="w-4 h-4" />, onClick: () => setSharingId(m.id) },
-                            { label: "Preview", icon: <Eye className="w-4 h-4" />, onClick: () => onViewUi(m), primary: true },
-                            { label: "Refine", icon: <RefreshCw className="w-4 h-4" />, onClick: () => onRefine(m) },
-                            { label: "Copy Code", icon: copiedId === m.id ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />, onClick: () => handleCopy(m.uiModuleLua || m.code, m.id) }
-                          ]}
-                        >
-                          {m.metadata?.qaReport?.issues?.length > 0 && (
-                            <div className="px-5 py-3 bg-red-500/5 border-b border-white/5 flex items-center justify-between">
-                              <span className="text-[10px] font-bold text-red-400 uppercase tracking-widest">UX Issues Detected</span>
-                              <button 
-                                onClick={() => onFixUiAudit(m)}
-                                className="px-3 py-1 rounded-lg bg-red-500 text-white text-[9px] font-black uppercase tracking-widest hover:bg-red-600 transition-all"
-                              >
-                                Apply Fixes
-                              </button>
-                            </div>
-                          )}
-                          <div className="aspect-video bg-gradient-to-br from-gray-900 to-black flex items-center justify-center relative overflow-hidden rounded-b-2xl">
-                            <div className="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]" />
-                            <Layout className="w-16 h-16 text-white/5" />
-                            <div className="absolute top-3 left-3 flex flex-wrap gap-2">
-                              <UiStatsBadge label="Instances" value={m.metadata?.instanceCount || "42"} icon={Layers} />
-                              <UiStatsBadge label="Responsive" value="Yes" icon={MousePointer2} />
-                            </div>
-                          </div>
-                        </ArtifactCard>
                       ) : (
+                        // Default to a generic code artifact card with collapsible code
                         <ArtifactCard
                           title={m.title || "Generated Script"}
                           subtitle="Luau Logic Module"
                           icon={Code2}
                           type="code"
                           qaReport={m.metadata?.qaReport}
+                          code={m.uiModuleLua || m.code}
                           actions={[
                             { label: "Push to Studio", icon: <Send className="w-4 h-4" />, onClick: () => onPushToStudio(m.artifactId, "script", { code: m.uiModuleLua || m.code, title: m.title }) },
                             { label: "Save to Library", icon: <Bookmark className="w-4 h-4" />, onClick: () => window.dispatchEvent(new CustomEvent("nexus:saveScript", { detail: { name: m.title || "Generated Script", code: m.uiModuleLua || m.code } })) },
@@ -625,12 +600,7 @@ export default function ChatView({
                             { label: "Copy Code", icon: copiedId === m.id ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />, onClick: () => handleCopy(m.uiModuleLua || m.code, m.id), primary: true }
                           ]}
                         >
-                          <ScriptLoadingBarContainer
-                            filename={m.title || "Generated_Script.lua"}
-                            codeReady={!!(m.uiModuleLua || m.code)}
-                            loading={false}
-                            onView={() => onViewUi(m)}
-                          />
+                          {/* The actual code content will be rendered by ArtifactCard's children or internal logic */}
                         </ArtifactCard>
                       )}
                     </div>
