@@ -1,17 +1,45 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import url("https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;700&family=Rubik:wght@400;500;600&display=swap");
 
-/* Hide ResizeObserver error overlay in Chrome (optional, for extra suppression) */
-body > .resize-observer-error {
-  display: none !important;
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
 }
 
-/* Custom Scrollbar for History */
-.scrollbar-hide::-webkit-scrollbar {
-  display: none;
+body {
+  margin: 0;
+  font-family: "Rubik", sans-serif;
+  background: linear-gradient(140deg, #f6f2ea 0%, #f1f7f4 50%, #fef9f6 100%);
+  color: #132125;
+  min-height: 100vh;
+  position: relative;
+  overflow-x: hidden;
 }
-.scrollbar-hide {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
+
+body::before,
+body::after {
+  content: "";
+  position: fixed;
+  width: 320px;
+  height: 320px;
+  border-radius: 45%;
+  z-index: -1;
+  opacity: 0.35;
+  filter: blur(20px);
+}
+
+body::before {
+  top: -80px;
+  right: -60px;
+  background: radial-gradient(circle, #f4b9a7 0%, transparent 70%);
+}
+
+body::after {
+  bottom: -120px;
+  left: -80px;
+  background: radial-gradient(circle, #bfe6e0 0%, transparent 70%);
+}
+
+a {
+  color: inherit;
 }
