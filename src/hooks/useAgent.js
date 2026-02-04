@@ -8,7 +8,15 @@ export function useAgent(user, notify, refreshBilling) {
   const [messages, setMessages] = useState([]);
   const [isThinking, setIsThinking] = useState(false);
 
-  const sendMessage = useCallback(async (goal, chatId, setChatId, existingRequestId = null, expertMode = "general", currentMode = "plan", attachments = []) => {
+  function normalizeHistory(chatHistory) {
+    if (!Array.isArray(chatHistory) || chatHistory.length === 0) return [];
+    return chatHistory.slice(-10).map((m) => ({
+      role: m.role === "user" ? "user" : "assistant",
+      content: (m.role === "user" ? m.content : (m.explanation || m.content || m.thought || "")) || "",
+    })).filter((m) => m.content.trim() !== "" || m.role === "user");
+  }
+
+  const sendMessage = useCallback(async (goal, chatId, setChatId, existingRequestId = null, expertMode = "general", currentMode = "plan", attachments = [], chatHistory = null) => {
     if (!user || (!goal && attachments.length === 0)) return;
 
     setIsThinking(true);
@@ -38,6 +46,7 @@ export function useAgent(user, notify, refreshBilling) {
         });
       }
 
+      const history = normalizeHistory(chatHistory || messages);
       const token = await user.getIdToken();
       const res = await fetch(`${BACKEND_URL}/api/ui-builder/ai/agent`, {
         method: "POST",
@@ -46,7 +55,7 @@ export function useAgent(user, notify, refreshBilling) {
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          history: messages.slice(-5), // Send recent history for context
+          history,
           goal,
           chatMode: expertMode,
           mode: currentMode,

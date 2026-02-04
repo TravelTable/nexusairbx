@@ -416,7 +416,9 @@ export default function ChatView({
                   )}
 
                   {m.role === 'assistant' && m.options && m.options.length > 0 && (
-                    <div className="flex flex-wrap gap-2 mt-4 mb-2">
+                    <div className="mt-4 mb-2">
+                      <div className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">Suggested actions</div>
+                      <div className="flex flex-wrap gap-2">
                       {m.options.map((opt, idx) => (
                         <button
                           key={idx}
@@ -430,6 +432,7 @@ export default function ChatView({
                           <ChevronRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
                         </button>
                       ))}
+                      </div>
                     </div>
                   )}
 

@@ -442,8 +442,17 @@ function AiPage() {
         return;
       }
 
-      const data = await agent.sendMessage(currentPrompt, activeChatId, chat.setCurrentChatId, requestId, effectiveMode, chat.chatMode, currentAttachments);
-      if (!data) return await chat.handleSubmit(currentPrompt, activeChatId, requestId, null, false, currentAttachments);
+      const data = await agent.sendMessage(currentPrompt, activeChatId, chat.setCurrentChatId, requestId, effectiveMode, chat.chatMode, currentAttachments, chat.messages);
+      if (!data) {
+        notify({ message: "Agent didn't respond. Sending as chat instead.", type: "info" });
+        return await chat.handleSubmit(currentPrompt, activeChatId, requestId, null, false, currentAttachments);
+      }
+
+      if (data.suggestedMode) {
+        chat.updateChatMode(activeChatId, data.suggestedMode);
+        const modeLabel = CHAT_MODES.find((m) => m.id === data.suggestedMode)?.label || data.suggestedMode;
+        notify({ message: `Switched to ${modeLabel} for this task.`, type: "info" });
+      }
 
       switch (data.action) {
         case "pipeline":
@@ -470,6 +479,9 @@ function AiPage() {
         case "plan":
           chat.setTasks(data.tasks || []);
           await chat.handleSubmit(currentPrompt, activeChatId, requestId);
+          break;
+        case "code":
+          await chat.handleSubmit(data.parameters?.prompt || currentPrompt, activeChatId, requestId, null, false, currentAttachments);
           break;
         default:
           await chat.handleSubmit(currentPrompt, activeChatId, requestId);
@@ -851,6 +863,18 @@ function AiPage() {
                           }
                           notify({ message: `Generated ${data.scripts.length} scripts for ${task.label}`, type: "success" });
                         }
+                      } else if (task.type === "refine") {
+                        if (ui.activeUi?.uiModuleLua || ui.activeUi?.lua) {
+                          await ui.handleRefine(task.prompt);
+                        } else {
+                          await ui.handleGenerateUiPreview(task.prompt, chat.currentChatId, chat.setCurrentChatId, null, requestId);
+                        }
+                      } else if (task.type === "lint") {
+                        await handleUiAudit();
+                      } else if (task.type === "suggest_assets") {
+                        await handleSuggestAssets(task.prompt);
+                      } else if (task.type === "code") {
+                        await handlePromptSubmit(null, task.prompt);
                       }
                       chat.setTasks(prev => prev.map(t => t.id === task.id ? { ...t, status: 'done' } : t));
                     } catch (err) {
