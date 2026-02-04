@@ -201,26 +201,26 @@ export function useAiChat(user, settings, refreshBilling, notify) {
 
       setGenerationStage("Generating...");
       
-      // 2. Connect to Stream
+      // 2. Connect to Stream (backend processes fully, sends only final "done" event)
       return new Promise((resolve, reject) => {
         let eventSource = new EventSource(`${BACKEND_URL}/api/generate/stream?jobId=${jobId}&token=${token}&mode=${currentMode}`);
-        let fullText = "";
+        let receivedDone = false;
         const isAutoExecuting = currentMode === "act";
         let retryCount = 0;
         const maxRetries = 3;
 
         const setupListeners = (es) => {
-          es.addEventListener("chunk", (e) => {
+          es.addEventListener("stage", (e) => {
             try {
-              const { chunk } = JSON.parse(e.data);
-              fullText += chunk;
-              setPendingMessage(prev => ({ ...prev, content: fullText, type: "chat" }));
+              const data = JSON.parse(e.data);
+              if (data?.message) setGenerationStage(data.message);
             } catch (err) {
-              console.error("Failed to parse chunk:", err);
+              console.error("Failed to parse stage:", err);
             }
           });
 
           es.addEventListener("done", async (e) => {
+            receivedDone = true;
             try {
               const data = JSON.parse(e.data);
               es.close();
@@ -282,7 +282,7 @@ export function useAiChat(user, settings, refreshBilling, notify) {
 
           es.addEventListener("error", (e) => {
             es.close();
-            if (retryCount < maxRetries && !fullText) {
+            if (retryCount < maxRetries && !receivedDone) {
               retryCount++;
               console.log(`Retrying connection (${retryCount}/${maxRetries})...`);
               setTimeout(() => {
