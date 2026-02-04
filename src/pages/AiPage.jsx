@@ -63,6 +63,7 @@ import { useAgent } from "../hooks/useAgent";
 import ChatView, { CHAT_MODES } from "../components/ai/ChatView";
 import LibraryView from "../components/ai/LibraryView";
 import GameProfileWizard from "../components/ai/GameProfileWizard";
+import ProjectArchitecturePanel from "../components/ai/ProjectArchitecturePanel";
 
 function AiPage() {
   // 1. External Hooks
@@ -117,6 +118,7 @@ function AiPage() {
   const [showProNudge, setShowProNudge] = useState(false);
   const [proNudgeReason, setProNudgeReason] = useState("");
   const [projectContext, setProjectContext] = useState(null);
+  const [architecturePanelOpen, setArchitecturePanelOpen] = useState(false);
   const [teams, setTeams] = useState([]);
   const [attachments, setAttachments] = useState([]);
   const [toast, setToast] = useState(null);
@@ -663,9 +665,11 @@ function AiPage() {
               </div>
 
               <div className="flex items-center gap-2">
+                <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider hidden sm:inline">Project</span>
                 <ProjectContextStatus 
                   context={projectContext} 
                   plan={planKey}
+                  onViewStructure={() => setArchitecturePanelOpen(true)}
                   onSync={async () => {
                     if (!user) {
                       setShowSignInNudge(true);
@@ -1097,6 +1101,27 @@ function AiPage() {
             </div>
           </div>
         </main>
+
+        {architecturePanelOpen && (
+          <div className="fixed inset-y-0 right-0 z-40 w-full max-w-md h-full shadow-2xl">
+            <ProjectArchitecturePanel
+              context={projectContext}
+              onClose={() => setArchitecturePanelOpen(false)}
+              onSync={async () => {
+                if (!user) {
+                  setShowSignInNudge(true);
+                  return;
+                }
+                if (!isPremium) {
+                  setProNudgeReason("Project Context Sync");
+                  setShowProNudge(true);
+                  return;
+                }
+                notify({ message: "Please use the NexusRBX Studio Plugin to refresh context", type: "info" });
+              }}
+            />
+          </div>
+        )}
       </div>
 
       <CodeDrawer

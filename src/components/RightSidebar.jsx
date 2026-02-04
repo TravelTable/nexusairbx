@@ -405,7 +405,7 @@ function handleModelChange(e) {
           onChange={(e) => setSettings((prev) => ({ ...prev, gameSpec: e.target.value }))}
         />
         <div className="text-xs text-gray-500 mt-1">
-          This is sent as project context to reduce repeated prompting + token waste.
+          This is sent as project context to reduce repeated prompting + token waste. Project structure (remotes, modules) is synced from Studio and shown in the Project panel on the AI page.
         </div>
       </div>
 

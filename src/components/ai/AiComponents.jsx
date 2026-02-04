@@ -258,7 +258,7 @@ export const TaskOrchestrator = ({ tasks, currentTaskId, onExecuteTask, plan }) 
   );
 };
 
-export const ProjectContextStatus = ({ context, onSync, plan }) => {
+export const ProjectContextStatus = ({ context, onSync, onViewStructure, plan }) => {
   const [isSyncing, setIsSyncing] = useState(false);
 
   const handleSync = async () => {
@@ -276,13 +276,18 @@ export const ProjectContextStatus = ({ context, onSync, plan }) => {
           <Zap className="w-3 h-3 text-[#9b5de5] fill-current" />
         </div>
       )}
-      <div className="flex items-center gap-2">
+      <button
+        type="button"
+        onClick={onViewStructure}
+        className="flex items-center gap-2 text-left hover:opacity-90 transition-opacity"
+        title="View project structure"
+      >
         <div className={`w-2 h-2 rounded-full ${context ? 'bg-[#00f5d4] shadow-[0_0_10px_rgba(0,245,212,0.5)]' : 'bg-gray-600'}`} />
         <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">
           {context ? 'Studio Linked' : 'Studio Offline'}
         </span>
-      </div>
-      
+      </button>
+
       {context && (
         <div className="h-4 w-px bg-white/10" />
       )}
@@ -295,7 +300,19 @@ export const ProjectContextStatus = ({ context, onSync, plan }) => {
         </div>
       )}
 
-      <button 
+      {onViewStructure && (
+        <button
+          type="button"
+          onClick={onViewStructure}
+          className="px-2 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider text-[#00f5d4] hover:bg-[#00f5d4]/10 transition-colors"
+          title="View project structure"
+        >
+          View
+        </button>
+      )}
+
+      <button
+        type="button"
         onClick={handleSync}
         disabled={isSyncing}
         className={`p-1.5 rounded-lg hover:bg-white/10 transition-all ${isSyncing ? 'animate-spin text-[#00f5d4]' : 'text-gray-500 hover:text-white'}`}

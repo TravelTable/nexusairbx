@@ -219,74 +219,44 @@ export default function UiPreviewDrawer({
     return p ? p.slice(0, 60) + (p.length > 60 ? "..." : "") : "UI Preview";
   }, [prompt]);
 
+  const hasContent = !!(boardState || uiModuleLua || lua);
+
   if (inline) {
     return (
-      <div className="h-full flex flex-col bg-[#0b1220]">
-        <div className="px-3 pt-3">
-          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
-            <button
-              type="button"
-              onClick={() => setTab("preview")}
-              className={`px-3 py-2 rounded text-sm border whitespace-nowrap ${
-                tab === "preview"
-                  ? "border-[#00f5d4] bg-[#00f5d4]/10 text-white"
-                  : "border-gray-800 bg-black/20 text-gray-300 hover:bg-black/30"
-              }`}
-            >
-              Preview
-            </button>
-            <button
-              type="button"
-              onClick={() => setTab("code")}
-              className={`px-3 py-2 rounded text-sm border whitespace-nowrap ${
-                tab === "code"
-                  ? "border-[#00f5d4] bg-[#00f5d4]/10 text-white"
-                  : "border-gray-800 bg-black/20 text-gray-300 hover:bg-black/30"
-              }`}
-            >
-              Code
-            </button>
-            <button
-              type="button"
-              onClick={() => setTab("functionality")}
-              className={`px-3 py-2 rounded text-sm border whitespace-nowrap ${
-                tab === "functionality"
-                  ? "border-[#f15bb5] bg-[#f15bb5]/10 text-white"
-                  : "border-gray-800 bg-black/20 text-gray-300 hover:bg-black/30"
-              }`}
-            >
-              Functionality
-            </button>
-            <button
-              type="button"
-              onClick={() => setTab("assets")}
-              className={`px-3 py-2 rounded text-sm border whitespace-nowrap relative ${
-                tab === "assets"
-                  ? "border-[#00f5d4] bg-[#00f5d4]/10 text-white"
-                  : "border-gray-800 bg-black/20 text-gray-300 hover:bg-black/30"
-              }`}
-            >
-              Icons & Assets
-              {uniqueAssets.length > 0 && !uniqueAssets.every(a => assetIds[a.url]) && (
-                <span className="absolute -top-1 -right-1 w-2 h-2 bg-[#00f5d4] rounded-full animate-pulse" />
-              )}
-            </button>
-            <button
-              type="button"
-              onClick={() => setTab("history")}
-              className={`px-3 py-2 rounded text-sm border whitespace-nowrap ${
-                tab === "history"
-                  ? "border-[#9b5de5] bg-[#9b5de5]/10 text-white"
-                  : "border-gray-800 bg-black/20 text-gray-300 hover:bg-black/30"
-              }`}
-            >
-              History
-            </button>
+      <div className="h-full flex flex-col bg-[#0b1220] border-l border-white/5">
+        <div className="px-4 pt-4 shrink-0">
+          <div className="flex gap-1 overflow-x-auto scrollbar-hide rounded-xl bg-white/5 p-1 border border-white/10">
+            {[
+              { id: "preview", label: "Preview" },
+              { id: "code", label: "Code" },
+              { id: "functionality", label: "Functionality" },
+              { id: "assets", label: "Icons & Assets", badge: uniqueAssets.length > 0 && !uniqueAssets.every(a => assetIds[a.url]) },
+              { id: "history", label: "History" },
+            ].map(({ id, label, badge }) => (
+              <button
+                key={id}
+                type="button"
+                onClick={() => setTab(id)}
+                className={`relative px-3 py-2 rounded-lg text-xs font-semibold uppercase tracking-wider whitespace-nowrap transition-all ${
+                  tab === id
+                    ? "bg-[#00f5d4]/10 text-[#00f5d4] border border-[#00f5d4]/30"
+                    : "text-gray-400 hover:text-white border border-transparent"
+                }`}
+              >
+                {label}
+                {badge && <span className="absolute top-1 right-1 w-1.5 h-1.5 bg-[#00f5d4] rounded-full animate-pulse" />}
+              </button>
+            ))}
           </div>
         </div>
 
-        <div className="p-3 flex-1 overflow-hidden">
-          {tab === "preview" && (
+        <div className="p-4 flex-1 overflow-hidden min-h-0">
+          {!hasContent ? (
+            <div className="h-full flex flex-col items-center justify-center text-center px-6 rounded-xl border border-white/10 bg-white/5">
+              <p className="text-sm font-medium text-gray-400 mb-1">No UI yet</p>
+              <p className="text-xs text-gray-500">Generate a UI in chat to see preview, code, and assets here.</p>
+            </div>
+          ) : tab === "preview" ? (
             <PreviewTab
               lua={uiModuleLua || lua}
               boardState={boardState}
@@ -303,8 +273,7 @@ export default function UiPreviewDrawer({
                 onUpdateLua(newBS);
               }}
             />
-          )}
-          {tab === "code" && (
+          ) : tab === "code" ? (
             <CodeTab
               uiModuleLua={uiModuleLua}
               systemsLua={systemsLua}
@@ -313,8 +282,7 @@ export default function UiPreviewDrawer({
               handleCopy={handleCopy}
               onDownload={handleDownloadFiles}
             />
-          )}
-          {tab === "functionality" && (
+          ) : tab === "functionality" ? (
             <FunctionalityTab
               funcPlan={funcPlan}
               funcScripts={funcScripts}
@@ -324,8 +292,7 @@ export default function UiPreviewDrawer({
               handleGenerateFunctionality={handleGenerateFunctionality}
               mainScriptUpdated={mainScriptUpdated}
             />
-          )}
-          {tab === "assets" && (
+          ) : tab === "assets" ? (
             <AssetsTab
               uniqueAssets={uniqueAssets}
               handleDownloadAllAssets={handleDownloadFiles}
@@ -334,8 +301,7 @@ export default function UiPreviewDrawer({
               isFinalizing={isFinalizing}
               handleFinalizeAssets={handleFinalizeAssets}
             />
-          )}
-          {tab === "history" && (
+          ) : (
             <HistoryTab
               history={history}
               activeId={activeId}
