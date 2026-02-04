@@ -289,6 +289,17 @@ function AiPage() {
     return () => unsubscribe();
   }, []);
 
+  // Show sign-in nudge once per session when a guest lands on the AI page
+  useEffect(() => {
+    if (user !== null) return;
+    if (sessionStorage.getItem("nexusrbx:signInNudgeShown")) return;
+    const t = setTimeout(() => {
+      setShowSignInNudge(true);
+      sessionStorage.setItem("nexusrbx:signInNudgeShown", "1");
+    }, 800);
+    return () => clearTimeout(t);
+  }, [user]);
+
   useEffect(() => {
     if (!user) {
       setScripts([]);
@@ -705,6 +716,20 @@ function AiPage() {
                         await handlePromptSubmit(null, m.prompt || m.content);
                       }
                     }
+                  }}
+                  onPlanUI={() => {
+                    chat.updateChatMode(chat.currentChatId, "ui");
+                    chat.setChatMode("plan");
+                    setPrompt("Help me plan a UI: screens, layout, and main components.");
+                    const el = document.getElementById("tour-prompt-box");
+                    if (el) el.focus();
+                  }}
+                  onPlanSystem={() => {
+                    chat.updateChatMode(chat.currentChatId, "system");
+                    chat.setChatMode("plan");
+                    setPrompt("Help me plan a system: services, remotes, and data flow.");
+                    const el = document.getElementById("tour-prompt-box");
+                    if (el) el.focus();
                   }}
                   onPushToStudio={(id, type, data) => {
                     if (!user) {

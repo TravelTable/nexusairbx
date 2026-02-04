@@ -22,6 +22,8 @@ export default function ChatView({
   onQuickStart,
   onRefine,
   onToggleActMode,
+  onPlanUI,
+  onPlanSystem,
   onExecuteTask,
   onPushToStudio,
   onFixUiAudit,
@@ -77,6 +79,8 @@ export default function ChatView({
           onEditCustomMode={onEditCustomMode}
           onInstallCommunityMode={onInstallCommunityMode}
           onToggleActMode={onToggleActMode}
+          onPlanUI={onPlanUI}
+          onPlanSystem={onPlanSystem}
           communityModes={communityModes}
           loadingCommunity={loadingCommunity}
           fetchCommunityModes={fetchCommunityModes}

@@ -45,14 +45,14 @@ export default function SignInNudgeModal({ isOpen, onClose }) {
             </div>
 
             <h2 className="text-2xl font-bold text-white mb-3">
-              Claim Your 20,000 <br />
+              Sign up to access <br />
               <span className="bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-transparent bg-clip-text">
-                Free Monthly Tokens
+                tokens and features
               </span>
             </h2>
 
             <p className="text-gray-400 text-[15px] leading-relaxed mb-8">
-              Sign in to NexusRBX to unlock your monthly allowance. Save your projects, track usage, and build amazing Roblox UIs.
+              Create a free account to get monthly tokens, save your projects, and unlock all NexusRBX features for building Roblox UIs.
             </p>
 
             <div className="space-y-4 mb-8">
@@ -79,10 +79,16 @@ export default function SignInNudgeModal({ isOpen, onClose }) {
 
             <div className="flex flex-col gap-3">
               <button
-                onClick={() => navigate("/signin", { state: { from: location } })}
+                onClick={() => navigate("/signup", { state: { from: location } })}
                 className="w-full py-4 rounded-2xl bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-white font-bold text-lg shadow-[0_0_20px_rgba(155,93,229,0.3)] hover:shadow-[0_0_30px_rgba(155,93,229,0.5)] transition-all active:scale-[0.98]"
               >
-                Sign In to Claim
+                Sign Up
+              </button>
+              <button
+                onClick={() => navigate("/signin", { state: { from: location } })}
+                className="w-full py-3 rounded-2xl border border-white/10 text-gray-300 hover:text-white hover:border-white/20 text-sm font-medium transition-colors"
+              >
+                Already have an account? Sign In
               </button>
               <button
                 onClick={onClose}

@@ -79,25 +79,32 @@ export default function ChatComposer({
             resetsAt={resetsAt}
             plan={planKey}
           />
-          <div className="flex items-center bg-gray-900/50 border border-gray-800 rounded-xl p-1 shadow-inner">
-            <button
-              type="button"
-              onClick={() => setChatMode("plan")}
-              className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 ${
-                chatMode === "plan" ? "bg-gray-800 text-[#00f5d4] shadow-sm" : "text-gray-400 hover:text-white"
-              }`}
-            >
-              <Search className="w-3 h-3" /> Plan
-            </button>
-            <button
-              type="button"
-              onClick={onActClick}
-              className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 ${
-                chatMode === "act" ? "bg-gray-800 text-orange-400 shadow-sm" : "text-gray-500 hover:text-white"
-              }`}
-            >
-              <Zap className="w-3 h-3" /> Act
-            </button>
+          <div className="flex items-center gap-2 flex-wrap">
+            {(activeModeData?.id === "ui" || activeModeData?.id === "system") && chatMode === "act" && (
+              <span className="text-[9px] text-gray-500 font-medium hidden sm:inline">
+                Tip: Use Plan to outline first
+              </span>
+            )}
+            <div className="flex items-center bg-gray-900/50 border border-gray-800 rounded-xl p-1 shadow-inner">
+              <button
+                type="button"
+                onClick={() => setChatMode("plan")}
+                className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 ${
+                  chatMode === "plan" ? "bg-gray-800 text-[#00f5d4] shadow-sm" : "text-gray-400 hover:text-white"
+                }`}
+              >
+                <Search className="w-3 h-3" /> Plan
+              </button>
+              <button
+                type="button"
+                onClick={onActClick}
+                className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 ${
+                  chatMode === "act" ? "bg-gray-800 text-orange-400 shadow-sm" : "text-gray-500 hover:text-white"
+                }`}
+              >
+                <Zap className="w-3 h-3" /> Act
+              </button>
+            </div>
           </div>
         </div>
 

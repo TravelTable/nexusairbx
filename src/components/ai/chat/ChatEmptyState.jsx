@@ -1,5 +1,5 @@
 import React from "react";
-import { Sparkles, Zap, Settings2, Plus, Users } from "lucide-react";
+import { Sparkles, Zap, Settings2, Plus, Users, Layout, Rocket } from "lucide-react";
 import { CHAT_MODES } from "../chatConstants";
 
 export default function ChatEmptyState({
@@ -12,6 +12,8 @@ export default function ChatEmptyState({
   onEditCustomMode,
   onInstallCommunityMode,
   onToggleActMode,
+  onPlanUI,
+  onPlanSystem,
   communityModes = [],
   loadingCommunity,
   fetchCommunityModes,
@@ -21,6 +23,30 @@ export default function ChatEmptyState({
   return (
     <div className="min-h-[60vh] flex flex-col items-center justify-center text-center space-y-10 py-12">
       <div className="space-y-3">
+        {(onPlanUI || onPlanSystem) && (
+          <div className="flex flex-wrap items-center justify-center gap-2 mb-4">
+            {onPlanUI && (
+              <button
+                type="button"
+                onClick={onPlanUI}
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#00f5d4]/10 border border-[#00f5d4]/30 text-[#00f5d4] text-sm font-bold hover:bg-[#00f5d4]/20 transition-all"
+              >
+                <Layout className="w-4 h-4" />
+                Plan a UI
+              </button>
+            )}
+            {onPlanSystem && (
+              <button
+                type="button"
+                onClick={onPlanSystem}
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-400/10 border border-blue-400/30 text-blue-400 text-sm font-bold hover:bg-blue-400/20 transition-all"
+              >
+                <Rocket className="w-4 h-4" />
+                Plan a system
+              </button>
+            )}
+          </div>
+        )}
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-2">
           <Sparkles className="w-3 h-3 text-[#00f5d4]" />
           Select Assistant Mode
