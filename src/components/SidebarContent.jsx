@@ -437,6 +437,29 @@ export default function SidebarContent({
             </div>
 
             <div className="space-y-6">
+              {/* New conversation: explicit when no chat selected */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 px-1">
+                  <span className="text-[10px] font-bold text-gray-600 uppercase tracking-widest">Current</span>
+                  <div className="h-px flex-1 bg-white/5" />
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleCreateChatLocal();
+                    setActiveTab("chats");
+                  }}
+                  className={`w-full py-2.5 px-3 rounded-xl text-left flex items-center gap-3 transition-all ${
+                    currentChatId === null
+                      ? "bg-[#00f5d4]/10 border border-[#00f5d4]/30 text-white"
+                      : "bg-white/[0.02] border border-white/5 hover:bg-white/[0.05] hover:border-white/10 text-gray-400 hover:text-white"
+                  }`}
+                >
+                  <Plus className="w-4 h-4 shrink-0 text-[#00f5d4]" />
+                  <span className="text-xs font-bold truncate">New conversation</span>
+                </button>
+              </div>
+
               {chats.length === 0 ? (
                 <div className="text-center py-8 px-4 rounded-2xl bg-white/[0.02] border border-dashed border-white/5">
                   <MessageSquare className="w-8 h-8 text-gray-700 mx-auto mb-2" />

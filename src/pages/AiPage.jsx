@@ -8,13 +8,10 @@ import { useBilling } from "../context/BillingContext";
 import { useSettings } from "../context/SettingsContext";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
-  Loader,
   Menu,
   Library,
   Plus,
   Sparkles,
-  Search,
-  Zap,
   Layout,
   X,
 } from "lucide-react";
@@ -29,9 +26,7 @@ import CodeDrawer from "../components/CodeDrawer";
 import SignInNudgeModal from "../components/SignInNudgeModal";
 import ProNudgeModal from "../components/ProNudgeModal";
 import {
-  TokenBar,
   CustomModeModal,
-  UnifiedStatusBar,
   ProjectContextStatus,
 } from "../components/ai/AiComponents";
 import NotificationToast from "../components/NotificationToast";
@@ -43,7 +38,6 @@ import {
   onSnapshot,
   getDocs,
   setDoc,
-  addDoc,
   doc,
   serverTimestamp,
   deleteDoc,
@@ -53,14 +47,13 @@ import { v4 as uuidv4 } from "uuid";
 import { BACKEND_URL } from "../lib/uiBuilderApi";
 
 // Hooks
-import { useAiChat } from "../hooks/useAiChat";
-import { useUiBuilder } from "../hooks/useUiBuilder";
+import { useUnifiedChat } from "../hooks/useUnifiedChat";
 import { useGameProfile } from "../hooks/useGameProfile";
 import { useAiScripts } from "../hooks/useAiScripts";
-import { useAgent } from "../hooks/useAgent";
 
 // Components
 import ChatView, { CHAT_MODES } from "../components/ai/ChatView";
+import ChatComposer from "../components/ai/chat/ChatComposer";
 import LibraryView from "../components/ai/LibraryView";
 import GameProfileWizard from "../components/ai/GameProfileWizard";
 import ProjectArchitecturePanel from "../components/ai/ProjectArchitecturePanel";
@@ -132,11 +125,71 @@ function AiPage() {
     console.log(`[${type}] ${message}`);
   }, []);
 
-  const chat = useAiChat(user, settings, refreshBilling, notify);
-  const ui = useUiBuilder(user, settings, refreshBilling, notify);
+  const handleSuggestAssets = useCallback(
+    async (promptContext, uiRef) => {
+      if (!user) return;
+      try {
+        const token = await user.getIdToken();
+        const res = await fetch(`${BACKEND_URL}/api/ui-builder/ai/suggest-image-queries`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({
+            items: uiRef?.activeUi?.boardState?.items || [],
+            boardPrompt: promptContext,
+          }),
+        });
+        if (res.ok) {
+          const out = await res.json();
+          const msg =
+            out?.suggestions?.length > 0
+              ? out.suggestions.map((s) => `${s.itemId}: ${s.queries.join(", ")}`).join(" | ")
+              : "No suggestions returned.";
+          notify({ message: msg, type: "info" });
+        }
+      } catch (err) {
+        notify({ message: "Asset suggestion failed", type: "error" });
+      }
+    },
+    [user, notify]
+  );
+
+  const handleUiAudit = useCallback(
+    async (uiRef) => {
+      if (!user) return;
+      try {
+        const token = await user.getIdToken();
+        const res = await fetch(`${BACKEND_URL}/api/ui-builder/ai/audit`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ boardState: uiRef?.activeUi?.boardState || null }),
+        });
+        if (res.ok) {
+          const out = await res.json();
+          const msg =
+            out?.audit?.score !== undefined
+              ? `Audit score: ${out.audit.score}. Issues: ${out.audit.issues.map((i) => i.message).join(" | ")}`
+              : "Audit returned no score.";
+          notify({ message: msg, type: "info" });
+        }
+      } catch (err) {
+        notify({ message: "Audit failed", type: "error" });
+      }
+    },
+    [user, notify]
+  );
+
+  const unified = useUnifiedChat(user, settings, refreshBilling, notify, {
+    onSuggestAssets: handleSuggestAssets,
+    onUiAudit: handleUiAudit,
+    onSignInNudge: () => setShowSignInNudge(true),
+    getModeLabel: (id) => CHAT_MODES.find((m) => m.id === id)?.label || id,
+  });
+
+  const chat = unified;
+  const ui = unified.ui;
+  const agent = unified.agent;
   const game = useGameProfile(settings, updateSettings);
   const scriptManager = useAiScripts(user, notify);
-  const agent = useAgent(user, notify, refreshBilling);
 
   // Auto-focus prompt box on mode change or new chat
   useEffect(() => {
@@ -207,6 +260,22 @@ function AiPage() {
     ],
   };
   const currentPowerTools = powerTools[chat.activeMode] || [];
+  const composerSuggestions = [
+    ...currentPowerTools.map((tool) => ({
+      label: tool.label,
+      prompt: tool.prompt,
+      submit: true,
+      primary: true,
+      requiresPro: true,
+      proNudgeReason: "UI Power Tools & Styles",
+    })),
+    ...currentActions.map((action) => ({
+      label: action.label,
+      prompt: action.prompt,
+      submit: false,
+      primary: false,
+    })),
+  ];
 
   // 5. Effects
   useEffect(() => {
@@ -381,151 +450,14 @@ function AiPage() {
   };
 
   const handlePromptSubmit = async (e, overridePrompt = null) => {
-    if (e && typeof e.preventDefault === 'function') e.preventDefault();
-    const currentPrompt = (overridePrompt || prompt).trim();
-    if (!currentPrompt || !user) {
-      if (!user) setShowSignInNudge(true);
-      return;
-    }
-
+    if (e && typeof e.preventDefault === "function") e.preventDefault();
+    const currentPrompt = (overridePrompt ?? prompt).trim();
     const currentAttachments = [...attachments];
+    if (!currentPrompt && currentAttachments.length === 0) return;
     setPrompt("");
     setAttachments([]);
     if (activeTab !== "chat") setActiveTab("chat");
-
-    let effectiveMode = chat.activeMode;
-    const commandMap = { "/ui": "ui", "/audit": "security", "/optimize": "performance", "/logic": "logic" };
-    for (const [cmd, mode] of Object.entries(commandMap)) {
-      if (currentPrompt.startsWith(cmd)) {
-        effectiveMode = mode;
-        chat.updateChatMode(chat.currentChatId, mode);
-        break;
-      }
-    }
-
-    try {
-      const requestId = uuidv4();
-      let activeChatId = chat.currentChatId;
-
-      if (!activeChatId) {
-        const newChatRef = await addDoc(collection(db, "users", user.uid, "chats"), {
-          title: currentPrompt.slice(0, 30) + (currentPrompt.length > 30 ? "..." : ""),
-          activeMode: effectiveMode,
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp(),
-        });
-        activeChatId = newChatRef.id;
-        chat.openChatById(activeChatId);
-      }
-
-      chat.setPendingMessage({ 
-        role: "assistant", content: "", type: "chat", prompt: currentPrompt, mode: chat.chatMode, attachments: currentAttachments
-      });
-
-      const p = currentPrompt.toLowerCase();
-      const isUiRequest = p.startsWith("/ui") || ["build ui", "menu", "screen", "hud", "shop", "layout", "frame"].some(k => p.includes(k));
-      const isRefineRequest = p.startsWith("refine:") || p.startsWith("tweak:") || p.includes("refine ui");
-
-      if (isUiRequest && !isRefineRequest) {
-        const uiPromise = ui.handleGenerateUiPreview(currentPrompt.replace(/^\/ui\s*/i, ""), activeChatId, chat.setCurrentChatId, null, requestId, currentAttachments);
-        const chatPromise = chat.handleSubmit(currentPrompt, activeChatId, requestId, null, false, currentAttachments);
-        await Promise.all([uiPromise, chatPromise]);
-        return;
-      }
-
-      if (isRefineRequest) {
-        if (!ui.activeUi?.lua) {
-          await ui.handleGenerateUiPreview(currentPrompt.replace(/^(refine|tweak):\s*/i, ""), activeChatId, chat.setCurrentChatId, null, requestId, currentAttachments);
-        } else {
-          await ui.handleRefine(currentPrompt.replace(/^(refine|tweak):\s*/i, ""), null, currentAttachments);
-        }
-        return;
-      }
-
-      const data = await agent.sendMessage(currentPrompt, activeChatId, chat.setCurrentChatId, requestId, effectiveMode, chat.chatMode, currentAttachments, chat.messages);
-      if (!data) {
-        notify({ message: "Agent didn't respond. Sending as chat instead.", type: "info" });
-        return await chat.handleSubmit(currentPrompt, activeChatId, requestId, null, false, currentAttachments);
-      }
-
-      if (data.suggestedMode) {
-        chat.updateChatMode(activeChatId, data.suggestedMode);
-        const modeLabel = CHAT_MODES.find((m) => m.id === data.suggestedMode)?.label || data.suggestedMode;
-        notify({ message: `Switched to ${modeLabel} for this task.`, type: "info" });
-      }
-
-      switch (data.action) {
-        case "pipeline":
-          await Promise.all([
-            ui.handleGenerateUiPreview(data.parameters?.prompt || currentPrompt, activeChatId, chat.setCurrentChatId, data.parameters?.specs || null, requestId),
-            chat.handleSubmit(currentPrompt, activeChatId, requestId)
-          ]);
-          break;
-        case "refine":
-          if (!ui.activeUi?.lua) {
-            await ui.handleGenerateUiPreview(data.parameters?.instruction || currentPrompt, activeChatId, chat.setCurrentChatId, data.parameters?.specs || null, requestId);
-          } else {
-            await ui.handleRefine(data.parameters?.instruction || currentPrompt);
-          }
-          break;
-        case "suggest_assets":
-          await handleSuggestAssets(data.parameters?.prompt || currentPrompt);
-          await chat.handleSubmit(currentPrompt, activeChatId, requestId);
-          break;
-        case "lint":
-          await handleUiAudit();
-          await chat.handleSubmit(currentPrompt, activeChatId, requestId);
-          break;
-        case "plan":
-          chat.setTasks(data.tasks || []);
-          await chat.handleSubmit(currentPrompt, activeChatId, requestId);
-          break;
-        case "code":
-          await chat.handleSubmit(data.parameters?.prompt || currentPrompt, activeChatId, requestId, null, false, currentAttachments);
-          break;
-        default:
-          await chat.handleSubmit(currentPrompt, activeChatId, requestId);
-      }
-    } catch (err) {
-      console.error("Routing error:", err);
-      await chat.handleSubmit(currentPrompt);
-    }
-  };
-
-  const handleSuggestAssets = async (promptContext) => {
-    try {
-      const token = await user.getIdToken();
-      const res = await fetch(`${BACKEND_URL}/api/ui-builder/ai/suggest-image-queries`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ items: ui.activeUi?.boardState?.items || [], boardPrompt: promptContext }),
-      });
-      if (res.ok) {
-        const out = await res.json();
-        const msg = out?.suggestions?.length > 0 
-          ? out.suggestions.map(s => `${s.itemId}: ${s.queries.join(", ")}`).join(" | ")
-          : "No suggestions returned.";
-        notify({ message: msg, type: "info" });
-      }
-    } catch (err) { notify({ message: "Asset suggestion failed", type: "error" }); }
-  };
-
-  const handleUiAudit = async () => {
-    try {
-      const token = await user.getIdToken();
-      const res = await fetch(`${BACKEND_URL}/api/ui-builder/ai/audit`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ boardState: ui.activeUi?.boardState || null }),
-      });
-      if (res.ok) {
-        const out = await res.json();
-        const msg = out?.audit?.score !== undefined 
-          ? `Audit score: ${out.audit.score}. Issues: ${out.audit.issues.map(i => i.message).join(" | ")}`
-          : "Audit returned no score.";
-        notify({ message: msg, type: "info" });
-      }
-    } catch (err) { notify({ message: "Audit failed", type: "error" }); }
+    await unified.handleSubmit(currentPrompt, currentAttachments);
   };
 
   const handleOpenScript = async (script) => {
@@ -573,6 +505,7 @@ function AiPage() {
         variant="ai"
         navigate={navigate}
         user={user}
+        handleLogin={() => navigate("/signin", { state: { from: location } })}
         tokenInfo={{ sub: { limit: subLimit, used: subLimit - totalRemaining }, payg: { remaining: totalRemaining } }}
         tokenLoading={false}
       />
@@ -702,8 +635,8 @@ function AiPage() {
               {activeTab === "chat" && (
                 <ChatView 
                   messages={chat.messages} 
-                  pendingMessage={chat.pendingMessage || ui.pendingMessage || (agent.isThinking ? { role: "assistant", content: "", thought: "Nexus is thinking...", prompt: "" } : null)} 
-                  generationStage={chat.generationStage || ui.generationStage || (agent.isThinking ? "Nexus is thinking..." : "")} 
+                  pendingMessage={unified.pendingMessage} 
+                  generationStage={unified.generationStage} 
                   user={user} 
                   activeMode={chat.activeMode}
                   customModes={chat.customModes}
@@ -896,184 +829,52 @@ function AiPage() {
               )}
             </div>
 
-            <div className="p-4 bg-gradient-to-t from-black via-black/80 to-transparent">
-              <div className="max-w-5xl mx-auto space-y-4">
-                <UnifiedStatusBar 
-                  isGenerating={chat.isGenerating || ui.uiIsGenerating || agent.isThinking}
-                  stage={chat.generationStage || ui.generationStage || (agent.isThinking ? "Nexus is thinking..." : "")}
-                  mode={chat.activeMode}
-                />
-
-                {currentPowerTools.length > 0 && (
-                  <div className="flex items-center gap-2 px-2 overflow-x-auto scrollbar-hide pb-1 border-b border-white/5 mb-2">
-                    <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest mr-2">Power Tools:</span>
-                    {currentPowerTools.map((tool, idx) => (
-                      <button
-                        key={idx}
-                        onClick={() => {
-                          if (!isPremium) {
-                            setProNudgeReason("UI Power Tools & Styles");
-                            setShowProNudge(true);
-                            return;
-                          }
-                          handlePromptSubmit(null, tool.prompt);
-                        }}
-                        className="whitespace-nowrap px-3 py-1.5 rounded-lg bg-[#00f5d4]/5 border border-[#00f5d4]/10 text-[9px] font-black text-[#00f5d4] uppercase tracking-widest hover:bg-[#00f5d4]/20 transition-all flex items-center gap-1.5"
-                      >
-                        {tool.label}
-                        {!isPremium && <Zap className="w-2 h-2 text-[#9b5de5] fill-current" />}
-                      </button>
-                    ))}
-                  </div>
-                )}
-
-                {currentActions.length > 0 && (
-                  <div className="flex items-center gap-2 px-2 overflow-x-auto scrollbar-hide pb-1">
-                    {currentActions.map((action, idx) => (
-                      <button
-                        key={idx}
-                        onClick={() => setPrompt(action.prompt)}
-                        className="whitespace-nowrap px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-[10px] font-black text-gray-400 uppercase tracking-widest hover:bg-white/10 hover:text-white transition-all"
-                      >
-                        {action.label}
-                      </button>
-                    ))}
-                  </div>
-                )}
-
-                <div className="px-2 flex items-center justify-between gap-4">
-                  <TokenBar tokensLeft={totalRemaining} tokensLimit={subLimit} resetsAt={resetsAt} plan={planKey} />
-                  
-                  <div className="flex items-center bg-gray-900/50 border border-gray-800 rounded-xl p-1 shadow-inner">
-                    <button 
-                      onClick={() => chat.setChatMode("plan")}
-                      className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 ${chat.chatMode === "plan" ? "bg-gray-800 text-[#00f5d4] shadow-sm" : "text-gray-400 hover:text-white"}`}
-                    >
-                      <Search className="w-3 h-3" /> Plan
-                    </button>
-                    <button 
-                      onClick={async () => {
-                        if (!isPremium) {
-                          setProNudgeReason("Act Mode (Auto-Execution)");
-                          setShowProNudge(true);
-                          return;
-                        }
-                        chat.setChatMode("act");
-                        const lastMsg = chat.messages[chat.messages.length - 1];
-                        if (lastMsg && lastMsg.role === 'assistant' && (lastMsg.plan || lastMsg.explanation?.includes('<plan>'))) {
-                          await handlePromptSubmit(null, lastMsg.prompt || chat.messages[chat.messages.length - 2]?.content);
-                        }
-                      }}
-                      className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 ${chat.chatMode === "act" ? "bg-gray-800 text-orange-400 shadow-sm" : "text-gray-500 hover:text-white"}`}
-                    >
-                      <Zap className="w-3 h-3" /> Act
-                    </button>
-                  </div>
-                </div>
-                
-                <div className="relative group">
-                  {chat.isGenerating && (
-                    <div className="absolute -top-6 left-0 right-0 flex justify-center animate-in fade-in slide-in-from-bottom-1 duration-500">
-                      <span className="text-[9px] font-bold text-gray-500 uppercase tracking-widest bg-black/40 backdrop-blur-md px-3 py-1 rounded-full border border-white/5">
-                        Complex generations may take up to 5 minutes
-                      </span>
-                    </div>
-                  )}
-                  <div 
-                    className="absolute -inset-0.5 rounded-2xl blur opacity-20 group-focus-within:opacity-40 transition duration-500" 
-                    style={{ background: `linear-gradient(to r, ${currentTheme.primary}, ${currentTheme.secondary})` }}
-                  />
-                  <div className="relative bg-[#121212] border border-white/10 rounded-2xl p-2 shadow-2xl flex flex-col gap-2">
-                    {attachments.length > 0 && (
-                      <div className="flex flex-wrap gap-2 px-2 pt-2">
-                        {attachments.map((file, idx) => (
-                          <div key={idx} className="relative group/file bg-white/5 border border-white/10 rounded-lg p-2 flex items-center gap-2 pr-8">
-                            {file.isImage ? (
-                              <img src={file.data} alt={file.name} className="w-6 h-6 rounded object-cover" />
-                            ) : (
-                              <Layout className="w-4 h-4 text-gray-500" />
-                            )}
-                            <span className="text-[10px] font-bold text-gray-300 truncate max-w-[100px]">{file.name}</span>
-                            <button 
-                              onClick={() => setAttachments(prev => prev.filter((_, i) => i !== idx))}
-                              className="absolute right-1 top-1/2 -translate-y-1/2 p-1 text-gray-500 hover:text-red-400 transition-colors"
-                            >
-                              <X className="w-3 h-3" />
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                    <div className="flex items-center gap-2 px-2 pt-2">
-                      <div className={`px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest transition-all ${agent.isThinking || ui.uiIsGenerating || chat.isGenerating ? 'bg-[#00f5d4] text-black animate-pulse' : 'bg-white/5 text-gray-500'}`}>
-                        {agent.isThinking ? 'Thinking' : ui.uiIsGenerating ? 'Building' : chat.isGenerating ? 'Responding' : 'Ready'}
-                      </div>
-                      <div className="h-px flex-1 bg-white/5" />
-                    </div>
-                    <div className="flex items-center gap-2 p-2 pt-0">
-                      <div className="relative">
-                        <input 
-                          type="file" 
-                          id="file-upload" 
-                          className="hidden" 
-                          multiple 
-                          onChange={handleFileUpload}
-                          accept="image/*,.lua,.txt,.json"
-                        />
-                        <label 
-                          htmlFor="file-upload"
-                          className="p-3 rounded-xl bg-white/5 text-gray-500 hover:text-white hover:bg-white/10 transition-all cursor-pointer flex items-center justify-center"
-                          title="Upload Image or File"
-                        >
-                          <Plus className="h-5 w-5" />
-                        </label>
-                      </div>
-                      <textarea
-                        id="tour-prompt-box"
-                        className="flex-1 bg-transparent border-none rounded-xl p-3 resize-none focus:ring-0 text-gray-100 placeholder-gray-500 text-[14px] md:text-[15px] leading-relaxed disabled:opacity-50"
-                        rows="1" 
-                        placeholder={activeModeData.placeholder}
-                        value={prompt} 
-                        onChange={(e) => setPrompt(e.target.value)}
-                        disabled={chat.isGenerating || ui.uiIsGenerating || agent.isThinking}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' && !e.shiftKey) {
-                            e.preventDefault();
-                            handlePromptSubmit();
-                          }
-                        }}
-                      />
-                      <div className="flex items-center gap-2">
-                        <button 
-                          id="tour-mode-toggle"
-                          onClick={() => {
-                            const allModes = [...CHAT_MODES, ...chat.customModes];
-                            const modeIds = allModes.map(m => m.id);
-                            const currentIndex = modeIds.indexOf(chat.activeMode);
-                            const nextIndex = (currentIndex + 1) % modeIds.length;
-                            chat.updateChatMode(chat.currentChatId, modeIds[nextIndex]);
-                          }}
-                          className={`hidden sm:flex items-center gap-2 px-3 py-2 rounded-xl border border-white/5 text-[10px] font-black uppercase tracking-widest transition-all hover:bg-white/5 ${activeModeData.bg} ${activeModeData.color}`}
-                          style={chat.activeMode.startsWith('custom_') ? { color: activeModeData.color || '#9b5de5' } : {}}
-                          title={`Current Mode: ${activeModeData.label}. Click to cycle.`}
-                        >
-                          {activeModeData.icon}
-                          <span className="hidden lg:inline">{activeModeData.label}</span>
-                        </button>
-                        <button 
-                          id="tour-generate-button"
-                          onClick={handlePromptSubmit} 
-                          disabled={chat.isGenerating || ui.uiIsGenerating || agent.isThinking || (!prompt.trim() && attachments.length === 0)}
-                          className="p-3 rounded-xl transition-all disabled:opacity-50 bg-[#00f5d4] text-black hover:shadow-[0_0_20px_rgba(0,245,212,0.4)] active:scale-95"
-                        >
-                          {chat.isGenerating || ui.uiIsGenerating || agent.isThinking ? <Loader className="h-5 w-5 animate-spin" /> : <Sparkles className="h-5 w-5" />}
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+            <ChatComposer
+              prompt={prompt}
+              setPrompt={setPrompt}
+              attachments={attachments}
+              setAttachments={setAttachments}
+              onSubmit={(e) => handlePromptSubmit(e)}
+              isGenerating={unified.isGenerating}
+              generationStage={unified.generationStage}
+              placeholder={activeModeData.placeholder}
+              activeModeData={activeModeData}
+              allModes={[...CHAT_MODES, ...chat.customModes]}
+              onModeChange={(mode) => chat.updateChatMode(chat.currentChatId, mode)}
+              currentChatId={chat.currentChatId}
+              chatMode={chat.chatMode}
+              setChatMode={chat.setChatMode}
+              onActClick={async () => {
+                if (!isPremium) {
+                  setProNudgeReason("Act Mode (Auto-Execution)");
+                  setShowProNudge(true);
+                  return;
+                }
+                chat.setChatMode("act");
+                const lastMsg = chat.messages[chat.messages.length - 1];
+                if (lastMsg?.role === "assistant" && (lastMsg.plan || lastMsg.explanation?.includes("<plan>"))) {
+                  await handlePromptSubmit(null, lastMsg.prompt || chat.messages[chat.messages.length - 2]?.content);
+                }
+              }}
+              tokensLeft={totalRemaining}
+              tokensLimit={subLimit}
+              resetsAt={resetsAt}
+              planKey={planKey}
+              themePrimary={currentTheme.primary}
+              themeSecondary={currentTheme.secondary}
+              suggestions={composerSuggestions}
+              onSuggestionClick={(item) => {
+                if (item.submit) handlePromptSubmit(null, item.prompt);
+                else setPrompt(item.prompt);
+              }}
+              isPremium={isPremium}
+              onProNudge={(reason) => {
+                setProNudgeReason(reason || "This feature");
+                setShowProNudge(true);
+              }}
+              onFileUpload={handleFileUpload}
+              disabled={unified.isGenerating}
+            />
           </div>
 
           {/* Right Side: Live Preview (Focus Mode) */}

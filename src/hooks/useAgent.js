@@ -67,11 +67,11 @@ export function useAgent(user, notify, refreshBilling) {
       if (!res.ok) throw new Error("Agent request failed");
       const data = await res.json();
 
-      // 3. Save Assistant Thought to Firestore
-      if (activeChatId) {
+      // 3. Save Assistant Thought to Firestore (skip for "chat" — streamed reply is stored as requestId-assistant by handleSubmit)
+      if (activeChatId && data.action !== "chat") {
         await setDoc(doc(db, "users", user.uid, "chats", activeChatId, "messages", `${requestId}-agent`), {
           role: "assistant",
-          content: data.action === "chat" ? (data.thought || "I've processed your request.") : "",
+          content: data.thought || "",
           thought: data.thought || "",
           action: data.action || "chat",
           mode: data.mode || null,
