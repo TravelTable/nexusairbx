@@ -17,6 +17,26 @@ import {
 import { v4 as uuidv4 } from "uuid";
 import { auth, db } from "../firebase";
 import { BACKEND_URL } from "../config";
+import { FEATURE_FLAGS } from "../lib/featureFlags";
+import {
+  applyStreamDelta,
+  createPendingStreamState,
+  formatPendingStreamContent,
+} from "../lib/streaming";
+import { emitStreamMetric } from "../lib/streamMetrics";
+
+const STREAM_MAX_RETRIES = 3;
+const RESULT_MAX_POLLS = 6;
+const RESULT_POLL_BASE_MS = 1000;
+
+const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+function resolveResultUrl(jobId, resultUrl) {
+  if (resultUrl && /^https?:\/\//i.test(resultUrl)) return resultUrl;
+  if (resultUrl && resultUrl.startsWith("/")) return `${BACKEND_URL}${resultUrl}`;
+  if (resultUrl) return `${BACKEND_URL}/${resultUrl.replace(/^\/+/, "")}`;
+  return `${BACKEND_URL}/api/generate/result?jobId=${encodeURIComponent(jobId)}`;
+}
 
 export function useAiChat(user, settings, refreshBilling, notify) {
   const [messages, setMessages] = useState([]);
@@ -58,6 +78,7 @@ export function useAiChat(user, settings, refreshBilling, notify) {
   const messagesUnsubRef = useRef(null);
   const chatUnsubRef = useRef(null);
   const customModesUnsubRef = useRef(null);
+  const streamStateRef = useRef(createPendingStreamState());
 
   // Load custom modes
   useEffect(() => {
@@ -198,16 +219,162 @@ export function useAiChat(user, settings, refreshBilling, notify) {
       const jobData = await jobRes.json();
       const jobId = jobData.jobId;
       if (!jobId) throw new Error("Failed to create generation job");
+      const resultUrl = resolveResultUrl(jobId, jobData.resultUrl);
+      const enableDeltaStreaming =
+        FEATURE_FLAGS.streamV2 &&
+        (jobData.streamVersion === "v2" || !jobData.streamVersion);
 
       setGenerationStage("Generating...");
+      streamStateRef.current = createPendingStreamState();
       
-      // 2. Connect to Stream (backend processes fully, sends only final "done" event)
+      const fetchFinalResult = async () => {
+        for (let attempt = 0; attempt < RESULT_MAX_POLLS; attempt++) {
+          const res = await fetch(resultUrl, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              Accept: "application/json",
+            },
+          });
+
+          if (res.status === 202) {
+            await wait(RESULT_POLL_BASE_MS * (attempt + 1));
+            continue;
+          }
+
+          if (!res.ok) {
+            const text = await res.text().catch(() => "");
+            throw new Error(text || `Failed to recover result (${res.status})`);
+          }
+
+          const data = await res.json();
+          const pending = data?.status === "pending" || data?.done === false;
+          if (pending) {
+            await wait(RESULT_POLL_BASE_MS * (attempt + 1));
+            continue;
+          }
+          return data?.result || data;
+        }
+
+        throw new Error("Timed out while recovering streamed generation");
+      };
+
+      // 2. Connect to stream (v1 done-only and v2 delta+done are both supported)
       return new Promise((resolve, reject) => {
-        let eventSource = new EventSource(`${BACKEND_URL}/api/generate/stream?jobId=${jobId}&token=${token}&mode=${currentMode}`);
+        let eventSource = null;
         let receivedDone = false;
+        let finalized = false;
         const isAutoExecuting = currentMode === "act";
         let retryCount = 0;
-        const maxRetries = 3;
+        const metrics = {
+          startedAt: Date.now(),
+          firstDeltaAt: null,
+          deltaCount: 0,
+          usedFallback: false,
+        };
+
+        const streamUrl = `${BACKEND_URL}/api/generate/stream?jobId=${jobId}&token=${token}&mode=${currentMode}`;
+
+        const failAndReject = (err, tag = "network") => {
+          emitStreamMetric("error", {
+            jobId,
+            tag,
+            message: err?.message || "Generation failed",
+            retries: retryCount,
+          });
+          setIsGenerating(false);
+          setPendingMessage(null);
+          setGenerationStage("");
+          reject(err instanceof Error ? err : new Error(String(err || "Generation failed")));
+        };
+
+        const finalizeWithData = async (data, source = "done") => {
+          if (finalized) return;
+          finalized = true;
+
+          setGenerationStage("Finalizing...");
+          const assistantMsgRef = doc(db, "users", user.uid, "chats", activeChatId, "messages", `${requestId}-assistant`);
+
+          const msgPayload = {
+            role: "assistant",
+            content: "",
+            explanation: data?.explanation || "",
+            thought: data?.thought || "",
+            code: data?.content || data?.code || "", // Backend sends "content" for code.
+            projectId: data?.projectId || null,
+            versionNumber: data?.versionNumber || 1,
+            createdAt: serverTimestamp(),
+            requestId,
+            jobId,
+            artifactId: data?.artifactId,
+            isAutoExecuting,
+            metadata: {
+              ...(data?.metadata || {}),
+              mode: currentMode,
+              qaReport: data?.qaReport || null
+            }
+          };
+
+          if (data?.options) msgPayload.options = data.options;
+          if (data?.plan) msgPayload.plan = data.plan;
+
+          await setDoc(assistantMsgRef, msgPayload);
+
+          await updateDoc(doc(db, "users", user.uid, "chats", activeChatId), {
+            updatedAt: serverTimestamp(),
+            lastMessage: content.slice(0, 50),
+          });
+
+          // Notify UI hook if this was a UI generation
+          if (data?.projectId) {
+            window.dispatchEvent(new CustomEvent("nexus:uiGenerated", {
+              detail: {
+                ...data,
+                uiModuleLua: data.uiModuleLua || data.content,
+                systemsLua: data.systemsLua || ""
+              }
+            }));
+          }
+
+          emitStreamMetric("complete", {
+            jobId,
+            source,
+            retries: retryCount,
+            deltaCount: metrics.deltaCount,
+            firstDeltaMs: metrics.firstDeltaAt ? metrics.firstDeltaAt - metrics.startedAt : null,
+            totalMs: Date.now() - metrics.startedAt,
+            fallbackUsed: metrics.usedFallback,
+          });
+
+          refreshBilling();
+          setIsGenerating(false);
+          setPendingMessage(null);
+          setGenerationStage("");
+        };
+
+        const recoverFromStreamFailure = async (rawError = null) => {
+          if (finalized || receivedDone) return;
+
+          if (retryCount < STREAM_MAX_RETRIES) {
+            retryCount += 1;
+            emitStreamMetric("retry", { jobId, retryCount });
+            setTimeout(() => {
+              connect();
+            }, 1000 * retryCount);
+            return;
+          }
+
+          try {
+            metrics.usedFallback = true;
+            setGenerationStage("Recovering stream...");
+            emitStreamMetric("fallback_start", { jobId });
+            const recovered = await fetchFinalResult();
+            await finalizeWithData(recovered, "fallback");
+            resolve();
+          } catch (fallbackErr) {
+            const errorMsg = rawError?.message || fallbackErr?.message || "Generation failed";
+            failAndReject(new Error(errorMsg), "timeout");
+          }
+        };
 
         const setupListeners = (es) => {
           es.addEventListener("stage", (e) => {
@@ -219,88 +386,54 @@ export function useAiChat(user, settings, refreshBilling, notify) {
             }
           });
 
+          es.addEventListener("delta", (e) => {
+            if (!enableDeltaStreaming) return;
+            try {
+              const data = JSON.parse(e.data);
+              streamStateRef.current = applyStreamDelta(streamStateRef.current, data);
+              const pendingContent = formatPendingStreamContent(streamStateRef.current);
+              setPendingMessage((prev) => {
+                if (!prev) return prev;
+                return { ...prev, content: pendingContent };
+              });
+              metrics.deltaCount += 1;
+              if (!metrics.firstDeltaAt) {
+                metrics.firstDeltaAt = Date.now();
+                emitStreamMetric("first_delta", { jobId, msFromStart: metrics.firstDeltaAt - metrics.startedAt });
+              }
+            } catch (err) {
+              console.error("Failed to parse stream delta:", err);
+              emitStreamMetric("error", { jobId, tag: "protocol", message: "delta_parse_failed" });
+            }
+          });
+
           es.addEventListener("done", async (e) => {
             receivedDone = true;
             try {
               const data = JSON.parse(e.data);
               es.close();
-              
-              setGenerationStage("Finalizing...");
-              const assistantMsgRef = doc(db, "users", user.uid, "chats", activeChatId, "messages", `${requestId}-assistant`);
-              
-              const msgPayload = {
-                role: "assistant",
-                content: "",
-                explanation: data.explanation || "",
-                thought: data.thought || "",
-                code: data.content || "", // Backend sends 'content' for code in stream
-                projectId: data.projectId || null,
-                versionNumber: data.versionNumber || 1,
-                createdAt: serverTimestamp(),
-                requestId,
-                jobId,
-                artifactId: data.artifactId,
-                isAutoExecuting,
-                metadata: {
-                  ...(data.metadata || {}),
-                  mode: currentMode,
-                  qaReport: data.qaReport || null
-                }
-              };
-
-              if (data.options) msgPayload.options = data.options;
-              if (data.plan) msgPayload.plan = data.plan;
-
-              await setDoc(assistantMsgRef, msgPayload);
-
-              await updateDoc(doc(db, "users", user.uid, "chats", activeChatId), {
-                updatedAt: serverTimestamp(),
-                lastMessage: content.slice(0, 50),
-              });
-              
-              // Notify UI hook if this was a UI generation
-              if (data.projectId) {
-                // Ensure we pass the new format if available
-                window.dispatchEvent(new CustomEvent("nexus:uiGenerated", { 
-                  detail: {
-                    ...data,
-                    uiModuleLua: data.uiModuleLua || data.content,
-                    systemsLua: data.systemsLua || ""
-                  } 
-                }));
-              }
-
-              refreshBilling();
-              setIsGenerating(false);
-              setPendingMessage(null);
-              setGenerationStage("");
+              await finalizeWithData(data, "done");
               resolve();
             } catch (err) {
-              reject(err);
+              failAndReject(err, "protocol");
             }
           });
 
-          es.addEventListener("error", (e) => {
+          es.addEventListener("error", async () => {
             es.close();
-            if (retryCount < maxRetries && !receivedDone) {
-              retryCount++;
-              console.log(`Retrying connection (${retryCount}/${maxRetries})...`);
-              setTimeout(() => {
-                eventSource = new EventSource(`${BACKEND_URL}/api/generate/stream?jobId=${jobId}&token=${token}&mode=${currentMode}`);
-                setupListeners(eventSource);
-              }, 1000 * retryCount);
-            } else {
-              let errorMsg = "Generation failed";
-              try {
-                const data = JSON.parse(e.data);
-                if (data.error) errorMsg = data.error;
-              } catch (err) {}
-              reject(new Error(errorMsg));
-            }
+            emitStreamMetric("error", { jobId, tag: "network", retryCount });
+            await recoverFromStreamFailure();
           });
         };
 
-        setupListeners(eventSource);
+        const connect = () => {
+          eventSource?.close?.();
+          eventSource = new EventSource(streamUrl);
+          emitStreamMetric("connect", { jobId, retryCount });
+          setupListeners(eventSource);
+        };
+
+        connect();
       });
 
     } catch (e) {

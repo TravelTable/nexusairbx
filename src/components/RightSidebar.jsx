@@ -232,18 +232,36 @@ export default function RightSidebar({
 
   // Helper: check if user is pro or team by entitlements
   const isProOrTeam = entitlements.includes("pro") || entitlements.includes("team");
+  const FREE_MODEL_VALUE = "deepseek-free";
 
   // For template quota
   const [showUpgradeBanner, setShowUpgradeBanner] = useState(false);
-// For locked model selection
-const [lockedModelBanner, setLockedModelBanner] = useState(null); // No longer used, but kept for legacy
+  // For locked model selection
+  const [lockedModelBanner, setLockedModelBanner] = useState(null);
 
-// --- Model Picker Filtering ---
-// For this version, allow all models for everyone (even free users)
-const allowedModels = modelOptions;
-const lockedModels = [];
-const displayAllowedModels = modelOptions;
-const displayLockedModels = [];
+  // --- Model Picker Filtering ---
+  const safeModelOptions = Array.isArray(modelOptions) ? modelOptions : [];
+  const freeModelOption = safeModelOptions.find((m) => m.value === FREE_MODEL_VALUE) || {
+    value: FREE_MODEL_VALUE,
+    label: "DeepSeek Core (Free Default)",
+  };
+  const displayAllowedModels = isProOrTeam
+    ? safeModelOptions.filter((m) => m.value !== FREE_MODEL_VALUE)
+    : [freeModelOption];
+  const displayLockedModels = isProOrTeam
+    ? []
+    : safeModelOptions.filter((m) => m.value !== FREE_MODEL_VALUE);
+
+  useEffect(() => {
+    if (!settings?.modelVersion) return;
+    if (!isProOrTeam && settings.modelVersion !== FREE_MODEL_VALUE) {
+      setSettings((prev) => ({ ...prev, modelVersion: FREE_MODEL_VALUE }));
+      return;
+    }
+    if (isProOrTeam && settings.modelVersion === FREE_MODEL_VALUE) {
+      setSettings((prev) => ({ ...prev, modelVersion: "nexus-4" }));
+    }
+  }, [FREE_MODEL_VALUE, isProOrTeam, settings?.modelVersion, setSettings]);
 
   // --- Template Quota Meter ---
   // For demo: count userPromptTemplates as "used"
@@ -265,11 +283,15 @@ const displayLockedModels = [];
   // isProOrTeam is now based on entitlements above
 
   // --- Handle Model Change ---
-function handleModelChange(e) {
-  const value = e.target.value;
-  // All models are allowed for all users
-  setSettings((prev) => ({ ...prev, modelVersion: value }));
-}
+  function handleModelChange(e) {
+    const value = e.target.value;
+    if (!isProOrTeam && value !== FREE_MODEL_VALUE) {
+      setLockedModelBanner(value);
+      return;
+    }
+    setLockedModelBanner(null);
+    setSettings((prev) => ({ ...prev, modelVersion: value }));
+  }
 
   // --- Handle Add Template ---
   function handleAddTemplate() {
@@ -321,11 +343,24 @@ function handleModelChange(e) {
           ))}
 
           {/* Locked models */}
-{/* No locked models for any user */}
+          {displayLockedModels.map((m) => (
+            <label
+              key={m.value}
+              className="flex items-center gap-2 px-3 py-2 rounded border border-gray-800 opacity-70 cursor-not-allowed"
+            >
+              <input type="radio" name="model-locked" disabled className="accent-[#9b5de5]" />
+              <Lock className="w-4 h-4 text-gray-500" />
+              <span className="font-medium text-gray-400">{m.label} (Pro)</span>
+            </label>
+          ))}
         </div>
 
         {/* Inline “locked” banner when user tries to pick a locked model */}
-{/* No locked model banner needed, all models are available */}
+        {!isProOrTeam && lockedModelBanner && (
+          <div className="mt-2 text-xs text-amber-300 bg-amber-950/30 border border-amber-800 rounded px-2 py-1">
+            Upgrade to Pro or Team to select premium GPT models.
+          </div>
+        )}
       </div>
 
       {/* Creativity Picker */}

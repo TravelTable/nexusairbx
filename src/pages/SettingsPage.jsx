@@ -95,7 +95,7 @@ const SettingsPage = () => {
 
   const { settings, updateSettings } = useSettings();
   const [codingStandards, setCodingStandards] = useState(settings.codingStandards || "");
-  const { plan, totalRemaining, subLimit, resetsAt, portal, cancel } = useBilling();
+  const { plan, totalRemaining, subLimit, resetsAt, portal, cancel, entitlements = [] } = useBilling();
   const [usageData, setUsageData] = useState({ logs: [], chartData: [] });
   const [devStats, setDevStats] = useState(null);
   const [devUsers, setDevUsers] = useState([]);
@@ -115,6 +115,7 @@ const SettingsPage = () => {
   const [newTeamName, setNewTeamName] = useState("");
 
   const navigate = useNavigate();
+  const isPremiumPlan = entitlements.includes("pro") || entitlements.includes("team") || plan === "PRO" || plan === "TEAM";
 
   const fetchUsage = useCallback(async () => {
     if (!user) return;
@@ -184,6 +185,15 @@ const SettingsPage = () => {
       fetchTeams();
     }
   }, [activeTab, fetchDevData, fetchUsage, fetchTeams, isDev]);
+
+  useEffect(() => {
+    if (!isPremiumPlan && settings.modelVersion !== "deepseek-free") {
+      updateSettings({ modelVersion: "deepseek-free" });
+    }
+    if (isPremiumPlan && settings.modelVersion === "deepseek-free") {
+      updateSettings({ modelVersion: "nexus-4" });
+    }
+  }, [isPremiumPlan, settings.modelVersion, updateSettings]);
 
   const fetchInspectorData = async (uid) => {
     setDevLoading(true);
@@ -374,7 +384,7 @@ const SettingsPage = () => {
                 </div>
                 <p className="text-gray-400 mb-6">
                   {plan === "FREE" 
-                    ? "Upgrade to Pro to unlock Nexus-5 (GPT-5.2), 500,000 token monthly allowance, and advanced Roblox Studio integration."
+                    ? "Free plan uses DeepSeek Core by default. Upgrade to Pro for Nexus-5 (GPT-5.2), 500,000 monthly tokens, and advanced Roblox Studio integration."
                     : `Your Pro subscription includes Nexus-5 (GPT-5.2) and a 500,000 token monthly allowance. Resets on ${resetsAt ? new Date(resetsAt).toLocaleDateString() : "N/A"}`}
                 </p>
                 
@@ -517,12 +527,29 @@ const SettingsPage = () => {
                   <label className="text-sm text-gray-400">Default Model</label>
                   <select 
                     value={settings.modelVersion}
-                    onChange={(e) => updateSettings({ modelVersion: e.target.value })}
+                    onChange={(e) => {
+                      const next = e.target.value;
+                      if (!isPremiumPlan && next !== "deepseek-free") return;
+                      updateSettings({ modelVersion: next });
+                    }}
                     className="w-full bg-black border border-gray-800 rounded-xl p-3 text-white outline-none focus:border-purple-500 transition-colors"
                   >
-                    <option value="nexus-4">Nexus-5 (Smarter AI, GPT-5.2)</option>
-                    <option value="nexus-3">Nexus-4 (Legacy, Fast)</option>
+                    {!isPremiumPlan ? (
+                      <>
+                        <option value="deepseek-free">DeepSeek Core (Free Default)</option>
+                        <option value="nexus-4" disabled>Nexus-5 (GPT-5.2) - Pro</option>
+                        <option value="nexus-3" disabled>Nexus-4 (Legacy, Fast) - Pro</option>
+                      </>
+                    ) : (
+                      <>
+                        <option value="nexus-4">Nexus-5 (GPT-5.2)</option>
+                        <option value="nexus-3">Nexus-4 (Legacy, Fast)</option>
+                      </>
+                    )}
                   </select>
+                  {!isPremiumPlan && (
+                    <p className="text-[11px] text-gray-500">Upgrade to Pro to unlock GPT model selection.</p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm text-gray-400">Creativity Level</label>

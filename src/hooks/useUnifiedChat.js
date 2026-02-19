@@ -5,6 +5,7 @@ import { v4 as uuidv4 } from "uuid";
 import { useAiChat } from "./useAiChat";
 import { useUiBuilder } from "./useUiBuilder";
 import { useAgent } from "./useAgent";
+import { isPremiumMode } from "../lib/modeGates";
 
 const AGENT_PLACEHOLDER = {
   role: "assistant",
@@ -27,6 +28,8 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
     onSuggestAssets,
     onUiAudit,
     onSignInNudge,
+    onRequireUpgrade,
+    isPremium = false,
     getModeLabel = (id) => id,
   } = options;
 
@@ -52,7 +55,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
   }, [chat.generationStage, ui.generationStage, agent.isThinking]);
 
   const handleSubmit = useCallback(
-    async (currentPrompt, currentAttachments = [], submitOptions = {}) => {
+    async (currentPrompt, currentAttachments = []) => {
       const prompt = (currentPrompt || "").trim();
       if (!prompt && currentAttachments.length === 0) {
         if (!user && onSignInNudge) onSignInNudge();
@@ -70,10 +73,21 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
         "/optimize": "performance",
         "/logic": "logic",
       };
+
+      const trySwitchMode = (mode) => {
+        if (!mode) return false;
+        if (isPremiumMode(mode) && !isPremium) {
+          onRequireUpgrade?.(mode);
+          return false;
+        }
+        chat.updateChatMode(chat.currentChatId, mode);
+        return true;
+      };
+
       for (const [cmd, mode] of Object.entries(commandMap)) {
         if (prompt.startsWith(cmd)) {
-          effectiveMode = mode;
-          chat.updateChatMode(chat.currentChatId, mode);
+          const switched = trySwitchMode(mode);
+          if (switched) effectiveMode = mode;
           break;
         }
       }
@@ -186,12 +200,13 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
         }
 
         if (data.suggestedMode) {
-          chat.updateChatMode(activeChatId, data.suggestedMode);
-          const modeLabel = getModeLabel(data.suggestedMode);
-          notify({
-            message: `Switched to ${modeLabel} for this task.`,
-            type: "info",
-          });
+          if (trySwitchMode(data.suggestedMode)) {
+            const modeLabel = getModeLabel(data.suggestedMode);
+            notify({
+              message: `Switched to ${modeLabel} for this task.`,
+              type: "info",
+            });
+          }
         }
 
         switch (data.action) {
@@ -273,6 +288,8 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
       onSuggestAssets,
       onUiAudit,
       onSignInNudge,
+      onRequireUpgrade,
+      isPremium,
       getModeLabel,
     ]
   );

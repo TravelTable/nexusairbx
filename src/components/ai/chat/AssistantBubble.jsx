@@ -155,14 +155,7 @@ export default function AssistantBubble({
                 Nexus detected you might need specialized tools for this task.
               </p>
               <button
-                onClick={() => {
-                  const isProMode = ["security", "performance", "data", "system", "animator"].includes(m.suggestedMode);
-                  if (isProMode && user?.plan !== "PRO" && user?.plan !== "TEAM") {
-                    onToggleActMode({ prompt: `Switch to ${m.suggestedMode} Mode` });
-                    return;
-                  }
-                  onModeChange(m.suggestedMode);
-                }}
+                onClick={() => onModeChange(m.suggestedMode)}
                 className="w-full py-3 rounded-xl bg-[#9b5de5] text-white font-black text-sm flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] transition-all shadow-[0_0_20px_rgba(155,93,229,0.4)]"
               >
                 <RefreshCw className="w-4 h-4" />

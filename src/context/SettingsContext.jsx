@@ -5,7 +5,7 @@ import { onAuthStateChanged } from "firebase/auth";
 const SettingsContext = createContext(null);
 
 const DEFAULT_SETTINGS = {
-  modelVersion: "nexus-4",
+  modelVersion: "deepseek-free",
   creativity: 0.7,
   codeStyle: "optimized",
   verbosity: "concise",

@@ -91,7 +91,7 @@ export default function ChatEmptyState({
               onClick={() => onModeChange(mode.id)}
               className={`p-5 rounded-2xl bg-gray-900/40 border transition-all text-left group relative overflow-hidden ${activeMode === mode.id ? "border-white/20 ring-2 ring-offset-2 ring-offset-black ring-white/10" : `border-gray-800 ${mode.border}`}`}
             >
-              {["security", "performance", "data", "system", "animator"].includes(mode.id) && (
+              {mode.requiresPremium && (
                 <div className="absolute top-3 right-3 z-10">
                   <Zap className="w-3 h-3 text-[#9b5de5] fill-current" />
                 </div>
@@ -107,8 +107,7 @@ export default function ChatEmptyState({
               <div className="font-bold text-white mb-1 text-sm flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   {mode.label}
-                  {["security", "performance", "data", "system", "animator"].includes(mode.id) &&
-                    !isPremium && (
+                  {mode.requiresPremium && !isPremium && (
                       <span className="px-1.5 py-0.5 rounded bg-[#9b5de5]/20 text-[#9b5de5] text-[8px] font-black uppercase tracking-widest">
                         Pro
                       </span>

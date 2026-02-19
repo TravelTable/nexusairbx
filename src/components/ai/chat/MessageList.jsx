@@ -2,6 +2,7 @@ import React from "react";
 import { NexusRBXAvatar, UserAvatar, FormatText, SkeletonArtifact } from "../AiComponents";
 import { stripTags } from "./stripTags";
 import MessageBubble from "./MessageBubble";
+import { parsePendingStreamContent } from "../../../lib/streaming";
 
 export default function MessageList({
   messages,
@@ -23,6 +24,8 @@ export default function MessageList({
   onPushToStudio,
   onFixUiAudit,
 }) {
+  const pendingParsed = parsePendingStreamContent(pendingMessage?.content || "");
+
   return (
     <div className="flex-1 overflow-y-auto scrollbar-hide space-y-6">
       {messages.map((m) => (
@@ -74,13 +77,38 @@ export default function MessageList({
               ) : (
                 <div className="space-y-4">
                   <div className="p-4 md:p-6 rounded-3xl bg-[#121212]/80 border border-white/10 backdrop-blur-xl shadow-2xl">
-                    <div className="text-[15px] md:text-[16px] whitespace-pre-wrap leading-relaxed text-gray-100">
-                      <FormatText text={stripTags(pendingMessage.content)} />
-                    </div>
+                    {pendingParsed.hasStructured ? (
+                      <div className="space-y-4">
+                        {pendingParsed.explanation && (
+                          <div className="text-[15px] md:text-[16px] whitespace-pre-wrap leading-relaxed text-gray-100">
+                            <FormatText text={pendingParsed.explanation} />
+                          </div>
+                        )}
+                        {pendingParsed.code && (
+                          <div className="rounded-2xl border border-white/10 bg-black/40 overflow-hidden">
+                            <div className="px-3 py-2 border-b border-white/5 text-[10px] font-black uppercase tracking-widest text-gray-500">
+                              Streaming Code
+                            </div>
+                            <pre className="p-4 text-[12px] leading-relaxed text-gray-300 whitespace-pre overflow-x-auto">
+                              {pendingParsed.code}
+                            </pre>
+                          </div>
+                        )}
+                        {pendingParsed.plain && (
+                          <div className="text-[14px] whitespace-pre-wrap leading-relaxed text-gray-300">
+                            <FormatText text={pendingParsed.plain} />
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="text-[15px] md:text-[16px] whitespace-pre-wrap leading-relaxed text-gray-100">
+                        <FormatText text={stripTags(pendingMessage.content)} />
+                      </div>
+                    )}
                   </div>
                   {pendingMessage.type === "ui" && <SkeletonArtifact type="ui" />}
                   {pendingMessage.type === "chat" &&
-                    pendingMessage.content?.includes("```") && (
+                    (pendingMessage.content?.includes("```") || pendingParsed.code) && (
                       <SkeletonArtifact type="code" />
                     )}
                 </div>

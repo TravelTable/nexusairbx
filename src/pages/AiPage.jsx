@@ -57,6 +57,7 @@ import ChatComposer from "../components/ai/chat/ChatComposer";
 import LibraryView from "../components/ai/LibraryView";
 import GameProfileWizard from "../components/ai/GameProfileWizard";
 import ProjectArchitecturePanel from "../components/ai/ProjectArchitecturePanel";
+import { isPremiumMode } from "../lib/modeGates";
 
 function AiPage() {
   // 1. External Hooks
@@ -182,6 +183,12 @@ function AiPage() {
     onSuggestAssets: handleSuggestAssets,
     onUiAudit: handleUiAudit,
     onSignInNudge: () => setShowSignInNudge(true),
+    isPremium,
+    onRequireUpgrade: (modeId) => {
+      const modeLabel = CHAT_MODES.find((m) => m.id === modeId)?.label || modeId;
+      setProNudgeReason(`${modeLabel} Mode`);
+      setShowProNudge(true);
+    },
     getModeLabel: (id) => CHAT_MODES.find((m) => m.id === id)?.label || id,
   });
 
@@ -208,6 +215,24 @@ function AiPage() {
   }, [chat]);
 
   const activeModeData = CHAT_MODES.find(m => m.id === chat.activeMode) || CHAT_MODES[0];
+  const getModeLabel = useCallback((modeId) => {
+    return (
+      CHAT_MODES.find((m) => m.id === modeId)?.label ||
+      chat.customModes.find((m) => m.id === modeId)?.label ||
+      modeId
+    );
+  }, [chat.customModes]);
+
+  const handleModeChange = useCallback((modeId) => {
+    if (!modeId) return false;
+    if (isPremiumMode(modeId) && !isPremium) {
+      setProNudgeReason(`${getModeLabel(modeId)} Mode`);
+      setShowProNudge(true);
+      return false;
+    }
+    chat.updateChatMode(chat.currentChatId, modeId);
+    return true;
+  }, [chat, getModeLabel, isPremium]);
 
   // Mode-specific theme colors for background glows
   const modeColors = {
@@ -651,7 +676,7 @@ function AiPage() {
                   user={user} 
                   activeMode={chat.activeMode}
                   customModes={chat.customModes}
-                  onModeChange={(mode) => chat.updateChatMode(chat.currentChatId, mode)}
+                  onModeChange={handleModeChange}
                   onCreateCustomMode={() => {
                     if (!user) {
                       setShowSignInNudge(true);
@@ -725,7 +750,8 @@ function AiPage() {
                     if (el) el.focus();
                   }}
                   onPlanSystem={() => {
-                    chat.updateChatMode(chat.currentChatId, "system");
+                    const switched = handleModeChange("system");
+                    if (!switched) return;
                     chat.setChatMode("plan");
                     setPrompt("Help me plan a system: services, remotes, and data flow.");
                     const el = document.getElementById("tour-prompt-box");
@@ -865,16 +891,11 @@ function AiPage() {
               placeholder={activeModeData.placeholder}
               activeModeData={activeModeData}
               allModes={[...CHAT_MODES, ...chat.customModes]}
-              onModeChange={(mode) => chat.updateChatMode(chat.currentChatId, mode)}
+              onModeChange={handleModeChange}
               currentChatId={chat.currentChatId}
               chatMode={chat.chatMode}
               setChatMode={chat.setChatMode}
               onActClick={async () => {
-                if (!isPremium) {
-                  setProNudgeReason("Act Mode (Auto-Execution)");
-                  setShowProNudge(true);
-                  return;
-                }
                 chat.setChatMode("act");
                 const lastMsg = chat.messages[chat.messages.length - 1];
                 if (lastMsg?.role === "assistant" && (lastMsg.plan || lastMsg.explanation?.includes("<plan>"))) {

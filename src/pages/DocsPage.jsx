@@ -524,7 +524,7 @@ function TroubleshootingContent() {
         <div className="space-y-6">
           <div>
             <h4 className="font-bold text-white">Is NexusRBX free?</h4>
-            <p className="text-sm text-gray-400">Yes, we offer a free tier with a monthly token allowance. Paid plans offer more tokens and advanced models like GPT-5.2.</p>
+            <p className="text-sm text-gray-400">Yes, we offer a free tier with a monthly token allowance on DeepSeek Core. Paid plans offer more tokens and advanced models like GPT-5.2.</p>
           </div>
           <div>
             <h4 className="font-bold text-white">What are tokens?</h4>
