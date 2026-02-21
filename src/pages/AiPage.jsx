@@ -10,7 +10,6 @@ import { useNavigate, useLocation } from "react-router-dom";
 import {
   Menu,
   Library,
-  Plus,
   Sparkles,
   Layout,
   X,
@@ -194,7 +193,6 @@ function AiPage() {
 
   const chat = unified;
   const ui = unified.ui;
-  const agent = unified.agent;
   const game = useGameProfile(settings, updateSettings);
   const scriptManager = useAiScripts(user, notify);
 
