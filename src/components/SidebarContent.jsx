@@ -27,6 +27,7 @@ import {
   getVersionStr,
   fromNow,
 } from "../lib/sidebarUtils";
+import { AI_EVENTS, emitAiEvent } from "../lib/aiEvents";
 import {
   getFirestore,
   doc,
@@ -144,16 +145,14 @@ export default function SidebarContent({
   const handleScriptSelect = useCallback(
     (scriptId) => {
       setCurrentScriptId(scriptId);
-      window.dispatchEvent(
-        new CustomEvent("nexus:openCodeDrawer", { detail: { scriptId } })
-      );
+      emitAiEvent(AI_EVENTS.OPEN_CODE_DRAWER, { scriptId });
       if (isMobile && typeof onSelect === "function") onSelect();
     },
     [isMobile, setCurrentScriptId, onSelect]
   );
 
   const handleCreateChatLocal = useCallback(() => {
-    window.dispatchEvent(new CustomEvent("nexus:startDraft"));
+    emitAiEvent(AI_EVENTS.START_DRAFT);
     if (isMobile && typeof onSelect === "function") onSelect();
   }, [isMobile, onSelect]);
 
@@ -185,9 +184,7 @@ export default function SidebarContent({
       if (typeof onSelectChat === "function") {
         onSelectChat(chatId);
       } else {
-        window.dispatchEvent(
-          new CustomEvent("nexus:openChat", { detail: { id: chatId } })
-        );
+        emitAiEvent(AI_EVENTS.OPEN_CHAT, { id: chatId });
       }
       if (isMobile && typeof onSelect === "function") onSelect();
     },
@@ -390,17 +387,13 @@ export default function SidebarContent({
                         isSelected ? "bg-gray-800/60 border-[#00f5d4]" : "bg-gray-900/40 border-gray-700"
                       }`}
                       onClick={() => {
-                        window.dispatchEvent(
-                          new CustomEvent("nexus:openCodeDrawer", {
-                            detail: {
-                              scriptId: currentScriptId,
-                              code: ver.code,
-                              title: ver.title || currentScript?.title || "Script",
-                              versionNumber: ver.versionNumber || getVersionStr(ver),
-                              explanation: ver.explanation || "",
-                            },
-                          })
-                        );
+                        emitAiEvent(AI_EVENTS.OPEN_CODE_DRAWER, {
+                          scriptId: currentScriptId,
+                          code: ver.code,
+                          title: ver.title || currentScript?.title || "Script",
+                          versionNumber: ver.versionNumber || getVersionStr(ver),
+                          explanation: ver.explanation || "",
+                        });
                       }}
                     >
                       <div className="flex-1 min-w-0">

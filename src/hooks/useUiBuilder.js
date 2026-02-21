@@ -11,6 +11,7 @@ import { v4 as uuidv4 } from "uuid";
 import { aiPipeline, aiRefineLua, exportLua } from "../lib/uiBuilderApi";
 import { cryptoRandomId } from "../lib/versioning";
 import { formatNumber } from "../lib/aiUtils";
+import { AI_EVENTS, onAiEvent } from "../lib/aiEvents";
 
 export function useUiBuilder(user, settings, refreshBilling, notify) {
   const [uiGenerations, setUiGenerations] = useState([]);
@@ -37,8 +38,8 @@ export function useUiBuilder(user, settings, refreshBilling, notify) {
         setActiveUiId(data.projectId);
       }
     };
-    window.addEventListener("nexus:uiGenerated", handleUiGenerated);
-    return () => window.removeEventListener("nexus:uiGenerated", handleUiGenerated);
+    const unbind = onAiEvent(AI_EVENTS.UI_GENERATED, handleUiGenerated);
+    return () => unbind();
   }, []);
 
   const activeUi = uiGenerations.find((g) => g.id === activeUiId) || uiGenerations[0] || null;

@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { FileCode, XCircle } from "lucide-react";
+import { AI_EVENTS, emitAiEvent } from "../lib/aiEvents";
 
 export default function ScriptLoadingBarContainer({
   filename = "Script.lua",
@@ -155,19 +156,15 @@ export default function ScriptLoadingBarContainer({
 
                 // Fallback: if ready and no handler, try the legacy global drawer event
                 if (canView) {
-                  window.dispatchEvent(
-                    new CustomEvent("nexus:openCodeDrawer", {
-                      detail: {
-                        code:
-                          typeof window !== "undefined" && window.nexusCurrentCode
-                            ? window.nexusCurrentCode
-                            : "",
-                        title: displayName || filename || "Script",
-                        version: version,
-                        language: language,
-                      },
-                    })
-                  );
+                  emitAiEvent(AI_EVENTS.OPEN_CODE_DRAWER, {
+                    code:
+                      typeof window !== "undefined" && window.nexusCurrentCode
+                        ? window.nexusCurrentCode
+                        : "",
+                    title: displayName || filename || "Script",
+                    version: version,
+                    language: language,
+                  });
                 }
               }}
               disabled={!canView}

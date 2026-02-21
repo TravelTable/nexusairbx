@@ -2,6 +2,7 @@ import React from "react";
 import { Image as ImageIcon, Copy, Loader, Zap } from "lucide-react";
 import { Light as SyntaxHighlighter } from "react-syntax-highlighter";
 import { atomOneDark } from "react-syntax-highlighter/dist/esm/styles/hljs";
+import { AI_EVENTS, emitAiEvent } from "../../lib/aiEvents";
 
 export default function FunctionalityTab({
   funcPlan,
@@ -52,7 +53,7 @@ export default function FunctionalityTab({
                 <div className="flex items-center gap-1.5">
                   <button 
                     onClick={() => {
-                      window.dispatchEvent(new CustomEvent("nexus:saveScript", { detail: s }));
+                      emitAiEvent(AI_EVENTS.SAVE_SCRIPT, s);
                     }}
                     className="px-2 py-1 rounded bg-[#f15bb5]/10 hover:bg-[#f15bb5]/20 text-[#f15bb5] text-[10px] font-bold uppercase tracking-wider border border-[#f15bb5]/20 transition-colors"
                   >

@@ -31,6 +31,7 @@ import {
 } from "lucide-react";
 import { CHAT_MODES } from "../chatConstants";
 import { stripTags } from "./stripTags";
+import { AI_EVENTS, emitAiEvent } from "../../../lib/aiEvents";
 
 export default function AssistantBubble({
   message: m,
@@ -177,16 +178,12 @@ export default function AssistantBubble({
                     </div>
                     <button
                       onClick={() => {
-                        window.dispatchEvent(
-                          new CustomEvent("nexus:openCodeDrawer", {
-                            detail: {
-                              code: m.uiModuleLua || m.code,
-                              title: m.title || "Generated Script",
-                              explanation: m.explanation || "",
-                              versionNumber: m.versionNumber || 1,
-                            },
-                          })
-                        );
+                        emitAiEvent(AI_EVENTS.OPEN_CODE_DRAWER, {
+                          code: m.uiModuleLua || m.code,
+                          title: m.title || "Generated Script",
+                          explanation: m.explanation || "",
+                          versionNumber: m.versionNumber || 1,
+                        });
                       }}
                       className="px-3 py-1 rounded-lg bg-white/5 border border-white/10 text-[10px] font-black text-white uppercase tracking-widest hover:bg-white/10 transition-all"
                     >
@@ -210,7 +207,7 @@ export default function AssistantBubble({
                   qaReport={m.metadata?.qaReport}
                   actions={[
                     { label: "Push to Studio", icon: <Send className="w-4 h-4" />, onClick: () => onPushToStudio(m.artifactId, "script", { code: m.uiModuleLua || m.code, title: m.title }) },
-                    { label: "Save to Library", icon: <Bookmark className="w-4 h-4" />, onClick: () => window.dispatchEvent(new CustomEvent("nexus:saveScript", { detail: { name: m.title || "Security Audit", code: m.uiModuleLua || m.code } })) },
+                    { label: "Save to Library", icon: <Bookmark className="w-4 h-4" />, onClick: () => emitAiEvent(AI_EVENTS.SAVE_SCRIPT, { name: m.title || "Security Audit", code: m.uiModuleLua || m.code }) },
                     { label: "Share with Team", icon: <Users className="w-4 h-4" />, onClick: () => setSharingId(m.id) },
                     { label: "Copy Code", icon: copiedId === m.id ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />, onClick: () => handleCopy(m.uiModuleLua || m.code, m.id), primary: copiedId === m.id },
                   ]}
@@ -218,14 +215,10 @@ export default function AssistantBubble({
                   <SecurityReport
                     report={m.metadata.structuredData.report}
                     onFix={() => {
-                      window.dispatchEvent(
-                        new CustomEvent("nexus:applyCodePatch", {
-                          detail: {
-                            code: m.metadata.structuredData.patchedCode || m.code,
-                            messageId: m.id,
-                          },
-                        })
-                      );
+                      emitAiEvent(AI_EVENTS.APPLY_CODE_PATCH, {
+                        code: m.metadata.structuredData.patchedCode || m.code,
+                        messageId: m.id,
+                      });
                     }}
                   />
                 </ArtifactCard>
@@ -238,7 +231,7 @@ export default function AssistantBubble({
                   qaReport={m.metadata?.qaReport}
                   actions={[
                     { label: "Push to Studio", icon: <Send className="w-4 h-4" />, onClick: () => onPushToStudio(m.artifactId, "script", { code: m.uiModuleLua || m.code, title: m.title }) },
-                    { label: "Save to Library", icon: <Bookmark className="w-4 h-4" />, onClick: () => window.dispatchEvent(new CustomEvent("nexus:saveScript", { detail: { name: m.title || "Performance Audit", code: m.uiModuleLua || m.code } })) },
+                    { label: "Save to Library", icon: <Bookmark className="w-4 h-4" />, onClick: () => emitAiEvent(AI_EVENTS.SAVE_SCRIPT, { name: m.title || "Performance Audit", code: m.uiModuleLua || m.code }) },
                     { label: "Share with Team", icon: <Users className="w-4 h-4" />, onClick: () => setSharingId(m.id) },
                     { label: "Copy Code", icon: copiedId === m.id ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />, onClick: () => handleCopy(m.uiModuleLua || m.code, m.id), primary: copiedId === m.id },
                   ]}
@@ -246,14 +239,10 @@ export default function AssistantBubble({
                   <PerformanceAudit
                     audit={m.metadata.structuredData.audit}
                     onOptimize={() => {
-                      window.dispatchEvent(
-                        new CustomEvent("nexus:applyCodePatch", {
-                          detail: {
-                            code: m.metadata.structuredData.optimizedCode || m.code,
-                            messageId: m.id,
-                          },
-                        })
-                      );
+                      emitAiEvent(AI_EVENTS.APPLY_CODE_PATCH, {
+                        code: m.metadata.structuredData.optimizedCode || m.code,
+                        messageId: m.id,
+                      });
                     }}
                   />
                 </ArtifactCard>
@@ -303,7 +292,7 @@ export default function AssistantBubble({
                   qaReport={m.metadata?.qaReport}
                   actions={[
                     { label: "Push to Studio", icon: <Send className="w-4 h-4" />, onClick: () => onPushToStudio(m.artifactId, "script", { code: m.uiModuleLua || m.code, title: m.title }) },
-                    { label: "Save to Library", icon: <Bookmark className="w-4 h-4" />, onClick: () => window.dispatchEvent(new CustomEvent("nexus:saveScript", { detail: { name: m.title || "Generated Script", code: m.uiModuleLua || m.code } })) },
+                    { label: "Save to Library", icon: <Bookmark className="w-4 h-4" />, onClick: () => emitAiEvent(AI_EVENTS.SAVE_SCRIPT, { name: m.title || "Generated Script", code: m.uiModuleLua || m.code }) },
                     { label: "Share with Team", icon: <Users className="w-4 h-4" />, onClick: () => setSharingId(m.id) },
                     { label: "Copy Code", icon: copiedId === m.id ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />, onClick: () => handleCopy(m.uiModuleLua || m.code, m.id), primary: true },
                   ]}

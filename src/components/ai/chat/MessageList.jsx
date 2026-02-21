@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { NexusRBXAvatar, UserAvatar, FormatText, SkeletonArtifact } from "../AiComponents";
 import { stripTags } from "./stripTags";
 import MessageBubble from "./MessageBubble";
@@ -25,6 +25,29 @@ export default function MessageList({
   onFixUiAudit,
 }) {
   const pendingParsed = parsePendingStreamContent(pendingMessage?.content || "");
+  const hasPendingMessage = !!pendingMessage;
+
+  useEffect(() => {
+    if (!chatEndRef?.current) return;
+    const scroll = () =>
+      chatEndRef.current.scrollIntoView({
+        behavior: hasPendingMessage ? "smooth" : "auto",
+        block: "end",
+      });
+
+    const frameId =
+      typeof window !== "undefined" && typeof window.requestAnimationFrame === "function"
+        ? window.requestAnimationFrame(scroll)
+        : null;
+
+    if (frameId == null) scroll();
+
+    return () => {
+      if (frameId != null && typeof window !== "undefined") {
+        window.cancelAnimationFrame(frameId);
+      }
+    };
+  }, [messages, pendingMessage?.content, pendingMessage?.prompt, hasPendingMessage, chatEndRef]);
 
   return (
     <div className="flex-1 overflow-y-auto scrollbar-hide space-y-6">

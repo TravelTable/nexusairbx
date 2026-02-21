@@ -78,6 +78,7 @@ export default function ChatView({
           onCreateCustomMode={onCreateCustomMode}
           onEditCustomMode={onEditCustomMode}
           onInstallCommunityMode={onInstallCommunityMode}
+          onQuickStart={onQuickStart}
           onToggleActMode={onToggleActMode}
           onPlanUI={onPlanUI}
           onPlanSystem={onPlanSystem}

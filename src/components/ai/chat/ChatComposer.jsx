@@ -3,7 +3,7 @@ import { Plus, X, Search, Zap, Sparkles, Loader } from "lucide-react";
 import { UnifiedStatusBar, TokenBar } from "../AiComponents";
 
 /**
- * Single composer component: status bar, suggestion chips, Plan/Act + tokens, then attach + input + mode + send.
+ * Composer layout: unified status + controls row + input row.
  */
 export default function ChatComposer({
   prompt,
@@ -36,18 +36,69 @@ export default function ChatComposer({
 }) {
   return (
     <div className="p-4 bg-gradient-to-t from-black via-black/80 to-transparent">
-      <div className="max-w-5xl mx-auto space-y-4">
-        <UnifiedStatusBar
-          isGenerating={isGenerating}
-          stage={generationStage}
-          mode={activeModeData?.id}
-        />
+      <div className="max-w-5xl mx-auto space-y-3">
+        <UnifiedStatusBar isGenerating={isGenerating} stage={generationStage} mode={activeModeData?.id} />
+
+        <div className="px-2 flex items-center justify-between gap-4 flex-wrap">
+          <TokenBar
+            tokensLeft={tokensLeft}
+            tokensLimit={tokensLimit}
+            resetsAt={resetsAt}
+            plan={planKey}
+          />
+
+          <div className="flex items-center gap-3 flex-wrap">
+            <div className="flex items-center bg-gray-900/50 border border-gray-800 rounded-xl p-1 shadow-inner" role="tablist" aria-label="Plan or act mode">
+              <button
+                type="button"
+                onClick={() => setChatMode("plan")}
+                aria-pressed={chatMode === "plan"}
+                className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 ${
+                  chatMode === "plan" ? "bg-gray-800 text-[#00f5d4] shadow-sm" : "text-gray-400 hover:text-white"
+                }`}
+              >
+                <Search className="w-3 h-3" /> Plan
+              </button>
+              <button
+                type="button"
+                onClick={onActClick}
+                aria-pressed={chatMode === "act"}
+                className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 ${
+                  chatMode === "act" ? "bg-gray-800 text-orange-400 shadow-sm" : "text-gray-500 hover:text-white"
+                }`}
+              >
+                <Zap className="w-3 h-3" /> Act
+              </button>
+            </div>
+
+            <button
+              type="button"
+              id="tour-mode-toggle"
+              onClick={() => {
+                if (!allModes?.length) return;
+                const modeIds = allModes.map((m) => m.id);
+                const currentIndex = modeIds.indexOf(activeModeData?.id);
+                const nextIndex = (currentIndex + 1) % modeIds.length;
+                onModeChange?.(modeIds[nextIndex]);
+              }}
+              className={`hidden sm:flex items-center gap-2 px-3 py-2 rounded-xl border border-white/5 text-[10px] font-black uppercase tracking-widest transition-all hover:bg-white/5 ${activeModeData?.bg || ""} ${activeModeData?.color || "text-gray-400"}`}
+              style={
+                activeModeData?.id?.startsWith("custom_")
+                  ? { color: activeModeData.color || "#9b5de5" }
+                  : undefined
+              }
+              title={`Current mode: ${activeModeData?.label}. Click to cycle.`}
+              aria-label={`Current mode ${activeModeData?.label}. Click to cycle modes.`}
+            >
+              {activeModeData?.icon}
+              <span className="hidden lg:inline">{activeModeData?.label}</span>
+            </button>
+          </div>
+        </div>
 
         {suggestions.length > 0 && (
-          <div className="flex items-center gap-2 px-2 overflow-x-auto scrollbar-hide pb-1">
-            <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest mr-2 shrink-0">
-              Suggestions
-            </span>
+          <div className="flex items-center gap-2 px-2 overflow-x-auto scrollbar-hide pb-1" aria-label="Prompt suggestions">
+            <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest mr-2 shrink-0">Suggestions</span>
             {suggestions.map((item, idx) => (
               <button
                 key={idx}
@@ -72,76 +123,30 @@ export default function ChatComposer({
           </div>
         )}
 
-        <div className="px-2 flex items-center justify-between gap-4 flex-wrap">
-          <TokenBar
-            tokensLeft={tokensLeft}
-            tokensLimit={tokensLimit}
-            resetsAt={resetsAt}
-            plan={planKey}
-          />
-          <div className="flex items-center gap-2 flex-wrap">
-            {(activeModeData?.id === "ui" || activeModeData?.id === "system") && chatMode === "act" && (
-              <span className="text-[9px] text-gray-500 font-medium hidden sm:inline">
-                Tip: Use Plan to outline first
-              </span>
-            )}
-            <div className="flex items-center bg-gray-900/50 border border-gray-800 rounded-xl p-1 shadow-inner">
-              <button
-                type="button"
-                onClick={() => setChatMode("plan")}
-                className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 ${
-                  chatMode === "plan" ? "bg-gray-800 text-[#00f5d4] shadow-sm" : "text-gray-400 hover:text-white"
-                }`}
-              >
-                <Search className="w-3 h-3" /> Plan
-              </button>
-              <button
-                type="button"
-                onClick={onActClick}
-                className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 ${
-                  chatMode === "act" ? "bg-gray-800 text-orange-400 shadow-sm" : "text-gray-500 hover:text-white"
-                }`}
-              >
-                <Zap className="w-3 h-3" /> Act
-              </button>
-            </div>
-          </div>
-        </div>
-
         <div className="relative group">
-          {isGenerating && (
-            <div className="absolute -top-6 left-0 right-0 flex justify-center animate-in fade-in slide-in-from-bottom-1 duration-500">
-              <span className="text-[9px] font-bold text-gray-500 uppercase tracking-widest bg-black/40 backdrop-blur-md px-3 py-1 rounded-full border border-white/5">
-                Complex generations may take up to 5 minutes
-              </span>
-            </div>
-          )}
           <div
             className="absolute -inset-0.5 rounded-2xl blur opacity-20 group-focus-within:opacity-40 transition duration-500"
             style={{
               background: `linear-gradient(to right, ${themePrimary || "#9b5de5"}, ${themeSecondary || "#00f5d4"})`,
             }}
+            aria-hidden="true"
           />
           <div className="relative bg-[#121212] border border-white/10 rounded-2xl p-2 shadow-2xl flex flex-col gap-2">
             {attachments.length > 0 && (
-              <div className="flex flex-wrap gap-2 px-2 pt-2">
+              <div className="flex flex-wrap gap-2 px-2 pt-2" aria-label="Attached files">
                 {attachments.map((file, idx) => (
-                  <div
-                    key={idx}
-                    className="relative group/file bg-white/5 border border-white/10 rounded-lg p-2 flex items-center gap-2 pr-8"
-                  >
+                  <div key={idx} className="relative group/file bg-white/5 border border-white/10 rounded-lg p-2 flex items-center gap-2 pr-8">
                     {file.isImage ? (
                       <img src={file.data} alt={file.name} className="w-6 h-6 rounded object-cover" />
                     ) : (
-                      <span className="text-gray-500 text-xs">📎</span>
+                      <span className="text-gray-500 text-xs font-bold">FILE</span>
                     )}
-                    <span className="text-[10px] font-bold text-gray-300 truncate max-w-[100px]">
-                      {file.name}
-                    </span>
+                    <span className="text-[10px] font-bold text-gray-300 truncate max-w-[100px]">{file.name}</span>
                     <button
                       type="button"
                       onClick={() => setAttachments((prev) => prev.filter((_, i) => i !== idx))}
                       className="absolute right-1 top-1/2 -translate-y-1/2 p-1 text-gray-500 hover:text-red-400 transition-colors"
+                      aria-label={`Remove ${file.name}`}
                     >
                       <X className="w-3 h-3" />
                     </button>
@@ -149,16 +154,18 @@ export default function ChatComposer({
                 ))}
               </div>
             )}
+
             <div className="flex items-center gap-2 px-2 pt-2">
               <div
                 className={`px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest transition-all ${
                   isGenerating ? "bg-[#00f5d4] text-black animate-pulse" : "bg-white/5 text-gray-500"
                 }`}
               >
-                {isGenerating ? generationStage || "Working…" : "Ready"}
+                {isGenerating ? generationStage || "Working" : "Ready"}
               </div>
               <div className="h-px flex-1 bg-white/5" />
             </div>
+
             <div className="flex items-center gap-2 p-2 pt-0">
               <div className="relative">
                 <input
@@ -172,11 +179,13 @@ export default function ChatComposer({
                 <label
                   htmlFor="chat-composer-file-upload"
                   className="p-3 rounded-xl bg-white/5 text-gray-500 hover:text-white hover:bg-white/10 transition-all cursor-pointer flex items-center justify-center"
-                  title="Upload Image or File"
+                  title="Upload image or file"
+                  aria-label="Upload image or file"
                 >
                   <Plus className="h-5 w-5" />
                 </label>
               </div>
+
               <textarea
                 id="tour-prompt-box"
                 className="flex-1 bg-transparent border-none rounded-xl p-3 resize-none focus:ring-0 text-gray-100 placeholder-gray-500 text-[14px] md:text-[15px] leading-relaxed disabled:opacity-50 min-h-[44px]"
@@ -185,6 +194,7 @@ export default function ChatComposer({
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
                 disabled={disabled}
+                aria-label="Prompt input"
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && !e.shiftKey) {
                     e.preventDefault();
@@ -192,42 +202,17 @@ export default function ChatComposer({
                   }
                 }}
               />
-              <div className="flex items-center gap-2 shrink-0">
-                <button
-                  type="button"
-                  id="tour-mode-toggle"
-                  onClick={() => {
-                    if (!allModes?.length) return;
-                    const modeIds = allModes.map((m) => m.id);
-                    const currentIndex = modeIds.indexOf(activeModeData?.id);
-                    const nextIndex = (currentIndex + 1) % modeIds.length;
-                    onModeChange?.(modeIds[nextIndex]);
-                  }}
-                  className={`hidden sm:flex items-center gap-2 px-3 py-2 rounded-xl border border-white/5 text-[10px] font-black uppercase tracking-widest transition-all hover:bg-white/5 ${activeModeData?.bg || ""} ${activeModeData?.color || "text-gray-400"}`}
-                  style={
-                    activeModeData?.id?.startsWith("custom_")
-                      ? { color: activeModeData.color || "#9b5de5" }
-                      : undefined
-                  }
-                  title={`Current: ${activeModeData?.label}. Click to cycle.`}
-                >
-                  {activeModeData?.icon}
-                  <span className="hidden lg:inline">{activeModeData?.label}</span>
-                </button>
-                <button
-                  type="button"
-                  id="tour-generate-button"
-                  onClick={() => onSubmit?.()}
-                  disabled={disabled || (!prompt?.trim() && attachments.length === 0)}
-                  className="p-3 rounded-xl transition-all disabled:opacity-50 bg-[#00f5d4] text-black hover:shadow-[0_0_20px_rgba(0,245,212,0.4)] active:scale-95"
-                >
-                  {isGenerating ? (
-                    <Loader className="h-5 w-5 animate-spin" />
-                  ) : (
-                    <Sparkles className="h-5 w-5" />
-                  )}
-                </button>
-              </div>
+
+              <button
+                type="button"
+                id="tour-generate-button"
+                onClick={() => onSubmit?.()}
+                disabled={disabled || (!prompt?.trim() && attachments.length === 0)}
+                className="p-3 rounded-xl transition-all disabled:opacity-50 bg-[#00f5d4] text-black hover:shadow-[0_0_20px_rgba(0,245,212,0.4)] active:scale-95"
+                aria-label={isGenerating ? "Generation in progress" : "Send prompt"}
+              >
+                {isGenerating ? <Loader className="h-5 w-5 animate-spin" /> : <Sparkles className="h-5 w-5" />}
+              </button>
             </div>
           </div>
         </div>

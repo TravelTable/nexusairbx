@@ -1,4 +1,6 @@
-const STREAM_METRIC_EVENT = "nexus:streamMetric";
+import { AI_EVENTS } from "./aiEvents";
+
+const STREAM_METRIC_EVENT = AI_EVENTS.STREAM_METRIC;
 
 export function emitStreamMetric(type, payload = {}) {
   const metric = {

@@ -24,6 +24,7 @@ import {
   formatPendingStreamContent,
 } from "../lib/streaming";
 import { emitStreamMetric } from "../lib/streamMetrics";
+import { AI_EVENTS, emitAiEvent, onAiEvent } from "../lib/aiEvents";
 
 const STREAM_MAX_RETRIES = 3;
 const RESULT_MAX_POLLS = 6;
@@ -71,8 +72,8 @@ export function useAiChat(user, settings, refreshBilling, notify) {
         notify?.({ message: "Failed to apply optimization", type: "error" });
       }
     };
-    window.addEventListener("nexus:applyCodePatch", handleApplyPatch);
-    return () => window.removeEventListener("nexus:applyCodePatch", handleApplyPatch);
+    const unbind = onAiEvent(AI_EVENTS.APPLY_CODE_PATCH, handleApplyPatch);
+    return () => unbind();
   }, [user, currentChatId, notify]);
 
   const messagesUnsubRef = useRef(null);
@@ -326,13 +327,11 @@ export function useAiChat(user, settings, refreshBilling, notify) {
 
           // Notify UI hook if this was a UI generation
           if (data?.projectId) {
-            window.dispatchEvent(new CustomEvent("nexus:uiGenerated", {
-              detail: {
-                ...data,
-                uiModuleLua: data.uiModuleLua || data.content,
-                systemsLua: data.systemsLua || ""
-              }
-            }));
+            emitAiEvent(AI_EVENTS.UI_GENERATED, {
+              ...data,
+              uiModuleLua: data.uiModuleLua || data.content,
+              systemsLua: data.systemsLua || "",
+            });
           }
 
           emitStreamMetric("complete", {

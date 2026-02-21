@@ -1,0 +1,45 @@
+:root {
+  --ai-bg: #050505;
+  --ai-surface: #121212;
+  --ai-surface-muted: rgba(255, 255, 255, 0.04);
+  --ai-border: rgba(255, 255, 255, 0.1);
+  --ai-text: #f8fafc;
+  --ai-text-muted: #9ca3af;
+  --ai-accent: #00f5d4;
+  --ai-accent-2: #9b5de5;
+  --ai-info: #00bbf9;
+  --ai-danger: #ff3860;
+}
+
+.ai-page {
+  background-color: var(--ai-bg);
+  color: var(--ai-text);
+}
+
+.ai-glow-primary {
+  background-color: color-mix(in srgb, var(--ai-accent) 12%, transparent);
+}
+
+.ai-glow-secondary {
+  background-color: color-mix(in srgb, var(--ai-accent-2) 12%, transparent);
+}
+
+.ai-surface {
+  background-color: var(--ai-surface);
+}
+
+.ai-border {
+  border-color: var(--ai-border);
+}
+
+.ai-muted {
+  color: var(--ai-text-muted);
+}
+
+.ai-accent {
+  color: var(--ai-accent);
+}
+
+.ai-accent-2 {
+  color: var(--ai-accent-2);
+}
