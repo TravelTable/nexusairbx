@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { AlertCircle, Loader, Settings2, Sliders, Grid3X3, Sparkles, Smartphone, Tablet, Monitor, MousePointer2, Move } from "lucide-react";
 import LuaPreviewRenderer, { PREVIEW_DEVICES } from "../../preview/LuaPreviewRenderer";
-import { auth } from "../../firebase";
 import { useBilling } from "../../context/BillingContext";
 
 export default function PreviewTab({
@@ -15,7 +14,6 @@ export default function PreviewTab({
   setRefineInput,
   isRefining,
   onRefine,
-  user: propUser // Rename to avoid shadowing
 }) {
   const [showGrid, setShowGrid] = React.useState(false);
   const [showTweaks, setShowTweaks] = React.useState(false);
@@ -29,7 +27,6 @@ export default function PreviewTab({
 
   const { entitlements = [] } = useBilling();
   const isPremium = entitlements.includes("pro") || entitlements.includes("team");
-  const currentUser = auth.currentUser || propUser;
 
   return (
     <div className="h-full flex flex-col gap-3">

@@ -173,7 +173,7 @@ export function useAiWorkspaceController() {
       surface: "ai_page",
       metadata,
     });
-  }, [chat.activeMode, chat.chatMode, chat.currentChatId]);
+  }, [chat.activeMode, chat.currentChatId]);
 
   useEffect(() => {
     telemetryRef.current?.destroy?.();
@@ -307,7 +307,7 @@ export function useAiWorkspaceController() {
       if (typeof window !== "undefined" && window.innerWidth < 1024) setMobileTab("preview");
     });
     return () => unbind();
-  }, [ui.setUiDrawerOpen]);
+  }, [ui]);
 
   useEffect(() => {
     if (!user) return;
