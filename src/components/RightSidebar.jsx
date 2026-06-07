@@ -3,6 +3,7 @@ import { Lock, Plus, Info } from "lucide-react";
 import { useBilling } from "../context/BillingContext";
 import { auth } from "../firebase"; // Make sure this path is correct for your project
 import { onAuthStateChanged } from "firebase/auth";
+import { BACKEND_URL } from "../config";
 
 /**
  * RightSidebar
@@ -36,10 +37,7 @@ export default function RightSidebar({
     return () => unsub();
   }, []);
 
-  // --- API base: MUST point at backend, not the frontend origin ---
-  const API_BASE =
-    (process.env.REACT_APP_BACKEND_URL ||
-      "https://nexusrbx-backend-production.up.railway.app").replace(/\/+$/, "");
+  const API_BASE = BACKEND_URL.replace(/\/+$/, "");
 
   const DEBUG =
     (typeof window !== "undefined" &&

@@ -7,9 +7,10 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Light as SyntaxHighlighter } from "react-syntax-highlighter";
 import lua from "react-syntax-highlighter/dist/esm/languages/hljs/lua";
 import { atomOneDark } from "react-syntax-highlighter/dist/esm/styles/hljs";
+import { BACKEND_URL } from "./config";
 SyntaxHighlighter.registerLanguage("lua", lua);
 
-const API_BASE = "https://nexusrbx-backend-production.up.railway.app/api";
+const API_BASE = `${BACKEND_URL.replace(/\/+$/, "")}/api`;
 
 async function fetchScript(id) {
   const res = await fetch(`${API_BASE}/script/${id}`);

@@ -1,6 +1,7 @@
 import React from 'react';
+import { getEntitlements } from '../lib/billing';
 
-// Debug page: pulls /api/billing/entitlements and shows JSON + quick actions
+// Admin-only debug page: pulls /api/billing/entitlements and shows JSON
 export default function DebugEntitlementsPage() {
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState("");
@@ -10,21 +11,7 @@ export default function DebugEntitlementsPage() {
     setLoading(true);
     setError("");
     try {
-      // force fresh ID token and bypass caches
-      const token = await window.firebaseAuth.currentUser.getIdToken(force);
-      const res = await fetch("https://nexusrbx-backend-production.up.railway.app/api/billing/entitlements?t=" + Date.now(), {
-        headers: {
-          "Authorization": `Bearer ${token}`,
-          "Accept": "application/json",
-          "Cache-Control": "no-store",
-          "Pragma": "no-cache",
-        },
-        mode: "cors",
-      });
-      const text = await res.text();
-      let json;
-      try { json = JSON.parse(text); } catch { throw new Error(`Non-JSON (${res.status}) ${text?.slice(0,200)}`); }
-      if (!res.ok) throw new Error(json?.error || json?.message || `HTTP ${res.status}`);
+      const json = await getEntitlements({ noCache: force });
       setData(json);
     } catch (e) {
       setError(e?.message || String(e));

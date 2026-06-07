@@ -11,10 +11,9 @@ import NotificationToast from "../../components/NotificationToast";
 import GameProfileWizard from "../../components/ai/GameProfileWizard";
 import ChatView from "../../components/ai/ChatView";
 import ChatComposer from "../../components/ai/chat/ChatComposer";
-import LibraryView from "../../components/ai/LibraryView";
+import ExportBar from "../../components/ai/ExportBar";
 import ProjectArchitecturePanel from "../../components/ai/ProjectArchitecturePanel";
-import { CustomModeModal, ProjectContextStatus } from "../../components/ai/AiComponents";
-import { CHAT_MODES } from "../../components/ai/chatConstants";
+import { ProjectContextStatus } from "../../components/ai/AiComponents";
 import { AI_EVENTS } from "../../lib/aiEvents";
 import { BACKEND_URL } from "../../lib/uiBuilderApi";
 
@@ -29,21 +28,17 @@ export default function AiWorkspaceLayout({ controller }) {
     activeTab,
     mobileTab,
     prompt,
+    refineTarget,
     attachments,
     scripts,
     projectContext,
     architecturePanelOpen,
-    teams,
-    customModeModalOpen,
-    editingCustomMode,
     showSignInNudge,
     showProNudge,
     proNudgeReason,
     codeDrawerOpen,
     codeDrawerData,
     currentTheme,
-    activeModeData,
-    composerSuggestions,
     currentToast,
   } = uiState;
 
@@ -59,25 +54,18 @@ export default function AiWorkspaceLayout({ controller }) {
     setShowSignInNudge,
     setShowProNudge,
     setProNudgeReason,
-    setCustomModeModalOpen,
-    setEditingCustomMode,
     setCodeDrawerOpen,
     dismissToast,
-    handleSidebarTabChange,
     handlePromptSubmit,
+    onApprovePlan,
+    onClarifySubmit,
+    handleEditPlan,
+    handleStartRefine,
+    cancelRefine,
     handleFileUpload,
-    handleModeChange,
-    handleOpenScript,
-    handlePlanUi,
-    handlePlanSystem,
-    handleToggleActMode,
     handleQuickStart,
-    handleInstallCommunityMode,
-    handleSaveCustomMode,
     handlePreviewToggle,
     handleClosePreview,
-    handleUiAudit,
-    handleSuggestAssets,
     track,
     notify,
     emitAiEvent,
@@ -135,8 +123,8 @@ export default function AiWorkspaceLayout({ controller }) {
         >
           <div className="flex-1 flex flex-col min-h-0">
             <SidebarContent
-              activeTab={activeTab === "chat" ? "chats" : "saved"}
-              setActiveTab={handleSidebarTabChange}
+              activeTab="chats"
+              setActiveTab={() => setActiveTab("chat")}
               scripts={scripts}
               currentChatId={chat.currentChatId}
               currentScriptId={scriptManager.currentScriptId}
@@ -227,9 +215,6 @@ export default function AiWorkspaceLayout({ controller }) {
                   {ui.uiDrawerOpen ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                   {ui.uiDrawerOpen ? "Hide Preview" : "Open Preview"}
                 </button>
-                {!ui.uiDrawerOpen && (
-                  <span className="text-[10px] font-medium text-gray-500 hidden sm:inline">Preview opens when a UI artifact is selected.</span>
-                )}
               </div>
 
               <div className="flex items-center gap-2">
@@ -254,19 +239,10 @@ export default function AiWorkspaceLayout({ controller }) {
                   generationStage={unified.generationStage}
                   user={user}
                   activeMode={chat.activeMode}
-                  customModes={chat.customModes}
-                  onModeChange={handleModeChange}
-                  onCreateCustomMode={() => {
-                    if (!requireUser()) return;
-                    setEditingCustomMode(null);
-                    setCustomModeModalOpen(true);
-                  }}
-                  onEditCustomMode={(mode) => {
-                    if (!requireUser()) return;
-                    setEditingCustomMode(mode);
-                    setCustomModeModalOpen(true);
-                  }}
-                  onInstallCommunityMode={handleInstallCommunityMode}
+                  isBusy={unified.isGenerating}
+                  onApprovePlan={onApprovePlan}
+                  onClarifySubmit={onClarifySubmit}
+                  onEditPlan={handleEditPlan}
                   onViewUi={(m) => {
                     ui.setActiveUiId(m.projectId);
                     ui.setUiDrawerOpen(true);
@@ -274,25 +250,17 @@ export default function AiWorkspaceLayout({ controller }) {
                     track("artifact_action_used", { action: "view_ui" });
                   }}
                   onQuickStart={handleQuickStart}
+                  notify={notify}
                   onRefine={(m) => {
-                    if (!requirePremium("UI Refinement & Iteration")) return;
-                    setPrompt("Refine this UI: ");
-                    track("artifact_action_used", { action: "refine_prompt_seed" });
+                    if (!requirePremium("Refinement & Iteration")) return;
+                    handleStartRefine(m);
+                    track("artifact_action_used", { action: "refine_start" });
                   }}
-                  onToggleActMode={handleToggleActMode}
-                  onPlanUI={handlePlanUi}
-                  onPlanSystem={handlePlanSystem}
                   onPushToStudio={(id, type, data) => {
-                    if (!requirePremium("One-Click Studio Push")) return;
+                    if (!requirePremium("Studio Export")) return;
                     chat.handlePushToStudio(id, type, data);
                     track("artifact_action_used", { action: "push_to_studio", type });
                   }}
-                  onShareWithTeam={(id, type, teamId) => {
-                    if (!requirePremium("Team Collaboration")) return;
-                    chat.handleShareWithTeam(id, type, teamId);
-                    track("artifact_action_used", { action: "share_with_team", type });
-                  }}
-                  teams={teams}
                   onFixUiAudit={async (m) => {
                     if (!requirePremium("UI Auto-Fix & Audit")) return;
                     if (!m.boardState || !m.metadata?.qaReport?.issues) return;
@@ -318,64 +286,8 @@ export default function AiWorkspaceLayout({ controller }) {
                       notify({ message: "Failed to apply UI fixes", type: "error" });
                     }
                   }}
-                  onExecuteTask={async (task) => {
-                    if (!requirePremium("Multi-Step Goal Execution")) return;
-                    chat.setCurrentTaskId(task.id);
-                    const requestId =
-                      typeof crypto !== "undefined" && crypto.randomUUID
-                        ? crypto.randomUUID()
-                        : `${Date.now()}-${Math.random()}`;
-                    try {
-                      if (task.type === "pipeline") {
-                        await ui.handleGenerateUiPreview(task.prompt, chat.currentChatId, chat.setCurrentChatId, null, requestId);
-                      } else if (task.type === "generate_functionality") {
-                        const token = await user.getIdToken();
-                        const res = await fetch(`${BACKEND_URL}/api/ui-builder/ai/generate-functionality`, {
-                          method: "POST",
-                          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-                          body: JSON.stringify({
-                            lua: ui.activeUi?.uiModuleLua || "",
-                            prompt: task.prompt,
-                            gameSpec: settings.gameSpec || "",
-                          }),
-                        });
-                        if (res.ok) {
-                          const data = await res.json();
-                          for (const s of data.scripts) {
-                            // eslint-disable-next-line no-await-in-loop
-                            await scriptManager.handleCreateScript(s.name, s.code, "logic");
-                          }
-                          notify({ message: `Generated ${data.scripts.length} scripts for ${task.label}`, type: "success" });
-                        }
-                      } else if (task.type === "refine") {
-                        if (ui.activeUi?.uiModuleLua || ui.activeUi?.lua) {
-                          await ui.handleRefine(task.prompt);
-                        } else {
-                          await ui.handleGenerateUiPreview(task.prompt, chat.currentChatId, chat.setCurrentChatId, null, requestId);
-                        }
-                      } else if (task.type === "lint") {
-                        await handleUiAudit();
-                      } else if (task.type === "suggest_assets") {
-                        await handleSuggestAssets(task.prompt);
-                      } else if (task.type === "code") {
-                        await handlePromptSubmit(null, task.prompt);
-                      }
-
-                      chat.setTasks((prev) => prev.map((t) => (t.id === task.id ? { ...t, status: "done" } : t)));
-                      track("task_completed", { taskType: task.type, taskLabel: task.label });
-                    } catch (err) {
-                      notify({ message: `Failed to execute ${task.label}`, type: "error" });
-                    } finally {
-                      chat.setCurrentTaskId(null);
-                    }
-                  }}
-                  currentTaskId={chat.currentTaskId}
                   chatEndRef={chatEndRef}
                 />
-              )}
-
-              {activeTab === "library" && (
-                <LibraryView scripts={scripts} onOpenScript={handleOpenScript} />
               )}
             </div>
 
@@ -387,36 +299,15 @@ export default function AiWorkspaceLayout({ controller }) {
               onSubmit={(e) => handlePromptSubmit(e)}
               isGenerating={unified.isGenerating}
               generationStage={unified.generationStage}
-              placeholder={activeModeData.placeholder}
-              activeModeData={activeModeData}
-              allModes={[...CHAT_MODES, ...chat.customModes]}
-              onModeChange={handleModeChange}
-              currentChatId={chat.currentChatId}
-              chatMode={chat.chatMode}
-              setChatMode={chat.setChatMode}
-              onActClick={async () => {
-                chat.setChatMode("act");
-                const lastMsg = chat.messages[chat.messages.length - 1];
-                if (lastMsg?.role === "assistant" && (lastMsg.plan || lastMsg.explanation?.includes("<plan>"))) {
-                  await handlePromptSubmit(null, lastMsg.prompt || chat.messages[chat.messages.length - 2]?.content);
-                }
-              }}
+              placeholder={refineTarget ? "Describe the change you want…" : "What do you want to build?"}
+              refineTarget={refineTarget}
+              onCancelRefine={cancelRefine}
               tokensLeft={totalRemaining}
               tokensLimit={subLimit}
               resetsAt={resetsAt}
               planKey={planKey}
               themePrimary={currentTheme.primary}
               themeSecondary={currentTheme.secondary}
-              suggestions={composerSuggestions}
-              onSuggestionClick={(item) => {
-                if (item.submit) handlePromptSubmit(null, item.prompt);
-                else setPrompt(item.prompt);
-              }}
-              isPremium={isPremium}
-              onProNudge={(reason) => {
-                setProNudgeReason(reason || "This feature");
-                setShowProNudge(true);
-              }}
               onFileUpload={handleFileUpload}
               disabled={unified.isGenerating}
             />
@@ -446,6 +337,23 @@ export default function AiWorkspaceLayout({ controller }) {
                 {ui.activeUi?.prompt ? `Active: ${ui.activeUi.prompt.slice(0, 46)}${ui.activeUi.prompt.length > 46 ? "..." : ""}` : "No active UI"}
               </span>
             </div>
+
+            {ui.activeUi && (
+              <ExportBar
+                lua={ui.activeUi?.uiModuleLua || ui.activeUi?.lua || ""}
+                systemsLua={ui.activeUi?.systemsLua || ""}
+                boardState={ui.activeUi?.boardState || null}
+                title={ui.activeUi?.prompt || "Generated UI"}
+                projectId={ui.activeUiId}
+                kind="ui"
+                onPushToStudio={(id, type, data) => {
+                  if (!requirePremium("Studio Export")) return;
+                  chat.handlePushToStudio(id, type, data);
+                  track("artifact_action_used", { action: "push_to_studio_export_bar", type });
+                }}
+                notify={notify}
+              />
+            )}
 
             <div className="flex-1 overflow-hidden">
               <UiPreviewDrawer
@@ -524,13 +432,6 @@ export default function AiWorkspaceLayout({ controller }) {
         isOpen={showProNudge}
         onClose={() => setShowProNudge(false)}
         reason={proNudgeReason}
-      />
-
-      <CustomModeModal
-        isOpen={customModeModalOpen}
-        onClose={() => setCustomModeModalOpen(false)}
-        onSave={handleSaveCustomMode}
-        initialData={editingCustomMode}
       />
 
       {currentToast && (

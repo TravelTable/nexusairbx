@@ -3,6 +3,7 @@ import React, { createContext, useContext, useEffect, useMemo, useState, useCall
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "../firebase"; // keep your existing init
 import { getEntitlements, summarizeEntitlements, startCheckout, openPortal, cancelSubscription } from "../lib/billing";
+import { AI_EVENTS, onAiEvent } from "../lib/aiEvents";
 
 const BillingCtx = createContext(null);
 
@@ -17,7 +18,7 @@ export function BillingProvider({ children, pollMs = 60_000 }) {
     paygRemaining: 0,
     totalRemaining: 0,
     resetsAt: null,
-    isDev: false,
+    isAdmin: false,
     entitlements: [],
   });
 
@@ -61,7 +62,13 @@ export function BillingProvider({ children, pollMs = 60_000 }) {
   useEffect(() => {
     refresh();
     const id = setInterval(refresh, pollMs);
-    return () => clearInterval(id);
+    const unbind = onAiEvent(AI_EVENTS.UI_GENERATED, () => refresh());
+    const unbindJob = onAiEvent("JOB_COMPLETE", () => refresh());
+    return () => {
+      clearInterval(id);
+      unbind();
+      unbindJob();
+    };
   }, [refresh, pollMs]);
 
   const actions = useMemo(() => ({

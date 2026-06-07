@@ -1,8 +1,8 @@
 // src/lib/billing.js
 import { getAuth } from "firebase/auth";
+import { BACKEND_URL } from "../config";
 
-// Backend origin (hardcoded OK if that’s your deploy)
-const API_ORIGIN = "https://nexusrbx-backend-production.up.railway.app";
+const API_ORIGIN = BACKEND_URL;
 
 async function getIdToken({ force = false } = {}) {
   const user = getAuth().currentUser;
@@ -78,36 +78,24 @@ export async function getEntitlements({ noCache = true } = {}) {
   return r.json();
 }
 
-const DEV_EMAIL = "jackt1263@gmail.com";
-
 export function summarizeEntitlements(e) {
-  const user = getAuth().currentUser;
-  const isDev = user?.email === DEV_EMAIL;
-
-  let plan = e?.plan || "FREE";
-  let cycle = e?.cycle || null;
-  let limit = Number(e?.sub?.limit ?? 0);
-  let used  = Number(e?.sub?.used ?? 0);
-  let paygRemaining = Math.max(0, Number(e?.payg?.remaining ?? 0));
-
-  // Developer Override
-  if (isDev) {
-    plan = "TEAM";
-    limit = 999_999_999;
-    used = 0;
-    paygRemaining = 999_999_999;
-  }
+  const plan = e?.plan || "FREE";
+  const cycle = e?.cycle || null;
+  const limit = Number(e?.sub?.limit ?? 0);
+  const used = Number(e?.sub?.used ?? 0);
+  const paygRemaining = Math.max(0, Number(e?.payg?.remaining ?? 0));
 
   const subRemaining = Math.max(0, limit - used);
   return {
-    plan, cycle,
+    plan,
+    cycle,
     subRemaining,
     paygRemaining,
     totalRemaining: subRemaining + paygRemaining,
     resetsAt: e?.sub?.resetsAt ? new Date(e.sub.resetsAt) : null,
     subLimit: limit,
-    isDev,
-    entitlements: isDev ? ["pro", "team"] : (e?.entitlements || [])
+    isAdmin: Boolean(e?.flags?.isAdmin),
+    entitlements: e?.entitlements || [],
   };
 }
 

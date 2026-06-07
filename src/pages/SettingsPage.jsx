@@ -53,8 +53,6 @@ import {
   YAxis,
 } from "recharts";
 
-const DEV_EMAIL = "jackt1263@gmail.com";
-
 const StatCard = ({ title, value, icon: Icon, color }) => (
   <div className="bg-gray-900/50 border border-gray-800 rounded-2xl p-5 backdrop-blur-xl hover:border-gray-700 transition-colors group">
     <div className="flex justify-between items-start mb-3">
@@ -80,10 +78,27 @@ const TABS = [
 const SettingsPage = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
   const user = auth.currentUser;
-  const isDev = user?.email === DEV_EMAIL;
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      if (!user) {
+        setIsAdmin(false);
+        return;
+      }
+      try {
+        const tokenResult = await user.getIdTokenResult(true);
+        if (!cancelled) setIsAdmin(tokenResult.claims?.admin === true);
+      } catch {
+        if (!cancelled) setIsAdmin(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [user]);
 
   const finalTabs = useMemo(() => {
-    if (isDev) {
+    if (isAdmin) {
       return [
         ...TABS, 
         { id: "developer", label: "Developer", icon: Terminal },
@@ -91,7 +106,7 @@ const SettingsPage = () => {
       ];
     }
     return TABS;
-  }, [isDev]);
+  }, [isAdmin]);
 
   const { settings, updateSettings } = useSettings();
   const [codingStandards, setCodingStandards] = useState(settings.codingStandards || "");
@@ -134,7 +149,7 @@ const SettingsPage = () => {
   }, [user]);
 
   const fetchDevData = useCallback(async () => {
-    if (!user || !isDev) return;
+    if (!user || !isAdmin) return;
     setDevLoading(true);
     try {
       const token = await user.getIdToken();
@@ -156,13 +171,13 @@ const SettingsPage = () => {
     } finally {
       setDevLoading(false);
     }
-  }, [isDev, user]);
+  }, [isAdmin, user]);
 
   const fetchTeams = useCallback(async () => {
     if (!user) return;
     try {
       const token = await user.getIdToken();
-      const res = await fetch(`${process.env.REACT_APP_BACKEND_URL || "https://nexusrbx-backend-production.up.railway.app"}/api/user/teams`, {
+      const res = await fetch(`${BACKEND_URL}/api/user/teams`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.ok) {
@@ -178,13 +193,13 @@ const SettingsPage = () => {
     if (activeTab === "usage" || activeTab === "dashboard") {
       fetchUsage();
     }
-    if (activeTab === "developer" && isDev) {
+    if (activeTab === "developer" && isAdmin) {
       fetchDevData();
     }
     if (activeTab === "teams") {
       fetchTeams();
     }
-  }, [activeTab, fetchDevData, fetchUsage, fetchTeams, isDev]);
+  }, [activeTab, fetchDevData, fetchUsage, fetchTeams, isAdmin]);
 
   useEffect(() => {
     if (!isPremiumPlan && settings.modelVersion !== "deepseek-free") {
@@ -704,7 +719,7 @@ const SettingsPage = () => {
                     <span className="text-green-400 font-bold flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></div> Online</span>
                   </div>
                   <div className="p-3 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-300 text-xs">
-                    Developer Email: <span className="font-mono">{DEV_EMAIL}</span> (Infinite Tokens Active)
+                    Admin access is controlled via Firebase custom claims (admin=true).
                   </div>
                 </div>
               </div>

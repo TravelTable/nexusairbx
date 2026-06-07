@@ -23,8 +23,9 @@ import { useBilling } from "../context/BillingContext";
 import NexusRBXHeader from "../components/NexusRBXHeader";
 import NexusRBXFooter from "../components/NexusRBXFooter";
 import ProNudgeModal from "../components/ProNudgeModal";
+import { BACKEND_URL } from "../config";
 
-const API_BASE = (process.env.REACT_APP_BACKEND_URL || "https://nexusrbx-backend-production.up.railway.app").replace(/\/+$/, "");
+const API_BASE = BACKEND_URL.replace(/\/+$/, "");
 
 export default function IconDetailPage() {
   const { id } = useParams();

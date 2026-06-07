@@ -9,20 +9,16 @@ export default function MessageList({
   pendingMessage,
   user,
   activeMode,
-  generationStage,
-  currentTaskId,
   chatEndRef,
-  copiedId,
-  setCopiedId,
-  setSharingId,
-  onModeChange,
-  onToggleActMode,
-  onExecuteTask,
   onViewUi,
-  onQuickStart,
   onRefine,
   onPushToStudio,
   onFixUiAudit,
+  onApprovePlan,
+  onClarifySubmit,
+  onEditPlan,
+  notify,
+  isBusy,
 }) {
   const pendingParsed = parsePendingStreamContent(pendingMessage?.content || "");
   const hasPendingMessage = !!pendingMessage;
@@ -55,36 +51,32 @@ export default function MessageList({
         <MessageBubble
           key={m.id}
           message={m}
-          messages={messages}
           user={user}
           activeMode={activeMode}
-          generationStage={generationStage}
-          pendingMessage={pendingMessage}
-          currentTaskId={currentTaskId}
-          copiedId={copiedId}
-          setCopiedId={setCopiedId}
-          setSharingId={setSharingId}
-          onModeChange={onModeChange}
-          onToggleActMode={onToggleActMode}
-          onExecuteTask={onExecuteTask}
           onViewUi={onViewUi}
-          onQuickStart={onQuickStart}
           onRefine={onRefine}
           onPushToStudio={onPushToStudio}
           onFixUiAudit={onFixUiAudit}
+          onApprovePlan={onApprovePlan}
+          onClarifySubmit={onClarifySubmit}
+          onEditPlan={onEditPlan}
+          notify={notify}
+          isBusy={isBusy}
         />
       ))}
 
       {pendingMessage && (
         <>
-          <div className="flex justify-end gap-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <div className="max-w-[70%] md:max-w-[60%] order-1">
-              <div className="p-4 md:p-5 rounded-3xl bg-[#121212]/80 border border-white/10 backdrop-blur-xl shadow-2xl text-gray-100">
-                <div className="text-[15px] whitespace-pre-wrap">{pendingMessage.prompt}</div>
+          {pendingMessage.prompt ? (
+            <div className="flex justify-end gap-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+              <div className="max-w-[70%] md:max-w-[60%] order-1">
+                <div className="p-4 md:p-5 rounded-3xl bg-[#121212]/80 border border-white/10 backdrop-blur-xl shadow-2xl text-gray-100">
+                  <div className="text-[15px] whitespace-pre-wrap">{pendingMessage.prompt}</div>
+                </div>
               </div>
+              <UserAvatar email={user?.email} />
             </div>
-            <UserAvatar email={user?.email} />
-          </div>
+          ) : null}
 
           <div className="flex justify-start gap-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <NexusRBXAvatar isThinking={true} mode={activeMode} />

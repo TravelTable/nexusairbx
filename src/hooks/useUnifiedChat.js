@@ -1,59 +1,156 @@
-import { useCallback, useMemo } from "react";
-import { addDoc, collection, serverTimestamp } from "firebase/firestore";
+import { useCallback, useMemo, useState } from "react";
+import {
+  addDoc,
+  collection,
+  doc,
+  setDoc,
+  updateDoc,
+  serverTimestamp,
+} from "firebase/firestore";
 import { db } from "../firebase";
 import { v4 as uuidv4 } from "uuid";
 import { useAiChat } from "./useAiChat";
 import { useUiBuilder } from "./useUiBuilder";
 import { useAgent } from "./useAgent";
-import { isPremiumMode } from "../lib/modeGates";
+import { orchestrate, approveWorkflowPlan } from "../lib/workflowApi";
 
-const AGENT_PLACEHOLDER = {
+const THINKING_PLACEHOLDER = {
   role: "assistant",
   content: "",
-  thought: "Nexus is thinking...",
+  thought: "Understanding your task...",
   prompt: "",
 };
 
 /**
- * Single source of truth for "generating" and "pending" state across chat, UI, and agent.
- * AiPage and ChatView should consume only isGenerating, pendingMessage, generationStage from this hook.
+ * Linear product loop for the /ai page:
+ *   Task -> Orchestrate (Clarify OR Plan) -> Approve -> Generate -> Review -> Refine -> Export
  *
- * Dual-stream behavior: the backend has two flows — (1) POST /api/generate/artifact + GET /api/generate/stream
- * for chat/agent, and (2) UI pipeline (e.g. /api/ui-builder/ai/pipeline/stream) for UI generation. A single
- * user request can trigger both (e.g. /ui triggers UI + chat in parallel). This hook merges their
- * generating/pending state so the client always shows one "working" and one "done" state per request.
+ * handleSubmit only ever orchestrates. It never generates directly. Generation is triggered
+ * exclusively by approving a plan, which dispatches to the existing UI pipeline (classification "ui")
+ * or the detached artifact job worker (classification "script" | "project").
  */
 export function useUnifiedChat(user, settings, refreshBilling, notify, options = {}) {
-  const {
-    onSuggestAssets,
-    onUiAudit,
-    onSignInNudge,
-    onRequireUpgrade,
-    isPremium = false,
-    getModeLabel = (id) => id,
-  } = options;
+  const { onSignInNudge } = options;
 
   const chat = useAiChat(user, settings, refreshBilling, notify);
   const ui = useUiBuilder(user, settings, refreshBilling, notify);
   const agent = useAgent(user, notify, refreshBilling);
 
+  const [flowBusy, setFlowBusy] = useState(false);
+
   const isGenerating =
-    chat.isGenerating || ui.uiIsGenerating || agent.isThinking;
+    chat.isGenerating || ui.uiIsGenerating || agent.isThinking || flowBusy;
 
   const pendingMessage = useMemo(() => {
     if (chat.pendingMessage) return chat.pendingMessage;
     if (ui.pendingMessage) return ui.pendingMessage;
-    if (agent.isThinking) return AGENT_PLACEHOLDER;
+    if (agent.isThinking) return THINKING_PLACEHOLDER;
+    if (flowBusy) return THINKING_PLACEHOLDER;
     return null;
-  }, [chat.pendingMessage, ui.pendingMessage, agent.isThinking]);
+  }, [chat.pendingMessage, ui.pendingMessage, agent.isThinking, flowBusy]);
 
   const generationStage = useMemo(() => {
     if (chat.generationStage) return chat.generationStage;
     if (ui.generationStage) return ui.generationStage;
-    if (agent.isThinking) return "Nexus is thinking...";
+    if (flowBusy) return "Understanding your task...";
     return "";
-  }, [chat.generationStage, ui.generationStage, agent.isThinking]);
+  }, [chat.generationStage, ui.generationStage, flowBusy]);
 
+  // Ensure a chat exists, returning its id (creating + opening if needed).
+  const ensureChat = useCallback(
+    async (titleSeed) => {
+      let activeChatId = chat.currentChatId;
+      if (!activeChatId) {
+        const newChatRef = await addDoc(collection(db, "users", user.uid, "chats"), {
+          title: titleSeed.slice(0, 30) + (titleSeed.length > 30 ? "..." : ""),
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        });
+        activeChatId = newChatRef.id;
+        chat.openChatById(activeChatId);
+      }
+      return activeChatId;
+    },
+    [chat, user]
+  );
+
+  const writeUserMessage = useCallback(
+    async (activeChatId, requestId, content) => {
+      await setDoc(
+        doc(db, "users", user.uid, "chats", activeChatId, "messages", `${requestId}-user`),
+        { role: "user", content, createdAt: serverTimestamp(), requestId }
+      );
+    },
+    [user]
+  );
+
+  const writeOrchestrationResult = useCallback(
+    async (activeChatId, requestId, decision, originPrompt, attachments) => {
+      const attMeta = (attachments || []).map((a) => ({
+        name: a.name,
+        type: a.type,
+        data: a.data,
+        isImage: a.isImage,
+      }));
+
+      if (decision.status === "needs_clarification") {
+        await setDoc(
+          doc(db, "users", user.uid, "chats", activeChatId, "messages", `${requestId}-clarify`),
+          {
+            role: "assistant",
+            stage: "clarify",
+            questions: decision.questions || [],
+            originPrompt,
+            attachments: attMeta,
+            createdAt: serverTimestamp(),
+            requestId,
+          }
+        );
+        return;
+      }
+
+      await setDoc(
+        doc(db, "users", user.uid, "chats", activeChatId, "messages", `${requestId}-plan`),
+        {
+          role: "assistant",
+          stage: "plan",
+          planId: decision.planId,
+          classification: decision.classification || "ui",
+          aiSummary: decision.aiSummary || "",
+          aiSteps: Array.isArray(decision.aiSteps) ? decision.aiSteps : [],
+          planSteps: Array.isArray(decision.planSteps) ? decision.planSteps : [],
+          originPrompt,
+          attachments: attMeta,
+          createdAt: serverTimestamp(),
+          requestId,
+        }
+      );
+    },
+    [user]
+  );
+
+  // Dispatch generation for an approved plan based on its classification.
+  const runGeneration = useCallback(
+    async (activeChatId, classification, prompt, attachments) => {
+      const requestId = uuidv4();
+      if (classification === "ui") {
+        await ui.handleGenerateUiPreview(
+          prompt,
+          activeChatId,
+          chat.setCurrentChatId,
+          null,
+          requestId,
+          attachments
+        );
+      } else {
+        // script | project -> detached artifact job worker
+        await chat.handleSubmit(prompt, activeChatId, requestId, null, false, attachments);
+      }
+    },
+    [chat, ui]
+  );
+
+  // Stage 1: every prompt goes through orchestration first.
   const handleSubmit = useCallback(
     async (currentPrompt, currentAttachments = []) => {
       const prompt = (currentPrompt || "").trim();
@@ -62,236 +159,148 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
         return;
       }
       if (!user) {
-        if (onSignInNudge) onSignInNudge();
+        onSignInNudge?.();
         return;
       }
-
-      let effectiveMode = chat.activeMode;
-      const commandMap = {
-        "/ui": "ui",
-        "/audit": "security",
-        "/optimize": "performance",
-        "/logic": "logic",
-      };
-
-      const trySwitchMode = (mode) => {
-        if (!mode) return false;
-        if (isPremiumMode(mode) && !isPremium) {
-          onRequireUpgrade?.(mode);
-          return false;
-        }
-        chat.updateChatMode(chat.currentChatId, mode);
-        return true;
-      };
-
-      for (const [cmd, mode] of Object.entries(commandMap)) {
-        if (prompt.startsWith(cmd)) {
-          const switched = trySwitchMode(mode);
-          if (switched) effectiveMode = mode;
-          break;
-        }
-      }
+      if (isGenerating) return;
 
       const requestId = uuidv4();
-      let activeChatId = chat.currentChatId;
-
+      setFlowBusy(true);
       try {
-        // Create chat doc first, then open it (race-free: next send uses this id)
-        if (!activeChatId) {
-          const newChatRef = await addDoc(
-            collection(db, "users", user.uid, "chats"),
-            {
-              title: prompt.slice(0, 30) + (prompt.length > 30 ? "..." : ""),
-              activeMode: effectiveMode,
-              createdAt: serverTimestamp(),
-              updatedAt: serverTimestamp(),
-            }
-          );
-          activeChatId = newChatRef.id;
-          chat.openChatById(activeChatId);
-        }
+        const activeChatId = await ensureChat(prompt || "New build");
+        await writeUserMessage(activeChatId, requestId, prompt);
 
-        chat.setPendingMessage({
-          role: "assistant",
-          content: "",
-          type: "chat",
+        const decision = await orchestrate({
           prompt,
-          mode: chat.chatMode,
+          history: chat.messages,
           attachments: currentAttachments,
         });
 
-        const p = prompt.toLowerCase();
-        const isUiRequest =
-          p.startsWith("/ui") ||
-          ["build ui", "menu", "screen", "hud", "shop", "layout", "frame"].some(
-            (k) => p.includes(k)
-          );
-        const isRefineRequest =
-          p.startsWith("refine:") ||
-          p.startsWith("tweak:") ||
-          p.includes("refine ui");
-
-        if (isUiRequest && !isRefineRequest) {
-          const uiPromise = ui.handleGenerateUiPreview(
-            prompt.replace(/^\/ui\s*/i, ""),
-            activeChatId,
-            chat.setCurrentChatId,
-            null,
-            requestId,
-            currentAttachments
-          );
-          const chatPromise = chat.handleSubmit(
-            prompt,
-            activeChatId,
-            requestId,
-            null,
-            false,
-            currentAttachments
-          );
-          await Promise.all([uiPromise, chatPromise]);
-          return;
-        }
-
-        if (isRefineRequest) {
-          if (!ui.activeUi?.lua) {
-            await ui.handleGenerateUiPreview(
-              prompt.replace(/^(refine|tweak):\s*/i, ""),
-              activeChatId,
-              chat.setCurrentChatId,
-              null,
-              requestId,
-              currentAttachments
-            );
-          } else {
-            await ui.handleRefine(
-              prompt.replace(/^(refine|tweak):\s*/i, ""),
-              null,
-              currentAttachments
-            );
-          }
-          return;
-        }
-
-        const data = await agent.sendMessage(
-          prompt,
+        await writeOrchestrationResult(
           activeChatId,
-          chat.setCurrentChatId,
           requestId,
-          effectiveMode,
-          chat.chatMode,
-          currentAttachments,
-          chat.messages
+          decision,
+          prompt,
+          currentAttachments
         );
-
-        if (!data) {
-          notify({
-            message: "Agent didn't respond. Sending as chat instead.",
-            type: "info",
-          });
-          await chat.handleSubmit(
-            prompt,
-            activeChatId,
-            requestId,
-            null,
-            false,
-            currentAttachments
-          );
-          return;
-        }
-
-        if (data.suggestedMode) {
-          if (trySwitchMode(data.suggestedMode)) {
-            const modeLabel = getModeLabel(data.suggestedMode);
-            notify({
-              message: `Switched to ${modeLabel} for this task.`,
-              type: "info",
-            });
-          }
-        }
-
-        switch (data.action) {
-          case "pipeline":
-            await Promise.all([
-              ui.handleGenerateUiPreview(
-                data.parameters?.prompt || prompt,
-                activeChatId,
-                chat.setCurrentChatId,
-                data.parameters?.specs || null,
-                requestId
-              ),
-              chat.handleSubmit(prompt, activeChatId, requestId),
-            ]);
-            break;
-          case "refine":
-            if (!ui.activeUi?.lua) {
-              await ui.handleGenerateUiPreview(
-                data.parameters?.instruction || prompt,
-                activeChatId,
-                chat.setCurrentChatId,
-                data.parameters?.specs || null,
-                requestId
-              );
-            } else {
-              await ui.handleRefine(data.parameters?.instruction || prompt);
-            }
-            break;
-          case "suggest_assets":
-            if (onSuggestAssets) {
-              await onSuggestAssets(data.parameters?.prompt || prompt, ui);
-            }
-            await chat.handleSubmit(prompt, activeChatId, requestId);
-            break;
-          case "lint":
-            if (onUiAudit) await onUiAudit(ui);
-            await chat.handleSubmit(prompt, activeChatId, requestId);
-            break;
-          case "plan":
-            chat.setTasks(data.tasks || []);
-            await chat.handleSubmit(prompt, activeChatId, requestId);
-            break;
-          case "code":
-            await chat.handleSubmit(
-              data.parameters?.prompt || prompt,
-              activeChatId,
-              requestId,
-              null,
-              false,
-              currentAttachments
-            );
-            break;
-          default:
-            await chat.handleSubmit(prompt, activeChatId, requestId);
-        }
       } catch (err) {
-        console.error("Routing error:", err);
-        notify({
-          message: err?.message || "Generation failed. You can try again.",
-          type: "error",
-        });
-        try {
-          await chat.handleSubmit(prompt, activeChatId, requestId);
-        } catch (fallbackErr) {
-          console.error("Fallback chat submit failed:", fallbackErr);
-          notify({
-            message: "Generation failed. You can try again.",
-            type: "error",
-          });
-        }
+        console.error("Orchestration error:", err);
+        notify?.({ message: err?.message || "Could not start the build", type: "error" });
+      } finally {
+        setFlowBusy(false);
       }
     },
     [
       user,
-      chat,
-      ui,
-      agent,
-      notify,
-      onSuggestAssets,
-      onUiAudit,
+      isGenerating,
       onSignInNudge,
-      onRequireUpgrade,
-      isPremium,
-      getModeLabel,
+      ensureChat,
+      writeUserMessage,
+      writeOrchestrationResult,
+      chat.messages,
+      notify,
     ]
+  );
+
+  // Stage 2 (clarify): user answers the questions; re-orchestrate (now produces a plan).
+  const submitClarifyAnswers = useCallback(
+    async (message, answers) => {
+      if (!user || !message) return;
+      if (isGenerating) return;
+
+      const prompt = message.originPrompt || "";
+      const attachments = message.attachments || [];
+      const requestId = uuidv4();
+      setFlowBusy(true);
+      try {
+        const activeChatId = chat.currentChatId;
+        if (!activeChatId) return;
+
+        const answerText = Object.entries(answers || {})
+          .filter(([, v]) => v != null && String(v).trim() !== "")
+          .map(([k, v]) => `${k}: ${v}`)
+          .join("\n");
+        if (answerText) await writeUserMessage(activeChatId, requestId, answerText);
+
+        await updateDoc(
+          doc(db, "users", user.uid, "chats", activeChatId, "messages", message.id),
+          { stage: "clarify_answered", answers: answers || {}, updatedAt: serverTimestamp() }
+        );
+
+        const decision = await orchestrate({
+          prompt,
+          answers,
+          history: chat.messages,
+          attachments,
+        });
+
+        await writeOrchestrationResult(activeChatId, requestId, decision, prompt, attachments);
+      } catch (err) {
+        console.error("Clarify error:", err);
+        notify?.({ message: err?.message || "Could not continue", type: "error" });
+      } finally {
+        setFlowBusy(false);
+      }
+    },
+    [user, isGenerating, chat.currentChatId, chat.messages, writeUserMessage, writeOrchestrationResult, notify]
+  );
+
+  // Stage 3 (plan): user approves the plan -> generate.
+  const approvePlan = useCallback(
+    async (message) => {
+      if (!user || !message?.planId) return;
+      if (isGenerating) return;
+
+      const activeChatId = chat.currentChatId;
+      if (!activeChatId) return;
+
+      try {
+        await approveWorkflowPlan(message.planId);
+        await updateDoc(
+          doc(db, "users", user.uid, "chats", activeChatId, "messages", message.id),
+          { stage: "plan_approved", updatedAt: serverTimestamp() }
+        );
+        await runGeneration(
+          activeChatId,
+          message.classification || "ui",
+          message.originPrompt || "",
+          message.attachments || []
+        );
+      } catch (err) {
+        console.error("Approve/generate error:", err);
+        notify?.({ message: err?.message || "Build failed. You can try again.", type: "error" });
+      }
+    },
+    [user, isGenerating, chat.currentChatId, runGeneration, notify]
+  );
+
+  // Stage 5 (refine): re-run generation with a refinement instruction.
+  const refineArtifact = useCallback(
+    async (message, refinePrompt) => {
+      if (!user || !refinePrompt) return;
+      if (isGenerating) return;
+
+      const activeChatId = chat.currentChatId;
+      if (!activeChatId) return;
+
+      try {
+        const isUi = message?.classification === "ui" || message?.projectId || message?.metadata?.type === "ui";
+        if (isUi && ui.activeUi?.uiModuleLua) {
+          await ui.handleRefine(refinePrompt);
+        } else {
+          await runGeneration(
+            activeChatId,
+            message?.classification || (isUi ? "ui" : "script"),
+            refinePrompt,
+            []
+          );
+        }
+      } catch (err) {
+        console.error("Refine error:", err);
+        notify?.({ message: err?.message || "Refine failed. You can try again.", type: "error" });
+      }
+    },
+    [user, isGenerating, chat.currentChatId, ui, runGeneration, notify]
   );
 
   return {
@@ -300,6 +309,9 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
     pendingMessage,
     generationStage,
     handleSubmit,
+    submitClarifyAnswers,
+    approvePlan,
+    refineArtifact,
     ui,
     agent,
   };

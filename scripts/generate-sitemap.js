@@ -3,7 +3,7 @@ const path = require('path');
 const https = require('https');
 
 const BASE_URL = 'https://nexusrbx.com';
-const BACKEND_URL = 'https://nexusrbx-backend-production.up.railway.app';
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'https://nexusrbx-backend-production.up.railway.app';
 
 const staticRoutes = [
   '',

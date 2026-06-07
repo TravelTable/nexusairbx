@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { auth } from "../firebase";
 import { onAuthStateChanged } from "firebase/auth";
+import { BACKEND_URL } from "../config";
 
 const SettingsContext = createContext(null);
 
@@ -38,7 +39,7 @@ export function SettingsProvider({ children }) {
   const fetchBackendSettings = async (u) => {
     try {
       const token = await u.getIdToken();
-      const res = await fetch(`${process.env.REACT_APP_BACKEND_URL || "https://nexusrbx-backend-production.up.railway.app"}/api/user/settings`, {
+      const res = await fetch(`${BACKEND_URL}/api/user/settings`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.ok) {
@@ -62,7 +63,7 @@ export function SettingsProvider({ children }) {
     if (user) {
       try {
         const token = await user.getIdToken();
-        await fetch(`${process.env.REACT_APP_BACKEND_URL || "https://nexusrbx-backend-production.up.railway.app"}/api/user/settings`, {
+        await fetch(`${BACKEND_URL}/api/user/settings`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",

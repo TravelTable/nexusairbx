@@ -14,12 +14,8 @@ import {
   limit,
   onSnapshot,
   getDocs,
-  setDoc,
   doc,
-  serverTimestamp,
-  deleteDoc,
 } from "firebase/firestore";
-import { v4 as uuidv4 } from "uuid";
 
 import { auth, db } from "../../firebase";
 import { useBilling } from "../../context/BillingContext";
@@ -28,12 +24,9 @@ import { useUnifiedChat } from "../../hooks/useUnifiedChat";
 import { useGameProfile } from "../../hooks/useGameProfile";
 import { useAiScripts } from "../../hooks/useAiScripts";
 import { CHAT_MODES } from "../../components/ai/chatConstants";
-import { isPremiumMode } from "../../lib/modeGates";
 import { AI_PAGE_V2_ENABLED } from "../../config";
 import { BACKEND_URL } from "../../lib/uiBuilderApi";
 import { AI_EVENTS, emitAiEvent, onAiEvent } from "../../lib/aiEvents";
-import { resolveAiRouteDecision } from "../../lib/aiRouter";
-import { buildCompactActContext } from "../../lib/aiContext";
 import { createAiTelemetryClient } from "../../lib/aiTelemetry";
 import { useAiNotifications } from "./useAiNotifications";
 
@@ -50,65 +43,6 @@ const MODE_COLORS = {
   security: { primary: "#ff006e", secondary: "#8338ec" },
 };
 
-function getDefaultQuickActions(activeMode) {
-  const quickActions = {
-    ui: [
-      { label: "Generate Layout", prompt: "/ui Generate a modern layout for a ", submit: false },
-      { label: "Glassmorphism", prompt: "Apply a glassmorphism theme to this UI", submit: false },
-    ],
-    security: [
-      { label: "Audit Remotes", prompt: "Audit my RemoteEvents for vulnerabilities: ", submit: false },
-      { label: "Check Scopes", prompt: "Check my DataStore scopes for security issues", submit: false },
-    ],
-    logic: [
-      { label: "Optimize Loop", prompt: "Optimize this loop for performance: ", submit: false },
-      { label: "Convert Module", prompt: "Convert this script into a modular Luau component", submit: false },
-    ],
-    performance: [
-      { label: "Memory Audit", prompt: "Audit this code for potential memory leaks: ", submit: false },
-      { label: "Speed Up", prompt: "Suggest micro-optimizations to speed up this function: ", submit: false },
-    ],
-  };
-
-  const powerTools = {
-    ui: [
-      {
-        label: "Simulator Style",
-        prompt: "Apply a high-quality Simulator style to this UI (bright colors, thick strokes, playful fonts)",
-      },
-      {
-        label: "Glassmorphism",
-        prompt: "Apply a modern Glassmorphism style to this UI (transparency, blur, thin white strokes)",
-      },
-      {
-        label: "Minimalist",
-        prompt: "Apply a clean, professional Minimalist style to this UI (flat colors, ample whitespace, sharp corners)",
-      },
-    ],
-    animator: [
-      { label: "Smooth Fade", prompt: "Add a smooth fade-in/out animation to this UI using TweenService" },
-      { label: "Spring Bounce", prompt: "Add a juicy spring bounce effect to the buttons" },
-    ],
-    logic: [
-      { label: "Convert to OOP", prompt: "Refactor this code to use an Object-Oriented Programming (OOP) pattern" },
-      { label: "Type Checking", prompt: "Add strict Luau type-checking to this script" },
-    ],
-  };
-
-  return {
-    currentActions: quickActions[activeMode] || [],
-    currentPowerTools: powerTools[activeMode] || [],
-  };
-}
-
-function inferTargetModeFromMessage(message) {
-  const p = String(message?.prompt || message?.content || "").toLowerCase();
-  if (["ui", "menu", "layout", "screen", "frame"].some((k) => p.includes(k))) {
-    return "ui";
-  }
-  return "logic";
-}
-
 export function useAiWorkspaceController() {
   const { plan, totalRemaining, subLimit, resetsAt, refresh: refreshBilling, entitlements } = useBilling();
   const { settings, updateSettings } = useSettings();
@@ -124,11 +58,10 @@ export function useAiWorkspaceController() {
   const [sidebarOpen, setSidebarOpen] = useState(typeof window !== "undefined" ? window.innerWidth > 1024 : true);
 
   const [prompt, setPrompt] = useState("");
+  const [refineTarget, setRefineTarget] = useState(null);
   const [showSignInNudge, setShowSignInNudge] = useState(false);
   const [showProNudge, setShowProNudge] = useState(false);
   const [proNudgeReason, setProNudgeReason] = useState("");
-  const [customModeModalOpen, setCustomModeModalOpen] = useState(false);
-  const [editingCustomMode, setEditingCustomMode] = useState(null);
   const [projectContext, setProjectContext] = useState(null);
   const [architecturePanelOpen, setArchitecturePanelOpen] = useState(false);
   const [teams, setTeams] = useState([]);
@@ -155,24 +88,9 @@ export function useAiWorkspaceController() {
   const isPremium = entitlements?.includes("pro") || entitlements?.includes("team");
   const planKey = plan?.toLowerCase() || "free";
 
-  const handleSidebarTabChange = useCallback((sidebarTab) => {
-    if (sidebarTab === "scripts" || sidebarTab === "chats" || sidebarTab === "agent") {
-      setActiveTab("chat");
-      return;
-    }
-    if (sidebarTab === "saved") {
-      if (!user) {
-        setShowSignInNudge(true);
-        return;
-      }
-      if (!isPremium) {
-        setProNudgeReason("Saved Scripts Library");
-        setShowProNudge(true);
-        return;
-      }
-      setActiveTab("library");
-    }
-  }, [isPremium, user]);
+  const handleSidebarTabChange = useCallback(() => {
+    setActiveTab("chat");
+  }, []);
 
   const handleSuggestAssets = useCallback(
     async (promptContext, uiRef) => {
@@ -228,16 +146,8 @@ export function useAiWorkspaceController() {
   );
 
   const unified = useUnifiedChat(user, settings, refreshBilling, notify, {
-    onSuggestAssets: handleSuggestAssets,
-    onUiAudit: handleUiAudit,
     onSignInNudge: () => setShowSignInNudge(true),
     isPremium,
-    onRequireUpgrade: (modeId) => {
-      const modeLabel = CHAT_MODES.find((m) => m.id === modeId)?.label || modeId;
-      setProNudgeReason(`${modeLabel} Mode`);
-      setShowProNudge(true);
-    },
-    getModeLabel: (id) => CHAT_MODES.find((m) => m.id === id)?.label || id,
   });
 
   const chat = unified;
@@ -255,36 +165,11 @@ export function useAiWorkspaceController() {
     [chat.activeMode]
   );
 
-  const { currentActions, currentPowerTools } = useMemo(
-    () => getDefaultQuickActions(chat.activeMode),
-    [chat.activeMode]
-  );
-
-  const composerSuggestions = useMemo(() => {
-    return [
-      ...currentPowerTools.map((tool) => ({
-        label: tool.label,
-        prompt: tool.prompt,
-        submit: true,
-        primary: true,
-        requiresPro: true,
-        proNudgeReason: "UI Power Tools & Styles",
-      })),
-      ...currentActions.map((action) => ({
-        label: action.label,
-        prompt: action.prompt,
-        submit: false,
-        primary: false,
-      })),
-    ];
-  }, [currentActions, currentPowerTools]);
-
   const track = useCallback((event, metadata = {}) => {
     telemetryRef.current?.track({
       event,
       chatId: chat.currentChatId || undefined,
       mode: chat.activeMode,
-      chatMode: chat.chatMode,
       surface: "ai_page",
       metadata,
     });
@@ -415,6 +300,15 @@ export function useAiWorkspaceController() {
     };
   }, [chat, isPremium, notify, scriptManager, track]);
 
+  // Review stage: auto-open the preview when a UI artifact finishes generating.
+  useEffect(() => {
+    const unbind = onAiEvent(AI_EVENTS.UI_GENERATED, () => {
+      ui.setUiDrawerOpen(true);
+      if (typeof window !== "undefined" && window.innerWidth < 1024) setMobileTab("preview");
+    });
+    return () => unbind();
+  }, [ui.setUiDrawerOpen]);
+
   useEffect(() => {
     if (!user) return;
 
@@ -442,75 +336,6 @@ export function useAiWorkspaceController() {
     return () => unsubUser();
   }, [user]);
 
-  const getModeLabel = useCallback(
-    (modeId) => {
-      return (
-        CHAT_MODES.find((m) => m.id === modeId)?.label ||
-        chat.customModes.find((m) => m.id === modeId)?.label ||
-        modeId
-      );
-    },
-    [chat.customModes]
-  );
-
-  const handleModeChange = useCallback(
-    (modeId) => {
-      if (!modeId) return false;
-      if (isPremiumMode(modeId) && !isPremium) {
-        setProNudgeReason(`${getModeLabel(modeId)} Mode`);
-        setShowProNudge(true);
-        return false;
-      }
-      chat.updateChatMode(chat.currentChatId, modeId);
-      track("mode_changed", { modeId });
-      return true;
-    },
-    [chat, getModeLabel, isPremium, track]
-  );
-
-  const routeAndSubmitPrompt = useCallback(async (rawPrompt, currentAttachments) => {
-    const decision = await resolveAiRouteDecision({
-      user,
-      prompt: rawPrompt,
-      attachments: currentAttachments,
-      activeMode: chat.activeMode,
-      chatMode: chat.chatMode,
-      hasActiveUi: !!ui.activeUi?.uiModuleLua,
-    });
-
-    let finalPrompt = decision.normalizedPrompt || String(rawPrompt || "").trim();
-
-    if (decision.targetMode && decision.targetMode !== chat.activeMode) {
-      const switched = handleModeChange(decision.targetMode);
-      if (!switched) return;
-    }
-
-    if (decision.action === "pipeline" && !/^\/ui\b/i.test(finalPrompt)) {
-      finalPrompt = `/ui ${finalPrompt}`.trim();
-    }
-
-    if (decision.action === "refine" && !/^(refine:|tweak:)/i.test(finalPrompt)) {
-      finalPrompt = `Refine: ${finalPrompt}`;
-    }
-
-    track("prompt_submitted", {
-      action: decision.action,
-      source: decision.source,
-      attachments: currentAttachments.length,
-      length: finalPrompt.length,
-    });
-
-    await unified.handleSubmit(finalPrompt, currentAttachments);
-  }, [
-    user,
-    chat.activeMode,
-    chat.chatMode,
-    ui.activeUi,
-    handleModeChange,
-    track,
-    unified,
-  ]);
-
   const handlePromptSubmit = useCallback(async (e, overridePrompt = null) => {
     if (e && typeof e.preventDefault === "function") e.preventDefault();
 
@@ -523,87 +348,47 @@ export function useAiWorkspaceController() {
     setPrompt("");
     setAttachments([]);
 
-    if (IS_AI_PAGE_V2_ENABLED) {
-      await routeAndSubmitPrompt(currentPrompt, currentAttachments);
+    // Refine loop: if a refine target is active, regenerate that artifact directly
+    // instead of starting a new orchestration turn.
+    if (refineTarget) {
+      const target = refineTarget;
+      setRefineTarget(null);
+      track("artifact_action_used", { action: "refine_submit" });
+      await unified.refineArtifact(target, currentPrompt);
       return;
     }
+
+    track("prompt_submitted", {
+      attachments: currentAttachments.length,
+      length: currentPrompt.length,
+    });
 
     await unified.handleSubmit(currentPrompt, currentAttachments);
   }, [
     prompt,
     attachments,
     activeTab,
+    refineTarget,
     unified,
-    routeAndSubmitPrompt,
+    track,
   ]);
 
+  const handleStartRefine = useCallback((message) => {
+    setRefineTarget(message || null);
+    setActiveTab("chat");
+  }, []);
+
+  const cancelRefine = useCallback(() => setRefineTarget(null), []);
+
   const handleQuickStart = useCallback(async (item) => {
-    const payload = typeof item === "string"
-      ? { prompt: item, label: "quick_start", mode: chat.activeMode }
-      : item;
+    const promptText = typeof item === "string" ? item : item?.prompt || "";
+    track("quickstart_clicked", { length: promptText.length });
+    await handlePromptSubmit(null, promptText);
+  }, [handlePromptSubmit, track]);
 
-    if (payload?.mode) {
-      handleModeChange(payload.mode);
-    }
-
-    track("quickstart_clicked", {
-      label: payload?.label || "quick_start",
-      mode: payload?.mode || chat.activeMode,
-    });
-
-    await handlePromptSubmit(null, payload?.prompt || "");
-  }, [chat.activeMode, handleModeChange, handlePromptSubmit, track]);
-
-  const handleInstallCommunityMode = useCallback(async (mode) => {
-    if (!user) return;
-    try {
-      const modeId = `custom_${uuidv4().slice(0, 8)}`;
-      await setDoc(doc(db, "users", user.uid, "custom_modes", modeId), {
-        ...mode,
-        id: modeId,
-        isPublic: false,
-        authorId: mode.authorId,
-        authorName: mode.authorName,
-        updatedAt: serverTimestamp(),
-        createdAt: serverTimestamp(),
-      });
-      notify({ message: `Expert "${mode.label}" installed`, type: "success" });
-    } catch (err) {
-      notify({ message: "Failed to install expert", type: "error" });
-    }
-  }, [user, notify]);
-
-  const handleSaveCustomMode = useCallback(async (data) => {
-    if (!user) return;
-    try {
-      const modeId = editingCustomMode?.id || `custom_${uuidv4().slice(0, 8)}`;
-      const payload = {
-        ...data,
-        authorId: user.uid,
-        authorName: user.displayName || "Anonymous",
-        updatedAt: serverTimestamp(),
-        createdAt: editingCustomMode?.createdAt || serverTimestamp(),
-      };
-
-      await setDoc(doc(db, "users", user.uid, "custom_modes", modeId), payload);
-
-      if (data.isPublic) {
-        await setDoc(doc(db, "community_modes", modeId), payload);
-      } else {
-        try {
-          await deleteDoc(doc(db, "community_modes", modeId));
-        } catch (e) {
-          // ignore best-effort delete
-        }
-      }
-
-      notify({ message: "Custom expert saved", type: "success" });
-      setCustomModeModalOpen(false);
-      setEditingCustomMode(null);
-    } catch (err) {
-      notify({ message: "Failed to save custom expert", type: "error" });
-    }
-  }, [editingCustomMode, notify, user]);
+  const handleEditPlan = useCallback((message) => {
+    setPrompt(message?.originPrompt || "");
+  }, []);
 
   const handleFileUpload = useCallback((e) => {
     const files = Array.from(e.target.files || []);
@@ -676,54 +461,6 @@ export function useAiWorkspaceController() {
     }
   }, [isPremium, notify, ui, user]);
 
-  const handlePlanUi = useCallback(() => {
-    chat.updateChatMode(chat.currentChatId, "ui");
-    chat.setChatMode("plan");
-    setPrompt("Help me plan a UI: screens, layout, and main components.");
-  }, [chat]);
-
-  const handlePlanSystem = useCallback(() => {
-    const switched = handleModeChange("system");
-    if (!switched) return;
-    chat.setChatMode("plan");
-    setPrompt("Help me plan a system: services, remotes, and data flow.");
-  }, [chat, handleModeChange]);
-
-  const handleToggleActMode = useCallback(async (message) => {
-    const isGeneral = chat.activeMode === "general";
-
-    if (isGeneral) {
-      const targetMode = inferTargetModeFromMessage(message);
-      chat.startNewChat();
-      chat.setActiveMode(targetMode);
-      chat.setChatMode("act");
-
-      notify({
-        message: `Context transferred to ${CHAT_MODES.find((m) => m.id === targetMode)?.label || targetMode}`,
-        type: "success",
-      });
-
-      const compactContext = buildCompactActContext(
-        chat.messages,
-        message?.prompt || message?.content || "",
-        { maxTurns: 6 }
-      );
-
-      const cmd = targetMode === "ui" ? "/ui " : "/logic ";
-      await handlePromptSubmit(null, `${cmd}${compactContext}`);
-      return;
-    }
-
-    chat.setChatMode("act");
-    if (message?.projectId && message?.metadata?.type === "ui") {
-      await ui.handleRefine(message.prompt || message.content);
-      track("artifact_action_used", { action: "act_refine" });
-      return;
-    }
-
-    await handlePromptSubmit(null, message?.prompt || message?.content || "");
-  }, [chat, handlePromptSubmit, notify, track, ui]);
-
   const handleOpenPreview = useCallback(() => {
     if (!ui.activeUi && !ui.uiGenerations.length) {
       notify({ message: "Generate or open a UI first to use preview", type: "info" });
@@ -768,13 +505,12 @@ export function useAiWorkspaceController() {
       activeTab,
       mobileTab,
       prompt,
+      refineTarget,
       attachments,
       scripts,
       projectContext,
       architecturePanelOpen,
       teams,
-      customModeModalOpen,
-      editingCustomMode,
       showSignInNudge,
       showProNudge,
       proNudgeReason,
@@ -782,7 +518,6 @@ export function useAiWorkspaceController() {
       codeDrawerData,
       currentTheme,
       activeModeData,
-      composerSuggestions,
       currentToast,
       toasts,
     },
@@ -807,22 +542,20 @@ export function useAiWorkspaceController() {
       setShowSignInNudge,
       setShowProNudge,
       setProNudgeReason,
-      setCustomModeModalOpen,
-      setEditingCustomMode,
       setCodeDrawerOpen,
       dismissToast,
 
       handleSidebarTabChange,
       handlePromptSubmit,
+      onApprovePlan: unified.approvePlan,
+      onClarifySubmit: unified.submitClarifyAnswers,
+      onRefineArtifact: unified.refineArtifact,
+      handleStartRefine,
+      cancelRefine,
+      handleEditPlan,
       handleFileUpload,
-      handleModeChange,
       handleOpenScript,
-      handlePlanUi,
-      handlePlanSystem,
-      handleToggleActMode,
       handleQuickStart,
-      handleInstallCommunityMode,
-      handleSaveCustomMode,
       handleOpenPreview,
       handleClosePreview,
       handlePreviewToggle,

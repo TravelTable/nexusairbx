@@ -1,4 +1,5 @@
 import { BACKEND_URL as CONFIG_BACKEND_URL } from "../config";
+import { ensureStreamSession } from "./streamSession";
 
 export const BACKEND_URL = CONFIG_BACKEND_URL;
 
@@ -225,7 +226,11 @@ export async function aiPipelineStream({
     maxSystemsTokens: String(maxSystemsTokens)
   });
 
-  const eventSource = new EventSource(`${BACKEND_URL}/api/ui-builder/ai/pipeline/stream?${params.toString()}&token=${token}`);
+  await ensureStreamSession(token);
+
+  const eventSource = new EventSource(`${BACKEND_URL}/api/ui-builder/ai/pipeline/stream?${params.toString()}`, {
+    withCredentials: true,
+  });
 
   eventSource.addEventListener("stage", (e) => {
     const data = JSON.parse(e.data);

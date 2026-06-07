@@ -4,23 +4,17 @@ import AssistantBubble from "./AssistantBubble";
 
 export default function MessageBubble({
   message: m,
-  messages,
   user,
   activeMode,
-  generationStage,
-  pendingMessage,
-  currentTaskId,
-  copiedId,
-  setCopiedId,
-  setSharingId,
-  onModeChange,
-  onToggleActMode,
-  onExecuteTask,
   onViewUi,
-  onQuickStart,
   onRefine,
   onPushToStudio,
   onFixUiAudit,
+  onApprovePlan,
+  onClarifySubmit,
+  onEditPlan,
+  notify,
+  isBusy,
 }) {
   if (m.role === "user") {
     return (
@@ -40,23 +34,17 @@ export default function MessageBubble({
   return (
     <AssistantBubble
       message={m}
-      messages={messages}
       activeMode={activeMode}
-      generationStage={generationStage}
-      pendingMessage={pendingMessage}
       user={user}
-      currentTaskId={currentTaskId}
-      copiedId={copiedId}
-      setCopiedId={setCopiedId}
-      setSharingId={setSharingId}
-      onModeChange={onModeChange}
-      onToggleActMode={onToggleActMode}
-      onExecuteTask={onExecuteTask}
       onViewUi={onViewUi}
-      onQuickStart={onQuickStart}
       onRefine={onRefine}
       onPushToStudio={onPushToStudio}
       onFixUiAudit={onFixUiAudit}
+      onApprovePlan={onApprovePlan}
+      onClarifySubmit={onClarifySubmit}
+      onEditPlan={onEditPlan}
+      notify={notify}
+      isBusy={isBusy}
     />
   );
 }

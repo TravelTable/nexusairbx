@@ -2,8 +2,7 @@ import React, { useState } from "react";
 import { AlertCircle, Loader, Settings2, Sliders, Grid3X3, Sparkles, Smartphone, Tablet, Monitor, MousePointer2, Move } from "lucide-react";
 import LuaPreviewRenderer, { PREVIEW_DEVICES } from "../../preview/LuaPreviewRenderer";
 import { auth } from "../../firebase";
-
-const DEV_EMAIL = "jackt1263@gmail.com";
+import { useBilling } from "../../context/BillingContext";
 
 export default function PreviewTab({
   lua,
@@ -28,8 +27,9 @@ export default function PreviewTab({
     transparency: 0
   });
 
+  const { entitlements = [] } = useBilling();
+  const isPremium = entitlements.includes("pro") || entitlements.includes("team");
   const currentUser = auth.currentUser || propUser;
-  const isDev = currentUser?.email === DEV_EMAIL;
 
   return (
     <div className="h-full flex flex-col gap-3">
@@ -89,7 +89,7 @@ export default function PreviewTab({
         </div>
 
         {/* Coming Soon Overlay */}
-        {!isDev && !editMode ? (
+        {!isPremium && !editMode ? (
           <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black/60 backdrop-blur-[2px] p-6 text-center">
             <div className="bg-gradient-to-br from-[#9b5de5] to-[#00f5d4] p-0.5 rounded-2xl shadow-[0_0_30px_rgba(155,93,229,0.3)]">
               <div className="bg-[#0b1220] rounded-[14px] px-8 py-6 flex flex-col items-center gap-4">

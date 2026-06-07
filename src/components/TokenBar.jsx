@@ -5,13 +5,12 @@ export default function TokenBar({
   tokensLeft,
   plan,
   resetsAt,
-  isDev,
+  isAdmin,
   tokenLimit,
   tokensLoading,
 }) {
   // Determine if the plan is unlimited (e.g., Developer)
-  const isUnlimited =
-    isDev || plan?.toLowerCase() === "unlimited";
+  const isUnlimited = plan?.toLowerCase() === "unlimited";
 
   // Format reset date if available
   const getResetLabel = () => {
@@ -39,7 +38,7 @@ export default function TokenBar({
     <div className="flex items-center gap-2">
       <span className="text-xs text-gray-400 mr-2">Tokens:</span>
       {isUnlimited ? (
-        <span className="text-green-400 font-bold">∞ {isDev ? "(Developer)" : "(Unlimited)"}</span>
+        <span className="text-green-400 font-bold">∞ (Unlimited)</span>
       ) : plan?.toLowerCase() === "team" ? (
         <span className="text-[#00f5d4] font-bold">High Limit (Team)</span>
       ) : (

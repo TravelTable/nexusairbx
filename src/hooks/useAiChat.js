@@ -17,6 +17,7 @@ import {
 import { v4 as uuidv4 } from "uuid";
 import { auth, db } from "../firebase";
 import { BACKEND_URL } from "../config";
+import { ensureStreamSession } from "../lib/streamSession";
 import { FEATURE_FLAGS } from "../lib/featureFlags";
 import {
   applyStreamDelta,
@@ -259,7 +260,10 @@ export function useAiChat(user, settings, refreshBilling, notify) {
         throw new Error("Timed out while recovering streamed generation");
       };
 
-      // 2. Connect to stream (v1 done-only and v2 delta+done are both supported)
+      setGenerationStage("Connecting...");
+      await ensureStreamSession(token);
+
+      // 2. Connect to stream (tails worker events; auth via HttpOnly cookie)
       return new Promise((resolve, reject) => {
         let eventSource = null;
         let receivedDone = false;
@@ -273,7 +277,7 @@ export function useAiChat(user, settings, refreshBilling, notify) {
           usedFallback: false,
         };
 
-        const streamUrl = `${BACKEND_URL}/api/generate/stream?jobId=${jobId}&token=${token}&mode=${currentMode}`;
+        const streamUrl = `${BACKEND_URL}/api/generate/stream?jobId=${encodeURIComponent(jobId)}&mode=${encodeURIComponent(currentMode)}`;
 
         const failAndReject = (err, tag = "network") => {
           emitStreamMetric("error", {
@@ -345,6 +349,7 @@ export function useAiChat(user, settings, refreshBilling, notify) {
           });
 
           refreshBilling();
+          emitAiEvent("JOB_COMPLETE", { jobId });
           setIsGenerating(false);
           setPendingMessage(null);
           setGenerationStage("");
@@ -427,7 +432,7 @@ export function useAiChat(user, settings, refreshBilling, notify) {
 
         const connect = () => {
           eventSource?.close?.();
-          eventSource = new EventSource(streamUrl);
+          eventSource = new EventSource(streamUrl, { withCredentials: true });
           emitStreamMetric("connect", { jobId, retryCount });
           setupListeners(eventSource);
         };
@@ -544,12 +549,38 @@ export function useAiChat(user, settings, refreshBilling, notify) {
           },
           body: JSON.stringify({ artifactId, type, data }),
         });
-        if (res.ok) {
-          notify?.({ message: "Artifact queued for Studio push!", type: "success" });
-        } else {
+        if (!res.ok) {
           const err = await res.json();
           notify?.({ message: err.error || "Push failed", type: "error" });
+          return;
         }
+        const { pushId } = await res.json();
+        notify?.({ message: "Queued for Studio import…", type: "info" });
+
+        for (let i = 0; i < 30; i += 1) {
+          // eslint-disable-next-line no-await-in-loop
+          await wait(2000);
+          // eslint-disable-next-line no-await-in-loop
+          const statusRes = await fetch(`${BACKEND_URL}/api/plugin/push-queue/${pushId}/status`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          if (!statusRes.ok) continue;
+          // eslint-disable-next-line no-await-in-loop
+          const status = await statusRes.json();
+          if (status.status === "applied") {
+            const paths = (status.importedPaths || []).join(", ");
+            notify?.({
+              message: paths ? `Imported to Studio: ${paths}` : "Studio import confirmed",
+              type: "success",
+            });
+            return;
+          }
+          if (status.status === "failed" || status.status === "expired") {
+            notify?.({ message: "Studio import failed or expired", type: "error" });
+            return;
+          }
+        }
+        notify?.({ message: "Still waiting for Studio plugin to confirm import", type: "info" });
       } catch (err) {
         console.error("Push error:", err);
         notify?.({ message: "Failed to connect to push service", type: "error" });

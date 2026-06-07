@@ -1,0 +1,54 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    match /users/{uid} {
+      allow read, write: if isOwner(uid);
+
+      match /{document=**} {
+        allow read, write: if isOwner(uid);
+      }
+    }
+
+    match /teams/{teamId} {
+      allow read: if isSignedIn() &&
+        exists(/databases/$(database)/documents/teams/$(teamId)/members/$(request.auth.uid));
+      allow write: if isSignedIn() &&
+        get(/databases/$(database)/documents/teams/$(teamId)/members/$(request.auth.uid)).data.role in ['owner', 'admin'];
+
+      match /members/{memberId} {
+        allow read: if isSignedIn();
+        allow write: if isSignedIn() &&
+          get(/databases/$(database)/documents/teams/$(teamId)/members/$(request.auth.uid)).data.role in ['owner', 'admin'];
+      }
+
+      match /shared_artifacts/{artifactId} {
+        allow read: if isSignedIn() &&
+          exists(/databases/$(database)/documents/teams/$(teamId)/members/$(request.auth.uid));
+        allow create: if isSignedIn() &&
+          exists(/databases/$(database)/documents/teams/$(teamId)/members/$(request.auth.uid));
+      }
+
+      match /projects/{projectId} {
+        allow read, write: if isSignedIn() &&
+          exists(/databases/$(database)/documents/teams/$(teamId)/members/$(request.auth.uid));
+      }
+    }
+
+    match /_jobs/{jobId} {
+      allow read: if false;
+      allow write: if false;
+    }
+
+    match /_stream_sessions/{sessionId} {
+      allow read, write: if false;
+    }
+  }
+}

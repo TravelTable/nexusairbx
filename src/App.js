@@ -40,6 +40,7 @@ const NexusRBXIconDetailPage = lazy(() => import("./pages/IconDetailPage"));
 const NexusRBXNotFoundPage = lazy(() => import("./pages/NotFoundPage"));
 const ScriptShareModalWrapper = lazy(() => import("./components/ScriptShareModalWrapper"));
 const DebugEntitlementsPage = lazy(() => import("./pages/DebugEntitlementsPage"));
+const AdminRoute = lazy(() => import("./components/AdminRoute"));
 
 function App() {
   const { portal } = useBilling();
@@ -68,7 +69,7 @@ function App() {
           <Route path="/icons/:id" element={<NexusRBXIconDetailPage />} />
           <Route path="/script/:id" element={<ScriptShareModalWrapper />} />
           {/* NEW: on-screen entitlements debugger */}
-          <Route path="/debug/entitlements" element={<DebugEntitlementsPage />} />
+          <Route path="/debug/entitlements" element={<AdminRoute><DebugEntitlementsPage /></AdminRoute>} />
           <Route path="*" element={<NexusRBXNotFoundPage />} />
         </Routes>
       </Suspense>
