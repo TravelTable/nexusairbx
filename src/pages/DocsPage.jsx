@@ -89,7 +89,7 @@ export default function NexusRBXDocsPageContainer() {
       items: [
         { id: "introduction", title: "Introduction", href: "#introduction" },
         { id: "account-setup", title: "Account Setup", href: "#account-setup" },
-        { id: "plugin-install", title: "Plugin Install", href: "#plugin-install" },
+        { id: "export-download", title: "Export & Download", href: "#export-download" },
         { id: "ai-console", title: "AI Console", href: "#ai-console" },
         { id: "quick-start", title: "Quick Start", href: "#quick-start" }
       ]
@@ -352,24 +352,19 @@ function GettingStartedContent() {
         <ul className="list-disc list-inside text-gray-400 space-y-2">
           <li><strong>Register:</strong> Visit nexusrbx.com and click Sign Up.</li>
           <li><strong>Verify:</strong> Confirm your email address to enable all features.</li>
-          <li><strong>API Key:</strong> Find your secret API key in account settings for plugin use.</li>
+          <li><strong>API Key:</strong> Find your secret API key in account settings for programmatic access.</li>
         </ul>
       </section>
 
-      <section id="plugin-install" className="scroll-mt-16 mt-12 relative overflow-hidden">
-        <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px] z-10 flex items-center justify-center rounded-2xl">
-          <div className="px-6 py-3 rounded-xl bg-[#9b5de5] text-white font-black uppercase tracking-widest shadow-xl transform -rotate-2">
-            Coming Soon
-          </div>
-        </div>
-        <h2 className="text-2xl font-bold mb-4 text-[#9b5de5] opacity-40">Installing the Studio Plugin</h2>
-        <div className="bg-white/5 border border-white/10 rounded-2xl p-6 opacity-40">
-          <p className="text-gray-400 mb-4">The NexusRBX Studio Plugin allows you to import your generated UI boards directly into Roblox Studio with a single click.</p>
+      <section id="export-download" className="scroll-mt-16 mt-12">
+        <h2 className="text-2xl font-bold mb-4 text-[#9b5de5]">Exporting & Downloading</h2>
+        <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
+          <p className="text-gray-400 mb-4">Every generated artifact can be moved into Roblox Studio straight from the web app — no plugin required.</p>
           <ul className="list-decimal list-inside space-y-3 text-gray-300">
-            <li>Search for <strong>"NexusRBX"</strong> in the Plugin Marketplace.</li>
-            <li>Install the plugin and open the NexusRBX panel.</li>
-            <li>Enter your <strong>API Key</strong> to authenticate.</li>
-            <li>Select a board from your account and click <strong>"Import"</strong>.</li>
+            <li>Open the artifact in the AI Console preview panel.</li>
+            <li>Use <strong>Copy</strong> to grab the Luau, or <strong>.lua</strong> / <strong>Bundle</strong> to download the files.</li>
+            <li>Paste the code into a Script / LocalScript in Roblox Studio.</li>
+            <li>Run <strong>Verify</strong> first to catch readiness issues before you paste.</li>
           </ul>
         </div>
       </section>
@@ -402,7 +397,7 @@ function GettingStartedContent() {
             <li>Type the prompt and click <strong>Generate</strong>.</li>
             <li>Review the code in the output panel.</li>
             <li>Click <strong>Simulate</strong> to verify logic.</li>
-            <li>Click <strong>Send to Studio</strong> to insert it into your game.</li>
+            <li>Use <strong>Copy</strong> or <strong>Download</strong> and paste it into your game in Studio.</li>
           </ol>
         </div>
       </section>

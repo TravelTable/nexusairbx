@@ -13,8 +13,8 @@ export default function ChatView({
   activeMode = "general",
   onViewUi,
   onQuickStart,
+  onOpenTemplates,
   onRefine,
-  onPushToStudio,
   onFixUiAudit,
   onApprovePlan,
   onClarifySubmit,
@@ -28,7 +28,7 @@ export default function ChatView({
   return (
     <div className="w-full max-w-5xl mx-auto h-full flex flex-col">
       {showEmpty ? (
-        <ChatEmptyState onQuickStart={onQuickStart} user={user} />
+        <ChatEmptyState onQuickStart={onQuickStart} onOpenTemplates={onOpenTemplates} user={user} />
       ) : (
         <MessageList
           messages={messages}
@@ -39,7 +39,6 @@ export default function ChatView({
           chatEndRef={chatEndRef}
           onViewUi={onViewUi}
           onRefine={onRefine}
-          onPushToStudio={onPushToStudio}
           onFixUiAudit={onFixUiAudit}
           onApprovePlan={onApprovePlan}
           onClarifySubmit={onClarifySubmit}

@@ -321,6 +321,7 @@ export function useAiChat(user, settings, refreshBilling, notify) {
 
           if (data?.options) msgPayload.options = data.options;
           if (data?.plan) msgPayload.plan = data.plan;
+          if (Array.isArray(data?.files) && data.files.length) msgPayload.files = data.files;
 
           await setDoc(assistantMsgRef, msgPayload);
 
@@ -335,6 +336,7 @@ export function useAiChat(user, settings, refreshBilling, notify) {
               ...data,
               uiModuleLua: data.uiModuleLua || data.content,
               systemsLua: data.systemsLua || "",
+              files: Array.isArray(data.files) ? data.files : [],
             });
           }
 
@@ -537,55 +539,6 @@ export function useAiChat(user, settings, refreshBilling, notify) {
     setCurrentTaskId,
     chatMode,
     setChatMode,
-    handlePushToStudio: async (artifactId, type, data) => {
-      if (!user) return;
-      try {
-        const token = await user.getIdToken();
-        const res = await fetch(`${BACKEND_URL}/api/plugin/push-queue`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ artifactId, type, data }),
-        });
-        if (!res.ok) {
-          const err = await res.json();
-          notify?.({ message: err.error || "Push failed", type: "error" });
-          return;
-        }
-        const { pushId } = await res.json();
-        notify?.({ message: "Queued for Studio import…", type: "info" });
-
-        for (let i = 0; i < 30; i += 1) {
-          // eslint-disable-next-line no-await-in-loop
-          await wait(2000);
-          // eslint-disable-next-line no-await-in-loop
-          const statusRes = await fetch(`${BACKEND_URL}/api/plugin/push-queue/${pushId}/status`, {
-            headers: { Authorization: `Bearer ${token}` },
-          });
-          if (!statusRes.ok) continue;
-          // eslint-disable-next-line no-await-in-loop
-          const status = await statusRes.json();
-          if (status.status === "applied") {
-            const paths = (status.importedPaths || []).join(", ");
-            notify?.({
-              message: paths ? `Imported to Studio: ${paths}` : "Studio import confirmed",
-              type: "success",
-            });
-            return;
-          }
-          if (status.status === "failed" || status.status === "expired") {
-            notify?.({ message: "Studio import failed or expired", type: "error" });
-            return;
-          }
-        }
-        notify?.({ message: "Still waiting for Studio plugin to confirm import", type: "info" });
-      } catch (err) {
-        console.error("Push error:", err);
-        notify?.({ message: "Failed to connect to push service", type: "error" });
-      }
-    },
     handleShareWithTeam: async (artifactId, type, teamId) => {
       if (!user) return;
       try {

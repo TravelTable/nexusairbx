@@ -13,8 +13,7 @@ import {
   Zap,
   Layout,
   Code,
-  ShieldCheck,
-  Download
+  ShieldCheck
 } from "lucide-react";
 import TokensCounterContainer from "./TokensCounterContainer";
 import { useLocation } from "react-router-dom";
@@ -74,14 +73,6 @@ function NexusRBXHeader({
       icon: Layout,
       href: "/icons-market",
       premium: false
-    },
-    {
-      name: "Roblox Plugin",
-      description: "Import UI directly into Studio",
-      icon: Download,
-      href: "/settings", // Direct to account for sync code
-      premium: true,
-      badge: "BETA"
     },
     {
       name: "SFX Generator",

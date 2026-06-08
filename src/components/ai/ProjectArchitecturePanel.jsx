@@ -99,14 +99,14 @@ export default function ProjectArchitecturePanel({ context, onClose, onSync }) {
         {!hasAny ? (
           <div className="rounded-xl bg-white/5 border border-white/10 p-6 text-center">
             <p className="text-sm text-gray-400 mb-2">No project context yet.</p>
-            <p className="text-xs text-gray-500 mb-4">Sync from the NexusRBX Studio Plugin to show your Remotes, Modules, and services here.</p>
+            <p className="text-xs text-gray-500 mb-4">Add your game's Remotes, Modules, and services so the AI can generate code that fits your project.</p>
             {onSync && (
               <button
                 type="button"
                 onClick={onSync}
                 className="px-4 py-2 rounded-lg bg-[#00f5d4]/10 text-[#00f5d4] text-xs font-semibold hover:bg-[#00f5d4]/20 transition-colors"
               >
-                Sync from Studio
+                Add Project Context
               </button>
             )}
           </div>

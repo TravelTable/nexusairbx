@@ -10,6 +10,7 @@ import {
 } from "../AiComponents";
 import ScriptLoadingBarContainer from "../../ScriptLoadingBarContainer";
 import ExportBar from "../ExportBar";
+import QaScoreBadge from "../QaScoreBadge";
 import {
   Layout,
   Eye,
@@ -42,7 +43,6 @@ export default function AssistantBubble({
   user,
   onViewUi,
   onRefine,
-  onPushToStudio,
   onFixUiAudit,
   onApprovePlan,
   onClarifySubmit,
@@ -71,6 +71,8 @@ export default function AssistantBubble({
   const hasArtifact = (m.uiModuleLua || m.code) && m.metadata?.mode !== "plan";
   const isUi = m.metadata?.type === "ui" || !!m.projectId;
   const code = m.uiModuleLua || m.code || "";
+  const qaReport = m.metadata?.qaReport || null;
+  const qaIssueCount = Array.isArray(qaReport?.issues) ? qaReport.issues.length : 0;
 
   const exportBar = hasArtifact ? (
     <ExportBar
@@ -80,7 +82,7 @@ export default function AssistantBubble({
       title={m.title || (isUi ? "Generated UI" : "Generated Script")}
       projectId={isUi ? m.projectId : m.artifactId}
       kind={isUi ? "ui" : "script"}
-      onPushToStudio={onPushToStudio}
+      files={m.files || []}
       onSaveLibrary={({ name, code: c }) =>
         emitAiEvent(AI_EVENTS.SAVE_SCRIPT, { name: name || m.title || "Generated Script", code: c })
       }
@@ -107,6 +109,19 @@ export default function AssistantBubble({
 
       {hasArtifact && (
         <div className="mt-6 space-y-4">
+          {qaReport && Number.isFinite(Number(qaReport.score)) && (
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">
+                Quality &amp; Trust
+              </span>
+              <QaScoreBadge
+                score={qaReport.score}
+                issueCount={qaIssueCount}
+                onFix={isUi ? () => onFixUiAudit?.(m) : undefined}
+                disabled={isBusy}
+              />
+            </div>
+          )}
           {activeMode === "general" && !m.metadata?.structuredData ? (
             <div className="p-4 rounded-2xl bg-black/40 border border-white/5 space-y-3">
               <div className="flex items-center justify-between">

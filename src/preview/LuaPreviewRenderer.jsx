@@ -1,6 +1,27 @@
-import React, { useLayoutEffect, useRef, useState, useMemo, useCallback } from "react";
+import React, {
+  useLayoutEffect,
+  useRef,
+  useState,
+  useMemo,
+  useCallback,
+  useEffect,
+} from "react";
 import { extractUiManifestFromLua } from "../lib/extractUiManifestFromLua";
 import { robloxThumbnailUrl } from "../lib/uiBuilderApi";
+import {
+  buildTree,
+  resolveUDim2,
+  udimToCss,
+  resolveAnchor,
+  resolveFill,
+  resolveTextColor,
+  resolveFont,
+  resolveRadius,
+  resolvePadding,
+  resolveLayout,
+  parseColor,
+  toNum,
+} from "./robloxLayout";
 
 export const PREVIEW_DEVICES = {
   pc: { name: "PC / Console", w: 1280, h: 720, icon: "Monitor" },
@@ -9,88 +30,98 @@ export const PREVIEW_DEVICES = {
   portrait: { name: "Phone (Portrait)", w: 375, h: 812, icon: "Smartphone" },
 };
 
-export default function LuaPreviewRenderer({ 
-  lua, 
-  boardState, 
-  interactive = false, 
+// Roblox reserves a ~36px strip at the top of the screen for the topbar (chat,
+// leaderboard, etc.). UIs with IgnoreGuiInset=true can render underneath it, so
+// we draw it as an informational overlay in canvas units.
+const TOPBAR_INSET = 36;
+
+export default function LuaPreviewRenderer({
+  lua,
+  boardState,
+  interactive = false,
   onAction,
   device = "pc",
   editMode = false,
-  onUpdateItem
+  onUpdateItem,
+  showSafeArea = true,
 }) {
   const outerRef = useRef(null);
   const [box, setBox] = useState({ w: 0, h: 0 });
 
-  // Measure on mount and on resize
+  // Client-side simulation state (no backend): visibility overrides driven by
+  // interaction rules (modal toggles / tab switching where the manifest expresses them).
+  const [visOverrides, setVisOverrides] = useState({});
+
   useLayoutEffect(() => {
     if (!outerRef.current) return;
-    
     const measure = () => {
       if (outerRef.current) {
         const { width, height } = outerRef.current.getBoundingClientRect();
-        if (width > 0 && height > 0) {
-          setBox({ w: width, h: height });
-        }
+        if (width > 0 && height > 0) setBox({ w: width, h: height });
       }
     };
-
     measure();
-    
+
     if (typeof ResizeObserver === "undefined") {
       const timer = setInterval(measure, 1000);
       return () => clearInterval(timer);
     }
-
     const ro = new ResizeObserver(measure);
     ro.observe(outerRef.current);
-    
-    // Multiple measurements to catch animation ends
-    const timers = [300, 600, 1200, 2500].map(ms => setTimeout(measure, ms));
-
+    const timers = [300, 600, 1200].map((ms) => setTimeout(measure, ms));
     return () => {
       ro.disconnect();
       timers.forEach(clearTimeout);
     };
   }, []);
 
+  // Reset interaction state when the underlying UI changes.
+  useEffect(() => {
+    setVisOverrides({});
+  }, [boardState, lua]);
+
   const board = useMemo(() => {
     if (boardState) return boardState;
-    // Fallback to parsing Lua only if boardState is missing
     return extractUiManifestFromLua(lua);
   }, [lua, boardState]);
 
   const items = useMemo(() => (Array.isArray(board?.items) ? board.items : []), [board]);
-  
+  const tokens = board?.tokens || {};
+
   const deviceConfig = PREVIEW_DEVICES[device] || PREVIEW_DEVICES.pc;
+  // Render at the TRUE device resolution; the manifest's own canvasSize is only a
+  // hint for authored coordinates, so we honor the selected device frame.
   const canvasW = deviceConfig.w;
   const canvasH = deviceConfig.h;
 
-  // --- SMART ZOOM LOGIC ---
-  // Calculate the bounding box of all visible items to "zoom in" on the content
-  const bounds = useMemo(() => {
-    if (items.length === 0) return { x: 0, y: 0, w: canvasW, h: canvasH };
-    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-    items.forEach(it => {
-      if (it.visible === false) return;
-      const ix = parseFloat(it.x) || 0;
-      const iy = parseFloat(it.y) || 0;
-      const iw = parseFloat(it.w) || 0;
-      const ih = parseFloat(it.h) || 0;
-      minX = Math.min(minX, ix);
-      minY = Math.min(minY, iy);
-      maxX = Math.max(maxX, ix + iw);
-      maxY = Math.max(maxY, iy + ih);
+  const tree = useMemo(() => buildTree(items), [items]);
+
+  // Base (manifest) visibility per id, so ToggleVisible flips the real state.
+  const baseVisible = useMemo(() => {
+    const m = {};
+    items.forEach((it, i) => {
+      const id = it && it.id != null ? String(it.id) : `__auto_${i}`;
+      m[id] = it?.visible !== false;
     });
-    
-    // Add some padding around the content (40px)
-    const padding = 40;
-    const bx = Math.max(0, minX - padding);
-    const by = Math.max(0, minY - padding);
-    const bw = Math.min(canvasW, (maxX - minX) + (padding * 2));
-    const bh = Math.min(canvasH, (maxY - minY) + (padding * 2));
-    
-    return { x: bx, y: by, w: bw, h: bh };
-  }, [items, canvasW, canvasH]);
+    return m;
+  }, [items]);
+
+  const applyRule = useCallback(
+    (rule) => {
+      if (!rule || typeof rule !== "object") return;
+      const targetId = rule.targetId != null ? String(rule.targetId) : null;
+      if (!targetId) return;
+      setVisOverrides((prev) => {
+        const next = { ...prev };
+        const current = prev[targetId] !== undefined ? prev[targetId] : baseVisible[targetId] !== false;
+        if (rule.type === "ToggleVisible") next[targetId] = !current;
+        else if (rule.type === "SetVisible") next[targetId] = rule.value === undefined ? true : rule.value === true;
+        else if (rule.type === "SetHidden") next[targetId] = false;
+        return next;
+      });
+    },
+    [baseVisible]
+  );
 
   if (!lua && !boardState) {
     return (
@@ -107,7 +138,7 @@ export default function LuaPreviewRenderer({
         <div className="text-[11px] opacity-70 max-w-[220px]">
           The Lua code is missing a valid UI manifest or the JSON is malformed.
         </div>
-        <button 
+        <button
           onClick={() => console.log("RAW LUA:", lua)}
           className="mt-4 px-3 py-1 text-[10px] bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 rounded uppercase tracking-wider font-bold"
         >
@@ -124,256 +155,456 @@ export default function LuaPreviewRenderer({
         <div className="text-[11px] opacity-70 max-w-[220px]">
           The Lua code contains a manifest, but it has no UI elements to display.
         </div>
-        <div className="mt-4 p-2 bg-black/40 rounded border border-white/5 text-[10px] font-mono text-left max-w-full overflow-auto">
-          <div className="text-zinc-500 mb-1">Debug Info</div>
-          <div className="text-zinc-300">Canvas: {board.canvasSize?.w}x{board.canvasSize?.h}</div>
-          <div className="text-zinc-300">Items: {items.length}</div>
-          <button 
-            onClick={() => console.log("MANIFEST DATA:", board)}
-            className="mt-2 text-[#00f5d4] hover:underline"
-          >
-            Inspect Manifest in Console
-          </button>
-        </div>
       </div>
     );
   }
-  
-  // Sort items by ZIndex to ensure correct stacking (higher ZIndex on top)
-  const sortedItems = [...items].sort((a, b) => (Number(a.zIndex) || 0) - (Number(b.zIndex) || 0));
 
-  // Scale based on the content bounds instead of the full canvas
-  const scale = box.w > 0 && box.h > 0 
-    ? Math.min(box.w / bounds.w, box.h / bounds.h, 1.0) 
-    : 0.5; 
-  
+  // Scale the WHOLE canvas to fit its container (letterboxed/centered) instead of
+  // zooming onto a content bounding box.
   const isReady = box.w > 0 && box.h > 0;
+  const canvasScale = isReady ? Math.min(box.w / canvasW, box.h / canvasH) : 0.5;
 
-  // Calculate centering translation
-  // We want the center of the 'bounds' to be at the center of the 'box'
-  const translateX = isReady ? (canvasW / 2 - (bounds.x + bounds.w / 2)) : 0;
-  const translateY = isReady ? (canvasH / 2 - (bounds.y + bounds.h / 2)) : 0;
+  // TODO(progressive-render): stream boardState as it generates so the preview
+  // fills in live. This requires coordinating with the backend SSE pipeline
+  // (GET /api/ui-builder/ai/pipeline/stream), owned by another agent. For now we
+  // render the final boardState in one pass.
+
+  const ctx = {
+    interactive,
+    editMode,
+    onAction,
+    onUpdateItem,
+    canvasScale,
+    tokens,
+    visOverrides,
+    applyRule,
+  };
+
+  const isPhone = device === "phone" || device === "portrait";
+  const isPortrait = device === "portrait";
 
   return (
-    <div ref={outerRef} className="w-full h-full flex items-center justify-center bg-[#050505] overflow-hidden relative min-h-[300px]">
-      {/* Debug Info */}
+    <div
+      ref={outerRef}
+      className="w-full h-full flex items-center justify-center bg-[#050505] overflow-hidden relative min-h-[300px]"
+    >
       <div className="absolute top-2 left-2 text-[10px] text-white/20 pointer-events-none z-10">
-        {items.length} items | {canvasW}x{canvasH} | Zoom: {Math.round(scale * 100)}%
+        {items.length} items | {canvasW}x{canvasH} | Fit: {Math.round(canvasScale * 100)}%
       </div>
 
       <div
-        className={`relative bg-[#0D0D0D] shadow-[0_0_80px_rgba(0,0,0,0.8)] transition-all duration-700 ${isReady ? 'opacity-100 scale-100' : 'opacity-60 scale-95'}`}
+        className={`relative transition-opacity duration-500 ${isReady ? "opacity-100" : "opacity-0"}`}
         style={{
           width: canvasW,
           height: canvasH,
-          // Center the content bounds in the view
-          transform: `scale(${scale}) translate(${translateX}px, ${translateY}px)`,
+          transform: `scale(${canvasScale})`,
           transformOrigin: "center center",
-          borderRadius: 12,
           flexShrink: 0,
+          background: "#0D0D0D",
+          borderRadius: 14,
+          overflow: "hidden",
           border: "1px solid rgba(255,255,255,0.15)",
-          pointerEvents: isReady ? "auto" : "none"
+          boxShadow: "0 0 80px rgba(0,0,0,0.8)",
+          pointerEvents: isReady ? "auto" : "none",
         }}
       >
-        {sortedItems.map((item) => (
-          <PreviewNode
-            key={item.id}
-            item={item}
-            interactive={interactive}
-            onAction={onAction}
-            editMode={editMode}
-            onUpdate={(updates) => onUpdateItem?.(item.id, updates)}
-            canvasSize={{ w: canvasW, h: canvasH }}
-          />
+        {tree.roots.map((node) => (
+          <PreviewNode key={node.__id} node={node} ctx={ctx} parentLayout={null} />
         ))}
+
+        {/* Roblox topbar inset + mobile safe-area overlay (subtle, toggleable) */}
+        {showSafeArea && (
+          <SafeAreaOverlay
+            canvasW={canvasW}
+            canvasH={canvasH}
+            isPhone={isPhone}
+            isPortrait={isPortrait}
+          />
+        )}
       </div>
     </div>
   );
 }
 
 /**
- * Helper to convert Roblox-style color strings or hex to CSS colors
+ * Subtle overlay showing the Roblox topbar reserved strip and (on phones) the
+ * notch / safe-area, so UIs that render underneath are visually obvious.
  */
-function parseColor(color) {
-  if (!color) return null;
-  const s = String(color).trim();
-  
-  // Handle Color3.fromRGB(r, g, b)
-  const rgbMatch = s.match(/fromRGB\s*\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)/i);
-  if (rgbMatch) {
-    return `rgb(${rgbMatch[1]}, ${rgbMatch[2]}, ${rgbMatch[3]})`;
-  }
-  
-  // Handle Color3.new(r, g, b)
-  const newMatch = s.match(/new\s*\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)\s*\)/i);
-  if (newMatch) {
-    return `rgb(${Math.round(parseFloat(newMatch[1]) * 255)}, ${Math.round(parseFloat(newMatch[2]) * 255)}, ${Math.round(parseFloat(newMatch[3]) * 255)})`;
-  }
-
-  // Handle rgba(r, g, b, a)
-  if (s.startsWith("rgba")) return s;
-  
-  // Handle hex
-  if (s.startsWith("#")) return s;
-  
-  return s;
-}
-
-function PreviewNode({ item, interactive, onAction, editMode, onUpdate, canvasSize }) {
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-
-  const x = parseFloat(item.x) || 0;
-  const y = parseFloat(item.y) || 0;
-  const w = parseFloat(item.w) || 0;
-  const h = parseFloat(item.h) || 0;
-
-  const isScale = item.useScale === true;
-
-  const handleMouseDown = (e) => {
-    if (!editMode) return;
-    e.stopPropagation();
-    setIsDragging(true);
-    setDragStart({ x: e.clientX, y: e.clientY });
-  };
-
-  const handleMouseMove = useCallback((e) => {
-    if (!isDragging || !editMode) return;
-    const dx = e.clientX - dragStart.x;
-    const dy = e.clientY - dragStart.y;
-
-    // Convert pixel delta to scale if needed
-    const nx = isScale ? x + (dx / canvasSize.w) : x + dx;
-    const ny = isScale ? y + (dy / canvasSize.h) : y + dy;
-
-    onUpdate({ x: nx, y: ny });
-    setDragStart({ x: e.clientX, y: e.clientY });
-  }, [isDragging, editMode, dragStart, isScale, x, y, canvasSize.w, canvasSize.h, onUpdate]);
-
-  const handleMouseUp = useCallback(() => {
-    setIsDragging(false);
-  }, []);
-
-  React.useEffect(() => {
-    if (isDragging) {
-      window.addEventListener('mousemove', handleMouseMove);
-      window.addEventListener('mouseup', handleMouseUp);
-    }
-    return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
-    };
-  }, [isDragging, handleMouseMove, handleMouseUp]);
-
-  const type = String(item.type || "").toLowerCase();
-  const fillColor = parseColor(item.fill);
-  const strokeColor = parseColor(item.strokeColor);
-  const textColor = parseColor(item.textColor);
-
-  // Font Mapping
-  const fontMap = {
-    "Gotham": "'Inter', sans-serif",
-    "GothamBold": "'Inter', sans-serif",
-    "GothamBlack": "'Inter', sans-serif",
-    "FredokaOne": "'Fredoka One', cursive",
-    "LuckiestGuy": "'Luckiest Guy', cursive",
-    "Bangers": "'Bangers', cursive",
-    "Arcade": "'Press Start 2P', cursive"
-  };
-  const fontFamily = fontMap[item.font] || fontMap["Gotham"];
-
-  // Gradient Support
-  let background = fillColor || (type === "frame" ? "rgba(255,255,255,0.05)" : "#111827");
-  if (item.gradient && item.gradient.color1 && item.gradient.color2) {
-    const c1 = parseColor(item.gradient.color1);
-    const c2 = parseColor(item.gradient.color2);
-    background = `linear-gradient(180deg, ${c1} 0%, ${c2} 100%)`;
-  }
-
-  const style = {
-    position: "absolute",
-    left: isScale ? `${x * 100}%` : x,
-    top: isScale ? `${y * 100}%` : y,
-    width: isScale ? `${w * 100}%` : w,
-    height: isScale ? `${h * 100}%` : h,
-    zIndex: Number(item.zIndex) || 1,
-    cursor: editMode ? (isDragging ? "grabbing" : "grab") : (interactive ? "pointer" : "default"),
-    borderRadius: Number(item.radius) || 0,
-    background: background,
-    border: editMode
-      ? "2px dashed #00f5d4"
-      : item.stroke
-        ? `${Number(item.strokeWidth) || 1}px solid ${strokeColor || "rgba(255,255,255,0.2)"}`
-        : (type === "frame" ? "1px solid rgba(255,255,255,0.1)" : "none"),
-    color: textColor || "#ffffff",
-    display: item.visible === false ? "none" : "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    pointerEvents: interactive ? "auto" : "none",
-    userSelect: "none",
-    fontSize: Number(item.fontSize) || 14,
-    fontFamily: fontFamily,
-    fontWeight: item.font?.includes("Bold") ? "bold" : "normal",
-    overflow: "hidden",
-    textAlign: "center",
-    padding: 4,
-    boxSizing: "border-box",
-    boxShadow: type === "textbutton" ? "0 4px 14px rgba(0,0,0,0.4)" : "none",
-    opacity: item.opacity !== undefined ? Number(item.opacity) : 1,
-  };
-
-  if (type === "textlabel") {
-    return <div style={style} onMouseDown={handleMouseDown}>{item.text}</div>;
-  }
-
-  if (type === "frame" || type === "scrollingframe") {
-    return (
-      <div style={{ ...style, alignItems: "flex-start", justifyContent: "flex-start" }} onMouseDown={handleMouseDown}>
-        {/* Frames are containers */}
-      </div>
-    );
-  }
-
-  if (type === "textbutton" || type === "monetizationbutton") {
-    return (
-      <button
-        type="button"
+function SafeAreaOverlay({ canvasW, canvasH, isPhone, isPortrait }) {
+  return (
+    <div
+      className="absolute inset-0 pointer-events-none"
+      style={{ zIndex: 99999 }}
+      aria-hidden
+    >
+      {/* Roblox topbar inset */}
+      <div
         style={{
-          ...style,
-          cursor: interactive ? "pointer" : "default",
-          transition: "all 150ms ease",
-        }}
-        onClick={() => {
-          if (!interactive) return;
-          onAction?.({
-            type: "click",
-            id: item.id,
-            label: item.text || "Button",
-          });
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          height: TOPBAR_INSET,
+          background:
+            "repeating-linear-gradient(45deg, rgba(0,245,212,0.05) 0px, rgba(0,245,212,0.05) 6px, rgba(0,245,212,0.10) 6px, rgba(0,245,212,0.10) 12px)",
+          borderBottom: "1px dashed rgba(0,245,212,0.35)",
         }}
       >
-        {item.text || "Button"}
+        <span
+          style={{
+            position: "absolute",
+            right: 6,
+            top: "50%",
+            transform: "translateY(-50%)",
+            fontSize: 11,
+            letterSpacing: 1,
+            fontWeight: 700,
+            color: "rgba(0,245,212,0.6)",
+          }}
+        >
+          ROBLOX TOPBAR
+        </span>
+      </div>
+
+      {/* Mobile notch (portrait) */}
+      {isPortrait && (
+        <div
+          style={{
+            position: "absolute",
+            top: 0,
+            left: "50%",
+            transform: "translateX(-50%)",
+            width: canvasW * 0.42,
+            height: 28,
+            background: "rgba(0,0,0,0.85)",
+            borderBottomLeftRadius: 18,
+            borderBottomRightRadius: 18,
+          }}
+        />
+      )}
+
+      {/* Mobile side safe-areas (landscape phone) */}
+      {isPhone && !isPortrait && (
+        <>
+          <div
+            style={{
+              position: "absolute",
+              top: 0,
+              bottom: 0,
+              left: 0,
+              width: 44,
+              borderRight: "1px dashed rgba(155,93,229,0.30)",
+              background: "linear-gradient(90deg, rgba(0,0,0,0.25), transparent)",
+            }}
+          />
+          <div
+            style={{
+              position: "absolute",
+              top: 0,
+              bottom: 0,
+              right: 0,
+              width: 44,
+              borderLeft: "1px dashed rgba(155,93,229,0.30)",
+              background: "linear-gradient(270deg, rgba(0,0,0,0.25), transparent)",
+            }}
+          />
+        </>
+      )}
+    </div>
+  );
+}
+
+/** Build a CSS background (solid + optional gradient) for a node. */
+function buildBackground(node, tokens, isContainer) {
+  const fill = resolveFill(node, tokens);
+  let background = fill;
+
+  if (!background) {
+    if (isContainer && (node.type || "").toLowerCase() === "frame") {
+      background = "rgba(255,255,255,0.04)";
+    } else {
+      background = null; // transparent (text labels/buttons default to transparent)
+    }
+  }
+
+  const g = node.gradient;
+  if (g && typeof g === "object") {
+    const stops = Array.isArray(g.stops) && g.stops.length >= 2 ? g.stops : null;
+    const robloxRot = toNum(g.rotation, 90);
+    const cssAngle = robloxRot + 90; // Roblox 0deg = horizontal L->R = CSS 90deg
+    if (stops) {
+      const parts = stops
+        .map((s) => {
+          const c = parseColor(s.color || s.colour);
+          if (!c) return null;
+          const pos = s.position != null ? `${toNum(s.position) * 100}%` : "";
+          return `${c} ${pos}`.trim();
+        })
+        .filter(Boolean);
+      if (parts.length >= 2) background = `linear-gradient(${cssAngle}deg, ${parts.join(", ")})`;
+    } else if (g.color1 && g.color2) {
+      const c1 = parseColor(g.color1);
+      const c2 = parseColor(g.color2);
+      if (c1 && c2) background = `linear-gradient(${cssAngle}deg, ${c1} 0%, ${c2} 100%)`;
+    }
+  }
+
+  return background;
+}
+
+const TYPE_ALIASES = {
+  monetizationbutton: "textbutton",
+};
+
+function PreviewNode({ node, ctx, parentLayout }) {
+  const elRef = useRef(null);
+  const [hover, setHover] = useState(false);
+  const [pressed, setPressed] = useState(false);
+  const [focused, setFocused] = useState(false);
+  const [drag, setDrag] = useState(null);
+
+  const { interactive, editMode, onAction, onUpdateItem, canvasScale, tokens, visOverrides, applyRule } = ctx;
+
+  const rawType = String(node.type || "Frame").toLowerCase();
+  const type = TYPE_ALIASES[rawType] || rawType;
+  const isContainer = type === "frame" || type === "scrollingframe" || type === "viewportframe";
+
+  const { pos, size } = useMemo(() => resolveUDim2(node), [node]);
+  const anchor = useMemo(() => resolveAnchor(node), [node]);
+  const layout = useMemo(() => resolveLayout(node.layout), [node.layout]);
+  const padding = useMemo(() => resolvePadding(node.padding), [node.padding]);
+  const font = useMemo(() => resolveFont(node), [node]);
+
+  // Visibility: explicit overrides (from interactions) win over manifest value.
+  const overridden = visOverrides[node.__id];
+  const visible = overridden !== undefined ? overridden : node.visible !== false;
+
+  // Drag-to-nudge (editMode). Converts screen px deltas back to canvas/parent units.
+  const handleMouseDown = useCallback(
+    (e) => {
+      if (!editMode) return;
+      e.stopPropagation();
+      setDrag({ x: e.clientX, y: e.clientY });
+    },
+    [editMode]
+  );
+
+  const handleMouseMove = useCallback(
+    (e) => {
+      if (!drag) return;
+      const dxScreen = e.clientX - drag.x;
+      const dyScreen = e.clientY - drag.y;
+      const scale = canvasScale || 1;
+      // Layout boxes are NOT affected by the canvas CSS transform, so parent
+      // clientWidth/Height are already in canvas units.
+      const parentEl = elRef.current?.parentElement;
+      const parentW = parentEl?.clientWidth || 0;
+      const parentH = parentEl?.clientHeight || 0;
+      const dxCanvas = dxScreen / scale;
+      const dyCanvas = dyScreen / scale;
+
+      const nextX =
+        pos.x.scale !== 0 && parentW
+          ? toNum(node.x) + dxCanvas / parentW
+          : toNum(node.x) + dxCanvas;
+      const nextY =
+        pos.y.scale !== 0 && parentH
+          ? toNum(node.y) + dyCanvas / parentH
+          : toNum(node.y) + dyCanvas;
+
+      onUpdateItem?.(node.__id, { x: nextX, y: nextY });
+      setDrag({ x: e.clientX, y: e.clientY });
+    },
+    [drag, canvasScale, pos.x.scale, pos.y.scale, node.x, node.y, node.__id, onUpdateItem]
+  );
+
+  const handleMouseUp = useCallback(() => setDrag(null), []);
+
+  useEffect(() => {
+    if (!drag) return undefined;
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, [drag, handleMouseMove, handleMouseUp]);
+
+  // Whether this node participates in a parent layout (flow) instead of absolute.
+  const inGridFlow = parentLayout?.kind === "grid";
+  const inListFlow = parentLayout?.kind === "list";
+  const inFlow = inGridFlow || inListFlow;
+
+  const radius = resolveRadius(node.radius);
+  const background = buildBackground(node, tokens, isContainer);
+
+  const strokeColor = parseColor(node.strokeColor);
+  const hasStroke = node.stroke === true;
+  const strokeWidth = hasStroke ? Math.max(1, toNum(node.strokeWidth, 2)) : 0;
+  const strokeTransparency = node.strokeTransparency != null ? toNum(node.strokeTransparency) : 0;
+
+  const clip = node.clipsDescendants === true || type === "scrollingframe";
+
+  // Text alignment.
+  const xAlign = String(node.textXAlignment || node.horizontalAlignment || "Center");
+  const yAlign = String(node.textYAlignment || node.verticalAlignment || "Center");
+  const justify =
+    xAlign === "Left" ? "flex-start" : xAlign === "Right" ? "flex-end" : "center";
+  const alignItems =
+    yAlign === "Top" ? "flex-start" : yAlign === "Bottom" ? "flex-end" : "center";
+  const textAlign = xAlign === "Left" ? "left" : xAlign === "Right" ? "right" : "center";
+
+  // Font sizing (TextScaled approximation fills the box height).
+  let fontSize = toNum(node.fontSize, 14);
+  if (node.textScaled === true) {
+    fontSize = Math.max(8, (size.h.offset || 24) * 0.5);
+  }
+
+  const baseStyle = {
+    boxSizing: "border-box",
+    zIndex: Math.floor(toNum(node.zIndex, 1)),
+    display: visible ? "flex" : "none",
+    alignItems,
+    justifyContent: justify,
+    color: resolveTextColor(node, tokens),
+    fontFamily: font.family,
+    fontWeight: font.weight,
+    fontSize,
+    textAlign,
+    borderRadius: radius,
+    background: background || "transparent",
+    opacity: node.opacity != null ? Math.max(0, Math.min(1, toNum(node.opacity, 1))) : 1,
+    overflow: clip ? (type === "scrollingframe" ? "auto" : "hidden") : "visible",
+    userSelect: "none",
+  };
+
+  // Stroke via outline so it doesn't affect box sizing.
+  if (strokeWidth > 0) {
+    baseStyle.boxShadow = `0 0 0 ${strokeWidth}px ${
+      strokeColor || "rgba(148,163,184,0.6)"
+    }`;
+    if (strokeTransparency > 0) baseStyle.outlineColor = "transparent";
+  }
+
+  // Positioning: absolute (default) vs in-flow (parent has UIListLayout/Grid).
+  if (inFlow) {
+    baseStyle.position = "relative";
+    if (inGridFlow) {
+      baseStyle.width = `${parentLayout.cellX}px`;
+      baseStyle.height = `${parentLayout.cellY}px`;
+      baseStyle.flexShrink = 0;
+    } else {
+      baseStyle.width = udimToCss(size.w);
+      baseStyle.height = udimToCss(size.h);
+      baseStyle.flexShrink = 0;
+    }
+  } else {
+    baseStyle.position = "absolute";
+    baseStyle.left = udimToCss(pos.x);
+    baseStyle.top = udimToCss(pos.y);
+    baseStyle.width = udimToCss(size.w);
+    baseStyle.height = udimToCss(size.h);
+    if (anchor.x || anchor.y) {
+      baseStyle.transform = `translate(${-anchor.x * 100}%, ${-anchor.y * 100}%)`;
+    }
+  }
+
+  // Container layout (UIListLayout / UIGridLayout) + UIPadding.
+  const containerStyle = { ...baseStyle };
+  if (layout) {
+    Object.assign(containerStyle, layout.style);
+  } else if (isContainer || node.__children.length > 0) {
+    // Children are absolutely positioned within this container.
+    containerStyle.display = visible ? "block" : "none";
+    containerStyle.position = baseStyle.position;
+  }
+  if (padding) {
+    containerStyle.paddingTop = padding.top;
+    containerStyle.paddingBottom = padding.bottom;
+    containerStyle.paddingLeft = padding.left;
+    containerStyle.paddingRight = padding.right;
+  }
+
+  // Interaction visuals (hover/press) for buttons.
+  const isButton = type === "textbutton" || type === "imagebutton";
+  const interactiveStyle =
+    isButton && interactive && !editMode
+      ? {
+          transition: "transform 120ms ease, filter 120ms ease",
+          transform: `${baseStyle.transform ? baseStyle.transform + " " : ""}scale(${
+            pressed ? 0.96 : hover ? 1.03 : 1
+          })`,
+          filter: pressed ? "brightness(0.9)" : hover ? "brightness(1.08)" : "none",
+        }
+      : {};
+
+  const editStyle = editMode
+    ? {
+        outline: "2px dashed #00f5d4",
+        outlineOffset: -1,
+        cursor: drag ? "grabbing" : "grab",
+      }
+    : {};
+
+  const fireClick = () => {
+    if (!interactive || editMode) return;
+    onAction?.({ type: "click", id: node.__id, label: node.text || node.name || "Button" });
+    if (node.interactions?.OnClick) applyRule(node.interactions.OnClick);
+  };
+
+  const children = node.__children.map((child) => (
+    <PreviewNode key={child.__id} node={child} ctx={ctx} parentLayout={layout} />
+  ));
+
+  // --- Render per element type ---
+
+  if (type === "textbutton") {
+    return (
+      <button
+        ref={elRef}
+        type="button"
+        style={{ ...containerStyle, ...interactiveStyle, ...editStyle, padding: padding ? undefined : 6, cursor: editMode ? editStyle.cursor : interactive ? "pointer" : "default" }}
+        onMouseDown={handleMouseDown}
+        onMouseEnter={() => setHover(true)}
+        onMouseLeave={() => {
+          setHover(false);
+          setPressed(false);
+        }}
+        onMouseDownCapture={() => interactive && !editMode && setPressed(true)}
+        onMouseUp={() => setPressed(false)}
+        onClick={fireClick}
+      >
+        {node.text || node.name || "Button"}
+        {children}
       </button>
     );
   }
 
-  if (item.type === "TextBox") {
+  if (type === "textbox") {
     return (
       <input
+        ref={elRef}
         style={{
-          ...style,
+          ...baseStyle,
           justifyContent: "flex-start",
+          textAlign: "left",
           padding: 8,
           outline: "none",
+          border: focused ? "1px solid #00f5d4" : baseStyle.boxShadow ? undefined : "1px solid rgba(255,255,255,0.12)",
+          background: background || "rgba(255,255,255,0.06)",
         }}
-        disabled={!interactive}
-        placeholder={item.placeholder || "Type..."}
+        disabled={!interactive || editMode}
+        defaultValue={node.text || ""}
+        placeholder={node.placeholderText || node.placeholder || "Type..."}
+        onMouseDown={handleMouseDown}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
         onChange={(e) => {
           if (!interactive) return;
           onAction?.({
             type: "input",
-            id: item.id,
-            label: item.placeholder || "TextBox",
+            id: node.__id,
+            label: node.placeholderText || node.placeholder || "TextBox",
             value: e.target.value,
           });
         }}
@@ -381,48 +612,69 @@ function PreviewNode({ item, interactive, onAction, editMode, onUpdate, canvasSi
     );
   }
 
-  if ((item.type === "ImageLabel" || item.type === "ImageButton") && item.imageId) {
-    const imageIdStr = String(item.imageId || "");
+  if (type === "imagelabel" || type === "imagebutton") {
+    const imageIdStr = String(node.imageId || "");
     let src = null;
-    
     if (imageIdStr.startsWith("http")) {
-      // Direct URL (temporary asset from Firestore/AI)
       src = imageIdStr;
     } else {
-      // Roblox Asset ID
       const match = imageIdStr.match(/(\d{5,})/);
       src = match ? robloxThumbnailUrl({ assetId: match[1] }) : null;
     }
-
     return (
-      <div 
+      <div
+        ref={elRef}
         style={{
-          ...style,
-          cursor: item.type === "ImageButton" && interactive ? "pointer" : "default"
+          ...containerStyle,
+          ...interactiveStyle,
+          ...editStyle,
+          cursor: editMode ? editStyle.cursor : type === "imagebutton" && interactive ? "pointer" : "default",
         }}
-        onClick={() => {
-          if (item.type === "ImageButton" && interactive) {
-            onAction?.({
-              type: "click",
-              id: item.id,
-              label: item.name || "ImageButton",
-            });
-          }
+        onMouseDown={handleMouseDown}
+        onMouseEnter={() => type === "imagebutton" && setHover(true)}
+        onMouseLeave={() => {
+          setHover(false);
+          setPressed(false);
         }}
+        onClick={fireClick}
       >
         {src ? (
-          <img 
-            src={src} 
-            alt="" 
-            className="w-full h-full object-contain" 
+          <img
+            src={src}
+            alt=""
+            style={{ width: "100%", height: "100%", objectFit: "contain", pointerEvents: "none" }}
             onError={(e) => {
-              e.target.style.display = 'none';
+              e.target.style.display = "none";
             }}
           />
-        ) : null}
+        ) : (
+          <div className="w-full h-full flex items-center justify-center text-[10px] text-white/30 border border-dashed border-white/10">
+            no image
+          </div>
+        )}
+        {children}
       </div>
     );
   }
 
-  return <div style={style} />;
+  if (type === "textlabel") {
+    return (
+      <div ref={elRef} style={{ ...containerStyle, ...editStyle, padding: padding ? undefined : 4, whiteSpace: node.textWrapped === false ? "nowrap" : "normal" }} onMouseDown={handleMouseDown}>
+        <span style={{ pointerEvents: "none" }}>{node.text}</span>
+        {children}
+      </div>
+    );
+  }
+
+  // Frame / ScrollingFrame / ViewportFrame / fallback container
+  return (
+    <div ref={elRef} style={{ ...containerStyle, ...editStyle }} onMouseDown={handleMouseDown}>
+      {type === "viewportframe" && node.__children.length === 0 && (
+        <div className="w-full h-full flex items-center justify-center text-[10px] text-white/25">
+          3D Viewport
+        </div>
+      )}
+      {children}
+    </div>
+  );
 }

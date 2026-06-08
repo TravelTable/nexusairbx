@@ -1,5 +1,5 @@
 import React from "react";
-import { Sparkles, Layout, Code2, Rocket } from "lucide-react";
+import { Sparkles, Layout, Code2, Rocket, LayoutGrid } from "lucide-react";
 
 const EXAMPLES = [
   {
@@ -22,7 +22,7 @@ const EXAMPLES = [
   },
 ];
 
-export default function ChatEmptyState({ onQuickStart }) {
+export default function ChatEmptyState({ onQuickStart, onOpenTemplates }) {
   return (
     <div className="min-h-[60vh] flex flex-col items-center justify-center text-center space-y-10 py-12">
       <div className="space-y-3 max-w-xl">
@@ -51,6 +51,17 @@ export default function ChatEmptyState({ onQuickStart }) {
           </button>
         ))}
       </div>
+
+      {onOpenTemplates && (
+        <button
+          type="button"
+          onClick={onOpenTemplates}
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#00f5d4]/10 border border-[#00f5d4]/20 text-[#00f5d4] text-xs font-bold uppercase tracking-widest hover:bg-[#00f5d4]/20 transition-all"
+        >
+          <LayoutGrid className="w-4 h-4" />
+          Browse template gallery
+        </button>
+      )}
     </div>
   );
 }

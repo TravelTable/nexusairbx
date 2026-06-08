@@ -1,5 +1,5 @@
-import React from "react";
-import { Menu, Layout, X, Eye, EyeOff, FolderOpen } from "lucide-react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
+import { Menu, Layout, X, Eye, EyeOff, FolderOpen, LayoutGrid, Share2, Loader2 } from "lucide-react";
 
 import SidebarContent from "../../components/SidebarContent";
 import NexusRBXHeader from "../../components/NexusRBXHeader";
@@ -12,6 +12,9 @@ import GameProfileWizard from "../../components/ai/GameProfileWizard";
 import ChatView from "../../components/ai/ChatView";
 import ChatComposer from "../../components/ai/chat/ChatComposer";
 import ExportBar from "../../components/ai/ExportBar";
+import ModelSwitcher from "../../components/ai/ModelSwitcher";
+import TemplateGallery from "../../components/ai/TemplateGallery";
+import DailyPromptBadge from "../../components/ai/DailyPromptBadge";
 import ProjectArchitecturePanel from "../../components/ai/ProjectArchitecturePanel";
 import { ProjectContextStatus } from "../../components/ai/AiComponents";
 import { AI_EVENTS } from "../../lib/aiEvents";
@@ -28,6 +31,7 @@ export default function AiWorkspaceLayout({ controller }) {
     activeTab,
     mobileTab,
     prompt,
+    isImproving,
     refineTarget,
     attachments,
     scripts,
@@ -38,6 +42,8 @@ export default function AiWorkspaceLayout({ controller }) {
     proNudgeReason,
     codeDrawerOpen,
     codeDrawerData,
+    templateGalleryOpen,
+    isSharing,
     currentTheme,
     currentToast,
   } = uiState;
@@ -55,15 +61,20 @@ export default function AiWorkspaceLayout({ controller }) {
     setShowProNudge,
     setProNudgeReason,
     setCodeDrawerOpen,
+    setTemplateGalleryOpen,
     dismissToast,
+    updateSettings,
     handlePromptSubmit,
     onApprovePlan,
     onClarifySubmit,
     handleEditPlan,
     handleStartRefine,
     cancelRefine,
+    handleImprovePrompt,
     handleFileUpload,
     handleQuickStart,
+    handleSelectTemplate,
+    handleCreateShareLink,
     handlePreviewToggle,
     handleClosePreview,
     track,
@@ -72,6 +83,53 @@ export default function AiWorkspaceLayout({ controller }) {
   } = handlers;
 
   const { chatEndRef } = refs;
+
+  // Resizable chat <-> preview split (desktop only). previewWidth is a percent
+  // of the workspace width; the chat column takes the rest.
+  const MIN_PREVIEW = 28;
+  const MAX_PREVIEW = 70;
+  const mainRef = useRef(null);
+  const [previewWidth, setPreviewWidth] = useState(42);
+  const [isResizing, setIsResizing] = useState(false);
+
+  const desktopSplit = ui.uiDrawerOpen && !isMobile;
+
+  const handleDividerMouseDown = useCallback((e) => {
+    e.preventDefault();
+    setIsResizing(true);
+  }, []);
+
+  const handleDividerKeyDown = useCallback((e) => {
+    if (e.key === "ArrowLeft") {
+      e.preventDefault();
+      setPreviewWidth((w) => Math.min(MAX_PREVIEW, w + 3));
+    } else if (e.key === "ArrowRight") {
+      e.preventDefault();
+      setPreviewWidth((w) => Math.max(MIN_PREVIEW, w - 3));
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!isResizing) return undefined;
+    const onMove = (e) => {
+      const rect = mainRef.current?.getBoundingClientRect();
+      if (!rect || rect.width === 0) return;
+      const fromRight = rect.right - e.clientX;
+      const pct = (fromRight / rect.width) * 100;
+      setPreviewWidth(Math.max(MIN_PREVIEW, Math.min(MAX_PREVIEW, pct)));
+    };
+    const onUp = () => setIsResizing(false);
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+    document.body.style.cursor = "col-resize";
+    document.body.style.userSelect = "none";
+    return () => {
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
+    };
+  }, [isResizing]);
 
   const requireUser = (fallback) => {
     if (!user) {
@@ -171,7 +229,7 @@ export default function AiWorkspaceLayout({ controller }) {
           </div>
         </aside>
 
-        <main className="flex-1 flex flex-row relative min-w-0 overflow-hidden">
+        <main ref={mainRef} className="flex-1 flex flex-row relative min-w-0 overflow-hidden">
           {isMobile && ui.uiDrawerOpen && (
             <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 bg-black/70 backdrop-blur-xl border border-white/10 rounded-full p-1.5 flex items-center gap-1 shadow-2xl">
               <button
@@ -193,8 +251,11 @@ export default function AiWorkspaceLayout({ controller }) {
             </div>
           )}
 
-          <div className={`flex-1 flex flex-col min-w-0 transition-all duration-500 ${ui.uiDrawerOpen ? "lg:max-w-[40%] border-r border-white/5" : "w-full"} ${isMobile && ui.uiDrawerOpen && mobileTab !== "chat" ? "hidden" : "flex"}`}>
-            <div className="flex items-center justify-between p-4 border-b border-white/5 bg-black/30 backdrop-blur-md sticky top-0 z-20 gap-4">
+          <div
+            className={`flex flex-col min-w-0 ${isResizing ? "" : "transition-all duration-300"} ${ui.uiDrawerOpen ? "border-r border-white/5" : "w-full"} ${desktopSplit ? "" : "flex-1"} ${isMobile && ui.uiDrawerOpen && mobileTab !== "chat" ? "hidden" : "flex"}`}
+            style={desktopSplit ? { width: `${100 - previewWidth}%`, flexGrow: 0, flexShrink: 0 } : undefined}
+          >
+            <div className="flex items-center justify-between px-4 py-3 border-b border-white/5 bg-black/30 backdrop-blur-md sticky top-0 z-20 gap-4">
               <div className="flex items-center gap-3">
                 <button
                   type="button"
@@ -215,17 +276,45 @@ export default function AiWorkspaceLayout({ controller }) {
                   {ui.uiDrawerOpen ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                   {ui.uiDrawerOpen ? "Hide Preview" : "Open Preview"}
                 </button>
+                <div className="h-4 w-px bg-white/10 hidden sm:block" aria-hidden="true" />
+                <ModelSwitcher
+                  value={settings.modelVersion}
+                  isPremium={isPremium}
+                  onChange={(id) => updateSettings({ modelVersion: id })}
+                  onProNudge={(reason) => {
+                    if (!requireUser()) return;
+                    setProNudgeReason(reason || "Premium AI Models");
+                    setShowProNudge(true);
+                  }}
+                />
+                <div className="h-4 w-px bg-white/10 hidden sm:block" aria-hidden="true" />
+                <button
+                  type="button"
+                  onClick={() => setTemplateGalleryOpen(true)}
+                  className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-xs font-bold uppercase tracking-widest text-gray-300 hover:text-white hover:bg-white/10 transition-all"
+                  aria-label="Open quick-start template gallery"
+                >
+                  <LayoutGrid className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Templates</span>
+                </button>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-3">
+                <DailyPromptBadge
+                  totalRemaining={totalRemaining}
+                  subLimit={subLimit}
+                  resetsAt={resetsAt}
+                  planKey={planKey}
+                />
+                <div className="h-4 w-px bg-white/10 hidden sm:block" aria-hidden="true" />
                 <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider hidden sm:inline">Project</span>
                 <ProjectContextStatus
                   context={projectContext}
                   plan={planKey}
                   onViewStructure={() => setArchitecturePanelOpen(true)}
                   onSync={async () => {
-                    if (!requirePremium("Project Context Sync")) return;
-                    notify({ message: "Use the NexusRBX Studio Plugin to refresh context", type: "info" });
+                    if (!requireUser()) return;
+                    game.setShowWizard(true);
                   }}
                 />
               </div>
@@ -250,16 +339,12 @@ export default function AiWorkspaceLayout({ controller }) {
                     track("artifact_action_used", { action: "view_ui" });
                   }}
                   onQuickStart={handleQuickStart}
+                  onOpenTemplates={() => setTemplateGalleryOpen(true)}
                   notify={notify}
                   onRefine={(m) => {
                     if (!requirePremium("Refinement & Iteration")) return;
                     handleStartRefine(m);
                     track("artifact_action_used", { action: "refine_start" });
-                  }}
-                  onPushToStudio={(id, type, data) => {
-                    if (!requirePremium("Studio Export")) return;
-                    chat.handlePushToStudio(id, type, data);
-                    track("artifact_action_used", { action: "push_to_studio", type });
                   }}
                   onFixUiAudit={async (m) => {
                     if (!requirePremium("UI Auto-Fix & Audit")) return;
@@ -309,33 +394,76 @@ export default function AiWorkspaceLayout({ controller }) {
               themePrimary={currentTheme.primary}
               themeSecondary={currentTheme.secondary}
               onFileUpload={handleFileUpload}
+              onImprovePrompt={handleImprovePrompt}
+              isImproving={isImproving}
               disabled={unified.isGenerating}
             />
           </div>
 
-          <div className={`flex-1 bg-[#050505] flex-col min-w-0 transition-all duration-500 ${ui.uiDrawerOpen ? "flex" : "hidden"} ${isMobile && mobileTab !== "preview" ? "hidden" : "flex"}`}>
-            <div className="flex items-center justify-between p-4 border-b border-white/5 bg-black/30 backdrop-blur-md sticky top-0 z-20">
-              <div className="flex items-center gap-2">
-                <div className="p-1.5 rounded-lg bg-[#00f5d4]/10 text-[#00f5d4]">
+          {desktopSplit && (
+            <div
+              role="separator"
+              aria-orientation="vertical"
+              aria-label="Resize preview panel"
+              aria-valuenow={Math.round(previewWidth)}
+              aria-valuemin={MIN_PREVIEW}
+              aria-valuemax={MAX_PREVIEW}
+              tabIndex={0}
+              onMouseDown={handleDividerMouseDown}
+              onKeyDown={handleDividerKeyDown}
+              className={`group hidden lg:flex shrink-0 w-1.5 cursor-col-resize items-center justify-center relative z-30 transition-colors ${isResizing ? "bg-[#00f5d4]/40" : "bg-white/5 hover:bg-[#00f5d4]/30"}`}
+              title="Drag to resize (or use arrow keys)"
+            >
+              <div className={`w-0.5 h-10 rounded-full transition-colors ${isResizing ? "bg-[#00f5d4]" : "bg-white/20 group-hover:bg-[#00f5d4]"}`} />
+            </div>
+          )}
+
+          <div
+            className={`bg-[#050505] flex-col min-w-0 ${isResizing ? "" : "transition-all duration-300"} ${ui.uiDrawerOpen ? "flex" : "hidden"} ${desktopSplit ? "" : "flex-1"} ${isMobile && mobileTab !== "preview" ? "hidden" : "flex"}`}
+            style={desktopSplit ? { width: `${previewWidth}%`, flexGrow: 0, flexShrink: 0 } : undefined}
+          >
+            <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-white/5 bg-black/30 backdrop-blur-md sticky top-0 z-20">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="p-1.5 rounded-lg bg-[#00f5d4]/10 text-[#00f5d4] shrink-0">
                   <Layout className="w-4 h-4" />
                 </div>
-                <span className="text-[10px] font-black uppercase tracking-widest text-white">Live Preview & Code</span>
+                <div className="min-w-0">
+                  <div className="text-[10px] font-black uppercase tracking-widest text-white leading-tight">Live Preview & Code</div>
+                  <div className="mt-0.5 flex items-center gap-1.5 text-[11px] text-gray-400 truncate">
+                    <FolderOpen className="w-3 h-3 shrink-0" />
+                    <span className="truncate">
+                      {ui.activeUi?.prompt ? `${ui.activeUi.prompt.slice(0, 46)}${ui.activeUi.prompt.length > 46 ? "…" : ""}` : "No active UI"}
+                    </span>
+                  </div>
+                </div>
               </div>
-              <button
-                type="button"
-                onClick={handleClosePreview}
-                className="p-2 rounded-lg hover:bg-white/5 text-gray-500 hover:text-white transition-all"
-                aria-label="Close preview panel"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="flex items-center justify-between gap-3 px-4 py-2 border-b border-white/5 bg-black/20">
-              <span className="text-[10px] uppercase tracking-wider text-gray-400 font-bold inline-flex items-center gap-2">
-                <FolderOpen className="w-3.5 h-3.5" />
-                {ui.activeUi?.prompt ? `Active: ${ui.activeUi.prompt.slice(0, 46)}${ui.activeUi.prompt.length > 46 ? "..." : ""}` : "No active UI"}
-              </span>
+              <div className="flex items-center gap-1.5 shrink-0">
+                {ui.activeUi && (
+                  <button
+                    type="button"
+                    onClick={handleCreateShareLink}
+                    disabled={isSharing}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-[10px] font-bold uppercase tracking-widest text-gray-300 hover:text-white hover:bg-white/10 transition-all disabled:opacity-50"
+                    aria-label="Create a shareable read-only preview link"
+                    title="Copy a public, read-only preview link"
+                  >
+                    {isSharing ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <Share2 className="w-3.5 h-3.5" />
+                    )}
+                    Share
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={handleClosePreview}
+                  className="p-2 rounded-lg hover:bg-white/5 text-gray-500 hover:text-white transition-all"
+                  aria-label="Close preview panel"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
             </div>
 
             {ui.activeUi && (
@@ -346,11 +474,7 @@ export default function AiWorkspaceLayout({ controller }) {
                 title={ui.activeUi?.prompt || "Generated UI"}
                 projectId={ui.activeUiId}
                 kind="ui"
-                onPushToStudio={(id, type, data) => {
-                  if (!requirePremium("Studio Export")) return;
-                  chat.handlePushToStudio(id, type, data);
-                  track("artifact_action_used", { action: "push_to_studio_export_bar", type });
-                }}
+                files={ui.activeUi?.files || []}
                 notify={notify}
               />
             )}
@@ -362,6 +486,7 @@ export default function AiWorkspaceLayout({ controller }) {
                 onClose={handleClosePreview}
                 uiModuleLua={ui.activeUi?.uiModuleLua || ""}
                 systemsLua={ui.activeUi?.systemsLua || ""}
+                files={ui.activeUi?.files || []}
                 lua={ui.activeUi?.lua || ""}
                 boardState={ui.activeUi?.boardState || null}
                 prompt={ui.activeUi?.prompt || ""}
@@ -396,8 +521,9 @@ export default function AiWorkspaceLayout({ controller }) {
               context={projectContext}
               onClose={() => setArchitecturePanelOpen(false)}
               onSync={async () => {
-                if (!requirePremium("Project Context Sync")) return;
-                notify({ message: "Use the NexusRBX Studio Plugin to refresh context", type: "info" });
+                if (!requireUser()) return;
+                setArchitecturePanelOpen(false);
+                game.setShowWizard(true);
               }}
             />
           </div>
@@ -425,6 +551,12 @@ export default function AiWorkspaceLayout({ controller }) {
           onUpdate={game.updateProfile}
         />
       )}
+
+      <TemplateGallery
+        open={templateGalleryOpen}
+        onClose={() => setTemplateGalleryOpen(false)}
+        onSelect={handleSelectTemplate}
+      />
 
       <SignInNudgeModal isOpen={showSignInNudge} onClose={() => setShowSignInNudge(false)} />
 

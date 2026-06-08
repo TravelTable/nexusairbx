@@ -12,7 +12,6 @@ export default function MessageList({
   chatEndRef,
   onViewUi,
   onRefine,
-  onPushToStudio,
   onFixUiAudit,
   onApprovePlan,
   onClarifySubmit,
@@ -55,7 +54,6 @@ export default function MessageList({
           activeMode={activeMode}
           onViewUi={onViewUi}
           onRefine={onRefine}
-          onPushToStudio={onPushToStudio}
           onFixUiAudit={onFixUiAudit}
           onApprovePlan={onApprovePlan}
           onClarifySubmit={onClarifySubmit}

@@ -33,6 +33,7 @@ import {
 } from "lucide-react";
 import { useSettings } from "../context/SettingsContext";
 import { useBilling } from "../context/BillingContext";
+import { useModelCatalog } from "../hooks/useModelCatalog";
 import { CHAT_MODES } from "../components/ai/ChatView";
 import { BACKEND_URL } from "../config";
 import { auth } from "../firebase";
@@ -109,6 +110,7 @@ const SettingsPage = () => {
   }, [isAdmin]);
 
   const { settings, updateSettings } = useSettings();
+  const { models: modelCatalog } = useModelCatalog();
   const [codingStandards, setCodingStandards] = useState(settings.codingStandards || "");
   const { plan, totalRemaining, subLimit, resetsAt, portal, cancel, entitlements = [] } = useBilling();
   const [usageData, setUsageData] = useState({ logs: [], chartData: [] });
@@ -124,13 +126,50 @@ const SettingsPage = () => {
   const [pendingAction, setPendingAction] = useState(null);
   const [successMsg, setSuccessMsg] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
-  const [syncCode, setSyncCode] = useState("");
-  const [syncLoading, setSyncLoading] = useState(false);
   const [teams, setTeams] = useState([]);
   const [newTeamName, setNewTeamName] = useState("");
 
   const navigate = useNavigate();
   const isPremiumPlan = entitlements.includes("pro") || entitlements.includes("team") || plan === "PRO" || plan === "TEAM";
+
+  const MODEL_PROVIDER_LABELS = {
+    openai: "OpenAI",
+    deepseek: "DeepSeek",
+    anthropic: "Anthropic",
+    google: "Google",
+    xai: "xAI",
+    meta: "Meta",
+    alibaba: "Alibaba",
+    mistral: "Mistral",
+    other: "Other",
+  };
+  const MODEL_ALIAS_LABELS = {
+    "deepseek-free": "DeepSeek Core (Free)",
+    "nexus-4": "Nexus-5 (GPT-5.2)",
+    "nexus-3": "Nexus-4 (Legacy)",
+  };
+
+  const tierForModel = useCallback((id) => {
+    if (!id || id === "deepseek-free") return "free";
+    if (id === "nexus-4" || id === "nexus-3") return "pro";
+    const m = modelCatalog.find((x) => x.id === id);
+    return m?.tier || "pro";
+  }, [modelCatalog]);
+
+  const groupedModels = useMemo(() => {
+    const groups = {};
+    for (const m of modelCatalog) {
+      const key = m.provider || "other";
+      (groups[key] = groups[key] || []).push(m);
+    }
+    Object.values(groups).forEach((list) =>
+      list.sort((a, b) => {
+        if (a.tier !== b.tier) return a.tier === "free" ? -1 : 1;
+        return String(a.name).localeCompare(String(b.name));
+      })
+    );
+    return groups;
+  }, [modelCatalog]);
 
   const fetchUsage = useCallback(async () => {
     if (!user) return;
@@ -202,13 +241,13 @@ const SettingsPage = () => {
   }, [activeTab, fetchDevData, fetchUsage, fetchTeams, isAdmin]);
 
   useEffect(() => {
-    if (!isPremiumPlan && settings.modelVersion !== "deepseek-free") {
-      updateSettings({ modelVersion: "deepseek-free" });
+    // Free/anon users can never keep a pro-tier model selected.
+    if (modelCatalog.length === 0) return;
+    if (!isPremiumPlan && tierForModel(settings.modelVersion) === "pro") {
+      const freeDefault = modelCatalog.find((m) => m.tier === "free")?.id || "deepseek-v3.2-exp";
+      updateSettings({ modelVersion: freeDefault });
     }
-    if (isPremiumPlan && settings.modelVersion === "deepseek-free") {
-      updateSettings({ modelVersion: "nexus-4" });
-    }
-  }, [isPremiumPlan, settings.modelVersion, updateSettings]);
+  }, [isPremiumPlan, settings.modelVersion, modelCatalog, tierForModel, updateSettings]);
 
   const fetchInspectorData = async (uid) => {
     setDevLoading(true);
@@ -307,26 +346,6 @@ const SettingsPage = () => {
     setPendingAction(null);
   };
 
-  const handleGenerateSyncCode = async () => {
-    if (!user) return;
-    setSyncLoading(true);
-    try {
-      const token = await user.getIdToken();
-      const res = await fetch(`${BACKEND_URL}/api/plugin/sync-code`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setSyncCode(data.syncCode);
-      }
-    } catch (e) {
-      setErrorMsg("Failed to generate sync code.");
-    } finally {
-      setSyncLoading(false);
-    }
-  };
-
   const pieData = useMemo(() => [
     { name: "Used", value: subLimit - totalRemaining },
     { name: "Remaining", value: totalRemaining },
@@ -399,7 +418,7 @@ const SettingsPage = () => {
                 </div>
                 <p className="text-gray-400 mb-6">
                   {plan === "FREE" 
-                    ? "Free plan uses DeepSeek Core by default. Upgrade to Pro for Nexus-5 (GPT-5.2), 500,000 monthly tokens, and advanced Roblox Studio integration."
+                    ? "Free plan uses DeepSeek Core by default. Upgrade to Pro for premium models (GPT-5.2, Claude, Gemini), 500,000 monthly tokens, and advanced AI features."
                     : `Your Pro subscription includes Nexus-5 (GPT-5.2) and a 500,000 token monthly allowance. Resets on ${resetsAt ? new Date(resetsAt).toLocaleDateString() : "N/A"}`}
                 </p>
                 
@@ -544,26 +563,30 @@ const SettingsPage = () => {
                     value={settings.modelVersion}
                     onChange={(e) => {
                       const next = e.target.value;
-                      if (!isPremiumPlan && next !== "deepseek-free") return;
+                      if (!isPremiumPlan && tierForModel(next) === "pro") return;
                       updateSettings({ modelVersion: next });
                     }}
                     className="w-full bg-black border border-gray-800 rounded-xl p-3 text-white outline-none focus:border-purple-500 transition-colors"
                   >
-                    {!isPremiumPlan ? (
-                      <>
-                        <option value="deepseek-free">DeepSeek Core (Free Default)</option>
-                        <option value="nexus-4" disabled>Nexus-5 (GPT-5.2) - Pro</option>
-                        <option value="nexus-3" disabled>Nexus-4 (Legacy, Fast) - Pro</option>
-                      </>
-                    ) : (
-                      <>
-                        <option value="nexus-4">Nexus-5 (GPT-5.2)</option>
-                        <option value="nexus-3">Nexus-4 (Legacy, Fast)</option>
-                      </>
+                    {!modelCatalog.some((m) => m.id === settings.modelVersion) && settings.modelVersion && (
+                      <option value={settings.modelVersion}>
+                        {MODEL_ALIAS_LABELS[settings.modelVersion] || settings.modelVersion}
+                      </option>
                     )}
+                    {Object.entries(groupedModels).map(([provider, list]) => (
+                      <optgroup key={provider} label={MODEL_PROVIDER_LABELS[provider] || provider}>
+                        {list.map((m) => (
+                          <option key={m.id} value={m.id} disabled={!isPremiumPlan && m.tier === "pro"}>
+                            {m.name}
+                            {m.tier === "pro" ? " — Pro" : ""}
+                            {m.contextLength ? ` (${Math.round(m.contextLength / 1000)}k)` : ""}
+                          </option>
+                        ))}
+                      </optgroup>
+                    ))}
                   </select>
                   {!isPremiumPlan && (
-                    <p className="text-[11px] text-gray-500">Upgrade to Pro to unlock GPT model selection.</p>
+                    <p className="text-[11px] text-gray-500">Upgrade to Pro to unlock premium model selection.</p>
                   )}
                 </div>
                 <div className="space-y-2">
@@ -944,32 +967,6 @@ const SettingsPage = () => {
               >
                 <LogOut className="w-5 h-5" /> Sign Out
               </button>
-            </div>
-
-            {/* Roblox Plugin Sync */}
-            <div className="bg-gray-900/50 border border-gray-800 rounded-2xl p-6 backdrop-blur-xl">
-              <h3 className="text-lg font-bold text-white mb-2 flex items-center gap-2">
-                <Zap className="w-5 h-5 text-purple-400" />
-                Roblox Studio Plugin
-              </h3>
-              <p className="text-sm text-gray-500 mb-6">Sync your NexusRBX account with the Roblox Studio plugin to import your UI boards directly.</p>
-              
-              {syncCode ? (
-                <div className="p-6 rounded-xl bg-black/40 border border-purple-500/30 text-center">
-                  <p className="text-xs text-gray-500 uppercase font-bold mb-2">Your Sync Code</p>
-                  <div className="text-4xl font-black tracking-[0.5em] text-white mb-4">{syncCode}</div>
-                  <p className="text-xs text-purple-400">Enter this code in the NexusRBX Roblox Plugin. Expires in 5 minutes.</p>
-                </div>
-              ) : (
-                <button 
-                  onClick={handleGenerateSyncCode}
-                  disabled={syncLoading}
-                  className="w-full py-4 rounded-xl bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-white font-bold hover:scale-[1.02] transition-all flex items-center justify-center gap-2"
-                >
-                  {syncLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Sparkles className="w-5 h-5" />}
-                  Generate Sync Code
-                </button>
-              )}
             </div>
 
             <div className="bg-red-500/5 border border-red-500/20 rounded-2xl p-6 backdrop-blur-xl">

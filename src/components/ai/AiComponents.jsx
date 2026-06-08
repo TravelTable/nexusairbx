@@ -284,7 +284,7 @@ export const ProjectContextStatus = ({ context, onSync, onViewStructure, plan })
       >
         <div className={`w-2 h-2 rounded-full ${context ? 'bg-[#00f5d4] shadow-[0_0_10px_rgba(0,245,212,0.5)]' : 'bg-gray-600'}`} />
         <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">
-          {context ? 'Studio Linked' : 'Studio Offline'}
+          {context ? 'Context Linked' : 'No Context'}
         </span>
       </button>
 
@@ -316,7 +316,7 @@ export const ProjectContextStatus = ({ context, onSync, onViewStructure, plan })
         onClick={handleSync}
         disabled={isSyncing}
         className={`p-1.5 rounded-lg hover:bg-white/10 transition-all ${isSyncing ? 'animate-spin text-[#00f5d4]' : 'text-gray-500 hover:text-white'}`}
-        title="Sync Context from Studio"
+        title="Add or update project context"
       >
         <RefreshCw className="w-3.5 h-3.5" />
       </button>

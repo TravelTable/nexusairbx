@@ -1,5 +1,5 @@
 import React from "react";
-import { Plus, X, Sparkles, Loader, RefreshCw } from "lucide-react";
+import { Plus, X, Sparkles, Loader, RefreshCw, Wand2 } from "lucide-react";
 import { UnifiedStatusBar, TokenBar } from "../AiComponents";
 
 /**
@@ -24,6 +24,8 @@ export default function ChatComposer({
   refineTarget,
   onCancelRefine,
   onFileUpload,
+  onImprovePrompt,
+  isImproving,
   disabled,
 }) {
   return (
@@ -98,6 +100,23 @@ export default function ChatComposer({
                 {isGenerating ? generationStage || "Working" : "Ready"}
               </div>
               <div className="h-px flex-1 bg-white/5" />
+              {onImprovePrompt && (
+                <button
+                  type="button"
+                  onClick={() => onImprovePrompt()}
+                  disabled={disabled || isImproving || !prompt?.trim()}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider text-[#9b5de5] bg-[#9b5de5]/10 border border-[#9b5de5]/20 hover:bg-[#9b5de5]/20 hover:text-white transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                  title="Expand your prompt into a detailed brief"
+                  aria-label="Improve my prompt"
+                >
+                  {isImproving ? (
+                    <Loader className="w-3 h-3 animate-spin" />
+                  ) : (
+                    <Wand2 className="w-3 h-3" />
+                  )}
+                  {isImproving ? "Improving" : "Improve"}
+                </button>
+              )}
             </div>
 
             <div className="flex items-center gap-2 p-2 pt-0">

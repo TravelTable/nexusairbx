@@ -1,22 +1,21 @@
 import React, { useState } from "react";
 import JSZip from "jszip";
-import { Copy, Check, Download, Send, ShieldCheck, Loader, Package, Bookmark, RefreshCw } from "lucide-react";
+import { Copy, Check, Download, ShieldCheck, Loader, Package, Bookmark, RefreshCw, Boxes, Terminal } from "lucide-react";
 import { verifyRobloxReadiness } from "../../lib/workflowApi";
+import { buildRojoZip, buildStudioLoader } from "../../lib/rojoExport";
 
 /**
  * Unified export surface for a finalized artifact (the Review stage).
- * Consolidates Copy / Download .lua / Download bundle / Verify / Save / Push / Refine
+ * Consolidates Copy / Download .lua / Download bundle / Verify / Save / Refine
  * into one bar, used in both the preview drawer and the chat bubble.
  */
 export default function ExportBar({
   lua,
   systemsLua = "",
   funcScripts = [],
-  boardState = null,
+  files = [], // Phase 4 multi-file output: [{ name, path, kind, content }]
   title,
-  projectId,
   kind = "ui", // "ui" | "script" | "project"
-  onPushToStudio,
   onSaveLibrary,
   onRefine,
   notify,
@@ -24,6 +23,8 @@ export default function ExportBar({
   const [copied, setCopied] = useState(false);
   const [verifying, setVerifying] = useState(false);
   const [bundling, setBundling] = useState(false);
+  const [rojoBuilding, setRojoBuilding] = useState(false);
+  const [loaderCopied, setLoaderCopied] = useState(false);
 
   const code = lua || "";
   const disabled = !code.trim();
@@ -72,6 +73,40 @@ export default function ExportBar({
     }
   };
 
+  // Rojo export + Studio loader share the same normalized inputs. For UI artifacts
+  // `code` is the UI ModuleScript; for script/project artifacts it's gameplay logic.
+  const rojoInput =
+    kind === "ui"
+      ? { title, uiModuleLua: code, systemsLua, files }
+      : { title, systemsLua: code || systemsLua, files };
+
+  const handleRojoExport = async () => {
+    if (disabled || rojoBuilding) return;
+    setRojoBuilding(true);
+    try {
+      const blob = await buildRojoZip(rojoInput);
+      downloadBlob(blob, `${safeName}_rojo.zip`);
+      notify?.({ message: "Rojo project exported", type: "success" });
+    } catch (err) {
+      notify?.({ message: "Failed to build Rojo project", type: "error" });
+    } finally {
+      setRojoBuilding(false);
+    }
+  };
+
+  const handleCopyLoader = async () => {
+    if (disabled) return;
+    try {
+      const snippet = buildStudioLoader(rojoInput);
+      await navigator.clipboard.writeText(snippet);
+      setLoaderCopied(true);
+      setTimeout(() => setLoaderCopied(false), 2000);
+      notify?.({ message: "Studio loader copied — paste into the Studio command bar", type: "success" });
+    } catch (err) {
+      notify?.({ message: "Failed to copy Studio loader", type: "error" });
+    }
+  };
+
   const handleVerify = async () => {
     if (disabled || verifying) return;
     setVerifying(true);
@@ -115,6 +150,28 @@ export default function ExportBar({
         </button>
       )}
 
+      <button
+        type="button"
+        onClick={handleRojoExport}
+        disabled={disabled || rojoBuilding}
+        title="Download a Rojo project (default.project.json + src/ tree)"
+        className={`${btn} bg-[#9b5de5]/10 text-[#9b5de5] hover:bg-[#9b5de5]/20`}
+      >
+        {rojoBuilding ? <Loader className="w-3.5 h-3.5 animate-spin" /> : <Boxes className="w-3.5 h-3.5" />}
+        Rojo Project
+      </button>
+
+      <button
+        type="button"
+        onClick={handleCopyLoader}
+        disabled={disabled}
+        title="Copy a Luau snippet to paste into the Studio command bar"
+        className={`${btn} bg-[#00f5d4]/10 text-[#00f5d4] hover:bg-[#00f5d4]/20`}
+      >
+        {loaderCopied ? <Check className="w-3.5 h-3.5" /> : <Terminal className="w-3.5 h-3.5" />}
+        Studio Loader
+      </button>
+
       <button type="button" onClick={handleVerify} disabled={disabled || verifying} className={`${btn} bg-white/5 text-gray-300 hover:bg-white/10`}>
         {verifying ? <Loader className="w-3.5 h-3.5 animate-spin" /> : <ShieldCheck className="w-3.5 h-3.5" />}
         Verify
@@ -131,15 +188,6 @@ export default function ExportBar({
           <RefreshCw className="w-3.5 h-3.5" /> Refine
         </button>
       )}
-
-      <button
-        type="button"
-        onClick={() => onPushToStudio?.(projectId, kind === "ui" ? "ui" : "script", { boardState, lua: code, code, title })}
-        disabled={disabled}
-        className={`${btn} bg-[#00f5d4] text-black hover:shadow-[0_0_16px_rgba(0,245,212,0.35)]`}
-      >
-        <Send className="w-3.5 h-3.5" /> Push to Studio
-      </button>
     </div>
   );
 }

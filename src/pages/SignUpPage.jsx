@@ -584,7 +584,7 @@ function NexusRBXSignUpPage({
                     <PlanCard 
                       title="Pro" 
                       price="$14.99" 
-                      desc="500k tokens/mo • Nexus-5 (GPT-5.2) • Studio Plugin" 
+                      desc="500k tokens/mo • Nexus-5 (GPT-5.2) • Premium Models" 
                       icon={Zap} 
                       popular 
                       selected={selectedPlan === "pro"} 

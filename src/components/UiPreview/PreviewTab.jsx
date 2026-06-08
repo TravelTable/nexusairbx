@@ -1,7 +1,7 @@
-import React, { useState } from "react";
-import { AlertCircle, Loader, Settings2, Sliders, Grid3X3, Sparkles, Smartphone, Tablet, Monitor, MousePointer2, Move } from "lucide-react";
+import React, { useState, useEffect, useRef } from "react";
+import { AlertCircle, Loader, Settings2, Sliders, Grid3X3, Smartphone, Tablet, Monitor, MousePointer2, Move, ScanLine, GitCompare } from "lucide-react";
 import LuaPreviewRenderer, { PREVIEW_DEVICES } from "../../preview/LuaPreviewRenderer";
-import { useBilling } from "../../context/BillingContext";
+import RefineChips from "../ai/RefineChips";
 
 export default function PreviewTab({
   lua,
@@ -17,6 +17,7 @@ export default function PreviewTab({
 }) {
   const [showGrid, setShowGrid] = React.useState(false);
   const [showTweaks, setShowTweaks] = React.useState(false);
+  const [showSafeArea, setShowSafeArea] = React.useState(true);
   const [device, setDevice] = useState("pc");
   const [editMode, setEditMode] = useState(false);
   const [tweaks, setTweaks] = React.useState({
@@ -25,8 +26,23 @@ export default function PreviewTab({
     transparency: 0
   });
 
-  const { entitlements = [] } = useBilling();
-  const isPremium = entitlements.includes("pro") || entitlements.includes("team");
+  // Before/after diff: stash the previously-rendered boardState whenever a new
+  // one arrives (e.g. after a refine) so the user can compare last vs current.
+  const [previousBoard, setPreviousBoard] = useState(null);
+  const [compare, setCompare] = useState(false);
+  const prevBoardRef = useRef(boardState);
+
+  useEffect(() => {
+    if (boardState && prevBoardRef.current && boardState !== prevBoardRef.current) {
+      setPreviousBoard(prevBoardRef.current);
+    }
+    prevBoardRef.current = boardState;
+  }, [boardState]);
+
+  // If there is nothing to compare against, never leave the toggle stuck on.
+  useEffect(() => {
+    if (!previousBoard && compare) setCompare(false);
+  }, [previousBoard, compare]);
 
   return (
     <div className="h-full flex flex-col gap-3">
@@ -75,48 +91,67 @@ export default function PreviewTab({
 
       <div className="flex-1 min-h-0 border border-gray-800 rounded-lg overflow-hidden bg-black/20 relative group">
         <div className={`h-full w-full ${showGrid ? 'bg-[radial-gradient(#334155_1px,transparent_1px)] [background-size:16px_16px]' : ''}`}>
-          <LuaPreviewRenderer
-            lua={lua}
-            boardState={boardState}
-            interactive={!editMode}
-            device={device}
-            editMode={editMode}
-            onAction={(evt) => setLastEvent(evt)}
-          />
-        </div>
-
-        {/* Coming Soon Overlay */}
-        {!isPremium && !editMode ? (
-          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black/60 backdrop-blur-[2px] p-6 text-center">
-            <div className="bg-gradient-to-br from-[#9b5de5] to-[#00f5d4] p-0.5 rounded-2xl shadow-[0_0_30px_rgba(155,93,229,0.3)]">
-              <div className="bg-[#0b1220] rounded-[14px] px-8 py-6 flex flex-col items-center gap-4">
-                <div className="w-12 h-12 rounded-full bg-[#9b5de5]/20 flex items-center justify-center">
-                  <Sparkles className="w-6 h-6 text-[#9b5de5]" />
-                </div>
-                <div>
-                  <h3 className="text-xl font-black text-white uppercase tracking-tighter">Coming Soon</h3>
-                  <p className="text-gray-400 text-xs font-medium max-w-[200px] mt-1">
-                    The Live Preview engine is currently in private beta.
-                  </p>
-                </div>
-                <div className="px-4 py-1.5 rounded-full bg-white/5 border border-white/10 text-[10px] font-bold text-gray-500 uppercase tracking-widest">
-                  Stay Tuned
-                </div>
+          {compare && previousBoard ? (
+            <div className="h-full w-full grid grid-cols-2 gap-px bg-white/10">
+              <div className="relative bg-black/20 overflow-hidden">
+                <span className="absolute top-2 left-2 z-20 px-2 py-0.5 rounded-full bg-black/70 border border-white/10 text-[9px] font-black uppercase tracking-widest text-gray-400">
+                  Before
+                </span>
+                <LuaPreviewRenderer
+                  boardState={previousBoard}
+                  interactive={false}
+                  device={device}
+                  showSafeArea={showSafeArea}
+                />
+              </div>
+              <div className="relative bg-black/20 overflow-hidden">
+                <span className="absolute top-2 left-2 z-20 px-2 py-0.5 rounded-full bg-[#00f5d4]/20 border border-[#00f5d4]/40 text-[9px] font-black uppercase tracking-widest text-[#00f5d4]">
+                  After
+                </span>
+                <LuaPreviewRenderer
+                  lua={lua}
+                  boardState={boardState}
+                  interactive={false}
+                  device={device}
+                  showSafeArea={showSafeArea}
+                />
               </div>
             </div>
-          </div>
-        ) : (
-          <div className="absolute top-0 left-0 right-0 z-10 bg-gradient-to-r from-[#9b5de5]/80 to-[#00f5d4]/80 backdrop-blur-md py-1 px-4 flex items-center justify-between border-b border-white/10">
-            <div className="flex items-center gap-2">
-              <Sparkles className="w-3 h-3 text-white animate-pulse" />
-              <span className="text-[10px] font-black text-white uppercase tracking-[0.2em]">Developer Preview Mode</span>
-            </div>
-            <span className="text-[9px] font-bold text-white/80 bg-black/20 px-2 py-0.5 rounded">Coming Soon (Public)</span>
-          </div>
+          ) : (
+            <LuaPreviewRenderer
+              lua={lua}
+              boardState={boardState}
+              interactive={!editMode}
+              device={device}
+              editMode={editMode}
+              showSafeArea={showSafeArea}
+              onAction={(evt) => setLastEvent(evt)}
+            />
+          )}
+        </div>
+
+        {/* Compare toggle (only when a previous layout exists) */}
+        {previousBoard && (
+          <button
+            onClick={() => setCompare((c) => !c)}
+            className={`absolute top-3 left-3 z-30 inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-[10px] font-black uppercase tracking-widest transition-all ${compare ? 'bg-[#9b5de5] border-[#9b5de5] text-white' : 'bg-black/80 border-white/10 text-gray-300 hover:text-white'}`}
+            title="Compare the previous layout with the current one"
+            aria-pressed={compare}
+          >
+            <GitCompare className="w-3.5 h-3.5" />
+            {compare ? 'Exit Compare' : 'Compare'}
+          </button>
         )}
-        
+
         {/* Status Overlay */}
         <div className="absolute top-3 right-3 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300">
+          <button
+            onClick={() => setShowSafeArea(!showSafeArea)}
+            className={`p-1.5 rounded-lg border transition-all ${showSafeArea ? 'bg-[#00f5d4] border-[#00f5d4] text-black' : 'bg-black/80 border-white/10 text-gray-400 hover:text-white'}`}
+            title="Toggle Roblox topbar / safe-area overlay"
+          >
+            <ScanLine className="w-4 h-4" />
+          </button>
           <button
             onClick={() => setShowTweaks(!showTweaks)}
             className={`p-1.5 rounded-lg border transition-all ${showTweaks ? 'bg-[#9b5de5] border-[#9b5de5] text-white' : 'bg-black/80 border-white/10 text-gray-400 hover:text-white'}`}
@@ -199,7 +234,9 @@ export default function PreviewTab({
         )}
       </div>
 
-      <div className="flex items-center gap-2 mt-auto">
+      <div className="mt-auto flex flex-col gap-2">
+        <RefineChips onRefine={onRefine} isRefining={isRefining} />
+        <div className="flex items-center gap-2">
         <input
           className="flex-1 bg-gray-900 border border-gray-800 rounded-lg px-3 py-2 text-sm text-white focus:border-[#00f5d4] outline-none disabled:opacity-50"
           placeholder="Refine this UI (e.g. 'Make it more blue', 'Add a close button')"
@@ -216,6 +253,7 @@ export default function PreviewTab({
           {isRefining ? <Loader className="w-4 h-4 animate-spin" /> : null}
           {isRefining ? "Refining..." : "Refine"}
         </button>
+        </div>
       </div>
 
       <div className="text-[11px] text-gray-500">

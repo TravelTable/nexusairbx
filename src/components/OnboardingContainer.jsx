@@ -178,7 +178,7 @@ function WorkspaceStep() {
           </div>
           <div>
             <div className="text-sm font-bold text-white">Project Context</div>
-            <p className="text-xs text-gray-400 leading-relaxed">Nexus now understands your entire Roblox project. Sync your Studio context to get hyper-relevant code.</p>
+            <p className="text-xs text-gray-400 leading-relaxed">Nexus can understand your entire Roblox project. Add your project context to get hyper-relevant code.</p>
           </div>
         </div>
       </div>

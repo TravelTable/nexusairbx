@@ -21,6 +21,7 @@ export default function UiPreviewDrawer({
   onClose,
   uiModuleLua,
   systemsLua,
+  files = [],
   lua, // Fallback for old data
   boardState,
   prompt,
@@ -90,6 +91,19 @@ export default function UiPreviewDrawer({
     // 2. Systems Logic
     if (systemsLua) {
       zip.file("Systems.server.lua", systemsLua);
+    }
+
+    // 2b. Multi-file scripts (server/client/module), with correct paths/extensions.
+    if (Array.isArray(files) && files.length > 0) {
+      const extByKind = { server: "server.lua", client: "client.lua", module: "lua" };
+      files.forEach((f, i) => {
+        const ext = extByKind[f.kind] || "lua";
+        const rawPath = (f.path && String(f.path).trim()) || "";
+        const base = rawPath
+          ? rawPath.replace(/\\/g, "/").replace(/\.lua$/i, "")
+          : `scripts/${f.name || `Script${i + 1}`}`;
+        zip.file(`${base}.${ext}`, f.content || "");
+      });
     }
 
     // 3. Functionality Scripts
@@ -277,9 +291,9 @@ export default function UiPreviewDrawer({
             <CodeTab
               uiModuleLua={uiModuleLua}
               systemsLua={systemsLua}
+              files={files}
               lua={lua}
-              copySuccess={copySuccess}
-              handleCopy={handleCopy}
+              onUpdateLua={onUpdateLua}
               onDownload={handleDownloadFiles}
             />
           ) : tab === "functionality" ? (
@@ -459,9 +473,9 @@ export default function UiPreviewDrawer({
             <CodeTab
               uiModuleLua={uiModuleLua}
               systemsLua={systemsLua}
+              files={files}
               lua={lua}
-              copySuccess={copySuccess}
-              handleCopy={handleCopy}
+              onUpdateLua={onUpdateLua}
               onDownload={handleDownloadFiles}
             />
           )}

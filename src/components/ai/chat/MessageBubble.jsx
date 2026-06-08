@@ -8,7 +8,6 @@ export default function MessageBubble({
   activeMode,
   onViewUi,
   onRefine,
-  onPushToStudio,
   onFixUiAudit,
   onApprovePlan,
   onClarifySubmit,
@@ -38,7 +37,6 @@ export default function MessageBubble({
       user={user}
       onViewUi={onViewUi}
       onRefine={onRefine}
-      onPushToStudio={onPushToStudio}
       onFixUiAudit={onFixUiAudit}
       onApprovePlan={onApprovePlan}
       onClarifySubmit={onClarifySubmit}

@@ -214,6 +214,7 @@ export async function aiPipelineStream({
   gameSpec = "",
   maxSystemsTokens = 2500,
   onStage,
+  onPartialBoard,
   onBoardState,
   onDone,
   onError
@@ -233,24 +234,29 @@ export async function aiPipelineStream({
   });
 
   eventSource.addEventListener("stage", (e) => {
-    const data = JSON.parse(e.data);
-    onStage?.(data);
+    try { onStage?.(JSON.parse(e.data)); } catch (_) {}
+  });
+
+  // Progressive render: partial boardState containing the items parsed so far.
+  eventSource.addEventListener("partial_board", (e) => {
+    try { onPartialBoard?.(JSON.parse(e.data).boardState); } catch (_) {}
   });
 
   eventSource.addEventListener("boardState", (e) => {
-    const data = JSON.parse(e.data);
-    onBoardState?.(data.boardState);
+    try { onBoardState?.(JSON.parse(e.data).boardState); } catch (_) {}
   });
 
   eventSource.addEventListener("done", (e) => {
-    const data = JSON.parse(e.data);
-    onDone?.(data);
+    try { onDone?.(JSON.parse(e.data)); } catch (err) { onError?.({ message: err?.message || "Failed to parse result" }); }
     eventSource.close();
   });
 
   eventSource.addEventListener("error", (e) => {
-    const data = JSON.parse(e.data);
-    onError?.(data);
+    // SSE "error" can be a server-sent event (with data) or a native transport
+    // error (no data). Handle both without throwing.
+    let data = null;
+    try { if (e?.data) data = JSON.parse(e.data); } catch (_) {}
+    onError?.(data || { message: "Connection lost during generation" });
     eventSource.close();
   });
 

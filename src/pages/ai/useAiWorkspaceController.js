@@ -58,6 +58,7 @@ export function useAiWorkspaceController() {
   const [sidebarOpen, setSidebarOpen] = useState(typeof window !== "undefined" ? window.innerWidth > 1024 : true);
 
   const [prompt, setPrompt] = useState("");
+  const [isImproving, setIsImproving] = useState(false);
   const [refineTarget, setRefineTarget] = useState(null);
   const [showSignInNudge, setShowSignInNudge] = useState(false);
   const [showProNudge, setShowProNudge] = useState(false);
@@ -68,6 +69,7 @@ export function useAiWorkspaceController() {
   const [attachments, setAttachments] = useState([]);
   const [codeDrawerOpen, setCodeDrawerOpen] = useState(false);
   const [codeDrawerData, setCodeDrawerData] = useState({ code: "", title: "", explanation: "" });
+  const [templateGalleryOpen, setTemplateGalleryOpen] = useState(false);
 
   const chatEndRef = useRef(null);
   const pageViewTrackedRef = useRef(false);
@@ -380,11 +382,55 @@ export function useAiWorkspaceController() {
 
   const cancelRefine = useCallback(() => setRefineTarget(null), []);
 
+  const handleImprovePrompt = useCallback(async () => {
+    const current = prompt.trim();
+    if (!current) {
+      notify({ message: "Type a prompt first to improve it", type: "info" });
+      return;
+    }
+    if (!user) {
+      setShowSignInNudge(true);
+      return;
+    }
+    if (isImproving) return;
+
+    setIsImproving(true);
+    try {
+      const token = await user.getIdToken();
+      const res = await fetch(`${BACKEND_URL}/api/ai/improve-prompt`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ prompt: current, gameSpec: settings?.gameSpec || "" }),
+      });
+      if (!res.ok) throw new Error("Improve prompt request failed");
+      const data = await res.json();
+      const improved = (data?.improvedPrompt || "").trim();
+      if (improved && improved !== current) {
+        setPrompt(improved);
+        notify({ message: "Prompt improved — review and edit before sending", type: "success" });
+        track("prompt_improved", { fromLength: current.length, toLength: improved.length });
+      } else {
+        notify({ message: "Prompt already looks good", type: "info" });
+      }
+    } catch (err) {
+      notify({ message: "Couldn't improve prompt, try again", type: "error" });
+    } finally {
+      setIsImproving(false);
+    }
+  }, [prompt, user, isImproving, settings, notify, track]);
+
   const handleQuickStart = useCallback(async (item) => {
     const promptText = typeof item === "string" ? item : item?.prompt || "";
     track("quickstart_clicked", { length: promptText.length });
     await handlePromptSubmit(null, promptText);
   }, [handlePromptSubmit, track]);
+
+  const handleSelectTemplate = useCallback(async (template) => {
+    setTemplateGalleryOpen(false);
+    if (!template?.prompt) return;
+    track("template_selected", { id: template.id, category: template.category });
+    await handleQuickStart(template.prompt);
+  }, [handleQuickStart, track]);
 
   const handleEditPlan = useCallback((message) => {
     setPrompt(message?.originPrompt || "");
@@ -446,6 +492,7 @@ export function useAiWorkspaceController() {
                   id: script.id,
                   uiModuleLua: data.uiModuleLua || data.code,
                   systemsLua: data.systemsLua || "",
+                  files: Array.isArray(data.files) ? data.files : [],
                   boardState: data.boardState || null,
                   prompt: script.title,
                   createdAt: Date.now(),
@@ -484,6 +531,55 @@ export function useAiWorkspaceController() {
     handleOpenPreview();
   }, [handleClosePreview, handleOpenPreview, ui.uiDrawerOpen]);
 
+  const [isSharing, setIsSharing] = useState(false);
+
+  // Create an unlisted, read-only share link for the active UI and copy it to
+  // the clipboard. Anyone with the link can view the preview (no auth needed).
+  const handleCreateShareLink = useCallback(async () => {
+    const activeUi = ui.activeUi;
+    if (!activeUi || (!activeUi.boardState && !activeUi.uiModuleLua && !activeUi.lua)) {
+      notify({ message: "Generate or open a UI first to share it", type: "info" });
+      return;
+    }
+    if (!user) {
+      setShowSignInNudge(true);
+      return;
+    }
+    if (isSharing) return;
+
+    setIsSharing(true);
+    try {
+      const token = await user.getIdToken();
+      const res = await fetch(`${BACKEND_URL}/api/share/ui`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          title: activeUi.prompt || "Generated UI",
+          boardState: activeUi.boardState || null,
+          uiModuleLua: activeUi.uiModuleLua || activeUi.lua || "",
+          systemsLua: activeUi.systemsLua || "",
+        }),
+      });
+      if (!res.ok) throw new Error("Share request failed");
+      const data = await res.json();
+      const shareId = data?.shareId;
+      if (!shareId) throw new Error("No share id returned");
+
+      const shareUrl = `${window.location.origin}/preview/${shareId}`;
+      try {
+        await navigator.clipboard.writeText(shareUrl);
+        notify({ message: "Share link copied to clipboard", type: "success" });
+      } catch (clipErr) {
+        notify({ message: `Share link: ${shareUrl}`, type: "info" });
+      }
+      track("artifact_action_used", { action: "share_ui" });
+    } catch (err) {
+      notify({ message: "Couldn't create share link, try again", type: "error" });
+    } finally {
+      setIsSharing(false);
+    }
+  }, [ui.activeUi, user, isSharing, notify, track]);
+
   return {
     billing: {
       plan,
@@ -505,6 +601,7 @@ export function useAiWorkspaceController() {
       activeTab,
       mobileTab,
       prompt,
+      isImproving,
       refineTarget,
       attachments,
       scripts,
@@ -516,6 +613,8 @@ export function useAiWorkspaceController() {
       proNudgeReason,
       codeDrawerOpen,
       codeDrawerData,
+      templateGalleryOpen,
+      isSharing,
       currentTheme,
       activeModeData,
       currentToast,
@@ -543,7 +642,9 @@ export function useAiWorkspaceController() {
       setShowProNudge,
       setProNudgeReason,
       setCodeDrawerOpen,
+      setTemplateGalleryOpen,
       dismissToast,
+      updateSettings,
 
       handleSidebarTabChange,
       handlePromptSubmit,
@@ -552,10 +653,13 @@ export function useAiWorkspaceController() {
       onRefineArtifact: unified.refineArtifact,
       handleStartRefine,
       cancelRefine,
+      handleImprovePrompt,
       handleEditPlan,
       handleFileUpload,
       handleOpenScript,
       handleQuickStart,
+      handleSelectTemplate,
+      handleCreateShareLink,
       handleOpenPreview,
       handleClosePreview,
       handlePreviewToggle,
