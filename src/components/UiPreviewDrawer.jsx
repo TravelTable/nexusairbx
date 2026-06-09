@@ -10,6 +10,7 @@ import PreviewTab from "./UiPreview/PreviewTab";
 import CodeTab from "./UiPreview/CodeTab";
 import FunctionalityTab from "./UiPreview/FunctionalityTab";
 import AssetsTab from "./UiPreview/AssetsTab";
+import UiPlanPanel from "./UiPreview/UiPlanPanel";
 import HistoryTab from "./UiPreview/HistoryTab";
 import IconWorkflowModal from "./UiPreview/IconWorkflowModal";
 
@@ -243,6 +244,7 @@ export default function UiPreviewDrawer({
             {[
               { id: "preview", label: "Preview" },
               { id: "code", label: "Code" },
+              { id: "plan", label: "Plan & Assets" },
               { id: "functionality", label: "Functionality" },
               { id: "assets", label: "Icons & Assets", badge: uniqueAssets.length > 0 && !uniqueAssets.every(a => assetIds[a.url]) },
               { id: "history", label: "History" },
@@ -265,11 +267,18 @@ export default function UiPreviewDrawer({
         </div>
 
         <div className="p-4 flex-1 overflow-hidden min-h-0">
-          {!hasContent ? (
+          {!hasContent && tab !== "plan" ? (
             <div className="h-full flex flex-col items-center justify-center text-center px-6 rounded-xl border border-white/10 bg-white/5">
               <p className="text-sm font-medium text-gray-400 mb-1">No UI yet</p>
               <p className="text-xs text-gray-500">Generate a UI in chat to see preview, code, and assets here.</p>
             </div>
+          ) : tab === "plan" ? (
+            <UiPlanPanel
+              user={user}
+              prompt={prompt}
+              boardState={boardState}
+              onUpdateBoardState={(newBS) => onUpdateLua(newBS)}
+            />
           ) : tab === "preview" ? (
             <PreviewTab
               lua={uiModuleLua || lua}
@@ -413,6 +422,17 @@ export default function UiPreviewDrawer({
             </button>
             <button
               type="button"
+              onClick={() => setTab("plan")}
+              className={`px-3 py-2 rounded text-sm border whitespace-nowrap ${
+                tab === "plan"
+                  ? "border-[#9b5de5] bg-[#9b5de5]/10 text-white"
+                  : "border-gray-800 bg-black/20 text-gray-300 hover:bg-black/30"
+              }`}
+            >
+              Plan & Assets
+            </button>
+            <button
+              type="button"
               onClick={() => setTab("functionality")}
               className={`px-3 py-2 rounded text-sm border whitespace-nowrap ${
                 tab === "functionality"
@@ -477,6 +497,14 @@ export default function UiPreviewDrawer({
               lua={lua}
               onUpdateLua={onUpdateLua}
               onDownload={handleDownloadFiles}
+            />
+          )}
+          {tab === "plan" && (
+            <UiPlanPanel
+              user={user}
+              prompt={prompt}
+              boardState={boardState}
+              onUpdateBoardState={(newBS) => onUpdateLua(newBS)}
             />
           )}
           {tab === "functionality" && (

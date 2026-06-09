@@ -315,6 +315,95 @@ export async function aiEnhanceBoard({ token, boardState, prompt = "Make it feel
   return handleResponse(res);
 }
 
+// --- Genre-aware UI generation system -------------------------------------
+
+/**
+ * Generate a structured 12-field UI plan (genre, screen, style, assets, ...).
+ * Returns { plan, model, tokensConsumed, estimate, entitlements }.
+ */
+export async function aiPlanUi({ token, prompt, genreHint, projectId, screenId, requestedModel }) {
+  const res = await fetch(`${BACKEND_URL}/api/ui-builder/plan`, {
+    method: "POST",
+    headers: authHeaders(token),
+    body: JSON.stringify({ prompt, genreHint, projectId, screenId, requestedModel }),
+  });
+  return handleResponse(res);
+}
+
+export async function createUiProject({ token, game_genre, theme, style, palette, name }) {
+  const res = await fetch(`${BACKEND_URL}/api/ui-builder/projects`, {
+    method: "POST",
+    headers: authHeaders(token),
+    body: JSON.stringify({ game_genre, theme, style, palette, name }),
+  });
+  return handleResponse(res);
+}
+
+export async function getUiProjectState({ token, projectId }) {
+  const res = await fetch(
+    `${BACKEND_URL}/api/ui-builder/projects/${encodeURIComponent(projectId)}/state`,
+    { headers: authHeaders(token) }
+  );
+  return handleResponse(res);
+}
+
+export async function listUiProjectAssets({ token, projectId }) {
+  const res = await fetch(
+    `${BACKEND_URL}/api/ui-builder/projects/${encodeURIComponent(projectId)}/assets`,
+    { headers: authHeaders(token) }
+  );
+  return handleResponse(res);
+}
+
+/**
+ * Run the asset pipeline for a plan's asset_list (or explicit specs).
+ * Returns { projectId, results, generatedCount, boardState, entitlements }.
+ */
+export async function aiGenerateAssets({ token, projectId, specs, plan, boardState, allowReuse = true }) {
+  const res = await fetch(`${BACKEND_URL}/api/ui-builder/assets/generate`, {
+    method: "POST",
+    headers: authHeaders(token),
+    body: JSON.stringify({ projectId, specs, plan, boardState, allowReuse }),
+  });
+  return handleResponse(res);
+}
+
+/** Regenerate a single asset by id ("regenerate only the shop icon"). */
+export async function aiRegenerateAsset({ token, assetId, projectId, spec, boardState }) {
+  const res = await fetch(
+    `${BACKEND_URL}/api/ui-builder/assets/${encodeURIComponent(assetId)}/regenerate`,
+    {
+      method: "POST",
+      headers: authHeaders(token),
+      body: JSON.stringify({ projectId, spec, boardState }),
+    }
+  );
+  return handleResponse(res);
+}
+
+/** Re-plan + re-art a single component ("make the quest panel darker"). */
+export async function aiRegenerateComponent({ token, componentId, boardState, instruction, projectId, regenerateAsset, assetSpec }) {
+  const res = await fetch(
+    `${BACKEND_URL}/api/ui-builder/component/${encodeURIComponent(componentId)}/regenerate`,
+    {
+      method: "POST",
+      headers: authHeaders(token),
+      body: JSON.stringify({ boardState, instruction, projectId, regenerateAsset, assetSpec }),
+    }
+  );
+  return handleResponse(res);
+}
+
+/** Export a clean, multi-file Roblox project (UITheme/UIAssets/etc.). */
+export async function exportModulesApi({ token, boardState, systemsLua, assets, screenName }) {
+  const res = await fetch(`${BACKEND_URL}/api/ui-builder/export-modules`, {
+    method: "POST",
+    headers: authHeaders(token),
+    body: JSON.stringify({ boardState, systemsLua, assets, screenName }),
+  });
+  return handleResponse(res);
+}
+
 // --- Roblox helpers (no auth; backend proxies Roblox endpoints) ---
 export function robloxThumbnailUrl({ assetId, size = "420x420" }) {
   const id = String(assetId || "").trim();
