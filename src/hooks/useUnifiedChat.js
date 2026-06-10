@@ -74,14 +74,31 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
     [chat, user]
   );
 
+  // Keep the parent chat doc's lastMessage/updatedAt fresh so the sidebar shows
+  // the latest activity instead of "No messages yet".
+  const touchChat = useCallback(
+    async (activeChatId, lastMessage) => {
+      try {
+        await updateDoc(doc(db, "users", user.uid, "chats", activeChatId), {
+          lastMessage: String(lastMessage || "").slice(0, 140),
+          updatedAt: serverTimestamp(),
+        });
+      } catch (_) {
+        // non-fatal: the message itself is already written
+      }
+    },
+    [user]
+  );
+
   const writeUserMessage = useCallback(
     async (activeChatId, requestId, content) => {
       await setDoc(
         doc(db, "users", user.uid, "chats", activeChatId, "messages", `${requestId}-user`),
         { role: "user", content, createdAt: serverTimestamp(), requestId }
       );
+      await touchChat(activeChatId, content);
     },
-    [user]
+    [user, touchChat]
   );
 
   const writeOrchestrationResult = useCallback(
@@ -106,6 +123,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
             requestId,
           }
         );
+        await touchChat(activeChatId, "Needs a few details…");
         return;
       }
 
@@ -125,8 +143,9 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
           requestId,
         }
       );
+      await touchChat(activeChatId, decision.aiSummary || "Build plan ready");
     },
-    [user]
+    [user, touchChat]
   );
 
   // Dispatch generation for an approved plan based on its classification.

@@ -74,7 +74,9 @@ export default function AssistantBubble({
   const qaReport = m.metadata?.qaReport || null;
   const qaIssueCount = Array.isArray(qaReport?.issues) ? qaReport.issues.length : 0;
 
-  const exportBar = hasArtifact ? (
+  // UI artifacts get their export surface in the preview drawer; only show the
+  // in-bubble ExportBar for script/project artifacts to avoid duplication.
+  const exportBar = hasArtifact && !isUi ? (
     <ExportBar
       lua={code}
       systemsLua={m.systemsLua || ""}

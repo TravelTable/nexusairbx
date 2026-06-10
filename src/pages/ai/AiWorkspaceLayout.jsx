@@ -22,7 +22,7 @@ import { BACKEND_URL } from "../../lib/uiBuilderApi";
 
 export default function AiWorkspaceLayout({ controller }) {
   const { billing, navigation, uiState, refs, modules, handlers } = controller;
-  const { planKey, totalRemaining, subLimit, resetsAt, isPremium } = billing;
+  const { planKey, totalRemaining, subRemaining, paygRemaining, subLimit, resetsAt, isPremium } = billing;
   const { navigate, location } = navigation;
   const {
     user,
@@ -169,7 +169,7 @@ export default function AiWorkspaceLayout({ controller }) {
         navigate={navigate}
         user={user}
         handleLogin={() => navigate("/signin", { state: { from: location } })}
-        tokenInfo={{ sub: { limit: subLimit, used: subLimit - totalRemaining }, payg: { remaining: totalRemaining } }}
+        tokenInfo={{ sub: { limit: subLimit, used: subLimit - subRemaining }, payg: { remaining: paygRemaining } }}
         tokenLoading={false}
       />
 

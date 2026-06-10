@@ -44,7 +44,7 @@ const MODE_COLORS = {
 };
 
 export function useAiWorkspaceController() {
-  const { plan, totalRemaining, subLimit, resetsAt, refresh: refreshBilling, entitlements } = useBilling();
+  const { plan, totalRemaining, subRemaining, paygRemaining, subLimit, resetsAt, refresh: refreshBilling, entitlements } = useBilling();
   const { settings, updateSettings } = useSettings();
   const navigate = useNavigate();
   const location = useLocation();
@@ -585,6 +585,8 @@ export function useAiWorkspaceController() {
       plan,
       planKey,
       totalRemaining,
+      subRemaining,
+      paygRemaining,
       subLimit,
       resetsAt,
       isPremium,
