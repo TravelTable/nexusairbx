@@ -1,0 +1,68 @@
+import React from "react";
+import { render, screen } from "@testing-library/react";
+import MessageList from "./MessageList";
+
+const baseProps = {
+  messages: [],
+  user: { email: "builder@example.com" },
+  activeMode: "general",
+  generationStage: "",
+  chatEndRef: { current: null },
+  onViewUi: jest.fn(),
+  onRefine: jest.fn(),
+  onFixUiAudit: jest.fn(),
+  onApprovePlan: jest.fn(),
+  onClarifySubmit: jest.fn(),
+  onEditPlan: jest.fn(),
+  notify: jest.fn(),
+  isBusy: true,
+};
+
+describe("MessageList pending activity", () => {
+  test("shows action progress before visible output arrives", () => {
+    render(
+      <MessageList
+        {...baseProps}
+        generationStage="Planning Layout..."
+        pendingMessage={{
+          role: "assistant",
+          content: "",
+          type: "ui",
+          prompt: "Build a shop UI",
+          stage: "Planning Layout...",
+        }}
+      />
+    );
+
+    expect(screen.getByText("Nexus is working")).toBeTruthy();
+    expect(screen.getByText("Planning Layout...")).toBeTruthy();
+    expect(screen.getByText("Understanding task")).toBeTruthy();
+    expect(screen.getByText("Planning build")).toBeTruthy();
+    expect(screen.getByText("Generating artifact")).toBeTruthy();
+    expect(screen.getByText("Finalizing")).toBeTruthy();
+  });
+
+  test("does not render thought-only stream text as answer content", () => {
+    render(
+      <MessageList
+        {...baseProps}
+        generationStage="Analyzing Request..."
+        pendingMessage={{
+          role: "assistant",
+          content: "",
+          type: "chat",
+          prompt: "Make a datastore script",
+          stage: "Analyzing Request...",
+          streamState: {
+            thought: "Internal analysis that should stay hidden",
+            hasThought: true,
+            hasVisibleOutput: false,
+          },
+        }}
+      />
+    );
+
+    expect(screen.getByText("Analyzing Request...")).toBeTruthy();
+    expect(screen.queryByText("Internal analysis that should stay hidden")).toBeNull();
+  });
+});

@@ -108,7 +108,7 @@ export function useUiBuilder(user, settings, refreshBilling, notify) {
     if (!user) return;
 
     setUiIsGenerating(true);
-    setPendingMessage({ role: "assistant", content: "", type: "ui", prompt: content });
+    setPendingMessage({ role: "assistant", content: "", type: "ui", prompt: content, stage: "Planning Layout..." });
     setGenerationStage("Planning Layout...");
     
     let activeChatId = currentChatId;
@@ -210,7 +210,11 @@ export function useUiBuilder(user, settings, refreshBilling, notify) {
               maxItems,
               gameSpec: settings.gameSpec || "",
               maxSystemsTokens: settings.uiMaxSystemsTokens,
-              onStage: (d) => setGenerationStage(d?.message || ""),
+              onStage: (d) => {
+                const message = d?.message || "";
+                setGenerationStage(message);
+                setPendingMessage((prev) => (prev ? { ...prev, stage: message } : prev));
+              },
               onPartialBoard: (bs) => {
                 if (!bs) return;
                 setUiGenerations((prev) => prev.map(g => g.id === tempId ? { ...g, boardState: bs } : g));
@@ -241,6 +245,7 @@ export function useUiBuilder(user, settings, refreshBilling, notify) {
       // Non-streaming fallback: attachments present, or streaming failed pre-done.
       if (!streamedDone) {
         setGenerationStage("Planning Layout...");
+        setPendingMessage((prev) => (prev ? { ...prev, stage: "Planning Layout..." } : prev));
         let data;
         try {
           data = await aiPipeline({

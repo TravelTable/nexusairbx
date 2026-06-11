@@ -2,6 +2,7 @@ import {
   applyStreamDelta,
   createPendingStreamState,
   formatPendingStreamContent,
+  getPendingStreamSnapshot,
   parsePendingStreamContent,
 } from "./streaming";
 
@@ -34,5 +35,20 @@ describe("streaming utils", () => {
     expect(parsed.hasStructured).toBe(true);
     expect(parsed.explanation).toBe("Build services first");
     expect(parsed.code).toContain("local x = 1");
+  });
+
+  test("keeps thought deltas out of visible pending content", () => {
+    let state = createPendingStreamState();
+
+    state = applyStreamDelta(state, { seq: 1, channel: "thought", text: "Internal analysis" });
+    expect(formatPendingStreamContent(state)).toBe("");
+
+    const snapshot = getPendingStreamSnapshot(state);
+    expect(snapshot.thought).toBe("Internal analysis");
+    expect(snapshot.hasThought).toBe(true);
+    expect(snapshot.hasVisibleOutput).toBe(false);
+
+    state = applyStreamDelta(state, { seq: 2, channel: "content", text: "Visible answer" });
+    expect(formatPendingStreamContent(state)).toBe("Visible answer");
   });
 });

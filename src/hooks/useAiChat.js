@@ -23,6 +23,7 @@ import {
   applyStreamDelta,
   createPendingStreamState,
   formatPendingStreamContent,
+  getPendingStreamSnapshot,
 } from "../lib/streaming";
 import { emitStreamMetric } from "../lib/streamMetrics";
 import { AI_EVENTS, emitAiEvent, onAiEvent } from "../lib/aiEvents";
@@ -147,7 +148,15 @@ export function useAiChat(user, settings, refreshBilling, notify) {
     const currentMode = actNow ? "act" : chatMode;
 
     setIsGenerating(true);
-    setPendingMessage({ role: "assistant", content: "", type: "chat", prompt: content, mode: currentMode });
+    setPendingMessage({
+      role: "assistant",
+      content: "",
+      type: "chat",
+      prompt: content,
+      mode: currentMode,
+      stage: "Analyzing Request...",
+      streamState: getPendingStreamSnapshot(createPendingStreamState()),
+    });
     setGenerationStage("Analyzing Request...");
 
     let activeChatId = existingChatId || currentChatId;
@@ -177,6 +186,7 @@ export function useAiChat(user, settings, refreshBilling, notify) {
       }
 
       setGenerationStage("Preparing Job...");
+      setPendingMessage((prev) => (prev ? { ...prev, stage: "Preparing Job..." } : prev));
       const token = await user.getIdToken();
       
       const idemKey = `chat-${requestId}`;
@@ -227,6 +237,7 @@ export function useAiChat(user, settings, refreshBilling, notify) {
         (jobData.streamVersion === "v2" || !jobData.streamVersion);
 
       setGenerationStage("Generating...");
+      setPendingMessage((prev) => (prev ? { ...prev, stage: "Generating..." } : prev));
       streamStateRef.current = createPendingStreamState();
       
       const fetchFinalResult = async () => {
@@ -261,6 +272,7 @@ export function useAiChat(user, settings, refreshBilling, notify) {
       };
 
       setGenerationStage("Connecting...");
+      setPendingMessage((prev) => (prev ? { ...prev, stage: "Connecting..." } : prev));
       await ensureStreamSession(token);
 
       // 2. Connect to stream (tails worker events; auth via HttpOnly cookie)
@@ -297,6 +309,7 @@ export function useAiChat(user, settings, refreshBilling, notify) {
           finalized = true;
 
           setGenerationStage("Finalizing...");
+          setPendingMessage((prev) => (prev ? { ...prev, stage: "Finalizing..." } : prev));
           const assistantMsgRef = doc(db, "users", user.uid, "chats", activeChatId, "messages", `${requestId}-assistant`);
 
           const msgPayload = {
@@ -372,6 +385,7 @@ export function useAiChat(user, settings, refreshBilling, notify) {
           try {
             metrics.usedFallback = true;
             setGenerationStage("Recovering stream...");
+            setPendingMessage((prev) => (prev ? { ...prev, stage: "Recovering stream..." } : prev));
             emitStreamMetric("fallback_start", { jobId });
             const recovered = await fetchFinalResult();
             await finalizeWithData(recovered, "fallback");
@@ -386,7 +400,13 @@ export function useAiChat(user, settings, refreshBilling, notify) {
           es.addEventListener("stage", (e) => {
             try {
               const data = JSON.parse(e.data);
-              if (data?.message) setGenerationStage(data.message);
+              if (data?.message) {
+                setGenerationStage(data.message);
+                setPendingMessage((prev) => {
+                  if (!prev) return prev;
+                  return { ...prev, stage: data.message };
+                });
+              }
             } catch (err) {
               console.error("Failed to parse stage:", err);
             }
@@ -400,7 +420,11 @@ export function useAiChat(user, settings, refreshBilling, notify) {
               const pendingContent = formatPendingStreamContent(streamStateRef.current);
               setPendingMessage((prev) => {
                 if (!prev) return prev;
-                return { ...prev, content: pendingContent };
+                return {
+                  ...prev,
+                  content: pendingContent,
+                  streamState: getPendingStreamSnapshot(streamStateRef.current),
+                };
               });
               metrics.deltaCount += 1;
               if (!metrics.firstDeltaAt) {

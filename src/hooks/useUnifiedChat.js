@@ -19,6 +19,7 @@ const THINKING_PLACEHOLDER = {
   content: "",
   thought: "Understanding your task...",
   prompt: "",
+  stage: "Understanding your task...",
 };
 
 /**

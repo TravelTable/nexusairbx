@@ -41,7 +41,6 @@ export function formatPendingStreamContent(state) {
   const explanation = state.explanation || "";
   const code = state.code || "";
   const content = state.content || "";
-  const thought = state.thought || "";
 
   if (explanation || code) {
     let out = "";
@@ -51,7 +50,7 @@ export function formatPendingStreamContent(state) {
     return out;
   }
 
-  return [thought, content].filter(Boolean).join("\n\n").trim();
+  return content.trim();
 }
 
 export function parsePendingStreamContent(raw = "") {
@@ -71,5 +70,19 @@ export function parsePendingStreamContent(raw = "") {
     code,
     plain,
     hasStructured: Boolean(explanation || code),
+  };
+}
+
+export function getPendingStreamSnapshot(state) {
+  const base = state || createPendingStreamState();
+  return {
+    thought: base.thought || "",
+    explanation: base.explanation || "",
+    code: base.code || "",
+    content: base.content || "",
+    hasVisibleOutput: Boolean(base.explanation || base.code || base.content),
+    hasThought: Boolean(base.thought),
+    seq: Number.isFinite(Number(base.seq)) ? Number(base.seq) : -1,
+    startedAt: base.startedAt || Date.now(),
   };
 }

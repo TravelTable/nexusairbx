@@ -2,7 +2,6 @@ import React from "react";
 import {
   NexusRBXAvatar,
   FormatText,
-  ThoughtAccordion,
   UiStatsBadge,
   SecurityReport,
   PerformanceAudit,
@@ -95,8 +94,6 @@ export default function AssistantBubble({
 
   return (
     <BubbleShell activeMode={activeMode}>
-      {m.thought && <ThoughtAccordion thought={m.thought} />}
-
       {m.explanation ? (
         <div className="text-[15px] md:text-[16px] whitespace-pre-wrap leading-relaxed text-gray-100">
           <FormatText text={stripTags(m.explanation)} />
