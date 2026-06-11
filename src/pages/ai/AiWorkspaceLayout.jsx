@@ -472,7 +472,7 @@ export default function AiWorkspaceLayout({ controller }) {
                 systemsLua={ui.activeUi?.systemsLua || ""}
                 boardState={ui.activeUi?.boardState || null}
                 title={ui.activeUi?.prompt || "Generated UI"}
-                projectId={ui.activeUiId}
+                artifactId={ui.activeUiId}
                 kind="ui"
                 files={ui.activeUi?.files || []}
                 notify={notify}

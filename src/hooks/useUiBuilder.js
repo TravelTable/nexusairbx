@@ -12,6 +12,8 @@ import { aiPipeline, aiPipelineStream, aiRefineLua, exportLua } from "../lib/uiB
 import { cryptoRandomId } from "../lib/versioning";
 import { formatNumber } from "../lib/aiUtils";
 import { AI_EVENTS, onAiEvent } from "../lib/aiEvents";
+import { buildStudioPayload } from "../lib/studioPayload";
+import { pushToStudio } from "../lib/studioBridgeApi";
 
 export function useUiBuilder(user, settings, refreshBilling, notify) {
   const [uiGenerations, setUiGenerations] = useState([]);
@@ -180,6 +182,27 @@ export function useUiBuilder(user, settings, refreshBilling, notify) {
           ...prev.filter(g => g.requestId !== requestId && g.id !== replaceId),
         ]);
         setActiveUiId(scriptId);
+
+        try {
+          const studioMode =
+            typeof window !== "undefined"
+              ? window.localStorage.getItem("nexusStudioApplyMode")
+              : "manual_review";
+          if (studioMode === "auto_after_approval" || studioMode === "unrestricted_dev") {
+            const payload = buildStudioPayload({
+              title: resultTitle,
+              kind: "ui",
+              uiModuleLua: uiModuleLua || "",
+              systemsLua: systemsLua || "",
+              boardState,
+              artifactId: scriptId,
+            });
+            await pushToStudio({ payload, applyMode: studioMode });
+            notify({ message: "Queued automatic Studio push", type: "success" });
+          }
+        } catch (studioErr) {
+          notify({ message: studioErr?.message || "Automatic Studio push failed", type: "error" });
+        }
 
         const tokenMsg = tokensConsumed ? ` (${formatNumber(tokensConsumed)} tokens used)` : "";
         notify({ message: `UI generated and saved.${tokenMsg}`, type: "success" });

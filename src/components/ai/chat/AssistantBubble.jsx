@@ -81,7 +81,7 @@ export default function AssistantBubble({
       systemsLua={m.systemsLua || ""}
       boardState={m.boardState || null}
       title={m.title || (isUi ? "Generated UI" : "Generated Script")}
-      projectId={isUi ? m.projectId : m.artifactId}
+      artifactId={isUi ? m.projectId : m.artifactId}
       kind={isUi ? "ui" : "script"}
       files={m.files || []}
       onSaveLibrary={({ name, code: c }) =>

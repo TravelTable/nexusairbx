@@ -19,6 +19,8 @@ import { auth, db } from "../firebase";
 import { BACKEND_URL } from "../config";
 import { ensureStreamSession } from "../lib/streamSession";
 import { FEATURE_FLAGS } from "../lib/featureFlags";
+import { buildStudioPayload } from "../lib/studioPayload";
+import { pushToStudio } from "../lib/studioBridgeApi";
 import {
   applyStreamDelta,
   createPendingStreamState,
@@ -337,6 +339,27 @@ export function useAiChat(user, settings, refreshBilling, notify) {
           if (Array.isArray(data?.files) && data.files.length) msgPayload.files = data.files;
 
           await setDoc(assistantMsgRef, msgPayload);
+
+          try {
+            const studioMode =
+              typeof window !== "undefined"
+                ? window.localStorage.getItem("nexusStudioApplyMode")
+                : "manual_review";
+            if (studioMode === "auto_after_approval" || studioMode === "unrestricted_dev") {
+              const payload = buildStudioPayload({
+                title: data?.title || content.slice(0, 50) || "Generated Script",
+                kind: data?.projectId ? "project" : "script",
+                lua: data?.content || data?.code || "",
+                systemsLua: data?.systemsLua || "",
+                files: Array.isArray(data?.files) ? data.files : [],
+                artifactId: data?.artifactId,
+              });
+              await pushToStudio({ payload, applyMode: studioMode });
+              notify?.({ message: "Queued automatic Studio push", type: "success" });
+            }
+          } catch (studioErr) {
+            notify?.({ message: studioErr?.message || "Automatic Studio push failed", type: "error" });
+          }
 
           await updateDoc(doc(db, "users", user.uid, "chats", activeChatId), {
             updatedAt: serverTimestamp(),
