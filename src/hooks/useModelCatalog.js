@@ -6,13 +6,13 @@ import { BACKEND_URL } from "../config";
  * in-module for the session so multiple consumers (workspace switcher, settings)
  * share a single network request.
  *
- * Each model: { id, name, provider, contextLength, tier, recommended }.
+ * Each model: { id, name, provider, contextLength, tier, recommended, creditMultiplier, costTierLabel }.
  */
 
 const FALLBACK_MODELS = [
-  { id: "deepseek-v3.2-exp", name: "DeepSeek V3.2", provider: "deepseek", contextLength: 128000, tier: "free", recommended: true },
-  { id: "gpt-4o-mini", name: "GPT-4o mini", provider: "openai", contextLength: 128000, tier: "free", recommended: true },
-  { id: "gpt-5.2", name: "GPT-5.2", provider: "openai", contextLength: 256000, tier: "pro", recommended: true },
+  { id: "deepseek-v3.2-exp", name: "DeepSeek V3.2", provider: "deepseek", contextLength: 128000, tier: "free", recommended: true, creditMultiplier: 1, costTierLabel: "1x credits" },
+  { id: "gpt-4o-mini", name: "GPT-4o mini", provider: "openai", contextLength: 128000, tier: "free", recommended: true, creditMultiplier: 1, costTierLabel: "1x credits" },
+  { id: "gpt-5.2", name: "GPT-5.2", provider: "openai", contextLength: 256000, tier: "pro", recommended: true, creditMultiplier: 8, costTierLabel: "8x credits" },
 ];
 
 let moduleCache = null;

@@ -107,6 +107,7 @@ export default function ModelSwitcher({ value, onChange, isPremium, onProNudge, 
                 const locked = model.tier === "pro" && !isPremium;
                 const selected = model.id === value;
                 const ctx = formatContext(model.contextLength);
+                const costLabel = model.costTierLabel || (model.creditMultiplier ? `${model.creditMultiplier}x credits` : null);
                 return (
                   <button
                     key={model.id}
@@ -132,6 +133,7 @@ export default function ModelSwitcher({ value, onChange, isPremium, onProNudge, 
                         >
                           {model.tier === "pro" ? "Pro" : "Free"}
                         </span>
+                        {costLabel && <span className="text-[9px] text-gray-500 font-mono">{costLabel}</span>}
                       </div>
                     </div>
                     {locked ? (
