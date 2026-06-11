@@ -40,3 +40,34 @@ export async function getStudioCommand(commandId) {
   });
   return readJsonOrThrow(res, "Failed to load Studio command");
 }
+
+export async function startStudioAgent({ goal, chatId = null, sessionId = null }) {
+  const res = await authedFetch("/api/studio/agent/start", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ goal, chatId, sessionId }),
+  });
+  return readJsonOrThrow(res, "Failed to start Studio agent");
+}
+
+export async function getStudioAgentRun(runId) {
+  const res = await authedFetch(`/api/studio/agent/${encodeURIComponent(runId)}`, {
+    method: "GET",
+    noCache: true,
+  });
+  return readJsonOrThrow(res, "Failed to load Studio agent run");
+}
+
+export async function continueStudioAgent(runId) {
+  const res = await authedFetch(`/api/studio/agent/${encodeURIComponent(runId)}/continue`, {
+    method: "POST",
+  });
+  return readJsonOrThrow(res, "Failed to continue Studio agent");
+}
+
+export async function restoreStudioAgent(runId) {
+  const res = await authedFetch(`/api/studio/agent/${encodeURIComponent(runId)}/restore`, {
+    method: "POST",
+  });
+  return readJsonOrThrow(res, "Failed to restore Studio snapshots");
+}

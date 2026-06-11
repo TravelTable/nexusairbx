@@ -16,6 +16,7 @@ import ModelSwitcher from "../../components/ai/ModelSwitcher";
 import TemplateGallery from "../../components/ai/TemplateGallery";
 import DailyPromptBadge from "../../components/ai/DailyPromptBadge";
 import ProjectArchitecturePanel from "../../components/ai/ProjectArchitecturePanel";
+import StudioAgentPanel from "../../components/ai/StudioAgentPanel";
 import { ProjectContextStatus } from "../../components/ai/AiComponents";
 import { AI_EVENTS } from "../../lib/aiEvents";
 import { BACKEND_URL } from "../../lib/uiBuilderApi";
@@ -319,6 +320,8 @@ export default function AiWorkspaceLayout({ controller }) {
                 />
               </div>
             </div>
+
+            <StudioAgentPanel user={user} chatId={chat.currentChatId} notify={notify} />
 
             <div className="flex-grow overflow-y-auto px-4 py-6 scrollbar-hide">
               {activeTab === "chat" && (
