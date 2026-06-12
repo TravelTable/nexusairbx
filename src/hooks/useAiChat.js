@@ -318,8 +318,10 @@ export function useAiChat(user, settings, refreshBilling, notify) {
             role: "assistant",
             content: "",
             explanation: data?.explanation || "",
+            summary: data?.summary || "",
             thought: data?.thought || "",
             code: data?.content || data?.code || "", // Backend sends "content" for code.
+            title: data?.title || "",
             projectId: data?.projectId || null,
             versionNumber: data?.versionNumber || 1,
             createdAt: serverTimestamp(),
@@ -330,6 +332,7 @@ export function useAiChat(user, settings, refreshBilling, notify) {
             metadata: {
               ...(data?.metadata || {}),
               mode: currentMode,
+              type: data?.artifactType || data?.metadata?.type || null,
               qaReport: data?.qaReport || null
             }
           };
@@ -337,6 +340,10 @@ export function useAiChat(user, settings, refreshBilling, notify) {
           if (data?.options) msgPayload.options = data.options;
           if (data?.plan) msgPayload.plan = data.plan;
           if (Array.isArray(data?.files) && data.files.length) msgPayload.files = data.files;
+          if (Array.isArray(data?.setupSteps) && data.setupSteps.length) msgPayload.setupSteps = data.setupSteps;
+          if (Array.isArray(data?.testingSteps) && data.testingSteps.length) msgPayload.testingSteps = data.testingSteps;
+          if (Array.isArray(data?.securityNotes) && data.securityNotes.length) msgPayload.securityNotes = data.securityNotes;
+          if (Array.isArray(data?.warnings) && data.warnings.length) msgPayload.warnings = data.warnings;
 
           await setDoc(assistantMsgRef, msgPayload);
 
@@ -365,16 +372,6 @@ export function useAiChat(user, settings, refreshBilling, notify) {
             updatedAt: serverTimestamp(),
             lastMessage: content.slice(0, 50),
           });
-
-          // Notify UI hook if this was a UI generation
-          if (data?.projectId) {
-            emitAiEvent(AI_EVENTS.UI_GENERATED, {
-              ...data,
-              uiModuleLua: data.uiModuleLua || data.content,
-              systemsLua: data.systemsLua || "",
-              files: Array.isArray(data.files) ? data.files : [],
-            });
-          }
 
           emitStreamMetric("complete", {
             jobId,

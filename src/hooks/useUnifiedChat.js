@@ -10,8 +10,6 @@ import {
 import { db } from "../firebase";
 import { v4 as uuidv4 } from "uuid";
 import { useAiChat } from "./useAiChat";
-import { useUiBuilder } from "./useUiBuilder";
-import { useAgent } from "./useAgent";
 import { orchestrate, approveWorkflowPlan } from "../lib/workflowApi";
 
 const THINKING_PLACEHOLDER = {
@@ -23,39 +21,33 @@ const THINKING_PLACEHOLDER = {
 };
 
 /**
- * Linear product loop for the /ai page:
- *   Task -> Orchestrate (Clarify OR Plan) -> Approve -> Generate -> Review -> Refine -> Export
+ * Linear product loop for the code-first /ai workspace:
+ *   Task -> Orchestrate (Clarify OR Plan) -> Approve -> Generate multi-file artifact -> Review -> Refine
  *
- * handleSubmit only ever orchestrates. It never generates directly. Generation is triggered
- * exclusively by approving a plan, which dispatches to the existing UI pipeline (classification "ui")
- * or the detached artifact job worker (classification "script" | "project").
+ * handleSubmit only ever orchestrates. Generation is triggered exclusively by
+ * approving a plan, which now ALWAYS runs the artifact job worker (script,
+ * project, and ui all produce a normalized multi-file Roblox artifact).
  */
 export function useUnifiedChat(user, settings, refreshBilling, notify, options = {}) {
   const { onSignInNudge } = options;
 
   const chat = useAiChat(user, settings, refreshBilling, notify);
-  const ui = useUiBuilder(user, settings, refreshBilling, notify);
-  const agent = useAgent(user, notify, refreshBilling);
 
   const [flowBusy, setFlowBusy] = useState(false);
 
-  const isGenerating =
-    chat.isGenerating || ui.uiIsGenerating || agent.isThinking || flowBusy;
+  const isGenerating = chat.isGenerating || flowBusy;
 
   const pendingMessage = useMemo(() => {
     if (chat.pendingMessage) return chat.pendingMessage;
-    if (ui.pendingMessage) return ui.pendingMessage;
-    if (agent.isThinking) return THINKING_PLACEHOLDER;
     if (flowBusy) return THINKING_PLACEHOLDER;
     return null;
-  }, [chat.pendingMessage, ui.pendingMessage, agent.isThinking, flowBusy]);
+  }, [chat.pendingMessage, flowBusy]);
 
   const generationStage = useMemo(() => {
     if (chat.generationStage) return chat.generationStage;
-    if (ui.generationStage) return ui.generationStage;
     if (flowBusy) return "Understanding your task...";
     return "";
-  }, [chat.generationStage, ui.generationStage, flowBusy]);
+  }, [chat.generationStage, flowBusy]);
 
   // Ensure a chat exists, returning its id (creating + opening if needed).
   const ensureChat = useCallback(
@@ -75,8 +67,6 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
     [chat, user]
   );
 
-  // Keep the parent chat doc's lastMessage/updatedAt fresh so the sidebar shows
-  // the latest activity instead of "No messages yet".
   const touchChat = useCallback(
     async (activeChatId, lastMessage) => {
       try {
@@ -134,7 +124,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
           role: "assistant",
           stage: "plan",
           planId: decision.planId,
-          classification: decision.classification || "ui",
+          classification: decision.classification || "script",
           aiSummary: decision.aiSummary || "",
           aiSteps: Array.isArray(decision.aiSteps) ? decision.aiSteps : [],
           planSteps: Array.isArray(decision.planSteps) ? decision.planSteps : [],
@@ -149,25 +139,14 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
     [user, touchChat]
   );
 
-  // Dispatch generation for an approved plan based on its classification.
+  // Dispatch generation for an approved plan. All classifications now run the
+  // artifact job worker in "act" mode to produce a multi-file Roblox artifact.
   const runGeneration = useCallback(
     async (activeChatId, classification, prompt, attachments) => {
       const requestId = uuidv4();
-      if (classification === "ui") {
-        await ui.handleGenerateUiPreview(
-          prompt,
-          activeChatId,
-          chat.setCurrentChatId,
-          null,
-          requestId,
-          attachments
-        );
-      } else {
-        // script | project -> detached artifact job worker
-        await chat.handleSubmit(prompt, activeChatId, requestId, null, false, attachments);
-      }
+      await chat.handleSubmit(prompt, activeChatId, requestId, null, true, attachments);
     },
-    [chat, ui]
+    [chat]
   );
 
   // Stage 1: every prompt goes through orchestration first.
@@ -282,7 +261,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
         );
         await runGeneration(
           activeChatId,
-          message.classification || "ui",
+          message.classification || "script",
           message.originPrompt || "",
           message.attachments || []
         );
@@ -294,7 +273,9 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
     [user, isGenerating, chat.currentChatId, runGeneration, notify]
   );
 
-  // Stage 5 (refine): re-run generation with a refinement instruction.
+  // Stage 5 (refine): re-run generation with a refinement instruction, passing
+  // the existing generated files as context so the agent EDITS rather than
+  // regenerates everything from scratch.
   const refineArtifact = useCallback(
     async (message, refinePrompt) => {
       if (!user || !refinePrompt) return;
@@ -304,23 +285,35 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
       if (!activeChatId) return;
 
       try {
-        const isUi = message?.classification === "ui" || message?.projectId || message?.metadata?.type === "ui";
-        if (isUi && ui.activeUi?.uiModuleLua) {
-          await ui.handleRefine(refinePrompt);
-        } else {
-          await runGeneration(
-            activeChatId,
-            message?.classification || (isUi ? "ui" : "script"),
-            refinePrompt,
-            []
-          );
-        }
+        const existingFiles = Array.isArray(message?.files) && message.files.length
+          ? message.files
+          : message?.code
+            ? [{ name: message.title || "Script", content: message.code }]
+            : [];
+
+        const fileAttachments = existingFiles.map((f) => ({
+          name: `${f.name || "file"}${/\.lua$/i.test(f.name || "") ? "" : ".lua"}`,
+          type: "text/x-lua",
+          data: String(f.content || ""),
+          isImage: false,
+        }));
+
+        const augmentedPrompt = existingFiles.length
+          ? `You are refining an existing multi-file Roblox project (its current files are attached). Apply this change:\n\n${refinePrompt}\n\nReturn the full updated set of files. Modify only what's necessary and keep unaffected files intact, preserving their structure and placement.`
+          : refinePrompt;
+
+        await runGeneration(
+          activeChatId,
+          message?.classification || "project",
+          augmentedPrompt,
+          fileAttachments
+        );
       } catch (err) {
         console.error("Refine error:", err);
         notify?.({ message: err?.message || "Refine failed. You can try again.", type: "error" });
       }
     },
-    [user, isGenerating, chat.currentChatId, ui, runGeneration, notify]
+    [user, isGenerating, chat.currentChatId, runGeneration, notify]
   );
 
   return {
@@ -332,7 +325,5 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
     submitClarifyAnswers,
     approvePlan,
     refineArtifact,
-    ui,
-    agent,
   };
 }

@@ -39,6 +39,9 @@ function normalizeKind(kind) {
   if (k === "server") return "server";
   if (k === "client" || k === "local") return "client";
   if (k === "module" || k === "shared" || k === "modulescript") return "module";
+  // UI modules and config tables export as ModuleScripts; docs are not scripts.
+  if (k === "ui" || k === "config") return "module";
+  if (k === "docs") return "docs";
   return "module";
 }
 
@@ -73,6 +76,7 @@ export function collectScripts({ uiModuleLua, systemsLua, files } = {}) {
   const add = (rawName, kind, source, fallbackName) => {
     if (!source || !String(source).trim()) return;
     const normKind = normalizeKind(kind);
+    if (normKind === "docs") return; // docs are exported as README, not scripts
     let name = sanitizeInstanceName(rawName, fallbackName);
     let unique = name;
     let n = 2;
@@ -293,4 +297,75 @@ export function buildStudioLoader({ title, uiModuleLua, systemsLua, files } = {}
 
   lines.push(`print(("[NexusRBX] Loaded %d script(s) under '%s'."):format(${total}, FOLDER_NAME))`);
   return lines.join("\n");
+}
+
+// --- Placement-based export (folders match Roblox service placement) ----------
+
+function extForKind(kind) {
+  const k = String(kind || "").toLowerCase();
+  if (k === "server") return "server.lua";
+  if (k === "client") return "client.lua";
+  if (k === "docs") return "md";
+  if (k === "config") return "json";
+  return "lua";
+}
+
+/**
+ * Build a README_SETUP.md that embeds the agent's setup, testing, and security
+ * notes plus a placement map of every generated file.
+ */
+export function buildSetupReadme(artifact = {}) {
+  const projectName = safeProjectName(artifact.title);
+  const files = Array.isArray(artifact.files) ? artifact.files : [];
+  const section = (heading, items) => {
+    const list = Array.isArray(items) ? items.filter(Boolean) : [];
+    if (!list.length) return "";
+    return `## ${heading}\n\n${list.map((s, i) => `${i + 1}. ${s}`).join("\n")}\n\n`;
+  };
+  const placementMap = files.length
+    ? files
+        .map((f) => `- \`${f.placement}/${f.name}\` — ${f.kind}${f.purpose ? `: ${f.purpose}` : ""}`)
+        .join("\n")
+    : "- (no files)";
+
+  return `# ${projectName} — Setup
+
+${artifact.summary ? `${artifact.summary}\n\n` : ""}## File placement
+
+Place each file under the matching Roblox service in Studio:
+
+${placementMap}
+
+> Naming: \`*.server.lua\` = Script, \`*.client.lua\` = LocalScript, plain \`*.lua\` = ModuleScript.
+
+${section("Setup steps", artifact.setupSteps)}${section("Testing steps", artifact.testingSteps)}${section("Security notes", artifact.securityNotes)}${section("Warnings", artifact.warnings)}---
+
+Exported from NexusRBX.
+`;
+}
+
+/**
+ * Build a downloadable .zip whose folder structure mirrors Roblox service
+ * placement, plus a README_SETUP.md. Each file keeps a Studio-appropriate
+ * extension based on its kind.
+ * @returns {Promise<Blob>}
+ */
+export async function buildPlacementZip(artifact = {}) {
+  const files = Array.isArray(artifact.files) ? artifact.files : [];
+  const zip = new JSZip();
+  const used = new Set();
+
+  files.forEach((f, i) => {
+    const placement = f.placement || "ReplicatedStorage";
+    const base = sanitizeInstanceName(f.name, `Script${i + 1}`);
+    const ext = extForKind(f.kind);
+    let rel = `${placement}/${base}.${ext}`;
+    let n = 2;
+    while (used.has(rel)) rel = `${placement}/${base}${n++}.${ext}`;
+    used.add(rel);
+    zip.file(rel, f.content || "");
+  });
+
+  zip.file("README_SETUP.md", buildSetupReadme(artifact));
+  return zip.generateAsync({ type: "blob" });
 }

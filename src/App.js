@@ -38,7 +38,6 @@ const NexusRBXIconGeneratorPage = lazy(() => import("./pages/IconGeneratorPage")
 const NexusRBXIconsMarketPage = lazy(() => import("./pages/IconsMarketPage"));
 const NexusRBXIconDetailPage = lazy(() => import("./pages/IconDetailPage"));
 const NexusRBXNotFoundPage = lazy(() => import("./pages/NotFoundPage"));
-const NexusRBXSharePreviewPage = lazy(() => import("./pages/SharePreviewPage"));
 const ScriptShareModalWrapper = lazy(() => import("./components/ScriptShareModalWrapper"));
 const DebugEntitlementsPage = lazy(() => import("./pages/DebugEntitlementsPage"));
 const AdminRoute = lazy(() => import("./components/AdminRoute"));
@@ -69,7 +68,6 @@ function App() {
           <Route path="/icons-market" element={<NexusRBXIconsMarketPage />} />
           <Route path="/icons/:id" element={<NexusRBXIconDetailPage />} />
           <Route path="/script/:id" element={<ScriptShareModalWrapper />} />
-          <Route path="/preview/:id" element={<NexusRBXSharePreviewPage />} />
           {/* NEW: on-screen entitlements debugger */}
           <Route path="/debug/entitlements" element={<AdminRoute><DebugEntitlementsPage /></AdminRoute>} />
           <Route path="*" element={<NexusRBXNotFoundPage />} />

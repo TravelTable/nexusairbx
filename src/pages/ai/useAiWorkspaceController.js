@@ -13,7 +13,6 @@ import {
   orderBy,
   limit,
   onSnapshot,
-  getDocs,
   doc,
 } from "firebase/firestore";
 
@@ -21,11 +20,11 @@ import { auth, db } from "../../firebase";
 import { useBilling } from "../../context/BillingContext";
 import { useSettings } from "../../context/SettingsContext";
 import { useUnifiedChat } from "../../hooks/useUnifiedChat";
+import { useArtifactWorkspace } from "../../hooks/useArtifactWorkspace";
 import { useGameProfile } from "../../hooks/useGameProfile";
 import { useAiScripts } from "../../hooks/useAiScripts";
 import { CHAT_MODES } from "../../components/ai/chatConstants";
-import { AI_PAGE_V2_ENABLED } from "../../config";
-import { BACKEND_URL } from "../../lib/uiBuilderApi";
+import { AI_PAGE_V2_ENABLED, BACKEND_URL } from "../../config";
 import { AI_EVENTS, emitAiEvent, onAiEvent } from "../../lib/aiEvents";
 import { createAiTelemetryClient } from "../../lib/aiTelemetry";
 import { useAiNotifications } from "./useAiNotifications";
@@ -53,6 +52,7 @@ export function useAiWorkspaceController() {
   const [scripts, setScripts] = useState([]);
   const [scriptsLimit] = useState(50);
   const [activeTab, setActiveTab] = useState("chat");
+  // Mobile tabs: chat | files | code | details (no preview).
   const [mobileTab, setMobileTab] = useState("chat");
   const [isMobile, setIsMobile] = useState(typeof window !== "undefined" ? window.innerWidth < 1024 : false);
   const [sidebarOpen, setSidebarOpen] = useState(typeof window !== "undefined" ? window.innerWidth > 1024 : true);
@@ -69,7 +69,6 @@ export function useAiWorkspaceController() {
   const [attachments, setAttachments] = useState([]);
   const [codeDrawerOpen, setCodeDrawerOpen] = useState(false);
   const [codeDrawerData, setCodeDrawerData] = useState({ code: "", title: "", explanation: "" });
-  const [templateGalleryOpen, setTemplateGalleryOpen] = useState(false);
 
   const chatEndRef = useRef(null);
   const pageViewTrackedRef = useRef(false);
@@ -90,72 +89,20 @@ export function useAiWorkspaceController() {
   const isPremium = entitlements?.includes("pro") || entitlements?.includes("team");
   const planKey = plan?.toLowerCase() || "free";
 
-  const handleSidebarTabChange = useCallback(() => {
-    setActiveTab("chat");
-  }, []);
-
-  const handleSuggestAssets = useCallback(
-    async (promptContext, uiRef) => {
-      if (!user) return;
-      try {
-        const token = await user.getIdToken();
-        const res = await fetch(`${BACKEND_URL}/api/ui-builder/ai/suggest-image-queries`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-          body: JSON.stringify({
-            items: uiRef?.activeUi?.boardState?.items || [],
-            boardPrompt: promptContext,
-          }),
-        });
-        if (!res.ok) throw new Error("Asset suggestion request failed");
-
-        const out = await res.json();
-        const msg =
-          out?.suggestions?.length > 0
-            ? out.suggestions.map((s) => `${s.itemId}: ${s.queries.join(", ")}`).join(" | ")
-            : "No suggestions returned.";
-        notify({ message: msg, type: "info" });
-      } catch (err) {
-        notify({ message: "Asset suggestion failed", type: "error" });
-      }
-    },
-    [user, notify]
-  );
-
-  const handleUiAudit = useCallback(
-    async (uiRef) => {
-      if (!user) return;
-      try {
-        const token = await user.getIdToken();
-        const res = await fetch(`${BACKEND_URL}/api/ui-builder/ai/audit`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-          body: JSON.stringify({ boardState: uiRef?.activeUi?.boardState || null }),
-        });
-        if (!res.ok) throw new Error("Audit request failed");
-
-        const out = await res.json();
-        const msg =
-          out?.audit?.score !== undefined
-            ? `Audit score: ${out.audit.score}. Issues: ${out.audit.issues.map((i) => i.message).join(" | ")}`
-            : "Audit returned no score.";
-        notify({ message: msg, type: "info" });
-      } catch (err) {
-        notify({ message: "Audit failed", type: "error" });
-      }
-    },
-    [user, notify]
-  );
-
   const unified = useUnifiedChat(user, settings, refreshBilling, notify, {
     onSignInNudge: () => setShowSignInNudge(true),
     isPremium,
   });
 
   const chat = unified;
-  const ui = unified.ui;
   const game = useGameProfile(settings, updateSettings);
   const scriptManager = useAiScripts(user, notify);
+
+  const workspace = useArtifactWorkspace(chat.messages, {
+    isGenerating: unified.isGenerating,
+    generationStage: unified.generationStage,
+    pendingMessage: unified.pendingMessage,
+  });
 
   const activeModeData = useMemo(
     () => CHAT_MODES.find((m) => m.id === chat.activeMode) || CHAT_MODES[0],
@@ -201,15 +148,14 @@ export function useAiWorkspaceController() {
 
   useEffect(() => {
     const last = [...chat.messages].reverse().find(
-      (m) =>
-        m.role === "assistant" &&
-        (m.projectId || m.artifactId || m.code || m.uiModuleLua)
+      (m) => m.role === "assistant" && (m.projectId || m.artifactId || m.code || (Array.isArray(m.files) && m.files.length))
     );
     if (!last || last.id === lastArtifactTrackedRef.current) return;
 
     lastArtifactTrackedRef.current = last.id;
     track("artifact_generated", {
-      artifactType: last.metadata?.type || (last.projectId ? "ui" : "code"),
+      artifactType: last.metadata?.type || (Array.isArray(last.files) && last.files.length ? "project" : "script"),
+      fileCount: Array.isArray(last.files) ? last.files.length : 1,
       hasQaReport: !!last.metadata?.qaReport,
     });
   }, [chat.messages, track]);
@@ -278,6 +224,7 @@ export function useAiWorkspaceController() {
 
     const unbindOpenCodeDrawer = onAiEvent(AI_EVENTS.OPEN_CODE_DRAWER, (e) => {
       const { code, title, explanation } = e.detail || {};
+      if (!code) return;
       setCodeDrawerData({ code: code || "", title: title || "", explanation: explanation || "" });
       setCodeDrawerOpen(true);
     });
@@ -301,15 +248,6 @@ export function useAiWorkspaceController() {
       unbindSaveScript();
     };
   }, [chat, isPremium, notify, scriptManager, track]);
-
-  // Review stage: auto-open the preview when a UI artifact finishes generating.
-  useEffect(() => {
-    const unbind = onAiEvent(AI_EVENTS.UI_GENERATED, () => {
-      ui.setUiDrawerOpen(true);
-      if (typeof window !== "undefined" && window.innerWidth < 1024) setMobileTab("preview");
-    });
-    return () => unbind();
-  }, [ui]);
 
   useEffect(() => {
     if (!user) return;
@@ -347,11 +285,10 @@ export function useAiWorkspaceController() {
     if (!currentPrompt && currentAttachments.length === 0) return;
 
     if (activeTab !== "chat") setActiveTab("chat");
+    if (isMobile) setMobileTab("chat");
     setPrompt("");
     setAttachments([]);
 
-    // Refine loop: if a refine target is active, regenerate that artifact directly
-    // instead of starting a new orchestration turn.
     if (refineTarget) {
       const target = refineTarget;
       setRefineTarget(null);
@@ -370,6 +307,7 @@ export function useAiWorkspaceController() {
     prompt,
     attachments,
     activeTab,
+    isMobile,
     refineTarget,
     unified,
     track,
@@ -378,9 +316,16 @@ export function useAiWorkspaceController() {
   const handleStartRefine = useCallback((message) => {
     setRefineTarget(message || null);
     setActiveTab("chat");
-  }, []);
+    if (isMobile) setMobileTab("chat");
+  }, [isMobile]);
 
   const cancelRefine = useCallback(() => setRefineTarget(null), []);
+
+  const handleOpenArtifact = useCallback((message) => {
+    if (message?.id) workspace.openArtifact(message.id);
+    if (isMobile) setMobileTab("code");
+    track("artifact_action_used", { action: "open_in_editor" });
+  }, [workspace, isMobile, track]);
 
   const handleImprovePrompt = useCallback(async () => {
     const current = prompt.trim();
@@ -425,13 +370,6 @@ export function useAiWorkspaceController() {
     await handlePromptSubmit(null, promptText);
   }, [handlePromptSubmit, track]);
 
-  const handleSelectTemplate = useCallback(async (template) => {
-    setTemplateGalleryOpen(false);
-    if (!template?.prompt) return;
-    track("template_selected", { id: template.id, category: template.category });
-    await handleQuickStart(template.prompt);
-  }, [handleQuickStart, track]);
-
   const handleEditPlan = useCallback((message) => {
     setPrompt(message?.originPrompt || "");
   }, []);
@@ -460,125 +398,6 @@ export function useAiWorkspaceController() {
       }
     });
   }, []);
-
-  const handleOpenScript = useCallback(async (script) => {
-    if (!isPremium) {
-      setProNudgeReason("Saved Scripts Library");
-      setShowProNudge(true);
-      return;
-    }
-
-    if (script.type === "ui") {
-      setActiveTab("chat");
-      const uid = user?.uid;
-      if (!uid) return;
-
-      const snap = await getDocs(
-        query(
-          collection(db, "users", uid, "scripts", script.id, "versions"),
-          orderBy("versionNumber", "desc"),
-          limit(1)
-        )
-      );
-
-      if (!snap.empty) {
-        const data = snap.docs[0].data();
-        ui.setActiveUiId(script.id);
-        ui.setUiGenerations((prev) =>
-          prev.some((g) => g.id === script.id)
-            ? prev
-            : [
-                {
-                  id: script.id,
-                  uiModuleLua: data.uiModuleLua || data.code,
-                  systemsLua: data.systemsLua || "",
-                  files: Array.isArray(data.files) ? data.files : [],
-                  boardState: data.boardState || null,
-                  prompt: script.title,
-                  createdAt: Date.now(),
-                },
-                ...prev,
-              ]
-        );
-        ui.setUiDrawerOpen(true);
-      }
-    } else {
-      setActiveTab("chat");
-      notify({ message: "Opening script", type: "info" });
-    }
-  }, [isPremium, notify, ui, user]);
-
-  const handleOpenPreview = useCallback(() => {
-    if (!ui.activeUi && !ui.uiGenerations.length) {
-      notify({ message: "Generate or open a UI first to use preview", type: "info" });
-      return;
-    }
-    ui.setUiDrawerOpen(true);
-    if (isMobile) setMobileTab("preview");
-    track("artifact_action_used", { action: "open_preview" });
-  }, [isMobile, notify, track, ui]);
-
-  const handleClosePreview = useCallback(() => {
-    ui.setUiDrawerOpen(false);
-    if (isMobile) setMobileTab("chat");
-  }, [isMobile, ui]);
-
-  const handlePreviewToggle = useCallback(() => {
-    if (ui.uiDrawerOpen) {
-      handleClosePreview();
-      return;
-    }
-    handleOpenPreview();
-  }, [handleClosePreview, handleOpenPreview, ui.uiDrawerOpen]);
-
-  const [isSharing, setIsSharing] = useState(false);
-
-  // Create an unlisted, read-only share link for the active UI and copy it to
-  // the clipboard. Anyone with the link can view the preview (no auth needed).
-  const handleCreateShareLink = useCallback(async () => {
-    const activeUi = ui.activeUi;
-    if (!activeUi || (!activeUi.boardState && !activeUi.uiModuleLua && !activeUi.lua)) {
-      notify({ message: "Generate or open a UI first to share it", type: "info" });
-      return;
-    }
-    if (!user) {
-      setShowSignInNudge(true);
-      return;
-    }
-    if (isSharing) return;
-
-    setIsSharing(true);
-    try {
-      const token = await user.getIdToken();
-      const res = await fetch(`${BACKEND_URL}/api/share/ui`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({
-          title: activeUi.prompt || "Generated UI",
-          boardState: activeUi.boardState || null,
-          uiModuleLua: activeUi.uiModuleLua || activeUi.lua || "",
-          systemsLua: activeUi.systemsLua || "",
-        }),
-      });
-      if (!res.ok) throw new Error("Share request failed");
-      const data = await res.json();
-      const shareId = data?.shareId;
-      if (!shareId) throw new Error("No share id returned");
-
-      const shareUrl = `${window.location.origin}/preview/${shareId}`;
-      try {
-        await navigator.clipboard.writeText(shareUrl);
-        notify({ message: "Share link copied to clipboard", type: "success" });
-      } catch (clipErr) {
-        notify({ message: `Share link: ${shareUrl}`, type: "info" });
-      }
-      track("artifact_action_used", { action: "share_ui" });
-    } catch (err) {
-      notify({ message: "Couldn't create share link, try again", type: "error" });
-    } finally {
-      setIsSharing(false);
-    }
-  }, [ui.activeUi, user, isSharing, notify, track]);
 
   return {
     billing: {
@@ -615,8 +434,6 @@ export function useAiWorkspaceController() {
       proNudgeReason,
       codeDrawerOpen,
       codeDrawerData,
-      templateGalleryOpen,
-      isSharing,
       currentTheme,
       activeModeData,
       currentToast,
@@ -627,10 +444,10 @@ export function useAiWorkspaceController() {
     },
     modules: {
       chat,
-      ui,
       game,
       scriptManager,
       unified,
+      workspace,
       settings,
     },
     handlers: {
@@ -644,29 +461,20 @@ export function useAiWorkspaceController() {
       setShowProNudge,
       setProNudgeReason,
       setCodeDrawerOpen,
-      setTemplateGalleryOpen,
       dismissToast,
       updateSettings,
 
-      handleSidebarTabChange,
       handlePromptSubmit,
       onApprovePlan: unified.approvePlan,
       onClarifySubmit: unified.submitClarifyAnswers,
       onRefineArtifact: unified.refineArtifact,
       handleStartRefine,
       cancelRefine,
+      handleOpenArtifact,
       handleImprovePrompt,
       handleEditPlan,
       handleFileUpload,
-      handleOpenScript,
       handleQuickStart,
-      handleSelectTemplate,
-      handleCreateShareLink,
-      handleOpenPreview,
-      handleClosePreview,
-      handlePreviewToggle,
-      handleUiAudit,
-      handleSuggestAssets,
       track,
       notify,
       emitAiEvent,

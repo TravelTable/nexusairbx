@@ -1,11 +1,11 @@
 import React from "react";
 import "../styles/aiTheme.css";
-import AiWorkspaceLayout from "./ai/AiWorkspaceLayout";
+import AgentWorkspaceLayout from "./ai/AgentWorkspaceLayout";
 import { useAiWorkspaceController } from "./ai/useAiWorkspaceController";
 
 function AiPage() {
   const controller = useAiWorkspaceController();
-  return <AiWorkspaceLayout controller={controller} />;
+  return <AgentWorkspaceLayout controller={controller} />;
 }
 
 export default AiPage;

@@ -3,7 +3,6 @@ export const AI_EVENTS = Object.freeze({
   OPEN_CODE_DRAWER: "nexus:openCodeDrawer",
   SAVE_SCRIPT: "nexus:saveScript",
   APPLY_CODE_PATCH: "nexus:applyCodePatch",
-  UI_GENERATED: "nexus:uiGenerated",
   OPEN_CHAT: "nexus:openChat",
   STREAM_METRIC: "nexus:streamMetric",
 });
