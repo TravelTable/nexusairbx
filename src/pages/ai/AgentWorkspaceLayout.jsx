@@ -53,7 +53,7 @@ function ArtifactSwitcher({ artifacts, activeId, onSelect }) {
 
 export default function AgentWorkspaceLayout({ controller }) {
   const { billing, navigation, uiState, refs, modules, handlers } = controller;
-  const { planKey, totalRemaining, subRemaining, paygRemaining, subLimit, resetsAt, isPremium } = billing;
+  const { planKey, totalRemaining, subRemaining, paygRemaining, subLimit, resetsAt, isPremium, unlimitedTokens, devOverride, flags } = billing;
   const { navigate, location } = navigation;
   const {
     user,
@@ -165,6 +165,8 @@ export default function AgentWorkspaceLayout({ controller }) {
       tokensLimit={subLimit}
       resetsAt={resetsAt}
       planKey={planKey}
+      unlimitedTokens={unlimitedTokens}
+      devOverride={devOverride}
       themePrimary={currentTheme.primary}
       themeSecondary={currentTheme.secondary}
       artifact={workspace.activeArtifact}
@@ -217,7 +219,18 @@ export default function AgentWorkspaceLayout({ controller }) {
         navigate={navigate}
         user={user}
         handleLogin={() => navigate("/signin", { state: { from: location } })}
-        tokenInfo={{ sub: { limit: subLimit, used: subLimit - subRemaining }, payg: { remaining: paygRemaining } }}
+        tokenInfo={{
+          sub: { limit: subLimit, used: subLimit - subRemaining },
+          payg: { remaining: paygRemaining },
+          unlimitedTokens,
+          devOverride,
+          isAdmin: Boolean(flags?.isAdmin),
+          flags: flags || {
+            isAdmin: Boolean(flags?.isAdmin),
+            unlimitedTokens,
+            devOverride,
+          },
+        }}
         tokenLoading={false}
       />
 
@@ -320,7 +333,14 @@ export default function AgentWorkspaceLayout({ controller }) {
               />
             </div>
             <div className="flex items-center gap-3">
-              <DailyPromptBadge totalRemaining={totalRemaining} subLimit={subLimit} resetsAt={resetsAt} planKey={planKey} />
+              <DailyPromptBadge
+                totalRemaining={totalRemaining}
+                subLimit={subLimit}
+                resetsAt={resetsAt}
+                planKey={planKey}
+                unlimitedTokens={unlimitedTokens}
+                devOverride={devOverride}
+              />
               <div className="h-4 w-px bg-white/10 hidden sm:block" aria-hidden="true" />
               <ProjectContextStatus
                 context={projectContext}

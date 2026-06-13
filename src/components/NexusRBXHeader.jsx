@@ -190,6 +190,11 @@ function NexusRBXHeader({
                         : 0,
                   },
                 }}
+                flags={tokenInfo?.flags || {
+                  unlimitedTokens: Boolean(tokenInfo?.unlimitedTokens),
+                  devOverride: Boolean(tokenInfo?.devOverride),
+                  isAdmin: Boolean(tokenInfo?.isAdmin),
+                }}
                 isLoading={tokenLoading}
                 showRefreshButton={false}
                 variant="header"

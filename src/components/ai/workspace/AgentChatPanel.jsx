@@ -38,6 +38,8 @@ export default function AgentChatPanel({
   tokensLimit,
   resetsAt,
   planKey,
+  unlimitedTokens,
+  devOverride,
   themePrimary,
   themeSecondary,
   // details
@@ -117,6 +119,8 @@ export default function AgentChatPanel({
             tokensLimit={tokensLimit}
             resetsAt={resetsAt}
             planKey={planKey}
+            unlimitedTokens={unlimitedTokens}
+            devOverride={devOverride}
             themePrimary={themePrimary}
             themeSecondary={themeSecondary}
             onFileUpload={onFileUpload}

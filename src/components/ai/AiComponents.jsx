@@ -41,7 +41,30 @@ export const FormatText = React.memo(({ text }) => {
   );
 });
 
-export function TokenBar({ tokensLeft, tokensLimit, resetsAt, plan }) {
+export function TokenBar({ tokensLeft, tokensLimit, resetsAt, plan, unlimitedTokens = false, devOverride = false }) {
+  if (unlimitedTokens) {
+    const planInfo = PLAN_INFO[plan] || PLAN_INFO.free;
+    return (
+      <div id="tour-token-bar" className="w-full flex flex-col gap-1 relative z-10">
+        <div className="flex items-center justify-between mb-1">
+          <div className="text-xs text-gray-300 font-medium">
+            Tokens: <span className="text-[#00f5d4] font-bold">{devOverride ? "Dev unlimited" : "Unlimited"}</span>
+          </div>
+          <span className="flex items-center gap-1 text-xs text-[#00f5d4]" title="Unlimited token override is active">
+            <Zap className="w-4 h-4" /> Active
+          </span>
+        </div>
+        <div className="w-full h-3 bg-gray-800/50 rounded-full overflow-hidden relative border border-white/5">
+          <div className="h-full rounded-full transition-all duration-500 bg-gradient-to-r from-[#00f5d4] to-[#9b5de5]" style={{ width: "100%" }}></div>
+        </div>
+        <div className="flex items-center justify-between mt-1 text-xs text-gray-400">
+          <span>{devOverride ? "Dev override active" : ""}</span>
+          <span className="text-gray-500">{devOverride ? "Unlimited override" : planInfo.capText}</span>
+        </div>
+      </div>
+    );
+  }
+
   const percent = typeof tokensLeft === "number" && typeof tokensLimit === "number"
       ? Math.max(0, Math.min(100, (tokensLeft / tokensLimit) * 100))
       : 100;

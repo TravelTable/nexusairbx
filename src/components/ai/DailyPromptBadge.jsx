@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React from "react";
 import { Zap } from "lucide-react";
 
 // Friendly "prompts left" framing layered on top of the token system.
@@ -30,16 +30,33 @@ export default function DailyPromptBadge({
   subLimit = 0,
   resetsAt = null,
   planKey = "free",
+  unlimitedTokens = false,
+  devOverride = false,
 }) {
-  const promptsLeft = useMemo(
-    () => Math.max(0, Math.floor(Number(totalRemaining || 0) / AVG_TOKENS_PER_PROMPT)),
-    [totalRemaining]
-  );
+  const promptsLeft = Math.max(0, Math.floor(Number(totalRemaining || 0) / AVG_TOKENS_PER_PROMPT));
+  const promptsTotal = Math.max(0, Math.floor(Number(subLimit || 0) / AVG_TOKENS_PER_PROMPT));
 
-  const promptsTotal = useMemo(
-    () => Math.max(0, Math.floor(Number(subLimit || 0) / AVG_TOKENS_PER_PROMPT)),
-    [subLimit]
-  );
+  if (unlimitedTokens) {
+    const title = devOverride
+      ? "Dev override active. Tokens are unlimited for this account."
+      : "Unlimited tokens are active for this account.";
+
+    return (
+      <div
+        className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full border text-[11px] font-bold"
+        style={{
+          color: "#00f5d4",
+          borderColor: "#00f5d433",
+          backgroundColor: "#00f5d414",
+        }}
+        title={title}
+        aria-label={title}
+      >
+        <Zap className="w-3.5 h-3.5" />
+        <span>{devOverride ? "Dev unlimited" : "Unlimited tokens"}</span>
+      </div>
+    );
+  }
 
   // Nothing useful to show (e.g. signed-out / no allowance loaded yet).
   if (!subLimit && !totalRemaining) return null;

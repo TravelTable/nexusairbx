@@ -19,6 +19,13 @@ export function BillingProvider({ children, pollMs = 60_000 }) {
     totalRemaining: 0,
     resetsAt: null,
     isAdmin: false,
+    unlimitedTokens: false,
+    devOverride: false,
+    flags: {
+      isAdmin: false,
+      unlimitedTokens: false,
+      devOverride: false,
+    },
     entitlements: [],
   });
 
@@ -38,6 +45,13 @@ export function BillingProvider({ children, pollMs = 60_000 }) {
         subRemaining: 0,
         paygRemaining: 0,
         resetsAt: null,
+        unlimitedTokens: false,
+        devOverride: false,
+        flags: {
+          isAdmin: false,
+          unlimitedTokens: false,
+          devOverride: false,
+        },
       }));
       return;
     }

@@ -84,6 +84,11 @@ export function summarizeEntitlements(e) {
   const limit = Number(e?.sub?.limit ?? 0);
   const used = Number(e?.sub?.used ?? 0);
   const paygRemaining = Math.max(0, Number(e?.payg?.remaining ?? 0));
+  const flags = {
+    isAdmin: Boolean(e?.flags?.isAdmin),
+    unlimitedTokens: Boolean(e?.flags?.unlimitedTokens),
+    devOverride: Boolean(e?.flags?.devOverride),
+  };
 
   const subRemaining = Math.max(0, limit - used);
   return {
@@ -94,7 +99,10 @@ export function summarizeEntitlements(e) {
     totalRemaining: subRemaining + paygRemaining,
     resetsAt: e?.sub?.resetsAt ? new Date(e.sub.resetsAt) : null,
     subLimit: limit,
-    isAdmin: Boolean(e?.flags?.isAdmin),
+    isAdmin: flags.isAdmin,
+    unlimitedTokens: flags.unlimitedTokens,
+    devOverride: flags.devOverride,
+    flags,
     entitlements: e?.entitlements || [],
   };
 }

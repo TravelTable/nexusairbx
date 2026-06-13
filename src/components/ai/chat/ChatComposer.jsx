@@ -19,6 +19,8 @@ export default function ChatComposer({
   tokensLimit,
   resetsAt,
   planKey,
+  unlimitedTokens,
+  devOverride,
   themePrimary,
   themeSecondary,
   refineTarget,
@@ -39,6 +41,8 @@ export default function ChatComposer({
             tokensLimit={tokensLimit}
             resetsAt={resetsAt}
             plan={planKey}
+            unlimitedTokens={unlimitedTokens}
+            devOverride={devOverride}
           />
         </div>
 

@@ -8,7 +8,23 @@ export default function TokenBar({
   isAdmin,
   tokenLimit,
   tokensLoading,
+  unlimitedTokens = false,
+  devOverride = false,
 }) {
+  if (unlimitedTokens) {
+    return (
+      <div className="flex items-center gap-2">
+        <span className="text-xs text-gray-400 mr-2">Tokens:</span>
+        <span className="text-[#00f5d4] font-bold">
+          {devOverride ? "Dev unlimited" : "Unlimited"}
+        </span>
+        <span className="ml-2 text-xs text-gray-400">
+          {devOverride ? "Dev override active" : "Unlimited"}
+        </span>
+      </div>
+    );
+  }
+
   // Determine if the plan is unlimited (e.g., Developer)
   const isUnlimited = plan?.toLowerCase() === "unlimited";
 
