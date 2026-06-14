@@ -35,7 +35,7 @@ function ModeSelector({ mode, onModeChange, disabled }) {
 
       {open && (
         <div
-          className="absolute bottom-full left-0 mb-2 w-64 rounded-2xl border border-white/10 bg-[#0D0D0D]/95 backdrop-blur-2xl shadow-2xl z-50 p-1.5"
+          className="absolute bottom-full left-0 mb-2 w-64 rounded-2xl border border-white/10 bg-[#0D0D0D] backdrop-blur-2xl shadow-2xl z-50 p-1.5"
           role="listbox"
         >
           {CHAT_MODES.map((m) => {

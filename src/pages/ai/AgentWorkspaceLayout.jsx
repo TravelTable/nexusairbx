@@ -9,6 +9,7 @@ import ProNudgeModal from "../../components/ProNudgeModal";
 import NotificationToast from "../../components/NotificationToast";
 import GameProfileWizard from "../../components/ai/GameProfileWizard";
 import ModelSwitcher from "../../components/ai/ModelSwitcher";
+import StudioPairControl from "../../components/ai/StudioPairControl";
 import DailyPromptBadge from "../../components/ai/DailyPromptBadge";
 import ProjectArchitecturePanel from "../../components/ai/ProjectArchitecturePanel";
 import { ProjectContextStatus } from "../../components/ai/AiComponents";
@@ -339,6 +340,14 @@ export default function AgentWorkspaceLayout({ controller }) {
                   setProNudgeReason(reason || "Premium AI Models");
                   setShowProNudge(true);
                 }}
+              />
+              <div className="h-4 w-px bg-white/10 hidden sm:block" aria-hidden="true" />
+              <StudioPairControl
+                connected={studio?.connected}
+                loading={studio?.loading}
+                refresh={studio?.refresh}
+                notify={notify}
+                requireUser={requireUser}
               />
             </div>
             <div className="flex items-center gap-3">

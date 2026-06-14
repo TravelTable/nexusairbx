@@ -607,6 +607,7 @@ export function useAiWorkspaceController() {
       connected: studioConnection.connected,
       loading: studioConnection.loading,
       sessionId: studioConnection.sessionId,
+      refresh: studioConnection.refresh,
       enabled: studioEnabled,
       applyMode: studioApplyMode,
       approvingStepId,
