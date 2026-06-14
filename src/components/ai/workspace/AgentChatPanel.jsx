@@ -36,6 +36,11 @@ export default function AgentChatPanel({
   onStudioEnabledChange,
   studioApplyMode,
   onStudioApplyModeChange,
+  studioAutoPushEnabled,
+  onStudioAutoPushEnabledChange,
+  studioAutoPushPolicy,
+  onStudioAutoPushPolicyChange,
+  studioAutoPushAuthorized,
   // composer
   prompt,
   setPrompt,
@@ -61,7 +66,7 @@ export default function AgentChatPanel({
   agentRun,
 }) {
   const [view, setView] = useState("chat");
-  const active = agentRun?.status === "thinking" || agentRun?.status === "generating";
+  const active = ["inspecting", "generating", "validating", "applying"].includes(agentRun?.status);
 
   return (
     <div className="h-full flex flex-col min-h-0 bg-ink-900">
@@ -77,6 +82,11 @@ export default function AgentChatPanel({
           onStudioEnabledChange={onStudioEnabledChange}
           applyMode={studioApplyMode}
           onApplyModeChange={onStudioApplyModeChange}
+          autoPushEnabled={studioAutoPushEnabled}
+          onAutoPushEnabledChange={onStudioAutoPushEnabledChange}
+          autoPushPolicy={studioAutoPushPolicy}
+          onAutoPushPolicyChange={onStudioAutoPushPolicyChange}
+          autoPushAuthorized={studioAutoPushAuthorized}
         />
         <div className="ml-auto">
           <Segmented
@@ -96,7 +106,9 @@ export default function AgentChatPanel({
           }`}
         >
           {studioConnected && studioEnabled
-            ? "Studio connected · live tools enabled"
+            ? studioAutoPushEnabled
+              ? `Studio connected · live tools enabled · auto push ${studioAutoPushPolicy === "manual_only" ? "manual only" : studioAutoPushPolicy === "after_playtest" ? "after playtest" : "after validation"}`
+              : "Studio connected · live tools enabled · auto push off"
             : studioConnected
               ? "Studio connected · live tools off"
               : "Studio offline · code-only mode"}

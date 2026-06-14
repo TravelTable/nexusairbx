@@ -15,6 +15,9 @@ const DEFAULT_SETTINGS = {
   enableGameWizard: true,
   chatMode: "agent",
   showThinking: true,
+  studioAutoPushEnabled: false,
+  studioAutoPushPolicy: "after_validation",
+  lastAuthorizedStudioSessionId: null,
 };
 
 export function SettingsProvider({ children }) {

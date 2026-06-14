@@ -39,6 +39,7 @@ import { useStudioConnection } from "../../hooks/useStudioConnection";
 import { AI_EVENTS, emitAiEvent, onAiEvent } from "../../lib/aiEvents";
 import { createAiTelemetryClient } from "../../lib/aiTelemetry";
 import { useAiNotifications } from "./useAiNotifications";
+import { saveWorkspaceArtifact } from "../../lib/artifactWorkspaceApi";
 
 const IS_AI_PAGE_V2_ENABLED = AI_PAGE_V2_ENABLED;
 
@@ -306,6 +307,23 @@ export function useAiWorkspaceController() {
     return () => unsubUser();
   }, [user]);
 
+  useEffect(() => {
+    if (!user || !studioConnection.connected || !studioConnection.sessionId) return;
+    if (settings?.lastAuthorizedStudioSessionId === studioConnection.sessionId) return;
+    updateSettings({
+      studioAutoPushEnabled: true,
+      studioAutoPushPolicy: settings?.studioAutoPushPolicy || "after_validation",
+      lastAuthorizedStudioSessionId: studioConnection.sessionId,
+    }).catch(() => {});
+  }, [
+    user,
+    studioConnection.connected,
+    studioConnection.sessionId,
+    settings?.lastAuthorizedStudioSessionId,
+    settings?.studioAutoPushPolicy,
+    updateSettings,
+  ]);
+
   const handlePromptSubmit = useCallback(async (e, overridePrompt = null) => {
     if (e && typeof e.preventDefault === "function") e.preventDefault();
 
@@ -323,7 +341,7 @@ export function useAiWorkspaceController() {
       const target = refineTarget;
       setRefineTarget(null);
       track("artifact_action_used", { action: "refine_submit" });
-      await unified.refineArtifact(target, currentPrompt);
+      await unified.refineArtifact(target, currentPrompt, workspace.activeArtifactSnapshot);
       return;
     }
 
@@ -340,8 +358,17 @@ export function useAiWorkspaceController() {
     isMobile,
     refineTarget,
     unified,
+    workspace.activeArtifactSnapshot,
     track,
   ]);
+
+  useEffect(() => {
+    if (!user || !workspace.activeArtifactSnapshot?.artifactId) return undefined;
+    const timer = window.setTimeout(() => {
+      saveWorkspaceArtifact(workspace.activeArtifactSnapshot, "workspace").catch(() => {});
+    }, 400);
+    return () => window.clearTimeout(timer);
+  }, [user, workspace.activeArtifactSnapshot]);
 
   const handleStartRefine = useCallback((message) => {
     setRefineTarget(message || null);
@@ -438,6 +465,21 @@ export function useAiWorkspaceController() {
     setStudioApplyModeState(mode);
     setStudioApplyMode(mode);
   }, []);
+
+  const handleStudioAutoPushEnabledChange = useCallback((enabled) => {
+    updateSettings({
+      studioAutoPushEnabled: Boolean(enabled),
+    }).catch(() => {});
+  }, [updateSettings]);
+
+  const handleStudioAutoPushPolicyChange = useCallback((policy) => {
+    const nextPolicy = ["after_validation", "after_playtest", "manual_only"].includes(policy)
+      ? policy
+      : "after_validation";
+    updateSettings({
+      studioAutoPushPolicy: nextPolicy,
+    }).catch(() => {});
+  }, [updateSettings]);
 
   const syncAgentRunSteps = useCallback(
     async (runId, fallbackStep = null) => {
@@ -602,6 +644,8 @@ export function useAiWorkspaceController() {
       handleRestoreRun,
       handleStudioEnabledChange,
       handleStudioApplyModeChange,
+      handleStudioAutoPushEnabledChange,
+      handleStudioAutoPushPolicyChange,
     },
     studio: {
       connected: studioConnection.connected,
@@ -610,6 +654,9 @@ export function useAiWorkspaceController() {
       refresh: studioConnection.refresh,
       enabled: studioEnabled,
       applyMode: studioApplyMode,
+      autoPushEnabled: Boolean(settings?.studioAutoPushEnabled),
+      autoPushPolicy: settings?.studioAutoPushPolicy || "after_validation",
+      lastAuthorizedSessionId: settings?.lastAuthorizedStudioSessionId || null,
       approvingStepId,
       restoringRun,
       unifiedAgent: FEATURE_FLAGS.unifiedAgent,

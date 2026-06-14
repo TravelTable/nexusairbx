@@ -18,6 +18,11 @@ export default function StudioControls({
   onStudioEnabledChange,
   applyMode,
   onApplyModeChange,
+  autoPushEnabled = false,
+  onAutoPushEnabledChange,
+  autoPushPolicy = "after_validation",
+  onAutoPushPolicyChange,
+  autoPushAuthorized = false,
 }) {
   if (!FEATURE_FLAGS.unifiedAgent) return null;
 
@@ -56,19 +61,47 @@ export default function StudioControls({
       </label>
 
       {enabled && connected && (
-        <select
-          value={mode}
-          onChange={(e) => {
-            setStudioApplyMode(e.target.value);
-            onApplyModeChange?.(e.target.value);
-          }}
-          className="h-[26px] rounded-lg border border-white/10 bg-black/30 px-2 text-[9px] font-black uppercase tracking-widest text-gray-300 outline-none"
-          title="How mutating Studio steps are applied"
-        >
-          <option value="manual_review">Manual</option>
-          <option value="auto_after_approval">Auto</option>
-          <option value="unrestricted_dev">Dev</option>
-        </select>
+        <>
+          <select
+            value={mode}
+            onChange={(e) => {
+              setStudioApplyMode(e.target.value);
+              onApplyModeChange?.(e.target.value);
+            }}
+            className="h-[26px] rounded-lg border border-white/10 bg-black/30 px-2 text-[9px] font-black uppercase tracking-widest text-gray-300 outline-none"
+            title="How mutating Studio tool steps are approved"
+          >
+            <option value="manual_review">Manual Review</option>
+            <option value="auto_after_approval">Auto Queue</option>
+            <option value="unrestricted_dev">Dev Override</option>
+          </select>
+
+          <label
+            className="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg border border-white/10 bg-white/5 text-[10px] font-bold uppercase tracking-widest text-gray-400 cursor-pointer"
+            title={autoPushAuthorized ? "Automatically push the validated managed artifact into Studio" : "Auto Push unlocks after this Studio session is paired and authorized"}
+          >
+            <input
+              type="checkbox"
+              checked={Boolean(autoPushEnabled)}
+              onChange={(e) => onAutoPushEnabledChange?.(e.target.checked)}
+              className="accent-[#00f5d4]"
+              disabled={!connected || !autoPushAuthorized}
+            />
+            Auto Push
+          </label>
+
+          <select
+            value={autoPushPolicy}
+            onChange={(e) => onAutoPushPolicyChange?.(e.target.value)}
+            className="h-[26px] rounded-lg border border-white/10 bg-black/30 px-2 text-[9px] font-black uppercase tracking-widest text-gray-300 outline-none"
+            title="When a validated managed artifact is allowed to mutate Studio"
+            disabled={!connected || !autoPushAuthorized || !autoPushEnabled}
+          >
+            <option value="after_validation">After Validation</option>
+            <option value="after_playtest">After Playtest</option>
+            <option value="manual_only">Manual Only</option>
+          </select>
+        </>
       )}
     </div>
   );

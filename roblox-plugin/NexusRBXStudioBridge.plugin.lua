@@ -7,6 +7,7 @@ local PLUGIN_VERSION = "0.3.1-agent"
 local HttpService = game:GetService("HttpService")
 local ChangeHistoryService = game:GetService("ChangeHistoryService")
 local CollectionService = game:GetService("CollectionService")
+local ScriptEditorService = game:GetService("ScriptEditorService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ServerScriptService = game:GetService("ServerScriptService")
 local ServerStorage = game:GetService("ServerStorage")
@@ -139,6 +140,9 @@ local CREATABLE_CLASSES = {
 	ModuleScript = true,
 }
 
+local AGENT_ARTIFACT_ID_ATTRIBUTE = "AgentArtifactId"
+local AGENT_FILE_ID_ATTRIBUTE = "AgentFileId"
+
 local function setStatus(text)
 	statusLabel.Text = "Status: " .. tostring(text)
 end
@@ -165,6 +169,16 @@ end
 
 local function jsonDecode(value)
 	return HttpService:JSONDecode(value)
+end
+
+local function stableHash(value)
+	local hash = 2166136261
+	local text = tostring(value or "")
+	for i = 1, #text do
+		hash = bit32.bxor(hash, string.byte(text, i))
+		hash = (hash * 16777619) % 4294967296
+	end
+	return string.format("%08x", hash)
 end
 
 local function request(method, path, body, token)
@@ -313,6 +327,45 @@ local function safeSetProperty(inst, key, value)
 	end)
 end
 
+local function readScriptSource(inst)
+	if not inst or not SCRIPT_CLASSES[inst.ClassName] then
+		return false, ""
+	end
+	if ScriptEditorService and ScriptEditorService.GetEditorSource then
+		local ok, source = pcall(function()
+			return ScriptEditorService:GetEditorSource(inst)
+		end)
+		if ok and type(source) == "string" then
+			return true, source
+		end
+	end
+	local ok, source = pcall(function()
+		return inst.Source
+	end)
+	return ok, ok and source or ""
+end
+
+local function writeScriptSource(inst, source)
+	if not inst or not SCRIPT_CLASSES[inst.ClassName] then
+		return false, "Not a script instance"
+	end
+	local nextSource = tostring(source or "")
+	if ScriptEditorService and ScriptEditorService.UpdateSourceAsync then
+		local ok, err = pcall(function()
+			ScriptEditorService:UpdateSourceAsync(inst, function()
+				return nextSource
+			end)
+		end)
+		if ok then
+			return true
+		end
+	end
+	local ok, err = pcall(function()
+		inst.Source = nextSource
+	end)
+	return ok, ok and nil or tostring(err)
+end
+
 local function snapshotInstance(path)
 	local inst = resolvePath(path)
 	if not inst then
@@ -343,9 +396,7 @@ local function snapshotInstance(path)
 	}
 
 	if SCRIPT_CLASSES[inst.ClassName] then
-		local ok, source = pcall(function()
-			return inst.Source
-		end)
+		local ok, source = readScriptSource(inst)
 		snap.source = ok and source or ""
 	end
 	if inst:IsA("ScreenGui") then
@@ -433,9 +484,7 @@ local function serializeInstance(inst, path, depth, maxDepth, state, includeSour
 	if SCRIPT_CLASSES[inst.ClassName] then
 		item.isScript = true
 		if includeSource then
-			local ok, source = pcall(function()
-				return inst.Source
-			end)
+			local ok, source = readScriptSource(inst)
 			if ok then
 				item.source = string.sub(source, 1, sourceMaxChars or 0)
 				item.sourceLength = #source
@@ -463,6 +512,36 @@ local function serializeInstance(inst, path, depth, maxDepth, state, includeSour
 	return item
 end
 
+local function getInspectionRoots()
+	local roots = {}
+	local seen = {}
+	local preferred = {
+		ReplicatedStorage,
+		ServerScriptService,
+		ServerStorage,
+		StarterGui,
+		StarterPlayer,
+		Workspace,
+		Lighting,
+	}
+	for _, inst in ipairs(preferred) do
+		if inst and not seen[inst] then
+			seen[inst] = true
+			table.insert(roots, inst)
+		end
+	end
+	for _, child in ipairs(game:GetChildren()) do
+		if not seen[child] then
+			seen[child] = true
+			table.insert(roots, child)
+		end
+	end
+	table.sort(roots, function(a, b)
+		return tostring(a.Name) < tostring(b.Name)
+	end)
+	return roots
+end
+
 local function inspectPlace(payload)
 	local maxDepth = math.clamp(tonumber(payload.maxDepth) or 5, 1, 8)
 	local maxInstances = math.clamp(tonumber(payload.maxInstances) or 500, 20, 1500)
@@ -470,18 +549,8 @@ local function inspectPlace(payload)
 	local sourceMaxChars = math.clamp(tonumber(payload.sourceMaxChars) or 0, 0, 8000)
 	local state = { count = 0, maxInstances = maxInstances }
 	local roots = {}
-	local rootNames = {
-		"ReplicatedStorage",
-		"ServerScriptService",
-		"ServerStorage",
-		"StarterGui",
-		"StarterPlayer",
-		"Workspace",
-		"Lighting",
-	}
-	for _, name in ipairs(rootNames) do
-		local inst = SERVICE_ROOTS[name]
-		table.insert(roots, serializeInstance(inst, name, 1, maxDepth, state, includeSource, sourceMaxChars))
+	for _, inst in ipairs(getInspectionRoots()) do
+		table.insert(roots, serializeInstance(inst, inst.Name, 1, maxDepth, state, includeSource, sourceMaxChars))
 	end
 	return {
 		placeName = game.Name,
@@ -498,9 +567,7 @@ local function readScript(payload)
 	for _, path in ipairs(payload.paths or {}) do
 		local inst = resolvePath(path)
 		if inst and SCRIPT_CLASSES[inst.ClassName] then
-			local ok, source = pcall(function()
-				return inst.Source
-			end)
+			local ok, source = readScriptSource(inst)
 			table.insert(out, {
 				path = fullPath(inst),
 				className = inst.ClassName,
@@ -527,7 +594,10 @@ local function writeScript(payload)
 		table.insert(snapshots, snapshotInstance(path))
 	end
 	local inst = createOrReplaceInstance(path, className, {}, payload.createParents ~= false)
-	inst.Source = payload.source or ""
+	local ok, err = writeScriptSource(inst, payload.source or "")
+	if not ok then
+		error(err or "Could not write script source")
+	end
 	return {
 		path = fullPath(inst),
 		className = inst.ClassName,
@@ -586,7 +656,7 @@ local function restoreSnapshots(payload)
 		elseif snap.path and snap.className and snap.className ~= "" then
 			local inst = createOrReplaceInstance(snap.path, snap.className, snap.properties or {}, true)
 			if SCRIPT_CLASSES[inst.ClassName] and snap.source ~= nil then
-				inst.Source = snap.source
+				writeScriptSource(inst, snap.source)
 			end
 			restored = restored + 1
 		end
@@ -604,9 +674,7 @@ local function runSmokeCheck(payload)
 		end
 		if SCRIPT_CLASSES[inst.ClassName] then
 			checked = checked + 1
-			local ok, source = pcall(function()
-				return inst.Source
-			end)
+			local ok, source = readScriptSource(inst)
 			if not ok then
 				table.insert(issues, { path = fullPath(inst), message = "Could not read source" })
 			elseif payload.includeSourceScan ~= false then
@@ -679,7 +747,7 @@ local function validateLuauSource(source)
 	return #issues == 0, issues
 end
 
-local function applyArtifact(payload)
+local function applyArtifactLegacy(payload)
 	local projectName = payload.projectName or "NexusRBX_Project"
 	local serviceFolders = {}
 	local fileResults = {}
@@ -700,8 +768,11 @@ local function applyArtifact(payload)
 		local applyOk, applyErr = pcall(function()
 			local inst = Instance.new(scriptSpec.className or "ModuleScript")
 			inst.Name = name
-			inst.Source = scriptSpec.source or ""
 			inst.Parent = serviceFolders[serviceName]
+			local ok, err = writeScriptSource(inst, scriptSpec.source or "")
+			if not ok then
+				error(err or "Could not write script source")
+			end
 		end)
 		table.insert(fileResults, {
 			name = name,
@@ -735,12 +806,485 @@ local function applyArtifact(payload)
 		}, true)
 	end
 	return {
+		ok = true,
 		scripts = #(payload.scripts or {}),
 		remotes = #(payload.remotes or {}),
 		screenGuis = #(payload.screenGuis or {}),
 		warnings = payload.warnings or {},
 		files = fileResults,
 		validation = { failures = validationFailures, total = #(payload.scripts or {}) },
+		snapshots = snapshots,
+	}
+end
+
+local function classNameForKind(kind)
+	local normalized = string.lower(tostring(kind or "module"))
+	if normalized == "server" then
+		return "Script"
+	elseif normalized == "client" then
+		return "LocalScript"
+	end
+	return "ModuleScript"
+end
+
+local function leafNameFromPath(path)
+	local parts = splitPath(path)
+	return parts[#parts] or ""
+end
+
+local function buildManagedIndexes(payload)
+	local fileById = {}
+	local fileByPath = {}
+	local manifestById = {}
+	local manifestByPath = {}
+	local preconditionsByFileId = {}
+	local preconditionsByPath = {}
+
+	for _, file in ipairs(payload.files or {}) do
+		local fileId = tostring(file.fileId or file.id or "")
+		local path = tostring(file.path or "")
+		local entry = {
+			fileId = fileId,
+			path = path,
+			placement = file.placement,
+			kind = file.kind,
+			content = file.content or "",
+			className = file.className or classNameForKind(file.kind),
+			name = file.name or leafNameFromPath(path),
+		}
+		if fileId ~= "" then
+			fileById[fileId] = entry
+		end
+		if path ~= "" then
+			fileByPath[path] = entry
+		end
+	end
+
+	for _, file in ipairs(payload.managedManifest or {}) do
+		local fileId = tostring(file.fileId or "")
+		local path = tostring(file.canonicalPath or "")
+		if fileId ~= "" then
+			manifestById[fileId] = file
+		end
+		if path ~= "" then
+			manifestByPath[path] = file
+		end
+	end
+
+	for _, item in ipairs(payload.studioPreconditions or {}) do
+		local fileId = tostring(item.fileId or "")
+		local path = tostring(item.path or "")
+		if fileId ~= "" then
+			preconditionsByFileId[fileId] = item
+		end
+		if path ~= "" then
+			preconditionsByPath[path] = item
+		end
+	end
+
+	return {
+		fileById = fileById,
+		fileByPath = fileByPath,
+		manifestById = manifestById,
+		manifestByPath = manifestByPath,
+		preconditionsByFileId = preconditionsByFileId,
+		preconditionsByPath = preconditionsByPath,
+	}
+end
+
+local function validateManagedOperations(operations)
+	local errors = {}
+	local targetPaths = {}
+	local renameSources = {}
+	local deleteTargets = {}
+	for index, op in ipairs(operations or {}) do
+		local opType = tostring(op.type or "")
+		if opType == "upsert" then
+			local targetPath = tostring(op.path or "")
+			if targetPath == "" then
+				table.insert(errors, ("Upsert %d is missing path"):format(index))
+			elseif targetPaths[targetPath] then
+				table.insert(errors, "Duplicate target path: " .. targetPath)
+			else
+				targetPaths[targetPath] = true
+			end
+		elseif opType == "delete" then
+			local targetPath = tostring(op.path or "")
+			if targetPath == "" then
+				table.insert(errors, ("Delete %d is missing path"):format(index))
+			elseif deleteTargets[targetPath] then
+				table.insert(errors, "Duplicate delete path: " .. targetPath)
+			else
+				deleteTargets[targetPath] = true
+			end
+		elseif opType == "rename" then
+			local fromPath = tostring(op.fromPath or "")
+			local toPath = tostring(op.toPath or "")
+			if fromPath == "" or toPath == "" then
+				table.insert(errors, ("Rename %d is missing paths"):format(index))
+			elseif fromPath == toPath then
+				table.insert(errors, ("Rename %d does not change path"):format(index))
+			else
+				if renameSources[fromPath] then
+					table.insert(errors, "Duplicate rename source: " .. fromPath)
+				end
+				if deleteTargets[fromPath] then
+					table.insert(errors, "Conflicting rename/delete for " .. fromPath)
+				end
+				if targetPaths[toPath] then
+					table.insert(errors, "Duplicate target path: " .. toPath)
+				end
+				renameSources[fromPath] = true
+				targetPaths[toPath] = true
+			end
+		else
+			table.insert(errors, ("Unsupported operation type: %s"):format(opType))
+		end
+	end
+	return errors
+end
+
+local function snapshotOnce(target, snapshots, seenPaths)
+	local path = typeof(target) == "Instance" and fullPath(target) or tostring(target or "")
+	if path == "" or seenPaths[path] then
+		return
+	end
+	seenPaths[path] = true
+	if typeof(target) == "Instance" then
+		appendSnapshotTree(target, snapshots)
+	else
+		table.insert(snapshots, snapshotInstance(path))
+	end
+end
+
+local function findManagedInstanceByFileId(fileId, expectedClass)
+	if not fileId or fileId == "" then
+		return nil, nil
+	end
+	local matches = {}
+	for _, inst in ipairs(game:GetDescendants()) do
+		if inst:GetAttribute(AGENT_FILE_ID_ATTRIBUTE) == fileId and inst.ClassName == expectedClass then
+			table.insert(matches, inst)
+		end
+	end
+	if #matches == 1 then
+		return matches[1], nil
+	end
+	if #matches > 1 then
+		return nil, "ambiguous"
+	end
+	return nil, nil
+end
+
+local function findUniqueLeafMatch(path, expectedClass)
+	local parent, leaf = ensureParent(path, false)
+	if not parent or not leaf then
+		return nil, nil
+	end
+	local matches = {}
+	for _, child in ipairs(parent:GetChildren()) do
+		if child.Name == leaf and child.ClassName == expectedClass then
+			table.insert(matches, child)
+		end
+	end
+	if #matches == 1 then
+		return matches[1], nil
+	end
+	if #matches > 1 then
+		return nil, "ambiguous"
+	end
+	return nil, nil
+end
+
+local function resolveManagedTarget(spec, indexes, currentPathOverride)
+	local fileId = tostring(spec.fileId or spec.id or "")
+	local expectedClass = tostring(spec.className or classNameForKind(spec.kind))
+	local canonicalPath = tostring(currentPathOverride or spec.path or "")
+	local attrMatch, attrError = findManagedInstanceByFileId(fileId, expectedClass)
+	if attrError == "ambiguous" then
+		return { ok = false, code = "ambiguous", message = "Multiple Studio instances share the same AgentFileId" }
+	end
+	if attrMatch then
+		return { ok = true, instance = attrMatch, expectedClass = expectedClass, matchType = "file_id" }
+	end
+
+	local exact = canonicalPath ~= "" and resolvePath(canonicalPath) or nil
+	if exact then
+		if exact.ClassName ~= expectedClass then
+			return {
+				ok = false,
+				code = "class_mismatch",
+				message = ("Expected %s at %s but found %s"):format(expectedClass, canonicalPath, exact.ClassName),
+			}
+		end
+		return { ok = true, instance = exact, expectedClass = expectedClass, matchType = "canonical_path" }
+	end
+
+	local leafMatch, leafError = findUniqueLeafMatch(canonicalPath, expectedClass)
+	if leafError == "ambiguous" then
+		return {
+			ok = false,
+			code = "ambiguous",
+			message = ("Ambiguous Studio leaf-name match for %s"):format(canonicalPath),
+		}
+	end
+	if leafMatch then
+		return { ok = true, instance = leafMatch, expectedClass = expectedClass, matchType = "leaf_name" }
+	end
+
+	return { ok = true, instance = nil, expectedClass = expectedClass, matchType = "create" }
+end
+
+local function checkStudioPreconditions(inst, spec, manifestEntry, indexes)
+	if not inst or not SCRIPT_CLASSES[inst.ClassName] then
+		return true, nil, nil
+	end
+	local ok, source = readScriptSource(inst)
+	if not ok then
+		return false, "Could not read Studio script source", nil
+	end
+	local currentHash = stableHash(source)
+	local fileId = tostring(spec.fileId or spec.id or "")
+	local precondition = indexes.preconditionsByFileId[fileId] or indexes.preconditionsByPath[tostring(spec.path or "")]
+	if precondition and tostring(precondition.sourceHash or "") ~= "" and tostring(precondition.sourceHash) ~= currentHash then
+		return false, "Studio source precondition hash mismatch", currentHash
+	end
+	if manifestEntry and tostring(manifestEntry.lastAppliedSourceHash or "") ~= "" and tostring(manifestEntry.lastAppliedSourceHash) ~= currentHash then
+		return false, "Studio source changed independently since the last managed apply", currentHash
+	end
+	return true, nil, currentHash
+end
+
+local function applyManagedUpsert(spec, resolved, indexes, snapshots, seenPaths)
+	local targetPath = tostring(spec.path or "")
+	local expectedClass = tostring(spec.className or classNameForKind(spec.kind))
+	local inst = resolved.instance
+	if inst then
+		snapshotOnce(inst, snapshots, seenPaths)
+	else
+		snapshotOnce(targetPath, snapshots, seenPaths)
+		local parent, leaf = ensureParent(targetPath, true)
+		if not parent or not leaf then
+			return nil, "Could not resolve parent for " .. targetPath
+		end
+		inst = Instance.new(expectedClass)
+		inst.Name = leaf
+		inst.Parent = parent
+	end
+
+	if inst.ClassName ~= expectedClass then
+		return nil, ("Expected %s but found %s"):format(expectedClass, inst.ClassName)
+	end
+
+	local manifestEntry = indexes.manifestById[tostring(spec.fileId or spec.id or "")] or indexes.manifestByPath[targetPath]
+	local ok, preconditionError = checkStudioPreconditions(inst, spec, manifestEntry, indexes)
+	if not ok then
+		return nil, preconditionError
+	end
+
+	inst:SetAttribute(AGENT_ARTIFACT_ID_ATTRIBUTE, tostring(spec.artifactId or ""))
+	inst:SetAttribute(AGENT_FILE_ID_ATTRIBUTE, tostring(spec.fileId or spec.id or ""))
+	local parent, leaf = ensureParent(targetPath, true)
+	if not parent or not leaf then
+		return nil, "Could not resolve parent for " .. targetPath
+	end
+	inst.Name = leaf
+	inst.Parent = parent
+	local wrote, writeErr = writeScriptSource(inst, spec.content or "")
+	if not wrote then
+		return nil, writeErr or "Could not update Studio script source"
+	end
+	return inst, nil
+end
+
+local function buildManagedFileRecord(inst, spec)
+	local ok, source = readScriptSource(inst)
+	local sourceText = ok and source or (spec.content or "")
+	return {
+		fileId = tostring(spec.fileId or spec.id or ""),
+		canonicalPath = tostring(spec.path or fullPath(inst)),
+		placement = tostring(spec.placement or ""),
+		kind = tostring(spec.kind or "module"),
+		className = inst.ClassName,
+		lastAppliedSourceHash = stableHash(sourceText),
+		lastResolvedStudioPath = fullPath(inst),
+	}
+end
+
+local function applyArtifact(payload)
+	if tonumber(payload.schemaVersion or 1) < 2 then
+		return applyArtifactLegacy(payload)
+	end
+
+	local operations = payload.operations or {}
+	local snapshots = {}
+	local seenPaths = {}
+	local fileResults = {}
+	local indexes = buildManagedIndexes(payload)
+	local validationErrors = validateManagedOperations(operations)
+	local managedFiles = {}
+	local finalFiles = {}
+
+	for _, spec in pairs(indexes.fileById) do
+		table.insert(finalFiles, spec)
+	end
+	if #validationErrors > 0 then
+		return {
+			ok = false,
+			error = table.concat(validationErrors, " | "),
+			files = fileResults,
+			validation = { failures = #validationErrors, total = #operations },
+			snapshots = snapshots,
+		}
+	end
+
+	local function pushResult(base, ok, err)
+		local row = base
+		row.ok = ok
+		if not ok then
+			row.error = tostring(err or "Unknown Studio apply failure")
+		end
+		table.insert(fileResults, row)
+	end
+
+	local executionOk, executionErr = pcall(function()
+		for _, phase in ipairs({ "rename", "delete", "upsert" }) do
+			for _, op in ipairs(operations) do
+				if op.type == phase then
+					if phase == "rename" then
+						local manifestEntry = indexes.manifestById[tostring(op.id or "")] or indexes.manifestByPath[tostring(op.fromPath or "")]
+						local spec = indexes.fileById[tostring(op.id or "")] or indexes.fileByPath[tostring(op.toPath or "")]
+						spec = spec or {
+							fileId = tostring(op.id or ""),
+							id = tostring(op.id or ""),
+							path = tostring(op.toPath or ""),
+							kind = manifestEntry and manifestEntry.kind or "module",
+							placement = manifestEntry and manifestEntry.placement or splitPath(op.toPath)[1],
+							className = manifestEntry and manifestEntry.className or classNameForKind(manifestEntry and manifestEntry.kind or "module"),
+						}
+						spec.artifactId = payload.artifactId
+						local resolved = resolveManagedTarget(spec, indexes, tostring(op.fromPath or ""))
+						if not resolved.ok then
+							pushResult({ type = phase, path = tostring(op.fromPath or ""), toPath = tostring(op.toPath or "") }, false, resolved.message)
+							error(resolved.message)
+						end
+						if not resolved.instance then
+							pushResult({ type = phase, path = tostring(op.fromPath or ""), toPath = tostring(op.toPath or "") }, false, "Rename source not found")
+							error("Rename source not found")
+						end
+						local ok, preconditionError = checkStudioPreconditions(resolved.instance, spec, manifestEntry, indexes)
+						if not ok then
+							pushResult({ type = phase, path = tostring(op.fromPath or ""), toPath = tostring(op.toPath or "") }, false, preconditionError)
+							error(preconditionError)
+						end
+						snapshotOnce(resolved.instance, snapshots, seenPaths)
+						snapshotOnce(tostring(op.toPath or ""), snapshots, seenPaths)
+						local parent, leaf = ensureParent(tostring(op.toPath or ""), true)
+						if not parent or not leaf then
+							pushResult({ type = phase, path = tostring(op.fromPath or ""), toPath = tostring(op.toPath or "") }, false, "Could not resolve rename target parent")
+							error("Could not resolve rename target parent")
+						end
+						resolved.instance.Name = leaf
+						resolved.instance.Parent = parent
+						resolved.instance:SetAttribute(AGENT_ARTIFACT_ID_ATTRIBUTE, tostring(payload.artifactId or ""))
+						resolved.instance:SetAttribute(AGENT_FILE_ID_ATTRIBUTE, tostring(spec.fileId or spec.id or ""))
+						pushResult({ type = phase, path = tostring(op.fromPath or ""), toPath = tostring(op.toPath or "") }, true, nil)
+					elseif phase == "delete" then
+						local manifestEntry = indexes.manifestById[tostring(op.id or "")] or indexes.manifestByPath[tostring(op.path or "")]
+						local spec = manifestEntry and {
+							fileId = tostring(manifestEntry.fileId or op.id or ""),
+							id = tostring(manifestEntry.fileId or op.id or ""),
+							path = tostring(manifestEntry.canonicalPath or op.path or ""),
+							kind = manifestEntry.kind,
+							placement = manifestEntry.placement,
+							className = manifestEntry.className or classNameForKind(manifestEntry.kind),
+						} or {
+							fileId = tostring(op.id or ""),
+							id = tostring(op.id or ""),
+							path = tostring(op.path or ""),
+							kind = "module",
+							placement = splitPath(op.path)[1],
+							className = classNameForKind("module"),
+						}
+						local resolved = resolveManagedTarget(spec, indexes, tostring(op.path or ""))
+						if not resolved.ok then
+							pushResult({ type = phase, path = tostring(op.path or "") }, false, resolved.message)
+							error(resolved.message)
+						end
+						if resolved.instance then
+							local ok, preconditionError = checkStudioPreconditions(resolved.instance, spec, manifestEntry, indexes)
+							if not ok then
+								pushResult({ type = phase, path = tostring(op.path or "") }, false, preconditionError)
+								error(preconditionError)
+							end
+							snapshotOnce(resolved.instance, snapshots, seenPaths)
+							resolved.instance:Destroy()
+						else
+							snapshotOnce(tostring(op.path or ""), snapshots, seenPaths)
+						end
+						pushResult({ type = phase, path = tostring(op.path or "") }, true, nil)
+					else
+						local spec = indexes.fileById[tostring(op.id or "")] or indexes.fileByPath[tostring(op.path or "")]
+						spec = spec or {
+							fileId = tostring(op.id or ""),
+							id = tostring(op.id or ""),
+							path = tostring(op.path or ""),
+							placement = tostring(op.placement or splitPath(op.path)[1] or "ReplicatedStorage"),
+							kind = tostring(op.kind or "module"),
+							content = tostring(op.content or ""),
+							className = classNameForKind(op.kind),
+						}
+						spec.artifactId = payload.artifactId
+						local resolved = resolveManagedTarget(spec, indexes, tostring(op.path or spec.path or ""))
+						if not resolved.ok then
+							pushResult({ type = phase, path = tostring(op.path or "") }, false, resolved.message)
+							error(resolved.message)
+						end
+						local inst, applyErr = applyManagedUpsert(spec, resolved, indexes, snapshots, seenPaths)
+						if not inst then
+							pushResult({ type = phase, path = tostring(op.path or "") }, false, applyErr)
+							error(applyErr)
+						end
+						managedFiles[tostring(spec.fileId or spec.id or "")] = buildManagedFileRecord(inst, spec)
+						pushResult({ type = phase, path = tostring(op.path or "") }, true, nil)
+					end
+				end
+			end
+		end
+
+		for _, spec in ipairs(finalFiles) do
+			local resolved = resolveManagedTarget(spec, indexes, tostring(spec.path or ""))
+			if resolved.ok and resolved.instance then
+				managedFiles[tostring(spec.fileId or spec.id or "")] = buildManagedFileRecord(resolved.instance, spec)
+			end
+		end
+	end)
+
+	if not executionOk then
+		restoreSnapshots({ snapshots = snapshots })
+		return {
+			ok = false,
+			error = tostring(executionErr),
+			files = fileResults,
+			validation = { failures = 1, total = #operations },
+			snapshots = snapshots,
+			managedFiles = {},
+		}
+	end
+
+	local managedList = {}
+	for _, record in pairs(managedFiles) do
+		table.insert(managedList, record)
+	end
+
+	return {
+		ok = true,
+		artifactId = payload.artifactId,
+		revision = payload.revision,
+		files = fileResults,
+		managedFiles = managedList,
+		validation = { failures = 0, total = #operations },
+		warnings = payload.warnings or {},
 		snapshots = snapshots,
 	}
 end
@@ -810,7 +1354,12 @@ local function pullOnce()
 		return executeCommand(command)
 	end)
 
-	if applyOk then
+	if applyOk and type(resultOrError) == "table" and resultOrError.ok == false then
+		finishRecording(recording, false)
+		ack(command.id, "failed", resultOrError, tostring(resultOrError.error or "Studio command failed"))
+		setLast((command.type or "command") .. " failed: " .. tostring(resultOrError.error or "Studio command failed"))
+		setStatus("connected")
+	elseif applyOk then
 		finishRecording(recording, true)
 		ack(command.id, "succeeded", resultOrError, nil)
 		local snapshotCount = (type(resultOrError) == "table" and #(resultOrError.snapshots or {})) or 0

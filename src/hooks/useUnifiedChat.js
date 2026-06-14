@@ -143,9 +143,9 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
   // Dispatch generation for an approved plan. All classifications now run the
   // artifact job worker in "act" mode to produce a multi-file Roblox artifact.
   const runGeneration = useCallback(
-    async (activeChatId, classification, prompt, attachments) => {
+    async (activeChatId, classification, prompt, attachments, baseArtifact = null) => {
       const requestId = uuidv4();
-      await chat.handleSubmit(prompt, activeChatId, requestId, null, true, attachments);
+      await chat.handleSubmit(prompt, activeChatId, requestId, null, true, attachments, baseArtifact);
     },
     [chat]
   );
@@ -353,7 +353,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
   // the existing generated files as context so the agent EDITS rather than
   // regenerates everything from scratch.
   const refineArtifact = useCallback(
-    async (message, refinePrompt) => {
+    async (message, refinePrompt, workspaceArtifact = null) => {
       if (!user || !refinePrompt) return;
       if (isGenerating) return;
 
@@ -361,10 +361,12 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
       if (!activeChatId) return;
 
       try {
-        const existingFiles = Array.isArray(message?.files) && message.files.length
-          ? message.files
-          : message?.code
-            ? [{ name: message.title || "Script", content: message.code }]
+        const existingFiles = Array.isArray(workspaceArtifact?.files) && workspaceArtifact.files.length
+          ? workspaceArtifact.files
+          : Array.isArray(message?.files) && message.files.length
+            ? message.files
+            : message?.code
+              ? [{ name: message.title || "Script", content: message.code }]
             : [];
 
         const fileAttachments = existingFiles.map((f) => ({
@@ -382,7 +384,8 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
           activeChatId,
           message?.classification || "project",
           augmentedPrompt,
-          fileAttachments
+          fileAttachments,
+          workspaceArtifact
         );
       } catch (err) {
         console.error("Refine error:", err);

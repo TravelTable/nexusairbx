@@ -9,6 +9,7 @@
 // is code-first and never renders a visual canvas.
 
 import { v4 as uuidv4 } from "uuid";
+import { computeArtifactRevision, computeContentHash } from "./artifactState";
 
 // The seven Roblox service placements the workspace groups files under.
 export const ROBLOX_PLACEMENTS = [
@@ -113,6 +114,7 @@ export function normalizeFile(rawFile, index = 0) {
     kind,
     language: languageForKind(kind, raw.language),
     content,
+    contentHash: raw.contentHash || computeContentHash(content),
     purpose: raw.purpose || raw.description || "",
     dependencies: Array.isArray(raw.dependencies) ? raw.dependencies.filter(Boolean) : [],
     warnings: toStringArray(raw.warnings || raw.notes),
@@ -170,8 +172,10 @@ export function normalizeArtifact(raw = {}, opts = {}) {
   }
 
   const generatedAt = raw.generatedAt || opts.generatedAt || Date.now();
+  const artifactId = raw.projectId || raw.artifactId || null;
+  const revision = raw.revision || computeArtifactRevision(files);
   return {
-    id: raw.id || raw.artifactId || raw.projectId || opts.id || uuidv4(),
+    id: raw.id || raw.projectId || raw.artifactId || opts.id || uuidv4(),
     title: raw.title || opts.title || "Generated Artifact",
     summary: raw.summary || raw.explanation || opts.summary || "",
     type: inferArtifactType(raw, files),
@@ -185,8 +189,9 @@ export function normalizeArtifact(raw = {}, opts = {}) {
     qaReport: raw.metadata?.qaReport || raw.qaReport || null,
     lintWarning: raw.metadata?.lintWarning || raw.lintWarning || null,
     versionNumber: raw.versionNumber || 1,
-    artifactId: raw.artifactId || null,
+    artifactId,
     projectId: raw.projectId || null,
+    revision,
     generatedAt,
     updatedAt: raw.updatedAt || generatedAt,
   };

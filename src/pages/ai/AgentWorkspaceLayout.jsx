@@ -108,6 +108,8 @@ export default function AgentWorkspaceLayout({ controller }) {
     handleRestoreRun,
     handleStudioEnabledChange,
     handleStudioApplyModeChange,
+    handleStudioAutoPushEnabledChange,
+    handleStudioAutoPushPolicyChange,
   } = handlers;
 
   const { chatEndRef } = refs;
@@ -187,6 +189,11 @@ export default function AgentWorkspaceLayout({ controller }) {
       onStudioEnabledChange={handleStudioEnabledChange}
       studioApplyMode={studio?.applyMode}
       onStudioApplyModeChange={handleStudioApplyModeChange}
+      studioAutoPushEnabled={studio?.autoPushEnabled}
+      onStudioAutoPushEnabledChange={handleStudioAutoPushEnabledChange}
+      studioAutoPushPolicy={studio?.autoPushPolicy}
+      onStudioAutoPushPolicyChange={handleStudioAutoPushPolicyChange}
+      studioAutoPushAuthorized={Boolean(studio?.lastAuthorizedSessionId)}
     />
   );
 

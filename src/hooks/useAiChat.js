@@ -25,8 +25,7 @@ import {
   normalizeToolStep,
   upsertAgentStep,
 } from "../lib/agentSteps";
-import { buildStudioPayload } from "../lib/studioPayload";
-import { pushToStudio, getStudioStatus } from "../lib/studioBridgeApi";
+import { getStudioStatus } from "../lib/studioBridgeApi";
 import { getAgentRun } from "../lib/workflowApi";
 import {
   applyStreamDelta,
@@ -69,6 +68,7 @@ function buildAssistantMessagePayload(data, { requestId, jobId, currentMode, isA
       mode: currentMode,
       type: data?.artifactType || data?.metadata?.type || null,
       qaReport: data?.qaReport || null,
+      runState: data?.runState || data?.metadata?.runState || null,
     },
   };
 
@@ -78,6 +78,7 @@ function buildAssistantMessagePayload(data, { requestId, jobId, currentMode, isA
   if (data?.options) payload.options = data.options;
   if (data?.plan) payload.plan = data.plan;
   if (Array.isArray(data?.files) && data.files.length) payload.files = data.files;
+  if (data?.revision) payload.revision = data.revision;
   if (Array.isArray(data?.setupSteps) && data.setupSteps.length) payload.setupSteps = data.setupSteps;
   if (Array.isArray(data?.testingSteps) && data.testingSteps.length) payload.testingSteps = data.testingSteps;
   if (Array.isArray(data?.securityNotes) && data.securityNotes.length) payload.securityNotes = data.securityNotes;
@@ -288,7 +289,15 @@ export function useAiChat(user, settings, refreshBilling, notify) {
     refreshBilling,
   ]);
 
-  const handleSubmit = async (prompt, existingChatId = null, existingRequestId = null, modeOverride = null, actNow = false, attachments = []) => {
+  const handleSubmit = async (
+    prompt,
+    existingChatId = null,
+    existingRequestId = null,
+    modeOverride = null,
+    actNow = false,
+    attachments = [],
+    baseArtifact = null
+  ) => {
     const content = prompt.trim();
     if (!content && attachments.length === 0) return;
     if (isGenerating || !user) return;
@@ -342,6 +351,8 @@ export function useAiChat(user, settings, refreshBilling, notify) {
       
       // 1. Create Artifact Job
       const studioEnabled = FEATURE_FLAGS.unifiedAgent && getStudioEnabledPreference();
+      const autoPushToStudio = Boolean(settings?.studioAutoPushEnabled);
+      const autoPushPolicy = settings?.studioAutoPushPolicy || "after_validation";
       let studioSessionId = null;
       if (studioEnabled) {
         try {
@@ -371,6 +382,9 @@ export function useAiChat(user, settings, refreshBilling, notify) {
           studioEnabled: studioEnabled && Boolean(studioSessionId),
           applyMode: getStudioApplyMode(),
           studioSessionId,
+          autoPushToStudio,
+          autoPushPolicy,
+          baseArtifact,
         }),
       });
       
@@ -514,27 +528,6 @@ export function useAiChat(user, settings, refreshBilling, notify) {
           if (data?.runId || agentRunId) msgPayload.runId = data?.runId || agentRunId;
 
           await setDoc(assistantMsgRef, msgPayload);
-
-          try {
-            const studioMode =
-              typeof window !== "undefined"
-                ? window.localStorage.getItem("nexusStudioApplyMode")
-                : "manual_review";
-            if (!data?.runId && (studioMode === "auto_after_approval" || studioMode === "unrestricted_dev")) {
-              const payload = buildStudioPayload({
-                title: data?.title || content.slice(0, 50) || "Generated Script",
-                kind: data?.projectId ? "project" : "script",
-                lua: data?.content || data?.code || "",
-                systemsLua: data?.systemsLua || "",
-                files: Array.isArray(data?.files) ? data.files : [],
-                artifactId: data?.artifactId,
-              });
-              await pushToStudio({ payload, applyMode: studioMode });
-              notify?.({ message: "Queued automatic Studio push", type: "success" });
-            }
-          } catch (studioErr) {
-            notify?.({ message: studioErr?.message || "Automatic Studio push failed", type: "error" });
-          }
 
           await updateDoc(doc(db, "users", user.uid, "chats", activeChatId), {
             updatedAt: serverTimestamp(),

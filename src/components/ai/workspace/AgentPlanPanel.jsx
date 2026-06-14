@@ -4,15 +4,21 @@ import AgentStepList from "./AgentStepList";
 import { FEATURE_FLAGS } from "../../../lib/featureFlags";
 
 const STAGES = [
-  { id: "thinking", label: "Understanding & planning" },
+  { id: "inspecting", label: "Inspecting Studio" },
   { id: "generating", label: "Generating files" },
-  { id: "done", label: "Ready" },
+  { id: "validating", label: "Validating artifact" },
+  { id: "ready_to_apply", label: "Ready to apply" },
+  { id: "applying", label: "Applying in Studio" },
+  { id: "applied", label: "Applied" },
 ];
 
 function stageIndex(status) {
-  if (status === "thinking") return 0;
+  if (status === "inspecting") return 0;
   if (status === "generating") return 1;
-  if (status === "done") return 2;
+  if (status === "validating") return 2;
+  if (status === "ready_to_apply") return 3;
+  if (status === "applying") return 4;
+  if (status === "applied") return 5;
   return -1;
 }
 
@@ -25,14 +31,14 @@ export default function AgentPlanPanel({
   approvingStepId,
   restoring = false,
 }) {
-  const active = agentRun?.status === "thinking" || agentRun?.status === "generating";
+  const active = ["inspecting", "generating", "validating", "ready_to_apply", "applying", "applied"].includes(agentRun?.status);
   const idx = stageIndex(agentRun?.status);
   const plan = planText || agentRun?.plan;
   const steps = agentRun?.steps || [];
   const showSteps = FEATURE_FLAGS.unifiedAgent && steps.length > 0;
   const canRestore = Boolean(agentRun?.runId && agentRun?.snapshotCount > 0);
 
-  if (!active && !plan && !showSteps) return null;
+  if (!active && !plan && !showSteps && !["conflict", "failed", "push_skipped"].includes(agentRun?.status)) return null;
 
   return (
     <div className="rounded-2xl border border-white/5 bg-white/[0.02] p-4 space-y-3">
@@ -70,6 +76,24 @@ export default function AgentPlanPanel({
               </div>
             );
           })}
+        </div>
+      )}
+
+      {agentRun?.status === "conflict" && (
+        <div className="rounded-xl border border-amber-400/20 bg-amber-400/10 px-3 py-2 text-xs text-amber-100">
+          Conflict detected. The workspace or Studio changed while this run was in progress, so automatic apply was blocked.
+        </div>
+      )}
+
+      {agentRun?.status === "failed" && (
+        <div className="rounded-xl border border-red-400/20 bg-red-400/10 px-3 py-2 text-xs text-red-100">
+          The run failed before apply completed.
+        </div>
+      )}
+
+      {agentRun?.status === "push_skipped" && (
+        <div className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs text-gray-300">
+          Build completed without an automatic Studio mutation. Manual Push remains available.
         </div>
       )}
 

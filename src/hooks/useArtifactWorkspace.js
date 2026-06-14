@@ -8,6 +8,7 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { artifactFromMessage } from "../lib/normalizeArtifact";
 import { countStepSnapshots } from "../lib/agentSteps";
+import { buildBaseArtifactSnapshot, computeContentHash, computeArtifactRevision } from "../lib/artifactState";
 
 const EMPTY_AGENT_RUN = {
   status: "idle", // idle | thinking | generating | done | error
@@ -20,6 +21,37 @@ const EMPTY_AGENT_RUN = {
   logs: [],
   errors: [],
 };
+
+function normalizeRunState(value) {
+  const state = String(value || "").trim().toLowerCase();
+  if (
+    [
+      "inspecting",
+      "generating",
+      "validating",
+      "ready_to_apply",
+      "applying",
+      "applied",
+      "conflict",
+      "failed",
+      "push_skipped",
+    ].includes(state)
+  ) {
+    return state;
+  }
+  return "";
+}
+
+function derivePendingRunState(stage = "", steps = []) {
+  if ((steps || []).some((step) => step.type === "apply_artifact" && ["queued", "delivered", "running"].includes(step.status))) {
+    return "applying";
+  }
+  const lower = String(stage || "").toLowerCase();
+  if (/inspect/.test(lower)) return "inspecting";
+  if (/validat|review|merge|lint|smoke/.test(lower)) return "validating";
+  if (/apply/.test(lower)) return "applying";
+  return "generating";
+}
 
 // Reducer keeps per-file local edits keyed by `${artifactId}:${fileId}`.
 function editsReducer(state, action) {
@@ -68,9 +100,20 @@ export function useArtifactWorkspace(messages, { isGenerating, generationStage, 
         const content = edited ? edits[key] : file.content;
         const dirty = edited && content !== file.content;
         if (dirty) dirtyCount += 1;
-        return { ...file, content, dirty, status: dirty ? "edited" : file.status };
+        return {
+          ...file,
+          content,
+          contentHash: computeContentHash(content),
+          dirty,
+          status: dirty ? "edited" : file.status,
+        };
       });
-      return { ...artifact, files, dirtyCount };
+      return {
+        ...artifact,
+        files,
+        dirtyCount,
+        revision: computeArtifactRevision(files),
+      };
     });
   }, [baseArtifacts, edits]);
 
@@ -117,26 +160,30 @@ export function useArtifactWorkspace(messages, { isGenerating, generationStage, 
 
   // Current agent run mirrors the unified chat generation state.
   const agentRun = useMemo(() => {
+    const latestAssistant = [...(messages || [])]
+      .reverse()
+      .find((m) => m.role === "assistant" && (m.runId || m.metadata?.runState || (Array.isArray(m.steps) && m.steps.length)));
     const latestWithSteps = [...(messages || [])]
       .reverse()
       .find((m) => m.role === "assistant" && Array.isArray(m.steps) && m.steps.length);
 
     if (!isGenerating) {
       const steps = latestWithSteps?.steps || [];
+      const persistedRunState = normalizeRunState(latestAssistant?.metadata?.runState);
       return {
         ...EMPTY_AGENT_RUN,
-        status: artifacts.length ? "done" : "idle",
+        status: persistedRunState || (artifacts.length ? "push_skipped" : "idle"),
+        stage: persistedRunState ? persistedRunState.replace(/_/g, " ") : "",
         steps,
-        runId: latestWithSteps?.runId || null,
+        runId: latestAssistant?.runId || latestWithSteps?.runId || null,
         snapshotCount: countStepSnapshots(steps),
       };
     }
     const stage = generationStage || pendingMessage?.stage || "Working...";
     const steps = pendingMessage?.steps || [];
-    const isThinking = /understand|analy|plan|prepar|connect/i.test(stage) && !steps.length;
     return {
       ...EMPTY_AGENT_RUN,
-      status: isThinking ? "thinking" : "generating",
+      status: derivePendingRunState(stage, steps),
       stage,
       plan: pendingMessage?.plan || "",
       steps,
@@ -148,6 +195,7 @@ export function useArtifactWorkspace(messages, { isGenerating, generationStage, 
   return {
     artifacts,
     activeArtifact,
+    activeArtifactSnapshot: buildBaseArtifactSnapshot(activeArtifact),
     activeArtifactId: activeArtifact?.id || null,
     activeFile,
     activeFileId: activeFile?.id || null,

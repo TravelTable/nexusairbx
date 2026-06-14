@@ -33,6 +33,15 @@ export async function pushToStudio({ payload, applyMode = "manual_review", sessi
   return readJsonOrThrow(res, "Failed to push to Studio");
 }
 
+export async function applyArtifactToStudio({ artifact, sessionId = null, studioPreconditions = [] }) {
+  const res = await authedFetch("/api/studio/apply-artifact", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ artifact, sessionId, studioPreconditions }),
+  });
+  return readJsonOrThrow(res, "Failed to apply artifact to Studio");
+}
+
 export async function getStudioCommand(commandId) {
   const res = await authedFetch(`/api/studio/commands/${encodeURIComponent(commandId)}`, {
     method: "GET",

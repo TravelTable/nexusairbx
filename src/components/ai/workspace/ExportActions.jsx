@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { Copy, Check, Download, FileDown, Boxes, Terminal, Send, ShieldCheck, Loader, Radio, Files } from "lucide-react";
 import { buildRojoZip, buildStudioLoader, buildPlacementZip, safeProjectName } from "../../../lib/rojoExport";
-import { buildStudioPayload } from "../../../lib/studioPayload";
-import { getStudioStatus, getStudioCommand, pushToStudio } from "../../../lib/studioBridgeApi";
+import { getStudioStatus, getStudioCommand, applyArtifactToStudio } from "../../../lib/studioBridgeApi";
+import { buildBaseArtifactSnapshot } from "../../../lib/artifactState";
 import { verifyRobloxReadiness } from "../../../lib/workflowApi";
 
 function downloadBlob(blob, filename) {
@@ -54,7 +54,6 @@ export default function ExportActions({ artifact, activeFile, notify }) {
   if (!artifact) return null;
   const files = artifact.files || [];
   const safeName = safeProjectName(artifact.title);
-  const kind = artifact.type === "ui" ? "ui" : artifact.type === "project" || artifact.type === "system" ? "project" : "script";
 
   const handleCopyFile = async () => {
     if (!activeFile) return;
@@ -131,15 +130,9 @@ export default function ExportActions({ artifact, activeFile, notify }) {
     if (studioBusy) return;
     setStudioBusy(true);
     try {
-      const payload = buildStudioPayload({
-        title: artifact.title,
-        kind,
-        lua: files[0]?.content || "",
-        files: files.map((f) => ({ name: f.name, path: f.path, kind: f.kind, content: f.content })),
-        artifactId: artifact.artifactId || artifact.id,
+      const result = await applyArtifactToStudio({
+        artifact: buildBaseArtifactSnapshot(artifact),
       });
-      const applyMode = (typeof window !== "undefined" && window.localStorage.getItem("nexusStudioApplyMode")) || "manual_review";
-      const result = await pushToStudio({ payload, applyMode });
       setStudioConnected(true);
       notify?.({ message: "Queued Studio push", type: "success" });
       if (result.commandId) pollCommand(result.commandId).catch(() => {});
