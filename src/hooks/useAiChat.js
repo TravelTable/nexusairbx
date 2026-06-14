@@ -19,8 +19,14 @@ import { auth, db } from "../firebase";
 import { BACKEND_URL } from "../config";
 import { ensureStreamSession } from "../lib/streamSession";
 import { FEATURE_FLAGS } from "../lib/featureFlags";
+import {
+  getStudioApplyMode,
+  getStudioEnabledPreference,
+  normalizeToolStep,
+  upsertAgentStep,
+} from "../lib/agentSteps";
 import { buildStudioPayload } from "../lib/studioPayload";
-import { pushToStudio } from "../lib/studioBridgeApi";
+import { pushToStudio, getStudioStatus } from "../lib/studioBridgeApi";
 import {
   applyStreamDelta,
   createPendingStreamState,
@@ -194,6 +200,18 @@ export function useAiChat(user, settings, refreshBilling, notify) {
       const idemKey = `chat-${requestId}`;
       
       // 1. Create Artifact Job
+      const studioEnabled = FEATURE_FLAGS.unifiedAgent && getStudioEnabledPreference();
+      let studioSessionId = null;
+      if (studioEnabled) {
+        try {
+          const studioStatus = await getStudioStatus();
+          const activeSession = (studioStatus.sessions || []).find((s) => s.status === "connected");
+          studioSessionId = activeSession?.sessionId || activeSession?.id || null;
+        } catch (_) {
+          /* non-fatal: codegen still works without Studio */
+        }
+      }
+
       const jobRes = await fetch(`${BACKEND_URL}/api/generate/artifact`, {
         method: "POST",
         headers: { 
@@ -208,7 +226,10 @@ export function useAiChat(user, settings, refreshBilling, notify) {
           chatMode: expertMode,
           mode: currentMode,
           conversation: messages.slice(-10).map(m => ({ role: m.role, content: m.content || m.explanation })),
-          attachments: attachments.map(a => ({ name: a.name, type: a.type, data: a.data, isImage: a.isImage }))
+          attachments: attachments.map(a => ({ name: a.name, type: a.type, data: a.data, isImage: a.isImage })),
+          studioEnabled: studioEnabled && Boolean(studioSessionId),
+          applyMode: getStudioApplyMode(),
+          studioSessionId,
         }),
       });
       
@@ -233,13 +254,14 @@ export function useAiChat(user, settings, refreshBilling, notify) {
       const jobData = await jobRes.json();
       const jobId = jobData.jobId;
       if (!jobId) throw new Error("Failed to create generation job");
+      const agentRunId = jobData.runId || null;
       const resultUrl = resolveResultUrl(jobId, jobData.resultUrl);
       const enableDeltaStreaming =
         FEATURE_FLAGS.streamV2 &&
         (jobData.streamVersion === "v2" || !jobData.streamVersion);
 
       setGenerationStage("Generating...");
-      setPendingMessage((prev) => (prev ? { ...prev, stage: "Generating..." } : prev));
+      setPendingMessage((prev) => (prev ? { ...prev, stage: "Generating...", steps: [], runId: agentRunId } : prev));
       streamStateRef.current = createPendingStreamState();
       
       const fetchFinalResult = async () => {
@@ -344,6 +366,10 @@ export function useAiChat(user, settings, refreshBilling, notify) {
           if (Array.isArray(data?.testingSteps) && data.testingSteps.length) msgPayload.testingSteps = data.testingSteps;
           if (Array.isArray(data?.securityNotes) && data.securityNotes.length) msgPayload.securityNotes = data.securityNotes;
           if (Array.isArray(data?.warnings) && data.warnings.length) msgPayload.warnings = data.warnings;
+          if (Array.isArray(data?.steps) && data.steps.length) {
+            msgPayload.steps = data.steps.map(normalizeToolStep);
+          }
+          if (data?.runId || agentRunId) msgPayload.runId = data?.runId || agentRunId;
 
           await setDoc(assistantMsgRef, msgPayload);
 
@@ -352,7 +378,7 @@ export function useAiChat(user, settings, refreshBilling, notify) {
               typeof window !== "undefined"
                 ? window.localStorage.getItem("nexusStudioApplyMode")
                 : "manual_review";
-            if (studioMode === "auto_after_approval" || studioMode === "unrestricted_dev") {
+            if (!data?.runId && (studioMode === "auto_after_approval" || studioMode === "unrestricted_dev")) {
               const payload = buildStudioPayload({
                 title: data?.title || content.slice(0, 50) || "Generated Script",
                 kind: data?.projectId ? "project" : "script",
@@ -454,6 +480,30 @@ export function useAiChat(user, settings, refreshBilling, notify) {
             } catch (err) {
               console.error("Failed to parse stream delta:", err);
               emitStreamMetric("error", { jobId, tag: "protocol", message: "delta_parse_failed" });
+            }
+          });
+
+          es.addEventListener("tool_step", (e) => {
+            if (!FEATURE_FLAGS.unifiedAgent) return;
+            try {
+              const data = JSON.parse(e.data);
+              const step = normalizeToolStep(data.step || data);
+              setPendingMessage((prev) => {
+                if (!prev) return prev;
+                const steps = upsertAgentStep(prev.steps || [], step);
+                return {
+                  ...prev,
+                  steps,
+                  runId: data.runId || prev.runId || agentRunId,
+                  stage: step.label || step.type || prev.stage,
+                };
+              });
+              if (step.label || step.type) {
+                setGenerationStage(step.label || step.type);
+              }
+            } catch (err) {
+              console.error("Failed to parse tool_step:", err);
+              emitStreamMetric("error", { jobId, tag: "protocol", message: "tool_step_parse_failed" });
             }
           });
 

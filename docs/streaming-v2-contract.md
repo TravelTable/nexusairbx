@@ -20,13 +20,19 @@ Events:
 
 2. `delta`
 - Payload: `{ jobId, seq, channel, text, ts }`
-- `channel` values: `thought | explanation | code | content`
+- `channel` values: `reasoning | content`
+- `reasoning` carries the leading streamed thinking block for display only; the saved final payload uses `thought`.
 - `seq` must be monotonically increasing per `jobId`
 
 3. `done`
 - Payload: final canonical result payload currently consumed by client
+- May include `steps[]` and `runId` when unified agent is enabled (see `docs/unified-agent-contract.md`)
 
-4. `error`
+4. `tool_step` (unified agent)
+- Payload: `{ jobId, runId, step: { id, type, label, status, error, result, snapshotCount, requiresApproval }, ts }`
+- Client upserts steps by `step.id`
+
+5. `error`
 - Payload: `{ jobId, code, message, retryable }`
 
 ## Recovery endpoint

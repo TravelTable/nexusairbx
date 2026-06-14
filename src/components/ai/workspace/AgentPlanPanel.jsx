@@ -1,5 +1,7 @@
 import React from "react";
-import { Loader2, CircleDot, ListChecks } from "lucide-react";
+import { Loader2, CircleDot, ListChecks, RotateCcw } from "lucide-react";
+import AgentStepList from "./AgentStepList";
+import { FEATURE_FLAGS } from "../../../lib/featureFlags";
 
 const STAGES = [
   { id: "thinking", label: "Understanding & planning" },
@@ -14,13 +16,23 @@ function stageIndex(status) {
   return -1;
 }
 
-// Build progress + plan for the current agent run (right column header region).
-export default function AgentPlanPanel({ agentRun, planText }) {
+// Build progress + plan + unified tool steps for the current agent run.
+export default function AgentPlanPanel({
+  agentRun,
+  planText,
+  onApproveStep,
+  onRestoreRun,
+  approvingStepId,
+  restoring = false,
+}) {
   const active = agentRun?.status === "thinking" || agentRun?.status === "generating";
   const idx = stageIndex(agentRun?.status);
   const plan = planText || agentRun?.plan;
+  const steps = agentRun?.steps || [];
+  const showSteps = FEATURE_FLAGS.unifiedAgent && steps.length > 0;
+  const canRestore = Boolean(agentRun?.runId && agentRun?.snapshotCount > 0);
 
-  if (!active && !plan) return null;
+  if (!active && !plan && !showSteps) return null;
 
   return (
     <div className="rounded-2xl border border-white/5 bg-white/[0.02] p-4 space-y-3">
@@ -28,9 +40,21 @@ export default function AgentPlanPanel({ agentRun, planText }) {
         <ListChecks className="w-3.5 h-3.5 text-[#00f5d4]" />
         <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">Agent Plan</span>
         {active && <span className="ml-auto text-[10px] text-[#00f5d4] font-bold">{agentRun.stage}</span>}
+        {canRestore && onRestoreRun && (
+          <button
+            type="button"
+            onClick={() => onRestoreRun(agentRun.runId)}
+            disabled={restoring}
+            className="ml-auto inline-flex items-center gap-1.5 px-2 py-1 rounded-lg border border-red-400/20 bg-red-400/10 text-red-200 text-[10px] font-black uppercase tracking-widest disabled:opacity-40"
+            title="Restore snapshots captured during this run"
+          >
+            {restoring ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RotateCcw className="w-3.5 h-3.5" />}
+            Restore
+          </button>
+        )}
       </div>
 
-      {active && (
+      {active && !showSteps && (
         <div className="space-y-2">
           {STAGES.map((s, i) => {
             const done = i < idx;
@@ -47,6 +71,16 @@ export default function AgentPlanPanel({ agentRun, planText }) {
             );
           })}
         </div>
+      )}
+
+      {showSteps && (
+        <AgentStepList
+          steps={steps}
+          maxHeight="max-h-52"
+          onApproveStep={onApproveStep}
+          approvingStepId={approvingStepId}
+          emptyLabel="Waiting for agent steps…"
+        />
       )}
 
       {plan && (

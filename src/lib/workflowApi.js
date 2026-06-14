@@ -34,3 +34,29 @@ export async function verifyRobloxReadiness({ lua, manifest }) {
   if (!res.ok) throw new Error("Verification failed");
   return res.json();
 }
+
+/** Approve a Studio tool step awaiting user confirmation (unified agent run). */
+export async function approveAgentStep(runId, stepId) {
+  const res = await authedFetch(`/api/ai/agent/${encodeURIComponent(runId)}/approve-step`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ stepId }),
+  });
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(text || "Failed to approve agent step");
+  }
+  return res.json();
+}
+
+/** Queue snapshot restore for all snapshots captured during a unified agent run. */
+export async function restoreAgentRun(runId) {
+  const res = await authedFetch(`/api/ai/agent/${encodeURIComponent(runId)}/restore`, {
+    method: "POST",
+  });
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(text || "Failed to restore agent run snapshots");
+  }
+  return res.json();
+}

@@ -14,6 +14,7 @@ import ProjectArchitecturePanel from "../../components/ai/ProjectArchitecturePan
 import StudioAgentPanel from "../../components/ai/StudioAgentPanel";
 import { ProjectContextStatus } from "../../components/ai/AiComponents";
 import { AI_EVENTS } from "../../lib/aiEvents";
+import { FEATURE_FLAGS } from "../../lib/featureFlags";
 import { Segmented } from "../../components/ui";
 
 import CodeFileTree from "../../components/ai/workspace/CodeFileTree";
@@ -53,7 +54,7 @@ function ArtifactSwitcher({ artifacts, activeId, onSelect }) {
 }
 
 export default function AgentWorkspaceLayout({ controller }) {
-  const { billing, navigation, uiState, refs, modules, handlers } = controller;
+  const { billing, navigation, uiState, refs, modules, handlers, studio } = controller;
   const { planKey, totalRemaining, subRemaining, paygRemaining, subLimit, resetsAt, isPremium, unlimitedTokens, devOverride, flags } = billing;
   const { navigate, location } = navigation;
   const {
@@ -104,6 +105,10 @@ export default function AgentWorkspaceLayout({ controller }) {
     handleOpenArtifact,
     track,
     notify,
+    handleApproveStep,
+    handleRestoreRun,
+    handleStudioEnabledChange,
+    handleStudioApplyModeChange,
   } = handlers;
 
   const { chatEndRef } = refs;
@@ -173,6 +178,16 @@ export default function AgentWorkspaceLayout({ controller }) {
       onModeChange={(m) => chat.updateChatMode(chat.currentChatId, m)}
       artifact={workspace.activeArtifact}
       agentRun={workspace.agentRun}
+      onApproveStep={handleApproveStep}
+      onRestoreRun={handleRestoreRun}
+      approvingStepId={studio?.approvingStepId}
+      restoringRun={studio?.restoringRun}
+      studioConnected={studio?.connected}
+      studioLoading={studio?.loading}
+      studioEnabled={studio?.enabled}
+      onStudioEnabledChange={handleStudioEnabledChange}
+      studioApplyMode={studio?.applyMode}
+      onStudioApplyModeChange={handleStudioApplyModeChange}
     />
   );
 
@@ -350,7 +365,9 @@ export default function AgentWorkspaceLayout({ controller }) {
             </div>
           </div>
 
-          <StudioAgentPanel user={user} chatId={chat.currentChatId} notify={notify} />
+          {!FEATURE_FLAGS.unifiedAgent && (
+            <StudioAgentPanel user={user} chatId={chat.currentChatId} notify={notify} />
+          )}
 
           {/* Desktop center + right; mobile single-pane via tabs */}
           <div className="flex-1 min-h-0 flex">
@@ -364,7 +381,14 @@ export default function AgentWorkspaceLayout({ controller }) {
             )}
             {isMobile && mobileTab === "details" && (
               <div className="flex-1 min-w-0 bg-[#0a0a0a]">
-                <BuildDetailsPanel artifact={workspace.activeArtifact} agentRun={workspace.agentRun} />
+                <BuildDetailsPanel
+                  artifact={workspace.activeArtifact}
+                  agentRun={workspace.agentRun}
+                  onApproveStep={handleApproveStep}
+                  onRestoreRun={handleRestoreRun}
+                  approvingStepId={studio?.approvingStepId}
+                  restoringRun={studio?.restoringRun}
+                />
               </div>
             )}
 

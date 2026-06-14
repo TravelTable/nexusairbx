@@ -7,12 +7,16 @@
 
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { artifactFromMessage } from "../lib/normalizeArtifact";
+import { countStepSnapshots } from "../lib/agentSteps";
 
 const EMPTY_AGENT_RUN = {
   status: "idle", // idle | thinking | generating | done | error
   stage: "",
   plan: "",
   currentStep: null,
+  steps: [],
+  runId: null,
+  snapshotCount: 0,
   logs: [],
   errors: [],
 };
@@ -113,18 +117,33 @@ export function useArtifactWorkspace(messages, { isGenerating, generationStage, 
 
   // Current agent run mirrors the unified chat generation state.
   const agentRun = useMemo(() => {
+    const latestWithSteps = [...(messages || [])]
+      .reverse()
+      .find((m) => m.role === "assistant" && Array.isArray(m.steps) && m.steps.length);
+
     if (!isGenerating) {
-      return { ...EMPTY_AGENT_RUN, status: artifacts.length ? "done" : "idle" };
+      const steps = latestWithSteps?.steps || [];
+      return {
+        ...EMPTY_AGENT_RUN,
+        status: artifacts.length ? "done" : "idle",
+        steps,
+        runId: latestWithSteps?.runId || null,
+        snapshotCount: countStepSnapshots(steps),
+      };
     }
     const stage = generationStage || pendingMessage?.stage || "Working...";
-    const isThinking = /understand|analy|plan|prepar|connect/i.test(stage);
+    const steps = pendingMessage?.steps || [];
+    const isThinking = /understand|analy|plan|prepar|connect/i.test(stage) && !steps.length;
     return {
       ...EMPTY_AGENT_RUN,
       status: isThinking ? "thinking" : "generating",
       stage,
       plan: pendingMessage?.plan || "",
+      steps,
+      runId: pendingMessage?.runId || null,
+      snapshotCount: countStepSnapshots(steps),
     };
-  }, [isGenerating, generationStage, pendingMessage, artifacts.length]);
+  }, [isGenerating, generationStage, pendingMessage, artifacts.length, messages]);
 
   return {
     artifacts,

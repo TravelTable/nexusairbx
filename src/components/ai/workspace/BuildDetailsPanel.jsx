@@ -8,7 +8,14 @@ import ValidationReportPanel from "./ValidationReportPanel";
 // Engineering-focused details for the active artifact: plan, setup, testing,
 // security/validation. Used in the right column's "Details" view and as the
 // mobile "Details" tab.
-export default function BuildDetailsPanel({ artifact, agentRun }) {
+export default function BuildDetailsPanel({
+  artifact,
+  agentRun,
+  onApproveStep,
+  onRestoreRun,
+  approvingStepId,
+  restoringRun = false,
+}) {
   const hasContent =
     artifact &&
     (artifact.plan ||
@@ -18,7 +25,9 @@ export default function BuildDetailsPanel({ artifact, agentRun }) {
       artifact.warnings?.length ||
       artifact.qaReport);
 
-  if (!hasContent && agentRun?.status !== "thinking" && agentRun?.status !== "generating") {
+  const hasSteps = (agentRun?.steps || []).length > 0;
+
+  if (!hasContent && !hasSteps && agentRun?.status !== "thinking" && agentRun?.status !== "generating") {
     return (
       <div className="px-4 py-10 text-center">
         <ClipboardList className="w-8 h-8 text-gray-700 mx-auto mb-2" />
@@ -31,7 +40,14 @@ export default function BuildDetailsPanel({ artifact, agentRun }) {
 
   return (
     <div className="p-4 space-y-4 overflow-y-auto scrollbar-hide">
-      <AgentPlanPanel agentRun={agentRun} planText={artifact?.plan} />
+      <AgentPlanPanel
+        agentRun={agentRun}
+        planText={artifact?.plan}
+        onApproveStep={onApproveStep}
+        onRestoreRun={onRestoreRun}
+        approvingStepId={approvingStepId}
+        restoring={restoringRun}
+      />
       <SetupStepsPanel steps={artifact?.setupSteps} />
       <TestingStepsPanel steps={artifact?.testingSteps} />
       <ValidationReportPanel artifact={artifact} />

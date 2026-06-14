@@ -5,6 +5,8 @@ import MessageBubble from "./MessageBubble";
 import ThinkingDisclosure from "./ThinkingDisclosure";
 import { parsePendingStreamContent } from "../../../lib/streaming";
 import { CheckCircle2, Circle, Clock3, Loader2, RotateCcw } from "lucide-react";
+import AgentStepList from "../workspace/AgentStepList";
+import { FEATURE_FLAGS } from "../../../lib/featureFlags";
 
 const ACTIVITY_STEPS = [
   {
@@ -49,6 +51,10 @@ function resolveActiveStepIndex(stage, pendingMessage, parsed) {
 }
 
 function PendingActivityPanel({ pendingMessage, generationStage, parsed }) {
+  const hasUnifiedSteps =
+    FEATURE_FLAGS.unifiedAgent && Array.isArray(pendingMessage?.steps) && pendingMessage.steps.length > 0;
+  if (hasUnifiedSteps) return null;
+
   const stage = resolveActivityStage(pendingMessage, generationStage, parsed);
   const activeIndex = resolveActiveStepIndex(stage, pendingMessage, parsed);
   const isRecovering = String(stage).toLowerCase().includes("recovering");
@@ -138,6 +144,8 @@ export default function MessageList({
   onEditPlan,
   notify,
   isBusy,
+  onApproveStep,
+  approvingStepId,
 }) {
   const pendingParsed = parsePendingStreamContent(pendingMessage?.content || "");
   const hasPendingMessage = !!pendingMessage;
@@ -180,6 +188,8 @@ export default function MessageList({
           onEditPlan={onEditPlan}
           notify={notify}
           isBusy={isBusy}
+          onApproveStep={onApproveStep}
+          approvingStepId={approvingStepId}
         />
       ))}
 
@@ -204,6 +214,15 @@ export default function MessageList({
                 generationStage={generationStage}
                 parsed={pendingParsed}
               />
+
+              {FEATURE_FLAGS.unifiedAgent && Array.isArray(pendingMessage.steps) && pendingMessage.steps.length > 0 && (
+                <AgentStepList
+                  steps={pendingMessage.steps}
+                  maxHeight="max-h-52"
+                  onApproveStep={onApproveStep}
+                  approvingStepId={approvingStepId}
+                />
+              )}
 
               {pendingMessage.streamState?.thought ? (
                 <ThinkingDisclosure text={pendingMessage.streamState.thought} live defaultOpen />

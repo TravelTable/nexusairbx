@@ -41,6 +41,7 @@ export async function getStudioCommand(commandId) {
   return readJsonOrThrow(res, "Failed to load Studio command");
 }
 
+/** @deprecated Legacy Studio Agent panel — use unified agent run + restoreAgentRun instead. */
 export async function startStudioAgent({ goal, chatId = null, sessionId = null }) {
   const res = await authedFetch("/api/studio/agent/start", {
     method: "POST",
@@ -50,6 +51,7 @@ export async function startStudioAgent({ goal, chatId = null, sessionId = null }
   return readJsonOrThrow(res, "Failed to start Studio agent");
 }
 
+/** @deprecated Legacy Studio Agent panel */
 export async function getStudioAgentRun(runId) {
   const res = await authedFetch(`/api/studio/agent/${encodeURIComponent(runId)}`, {
     method: "GET",
@@ -58,6 +60,7 @@ export async function getStudioAgentRun(runId) {
   return readJsonOrThrow(res, "Failed to load Studio agent run");
 }
 
+/** @deprecated Legacy Studio Agent panel */
 export async function continueStudioAgent(runId) {
   const res = await authedFetch(`/api/studio/agent/${encodeURIComponent(runId)}/continue`, {
     method: "POST",
@@ -65,6 +68,7 @@ export async function continueStudioAgent(runId) {
   return readJsonOrThrow(res, "Failed to continue Studio agent");
 }
 
+/** @deprecated Prefer restoreAgentRun from workflowApi for unified runs */
 export async function restoreStudioAgent(runId) {
   const res = await authedFetch(`/api/studio/agent/${encodeURIComponent(runId)}/restore`, {
     method: "POST",

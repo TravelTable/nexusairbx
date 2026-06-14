@@ -22,6 +22,8 @@ export default function ChatView({
   notify,
   isBusy,
   chatEndRef,
+  onApproveStep,
+  approvingStepId,
 }) {
   const showEmpty = messages.length === 0 && !pendingMessage;
 
@@ -45,6 +47,8 @@ export default function ChatView({
           onEditPlan={onEditPlan}
           notify={notify}
           isBusy={isBusy}
+          onApproveStep={onApproveStep}
+          approvingStepId={approvingStepId}
         />
       )}
     </div>

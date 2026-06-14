@@ -12,6 +12,8 @@ import { stripTags } from "./stripTags";
 import { ClarifyCard, PlanCard } from "./FlowCards";
 import ThinkingDisclosure from "./ThinkingDisclosure";
 import { AI_EVENTS, emitAiEvent } from "../../../lib/aiEvents";
+import AgentStepList from "../workspace/AgentStepList";
+import { FEATURE_FLAGS } from "../../../lib/featureFlags";
 
 function BubbleShell({ activeMode, children }) {
   return (
@@ -35,6 +37,8 @@ export default function AssistantBubble({
   onClarifySubmit,
   onEditPlan,
   isBusy,
+  onApproveStep,
+  approvingStepId,
 }) {
   // Stage 2: clarifying questions
   if (m.stage === "clarify" || m.stage === "clarify_answered") {
@@ -67,6 +71,18 @@ export default function AssistantBubble({
           <ThinkingDisclosure text={m.thought} />
         </div>
       ) : null}
+
+      {FEATURE_FLAGS.unifiedAgent && Array.isArray(m.steps) && m.steps.length > 0 && (
+        <div className="mb-4">
+          <AgentStepList
+            steps={m.steps}
+            maxHeight="max-h-48"
+            onApproveStep={onApproveStep}
+            approvingStepId={approvingStepId}
+          />
+        </div>
+      )}
+
       {m.explanation ? (
         <div className="text-[15px] whitespace-pre-wrap leading-relaxed text-gray-100">
           <FormatText text={stripTags(m.explanation)} />

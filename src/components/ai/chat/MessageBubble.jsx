@@ -14,6 +14,8 @@ export default function MessageBubble({
   onEditPlan,
   notify,
   isBusy,
+  onApproveStep,
+  approvingStepId,
 }) {
   if (m.role === "user") {
     return (
@@ -43,6 +45,8 @@ export default function MessageBubble({
       onEditPlan={onEditPlan}
       notify={notify}
       isBusy={isBusy}
+      onApproveStep={onApproveStep}
+      approvingStepId={approvingStepId}
     />
   );
 }

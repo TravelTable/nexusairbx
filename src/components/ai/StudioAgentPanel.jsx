@@ -1,34 +1,11 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Bot, CheckCircle2, Circle, Loader2, Play, RotateCcw, ShieldAlert, TerminalSquare, XCircle } from "lucide-react";
+import { Bot, Loader2, Play, RotateCcw, ShieldAlert, TerminalSquare } from "lucide-react";
 import { continueStudioAgent, getStudioAgentRun, restoreStudioAgent, startStudioAgent } from "../../lib/studioBridgeApi";
+import AgentStepList from "./workspace/AgentStepList";
 
 const TERMINAL = new Set(["succeeded", "failed"]);
 
-function statusIcon(status) {
-  if (status === "succeeded") return <CheckCircle2 className="w-3.5 h-3.5 text-[#00f5d4]" />;
-  if (status === "failed") return <XCircle className="w-3.5 h-3.5 text-red-400" />;
-  if (status === "queued" || status === "delivered" || status === "running") {
-    return <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-300" />;
-  }
-  return <Circle className="w-3.5 h-3.5 text-gray-500" />;
-}
-
-function summarizeResult(step) {
-  if (step.error) return step.error;
-  const result = step.result || {};
-  if (step.type === "inspect_place") {
-    return `${result.count || result.totalInstances || 0} instance(s) inspected${result.truncated ? " (truncated)" : ""}`;
-  }
-  if (step.type === "read_script" && result.scripts) return `${result.scripts.length} script source(s) returned`;
-  if (step.type === "write_script" && result.path) return `Wrote ${result.path}`;
-  if (step.type === "create_instance" && result.path) return `Created ${result.path}`;
-  if (step.type === "delete_instance" && result.path) return `Deleted ${result.path}`;
-  if (step.type === "restore_snapshot") return `Restored ${result.restored || 0} snapshot(s)`;
-  if (step.type === "run_smoke_check") return `${result.issues?.length || 0} issue(s), ${result.checkedScripts || 0} script(s) checked`;
-  if (step.type === "apply_artifact") return "Applied artifact";
-  return step.status || "pending";
-}
-
+/** @deprecated Shown only when REACT_APP_UNIFIED_AGENT is not enabled. */
 export default function StudioAgentPanel({ user, chatId, notify }) {
   const [goal, setGoal] = useState("");
   const [run, setRun] = useState(null);
@@ -198,26 +175,7 @@ export default function StudioAgentPanel({ user, chatId, notify }) {
                 </button>
               </div>
 
-              <div className="max-h-44 overflow-y-auto rounded-lg border border-white/5 bg-black/20 divide-y divide-white/5">
-                {(run.steps || []).length === 0 ? (
-                  <div className="px-3 py-2 text-xs text-gray-500">No Studio tool steps yet.</div>
-                ) : (
-                  run.steps.map((step) => (
-                    <div key={step.id} className="px-3 py-2 flex items-start gap-2">
-                      <div className="mt-0.5">{statusIcon(step.status)}</div>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2 min-w-0">
-                          <span className="text-[11px] font-bold text-white truncate">{step.label || step.type}</span>
-                          <span className="text-[9px] font-black uppercase tracking-widest text-gray-600 shrink-0">{step.type}</span>
-                        </div>
-                        <div className={`text-[11px] truncate ${step.error ? "text-red-300" : "text-gray-500"}`}>
-                          {summarizeResult(step)}
-                        </div>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
+              <AgentStepList steps={run.steps || []} emptyLabel="No Studio tool steps yet." />
 
               {run.status === "failed" && (
                 <div className="flex items-start gap-2 rounded-lg border border-red-400/20 bg-red-400/10 px-3 py-2 text-xs text-red-100">

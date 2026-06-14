@@ -25,6 +25,16 @@ import { useGameProfile } from "../../hooks/useGameProfile";
 import { useAiScripts } from "../../hooks/useAiScripts";
 import { CHAT_MODES } from "../../components/ai/chatConstants";
 import { AI_PAGE_V2_ENABLED, BACKEND_URL } from "../../config";
+import { FEATURE_FLAGS } from "../../lib/featureFlags";
+import { approveAgentStep, restoreAgentRun } from "../../lib/workflowApi";
+import {
+  getStudioApplyMode,
+  getStudioEnabledPreference,
+  setStudioApplyMode,
+  setStudioEnabledPreference,
+  upsertAgentStep,
+} from "../../lib/agentSteps";
+import { useStudioConnection } from "../../hooks/useStudioConnection";
 import { AI_EVENTS, emitAiEvent, onAiEvent } from "../../lib/aiEvents";
 import { createAiTelemetryClient } from "../../lib/aiTelemetry";
 import { useAiNotifications } from "./useAiNotifications";
@@ -82,6 +92,12 @@ export function useAiWorkspaceController() {
   const [attachments, setAttachments] = useState([]);
   const [codeDrawerOpen, setCodeDrawerOpen] = useState(false);
   const [codeDrawerData, setCodeDrawerData] = useState({ code: "", title: "", explanation: "" });
+  const [studioEnabled, setStudioEnabled] = useState(() => getStudioEnabledPreference());
+  const [studioApplyMode, setStudioApplyModeState] = useState(() => getStudioApplyMode());
+  const [approvingStepId, setApprovingStepId] = useState(null);
+  const [restoringRun, setRestoringRun] = useState(false);
+
+  const studioConnection = useStudioConnection();
 
   const chatEndRef = useRef(null);
   const pageViewTrackedRef = useRef(false);
@@ -412,6 +428,56 @@ export function useAiWorkspaceController() {
     });
   }, []);
 
+  const handleStudioEnabledChange = useCallback((enabled) => {
+    setStudioEnabled(enabled);
+    setStudioEnabledPreference(enabled);
+  }, []);
+
+  const handleStudioApplyModeChange = useCallback((mode) => {
+    setStudioApplyModeState(mode);
+    setStudioApplyMode(mode);
+  }, []);
+
+  const handleApproveStep = useCallback(
+    async (step) => {
+      const runId = unified.pendingMessage?.runId || workspace.agentRun?.runId;
+      if (!runId || !step?.id || !user) return;
+      setApprovingStepId(step.id);
+      try {
+        const result = await approveAgentStep(runId, step.id);
+        const updated = result?.step;
+        if (updated && unified.setPendingMessage) {
+          unified.setPendingMessage((prev) => {
+            if (!prev) return prev;
+            return { ...prev, steps: upsertAgentStep(prev.steps || [], updated) };
+          });
+        }
+        notify({ message: "Studio step approved", type: "success" });
+      } catch (err) {
+        notify({ message: err?.message || "Could not approve step", type: "error" });
+      } finally {
+        setApprovingStepId(null);
+      }
+    },
+    [unified, workspace.agentRun?.runId, user, notify]
+  );
+
+  const handleRestoreRun = useCallback(
+    async (runId) => {
+      if (!runId || !user || restoringRun) return;
+      setRestoringRun(true);
+      try {
+        await restoreAgentRun(runId);
+        notify({ message: "Queued Studio snapshot restore", type: "success" });
+      } catch (err) {
+        notify({ message: err?.message || "Could not restore snapshots", type: "error" });
+      } finally {
+        setRestoringRun(false);
+      }
+    },
+    [user, restoringRun, notify]
+  );
+
   return {
     billing: {
       plan,
@@ -495,6 +561,21 @@ export function useAiWorkspaceController() {
       track,
       notify,
       emitAiEvent,
+
+      handleApproveStep,
+      handleRestoreRun,
+      handleStudioEnabledChange,
+      handleStudioApplyModeChange,
+    },
+    studio: {
+      connected: studioConnection.connected,
+      loading: studioConnection.loading,
+      sessionId: studioConnection.sessionId,
+      enabled: studioEnabled,
+      applyMode: studioApplyMode,
+      approvingStepId,
+      restoringRun,
+      unifiedAgent: FEATURE_FLAGS.unifiedAgent,
     },
   };
 }
