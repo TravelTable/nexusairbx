@@ -19,7 +19,7 @@ const baseProps = {
 };
 
 describe("MessageList pending activity", () => {
-  test("shows action progress before visible output arrives", () => {
+  test("shows the live stage header before visible output arrives", () => {
     render(
       <MessageList
         {...baseProps}
@@ -36,10 +36,32 @@ describe("MessageList pending activity", () => {
 
     expect(screen.getByText("Nexus is working")).toBeTruthy();
     expect(screen.getByText("Planning Layout...")).toBeTruthy();
-    expect(screen.getByText("Understanding task")).toBeTruthy();
-    expect(screen.getByText("Planning build")).toBeTruthy();
-    expect(screen.getByText("Generating artifact")).toBeTruthy();
-    expect(screen.getByText("Finalizing")).toBeTruthy();
+    // The fixed fake checklist is gone — progress now streams live below the header.
+    expect(screen.queryByText("Understanding task")).toBeNull();
+    expect(screen.queryByText("Finalizing")).toBeNull();
+  });
+
+  test("streams agent commands/actions as they arrive", () => {
+    render(
+      <MessageList
+        {...baseProps}
+        generationStage="Generating..."
+        pendingMessage={{
+          role: "assistant",
+          content: "",
+          type: "ui",
+          prompt: "Build a shop UI",
+          stage: "Generating...",
+          steps: [
+            { id: "s1", type: "generate_artifact", label: "Generate artifact", status: "running" },
+            { id: "s2", type: "write_script", label: "Write ShopService", status: "awaiting_approval" },
+          ],
+        }}
+      />
+    );
+
+    expect(screen.getByText("Generate artifact")).toBeTruthy();
+    expect(screen.getByText("Write ShopService")).toBeTruthy();
   });
 
   test("streams the live chain-of-thought in a Thinking disclosure (not as answer content)", () => {

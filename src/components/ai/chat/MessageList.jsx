@@ -4,32 +4,8 @@ import { stripTags } from "./stripTags";
 import MessageBubble from "./MessageBubble";
 import ThinkingDisclosure from "./ThinkingDisclosure";
 import { parsePendingStreamContent } from "../../../lib/streaming";
-import { CheckCircle2, Circle, Clock3, Loader2, RotateCcw } from "lucide-react";
+import { Clock3, Loader2, RotateCcw } from "lucide-react";
 import AgentStepList from "../workspace/AgentStepList";
-import { FEATURE_FLAGS } from "../../../lib/featureFlags";
-
-const ACTIVITY_STEPS = [
-  {
-    id: "understand",
-    label: "Understanding task",
-    matches: ["understanding", "analyzing request", "preparing job", "connecting"],
-  },
-  {
-    id: "plan",
-    label: "Planning build",
-    matches: ["planning", "layout", "components", "requirements"],
-  },
-  {
-    id: "generate",
-    label: "Generating artifact",
-    matches: ["generating", "writing", "code", "streaming", "building", "rendering"],
-  },
-  {
-    id: "finalize",
-    label: "Finalizing",
-    matches: ["finalizing", "saving", "recovering"],
-  },
-];
 
 function resolveActivityStage(pendingMessage, generationStage, parsed) {
   const stage = pendingMessage?.stage || generationStage || "";
@@ -39,91 +15,38 @@ function resolveActivityStage(pendingMessage, generationStage, parsed) {
   return "Understanding your task...";
 }
 
-function resolveActiveStepIndex(stage, pendingMessage, parsed) {
-  const normalized = String(stage || "").toLowerCase();
-  const matchedIndex = ACTIVITY_STEPS.findIndex((step) =>
-    step.matches.some((match) => normalized.includes(match))
-  );
-  if (matchedIndex >= 0) return matchedIndex;
-  if (parsed?.code || pendingMessage?.streamState?.code) return 2;
-  if (parsed?.explanation || pendingMessage?.streamState?.explanation) return 2;
-  return 0;
-}
-
-function PendingActivityPanel({ pendingMessage, generationStage, parsed }) {
-  const hasUnifiedSteps =
-    FEATURE_FLAGS.unifiedAgent && Array.isArray(pendingMessage?.steps) && pendingMessage.steps.length > 0;
-  if (hasUnifiedSteps) return null;
-
+/**
+ * Compact, live status header shown while the agent works. The actual progress
+ * (thoughts, commands/actions, and text/code) streams in below this header via
+ * the thinking disclosure, the agent step log, and the content block — so this
+ * header only reflects the current live stage, not a fixed checklist.
+ */
+function LiveActivityHeader({ pendingMessage, generationStage, parsed }) {
   const stage = resolveActivityStage(pendingMessage, generationStage, parsed);
-  const activeIndex = resolveActiveStepIndex(stage, pendingMessage, parsed);
   const isRecovering = String(stage).toLowerCase().includes("recovering");
 
   return (
-    <div className="rounded-3xl bg-[#121212]/80 border border-white/10 backdrop-blur-xl shadow-2xl overflow-hidden">
-      <div className="p-4 md:p-5 border-b border-white/5 bg-white/[0.03]">
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex items-start gap-3 min-w-0">
-            <div className="mt-0.5 p-2 rounded-xl bg-[#00f5d4]/10 border border-[#00f5d4]/20 text-[#00f5d4]">
-              {isRecovering ? (
-                <RotateCcw className="w-4 h-4 animate-spin" />
-              ) : (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              )}
-            </div>
-            <div className="min-w-0">
-              <div className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">
-                Nexus is working
-              </div>
-              <div className="mt-1 text-sm md:text-[15px] font-semibold text-white break-words">
-                {stage}
-              </div>
-            </div>
+    <div className="flex items-center justify-between gap-3 rounded-2xl bg-white/[0.03] border border-white/10 px-4 py-3">
+      <div className="flex items-center gap-3 min-w-0">
+        <span className="shrink-0 text-[#00f5d4]">
+          {isRecovering ? (
+            <RotateCcw className="w-4 h-4 animate-spin" />
+          ) : (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          )}
+        </span>
+        <div className="min-w-0">
+          <div className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">
+            Nexus is working
           </div>
-          <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/5 border border-white/10 text-[10px] font-bold uppercase tracking-widest text-gray-400 shrink-0">
-            <Clock3 className="w-3 h-3" />
-            Live
+          <div className="mt-0.5 text-sm md:text-[15px] font-semibold text-white break-words">
+            {stage}
           </div>
         </div>
       </div>
-
-      <div className="p-4 md:p-5 space-y-3">
-        {ACTIVITY_STEPS.map((step, index) => {
-          const isDone = index < activeIndex;
-          const isActive = index === activeIndex;
-          return (
-            <div key={step.id} className="flex items-center gap-3">
-              <div
-                className={`w-6 h-6 rounded-full flex items-center justify-center border transition-colors ${
-                  isDone
-                    ? "bg-[#00f5d4] border-[#00f5d4] text-black"
-                    : isActive
-                      ? "bg-[#00f5d4]/10 border-[#00f5d4]/40 text-[#00f5d4]"
-                      : "bg-white/5 border-white/10 text-gray-600"
-                }`}
-              >
-                {isDone ? (
-                  <CheckCircle2 className="w-3.5 h-3.5" />
-                ) : isActive ? (
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                ) : (
-                  <Circle className="w-3 h-3" />
-                )}
-              </div>
-              <div
-                className={`text-xs md:text-sm font-semibold ${
-                  isDone || isActive ? "text-gray-100" : "text-gray-500"
-                }`}
-              >
-                {step.label}
-              </div>
-            </div>
-          );
-        })}
-
-        <div className="pt-2 text-[11px] leading-relaxed text-gray-500">
-          Complex generations can take a few minutes. This trace updates as the backend reports progress.
-        </div>
+      <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/5 border border-white/10 text-[10px] font-bold uppercase tracking-widest text-gray-400 shrink-0">
+        <Clock3 className="w-3 h-3" />
+        Live
       </div>
     </div>
   );
@@ -216,24 +139,24 @@ export default function MessageList({
           <div className="flex justify-start gap-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <NexusRBXAvatar isThinking={true} mode={activeMode} />
             <div className="max-w-[85%] md:max-w-[80%] order-2 space-y-4">
-              <PendingActivityPanel
+              <LiveActivityHeader
                 pendingMessage={pendingMessage}
                 generationStage={generationStage}
                 parsed={pendingParsed}
               />
 
-              {FEATURE_FLAGS.unifiedAgent && Array.isArray(pendingMessage.steps) && pendingMessage.steps.length > 0 && (
+              {pendingMessage.streamState?.thought ? (
+                <ThinkingDisclosure text={pendingMessage.streamState.thought} live defaultOpen />
+              ) : null}
+
+              {Array.isArray(pendingMessage.steps) && pendingMessage.steps.length > 0 && (
                 <AgentStepList
                   steps={pendingMessage.steps}
-                  maxHeight="max-h-52"
+                  maxHeight="max-h-72"
                   onApproveStep={onApproveStep}
                   approvingStepId={approvingStepId}
                 />
               )}
-
-              {pendingMessage.streamState?.thought ? (
-                <ThinkingDisclosure text={pendingMessage.streamState.thought} live defaultOpen />
-              ) : null}
 
               {pendingMessage.content ? (
                 <div className="space-y-4">
