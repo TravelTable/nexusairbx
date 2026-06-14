@@ -1,10 +1,80 @@
-import React from "react";
-import { Plus, X, Sparkles, Loader, RefreshCw, Wand2 } from "lucide-react";
+import React, { useEffect, useRef, useState } from "react";
+import { Plus, X, Sparkles, Loader, RefreshCw, Wand2, ChevronDown, Check } from "lucide-react";
 import { UnifiedStatusBar, TokenBar } from "../AiComponents";
+import { CHAT_MODES } from "../chatConstants";
+
+function ModeSelector({ mode, onModeChange, disabled }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    const onClickOutside = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener("mousedown", onClickOutside);
+    return () => document.removeEventListener("mousedown", onClickOutside);
+  }, []);
+
+  const current = CHAT_MODES.find((m) => m.id === mode) || CHAT_MODES[0];
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        disabled={disabled}
+        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider border transition-all disabled:opacity-40 ${current.bg} ${current.color} border-white/10 hover:bg-white/10`}
+        title="Select mode"
+        aria-haspopup="listbox"
+        aria-expanded={open}
+      >
+        {current.icon}
+        {current.label}
+        <ChevronDown className={`w-3 h-3 transition-transform ${open ? "rotate-180" : ""}`} />
+      </button>
+
+      {open && (
+        <div
+          className="absolute bottom-full left-0 mb-2 w-64 rounded-2xl border border-white/10 bg-[#0D0D0D]/95 backdrop-blur-2xl shadow-2xl z-50 p-1.5"
+          role="listbox"
+        >
+          {CHAT_MODES.map((m) => {
+            const selected = m.id === mode;
+            return (
+              <button
+                key={m.id}
+                type="button"
+                role="option"
+                aria-selected={selected}
+                onClick={() => {
+                  onModeChange?.(m.id);
+                  setOpen(false);
+                }}
+                className={`w-full flex items-start gap-2.5 px-2.5 py-2 rounded-xl text-left transition-all ${
+                  selected ? "bg-white/[0.07] border border-white/10" : "border border-transparent hover:bg-white/5"
+                }`}
+              >
+                <span className={`mt-0.5 ${m.color}`}>{m.icon}</span>
+                <span className="flex-1 min-w-0">
+                  <span className="flex items-center gap-1.5">
+                    <span className="text-xs font-bold text-white">{m.label}</span>
+                    {selected && <Check className="w-3 h-3 text-[#00f5d4]" />}
+                  </span>
+                  <span className="block text-[10px] text-gray-500 leading-snug mt-0.5">{m.description}</span>
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
 
 /**
- * Slim composer for the linear flow: status strip, token bar, attachments, prompt, send.
- * No mode pickers or plan/act toggle — intent is resolved server-side by orchestration.
+ * Slim composer for the linear flow: status strip, token bar, mode selector,
+ * attachments, prompt, send. The mode selector picks the Cursor-style operating
+ * mode; clarifying questions only appear in Plan and Ask modes.
  */
 export default function ChatComposer({
   prompt,
@@ -29,6 +99,8 @@ export default function ChatComposer({
   onImprovePrompt,
   isImproving,
   disabled,
+  mode = "agent",
+  onModeChange,
 }) {
   return (
     <div className="p-4 bg-gradient-to-t from-black via-black/80 to-transparent">
@@ -71,7 +143,7 @@ export default function ChatComposer({
             }}
             aria-hidden="true"
           />
-          <div className="relative bg-[#121212] border border-white/10 rounded-2xl p-2 shadow-2xl flex flex-col gap-2">
+          <div className="relative bg-ink-800/90 border border-white/10 rounded-2xl2 p-2 shadow-panel backdrop-blur-xl flex flex-col gap-2">
             {attachments.length > 0 && (
               <div className="flex flex-wrap gap-2 px-2 pt-2" aria-label="Attached files">
                 {attachments.map((file, idx) => (
@@ -96,6 +168,7 @@ export default function ChatComposer({
             )}
 
             <div className="flex items-center gap-2 px-2 pt-2">
+              <ModeSelector mode={mode} onModeChange={onModeChange} disabled={disabled} />
               <div
                 className={`px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest transition-all ${
                   isGenerating ? "bg-[#00f5d4] text-black animate-pulse" : "bg-white/5 text-gray-500"
@@ -165,7 +238,7 @@ export default function ChatComposer({
                 id="tour-generate-button"
                 onClick={() => onSubmit?.()}
                 disabled={disabled || (!prompt?.trim() && attachments.length === 0)}
-                className="p-3 rounded-xl transition-all disabled:opacity-50 bg-[#00f5d4] text-black hover:shadow-[0_0_20px_rgba(0,245,212,0.4)] active:scale-95"
+                className="p-3 rounded-xl transition-all disabled:opacity-50 disabled:active:scale-100 bg-nexus-cyan text-black hover:shadow-[0_0_24px_rgba(0,245,212,0.45)] active:scale-95 focus-ring"
                 aria-label={isGenerating ? "Generation in progress" : "Send prompt"}
               >
                 {isGenerating ? <Loader className="h-5 w-5 animate-spin" /> : <Sparkles className="h-5 w-5" />}

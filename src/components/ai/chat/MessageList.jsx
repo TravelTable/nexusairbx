@@ -2,6 +2,7 @@ import React, { useEffect } from "react";
 import { NexusRBXAvatar, UserAvatar, FormatText, SkeletonArtifact } from "../AiComponents";
 import { stripTags } from "./stripTags";
 import MessageBubble from "./MessageBubble";
+import ThinkingDisclosure from "./ThinkingDisclosure";
 import { parsePendingStreamContent } from "../../../lib/streaming";
 import { CheckCircle2, Circle, Clock3, Loader2, RotateCcw } from "lucide-react";
 
@@ -203,6 +204,10 @@ export default function MessageList({
                 generationStage={generationStage}
                 parsed={pendingParsed}
               />
+
+              {pendingMessage.streamState?.thought ? (
+                <ThinkingDisclosure text={pendingMessage.streamState.thought} live defaultOpen />
+              ) : null}
 
               {pendingMessage.content ? (
                 <div className="space-y-4">

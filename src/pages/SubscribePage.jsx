@@ -36,7 +36,7 @@ const plans = [
       { text: "20k tokens / month (resets)", included: true },
       { text: "Community support", included: true },
       { text: "Script history (7 days)", included: true },
-      { text: "Nexus-5 (GPT-5.2) access", included: false },
+      { text: "Nexus (GPT-5.4) access", included: false },
       { text: "Pro-Grade UI Engine", included: false },
       { text: "Premium model selection (Claude, Gemini, Grok)", included: false },
     ],
@@ -55,7 +55,7 @@ const plans = [
     tokenAllowancePM: 500_000,
     approxScriptsPM: "~70–100 medium scripts",
     features: [
-      { text: "Nexus-5 (GPT-5.2) Neural Core", included: true },
+      { text: "Nexus (GPT-5.4) Neural Core", included: true },
       { text: "500k tokens / month (resets)", included: true },
       { text: "Pro-Grade UI Engine (Responsive)", included: true },
       { text: "Deep Luau Integration (Task/Signal)", included: true },
@@ -109,7 +109,7 @@ const faqs = [
     id: "tokens",
     question: "What are tokens and how are they used?",
     answer:
-      "We meter GPT-5.2 input + output tokens. Each request deducts the exact tokens used, with a 1,000-token minimum per request to prevent abuse.",
+      "We meter GPT-5.4 input + output tokens. Each request deducts the exact tokens used, with a 1,000-token minimum per request to prevent abuse.",
   },
   {
     id: "allowance",
@@ -267,7 +267,7 @@ export default function SubscribePage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
-              className="text-4xl md:text-6xl font-black tracking-tight"
+              className="font-display text-4xl md:text-6xl font-extrabold tracking-tight"
             >
               Build Faster with <br />
               <span className="bg-gradient-to-r from-[#9b5de5] via-[#00f5d4] to-[#9b5de5] text-transparent bg-clip-text bg-[length:200%_auto] animate-[shimmer_4s_linear_infinite]">
@@ -397,7 +397,7 @@ export default function SubscribePage() {
         <section className="pb-24 px-4">
           <div className="max-w-3xl mx-auto space-y-12">
             <div className="text-center space-y-4">
-              <h2 className="text-4xl font-bold">Common Questions</h2>
+              <h2 className="font-display text-4xl font-bold">Common Questions</h2>
               <p className="text-gray-400">Everything you need to know about Nexus billing.</p>
             </div>
             
@@ -439,7 +439,7 @@ export default function SubscribePage() {
           <div className="max-w-5xl mx-auto p-12 rounded-[3rem] bg-gradient-to-br from-[#9b5de5]/20 to-[#00f5d4]/20 border border-white/10 text-center space-y-8 relative overflow-hidden">
             <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 pointer-events-none" />
             <div className="relative z-10 space-y-6">
-              <h2 className="text-4xl md:text-5xl font-bold">Ready to build the future?</h2>
+              <h2 className="font-display text-4xl md:text-5xl font-bold">Ready to build the future?</h2>
               <p className="text-gray-400 text-lg max-w-xl mx-auto">
                 Join thousands of developers using Nexus to ship high-quality Roblox games faster than ever.
               </p>

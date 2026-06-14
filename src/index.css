@@ -1,17 +1,74 @@
+@import url("https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap");
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  body {
+    font-family: "Manrope", ui-sans-serif, system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+}
+
+@layer components {
+  /* Frosted surface used for panels and cards. */
+  .glass-panel {
+    @apply bg-[#0d0d10]/80 border border-white/10 backdrop-blur-xl;
+  }
+  .card-surface {
+    @apply bg-[#121216]/80 border border-white/10 rounded-2xl backdrop-blur-xl;
+  }
+  /* Cyan -> purple brand gradient applied to text. */
+  .gradient-text {
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(90deg, #00f5d4, #9b5de5);
+  }
+  /* Accessible keyboard focus ring. */
+  .focus-ring {
+    @apply outline-none focus-visible:ring-2 focus-visible:ring-[#00f5d4]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black;
+  }
+}
 
 /* Hide ResizeObserver error overlay in Chrome (optional, for extra suppression) */
 body > .resize-observer-error {
   display: none !important;
 }
 
-/* Custom Scrollbar for History */
+/* Custom Scrollbar */
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
 .scrollbar-hide {
   -ms-overflow-style: none;
   scrollbar-width: none;
+}
+
+/* Thin, themed scrollbar for scroll regions that should show one. */
+.scrollbar-thin::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 9999px;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* Respect reduced-motion preferences. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
 }

@@ -38,7 +38,7 @@ export function ClarifyCard({ message, onSubmit, disabled }) {
 
   return (
     <div className="rounded-2xl border border-[#9b5de5]/25 bg-[#9b5de5]/5 p-4 space-y-4">
-      <div className="flex items-center gap-2 text-sm font-bold text-[#9b5de5]">
+      <div className="flex items-center gap-2 font-display text-sm font-bold text-[#9b5de5]">
         <HelpCircle className="w-4 h-4" /> A few quick questions
       </div>
 
@@ -109,7 +109,7 @@ export function PlanCard({ message, onApprove, onEdit, disabled }) {
   return (
     <div className="rounded-2xl border border-[#00f5d4]/25 bg-[#00f5d4]/5 p-4 space-y-4">
       <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2 text-sm font-bold text-[#00f5d4]">
+        <div className="flex items-center gap-2 font-display text-sm font-bold text-[#00f5d4]">
           <ListChecks className="w-4 h-4" /> Build plan
         </div>
         <span className="px-2 py-1 rounded-md bg-black/30 border border-white/10 text-[10px] font-black uppercase tracking-widest text-gray-300">

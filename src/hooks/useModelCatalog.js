@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { BACKEND_URL } from "../config";
 
 /**
- * Fetches the dynamic CometAPI model catalog from GET /api/models and caches it
+ * Fetches the dynamic AI Gateway model catalog from GET /api/models and caches it
  * in-module for the session so multiple consumers (workspace switcher, settings)
  * share a single network request.
  *
@@ -10,9 +10,9 @@ import { BACKEND_URL } from "../config";
  */
 
 const FALLBACK_MODELS = [
-  { id: "deepseek-v3.2-exp", name: "DeepSeek V3.2", provider: "deepseek", contextLength: 128000, tier: "free", recommended: true, creditMultiplier: 1, costTierLabel: "1x credits" },
-  { id: "gpt-4o-mini", name: "GPT-4o mini", provider: "openai", contextLength: 128000, tier: "free", recommended: true, creditMultiplier: 1, costTierLabel: "1x credits" },
-  { id: "gpt-5.2", name: "GPT-5.2", provider: "openai", contextLength: 256000, tier: "pro", recommended: true, creditMultiplier: 8, costTierLabel: "8x credits" },
+  { id: "deepseek/deepseek-v3.2", name: "DeepSeek V3.2", provider: "deepseek", contextLength: 128000, tier: "free", recommended: true, creditMultiplier: 1, costTierLabel: "1x credits" },
+  { id: "openai/gpt-5-mini", name: "GPT-5 mini", provider: "openai", contextLength: 256000, tier: "free", recommended: true, creditMultiplier: 1, costTierLabel: "1x credits" },
+  { id: "openai/gpt-5.4", name: "GPT-5.4", provider: "openai", contextLength: 256000, tier: "pro", recommended: true, creditMultiplier: 8, costTierLabel: "8x credits" },
 ];
 
 let moduleCache = null;

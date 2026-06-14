@@ -55,7 +55,7 @@ import {
 } from "recharts";
 
 const StatCard = ({ title, value, icon: Icon, color }) => (
-  <div className="bg-gray-900/50 border border-gray-800 rounded-2xl p-5 backdrop-blur-xl hover:border-gray-700 transition-colors group">
+  <div className="card-surface p-5 backdrop-blur-xl hover:border-gray-700 transition-colors group">
     <div className="flex justify-between items-start mb-3">
       <div className={`p-2 rounded-xl bg-gray-800 group-hover:scale-110 transition-transform ${color}`}>
         <Icon className="w-5 h-5" />
@@ -145,8 +145,8 @@ const SettingsPage = () => {
   };
   const MODEL_ALIAS_LABELS = {
     "deepseek-free": "DeepSeek Core (Free)",
-    "nexus-4": "Nexus-5 (GPT-5.2)",
-    "nexus-3": "Nexus-4 (Legacy)",
+    "nexus-4": "Nexus (GPT-5.4)",
+    "nexus-3": "Nexus (Legacy)",
   };
 
   const tierForModel = useCallback((id) => {
@@ -244,7 +244,7 @@ const SettingsPage = () => {
     // Free/anon users can never keep a pro-tier model selected.
     if (modelCatalog.length === 0) return;
     if (!isPremiumPlan && tierForModel(settings.modelVersion) === "pro") {
-      const freeDefault = modelCatalog.find((m) => m.tier === "free")?.id || "deepseek-v3.2-exp";
+      const freeDefault = modelCatalog.find((m) => m.tier === "free")?.id || "deepseek/deepseek-v3.2";
       updateSettings({ modelVersion: freeDefault });
     }
   }, [isPremiumPlan, settings.modelVersion, modelCatalog, tierForModel, updateSettings]);
@@ -373,8 +373,8 @@ const SettingsPage = () => {
               <StatCard title="Total Limit" value={subLimit?.toLocaleString() || "0"} icon={Shield} color="text-pink-400" />
             </div>
 
-            <div className="bg-gray-900/50 border border-gray-800 rounded-2xl p-6 backdrop-blur-xl">
-              <h3 className="text-lg font-bold text-white mb-6 flex items-center gap-2">
+            <div className="card-surface p-6">
+              <h3 className="font-display text-lg font-bold text-white mb-6 flex items-center gap-2">
                 <BarChart3 className="w-5 h-5 text-purple-400" />
                 Token Usage Trend (30 Days)
               </h3>
@@ -405,7 +405,7 @@ const SettingsPage = () => {
       case "subscription":
         return (
           <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <div className="bg-gray-900/50 border border-gray-800 rounded-2xl p-8 backdrop-blur-xl relative overflow-hidden">
+            <div className="card-surface p-8 backdrop-blur-xl relative overflow-hidden">
               <div className="absolute top-0 right-0 p-8 opacity-10">
                 <Zap className="w-32 h-32 text-purple-400" />
               </div>
@@ -453,7 +453,7 @@ const SettingsPage = () => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="bg-gray-900/50 border border-gray-800 rounded-2xl p-6 backdrop-blur-xl">
+              <div className="card-surface p-6">
                 <h4 className="text-white font-bold mb-4">Token Balance</h4>
                 <div className="h-48">
                   <ResponsiveContainer width="100%" height="100%">
@@ -481,7 +481,7 @@ const SettingsPage = () => {
                 </div>
               </div>
               
-              <div className="bg-gray-900/50 border border-gray-800 rounded-2xl p-6 backdrop-blur-xl flex flex-col justify-center">
+              <div className="card-surface p-6 flex flex-col justify-center">
                 <div className="space-y-4">
                   <div className="flex justify-between items-center">
                     <span className="text-gray-400">Monthly Allowance</span>
@@ -506,9 +506,9 @@ const SettingsPage = () => {
       case "usage":
         return (
           <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <div className="bg-gray-900/50 border border-gray-800 rounded-2xl overflow-hidden backdrop-blur-xl">
+            <div className="card-surface overflow-hidden backdrop-blur-xl">
               <div className="p-6 border-b border-gray-800 flex justify-between items-center">
-                <h3 className="text-lg font-bold text-white">Recent Activity</h3>
+                <h3 className="font-display text-lg font-bold text-white">Recent Activity</h3>
                 <button onClick={fetchUsage} className="text-purple-400 hover:text-purple-300 text-sm flex items-center gap-1">
                   <History className="w-4 h-4" /> Refresh
                 </button>
@@ -551,8 +551,8 @@ const SettingsPage = () => {
       case "ai":
         return (
           <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <div className="bg-gray-900/50 border border-gray-800 rounded-2xl p-6 backdrop-blur-xl">
-              <h3 className="text-lg font-bold text-white mb-6 flex items-center gap-2">
+            <div className="card-surface p-6">
+              <h3 className="font-display text-lg font-bold text-white mb-6 flex items-center gap-2">
                 <Bot className="w-5 h-5 text-purple-400" />
                 Global AI Preferences
               </h3>
@@ -602,9 +602,9 @@ const SettingsPage = () => {
                   </select>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm text-gray-400">Default Chat Mode</label>
+                  <label className="text-sm text-gray-400">Default Mode</label>
                   <select 
-                    value={settings.chatMode || "general"}
+                    value={settings.chatMode || "agent"}
                     onChange={(e) => updateSettings({ chatMode: e.target.value })}
                     className="w-full bg-black border border-gray-800 rounded-xl p-3 text-white outline-none focus:border-purple-500 transition-colors"
                   >
@@ -612,6 +612,21 @@ const SettingsPage = () => {
                       <option key={mode.id} value={mode.id}>{mode.label}</option>
                     ))}
                   </select>
+                  <p className="text-[10px] text-gray-500 italic">
+                    {(CHAT_MODES.find((m) => m.id === (settings.chatMode || "agent")) || CHAT_MODES[0]).description}
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm text-gray-400">Show Chain of Thought</label>
+                  <div className="flex items-center justify-between p-3 bg-black border border-gray-800 rounded-xl">
+                    <span className="text-xs text-gray-500">Stream the agent's live thinking in chat</span>
+                    <button 
+                      onClick={() => updateSettings({ showThinking: settings.showThinking === false })}
+                      className={`w-12 h-6 rounded-full transition-all relative ${settings.showThinking !== false ? 'bg-[#00f5d4]' : 'bg-gray-700'}`}
+                    >
+                      <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${settings.showThinking !== false ? 'left-7' : 'left-1'}`} />
+                    </button>
+                  </div>
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm text-gray-400">Game Profile Wizard</label>
@@ -645,8 +660,8 @@ const SettingsPage = () => {
               </div>
             </div>
 
-            <div className="bg-gray-900/50 border border-gray-800 rounded-2xl p-6 backdrop-blur-xl">
-              <h3 className="text-lg font-bold text-white mb-2 flex items-center gap-2">
+            <div className="card-surface p-6">
+              <h3 className="font-display text-lg font-bold text-white mb-2 flex items-center gap-2">
                 <Globe className="w-5 h-5 text-cyan-400" />
                 Global Game Context
               </h3>
@@ -675,8 +690,8 @@ const SettingsPage = () => {
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Token Injector */}
-              <div className="bg-gray-900/50 border border-gray-800 rounded-2xl p-6 backdrop-blur-xl">
-                <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+              <div className="card-surface p-6">
+                <h3 className="font-display text-lg font-bold text-white mb-4 flex items-center gap-2">
                   <PlusCircle className="w-5 h-5 text-pink-400" />
                   Token Injector
                 </h3>
@@ -723,8 +738,8 @@ const SettingsPage = () => {
               </div>
 
               {/* System Health */}
-              <div className="bg-gray-900/50 border border-gray-800 rounded-2xl p-6 backdrop-blur-xl">
-                <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+              <div className="card-surface p-6">
+                <h3 className="font-display text-lg font-bold text-white mb-4 flex items-center gap-2">
                   <Activity className="w-5 h-5 text-cyan-400" />
                   System Status
                 </h3>
@@ -749,9 +764,9 @@ const SettingsPage = () => {
             </div>
 
             {/* User List */}
-            <div className="bg-gray-900/50 border border-gray-800 rounded-2xl overflow-hidden backdrop-blur-xl">
+            <div className="card-surface overflow-hidden backdrop-blur-xl">
               <div className="p-6 border-b border-gray-800 flex flex-col md:flex-row justify-between items-center gap-4">
-                <h3 className="text-lg font-bold text-white">User Directory (Recent 100)</h3>
+                <h3 className="font-display text-lg font-bold text-white">User Directory (Recent 100)</h3>
                 <div className="flex items-center gap-3 w-full md:w-auto">
                   <div className="relative flex-grow">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
@@ -823,8 +838,8 @@ const SettingsPage = () => {
       case "teams":
         return (
           <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <div className="bg-gray-900/50 border border-gray-800 rounded-2xl p-6 backdrop-blur-xl">
-              <h3 className="text-lg font-bold text-white mb-2 flex items-center gap-2">
+            <div className="card-surface p-6">
+              <h3 className="font-display text-lg font-bold text-white mb-2 flex items-center gap-2">
                 <Users className="w-5 h-5 text-[#00f5d4]" />
                 Team Collaboration
               </h3>
@@ -888,7 +903,7 @@ const SettingsPage = () => {
       case "help":
         return (
           <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <div className="bg-gray-900/50 border border-gray-800 rounded-2xl p-8 backdrop-blur-xl">
+            <div className="card-surface p-8 backdrop-blur-xl">
               <h3 className="text-xl font-bold text-white mb-2 flex items-center gap-2">
                 <Sparkles className="w-6 h-6 text-[#00f5d4]" />
                 Tutorials & Onboarding
@@ -929,7 +944,7 @@ const SettingsPage = () => {
               </div>
             </div>
 
-            <div className="bg-gray-900/50 border border-gray-800 rounded-2xl p-8 backdrop-blur-xl">
+            <div className="card-surface p-8 backdrop-blur-xl">
               <h3 className="text-xl font-bold text-white mb-2 flex items-center gap-2">
                 <MessageCircle className="w-6 h-6 text-purple-400" />
                 Community & Support
@@ -950,7 +965,7 @@ const SettingsPage = () => {
       case "account":
         return (
           <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <div className="bg-gray-900/50 border border-gray-800 rounded-2xl p-6 backdrop-blur-xl">
+            <div className="card-surface p-6">
               <div className="flex items-center gap-4 mb-8">
                 <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-[#9b5de5] to-[#00f5d4] flex items-center justify-center text-3xl font-bold text-white shadow-lg shadow-purple-500/20">
                   {user?.email?.[0].toUpperCase()}
@@ -1183,7 +1198,7 @@ const SettingsPage = () => {
           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#9b5de5] to-[#00f5d4] flex items-center justify-center shadow-lg shadow-purple-500/20">
             <SettingsIcon className="w-6 h-6 text-white" />
           </div>
-          <h1 className="text-xl font-bold text-white tracking-tight">Settings</h1>
+          <h1 className="font-display text-xl font-bold text-white tracking-tight">Settings</h1>
         </div>
 
         <nav className="flex flex-col gap-1">
@@ -1216,7 +1231,7 @@ const SettingsPage = () => {
           {/* Header */}
           <div className="mb-8 flex justify-between items-end">
             <div>
-              <h2 className="text-2xl font-bold text-white mb-1">{finalTabs.find(t => t.id === activeTab)?.label}</h2>
+              <h2 className="font-display text-2xl font-bold text-white mb-1">{finalTabs.find(t => t.id === activeTab)?.label}</h2>
               <p className="text-sm text-gray-500">Manage your NexusRBX experience and account data.</p>
             </div>
             {activeTab === "dashboard" && (

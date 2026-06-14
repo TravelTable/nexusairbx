@@ -12,11 +12,11 @@ export default function GenerationStatusBar({ currentStage }) {
   if (!currentStage) return null;
 
   return (
-    <div className="w-full bg-gray-900/50 border border-gray-800 rounded-xl p-4 mb-4 animate-in fade-in slide-in-from-top-2 duration-300">
+    <div className="w-full card-surface rounded-xl p-4 mb-4 animate-fade-in-up">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
-          <Loader className="w-4 h-4 text-[#00f5d4] animate-spin" />
-          <span className="text-sm font-bold text-white">Nexus is working...</span>
+          <Loader className="w-4 h-4 text-nexus-cyan animate-spin" />
+          <span className="font-display text-sm font-bold text-white">Nexus is working...</span>
         </div>
         <span className="text-[10px] font-mono text-gray-500 uppercase tracking-widest">{currentStage}</span>
       </div>

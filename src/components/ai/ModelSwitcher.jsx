@@ -17,8 +17,8 @@ const PROVIDER_LABELS = {
 // Legacy alias values still possible in persisted settings.
 const ALIAS_LABELS = {
   "deepseek-free": "DeepSeek Core (Free)",
-  "nexus-4": "Nexus-5 (GPT-5.2)",
-  "nexus-3": "Nexus-4 (Legacy)",
+  "nexus-4": "Nexus (GPT-5.4)",
+  "nexus-3": "Nexus (Legacy)",
 };
 
 function formatContext(len) {
@@ -28,7 +28,7 @@ function formatContext(len) {
 }
 
 /**
- * Compact in-workspace model picker driven by the dynamic CometAPI catalog.
+ * Compact in-workspace model picker driven by the dynamic AI Gateway catalog.
  * Pro-tier models are locked for non-premium users and route to the ProNudge flow.
  */
 export default function ModelSwitcher({ value, onChange, isPremium, onProNudge, compact = true }) {

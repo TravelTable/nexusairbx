@@ -1,7 +1,29 @@
 import React, { useMemo } from "react";
-import { FolderOpen, Folder, FileQuestion } from "lucide-react";
+import { FolderOpen, Folder, FileQuestion, AlertTriangle } from "lucide-react";
 import GeneratedFileCard from "./GeneratedFileCard";
+import QaScoreBadge from "../QaScoreBadge";
 import { ROBLOX_PLACEMENTS } from "./workspaceMeta";
+
+// Compact quality summary for the whole artifact (QA score + lint warning).
+function WorkspaceQaSummary({ artifact }) {
+  const qa = artifact?.qaReport || null;
+  const lintWarning = artifact?.lintWarning || null;
+  const issueCount = Array.isArray(qa?.issues) ? qa.issues.length : 0;
+  const hasScore = qa && Number.isFinite(Number(qa.score));
+  if (!hasScore && !lintWarning) return null;
+
+  return (
+    <div className="px-1.5 pb-2 space-y-1.5">
+      {hasScore && <QaScoreBadge score={qa.score} issueCount={issueCount} />}
+      {lintWarning && (
+        <div className="flex items-start gap-1.5 px-2 py-1.5 rounded-lg bg-yellow-400/10 border border-yellow-400/20 text-[10px] text-yellow-300/90 leading-snug">
+          <AlertTriangle className="w-3 h-3 shrink-0 mt-0.5" />
+          <span className="truncate">{lintWarning}</span>
+        </div>
+      )}
+    </div>
+  );
+}
 
 // Left-panel file tree. Files are grouped by their Roblox service placement so a
 // developer immediately sees where each script belongs in Studio.
@@ -37,6 +59,7 @@ export default function CodeFileTree({ artifact, activeFileId, onSelectFile }) {
 
   return (
     <div className="space-y-3">
+      <WorkspaceQaSummary artifact={artifact} />
       {groups.map(([placement, files]) => (
         <div key={placement} className="space-y-1">
           <div className="flex items-center gap-2 px-1.5 py-1">

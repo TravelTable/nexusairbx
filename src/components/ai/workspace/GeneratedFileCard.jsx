@@ -1,5 +1,5 @@
 import React from "react";
-import { Circle } from "lucide-react";
+import { Circle, AlertTriangle } from "lucide-react";
 import { kindMeta, statusMeta } from "./workspaceMeta";
 
 // Compact row for a single generated file in the file tree.
@@ -7,6 +7,7 @@ export default function GeneratedFileCard({ file, active, onSelect }) {
   const meta = kindMeta(file.kind);
   const Icon = meta.icon;
   const status = statusMeta(file.dirty ? "edited" : file.status);
+  const warningCount = Array.isArray(file.warnings) ? file.warnings.length : 0;
 
   return (
     <button
@@ -27,8 +28,16 @@ export default function GeneratedFileCard({ file, active, onSelect }) {
         </div>
         <div className="text-[10px] text-gray-500 truncate">{meta.label}</div>
       </div>
-      <div className="flex items-center gap-1 shrink-0" title={status.label}>
-        <Circle className="w-2 h-2" style={{ color: status.dot, fill: status.dot }} />
+      <div className="flex items-center gap-1.5 shrink-0">
+        {warningCount > 0 && (
+          <AlertTriangle
+            className="w-3 h-3 text-yellow-400"
+            title={`${warningCount} warning${warningCount === 1 ? "" : "s"}`}
+          />
+        )}
+        <span title={status.label}>
+          <Circle className="w-2 h-2" style={{ color: status.dot, fill: status.dot }} />
+        </span>
       </div>
     </button>
   );

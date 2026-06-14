@@ -183,6 +183,7 @@ export function normalizeArtifact(raw = {}, opts = {}) {
     warnings: toStringArray(raw.warnings),
     plan: raw.plan || "",
     qaReport: raw.metadata?.qaReport || raw.qaReport || null,
+    lintWarning: raw.metadata?.lintWarning || raw.lintWarning || null,
     versionNumber: raw.versionNumber || 1,
     artifactId: raw.artifactId || null,
     projectId: raw.projectId || null,

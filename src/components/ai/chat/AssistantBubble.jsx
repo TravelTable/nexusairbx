@@ -10,14 +10,15 @@ import QaScoreBadge from "../QaScoreBadge";
 import { Activity, ShieldAlert, FolderOpen, FileCode2 } from "lucide-react";
 import { stripTags } from "./stripTags";
 import { ClarifyCard, PlanCard } from "./FlowCards";
+import ThinkingDisclosure from "./ThinkingDisclosure";
 import { AI_EVENTS, emitAiEvent } from "../../../lib/aiEvents";
 
 function BubbleShell({ activeMode, children }) {
   return (
-    <div className="flex justify-start gap-4 group animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="flex justify-start gap-3.5 group animate-fade-in-up">
       <NexusRBXAvatar mode={activeMode} />
       <div className="max-w-[90%] order-2">
-        <div className="p-4 md:p-5 rounded-3xl bg-[#121212]/80 border border-white/10 backdrop-blur-xl shadow-2xl">
+        <div className="p-4 md:p-5 rounded-2xl2 rounded-tl-md card-surface shadow-panel">
           {children}
         </div>
       </div>
@@ -61,6 +62,11 @@ export default function AssistantBubble({
 
   return (
     <BubbleShell activeMode={activeMode}>
+      {m.thought ? (
+        <div className="mb-3">
+          <ThinkingDisclosure text={m.thought} />
+        </div>
+      ) : null}
       {m.explanation ? (
         <div className="text-[15px] whitespace-pre-wrap leading-relaxed text-gray-100">
           <FormatText text={stripTags(m.explanation)} />
@@ -97,13 +103,13 @@ export default function AssistantBubble({
               />
             </ArtifactCard>
           ) : (
-            <div className="p-4 rounded-2xl bg-black/40 border border-white/5 flex items-center justify-between gap-3">
+            <div className="p-4 rounded-2xl bg-gradient-to-br from-nexus-cyan/[0.06] to-transparent border border-nexus-cyan/15 flex items-center justify-between gap-3 transition-all hover:border-nexus-cyan/30">
               <div className="flex items-center gap-3 min-w-0">
-                <div className="p-2 rounded-xl bg-[#00f5d4]/10 text-[#00f5d4] shrink-0">
+                <div className="p-2 rounded-xl bg-nexus-cyan/10 text-nexus-cyan shrink-0 shadow-[0_0_16px_rgba(0,245,212,0.25)]">
                   <FileCode2 className="w-4 h-4" />
                 </div>
                 <div className="min-w-0">
-                  <div className="text-sm font-bold text-white truncate">{m.title || "Generated Roblox Artifact"}</div>
+                  <div className="font-display text-sm font-bold text-white truncate">{m.title || "Generated Roblox Artifact"}</div>
                   <div className="text-[11px] text-gray-500">
                     {fileCount > 0 ? `${fileCount} file${fileCount === 1 ? "" : "s"}` : "1 script"} ready in the workspace
                   </div>

@@ -14,6 +14,7 @@ import ProjectArchitecturePanel from "../../components/ai/ProjectArchitecturePan
 import StudioAgentPanel from "../../components/ai/StudioAgentPanel";
 import { ProjectContextStatus } from "../../components/ai/AiComponents";
 import { AI_EVENTS } from "../../lib/aiEvents";
+import { Segmented } from "../../components/ui";
 
 import CodeFileTree from "../../components/ai/workspace/CodeFileTree";
 import CodeWorkspace from "../../components/ai/workspace/CodeWorkspace";
@@ -169,6 +170,7 @@ export default function AgentWorkspaceLayout({ controller }) {
       devOverride={devOverride}
       themePrimary={currentTheme.primary}
       themeSecondary={currentTheme.secondary}
+      onModeChange={(m) => chat.updateChatMode(chat.currentChatId, m)}
       artifact={workspace.activeArtifact}
       agentRun={workspace.agentRun}
     />
@@ -213,6 +215,11 @@ export default function AgentWorkspaceLayout({ controller }) {
         style={{ backgroundColor: `${currentTheme.primary}14` }}
         aria-hidden="true"
       />
+      <div
+        className="fixed bottom-[-15%] right-[-10%] w-[45%] h-[45%] blur-[140px] rounded-full pointer-events-none transition-colors duration-1000"
+        style={{ backgroundColor: `${currentTheme.secondary}10` }}
+        aria-hidden="true"
+      />
 
       <NexusRBXHeader
         variant="ai"
@@ -240,27 +247,16 @@ export default function AgentWorkspaceLayout({ controller }) {
           className={`fixed inset-y-0 left-0 z-40 w-80 bg-[#0D0D0D]/95 backdrop-blur-2xl border-r border-white/5 flex flex-col transform transition-all duration-300 ease-in-out ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} lg:relative lg:translate-x-0 ${sidebarOpen ? "lg:w-80" : "lg:w-0 lg:opacity-0 lg:pointer-events-none"}`}
           aria-label="Project sidebar"
         >
-          <div className="flex items-center gap-1 px-3 py-2.5 border-b border-white/5">
-            <div className="flex bg-gray-900/60 border border-white/5 rounded-xl p-0.5 w-full">
-              <button
-                type="button"
-                onClick={() => setLeftView("files")}
-                className={`flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all ${
-                  leftView === "files" ? "bg-[#00f5d4]/15 text-[#00f5d4]" : "text-gray-500 hover:text-gray-300"
-                }`}
-              >
-                <FolderTree className="w-3.5 h-3.5" /> Files
-              </button>
-              <button
-                type="button"
-                onClick={() => setLeftView("history")}
-                className={`flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all ${
-                  leftView === "history" ? "bg-[#9b5de5]/15 text-[#9b5de5]" : "text-gray-500 hover:text-gray-300"
-                }`}
-              >
-                <History className="w-3.5 h-3.5" /> History
-              </button>
-            </div>
+          <div className="flex items-center px-3 py-2.5 border-b border-white/10">
+            <Segmented
+              fullWidth
+              options={[
+                { id: "files", label: "Files", icon: FolderTree },
+                { id: "history", label: "History", icon: History },
+              ]}
+              value={leftView}
+              onChange={setLeftView}
+            />
           </div>
 
           <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide">

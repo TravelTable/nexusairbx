@@ -47,7 +47,7 @@ export function useAiChat(user, settings, refreshBilling, notify) {
   const [messages, setMessages] = useState([]);
   const [currentChatId, setCurrentChatId] = useState(null);
   const [currentChatMeta, setCurrentChatMeta] = useState(null);
-  const [activeMode, setActiveMode] = useState("general");
+  const [activeMode, setActiveMode] = useState(settings?.chatMode || "agent");
   const [customModes, setCustomModes] = useState([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [pendingMessage, setPendingMessage] = useState(null);
@@ -163,7 +163,7 @@ export function useAiChat(user, settings, refreshBilling, notify) {
 
     let activeChatId = existingChatId || currentChatId;
     const requestId = existingRequestId || uuidv4();
-    const expertMode = modeOverride || activeMode || settings.chatMode || "general";
+    const expertMode = modeOverride || activeMode || settings.chatMode || "agent";
 
     try {
       if (!activeChatId) {
@@ -528,7 +528,7 @@ export function useAiChat(user, settings, refreshBilling, notify) {
     setCurrentChatId(null);
     setCurrentChatMeta(null);
     setMessages([]);
-    setActiveMode("general");
+    setActiveMode("agent");
     setTasks([]);
     setCurrentTaskId(null);
   }, []);

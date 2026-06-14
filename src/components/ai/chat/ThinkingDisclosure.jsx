@@ -1,0 +1,43 @@
+import React, { useState } from "react";
+import { Brain, ChevronDown } from "lucide-react";
+
+/**
+ * Collapsible chain-of-thought disclosure. Shows the model's streamed <thinking>
+ * block (live) or the saved thought (finalized). Hidden when there is no text.
+ */
+function thoughtEnabled() {
+  try {
+    const s = JSON.parse(localStorage.getItem("nexusrbx:settings") || "{}");
+    return s.showThinking !== false;
+  } catch (_) {
+    return true;
+  }
+}
+
+export default function ThinkingDisclosure({ text, live = false, defaultOpen = false }) {
+  const clean = String(text || "").replace(/<\/?thinking>/gi, "").trim();
+  const [open, setOpen] = useState(defaultOpen || live);
+  if (!clean || !thoughtEnabled()) return null;
+
+  return (
+    <div className="rounded-2xl border border-white/10 bg-black/30 overflow-hidden">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-white/[0.03] transition-colors"
+        aria-expanded={open}
+      >
+        <Brain className={`w-3.5 h-3.5 ${live ? "text-[#00f5d4] animate-pulse" : "text-[#9b5de5]"}`} />
+        <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">
+          {live ? "Thinking…" : "Thought process"}
+        </span>
+        <ChevronDown className={`w-3.5 h-3.5 ml-auto text-gray-500 transition-transform ${open ? "rotate-180" : ""}`} />
+      </button>
+      {open && (
+        <div className="px-3 pb-3 pt-2 border-t border-white/5 text-[12px] leading-relaxed text-gray-400 whitespace-pre-wrap">
+          {clean}
+        </div>
+      )}
+    </div>
+  );
+}

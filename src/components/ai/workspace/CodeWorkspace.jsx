@@ -71,11 +71,11 @@ export default function CodeWorkspace({
 
   if (!artifact) {
     return (
-      <div className="h-full flex flex-col items-center justify-center text-center px-8 bg-[#050505]">
-        <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/5 mb-4">
-          <FileCode2 className="w-10 h-10 text-gray-700" />
+      <div className="h-full flex flex-col items-center justify-center text-center px-8 bg-ink-950">
+        <div className="p-4 rounded-2xl bg-nexus-cyan/[0.04] border border-nexus-cyan/10 mb-4 shadow-[0_0_40px_-10px_rgba(0,245,212,0.25)]">
+          <FileCode2 className="w-10 h-10 text-nexus-cyan/70" />
         </div>
-        <h2 className="text-lg font-bold text-gray-300">Your code workspace</h2>
+        <h2 className="font-display text-lg font-bold text-gray-200">Your code workspace</h2>
         <p className="mt-2 text-sm text-gray-500 max-w-sm leading-relaxed">
           Ask the agent to build a Roblox system. Generated server, client, and module scripts appear
           here as editable files, organized by their Studio placement.
@@ -87,10 +87,10 @@ export default function CodeWorkspace({
   const readOnly = !editing;
 
   return (
-    <div className="h-full flex flex-col min-h-0 bg-[#050505]">
-      <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-white/5 bg-black/30">
+    <div className="h-full flex flex-col min-h-0 bg-ink-950">
+      <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-white/10 bg-black/30">
         <div className="min-w-0">
-          <div className="text-sm font-bold text-white truncate">{artifact.title}</div>
+          <div className="font-display text-sm font-bold text-white truncate">{artifact.title}</div>
           {artifact.summary && (
             <div className="text-[11px] text-gray-500 truncate">{artifact.summary}</div>
           )}

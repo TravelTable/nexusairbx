@@ -8,6 +8,7 @@ import {
   serverTimestamp,
 } from "firebase/firestore";
 import { db } from "../firebase";
+import { BACKEND_URL } from "../config";
 import { v4 as uuidv4 } from "uuid";
 import { useAiChat } from "./useAiChat";
 import { orchestrate, approveWorkflowPlan } from "../lib/workflowApi";
@@ -149,7 +150,58 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
     [chat]
   );
 
-  // Stage 1: every prompt goes through orchestration first.
+  // ASK mode: read-only conversational streaming. No orchestrate, no plan, no job.
+  const handleAskSubmit = useCallback(
+    async (prompt, _attachments, activeChatId, requestId) => {
+      const token = await user.getIdToken();
+      chat.setPendingMessage({ role: "assistant", content: "", type: "chat", prompt, stage: "Thinking..." });
+      let full = "";
+      try {
+        const res = await fetch(`${BACKEND_URL}/api/ai/chat`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({
+            prompt,
+            gameSpec: settings?.gameSpec || "",
+            conversation: chat.messages.slice(-10).map((m) => ({ role: m.role, content: m.content || m.explanation })),
+          }),
+        });
+        if (!res.ok || !res.body) {
+          const text = await res.text().catch(() => "");
+          throw new Error(text || "Ask request failed");
+        }
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let streaming = true;
+        while (streaming) {
+          const { done, value } = await reader.read();
+          if (done) {
+            streaming = false;
+            break;
+          }
+          full += decoder.decode(value, { stream: true });
+          const snapshot = full;
+          chat.setPendingMessage((prev) => (prev ? { ...prev, content: snapshot, stage: "" } : prev));
+        }
+      } finally {
+        chat.setPendingMessage(null);
+      }
+      const text = full.trim() || "(no response)";
+      await setDoc(
+        doc(db, "users", user.uid, "chats", activeChatId, "messages", `${requestId}-assistant`),
+        { role: "assistant", content: text, explanation: text, createdAt: serverTimestamp(), requestId }
+      );
+      await touchChat(activeChatId, text);
+      refreshBilling?.();
+    },
+    [user, chat, settings, touchChat, refreshBilling]
+  );
+
+  // Stage 1: route by operating mode.
+  //  - ask   -> conversational stream (read-only)
+  //  - plan  -> orchestrate (may clarify) -> plan card -> user approves
+  //  - agent -> orchestrate (no questions) -> auto-approve -> build, plan shown inline
+  //  - debug -> same as agent, with debug framing
   const handleSubmit = useCallback(
     async (currentPrompt, currentAttachments = []) => {
       const prompt = (currentPrompt || "").trim();
@@ -163,16 +215,23 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
       }
       if (isGenerating) return;
 
+      const mode = chat.activeMode || "agent";
       const requestId = uuidv4();
       setFlowBusy(true);
       try {
         const activeChatId = await ensureChat(prompt || "New build");
         await writeUserMessage(activeChatId, requestId, prompt);
 
+        if (mode === "ask") {
+          await handleAskSubmit(prompt, currentAttachments, activeChatId, requestId);
+          return;
+        }
+
         const decision = await orchestrate({
           prompt,
           history: chat.messages,
           attachments: currentAttachments,
+          mode,
         });
 
         await writeOrchestrationResult(
@@ -182,6 +241,20 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
           prompt,
           currentAttachments
         );
+
+        // Agent & Debug build immediately (no approval gate); the plan is shown inline.
+        if ((mode === "agent" || mode === "debug") && decision.status === "awaiting_approval" && decision.planId) {
+          try {
+            await approveWorkflowPlan(decision.planId);
+            await updateDoc(
+              doc(db, "users", user.uid, "chats", activeChatId, "messages", `${requestId}-plan`),
+              { stage: "plan_approved", updatedAt: serverTimestamp() }
+            );
+          } catch (_) {
+            /* non-fatal: continue to generation */
+          }
+          await runGeneration(activeChatId, decision.classification || "project", prompt, currentAttachments);
+        }
       } catch (err) {
         console.error("Orchestration error:", err);
         notify?.({ message: err?.message || "Could not start the build", type: "error" });
@@ -196,7 +269,10 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
       ensureChat,
       writeUserMessage,
       writeOrchestrationResult,
+      handleAskSubmit,
+      runGeneration,
       chat.messages,
+      chat.activeMode,
       notify,
     ]
   );

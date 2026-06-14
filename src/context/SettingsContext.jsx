@@ -13,6 +13,8 @@ const DEFAULT_SETTINGS = {
   gameSpec: "",
   theme: "dark",
   enableGameWizard: true,
+  chatMode: "agent",
+  showThinking: true,
 };
 
 export function SettingsProvider({ children }) {

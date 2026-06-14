@@ -1,22 +1,64 @@
-import {
-  MessageSquare,
-  Layout,
-  Code2,
-  Rocket,
-  Move,
-  Database,
-  Activity,
-  ShieldAlert,
-} from "lucide-react";
-import { isPremiumMode } from "../../lib/modeGates";
+import { Infinity as InfinityIcon, ClipboardList, Bug, MessageCircle } from "lucide-react";
 
+/**
+ * Cursor-style operating modes (replaces the legacy expert personas).
+ *
+ *  - agent : autonomous build, no questions, plan streamed inline.
+ *  - plan  : proposes a plan and waits for approval; may ask clarifying questions.
+ *  - debug : diagnoses and fixes; no questions.
+ *  - ask   : read-only conversational Q&A.
+ *
+ * All modes are free; premium is gated on model + token limits, not mode.
+ */
 export const CHAT_MODES = [
-  { id: "general", label: "General Assistant", icon: <MessageSquare className="w-4 h-4" />, color: "text-gray-400", bg: "bg-gray-400/10", border: "hover:border-gray-400/50", description: "General Roblox help, debugging, and documentation.", placeholder: "Ask anything about Roblox development...", type: "pure persona", requiresPremium: isPremiumMode("general") },
-  { id: "ui", label: "UI Architect", icon: <Layout className="w-4 h-4" />, color: "text-[#00f5d4]", bg: "bg-[#00f5d4]/10", border: "hover:border-[#00f5d4]/50", description: "Specialized in building and refining Roblox UI manifests.", placeholder: "Describe the UI you want to build (e.g. 'A modern shop menu')...", type: "tool-routing", requiresPremium: isPremiumMode("ui") },
-  { id: "logic", label: "Logic Engineer", icon: <Code2 className="w-4 h-4" />, color: "text-[#9b5de5]", bg: "bg-[#9b5de5]/10", border: "hover:border-[#9b5de5]/50", description: "Focused on clean, optimized Luau scripting and bug fixing.", placeholder: "Paste code to optimize or describe a logic problem...", type: "pure persona", requiresPremium: isPremiumMode("logic") },
-  { id: "system", label: "System Designer", icon: <Rocket className="w-4 h-4" />, color: "text-blue-400", bg: "bg-blue-400/10", border: "hover:border-blue-400/50", description: "Architecting DataStores, Networking, and Game Loops.", placeholder: "Describe a system (e.g. 'A global leaderboard with DataStores')...", type: "pure persona", requiresPremium: isPremiumMode("system") },
-  { id: "animator", label: "Animator", icon: <Move className="w-4 h-4" />, color: "text-pink-400", bg: "bg-pink-400/10", border: "hover:border-pink-400/50", description: "Tweens, AnimationControllers, and procedural motion.", placeholder: "Describe an animation or tween sequence...", type: "pure persona", requiresPremium: isPremiumMode("animator") },
-  { id: "data", label: "Data Specialist", icon: <Database className="w-4 h-4" />, color: "text-yellow-400", bg: "bg-yellow-400/10", border: "hover:border-yellow-400/50", description: "DataStore v2, Caching, Pagination, and Analytics.", placeholder: "Ask about DataStore patterns or data management...", type: "pure persona", requiresPremium: isPremiumMode("data") },
-  { id: "performance", label: "Performance Tuner", icon: <Activity className="w-4 h-4" />, color: "text-emerald-400", bg: "bg-emerald-400/10", border: "hover:border-emerald-400/50", description: "Diagnosing bottlenecks and micro-optimizations.", placeholder: "Paste code to audit for performance issues...", type: "pure persona", requiresPremium: isPremiumMode("performance") },
-  { id: "security", label: "Security Auditor", icon: <ShieldAlert className="w-4 h-4" />, color: "text-red-400", bg: "bg-red-400/10", border: "hover:border-red-400/50", description: "RemoteEvent security and anti-exploit patterns.", placeholder: "Audit your Remotes or ask about anti-exploit best practices...", type: "pure persona", requiresPremium: isPremiumMode("security") },
+  {
+    id: "agent",
+    label: "Agent",
+    icon: <InfinityIcon className="w-4 h-4" />,
+    color: "text-[#00f5d4]",
+    bg: "bg-[#00f5d4]/10",
+    border: "hover:border-[#00f5d4]/50",
+    description: "Autonomously plans and builds your Roblox project end-to-end.",
+    placeholder: "Describe what you want to build…",
+    type: "operating-mode",
+    requiresPremium: false,
+  },
+  {
+    id: "plan",
+    label: "Plan",
+    icon: <ClipboardList className="w-4 h-4" />,
+    color: "text-[#9b5de5]",
+    bg: "bg-[#9b5de5]/10",
+    border: "hover:border-[#9b5de5]/50",
+    description: "Proposes a plan (and may ask a few questions) before building.",
+    placeholder: "Describe what you want to plan…",
+    type: "operating-mode",
+    requiresPremium: false,
+  },
+  {
+    id: "debug",
+    label: "Debug",
+    icon: <Bug className="w-4 h-4" />,
+    color: "text-yellow-400",
+    bg: "bg-yellow-400/10",
+    border: "hover:border-yellow-400/50",
+    description: "Finds the root cause and fixes bugs. Paste an error or file.",
+    placeholder: "Paste an error or describe the bug…",
+    type: "operating-mode",
+    requiresPremium: false,
+  },
+  {
+    id: "ask",
+    label: "Ask",
+    icon: <MessageCircle className="w-4 h-4" />,
+    color: "text-gray-300",
+    bg: "bg-gray-400/10",
+    border: "hover:border-gray-400/50",
+    description: "Read-only Q&A about Roblox development. Never edits anything.",
+    placeholder: "Ask anything about Roblox development…",
+    type: "operating-mode",
+    requiresPremium: false,
+  },
 ];
+
+export const DEFAULT_CHAT_MODE = "agent";

@@ -2,7 +2,7 @@
 -- Local Studio plugin: website-controlled apply + agent tool runner.
 
 local BACKEND_URL = "https://nexusrbx-backend-production.up.railway.app"
-local PLUGIN_VERSION = "0.2.0-agent"
+local PLUGIN_VERSION = "0.3.0-agent"
 
 local HttpService = game:GetService("HttpService")
 local ChangeHistoryService = game:GetService("ChangeHistoryService")
@@ -632,20 +632,61 @@ local function ensureCleanFolder(parent, folderName)
 	return folder
 end
 
+-- Lightweight pre-apply Luau sanity check. Studio plugins can't compile Luau
+-- from a string, so this is a conservative static check (only high-confidence
+-- problems) whose diagnostics are reported back to the backend.
+local function validateLuauSource(source)
+	local issues = {}
+	local src = tostring(source or "")
+	if src:gsub("%s+", "") == "" then
+		table.insert(issues, "empty source")
+		return false, issues
+	end
+	if src:find("```", 1, true) then
+		table.insert(issues, "contains markdown code fence (```)")
+	end
+	if src:find("<file", 1, true) or src:find("</file>", 1, true) then
+		table.insert(issues, "contains leaked <file> tag")
+	end
+	if src:find("TODO", 1, true) or src:find("your code here", 1, true) then
+		table.insert(issues, "contains placeholder / TODO text")
+	end
+	return #issues == 0, issues
+end
+
 local function applyArtifact(payload)
 	local projectName = payload.projectName or "NexusRBX_Project"
 	local serviceFolders = {}
+	local fileResults = {}
+	local validationFailures = 0
+
 	for _, scriptSpec in ipairs(payload.scripts or {}) do
 		local serviceName = scriptSpec.service or "ReplicatedStorage"
 		local serviceRoot = getServiceRoot(serviceName)
 		if not serviceFolders[serviceName] then
 			serviceFolders[serviceName] = ensureCleanFolder(serviceRoot, projectName)
 		end
-		local inst = Instance.new(scriptSpec.className or "ModuleScript")
-		inst.Name = scriptSpec.name or inst.ClassName
-		inst.Source = scriptSpec.source or ""
-		inst.Parent = serviceFolders[serviceName]
+		local name = scriptSpec.name or (scriptSpec.className or "Script")
+		local valid, issues = validateLuauSource(scriptSpec.source)
+		if not valid then
+			validationFailures = validationFailures + 1
+		end
+		local applyOk, applyErr = pcall(function()
+			local inst = Instance.new(scriptSpec.className or "ModuleScript")
+			inst.Name = name
+			inst.Source = scriptSpec.source or ""
+			inst.Parent = serviceFolders[serviceName]
+		end)
+		table.insert(fileResults, {
+			name = name,
+			service = serviceName,
+			ok = applyOk,
+			valid = valid,
+			issues = issues,
+			error = (not applyOk) and tostring(applyErr) or nil,
+		})
 	end
+
 	if #(payload.remotes or {}) > 0 then
 		local remoteFolder = serviceFolders.ReplicatedStorage or ensureCleanFolder(ReplicatedStorage, projectName)
 		for _, remoteSpec in ipairs(payload.remotes or {}) do
@@ -665,6 +706,8 @@ local function applyArtifact(payload)
 		remotes = #(payload.remotes or {}),
 		screenGuis = #(payload.screenGuis or {}),
 		warnings = payload.warnings or {},
+		files = fileResults,
+		validation = { failures = validationFailures, total = #(payload.scripts or {}) },
 	}
 end
 
@@ -736,8 +779,18 @@ local function pullOnce()
 	if applyOk then
 		finishRecording(recording, true)
 		ack(command.id, "succeeded", resultOrError, nil)
-		local snapshotCount = #(resultOrError.snapshots or {})
-		setLast(("%s succeeded%s"):format(command.type or "command", snapshotCount > 0 and (" with " .. snapshotCount .. " snapshot(s)") or ""))
+		local snapshotCount = (type(resultOrError) == "table" and #(resultOrError.snapshots or {})) or 0
+		local extra = ""
+		if type(resultOrError) == "table" and resultOrError.validation then
+			local v = resultOrError.validation
+			if (v.failures or 0) > 0 then
+				extra = (" — %d/%d file(s) flagged"):format(v.failures, v.total or 0)
+			end
+		end
+		if snapshotCount > 0 then
+			extra = extra .. (" (" .. snapshotCount .. " snapshot(s))")
+		end
+		setLast(("%s succeeded%s"):format(command.type or "command", extra))
 		setStatus("connected")
 	else
 		finishRecording(recording, false)

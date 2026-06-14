@@ -42,7 +42,7 @@ describe("MessageList pending activity", () => {
     expect(screen.getByText("Finalizing")).toBeTruthy();
   });
 
-  test("does not render thought-only stream text as answer content", () => {
+  test("streams the live chain-of-thought in a Thinking disclosure (not as answer content)", () => {
     render(
       <MessageList
         {...baseProps}
@@ -54,7 +54,7 @@ describe("MessageList pending activity", () => {
           prompt: "Make a datastore script",
           stage: "Analyzing Request...",
           streamState: {
-            thought: "Internal analysis that should stay hidden",
+            thought: "Reasoning about the datastore approach",
             hasThought: true,
             hasVisibleOutput: false,
           },
@@ -63,6 +63,8 @@ describe("MessageList pending activity", () => {
     );
 
     expect(screen.getByText("Analyzing Request...")).toBeTruthy();
-    expect(screen.queryByText("Internal analysis that should stay hidden")).toBeNull();
+    // The thought is surfaced live inside the collapsible "Thinking…" disclosure.
+    expect(screen.getByText("Thinking…")).toBeTruthy();
+    expect(screen.getByText("Reasoning about the datastore approach")).toBeTruthy();
   });
 });

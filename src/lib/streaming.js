@@ -1,4 +1,4 @@
-const STREAM_CHANNELS = new Set(["thought", "explanation", "code", "content"]);
+const STREAM_CHANNELS = new Set(["thought", "reasoning", "explanation", "code", "content"]);
 
 export function createPendingStreamState() {
   return {
@@ -22,14 +22,19 @@ export function applyStreamDelta(currentState, delta) {
     seq: hasSeq ? rawSeq : base.seq,
   };
 
-  const channel = STREAM_CHANNELS.has(delta?.channel) ? delta.channel : "content";
-  const text =
+  let channel = STREAM_CHANNELS.has(delta?.channel) ? delta.channel : "content";
+  // The backend "reasoning" channel carries the live chain-of-thought; accumulate
+  // it into `thought` (stripping the <thinking> wrapper tags).
+  if (channel === "reasoning") channel = "thought";
+  let text =
     typeof delta?.text === "string"
       ? delta.text
       : typeof delta?.content === "string"
         ? delta.content
         : "";
 
+  if (!text) return next;
+  if (channel === "thought") text = text.replace(/<\/?thinking>/gi, "");
   if (!text) return next;
   next[channel] = `${next[channel] || ""}${text}`;
   return next;

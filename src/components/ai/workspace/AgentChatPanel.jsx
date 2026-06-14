@@ -4,6 +4,7 @@ import ChatView from "../ChatView";
 import ChatComposer from "../chat/ChatComposer";
 import AgentPlanPanel from "./AgentPlanPanel";
 import BuildDetailsPanel from "./BuildDetailsPanel";
+import { Segmented } from "../../ui";
 
 // Right column: the practical, engineering-focused agent. Chat drives the
 // workflow; build progress + setup/testing/security live in the Details view.
@@ -42,6 +43,7 @@ export default function AgentChatPanel({
   devOverride,
   themePrimary,
   themeSecondary,
+  onModeChange,
   // details
   artifact,
   agentRun,
@@ -50,28 +52,21 @@ export default function AgentChatPanel({
   const active = agentRun?.status === "thinking" || agentRun?.status === "generating";
 
   return (
-    <div className="h-full flex flex-col min-h-0 bg-[#0a0a0a]">
-      <div className="flex items-center gap-1 px-3 py-2.5 border-b border-white/5 bg-black/30">
-        <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 mr-1">Agent</span>
-        <div className="ml-auto flex bg-gray-900/60 border border-white/5 rounded-xl p-0.5">
-          <button
-            type="button"
-            onClick={() => setView("chat")}
-            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all ${
-              view === "chat" ? "bg-[#00f5d4]/15 text-[#00f5d4]" : "text-gray-500 hover:text-gray-300"
-            }`}
-          >
-            <MessageSquare className="w-3.5 h-3.5" /> Chat
-          </button>
-          <button
-            type="button"
-            onClick={() => setView("details")}
-            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all ${
-              view === "details" ? "bg-[#9b5de5]/15 text-[#9b5de5]" : "text-gray-500 hover:text-gray-300"
-            }`}
-          >
-            <ClipboardList className="w-3.5 h-3.5" /> Details
-          </button>
+    <div className="h-full flex flex-col min-h-0 bg-ink-900">
+      <div className="flex items-center gap-2 px-3 py-2.5 border-b border-white/10 bg-black/30">
+        <span className="flex items-center gap-1.5 text-[11px] font-display font-bold tracking-wide text-white">
+          <span className="w-1.5 h-1.5 rounded-full bg-nexus-cyan shadow-[0_0_8px_rgba(0,245,212,0.8)]" />
+          Agent
+        </span>
+        <div className="ml-auto">
+          <Segmented
+            options={[
+              { id: "chat", label: "Chat", icon: MessageSquare },
+              { id: "details", label: "Details", icon: ClipboardList },
+            ]}
+            value={view}
+            onChange={setView}
+          />
         </div>
       </div>
 
@@ -127,6 +122,8 @@ export default function AgentChatPanel({
             onImprovePrompt={onImprovePrompt}
             isImproving={isImproving}
             disabled={isBusy}
+            mode={activeMode}
+            onModeChange={onModeChange}
           />
         </>
       )}

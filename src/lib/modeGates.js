@@ -1,23 +1,16 @@
-import { FEATURE_FLAGS } from "./featureFlags";
+/**
+ * Mode gating.
+ *
+ * With the Cursor-style 4-mode model (Agent, Plan, Debug, Ask) all operating
+ * modes are free. Premium is gated on model selection + token limits instead of
+ * the mode. These helpers are kept for back-compat with callers that still ask
+ * whether a mode is premium.
+ */
 
-const LEGACY_PREMIUM_MODE_IDS = Object.freeze([
-  "security",
-  "performance",
-  "data",
-  "system",
-  "animator",
-]);
+export const PREMIUM_MODE_IDS = Object.freeze([]);
 
-const SYSTEM_ONLY_PREMIUM_MODE_IDS = Object.freeze(["system"]);
-
-export const PREMIUM_MODE_IDS = Object.freeze(
-  FEATURE_FLAGS.systemOnlyPremium
-    ? [...SYSTEM_ONLY_PREMIUM_MODE_IDS]
-    : [...LEGACY_PREMIUM_MODE_IDS]
-);
-
-export function isPremiumMode(modeId) {
-  return PREMIUM_MODE_IDS.includes(String(modeId || "").toLowerCase());
+export function isPremiumMode() {
+  return false;
 }
 
 export function getPremiumModeIds() {

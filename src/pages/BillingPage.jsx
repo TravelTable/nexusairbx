@@ -40,7 +40,7 @@ const SUBSCRIPTION_PLANS = [
     tokens: 500_000,
     features: [
       "500,000 tokens/month",
-      "GPT-5.2 AI Access",
+      "GPT-5.4 AI Access",
       "Public API Access (Soon)",
       "Priority support",
       "Advanced features",
@@ -58,7 +58,7 @@ const SUBSCRIPTION_PLANS = [
     tokens: 1_500_000,
     features: [
       "1,500,000 tokens/month",
-      "GPT-5.2 AI Access",
+      "GPT-5.4 AI Access",
       "Full Public API Access (Soon)",
       "Team management",
       "Priority support",
@@ -616,7 +616,7 @@ export default function BillingPage() {
 
       <div className="max-w-3xl mx-auto py-10 px-4 sm:px-5 lg:px-6">
         <div className="mb-6">
-          <h1 className="text-3xl font-bold text-white mb-1">Billing & Subscription</h1>
+          <h1 className="font-display text-3xl font-bold text-white mb-1">Billing & Subscription</h1>
           <p className="text-gray-400">
             Manage your NexusRBX plan, tokens, and billing.
           </p>
@@ -637,7 +637,7 @@ export default function BillingPage() {
         <div className="bg-gray-800 rounded-lg shadow-sm p-5 mb-7 border border-gray-700">
           <div className="flex items-center mb-3">
             <Zap className="h-5 w-5 text-purple-400 mr-2" />
-            <h2 className="text-xl font-semibold text-white">Current Plan</h2>
+            <h2 className="font-display text-xl font-semibold text-white">Current Plan</h2>
           </div>
           {/* Token Meter */}
           <div className="mb-4">
@@ -736,7 +736,7 @@ export default function BillingPage() {
           <div className="bg-gray-800 rounded-lg shadow-sm p-5 mb-7 border border-purple-700/40">
             <div className="flex items-center mb-3">
               <ArrowUpRight className="h-5 w-5 text-purple-400 mr-2" />
-              <h2 className="text-xl font-semibold text-white">
+              <h2 className="font-display text-xl font-semibold text-white">
                 Upgrade Your Plan
               </h2>
             </div>
@@ -800,7 +800,7 @@ export default function BillingPage() {
 <div className="bg-gray-800 rounded-lg p-5 mb-7 border border-gray-700">
   <div className="flex items-center mb-3">
     <DollarSign className="h-5 w-5 text-green-400 mr-2" />
-    <h2 className="text-xl font-semibold text-white">Buy More Tokens (PAYG)</h2>
+    <h2 className="font-display text-xl font-semibold text-white">Buy More Tokens (PAYG)</h2>
   </div>
 
 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -841,7 +841,7 @@ export default function BillingPage() {
         <div className="bg-gray-800 rounded-lg shadow-sm p-5 border border-gray-700">
           <div className="flex items-center mb-3">
             <AlertTriangle className="h-5 w-5 text-yellow-400 mr-2" />
-            <h2 className="text-xl font-semibold text-white">
+            <h2 className="font-display text-xl font-semibold text-white">
               Billing & Support
             </h2>
           </div>
