@@ -135,7 +135,7 @@ export default function ChatComposer({
           </div>
         )}
 
-        <div className="relative group">
+        <div className="relative group z-20">
           <div
             className="absolute -inset-0.5 rounded-2xl blur opacity-20 group-focus-within:opacity-40 transition duration-500"
             style={{
