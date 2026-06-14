@@ -7,7 +7,7 @@ import BuildDetailsPanel from "./BuildDetailsPanel";
 import StudioControls from "./StudioControls";
 import { Segmented } from "../../ui";
 
-// Right column: the practical, engineering-focused agent. Chat drives the
+// Primary Studio agent surface. Chat drives the
 // workflow; build progress + setup/testing/security live in the Details view.
 export default function AgentChatPanel({
   // chat
@@ -68,7 +68,7 @@ export default function AgentChatPanel({
       <div className="flex items-center gap-2 px-3 py-2.5 border-b border-white/10 bg-black/30 flex-wrap">
         <span className="flex items-center gap-1.5 text-[11px] font-display font-bold tracking-wide text-white">
           <span className="w-1.5 h-1.5 rounded-full bg-nexus-cyan shadow-[0_0_8px_rgba(0,245,212,0.8)]" />
-          Agent
+          Studio Agent
         </span>
         <StudioControls
           connected={studioConnected}
@@ -87,6 +87,19 @@ export default function AgentChatPanel({
             value={view}
             onChange={setView}
           />
+        </div>
+      </div>
+      <div className="px-3 py-2 border-b border-white/5 bg-black/20">
+        <div
+          className={`text-[11px] leading-relaxed ${
+            studioConnected && studioEnabled ? "text-[#00f5d4]" : "text-gray-500"
+          }`}
+        >
+          {studioConnected && studioEnabled
+            ? "Studio connected · live tools enabled"
+            : studioConnected
+              ? "Studio connected · live tools off"
+              : "Studio offline · code-only mode"}
         </div>
       </div>
 
@@ -142,7 +155,7 @@ export default function AgentChatPanel({
             onSubmit={onSubmit}
             isGenerating={isBusy}
             generationStage={generationStage}
-            placeholder={refineTarget ? "Describe the change you want…" : "What do you want to build?"}
+            placeholder={refineTarget ? "Describe the Studio change you want..." : "Ask the Studio agent to build, inspect, wire, or fix..."}
             refineTarget={refineTarget}
             onCancelRefine={onCancelRefine}
             tokensLeft={tokensLeft}

@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback, useEffect, useMemo } from "react";
 import { 
   doc, 
   collection, 
@@ -27,6 +27,7 @@ import {
 } from "../lib/agentSteps";
 import { buildStudioPayload } from "../lib/studioPayload";
 import { pushToStudio, getStudioStatus } from "../lib/studioBridgeApi";
+import { getAgentRun } from "../lib/workflowApi";
 import {
   applyStreamDelta,
   createPendingStreamState,
@@ -37,7 +38,7 @@ import { emitStreamMetric } from "../lib/streamMetrics";
 import { AI_EVENTS, emitAiEvent, onAiEvent } from "../lib/aiEvents";
 
 const STREAM_MAX_RETRIES = 3;
-const RESULT_MAX_POLLS = 6;
+const RESULT_MAX_POLLS = 45;
 const RESULT_POLL_BASE_MS = 1000;
 
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -47,6 +48,43 @@ function resolveResultUrl(jobId, resultUrl) {
   if (resultUrl && resultUrl.startsWith("/")) return `${BACKEND_URL}${resultUrl}`;
   if (resultUrl) return `${BACKEND_URL}/${resultUrl.replace(/^\/+/, "")}`;
   return `${BACKEND_URL}/api/generate/result?jobId=${encodeURIComponent(jobId)}`;
+}
+
+function buildAssistantMessagePayload(data, { requestId, jobId, currentMode, isAutoExecuting }) {
+  const payload = {
+    role: "assistant",
+    content: "",
+    explanation: data?.explanation || "",
+    summary: data?.summary || "",
+    thought: data?.thought || "",
+    code: data?.content || data?.code || "",
+    title: data?.title || "",
+    projectId: data?.projectId || null,
+    versionNumber: data?.versionNumber || 1,
+    pending: false,
+    isAutoExecuting,
+    updatedAt: serverTimestamp(),
+    metadata: {
+      ...(data?.metadata || {}),
+      mode: currentMode,
+      type: data?.artifactType || data?.metadata?.type || null,
+      qaReport: data?.qaReport || null,
+    },
+  };
+
+  if (requestId) payload.requestId = requestId;
+  if (jobId) payload.jobId = jobId;
+  if (data?.artifactId) payload.artifactId = data.artifactId;
+  if (data?.options) payload.options = data.options;
+  if (data?.plan) payload.plan = data.plan;
+  if (Array.isArray(data?.files) && data.files.length) payload.files = data.files;
+  if (Array.isArray(data?.setupSteps) && data.setupSteps.length) payload.setupSteps = data.setupSteps;
+  if (Array.isArray(data?.testingSteps) && data.testingSteps.length) payload.testingSteps = data.testingSteps;
+  if (Array.isArray(data?.securityNotes) && data.securityNotes.length) payload.securityNotes = data.securityNotes;
+  if (Array.isArray(data?.warnings) && data.warnings.length) payload.warnings = data.warnings;
+  if (Array.isArray(data?.steps) && data.steps.length) payload.steps = data.steps.map(normalizeToolStep);
+  if (data?.runId) payload.runId = data.runId;
+  return payload;
 }
 
 export function useAiChat(user, settings, refreshBilling, notify) {
@@ -148,12 +186,115 @@ export function useAiChat(user, settings, refreshBilling, notify) {
     );
   }, [user, notify]);
 
+  const pendingRecoveryMessage = useMemo(
+    () =>
+      [...(messages || [])]
+        .reverse()
+        .find((m) => m.role === "assistant" && m.pending && m.jobId && m.id) || null,
+    [messages]
+  );
+  const pendingRecoveryRef = useRef(null);
+  useEffect(() => {
+    pendingRecoveryRef.current = pendingRecoveryMessage;
+  }, [pendingRecoveryMessage]);
+
+  useEffect(() => {
+    const u = user || auth.currentUser;
+    if (!u || !currentChatId || isGenerating) return;
+    const pending = pendingRecoveryRef.current;
+    if (!pending) return;
+
+    let cancelled = false;
+    const pendingRef = doc(db, "users", u.uid, "chats", currentChatId, "messages", pending.id);
+    const chatRef = doc(db, "users", u.uid, "chats", currentChatId);
+
+    const pollPendingRun = async () => {
+      try {
+        const currentPending = pendingRecoveryRef.current || pending;
+        if (!currentPending) return;
+        const token = await u.getIdToken();
+        const res = await fetch(resolveResultUrl(currentPending.jobId, currentPending.resultUrl), {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: "application/json",
+          },
+        });
+        if (cancelled) return;
+
+        if (res.status === 202) {
+          if (currentPending.runId) {
+            const runResult = await getAgentRun(currentPending.runId);
+            if (cancelled) return;
+            const steps = Array.isArray(runResult?.run?.steps)
+              ? runResult.run.steps.map(normalizeToolStep)
+              : [];
+            const lastStep = steps[steps.length - 1];
+            await updateDoc(pendingRef, {
+              steps,
+              stage: lastStep?.label || lastStep?.type || runResult?.run?.status || currentPending.stage || "Working...",
+              updatedAt: serverTimestamp(),
+            }).catch(() => {});
+          }
+          return;
+        }
+
+        if (!res.ok) {
+          await updateDoc(pendingRef, {
+            pending: false,
+            stage: "failed",
+            error: `Generation failed (${res.status})`,
+            updatedAt: serverTimestamp(),
+          }).catch(() => {});
+          return;
+        }
+
+        const body = await res.json();
+        const data = body?.result || body;
+        if (data?.status === "pending" || data?.done === false) return;
+        const currentMode = currentPending.metadata?.mode || currentPending.mode || chatMode;
+        const msgPayload = buildAssistantMessagePayload(data, {
+          requestId: currentPending.requestId,
+          jobId: currentPending.jobId,
+          currentMode,
+          isAutoExecuting: Boolean(currentPending.isAutoExecuting || currentMode === "act"),
+        });
+        if (data?.runId || currentPending.runId) msgPayload.runId = data?.runId || currentPending.runId;
+        await updateDoc(pendingRef, msgPayload);
+        await updateDoc(chatRef, {
+          updatedAt: serverTimestamp(),
+          lastMessage: (currentPending.prompt || data?.title || "Studio agent run").slice(0, 50),
+        }).catch(() => {});
+        refreshBilling?.();
+        emitAiEvent("JOB_COMPLETE", { jobId: currentPending.jobId });
+      } catch (err) {
+        console.warn("Failed to recover pending agent run:", err?.message || err);
+      }
+    };
+
+    pollPendingRun();
+    const intervalId = setInterval(pollPendingRun, 10000);
+    return () => {
+      cancelled = true;
+      clearInterval(intervalId);
+    };
+  }, [
+    user,
+    currentChatId,
+    pendingRecoveryMessage?.id,
+    pendingRecoveryMessage?.jobId,
+    pendingRecoveryMessage?.runId,
+    isGenerating,
+    chatMode,
+    refreshBilling,
+  ]);
+
   const handleSubmit = async (prompt, existingChatId = null, existingRequestId = null, modeOverride = null, actNow = false, attachments = []) => {
     const content = prompt.trim();
     if (!content && attachments.length === 0) return;
     if (isGenerating || !user) return;
 
     const currentMode = actNow ? "act" : chatMode;
+    const requestId = existingRequestId || uuidv4();
 
     setIsGenerating(true);
     setPendingMessage({
@@ -162,13 +303,13 @@ export function useAiChat(user, settings, refreshBilling, notify) {
       type: "chat",
       prompt: content,
       mode: currentMode,
+      requestId,
       stage: "Analyzing Request...",
       streamState: getPendingStreamSnapshot(createPendingStreamState()),
     });
     setGenerationStage("Analyzing Request...");
 
     let activeChatId = existingChatId || currentChatId;
-    const requestId = existingRequestId || uuidv4();
     const expertMode = modeOverride || activeMode || settings.chatMode || "agent";
 
     try {
@@ -259,9 +400,29 @@ export function useAiChat(user, settings, refreshBilling, notify) {
       const enableDeltaStreaming =
         FEATURE_FLAGS.streamV2 &&
         (jobData.streamVersion === "v2" || !jobData.streamVersion);
+      const assistantMsgRef = doc(db, "users", user.uid, "chats", activeChatId, "messages", `${requestId}-assistant`);
 
       setGenerationStage("Generating...");
       setPendingMessage((prev) => (prev ? { ...prev, stage: "Generating...", steps: [], runId: agentRunId } : prev));
+      if (agentRunId) {
+        await setDoc(assistantMsgRef, {
+          role: "assistant",
+          content: "",
+          stage: "Generating...",
+          pending: true,
+          requestId,
+          jobId,
+          runId: agentRunId,
+          isAutoExecuting: currentMode === "act",
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+          metadata: {
+            mode: currentMode,
+            type: null,
+          },
+          steps: [],
+        }, { merge: true });
+      }
       streamStateRef.current = createPendingStreamState();
       
       const fetchFinalResult = async () => {
@@ -322,6 +483,14 @@ export function useAiChat(user, settings, refreshBilling, notify) {
             message: err?.message || "Generation failed",
             retries: retryCount,
           });
+          if (agentRunId) {
+            updateDoc(assistantMsgRef, {
+              pending: false,
+              stage: "failed",
+              error: err?.message || "Generation failed",
+              updatedAt: serverTimestamp(),
+            }).catch(() => {});
+          }
           setIsGenerating(false);
           setPendingMessage(null);
           setGenerationStage("");
@@ -334,41 +503,14 @@ export function useAiChat(user, settings, refreshBilling, notify) {
 
           setGenerationStage("Finalizing...");
           setPendingMessage((prev) => (prev ? { ...prev, stage: "Finalizing..." } : prev));
-          const assistantMsgRef = doc(db, "users", user.uid, "chats", activeChatId, "messages", `${requestId}-assistant`);
 
-          const msgPayload = {
-            role: "assistant",
-            content: "",
-            explanation: data?.explanation || "",
-            summary: data?.summary || "",
-            thought: data?.thought || "",
-            code: data?.content || data?.code || "", // Backend sends "content" for code.
-            title: data?.title || "",
-            projectId: data?.projectId || null,
-            versionNumber: data?.versionNumber || 1,
-            createdAt: serverTimestamp(),
+          const msgPayload = buildAssistantMessagePayload(data, {
             requestId,
             jobId,
-            artifactId: data?.artifactId,
+            currentMode,
             isAutoExecuting,
-            metadata: {
-              ...(data?.metadata || {}),
-              mode: currentMode,
-              type: data?.artifactType || data?.metadata?.type || null,
-              qaReport: data?.qaReport || null
-            }
-          };
-
-          if (data?.options) msgPayload.options = data.options;
-          if (data?.plan) msgPayload.plan = data.plan;
-          if (Array.isArray(data?.files) && data.files.length) msgPayload.files = data.files;
-          if (Array.isArray(data?.setupSteps) && data.setupSteps.length) msgPayload.setupSteps = data.setupSteps;
-          if (Array.isArray(data?.testingSteps) && data.testingSteps.length) msgPayload.testingSteps = data.testingSteps;
-          if (Array.isArray(data?.securityNotes) && data.securityNotes.length) msgPayload.securityNotes = data.securityNotes;
-          if (Array.isArray(data?.warnings) && data.warnings.length) msgPayload.warnings = data.warnings;
-          if (Array.isArray(data?.steps) && data.steps.length) {
-            msgPayload.steps = data.steps.map(normalizeToolStep);
-          }
+          });
+          msgPayload.createdAt = serverTimestamp();
           if (data?.runId || agentRunId) msgPayload.runId = data?.runId || agentRunId;
 
           await setDoc(assistantMsgRef, msgPayload);
@@ -452,6 +594,12 @@ export function useAiChat(user, settings, refreshBilling, notify) {
                   if (!prev) return prev;
                   return { ...prev, stage: data.message };
                 });
+                if (agentRunId) {
+                  updateDoc(assistantMsgRef, {
+                    stage: data.message,
+                    updatedAt: serverTimestamp(),
+                  }).catch(() => {});
+                }
               }
             } catch (err) {
               console.error("Failed to parse stage:", err);
@@ -491,6 +639,14 @@ export function useAiChat(user, settings, refreshBilling, notify) {
               setPendingMessage((prev) => {
                 if (!prev) return prev;
                 const steps = upsertAgentStep(prev.steps || [], step);
+                if (agentRunId) {
+                  updateDoc(assistantMsgRef, {
+                    steps,
+                    runId: data.runId || prev.runId || agentRunId,
+                    stage: step.label || step.type || prev.stage,
+                    updatedAt: serverTimestamp(),
+                  }).catch(() => {});
+                }
                 return {
                   ...prev,
                   steps,

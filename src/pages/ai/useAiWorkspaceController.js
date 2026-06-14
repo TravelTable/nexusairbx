@@ -14,6 +14,7 @@ import {
   limit,
   onSnapshot,
   doc,
+  updateDoc,
 } from "firebase/firestore";
 
 import { auth, db } from "../../firebase";
@@ -26,7 +27,7 @@ import { useAiScripts } from "../../hooks/useAiScripts";
 import { CHAT_MODES } from "../../components/ai/chatConstants";
 import { AI_PAGE_V2_ENABLED, BACKEND_URL } from "../../config";
 import { FEATURE_FLAGS } from "../../lib/featureFlags";
-import { approveAgentStep, restoreAgentRun } from "../../lib/workflowApi";
+import { approveAgentStep, getAgentRun, restoreAgentRun } from "../../lib/workflowApi";
 import {
   getStudioApplyMode,
   getStudioEnabledPreference,
@@ -438,6 +439,39 @@ export function useAiWorkspaceController() {
     setStudioApplyMode(mode);
   }, []);
 
+  const syncAgentRunSteps = useCallback(
+    async (runId, fallbackStep = null) => {
+      if (!runId || !user) return;
+      let steps = fallbackStep ? [fallbackStep] : [];
+      try {
+        const result = await getAgentRun(runId);
+        steps = Array.isArray(result?.run?.steps) ? result.run.steps : steps;
+      } catch (_) {
+        // The approving/restoring call already succeeded; stale UI is non-fatal.
+      }
+
+      if (!steps.length) return;
+
+      if (unified.setPendingMessage) {
+        unified.setPendingMessage((prev) => {
+          if (!prev?.runId || prev.runId !== runId) return prev;
+          return { ...prev, steps, runId };
+        });
+      }
+
+      const targetMessage = [...(chat.messages || [])]
+        .reverse()
+        .find((m) => m.role === "assistant" && m.runId === runId);
+      if (targetMessage?.id && chat.currentChatId) {
+        await updateDoc(doc(db, "users", user.uid, "chats", chat.currentChatId, "messages", targetMessage.id), {
+          steps,
+          runId,
+        }).catch(() => {});
+      }
+    },
+    [chat.currentChatId, chat.messages, unified, user]
+  );
+
   const handleApproveStep = useCallback(
     async (step) => {
       const runId = unified.pendingMessage?.runId || workspace.agentRun?.runId;
@@ -452,6 +486,7 @@ export function useAiWorkspaceController() {
             return { ...prev, steps: upsertAgentStep(prev.steps || [], updated) };
           });
         }
+        await syncAgentRunSteps(runId, updated);
         notify({ message: "Studio step approved", type: "success" });
       } catch (err) {
         notify({ message: err?.message || "Could not approve step", type: "error" });
@@ -459,7 +494,7 @@ export function useAiWorkspaceController() {
         setApprovingStepId(null);
       }
     },
-    [unified, workspace.agentRun?.runId, user, notify]
+    [unified, workspace.agentRun?.runId, user, syncAgentRunSteps, notify]
   );
 
   const handleRestoreRun = useCallback(
@@ -467,7 +502,8 @@ export function useAiWorkspaceController() {
       if (!runId || !user || restoringRun) return;
       setRestoringRun(true);
       try {
-        await restoreAgentRun(runId);
+        const result = await restoreAgentRun(runId);
+        await syncAgentRunSteps(runId, result?.step || null);
         notify({ message: "Queued Studio snapshot restore", type: "success" });
       } catch (err) {
         notify({ message: err?.message || "Could not restore snapshots", type: "error" });
@@ -475,7 +511,7 @@ export function useAiWorkspaceController() {
         setRestoringRun(false);
       }
     },
-    [user, restoringRun, notify]
+    [user, restoringRun, syncAgentRunSteps, notify]
   );
 
   return {

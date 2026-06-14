@@ -20,6 +20,19 @@ describe("agentSteps", () => {
     expect(step.snapshotCount).toBe(1);
   });
 
+  test("normalizeToolStep omits undefined optional fields for Firestore arrays", () => {
+    const step = normalizeToolStep({
+      id: "s1",
+      type: "inspect_place",
+      status: "queued",
+    });
+    expect(Object.prototype.hasOwnProperty.call(step, "label")).toBe(false);
+    expect(Object.prototype.hasOwnProperty.call(step, "error")).toBe(false);
+    expect(Object.prototype.hasOwnProperty.call(step, "result")).toBe(false);
+    expect(Object.prototype.hasOwnProperty.call(step, "snapshotCount")).toBe(false);
+    expect(Object.prototype.hasOwnProperty.call(step, "runId")).toBe(false);
+  });
+
   test("upsertAgentStep merges by id", () => {
     const first = upsertAgentStep([], { id: "a", type: "inspect_place", status: "running" });
     const second = upsertAgentStep(first, { id: "a", status: "succeeded", result: { count: 3 } });
@@ -35,6 +48,9 @@ describe("agentSteps", () => {
     expect(
       summarizeStepResult({ type: "generate_artifact", status: "succeeded", result: { fileCount: 4 } })
     ).toBe("Generated 4 file(s)");
+    expect(
+      summarizeStepResult({ type: "run_smoke_check", status: "succeeded", result: { checkedScripts: 7, issues: [] } })
+    ).toBe("0 issue(s), 7 script(s) checked");
   });
 
   test("countStepSnapshots sums snapshotCount", () => {

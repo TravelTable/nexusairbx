@@ -11,10 +11,8 @@ import GameProfileWizard from "../../components/ai/GameProfileWizard";
 import ModelSwitcher from "../../components/ai/ModelSwitcher";
 import DailyPromptBadge from "../../components/ai/DailyPromptBadge";
 import ProjectArchitecturePanel from "../../components/ai/ProjectArchitecturePanel";
-import StudioAgentPanel from "../../components/ai/StudioAgentPanel";
 import { ProjectContextStatus } from "../../components/ai/AiComponents";
 import { AI_EVENTS } from "../../lib/aiEvents";
-import { FEATURE_FLAGS } from "../../lib/featureFlags";
 import { Segmented } from "../../components/ui";
 
 import CodeFileTree from "../../components/ai/workspace/CodeFileTree";
@@ -318,7 +316,7 @@ export default function AgentWorkspaceLayout({ controller }) {
           </div>
         </aside>
 
-        {/* CENTER: code workspace */}
+        {/* CENTER: Studio agent chat */}
         <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
           <div className="relative z-30 flex items-center justify-between px-4 py-2.5 border-b border-white/5 bg-black/30 backdrop-blur-md gap-3">
             <div className="flex items-center gap-3 min-w-0">
@@ -365,14 +363,10 @@ export default function AgentWorkspaceLayout({ controller }) {
             </div>
           </div>
 
-          {!FEATURE_FLAGS.unifiedAgent && (
-            <StudioAgentPanel user={user} chatId={chat.currentChatId} notify={notify} />
-          )}
-
           {/* Desktop center + right; mobile single-pane via tabs */}
           <div className="flex-1 min-h-0 flex">
-            <div className={`flex-1 min-w-0 ${isMobile && mobileTab !== "code" ? "hidden" : "flex"} flex-col`}>
-              {codeWorkspace}
+            <div className={`flex-1 min-w-0 ${isMobile ? (mobileTab === "chat" ? "flex pb-16" : "hidden") : "flex"} flex-col`}>
+              {agentChat}
             </div>
 
             {/* Mobile-only file tree + details panes */}
@@ -392,9 +386,9 @@ export default function AgentWorkspaceLayout({ controller }) {
               </div>
             )}
 
-            {/* RIGHT: agent chat (desktop always; mobile when chat tab) */}
-            <div className={`w-full lg:w-[400px] lg:shrink-0 border-l border-white/5 ${isMobile ? (mobileTab === "chat" ? "flex pb-16" : "hidden") : "flex"} flex-col min-h-0`}>
-              {agentChat}
+            {/* RIGHT: generated code workspace */}
+            <div className={`w-full lg:w-[46%] xl:w-[42%] 2xl:w-[38%] lg:min-w-[420px] lg:max-w-[720px] lg:shrink-0 border-l border-white/5 ${isMobile && mobileTab !== "code" ? "hidden" : "flex"} flex-col min-h-0`}>
+              {codeWorkspace}
             </div>
           </div>
         </main>

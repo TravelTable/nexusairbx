@@ -56,22 +56,22 @@ export function normalizeToolStep(raw) {
   if (!raw || typeof raw !== "object") {
     return { id: "", type: "unknown", status: "queued" };
   }
-  return {
+  const step = {
     id: String(raw.id || raw.stepId || ""),
     type: String(raw.type || "unknown"),
-    label: raw.label ? String(raw.label) : undefined,
     status: STEP_STATUSES.includes(raw.status) ? raw.status : String(raw.status || "queued"),
-    error: raw.error ? String(raw.error) : undefined,
-    result: raw.result && typeof raw.result === "object" ? raw.result : undefined,
-    snapshotCount:
-      typeof raw.snapshotCount === "number"
-        ? raw.snapshotCount
-        : Array.isArray(raw.snapshots)
-          ? raw.snapshots.length
-          : undefined,
     requiresApproval: Boolean(raw.requiresApproval || raw.status === "awaiting_approval"),
-    runId: raw.runId ? String(raw.runId) : undefined,
   };
+  if (raw.label) step.label = String(raw.label);
+  if (raw.error) step.error = String(raw.error);
+  if (raw.result && typeof raw.result === "object") step.result = raw.result;
+  if (typeof raw.snapshotCount === "number") {
+    step.snapshotCount = raw.snapshotCount;
+  } else if (Array.isArray(raw.snapshots)) {
+    step.snapshotCount = raw.snapshots.length;
+  }
+  if (raw.runId) step.runId = String(raw.runId);
+  return step;
 }
 
 /**

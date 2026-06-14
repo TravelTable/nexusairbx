@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useMemo } from "react";
 import { NexusRBXAvatar, UserAvatar, FormatText, SkeletonArtifact } from "../AiComponents";
 import { stripTags } from "./stripTags";
 import MessageBubble from "./MessageBubble";
@@ -149,6 +149,13 @@ export default function MessageList({
 }) {
   const pendingParsed = parsePendingStreamContent(pendingMessage?.content || "");
   const hasPendingMessage = !!pendingMessage;
+  const visibleMessages = useMemo(
+    () =>
+      pendingMessage?.requestId
+        ? messages.filter((m) => !(m.pending && m.requestId === pendingMessage.requestId))
+        : messages,
+    [messages, pendingMessage?.requestId]
+  );
 
   useEffect(() => {
     if (!chatEndRef?.current) return;
@@ -170,11 +177,11 @@ export default function MessageList({
         window.cancelAnimationFrame(frameId);
       }
     };
-  }, [messages, pendingMessage?.content, pendingMessage?.prompt, pendingMessage?.stage, hasPendingMessage, chatEndRef]);
+  }, [visibleMessages, pendingMessage?.content, pendingMessage?.prompt, pendingMessage?.stage, hasPendingMessage, chatEndRef]);
 
   return (
     <div className="flex-1 overflow-y-auto scrollbar-hide space-y-6">
-      {messages.map((m) => (
+      {visibleMessages.map((m) => (
         <MessageBubble
           key={m.id}
           message={m}

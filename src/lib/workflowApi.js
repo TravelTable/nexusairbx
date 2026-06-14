@@ -35,6 +35,18 @@ export async function verifyRobloxReadiness({ lua, manifest }) {
   return res.json();
 }
 
+/** Fetch persisted status/steps for a unified agent run. */
+export async function getAgentRun(runId) {
+  const res = await authedFetch(`/api/ai/agent/${encodeURIComponent(runId)}`, {
+    method: "GET",
+  });
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(text || "Failed to fetch agent run");
+  }
+  return res.json();
+}
+
 /** Approve a Studio tool step awaiting user confirmation (unified agent run). */
 export async function approveAgentStep(runId, stepId) {
   const res = await authedFetch(`/api/ai/agent/${encodeURIComponent(runId)}/approve-step`, {

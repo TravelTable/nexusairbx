@@ -12,6 +12,15 @@ export function StepStatusIcon({ status }) {
   return <Circle className="w-3.5 h-3.5 text-gray-500" />;
 }
 
+function describeStepWait(step) {
+  if (!step) return "";
+  if (step.status === "awaiting_approval") return "Waiting for your approval";
+  if (step.status === "queued") return "Queued for Studio";
+  if (step.status === "delivered") return "Delivered to Studio plugin";
+  if (step.status === "running") return "Running in Studio";
+  return "";
+}
+
 /**
  * Inline tool-step log for unified agent runs (chat thread + details panel).
  */
@@ -36,6 +45,7 @@ export default function AgentStepList({
       {steps.map((step) => {
         const awaiting = step.status === "awaiting_approval";
         const terminal = TERMINAL_STEP_STATUSES.has(step.status);
+        const waitLabel = describeStepWait(step);
         return (
           <div key={step.id || `${step.type}-${step.label}`} className="px-3 py-2 flex items-start gap-2">
             <div className="mt-0.5">
@@ -51,6 +61,11 @@ export default function AgentStepList({
               <div className={`text-[11px] truncate ${step.error ? "text-red-300" : "text-gray-500"}`}>
                 {summarizeStepResult(step)}
               </div>
+              {!terminal && waitLabel && (
+                <div className={`mt-1 text-[10px] ${awaiting ? "text-amber-200" : "text-gray-600"}`}>
+                  {waitLabel}
+                </div>
+              )}
               {awaiting && onApproveStep && (
                 <button
                   type="button"
@@ -65,9 +80,6 @@ export default function AgentStepList({
                   )}
                   Approve step
                 </button>
-              )}
-              {!terminal && !awaiting && step.status === "running" && (
-                <div className="mt-1 text-[10px] text-gray-600">Running in Studio…</div>
               )}
             </div>
           </div>

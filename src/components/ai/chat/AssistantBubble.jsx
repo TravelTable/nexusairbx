@@ -7,7 +7,7 @@ import {
   ArtifactCard,
 } from "../AiComponents";
 import QaScoreBadge from "../QaScoreBadge";
-import { Activity, ShieldAlert, FolderOpen, FileCode2 } from "lucide-react";
+import { Activity, ShieldAlert, FolderOpen, FileCode2, Loader2 } from "lucide-react";
 import { stripTags } from "./stripTags";
 import { ClarifyCard, PlanCard } from "./FlowCards";
 import ThinkingDisclosure from "./ThinkingDisclosure";
@@ -80,6 +80,19 @@ export default function AssistantBubble({
             onApproveStep={onApproveStep}
             approvingStepId={approvingStepId}
           />
+        </div>
+      )}
+
+      {m.pending && !m.explanation && !m.content && (
+        <div className="flex items-center gap-2 text-sm text-gray-300">
+          <Loader2 className="w-4 h-4 animate-spin text-[#00f5d4]" />
+          <span>{m.stage || "Studio agent is working..."}</span>
+        </div>
+      )}
+
+      {m.error && (
+        <div className="text-sm text-red-300">
+          {m.error}
         </div>
       )}
 

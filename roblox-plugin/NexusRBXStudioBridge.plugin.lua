@@ -2,7 +2,7 @@
 -- Local Studio plugin: website-controlled apply + agent tool runner.
 
 local BACKEND_URL = "https://nexusrbx-backend-production.up.railway.app"
-local PLUGIN_VERSION = "0.3.0-agent"
+local PLUGIN_VERSION = "0.3.1-agent"
 
 local HttpService = game:GetService("HttpService")
 local ChangeHistoryService = game:GetService("ChangeHistoryService")
@@ -367,6 +367,16 @@ local function snapshotInstance(path)
 	return snap
 end
 
+local function appendSnapshotTree(inst, snapshots)
+	if not inst then
+		return
+	end
+	for _, child in ipairs(inst:GetChildren()) do
+		appendSnapshotTree(child, snapshots)
+	end
+	table.insert(snapshots, snapshotInstance(fullPath(inst)))
+end
+
 local function beginRecording(label)
 	local ok, recording = pcall(function()
 		return ChangeHistoryService:TryBeginRecording(label)
@@ -531,7 +541,12 @@ local function createInstanceTool(payload)
 	local className = payload.className or "Folder"
 	local snapshots = {}
 	if payload.snapshot ~= false then
-		table.insert(snapshots, snapshotInstance(path))
+		local existing = resolvePath(path)
+		if existing then
+			appendSnapshotTree(existing, snapshots)
+		else
+			table.insert(snapshots, snapshotInstance(path))
+		end
 	end
 	local inst = createOrReplaceInstance(path, className, payload.properties or {}, payload.createParents ~= false)
 	return {
@@ -544,7 +559,12 @@ end
 local function deleteInstanceTool(payload)
 	local path = payload.path
 	local inst = resolvePath(path)
-	local snapshots = { snapshotInstance(path) }
+	local snapshots = {}
+	if inst then
+		appendSnapshotTree(inst, snapshots)
+	else
+		table.insert(snapshots, snapshotInstance(path))
+	end
 	if inst then
 		inst:Destroy()
 	end
@@ -621,10 +641,15 @@ local function getServiceRoot(serviceName)
 	end
 end
 
-local function ensureCleanFolder(parent, folderName)
+local function ensureCleanFolder(parent, folderName, snapshots)
 	local existing = parent:FindFirstChild(folderName)
 	if existing then
+		if snapshots then
+			appendSnapshotTree(existing, snapshots)
+		end
 		existing:Destroy()
+	elseif snapshots then
+		table.insert(snapshots, snapshotInstance(fullPath(parent) .. "/" .. folderName))
 	end
 	local folder = Instance.new("Folder")
 	folder.Name = folderName
@@ -659,12 +684,13 @@ local function applyArtifact(payload)
 	local serviceFolders = {}
 	local fileResults = {}
 	local validationFailures = 0
+	local snapshots = {}
 
 	for _, scriptSpec in ipairs(payload.scripts or {}) do
 		local serviceName = scriptSpec.service or "ReplicatedStorage"
 		local serviceRoot = getServiceRoot(serviceName)
 		if not serviceFolders[serviceName] then
-			serviceFolders[serviceName] = ensureCleanFolder(serviceRoot, projectName)
+			serviceFolders[serviceName] = ensureCleanFolder(serviceRoot, projectName, snapshots)
 		end
 		local name = scriptSpec.name or (scriptSpec.className or "Script")
 		local valid, issues = validateLuauSource(scriptSpec.source)
@@ -688,7 +714,7 @@ local function applyArtifact(payload)
 	end
 
 	if #(payload.remotes or {}) > 0 then
-		local remoteFolder = serviceFolders.ReplicatedStorage or ensureCleanFolder(ReplicatedStorage, projectName)
+		local remoteFolder = serviceFolders.ReplicatedStorage or ensureCleanFolder(ReplicatedStorage, projectName, snapshots)
 		for _, remoteSpec in ipairs(payload.remotes or {}) do
 			local remote = Instance.new(remoteSpec.className == "RemoteFunction" and "RemoteFunction" or "RemoteEvent")
 			remote.Name = remoteSpec.name or remote.ClassName
@@ -696,7 +722,14 @@ local function applyArtifact(payload)
 		end
 	end
 	for _, screenSpec in ipairs(payload.screenGuis or {}) do
-		createOrReplaceInstance("StarterGui/" .. (screenSpec.name or "NexusRBXScreen"), "ScreenGui", {
+		local screenPath = "StarterGui/" .. (screenSpec.name or "NexusRBXScreen")
+		local existing = resolvePath(screenPath)
+		if existing then
+			appendSnapshotTree(existing, snapshots)
+		else
+			table.insert(snapshots, snapshotInstance(screenPath))
+		end
+		createOrReplaceInstance(screenPath, "ScreenGui", {
 			ResetOnSpawn = screenSpec.resetOnSpawn ~= false,
 			IgnoreGuiInset = screenSpec.ignoreGuiInset ~= false,
 		}, true)
@@ -708,6 +741,7 @@ local function applyArtifact(payload)
 		warnings = payload.warnings or {},
 		files = fileResults,
 		validation = { failures = validationFailures, total = #(payload.scripts or {}) },
+		snapshots = snapshots,
 	}
 end
 

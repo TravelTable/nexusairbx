@@ -4,20 +4,20 @@ import { Sparkles, Layout, Code2, Rocket, LayoutGrid } from "lucide-react";
 const EXAMPLES = [
   {
     icon: Layout,
-    title: "Build a shop UI",
-    prompt: "Build a Roblox shop UI with item cards, prices, and a buy button.",
+    title: "Build in Studio",
+    prompt: "Build a Roblox shop system in Studio with item cards, prices, and server-validated purchases.",
     accent: "#00f5d4",
   },
   {
     icon: Code2,
-    title: "Write a Luau script",
-    prompt: "Write a Luau script that gives players a speed boost when they touch a part.",
+    title: "Inspect and fix",
+    prompt: "Inspect my Studio place and fix the script that gives players a speed boost when they touch a part.",
     accent: "#9b5de5",
   },
   {
     icon: Rocket,
-    title: "Make a full system",
-    prompt: "Create a leaderboard system with a UI and a DataStore-backed score saver.",
+    title: "Wire a system",
+    prompt: "Wire a leaderboard system with a UI, remotes, and a DataStore-backed score saver.",
     accent: "#f15bb5",
   },
 ];
@@ -30,10 +30,10 @@ export default function ChatEmptyState({ onQuickStart, onOpenTemplates }) {
           <Sparkles className="w-7 h-7 text-nexus-cyan" />
         </div>
         <h1 className="font-display text-3xl md:text-4xl font-extrabold tracking-tight">
-          <span className="gradient-text">What do you want to build?</span>
+          <span className="gradient-text">What should the Studio agent do?</span>
         </h1>
         <p className="text-sm md:text-[15px] text-gray-400 leading-relaxed">
-          Describe your idea. I&apos;ll ask only what I need, show you a plan, build it, and help you export it into Roblox.
+          Ask it to inspect, build, wire, or fix your Roblox Studio project. It will plan the work, generate files, and help apply changes through Studio.
         </p>
       </div>
 
