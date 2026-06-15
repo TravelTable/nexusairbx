@@ -34,7 +34,18 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
 
   const chat = useAiChat(user, settings, refreshBilling, notify);
 
-  const [flowBusy, setFlowBusy] = useState(false);
+  // The pre-generation "flow" phase (orchestration / Ask streaming) is tracked
+  // per originating chat, mirroring how useAiChat scopes the generation phase.
+  const [flowBusyChats, setFlowBusyChats] = useState({}); // chatId -> bool
+  const setFlowBusyForChat = useCallback((chatId, value) => {
+    if (!chatId) return;
+    setFlowBusyChats((prev) => {
+      if (Boolean(prev[chatId]) === Boolean(value)) return prev;
+      return { ...prev, [chatId]: value };
+    });
+  }, []);
+
+  const flowBusy = !!flowBusyChats[chat.currentChatId];
 
   const isGenerating = chat.isGenerating || flowBusy;
 
@@ -49,6 +60,15 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
     if (flowBusy) return "Understanding your task...";
     return "";
   }, [chat.generationStage, flowBusy]);
+
+  // Chats with any in-flight work (orchestration or generation) — for sidebar badges.
+  const generatingChatIds = useMemo(() => {
+    const set = new Set(chat.generatingChatIds || []);
+    Object.keys(flowBusyChats).forEach((id) => {
+      if (flowBusyChats[id]) set.add(id);
+    });
+    return Array.from(set);
+  }, [chat.generatingChatIds, flowBusyChats]);
 
   // Ensure a chat exists, returning its id (creating + opening if needed).
   const ensureChat = useCallback(
@@ -154,7 +174,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
   const handleAskSubmit = useCallback(
     async (prompt, _attachments, activeChatId, requestId) => {
       const token = await user.getIdToken();
-      chat.setPendingMessage({ role: "assistant", content: "", type: "chat", prompt, stage: "Thinking..." });
+      chat.setPendingForChat(activeChatId, { role: "assistant", content: "", type: "chat", prompt, stage: "Thinking..." });
       let full = "";
       try {
         const res = await fetch(`${BACKEND_URL}/api/ai/chat`, {
@@ -181,10 +201,10 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
           }
           full += decoder.decode(value, { stream: true });
           const snapshot = full;
-          chat.setPendingMessage((prev) => (prev ? { ...prev, content: snapshot, stage: "" } : prev));
+          chat.setPendingForChat(activeChatId, (prev) => (prev ? { ...prev, content: snapshot, stage: "" } : prev));
         }
       } finally {
-        chat.setPendingMessage(null);
+        chat.setPendingForChat(activeChatId, null);
       }
       const text = full.trim() || "(no response)";
       await setDoc(
@@ -217,9 +237,10 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
 
       const mode = chat.activeMode || "agent";
       const requestId = uuidv4();
-      setFlowBusy(true);
+      let activeChatId = chat.currentChatId;
       try {
-        const activeChatId = await ensureChat(prompt || "New build");
+        activeChatId = await ensureChat(prompt || "New build");
+        setFlowBusyForChat(activeChatId, true);
         await writeUserMessage(activeChatId, requestId, prompt);
 
         if (mode === "ask") {
@@ -259,7 +280,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
         console.error("Orchestration error:", err);
         notify?.({ message: err?.message || "Could not start the build", type: "error" });
       } finally {
-        setFlowBusy(false);
+        setFlowBusyForChat(activeChatId, false);
       }
     },
     [
@@ -267,6 +288,8 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
       isGenerating,
       onSignInNudge,
       ensureChat,
+      setFlowBusyForChat,
+      chat.currentChatId,
       writeUserMessage,
       writeOrchestrationResult,
       handleAskSubmit,
@@ -286,10 +309,10 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
       const prompt = message.originPrompt || "";
       const attachments = message.attachments || [];
       const requestId = uuidv4();
-      setFlowBusy(true);
+      const activeChatId = chat.currentChatId;
+      if (!activeChatId) return;
+      setFlowBusyForChat(activeChatId, true);
       try {
-        const activeChatId = chat.currentChatId;
-        if (!activeChatId) return;
 
         const answerText = Object.entries(answers || {})
           .filter(([, v]) => v != null && String(v).trim() !== "")
@@ -314,10 +337,10 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
         console.error("Clarify error:", err);
         notify?.({ message: err?.message || "Could not continue", type: "error" });
       } finally {
-        setFlowBusy(false);
+        setFlowBusyForChat(activeChatId, false);
       }
     },
-    [user, isGenerating, chat.currentChatId, chat.messages, writeUserMessage, writeOrchestrationResult, notify]
+    [user, isGenerating, chat.currentChatId, chat.messages, writeUserMessage, writeOrchestrationResult, setFlowBusyForChat, notify]
   );
 
   // Stage 3 (plan): user approves the plan -> generate.
@@ -400,6 +423,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
     isGenerating,
     pendingMessage,
     generationStage,
+    generatingChatIds,
     handleSubmit,
     submitClarifyAnswers,
     approvePlan,

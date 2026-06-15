@@ -66,6 +66,7 @@ export default function SidebarContent({
   onSelectChat = () => {},
   onOpenGameContext = () => {},
   gameProfile = null,
+  generatingChatIds = [],
   user = null,
 }) {
   const { entitlements } = useBilling();
@@ -472,6 +473,7 @@ export default function SidebarContent({
                             key={c.id}
                             chat={c}
                             currentChatId={currentChatId}
+                            isGenerating={generatingChatIds?.includes(c.id)}
                             onOpenChat={handleOpenChat}
                             renamingChatId={renamingChatId}
                             renameChatTitle={renameChatTitle}

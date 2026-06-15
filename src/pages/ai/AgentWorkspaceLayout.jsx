@@ -902,6 +902,7 @@ export default function AgentWorkspaceLayout({ controller }) {
                 setActiveTab={() => setActiveTab("chat")}
                 scripts={scripts}
                 currentChatId={chat.currentChatId}
+                generatingChatIds={chat.generatingChatIds}
                 currentScriptId={scriptManager.currentScriptId}
                 setCurrentScriptId={scriptManager.setCurrentScriptId}
                 handleCreateScript={scriptManager.handleCreateScript}

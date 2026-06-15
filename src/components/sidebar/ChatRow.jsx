@@ -1,9 +1,10 @@
 import React from "react";
-import { Edit, Trash2 } from "lucide-react";
+import { Edit, Trash2, Loader2 } from "lucide-react";
 
 export default function ChatRow({
   chat,
   currentChatId,
+  isGenerating = false,
   onOpenChat,
   renamingChatId,
   renameChatTitle,
@@ -53,14 +54,21 @@ export default function ChatRow({
         ) : (
           <div className="flex flex-col gap-0.5">
             <span
-              className={`font-bold text-sm truncate ${
+              className={`font-bold text-sm truncate flex items-center gap-1.5 ${
                 isSelected ? "text-white" : "text-gray-300 group-hover:text-white"
               }`}
             >
-              {chat.title || "Untitled chat"}
+              {isGenerating && (
+                <Loader2 className="w-3 h-3 shrink-0 text-[#00f5d4] animate-spin" />
+              )}
+              <span className="truncate">{chat.title || "Untitled chat"}</span>
             </span>
-            <span className="text-[10px] text-gray-500 truncate">
-              {chat.lastMessage || "No messages yet"}
+            <span className="text-[10px] truncate">
+              {isGenerating ? (
+                <span className="text-[#00f5d4] font-semibold">Generating…</span>
+              ) : (
+                <span className="text-gray-500">{chat.lastMessage || "No messages yet"}</span>
+              )}
             </span>
           </div>
         )}

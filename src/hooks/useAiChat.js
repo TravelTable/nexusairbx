@@ -94,12 +94,65 @@ export function useAiChat(user, settings, refreshBilling, notify) {
   const [currentChatMeta, setCurrentChatMeta] = useState(null);
   const [activeMode, setActiveMode] = useState(settings?.chatMode || "agent");
   const [customModes, setCustomModes] = useState([]);
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [pendingMessage, setPendingMessage] = useState(null);
-  const [generationStage, setGenerationStage] = useState("");
+  // Generation state is keyed by the *originating* chat id so that a generation
+  // started in one chat keeps running (and rendering) in that chat even after
+  // the user navigates to a different chat. The UI consumes only the slice that
+  // belongs to the currently open chat (derived below).
+  const [generatingChats, setGeneratingChats] = useState({}); // chatId -> bool
+  const [pendingMessages, setPendingMessages] = useState({}); // chatId -> pendingMessage|null
+  const [generationStages, setGenerationStages] = useState({}); // chatId -> string
   const [tasks, setTasks] = useState([]);
   const [currentTaskId, setCurrentTaskId] = useState(null);
   const [chatMode, setChatMode] = useState("plan"); // "plan" | "act"
+
+  // Synchronous mirror of which chats are generating, so we can guard against
+  // double-submits without waiting for a state flush.
+  const generatingRef = useRef({});
+
+  // Live values for the currently open chat (what the UI renders).
+  const isGenerating = !!generatingChats[currentChatId];
+  const pendingMessage = (currentChatId && pendingMessages[currentChatId]) || null;
+  const generationStage = (currentChatId && generationStages[currentChatId]) || "";
+
+  // Chat ids that currently have an in-flight generation (for sidebar badges).
+  const generatingChatIds = useMemo(
+    () => Object.keys(generatingChats).filter((id) => generatingChats[id]),
+    [generatingChats]
+  );
+
+  const setPendingForChat = useCallback((chatId, updater) => {
+    if (!chatId) return;
+    setPendingMessages((prev) => {
+      const cur = prev[chatId] ?? null;
+      const next = typeof updater === "function" ? updater(cur) : updater;
+      if (next === cur) return prev;
+      return { ...prev, [chatId]: next };
+    });
+  }, []);
+
+  const setStageForChat = useCallback((chatId, value) => {
+    if (!chatId) return;
+    setGenerationStages((prev) => {
+      if (prev[chatId] === value) return prev;
+      return { ...prev, [chatId]: value };
+    });
+  }, []);
+
+  const setGeneratingForChat = useCallback((chatId, value) => {
+    if (!chatId) return;
+    generatingRef.current[chatId] = value;
+    setGeneratingChats((prev) => {
+      if (Boolean(prev[chatId]) === Boolean(value)) return prev;
+      return { ...prev, [chatId]: value };
+    });
+  }, []);
+
+  // Update the pending message for the currently open chat (used by interactive
+  // UI like "approve step"). Generation internals use setPendingForChat directly.
+  const setPendingMessage = useCallback(
+    (updater) => setPendingForChat(currentChatId, updater),
+    [setPendingForChat, currentChatId]
+  );
 
   // Listen for code patches (Security/Performance fixes)
   useEffect(() => {
@@ -128,7 +181,8 @@ export function useAiChat(user, settings, refreshBilling, notify) {
   const messagesUnsubRef = useRef(null);
   const chatUnsubRef = useRef(null);
   const customModesUnsubRef = useRef(null);
-  const streamStateRef = useRef(createPendingStreamState());
+  // Streaming buffers keyed by originating chat id.
+  const streamStatesRef = useRef({}); // chatId -> pendingStreamState
 
   // Load custom modes
   useEffect(() => {
@@ -300,26 +354,41 @@ export function useAiChat(user, settings, refreshBilling, notify) {
   ) => {
     const content = prompt.trim();
     if (!content && attachments.length === 0) return;
-    if (isGenerating || !user) return;
+    if (!user) return;
 
     const currentMode = actNow ? "act" : chatMode;
     const requestId = existingRequestId || uuidv4();
 
-    setIsGenerating(true);
-    setPendingMessage({
-      role: "assistant",
-      content: "",
-      type: "chat",
-      prompt: content,
-      mode: currentMode,
-      requestId,
-      stage: "Analyzing Request...",
-      streamState: getPendingStreamSnapshot(createPendingStreamState()),
-    });
-    setGenerationStage("Analyzing Request...");
-
     let activeChatId = existingChatId || currentChatId;
+    // Block only if THIS chat already has an in-flight generation; other chats
+    // are free to generate concurrently.
+    if (activeChatId && generatingRef.current[activeChatId]) return;
+
     const expertMode = modeOverride || activeMode || settings.chatMode || "agent";
+
+    // Setters bound to the originating chat. `activeChatId` is a `let` that may be
+    // assigned below (new chat); these closures always read its latest value, so
+    // generation state lands in the chat it started in regardless of navigation.
+    const setPending = (updater) => setPendingForChat(activeChatId, updater);
+    const setStage = (value) => setStageForChat(activeChatId, value);
+    const setBusy = (value) => setGeneratingForChat(activeChatId, value);
+
+    const beginGenerationState = (chatId) => {
+      setGeneratingForChat(chatId, true);
+      setPendingForChat(chatId, {
+        role: "assistant",
+        content: "",
+        type: "chat",
+        prompt: content,
+        mode: currentMode,
+        requestId,
+        stage: "Analyzing Request...",
+        streamState: getPendingStreamSnapshot(createPendingStreamState()),
+      });
+      setStageForChat(chatId, "Analyzing Request...");
+    };
+
+    if (activeChatId) beginGenerationState(activeChatId);
 
     try {
       if (!activeChatId) {
@@ -331,6 +400,7 @@ export function useAiChat(user, settings, refreshBilling, notify) {
         });
         activeChatId = newChatRef.id;
         openChatById(activeChatId);
+        beginGenerationState(activeChatId);
       }
 
       if (!existingRequestId) {
@@ -343,8 +413,8 @@ export function useAiChat(user, settings, refreshBilling, notify) {
         });
       }
 
-      setGenerationStage("Preparing Job...");
-      setPendingMessage((prev) => (prev ? { ...prev, stage: "Preparing Job..." } : prev));
+      setStage("Preparing Job...");
+      setPending((prev) => (prev ? { ...prev, stage: "Preparing Job..." } : prev));
       const token = await user.getIdToken();
       
       const idemKey = `chat-${requestId}`;
@@ -416,8 +486,8 @@ export function useAiChat(user, settings, refreshBilling, notify) {
         (jobData.streamVersion === "v2" || !jobData.streamVersion);
       const assistantMsgRef = doc(db, "users", user.uid, "chats", activeChatId, "messages", `${requestId}-assistant`);
 
-      setGenerationStage("Generating...");
-      setPendingMessage((prev) => (prev ? { ...prev, stage: "Generating...", steps: [], runId: agentRunId } : prev));
+      setStage("Generating...");
+      setPending((prev) => (prev ? { ...prev, stage: "Generating...", steps: [], runId: agentRunId } : prev));
       if (agentRunId) {
         await setDoc(assistantMsgRef, {
           role: "assistant",
@@ -437,7 +507,7 @@ export function useAiChat(user, settings, refreshBilling, notify) {
           steps: [],
         }, { merge: true });
       }
-      streamStateRef.current = createPendingStreamState();
+      streamStatesRef.current[activeChatId] = createPendingStreamState();
       
       const fetchFinalResult = async () => {
         for (let attempt = 0; attempt < RESULT_MAX_POLLS; attempt++) {
@@ -470,8 +540,8 @@ export function useAiChat(user, settings, refreshBilling, notify) {
         throw new Error("Timed out while recovering streamed generation");
       };
 
-      setGenerationStage("Connecting...");
-      setPendingMessage((prev) => (prev ? { ...prev, stage: "Connecting..." } : prev));
+      setStage("Connecting...");
+      setPending((prev) => (prev ? { ...prev, stage: "Connecting..." } : prev));
       await ensureStreamSession(token);
 
       // 2. Connect to stream (tails worker events; auth via HttpOnly cookie)
@@ -495,9 +565,9 @@ export function useAiChat(user, settings, refreshBilling, notify) {
         const flushPendingStreamState = () => {
           streamFlushTimer = null;
           lastStreamFlushAt = Date.now();
-          const snapshot = getPendingStreamSnapshot(streamStateRef.current);
-          const pendingContent = formatPendingStreamContent(streamStateRef.current);
-          setPendingMessage((prev) => {
+          const snapshot = getPendingStreamSnapshot(streamStatesRef.current[activeChatId]);
+          const pendingContent = formatPendingStreamContent(streamStatesRef.current[activeChatId]);
+          setPending((prev) => {
             if (!prev) return prev;
             return {
               ...prev,
@@ -538,10 +608,11 @@ export function useAiChat(user, settings, refreshBilling, notify) {
               updatedAt: serverTimestamp(),
             }).catch(() => {});
           }
-          setIsGenerating(false);
+          setBusy(false);
           if (streamFlushTimer) clearTimeout(streamFlushTimer);
-          setPendingMessage(null);
-          setGenerationStage("");
+          setPending(null);
+          setStage("");
+          delete streamStatesRef.current[activeChatId];
           reject(err instanceof Error ? err : new Error(String(err || "Generation failed")));
         };
 
@@ -549,8 +620,8 @@ export function useAiChat(user, settings, refreshBilling, notify) {
           if (finalized) return;
           finalized = true;
 
-          setGenerationStage("Finalizing...");
-          setPendingMessage((prev) => (prev ? { ...prev, stage: "Finalizing..." } : prev));
+          setStage("Finalizing...");
+          setPending((prev) => (prev ? { ...prev, stage: "Finalizing..." } : prev));
 
           const msgPayload = buildAssistantMessagePayload(data, {
             requestId,
@@ -580,10 +651,11 @@ export function useAiChat(user, settings, refreshBilling, notify) {
 
           refreshBilling();
           emitAiEvent("JOB_COMPLETE", { jobId });
-          setIsGenerating(false);
+          setBusy(false);
           if (streamFlushTimer) clearTimeout(streamFlushTimer);
-          setPendingMessage(null);
-          setGenerationStage("");
+          setPending(null);
+          setStage("");
+          delete streamStatesRef.current[activeChatId];
         };
 
         const recoverFromStreamFailure = async (rawError = null) => {
@@ -600,8 +672,8 @@ export function useAiChat(user, settings, refreshBilling, notify) {
 
           try {
             metrics.usedFallback = true;
-            setGenerationStage("Recovering stream...");
-            setPendingMessage((prev) => (prev ? { ...prev, stage: "Recovering stream..." } : prev));
+            setStage("Recovering stream...");
+            setPending((prev) => (prev ? { ...prev, stage: "Recovering stream..." } : prev));
             emitStreamMetric("fallback_start", { jobId });
             const recovered = await fetchFinalResult();
             await finalizeWithData(recovered, "fallback");
@@ -617,8 +689,8 @@ export function useAiChat(user, settings, refreshBilling, notify) {
             try {
               const data = JSON.parse(e.data);
               if (data?.message) {
-                setGenerationStage(data.message);
-                setPendingMessage((prev) => {
+                setStage(data.message);
+                setPending((prev) => {
                   if (!prev) return prev;
                   return { ...prev, stage: data.message };
                 });
@@ -638,7 +710,10 @@ export function useAiChat(user, settings, refreshBilling, notify) {
             if (!enableDeltaStreaming) return;
             try {
               const data = JSON.parse(e.data);
-              streamStateRef.current = applyStreamDelta(streamStateRef.current, data);
+              streamStatesRef.current[activeChatId] = applyStreamDelta(
+                streamStatesRef.current[activeChatId],
+                data
+              );
               metrics.deltaCount += 1;
               if (!metrics.firstDeltaAt) {
                 metrics.firstDeltaAt = Date.now();
@@ -656,7 +731,7 @@ export function useAiChat(user, settings, refreshBilling, notify) {
             try {
               const data = JSON.parse(e.data);
               const step = normalizeToolStep(data.step || data);
-              setPendingMessage((prev) => {
+              setPending((prev) => {
                 if (!prev) return prev;
                 const steps = upsertAgentStep(prev.steps || [], step);
                 if (agentRunId) {
@@ -675,7 +750,7 @@ export function useAiChat(user, settings, refreshBilling, notify) {
                 };
               });
               if (step.label || step.type) {
-                setGenerationStage(step.label || step.type);
+                setStage(step.label || step.type);
               }
             } catch (err) {
               console.error("Failed to parse tool_step:", err);
@@ -715,9 +790,10 @@ export function useAiChat(user, settings, refreshBilling, notify) {
     } catch (e) {
       console.error(e);
       notify({ message: e.message || "Generation failed", type: "error" });
-      setIsGenerating(false);
-      setPendingMessage(null);
-      setGenerationStage("");
+      setBusy(false);
+      setPending(null);
+      setStage("");
+      if (activeChatId) delete streamStatesRef.current[activeChatId];
     }
   };
 
@@ -725,6 +801,18 @@ export function useAiChat(user, settings, refreshBilling, notify) {
     if (!user || !chatId) return;
     try {
       await deleteDoc(doc(db, "users", user.uid, "chats", chatId));
+      // Drop any in-flight generation state tied to the deleted chat.
+      delete generatingRef.current[chatId];
+      delete streamStatesRef.current[chatId];
+      const dropKey = (obj) => {
+        if (!(chatId in obj)) return obj;
+        const next = { ...obj };
+        delete next[chatId];
+        return next;
+      };
+      setGeneratingChats(dropKey);
+      setPendingMessages(dropKey);
+      setGenerationStages(dropKey);
       if (currentChatId === chatId) {
         setCurrentChatId(null);
         setCurrentChatMeta(null);
@@ -792,6 +880,10 @@ export function useAiChat(user, settings, refreshBilling, notify) {
     isGenerating,
     pendingMessage,
     generationStage,
+    generatingChatIds,
+    setPendingForChat,
+    setStageForChat,
+    setGeneratingForChat,
     openChatById,
     handleSubmit,
     handleDeleteChat,
