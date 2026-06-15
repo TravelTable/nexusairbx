@@ -27,7 +27,28 @@ export default function BuildDetailsPanel({
 
   const hasSteps = (agentRun?.steps || []).length > 0;
 
-  if (!hasContent && !hasSteps && !["inspecting", "generating", "validating", "ready_to_apply", "applying", "applied", "conflict", "failed", "push_skipped"].includes(agentRun?.status)) {
+  if (
+    !hasContent &&
+    !hasSteps &&
+    ![
+      "inspecting",
+      "waiting_for_tool",
+      "waiting_for_approval",
+      "generating",
+      "validating",
+      "ready_to_apply",
+      "applying",
+      "applied",
+      "succeeded",
+      "conflict",
+      "failed",
+      "cancelled",
+      "blocked",
+      "iteration_limit",
+      "timed_out",
+      "push_skipped",
+    ].includes(agentRun?.status)
+  ) {
     return (
       <div className="px-4 py-10 text-center">
         <ClipboardList className="w-8 h-8 text-gray-700 mx-auto mb-2" />

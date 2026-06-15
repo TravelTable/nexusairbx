@@ -55,10 +55,12 @@ export async function getStudioTools() {
   return readJsonOrThrow(res, "Failed to load Studio tools");
 }
 
-export async function getStudioManifest({ sessionId = null, placeId = null, limit = 500, cursor = "" } = {}) {
+export async function getStudioManifest({ sessionId = null, placeId = null, revision = "", completeOnly = true, limit = 500, cursor = "" } = {}) {
   const params = new URLSearchParams();
   if (sessionId) params.set("sessionId", sessionId);
   if (placeId) params.set("placeId", placeId);
+  if (revision) params.set("revision", revision);
+  if (!completeOnly) params.set("completeOnly", "false");
   if (limit) params.set("limit", String(limit));
   if (cursor) params.set("cursor", cursor);
   const query = params.toString();
@@ -67,6 +69,92 @@ export async function getStudioManifest({ sessionId = null, placeId = null, limi
     noCache: true,
   });
   return readJsonOrThrow(res, "Failed to load Studio manifest");
+}
+
+export async function getStudioManifestStatus({ sessionId = null, placeId = null } = {}) {
+  const params = new URLSearchParams();
+  if (sessionId) params.set("sessionId", sessionId);
+  if (placeId) params.set("placeId", placeId);
+  const query = params.toString();
+  const res = await authedFetch(`/api/studio/manifest/status${query ? `?${query}` : ""}`, {
+    method: "GET",
+    noCache: true,
+  });
+  return readJsonOrThrow(res, "Failed to load Studio manifest status");
+}
+
+export async function searchStudioManifest({
+  sessionId = null,
+  placeId = null,
+  revision = "",
+  completeOnly = true,
+  query = "",
+  classes = [],
+  scriptOnly = false,
+  limit = 200,
+  cursor = "",
+} = {}) {
+  const params = new URLSearchParams();
+  if (sessionId) params.set("sessionId", sessionId);
+  if (placeId) params.set("placeId", placeId);
+  if (revision) params.set("revision", revision);
+  if (!completeOnly) params.set("completeOnly", "false");
+  if (query) params.set("query", query);
+  if (classes?.length) params.set("classes", classes.join(","));
+  if (scriptOnly) params.set("scriptOnly", "true");
+  if (limit) params.set("limit", String(limit));
+  if (cursor) params.set("cursor", cursor);
+  const res = await authedFetch(`/api/studio/manifest/search?${params.toString()}`, {
+    method: "GET",
+    noCache: true,
+  });
+  return readJsonOrThrow(res, "Failed to search Studio manifest");
+}
+
+export async function listStudioManifestChildren({
+  sessionId = null,
+  placeId = null,
+  revision = "",
+  completeOnly = true,
+  parentPath = "",
+  limit = 500,
+  cursor = "",
+} = {}) {
+  const params = new URLSearchParams();
+  if (sessionId) params.set("sessionId", sessionId);
+  if (placeId) params.set("placeId", placeId);
+  if (revision) params.set("revision", revision);
+  if (!completeOnly) params.set("completeOnly", "false");
+  if (parentPath) params.set("parentPath", parentPath);
+  if (limit) params.set("limit", String(limit));
+  if (cursor) params.set("cursor", cursor);
+  const res = await authedFetch(`/api/studio/manifest/children?${params.toString()}`, {
+    method: "GET",
+    noCache: true,
+  });
+  return readJsonOrThrow(res, "Failed to load Studio manifest children");
+}
+
+export async function listStudioScriptPaths({
+  sessionId = null,
+  placeId = null,
+  revision = "",
+  completeOnly = true,
+  limit = 500,
+  cursor = "",
+} = {}) {
+  const params = new URLSearchParams();
+  if (sessionId) params.set("sessionId", sessionId);
+  if (placeId) params.set("placeId", placeId);
+  if (revision) params.set("revision", revision);
+  if (!completeOnly) params.set("completeOnly", "false");
+  if (limit) params.set("limit", String(limit));
+  if (cursor) params.set("cursor", cursor);
+  const res = await authedFetch(`/api/studio/manifest/scripts?${params.toString()}`, {
+    method: "GET",
+    noCache: true,
+  });
+  return readJsonOrThrow(res, "Failed to list Studio script paths");
 }
 
 export async function queueStudioTool({ type, payload = {}, sessionId = null, label = "", applyMode = "manual_review", runId = null, stepId = null }) {

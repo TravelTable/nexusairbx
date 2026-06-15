@@ -5,20 +5,25 @@ import { FEATURE_FLAGS } from "../../../lib/featureFlags";
 
 const STAGES = [
   { id: "inspecting", label: "Inspecting Studio" },
+  { id: "waiting_for_tool", label: "Waiting for Studio" },
+  { id: "waiting_for_approval", label: "Waiting for approval" },
   { id: "generating", label: "Generating files" },
   { id: "validating", label: "Validating artifact" },
   { id: "ready_to_apply", label: "Ready to apply" },
   { id: "applying", label: "Applying in Studio" },
   { id: "applied", label: "Applied" },
+  { id: "succeeded", label: "Completed" },
 ];
 
 function stageIndex(status) {
   if (status === "inspecting") return 0;
-  if (status === "generating") return 1;
-  if (status === "validating") return 2;
-  if (status === "ready_to_apply") return 3;
-  if (status === "applying") return 4;
-  if (status === "applied") return 5;
+  if (status === "waiting_for_tool") return 1;
+  if (status === "waiting_for_approval") return 2;
+  if (status === "generating") return 3;
+  if (status === "validating") return 4;
+  if (status === "ready_to_apply") return 5;
+  if (status === "applying") return 6;
+  if (status === "applied" || status === "succeeded") return 7;
   return -1;
 }
 
@@ -31,14 +36,24 @@ export default function AgentPlanPanel({
   approvingStepId,
   restoring = false,
 }) {
-  const active = ["inspecting", "generating", "validating", "ready_to_apply", "applying", "applied"].includes(agentRun?.status);
+  const active = [
+    "inspecting",
+    "waiting_for_tool",
+    "waiting_for_approval",
+    "generating",
+    "validating",
+    "ready_to_apply",
+    "applying",
+    "applied",
+    "succeeded",
+  ].includes(agentRun?.status);
   const idx = stageIndex(agentRun?.status);
   const plan = planText || agentRun?.plan;
   const steps = agentRun?.steps || [];
   const showSteps = FEATURE_FLAGS.unifiedAgent && steps.length > 0;
   const canRestore = Boolean(agentRun?.runId && agentRun?.snapshotCount > 0);
 
-  if (!active && !plan && !showSteps && !["conflict", "failed", "push_skipped"].includes(agentRun?.status)) return null;
+  if (!active && !plan && !showSteps && !["conflict", "failed", "cancelled", "blocked", "iteration_limit", "timed_out", "push_skipped"].includes(agentRun?.status)) return null;
 
   return (
     <div className="rounded-2xl border border-white/5 bg-white/[0.02] p-4 space-y-3">
@@ -88,6 +103,30 @@ export default function AgentPlanPanel({
       {agentRun?.status === "failed" && (
         <div className="rounded-xl border border-red-400/20 bg-red-400/10 px-3 py-2 text-xs text-red-100">
           The run failed before apply completed.
+        </div>
+      )}
+
+      {agentRun?.status === "blocked" && (
+        <div className="rounded-xl border border-amber-400/20 bg-amber-400/10 px-3 py-2 text-xs text-amber-100">
+          The Studio agent hit a real blocker and stopped.
+        </div>
+      )}
+
+      {agentRun?.status === "cancelled" && (
+        <div className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs text-gray-300">
+          The Studio agent run was cancelled.
+        </div>
+      )}
+
+      {agentRun?.status === "iteration_limit" && (
+        <div className="rounded-xl border border-red-400/20 bg-red-400/10 px-3 py-2 text-xs text-red-100">
+          The Studio agent stopped after reaching the iteration limit.
+        </div>
+      )}
+
+      {agentRun?.status === "timed_out" && (
+        <div className="rounded-xl border border-red-400/20 bg-red-400/10 px-3 py-2 text-xs text-red-100">
+          The Studio agent stopped after reaching the runtime limit.
         </div>
       )}
 

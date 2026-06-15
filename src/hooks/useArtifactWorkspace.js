@@ -32,8 +32,15 @@ function normalizeRunState(value) {
       "ready_to_apply",
       "applying",
       "applied",
+      "waiting_for_tool",
+      "waiting_for_approval",
+      "succeeded",
       "conflict",
       "failed",
+      "cancelled",
+      "blocked",
+      "iteration_limit",
+      "timed_out",
       "push_skipped",
     ].includes(state)
   ) {
@@ -47,6 +54,8 @@ function derivePendingRunState(stage = "", steps = []) {
     return "applying";
   }
   const lower = String(stage || "").toLowerCase();
+  if (/approval/.test(lower)) return "waiting_for_approval";
+  if (/queued|waiting for tool/.test(lower)) return "waiting_for_tool";
   if (/inspect/.test(lower)) return "inspecting";
   if (/validat|review|merge|lint|smoke/.test(lower)) return "validating";
   if (/apply/.test(lower)) return "applying";

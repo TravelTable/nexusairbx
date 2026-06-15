@@ -66,7 +66,14 @@ export default function AgentChatPanel({
   agentRun,
 }) {
   const [view, setView] = useState("chat");
-  const active = ["inspecting", "generating", "validating", "applying"].includes(agentRun?.status);
+  const active = [
+    "inspecting",
+    "waiting_for_tool",
+    "waiting_for_approval",
+    "generating",
+    "validating",
+    "applying",
+  ].includes(agentRun?.status);
 
   return (
     <div className="h-full flex flex-col min-h-0 bg-ink-900">

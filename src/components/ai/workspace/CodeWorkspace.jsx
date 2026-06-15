@@ -1,6 +1,6 @@
-import React, { useState, useCallback } from "react";
-import Editor from "@monaco-editor/react";
-import { Copy, Check, Pencil, Eye, RotateCcw, FileCode2, Save } from "lucide-react";
+import React, { useState, useCallback, useEffect } from "react";
+import Editor, { DiffEditor } from "@monaco-editor/react";
+import { Copy, Check, Pencil, Eye, RotateCcw, FileCode2, Save, RefreshCw, Files } from "lucide-react";
 import CodeEditorTabs from "./CodeEditorTabs";
 import ArtifactInspector from "./ArtifactInspector";
 import ExportActions from "./ExportActions";
@@ -49,12 +49,27 @@ export default function CodeWorkspace({
   onChangeContent,
   onRevertEdits,
   onSaveFile,
+  onSaveAllFiles,
+  onRevertFile,
+  onRefreshFile,
+  onCloseFile,
   saving = false,
   conflict = null,
   notify,
 }) {
   const [editing, setEditing] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [mergeOpen, setMergeOpen] = useState(false);
+  const [mergeSource, setMergeSource] = useState("");
+
+  useEffect(() => {
+    if (!conflict) {
+      setMergeOpen(false);
+      setMergeSource("");
+      return;
+    }
+    setMergeSource(conflict.localSource || conflict.attemptedSource || "");
+  }, [conflict]);
 
   const handleEditorMount = useCallback((editor, monaco) => {
     defineNexusTheme(monaco);
@@ -109,6 +124,24 @@ export default function CodeWorkspace({
               <RotateCcw className="w-3.5 h-3.5" /> Revert
             </button>
           )}
+          {onRevertFile && activeFile?.dirty && (
+            <button
+              type="button"
+              onClick={() => onRevertFile(activeFile)}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/5 border border-white/10 text-[10px] font-bold uppercase tracking-widest text-gray-400 hover:text-white transition-all"
+            >
+              <RotateCcw className="w-3.5 h-3.5" /> Revert File
+            </button>
+          )}
+          {onRefreshFile && activeFile && (
+            <button
+              type="button"
+              onClick={() => onRefreshFile(activeFile)}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/5 border border-white/10 text-[10px] font-bold uppercase tracking-widest text-gray-400 hover:text-white transition-all"
+            >
+              <RefreshCw className="w-3.5 h-3.5" /> Refresh
+            </button>
+          )}
           <button
             type="button"
             onClick={() => setEditing((v) => !v)}
@@ -141,20 +174,126 @@ export default function CodeWorkspace({
               Save
             </button>
           )}
+          {onSaveAllFiles && artifact.files?.some((file) => file.dirty) && (
+            <button
+              type="button"
+              onClick={() => onSaveAllFiles(artifact.files)}
+              disabled={saving || readOnly}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[#fee440] text-black border border-[#fee440]/70 text-[10px] font-bold uppercase tracking-widest disabled:opacity-40 transition-all"
+              title="Save all open files to Studio"
+            >
+              <Files className="w-3.5 h-3.5" />
+              Save All
+            </button>
+          )}
         </div>
       </div>
 
       {conflict && (
-        <div className="border-b border-red-400/20 bg-red-400/10 px-4 py-2 text-xs text-red-100">
+        <div className="border-b border-red-400/20 bg-red-400/10 px-4 py-3 text-xs text-red-100 space-y-3">
           <div className="font-bold">Source conflict: Studio changed since this file was opened.</div>
-          <div className="mt-1 grid grid-cols-1 lg:grid-cols-2 gap-2 font-mono text-[11px]">
-            <pre className="max-h-32 overflow-auto rounded bg-black/30 p-2 whitespace-pre-wrap">{conflict.currentSource || conflict.currentVersion || ""}</pre>
-            <pre className="max-h-32 overflow-auto rounded bg-black/30 p-2 whitespace-pre-wrap">{conflict.attemptedSource || activeFile?.content || ""}</pre>
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-2 font-mono text-[11px]">
+            <div className="rounded bg-black/30 p-2">
+              <div className="mb-1 text-[10px] font-bold uppercase tracking-widest text-gray-400">Base</div>
+              <pre className="max-h-28 overflow-auto whitespace-pre-wrap">{conflict.baseSource || ""}</pre>
+            </div>
+            <div className="rounded bg-black/30 p-2">
+              <div className="mb-1 text-[10px] font-bold uppercase tracking-widest text-gray-400">Local</div>
+              <pre className="max-h-28 overflow-auto whitespace-pre-wrap">{conflict.localSource || conflict.attemptedSource || ""}</pre>
+            </div>
+            <div className="rounded bg-black/30 p-2">
+              <div className="mb-1 text-[10px] font-bold uppercase tracking-widest text-gray-400">Studio</div>
+              <pre className="max-h-28 overflow-auto whitespace-pre-wrap">{conflict.studioSource || conflict.currentSource || ""}</pre>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
+            <div className="min-h-[220px] rounded-lg overflow-hidden border border-white/10">
+              <DiffEditor
+                height="220px"
+                language={monacoLanguage(activeFile?.language)}
+                original={conflict.studioSource || conflict.currentSource || ""}
+                modified={conflict.localSource || conflict.attemptedSource || ""}
+                options={{
+                  readOnly: true,
+                  renderSideBySide: true,
+                  minimap: { enabled: false },
+                  scrollBeyondLastLine: false,
+                  automaticLayout: true,
+                }}
+              />
+            </div>
+            {mergeOpen ? (
+              <div className="min-h-[220px] rounded-lg overflow-hidden border border-white/10">
+                <Editor
+                  height="220px"
+                  language={monacoLanguage(activeFile?.language)}
+                  value={mergeSource}
+                  onMount={handleEditorMount}
+                  onChange={(value) => setMergeSource(value ?? "")}
+                  options={{
+                    readOnly: false,
+                    minimap: { enabled: false },
+                    scrollBeyondLastLine: false,
+                    automaticLayout: true,
+                    wordWrap: "on",
+                  }}
+                />
+              </div>
+            ) : (
+              <div className="rounded-lg border border-white/10 bg-black/30 p-3 text-[11px] text-gray-300">
+                Choose whether to keep the latest Studio version, overwrite Studio with your local edits, retry against the latest hash, or open the merge editor and apply a merged version.
+              </div>
+            )}
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {conflict.onKeepStudio && (
+              <button
+                type="button"
+                onClick={conflict.onKeepStudio}
+                className="px-2.5 py-1.5 rounded-lg border border-white/10 bg-white/5 text-[10px] font-bold uppercase tracking-widest text-gray-200"
+              >
+                Keep Studio
+              </button>
+            )}
+            {conflict.onOverwriteStudio && (
+              <button
+                type="button"
+                onClick={conflict.onOverwriteStudio}
+                className="px-2.5 py-1.5 rounded-lg border border-[#00f5d4]/40 bg-[#00f5d4]/10 text-[10px] font-bold uppercase tracking-widest text-[#00f5d4]"
+              >
+                Overwrite Studio
+              </button>
+            )}
+            {conflict.onRetryWithLatest && (
+              <button
+                type="button"
+                onClick={conflict.onRetryWithLatest}
+                className="px-2.5 py-1.5 rounded-lg border border-white/10 bg-white/5 text-[10px] font-bold uppercase tracking-widest text-gray-200"
+              >
+                Retry Latest Hash
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => setMergeOpen((value) => !value)}
+              className="px-2.5 py-1.5 rounded-lg border border-white/10 bg-white/5 text-[10px] font-bold uppercase tracking-widest text-gray-200"
+            >
+              {mergeOpen ? "Hide Merge" : "Open Merge"}
+            </button>
+            {mergeOpen && conflict.onApplyMerge && (
+              <button
+                type="button"
+                onClick={() => conflict.onApplyMerge(mergeSource)}
+                className="px-2.5 py-1.5 rounded-lg border border-[#fee440]/40 bg-[#fee440]/10 text-[10px] font-bold uppercase tracking-widest text-[#fee440]"
+              >
+                Apply Merge
+              </button>
+            )}
           </div>
         </div>
       )}
 
-      <CodeEditorTabs files={artifact.files} activeFileId={activeFile?.id} onSelectFile={onSelectFile} />
+      <CodeEditorTabs files={artifact.files} activeFileId={activeFile?.id} onSelectFile={onSelectFile} onCloseFile={onCloseFile} />
 
       <div className="flex-1 min-h-0">
         <Editor
