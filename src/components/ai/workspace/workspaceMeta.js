@@ -16,6 +16,9 @@ export function kindMeta(kind) {
 }
 
 export const STATUS_META = {
+  generating: { label: "Generating", color: "#00bbf9", dot: "#00bbf9" },
+  ready: { label: "Ready", color: "#00f5d4", dot: "#00f5d4" },
+  saved: { label: "Saved", color: "#9b5de5", dot: "#9b5de5" },
   generated: { label: "Generated", color: "#9ca3af", dot: "#6b7280" },
   edited: { label: "Edited", color: "#fee440", dot: "#fee440" },
   validated: { label: "Validated", color: "#00f5d4", dot: "#00f5d4" },

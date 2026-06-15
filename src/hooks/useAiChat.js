@@ -481,6 +481,8 @@ export function useAiChat(user, settings, refreshBilling, notify) {
         let finalized = false;
         const isAutoExecuting = currentMode === "act";
         let retryCount = 0;
+        let streamFlushTimer = null;
+        let lastStreamFlushAt = 0;
         const metrics = {
           startedAt: Date.now(),
           firstDeltaAt: null,
@@ -489,6 +491,37 @@ export function useAiChat(user, settings, refreshBilling, notify) {
         };
 
         const streamUrl = `${BACKEND_URL}/api/generate/stream?jobId=${encodeURIComponent(jobId)}&mode=${encodeURIComponent(currentMode)}`;
+
+        const flushPendingStreamState = () => {
+          streamFlushTimer = null;
+          lastStreamFlushAt = Date.now();
+          const snapshot = getPendingStreamSnapshot(streamStateRef.current);
+          const pendingContent = formatPendingStreamContent(streamStateRef.current);
+          setPendingMessage((prev) => {
+            if (!prev) return prev;
+            return {
+              ...prev,
+              content: pendingContent,
+              files: snapshot.files || [],
+              streamState: snapshot,
+              title: snapshot.files?.length ? "Generating Artifact" : prev.title,
+            };
+          });
+        };
+
+        const schedulePendingStreamFlush = (immediate = false) => {
+          if (immediate || Date.now() - lastStreamFlushAt >= 40) {
+            if (streamFlushTimer) {
+              clearTimeout(streamFlushTimer);
+              streamFlushTimer = null;
+            }
+            flushPendingStreamState();
+            return;
+          }
+          if (!streamFlushTimer) {
+            streamFlushTimer = setTimeout(flushPendingStreamState, 40);
+          }
+        };
 
         const failAndReject = (err, tag = "network") => {
           emitStreamMetric("error", {
@@ -506,6 +539,7 @@ export function useAiChat(user, settings, refreshBilling, notify) {
             }).catch(() => {});
           }
           setIsGenerating(false);
+          if (streamFlushTimer) clearTimeout(streamFlushTimer);
           setPendingMessage(null);
           setGenerationStage("");
           reject(err instanceof Error ? err : new Error(String(err || "Generation failed")));
@@ -547,6 +581,7 @@ export function useAiChat(user, settings, refreshBilling, notify) {
           refreshBilling();
           emitAiEvent("JOB_COMPLETE", { jobId });
           setIsGenerating(false);
+          if (streamFlushTimer) clearTimeout(streamFlushTimer);
           setPendingMessage(null);
           setGenerationStage("");
         };
@@ -604,20 +639,12 @@ export function useAiChat(user, settings, refreshBilling, notify) {
             try {
               const data = JSON.parse(e.data);
               streamStateRef.current = applyStreamDelta(streamStateRef.current, data);
-              const pendingContent = formatPendingStreamContent(streamStateRef.current);
-              setPendingMessage((prev) => {
-                if (!prev) return prev;
-                return {
-                  ...prev,
-                  content: pendingContent,
-                  streamState: getPendingStreamSnapshot(streamStateRef.current),
-                };
-              });
               metrics.deltaCount += 1;
               if (!metrics.firstDeltaAt) {
                 metrics.firstDeltaAt = Date.now();
                 emitStreamMetric("first_delta", { jobId, msFromStart: metrics.firstDeltaAt - metrics.startedAt });
               }
+              schedulePendingStreamFlush(data.channel === "file_event" && data.event?.event === "file_ready");
             } catch (err) {
               console.error("Failed to parse stream delta:", err);
               emitStreamMetric("error", { jobId, tag: "protocol", message: "delta_parse_failed" });

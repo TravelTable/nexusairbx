@@ -51,4 +51,72 @@ describe("streaming utils", () => {
     state = applyStreamDelta(state, { seq: 2, channel: "content", text: "Visible answer" });
     expect(formatPendingStreamContent(state)).toBe("Visible answer");
   });
+
+  test("assembles file events into pending files", () => {
+    let state = createPendingStreamState();
+
+    state = applyStreamDelta(state, {
+      seq: 1,
+      channel: "file_event",
+      event: {
+        event: "file_start",
+        fileId: "inventory",
+        path: "ServerScriptService/InventoryService.server.lua",
+        kind: "server",
+      },
+    });
+    state = applyStreamDelta(state, {
+      seq: 2,
+      channel: "file_event",
+      event: { event: "file_chunk", fileId: "inventory", sequence: 0, content: "local Inventory = " },
+    });
+    state = applyStreamDelta(state, {
+      seq: 3,
+      channel: "file_event",
+      event: { event: "file_chunk", fileId: "inventory", sequence: 1, content: "{}" },
+    });
+    state = applyStreamDelta(state, {
+      seq: 4,
+      channel: "file_event",
+      event: { event: "file_end", fileId: "inventory", sourceHash: "abc" },
+    });
+
+    const snapshot = getPendingStreamSnapshot(state);
+    expect(snapshot.hasFiles).toBe(true);
+    expect(snapshot.hasVisibleOutput).toBe(true);
+    expect(snapshot.files[0]).toMatchObject({
+      id: "inventory",
+      status: "ready",
+      content: "local Inventory = {}",
+    });
+  });
+
+  test("file_ready replaces streaming file with authoritative content", () => {
+    let state = createPendingStreamState();
+    state = applyStreamDelta(state, {
+      seq: 1,
+      channel: "file_event",
+      event: { event: "file_start", fileId: "a", path: "ReplicatedStorage/A.lua" },
+    });
+    state = applyStreamDelta(state, {
+      seq: 2,
+      channel: "file_event",
+      event: {
+        event: "file_ready",
+        file: {
+          id: "a",
+          path: "ReplicatedStorage/A.lua",
+          kind: "module",
+          content: "return { ready = true }",
+          contentHash: "hash",
+        },
+      },
+    });
+
+    expect(getPendingStreamSnapshot(state).files[0]).toMatchObject({
+      status: "ready",
+      contentHash: "hash",
+      content: "return { ready = true }",
+    });
+  });
 });

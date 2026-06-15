@@ -89,15 +89,27 @@ export function useArtifactWorkspace(messages, { isGenerating, generationStage, 
   const [edits, dispatchEdits] = useReducer(editsReducer, {});
   const lastAutoSelectedRef = useRef(null);
 
-  // Build the artifact list from assistant messages (newest first).
+  // Build the artifact list from assistant messages (newest first), including
+  // the current pending streamed artifact when file events have arrived.
   const baseArtifacts = useMemo(() => {
     const list = [];
     for (const m of messages || []) {
+      if (pendingMessage?.requestId && m.pending && m.requestId === pendingMessage.requestId) continue;
       const artifact = artifactFromMessage(m);
       if (artifact) list.push(artifact);
     }
-    return list.reverse();
-  }, [messages]);
+    const newestFirst = list.reverse();
+    const pendingArtifact = artifactFromMessage(pendingMessage);
+    if (pendingArtifact) {
+      newestFirst.unshift({
+        ...pendingArtifact,
+        id: pendingMessage.requestId || pendingArtifact.id,
+        title: pendingArtifact.title || "Generating Artifact",
+        summary: pendingMessage.stage || pendingArtifact.summary,
+      });
+    }
+    return newestFirst;
+  }, [messages, pendingMessage]);
 
   // Apply local edits on top of the generated content + recompute dirty state.
   const artifacts = useMemo(() => {
