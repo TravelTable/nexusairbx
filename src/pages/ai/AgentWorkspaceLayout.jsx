@@ -147,11 +147,17 @@ export default function AgentWorkspaceLayout({ controller }) {
   });
   const [terminalHistoryIndex, setTerminalHistoryIndex] = useState(-1);
   const terminalAbortRef = useRef(null);
+  const manifestRefreshInFlightRef = useRef(null);
+  const autoManifestRefreshKeyRef = useRef("");
 
   const appendTerminal = useCallback((line, kind = "stdout") => {
+    const text = String(line ?? "");
+    const normalizedText = kind === "stdout" || kind === "stderr" || text.endsWith("\n")
+      ? text
+      : `${text}\n`;
     setTerminalLines((prev) => [
       ...prev.slice(-400),
-      { id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, kind, text: String(line || "") },
+      { id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, kind, text: normalizedText },
     ]);
   }, []);
 
@@ -216,45 +222,68 @@ export default function AgentWorkspaceLayout({ controller }) {
   }, [studio?.lastAuthorizedSessionId]);
 
   const refreshStudioManifest = useCallback(async () => {
-    setStudioBusy(true);
-    setStudioConflict(null);
-    try {
-      let previousRevision = "";
+    if (manifestRefreshInFlightRef.current) {
+      return manifestRefreshInFlightRef.current;
+    }
+
+    const refreshPromise = (async () => {
+      setStudioBusy(true);
+      setStudioConflict(null);
       try {
-        const previous = await getStudioManifestStatus({
-          sessionId: studio?.lastAuthorizedSessionId || null,
-        });
-        previousRevision = previous.status?.lastCompleteRevision || previous.status?.activeRevision || "";
-      } catch (_) {
-        previousRevision = "";
+        let previousRevision = "";
+        try {
+          const previous = await getStudioManifestStatus({
+            sessionId: studio?.lastAuthorizedSessionId || null,
+          });
+          previousRevision = previous.status?.lastCompleteRevision || previous.status?.activeRevision || "";
+        } catch (_) {
+          previousRevision = "";
+        }
+        if (studio?.connected) {
+          const queued = await queueStudioTool({
+            type: "get_project_manifest",
+            payload: { maxDepth: 24, maxInstances: 10000, pageSize: 500, includeSource: false },
+            sessionId: studio?.lastAuthorizedSessionId || null,
+            label: "Refresh Studio manifest",
+            applyMode: "unrestricted_dev",
+          });
+          appendTerminal(`queued manifest refresh ${queued.commandId}`, "state");
+          const status = await waitForManifestCompletion(previousRevision);
+          const items = await fetchManifestPage(status.lastCompleteRevision || status.activeRevision || "");
+          setStudioManifest(items);
+        } else {
+          const data = await getStudioManifest({ sessionId: studio?.lastAuthorizedSessionId || null, limit: 1000 });
+          setStudioManifest(data.manifest?.items || []);
+        }
+      } catch (err) {
+        notify?.({ message: err?.message || "Could not refresh Studio manifest", type: "error" });
+      } finally {
+        setStudioBusy(false);
       }
-      if (studio?.connected) {
-        const queued = await queueStudioTool({
-          type: "get_project_manifest",
-          payload: { maxDepth: 24, maxInstances: 10000, pageSize: 500, includeSource: false },
-          sessionId: studio?.lastAuthorizedSessionId || null,
-          label: "Refresh Studio manifest",
-          applyMode: "unrestricted_dev",
-        });
-        appendTerminal(`queued manifest refresh ${queued.commandId}`, "state");
-        const status = await waitForManifestCompletion(previousRevision);
-        const items = await fetchManifestPage(status.lastCompleteRevision || status.activeRevision || "");
-        setStudioManifest(items);
-      } else {
-        const data = await getStudioManifest({ sessionId: studio?.lastAuthorizedSessionId || null, limit: 1000 });
-        setStudioManifest(data.manifest?.items || []);
-      }
-    } catch (err) {
-      notify?.({ message: err?.message || "Could not refresh Studio manifest", type: "error" });
+    })();
+
+    manifestRefreshInFlightRef.current = refreshPromise;
+    try {
+      return await refreshPromise;
     } finally {
-      setStudioBusy(false);
+      if (manifestRefreshInFlightRef.current === refreshPromise) {
+        manifestRefreshInFlightRef.current = null;
+      }
     }
   }, [appendTerminal, fetchManifestPage, notify, studio?.connected, studio?.lastAuthorizedSessionId, waitForManifestCompletion]);
 
   useEffect(() => {
-    if (!studio?.lastAuthorizedSessionId) return;
-    refreshStudioManifest().catch(() => {});
-  }, [refreshStudioManifest, studio?.lastAuthorizedSessionId]);
+    const sessionId = studio?.lastAuthorizedSessionId;
+    if (!sessionId) return;
+
+    const autoRefreshKey = `${sessionId}:${studio?.connected ? "live" : "cached"}`;
+    if (autoManifestRefreshKeyRef.current === autoRefreshKey) return;
+    autoManifestRefreshKeyRef.current = autoRefreshKey;
+
+    refreshStudioManifest().catch(() => {
+      autoManifestRefreshKeyRef.current = "";
+    });
+  }, [refreshStudioManifest, studio?.connected, studio?.lastAuthorizedSessionId]);
 
   const studioResults = useMemo(() => {
     const query = studioSearch.trim().toLowerCase();
@@ -310,10 +339,10 @@ export default function AgentWorkspaceLayout({ controller }) {
     };
   }, [studioFiles, workspace.activeArtifact]);
 
-  const studioActiveFile = useMemo(
-    () => studioFiles.find((file) => file.id === activeStudioFileId) || studioFiles[0] || null,
-    [activeStudioFileId, studioFiles]
-  );
+  const studioActiveFile = useMemo(() => {
+    if (!studioFiles.length) return workspace.activeFile;
+    return studioFiles.find((file) => file.id === activeStudioFileId) || studioFiles[0] || null;
+  }, [activeStudioFileId, studioFiles, workspace.activeFile]);
 
   const handleStudioFileChange = useCallback((_artifactId, _fileId, content) => {
     if (studioFiles.length) {
