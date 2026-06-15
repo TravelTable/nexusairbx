@@ -51,7 +51,7 @@ Writes should include `expectedSourceHash` when the caller previously read a scr
 
 - Manifest item documents now use deterministic SHA-256 IDs over `userId`, `sessionId`, `placeId`, `revision`, and `canonicalPath`.
 - Manifest pages are keyed by logical cursor identity, not transport command ID.
-- Deploy composite indexes from [`backend/firestore.indexes.json`](/Users/jackrow/nexusairbx/backend/firestore.indexes.json) with `firebase deploy --only firestore:indexes`.
+- Deploy composite indexes from [`backend/firestore.indexes.json`](../backend/firestore.indexes.json) with `firebase deploy --only firestore:indexes`.
 - New manifest writes use schema version `2`.
-- Top-level legacy version-1 manifest documents can be reviewed or deleted with [`backend/scripts/cleanupLegacyStudioManifest.js`](/Users/jackrow/nexusairbx/backend/scripts/cleanupLegacyStudioManifest.js).
+- Top-level legacy version-1 manifest documents can be reviewed or deleted with [`backend/scripts/cleanupLegacyStudioManifest.js`](../backend/scripts/cleanupLegacyStudioManifest.js).
 - Legacy malformed nested item paths produced by slash-bearing version-1 document IDs are not enumerable through normal collection queries and require separate administrative cleanup.
