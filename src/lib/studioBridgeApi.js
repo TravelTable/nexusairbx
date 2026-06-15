@@ -50,6 +50,34 @@ export async function getStudioCommand(commandId) {
   return readJsonOrThrow(res, "Failed to load Studio command");
 }
 
+export async function getStudioTools() {
+  const res = await authedFetch("/api/studio/tools", { method: "GET", noCache: true });
+  return readJsonOrThrow(res, "Failed to load Studio tools");
+}
+
+export async function getStudioManifest({ sessionId = null, placeId = null, limit = 500, cursor = "" } = {}) {
+  const params = new URLSearchParams();
+  if (sessionId) params.set("sessionId", sessionId);
+  if (placeId) params.set("placeId", placeId);
+  if (limit) params.set("limit", String(limit));
+  if (cursor) params.set("cursor", cursor);
+  const query = params.toString();
+  const res = await authedFetch(`/api/studio/manifest${query ? `?${query}` : ""}`, {
+    method: "GET",
+    noCache: true,
+  });
+  return readJsonOrThrow(res, "Failed to load Studio manifest");
+}
+
+export async function queueStudioTool({ type, payload = {}, sessionId = null, label = "", applyMode = "manual_review", runId = null, stepId = null }) {
+  const res = await authedFetch("/api/studio/tools/queue", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ type, payload, sessionId, label, applyMode, runId, stepId }),
+  });
+  return readJsonOrThrow(res, "Failed to queue Studio tool");
+}
+
 /** @deprecated Legacy Studio Agent panel — use unified agent run + restoreAgentRun instead. */
 export async function startStudioAgent({ goal, chatId = null, sessionId = null }) {
   const res = await authedFetch("/api/studio/agent/start", {

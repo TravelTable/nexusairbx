@@ -2,7 +2,7 @@
 -- Local Studio plugin: website-controlled apply + agent tool runner.
 
 local BACKEND_URL = "https://nexusrbx-backend-production.up.railway.app"
-local PLUGIN_VERSION = "0.3.1-agent"
+local PLUGIN_VERSION = "0.4.0-protocol"
 
 local HttpService = game:GetService("HttpService")
 local ChangeHistoryService = game:GetService("ChangeHistoryService")
@@ -131,10 +131,23 @@ local CREATABLE_CLASSES = {
 	BindableFunction = true,
 	ScreenGui = true,
 	Frame = true,
+	TextLabel = true,
+	TextButton = true,
+	TextBox = true,
+	ImageLabel = true,
+	ImageButton = true,
+	ScrollingFrame = true,
+	UIListLayout = true,
+	UIGridLayout = true,
+	UIPadding = true,
+	UICorner = true,
+	UIStroke = true,
 	StringValue = true,
 	BoolValue = true,
 	NumberValue = true,
 	IntValue = true,
+	ObjectValue = true,
+	Configuration = true,
 	Script = true,
 	LocalScript = true,
 	ModuleScript = true,
@@ -142,6 +155,8 @@ local CREATABLE_CLASSES = {
 
 local AGENT_ARTIFACT_ID_ATTRIBUTE = "AgentArtifactId"
 local AGENT_FILE_ID_ATTRIBUTE = "AgentFileId"
+local NEXUS_MANAGED_ID_ATTRIBUTE = "NexusManagedId"
+local lastBatchSnapshots = {}
 
 local function setStatus(text)
 	statusLabel.Text = "Status: " .. tostring(text)
@@ -171,6 +186,8 @@ local function jsonDecode(value)
 	return HttpService:JSONDecode(value)
 end
 
+local readScriptSource
+
 local function stableHash(value)
 	local hash = 2166136261
 	local text = tostring(value or "")
@@ -179,6 +196,134 @@ local function stableHash(value)
 		hash = (hash * 16777619) % 4294967296
 	end
 	return string.format("%08x", hash)
+end
+
+local function nowMs()
+	return math.floor(os.clock() * 1000)
+end
+
+local function ensureManagedId(inst)
+	if not inst or inst == game then
+		return nil
+	end
+	local existing = inst:GetAttribute(NEXUS_MANAGED_ID_ATTRIBUTE)
+	if existing and tostring(existing) ~= "" then
+		return tostring(existing)
+	end
+	local nextId = HttpService:GenerateGUID(false)
+	local ok = pcall(function()
+		inst:SetAttribute(NEXUS_MANAGED_ID_ATTRIBUTE, nextId)
+	end)
+	return ok and nextId or nil
+end
+
+local function attributesOf(inst)
+	local ok, attrs = pcall(function()
+		return inst:GetAttributes()
+	end)
+	return ok and attrs or {}
+end
+
+local function safePropertyValue(inst, key)
+	local ok, value = pcall(function()
+		return inst[key]
+	end)
+	if not ok then
+		return nil
+	end
+	local valueType = typeof(value)
+	if valueType == "string" or valueType == "number" or valueType == "boolean" then
+		return value
+	elseif valueType == "Color3" then
+		return { r = value.R, g = value.G, b = value.B, type = "Color3" }
+	elseif valueType == "UDim2" then
+		return {
+			type = "UDim2",
+			xScale = value.X.Scale,
+			xOffset = value.X.Offset,
+			yScale = value.Y.Scale,
+			yOffset = value.Y.Offset,
+		}
+	elseif valueType == "UDim" then
+		return { type = "UDim", scale = value.Scale, offset = value.Offset }
+	elseif valueType == "Vector2" then
+		return { type = "Vector2", x = value.X, y = value.Y }
+	elseif valueType == "Vector3" then
+		return { type = "Vector3", x = value.X, y = value.Y, z = value.Z }
+	elseif valueType == "EnumItem" then
+		return tostring(value)
+	end
+	return nil
+end
+
+local function propertiesOf(inst)
+	local props = {
+		Name = inst.Name,
+		ClassName = inst.ClassName,
+	}
+	local candidates = {
+		"Value",
+		"Enabled",
+		"ResetOnSpawn",
+		"IgnoreGuiInset",
+		"Text",
+		"Visible",
+		"Size",
+		"Position",
+		"AnchorPoint",
+		"BackgroundTransparency",
+		"TextTransparency",
+		"ImageTransparency",
+		"ZIndex",
+		"LayoutOrder",
+		"SortOrder",
+		"Padding",
+		"CornerRadius",
+		"Thickness",
+	}
+	for _, key in ipairs(candidates) do
+		local value = safePropertyValue(inst, key)
+		if value ~= nil then
+			props[key] = value
+		end
+	end
+	return props
+end
+
+local function propertyHash(inst)
+	return stableHash(jsonEncode(propertiesOf(inst)) .. jsonEncode(attributesOf(inst)) .. table.concat(CollectionService:GetTags(inst), ","))
+end
+
+local function scriptHash(inst)
+	if not inst or not SCRIPT_CLASSES[inst.ClassName] then
+		return nil
+	end
+	local ok, source = readScriptSource(inst)
+	return ok and stableHash(source) or nil
+end
+
+local function structuredUnsupported(operation, message)
+	return {
+		ok = false,
+		success = false,
+		operation = operation,
+		error = {
+			code = "unsupported_in_studio_plugin",
+			message = message or (operation .. " is not supported by this Studio plugin runtime"),
+			retryable = false,
+		},
+		warnings = {},
+		diagnostics = {},
+		affectedPaths = {},
+	}
+end
+
+local function escapePattern(text)
+	return tostring(text or ""):gsub("([^%w])", "%%%1")
+end
+
+local function escapeReplacement(text)
+	return tostring(text or ""):gsub("%%", "%%%%")
 end
 
 local function request(method, path, body, token)
@@ -312,7 +457,18 @@ local function ensureParent(path, createParents)
 end
 
 local function safeSetProperty(inst, key, value)
-	pcall(function()
+	local ok, err = pcall(function()
+		if typeof(value) == "table" and value.type == "UDim2" then
+			value = UDim2.new(value.xScale or 0, value.xOffset or 0, value.yScale or 0, value.yOffset or 0)
+		elseif typeof(value) == "table" and value.type == "UDim" then
+			value = UDim.new(value.scale or 0, value.offset or 0)
+		elseif typeof(value) == "table" and value.type == "Color3" then
+			value = Color3.new(value.r or 0, value.g or 0, value.b or 0)
+		elseif typeof(value) == "table" and value.type == "Vector2" then
+			value = Vector2.new(value.x or 0, value.y or 0)
+		elseif typeof(value) == "table" and value.type == "Vector3" then
+			value = Vector3.new(value.x or 0, value.y or 0, value.z or 0)
+		end
 		if key == "Value" and inst:IsA("ValueBase") then
 			inst.Value = value
 		elseif key == "ResetOnSpawn" and inst:IsA("ScreenGui") then
@@ -321,13 +477,28 @@ local function safeSetProperty(inst, key, value)
 			inst.IgnoreGuiInset = value ~= false
 		elseif key == "Enabled" and inst:IsA("ScreenGui") then
 			inst.Enabled = value ~= false
+		elseif key == "Text" and (inst:IsA("TextLabel") or inst:IsA("TextButton") or inst:IsA("TextBox")) then
+			inst.Text = tostring(value)
+		elseif key == "Visible" and inst:IsA("GuiObject") then
+			inst.Visible = value ~= false
+		elseif key == "Size" and inst:IsA("GuiObject") and typeof(value) == "UDim2" then
+			inst.Size = value
+		elseif key == "Position" and inst:IsA("GuiObject") and typeof(value) == "UDim2" then
+			inst.Position = value
+		elseif key == "BackgroundTransparency" and inst:IsA("GuiObject") then
+			inst.BackgroundTransparency = tonumber(value) or inst.BackgroundTransparency
+		elseif key == "LayoutOrder" and inst:IsA("GuiObject") then
+			inst.LayoutOrder = tonumber(value) or inst.LayoutOrder
 		elseif key == "Name" then
 			inst.Name = tostring(value)
+		else
+			error("Unsupported or unsafe property: " .. tostring(key))
 		end
 	end)
+	return ok, ok and nil or tostring(err)
 end
 
-local function readScriptSource(inst)
+function readScriptSource(inst)
 	if not inst or not SCRIPT_CLASSES[inst.ClassName] then
 		return false, ""
 	end
@@ -393,6 +564,8 @@ local function snapshotInstance(path)
 		className = inst.ClassName,
 		existed = true,
 		properties = {},
+		attributes = attributesOf(inst),
+		tags = CollectionService:GetTags(inst),
 	}
 
 	if SCRIPT_CLASSES[inst.ClassName] then
@@ -465,24 +638,33 @@ local function createOrReplaceInstance(path, className, properties, createParent
 	local inst = Instance.new(className)
 	inst.Name = name
 	for key, value in pairs(properties or {}) do
-		safeSetProperty(inst, key, value)
+		local ok, err = safeSetProperty(inst, key, value)
+		if not ok then
+			error(err)
+		end
 	end
 	inst.Parent = parent
 	return inst
 end
 
-local function serializeInstance(inst, path, depth, maxDepth, state, includeSource, sourceMaxChars)
+local function serializeInstance(inst, path, depth, maxDepth, state, includeSource, sourceMaxChars, parentPath)
 	state.count = state.count + 1
+	local managedId = ensureManagedId(inst)
 	local item = {
 		name = inst.Name,
 		className = inst.ClassName,
 		path = path,
+		parentPath = parentPath or "",
+		managedId = managedId,
 		tags = CollectionService:GetTags(inst),
+		attributes = attributesOf(inst),
+		propertyHash = propertyHash(inst),
 		children = {},
 	}
 
 	if SCRIPT_CLASSES[inst.ClassName] then
 		item.isScript = true
+		item.sourceHash = scriptHash(inst)
 		if includeSource then
 			local ok, source = readScriptSource(inst)
 			if ok then
@@ -495,6 +677,16 @@ local function serializeInstance(inst, path, depth, maxDepth, state, includeSour
 	elseif inst:IsA("ScreenGui") then
 		item.isScreenGui = true
 	end
+	table.insert(state.items, {
+		name = item.name,
+		className = item.className,
+		path = item.path,
+		parentPath = item.parentPath,
+		managedId = item.managedId,
+		sourceHash = item.sourceHash,
+		propertyHash = item.propertyHash,
+		updatedAt = os.time(),
+	})
 
 	if depth >= maxDepth or state.count >= state.maxInstances then
 		item.truncated = #inst:GetChildren() > 0
@@ -506,7 +698,7 @@ local function serializeInstance(inst, path, depth, maxDepth, state, includeSour
 			item.truncated = true
 			break
 		end
-		table.insert(item.children, serializeInstance(child, path .. "/" .. child.Name, depth + 1, maxDepth, state, includeSource, sourceMaxChars))
+		table.insert(item.children, serializeInstance(child, path .. "/" .. child.Name, depth + 1, maxDepth, state, includeSource, sourceMaxChars, path))
 	end
 
 	return item
@@ -543,20 +735,31 @@ local function getInspectionRoots()
 end
 
 local function inspectPlace(payload)
-	local maxDepth = math.clamp(tonumber(payload.maxDepth) or 5, 1, 8)
-	local maxInstances = math.clamp(tonumber(payload.maxInstances) or 500, 20, 1500)
+	local maxDepth = math.clamp(tonumber(payload.maxDepth) or 12, 1, 32)
+	local maxInstances = math.clamp(tonumber(payload.maxInstances) or 500, 20, 10000)
 	local includeSource = payload.includeSource == true
 	local sourceMaxChars = math.clamp(tonumber(payload.sourceMaxChars) or 0, 0, 8000)
-	local state = { count = 0, maxInstances = maxInstances }
+	local pageSize = math.clamp(tonumber(payload.pageSize) or maxInstances, 20, 1000)
+	local cursor = math.max(0, tonumber(payload.cursor) or 0)
+	local state = { count = 0, maxInstances = maxInstances, items = {} }
 	local roots = {}
 	for _, inst in ipairs(getInspectionRoots()) do
-		table.insert(roots, serializeInstance(inst, inst.Name, 1, maxDepth, state, includeSource, sourceMaxChars))
+		table.insert(roots, serializeInstance(inst, inst.Name, 1, maxDepth, state, includeSource, sourceMaxChars, ""))
+	end
+	local page = {}
+	for i = cursor + 1, math.min(#state.items, cursor + pageSize) do
+		table.insert(page, state.items[i])
 	end
 	return {
+		protocolVersion = "2026-06-15",
+		revision = stableHash(tostring(game.PlaceId) .. ":" .. tostring(state.count) .. ":" .. tostring(os.time())),
 		placeName = game.Name,
 		placeId = tostring(game.PlaceId),
 		count = state.count,
+		totalInstances = state.count,
 		truncated = state.count >= maxInstances,
+		items = page,
+		nextCursor = (cursor + pageSize < #state.items) and tostring(cursor + pageSize) or nil,
 		roots = roots,
 	}
 end
@@ -574,6 +777,7 @@ local function readScript(payload)
 				name = inst.Name,
 				source = ok and string.sub(source, 1, maxChars) or "",
 				sourceLength = ok and #source or 0,
+				sourceHash = ok and stableHash(source) or nil,
 				truncated = ok and #source > maxChars or false,
 			})
 		else
@@ -590,6 +794,30 @@ local function writeScript(payload)
 		error("write_script requires Script, LocalScript, or ModuleScript")
 	end
 	local snapshots = {}
+	local existing = resolvePath(path)
+	if existing and SCRIPT_CLASSES[existing.ClassName] and payload.expectedSourceHash and payload.expectedSourceHash ~= "" then
+		local currentHash = scriptHash(existing)
+		if currentHash ~= payload.expectedSourceHash then
+			return {
+				ok = false,
+				code = "source_conflict",
+				error = "Source hash conflict",
+				path = fullPath(existing),
+				expectedSourceHash = payload.expectedSourceHash,
+				currentSourceHash = currentHash,
+				retryable = false,
+			}
+		end
+	end
+	if existing and not payload.allowOverwrite and payload.createOnly == true then
+		return {
+			ok = false,
+			code = "already_exists",
+			error = "Script already exists",
+			path = fullPath(existing),
+			retryable = false,
+		}
+	end
 	if payload.snapshot ~= false then
 		table.insert(snapshots, snapshotInstance(path))
 	end
@@ -602,6 +830,7 @@ local function writeScript(payload)
 		path = fullPath(inst),
 		className = inst.ClassName,
 		sourceLength = #(payload.source or ""),
+		sourceHash = scriptHash(inst),
 		snapshots = snapshots,
 	}
 end
@@ -619,9 +848,19 @@ local function createInstanceTool(payload)
 		end
 	end
 	local inst = createOrReplaceInstance(path, className, payload.properties or {}, payload.createParents ~= false)
+	for key, value in pairs(payload.attributes or {}) do
+		inst:SetAttribute(tostring(key), value)
+	end
+	for _, tag in ipairs(payload.tags or {}) do
+		CollectionService:AddTag(inst, tostring(tag))
+	end
+	ensureManagedId(inst)
 	return {
 		path = fullPath(inst),
 		className = inst.ClassName,
+		properties = propertiesOf(inst),
+		attributes = attributesOf(inst),
+		tags = CollectionService:GetTags(inst),
 		snapshots = snapshots,
 	}
 end
@@ -641,6 +880,464 @@ local function deleteInstanceTool(payload)
 	return { path = path, deleted = inst ~= nil, snapshots = snapshots }
 end
 
+local function serializeFlat(inst, includeProperties, includeAttributes, includeTags)
+	local row = {
+		name = inst.Name,
+		className = inst.ClassName,
+		path = fullPath(inst),
+		parentPath = inst.Parent and fullPath(inst.Parent) or "",
+		managedId = ensureManagedId(inst),
+		propertyHash = propertyHash(inst),
+	}
+	if includeProperties ~= false then
+		row.properties = propertiesOf(inst)
+	end
+	if includeAttributes ~= false then
+		row.attributes = attributesOf(inst)
+	end
+	if includeTags ~= false then
+		row.tags = CollectionService:GetTags(inst)
+	end
+	if SCRIPT_CLASSES[inst.ClassName] then
+		row.isScript = true
+		row.sourceHash = scriptHash(inst)
+	end
+	return row
+end
+
+local function listChildren(payload)
+	local inst = resolvePath(payload.path)
+	if not inst then
+		return { ok = false, error = "Instance not found", path = payload.path, children = {} }
+	end
+	local pageSize = math.clamp(tonumber(payload.pageSize) or 250, 20, 1000)
+	local cursor = math.max(0, tonumber(payload.cursor) or 0)
+	local children = inst:GetChildren()
+	table.sort(children, function(a, b)
+		return a.Name < b.Name
+	end)
+	local out = {}
+	for i = cursor + 1, math.min(#children, cursor + pageSize) do
+		table.insert(out, serializeFlat(children[i], payload.includeProperties == true, true, true))
+	end
+	return {
+		path = fullPath(inst),
+		total = #children,
+		children = out,
+		nextCursor = (cursor + pageSize < #children) and tostring(cursor + pageSize) or nil,
+	}
+end
+
+local function inspectInstances(payload)
+	local paths = payload.paths or {}
+	local out = {}
+	for _, path in ipairs(paths) do
+		local inst = resolvePath(path)
+		if inst then
+			local row = serializeFlat(inst, payload.includeProperties ~= false, payload.includeAttributes ~= false, payload.includeTags ~= false)
+			if payload.includeChildren == true then
+				row.children = {}
+				for _, child in ipairs(inst:GetChildren()) do
+					table.insert(row.children, serializeFlat(child, false, true, true))
+				end
+			end
+			table.insert(out, row)
+		else
+			table.insert(out, { path = path, error = "Instance not found" })
+		end
+	end
+	return { instances = out }
+end
+
+local function searchProject(payload)
+	local query = tostring(payload.query or "")
+	local maxResults = math.clamp(tonumber(payload.maxResults) or 100, 1, 500)
+	local caseSensitive = payload.caseSensitive == true
+	local needle = caseSensitive and query or string.lower(query)
+	local classes = {}
+	for _, className in ipairs(payload.classes or {}) do
+		classes[tostring(className)] = true
+	end
+	local results = {}
+	for _, inst in ipairs(game:GetDescendants()) do
+		if #results >= maxResults then
+			break
+		end
+		if next(classes) == nil or classes[inst.ClassName] then
+			local hay = fullPath(inst) .. " " .. inst.Name .. " " .. inst.ClassName
+			if not caseSensitive then
+				hay = string.lower(hay)
+			end
+			if query == "" or string.find(hay, needle, 1, true) then
+				table.insert(results, serializeFlat(inst, false, true, true))
+			end
+		end
+	end
+	return { query = query, results = results, truncated = #results >= maxResults }
+end
+
+local function searchSource(payload)
+	local query = tostring(payload.query or "")
+	local maxResults = math.clamp(tonumber(payload.maxResults) or 100, 1, 500)
+	local maxContext = math.clamp(tonumber(payload.maxContextChars) or 300, 0, 2000)
+	local caseSensitive = payload.caseSensitive == true
+	local needle = caseSensitive and query or string.lower(query)
+	local allowedPaths = {}
+	for _, path in ipairs(payload.paths or {}) do
+		allowedPaths[tostring(path)] = true
+	end
+	local results = {}
+	for _, inst in ipairs(game:GetDescendants()) do
+		if #results >= maxResults then
+			break
+		end
+		if SCRIPT_CLASSES[inst.ClassName] then
+			local path = fullPath(inst)
+			if next(allowedPaths) == nil or allowedPaths[path] then
+				local ok, source = readScriptSource(inst)
+				if ok then
+					local hay = caseSensitive and source or string.lower(source)
+					local startIndex, endIndex = string.find(hay, needle, 1, true)
+					if query == "" or startIndex then
+						local contextStart = math.max(1, (startIndex or 1) - maxContext)
+						local contextEnd = math.min(#source, (endIndex or 1) + maxContext)
+						table.insert(results, {
+							path = path,
+							className = inst.ClassName,
+							sourceHash = stableHash(source),
+							matchStart = startIndex,
+							matchEnd = endIndex,
+							context = string.sub(source, contextStart, contextEnd),
+						})
+					end
+				end
+			end
+		end
+	end
+	return { query = query, results = results, truncated = #results >= maxResults }
+end
+
+local function readInstance(payload)
+	local paths = payload.paths or {}
+	if payload.path and payload.path ~= "" then
+		paths = { payload.path }
+	end
+	local out = {}
+	for _, path in ipairs(paths) do
+		local inst = resolvePath(path)
+		if inst then
+			table.insert(out, serializeFlat(inst, true, payload.includeAttributes ~= false, payload.includeTags ~= false))
+		else
+			table.insert(out, { path = path, error = "Instance not found" })
+		end
+	end
+	return { instances = out }
+end
+
+local function readProperties(payload)
+	return readInstance(payload)
+end
+
+local function getSelectionTool()
+	local selectionService = game:GetService("Selection")
+	local out = {}
+	for _, inst in ipairs(selectionService:Get()) do
+		table.insert(out, serializeFlat(inst, false, true, true))
+	end
+	return { selection = out }
+end
+
+local function getStudioContext()
+	local roots = {}
+	for _, inst in ipairs(getInspectionRoots()) do
+		table.insert(roots, {
+			name = inst.Name,
+			className = inst.ClassName,
+			path = fullPath(inst),
+			childCount = #inst:GetChildren(),
+		})
+	end
+	return {
+		placeName = game.Name,
+		placeId = tostring(game.PlaceId),
+		jobId = tostring(game.JobId),
+		pluginVersion = PLUGIN_VERSION,
+		roots = roots,
+	}
+end
+
+local function patchScript(payload)
+	local path = payload.path
+	local inst = resolvePath(path)
+	if not inst or not SCRIPT_CLASSES[inst.ClassName] then
+		return { ok = false, error = "Script not found", path = path }
+	end
+	local ok, source = readScriptSource(inst)
+	if not ok then
+		return { ok = false, error = "Could not read script source", path = path }
+	end
+	local currentHash = stableHash(source)
+	if payload.expectedSourceHash and payload.expectedSourceHash ~= "" and payload.expectedSourceHash ~= currentHash then
+		return {
+			ok = false,
+			code = "source_conflict",
+			error = "Source hash conflict",
+			path = fullPath(inst),
+			expectedSourceHash = payload.expectedSourceHash,
+			currentSourceHash = currentHash,
+		}
+	end
+	local nextSource = payload.source and payload.source ~= "" and tostring(payload.source) or source
+	local replacements = 0
+	for _, patch in ipairs(payload.patches or {}) do
+		local find = tostring(patch.find or "")
+		local replace = tostring(patch.replace or "")
+		if find ~= "" then
+			if patch.all == true then
+				local count
+				nextSource, count = string.gsub(nextSource, escapePattern(find), escapeReplacement(replace))
+				replacements = replacements + count
+			else
+				local startIndex, endIndex = string.find(nextSource, find, 1, true)
+				if startIndex then
+					nextSource = string.sub(nextSource, 1, startIndex - 1) .. replace .. string.sub(nextSource, endIndex + 1)
+					replacements = replacements + 1
+				else
+					return { ok = false, error = "Patch find text not found", path = fullPath(inst), find = find }
+				end
+			end
+		end
+	end
+	local snapshots = {}
+	if payload.snapshot ~= false then
+		table.insert(snapshots, snapshotInstance(fullPath(inst)))
+	end
+	local wrote, writeErr = writeScriptSource(inst, nextSource)
+	if not wrote then
+		return { ok = false, error = writeErr or "Could not write patched source", path = fullPath(inst), snapshots = snapshots }
+	end
+	return {
+		path = fullPath(inst),
+		replacements = replacements,
+		previousHash = currentHash,
+		sourceHash = stableHash(nextSource),
+		sourceLength = #nextSource,
+		snapshots = snapshots,
+	}
+end
+
+local function renameInstanceTool(payload)
+	local inst = resolvePath(payload.path)
+	if not inst then
+		return { ok = false, error = "Instance not found", path = payload.path }
+	end
+	local snapshots = {}
+	if payload.snapshot ~= false then
+		table.insert(snapshots, snapshotInstance(fullPath(inst)))
+	end
+	local oldPath = fullPath(inst)
+	inst.Name = tostring(payload.newName or payload.name or inst.Name)
+	return { previousPath = oldPath, path = fullPath(inst), snapshots = snapshots }
+end
+
+local function moveInstanceTool(payload)
+	local inst = resolvePath(payload.path)
+	if not inst then
+		return { ok = false, error = "Instance not found", path = payload.path }
+	end
+	local targetPath = tostring(payload.newPath or "")
+	local parent = nil
+	local leaf = nil
+	if targetPath ~= "" then
+		parent, leaf = ensureParent(targetPath, payload.createParents ~= false)
+	else
+		parent = resolvePath(payload.newParentPath)
+	end
+	if not parent then
+		return { ok = false, error = "Target parent not found", path = payload.path }
+	end
+	local snapshots = {}
+	if payload.snapshot ~= false then
+		table.insert(snapshots, snapshotInstance(fullPath(inst)))
+	end
+	local oldPath = fullPath(inst)
+	if leaf and leaf ~= "" then
+		inst.Name = leaf
+	end
+	inst.Parent = parent
+	return { previousPath = oldPath, path = fullPath(inst), snapshots = snapshots }
+end
+
+local function duplicateInstanceTool(payload)
+	local inst = resolvePath(payload.path)
+	if not inst then
+		return { ok = false, error = "Instance not found", path = payload.path }
+	end
+	local parent, leaf = ensureParent(payload.newPath, payload.createParents ~= false)
+	if not parent or not leaf then
+		return { ok = false, error = "Could not resolve duplicate target", path = payload.newPath }
+	end
+	local existing = parent:FindFirstChild(leaf)
+	local snapshots = {}
+	if payload.snapshot ~= false then
+		if existing then
+			appendSnapshotTree(existing, snapshots)
+		else
+			table.insert(snapshots, snapshotInstance(payload.newPath))
+		end
+	end
+	if existing then
+		existing:Destroy()
+	end
+	local clone = inst:Clone()
+	clone.Name = leaf
+	clone.Parent = parent
+	ensureManagedId(clone)
+	return { path = fullPath(clone), sourcePath = fullPath(inst), snapshots = snapshots }
+end
+
+local function createScript(payload)
+	payload.createOnly = true
+	return writeScript(payload)
+end
+
+local function deleteScript(payload)
+	local inst = resolvePath(payload.path)
+	if inst and not SCRIPT_CLASSES[inst.ClassName] then
+		return { ok = false, error = "Target is not a script", path = payload.path }
+	end
+	return deleteInstanceTool(payload)
+end
+
+local function updateProperties(payload)
+	local inst = resolvePath(payload.path)
+	if not inst then
+		return { ok = false, error = "Instance not found", path = payload.path }
+	end
+	local snapshots = {}
+	if payload.snapshot ~= false then
+		table.insert(snapshots, snapshotInstance(fullPath(inst)))
+	end
+	local errors = {}
+	for key, value in pairs(payload.properties or {}) do
+		local ok, err = safeSetProperty(inst, key, value)
+		if not ok then
+			table.insert(errors, { property = key, message = err })
+		end
+	end
+	return { path = fullPath(inst), properties = propertiesOf(inst), errors = errors, snapshots = snapshots, ok = #errors == 0 }
+end
+
+local function updateAttributes(payload)
+	local inst = resolvePath(payload.path)
+	if not inst then
+		return { ok = false, error = "Instance not found", path = payload.path }
+	end
+	local snapshots = {}
+	if payload.snapshot ~= false then
+		table.insert(snapshots, snapshotInstance(fullPath(inst)))
+	end
+	for key, value in pairs(payload.attributes or payload.values or {}) do
+		inst:SetAttribute(tostring(key), value)
+	end
+	return { path = fullPath(inst), attributes = attributesOf(inst), snapshots = snapshots }
+end
+
+local function updateTags(payload)
+	local inst = resolvePath(payload.path)
+	if not inst then
+		return { ok = false, error = "Instance not found", path = payload.path }
+	end
+	local snapshots = {}
+	if payload.snapshot ~= false then
+		table.insert(snapshots, snapshotInstance(fullPath(inst)))
+	end
+	if payload.set ~= nil then
+		for _, tag in ipairs(CollectionService:GetTags(inst)) do
+			CollectionService:RemoveTag(inst, tag)
+		end
+		for _, tag in ipairs(payload.set or {}) do
+			CollectionService:AddTag(inst, tostring(tag))
+		end
+	else
+		for _, tag in ipairs(payload.remove or {}) do
+			CollectionService:RemoveTag(inst, tostring(tag))
+		end
+		for _, tag in ipairs(payload.add or {}) do
+			CollectionService:AddTag(inst, tostring(tag))
+		end
+	end
+	return { path = fullPath(inst), tags = CollectionService:GetTags(inst), snapshots = snapshots }
+end
+
+local function replaceInFiles(payload)
+	local paths = payload.paths or {}
+	if #paths == 0 then
+		for _, inst in ipairs(game:GetDescendants()) do
+			if SCRIPT_CLASSES[inst.ClassName] then
+				table.insert(paths, fullPath(inst))
+			end
+		end
+	end
+	local maxFiles = math.clamp(tonumber(payload.maxFiles) or 120, 1, 500)
+	local results = {}
+	local snapshots = {}
+	local find = tostring(payload.find or "")
+	local replace = tostring(payload.replace or "")
+	if find == "" then
+		return { ok = false, error = "find is required" }
+	end
+	for _, path in ipairs(paths) do
+		if #results >= maxFiles then
+			break
+		end
+		local inst = resolvePath(path)
+		if inst and SCRIPT_CLASSES[inst.ClassName] then
+			local ok, source = readScriptSource(inst)
+			if ok then
+				local hay = source
+				local needle = find
+				if payload.caseSensitive == false then
+					hay = string.lower(source)
+					needle = string.lower(find)
+				end
+				if string.find(hay, needle, 1, true) then
+				if payload.snapshot ~= false then
+					table.insert(snapshots, snapshotInstance(fullPath(inst)))
+				end
+				local nextSource
+				if payload.caseSensitive == false then
+					nextSource = source
+					local startIndex, endIndex = string.find(string.lower(nextSource), needle, 1, true)
+					while startIndex do
+						nextSource = string.sub(nextSource, 1, startIndex - 1) .. replace .. string.sub(nextSource, endIndex + 1)
+						startIndex, endIndex = string.find(string.lower(nextSource), needle, startIndex + #replace, true)
+					end
+				else
+					nextSource = string.gsub(source, escapePattern(find), escapeReplacement(replace))
+				end
+				writeScriptSource(inst, nextSource)
+				table.insert(results, { path = fullPath(inst), previousHash = stableHash(source), sourceHash = stableHash(nextSource) })
+				end
+			end
+		end
+	end
+	return { filesChanged = #results, files = results, snapshots = snapshots }
+end
+
+local function createSnapshotTool(payload)
+	local snapshots = {}
+	for _, path in ipairs(payload.paths or {}) do
+		local inst = resolvePath(path)
+		if inst and payload.recursive ~= false then
+			appendSnapshotTree(inst, snapshots)
+		else
+			table.insert(snapshots, snapshotInstance(path))
+		end
+	end
+	return { snapshots = snapshots, snapshotCount = #snapshots }
+end
+
 local function restoreSnapshots(payload)
 	local restored = 0
 	local removed = 0
@@ -657,6 +1354,16 @@ local function restoreSnapshots(payload)
 			local inst = createOrReplaceInstance(snap.path, snap.className, snap.properties or {}, true)
 			if SCRIPT_CLASSES[inst.ClassName] and snap.source ~= nil then
 				writeScriptSource(inst, snap.source)
+			end
+			for key, value in pairs(snap.attributes or {}) do
+				pcall(function()
+					inst:SetAttribute(key, value)
+				end)
+			end
+			for _, tag in ipairs(snap.tags or {}) do
+				pcall(function()
+					CollectionService:AddTag(inst, tag)
+				end)
 			end
 			restored = restored + 1
 		end
@@ -695,6 +1402,81 @@ local function runSmokeCheck(payload)
 	end
 	scan(game)
 	return { checkedScripts = checked, issues = issues, ok = #issues == 0 }
+end
+
+local function parseLuau(payload)
+	local source = tostring(payload.source or "")
+	local path = tostring(payload.path or "")
+	if source == "" and path ~= "" then
+		local inst = resolvePath(path)
+		if inst and SCRIPT_CLASSES[inst.ClassName] then
+			local ok, existing = readScriptSource(inst)
+			if ok then
+				source = existing
+			end
+		end
+	end
+	local diagnostics = {}
+	if source:gsub("%s+", "") == "" then
+		table.insert(diagnostics, { severity = "error", message = "Source is empty" })
+	end
+	if source:find("```", 1, true) then
+		table.insert(diagnostics, { severity = "error", message = "Source contains markdown fence" })
+	end
+	if source:find("<file", 1, true) or source:find("</file>", 1, true) then
+		table.insert(diagnostics, { severity = "error", message = "Source contains leaked file markup" })
+	end
+	local balance = 0
+	for token in source:gmatch("[%(%)]") do
+		if token == "(" then
+			balance = balance + 1
+		else
+			balance = balance - 1
+		end
+		if balance < 0 then
+			table.insert(diagnostics, { severity = "warning", message = "Possible unmatched closing parenthesis" })
+			break
+		end
+	end
+	if balance > 0 then
+		table.insert(diagnostics, { severity = "warning", message = "Possible unmatched opening parenthesis" })
+	end
+	return {
+		path = path ~= "" and path or nil,
+		ok = #diagnostics == 0,
+		diagnostics = diagnostics,
+		sourceHash = stableHash(source),
+		sourceLength = #source,
+	}
+end
+
+local function runProjectValidation(payload)
+	local smoke = runSmokeCheck(payload or {})
+	local diagnostics = {}
+	for _, issue in ipairs(smoke.issues or {}) do
+		table.insert(diagnostics, {
+			severity = "warning",
+			path = issue.path,
+			message = issue.message,
+		})
+	end
+	return {
+		ok = smoke.ok,
+		checkedScripts = smoke.checkedScripts,
+		diagnostics = diagnostics,
+		issues = smoke.issues,
+	}
+end
+
+local function collectDiagnostics(payload)
+	return runProjectValidation(payload or {})
+end
+
+local function collectOutput()
+	return {
+		warnings = { "Roblox Studio output log collection is not exposed to plugins in this bridge runtime." },
+		output = {},
+	}
 end
 
 local function getServiceRoot(serviceName)
@@ -1291,14 +2073,110 @@ end
 
 local TOOL_HANDLERS = {
 	apply_artifact = applyArtifact,
+	get_project_manifest = inspectPlace,
+	list_children = listChildren,
 	inspect_place = inspectPlace,
+	inspect_instances = inspectInstances,
+	search_project = searchProject,
+	search_source = searchSource,
 	read_script = readScript,
+	read_scripts = readScript,
+	read_instance = readInstance,
+	read_properties = readProperties,
+	get_selection = getSelectionTool,
+	get_studio_context = getStudioContext,
+	get_change_history = function()
+		return { snapshots = localSnapshots, snapshotCount = #localSnapshots }
+	end,
+	get_output_logs = collectOutput,
+	collect_output = collectOutput,
+	create_script = createScript,
 	write_script = writeScript,
+	patch_script = patchScript,
+	rename_script = renameInstanceTool,
+	move_script = moveInstanceTool,
+	duplicate_script = duplicateInstanceTool,
+	delete_script = deleteScript,
+	format_script = function(payload)
+		return structuredUnsupported("format_script", "Formatting Luau source requires a formatter outside this Studio plugin runtime.")
+	end,
+	replace_in_files = replaceInFiles,
 	create_instance = createInstanceTool,
+	update_properties = updateProperties,
+	update_attributes = updateAttributes,
+	update_tags = updateTags,
+	rename_instance = renameInstanceTool,
+	move_instance = moveInstanceTool,
+	duplicate_instance = duplicateInstanceTool,
 	delete_instance = deleteInstanceTool,
+	parse_luau = parseLuau,
+	run_project_validation = runProjectValidation,
+	collect_diagnostics = collectDiagnostics,
+	run_test_service = function()
+		return structuredUnsupported("run_test_service", "Running TestService from a plugin is not safely supported by this bridge.")
+	end,
+	run_play_test = function()
+		return structuredUnsupported("run_play_test", "Starting play tests from this plugin bridge is not supported.")
+	end,
+	stop_play_test = function()
+		return structuredUnsupported("stop_play_test", "Stopping play tests from this plugin bridge is not supported.")
+	end,
+	create_snapshot = createSnapshotTool,
 	restore_snapshot = restoreSnapshots,
+	undo_last_batch = function()
+		return restoreSnapshots({ snapshots = lastBatchSnapshots })
+	end,
 	run_smoke_check = runSmokeCheck,
 }
+
+local function batchOperations(payload)
+	local snapshots = {}
+	local results = {}
+	local previousBatch = lastBatchSnapshots
+	lastBatchSnapshots = snapshots
+	local ok, err = pcall(function()
+		for index, op in ipairs(payload.operations or {}) do
+			local opType = tostring(op.type or "")
+			if opType == "apply_artifact" or opType == "batch_operations" then
+				error("Nested or artifact batch operation is not supported")
+			end
+			local handler = TOOL_HANDLERS[opType]
+			if not handler then
+				error("Unsupported batch operation: " .. opType)
+			end
+			local result = handler(op.payload or {})
+			if type(result) == "table" and result.snapshots then
+				for _, snap in ipairs(result.snapshots) do
+					table.insert(snapshots, snap)
+				end
+			end
+			if type(result) == "table" and result.ok == false then
+				table.insert(results, { index = index, type = opType, ok = false, error = result.error or result.message, result = result })
+				error(result.error or "Batch operation failed")
+			end
+			table.insert(results, { index = index, type = opType, ok = true, result = result })
+		end
+	end)
+	if not ok then
+		if payload.atomic ~= false then
+			restoreSnapshots({ snapshots = snapshots })
+		end
+		if #snapshots == 0 then
+			lastBatchSnapshots = previousBatch
+		end
+		return {
+			ok = false,
+			error = tostring(err),
+			atomic = payload.atomic ~= false,
+			rolledBack = payload.atomic ~= false,
+			results = results,
+			snapshots = snapshots,
+		}
+	end
+	return { ok = true, results = results, snapshots = snapshots, snapshotCount = #snapshots }
+end
+
+TOOL_HANDLERS.batch_operations = batchOperations
 
 local function ack(commandId, status, result, errorMessage)
 	local token = getToken()
@@ -1321,7 +2199,64 @@ local function executeCommand(command)
 	setRun(command.runId)
 	setActive((command.label or commandType) .. " (" .. commandType .. ")")
 	local payload = command.payload or {}
-	return handler(payload)
+	local started = nowMs()
+	local result = handler(payload)
+	if type(result) ~= "table" then
+		result = { output = result }
+	end
+	local affected = {}
+	if result.path then
+		table.insert(affected, result.path)
+	end
+	if result.previousPath then
+		table.insert(affected, result.previousPath)
+	end
+	if result.files then
+		for _, file in ipairs(result.files) do
+			if type(file) == "table" and file.path then
+				table.insert(affected, file.path)
+			end
+		end
+	end
+	if result.managedFiles then
+		for _, file in ipairs(result.managedFiles) do
+			if type(file) == "table" and file.canonicalPath then
+				table.insert(affected, file.canonicalPath)
+			end
+		end
+	end
+	local snapshots = result.snapshots
+	local snapshotIds = {}
+	if type(snapshots) == "table" then
+		for _, snap in ipairs(snapshots) do
+			if type(snap) == "table" and snap.id then
+				table.insert(snapshotIds, snap.id)
+			end
+		end
+	end
+	result.success = result.ok ~= false
+	result.ok = result.ok ~= false
+	result.commandId = command.id
+	result.runId = command.runId
+	result.stepId = command.stepId
+	result.operation = commandType
+	result.affectedPaths = result.affectedPaths or affected
+	result.previousHashes = result.previousHashes or {}
+	result.resultingHashes = result.resultingHashes or {}
+	result.warnings = result.warnings or {}
+	result.diagnostics = result.diagnostics or {}
+	result.output = result.output or {}
+	result.duration = math.max(0, nowMs() - started)
+	result.snapshotIds = result.snapshotIds or snapshotIds
+	result.retryable = result.retryable == true
+	if result.ok == false and type(result.error) ~= "table" then
+		result.error = {
+			code = tostring(result.code or "studio_command_failed"),
+			message = tostring(result.error or "Studio command failed"),
+			retryable = result.retryable,
+		}
+	end
+	return result
 end
 
 local function pullOnce()

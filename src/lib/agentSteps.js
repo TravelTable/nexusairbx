@@ -16,21 +16,72 @@ export const STEP_STATUSES = Object.freeze([
 export const TERMINAL_STEP_STATUSES = new Set(["succeeded", "failed"]);
 
 export const STUDIO_TOOL_TYPES = new Set([
+  "get_project_manifest",
+  "list_children",
   "inspect_place",
+  "inspect_instances",
+  "search_project",
+  "search_source",
   "read_script",
+  "read_scripts",
+  "read_instance",
+  "read_properties",
+  "get_selection",
+  "get_studio_context",
+  "get_change_history",
+  "get_output_logs",
+  "create_script",
   "write_script",
+  "patch_script",
+  "rename_script",
+  "move_script",
+  "duplicate_script",
+  "delete_script",
+  "format_script",
+  "replace_in_files",
   "create_instance",
+  "update_properties",
+  "update_attributes",
+  "update_tags",
+  "rename_instance",
+  "move_instance",
+  "duplicate_instance",
   "delete_instance",
+  "batch_operations",
+  "parse_luau",
   "restore_snapshot",
   "run_smoke_check",
+  "run_project_validation",
+  "run_test_service",
+  "run_play_test",
+  "stop_play_test",
+  "collect_diagnostics",
+  "collect_output",
+  "create_snapshot",
+  "undo_last_batch",
   "apply_artifact",
 ]);
 
 export const DESTRUCTIVE_TOOL_TYPES = new Set([
   "write_script",
+  "create_script",
+  "patch_script",
+  "rename_script",
+  "move_script",
+  "duplicate_script",
+  "delete_script",
+  "replace_in_files",
   "create_instance",
+  "update_properties",
+  "update_attributes",
+  "update_tags",
+  "rename_instance",
+  "move_instance",
+  "duplicate_instance",
   "delete_instance",
+  "batch_operations",
   "restore_snapshot",
+  "undo_last_batch",
   "apply_artifact",
 ]);
 
@@ -108,14 +159,25 @@ export function summarizeStepResult(step) {
     if (typeof files === "number") return `Generated ${files} file(s)`;
     return result.title ? `Generated ${result.title}` : "Artifact generated";
   }
+  if (type === "get_project_manifest") {
+    const count = result.totalInstances ?? result.count ?? result.items?.length ?? 0;
+    return `${count} manifest item(s) indexed${result.truncated ? " (truncated)" : ""}`;
+  }
   if (type === "inspect_place") {
     const count = result.count ?? result.totalInstances ?? 0;
     return `${count} instance(s) inspected${result.truncated ? " (truncated)" : ""}`;
   }
-  if (type === "read_script" && result.scripts) return `${result.scripts.length} script source(s) returned`;
-  if (type === "write_script" && result.path) return `Wrote ${result.path}`;
+  if ((type === "search_project" || type === "search_source") && result.results) return `${result.results.length} result(s)`;
+  if ((type === "read_script" || type === "read_scripts") && result.scripts) return `${result.scripts.length} script source(s) returned`;
+  if ((type === "write_script" || type === "create_script" || type === "patch_script") && result.path) return `Wrote ${result.path}`;
+  if ((type === "rename_script" || type === "rename_instance") && result.path) return `Renamed to ${result.path}`;
+  if ((type === "move_script" || type === "move_instance") && result.path) return `Moved to ${result.path}`;
+  if ((type === "duplicate_script" || type === "duplicate_instance") && result.path) return `Duplicated to ${result.path}`;
   if (type === "create_instance" && result.path) return `Created ${result.path}`;
-  if (type === "delete_instance" && result.path) return `Deleted ${result.path}`;
+  if ((type === "delete_instance" || type === "delete_script") && result.path) return `Deleted ${result.path}`;
+  if (type === "batch_operations") return `${result.results?.length || 0} operation(s)`;
+  if (type === "create_snapshot") return `Captured ${result.snapshotCount ?? result.snapshots?.length ?? 0} snapshot(s)`;
+  if (type === "undo_last_batch") return `Restored ${result.restored ?? 0} snapshot(s)`;
   if (type === "restore_snapshot") return `Restored ${result.restored ?? 0} snapshot(s)`;
   if (type === "run_smoke_check") {
     return `${result.issues?.length || 0} issue(s), ${result.checkedScripts || 0} script(s) checked`;
