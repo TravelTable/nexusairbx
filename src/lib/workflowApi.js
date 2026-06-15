@@ -72,3 +72,15 @@ export async function restoreAgentRun(runId) {
   }
   return res.json();
 }
+
+/** Cancel a unified agent run. */
+export async function cancelAgentRun(runId) {
+  const res = await authedFetch(`/api/ai/agent/${encodeURIComponent(runId)}/cancel`, {
+    method: "POST",
+  });
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(text || "Failed to cancel agent run");
+  }
+  return res.json();
+}

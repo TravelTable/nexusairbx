@@ -217,6 +217,14 @@ local function ensureManagedId(inst)
 	return ok and nextId or nil
 end
 
+local function readManagedId(inst)
+	if not inst or inst == game then
+		return nil
+	end
+	local existing = inst:GetAttribute(NEXUS_MANAGED_ID_ATTRIBUTE)
+	return existing and tostring(existing) or nil
+end
+
 local function attributesOf(inst)
 	local ok, attrs = pcall(function()
 		return inst:GetAttributes()
@@ -487,8 +495,25 @@ local function safeSetProperty(inst, key, value)
 			inst.Position = value
 		elseif key == "BackgroundTransparency" and inst:IsA("GuiObject") then
 			inst.BackgroundTransparency = tonumber(value) or inst.BackgroundTransparency
+		elseif key == "TextTransparency" and (inst:IsA("TextLabel") or inst:IsA("TextButton") or inst:IsA("TextBox")) then
+			inst.TextTransparency = tonumber(value) or inst.TextTransparency
+		elseif key == "ImageTransparency" and (inst:IsA("ImageLabel") or inst:IsA("ImageButton")) then
+			inst.ImageTransparency = tonumber(value) or inst.ImageTransparency
+		elseif key == "AnchorPoint" and inst:IsA("GuiObject") and typeof(value) == "Vector2" then
+			inst.AnchorPoint = value
+		elseif key == "ZIndex" and inst:IsA("GuiObject") then
+			inst.ZIndex = tonumber(value) or inst.ZIndex
 		elseif key == "LayoutOrder" and inst:IsA("GuiObject") then
 			inst.LayoutOrder = tonumber(value) or inst.LayoutOrder
+		elseif key == "Padding" and inst:IsA("UIPadding") and typeof(value) == "UDim" then
+			inst.PaddingTop = value
+			inst.PaddingBottom = value
+			inst.PaddingLeft = value
+			inst.PaddingRight = value
+		elseif key == "CornerRadius" and inst:IsA("UICorner") and typeof(value) == "UDim" then
+			inst.CornerRadius = value
+		elseif key == "Thickness" and inst:IsA("UIStroke") then
+			inst.Thickness = tonumber(value) or inst.Thickness
 		elseif key == "Name" then
 			inst.Name = tostring(value)
 		else
@@ -563,27 +588,15 @@ local function snapshotInstance(path)
 		name = inst.Name,
 		className = inst.ClassName,
 		existed = true,
-		properties = {},
+		properties = propertiesOf(inst),
 		attributes = attributesOf(inst),
 		tags = CollectionService:GetTags(inst),
 	}
+	snap.properties.ClassName = nil
 
 	if SCRIPT_CLASSES[inst.ClassName] then
 		local ok, source = readScriptSource(inst)
 		snap.source = ok and source or ""
-	end
-	if inst:IsA("ScreenGui") then
-		snap.properties.ResetOnSpawn = inst.ResetOnSpawn
-		snap.properties.IgnoreGuiInset = inst.IgnoreGuiInset
-		snap.properties.Enabled = inst.Enabled
-	end
-	if inst:IsA("ValueBase") then
-		local ok, value = pcall(function()
-			return inst.Value
-		end)
-		if ok then
-			snap.properties.Value = value
-		end
 	end
 
 	table.insert(localSnapshots, snap)
@@ -649,7 +662,7 @@ end
 
 local function serializeInstance(inst, path, depth, maxDepth, state, includeSource, sourceMaxChars, parentPath)
 	state.count = state.count + 1
-	local managedId = ensureManagedId(inst)
+	local managedId = readManagedId(inst)
 	local item = {
 		name = inst.Name,
 		className = inst.ClassName,
@@ -752,7 +765,7 @@ local function inspectPlace(payload)
 	end
 	return {
 		protocolVersion = "2026-06-15",
-		revision = stableHash(tostring(game.PlaceId) .. ":" .. tostring(state.count) .. ":" .. tostring(os.time())),
+		revision = tostring(payload.manifestRevision or "") ~= "" and tostring(payload.manifestRevision) or stableHash(tostring(game.PlaceId) .. ":" .. tostring(os.time())),
 		placeName = game.Name,
 		placeId = tostring(game.PlaceId),
 		count = state.count,
@@ -795,6 +808,28 @@ local function writeScript(payload)
 	end
 	local snapshots = {}
 	local existing = resolvePath(path)
+	if existing and not SCRIPT_CLASSES[existing.ClassName] then
+		return {
+			ok = false,
+			code = "class_conflict",
+			error = "Refusing to replace non-script instance hierarchy with a script",
+			path = fullPath(existing),
+			currentClassName = existing.ClassName,
+			expectedClassName = className,
+			retryable = false,
+		}
+	end
+	if existing and existing.ClassName ~= className and payload.allowClassChange ~= true then
+		return {
+			ok = false,
+			code = "class_conflict",
+			error = "Refusing to change script class without allowClassChange",
+			path = fullPath(existing),
+			currentClassName = existing.ClassName,
+			expectedClassName = className,
+			retryable = false,
+		}
+	end
 	if existing and SCRIPT_CLASSES[existing.ClassName] and payload.expectedSourceHash and payload.expectedSourceHash ~= "" then
 		local currentHash = scriptHash(existing)
 		if currentHash ~= payload.expectedSourceHash then
@@ -819,9 +854,31 @@ local function writeScript(payload)
 		}
 	end
 	if payload.snapshot ~= false then
-		table.insert(snapshots, snapshotInstance(path))
+		if existing then
+			appendSnapshotTree(existing, snapshots)
+		else
+			table.insert(snapshots, snapshotInstance(path))
+		end
 	end
-	local inst = createOrReplaceInstance(path, className, {}, payload.createParents ~= false)
+	local inst = existing
+	if not inst then
+		local parent, name = ensureParent(path, payload.createParents ~= false)
+		if not parent or not name then
+			return { ok = false, error = "Could not resolve parent for " .. tostring(path), path = path }
+		end
+		inst = Instance.new(className)
+		inst.Name = name
+		inst.Parent = parent
+	elseif inst.ClassName ~= className and payload.allowClassChange == true then
+		local previous = inst
+		local parent = previous.Parent
+		local name = previous.Name
+		previous:Destroy()
+		inst = Instance.new(className)
+		inst.Name = name
+		inst.Parent = parent
+	end
+	ensureManagedId(inst)
 	local ok, err = writeScriptSource(inst, payload.source or "")
 	if not ok then
 		error(err or "Could not write script source")
@@ -886,7 +943,7 @@ local function serializeFlat(inst, includeProperties, includeAttributes, include
 		className = inst.ClassName,
 		path = fullPath(inst),
 		parentPath = inst.Parent and fullPath(inst.Parent) or "",
-		managedId = ensureManagedId(inst),
+		managedId = readManagedId(inst),
 		propertyHash = propertyHash(inst),
 	}
 	if includeProperties ~= false then

@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from "react";
 import Editor from "@monaco-editor/react";
-import { Copy, Check, Pencil, Eye, RotateCcw, FileCode2 } from "lucide-react";
+import { Copy, Check, Pencil, Eye, RotateCcw, FileCode2, Save } from "lucide-react";
 import CodeEditorTabs from "./CodeEditorTabs";
 import ArtifactInspector from "./ArtifactInspector";
 import ExportActions from "./ExportActions";
@@ -48,6 +48,9 @@ export default function CodeWorkspace({
   onSelectFile,
   onChangeContent,
   onRevertEdits,
+  onSaveFile,
+  saving = false,
+  conflict = null,
   notify,
 }) {
   const [editing, setEditing] = useState(false);
@@ -126,8 +129,30 @@ export default function CodeWorkspace({
             {copied ? <Check className="w-3.5 h-3.5 text-[#00f5d4]" /> : <Copy className="w-3.5 h-3.5" />}
             Copy
           </button>
+          {onSaveFile && activeFile && (
+            <button
+              type="button"
+              onClick={() => onSaveFile(activeFile)}
+              disabled={saving || readOnly}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[#00f5d4] text-black border border-[#00f5d4]/70 text-[10px] font-bold uppercase tracking-widest disabled:opacity-40 transition-all"
+              title="Save this file to Studio"
+            >
+              <Save className="w-3.5 h-3.5" />
+              Save
+            </button>
+          )}
         </div>
       </div>
+
+      {conflict && (
+        <div className="border-b border-red-400/20 bg-red-400/10 px-4 py-2 text-xs text-red-100">
+          <div className="font-bold">Source conflict: Studio changed since this file was opened.</div>
+          <div className="mt-1 grid grid-cols-1 lg:grid-cols-2 gap-2 font-mono text-[11px]">
+            <pre className="max-h-32 overflow-auto rounded bg-black/30 p-2 whitespace-pre-wrap">{conflict.currentSource || conflict.currentVersion || ""}</pre>
+            <pre className="max-h-32 overflow-auto rounded bg-black/30 p-2 whitespace-pre-wrap">{conflict.attemptedSource || activeFile?.content || ""}</pre>
+          </div>
+        </div>
+      )}
 
       <CodeEditorTabs files={artifact.files} activeFileId={activeFile?.id} onSelectFile={onSelectFile} />
 

@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { Menu, FolderTree, History, Layers, FileCode2, MessageSquare, ClipboardList } from "lucide-react";
+import React, { useCallback, useMemo, useState } from "react";
+import { Menu, FolderTree, History, Layers, FileCode2, MessageSquare, ClipboardList, Search, RefreshCw, TerminalSquare } from "lucide-react";
 
 import SidebarContent from "../../components/SidebarContent";
 import NexusRBXHeader from "../../components/NexusRBXHeader";
@@ -20,6 +20,7 @@ import CodeFileTree from "../../components/ai/workspace/CodeFileTree";
 import CodeWorkspace from "../../components/ai/workspace/CodeWorkspace";
 import AgentChatPanel from "../../components/ai/workspace/AgentChatPanel";
 import BuildDetailsPanel from "../../components/ai/workspace/BuildDetailsPanel";
+import { getStudioCommand, getStudioManifest, queueStudioTool } from "../../lib/studioBridgeApi";
 
 const MOBILE_TABS = [
   { id: "chat", label: "Chat", icon: MessageSquare },
@@ -50,6 +51,16 @@ function ArtifactSwitcher({ artifacts, activeId, onSelect }) {
       ))}
     </div>
   );
+}
+
+async function pollStudioCommand(commandId, { timeoutMs = 30000 } = {}) {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    const command = await getStudioCommand(commandId);
+    if (command.status === "succeeded" || command.status === "failed") return command;
+    await new Promise((resolve) => setTimeout(resolve, 1200));
+  }
+  throw new Error("Studio command timed out");
 }
 
 export default function AgentWorkspaceLayout({ controller }) {
@@ -115,6 +126,155 @@ export default function AgentWorkspaceLayout({ controller }) {
   const { chatEndRef } = refs;
 
   const [leftView, setLeftView] = useState("files");
+  const [studioManifest, setStudioManifest] = useState([]);
+  const [studioSearch, setStudioSearch] = useState("");
+  const [studioFile, setStudioFile] = useState(null);
+  const [studioConflict, setStudioConflict] = useState(null);
+  const [studioBusy, setStudioBusy] = useState(false);
+  const [terminalLines, setTerminalLines] = useState([]);
+
+  const appendTerminal = useCallback((line) => {
+    setTerminalLines((prev) => [...prev.slice(-200), `[${new Date().toLocaleTimeString()}] ${line}`]);
+  }, []);
+
+  const refreshStudioManifest = useCallback(async () => {
+    setStudioBusy(true);
+    setStudioConflict(null);
+    try {
+      if (studio?.connected) {
+        const queued = await queueStudioTool({
+          type: "get_project_manifest",
+          payload: { maxDepth: 24, maxInstances: 10000, pageSize: 500, includeSource: false },
+          sessionId: studio?.lastAuthorizedSessionId || null,
+          label: "Refresh Studio manifest",
+          applyMode: "unrestricted_dev",
+        });
+        appendTerminal(`queued manifest refresh ${queued.commandId}`);
+      }
+      const data = await getStudioManifest({ sessionId: studio?.lastAuthorizedSessionId || null, limit: 1000 });
+      setStudioManifest(data.manifest?.items || []);
+    } catch (err) {
+      notify?.({ message: err?.message || "Could not refresh Studio manifest", type: "error" });
+    } finally {
+      setStudioBusy(false);
+    }
+  }, [appendTerminal, notify, studio?.connected, studio?.lastAuthorizedSessionId]);
+
+  const studioResults = useMemo(() => {
+    const query = studioSearch.trim().toLowerCase();
+    return (studioManifest || [])
+      .filter((item) => !query || `${item.canonicalPath || item.path} ${item.className}`.toLowerCase().includes(query))
+      .slice(0, 200);
+  }, [studioManifest, studioSearch]);
+
+  const openStudioScript = useCallback(async (item) => {
+    const path = item?.canonicalPath || item?.path;
+    if (!path) return;
+    setStudioBusy(true);
+    setStudioConflict(null);
+    try {
+      const queued = await queueStudioTool({
+        type: "read_script",
+        payload: { paths: [path], maxChars: 200000 },
+        sessionId: studio?.lastAuthorizedSessionId || null,
+        label: `Read ${path}`,
+        applyMode: "unrestricted_dev",
+      });
+      appendTerminal(`queued read ${path}`);
+      const command = await pollStudioCommand(queued.commandId);
+      if (command.status === "failed") throw new Error(command.error || "Studio read failed");
+      const script = command.result?.scripts?.[0];
+      if (!script || script.error) throw new Error(script?.error || "Script source unavailable");
+      setStudioFile({
+        id: `studio:${script.path}`,
+        name: script.name || path.split("/").pop(),
+        path: script.path,
+        placement: script.path.split("/")[0],
+        kind: script.className === "LocalScript" ? "client" : script.className === "Script" ? "server" : "module",
+        language: "luau",
+        content: script.source || "",
+        originalContent: script.source || "",
+        sourceHash: script.sourceHash,
+        className: script.className,
+        status: "synced",
+      });
+      appendTerminal(`opened ${script.path}`);
+    } catch (err) {
+      notify?.({ message: err?.message || "Could not open Studio script", type: "error" });
+    } finally {
+      setStudioBusy(false);
+    }
+  }, [appendTerminal, notify, studio?.lastAuthorizedSessionId]);
+
+  const studioArtifact = useMemo(() => {
+    if (!studioFile) return workspace.activeArtifact;
+    return {
+      id: "studio-live",
+      title: "Studio live file",
+      summary: studioFile.path,
+      files: [studioFile],
+      dirtyCount: studioFile.dirty ? 1 : 0,
+    };
+  }, [studioFile, workspace.activeArtifact]);
+
+  const studioActiveFile = studioFile || workspace.activeFile;
+
+  const handleStudioFileChange = useCallback((_artifactId, _fileId, content) => {
+    if (studioFile) {
+      setStudioFile((prev) => prev ? { ...prev, content, dirty: content !== prev.originalContent, status: "edited" } : prev);
+    } else {
+      workspace.updateFileContent(_artifactId, _fileId, content);
+    }
+  }, [studioFile, workspace]);
+
+  const saveStudioFile = useCallback(async (file) => {
+    if (!file?.path) return;
+    setStudioBusy(true);
+    setStudioConflict(null);
+    try {
+      const queued = await queueStudioTool({
+        type: "write_script",
+        payload: {
+          path: file.path,
+          className: file.className || "ModuleScript",
+          source: file.content || "",
+          expectedSourceHash: file.sourceHash || "",
+          createParents: false,
+          snapshot: true,
+        },
+        sessionId: studio?.lastAuthorizedSessionId || null,
+        label: `Save ${file.path}`,
+        applyMode: "unrestricted_dev",
+      });
+      appendTerminal(`queued save ${file.path}`);
+      const command = await pollStudioCommand(queued.commandId);
+      if (command.status === "failed") {
+        if (command.result?.code === "source_conflict" || command.result?.error?.code === "source_conflict") {
+          const read = await queueStudioTool({
+            type: "read_script",
+            payload: { paths: [file.path], maxChars: 200000 },
+            sessionId: studio?.lastAuthorizedSessionId || null,
+            label: `Read conflict ${file.path}`,
+            applyMode: "unrestricted_dev",
+          });
+          const current = await pollStudioCommand(read.commandId);
+          setStudioConflict({
+            currentSource: current.result?.scripts?.[0]?.source || "",
+            attemptedSource: file.content || "",
+          });
+          throw new Error("Studio source conflict detected");
+        }
+        throw new Error(command.error || "Studio save failed");
+      }
+      setStudioFile((prev) => prev ? { ...prev, sourceHash: command.result?.sourceHash || prev.sourceHash, dirty: false, status: "synced" } : prev);
+      appendTerminal(`saved ${file.path}`);
+      notify?.({ message: "Saved to Studio", type: "success" });
+    } catch (err) {
+      notify?.({ message: err?.message || "Could not save to Studio", type: "error" });
+    } finally {
+      setStudioBusy(false);
+    }
+  }, [appendTerminal, notify, studio?.lastAuthorizedSessionId]);
 
   const requireUser = (fallback) => {
     if (!user) {
@@ -199,11 +359,14 @@ export default function AgentWorkspaceLayout({ controller }) {
 
   const codeWorkspace = (
     <CodeWorkspace
-      artifact={workspace.activeArtifact}
-      activeFile={workspace.activeFile}
+      artifact={studioArtifact}
+      activeFile={studioActiveFile}
       onSelectFile={(fileId) => workspace.openFile(workspace.activeArtifact?.id, fileId)}
-      onChangeContent={workspace.updateFileContent}
+      onChangeContent={handleStudioFileChange}
       onRevertEdits={workspace.revertArtifactEdits}
+      onSaveFile={studioFile ? saveStudioFile : null}
+      saving={studioBusy}
+      conflict={studioConflict}
       notify={notify}
     />
   );
@@ -226,6 +389,63 @@ export default function AgentWorkspaceLayout({ controller }) {
           if (isMobile) setMobileTab("code");
         }}
       />
+      <div className="mt-4 border-t border-white/10 pt-3 space-y-2">
+        <div className="flex items-center justify-between gap-2 px-1">
+          <div className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Studio Manifest</div>
+          <button
+            type="button"
+            onClick={refreshStudioManifest}
+            disabled={studioBusy}
+            className="p-1.5 rounded-lg border border-white/10 bg-white/5 text-gray-400 hover:text-white disabled:opacity-40"
+            title="Refresh Studio manifest"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${studioBusy ? "animate-spin" : ""}`} />
+          </button>
+        </div>
+        <label className="flex items-center gap-2 rounded-lg border border-white/10 bg-black/30 px-2 py-1.5">
+          <Search className="w-3.5 h-3.5 text-gray-500" />
+          <input
+            value={studioSearch}
+            onChange={(e) => setStudioSearch(e.target.value)}
+            placeholder="Search Studio paths..."
+            className="min-w-0 flex-1 bg-transparent text-xs text-gray-200 placeholder:text-gray-600 outline-none"
+          />
+        </label>
+        <div className="max-h-72 overflow-y-auto space-y-0.5 pr-1">
+          {studioResults.map((item) => {
+            const isScript = ["Script", "LocalScript", "ModuleScript"].includes(item.className);
+            return (
+              <button
+                key={item.id || item.canonicalPath}
+                type="button"
+                onClick={() => isScript && openStudioScript(item)}
+                disabled={!isScript || studioBusy}
+                className={`w-full text-left px-2 py-1.5 rounded-lg border text-[11px] transition-all ${
+                  studioFile?.path === (item.canonicalPath || item.path)
+                    ? "border-[#00f5d4]/40 bg-[#00f5d4]/10 text-[#00f5d4]"
+                    : "border-transparent bg-white/[0.03] text-gray-400 hover:text-white hover:bg-white/[0.06]"
+                } disabled:opacity-40`}
+                title={item.canonicalPath || item.path}
+              >
+                <div className="truncate">{item.canonicalPath || item.path}</div>
+                <div className="text-[10px] text-gray-600">{item.className}{item.sourceHash ? ` · ${String(item.sourceHash).slice(0, 8)}` : ""}</div>
+              </button>
+            );
+          })}
+          {!studioResults.length && (
+            <div className="px-2 py-4 text-center text-xs text-gray-600">No persisted Studio manifest yet.</div>
+          )}
+        </div>
+        <div className="rounded-lg border border-white/10 bg-black/30 p-2">
+          <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-1">
+            <TerminalSquare className="w-3.5 h-3.5" />
+            Terminal
+          </div>
+          <pre className="max-h-28 overflow-auto whitespace-pre-wrap text-[10px] leading-relaxed text-gray-500">
+            {terminalLines.length ? terminalLines.join("\n") : "Studio command output appears here."}
+          </pre>
+        </div>
+      </div>
     </div>
   );
 
