@@ -24,6 +24,15 @@ export async function getStudioStatus() {
   return readJsonOrThrow(res, "Failed to load Studio status");
 }
 
+export async function disconnectStudio({ sessionId = null } = {}) {
+  const res = await authedFetch("/api/studio/disconnect", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ sessionId }),
+  });
+  return readJsonOrThrow(res, "Failed to disconnect Studio");
+}
+
 export async function pushToStudio({ payload, applyMode = "manual_review", sessionId = null }) {
   const res = await authedFetch("/api/studio/push", {
     method: "POST",

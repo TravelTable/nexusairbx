@@ -2,7 +2,7 @@
 -- Local Studio plugin: website-controlled apply + agent tool runner.
 
 local BACKEND_URL = "https://nexusrbx-backend-production.up.railway.app"
-local PLUGIN_VERSION = "0.4.0-protocol"
+local PLUGIN_VERSION = "0.4.1-protocol"
 
 local HttpService = game:GetService("HttpService")
 local ChangeHistoryService = game:GetService("ChangeHistoryService")
@@ -103,6 +103,7 @@ codeBox.Parent = root
 local pairButton = makeButton("Pair Studio", Color3.fromRGB(0, 170, 140))
 local pullButton = makeButton("Pull Latest Command")
 local restoreButton = makeButton("Restore Local Snapshots", Color3.fromRGB(155, 93, 229))
+local disconnectButton = makeButton("Disconnect Studio", Color3.fromRGB(214, 69, 80))
 local lastLabel = makeLabel("Last command: none", 96)
 
 local localSnapshots = {}
@@ -2429,6 +2430,27 @@ restoreButton.MouseButton1Click:Connect(function()
 		finishRecording(recording, false)
 		setLast("local restore failed: " .. tostring(resultOrError))
 	end
+end)
+
+disconnectButton.MouseButton1Click:Connect(function()
+	local token = getToken()
+	if not token then
+		setStatus("not paired")
+		setLast("already disconnected")
+		return
+	end
+	setStatus("disconnecting...")
+	-- Best-effort: tell the backend to drop this session before clearing locally.
+	pcall(function()
+		request("POST", "/api/studio/session/disconnect", {}, token)
+	end)
+	plugin:SetSetting("nexusrbxStudioToken", nil)
+	plugin:SetSetting("nexusrbxStudioSessionId", nil)
+	codeBox.Text = ""
+	setRun(nil)
+	setActive("none")
+	setStatus("not paired")
+	setLast("disconnected")
 end)
 
 toggleButton.Click:Connect(function()

@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Radio, ChevronDown, Copy, Check, Loader2, RefreshCw, Link2 } from "lucide-react";
-import { startStudioPairing } from "../../lib/studioBridgeApi";
+import { Radio, ChevronDown, Copy, Check, Loader2, RefreshCw, Link2, Unlink } from "lucide-react";
+import { startStudioPairing, disconnectStudio } from "../../lib/studioBridgeApi";
 
 const MENU_WIDTH = 320;
 const VIEWPORT_GUTTER = 8;
@@ -27,6 +27,7 @@ export default function StudioPairControl({ connected = false, loading = false, 
   const [expiresAt, setExpiresAt] = useState(0);
   const [now, setNow] = useState(() => Date.now());
   const [busy, setBusy] = useState(false);
+  const [disconnecting, setDisconnecting] = useState(false);
   const [copied, setCopied] = useState(false);
 
   const rootRef = useRef(null);
@@ -103,6 +104,21 @@ export default function StudioPairControl({ connected = false, loading = false, 
     }
   };
 
+  const handleDisconnect = async () => {
+    setDisconnecting(true);
+    try {
+      await disconnectStudio();
+      setPairCode("");
+      setExpiresAt(0);
+      notify?.({ message: "Roblox Studio disconnected", type: "success" });
+      await refresh?.();
+    } catch (err) {
+      notify?.({ message: err?.message || "Failed to disconnect Studio", type: "error" });
+    } finally {
+      setDisconnecting(false);
+    }
+  };
+
   const handleCopy = () => {
     if (!pairCode || !navigator.clipboard) return;
     navigator.clipboard.writeText(pairCode);
@@ -153,13 +169,24 @@ export default function StudioPairControl({ connected = false, loading = false, 
             </div>
 
             {connected ? (
-              <div className="rounded-xl border border-[#00f5d4]/20 bg-[#00f5d4]/5 p-3">
-                <p className="text-xs text-gray-300 leading-relaxed">
-                  Your Studio plugin is paired. Use{" "}
-                  <span className="text-[#00f5d4] font-semibold">Push Studio</span> on a generation, or enable Live
-                  Studio in the chat composer to let the agent act in Studio.
-                </p>
-              </div>
+              <>
+                <div className="rounded-xl border border-[#00f5d4]/20 bg-[#00f5d4]/5 p-3 mb-3">
+                  <p className="text-xs text-gray-300 leading-relaxed">
+                    Your Studio plugin is paired. Use{" "}
+                    <span className="text-[#00f5d4] font-semibold">Push Studio</span> on a generation, or enable Live
+                    Studio in the chat composer to let the agent act in Studio.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleDisconnect}
+                  disabled={disconnecting}
+                  className="w-full inline-flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-[10px] font-black uppercase tracking-widest hover:bg-rose-500/20 transition-all disabled:opacity-50"
+                >
+                  {disconnecting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Unlink className="w-3.5 h-3.5" />}
+                  Disconnect Studio
+                </button>
+              </>
             ) : !pairCode ? (
               <>
                 <p className="text-xs text-gray-400 leading-relaxed mb-3">
