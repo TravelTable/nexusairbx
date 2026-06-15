@@ -83,6 +83,7 @@ local function makeButton(text, color)
 end
 
 makeLabel("NexusRBX Studio Agent", 26, true)
+makeLabel("Plugin " .. PLUGIN_VERSION, 20)
 local statusLabel = makeLabel("Status: not paired", 40)
 local runLabel = makeLabel("Run: none", 34)
 local activeLabel = makeLabel("Active tool: none", 44)
@@ -2251,7 +2252,11 @@ local function executeCommand(command)
 	local commandType = command.type or "apply_artifact"
 	local handler = TOOL_HANDLERS[commandType]
 	if not handler then
-		error("Unsupported Studio command: " .. tostring(commandType))
+		error(string.format(
+			"Unsupported Studio command: %s (plugin %s). Reinstall the latest NexusRBXStudioBridge.plugin.lua via Plugins > Manage Plugins.",
+			tostring(commandType),
+			PLUGIN_VERSION
+		))
 	end
 	setRun(command.runId)
 	setActive((command.label or commandType) .. " (" .. commandType .. ")")

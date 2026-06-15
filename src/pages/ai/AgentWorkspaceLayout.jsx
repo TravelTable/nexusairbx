@@ -191,10 +191,16 @@ export default function AgentWorkspaceLayout({ controller }) {
   const waitForManifestCompletion = useCallback(async (previousRevision = "") => {
     const deadline = Date.now() + 60000;
     while (Date.now() < deadline) {
-      const data = await getStudioManifestStatus({
-        sessionId: studio?.lastAuthorizedSessionId || null,
-      });
-      const status = data.status || null;
+      let status = null;
+      try {
+        const data = await getStudioManifestStatus({
+          sessionId: studio?.lastAuthorizedSessionId || null,
+        });
+        status = data.status || null;
+      } catch (_) {
+        // Transient failure (e.g. no paired session yet); keep polling until ready or timeout.
+        status = null;
+      }
       const readyRevision = status?.lastCompleteRevision || "";
       if (
         readyRevision &&

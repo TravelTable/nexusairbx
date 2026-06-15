@@ -40,8 +40,18 @@ Writes should include `expectedSourceHash` when the caller previously read a scr
 
 1. Pair Studio from the web UI and confirm `/api/studio/status` shows the session.
 2. Queue `get_project_manifest` and verify `_studioProjectManifestItems` is populated.
-3. Queue `search_source` for a known token and verify only matching scripts are returned.
-4. Queue `read_script`, then `write_script` with the returned hash and confirm source updates.
-5. Edit the same script in Studio, retry the old `write_script`, and confirm `source_conflict`.
-6. Queue `batch_operations` with create/update/delete operations and verify snapshots.
-7. Queue `undo_last_batch` or `restore_snapshot` and confirm the hierarchy is restored.
+3. For paginated manifests, acknowledge the same page twice with different command IDs and confirm the item/page counts do not increase.
+4. Queue `search_source` for a known token and verify only matching scripts are returned.
+5. Queue `read_script`, then `write_script` with the returned hash and confirm source updates.
+6. Edit the same script in Studio, retry the old `write_script`, and confirm `source_conflict`.
+7. Queue `batch_operations` with create/update/delete operations and verify snapshots.
+8. Queue `undo_last_batch` or `restore_snapshot` and confirm the hierarchy is restored.
+
+## Firestore Notes
+
+- Manifest item documents now use deterministic SHA-256 IDs over `userId`, `sessionId`, `placeId`, `revision`, and `canonicalPath`.
+- Manifest pages are keyed by logical cursor identity, not transport command ID.
+- Deploy composite indexes from [`backend/firestore.indexes.json`](/Users/jackrow/nexusairbx/backend/firestore.indexes.json) with `firebase deploy --only firestore:indexes`.
+- New manifest writes use schema version `2`.
+- Top-level legacy version-1 manifest documents can be reviewed or deleted with [`backend/scripts/cleanupLegacyStudioManifest.js`](/Users/jackrow/nexusairbx/backend/scripts/cleanupLegacyStudioManifest.js).
+- Legacy malformed nested item paths produced by slash-bearing version-1 document IDs are not enumerable through normal collection queries and require separate administrative cleanup.
