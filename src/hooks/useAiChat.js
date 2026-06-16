@@ -574,6 +574,7 @@ export function useAiChat(user, settings, refreshBilling, notify) {
               content: pendingContent,
               files: snapshot.files || [],
               streamState: snapshot,
+              streamStatus: null,
               title: snapshot.files?.length ? "Generating Artifact" : prev.title,
             };
           });
@@ -664,6 +665,8 @@ export function useAiChat(user, settings, refreshBilling, notify) {
           if (retryCount < STREAM_MAX_RETRIES) {
             retryCount += 1;
             emitStreamMetric("retry", { jobId, retryCount });
+            setStage("Reconnecting to generation stream...");
+            setPending((prev) => (prev ? { ...prev, stage: "Reconnecting to generation stream...", streamStatus: "reconnecting" } : prev));
             setTimeout(() => {
               connect();
             }, 1000 * retryCount);
@@ -673,7 +676,7 @@ export function useAiChat(user, settings, refreshBilling, notify) {
           try {
             metrics.usedFallback = true;
             setStage("Recovering stream...");
-            setPending((prev) => (prev ? { ...prev, stage: "Recovering stream..." } : prev));
+            setPending((prev) => (prev ? { ...prev, stage: "Recovering stream...", streamStatus: "recovering" } : prev));
             emitStreamMetric("fallback_start", { jobId });
             const recovered = await fetchFinalResult();
             await finalizeWithData(recovered, "fallback");
@@ -692,7 +695,7 @@ export function useAiChat(user, settings, refreshBilling, notify) {
                 setStage(data.message);
                 setPending((prev) => {
                   if (!prev) return prev;
-                  return { ...prev, stage: data.message };
+                  return { ...prev, stage: data.message, streamStatus: null };
                 });
                 if (agentRunId) {
                   updateDoc(assistantMsgRef, {

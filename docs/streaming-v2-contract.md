@@ -19,9 +19,15 @@ Events:
 - Payload: `{ jobId, message, ts }`
 
 2. `delta`
-- Payload: `{ jobId, seq, channel, text, ts }`
-- `channel` values: `reasoning | content`
+- Payload: `{ jobId, seq, channel, text?, event?, ts }`
+- `channel` values: `reasoning | explanation | content | file_event`
 - `reasoning` carries the leading streamed thinking block for display only; the saved final payload uses `thought`.
+- `explanation` carries display-safe explanation text from the generated response.
+- `file_event` carries live artifact file lifecycle events:
+  - `file_start`: `{ event, fileId, id, name, path, placement, kind, purpose }`
+  - `file_chunk`: `{ event, fileId, sequence, content }`
+  - `file_end`: `{ event, fileId }`
+  - `file_ready`: `{ event, file }`, emitted after backend normalization/repair/merge so the client can replace provisional content.
 - `seq` must be monotonically increasing per `jobId`
 
 3. `done`

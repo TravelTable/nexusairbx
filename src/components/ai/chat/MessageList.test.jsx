@@ -64,7 +64,7 @@ describe("MessageList pending activity", () => {
     expect(screen.getByText("Write ShopService")).toBeTruthy();
   });
 
-  test("streams the live chain-of-thought in a Thinking disclosure (not as answer content)", () => {
+  test("streams the live build reasoning disclosure (not as answer content)", () => {
     render(
       <MessageList
         {...baseProps}
@@ -85,8 +85,94 @@ describe("MessageList pending activity", () => {
     );
 
     expect(screen.getByText("Analyzing Request...")).toBeTruthy();
-    // The thought is surfaced live inside the collapsible "Thinking…" disclosure.
-    expect(screen.getByText("Thinking…")).toBeTruthy();
+    // The thought is surfaced live inside the collapsible build reasoning disclosure.
+    expect(screen.getByText("Build reasoning")).toBeTruthy();
     expect(screen.getByText("Reasoning about the datastore approach")).toBeTruthy();
+  });
+
+  test("shows live file cards, counters, and active code preview", () => {
+    render(
+      <MessageList
+        {...baseProps}
+        generationStage="Writing files..."
+        pendingMessage={{
+          role: "assistant",
+          content: "",
+          type: "chat",
+          prompt: "Make an inventory system",
+          stage: "Writing files...",
+          streamState: {
+            thought: "Splitting server authority from shared configuration.",
+            explanation: "Creating the project files.",
+            activeFileId: "inventory",
+            files: [
+              {
+                id: "inventory",
+                name: "InventoryService",
+                path: "ServerScriptService/InventoryService.server.lua",
+                kind: "server",
+                status: "writing",
+                lineCount: 2,
+                purpose: "Owns server-side inventory updates.",
+                content: "local InventoryService = {}\nreturn InventoryService",
+              },
+            ],
+            fileCounts: {
+              discovered: 1,
+              writing: 1,
+              reviewing: 0,
+              ready: 0,
+            },
+          },
+        }}
+      />
+    );
+
+    expect(screen.getByText("Live build")).toBeTruthy();
+    expect(screen.getByText("Writing files...")).toBeTruthy();
+    expect(screen.getByText("InventoryService")).toBeTruthy();
+    expect(screen.getAllByText("ServerScriptService/InventoryService.server.lua").length).toBeGreaterThan(0);
+    expect(screen.getByText("2 lines")).toBeTruthy();
+    expect(screen.getByText("Active file preview")).toBeTruthy();
+    expect(screen.getByText(/local InventoryService/)).toBeTruthy();
+  });
+
+  test("keeps live panel visible while reconnecting", () => {
+    render(
+      <MessageList
+        {...baseProps}
+        generationStage="Reconnecting to generation stream..."
+        pendingMessage={{
+          role: "assistant",
+          content: "",
+          type: "chat",
+          prompt: "Make a shop",
+          stage: "Reconnecting to generation stream...",
+          streamStatus: "reconnecting",
+          streamState: {
+            files: [
+              {
+                id: "shop",
+                name: "ShopConfig",
+                path: "ReplicatedStorage/ShopConfig.lua",
+                kind: "config",
+                status: "reviewing",
+                lineCount: 1,
+                content: "return {}",
+              },
+            ],
+            fileCounts: {
+              discovered: 1,
+              writing: 0,
+              reviewing: 1,
+              ready: 0,
+            },
+          },
+        }}
+      />
+    );
+
+    expect(screen.getByText("Reconnecting to generation stream...")).toBeTruthy();
+    expect(screen.getByText("ShopConfig")).toBeTruthy();
   });
 });

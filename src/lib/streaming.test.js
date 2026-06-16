@@ -84,19 +84,27 @@ describe("streaming utils", () => {
     const snapshot = getPendingStreamSnapshot(state);
     expect(snapshot.hasFiles).toBe(true);
     expect(snapshot.hasVisibleOutput).toBe(true);
+    expect(snapshot.activeFileId).toBe("inventory");
+    expect(snapshot.fileCounts).toMatchObject({
+      discovered: 1,
+      writing: 0,
+      reviewing: 1,
+      ready: 0,
+    });
     expect(snapshot.files[0]).toMatchObject({
       id: "inventory",
-      status: "ready",
+      status: "reviewing",
       content: "local Inventory = {}",
+      lineCount: 1,
     });
   });
 
-  test("file_ready replaces streaming file with authoritative content", () => {
+  test("file_ready replaces streaming file with authoritative content by path", () => {
     let state = createPendingStreamState();
     state = applyStreamDelta(state, {
       seq: 1,
       channel: "file_event",
-      event: { event: "file_start", fileId: "a", path: "ReplicatedStorage/A.lua" },
+      event: { event: "file_start", fileId: "provisional-a", path: "ReplicatedStorage/A.lua" },
     });
     state = applyStreamDelta(state, {
       seq: 2,
@@ -104,19 +112,24 @@ describe("streaming utils", () => {
       event: {
         event: "file_ready",
         file: {
-          id: "a",
+          id: "final-a",
           path: "ReplicatedStorage/A.lua",
           kind: "module",
-          content: "return { ready = true }",
+          content: "return {\n  ready = true\n}",
           contentHash: "hash",
         },
       },
     });
 
+    expect(getPendingStreamSnapshot(state).files).toHaveLength(1);
+    expect(getPendingStreamSnapshot(state).activeFileId).toBe("final-a");
+    expect(getPendingStreamSnapshot(state).fileCounts.ready).toBe(1);
     expect(getPendingStreamSnapshot(state).files[0]).toMatchObject({
+      id: "final-a",
       status: "ready",
       contentHash: "hash",
-      content: "return { ready = true }",
+      content: "return {\n  ready = true\n}",
+      lineCount: 3,
     });
   });
 });

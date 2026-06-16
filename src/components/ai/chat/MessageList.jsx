@@ -2,10 +2,9 @@ import React, { useEffect, useMemo } from "react";
 import { NexusRBXAvatar, UserAvatar, FormatText, SkeletonArtifact } from "../AiComponents";
 import { stripTags } from "./stripTags";
 import MessageBubble from "./MessageBubble";
-import ThinkingDisclosure from "./ThinkingDisclosure";
+import LiveGenerationPanel from "./LiveGenerationPanel";
 import { parsePendingStreamContent } from "../../../lib/streaming";
 import { Clock3, Loader2, RotateCcw } from "lucide-react";
-import AgentStepList from "../workspace/AgentStepList";
 
 function resolveActivityStage(pendingMessage, generationStage, parsed) {
   const stage = pendingMessage?.stage || generationStage || "";
@@ -72,6 +71,11 @@ export default function MessageList({
 }) {
   const pendingParsed = parsePendingStreamContent(pendingMessage?.content || "");
   const hasPendingMessage = !!pendingMessage;
+  const showLiveGenerationPanel = Boolean(
+    pendingMessage?.streamState ||
+    (Array.isArray(pendingMessage?.files) && pendingMessage.files.length) ||
+    (Array.isArray(pendingMessage?.steps) && pendingMessage.steps.length)
+  );
   const visibleMessages = useMemo(
     () =>
       pendingMessage?.requestId
@@ -139,26 +143,22 @@ export default function MessageList({
           <div className="flex justify-start gap-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <NexusRBXAvatar isThinking={true} mode={activeMode} />
             <div className="max-w-[85%] md:max-w-[80%] order-2 space-y-4">
-              <LiveActivityHeader
-                pendingMessage={pendingMessage}
-                generationStage={generationStage}
-                parsed={pendingParsed}
-              />
-
-              {pendingMessage.streamState?.thought ? (
-                <ThinkingDisclosure text={pendingMessage.streamState.thought} live defaultOpen />
-              ) : null}
-
-              {Array.isArray(pendingMessage.steps) && pendingMessage.steps.length > 0 && (
-                <AgentStepList
-                  steps={pendingMessage.steps}
-                  maxHeight="max-h-72"
+              {showLiveGenerationPanel ? (
+                <LiveGenerationPanel
+                  pendingMessage={pendingMessage}
+                  generationStage={generationStage}
                   onApproveStep={onApproveStep}
                   approvingStepId={approvingStepId}
                 />
+              ) : (
+                <LiveActivityHeader
+                  pendingMessage={pendingMessage}
+                  generationStage={generationStage}
+                  parsed={pendingParsed}
+                />
               )}
 
-              {pendingMessage.content ? (
+              {pendingMessage.content && !showLiveGenerationPanel ? (
                 <div className="space-y-4">
                   <div className="p-4 md:p-6 rounded-3xl bg-[#121212]/80 border border-white/10 backdrop-blur-xl shadow-2xl">
                     {pendingParsed.hasStructured ? (
@@ -197,7 +197,7 @@ export default function MessageList({
                     )}
                 </div>
               ) : null}
-              {pendingMessage.type === "ui" && !pendingMessage.content && <SkeletonArtifact type="ui" />}
+              {pendingMessage.type === "ui" && !pendingMessage.content && !showLiveGenerationPanel && <SkeletonArtifact type="ui" />}
             </div>
           </div>
         </>
