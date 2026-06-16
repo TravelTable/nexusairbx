@@ -23,12 +23,8 @@ import {
   signInWithEmailAndPassword,
   GoogleAuthProvider,
   GithubAuthProvider,
-  signInWithPopup,
-  signOut,
-  onAuthStateChanged
+  signInWithPopup
 } from "firebase/auth";
-import { getEntitlements } from "../lib/billing";
-import NexusRBXHeader from "../components/NexusRBXHeader";
 import NexusRBXFooter from "../components/NexusRBXFooter";
 
 // Floating Tool Card Component (Matching Homepage)
@@ -81,34 +77,6 @@ export default function NexusRBXSignInPageContainer() {
   });
   const [rememberMe, setRememberMe] = useState(false);
   const [agreeToTerms, setAgreeToTerms] = useState(false);
-  const [user, setUser] = useState(null);
-  const [tokenInfo, setTokenInfo] = useState(null);
-  const [tokenLoading, setTokenLoading] = useState(false);
-
-  // Listen for auth state changes
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
-    });
-    return () => unsubscribe();
-  }, []);
-
-  // Fetch token info when user logs in
-  useEffect(() => {
-    if (!user) {
-      setTokenInfo(null);
-      return;
-    }
-    setTokenLoading(true);
-    getEntitlements()
-      .then((data) => {
-        setTokenInfo(data);
-      })
-      .catch(() => {
-        setTokenInfo(null);
-      })
-      .finally(() => setTokenLoading(false));
-  }, [user]);
 
   // Set persistence based on rememberMe
   useEffect(() => {
@@ -233,12 +201,6 @@ export default function NexusRBXSignInPageContainer() {
     }
   };
 
-  const handleLogout = async () => {
-    await signOut(auth);
-    setUser(null);
-    window.location.reload();
-  };
-
   return (
     <NexusRBXSignInPage
       formData={formData}
@@ -253,11 +215,7 @@ export default function NexusRBXSignInPageContainer() {
       handleSubmit={handleSubmit}
       handleGoogleSignIn={handleGoogleSignIn}
       handleGithubSignIn={handleGithubSignIn}
-      user={user}
-      handleLogout={handleLogout}
       navigate={navigate}
-      tokenInfo={tokenInfo}
-      tokenLoading={tokenLoading}
     />
   );
 }
@@ -276,11 +234,7 @@ function NexusRBXSignInPage({
   handleSubmit,
   handleGoogleSignIn,
   handleGithubSignIn,
-  user,
-  handleLogout,
-  navigate,
-  tokenInfo,
-  tokenLoading
+  navigate
 }) {
   const containerRef = useRef(null);
 
@@ -334,16 +288,16 @@ function NexusRBXSignInPage({
         <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-[#00f5d4]/10 blur-[120px] animate-pulse" style={{ animationDelay: '2s' }} />
       </div>
 
-      {/* Header */}
-      <NexusRBXHeader
-        navigate={navigate}
-        user={user}
-        handleLogin={() => navigate("/signin")}
-        tokenInfo={tokenInfo}
-        tokenLoading={tokenLoading}
-      />
+      <main className="flex-grow flex items-center justify-center p-4 pt-24 pb-8 relative z-10 overflow-visible">
+        <button
+          type="button"
+          onClick={() => navigate("/")}
+          className="absolute top-6 left-4 sm:left-6 inline-flex items-center gap-2 rounded-full border border-white/10 bg-black/30 px-4 py-2 text-xs font-bold uppercase tracking-[0.24em] text-gray-200 backdrop-blur-xl transition hover:border-[#00f5d4]/40 hover:text-white"
+        >
+          <ArrowRight className="h-3.5 w-3.5 rotate-180" />
+          Return home
+        </button>
 
-      <main className="flex-grow flex items-center justify-center p-4 relative z-10 overflow-visible">
         {/* Floating Advertisement Boxes */}
         {advertisedTools.map((tool) => (
           <FloatingToolCard key={tool.id} tool={tool} />

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
   Mail, 
@@ -23,11 +23,8 @@ import {
   createUserWithEmailAndPassword, 
   GoogleAuthProvider, 
   GithubAuthProvider, 
-  signInWithPopup,
-  onAuthStateChanged
+  signInWithPopup
 } from "firebase/auth";
-import { getEntitlements } from "../lib/billing";
-import NexusRBXHeader from "../components/NexusRBXHeader";
 import NexusRBXFooter from "../components/NexusRBXFooter";
 
 // Inline SVG for Google Icon
@@ -84,34 +81,6 @@ export default function NexusRBXSignUpPageContainer() {
     score: 0, // 0-4 where 4 is strongest
     feedback: ""
   });
-  const [user, setUser] = useState(null);
-  const [tokenInfo, setTokenInfo] = useState(null);
-  const [tokenLoading, setTokenLoading] = useState(false);
-
-  // Listen for auth state changes
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
-    });
-    return () => unsubscribe();
-  }, []);
-
-  // Fetch token info when user logs in
-  useEffect(() => {
-    if (!user) {
-      setTokenInfo(null);
-      return;
-    }
-    setTokenLoading(true);
-    getEntitlements()
-      .then((data) => {
-        setTokenInfo(data);
-      })
-      .catch(() => {
-        setTokenInfo(null);
-      })
-      .finally(() => setTokenLoading(false));
-  }, [user]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -281,9 +250,6 @@ export default function NexusRBXSignUpPageContainer() {
       handleSubmit={handleSubmit}
       handleGoogleSignUp={handleGoogleSignUp}
       handleGithubSignUp={handleGithubSignUp}
-      user={user}
-      tokenInfo={tokenInfo}
-      tokenLoading={tokenLoading}
       navigate={navigate}
     />
   );
@@ -306,9 +272,6 @@ function NexusRBXSignUpPage({
   handleSubmit,
   handleGoogleSignUp,
   handleGithubSignUp,
-  user,
-  tokenInfo,
-  tokenLoading,
   navigate
 }) {
   const containerRef = useRef(null);
@@ -328,16 +291,16 @@ function NexusRBXSignUpPage({
         <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-[#00f5d4]/10 blur-[120px] animate-pulse" style={{ animationDelay: '2s' }} />
       </div>
 
-      {/* Header */}
-      <NexusRBXHeader
-        navigate={navigate}
-        user={user}
-        handleLogin={() => navigate("/signin")}
-        tokenInfo={tokenInfo}
-        tokenLoading={tokenLoading}
-      />
+      <main className="flex-grow flex items-center justify-center p-4 pt-24 pb-12 relative z-10">
+        <button
+          type="button"
+          onClick={() => navigate("/")}
+          className="absolute top-6 left-4 sm:left-6 inline-flex items-center gap-2 rounded-full border border-white/10 bg-black/30 px-4 py-2 text-xs font-bold uppercase tracking-[0.24em] text-gray-200 backdrop-blur-xl transition hover:border-[#00f5d4]/40 hover:text-white"
+        >
+          <ArrowRight className="h-3.5 w-3.5 rotate-180" />
+          Return home
+        </button>
 
-      <main className="flex-grow flex items-center justify-center p-4 py-12 relative z-10 mt-16">
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}

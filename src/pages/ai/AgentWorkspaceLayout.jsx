@@ -1,8 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Menu, FolderTree, History, FileCode2, MessageSquare, ClipboardList, Search, RefreshCw, TerminalSquare } from "lucide-react";
+import { Menu, FolderTree, History, FileCode2, MessageSquare, ClipboardList, Search, RefreshCw, TerminalSquare, ArrowLeft } from "lucide-react";
 
 import SidebarContent from "../../components/SidebarContent";
-import NexusRBXHeader from "../../components/NexusRBXHeader";
 import CodeDrawer from "../../components/CodeDrawer";
 import SignInNudgeModal from "../../components/SignInNudgeModal";
 import ProNudgeModal from "../../components/ProNudgeModal";
@@ -42,8 +41,8 @@ async function pollStudioCommand(commandId, { timeoutMs = 30000 } = {}) {
 
 export default function AgentWorkspaceLayout({ controller }) {
   const { billing, navigation, uiState, refs, modules, handlers, studio, roblox } = controller;
-  const { planKey, totalRemaining, subRemaining, paygRemaining, subLimit, resetsAt, isPremium, unlimitedTokens, devOverride, flags } = billing;
-  const { navigate, location } = navigation;
+  const { planKey, totalRemaining, subLimit, resetsAt, isPremium, unlimitedTokens, devOverride } = billing;
+  const { navigate } = navigation;
   const {
     user,
     isMobile,
@@ -856,27 +855,16 @@ export default function AgentWorkspaceLayout({ controller }) {
         aria-hidden="true"
       />
 
-      <NexusRBXHeader
-        variant="ai"
-        navigate={navigate}
-        user={user}
-        handleLogin={() => navigate("/signin", { state: { from: location } })}
-        tokenInfo={{
-          sub: { limit: subLimit, used: subLimit - subRemaining },
-          payg: { remaining: paygRemaining },
-          unlimitedTokens,
-          devOverride,
-          isAdmin: Boolean(flags?.isAdmin),
-          flags: flags || {
-            isAdmin: Boolean(flags?.isAdmin),
-            unlimitedTokens,
-            devOverride,
-          },
-        }}
-        tokenLoading={false}
-      />
+      <button
+        type="button"
+        onClick={() => navigate("/")}
+        className="fixed left-4 top-4 z-50 inline-flex items-center gap-2 rounded-full border border-white/10 bg-black/40 px-4 py-2 text-xs font-bold uppercase tracking-[0.24em] text-gray-200 backdrop-blur-xl transition hover:border-white/20 hover:text-white sm:left-6 sm:top-6"
+      >
+        <ArrowLeft className="h-3.5 w-3.5" />
+        Return home
+      </button>
 
-      <div className="flex flex-1 min-h-0 overflow-hidden pt-20">
+      <div className="flex flex-1 min-h-0 overflow-hidden pt-20 sm:pt-24">
         {/* LEFT: project / artifacts / file tree / history */}
         <aside
           className={`fixed inset-y-0 left-0 z-40 w-80 bg-[#0D0D0D]/95 backdrop-blur-2xl border-r border-white/5 flex flex-col transform transition-all duration-300 ease-in-out ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} lg:relative lg:translate-x-0 ${sidebarOpen ? "lg:w-80" : "lg:w-0 lg:opacity-0 lg:pointer-events-none"}`}
