@@ -855,16 +855,7 @@ export default function AgentWorkspaceLayout({ controller }) {
         aria-hidden="true"
       />
 
-      <button
-        type="button"
-        onClick={() => navigate("/")}
-        className="fixed left-4 top-4 z-50 inline-flex items-center gap-2 rounded-full border border-white/10 bg-black/40 px-4 py-2 text-xs font-bold uppercase tracking-[0.24em] text-gray-200 backdrop-blur-xl transition hover:border-white/20 hover:text-white sm:left-6 sm:top-6"
-      >
-        <ArrowLeft className="h-3.5 w-3.5" />
-        Return home
-      </button>
-
-      <div className="flex flex-1 min-h-0 overflow-hidden pt-20 sm:pt-24">
+      <div className="flex flex-1 min-h-0 overflow-hidden">
         {/* LEFT: project / artifacts / file tree / history */}
         <aside
           className={`fixed inset-y-0 left-0 z-40 w-80 bg-[#0D0D0D]/95 backdrop-blur-2xl border-r border-white/5 flex flex-col transform transition-all duration-300 ease-in-out ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} lg:relative lg:translate-x-0 ${sidebarOpen ? "lg:w-80" : "lg:w-0 lg:opacity-0 lg:pointer-events-none"}`}
@@ -931,6 +922,16 @@ export default function AgentWorkspaceLayout({ controller }) {
         <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
           <div className="relative z-30 flex items-center justify-between px-4 py-2.5 border-b border-white/5 bg-black/30 backdrop-blur-md gap-3">
             <div className="flex items-center gap-3 min-w-0">
+              <button
+                type="button"
+                onClick={() => navigate("/")}
+                className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-[10px] font-bold uppercase tracking-[0.22em] text-gray-300 transition hover:border-white/20 hover:text-white"
+                aria-label="Return home"
+                title="Return home"
+              >
+                <ArrowLeft className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Return home</span>
+              </button>
               <button
                 type="button"
                 onClick={() => setSidebarOpen(!sidebarOpen)}
