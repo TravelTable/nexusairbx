@@ -1,11 +1,8 @@
 import React, { useState } from "react";
-import { MessageSquare, ClipboardList } from "lucide-react";
 import ChatView from "../ChatView";
 import ChatComposer from "../chat/ChatComposer";
 import AgentPlanPanel from "./AgentPlanPanel";
 import BuildDetailsPanel from "./BuildDetailsPanel";
-import StudioControls from "./StudioControls";
-import { Segmented } from "../../ui";
 
 // Primary Studio agent surface. Chat drives the
 // workflow; build progress + setup/testing/security live in the Details view.
@@ -77,123 +74,94 @@ export default function AgentChatPanel({
 
   return (
     <div className="h-full flex flex-col min-h-0 bg-ink-900">
-      <div className="flex items-center gap-2 px-3 py-2.5 border-b border-white/10 bg-black/30 flex-wrap">
-        <span className="flex items-center gap-1.5 text-[11px] font-display font-bold tracking-wide text-white">
-          <span className="w-1.5 h-1.5 rounded-full bg-nexus-cyan shadow-[0_0_8px_rgba(0,245,212,0.8)]" />
-          Studio Agent
-        </span>
-        <StudioControls
-          connected={studioConnected}
-          loading={studioLoading}
-          studioEnabled={studioEnabled}
-          onStudioEnabledChange={onStudioEnabledChange}
-          applyMode={studioApplyMode}
-          onApplyModeChange={onStudioApplyModeChange}
-          autoPushEnabled={studioAutoPushEnabled}
-          onAutoPushEnabledChange={onStudioAutoPushEnabledChange}
-          autoPushPolicy={studioAutoPushPolicy}
-          onAutoPushPolicyChange={onStudioAutoPushPolicyChange}
-          autoPushAuthorized={studioAutoPushAuthorized}
-        />
-        <div className="ml-auto">
-          <Segmented
-            options={[
-              { id: "chat", label: "Chat", icon: MessageSquare },
-              { id: "details", label: "Details", icon: ClipboardList },
-            ]}
-            value={view}
-            onChange={setView}
-          />
-        </div>
-      </div>
-      <div className="px-3 py-2 border-b border-white/5 bg-black/20">
-        <div
-          className={`text-[11px] leading-relaxed ${
-            studioConnected && studioEnabled ? "text-[#00f5d4]" : "text-gray-500"
-          }`}
-        >
-          {studioConnected && studioEnabled
-            ? studioAutoPushEnabled
-              ? `Studio connected · live tools enabled · auto push ${studioAutoPushPolicy === "manual_only" ? "manual only" : studioAutoPushPolicy === "after_playtest" ? "after playtest" : "after validation"}`
-              : "Studio connected · live tools enabled · auto push off"
-            : studioConnected
-              ? "Studio connected · live tools off"
-              : "Studio offline · code-only mode"}
-        </div>
-      </div>
-
-      {view === "details" ? (
-        <div className="flex-1 min-h-0">
-          <BuildDetailsPanel
-            artifact={artifact}
-            agentRun={agentRun}
-            onApproveStep={onApproveStep}
-            onRestoreRun={onRestoreRun}
-            approvingStepId={approvingStepId}
-            restoringRun={restoringRun}
-          />
-        </div>
-      ) : (
-        <>
-          {active && (
-            <div className="px-3 pt-3">
-              <AgentPlanPanel
-                agentRun={agentRun}
-                onApproveStep={onApproveStep}
-                onRestoreRun={onRestoreRun}
-                approvingStepId={approvingStepId}
-                restoring={restoringRun}
-              />
-            </div>
-          )}
-          <div className="flex-1 min-h-0 overflow-y-auto px-3 py-4 scrollbar-hide">
-            <ChatView
-              messages={messages}
-              pendingMessage={pendingMessage}
-              generationStage={generationStage}
-              user={user}
-              activeMode={activeMode}
-              isBusy={isBusy}
-              onApprovePlan={onApprovePlan}
-              onClarifySubmit={onClarifySubmit}
-              onEditPlan={onEditPlan}
-              onViewUi={onOpenArtifact}
-              onRefine={onRefine}
-              onQuickStart={onQuickStart}
-              notify={notify}
-              chatEndRef={chatEndRef}
+      <div className="flex-1 min-h-0 flex flex-col">
+        {view === "details" ? (
+          <div className="flex-1 min-h-0">
+            <BuildDetailsPanel
+              artifact={artifact}
+              agentRun={agentRun}
               onApproveStep={onApproveStep}
+              onRestoreRun={onRestoreRun}
               approvingStepId={approvingStepId}
+              restoringRun={restoringRun}
             />
           </div>
-          <ChatComposer
-            prompt={prompt}
-            setPrompt={setPrompt}
-            attachments={attachments}
-            setAttachments={setAttachments}
-            onSubmit={onSubmit}
-            isGenerating={isBusy}
-            generationStage={generationStage}
-            placeholder={refineTarget ? "Describe the Studio change you want..." : "Ask the Studio agent to build, inspect, wire, or fix..."}
-            refineTarget={refineTarget}
-            onCancelRefine={onCancelRefine}
-            tokensLeft={tokensLeft}
-            tokensLimit={tokensLimit}
-            resetsAt={resetsAt}
-            planKey={planKey}
-            unlimitedTokens={unlimitedTokens}
-            devOverride={devOverride}
-            themePrimary={themePrimary}
-            themeSecondary={themeSecondary}
-            onFileUpload={onFileUpload}
-            onImprovePrompt={onImprovePrompt}
-            isImproving={isImproving}
-            disabled={isBusy}
-            mode={activeMode}
-            onModeChange={onModeChange}
-          />
-        </>
-      )}
+        ) : (
+          <>
+            {active && (
+              <div className="px-3 pt-3">
+                <AgentPlanPanel
+                  agentRun={agentRun}
+                  onApproveStep={onApproveStep}
+                  onRestoreRun={onRestoreRun}
+                  approvingStepId={approvingStepId}
+                  restoring={restoringRun}
+                />
+              </div>
+            )}
+            <div className="flex-1 min-h-0 overflow-y-auto px-3 py-4 scrollbar-hide">
+              <ChatView
+                messages={messages}
+                pendingMessage={pendingMessage}
+                generationStage={generationStage}
+                user={user}
+                activeMode={activeMode}
+                isBusy={isBusy}
+                onApprovePlan={onApprovePlan}
+                onClarifySubmit={onClarifySubmit}
+                onEditPlan={onEditPlan}
+                onViewUi={onOpenArtifact}
+                onRefine={onRefine}
+                onQuickStart={onQuickStart}
+                notify={notify}
+                chatEndRef={chatEndRef}
+                onApproveStep={onApproveStep}
+                approvingStepId={approvingStepId}
+              />
+            </div>
+          </>
+        )}
+      </div>
+
+      <ChatComposer
+        prompt={prompt}
+        setPrompt={setPrompt}
+        attachments={attachments}
+        setAttachments={setAttachments}
+        onSubmit={onSubmit}
+        isGenerating={isBusy}
+        generationStage={generationStage}
+        placeholder={refineTarget ? "Describe the Studio change you want..." : "Ask the Studio agent to build, inspect, wire, or fix..."}
+        refineTarget={refineTarget}
+        onCancelRefine={onCancelRefine}
+        tokensLeft={tokensLeft}
+        tokensLimit={tokensLimit}
+        resetsAt={resetsAt}
+        planKey={planKey}
+        unlimitedTokens={unlimitedTokens}
+        devOverride={devOverride}
+        themePrimary={themePrimary}
+        themeSecondary={themeSecondary}
+        onFileUpload={onFileUpload}
+        onImprovePrompt={onImprovePrompt}
+        isImproving={isImproving}
+        disabled={isBusy}
+        mode={activeMode}
+        onModeChange={onModeChange}
+        view={view}
+        onViewChange={setView}
+        studioConnected={studioConnected}
+        studioLoading={studioLoading}
+        studioEnabled={studioEnabled}
+        onStudioEnabledChange={onStudioEnabledChange}
+        studioApplyMode={studioApplyMode}
+        onStudioApplyModeChange={onStudioApplyModeChange}
+        studioAutoPushEnabled={studioAutoPushEnabled}
+        onStudioAutoPushEnabledChange={onStudioAutoPushEnabledChange}
+        studioAutoPushPolicy={studioAutoPushPolicy}
+        onStudioAutoPushPolicyChange={onStudioAutoPushPolicyChange}
+        studioAutoPushAuthorized={studioAutoPushAuthorized}
+      />
     </div>
   );
 }

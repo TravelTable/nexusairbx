@@ -1,7 +1,9 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Plus, X, Sparkles, Loader, RefreshCw, Wand2, ChevronDown, Check } from "lucide-react";
+import { Plus, X, Sparkles, Loader, RefreshCw, Wand2, ChevronDown, Check, MessageSquare, ClipboardList } from "lucide-react";
 import { UnifiedStatusBar, TokenBar } from "../AiComponents";
 import { CHAT_MODES } from "../chatConstants";
+import StudioControls from "../workspace/StudioControls";
+import { Segmented } from "../../ui";
 
 function ModeSelector({ mode, onModeChange, disabled }) {
   const [open, setOpen] = useState(false);
@@ -101,6 +103,19 @@ export default function ChatComposer({
   disabled,
   mode = "agent",
   onModeChange,
+  view,
+  onViewChange,
+  studioConnected,
+  studioLoading,
+  studioEnabled,
+  onStudioEnabledChange,
+  studioApplyMode,
+  onStudioApplyModeChange,
+  studioAutoPushEnabled,
+  onStudioAutoPushEnabledChange,
+  studioAutoPushPolicy,
+  onStudioAutoPushPolicyChange,
+  studioAutoPushAuthorized,
 }) {
   return (
     <div className="p-4 bg-gradient-to-t from-black via-black/80 to-transparent">
@@ -167,7 +182,7 @@ export default function ChatComposer({
               </div>
             )}
 
-            <div className="flex items-center gap-2 px-2 pt-2">
+            <div className="flex items-center gap-2 px-2 pt-2 flex-wrap">
               <ModeSelector mode={mode} onModeChange={onModeChange} disabled={disabled} />
               <div
                 className={`px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest transition-all ${
@@ -176,7 +191,7 @@ export default function ChatComposer({
               >
                 {isGenerating ? generationStage || "Working" : "Ready"}
               </div>
-              <div className="h-px flex-1 bg-white/5" />
+              <div className="h-px flex-1 min-w-[0.5rem] bg-white/5" />
               {onImprovePrompt && (
                 <button
                   type="button"
@@ -194,6 +209,33 @@ export default function ChatComposer({
                   {isImproving ? "Improving" : "Improve"}
                 </button>
               )}
+              {onViewChange && (
+                <Segmented
+                  size="sm"
+                  options={[
+                    { id: "chat", label: "Chat", icon: MessageSquare },
+                    { id: "details", label: "Details", icon: ClipboardList },
+                  ]}
+                  value={view}
+                  onChange={onViewChange}
+                />
+              )}
+            </div>
+
+            <div className="px-2">
+              <StudioControls
+                connected={studioConnected}
+                loading={studioLoading}
+                studioEnabled={studioEnabled}
+                onStudioEnabledChange={onStudioEnabledChange}
+                applyMode={studioApplyMode}
+                onApplyModeChange={onStudioApplyModeChange}
+                autoPushEnabled={studioAutoPushEnabled}
+                onAutoPushEnabledChange={onStudioAutoPushEnabledChange}
+                autoPushPolicy={studioAutoPushPolicy}
+                onAutoPushPolicyChange={onStudioAutoPushPolicyChange}
+                autoPushAuthorized={studioAutoPushAuthorized}
+              />
             </div>
 
             <div className="flex items-center gap-2 p-2 pt-0">
