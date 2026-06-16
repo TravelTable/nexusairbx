@@ -30,6 +30,7 @@ import {
   Info,
   ArrowUpCircle,
   Skull,
+  Link as LinkIcon,
 } from "lucide-react";
 import { useSettings } from "../context/SettingsContext";
 import { useBilling } from "../context/BillingContext";
@@ -41,6 +42,14 @@ import { signOut } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
 import ConfirmationModal from "../components/ConfirmationModal";
 import BrutalAuditor from "../components/ai/BrutalAuditor";
+import {
+  beginRobloxOAuth,
+  beginRobloxReauthorization,
+  disconnectRobloxOAuth,
+  getRobloxOAuthStatus,
+  getRobloxOperations,
+  setRobloxTargetCreator,
+} from "../lib/robloxOAuthApi";
 import {
   CartesianGrid,
   Tooltip,
@@ -71,6 +80,7 @@ const TABS = [
   { id: "subscription", label: "Subscription", icon: CreditCard },
   { id: "usage", label: "Usage & Analytics", icon: Activity },
   { id: "ai", label: "AI Configuration", icon: Bot },
+  { id: "roblox", label: "Roblox", icon: Globe },
   { id: "teams", label: "Teams", icon: Users },
   { id: "account", label: "Account", icon: User },
   { id: "help", label: "Help & Tutorials", icon: MessageCircle },
@@ -128,9 +138,18 @@ const SettingsPage = () => {
   const [errorMsg, setErrorMsg] = useState("");
   const [teams, setTeams] = useState([]);
   const [newTeamName, setNewTeamName] = useState("");
+  const [robloxStatus, setRobloxStatus] = useState(null);
+  const [robloxOperations, setRobloxOperations] = useState([]);
+  const [robloxLoading, setRobloxLoading] = useState(false);
 
   const navigate = useNavigate();
   const isPremiumPlan = entitlements.includes("pro") || entitlements.includes("team") || plan === "PRO" || plan === "TEAM";
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const tab = params.get("tab");
+    if (tab && TABS.some((t) => t.id === tab)) setActiveTab(tab);
+  }, []);
 
   const MODEL_PROVIDER_LABELS = {
     openai: "OpenAI",
@@ -228,6 +247,24 @@ const SettingsPage = () => {
     }
   }, [user]);
 
+  const fetchRoblox = useCallback(async () => {
+    if (!user) return;
+    setRobloxLoading(true);
+    try {
+      const [status, ops] = await Promise.all([
+        getRobloxOAuthStatus(),
+        getRobloxOperations({ limit: 20 }).catch(() => ({ operations: [] })),
+      ]);
+      setRobloxStatus(status);
+      setRobloxOperations(ops.operations || []);
+    } catch (e) {
+      console.error("Failed to fetch Roblox integration", e);
+      setErrorMsg(e?.message || "Failed to load Roblox integration");
+    } finally {
+      setRobloxLoading(false);
+    }
+  }, [user]);
+
   useEffect(() => {
     if (activeTab === "usage" || activeTab === "dashboard") {
       fetchUsage();
@@ -238,7 +275,10 @@ const SettingsPage = () => {
     if (activeTab === "teams") {
       fetchTeams();
     }
-  }, [activeTab, fetchDevData, fetchUsage, fetchTeams, isAdmin]);
+    if (activeTab === "roblox") {
+      fetchRoblox();
+    }
+  }, [activeTab, fetchDevData, fetchUsage, fetchTeams, fetchRoblox, isAdmin]);
 
   useEffect(() => {
     // Free/anon users can never keep a pro-tier model selected.
@@ -675,6 +715,199 @@ const SettingsPage = () => {
             </div>
           </div>
         );
+
+      case "roblox": {
+        const connection = robloxStatus?.connection || null;
+        const connected = robloxStatus?.connected === true;
+        const profile = connection?.profile || {};
+        const creators = Array.isArray(connection?.creators) ? connection.creators : [];
+        const selectedCreatorKey = connection?.selectedCreator
+          ? `${connection.selectedCreator.type}:${connection.selectedCreator.id}`
+          : "";
+        const granted = robloxStatus?.capabilities?.granted || [];
+        const missing = robloxStatus?.capabilities?.missing || [];
+        const scopeText = (connection?.scopes || []).join(" ");
+
+        const startConnect = async (bundles = ["core"], reauth = false) => {
+          setRobloxLoading(true);
+          try {
+            if (reauth) {
+              await beginRobloxReauthorization({ bundles, returnPath: "/settings?tab=roblox" });
+            } else {
+              await beginRobloxOAuth({ bundles, returnPath: "/settings?tab=roblox" });
+            }
+          } catch (e) {
+            setErrorMsg(e?.message || "Failed to start Roblox authorization");
+            setRobloxLoading(false);
+          }
+        };
+
+        return (
+          <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="card-surface p-6">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+                <div>
+                  <h3 className="font-display text-lg font-bold text-white mb-2 flex items-center gap-2">
+                    <Globe className="w-5 h-5 text-[#00f5d4]" />
+                    Roblox OAuth
+                  </h3>
+                  <p className="text-sm text-gray-500">Connect a Roblox creator account so the agent can use authorized Open Cloud tools.</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className={`px-3 py-1 rounded-lg border text-xs font-bold uppercase ${connected ? "border-[#00f5d4]/30 bg-[#00f5d4]/10 text-[#00f5d4]" : "border-gray-800 bg-black text-gray-500"}`}>
+                    {robloxLoading ? "Loading" : connected ? "Connected" : "Disconnected"}
+                  </span>
+                  <button
+                    onClick={() => startConnect(["core"], connected)}
+                    disabled={robloxLoading}
+                    className="px-4 py-2 rounded-xl bg-[#00f5d4] text-black font-bold text-sm hover:scale-105 transition-transform disabled:opacity-60"
+                  >
+                    {connected ? "Reconnect" : "Connect Roblox"}
+                  </button>
+                </div>
+              </div>
+
+              {connected ? (
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                  <div className="lg:col-span-1 p-4 rounded-xl bg-black/40 border border-gray-800">
+                    <div className="flex items-center gap-3 mb-4">
+                      {profile.picture ? (
+                        <img src={profile.picture} alt="" className="w-12 h-12 rounded-xl bg-gray-900" />
+                      ) : (
+                        <div className="w-12 h-12 rounded-xl bg-gray-900 flex items-center justify-center">
+                          <User className="w-5 h-5 text-gray-500" />
+                        </div>
+                      )}
+                      <div className="min-w-0">
+                        <div className="text-white font-bold truncate">{profile.name || profile.preferred_username || "Roblox user"}</div>
+                        <div className="text-xs text-gray-500 truncate">@{profile.preferred_username || profile.sub}</div>
+                      </div>
+                    </div>
+
+                    <label className="text-xs text-gray-500 uppercase font-bold mb-2 block">Target Creator</label>
+                    <select
+                      value={selectedCreatorKey}
+                      onChange={async (e) => {
+                        const [type, id] = e.target.value.split(":");
+                        try {
+                          await setRobloxTargetCreator({ type, id });
+                          await fetchRoblox();
+                        } catch (err) {
+                          setErrorMsg(err?.message || "Failed to update Roblox creator");
+                        }
+                      }}
+                      className="w-full bg-black border border-gray-800 rounded-xl p-3 text-white outline-none focus:border-[#00f5d4]"
+                    >
+                      {creators.map((creator) => (
+                        <option key={`${creator.type}:${creator.id}`} value={`${creator.type}:${creator.id}`}>
+                          {creator.type} {creator.id}
+                        </option>
+                      ))}
+                    </select>
+
+                    <div className="mt-4">
+                      <label className="text-xs text-gray-500 uppercase font-bold mb-2 block">Granted Scopes</label>
+                      <p className="text-xs text-gray-400 break-words bg-black border border-gray-900 rounded-lg p-3 min-h-[54px]">
+                        {scopeText || "No scopes reported yet"}
+                      </p>
+                    </div>
+
+                    <button
+                      onClick={async () => {
+                        setRobloxLoading(true);
+                        try {
+                          await disconnectRobloxOAuth();
+                          await fetchRoblox();
+                          setSuccessMsg("Roblox disconnected");
+                        } catch (e) {
+                          setErrorMsg(e?.message || "Failed to disconnect Roblox");
+                        } finally {
+                          setRobloxLoading(false);
+                        }
+                      }}
+                      className="mt-4 w-full py-2 rounded-xl border border-red-500/30 bg-red-500/10 text-red-300 text-sm font-bold hover:bg-red-500/20"
+                    >
+                      Disconnect Roblox
+                    </button>
+                  </div>
+
+                  <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="p-4 rounded-xl bg-black/40 border border-gray-800">
+                      <h4 className="text-sm font-bold text-white mb-3 flex items-center gap-2">
+                        <CheckCircle className="w-4 h-4 text-[#00f5d4]" />
+                        Available Capabilities
+                      </h4>
+                      <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
+                        {granted.filter((cap) => !cap.future).map((cap) => (
+                          <div key={cap.id} className="p-3 rounded-lg bg-[#00f5d4]/5 border border-[#00f5d4]/10">
+                            <div className="text-sm text-white font-bold">{cap.label}</div>
+                            <div className="text-[10px] text-gray-500 uppercase">{cap.approval} · {cap.risk}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="p-4 rounded-xl bg-black/40 border border-gray-800">
+                      <h4 className="text-sm font-bold text-white mb-3 flex items-center gap-2">
+                        <LinkIcon className="w-4 h-4 text-purple-400" />
+                        Add-On Authorization
+                      </h4>
+                      <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
+                        {missing.filter((cap) => !cap.future).map((cap) => (
+                          <div key={cap.id} className="p-3 rounded-lg bg-purple-500/5 border border-purple-500/10">
+                            <div className="text-sm text-white font-bold">{cap.label}</div>
+                            <div className="text-[10px] text-gray-500 mb-2">{cap.missingScopes.join(" ")}</div>
+                            <button
+                              onClick={() => startConnect([cap.bundle || "core"], true)}
+                              className="px-3 py-1 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold"
+                            >
+                              Reauthorize
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="p-6 rounded-xl bg-black/40 border border-gray-800 text-center">
+                  <Globe className="w-10 h-10 text-gray-600 mx-auto mb-3" />
+                  <p className="text-gray-400 mb-4">Roblox is not connected. Connect to let the agent upload generated assets and read authorized creator resources.</p>
+                  <button
+                    onClick={() => startConnect(["core"], false)}
+                    disabled={robloxLoading}
+                    className="px-5 py-3 rounded-xl bg-[#00f5d4] text-black font-bold hover:scale-105 transition-transform disabled:opacity-60"
+                  >
+                    Connect Roblox
+                  </button>
+                </div>
+              )}
+            </div>
+
+            <div className="card-surface p-6">
+              <h3 className="font-display text-lg font-bold text-white mb-4 flex items-center gap-2">
+                <History className="w-5 h-5 text-purple-400" />
+                Roblox Operation History
+              </h3>
+              {robloxOperations.length ? (
+                <div className="divide-y divide-gray-800">
+                  {robloxOperations.map((op) => (
+                    <div key={op.id} className="py-3 flex items-center justify-between gap-4">
+                      <div>
+                        <div className="text-sm text-white font-bold">{op.action}</div>
+                        <div className="text-xs text-gray-500">{op.robloxResourceId || op.robloxOperationId || "No Roblox resource ID"}</div>
+                      </div>
+                      <span className="text-xs text-gray-500">{op.createdAt ? new Date(op.createdAt).toLocaleString() : ""}</span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-gray-500">No Roblox writes have been recorded yet.</p>
+              )}
+            </div>
+          </div>
+        );
+      }
 
       case "brutal":
         return <BrutalAuditor />;

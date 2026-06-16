@@ -40,6 +40,7 @@ import { AI_EVENTS, emitAiEvent, onAiEvent } from "../../lib/aiEvents";
 import { createAiTelemetryClient } from "../../lib/aiTelemetry";
 import { useAiNotifications } from "./useAiNotifications";
 import { saveWorkspaceArtifact } from "../../lib/artifactWorkspaceApi";
+import { getRobloxOAuthStatus } from "../../lib/robloxOAuthApi";
 
 const IS_AI_PAGE_V2_ENABLED = AI_PAGE_V2_ENABLED;
 
@@ -96,11 +97,29 @@ export function useAiWorkspaceController() {
   const [codeDrawerData, setCodeDrawerData] = useState({ code: "", title: "", explanation: "" });
   const [studioEnabled, setStudioEnabled] = useState(() => getStudioEnabledPreference());
   const [studioApplyMode, setStudioApplyModeState] = useState(() => getStudioApplyMode());
+  const [robloxStatus, setRobloxStatus] = useState(null);
+  const [robloxLoading, setRobloxLoading] = useState(false);
   const [approvingStepId, setApprovingStepId] = useState(null);
   const [restoringRun, setRestoringRun] = useState(false);
   const [chatProjectSnapshot, setChatProjectSnapshot] = useState(null);
 
   const studioConnection = useStudioConnection();
+
+  const refreshRobloxStatus = useCallback(async () => {
+    if (!user) {
+      setRobloxStatus(null);
+      return;
+    }
+    setRobloxLoading(true);
+    try {
+      const status = await getRobloxOAuthStatus();
+      setRobloxStatus(status);
+    } catch (_) {
+      setRobloxStatus({ connected: false });
+    } finally {
+      setRobloxLoading(false);
+    }
+  }, [user]);
 
   const chatEndRef = useRef(null);
   const pageViewTrackedRef = useRef(false);
@@ -210,6 +229,10 @@ export function useAiWorkspaceController() {
     });
     return () => unsubscribe();
   }, []);
+
+  useEffect(() => {
+    refreshRobloxStatus();
+  }, [refreshRobloxStatus]);
 
   useEffect(() => {
     if (!user) {
@@ -501,6 +524,12 @@ export function useAiWorkspaceController() {
     }).catch(() => {});
   }, [updateSettings]);
 
+  const handleRobloxAssetUploadsEnabledChange = useCallback((enabled) => {
+    updateSettings({
+      robloxAssetUploadsEnabled: Boolean(enabled),
+    });
+  }, [updateSettings]);
+
   const syncAgentRunSteps = useCallback(
     async (runId, fallbackStep = null) => {
       if (!runId || !user) return;
@@ -666,6 +695,7 @@ export function useAiWorkspaceController() {
       handleStudioApplyModeChange,
       handleStudioAutoPushEnabledChange,
       handleStudioAutoPushPolicyChange,
+      handleRobloxAssetUploadsEnabledChange,
     },
     studio: {
       connected: studioConnection.connected,
@@ -680,6 +710,18 @@ export function useAiWorkspaceController() {
       approvingStepId,
       restoringRun,
       unifiedAgent: FEATURE_FLAGS.unifiedAgent,
+    },
+    roblox: {
+      connected: robloxStatus?.connected === true,
+      loading: robloxLoading,
+      selectedCreator: robloxStatus?.connection?.selectedCreator || null,
+      uploadAvailable: Boolean(
+        robloxStatus?.connected &&
+        (robloxStatus?.capabilities?.granted || []).some((cap) => cap.id === "roblox_upload_asset")
+      ),
+      assetUploadsEnabled: Boolean(settings?.robloxAssetUploadsEnabled),
+      status: robloxStatus,
+      refresh: refreshRobloxStatus,
     },
   };
 }

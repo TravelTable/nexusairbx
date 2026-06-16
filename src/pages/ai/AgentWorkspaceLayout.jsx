@@ -41,7 +41,7 @@ async function pollStudioCommand(commandId, { timeoutMs = 30000 } = {}) {
 }
 
 export default function AgentWorkspaceLayout({ controller }) {
-  const { billing, navigation, uiState, refs, modules, handlers, studio } = controller;
+  const { billing, navigation, uiState, refs, modules, handlers, studio, roblox } = controller;
   const { planKey, totalRemaining, subRemaining, paygRemaining, subLimit, resetsAt, isPremium, unlimitedTokens, devOverride, flags } = billing;
   const { navigate, location } = navigation;
   const {
@@ -98,6 +98,7 @@ export default function AgentWorkspaceLayout({ controller }) {
     handleStudioApplyModeChange,
     handleStudioAutoPushEnabledChange,
     handleStudioAutoPushPolicyChange,
+    handleRobloxAssetUploadsEnabledChange,
   } = handlers;
 
   const { chatEndRef } = refs;
@@ -669,6 +670,12 @@ export default function AgentWorkspaceLayout({ controller }) {
       studioAutoPushPolicy={studio?.autoPushPolicy}
       onStudioAutoPushPolicyChange={handleStudioAutoPushPolicyChange}
       studioAutoPushAuthorized={Boolean(studio?.lastAuthorizedSessionId)}
+      robloxConnected={roblox?.connected}
+      robloxLoading={roblox?.loading}
+      robloxSelectedCreator={roblox?.selectedCreator}
+      robloxUploadAvailable={roblox?.uploadAvailable}
+      robloxAssetUploadsEnabled={roblox?.assetUploadsEnabled}
+      onRobloxAssetUploadsEnabledChange={handleRobloxAssetUploadsEnabledChange}
     />
   );
 

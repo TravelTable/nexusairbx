@@ -3,6 +3,7 @@ import { Plus, X, Sparkles, Loader, RefreshCw, Wand2, ChevronDown, Check, Messag
 import { UnifiedStatusBar, TokenBar } from "../AiComponents";
 import { CHAT_MODES } from "../chatConstants";
 import StudioControls from "../workspace/StudioControls";
+import RobloxCloudControls from "../workspace/RobloxCloudControls";
 import { Segmented } from "../../ui";
 
 function ModeSelector({ mode, onModeChange, disabled }) {
@@ -116,6 +117,12 @@ export default function ChatComposer({
   studioAutoPushPolicy,
   onStudioAutoPushPolicyChange,
   studioAutoPushAuthorized,
+  robloxConnected,
+  robloxLoading,
+  robloxSelectedCreator,
+  robloxUploadAvailable,
+  robloxAssetUploadsEnabled,
+  onRobloxAssetUploadsEnabledChange,
 }) {
   return (
     <div className="p-4 bg-gradient-to-t from-black via-black/80 to-transparent">
@@ -223,19 +230,29 @@ export default function ChatComposer({
             </div>
 
             <div className="px-2">
-              <StudioControls
-                connected={studioConnected}
-                loading={studioLoading}
-                studioEnabled={studioEnabled}
-                onStudioEnabledChange={onStudioEnabledChange}
-                applyMode={studioApplyMode}
-                onApplyModeChange={onStudioApplyModeChange}
-                autoPushEnabled={studioAutoPushEnabled}
-                onAutoPushEnabledChange={onStudioAutoPushEnabledChange}
-                autoPushPolicy={studioAutoPushPolicy}
-                onAutoPushPolicyChange={onStudioAutoPushPolicyChange}
-                autoPushAuthorized={studioAutoPushAuthorized}
-              />
+              <div className="flex items-center gap-2 flex-wrap">
+                <StudioControls
+                  connected={studioConnected}
+                  loading={studioLoading}
+                  studioEnabled={studioEnabled}
+                  onStudioEnabledChange={onStudioEnabledChange}
+                  applyMode={studioApplyMode}
+                  onApplyModeChange={onStudioApplyModeChange}
+                  autoPushEnabled={studioAutoPushEnabled}
+                  onAutoPushEnabledChange={onStudioAutoPushEnabledChange}
+                  autoPushPolicy={studioAutoPushPolicy}
+                  onAutoPushPolicyChange={onStudioAutoPushPolicyChange}
+                  autoPushAuthorized={studioAutoPushAuthorized}
+                />
+                <RobloxCloudControls
+                  connected={robloxConnected}
+                  loading={robloxLoading}
+                  selectedCreator={robloxSelectedCreator}
+                  uploadAvailable={robloxUploadAvailable}
+                  assetUploadsEnabled={robloxAssetUploadsEnabled}
+                  onAssetUploadsEnabledChange={onRobloxAssetUploadsEnabledChange}
+                />
+              </div>
             </div>
 
             <div className="flex items-center gap-2 p-2 pt-0">

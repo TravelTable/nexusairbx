@@ -38,6 +38,13 @@ export default function AgentChatPanel({
   studioAutoPushPolicy,
   onStudioAutoPushPolicyChange,
   studioAutoPushAuthorized,
+  // roblox cloud
+  robloxConnected,
+  robloxLoading,
+  robloxSelectedCreator,
+  robloxUploadAvailable,
+  robloxAssetUploadsEnabled,
+  onRobloxAssetUploadsEnabledChange,
   // composer
   prompt,
   setPrompt,
@@ -161,6 +168,12 @@ export default function AgentChatPanel({
         studioAutoPushPolicy={studioAutoPushPolicy}
         onStudioAutoPushPolicyChange={onStudioAutoPushPolicyChange}
         studioAutoPushAuthorized={studioAutoPushAuthorized}
+        robloxConnected={robloxConnected}
+        robloxLoading={robloxLoading}
+        robloxSelectedCreator={robloxSelectedCreator}
+        robloxUploadAvailable={robloxUploadAvailable}
+        robloxAssetUploadsEnabled={robloxAssetUploadsEnabled}
+        onRobloxAssetUploadsEnabledChange={onRobloxAssetUploadsEnabledChange}
       />
     </div>
   );

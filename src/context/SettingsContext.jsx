@@ -18,6 +18,14 @@ const DEFAULT_SETTINGS = {
   studioAutoPushEnabled: false,
   studioAutoPushPolicy: "after_validation",
   lastAuthorizedStudioSessionId: null,
+  robloxAssetUploadsEnabled: false,
+  robloxWritePolicy: {
+    assetWrites: "allowed_after_toggle",
+    universeWrites: "approval_required",
+    groupWrites: "approval_required",
+    secretWrites: "approval_required",
+    serverActions: "approval_required",
+  },
 };
 
 export function SettingsProvider({ children }) {

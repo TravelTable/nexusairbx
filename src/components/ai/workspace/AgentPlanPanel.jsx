@@ -1,31 +1,7 @@
 import React from "react";
-import { Loader2, CircleDot, ListChecks, RotateCcw } from "lucide-react";
+import { Loader2, ListChecks, RotateCcw } from "lucide-react";
 import AgentStepList from "./AgentStepList";
 import { FEATURE_FLAGS } from "../../../lib/featureFlags";
-
-const STAGES = [
-  { id: "inspecting", label: "Inspecting Studio" },
-  { id: "waiting_for_tool", label: "Waiting for Studio" },
-  { id: "waiting_for_approval", label: "Waiting for approval" },
-  { id: "generating", label: "Generating files" },
-  { id: "validating", label: "Validating artifact" },
-  { id: "ready_to_apply", label: "Ready to apply" },
-  { id: "applying", label: "Applying in Studio" },
-  { id: "applied", label: "Applied" },
-  { id: "succeeded", label: "Completed" },
-];
-
-function stageIndex(status) {
-  if (status === "inspecting") return 0;
-  if (status === "waiting_for_tool") return 1;
-  if (status === "waiting_for_approval") return 2;
-  if (status === "generating") return 3;
-  if (status === "validating") return 4;
-  if (status === "ready_to_apply") return 5;
-  if (status === "applying") return 6;
-  if (status === "applied" || status === "succeeded") return 7;
-  return -1;
-}
 
 // Build progress + plan + unified tool steps for the current agent run.
 export default function AgentPlanPanel({
@@ -47,7 +23,6 @@ export default function AgentPlanPanel({
     "applied",
     "succeeded",
   ].includes(agentRun?.status);
-  const idx = stageIndex(agentRun?.status);
   const plan = planText || agentRun?.plan;
   const steps = agentRun?.steps || [];
   const showSteps = FEATURE_FLAGS.unifiedAgent && steps.length > 0;
@@ -73,25 +48,6 @@ export default function AgentPlanPanel({
           </button>
         )}
       </div>
-
-      {active && !showSteps && (
-        <div className="space-y-2">
-          {STAGES.map((s, i) => {
-            const done = i < idx;
-            const current = i === idx;
-            return (
-              <div key={s.id} className="flex items-center gap-2.5 text-[13px]">
-                {current ? (
-                  <Loader2 className="w-3.5 h-3.5 text-[#00f5d4] animate-spin shrink-0" />
-                ) : (
-                  <CircleDot className={`w-3.5 h-3.5 shrink-0 ${done ? "text-[#00f5d4]" : "text-gray-600"}`} />
-                )}
-                <span className={done || current ? "text-gray-200" : "text-gray-500"}>{s.label}</span>
-              </div>
-            );
-          })}
-        </div>
-      )}
 
       {agentRun?.status === "conflict" && (
         <div className="rounded-xl border border-amber-400/20 bg-amber-400/10 px-3 py-2 text-xs text-amber-100">
