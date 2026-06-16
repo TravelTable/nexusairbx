@@ -2,7 +2,7 @@ import React, { useEffect, useMemo } from "react";
 import { NexusRBXAvatar, UserAvatar, FormatText, SkeletonArtifact } from "../AiComponents";
 import { stripTags } from "./stripTags";
 import MessageBubble from "./MessageBubble";
-import LiveGenerationPanel from "./LiveGenerationPanel";
+import LiveWorkStream from "./LiveWorkStream";
 import { parsePendingStreamContent } from "../../../lib/streaming";
 import { Clock3, Loader2, RotateCcw } from "lucide-react";
 
@@ -71,7 +71,7 @@ export default function MessageList({
 }) {
   const pendingParsed = parsePendingStreamContent(pendingMessage?.content || "");
   const hasPendingMessage = !!pendingMessage;
-  const showLiveGenerationPanel = Boolean(
+  const showLiveWorkStream = Boolean(
     pendingMessage?.streamState ||
     (Array.isArray(pendingMessage?.files) && pendingMessage.files.length) ||
     (Array.isArray(pendingMessage?.steps) && pendingMessage.steps.length)
@@ -143,8 +143,8 @@ export default function MessageList({
           <div className="flex justify-start gap-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <NexusRBXAvatar isThinking={true} mode={activeMode} />
             <div className="max-w-[85%] md:max-w-[80%] order-2 space-y-4">
-              {showLiveGenerationPanel ? (
-                <LiveGenerationPanel
+              {showLiveWorkStream ? (
+                <LiveWorkStream
                   pendingMessage={pendingMessage}
                   generationStage={generationStage}
                   onApproveStep={onApproveStep}
@@ -158,7 +158,7 @@ export default function MessageList({
                 />
               )}
 
-              {pendingMessage.content && !showLiveGenerationPanel ? (
+              {pendingMessage.content && !showLiveWorkStream ? (
                 <div className="space-y-4">
                   <div className="p-4 md:p-6 rounded-3xl bg-[#121212]/80 border border-white/10 backdrop-blur-xl shadow-2xl">
                     {pendingParsed.hasStructured ? (
@@ -197,7 +197,7 @@ export default function MessageList({
                     )}
                 </div>
               ) : null}
-              {pendingMessage.type === "ui" && !pendingMessage.content && !showLiveGenerationPanel && <SkeletonArtifact type="ui" />}
+              {pendingMessage.type === "ui" && !pendingMessage.content && !showLiveWorkStream && <SkeletonArtifact type="ui" />}
             </div>
           </div>
         </>

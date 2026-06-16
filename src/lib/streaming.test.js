@@ -1,4 +1,5 @@
 import {
+  applyStreamActivity,
   applyStreamDelta,
   createPendingStreamState,
   formatPendingStreamContent,
@@ -47,9 +48,53 @@ describe("streaming utils", () => {
     expect(snapshot.thought).toBe("Internal analysis");
     expect(snapshot.hasThought).toBe(true);
     expect(snapshot.hasVisibleOutput).toBe(false);
+    expect(snapshot.activity).toHaveLength(1);
+    expect(snapshot.activity[0]).toMatchObject({ type: "thinking", text: "Internal analysis" });
 
     state = applyStreamDelta(state, { seq: 2, channel: "content", text: "Visible answer" });
     expect(formatPendingStreamContent(state)).toBe("Visible answer");
+  });
+
+  test("builds ordered work-stream activity from reasoning, stage, file, and tool events", () => {
+    let state = createPendingStreamState();
+    state = applyStreamDelta(state, { seq: 1, channel: "reasoning", text: "I will split the system into server and shared modules." });
+    state = applyStreamActivity(state, { type: "stage", status: "Writing files", text: "Writing files..." });
+    state = applyStreamDelta(state, {
+      seq: 2,
+      channel: "file_event",
+      event: {
+        event: "file_start",
+        fileId: "inventory",
+        path: "ServerScriptService/InventoryService.server.lua",
+        kind: "server",
+      },
+    });
+    state = applyStreamDelta(state, {
+      seq: 3,
+      channel: "file_event",
+      event: { event: "file_chunk", fileId: "inventory", content: "local Inventory = {}\nreturn Inventory" },
+    });
+    state = applyStreamActivity(state, {
+      type: "tool_step",
+      id: "tool-1",
+      text: "Run smoke check",
+      status: "running",
+      stepType: "run_smoke_check",
+    });
+
+    const snapshot = getPendingStreamSnapshot(state);
+    expect(snapshot.activity.map((item) => item.type)).toEqual([
+      "thinking",
+      "stage",
+      "file_start",
+      "file_chunk",
+      "tool_step",
+    ]);
+    expect(snapshot.activity[3]).toMatchObject({
+      type: "file_chunk",
+      path: "ServerScriptService/InventoryService.server.lua",
+      code: "local Inventory = {}\nreturn Inventory",
+    });
   });
 
   test("assembles file events into pending files", () => {
@@ -97,6 +142,7 @@ describe("streaming utils", () => {
       content: "local Inventory = {}",
       lineCount: 1,
     });
+    expect(snapshot.activity.map((item) => item.type)).toEqual(["file_start", "file_chunk", "file_end"]);
   });
 
   test("file_ready replaces streaming file with authoritative content by path", () => {

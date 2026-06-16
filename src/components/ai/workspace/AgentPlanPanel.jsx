@@ -60,7 +60,6 @@ export default function AgentPlanPanel({
       <div className="flex items-center gap-2">
         <ListChecks className="w-3.5 h-3.5 text-[#00f5d4]" />
         <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">Agent Plan</span>
-        {active && <span className="ml-auto text-[10px] text-[#00f5d4] font-bold">{agentRun.stage}</span>}
         {canRestore && onRestoreRun && (
           <button
             type="button"

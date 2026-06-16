@@ -2,8 +2,8 @@ import React, { useState } from "react";
 import { Brain, ChevronDown } from "lucide-react";
 
 /**
- * Collapsible chain-of-thought disclosure. Shows the model's streamed <thinking>
- * block (live) or the saved thought (finalized). Hidden when there is no text.
+ * Collapsible display-safe build log for finalized messages. Hidden when there
+ * is no text or when the user disables thinking/progress display.
  */
 function thoughtEnabled() {
   try {
@@ -29,7 +29,7 @@ export default function ThinkingDisclosure({ text, live = false, defaultOpen = f
       >
         <Brain className={`w-3.5 h-3.5 ${live ? "text-[#00f5d4] animate-pulse" : "text-[#9b5de5]"}`} />
         <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">
-          {label || (live ? "Build reasoning" : "Build reasoning")}
+          {label || (live ? "Thinking" : "Build log")}
         </span>
         <ChevronDown className={`w-3.5 h-3.5 ml-auto text-gray-500 transition-transform ${open ? "rotate-180" : ""}`} />
       </button>

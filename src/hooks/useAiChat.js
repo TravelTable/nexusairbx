@@ -28,6 +28,7 @@ import {
 import { getStudioStatus } from "../lib/studioBridgeApi";
 import { getAgentRun } from "../lib/workflowApi";
 import {
+  applyStreamActivity,
   applyStreamDelta,
   createPendingStreamState,
   formatPendingStreamContent,
@@ -575,7 +576,6 @@ export function useAiChat(user, settings, refreshBilling, notify) {
               content: pendingContent,
               files: snapshot.files || [],
               streamState: snapshot,
-              streamStatus: null,
               title: snapshot.files?.length ? "Generating Artifact" : prev.title,
             };
           });
@@ -593,6 +593,14 @@ export function useAiChat(user, settings, refreshBilling, notify) {
           if (!streamFlushTimer) {
             streamFlushTimer = setTimeout(flushPendingStreamState, 40);
           }
+        };
+
+        const recordStreamActivity = (entry, immediate = true) => {
+          streamStatesRef.current[activeChatId] = applyStreamActivity(
+            streamStatesRef.current[activeChatId],
+            entry
+          );
+          schedulePendingStreamFlush(immediate);
         };
 
         const failAndReject = (err, tag = "network") => {
@@ -667,6 +675,7 @@ export function useAiChat(user, settings, refreshBilling, notify) {
             retryCount += 1;
             emitStreamMetric("retry", { jobId, retryCount });
             setStage("Reconnecting to generation stream...");
+            recordStreamActivity({ type: "stage", status: "Reconnecting", text: "Reconnecting to generation stream..." });
             setPending((prev) => (prev ? { ...prev, stage: "Reconnecting to generation stream...", streamStatus: "reconnecting" } : prev));
             setTimeout(() => {
               connect();
@@ -677,6 +686,7 @@ export function useAiChat(user, settings, refreshBilling, notify) {
           try {
             metrics.usedFallback = true;
             setStage("Recovering stream...");
+            recordStreamActivity({ type: "stage", status: "Recovering", text: "Recovering stream..." });
             setPending((prev) => (prev ? { ...prev, stage: "Recovering stream...", streamStatus: "recovering" } : prev));
             emitStreamMetric("fallback_start", { jobId });
             const recovered = await fetchFinalResult();
@@ -694,6 +704,7 @@ export function useAiChat(user, settings, refreshBilling, notify) {
               const data = JSON.parse(e.data);
               if (data?.message) {
                 setStage(data.message);
+                recordStreamActivity({ type: "stage", status: data.message, text: data.message }, false);
                 setPending((prev) => {
                   if (!prev) return prev;
                   return { ...prev, stage: data.message, streamStatus: null };
@@ -735,6 +746,14 @@ export function useAiChat(user, settings, refreshBilling, notify) {
             try {
               const data = JSON.parse(e.data);
               const step = normalizeToolStep(data.step || data);
+              recordStreamActivity({
+                type: "tool_step",
+                id: step.id ? `tool-${step.id}` : undefined,
+                status: step.status,
+                text: step.label || step.type,
+                stepType: step.type,
+                path: step.result?.path || "",
+              }, false);
               setPending((prev) => {
                 if (!prev) return prev;
                 const steps = upsertAgentStep(prev.steps || [], step);

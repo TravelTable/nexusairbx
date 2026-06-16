@@ -41,7 +41,7 @@ describe("MessageList pending activity", () => {
     expect(screen.queryByText("Finalizing")).toBeNull();
   });
 
-  test("streams agent commands/actions as they arrive", () => {
+  test("streams agent commands/actions inline in the work stream", () => {
     render(
       <MessageList
         {...baseProps}
@@ -52,6 +52,13 @@ describe("MessageList pending activity", () => {
           type: "ui",
           prompt: "Build a shop UI",
           stage: "Generating...",
+          streamState: {
+            activity: [
+              { id: "a1", type: "thinking", text: "I am preparing the shop UI files." },
+              { id: "tool-s1", type: "tool_step", text: "Generate artifact", status: "running", stepType: "generate_artifact" },
+              { id: "tool-s2", type: "tool_step", text: "Write ShopService", status: "awaiting_approval", stepType: "write_script" },
+            ],
+          },
           steps: [
             { id: "s1", type: "generate_artifact", label: "Generate artifact", status: "running" },
             { id: "s2", type: "write_script", label: "Write ShopService", status: "awaiting_approval" },
@@ -62,9 +69,10 @@ describe("MessageList pending activity", () => {
 
     expect(screen.getByText("Generate artifact")).toBeTruthy();
     expect(screen.getByText("Write ShopService")).toBeTruthy();
+    expect(screen.queryByText("Studio actions")).toBeNull();
   });
 
-  test("streams the live build reasoning disclosure (not as answer content)", () => {
+  test("streams live reasoning as normal work-log prose", () => {
     render(
       <MessageList
         {...baseProps}
@@ -77,6 +85,9 @@ describe("MessageList pending activity", () => {
           stage: "Analyzing Request...",
           streamState: {
             thought: "Reasoning about the datastore approach",
+            activity: [
+              { id: "thinking-1", type: "thinking", text: "Reasoning about the datastore approach" },
+            ],
             hasThought: true,
             hasVisibleOutput: false,
           },
@@ -85,12 +96,12 @@ describe("MessageList pending activity", () => {
     );
 
     expect(screen.getByText("Analyzing Request...")).toBeTruthy();
-    // The thought is surfaced live inside the collapsible build reasoning disclosure.
-    expect(screen.getByText("Build reasoning")).toBeTruthy();
+    expect(screen.getByText("Thinking")).toBeTruthy();
     expect(screen.getByText("Reasoning about the datastore approach")).toBeTruthy();
+    expect(screen.queryByText("Build reasoning")).toBeNull();
   });
 
-  test("shows live file cards, counters, and active code preview", () => {
+  test("shows a single work stream with inline file code excerpts", () => {
     render(
       <MessageList
         {...baseProps}
@@ -105,6 +116,26 @@ describe("MessageList pending activity", () => {
             thought: "Splitting server authority from shared configuration.",
             explanation: "Creating the project files.",
             activeFileId: "inventory",
+            activity: [
+              { id: "thinking-1", type: "thinking", text: "Splitting server authority from shared configuration." },
+              {
+                id: "file-start-inventory",
+                type: "file_start",
+                text: "Creating ServerScriptService/InventoryService.server.lua",
+                path: "ServerScriptService/InventoryService.server.lua",
+                kind: "server",
+                status: "Writing",
+              },
+              {
+                id: "file-chunk-inventory",
+                type: "file_chunk",
+                text: "Writing ServerScriptService/InventoryService.server.lua",
+                path: "ServerScriptService/InventoryService.server.lua",
+                kind: "server",
+                status: "Writing",
+                code: "local InventoryService = {}\nreturn InventoryService",
+              },
+            ],
             files: [
               {
                 id: "inventory",
@@ -128,13 +159,13 @@ describe("MessageList pending activity", () => {
       />
     );
 
-    expect(screen.getByText("Live build")).toBeTruthy();
+    expect(screen.getByText("Thinking")).toBeTruthy();
     expect(screen.getByText("Writing files...")).toBeTruthy();
-    expect(screen.getByText("InventoryService")).toBeTruthy();
     expect(screen.getAllByText("ServerScriptService/InventoryService.server.lua").length).toBeGreaterThan(0);
-    expect(screen.getByText("2 lines")).toBeTruthy();
-    expect(screen.getByText("Active file preview")).toBeTruthy();
     expect(screen.getByText(/local InventoryService/)).toBeTruthy();
+    expect(screen.queryByText("Active file preview")).toBeNull();
+    expect(screen.queryByText("Discovered")).toBeNull();
+    expect(screen.queryByText("2 lines")).toBeNull();
   });
 
   test("keeps live panel visible while reconnecting", () => {
@@ -150,6 +181,17 @@ describe("MessageList pending activity", () => {
           stage: "Reconnecting to generation stream...",
           streamStatus: "reconnecting",
           streamState: {
+            activity: [
+              { id: "stage-reconnect", type: "stage", text: "Reconnecting to generation stream...", status: "Reconnecting" },
+              {
+                id: "file-shop",
+                type: "file_chunk",
+                text: "Writing ReplicatedStorage/ShopConfig.lua",
+                path: "ReplicatedStorage/ShopConfig.lua",
+                kind: "config",
+                code: "return {}",
+              },
+            ],
             files: [
               {
                 id: "shop",
@@ -172,7 +214,7 @@ describe("MessageList pending activity", () => {
       />
     );
 
-    expect(screen.getByText("Reconnecting to generation stream...")).toBeTruthy();
-    expect(screen.getByText("ShopConfig")).toBeTruthy();
+    expect(screen.getAllByText("Reconnecting to generation stream...").length).toBeGreaterThan(0);
+    expect(screen.getByText("Writing ReplicatedStorage/ShopConfig.lua")).toBeTruthy();
   });
 });

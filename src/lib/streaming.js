@@ -1,4 +1,6 @@
 const STREAM_CHANNELS = new Set(["thought", "reasoning", "explanation", "code", "content"]);
+const MAX_ACTIVITY_ITEMS = 80;
+const MAX_CODE_PREVIEW_CHARS = 1800;
 
 function countLines(value = "") {
   const text = String(value || "");
@@ -29,6 +31,117 @@ function normalizeFileEventFile(raw = {}) {
 function findFileKeyByPath(filesById, path) {
   if (!path) return "";
   return Object.keys(filesById || {}).find((key) => filesById[key]?.path === path) || "";
+}
+
+function nextActivityId(base, type) {
+  return `${type}-${(base.activitySeq || 0) + 1}`;
+}
+
+function trimActivity(items = []) {
+  return items.length > MAX_ACTIVITY_ITEMS ? items.slice(items.length - MAX_ACTIVITY_ITEMS) : items;
+}
+
+function recentCodePreview(content = "") {
+  const text = String(content || "");
+  if (text.length <= MAX_CODE_PREVIEW_CHARS) return text;
+  return text.slice(text.length - MAX_CODE_PREVIEW_CHARS);
+}
+
+function appendActivity(base, entry) {
+  const nextSeq = (base.activitySeq || 0) + 1;
+  return {
+    activitySeq: nextSeq,
+    activity: trimActivity([
+      ...(base.activity || []),
+      {
+        id: entry.id || `${entry.type}-${nextSeq}`,
+        ts: entry.ts || Date.now(),
+        ...entry,
+      },
+    ]),
+  };
+}
+
+function appendOrUpdateThinking(base, text) {
+  const clean = String(text || "").replace(/<\/?(thinking|progress)>/gi, "");
+  if (!clean) return { activity: base.activity || [], activitySeq: base.activitySeq || 0 };
+  const activity = [...(base.activity || [])];
+  const last = activity[activity.length - 1];
+  if (last?.type === "thinking") {
+    activity[activity.length - 1] = { ...last, text: `${last.text || ""}${clean}`, ts: Date.now() };
+    return { activity: trimActivity(activity), activitySeq: base.activitySeq || 0 };
+  }
+  return appendActivity(base, { type: "thinking", text: clean });
+}
+
+function buildFileActivity(event, file, existing = null) {
+  const eventName = event?.event || "";
+  if (eventName === "file_start") {
+    return {
+      type: "file_start",
+      fileId: file.id,
+      path: file.path,
+      name: file.name,
+      kind: file.kind,
+      status: "Writing",
+      text: `${existing ? "Editing" : "Creating"} ${file.path}`,
+    };
+  }
+  if (eventName === "file_chunk") {
+    return {
+      id: `file-chunk-${file.id}`,
+      type: "file_chunk",
+      fileId: file.id,
+      path: file.path,
+      name: file.name,
+      kind: file.kind,
+      status: "Writing",
+      text: `Writing ${file.path}`,
+      code: recentCodePreview(file.content),
+    };
+  }
+  if (eventName === "file_end") {
+    return {
+      type: "file_end",
+      fileId: file.id,
+      path: file.path,
+      name: file.name,
+      kind: file.kind,
+      status: "Reviewing",
+      text: `Finished writing ${file.path}`,
+    };
+  }
+  if (eventName === "file_ready") {
+    return {
+      type: "file_ready",
+      fileId: file.id,
+      path: file.path,
+      name: file.name,
+      kind: file.kind,
+      status: "Validated",
+      text: `Validated ${file.path}`,
+      code: recentCodePreview(file.content),
+    };
+  }
+  if (eventName === "file_rename") {
+    return {
+      type: "file_rename",
+      fileId: file?.id || event.fileId || event.id || "",
+      path: event.toPath || "",
+      status: "Renamed",
+      text: `Renamed ${event.fromPath || "file"} to ${event.toPath || "new path"}`,
+    };
+  }
+  if (eventName === "file_delete") {
+    return {
+      type: "file_delete",
+      fileId: event.fileId || event.id || "",
+      path: event.path || "",
+      status: "Deleted",
+      text: `Deleted ${event.path || "file"}`,
+    };
+  }
+  return null;
 }
 
 function applyFileEvent(filesById, rawEvent, now = Date.now()) {
@@ -104,6 +217,8 @@ export function createPendingStreamState() {
     code: "",
     content: "",
     filesById: {},
+    activity: [],
+    activitySeq: 0,
     activeFileId: "",
     lastFileEvent: null,
     seq: -1,
@@ -120,6 +235,8 @@ export function applyStreamDelta(currentState, delta) {
   const next = {
     ...base,
     filesById: base.filesById || {},
+    activity: base.activity || [],
+    activitySeq: base.activitySeq || 0,
     activeFileId: base.activeFileId || "",
     lastFileEvent: base.lastFileEvent || null,
     seq: hasSeq ? rawSeq : base.seq,
@@ -127,17 +244,39 @@ export function applyStreamDelta(currentState, delta) {
 
   if (delta?.channel === "file_event") {
     const event = delta.event || delta;
+    const before = next.filesById || {};
     next.filesById = applyFileEvent(next.filesById, event);
     const eventName = event?.event || "";
     const fileId = String(event.file?.id || event.fileId || event.id || "");
     if (fileId) next.activeFileId = eventName === "file_ready" && event.file?.id ? String(event.file.id) : fileId;
     next.lastFileEvent = eventName || null;
+    const resolvedId = next.activeFileId || fileId;
+    const file = next.filesById[resolvedId] || next.filesById[fileId] || (event.file ? normalizeFileEventFile(event.file) : null);
+    const fileActivity = buildFileActivity(event, file, before[fileId] || null);
+    if (fileActivity) {
+      if (fileActivity.type === "file_chunk") {
+        const activity = [...(next.activity || [])];
+        const idx = activity.findIndex((item) => item.id === fileActivity.id);
+        if (idx >= 0) {
+          activity[idx] = { ...activity[idx], ...fileActivity, ts: Date.now() };
+          next.activity = trimActivity(activity);
+        } else {
+          const appended = appendActivity(next, fileActivity);
+          next.activity = appended.activity;
+          next.activitySeq = appended.activitySeq;
+        }
+      } else {
+        const appended = appendActivity(next, fileActivity);
+        next.activity = appended.activity;
+        next.activitySeq = appended.activitySeq;
+      }
+    }
     return next;
   }
 
   let channel = STREAM_CHANNELS.has(delta?.channel) ? delta.channel : "content";
-  // The backend "reasoning" channel carries the live chain-of-thought; accumulate
-  // it into `thought` (stripping the <thinking> wrapper tags).
+  // The backend "reasoning" channel carries display-safe live work-log text;
+  // accumulate it into `thought` for backward compatibility.
   if (channel === "reasoning") channel = "thought";
   let text =
     typeof delta?.text === "string"
@@ -147,10 +286,41 @@ export function applyStreamDelta(currentState, delta) {
         : "";
 
   if (!text) return next;
-  if (channel === "thought") text = text.replace(/<\/?thinking>/gi, "");
+  if (channel === "thought") text = text.replace(/<\/?(thinking|progress)>/gi, "");
   if (!text) return next;
   next[channel] = `${next[channel] || ""}${text}`;
+  if (channel === "thought") {
+    const updated = appendOrUpdateThinking(next, text);
+    next.activity = updated.activity;
+    next.activitySeq = updated.activitySeq;
+  }
   return next;
+}
+
+export function applyStreamActivity(currentState, entry) {
+  const base = currentState || createPendingStreamState();
+  const next = {
+    ...base,
+    filesById: base.filesById || {},
+    activity: base.activity || [],
+    activitySeq: base.activitySeq || 0,
+  };
+  const type = entry?.type || "stage";
+  if (type === "thinking") {
+    const updated = appendOrUpdateThinking(next, entry.text || "");
+    return { ...next, ...updated };
+  }
+  const appended = appendActivity(next, {
+    id: entry?.id || nextActivityId(next, type),
+    type,
+    text: entry?.text || "",
+    status: entry?.status || "",
+    path: entry?.path || "",
+    kind: entry?.kind || "",
+    code: entry?.code || "",
+    stepType: entry?.stepType || "",
+  });
+  return { ...next, ...appended };
 }
 
 export function formatPendingStreamContent(state) {
@@ -203,6 +373,8 @@ export function getPendingStreamSnapshot(state) {
     code: base.code || "",
     content: base.content || "",
     files,
+    activity: base.activity || [],
+    activitySeq: base.activitySeq || 0,
     activeFileId: base.activeFileId || files.find((file) => file.status === "writing")?.id || files[files.length - 1]?.id || "",
     fileCounts: {
       discovered: files.length,

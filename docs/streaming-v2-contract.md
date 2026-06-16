@@ -21,7 +21,7 @@ Events:
 2. `delta`
 - Payload: `{ jobId, seq, channel, text?, event?, ts }`
 - `channel` values: `reasoning | explanation | content | file_event`
-- `reasoning` carries the leading streamed thinking block for display only; the saved final payload uses `thought`.
+- `reasoning` carries display-safe `<thinking>` / `<progress>` work-log text for live display only; the saved final payload may keep it as `thought` metadata, but artifact parsing strips these tags.
 - `explanation` carries display-safe explanation text from the generated response.
 - `file_event` carries live artifact file lifecycle events:
   - `file_start`: `{ event, fileId, id, name, path, placement, kind, purpose }`
@@ -31,6 +31,7 @@ Events:
   - `file_rename`: `{ event, id?, fileId?, fromPath, toPath }`
   - `file_delete`: `{ event, id?, fileId?, path }`
 - `seq` must be monotonically increasing per `jobId`
+- Clients should merge `reasoning`, `stage`, `tool_step`, and `file_event` updates into one chronological work stream. The workspace file tree may still consume aggregate `files[]`, but pending chat should not render separate file-card dashboards.
 
 3. `done`
 - Payload: final canonical result payload currently consumed by client
