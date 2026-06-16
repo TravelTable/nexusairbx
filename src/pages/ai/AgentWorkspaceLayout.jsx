@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Menu, FolderTree, History, Layers, FileCode2, MessageSquare, ClipboardList, Search, RefreshCw, TerminalSquare } from "lucide-react";
+import { Menu, FolderTree, History, FileCode2, MessageSquare, ClipboardList, Search, RefreshCw, TerminalSquare } from "lucide-react";
 
 import SidebarContent from "../../components/SidebarContent";
 import NexusRBXHeader from "../../components/NexusRBXHeader";
@@ -29,30 +29,6 @@ const MOBILE_TABS = [
   { id: "code", label: "Code", icon: FileCode2 },
   { id: "details", label: "Details", icon: ClipboardList },
 ];
-
-function ArtifactSwitcher({ artifacts, activeId, onSelect }) {
-  if (!artifacts || artifacts.length < 2) return null;
-  return (
-    <div className="px-2 pb-2 space-y-1">
-      <div className="text-[10px] font-bold text-gray-600 uppercase tracking-widest px-1.5 py-1">Generations</div>
-      {artifacts.map((a) => (
-        <button
-          key={a.id}
-          type="button"
-          onClick={() => onSelect(a.id)}
-          className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-left text-xs transition-all ${
-            a.id === activeId ? "bg-white/[0.07] text-white border border-white/10" : "text-gray-400 hover:text-white hover:bg-white/[0.04] border border-transparent"
-          }`}
-          title={a.title}
-        >
-          <Layers className="w-3.5 h-3.5 shrink-0 text-[#9b5de5]" />
-          <span className="truncate flex-1">{a.title}</span>
-          <span className="text-[10px] text-gray-600">{a.files.length}</span>
-        </button>
-      ))}
-    </div>
-  );
-}
 
 async function pollStudioCommand(commandId, { timeoutMs = 30000 } = {}) {
   const deadline = Date.now() + timeoutMs;
@@ -722,17 +698,6 @@ export default function AgentWorkspaceLayout({ controller }) {
 
   const fileTree = (
     <div className="p-2">
-      <ArtifactSwitcher
-        artifacts={workspace.artifacts}
-        activeId={workspace.activeArtifact?.id}
-        onSelect={(id) => {
-          setStudioFiles([]);
-          setActiveStudioFileId(null);
-          setStudioConflict(null);
-          workspace.openArtifact(id);
-          if (isMobile) setMobileTab("code");
-        }}
-      />
       <CodeFileTree
         artifact={studioFiles.length ? studioArtifact : workspace.activeArtifact}
         activeFileId={studioFiles.length ? studioActiveFile?.id : workspace.activeFile?.id}

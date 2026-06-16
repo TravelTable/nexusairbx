@@ -35,7 +35,7 @@ function applyFileEvent(filesById, rawEvent, now = Date.now()) {
   const event = rawEvent || {};
   const next = { ...(filesById || {}) };
   const fileId = String(event.fileId || event.id || event.file?.id || event.file?.fileId || event.path || "");
-  if (!fileId && event.event !== "generation_complete") return next;
+  if (!fileId && !["generation_complete", "file_delete", "file_rename"].includes(event.event)) return next;
 
   if (event.event === "file_start") {
     const file = normalizeFileEventFile({ ...event, id: fileId, content: "", activeAt: now });
@@ -69,6 +69,28 @@ function applyFileEvent(filesById, rawEvent, now = Date.now()) {
     const existingKey = next[file.id] ? file.id : findFileKeyByPath(next, file.path);
     if (existingKey && existingKey !== file.id) delete next[existingKey];
     next[file.id] = file;
+    return next;
+  }
+
+  if (event.event === "file_delete") {
+    const key = fileId && next[fileId] ? fileId : findFileKeyByPath(next, event.path);
+    if (key) delete next[key];
+    return next;
+  }
+
+  if (event.event === "file_rename") {
+    const key = fileId && next[fileId] ? fileId : findFileKeyByPath(next, event.fromPath);
+    if (!key || !event.toPath) return next;
+    const existing = next[key];
+    const path = String(event.toPath || "").replace(/\\/g, "/").replace(/^\/+|\/+$/g, "");
+    next[key] = {
+      ...existing,
+      path,
+      name: path.split("/").filter(Boolean).pop() || existing.name,
+      placement: String(event.placement || path.split("/")[0] || existing.placement || "ReplicatedStorage"),
+      status: "renamed",
+      activeAt: now,
+    };
     return next;
   }
 

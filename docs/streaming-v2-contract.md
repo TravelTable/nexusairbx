@@ -28,6 +28,8 @@ Events:
   - `file_chunk`: `{ event, fileId, sequence, content }`
   - `file_end`: `{ event, fileId }`
   - `file_ready`: `{ event, file }`, emitted after backend normalization/repair/merge so the client can replace provisional content.
+  - `file_rename`: `{ event, id?, fileId?, fromPath, toPath }`
+  - `file_delete`: `{ event, id?, fileId?, path }`
 - `seq` must be monotonically increasing per `jobId`
 
 3. `done`
@@ -49,3 +51,31 @@ Events:
 - May also return `{ status: "pending" }` during processing
 
 The client retries SSE, then falls back to this endpoint before failing.
+
+## Chat project snapshot
+Each chat owns a current materialized project at:
+
+`users/{uid}/chats/{chatId}/project/current`
+
+Shape:
+- `artifactId: string`
+- `revision: string`
+- `title: string`
+- `files: ArtifactFile[]`
+- `updatedAt: Firestore timestamp`
+
+Each successful generation also writes an audit record to:
+
+`users/{uid}/chats/{chatId}/project_operations/{jobId}`
+
+Shape:
+- `operations: Array<{ type: "upsert" | "rename" | "delete", ... }>`
+- `baseRevision: string | null`
+- `resultRevision: string`
+- `runId: string | null`
+- `messageId: string | null`
+- `createdAt: Firestore timestamp`
+
+Clients should render `project/current` as the primary file tree. Assistant
+messages remain generation history and may be replayed only as fallback when no
+persisted project snapshot exists.

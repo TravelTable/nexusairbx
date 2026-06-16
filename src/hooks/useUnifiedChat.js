@@ -223,7 +223,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
   //  - agent -> orchestrate (no questions) -> auto-approve -> build, plan shown inline
   //  - debug -> same as agent, with debug framing
   const handleSubmit = useCallback(
-    async (currentPrompt, currentAttachments = []) => {
+    async (currentPrompt, currentAttachments = [], baseArtifact = null) => {
       const prompt = (currentPrompt || "").trim();
       if (!prompt && currentAttachments.length === 0) {
         if (!user && onSignInNudge) onSignInNudge();
@@ -274,7 +274,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
           } catch (_) {
             /* non-fatal: continue to generation */
           }
-          await runGeneration(activeChatId, decision.classification || "project", prompt, currentAttachments);
+          await runGeneration(activeChatId, decision.classification || "project", prompt, currentAttachments, baseArtifact);
         }
       } catch (err) {
         console.error("Orchestration error:", err);
@@ -345,7 +345,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
 
   // Stage 3 (plan): user approves the plan -> generate.
   const approvePlan = useCallback(
-    async (message) => {
+    async (message, baseArtifact = null) => {
       if (!user || !message?.planId) return;
       if (isGenerating) return;
 
@@ -362,7 +362,8 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
           activeChatId,
           message.classification || "script",
           message.originPrompt || "",
-          message.attachments || []
+          message.attachments || [],
+          baseArtifact
         );
       } catch (err) {
         console.error("Approve/generate error:", err);

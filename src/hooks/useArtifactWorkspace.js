@@ -9,6 +9,11 @@ import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "r
 import { artifactFromMessage } from "../lib/normalizeArtifact";
 import { countStepSnapshots } from "../lib/agentSteps";
 import { buildBaseArtifactSnapshot, computeContentHash, computeArtifactRevision } from "../lib/artifactState";
+import {
+  materializeProjectFromArtifacts,
+  mergeFilesIntoProject,
+  normalizeProjectArtifact,
+} from "../lib/chatProjectState";
 
 const EMPTY_AGENT_RUN = {
   status: "idle", // idle | thinking | generating | done | error
@@ -83,23 +88,53 @@ function editsReducer(state, action) {
   }
 }
 
-export function useArtifactWorkspace(messages, { isGenerating, generationStage, pendingMessage } = {}) {
+function applyLocalEdits(artifact, edits) {
+  if (!artifact) return null;
+  let dirtyCount = 0;
+  const files = (artifact.files || []).map((file) => {
+    const key = `${artifact.id}:${file.id}`;
+    const edited = Object.prototype.hasOwnProperty.call(edits, key);
+    const content = edited ? edits[key] : file.content;
+    const dirty = edited && content !== file.content;
+    if (dirty) dirtyCount += 1;
+    return {
+      ...file,
+      content,
+      contentHash: computeContentHash(content),
+      dirty,
+      status: dirty ? "edited" : file.status,
+    };
+  });
+  return {
+    ...artifact,
+    files,
+    dirtyCount,
+    revision: computeArtifactRevision(files),
+  };
+}
+
+export function useArtifactWorkspace(messages, { isGenerating, generationStage, pendingMessage, projectSnapshot } = {}) {
   const [activeArtifactId, setActiveArtifactId] = useState(null);
   const [activeFileId, setActiveFileId] = useState(null);
   const [edits, dispatchEdits] = useReducer(editsReducer, {});
   const lastAutoSelectedRef = useRef(null);
 
-  // Build the artifact list from assistant messages (newest first), including
-  // the current pending streamed artifact when file events have arrived.
-  const baseArtifacts = useMemo(() => {
+  const completedArtifacts = useMemo(() => {
     const list = [];
     for (const m of messages || []) {
       if (pendingMessage?.requestId && m.pending && m.requestId === pendingMessage.requestId) continue;
       const artifact = artifactFromMessage(m);
       if (artifact) list.push(artifact);
     }
-    const newestFirst = list.reverse();
-    const pendingArtifact = artifactFromMessage(pendingMessage);
+    return list;
+  }, [messages, pendingMessage?.requestId]);
+
+  const pendingArtifact = useMemo(() => artifactFromMessage(pendingMessage), [pendingMessage]);
+
+  // Build the artifact list from assistant messages (newest first), including
+  // the current pending streamed artifact when file events have arrived.
+  const baseArtifacts = useMemo(() => {
+    const newestFirst = [...completedArtifacts].reverse();
     if (pendingArtifact) {
       newestFirst.unshift({
         ...pendingArtifact,
@@ -109,48 +144,48 @@ export function useArtifactWorkspace(messages, { isGenerating, generationStage, 
       });
     }
     return newestFirst;
-  }, [messages, pendingMessage]);
+  }, [completedArtifacts, pendingArtifact, pendingMessage]);
+
+  const baseProjectArtifact = useMemo(() => {
+    const persisted = projectSnapshot?.artifactId || projectSnapshot?.files?.length
+      ? normalizeProjectArtifact(projectSnapshot, { id: projectSnapshot?.artifactId || "chat-project" })
+      : null;
+    let project = persisted || materializeProjectFromArtifacts(completedArtifacts);
+    if (project && pendingArtifact?.files?.length) {
+      project = mergeFilesIntoProject(project, pendingArtifact.files);
+      project = normalizeProjectArtifact({
+        ...project,
+        summary: pendingMessage?.stage || project.summary,
+        updatedAt: Date.now(),
+      });
+    }
+    return project;
+  }, [completedArtifacts, pendingArtifact, pendingMessage?.stage, projectSnapshot]);
 
   // Apply local edits on top of the generated content + recompute dirty state.
   const artifacts = useMemo(() => {
-    return baseArtifacts.map((artifact) => {
-      let dirtyCount = 0;
-      const files = artifact.files.map((file) => {
-        const key = `${artifact.id}:${file.id}`;
-        const edited = Object.prototype.hasOwnProperty.call(edits, key);
-        const content = edited ? edits[key] : file.content;
-        const dirty = edited && content !== file.content;
-        if (dirty) dirtyCount += 1;
-        return {
-          ...file,
-          content,
-          contentHash: computeContentHash(content),
-          dirty,
-          status: dirty ? "edited" : file.status,
-        };
-      });
-      return {
-        ...artifact,
-        files,
-        dirtyCount,
-        revision: computeArtifactRevision(files),
-      };
-    });
+    return baseArtifacts.map((artifact) => applyLocalEdits(artifact, edits));
   }, [baseArtifacts, edits]);
 
-  // Auto-select the newest artifact when one finishes generating.
+  const projectArtifact = useMemo(
+    () => applyLocalEdits(baseProjectArtifact, edits),
+    [baseProjectArtifact, edits]
+  );
+
+  // Auto-select the chat project when it exists; otherwise fall back to the
+  // newest individual artifact for older empty chats.
   useEffect(() => {
-    if (!artifacts.length) return;
-    const newest = artifacts[0];
-    if (lastAutoSelectedRef.current === newest.id) return;
-    lastAutoSelectedRef.current = newest.id;
-    setActiveArtifactId(newest.id);
-    setActiveFileId(newest.files[0]?.id || null);
-  }, [artifacts]);
+    const next = projectArtifact || artifacts[0] || null;
+    if (!next) return;
+    if (lastAutoSelectedRef.current === next.id) return;
+    lastAutoSelectedRef.current = next.id;
+    setActiveArtifactId(next.id);
+    setActiveFileId(next.files[0]?.id || null);
+  }, [artifacts, projectArtifact]);
 
   const activeArtifact = useMemo(
-    () => artifacts.find((a) => a.id === activeArtifactId) || artifacts[0] || null,
-    [artifacts, activeArtifactId]
+    () => projectArtifact || artifacts.find((a) => a.id === activeArtifactId) || artifacts[0] || null,
+    [artifacts, activeArtifactId, projectArtifact]
   );
 
   const activeFile = useMemo(() => {
@@ -193,7 +228,7 @@ export function useArtifactWorkspace(messages, { isGenerating, generationStage, 
       const persistedRunState = normalizeRunState(latestAssistant?.metadata?.runState);
       return {
         ...EMPTY_AGENT_RUN,
-        status: persistedRunState || (artifacts.length ? "push_skipped" : "idle"),
+        status: persistedRunState || (projectArtifact || artifacts.length ? "push_skipped" : "idle"),
         stage: persistedRunState ? persistedRunState.replace(/_/g, " ") : "",
         steps,
         runId: latestAssistant?.runId || latestWithSteps?.runId || null,
@@ -211,10 +246,12 @@ export function useArtifactWorkspace(messages, { isGenerating, generationStage, 
       runId: pendingMessage?.runId || null,
       snapshotCount: countStepSnapshots(steps),
     };
-  }, [isGenerating, generationStage, pendingMessage, artifacts.length, messages]);
+  }, [isGenerating, generationStage, pendingMessage, artifacts.length, projectArtifact, messages]);
 
   return {
     artifacts,
+    projectArtifact,
+    projectArtifactSnapshot: buildBaseArtifactSnapshot(projectArtifact),
     activeArtifact,
     activeArtifactSnapshot: buildBaseArtifactSnapshot(activeArtifact),
     activeArtifactId: activeArtifact?.id || null,

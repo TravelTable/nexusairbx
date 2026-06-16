@@ -132,4 +132,36 @@ describe("streaming utils", () => {
       lineCount: 3,
     });
   });
+
+  test("applies live file rename and delete events", () => {
+    let state = createPendingStreamState();
+    state = applyStreamDelta(state, {
+      seq: 1,
+      channel: "file_event",
+      event: { event: "file_ready", file: { id: "a", path: "ReplicatedStorage/Old.lua", content: "return {}" } },
+    });
+    state = applyStreamDelta(state, {
+      seq: 2,
+      channel: "file_event",
+      event: { event: "file_ready", file: { id: "b", path: "ReplicatedStorage/Delete.lua", content: "return true" } },
+    });
+    state = applyStreamDelta(state, {
+      seq: 3,
+      channel: "file_event",
+      event: { event: "file_rename", fileId: "a", fromPath: "ReplicatedStorage/Old.lua", toPath: "ReplicatedStorage/New.lua" },
+    });
+    state = applyStreamDelta(state, {
+      seq: 4,
+      channel: "file_event",
+      event: { event: "file_delete", path: "ReplicatedStorage/Delete.lua" },
+    });
+
+    const snapshot = getPendingStreamSnapshot(state);
+    expect(snapshot.files).toHaveLength(1);
+    expect(snapshot.files[0]).toMatchObject({
+      id: "a",
+      path: "ReplicatedStorage/New.lua",
+      status: "renamed",
+    });
+  });
 });

@@ -443,6 +443,7 @@ export function useAiChat(user, settings, refreshBilling, notify) {
         },
         body: JSON.stringify({ 
           prompt: content, 
+          requestId,
           settings,
           chatId: activeChatId,
           chatMode: expertMode,

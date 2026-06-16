@@ -98,6 +98,7 @@ export function useAiWorkspaceController() {
   const [studioApplyMode, setStudioApplyModeState] = useState(() => getStudioApplyMode());
   const [approvingStepId, setApprovingStepId] = useState(null);
   const [restoringRun, setRestoringRun] = useState(false);
+  const [chatProjectSnapshot, setChatProjectSnapshot] = useState(null);
 
   const studioConnection = useStudioConnection();
 
@@ -133,6 +134,7 @@ export function useAiWorkspaceController() {
     isGenerating: unified.isGenerating,
     generationStage: unified.generationStage,
     pendingMessage: unified.pendingMessage,
+    projectSnapshot: chatProjectSnapshot,
   });
 
   const activeModeData = useMemo(
@@ -241,6 +243,24 @@ export function useAiWorkspaceController() {
   }, [user, scriptsLimit, notify]);
 
   useEffect(() => {
+    if (!user || !chat.currentChatId) {
+      setChatProjectSnapshot(null);
+      return undefined;
+    }
+
+    const ref = doc(db, "users", user.uid, "chats", chat.currentChatId, "project", "current");
+    return onSnapshot(
+      ref,
+      (snap) => {
+        setChatProjectSnapshot(snap.exists() ? { id: snap.id, ...snap.data() } : null);
+      },
+      () => {
+        setChatProjectSnapshot(null);
+      }
+    );
+  }, [user, chat.currentChatId]);
+
+  useEffect(() => {
     if (location?.state?.initialPrompt) {
       setPrompt(location.state.initialPrompt);
       window.history.replaceState({}, document.title);
@@ -341,7 +361,7 @@ export function useAiWorkspaceController() {
       const target = refineTarget;
       setRefineTarget(null);
       track("artifact_action_used", { action: "refine_submit" });
-      await unified.refineArtifact(target, currentPrompt, workspace.activeArtifactSnapshot);
+      await unified.refineArtifact(target, currentPrompt, workspace.projectArtifactSnapshot);
       return;
     }
 
@@ -350,7 +370,7 @@ export function useAiWorkspaceController() {
       length: currentPrompt.length,
     });
 
-    await unified.handleSubmit(currentPrompt, currentAttachments);
+    await unified.handleSubmit(currentPrompt, currentAttachments, workspace.projectArtifactSnapshot);
   }, [
     prompt,
     attachments,
@@ -358,7 +378,7 @@ export function useAiWorkspaceController() {
     isMobile,
     refineTarget,
     unified,
-    workspace.activeArtifactSnapshot,
+    workspace.projectArtifactSnapshot,
     track,
   ]);
 
@@ -626,7 +646,7 @@ export function useAiWorkspaceController() {
       updateSettings,
 
       handlePromptSubmit,
-      onApprovePlan: unified.approvePlan,
+      onApprovePlan: (message) => unified.approvePlan(message, workspace.projectArtifactSnapshot),
       onClarifySubmit: unified.submitClarifyAnswers,
       onRefineArtifact: unified.refineArtifact,
       handleStartRefine,
