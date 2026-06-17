@@ -10,6 +10,7 @@ export default function ChatView({
   pendingMessage,
   generationStage,
   user,
+  profile,
   activeMode = "general",
   onViewUi,
   onQuickStart,
@@ -36,6 +37,7 @@ export default function ChatView({
           messages={messages}
           pendingMessage={pendingMessage}
           user={user}
+          profile={profile}
           activeMode={activeMode}
           generationStage={generationStage}
           chatEndRef={chatEndRef}

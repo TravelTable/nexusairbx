@@ -34,7 +34,7 @@ export default function RobloxCloudControls({
 
       <label
         className="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg border border-white/10 bg-white/5 text-[10px] font-bold uppercase tracking-widest text-gray-400 cursor-pointer"
-        title={uploadAvailable ? "Allow generated assets to upload to Roblox" : "Requires Roblox connection with asset write scope"}
+        title={uploadAvailable ? "Automatically upload generated assets to Roblox" : "Requires Roblox connection with asset write scope"}
       >
         <input
           type="checkbox"
@@ -43,7 +43,7 @@ export default function RobloxCloudControls({
           className="accent-[#00bbf9]"
           disabled={!uploadAvailable}
         />
-        Asset Uploads
+        Auto Upload Assets
       </label>
     </div>
   );

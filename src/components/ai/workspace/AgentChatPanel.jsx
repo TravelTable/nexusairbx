@@ -13,6 +13,7 @@ export default function AgentChatPanel({
   pendingMessage,
   generationStage,
   user,
+  profile,
   activeMode,
   isBusy,
   onApprovePlan,
@@ -114,6 +115,7 @@ export default function AgentChatPanel({
                 pendingMessage={pendingMessage}
                 generationStage={generationStage}
                 user={user}
+                profile={profile}
                 activeMode={activeMode}
                 isBusy={isBusy}
                 onApprovePlan={onApprovePlan}
@@ -136,6 +138,7 @@ export default function AgentChatPanel({
         projectId={robloxAssetProjectId}
         robloxConnected={robloxConnected}
         uploadAvailable={robloxUploadAvailable}
+        assetUploadsEnabled={robloxAssetUploadsEnabled}
         selectedCreator={robloxSelectedCreator}
         notify={notify}
       />

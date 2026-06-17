@@ -26,6 +26,7 @@ export default function RobloxAssetTray({
   projectId,
   robloxConnected = false,
   uploadAvailable = false,
+  assetUploadsEnabled = false,
   selectedCreator = null,
   notify,
 }) {
@@ -35,14 +36,19 @@ export default function RobloxAssetTray({
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
 
+  const autoUploadEnabled = Boolean(assetUploadsEnabled && uploadAvailable);
   const readyAssets = useMemo(() => assets.filter((asset) => asset.generationStatus !== "failed"), [assets]);
   const unapproved = useMemo(() => readyAssets.filter((asset) => !asset.approved), [readyAssets]);
-  const approvedPendingUpload = useMemo(
-    () => readyAssets.filter((asset) => asset.approved && !asset.latestUpload?.contentUri),
+  const retryableUploads = useMemo(
+    () => readyAssets.filter((asset) => {
+      const uploadStatus = asset?.latestUpload?.uploadStatus || asset?.uploadStatus || "not_requested";
+      if (asset?.latestUpload?.contentUri) return false;
+      return !["operation_pending", "uploading"].includes(uploadStatus);
+    }),
     [readyAssets]
   );
   const pendingUploads = useMemo(
-    () => readyAssets.filter((asset) => ["operation_pending", "uploading", "unknown"].includes(asset.latestUpload?.uploadStatus)),
+    () => readyAssets.filter((asset) => ["operation_pending", "uploading"].includes(asset.latestUpload?.uploadStatus)),
     [readyAssets]
   );
 
@@ -98,11 +104,11 @@ export default function RobloxAssetTray({
     })),
   }));
 
-  const uploadApproved = () => runAction("upload", (token) => uploadProjectAssetsToRoblox({
+  const uploadAssets = () => runAction("upload", (token) => uploadProjectAssetsToRoblox({
     token,
     projectId,
     expectedProjectRevision: projectRevision,
-    assetIds: approvedPendingUpload.map((asset) => asset.logicalAssetId || asset.asset_id),
+    assetIds: retryableUploads.map((asset) => asset.logicalAssetId || asset.asset_id),
     requestId: `asset-upload-${Date.now()}`,
   }));
 
@@ -136,26 +142,30 @@ export default function RobloxAssetTray({
           >
             {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
           </button>
-          <button
-            type="button"
-            onClick={approveAll}
-            disabled={!unapproved.length || Boolean(busy)}
-            className="inline-flex items-center gap-1 px-2 py-1 rounded-md border border-white/10 text-[10px] font-bold text-gray-300 hover:text-white hover:bg-white/5 disabled:opacity-40"
-            title="Approve generated assets"
-          >
-            {busy === "approve" ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
-            Approve
-          </button>
-          <button
-            type="button"
-            onClick={uploadApproved}
-            disabled={!robloxConnected || !uploadAvailable || !approvedPendingUpload.length || Boolean(busy)}
-            className="inline-flex items-center gap-1 px-2 py-1 rounded-md border border-[#00bbf9]/25 bg-[#00bbf9]/10 text-[10px] font-bold text-[#00bbf9] hover:bg-[#00bbf9]/20 disabled:opacity-40"
-            title="Upload approved assets to Roblox"
-          >
-            {busy === "upload" ? <Loader2 className="w-3 h-3 animate-spin" /> : <CloudUpload className="w-3 h-3" />}
-            Upload
-          </button>
+          {!autoUploadEnabled && (
+            <button
+              type="button"
+              onClick={approveAll}
+              disabled={!unapproved.length || Boolean(busy)}
+              className="inline-flex items-center gap-1 px-2 py-1 rounded-md border border-white/10 text-[10px] font-bold text-gray-300 hover:text-white hover:bg-white/5 disabled:opacity-40"
+              title="Approve generated assets"
+            >
+              {busy === "approve" ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
+              Approve
+            </button>
+          )}
+          {autoUploadEnabled && (
+            <button
+              type="button"
+              onClick={uploadAssets}
+              disabled={!robloxConnected || !uploadAvailable || !retryableUploads.length || Boolean(busy)}
+              className="inline-flex items-center gap-1 px-2 py-1 rounded-md border border-[#00bbf9]/25 bg-[#00bbf9]/10 text-[10px] font-bold text-[#00bbf9] hover:bg-[#00bbf9]/20 disabled:opacity-40"
+              title="Retry Roblox uploads for local or failed assets"
+            >
+              {busy === "upload" ? <Loader2 className="w-3 h-3 animate-spin" /> : <CloudUpload className="w-3 h-3" />}
+              Retry Upload
+            </button>
+          )}
           <button
             type="button"
             onClick={refreshUploads}
@@ -179,7 +189,15 @@ export default function RobloxAssetTray({
       <div className="flex gap-2 overflow-x-auto px-3 py-2 scrollbar-hide">
         {assets.map((asset) => {
           const uri = asset.latestUpload?.contentUri || asset.robloxImageId || "";
-          const uploadStatus = asset.latestUpload?.uploadStatus || (asset.approved ? "approved" : "local");
+          const uploadStatus = asset.latestUpload?.uploadStatus || asset.uploadStatus || (asset.approved ? "approved" : "local");
+          const statusLabel = (() => {
+            if (uploadStatus === "succeeded") return "uploaded";
+            if (uploadStatus === "failed") return "upload failed; local kept";
+            if (uploadStatus === "operation_pending" || uploadStatus === "uploading") return "pending";
+            if (uploadStatus === "approved") return "approved";
+            return "local only";
+          })();
+          const uploadError = asset.latestUpload?.lastError || asset.uploadError || "";
           return (
             <div key={`${asset.logicalAssetId || asset.asset_id}:${asset.generationId || ""}`} className="w-40 shrink-0 rounded-md border border-white/10 bg-white/[0.03] p-2">
               <div className="h-20 rounded-md bg-black/35 border border-white/10 overflow-hidden flex items-center justify-center">
@@ -194,8 +212,13 @@ export default function RobloxAssetTray({
                 <div className="text-[9px] text-gray-500 truncate">{asset.assetKind || asset.asset_type || "asset"}</div>
               </div>
               <div className={`mt-2 inline-flex max-w-full px-1.5 py-0.5 rounded border text-[9px] font-black uppercase tracking-wider ${statusTone(asset)}`}>
-                <span className="truncate">{uploadStatus}</span>
+                <span className="truncate">{statusLabel}</span>
               </div>
+              {uploadError && (
+                <div className="mt-2 text-[9px] leading-snug text-red-200">
+                  {uploadError}
+                </div>
+              )}
               {uri && uri.startsWith("rbxassetid://") && (
                 <button
                   type="button"

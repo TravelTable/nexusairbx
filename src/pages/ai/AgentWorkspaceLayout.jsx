@@ -623,6 +623,7 @@ export default function AgentWorkspaceLayout({ controller }) {
       pendingMessage={unified.pendingMessage}
       generationStage={unified.generationStage}
       user={user}
+      profile={roblox?.connected ? roblox?.status?.connection?.profile || null : null}
       activeMode={chat.activeMode}
       isBusy={unified.isGenerating}
       onApprovePlan={onApprovePlan}

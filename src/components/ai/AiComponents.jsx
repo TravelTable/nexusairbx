@@ -399,9 +399,9 @@ export const UnifiedStatusBar = ({ stage, isGenerating, mode = "general" }) => {
   );
 };
 
-export const UserAvatar = React.memo(({ email }) => {
-  const url = getGravatarUrl(email);
-  const initials = getUserInitials(email);
+export const UserAvatar = React.memo(({ email, name = "", photoUrl = "" }) => {
+  const url = photoUrl || getGravatarUrl(email);
+  const initials = getUserInitials(name || email);
   return (
     <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#9b5de5] to-[#00f5d4] flex items-center justify-center shadow-2xl overflow-hidden flex-shrink-0 border border-white/20">
       {url ? (

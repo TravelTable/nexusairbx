@@ -5,6 +5,7 @@ import AssistantBubble from "./AssistantBubble";
 export default function MessageBubble({
   message: m,
   user,
+  profile,
   activeMode,
   onViewUi,
   onRefine,
@@ -27,7 +28,11 @@ export default function MessageBubble({
             </div>
           </div>
         </div>
-        <UserAvatar email={user?.email} />
+        <UserAvatar
+          email={user?.email}
+          name={profile?.name || profile?.preferred_username || user?.displayName || ""}
+          photoUrl={profile?.picture || user?.photoURL || ""}
+        />
       </div>
     );
   }

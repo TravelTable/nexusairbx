@@ -55,6 +55,7 @@ export default function MessageList({
   messages,
   pendingMessage,
   user,
+  profile,
   activeMode,
   generationStage,
   chatEndRef,
@@ -113,6 +114,7 @@ export default function MessageList({
           key={m.id}
           message={m}
           user={user}
+          profile={profile}
           activeMode={activeMode}
           onViewUi={onViewUi}
           onRefine={onRefine}
@@ -136,7 +138,11 @@ export default function MessageList({
                   <div className="text-[15px] whitespace-pre-wrap">{pendingMessage.prompt}</div>
                 </div>
               </div>
-              <UserAvatar email={user?.email} />
+              <UserAvatar
+                email={user?.email}
+                name={profile?.name || profile?.preferred_username || user?.displayName || ""}
+                photoUrl={profile?.picture || user?.photoURL || ""}
+              />
             </div>
           ) : null}
 
