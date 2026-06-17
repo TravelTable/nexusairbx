@@ -26,6 +26,8 @@ import {
   signInWithPopup
 } from "firebase/auth";
 import NexusRBXFooter from "../components/NexusRBXFooter";
+import { AI_PAGE_V2_ENABLED } from "../config";
+import { createAiTelemetryClient } from "../lib/aiTelemetry";
 
 // Floating Tool Card Component (Matching Homepage)
 const FloatingToolCard = ({ tool }) => (
@@ -65,6 +67,16 @@ export default function NexusRBXSignInPageContainer() {
   const navigate = useNavigate();
   const location = useLocation();
   const from = location.state?.from?.pathname || "/";
+  const telemetryRef = useRef(null);
+  const onboardingSource = location.state?.onboardingSource || null;
+  const shouldForceOnboarding = onboardingSource === "signin_nudge";
+  const shouldRedirectToAi = shouldForceOnboarding || from === "/ai";
+  const signUpLinkState = shouldRedirectToAi
+    ? {
+      from: location.state?.from || { pathname: "/ai" },
+      onboardingSource: onboardingSource || "signin_nudge",
+    }
+    : undefined;
 
   const [formData, setFormData] = useState({
     email: "",
@@ -77,6 +89,61 @@ export default function NexusRBXSignInPageContainer() {
   });
   const [rememberMe, setRememberMe] = useState(false);
   const [agreeToTerms, setAgreeToTerms] = useState(false);
+
+  useEffect(() => {
+    telemetryRef.current?.destroy?.();
+    telemetryRef.current = createAiTelemetryClient({
+      enabled: AI_PAGE_V2_ENABLED,
+      getToken: async () => {
+        if (!auth.currentUser) return null;
+        return auth.currentUser.getIdToken();
+      },
+    });
+    telemetryRef.current.track({
+      event: "signin_page_view",
+      surface: "signin_page",
+      metadata: {
+        from,
+        onboardingSource: onboardingSource || undefined,
+      },
+    });
+    return () => {
+      telemetryRef.current?.destroy?.();
+      telemetryRef.current = null;
+    };
+  }, [from, onboardingSource]);
+
+  const trackAuthEvent = (event, metadata = {}) => {
+    telemetryRef.current?.track({
+      event,
+      surface: "signin_page",
+      metadata: {
+        from,
+        onboardingSource: onboardingSource || undefined,
+        ...metadata,
+      },
+    });
+  };
+
+  const finishSignInRedirect = async () => {
+    trackAuthEvent("signin_success", {
+      destination: shouldRedirectToAi ? "/ai" : from,
+    });
+    await telemetryRef.current?.flush?.();
+    if (shouldRedirectToAi) {
+      navigate("/ai", {
+        replace: true,
+        state: shouldForceOnboarding
+          ? {
+            forceOnboarding: true,
+            onboardingSource: onboardingSource || "signin_nudge",
+          }
+          : undefined,
+      });
+      return;
+    }
+    navigate(from, { replace: true });
+  };
 
   // Set persistence based on rememberMe
   useEffect(() => {
@@ -135,16 +202,18 @@ export default function NexusRBXSignInPageContainer() {
       status: "submitting",
       message: "Signing in..."
     });
+    trackAuthEvent("signin_submitted", { method: "password" });
 
     try {
-      await signInWithEmailAndPassword(auth, formData.email, formData.password);
+      const credential = await signInWithEmailAndPassword(auth, formData.email, formData.password);
+      await credential.user.getIdToken();
       setFormStatus({
         status: "success",
         message: "Sign in successful! Redirecting..."
       });
       setTimeout(() => {
-        navigate(from, { replace: true });
-      }, 1500);
+        void finishSignInRedirect();
+      }, 600);
     } catch (error) {
       setFormStatus({
         status: "error",
@@ -158,17 +227,19 @@ export default function NexusRBXSignInPageContainer() {
       status: "submitting",
       message: "Connecting to Google..."
     });
+    trackAuthEvent("signin_submitted", { method: "google" });
 
     try {
       const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
+      const credential = await signInWithPopup(auth, provider);
+      await credential.user.getIdToken();
       setFormStatus({
         status: "success",
         message: "Google sign in successful! Redirecting..."
       });
       setTimeout(() => {
-        navigate(from, { replace: true });
-      }, 1500);
+        void finishSignInRedirect();
+      }, 600);
     } catch (error) {
       setFormStatus({
         status: "error",
@@ -182,17 +253,19 @@ export default function NexusRBXSignInPageContainer() {
       status: "submitting",
       message: "Connecting to GitHub..."
     });
+    trackAuthEvent("signin_submitted", { method: "github" });
 
     try {
       const provider = new GithubAuthProvider();
-      await signInWithPopup(auth, provider);
+      const credential = await signInWithPopup(auth, provider);
+      await credential.user.getIdToken();
       setFormStatus({
         status: "success",
         message: "GitHub sign in successful! Redirecting..."
       });
       setTimeout(() => {
-        navigate(from, { replace: true });
-      }, 1500);
+        void finishSignInRedirect();
+      }, 600);
     } catch (error) {
       setFormStatus({
         status: "error",
@@ -208,6 +281,7 @@ export default function NexusRBXSignInPageContainer() {
       formStatus={formStatus}
       rememberMe={rememberMe}
       agreeToTerms={agreeToTerms}
+      signUpLinkState={signUpLinkState}
       handleInputChange={handleInputChange}
       togglePasswordVisibility={togglePasswordVisibility}
       handleRememberMeChange={handleRememberMeChange}
@@ -227,6 +301,7 @@ function NexusRBXSignInPage({
   formStatus,
   rememberMe,
   agreeToTerms,
+  signUpLinkState,
   handleInputChange,
   togglePasswordVisibility,
   handleRememberMeChange,
@@ -498,7 +573,7 @@ function NexusRBXSignInPage({
                 <p className="text-xs font-bold text-gray-600 uppercase tracking-widest">
                   New to NexusRBX?{" "}
                   <button 
-                    onClick={() => navigate("/signup")}
+                    onClick={() => navigate("/signup", signUpLinkState ? { state: signUpLinkState } : undefined)}
                     className="text-[#9b5de5] hover:text-[#00f5d4] transition-colors ml-1"
                   >
                     Create Account

@@ -1,5 +1,5 @@
-import { useState, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { 
   Mail, 
   Lock, 
@@ -26,6 +26,8 @@ import {
   signInWithPopup
 } from "firebase/auth";
 import NexusRBXFooter from "../components/NexusRBXFooter";
+import { AI_PAGE_V2_ENABLED } from "../config";
+import { createAiTelemetryClient } from "../lib/aiTelemetry";
 
 // Inline SVG for Google Icon
 function GoogleIcon({ className = "", ...props }) {
@@ -63,6 +65,15 @@ function GoogleIcon({ className = "", ...props }) {
 // Container Component
 export default function NexusRBXSignUpPageContainer() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const from = location.state?.from?.pathname || "/";
+  const telemetryRef = useRef(null);
+  const signInLinkState = location.state?.onboardingSource
+    ? {
+      from: location.state?.from || { pathname: "/ai" },
+      onboardingSource: location.state.onboardingSource,
+    }
+    : undefined;
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -81,6 +92,53 @@ export default function NexusRBXSignUpPageContainer() {
     score: 0, // 0-4 where 4 is strongest
     feedback: ""
   });
+
+  useEffect(() => {
+    telemetryRef.current?.destroy?.();
+    telemetryRef.current = createAiTelemetryClient({
+      enabled: AI_PAGE_V2_ENABLED,
+      getToken: async () => {
+        if (!auth.currentUser) return null;
+        return auth.currentUser.getIdToken();
+      },
+    });
+    telemetryRef.current.track({
+      event: "signup_page_view",
+      surface: "signup_page",
+      metadata: {
+        from,
+        onboardingSource: location.state?.onboardingSource || "signup",
+      },
+    });
+    return () => {
+      telemetryRef.current?.destroy?.();
+      telemetryRef.current = null;
+    };
+  }, [from, location.state?.onboardingSource]);
+
+  const trackAuthEvent = (event, metadata = {}) => {
+    telemetryRef.current?.track({
+      event,
+      surface: "signup_page",
+      metadata: {
+        from,
+        onboardingSource: location.state?.onboardingSource || "signup",
+        ...metadata,
+      },
+    });
+  };
+
+  const redirectToAiOnboarding = async (source = "signup") => {
+    trackAuthEvent("signup_redirect_ai", { source });
+    await telemetryRef.current?.flush?.();
+    navigate("/ai", {
+      replace: true,
+      state: {
+        forceOnboarding: true,
+        onboardingSource: source,
+      },
+    });
+  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -167,16 +225,25 @@ export default function NexusRBXSignUpPageContainer() {
       status: "submitting",
       message: "Creating your account..."
     });
+    trackAuthEvent("signup_submitted", {
+      method: "password",
+      selectedPlan,
+    });
 
     try {
-      await createUserWithEmailAndPassword(auth, formData.email, formData.password);
+      const credential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
+      await credential.user.getIdToken();
       setFormStatus({
         status: "success",
-        message: "Account created successfully! Redirecting to homepage..."
+        message: "Account created successfully! Opening the AI workspace..."
+      });
+      trackAuthEvent("signup_success", {
+        method: "password",
+        selectedPlan,
       });
       setTimeout(() => {
-        window.location.href = "/";
-      }, 2000);
+        void redirectToAiOnboarding("signup");
+      }, 800);
     } catch (error) {
       setFormStatus({
         status: "error",
@@ -190,17 +257,26 @@ export default function NexusRBXSignUpPageContainer() {
       status: "submitting",
       message: "Connecting to Google..."
     });
+    trackAuthEvent("signup_submitted", {
+      method: "google",
+      selectedPlan,
+    });
 
     try {
       const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
+      const credential = await signInWithPopup(auth, provider);
+      await credential.user.getIdToken();
       setFormStatus({
         status: "success",
-        message: "Google sign up successful! Redirecting..."
+        message: "Google sign up successful! Opening the AI workspace..."
+      });
+      trackAuthEvent("signup_success", {
+        method: "google",
+        selectedPlan,
       });
       setTimeout(() => {
-        window.location.href = "/";
-      }, 1500);
+        void redirectToAiOnboarding("signup");
+      }, 800);
     } catch (error) {
       setFormStatus({
         status: "error",
@@ -214,17 +290,26 @@ export default function NexusRBXSignUpPageContainer() {
       status: "submitting",
       message: "Connecting to GitHub..."
     });
+    trackAuthEvent("signup_submitted", {
+      method: "github",
+      selectedPlan,
+    });
 
     try {
       const provider = new GithubAuthProvider();
-      await signInWithPopup(auth, provider);
+      const credential = await signInWithPopup(auth, provider);
+      await credential.user.getIdToken();
       setFormStatus({
         status: "success",
-        message: "GitHub sign up successful! Redirecting..."
+        message: "GitHub sign up successful! Opening the AI workspace..."
+      });
+      trackAuthEvent("signup_success", {
+        method: "github",
+        selectedPlan,
       });
       setTimeout(() => {
-        window.location.href = "/";
-      }, 1500);
+        void redirectToAiOnboarding("signup");
+      }, 800);
     } catch (error) {
       setFormStatus({
         status: "error",
@@ -242,6 +327,7 @@ export default function NexusRBXSignUpPageContainer() {
       agreeToTerms={agreeToTerms}
       selectedPlan={selectedPlan}
       passwordStrength={passwordStrength}
+      signInLinkState={signInLinkState}
       handleInputChange={handleInputChange}
       togglePasswordVisibility={togglePasswordVisibility}
       toggleConfirmPasswordVisibility={toggleConfirmPasswordVisibility}
@@ -264,6 +350,7 @@ function NexusRBXSignUpPage({
   agreeToTerms,
   selectedPlan,
   passwordStrength,
+  signInLinkState,
   handleInputChange,
   togglePasswordVisibility,
   toggleConfirmPasswordVisibility,
@@ -608,7 +695,7 @@ function NexusRBXSignUpPage({
                 <p className="text-xs font-bold text-gray-600 uppercase tracking-widest">
                   Already have an account?{" "}
                   <button 
-                    onClick={() => navigate("/signin")}
+                    onClick={() => navigate("/signin", signInLinkState ? { state: signInLinkState } : undefined)}
                     className="text-[#9b5de5] hover:text-[#00f5d4] transition-colors ml-1"
                   >
                     Sign In

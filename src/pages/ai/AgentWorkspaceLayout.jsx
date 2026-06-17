@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Menu, FolderTree, History, FileCode2, MessageSquare, ClipboardList, Search, RefreshCw, TerminalSquare, ArrowLeft, Sparkles } from "lucide-react";
+import { Menu, FolderTree, History, FileCode2, MessageSquare, ClipboardList, Search, RefreshCw, TerminalSquare, ArrowLeft } from "lucide-react";
 
 import SidebarContent from "../../components/SidebarContent";
 import CodeDrawer from "../../components/CodeDrawer";
@@ -967,19 +967,6 @@ export default function AgentWorkspaceLayout({ controller }) {
               />
             </div>
             <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={() => {
-                  onboarding?.reopenChecklist?.();
-                  onboarding?.reopenModal?.();
-                }}
-                className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-[10px] font-bold uppercase tracking-[0.22em] text-gray-300 transition hover:border-white/20 hover:text-white"
-                title="Reopen onboarding"
-              >
-                <Sparkles className="h-3.5 w-3.5 text-[#00f5d4]" />
-                <span className="hidden sm:inline">Onboarding</span>
-              </button>
-              <div className="h-4 w-px bg-white/10 hidden sm:block" aria-hidden="true" />
               <DailyPromptBadge
                 totalRemaining={totalRemaining}
                 subLimit={subLimit}

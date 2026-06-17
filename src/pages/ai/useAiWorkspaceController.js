@@ -67,6 +67,8 @@ const MODE_COLORS = {
   security: { primary: "#ff006e", secondary: "#8338ec" },
 };
 
+const ONBOARDING_ENABLED = FEATURE_FLAGS.aiPageV2;
+
 export function useAiWorkspaceController() {
   const {
     plan,
@@ -115,7 +117,7 @@ export function useAiWorkspaceController() {
   const [restoringRun, setRestoringRun] = useState(false);
   const [chatProjectSnapshot, setChatProjectSnapshot] = useState(null);
   const [onboardingModalOpen, setOnboardingModalOpen] = useState(
-    () => FEATURE_FLAGS.unifiedAgent && !hasSeenCurrentOnboardingVersion()
+    () => ONBOARDING_ENABLED && !hasSeenCurrentOnboardingVersion()
   );
   const [onboardingChecklistDismissed, setOnboardingChecklistDismissed] = useState(
     () => readOnboardingChecklistDismissed()
@@ -146,6 +148,8 @@ export function useAiWorkspaceController() {
   const telemetryRef = useRef(null);
   const onboardingStartedRef = useRef(false);
   const onboardingCompletionRef = useRef({});
+  const onboardingSourceRef = useRef("organic");
+  const firstStudioMutationTrackedRef = useRef(false);
 
   const {
     notify: queueNotify,
@@ -336,37 +340,48 @@ export function useAiWorkspaceController() {
   }, [track]);
 
   useEffect(() => {
-    if (!FEATURE_FLAGS.unifiedAgent) {
+    if (!ONBOARDING_ENABLED) {
       setOnboardingModalOpen(false);
       setOnboardingChecklistDismissed(true);
     }
   }, []);
 
   useEffect(() => {
-    if (!FEATURE_FLAGS.unifiedAgent) return;
+    if (!ONBOARDING_ENABLED) return;
     if (onboardingModalOpen && !onboardingStartedRef.current) {
       onboardingStartedRef.current = true;
-      track("onboarding_started", { surface: "ai_page" });
+      track("onboarding_started", { source: onboardingSourceRef.current || "organic" });
     }
   }, [onboardingModalOpen, track]);
 
   useEffect(() => {
-    if (!FEATURE_FLAGS.unifiedAgent) return;
+    if (!ONBOARDING_ENABLED) return;
     const previous = onboardingCompletionRef.current;
     onboardingSteps.forEach((step) => {
       if (step.completed && !previous[step.id]) {
-        track("onboarding_step_completed", { stepId: step.id });
+        track("onboarding_step_completed", {
+          stepId: step.id,
+          source: onboardingSourceRef.current || "organic",
+        });
       }
       previous[step.id] = step.completed;
     });
   }, [onboardingSteps, track]);
 
   useEffect(() => {
-    if (!FEATURE_FLAGS.unifiedAgent) return;
+    if (!ONBOARDING_ENABLED) return;
     if (!allOnboardingStepsComplete) return;
     markOnboardingVersionSeen();
     setOnboardingModalOpen(false);
   }, [allOnboardingStepsComplete]);
+
+  useEffect(() => {
+    if (!hasAppliedStudioMutation || firstStudioMutationTrackedRef.current) return;
+    firstStudioMutationTrackedRef.current = true;
+    track("first_studio_mutation_succeeded", {
+      source: onboardingSourceRef.current || "organic",
+    });
+  }, [hasAppliedStudioMutation, track]);
 
   useEffect(() => {
     const last = [...chat.messages].reverse().find(
@@ -454,11 +469,47 @@ export function useAiWorkspaceController() {
   }, [user, chat.currentChatId]);
 
   useEffect(() => {
-    if (location?.state?.initialPrompt) {
-      setPrompt(location.state.initialPrompt);
-      window.history.replaceState({}, document.title);
+    if (!location?.state || typeof location.state !== "object") return;
+
+    const nextState = { ...location.state };
+    let shouldReplace = false;
+
+    if (location.state.onboardingSource) {
+      onboardingSourceRef.current = String(location.state.onboardingSource);
+      delete nextState.onboardingSource;
+      shouldReplace = true;
     }
-  }, [location]);
+
+    if (location.state.forceOnboarding) {
+      setOnboardingModalOpen(true);
+      setOnboardingChecklistDismissed(false);
+      writeOnboardingChecklistDismissed(false);
+      delete nextState.forceOnboarding;
+      shouldReplace = true;
+    }
+
+    if (location.state.initialPrompt) {
+      setPrompt(location.state.initialPrompt);
+      delete nextState.initialPrompt;
+      delete nextState.aiResult;
+      shouldReplace = true;
+    }
+
+    if (!shouldReplace) return;
+
+    const nextKeys = Object.keys(nextState);
+    navigate(
+      {
+        pathname: location.pathname,
+        search: location.search,
+        hash: location.hash,
+      },
+      {
+        replace: true,
+        state: nextKeys.length ? nextState : null,
+      }
+    );
+  }, [location, navigate]);
 
   useEffect(() => {
     const unbindStartDraft = onAiEvent(AI_EVENTS.START_DRAFT, () => {
@@ -561,6 +612,7 @@ export function useAiWorkspaceController() {
     track("prompt_submitted", {
       attachments: currentAttachments.length,
       length: currentPrompt.length,
+      source: onboardingSourceRef.current || "organic",
     });
 
     await unified.handleSubmit(currentPrompt, currentAttachments, workspace.projectArtifactSnapshot);
@@ -643,20 +695,30 @@ export function useAiWorkspaceController() {
   const closeOnboardingModal = useCallback((reason = "snooze") => {
     markOnboardingVersionSeen();
     setOnboardingModalOpen(false);
-    track("onboarding_dismissed", { target: "modal", reason });
+    track("onboarding_dismissed", {
+      target: "modal",
+      reason,
+      source: onboardingSourceRef.current || "organic",
+    });
   }, [track]);
 
   const reopenModal = useCallback(() => {
     setOnboardingChecklistDismissed(false);
     writeOnboardingChecklistDismissed(false);
     setOnboardingModalOpen(true);
-    track("onboarding_reopened", { target: "modal" });
+    track("onboarding_reopened", {
+      target: "modal",
+      source: onboardingSourceRef.current || "organic",
+    });
   }, [track]);
 
   const reopenChecklist = useCallback(() => {
     setOnboardingChecklistDismissed(false);
     writeOnboardingChecklistDismissed(false);
-    track("onboarding_reopened", { target: "checklist" });
+    track("onboarding_reopened", {
+      target: "checklist",
+      source: onboardingSourceRef.current || "organic",
+    });
   }, [track]);
 
   const markManualStepDone = useCallback((stepId) => {
@@ -676,7 +738,10 @@ export function useAiWorkspaceController() {
     setOnboardingChecklistDismissed(true);
     writeOnboardingChecklistDismissed(true);
     setOnboardingModalOpen(false);
-    track("onboarding_dismissed", { target: "checklist" });
+    track("onboarding_dismissed", {
+      target: "checklist",
+      source: onboardingSourceRef.current || "organic",
+    });
   }, [track]);
 
   const resetOnboarding = useCallback(() => {
@@ -686,7 +751,9 @@ export function useAiWorkspaceController() {
     setOnboardingModalOpen(true);
     onboardingStartedRef.current = false;
     onboardingCompletionRef.current = {};
-    track("onboarding_reopened", { target: "reset" });
+    firstStudioMutationTrackedRef.current = false;
+    onboardingSourceRef.current = "organic";
+    track("onboarding_reopened", { target: "reset", source: "organic" });
   }, [track]);
 
   const handleOnboardingStart = useCallback(() => {
@@ -938,8 +1005,8 @@ export function useAiWorkspaceController() {
       unifiedAgent: FEATURE_FLAGS.unifiedAgent,
     },
     onboarding: {
-      modalOpen: FEATURE_FLAGS.unifiedAgent && onboardingModalOpen,
-      checklistOpen: FEATURE_FLAGS.unifiedAgent && !onboardingChecklistDismissed,
+      modalOpen: ONBOARDING_ENABLED && onboardingModalOpen,
+      checklistOpen: ONBOARDING_ENABLED && !onboardingChecklistDismissed,
       steps: onboardingSteps,
       dismissed: onboardingChecklistDismissed,
       reopenModal,

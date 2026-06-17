@@ -4,8 +4,8 @@ export const FEATURE_FLAGS = Object.freeze({
   aiPageV2: process.env.REACT_APP_AI_PAGE_V2 !== "false",
   /** Unified chat + Studio tool loop (inline steps; retires separate Studio Agent panel). */
   unifiedAgent:
-    process.env.REACT_APP_UNIFIED_AGENT === "true" ||
-    process.env.NODE_ENV === "development",
+    process.env.REACT_APP_UNIFIED_AGENT !== "false" &&
+    process.env.REACT_APP_AI_PAGE_V2 !== "false",
   isDev: process.env.NODE_ENV === "development",
 });
 
