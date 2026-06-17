@@ -2,7 +2,6 @@ import React from "react";
 import { motion } from "framer-motion";
 import { Loader, ChevronRight } from "lucide-react";
 import FloatingToolCard from "./FloatingToolCard";
-import BetaBadge from "../BetaBadge";
 
 export default function HeroSection({
   advertisedTools,
@@ -27,16 +26,6 @@ export default function HeroSection({
           transition={{ duration: 0.8, ease: "easeOut" }}
           className="text-center space-y-8 relative z-10"
         >
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-sm font-medium text-[#00f5d4] mb-4">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#00f5d4] opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-[#00f5d4]"></span>
-            </span>
-            Nexus-5 (GPT-5.2) Engine Now Live
-            <div className="h-3 w-px bg-white/20 mx-1" />
-            <BetaBadge />
-          </div>
-
           <h1 className="text-4xl md:text-7xl font-bold tracking-tight bg-gradient-to-r from-[#9b5de5] via-[#f15bb5] to-[#00f5d4] text-transparent bg-clip-text leading-tight">
             The Ultimate AI UI Builder <br className="hidden md:block" /> & Script Generator
           </h1>
