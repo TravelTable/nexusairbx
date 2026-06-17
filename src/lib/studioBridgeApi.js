@@ -77,6 +77,55 @@ export async function buildNativeModelInStudio({ spec, sessionId = null, applyMo
   return readJsonOrThrow(res, "Failed to queue native model build");
 }
 
+export async function inspectNativeModel({ modelPath, modelId, sessionId = null }) {
+  const res = await authedFetch("/api/studio/native-model/inspect", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ modelPath, modelId, sessionId }),
+  });
+  return readJsonOrThrow(res, "Failed to inspect native model");
+}
+
+export async function validateNativeModelPatch({
+  inspectionId,
+  patch,
+  modelId = null,
+  modelPath = null,
+  sessionId = null,
+}) {
+  const res = await authedFetch("/api/studio/native-model/patch/validate", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ inspectionId, patch, modelId, modelPath, sessionId }),
+  });
+  return readJsonOrThrow(res, "Failed to validate native model patch");
+}
+
+export async function applyNativeModelPatch({
+  inspectionId,
+  patch,
+  expectedRevision = "",
+  modelId = null,
+  modelPath = null,
+  sessionId = null,
+  destructiveConfirmed = false,
+}) {
+  const res = await authedFetch("/api/studio/native-model/patch/apply", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      inspectionId,
+      patch,
+      expectedRevision,
+      modelId,
+      modelPath,
+      sessionId,
+      destructiveConfirmed,
+    }),
+  });
+  return readJsonOrThrow(res, "Failed to apply native model patch");
+}
+
 export async function getStudioTools() {
   const res = await authedFetch("/api/studio/tools", { method: "GET", noCache: true });
   return readJsonOrThrow(res, "Failed to load Studio tools");

@@ -1,6 +1,6 @@
 # Studio Tool Protocol
 
-Protocol version: `2026-06-15`
+Protocol version: `2026-06-18`
 
 The backend validates every Studio command in `backend/src/lib/studioToolProtocol.js` before it is queued. The plugin acknowledges each command with a structured result containing:
 
@@ -26,7 +26,7 @@ The backend validates every Studio command in `backend/src/lib/studioToolProtoco
 
 - Script tools: `create_script`, `write_script`, `patch_script`, `rename_script`, `move_script`, `duplicate_script`, `delete_script`, `replace_in_files`.
 - Instance tools: `create_instance`, `update_properties`, `update_attributes`, `update_tags`, `rename_instance`, `move_instance`, `duplicate_instance`, `delete_instance`.
-- Native model tools: `build_native_model` constructs one validated editable Roblox-native model from a declarative `NativeModelSpec`.
+- Native model tools: `build_native_model` constructs one validated editable Roblox-native model from a declarative `NativeModelSpec`; `inspect_native_model` and `apply_native_model_patch` support transactional refinement of managed native models.
 - Coordination: `batch_operations` runs deterministic sub-operations and rolls back snapshots when `atomic` is true.
 
 Writes should include `expectedSourceHash` when the caller previously read a script. The plugin rejects stale writes with `code: "source_conflict"`.
@@ -83,3 +83,33 @@ Receipts include the inserted root path, counts, bounds, placement mode, warning
 
 Common failure codes include `INVALID_SPEC`, `UNSUPPORTED_CLASS`, `UNSUPPORTED_PROPERTY`, `INVALID_PROPERTY_VALUE`, `INVALID_REFERENCE`, `DUPLICATE_INSTANCE_ID`, `INSTANCE_LIMIT_EXCEEDED`, `PART_LIMIT_EXCEEDED`, `CONSTRAINT_LIMIT_EXCEEDED`, `TREE_DEPTH_EXCEEDED`, `BOUNDS_LIMIT_EXCEEDED`, `INVALID_TARGET_PATH`, `STUDIO_SESSION_MISSING`, `BUILD_FAILED`, `PLACEMENT_FAILED`, and `COMMAND_ALREADY_APPLIED`.
 - Legacy malformed nested item paths produced by slash-bearing version-1 document IDs are not enumerable through normal collection queries and require separate administrative cleanup.
+
+## Native Model Refinement
+
+Managed native model roots carry `NexusGenerated`, `NexusManaged`, `NexusModelId`, `NexusCommandId`, `NexusLastCommandId`, `NexusSchemaVersion`, and `NexusRevision`. Every generated descendant carries a stable `NexusInstanceId`; edits target these IDs, not mutable names or arbitrary Studio paths.
+
+`inspect_native_model` is read-only. It accepts `modelPath` and `expectedModelId`, verifies the root is Nexus-managed, and returns a bounded allowlisted snapshot with model ID, revision, root path/name, counts, bounds, normalized instances, and warnings for missing/duplicate IDs or unsupported descendants. It never returns script source or plugin tokens. The backend stores successful inspections as 10-minute server-held records and returns an `inspectionId`; patch validation uses that reference instead of trusting browser-submitted snapshots.
+
+`NativeModelPatch` is declarative JSON:
+
+```json
+{
+  "schemaVersion": 1,
+  "modelId": "market-stall",
+  "expectedRevision": "rev_...",
+  "summary": "Make the roof red",
+  "operations": [
+    { "op": "set_properties", "targetId": "roof-left", "properties": { "Color": { "$type": "Color3", "r": 1, "g": 0, "b": 0 } } }
+  ]
+}
+```
+
+Supported operations are `set_properties`, `set_attributes`, `rename`, `transform`, `resize`, `add_instance`, `remove_instance`, `duplicate_instance`, `move_instance`, `replace_instance`, `set_tags`, and `transform_model`. Removals require `recursive: true` when descendants exist and a separate `destructiveConfirmed` flag before apply. The managed root cannot be removed through normal refinement.
+
+The backend validates schema version, model ID, expected revision, operation count, target IDs, new IDs, class/property allowlists, typed values, transforms, duplicate IDs, removed-target conflicts, estimated counts, estimated bounds, code-bearing fields, and arbitrary URLs. It then generates a human-readable diff with added/removed/modified counts and bounds before/after. The browser must show this diff for approval; raw patch JSON is not required for normal review.
+
+`apply_native_model_patch` is one typed mutating command for the complete patch. The plugin re-verifies model identity, managed metadata, expected revision, targets, and allowlists. It snapshots/clones the managed root before applying, applies the patch deterministically, updates `NexusRevision` only after success, records one logical history/snapshot entry, and returns a structured receipt with `previousRevision`, `newRevision`, operation counts, affected IDs, counts/bounds after, warnings, and history status. If any step fails, the plugin restores the complete pre-edit model and does not increment the revision.
+
+Revision conflicts return `MODEL_REVISION_CONFLICT` with the stale expected revision and current revision. The frontend should disable apply, show that Studio changed the model, and offer Refresh/Recalculate/Cancel. There is no force-overwrite flow in Phase 4.
+
+Unsupported edits include generated Luau, script or remote creation, Terrain, MeshPart/external mesh upload, CSG, arbitrary property paths, raw CFrame matrices from the browser, cross-model references, reparenting to Roblox services, editing unmanaged objects by default, and taking ownership of arbitrary project objects. NexusRBX edits models it manages; manually added descendants are reported as warnings instead of silently modified.

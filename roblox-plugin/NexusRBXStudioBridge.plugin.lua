@@ -900,7 +900,7 @@ local function inspectPlace(payload)
 		table.insert(page, state.items[i])
 	end
 	return {
-		protocolVersion = "2026-06-17",
+		protocolVersion = "2026-06-18",
 		revision = tostring(payload.manifestRevision or "") ~= "" and tostring(payload.manifestRevision) or stableHash(tostring(game.PlaceId) .. ":" .. tostring(os.time())),
 		placeName = game.Name,
 		placeId = tostring(game.PlaceId),
@@ -2584,6 +2584,7 @@ local function createNativeInstances(node, parent, idMap)
 	local inst = Instance.new(node.className)
 	inst.Name = tostring(node.name or node.id)
 	idMap[tostring(node.id)] = inst
+	inst:SetAttribute("NexusInstanceId", tostring(node.id))
 	for key, value in pairs(node.properties or {}) do
 		if key ~= "Value" then
 			applyNativeProperty(inst, key, value, idMap)
@@ -2779,10 +2780,13 @@ local function buildNativeModel(payload, command)
 		validateNativeReferences(spec.root, idMap)
 		resolveNativeReferences(spec.root, idMap)
 		rootModel:SetAttribute("NexusGenerated", true)
+		rootModel:SetAttribute("NexusManaged", true)
 		rootModel:SetAttribute("NexusBuildType", "native_model")
 		rootModel:SetAttribute("NexusModelId", tostring(spec.modelId or ""))
 		rootModel:SetAttribute("NexusCommandId", command and tostring(command.id or "") or "")
+		rootModel:SetAttribute("NexusLastCommandId", command and tostring(command.id or "") or "")
 		rootModel:SetAttribute("NexusSchemaVersion", 1)
+		rootModel:SetAttribute("NexusRevision", "rev_" .. stableHash(tostring(spec.modelId or "") .. ":" .. tostring(command and command.id or "") .. ":" .. tostring(os.clock())))
 		rootModel:SetAttribute("NexusIdempotencyKey", idempotencyKey)
 		local targetParent
 		targetParent, createdTargets = ensureNativeTargetParent(spec.targetParentPath or "Workspace/NexusBuilds")
@@ -2798,6 +2802,452 @@ local function buildNativeModel(payload, command)
 		return nativeBuildError("BUILD_FAILED", tostring(buildErr))
 	end
 	return buildNativeReceipt(command and command.id or "", spec, rootModel, state, spec.warnings or {}, false)
+end
+
+local function nativeTypedValue(value)
+	local valueType = typeof(value)
+	if valueType == "Vector3" then
+		return { ["$type"] = "Vector3", x = value.X, y = value.Y, z = value.Z }
+	elseif valueType == "Color3" then
+		return { ["$type"] = "Color3", r = value.R, g = value.G, b = value.B }
+	elseif valueType == "CFrame" then
+		local rx, ry, rz = value:ToOrientation()
+		return {
+			["$type"] = "CFrame",
+			position = { x = value.Position.X, y = value.Position.Y, z = value.Position.Z },
+			rotationDegrees = { x = math.deg(rx), y = math.deg(ry), z = math.deg(rz) },
+		}
+	elseif valueType == "EnumItem" then
+		local text = tostring(value)
+		local enumType, name = string.match(text, "^Enum%.([^%.]+)%.(.+)$")
+		return { ["$type"] = "Enum", enumType = enumType or "", name = name or text }
+	elseif valueType == "NumberRange" then
+		return { ["$type"] = "NumberRange", min = value.Min, max = value.Max }
+	elseif valueType == "NumberSequence" then
+		local keypoints = {}
+		for _, kp in ipairs(value.Keypoints) do
+			table.insert(keypoints, { time = kp.Time, value = kp.Value, envelope = kp.Envelope })
+		end
+		return { ["$type"] = "NumberSequence", keypoints = keypoints }
+	elseif valueType == "string" or valueType == "number" or valueType == "boolean" then
+		return value
+	end
+	return nil
+end
+
+local function nativeAllowedProperties(inst)
+	local out = {}
+	local allow = NATIVE_PROPERTY_ALLOWLIST[inst.ClassName] or {}
+	for key in pairs(allow) do
+		local ok, value = pcall(function()
+			return inst[key]
+		end)
+		if ok then
+			local typed = nativeTypedValue(value)
+			if typed ~= nil then
+				out[key] = typed
+			end
+		end
+	end
+	return out
+end
+
+local function nativeSnapshotSignature(root)
+	local rows = {}
+	for _, inst in ipairs(root:GetDescendants()) do
+		local id = inst:GetAttribute("NexusInstanceId")
+		if id then
+			table.insert(rows, tostring(id) .. ":" .. inst.ClassName .. ":" .. inst.Name .. ":" .. propertyHash(inst))
+		end
+	end
+	table.sort(rows)
+	return table.concat(rows, "|")
+end
+
+local function nativeRevision(root)
+	local stored = tostring(root:GetAttribute("NexusRevision") or "")
+	return "rev_" .. stableHash(stored .. ":" .. nativeSnapshotSignature(root))
+end
+
+local function nativeModelSummary(root)
+	local counts = { instances = 1, parts = 0, constraints = 0 }
+	for _, inst in ipairs(root:GetDescendants()) do
+		counts.instances = counts.instances + 1
+		if inst:IsA("BasePart") then
+			counts.parts = counts.parts + 1
+		end
+		if NATIVE_CONSTRAINT_CLASSES[inst.ClassName] then
+			counts.constraints = counts.constraints + 1
+		end
+	end
+	local bounds = { x = 0, y = 0, z = 0 }
+	local ok, _, size = pcall(function()
+		return root:GetBoundingBox()
+	end)
+	if ok and size then
+		bounds = { x = size.X, y = size.Y, z = size.Z }
+	end
+	return counts, bounds
+end
+
+local function inspectNativeModel(payload)
+	local root = resolvePath(payload.modelPath)
+	if not root or not root:IsA("Model") then
+		return nativeBuildError("MANAGED_MODEL_NOT_FOUND", "Managed native model was not found")
+	end
+	if root:GetAttribute("NexusManaged") ~= true and root:GetAttribute("NexusGenerated") ~= true then
+		return nativeBuildError("MODEL_NOT_MANAGED", "Model is not managed by NexusRBX")
+	end
+	local expectedModelId = tostring(payload.expectedModelId or payload.modelId or "")
+	local modelId = tostring(root:GetAttribute("NexusModelId") or "")
+	if expectedModelId ~= "" and modelId ~= expectedModelId then
+		return nativeBuildError("MODEL_ID_MISMATCH", "Managed model ID does not match")
+	end
+
+	local warnings = {}
+	local seen = {}
+	local instances = {}
+	local maxInstances = finiteNumber(payload.maxInstances or NATIVE_MODEL_LIMITS.maxInstances, 20, NATIVE_MODEL_LIMITS.maxInstances) or NATIVE_MODEL_LIMITS.maxInstances
+	local function addInstance(inst, parentId)
+		if #instances >= maxInstances then
+			table.insert(warnings, { code = "INSPECTION_TRUNCATED", message = "Native model inspection reached the instance limit" })
+			return
+		end
+		local id = inst == root and "root" or tostring(inst:GetAttribute("NexusInstanceId") or "")
+		if id == "" then
+			table.insert(warnings, { code = "MISSING_INSTANCE_ID", message = fullPath(inst) .. " is missing NexusInstanceId" })
+			return
+		end
+		if seen[id] then
+			table.insert(warnings, { code = "DUPLICATE_INSTANCE_ID", message = "Duplicate NexusInstanceId: " .. id })
+			return
+		end
+		if not NATIVE_CLASSES[inst.ClassName] then
+			table.insert(warnings, { code = "UNSUPPORTED_CLASS", message = fullPath(inst) .. " has unsupported class " .. inst.ClassName })
+			return
+		end
+		seen[id] = true
+		table.insert(instances, {
+			id = id,
+			parentId = parentId,
+			className = inst.ClassName,
+			name = inst.Name,
+			properties = nativeAllowedProperties(inst),
+			attributes = attributesOf(inst),
+			tags = CollectionService:GetTags(inst),
+		})
+		for _, child in ipairs(inst:GetChildren()) do
+			addInstance(child, id)
+		end
+	end
+	addInstance(root, nil)
+	local counts, bounds = nativeModelSummary(root)
+	return {
+		ok = true,
+		success = true,
+		type = "inspect_native_model",
+		modelId = modelId,
+		revision = nativeRevision(root),
+		rootPath = fullPath(root),
+		rootName = root.Name,
+		summary = {
+			instances = counts.instances,
+			parts = counts.parts,
+			constraints = counts.constraints,
+			bounds = bounds,
+		},
+		instances = instances,
+		warnings = warnings,
+	}
+end
+
+local function nativeTargetMap(root)
+	local map = { root = root }
+	for _, inst in ipairs(root:GetDescendants()) do
+		local id = inst:GetAttribute("NexusInstanceId")
+		if id then
+			if map[tostring(id)] then
+				nativePanic("DUPLICATE_INSTANCE_ID", "Duplicate NexusInstanceId: " .. tostring(id))
+			end
+			map[tostring(id)] = inst
+		end
+	end
+	return map
+end
+
+local function nativeTarget(idMap, targetId)
+	local inst = idMap[tostring(targetId or "")]
+	if not inst then
+		nativePanic("TARGET_NOT_FOUND", "Unknown managed instance ID: " .. tostring(targetId or ""))
+	end
+	return inst
+end
+
+local function isProtectedNexusMetadata(key)
+	return string.match(tostring(key or ""), "^Nexus") ~= nil
+end
+
+local function validateNoProtectedNexusAttributes(node)
+	for key in pairs(node.attributes or {}) do
+		if isProtectedNexusMetadata(key) then
+			nativePanic("UNSUPPORTED_PROPERTY", tostring(key) .. " is protected Nexus metadata")
+		end
+	end
+	for _, child in ipairs(node.children or {}) do
+		validateNoProtectedNexusAttributes(child)
+	end
+end
+
+local function applyNativeTransform(inst, op)
+	local t = op.translation or {}
+	local r = op.rotationDegrees or {}
+	local cf = CFrame.new(finiteNumber(t.x or 0, -100000, 100000) or 0, finiteNumber(t.y or 0, -100000, 100000) or 0, finiteNumber(t.z or 0, -100000, 100000) or 0)
+		* CFrame.Angles(math.rad(finiteNumber(r.x or 0, -3600, 3600) or 0), math.rad(finiteNumber(r.y or 0, -3600, 3600) or 0), math.rad(finiteNumber(r.z or 0, -3600, 3600) or 0))
+	if inst:IsA("PVInstance") then
+		inst:PivotTo(inst:GetPivot() * cf)
+	elseif inst:IsA("BasePart") then
+		inst.CFrame = inst.CFrame * cf
+	else
+		nativePanic("INVALID_OPERATION", inst.ClassName .. " cannot be transformed")
+	end
+end
+
+local function rewriteDuplicateIds(rootClone, sourceId, newPrefix)
+	local count = 0
+	rootClone:SetAttribute("NexusCommandId", nil)
+	rootClone:SetAttribute("NexusLastCommandId", nil)
+	local function visit(inst)
+		count = count + 1
+		local oldId = tostring(inst:GetAttribute("NexusInstanceId") or sourceId)
+		local newId = newPrefix
+		if oldId ~= sourceId then
+			newId = newPrefix .. "-" .. oldId
+		end
+		inst:SetAttribute("NexusInstanceId", newId)
+		for _, child in ipairs(inst:GetChildren()) do
+			visit(child)
+		end
+	end
+	visit(rootClone)
+	return count
+end
+
+local function applyNativeModelPatch(payload, command)
+	local root = resolvePath(payload.modelPath)
+	if not root or not root:IsA("Model") then
+		return nativeBuildError("MANAGED_MODEL_NOT_FOUND", "Managed native model was not found")
+	end
+	if root:GetAttribute("NexusManaged") ~= true and root:GetAttribute("NexusGenerated") ~= true then
+		return nativeBuildError("MODEL_NOT_MANAGED", "Model is not managed by NexusRBX")
+	end
+	local modelId = tostring(root:GetAttribute("NexusModelId") or "")
+	if modelId ~= tostring(payload.modelId or "") then
+		return nativeBuildError("MODEL_ID_MISMATCH", "Managed model ID does not match")
+	end
+	local expectedRevision = tostring(payload.expectedRevision or "")
+	local currentRevision = nativeRevision(root)
+	if expectedRevision ~= "" and expectedRevision ~= currentRevision then
+		return {
+			ok = false,
+			success = false,
+			code = "MODEL_REVISION_CONFLICT",
+			expectedRevision = expectedRevision,
+			currentRevision = currentRevision,
+			message = "The model changed in Studio after this edit was prepared.",
+		}
+	end
+	local idempotencyKey = tostring(payload.idempotencyKey or "")
+	if idempotencyKey ~= "" and root:GetAttribute("NexusLastPatchIdempotencyKey") == idempotencyKey then
+		return {
+			ok = true,
+			success = true,
+			type = "apply_native_model_patch",
+			code = "COMMAND_ALREADY_APPLIED",
+			commandId = command and tostring(command.id or "") or "",
+			modelId = modelId,
+			rootPath = fullPath(root),
+			previousRevision = expectedRevision,
+			newRevision = currentRevision,
+			operations = { requested = #(payload.patch and payload.patch.operations or {}), applied = 0, added = 0, removed = 0, modified = 0, duplicated = 0 },
+			affectedInstanceIds = {},
+			warnings = { "Command already applied; existing model returned." },
+			history = { recorded = true },
+		}
+	end
+
+	local patch = payload.patch or {}
+	if tonumber(patch.schemaVersion or 0) ~= 1 or tostring(patch.modelId or "") ~= modelId then
+		return nativeBuildError("INVALID_PATCH", "Invalid NativeModelPatch")
+	end
+	local hasRemoval = false
+	for _, op in ipairs(patch.operations or {}) do
+		if op.op == "remove_instance" then
+			hasRemoval = true
+		end
+	end
+	if hasRemoval and payload.destructiveConfirmed ~= true then
+		return nativeBuildError("INVALID_PATCH", "remove_instance requires destructive confirmation")
+	end
+
+	local parent = root.Parent
+	local originalName = root.Name
+	local rollback = root:Clone()
+	local snapshots = {}
+	appendSnapshotTree(root, snapshots)
+	local previousRevision = currentRevision
+	local affected = {}
+	local opCounts = { requested = #(patch.operations or {}), applied = 0, added = 0, removed = 0, modified = 0, duplicated = 0 }
+	local applyOk, applyErr = pcall(function()
+		local idMap = nativeTargetMap(root)
+		for _, op in ipairs(patch.operations or {}) do
+			local kind = tostring(op.op or "")
+			if kind == "set_properties" then
+				local inst = nativeTarget(idMap, op.targetId)
+				for key, value in pairs(op.properties or {}) do
+					applyNativeProperty(inst, key, value, idMap)
+				end
+				table.insert(affected, tostring(op.targetId))
+				opCounts.modified = opCounts.modified + 1
+			elseif kind == "set_attributes" then
+				local inst = nativeTarget(idMap, op.targetId)
+				for key, value in pairs(op.attributes or {}) do
+					if isProtectedNexusMetadata(key) then
+						nativePanic("UNSUPPORTED_PROPERTY", tostring(key) .. " is protected Nexus metadata")
+					end
+					inst:SetAttribute(tostring(key), value)
+				end
+				table.insert(affected, tostring(op.targetId))
+				opCounts.modified = opCounts.modified + 1
+			elseif kind == "rename" then
+				local inst = nativeTarget(idMap, op.targetId)
+				if not isSafeNativeName(tostring(op.name or "")) then
+					nativePanic("INVALID_OPERATION", "Invalid rename target")
+				end
+				inst.Name = tostring(op.name)
+				table.insert(affected, tostring(op.targetId))
+				opCounts.modified = opCounts.modified + 1
+			elseif kind == "transform" then
+				local inst = nativeTarget(idMap, op.targetId)
+				applyNativeTransform(inst, op)
+				table.insert(affected, tostring(op.targetId))
+				opCounts.modified = opCounts.modified + 1
+			elseif kind == "resize" then
+				local inst = nativeTarget(idMap, op.targetId)
+				if not inst:IsA("BasePart") then
+					nativePanic("INVALID_OPERATION", "Only BaseParts can be resized")
+				end
+				local size = nativeVector3(op.size, 0.05, 2048)
+				if not size then
+					nativePanic("INVALID_PROPERTY_VALUE", "Invalid resize size")
+				end
+				inst.Size = size
+				table.insert(affected, tostring(op.targetId))
+				opCounts.modified = opCounts.modified + 1
+			elseif kind == "add_instance" then
+				local parentInst = nativeTarget(idMap, op.parentId)
+				validateNoProtectedNexusAttributes(op.instance or {})
+				local newInst = createNativeInstances(op.instance, nil, idMap)
+				newInst.Parent = parentInst
+				table.insert(affected, tostring(op.instance and op.instance.id or ""))
+				opCounts.added = opCounts.added + 1
+			elseif kind == "move_instance" then
+				local inst = nativeTarget(idMap, op.targetId)
+				local newParent = nativeTarget(idMap, op.newParentId)
+				if inst == root then
+					nativePanic("INVALID_OPERATION", "Managed root cannot be moved")
+				end
+				inst.Parent = newParent
+				table.insert(affected, tostring(op.targetId))
+				opCounts.modified = opCounts.modified + 1
+			elseif kind == "duplicate_instance" then
+				local inst = nativeTarget(idMap, op.targetId)
+				local clone = inst:Clone()
+				rewriteDuplicateIds(clone, tostring(op.targetId), tostring(op.newIdPrefix or "copy"))
+				clone.Parent = inst.Parent
+				applyNativeTransform(clone, { translation = op.translation or { x = 0, y = 0, z = 0 } })
+				for _, desc in ipairs(clone:GetDescendants()) do
+					local id = desc:GetAttribute("NexusInstanceId")
+					if id then
+						idMap[tostring(id)] = desc
+					end
+				end
+				idMap[tostring(clone:GetAttribute("NexusInstanceId") or op.newIdPrefix)] = clone
+				table.insert(affected, tostring(op.newIdPrefix))
+				opCounts.duplicated = opCounts.duplicated + 1
+				opCounts.added = opCounts.added + 1
+			elseif kind == "remove_instance" then
+				local inst = nativeTarget(idMap, op.targetId)
+				if inst == root then
+					nativePanic("INVALID_OPERATION", "Managed root cannot be removed")
+				end
+				inst:Destroy()
+				table.insert(affected, tostring(op.targetId))
+				opCounts.removed = opCounts.removed + 1
+			elseif kind == "set_tags" then
+				local inst = nativeTarget(idMap, op.targetId)
+				for _, tag in ipairs(op.remove or {}) do
+					if CollectionService:HasTag(inst, tostring(tag)) then
+						CollectionService:RemoveTag(inst, tostring(tag))
+					end
+				end
+				for _, tag in ipairs(op.add or {}) do
+					CollectionService:AddTag(inst, tostring(tag))
+				end
+				table.insert(affected, tostring(op.targetId))
+				opCounts.modified = opCounts.modified + 1
+			elseif kind == "transform_model" then
+				applyNativeTransform(root, op)
+				table.insert(affected, "root")
+				opCounts.modified = opCounts.modified + 1
+			else
+				nativePanic("INVALID_OPERATION", "Unsupported NativeModelPatch operation: " .. kind)
+			end
+			opCounts.applied = opCounts.applied + 1
+		end
+		local counts = nativeModelSummary(root)
+		if counts.instances > NATIVE_MODEL_LIMITS.maxInstances or counts.parts > NATIVE_MODEL_LIMITS.maxBaseParts then
+			nativePanic("INSTANCE_LIMIT_EXCEEDED", "Native model limits exceeded")
+		end
+		root:SetAttribute("NexusRevision", "rev_" .. stableHash(modelId .. ":" .. tostring(command and command.id or "") .. ":" .. tostring(os.clock())))
+		root:SetAttribute("NexusLastCommandId", command and tostring(command.id or "") or "")
+		root:SetAttribute("NexusLastPatchIdempotencyKey", idempotencyKey)
+	end)
+
+	if not applyOk then
+		root:Destroy()
+		rollback.Name = originalName
+		rollback.Parent = parent
+		return {
+			ok = false,
+			success = false,
+			code = "PATCH_APPLICATION_FAILED",
+			error = tostring(applyErr),
+			snapshots = snapshots,
+		}
+	end
+	rollback:Destroy()
+	local countsAfter, boundsAfter = nativeModelSummary(root)
+	return {
+		ok = true,
+		success = true,
+		type = "apply_native_model_patch",
+		commandId = command and tostring(command.id or "") or "",
+		modelId = modelId,
+		rootPath = fullPath(root),
+		previousRevision = previousRevision,
+		newRevision = nativeRevision(root),
+		operations = opCounts,
+		affectedInstanceIds = affected,
+		countsAfter = {
+			instances = countsAfter.instances,
+			parts = countsAfter.parts,
+			constraints = countsAfter.constraints,
+		},
+		boundsAfter = boundsAfter,
+		warnings = {},
+		history = { recorded = true },
+		snapshots = snapshots,
+	}
 end
 
 local TOOL_HANDLERS = {
@@ -2820,6 +3270,8 @@ local TOOL_HANDLERS = {
 	get_output_logs = collectOutput,
 	collect_output = collectOutput,
 	build_native_model = buildNativeModel,
+	inspect_native_model = inspectNativeModel,
+	apply_native_model_patch = applyNativeModelPatch,
 	create_script = createScript,
 	write_script = writeScript,
 	patch_script = patchScript,
