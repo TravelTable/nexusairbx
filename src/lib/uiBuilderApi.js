@@ -339,6 +339,25 @@ export async function createUiProject({ token, game_genre, theme, style, palette
   return handleResponse(res);
 }
 
+export async function listGenreProfiles({ token }) {
+  const res = await fetch(`${BACKEND_URL}/api/ui-builder/genre-profiles`, {
+    headers: authHeaders(token),
+  });
+  return handleResponse(res);
+}
+
+export async function createStyleProfile({ token, projectId, profile }) {
+  const res = await fetch(
+    `${BACKEND_URL}/api/ui-builder/projects/${encodeURIComponent(projectId)}/style-profile`,
+    {
+      method: "POST",
+      headers: authHeaders(token),
+      body: JSON.stringify(profile || {}),
+    }
+  );
+  return handleResponse(res);
+}
+
 export async function getUiProjectState({ token, projectId }) {
   const res = await fetch(
     `${BACKEND_URL}/api/ui-builder/projects/${encodeURIComponent(projectId)}/state`,
@@ -359,23 +378,81 @@ export async function listUiProjectAssets({ token, projectId }) {
  * Run the asset pipeline for a plan's asset_list (or explicit specs).
  * Returns { projectId, results, generatedCount, boardState, entitlements }.
  */
-export async function aiGenerateAssets({ token, projectId, specs, plan, boardState, allowReuse = true }) {
+export async function aiGenerateAssets({
+  token,
+  projectId,
+  specs,
+  plan,
+  boardState,
+  allowReuse = true,
+  robloxOAuthUpload = false,
+  requestId,
+  runId,
+}) {
   const res = await fetch(`${BACKEND_URL}/api/ui-builder/assets/generate`, {
     method: "POST",
     headers: authHeaders(token),
-    body: JSON.stringify({ projectId, specs, plan, boardState, allowReuse }),
+    body: JSON.stringify({ projectId, specs, plan, boardState, allowReuse, robloxOAuthUpload, requestId, runId }),
   });
   return handleResponse(res);
 }
 
 /** Regenerate a single asset by id ("regenerate only the shop icon"). */
-export async function aiRegenerateAsset({ token, assetId, projectId, spec, boardState }) {
+export async function aiRegenerateAsset({ token, assetId, projectId, spec, boardState, robloxOAuthUpload = false, requestId, runId }) {
   const res = await fetch(
     `${BACKEND_URL}/api/ui-builder/assets/${encodeURIComponent(assetId)}/regenerate`,
     {
       method: "POST",
       headers: authHeaders(token),
-      body: JSON.stringify({ projectId, spec, boardState }),
+      body: JSON.stringify({ projectId, spec, boardState, robloxOAuthUpload, requestId, runId }),
+    }
+  );
+  return handleResponse(res);
+}
+
+export async function approveProjectAssets({ token, projectId, assets, expectedProjectRevision }) {
+  const res = await fetch(
+    `${BACKEND_URL}/api/ui-builder/projects/${encodeURIComponent(projectId)}/assets/approve`,
+    {
+      method: "POST",
+      headers: authHeaders(token),
+      body: JSON.stringify({ assets, expectedProjectRevision }),
+    }
+  );
+  return handleResponse(res);
+}
+
+export async function uploadProjectAssetsToRoblox({ token, projectId, assetIds, expectedProjectRevision, requestId, runId }) {
+  const res = await fetch(
+    `${BACKEND_URL}/api/ui-builder/projects/${encodeURIComponent(projectId)}/assets/upload-to-roblox`,
+    {
+      method: "POST",
+      headers: authHeaders(token),
+      body: JSON.stringify({ assetIds, expectedProjectRevision, requestId, runId }),
+    }
+  );
+  return handleResponse(res);
+}
+
+export async function refreshProjectAssetUploads({ token, projectId, assetIds }) {
+  const res = await fetch(
+    `${BACKEND_URL}/api/ui-builder/projects/${encodeURIComponent(projectId)}/assets/refresh-uploads`,
+    {
+      method: "POST",
+      headers: authHeaders(token),
+      body: JSON.stringify({ assetIds }),
+    }
+  );
+  return handleResponse(res);
+}
+
+export async function applyProjectAssetIds({ token, projectId, boardState, files, expectedProjectRevision }) {
+  const res = await fetch(
+    `${BACKEND_URL}/api/ui-builder/projects/${encodeURIComponent(projectId)}/assets/apply-ids`,
+    {
+      method: "POST",
+      headers: authHeaders(token),
+      body: JSON.stringify({ boardState, files, expectedProjectRevision }),
     }
   );
   return handleResponse(res);

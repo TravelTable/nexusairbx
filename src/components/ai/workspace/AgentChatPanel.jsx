@@ -3,6 +3,7 @@ import ChatView from "../ChatView";
 import ChatComposer from "../chat/ChatComposer";
 import AgentPlanPanel from "./AgentPlanPanel";
 import BuildDetailsPanel from "./BuildDetailsPanel";
+import RobloxAssetTray from "./RobloxAssetTray";
 
 // Primary Studio agent surface. Chat drives the
 // workflow; build progress + setup/testing/security live in the Details view.
@@ -44,6 +45,7 @@ export default function AgentChatPanel({
   robloxSelectedCreator,
   robloxUploadAvailable,
   robloxAssetUploadsEnabled,
+  robloxAssetProjectId,
   onRobloxAssetUploadsEnabledChange,
   // composer
   prompt,
@@ -129,6 +131,14 @@ export default function AgentChatPanel({
           </>
         )}
       </div>
+
+      <RobloxAssetTray
+        projectId={robloxAssetProjectId}
+        robloxConnected={robloxConnected}
+        uploadAvailable={robloxUploadAvailable}
+        selectedCreator={robloxSelectedCreator}
+        notify={notify}
+      />
 
       <ChatComposer
         prompt={prompt}

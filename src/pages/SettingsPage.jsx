@@ -29,6 +29,7 @@ import {
   Sparkles,
   Info,
   ArrowUpCircle,
+  ArrowLeft,
   Skull,
   Link as LinkIcon,
 } from "lucide-react";
@@ -1427,11 +1428,22 @@ const SettingsPage = () => {
 
       {/* Sidebar Navigation */}
       <aside className="w-full md:w-72 bg-gray-900/50 border-r border-gray-800 p-6 flex flex-col gap-8 backdrop-blur-2xl">
-        <div className="flex items-center gap-3 px-2">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#9b5de5] to-[#00f5d4] flex items-center justify-center shadow-lg shadow-purple-500/20">
-            <SettingsIcon className="w-6 h-6 text-white" />
+        <div className="flex flex-col gap-4 px-2">
+          <button
+            type="button"
+            onClick={() => navigate("/")}
+            className="inline-flex w-fit items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-[10px] font-bold uppercase tracking-[0.22em] text-gray-300 transition hover:border-white/20 hover:text-white"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" />
+            Return home
+          </button>
+
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#9b5de5] to-[#00f5d4] flex items-center justify-center shadow-lg shadow-purple-500/20">
+              <SettingsIcon className="w-6 h-6 text-white" />
+            </div>
+            <h1 className="font-display text-xl font-bold text-white tracking-tight">Settings</h1>
           </div>
-          <h1 className="font-display text-xl font-bold text-white tracking-tight">Settings</h1>
         </div>
 
         <nav className="flex flex-col gap-1">

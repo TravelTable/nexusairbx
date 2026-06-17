@@ -161,6 +161,11 @@ export function useAiWorkspaceController() {
     [chat.activeMode]
   );
 
+  const assetProjectId = useMemo(() => {
+    const latest = [...(chat.messages || [])].reverse().find((m) => m?.projectId || m?.metadata?.projectId);
+    return latest?.projectId || latest?.metadata?.projectId || chatProjectSnapshot?.projectId || null;
+  }, [chat.messages, chatProjectSnapshot]);
+
   const currentTheme = useMemo(
     () => MODE_COLORS[chat.activeMode] || MODE_COLORS.general,
     [chat.activeMode]
@@ -721,6 +726,7 @@ export function useAiWorkspaceController() {
       ),
       assetUploadsEnabled: Boolean(settings?.robloxAssetUploadsEnabled),
       status: robloxStatus,
+      assetProjectId,
       refresh: refreshRobloxStatus,
     },
   };

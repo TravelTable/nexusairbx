@@ -674,6 +674,7 @@ export default function AgentWorkspaceLayout({ controller }) {
       robloxSelectedCreator={roblox?.selectedCreator}
       robloxUploadAvailable={roblox?.uploadAvailable}
       robloxAssetUploadsEnabled={roblox?.assetUploadsEnabled}
+      robloxAssetProjectId={roblox?.assetProjectId}
       onRobloxAssetUploadsEnabledChange={handleRobloxAssetUploadsEnabledChange}
     />
   );
