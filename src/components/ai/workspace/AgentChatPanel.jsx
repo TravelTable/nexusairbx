@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import ChatView from "../ChatView";
 import ChatComposer from "../chat/ChatComposer";
+import CreatorStoreSearch from "../../assets/CreatorStoreSearch";
 import AgentPlanPanel from "./AgentPlanPanel";
 import BuildDetailsPanel from "./BuildDetailsPanel";
 import RobloxAssetTray from "./RobloxAssetTray";
@@ -152,6 +153,8 @@ export default function AgentChatPanel({
         selectedCreator={robloxSelectedCreator}
         notify={notify}
       />
+
+      <CreatorStoreSearch notify={notify} />
 
       <ChatComposer
         prompt={prompt}
