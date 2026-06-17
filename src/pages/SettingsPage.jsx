@@ -63,6 +63,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { clearOnboardingState } from "../lib/onboarding";
 
 const StatCard = ({ title, value, icon: Icon, color }) => (
   <div className="card-surface p-5 backdrop-blur-xl hover:border-gray-700 transition-colors group">
@@ -1148,8 +1149,8 @@ const SettingsPage = () => {
                 <button 
                   onClick={() => {
                     localStorage.removeItem("nexusrbx:tourComplete");
-                    localStorage.removeItem("nexusrbx:onboardingComplete");
-                    setSuccessMsg("Tutorials reset! Visit the AI Console to see them.");
+                    clearOnboardingState();
+                    setSuccessMsg("Onboarding reset. Visit the AI workspace to replay the welcome flow.");
                     setTimeout(() => setSuccessMsg(""), 5000);
                   }}
                   className="p-6 rounded-2xl bg-black border border-gray-800 hover:border-[#9b5de5] transition-all text-left group"
@@ -1163,8 +1164,8 @@ const SettingsPage = () => {
 
                 <button 
                   onClick={() => {
-                    localStorage.removeItem("nexusrbx:onboardingComplete");
-                    setSuccessMsg("Welcome guide reset! Visit the AI Console to see it.");
+                    clearOnboardingState();
+                    setSuccessMsg("Welcome flow reset. Visit the AI workspace to see it again.");
                     setTimeout(() => setSuccessMsg(""), 5000);
                   }}
                   className="p-6 rounded-2xl bg-black border border-gray-800 hover:border-[#00f5d4] transition-all text-left group"

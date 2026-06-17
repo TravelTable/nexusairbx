@@ -1,259 +1,221 @@
-import { useState, useEffect } from "react";
-import { ChevronLeft, ChevronRight, X, Sparkles, Layout, Zap, Library, MousePointer2 } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { ArrowRight, CheckCircle2, ExternalLink, Shield, Sparkles, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
-// Main Onboarding Modal Container
-export default function OnboardingContainer({ forceShow = false, onComplete }) {
-  const [currentStep, setCurrentStep] = useState(1);
-  const [show, setShow] = useState(false);
-  const totalSteps = 4;
+const FLOW_POINTS = [
+  {
+    title: "Pair Studio first",
+    description: "Install the plugin, mint a pairing code, and connect Roblox Studio before asking the agent to inspect or change anything.",
+  },
+  {
+    title: "Keep Manual Review on",
+    description: "Let the agent read and plan freely, but approve every mutating Studio step until you trust the workflow.",
+  },
+  {
+    title: "Verify and recover",
+    description: "Check the result in Studio, then use snapshots or restore if the change is not what you wanted.",
+  },
+];
 
-  // Show onboarding only if not completed
+export default function OnboardingContainer({
+  open = false,
+  user = null,
+  onClose,
+  onStart,
+}) {
+  const [step, setStep] = useState(1);
+
+  const startLabel = useMemo(() => (user ? "Start in Workspace" : "Start in Workspace"), [user]);
+
   useEffect(() => {
-    if (forceShow) {
-      setShow(true);
-      return;
-    }
-    const completed = localStorage.getItem("nexusrbx:onboardingComplete");
-    if (!completed || completed === "false") setShow(true);
-  }, [forceShow]);
+    if (open) setStep(1);
+  }, [open]);
 
-  const handleNext = () => {
-    if (currentStep < totalSteps) {
-      setCurrentStep(currentStep + 1);
-    } else {
-      handleFinish();
-    }
-  };
-
-  const handlePrevious = () => {
-    if (currentStep > 1) {
-      setCurrentStep(currentStep - 1);
-    }
-  };
-
-  const handleFinish = () => {
-    localStorage.setItem("nexusrbx:onboardingComplete", "true");
-    setShow(false);
-    if (onComplete) onComplete();
-  };
-
-  const handleClose = () => {
-    localStorage.setItem("nexusrbx:onboardingComplete", "true");
-    setShow(false);
-    if (onComplete) onComplete();
-  };
-
-  if (!show) return null;
+  if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-      <motion.div 
-        initial={{ opacity: 0, scale: 0.9, y: 20 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        className="relative w-full max-w-2xl bg-[#0D0D0D] border border-white/10 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+    <div className="fixed inset-0 z-[130] flex items-center justify-center bg-black/75 p-4 backdrop-blur-md">
+      <motion.div
+        initial={{ opacity: 0, y: 18, scale: 0.96 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, y: 18, scale: 0.96 }}
+        className="relative flex max-h-[92vh] w-full max-w-3xl flex-col overflow-hidden rounded-[28px] border border-white/10 bg-[#0D0D0D] shadow-[0_32px_120px_rgba(0,0,0,0.55)]"
       >
-        {/* Progress Bar */}
-        <div className="absolute top-0 left-0 right-0 h-1 bg-white/5">
-          <motion.div 
-            className="h-full bg-gradient-to-r from-[#9b5de5] to-[#00f5d4]"
-            initial={{ width: "0%" }}
-            animate={{ width: `${(currentStep / totalSteps) * 100}%` }}
+        <button
+          type="button"
+          onClick={onClose}
+          className="absolute right-4 top-4 z-10 inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/5 text-gray-400 transition hover:border-white/20 hover:text-white"
+          aria-label="Close onboarding"
+        >
+          <X className="h-4 w-4" />
+        </button>
+
+        <div className="h-1 w-full bg-white/5">
+          <div
+            className="h-full bg-gradient-to-r from-[#00f5d4] via-[#00bbf9] to-[#9b5de5]"
+            style={{ width: `${step === 1 ? 50 : 100}%` }}
           />
         </div>
 
-        {/* Close Button */}
-        <button 
-          onClick={handleClose}
-          className="absolute top-4 right-4 p-2 rounded-full hover:bg-white/5 text-gray-500 hover:text-white transition-colors z-10"
-        >
-          <X className="w-5 h-5" />
-        </button>
-
-        <div className="flex-1 overflow-y-auto p-8 md:p-12 scrollbar-hide">
+        <div className="overflow-y-auto p-8 md:p-10">
           <AnimatePresence mode="wait">
-            <motion.div
-              key={currentStep}
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              transition={{ duration: 0.3 }}
-            >
-              {currentStep === 1 && <WelcomeStep />}
-              {currentStep === 2 && <WorkspaceStep />}
-              {currentStep === 3 && <ExpertsStep />}
-              {currentStep === 4 && <PreviewStep />}
-            </motion.div>
+            {step === 1 ? (
+              <motion.div
+                key="welcome"
+                initial={{ opacity: 0, x: 18 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -18 }}
+                className="space-y-8"
+              >
+                <div className="space-y-4">
+                  <div className="inline-flex items-center gap-2 rounded-full border border-[#00f5d4]/15 bg-[#00f5d4]/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.24em] text-[#00f5d4]">
+                    <Sparkles className="h-3.5 w-3.5" />
+                    Studio Agent
+                  </div>
+                  <h2 className="max-w-2xl text-3xl font-black tracking-tight text-white md:text-4xl">
+                    Build, inspect, and apply Roblox Studio changes with a safer first-run flow
+                  </h2>
+                  <p className="max-w-2xl text-base leading-relaxed text-gray-400">
+                    NexusRBX can read your place manifest, inspect scripts, propose changes, and apply approved edits back into Studio. The safest default is to pair Studio, keep Manual Review enabled, and verify every first change.
+                  </p>
+                </div>
+
+                <div className="grid gap-3 md:grid-cols-3">
+                  {FLOW_POINTS.map((point) => (
+                    <div key={point.title} className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+                      <div className="mb-3 inline-flex rounded-xl border border-[#00f5d4]/15 bg-[#00f5d4]/10 p-2 text-[#00f5d4]">
+                        <CheckCircle2 className="h-4 w-4" />
+                      </div>
+                      <h3 className="text-sm font-bold text-white">{point.title}</h3>
+                      <p className="mt-2 text-xs leading-relaxed text-gray-400">{point.description}</p>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="rounded-2xl border border-amber-300/15 bg-amber-300/10 p-4">
+                  <div className="mb-2 inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.22em] text-amber-200">
+                    <Shield className="h-3.5 w-3.5" />
+                    Safe Default
+                  </div>
+                  <p className="text-sm leading-relaxed text-amber-50/90">
+                    Manual Review is the recommended default. Let the agent inspect and plan, then approve destructive Studio steps one by one until you are comfortable with the workflow.
+                  </p>
+                </div>
+              </motion.div>
+            ) : (
+              <motion.div
+                key="actions"
+                initial={{ opacity: 0, x: 18 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -18 }}
+                className="space-y-8"
+              >
+                <div className="space-y-4">
+                  <div className="inline-flex items-center gap-2 rounded-full border border-[#9b5de5]/15 bg-[#9b5de5]/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.24em] text-[#9b5de5]">
+                    <Shield className="h-3.5 w-3.5" />
+                    First Run
+                  </div>
+                  <h2 className="text-3xl font-black tracking-tight text-white md:text-4xl">
+                    Take the real path, not a demo tour
+                  </h2>
+                  <p className="max-w-2xl text-base leading-relaxed text-gray-400">
+                    Use the checklist in the AI workspace as your source of truth. It tracks pairing, Live Studio, your first prompt, approval, and final verification.
+                  </p>
+                </div>
+
+                <div className="grid gap-3 md:grid-cols-3">
+                  <a
+                    href="/docs#install-plugin"
+                    className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 transition hover:border-white/20 hover:bg-white/[0.05]"
+                  >
+                    <div className="text-[10px] font-black uppercase tracking-[0.22em] text-[#00f5d4]">Install</div>
+                    <div className="mt-2 text-sm font-bold text-white">Install Plugin</div>
+                    <p className="mt-2 text-xs leading-relaxed text-gray-400">
+                      Follow the current plugin install and update steps before you pair Studio.
+                    </p>
+                  </a>
+                  <a
+                    href="/docs#overview"
+                    className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 transition hover:border-white/20 hover:bg-white/[0.05]"
+                  >
+                    <div className="text-[10px] font-black uppercase tracking-[0.22em] text-[#00bbf9]">Reference</div>
+                    <div className="mt-2 text-sm font-bold text-white">Open Docs</div>
+                    <p className="mt-2 text-xs leading-relaxed text-gray-400">
+                      Review pairing, approval modes, prompt examples, snapshots, and troubleshooting.
+                    </p>
+                  </a>
+                  <button
+                    type="button"
+                    onClick={onStart}
+                    className="rounded-2xl border border-[#9b5de5]/20 bg-[#9b5de5]/10 p-4 text-left transition hover:border-[#9b5de5]/35 hover:bg-[#9b5de5]/15"
+                  >
+                    <div className="text-[10px] font-black uppercase tracking-[0.22em] text-[#f3d1ff]">Workspace</div>
+                    <div className="mt-2 text-sm font-bold text-white">{startLabel}</div>
+                    <p className="mt-2 text-xs leading-relaxed text-gray-300">
+                      Close this modal and follow the checklist beside the live AI workspace.
+                    </p>
+                  </button>
+                </div>
+
+                {!user && (
+                  <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-sm text-gray-300">
+                    Sign in before pairing Studio so NexusRBX can store your runs, manifest state, and approvals.
+                    <div className="mt-3">
+                      <a
+                        href="/signin"
+                        className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-[11px] font-black uppercase tracking-[0.2em] text-white transition hover:border-white/20"
+                      >
+                        Sign In
+                        <ExternalLink className="h-3 w-3" />
+                      </a>
+                    </div>
+                  </div>
+                )}
+              </motion.div>
+            )}
           </AnimatePresence>
         </div>
 
-        {/* Footer Navigation */}
-        <div className="p-6 bg-white/5 border-t border-white/5 flex items-center justify-between">
-          <button 
-            onClick={handlePrevious}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all ${currentStep > 1 ? 'text-gray-400 hover:text-white' : 'opacity-0 pointer-events-none'}`}
+        <div className="flex items-center justify-between border-t border-white/10 bg-white/[0.02] px-8 py-5">
+          <button
+            type="button"
+            onClick={() => setStep((prev) => Math.max(1, prev - 1))}
+            className={`rounded-full border px-4 py-2 text-[11px] font-black uppercase tracking-[0.22em] transition ${
+              step === 1
+                ? "border-white/5 bg-white/[0.02] text-gray-600 opacity-40"
+                : "border-white/10 bg-white/5 text-gray-300 hover:border-white/20 hover:text-white"
+            }`}
+            disabled={step === 1}
           >
-            <ChevronLeft className="w-4 h-4" />
             Back
           </button>
 
-          <div className="flex gap-1.5">
-            {[...Array(totalSteps)].map((_, i) => (
-              <div 
-                key={i} 
-                className={`w-1.5 h-1.5 rounded-full transition-all duration-500 ${currentStep === i + 1 ? 'w-4 bg-[#00f5d4]' : 'bg-white/10'}`}
-              />
-            ))}
+          <div className="flex items-center gap-2">
+            <span className={`h-2.5 w-2.5 rounded-full ${step === 1 ? "bg-[#00f5d4]" : "bg-white/10"}`} />
+            <span className={`h-2.5 w-2.5 rounded-full ${step === 2 ? "bg-[#00f5d4]" : "bg-white/10"}`} />
           </div>
 
-          <button 
-            onClick={handleNext}
-            className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-white text-sm font-black uppercase tracking-widest hover:shadow-[0_0_20px_rgba(0,245,212,0.3)] transition-all active:scale-95"
-          >
-            {currentStep === totalSteps ? "Get Started" : "Next"}
-            <ChevronRight className="w-4 h-4" />
-          </button>
+          {step === 1 ? (
+            <button
+              type="button"
+              onClick={() => setStep(2)}
+              className="inline-flex items-center gap-2 rounded-full border border-[#00f5d4]/20 bg-[#00f5d4]/10 px-4 py-2 text-[11px] font-black uppercase tracking-[0.22em] text-[#00f5d4] transition hover:border-[#00f5d4]/35 hover:text-white"
+            >
+              Continue
+              <ArrowRight className="h-3.5 w-3.5" />
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={onStart}
+              className="inline-flex items-center gap-2 rounded-full border border-[#9b5de5]/25 bg-[#9b5de5]/12 px-4 py-2 text-[11px] font-black uppercase tracking-[0.22em] text-white transition hover:border-[#9b5de5]/45"
+            >
+              {startLabel}
+              <ArrowRight className="h-3.5 w-3.5" />
+            </button>
+          )}
         </div>
       </motion.div>
-    </div>
-  );
-}
-
-function WelcomeStep() {
-  return (
-    <div className="space-y-6 text-center">
-      <div className="inline-flex p-4 rounded-2xl bg-gradient-to-br from-[#9b5de5] to-[#00f5d4] mb-4">
-        <Sparkles className="w-10 h-10 text-white" />
-      </div>
-      <h2 className="text-3xl md:text-4xl font-black text-white tracking-tight">
-        Welcome to the New Nexus
-      </h2>
-      <p className="text-gray-400 text-lg leading-relaxed max-w-md mx-auto">
-        We've completely redesigned the AI experience to be faster, more powerful, and more intuitive.
-      </p>
-      <div className="grid grid-cols-3 gap-4 pt-8">
-        <div className="p-4 rounded-2xl bg-white/5 border border-white/5">
-          <Zap className="w-6 h-6 text-[#00f5d4] mx-auto mb-2" />
-          <div className="text-[10px] font-black text-gray-500 uppercase">Faster</div>
-        </div>
-        <div className="p-4 rounded-2xl bg-white/5 border border-white/5">
-          <Layout className="w-6 h-6 text-[#9b5de5] mx-auto mb-2" />
-          <div className="text-[10px] font-black text-gray-500 uppercase">Sleeker</div>
-        </div>
-        <div className="p-4 rounded-2xl bg-white/5 border border-white/5">
-          <Sparkles className="w-6 h-6 text-[#00bbf9] mx-auto mb-2" />
-          <div className="text-[10px] font-black text-gray-500 uppercase">Smarter</div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function WorkspaceStep() {
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-4 mb-8">
-        <div className="p-3 rounded-xl bg-[#9b5de5]/20 text-[#9b5de5]">
-          <Library className="w-6 h-6" />
-        </div>
-        <div>
-          <h3 className="text-xl font-black text-white uppercase tracking-tight">Your Workspace</h3>
-          <p className="text-xs text-gray-500 font-bold uppercase tracking-widest">Everything in one place</p>
-        </div>
-      </div>
-      
-      <div className="space-y-4">
-        <div className="flex items-start gap-4 p-4 rounded-2xl bg-white/5 border border-white/5">
-          <div className="mt-1 p-1.5 rounded-lg bg-white/5 text-gray-400">
-            <MousePointer2 className="w-4 h-4" />
-          </div>
-          <div>
-            <div className="text-sm font-bold text-white">Unified Sidebar</div>
-            <p className="text-xs text-gray-400 leading-relaxed">Access your chat history, generated scripts, and saved library items instantly from the left panel.</p>
-          </div>
-        </div>
-        <div className="flex items-start gap-4 p-4 rounded-2xl bg-white/5 border border-white/5">
-          <div className="mt-1 p-1.5 rounded-lg bg-white/5 text-gray-400">
-            <Layout className="w-4 h-4" />
-          </div>
-          <div>
-            <div className="text-sm font-bold text-white">Project Context</div>
-            <p className="text-xs text-gray-400 leading-relaxed">Nexus can understand your entire Roblox project. Add your project context to get hyper-relevant code.</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function ExpertsStep() {
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-4 mb-8">
-        <div className="p-3 rounded-xl bg-[#00f5d4]/20 text-[#00f5d4]">
-          <Zap className="w-6 h-6" />
-        </div>
-        <div>
-          <h3 className="text-xl font-black text-white uppercase tracking-tight">AI Experts</h3>
-          <p className="text-xs text-gray-500 font-bold uppercase tracking-widest">Specialized for your needs</p>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
-        <div className="p-4 rounded-2xl bg-[#00f5d4]/5 border border-[#00f5d4]/10">
-          <div className="text-[#00f5d4] font-black text-[10px] uppercase mb-1">UI Specialist</div>
-          <p className="text-[11px] text-gray-400">Builds stunning, responsive Roblox interfaces in seconds.</p>
-        </div>
-        <div className="p-4 rounded-2xl bg-[#9b5de5]/5 border border-[#9b5de5]/10">
-          <div className="text-[#9b5de5] font-black text-[10px] uppercase mb-1">Logic Master</div>
-          <p className="text-[11px] text-gray-400">Handles complex game systems, math, and data structures.</p>
-        </div>
-        <div className="p-4 rounded-2xl bg-[#ff006e]/5 border border-[#ff006e]/10">
-          <div className="text-[#ff006e] font-black text-[10px] uppercase mb-1">Security Auditor</div>
-          <p className="text-[11px] text-gray-400">Finds vulnerabilities in your remotes and scripts.</p>
-        </div>
-        <div className="p-4 rounded-2xl bg-[#00bbf9]/5 border border-[#00bbf9]/10">
-          <div className="text-[#00bbf9] font-black text-[10px] uppercase mb-1">System Architect</div>
-          <p className="text-[11px] text-gray-400">Designs scalable frameworks and modular components.</p>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function PreviewStep() {
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-4 mb-8">
-        <div className="p-3 rounded-xl bg-[#00bbf9]/20 text-[#00bbf9]">
-          <Layout className="w-6 h-6" />
-        </div>
-        <div>
-          <h3 className="text-xl font-black text-white uppercase tracking-tight">Live Preview</h3>
-          <p className="text-xs text-gray-500 font-bold uppercase tracking-widest">See it before you ship it</p>
-        </div>
-      </div>
-
-      <div className="relative aspect-video rounded-2xl bg-black/40 border border-white/10 overflow-hidden group">
-        <div className="absolute inset-0 bg-gradient-to-br from-[#9b5de5]/10 to-[#00f5d4]/10" />
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="text-center space-y-2">
-            <Layout className="w-12 h-12 text-white/20 mx-auto" />
-            <div className="text-[10px] font-black text-gray-600 uppercase tracking-[0.3em]">Interactive Preview</div>
-          </div>
-        </div>
-        <div className="absolute bottom-4 left-4 right-4 p-3 rounded-xl bg-black/60 backdrop-blur-md border border-white/5">
-          <p className="text-[11px] text-gray-300 leading-relaxed">
-            The new side-by-side view lets you interact with your generated UI and inspect the Luau code simultaneously.
-          </p>
-        </div>
-      </div>
-      
-      <div className="bg-[#00f5d4]/10 border-l-4 border-[#00f5d4] p-4 rounded-r-xl">
-        <p className="text-xs text-gray-300">
-          <span className="text-[#00f5d4] font-bold">Pro Tip:</span> Use the "Act" mode to let Nexus automatically execute multi-step plans for you.
-        </p>
-      </div>
     </div>
   );
 }

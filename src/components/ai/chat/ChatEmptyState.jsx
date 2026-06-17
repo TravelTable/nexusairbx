@@ -5,19 +5,19 @@ const EXAMPLES = [
   {
     icon: Layout,
     title: "Build in Studio",
-    prompt: "Build a Roblox shop system in Studio with item cards, prices, and server-validated purchases.",
+    prompt: "Build a Roblox shop system in Studio with item cards, prices, and server-validated purchases. Keep Manual Review on.",
     accent: "#00f5d4",
   },
   {
     icon: Code2,
     title: "Inspect and fix",
-    prompt: "Inspect my Studio place and fix the script that gives players a speed boost when they touch a part.",
+    prompt: "Inspect my paired Studio place and fix the script that gives players a speed boost when they touch a part.",
     accent: "#9b5de5",
   },
   {
     icon: Rocket,
     title: "Wire a system",
-    prompt: "Wire a leaderboard system with a UI, remotes, and a DataStore-backed score saver.",
+    prompt: "Wire a leaderboard system with a UI, remotes, and a DataStore-backed score saver, then explain the approval steps before applying.",
     accent: "#f15bb5",
   },
 ];
@@ -33,7 +33,7 @@ export default function ChatEmptyState({ onQuickStart, onOpenTemplates }) {
           <span className="gradient-text">What should the Studio agent do?</span>
         </h1>
         <p className="text-sm md:text-[15px] text-gray-400 leading-relaxed">
-          Ask it to inspect, build, wire, or fix your Roblox Studio project. It will plan the work, generate files, and help apply changes through Studio.
+          Pair Studio, keep Manual Review enabled, then ask the agent to inspect, build, wire, or fix your Roblox project. It will plan the work, generate files, and help apply approved changes through Studio.
         </p>
       </div>
 
@@ -67,6 +67,18 @@ export default function ChatEmptyState({ onQuickStart, onOpenTemplates }) {
           Browse template gallery
         </button>
       )}
+
+      <div className="flex flex-wrap items-center justify-center gap-2 text-[11px] font-bold uppercase tracking-[0.18em] text-gray-500">
+        <a href="/docs#pair-studio" className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 transition hover:border-white/20 hover:text-white">
+          Pair Studio
+        </a>
+        <a href="/docs#first-prompt-examples" className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 transition hover:border-white/20 hover:text-white">
+          Prompt Examples
+        </a>
+        <a href="/docs#approve-and-apply" className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 transition hover:border-white/20 hover:text-white">
+          Approval Flow
+        </a>
+      </div>
     </div>
   );
 }
