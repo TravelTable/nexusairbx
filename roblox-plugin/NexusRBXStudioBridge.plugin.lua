@@ -5,6 +5,7 @@ local BACKEND_URL = "https://nexusrbx-backend-production.up.railway.app"
 local PLUGIN_VERSION = "0.4.1-protocol"
 
 local HttpService = game:GetService("HttpService")
+local AssetService = game:GetService("AssetService")
 local ChangeHistoryService = game:GetService("ChangeHistoryService")
 local CollectionService = game:GetService("CollectionService")
 local ScriptEditorService = game:GetService("ScriptEditorService")
@@ -2130,8 +2131,411 @@ local function applyArtifact(payload)
 	}
 end
 
+local CREATOR_STORE_IMPORT_MAX_DESCENDANTS = 10000
+local CREATOR_STORE_IMPORT_MAX_DEPTH = 64
+local CREATOR_STORE_IMPORT_RECEIPTS_SETTING = "nexusrbxCreatorStoreImportReceipts"
+local CREATOR_STORE_IMPORT_RECEIPT_ORDER_SETTING = "nexusrbxCreatorStoreImportReceiptOrder"
+
+local function creatorStoreFailure(assetId, code, message, warnings)
+	return {
+		ok = false,
+		type = "insert_creator_store_asset",
+		assetId = tostring(assetId or ""),
+		code = code,
+		message = message,
+		warnings = warnings or {},
+	}
+end
+
+local function importSettingTable(key)
+	local ok, value = pcall(function()
+		return plugin:GetSetting(key)
+	end)
+	if ok and type(value) == "table" then
+		return value
+	end
+	return {}
+end
+
+local function getStoredImportReceipt(idempotencyKey)
+	if tostring(idempotencyKey or "") == "" then
+		return nil
+	end
+	local receipts = importSettingTable(CREATOR_STORE_IMPORT_RECEIPTS_SETTING)
+	return receipts[tostring(idempotencyKey)]
+end
+
+local function storeImportReceipt(idempotencyKey, receipt)
+	if tostring(idempotencyKey or "") == "" or type(receipt) ~= "table" then
+		return
+	end
+	local key = tostring(idempotencyKey)
+	local receipts = importSettingTable(CREATOR_STORE_IMPORT_RECEIPTS_SETTING)
+	local order = importSettingTable(CREATOR_STORE_IMPORT_RECEIPT_ORDER_SETTING)
+	if not receipts[key] then
+		table.insert(order, key)
+	end
+	receipts[key] = receipt
+	while #order > 50 do
+		local oldKey = table.remove(order, 1)
+		receipts[oldKey] = nil
+	end
+	pcall(function()
+		plugin:SetSetting(CREATOR_STORE_IMPORT_RECEIPTS_SETTING, receipts)
+		plugin:SetSetting(CREATOR_STORE_IMPORT_RECEIPT_ORDER_SETTING, order)
+	end)
+end
+
+local function cleanImportName(value, fallback)
+	local text = tostring(value or ""):gsub("[%c]", ""):gsub("^%s+", ""):gsub("%s+$", "")
+	if text == "" then
+		text = fallback or "CreatorStoreAsset"
+	end
+	if #text > 100 then
+		text = string.sub(text, 1, 100)
+	end
+	return text
+end
+
+local function uniqueChildName(parent, desiredName)
+	local base = cleanImportName(desiredName, "CreatorStoreAsset")
+	if not parent:FindFirstChild(base) then
+		return base
+	end
+	for index = 2, 500 do
+		local candidate = string.format("%s (%d)", base, index)
+		if not parent:FindFirstChild(candidate) then
+			return candidate
+		end
+	end
+	return base .. " (" .. tostring(HttpService:GenerateGUID(false)) .. ")"
+end
+
+local function isAllowedCreatorStoreImportTarget(path)
+	local parts = splitPath(path)
+	local root = parts[1]
+	if root ~= "Workspace" and root ~= "ReplicatedStorage" and root ~= "ServerStorage" then
+		return false
+	end
+	for _, part in ipairs(parts) do
+		if part == "." or part == ".." then
+			return false
+		end
+	end
+	return #parts >= 1
+end
+
+local function safeIsA(inst, className)
+	local ok, result = pcall(function()
+		return inst:IsA(className)
+	end)
+	return ok and result == true
+end
+
+local function countTreeDepth(inst, depth)
+	local maxDepth = depth or 0
+	for _, child in ipairs(inst:GetChildren()) do
+		maxDepth = math.max(maxDepth, countTreeDepth(child, (depth or 0) + 1))
+	end
+	return maxDepth
+end
+
+local function belongsToRoot(value, root)
+	return typeof(value) == "Instance" and (value == root or value:IsDescendantOf(root))
+end
+
+local function scanAndSanitizeCreatorStoreRoot(root, requestedAssetType)
+	local scan = {
+		totalDescendants = 0,
+		scriptsRemoved = 0,
+		remoteObjectsRemoved = 0,
+		bindableObjectsRemoved = 0,
+		behaviouralObjectsFlagged = 0,
+		invalidReferencesFound = 0,
+		meshParts = 0,
+		parts = 0,
+		models = 0,
+		constraints = 0,
+		sounds = 0,
+		tools = 0,
+		prompts = 0,
+		clickDetectors = 0,
+		packages = 0,
+	}
+	local warnings = {}
+	local blocked = {}
+	local descendants = root:GetDescendants()
+	scan.totalDescendants = #descendants
+	if scan.totalDescendants > CREATOR_STORE_IMPORT_MAX_DESCENDANTS then
+		return nil, "ASSET_TREE_TOO_LARGE", "The Creator Store asset contains too many descendants.", scan, warnings
+	end
+	if countTreeDepth(root, 0) > CREATOR_STORE_IMPORT_MAX_DEPTH then
+		return nil, "ASSET_TREE_TOO_DEEP", "The Creator Store asset tree is too deeply nested.", scan, warnings
+	end
+	if root:IsA("MeshPart") then
+		scan.meshParts = scan.meshParts + 1
+	elseif root:IsA("BasePart") then
+		scan.parts = scan.parts + 1
+	elseif root:IsA("Model") then
+		scan.models = scan.models + 1
+	end
+
+	for _, inst in ipairs(descendants) do
+		if safeIsA(inst, "LuaSourceContainer") or SCRIPT_CLASSES[inst.ClassName] then
+			scan.scriptsRemoved = scan.scriptsRemoved + 1
+			table.insert(blocked, inst)
+		elseif inst:IsA("RemoteEvent") or inst:IsA("RemoteFunction") or safeIsA(inst, "UnreliableRemoteEvent") then
+			scan.remoteObjectsRemoved = scan.remoteObjectsRemoved + 1
+			table.insert(blocked, inst)
+		elseif inst:IsA("BindableEvent") or inst:IsA("BindableFunction") then
+			scan.bindableObjectsRemoved = scan.bindableObjectsRemoved + 1
+			table.insert(blocked, inst)
+		end
+
+		if inst:IsA("MeshPart") then
+			scan.meshParts = scan.meshParts + 1
+		elseif inst:IsA("BasePart") then
+			scan.parts = scan.parts + 1
+		elseif inst:IsA("Model") then
+			scan.models = scan.models + 1
+		end
+
+		if inst:IsA("Tool") then
+			scan.tools = scan.tools + 1
+			scan.behaviouralObjectsFlagged = scan.behaviouralObjectsFlagged + 1
+		elseif inst.ClassName == "HopperBin" or inst:IsA("Humanoid") or inst:IsA("AnimationController") then
+			scan.behaviouralObjectsFlagged = scan.behaviouralObjectsFlagged + 1
+		elseif inst:IsA("Sound") then
+			scan.sounds = scan.sounds + 1
+			scan.behaviouralObjectsFlagged = scan.behaviouralObjectsFlagged + 1
+		elseif inst:IsA("ProximityPrompt") then
+			scan.prompts = scan.prompts + 1
+			scan.behaviouralObjectsFlagged = scan.behaviouralObjectsFlagged + 1
+		elseif inst:IsA("ClickDetector") then
+			scan.clickDetectors = scan.clickDetectors + 1
+			scan.behaviouralObjectsFlagged = scan.behaviouralObjectsFlagged + 1
+		elseif inst.ClassName == "TouchTransmitter" then
+			scan.behaviouralObjectsFlagged = scan.behaviouralObjectsFlagged + 1
+		elseif inst.ClassName == "PackageLink" or inst.Name == "PackageLink" then
+			scan.packages = scan.packages + 1
+			scan.behaviouralObjectsFlagged = scan.behaviouralObjectsFlagged + 1
+		end
+
+		if safeIsA(inst, "Constraint") then
+			scan.constraints = scan.constraints + 1
+			local okAttachment0, attachment0 = pcall(function()
+				return inst.Attachment0
+			end)
+			local okAttachment1, attachment1 = pcall(function()
+				return inst.Attachment1
+			end)
+			if (okAttachment0 and attachment0 and not belongsToRoot(attachment0, root)) or (okAttachment1 and attachment1 and not belongsToRoot(attachment1, root)) then
+				scan.invalidReferencesFound = scan.invalidReferencesFound + 1
+			end
+		end
+	end
+
+	for _, inst in ipairs(blocked) do
+		if inst and inst.Parent then
+			inst:Destroy()
+		end
+	end
+
+	if scan.scriptsRemoved > 0 then
+		table.insert(warnings, string.format("Removed %d script object(s).", scan.scriptsRemoved))
+	end
+	if scan.remoteObjectsRemoved > 0 then
+		table.insert(warnings, string.format("Removed %d networking object(s).", scan.remoteObjectsRemoved))
+	end
+	if scan.bindableObjectsRemoved > 0 then
+		table.insert(warnings, string.format("Removed %d bindable object(s).", scan.bindableObjectsRemoved))
+	end
+	if scan.behaviouralObjectsFlagged > 0 then
+		table.insert(warnings, string.format("Flagged %d behavioural object(s) for review.", scan.behaviouralObjectsFlagged))
+	end
+	if scan.invalidReferencesFound > 0 then
+		table.insert(warnings, string.format("Found %d constraint reference(s) outside the imported tree.", scan.invalidReferencesFound))
+	end
+
+	local remainingVisuals = root:IsA("BasePart") and 1 or 0
+	for _, inst in ipairs(root:GetDescendants()) do
+		if inst:IsA("BasePart") then
+			remainingVisuals = remainingVisuals + 1
+		end
+	end
+	if remainingVisuals == 0 then
+		return nil, "NO_USABLE_CONTENT", "No usable visual content remained after sanitization.", scan, warnings
+	end
+	if requestedAssetType == "Mesh" and scan.meshParts == 0 then
+		return nil, "UNSUPPORTED_ASSET_TYPE", "The loaded asset did not contain a compatible mesh.", scan, warnings
+	end
+	return true, nil, nil, scan, warnings
+end
+
+local function targetCFrameForPlacement(placement)
+	local mode = tostring((placement or {}).mode or "camera_focus")
+	if mode == "explicit_position" and type(placement.position) == "table" then
+		local pos = placement.position
+		return CFrame.new(Vector3.new(tonumber(pos.x) or 0, tonumber(pos.y) or 0, tonumber(pos.z) or 0))
+	end
+	if mode == "camera_focus" then
+		local camera = Workspace.CurrentCamera
+		if camera then
+			local cameraFrame = camera.CFrame
+			local target = cameraFrame.Position + cameraFrame.LookVector * 24
+			if target.Y < 3 then
+				target = Vector3.new(target.X, 3, target.Z)
+			end
+			return CFrame.new(target)
+		end
+	end
+	return CFrame.new(0, 3, 0)
+end
+
+local function pivotImportedRoot(root, placement)
+	local target = targetCFrameForPlacement(placement)
+	if root:IsA("Model") then
+		root:PivotTo(target)
+	elseif root:IsA("BasePart") then
+		root.CFrame = target
+	else
+		local primary = root:FindFirstChildWhichIsA("BasePart", true)
+		if primary then
+			local delta = target.Position - primary.Position
+			for _, inst in ipairs(root:GetDescendants()) do
+				if inst:IsA("BasePart") then
+					inst.CFrame = inst.CFrame + delta
+				end
+			end
+		end
+	end
+	return target
+end
+
+local function insertCreatorStoreAsset(payload)
+	payload = payload or {}
+	local assetId = tostring(payload.assetId or "")
+	local idempotencyKey = tostring(payload.idempotencyKey or "")
+	local replay = getStoredImportReceipt(idempotencyKey)
+	if replay then
+		replay.replayed = true
+		replay.code = "COMMAND_ALREADY_APPLIED"
+		return replay
+	end
+
+	if not assetId:match("^[1-9]%d*$") then
+		return creatorStoreFailure(assetId, "INVALID_ASSET_ID", "assetId must be a positive integer.")
+	end
+	local assetType = tostring(payload.assetType or "")
+	if assetType ~= "Model" and assetType ~= "Mesh" then
+		return creatorStoreFailure(assetId, "UNSUPPORTED_ASSET_TYPE", "Only Model and Mesh Creator Store assets can be imported.")
+	end
+	local targetParentPath = tostring(payload.targetParentPath or "Workspace/NexusImports")
+	if not isAllowedCreatorStoreImportTarget(targetParentPath) then
+		return creatorStoreFailure(assetId, "INVALID_TARGET_PATH", "Creator Store imports can only target Workspace, ReplicatedStorage, or ServerStorage.")
+	end
+
+	local allowFreeAssets = false
+	pcall(function()
+		allowFreeAssets = AssetService.AllowInsertFreeAssets == true
+	end)
+	if not allowFreeAssets then
+		return creatorStoreFailure(assetId, "THIRD_PARTY_ASSETS_DISABLED", "Enable Allow Loading Third Party Assets in Studio Experience Settings.", {
+			"Roblox Studio blocked public Creator Store asset loading for this experience.",
+		})
+	end
+
+	local loadedOk, loadedOrErr = pcall(function()
+		return AssetService:LoadAssetAsync(tonumber(assetId))
+	end)
+	if not loadedOk then
+		local message = tostring(loadedOrErr or "")
+		local lower = string.lower(message)
+		local code = "ASSET_LOAD_FAILED"
+		if string.find(lower, "permission") or string.find(lower, "not allowed") or string.find(lower, "third") then
+			code = "THIRD_PARTY_ASSETS_DISABLED"
+			message = "Enable Allow Loading Third Party Assets in Studio Experience Settings."
+		elseif string.find(lower, "not found") or string.find(lower, "access") then
+			code = "ASSET_NOT_ACCESSIBLE"
+			message = "The Creator Store asset is not accessible from this Studio session."
+		else
+			message = "The Creator Store asset could not be loaded."
+		end
+		return creatorStoreFailure(assetId, code, message)
+	end
+
+	local loadedRoot = loadedOrErr
+	if typeof(loadedRoot) ~= "Instance" then
+		return creatorStoreFailure(assetId, "ASSET_LOAD_FAILED", "The Creator Store asset returned an invalid object.")
+	end
+	loadedRoot.Parent = nil
+
+	local scanOk, scanCode, scanMessage, scan, warnings = scanAndSanitizeCreatorStoreRoot(loadedRoot, assetType)
+	if not scanOk then
+		loadedRoot:Destroy()
+		return creatorStoreFailure(assetId, scanCode or "SANITIZATION_FAILED", scanMessage or "Creator Store import sanitization failed.", warnings)
+	end
+
+	local targetExisted = resolvePath(targetParentPath) ~= nil
+	local parent = ensureParent(targetParentPath .. "/ImportedAsset", true)
+	if not parent then
+		loadedRoot:Destroy()
+		return creatorStoreFailure(assetId, "INVALID_TARGET_PATH", "Could not resolve the Creator Store import destination.", warnings)
+	end
+
+	local requestedName = cleanImportName(payload.requestedName, cleanImportName(payload.assetName, "CreatorStoreAsset_" .. assetId))
+	local insertedName = uniqueChildName(parent, requestedName)
+	loadedRoot.Name = insertedName
+	local placementCFrame = nil
+	local placementOk = pcall(function()
+		loadedRoot.Parent = parent
+		placementCFrame = pivotImportedRoot(loadedRoot, payload.placement or {})
+	end)
+	if not placementOk then
+		if loadedRoot and loadedRoot.Parent then
+			loadedRoot:Destroy()
+		else
+			loadedRoot:Destroy()
+		end
+		if not targetExisted then
+			local target = resolvePath(targetParentPath)
+			if target and #target:GetChildren() == 0 then
+				target:Destroy()
+			end
+		end
+		return creatorStoreFailure(assetId, "PLACEMENT_FAILED", "The sanitized asset could not be placed in Studio.", warnings)
+	end
+
+	local insertedPath = fullPath(loadedRoot)
+	local receipt = {
+		ok = true,
+		type = "insert_creator_store_asset",
+		assetId = assetId,
+		assetName = cleanImportName(payload.assetName, requestedName),
+		insertedName = insertedName,
+		insertedRootPath = insertedPath,
+		insertedRootClass = loadedRoot.ClassName,
+		sanitizationMode = "strict",
+		scan = scan,
+		warnings = warnings,
+		placement = {
+			mode = tostring((payload.placement or {}).mode or "camera_focus"),
+			pivot = {
+				x = placementCFrame and placementCFrame.Position.X or 0,
+				y = placementCFrame and placementCFrame.Position.Y or 0,
+				z = placementCFrame and placementCFrame.Position.Z or 0,
+			},
+		},
+		history = { recorded = true },
+		affectedPaths = { insertedPath },
+	}
+	storeImportReceipt(idempotencyKey, receipt)
+	return receipt
+end
+
 local TOOL_HANDLERS = {
 	apply_artifact = applyArtifact,
+	insert_creator_store_asset = insertCreatorStoreAsset,
 	get_project_manifest = inspectPlace,
 	list_children = listChildren,
 	inspect_place = inspectPlace,

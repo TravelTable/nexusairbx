@@ -240,6 +240,7 @@ export default function CreatorStoreSearch({ notify }) {
         <CreatorStoreAssetDetails
           asset={selectedAsset}
           loading={detailsLoading}
+          notify={notify}
           onClose={() => {
             setSelectedAsset(null);
             setDetailsError("");

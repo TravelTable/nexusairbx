@@ -9,7 +9,13 @@ async function readJsonOrThrow(res, fallbackMessage) {
     data = null;
   }
   if (!res.ok) {
-    throw new Error(data?.error || text || fallbackMessage);
+    const error = new Error(data?.error || text || fallbackMessage);
+    error.status = res.status;
+    error.code = data?.code || null;
+    error.missingScopes = Array.isArray(data?.missingScopes) ? data.missingScopes : [];
+    error.capability = data?.capability || null;
+    error.retryAfter = res.headers?.get?.("Retry-After") || data?.retryAfter || null;
+    throw error;
   }
   return data || {};
 }
@@ -57,6 +63,21 @@ export async function getStudioCommand(commandId) {
     noCache: true,
   });
   return readJsonOrThrow(res, "Failed to load Studio command");
+}
+
+export async function importCreatorStoreAssetToStudio({
+  assetId,
+  sessionId = null,
+  targetParentPath = "Workspace/NexusImports",
+  requestedName = "",
+  placement = { mode: "camera_focus" },
+} = {}) {
+  const res = await authedFetch("/api/studio/creator-store/import", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ assetId, sessionId, targetParentPath, requestedName, placement }),
+  });
+  return readJsonOrThrow(res, "Failed to import Creator Store asset to Studio");
 }
 
 export async function getStudioTools() {

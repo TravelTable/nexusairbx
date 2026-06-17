@@ -1,9 +1,15 @@
 import React from "react";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import CreatorStoreSearch from "./CreatorStoreSearch";
 import { beginRobloxReauthorization } from "../../lib/robloxOAuthApi";
 import { getCreatorStoreAsset, searchCreatorStore } from "../../lib/robloxCreatorStoreApi";
+import {
+  getStudioCommand,
+  getStudioStatus,
+  importCreatorStoreAssetToStudio,
+  startStudioPairing,
+} from "../../lib/studioBridgeApi";
 
 jest.mock("../../lib/robloxCreatorStoreApi", () => ({
   getCreatorStoreAsset: jest.fn(),
@@ -12,6 +18,13 @@ jest.mock("../../lib/robloxCreatorStoreApi", () => ({
 
 jest.mock("../../lib/robloxOAuthApi", () => ({
   beginRobloxReauthorization: jest.fn(),
+}));
+
+jest.mock("../../lib/studioBridgeApi", () => ({
+  getStudioCommand: jest.fn(),
+  getStudioStatus: jest.fn(),
+  importCreatorStoreAssetToStudio: jest.fn(),
+  startStudioPairing: jest.fn(),
 }));
 
 function deferred() {
@@ -37,6 +50,7 @@ const asset = {
 describe("CreatorStoreSearch", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    getStudioStatus.mockResolvedValue({ sessions: [{ id: "studio-1", status: "connected" }] });
     Object.assign(navigator, {
       clipboard: {
         writeText: jest.fn().mockResolvedValue(undefined),
@@ -170,5 +184,111 @@ describe("CreatorStoreSearch", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Copy asset ID" }));
     await waitFor(() => expect(navigator.clipboard.writeText).toHaveBeenCalledWith("123"));
+  });
+
+  test("shows import action for Model and queues after confirmation", async () => {
+    jest.useFakeTimers();
+    searchCreatorStore.mockResolvedValueOnce({ results: [asset], nextCursor: null });
+    getCreatorStoreAsset.mockResolvedValueOnce({ asset });
+    importCreatorStoreAssetToStudio.mockResolvedValueOnce({ commandId: "cmd-1", status: "queued" });
+    getStudioCommand.mockResolvedValueOnce({
+      status: "succeeded",
+      result: {
+        insertedName: "Low Poly Tree",
+        insertedRootPath: "Workspace/NexusImports/Low Poly Tree",
+        scan: { scriptsRemoved: 2, remoteObjectsRemoved: 1, bindableObjectsRemoved: 1 },
+        warnings: ["Removed 2 script object(s)."],
+      },
+    });
+
+    render(<CreatorStoreSearch />);
+    fireEvent.change(screen.getByLabelText("Search Creator Store"), { target: { value: "tree" } });
+    fireEvent.click(screen.getByRole("button", { name: /^Search$/ }));
+    expect(await screen.findByText("Low Poly Tree")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "View details for Low Poly Tree" }));
+    expect(await screen.findByRole("button", { name: "Import to Studio" })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Import to Studio" }));
+    expect(screen.getByText("NexusRBX removes scripts and networking objects before placing this asset in your project.")).toBeTruthy();
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Import safely" }));
+    });
+
+    await waitFor(() => expect(importCreatorStoreAssetToStudio).toHaveBeenCalledWith({
+      assetId: "123",
+      sessionId: "studio-1",
+      targetParentPath: "Workspace/NexusImports",
+      requestedName: "Low Poly Tree",
+      placement: { mode: "camera_focus" },
+    }));
+    await act(async () => {
+      jest.advanceTimersByTime(1500);
+    });
+    expect(await screen.findByText("Inserted: Low Poly Tree")).toBeTruthy();
+    expect(screen.getByText("Scripts removed: 2")).toBeTruthy();
+    expect(screen.getByText("Networking removed: 2")).toBeTruthy();
+    jest.useRealTimers();
+  });
+
+  test("shows import action for Mesh", async () => {
+    const meshAsset = { ...asset, assetId: "456", name: "Tree Mesh", assetType: "Mesh" };
+    searchCreatorStore.mockResolvedValueOnce({ results: [meshAsset], nextCursor: null });
+    getCreatorStoreAsset.mockResolvedValueOnce({ asset: meshAsset });
+
+    render(<CreatorStoreSearch />);
+    fireEvent.change(screen.getByLabelText("Search Creator Store"), { target: { value: "tree" } });
+    fireEvent.click(screen.getByRole("button", { name: /^Search$/ }));
+    expect(await screen.findByText("Tree Mesh")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "View details for Tree Mesh" }));
+    expect(await screen.findByRole("button", { name: "Import to Studio" })).toBeTruthy();
+  });
+
+  test("does not show import action for unsupported asset types", async () => {
+    const audioAsset = { ...asset, assetType: "Audio" };
+    searchCreatorStore.mockResolvedValueOnce({ results: [audioAsset], nextCursor: null });
+    getCreatorStoreAsset.mockResolvedValueOnce({ asset: audioAsset });
+
+    render(<CreatorStoreSearch />);
+    fireEvent.change(screen.getByLabelText("Search Creator Store"), { target: { value: "sound" } });
+    fireEvent.click(screen.getByRole("button", { name: /^Search$/ }));
+    expect(await screen.findByText("Low Poly Tree")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "View details for Low Poly Tree" }));
+    await waitFor(() => expect(getCreatorStoreAsset).toHaveBeenCalled());
+    expect(screen.queryByRole("button", { name: "Import to Studio" })).toBeNull();
+  });
+
+  test("renders disconnected Studio guidance and pairing action", async () => {
+    getStudioStatus.mockResolvedValueOnce({ sessions: [] });
+    startStudioPairing.mockResolvedValueOnce({ code: "ABCD12" });
+    searchCreatorStore.mockResolvedValueOnce({ results: [asset], nextCursor: null });
+    getCreatorStoreAsset.mockResolvedValueOnce({ asset });
+
+    render(<CreatorStoreSearch />);
+    fireEvent.change(screen.getByLabelText("Search Creator Store"), { target: { value: "tree" } });
+    fireEvent.click(screen.getByRole("button", { name: /^Search$/ }));
+    expect(await screen.findByText("Low Poly Tree")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "View details for Low Poly Tree" }));
+    expect(await screen.findByText("Connect the NexusRBX Studio plugin before importing.")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Pair Studio" }));
+    expect(await screen.findByText("Pairing code: ABCD12")).toBeTruthy();
+  });
+
+  test("renders third-party-assets-disabled guidance", async () => {
+    searchCreatorStore.mockResolvedValueOnce({ results: [asset], nextCursor: null });
+    getCreatorStoreAsset.mockResolvedValueOnce({ asset });
+    const err = new Error("blocked");
+    err.code = "THIRD_PARTY_ASSETS_DISABLED";
+    importCreatorStoreAssetToStudio.mockRejectedValueOnce(err);
+
+    render(<CreatorStoreSearch />);
+    fireEvent.change(screen.getByLabelText("Search Creator Store"), { target: { value: "tree" } });
+    fireEvent.click(screen.getByRole("button", { name: /^Search$/ }));
+    expect(await screen.findByText("Low Poly Tree")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "View details for Low Poly Tree" }));
+    expect(await screen.findByRole("button", { name: "Import to Studio" })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Import to Studio" }));
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Import safely" }));
+    });
+    expect(await screen.findByText("Roblox Studio blocked this public Creator Store asset. Open Experience Settings and enable Allow Loading Third Party Assets, then retry.")).toBeTruthy();
   });
 });
