@@ -26,8 +26,6 @@ import {
   MessageCircle,
   X,
   Search,
-  Sparkles,
-  Info,
   ArrowUpCircle,
   ArrowLeft,
   Skull,
@@ -1140,41 +1138,25 @@ const SettingsPage = () => {
           <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <div className="card-surface p-8 backdrop-blur-xl">
               <h3 className="text-xl font-bold text-white mb-2 flex items-center gap-2">
-                <Sparkles className="w-6 h-6 text-[#00f5d4]" />
-                Tutorials & Onboarding
+                <Shield className="w-6 h-6 text-[#00f5d4]" />
+                Workspace Walkthrough
               </h3>
-              <p className="text-gray-400 mb-8">Need a refresher on how to use the Nexus AI Console? You can replay the interactive tour or the welcome guide at any time.</p>
+              <p className="text-gray-400 mb-8">Replay the Studio workflow walkthrough for plugin install, pairing, Manual Review, approval, and Studio verification.</p>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <button 
                   onClick={() => {
-                    localStorage.removeItem("nexusrbx:tourComplete");
                     clearOnboardingState();
-                    setSuccessMsg("Onboarding reset. Visit the AI workspace to replay the welcome flow.");
+                    setSuccessMsg("Workspace Walkthrough reset. Visit the AI workspace to replay it.");
                     setTimeout(() => setSuccessMsg(""), 5000);
                   }}
                   className="p-6 rounded-2xl bg-black border border-gray-800 hover:border-[#9b5de5] transition-all text-left group"
                 >
                   <div className="flex justify-between items-center mb-2">
-                    <span className="font-bold text-white group-hover:text-[#9b5de5] transition-colors">Replay Interactive Tour</span>
-                    <Zap className="w-5 h-5 text-gray-600 group-hover:text-[#9b5de5]" />
+                    <span className="font-bold text-white group-hover:text-[#9b5de5] transition-colors">Replay Workspace Walkthrough</span>
+                    <History className="w-5 h-5 text-gray-600 group-hover:text-[#9b5de5]" />
                   </div>
-                  <p className="text-xs text-gray-500">Reset the step-by-step spotlight tour of the AI interface.</p>
-                </button>
-
-                <button 
-                  onClick={() => {
-                    clearOnboardingState();
-                    setSuccessMsg("Welcome flow reset. Visit the AI workspace to see it again.");
-                    setTimeout(() => setSuccessMsg(""), 5000);
-                  }}
-                  className="p-6 rounded-2xl bg-black border border-gray-800 hover:border-[#00f5d4] transition-all text-left group"
-                >
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="font-bold text-white group-hover:text-[#00f5d4] transition-colors">Replay Welcome Guide</span>
-                    <Info className="w-5 h-5 text-gray-600 group-hover:text-[#00f5d4]" />
-                  </div>
-                  <p className="text-xs text-gray-500">Reset the high-level welcome modal for the AI Console.</p>
+                  <p className="text-xs text-gray-500">Reset the single first-run workflow panel in the AI workspace.</p>
                 </button>
               </div>
             </div>

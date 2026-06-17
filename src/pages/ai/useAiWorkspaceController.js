@@ -46,7 +46,6 @@ import {
   ONBOARDING_STEP_IDS,
   clearOnboardingState,
   createDefaultOnboardingManualSteps,
-  hasSeenCurrentOnboardingVersion,
   markOnboardingVersionSeen,
   readOnboardingChecklistDismissed,
   readOnboardingManualSteps,
@@ -116,9 +115,6 @@ export function useAiWorkspaceController() {
   const [approvingStepId, setApprovingStepId] = useState(null);
   const [restoringRun, setRestoringRun] = useState(false);
   const [chatProjectSnapshot, setChatProjectSnapshot] = useState(null);
-  const [onboardingModalOpen, setOnboardingModalOpen] = useState(
-    () => ONBOARDING_ENABLED && !hasSeenCurrentOnboardingVersion()
-  );
   const [onboardingChecklistDismissed, setOnboardingChecklistDismissed] = useState(
     () => readOnboardingChecklistDismissed()
   );
@@ -341,18 +337,17 @@ export function useAiWorkspaceController() {
 
   useEffect(() => {
     if (!ONBOARDING_ENABLED) {
-      setOnboardingModalOpen(false);
       setOnboardingChecklistDismissed(true);
     }
   }, []);
 
   useEffect(() => {
     if (!ONBOARDING_ENABLED) return;
-    if (onboardingModalOpen && !onboardingStartedRef.current) {
+    if (!onboardingChecklistDismissed && !onboardingStartedRef.current) {
       onboardingStartedRef.current = true;
       track("onboarding_started", { source: onboardingSourceRef.current || "organic" });
     }
-  }, [onboardingModalOpen, track]);
+  }, [onboardingChecklistDismissed, track]);
 
   useEffect(() => {
     if (!ONBOARDING_ENABLED) return;
@@ -372,7 +367,6 @@ export function useAiWorkspaceController() {
     if (!ONBOARDING_ENABLED) return;
     if (!allOnboardingStepsComplete) return;
     markOnboardingVersionSeen();
-    setOnboardingModalOpen(false);
   }, [allOnboardingStepsComplete]);
 
   useEffect(() => {
@@ -481,7 +475,6 @@ export function useAiWorkspaceController() {
     }
 
     if (location.state.forceOnboarding) {
-      setOnboardingModalOpen(true);
       setOnboardingChecklistDismissed(false);
       writeOnboardingChecklistDismissed(false);
       delete nextState.forceOnboarding;
@@ -692,31 +685,11 @@ export function useAiWorkspaceController() {
     await handlePromptSubmit(null, promptText);
   }, [handlePromptSubmit, track]);
 
-  const closeOnboardingModal = useCallback((reason = "snooze") => {
-    markOnboardingVersionSeen();
-    setOnboardingModalOpen(false);
-    track("onboarding_dismissed", {
-      target: "modal",
-      reason,
-      source: onboardingSourceRef.current || "organic",
-    });
-  }, [track]);
-
-  const reopenModal = useCallback(() => {
-    setOnboardingChecklistDismissed(false);
-    writeOnboardingChecklistDismissed(false);
-    setOnboardingModalOpen(true);
-    track("onboarding_reopened", {
-      target: "modal",
-      source: onboardingSourceRef.current || "organic",
-    });
-  }, [track]);
-
-  const reopenChecklist = useCallback(() => {
+  const reopenWalkthrough = useCallback(() => {
     setOnboardingChecklistDismissed(false);
     writeOnboardingChecklistDismissed(false);
     track("onboarding_reopened", {
-      target: "checklist",
+      target: "walkthrough",
       source: onboardingSourceRef.current || "organic",
     });
   }, [track]);
@@ -733,13 +706,12 @@ export function useAiWorkspaceController() {
     });
   }, []);
 
-  const dismissChecklist = useCallback(() => {
+  const dismissWalkthrough = useCallback(() => {
     markOnboardingVersionSeen();
     setOnboardingChecklistDismissed(true);
     writeOnboardingChecklistDismissed(true);
-    setOnboardingModalOpen(false);
     track("onboarding_dismissed", {
-      target: "checklist",
+      target: "walkthrough",
       source: onboardingSourceRef.current || "organic",
     });
   }, [track]);
@@ -748,20 +720,12 @@ export function useAiWorkspaceController() {
     clearOnboardingState();
     setOnboardingManualSteps(createDefaultOnboardingManualSteps());
     setOnboardingChecklistDismissed(false);
-    setOnboardingModalOpen(true);
     onboardingStartedRef.current = false;
     onboardingCompletionRef.current = {};
     firstStudioMutationTrackedRef.current = false;
     onboardingSourceRef.current = "organic";
-    track("onboarding_reopened", { target: "reset", source: "organic" });
+    track("onboarding_reopened", { target: "walkthrough", source: "organic", reason: "reset" });
   }, [track]);
-
-  const handleOnboardingStart = useCallback(() => {
-    markOnboardingVersionSeen();
-    setOnboardingChecklistDismissed(false);
-    writeOnboardingChecklistDismissed(false);
-    setOnboardingModalOpen(false);
-  }, []);
 
   const handleEditPlan = useCallback((message) => {
     setPrompt(message?.originPrompt || "");
@@ -1005,17 +969,14 @@ export function useAiWorkspaceController() {
       unifiedAgent: FEATURE_FLAGS.unifiedAgent,
     },
     onboarding: {
-      modalOpen: ONBOARDING_ENABLED && onboardingModalOpen,
+      walkthroughOpen: ONBOARDING_ENABLED && !onboardingChecklistDismissed,
       checklistOpen: ONBOARDING_ENABLED && !onboardingChecklistDismissed,
       steps: onboardingSteps,
       dismissed: onboardingChecklistDismissed,
-      reopenModal,
-      reopenChecklist,
+      reopenWalkthrough,
       markManualStepDone,
-      dismissChecklist,
+      dismissWalkthrough,
       resetOnboarding,
-      closeModal: closeOnboardingModal,
-      startFromModal: handleOnboardingStart,
     },
     roblox: {
       connected: robloxStatus?.connected === true,

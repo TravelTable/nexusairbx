@@ -4,7 +4,7 @@ import ChatComposer from "../chat/ChatComposer";
 import AgentPlanPanel from "./AgentPlanPanel";
 import BuildDetailsPanel from "./BuildDetailsPanel";
 import RobloxAssetTray from "./RobloxAssetTray";
-import OnboardingChecklistPanel from "./OnboardingChecklistPanel";
+import WorkspaceWalkthroughPanel from "./WorkspaceWalkthroughPanel";
 
 // Primary Studio agent surface. Chat drives the
 // workflow; build progress + setup/testing/security live in the Details view.
@@ -112,11 +112,11 @@ export default function AgentChatPanel({
               </div>
             )}
             <div className="px-3 pt-3">
-              <OnboardingChecklistPanel
+              <WorkspaceWalkthroughPanel
                 onboarding={onboarding}
                 onMarkManualStepDone={onboarding?.markManualStepDone}
-                onDismiss={onboarding?.dismissChecklist}
-                onReopenModal={onboarding?.reopenModal}
+                onDismiss={onboarding?.dismissWalkthrough}
+                onReplay={onboarding?.resetOnboarding}
               />
             </div>
             <div className="flex-1 min-h-0 overflow-y-auto px-3 py-4 scrollbar-hide">

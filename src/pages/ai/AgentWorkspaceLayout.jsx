@@ -3,7 +3,6 @@ import { Menu, FolderTree, History, FileCode2, MessageSquare, ClipboardList, Sea
 
 import SidebarContent from "../../components/SidebarContent";
 import CodeDrawer from "../../components/CodeDrawer";
-import OnboardingContainer from "../../components/OnboardingContainer";
 import SignInNudgeModal from "../../components/SignInNudgeModal";
 import ProNudgeModal from "../../components/ProNudgeModal";
 import NotificationToast from "../../components/NotificationToast";
@@ -1079,12 +1078,6 @@ export default function AgentWorkspaceLayout({ controller }) {
 
       <SignInNudgeModal isOpen={showSignInNudge} onClose={() => setShowSignInNudge(false)} />
       <ProNudgeModal isOpen={showProNudge} onClose={() => setShowProNudge(false)} reason={proNudgeReason} />
-      <OnboardingContainer
-        open={Boolean(onboarding?.modalOpen)}
-        user={user}
-        onClose={() => onboarding?.closeModal?.("snooze")}
-        onStart={() => onboarding?.startFromModal?.()}
-      />
 
       {currentToast && (
         <div className="fixed bottom-8 right-8 z-[120]" role="status" aria-live="polite">

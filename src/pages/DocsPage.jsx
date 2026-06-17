@@ -110,7 +110,7 @@ const SECTIONS = [
     id: "troubleshooting",
     title: "Troubleshooting",
     icon: AlertCircle,
-    summary: "Most onboarding issues come from an outdated plugin, an expired pairing code, Live Studio being off, or approval-mode confusion.",
+    summary: "Most first-run issues come from an outdated plugin, an expired pairing code, Live Studio being off, or approval-mode confusion.",
     bullets: [
       "If the workspace stays `Offline`, regenerate the pairing code and confirm the plugin is the latest version.",
       "If Live Studio controls are disabled, pair Studio first. The toggle is intentionally unavailable when no session is connected.",
@@ -182,7 +182,7 @@ export default function NexusRBXDocsPageContainer() {
               </span>
               <span className="ml-2 text-gray-400">Docs</span>
             </div>
-            <p className="mt-1 text-sm text-gray-500">AI workspace and Studio bridge onboarding</p>
+            <p className="mt-1 text-sm text-gray-500">AI workspace and Studio bridge walkthrough</p>
           </div>
 
           <div className="flex items-center gap-3">
@@ -255,7 +255,7 @@ export default function NexusRBXDocsPageContainer() {
               Onboard to the AI workspace and Studio bridge without guessing.
             </h1>
             <p className="mt-4 max-w-3xl text-base leading-relaxed text-gray-300">
-              This guide mirrors the live onboarding flow in `/ai`: install the plugin, pair Studio, keep Manual Review on, submit a first prompt, approve the first mutation, and verify the result in Studio.
+              This guide mirrors the Workspace Walkthrough in `/ai`: install the plugin, pair Studio, keep Manual Review on, submit a first prompt, approve the first mutation, and verify the result in Studio.
             </p>
           </section>
 
