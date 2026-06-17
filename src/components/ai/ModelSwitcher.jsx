@@ -2,25 +2,13 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { createPortal } from "react-dom";
 import { Cpu, ChevronDown, Lock, Check, Sparkles } from "lucide-react";
 import { useModelCatalog } from "../../hooks/useModelCatalog";
-
-const PROVIDER_LABELS = {
-  openai: "OpenAI",
-  deepseek: "DeepSeek",
-  anthropic: "Anthropic",
-  google: "Google",
-  xai: "xAI",
-  meta: "Meta",
-  alibaba: "Alibaba",
-  mistral: "Mistral",
-  other: "Other",
-};
-
-// Legacy alias values still possible in persisted settings.
-const ALIAS_LABELS = {
-  "deepseek-free": "DeepSeek Core (Free)",
-  "nexus-4": "Nexus (GPT-5.4)",
-  "nexus-3": "Nexus (Legacy)",
-};
+import {
+  MODEL_ALIAS_LABELS,
+  PROVIDER_LABELS,
+  groupModelsByProvider,
+  normalizeModelId,
+  sortProviderEntries,
+} from "../../lib/modelProviders";
 
 const MENU_WIDTH = 288;
 const VIEWPORT_GUTTER = 8;
@@ -42,6 +30,8 @@ export default function ModelSwitcher({ value, onChange, isPremium, onProNudge, 
   const rootRef = useRef(null);
   const buttonRef = useRef(null);
   const menuRef = useRef(null);
+
+  const normalizedValue = useMemo(() => normalizeModelId(value), [value]);
 
   const updateMenuPosition = useCallback(() => {
     const rect = buttonRef.current?.getBoundingClientRect();
@@ -77,25 +67,14 @@ export default function ModelSwitcher({ value, onChange, isPremium, onProNudge, 
     };
   }, [open, updateMenuPosition]);
 
-  const grouped = useMemo(() => {
-    const groups = {};
-    for (const m of models) {
-      const key = m.provider || "other";
-      (groups[key] = groups[key] || []).push(m);
-    }
-    // Sort: recommended first, then free before pro, then by name.
-    Object.values(groups).forEach((list) =>
-      list.sort((a, b) => {
-        if (!!b.recommended !== !!a.recommended) return b.recommended ? 1 : -1;
-        if (a.tier !== b.tier) return a.tier === "free" ? -1 : 1;
-        return String(a.name).localeCompare(String(b.name));
-      })
-    );
-    return groups;
-  }, [models]);
+  const grouped = useMemo(() => groupModelsByProvider(models), [models]);
+  const sortedProviders = useMemo(() => sortProviderEntries(grouped), [grouped]);
 
-  const current = useMemo(() => models.find((m) => m.id === value), [models, value]);
-  const currentLabel = current?.name || ALIAS_LABELS[value] || value || "Select model";
+  const current = useMemo(
+    () => models.find((m) => m.id === normalizedValue || m.id === value),
+    [models, normalizedValue, value]
+  );
+  const currentLabel = current?.name || MODEL_ALIAS_LABELS[value] || MODEL_ALIAS_LABELS[normalizedValue] || value || "Select model";
 
   const handleSelect = (model) => {
     const locked = model.tier === "pro" && !isPremium;
@@ -122,17 +101,17 @@ export default function ModelSwitcher({ value, onChange, isPremium, onProNudge, 
             }}
             role="listbox"
           >
-            {Object.keys(grouped).length === 0 && (
+            {sortedProviders.length === 0 && (
               <div className="px-3 py-4 text-xs text-gray-500 text-center">No models available.</div>
             )}
-            {Object.entries(grouped).map(([provider, list]) => (
+            {sortedProviders.map(([provider, list]) => (
               <div key={provider} className="mb-1">
                 <div className="px-2 py-1.5 text-[9px] font-black uppercase tracking-widest text-gray-600">
                   {PROVIDER_LABELS[provider] || provider}
                 </div>
                 {list.map((model) => {
                   const locked = model.tier === "pro" && !isPremium;
-                  const selected = model.id === value;
+                  const selected = model.id === normalizedValue || model.id === value;
                   const ctx = formatContext(model.contextLength);
                   const costLabel = model.costTierLabel || (model.creditMultiplier ? `${model.creditMultiplier}x credits` : null);
                   return (

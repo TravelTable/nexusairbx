@@ -150,8 +150,8 @@ export default function NexusRBXHomepageContainer() {
       id: 2,
       title: isPremium ? "Your Subscription" : "Premium",
       description: isPremium 
-        ? `You are currently on the ${tokenInfo.plan} plan. Enjoy Nexus-5 (GPT-5.2) AI and high-limit generations.`
-        : "Unlock Nexus-5 (GPT-5.2) AI, high-limit generations, and priority support. Access exclusive UI components and advanced scripting features.",
+        ? `You are currently on the ${tokenInfo.plan} plan. Enjoy Nexus (GPT-5.4) AI and high-limit generations.`
+        : "Unlock Nexus (GPT-5.4) AI, high-limit generations, and priority support. Access exclusive UI components and advanced scripting features.",
       icon: null,
       gradient: "from-cyan-500 to-blue-600",
       button: { text: isPremium ? "Manage Plan" : "Subscribe", href: isPremium ? "/settings" : "/subscribe" },
@@ -249,8 +249,8 @@ function NexusRBXHomepage({
     },
     {
       id: 3,
-      title: "Nexus-5 Neural Core",
-      description: "Powered by GPT-5.2, fine-tuned for Parallel Luau and Actor patterns. Mastery of complex CFrame math and Spatial Queries.",
+      title: "Nexus Neural Core",
+      description: "Powered by GPT-5.4, fine-tuned for Parallel Luau and Actor patterns. Mastery of complex CFrame math and Spatial Queries.",
       icon: Cpu,
       position: "bottom-[15%] -left-4 xl:-left-24",
       delay: 0.6,

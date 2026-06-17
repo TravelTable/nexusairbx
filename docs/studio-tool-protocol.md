@@ -26,6 +26,7 @@ The backend validates every Studio command in `backend/src/lib/studioToolProtoco
 
 - Script tools: `create_script`, `write_script`, `patch_script`, `rename_script`, `move_script`, `duplicate_script`, `delete_script`, `replace_in_files`.
 - Instance tools: `create_instance`, `update_properties`, `update_attributes`, `update_tags`, `rename_instance`, `move_instance`, `duplicate_instance`, `delete_instance`.
+- Native model tools: `build_native_model` constructs one validated editable Roblox-native model from a declarative `NativeModelSpec`.
 - Coordination: `batch_operations` runs deterministic sub-operations and rolls back snapshots when `atomic` is true.
 
 Writes should include `expectedSourceHash` when the caller previously read a script. The plugin rejects stale writes with `code: "source_conflict"`.
@@ -54,4 +55,31 @@ Writes should include `expectedSourceHash` when the caller previously read a scr
 - Deploy composite indexes from [`backend/firestore.indexes.json`](../backend/firestore.indexes.json) with `firebase deploy --only firestore:indexes`.
 - New manifest writes use schema version `2`.
 - Top-level legacy version-1 manifest documents can be reviewed or deleted with [`backend/scripts/cleanupLegacyStudioManifest.js`](../backend/scripts/cleanupLegacyStudioManifest.js).
+
+## Native Model Construction
+
+`build_native_model` is a mutating, non-destructive Studio command. The website/backend queues exactly one command with:
+
+```json
+{
+  "schemaVersion": 1,
+  "idempotencyKey": "native-model:...",
+  "spec": { "schemaVersion": 1, "modelId": "wooden-table", "root": { "className": "Model" } },
+  "applyMode": "manual_review"
+}
+```
+
+The spec is declarative JSON, not Luau. It supports editable Roblox-native structures made from `Model`, `Folder`, `Part`, `WedgePart`, `CornerWedgePart`, `TrussPart`, `Seat`, `VehicleSeat`, `SpawnLocation`, `Attachment`, safe value objects, safe lights/decals/textures/highlights/particle emitters, and allowlisted constraints. It does not support scripts, remotes, arbitrary services, mesh imports, CSG, terrain, rigs, vehicles, runtime code, or paid mesh generation providers.
+
+Properties are class-specific allowlists. Typed values use JSON forms such as `{"$type":"Vector3","x":1,"y":2,"z":3}`, `Color3`, `CFrame`, `Enum`, `NumberRange`, and limited `NumberSequence`. Unknown classes, unknown properties, invalid enum values, NaN/Infinity, negative sizes, unsafe asset IDs, duplicate IDs, external references, and missing internal references reject the build before Studio receives it.
+
+Default BasePart behavior is conservative: anchored, collidable/queryable/touchable, casts shadows, zero transparency, and not massless unless the spec overrides an allowed property.
+
+Initial limits are 750 total instances, 400 BaseParts, 150 constraints, 300 attachments, 50 lights, 30 particle emitters, tree depth 32, and 4096 studs maximum extent on any axis. The backend and plugin both enforce limits.
+
+Allowed destinations are `Workspace`, `ReplicatedStorage`, and `ServerStorage`; the frontend defaults to `Workspace/NexusBuilds`. Placement modes are `camera_focus`, `origin`, `explicit_position`, and `selection_relative`. The plugin builds the hierarchy while unparented, resolves references, creates the destination only after validation, parents the completed model, then calls `Model:PivotTo()` once.
+
+Receipts include the inserted root path, counts, bounds, placement mode, warnings, and history status. Idempotent replay returns the existing generated model instead of creating a duplicate. Failures destroy the unparented hierarchy and remove empty destination folders created by the failed command.
+
+Common failure codes include `INVALID_SPEC`, `UNSUPPORTED_CLASS`, `UNSUPPORTED_PROPERTY`, `INVALID_PROPERTY_VALUE`, `INVALID_REFERENCE`, `DUPLICATE_INSTANCE_ID`, `INSTANCE_LIMIT_EXCEEDED`, `PART_LIMIT_EXCEEDED`, `CONSTRAINT_LIMIT_EXCEEDED`, `TREE_DEPTH_EXCEEDED`, `BOUNDS_LIMIT_EXCEEDED`, `INVALID_TARGET_PATH`, `STUDIO_SESSION_MISSING`, `BUILD_FAILED`, `PLACEMENT_FAILED`, and `COMMAND_ALREADY_APPLIED`.
 - Legacy malformed nested item paths produced by slash-bearing version-1 document IDs are not enumerable through normal collection queries and require separate administrative cleanup.

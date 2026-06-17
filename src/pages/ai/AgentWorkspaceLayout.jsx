@@ -65,7 +65,6 @@ export default function AgentWorkspaceLayout({ controller }) {
   } = uiState;
 
   const { chat, game, scriptManager, unified, workspace, settings } = modules;
-  const { onboarding } = controller;
 
   const {
     setSidebarOpen,
@@ -678,7 +677,6 @@ export default function AgentWorkspaceLayout({ controller }) {
       robloxAssetUploadsEnabled={roblox?.assetUploadsEnabled}
       robloxAssetProjectId={roblox?.assetProjectId}
       onRobloxAssetUploadsEnabledChange={handleRobloxAssetUploadsEnabledChange}
-      onboarding={onboarding}
     />
   );
 
@@ -1006,6 +1004,7 @@ export default function AgentWorkspaceLayout({ controller }) {
                   onRestoreRun={handleRestoreRun}
                   approvingStepId={studio?.approvingStepId}
                   restoringRun={studio?.restoringRun}
+                  notify={notify}
                 />
               </div>
             )}

@@ -42,16 +42,6 @@ import { createAiTelemetryClient } from "../../lib/aiTelemetry";
 import { useAiNotifications } from "./useAiNotifications";
 import { saveWorkspaceArtifact } from "../../lib/artifactWorkspaceApi";
 import { getRobloxOAuthStatus } from "../../lib/robloxOAuthApi";
-import {
-  ONBOARDING_STEP_IDS,
-  clearOnboardingState,
-  createDefaultOnboardingManualSteps,
-  markOnboardingVersionSeen,
-  readOnboardingChecklistDismissed,
-  readOnboardingManualSteps,
-  writeOnboardingChecklistDismissed,
-  writeOnboardingManualSteps,
-} from "../../lib/onboarding";
 
 const IS_AI_PAGE_V2_ENABLED = AI_PAGE_V2_ENABLED;
 
@@ -65,8 +55,6 @@ const MODE_COLORS = {
   performance: { primary: "#00f5d4", secondary: "#00bbf9" },
   security: { primary: "#ff006e", secondary: "#8338ec" },
 };
-
-const ONBOARDING_ENABLED = FEATURE_FLAGS.aiPageV2;
 
 export function useAiWorkspaceController() {
   const {
@@ -115,10 +103,6 @@ export function useAiWorkspaceController() {
   const [approvingStepId, setApprovingStepId] = useState(null);
   const [restoringRun, setRestoringRun] = useState(false);
   const [chatProjectSnapshot, setChatProjectSnapshot] = useState(null);
-  const [onboardingChecklistDismissed, setOnboardingChecklistDismissed] = useState(
-    () => readOnboardingChecklistDismissed()
-  );
-  const [onboardingManualSteps, setOnboardingManualSteps] = useState(() => readOnboardingManualSteps());
 
   const studioConnection = useStudioConnection();
 
@@ -142,9 +126,6 @@ export function useAiWorkspaceController() {
   const pageViewTrackedRef = useRef(false);
   const lastArtifactTrackedRef = useRef(null);
   const telemetryRef = useRef(null);
-  const onboardingStartedRef = useRef(false);
-  const onboardingCompletionRef = useRef({});
-  const onboardingSourceRef = useRef("organic");
   const firstStudioMutationTrackedRef = useRef(false);
 
   const {
@@ -192,20 +173,6 @@ export function useAiWorkspaceController() {
     [chat.activeMode]
   );
 
-  const hasGeneratedAssistantOutput = useMemo(
-    () =>
-      (chat.messages || []).some(
-        (message) =>
-          message?.role === "assistant" &&
-          (message?.runId ||
-            message?.projectId ||
-            message?.artifactId ||
-            message?.code ||
-            (Array.isArray(message?.files) && message.files.length))
-      ),
-    [chat.messages]
-  );
-
   const hasAppliedStudioMutation = useMemo(() => {
     const stepLists = [];
     if (Array.isArray(workspace.agentRun?.steps)) stepLists.push(workspace.agentRun.steps);
@@ -217,91 +184,6 @@ export function useAiWorkspaceController() {
       (step) => DESTRUCTIVE_TOOL_TYPES.has(String(step?.type || "")) && String(step?.status || "") === "succeeded"
     );
   }, [chat.messages, unified.pendingMessage?.steps, workspace.agentRun?.steps]);
-
-  const onboardingSteps = useMemo(() => {
-    const liveStudioReady = Boolean(studioConnection.connected && studioEnabled);
-    return [
-      {
-        id: ONBOARDING_STEP_IDS.SIGN_IN,
-        label: "Sign in",
-        description: "Sign in before pairing Studio so NexusRBX can keep your runs, approvals, and manifest state attached to your account.",
-        completed: Boolean(user),
-        actionHref: user ? null : "/signin",
-        actionLabel: "Sign In",
-      },
-      {
-        id: ONBOARDING_STEP_IDS.INSTALL_PLUGIN,
-        label: "Install the Studio plugin",
-        description: "Install or update the local NexusRBX plugin in Roblox Studio before you generate a pairing code.",
-        completed: Boolean(onboardingManualSteps[ONBOARDING_STEP_IDS.INSTALL_PLUGIN]),
-        manual: true,
-        actionHref: "/docs#install-plugin",
-        actionLabel: "Plugin Docs",
-      },
-      {
-        id: ONBOARDING_STEP_IDS.PAIR_STUDIO,
-        label: "Pair Studio",
-        description: "Use the Pair Studio control in the workspace header, then enter the one-time code in the Roblox Studio plugin.",
-        completed: Boolean(studioConnection.connected),
-        actionHref: "/docs#pair-studio",
-        actionLabel: "Pairing Docs",
-      },
-      {
-        id: ONBOARDING_STEP_IDS.ENABLE_LIVE_STUDIO,
-        label: "Enable Live Studio",
-        description: "Turn on Live Studio in the composer so the agent can inspect the connected place and prepare Studio-aware steps.",
-        completed: liveStudioReady,
-        actionHref: "/docs#live-studio-and-approval-modes",
-        actionLabel: "Live Studio",
-      },
-      {
-        id: ONBOARDING_STEP_IDS.CONFIRM_APPROVAL_MODE,
-        label: "Keep approval mode on Manual Review",
-        description: "Manual Review is the safest first-run default because destructive Studio steps stay gated until you explicitly approve them.",
-        completed: liveStudioReady && studioApplyMode === "manual_review",
-        actionHref: "/docs#live-studio-and-approval-modes",
-        actionLabel: "Approval Modes",
-      },
-      {
-        id: ONBOARDING_STEP_IDS.SUBMIT_FIRST_PROMPT,
-        label: "Submit a first prompt",
-        description: "Ask the Studio agent to inspect, build, wire, or fix something so the workflow produces a real run or artifact.",
-        completed: hasGeneratedAssistantOutput,
-        actionHref: "/docs#first-prompt-examples",
-        actionLabel: "Prompt Examples",
-      },
-      {
-        id: ONBOARDING_STEP_IDS.APPROVE_AND_APPLY,
-        label: "Approve and apply the first Studio change",
-        description: "Review the plan, approve the mutating step, and let NexusRBX apply the first Studio change through the unified run flow.",
-        completed: hasAppliedStudioMutation,
-        actionHref: "/docs#approve-and-apply",
-        actionLabel: "Approval Flow",
-      },
-      {
-        id: ONBOARDING_STEP_IDS.VERIFY_IN_STUDIO,
-        label: "Verify the result in Studio",
-        description: "Check the change in Studio, confirm behavior manually, and use snapshots if you need to restore the previous state.",
-        completed: Boolean(onboardingManualSteps[ONBOARDING_STEP_IDS.VERIFY_IN_STUDIO]),
-        manual: true,
-        actionHref: "/docs#verify-and-recover",
-        actionLabel: "Verify & Recover",
-      },
-    ];
-  }, [
-    hasAppliedStudioMutation,
-    hasGeneratedAssistantOutput,
-    onboardingManualSteps,
-    studioApplyMode,
-    studioConnection.connected,
-    studioEnabled,
-    user,
-  ]);
-
-  const allOnboardingStepsComplete = useMemo(
-    () => onboardingSteps.length > 0 && onboardingSteps.every((step) => step.completed),
-    [onboardingSteps]
-  );
 
   const track = useCallback((event, metadata = {}) => {
     telemetryRef.current?.track({
@@ -336,45 +218,9 @@ export function useAiWorkspaceController() {
   }, [track]);
 
   useEffect(() => {
-    if (!ONBOARDING_ENABLED) {
-      setOnboardingChecklistDismissed(true);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (!ONBOARDING_ENABLED) return;
-    if (!onboardingChecklistDismissed && !onboardingStartedRef.current) {
-      onboardingStartedRef.current = true;
-      track("onboarding_started", { source: onboardingSourceRef.current || "organic" });
-    }
-  }, [onboardingChecklistDismissed, track]);
-
-  useEffect(() => {
-    if (!ONBOARDING_ENABLED) return;
-    const previous = onboardingCompletionRef.current;
-    onboardingSteps.forEach((step) => {
-      if (step.completed && !previous[step.id]) {
-        track("onboarding_step_completed", {
-          stepId: step.id,
-          source: onboardingSourceRef.current || "organic",
-        });
-      }
-      previous[step.id] = step.completed;
-    });
-  }, [onboardingSteps, track]);
-
-  useEffect(() => {
-    if (!ONBOARDING_ENABLED) return;
-    if (!allOnboardingStepsComplete) return;
-    markOnboardingVersionSeen();
-  }, [allOnboardingStepsComplete]);
-
-  useEffect(() => {
     if (!hasAppliedStudioMutation || firstStudioMutationTrackedRef.current) return;
     firstStudioMutationTrackedRef.current = true;
-    track("first_studio_mutation_succeeded", {
-      source: onboardingSourceRef.current || "organic",
-    });
+    track("first_studio_mutation_succeeded", {});
   }, [hasAppliedStudioMutation, track]);
 
   useEffect(() => {
@@ -467,19 +313,6 @@ export function useAiWorkspaceController() {
 
     const nextState = { ...location.state };
     let shouldReplace = false;
-
-    if (location.state.onboardingSource) {
-      onboardingSourceRef.current = String(location.state.onboardingSource);
-      delete nextState.onboardingSource;
-      shouldReplace = true;
-    }
-
-    if (location.state.forceOnboarding) {
-      setOnboardingChecklistDismissed(false);
-      writeOnboardingChecklistDismissed(false);
-      delete nextState.forceOnboarding;
-      shouldReplace = true;
-    }
 
     if (location.state.initialPrompt) {
       setPrompt(location.state.initialPrompt);
@@ -605,7 +438,6 @@ export function useAiWorkspaceController() {
     track("prompt_submitted", {
       attachments: currentAttachments.length,
       length: currentPrompt.length,
-      source: onboardingSourceRef.current || "organic",
     });
 
     await unified.handleSubmit(currentPrompt, currentAttachments, workspace.projectArtifactSnapshot);
@@ -684,48 +516,6 @@ export function useAiWorkspaceController() {
     track("quickstart_clicked", { length: promptText.length });
     await handlePromptSubmit(null, promptText);
   }, [handlePromptSubmit, track]);
-
-  const reopenWalkthrough = useCallback(() => {
-    setOnboardingChecklistDismissed(false);
-    writeOnboardingChecklistDismissed(false);
-    track("onboarding_reopened", {
-      target: "walkthrough",
-      source: onboardingSourceRef.current || "organic",
-    });
-  }, [track]);
-
-  const markManualStepDone = useCallback((stepId) => {
-    setOnboardingManualSteps((prev) => {
-      const next = {
-        ...createDefaultOnboardingManualSteps(),
-        ...prev,
-        [stepId]: true,
-      };
-      writeOnboardingManualSteps(next);
-      return next;
-    });
-  }, []);
-
-  const dismissWalkthrough = useCallback(() => {
-    markOnboardingVersionSeen();
-    setOnboardingChecklistDismissed(true);
-    writeOnboardingChecklistDismissed(true);
-    track("onboarding_dismissed", {
-      target: "walkthrough",
-      source: onboardingSourceRef.current || "organic",
-    });
-  }, [track]);
-
-  const resetOnboarding = useCallback(() => {
-    clearOnboardingState();
-    setOnboardingManualSteps(createDefaultOnboardingManualSteps());
-    setOnboardingChecklistDismissed(false);
-    onboardingStartedRef.current = false;
-    onboardingCompletionRef.current = {};
-    firstStudioMutationTrackedRef.current = false;
-    onboardingSourceRef.current = "organic";
-    track("onboarding_reopened", { target: "walkthrough", source: "organic", reason: "reset" });
-  }, [track]);
 
   const handleEditPlan = useCallback((message) => {
     setPrompt(message?.originPrompt || "");
@@ -967,16 +757,6 @@ export function useAiWorkspaceController() {
       approvingStepId,
       restoringRun,
       unifiedAgent: FEATURE_FLAGS.unifiedAgent,
-    },
-    onboarding: {
-      walkthroughOpen: ONBOARDING_ENABLED && !onboardingChecklistDismissed,
-      checklistOpen: ONBOARDING_ENABLED && !onboardingChecklistDismissed,
-      steps: onboardingSteps,
-      dismissed: onboardingChecklistDismissed,
-      reopenWalkthrough,
-      markManualStepDone,
-      dismissWalkthrough,
-      resetOnboarding,
     },
     roblox: {
       connected: robloxStatus?.connected === true,

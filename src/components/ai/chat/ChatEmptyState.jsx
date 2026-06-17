@@ -67,18 +67,6 @@ export default function ChatEmptyState({ onQuickStart, onOpenTemplates }) {
           Browse template gallery
         </button>
       )}
-
-      <div className="flex flex-wrap items-center justify-center gap-2 text-[11px] font-bold uppercase tracking-[0.18em] text-gray-500">
-        <a href="/docs#pair-studio" className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 transition hover:border-white/20 hover:text-white">
-          Pair Studio
-        </a>
-        <a href="/docs#first-prompt-examples" className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 transition hover:border-white/20 hover:text-white">
-          Prompt Examples
-        </a>
-        <a href="/docs#approve-and-apply" className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 transition hover:border-white/20 hover:text-white">
-          Approval Flow
-        </a>
-      </div>
     </div>
   );
 }

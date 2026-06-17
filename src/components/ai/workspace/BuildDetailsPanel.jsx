@@ -4,6 +4,7 @@ import AgentPlanPanel from "./AgentPlanPanel";
 import SetupStepsPanel from "./SetupStepsPanel";
 import TestingStepsPanel from "./TestingStepsPanel";
 import ValidationReportPanel from "./ValidationReportPanel";
+import NativeModelReviewPanel from "./NativeModelReviewPanel";
 
 // Engineering-focused details for the active artifact: plan, setup, testing,
 // security/validation. Used in the right column's "Details" view and as the
@@ -15,10 +16,13 @@ export default function BuildDetailsPanel({
   onRestoreRun,
   approvingStepId,
   restoringRun = false,
+  notify,
 }) {
+  const hasNativeModel = Boolean(artifact?.nativeModelSpec || artifact?.nativeModel?.spec || artifact?.nativeBuild?.spec);
   const hasContent =
     artifact &&
     (artifact.plan ||
+      hasNativeModel ||
       artifact.setupSteps?.length ||
       artifact.testingSteps?.length ||
       artifact.securityNotes?.length ||
@@ -69,6 +73,7 @@ export default function BuildDetailsPanel({
         approvingStepId={approvingStepId}
         restoring={restoringRun}
       />
+      <NativeModelReviewPanel artifact={artifact} notify={notify} />
       <SetupStepsPanel steps={artifact?.setupSteps} />
       <TestingStepsPanel steps={artifact?.testingSteps} />
       <ValidationReportPanel artifact={artifact} />

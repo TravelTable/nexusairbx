@@ -2,11 +2,12 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import { auth } from "../firebase";
 import { onAuthStateChanged } from "firebase/auth";
 import { BACKEND_URL } from "../config";
+import { DEFAULT_FREE_MODEL, normalizeModelId } from "../lib/modelProviders";
 
 const SettingsContext = createContext(null);
 
 const DEFAULT_SETTINGS = {
-  modelVersion: "deepseek-free",
+  modelVersion: DEFAULT_FREE_MODEL,
   creativity: 0.7,
   codeStyle: "optimized",
   verbosity: "concise",
@@ -28,10 +29,32 @@ const DEFAULT_SETTINGS = {
   },
 };
 
+function hydrateSettings(raw) {
+  const merged = { ...DEFAULT_SETTINGS, ...raw };
+  const normalizedModel = normalizeModelId(merged.modelVersion);
+  if (normalizedModel && normalizedModel !== merged.modelVersion) {
+    merged.modelVersion = normalizedModel;
+  }
+  return merged;
+}
+
 export function SettingsProvider({ children }) {
   const [settings, setSettings] = useState(() => {
     const saved = localStorage.getItem("nexusrbx:settings");
-    return saved ? { ...DEFAULT_SETTINGS, ...JSON.parse(saved) } : DEFAULT_SETTINGS;
+    if (!saved) return DEFAULT_SETTINGS;
+    try {
+      const raw = JSON.parse(saved);
+      const hydrated = hydrateSettings(raw);
+      if (raw.modelVersion !== hydrated.modelVersion) {
+        localStorage.setItem(
+          "nexusrbx:settings",
+          JSON.stringify({ ...raw, modelVersion: hydrated.modelVersion })
+        );
+      }
+      return hydrated;
+    } catch {
+      return DEFAULT_SETTINGS;
+    }
   });
   const [user, setUser] = useState(auth.currentUser);
   const [loading, setLoading] = useState(true);
@@ -58,7 +81,7 @@ export function SettingsProvider({ children }) {
       if (res.ok) {
         const data = await res.json();
         if (data && Object.keys(data).length > 0) {
-          setSettings((prev) => ({ ...prev, ...data }));
+          setSettings((prev) => hydrateSettings({ ...prev, ...data }));
         }
       }
     } catch (e) {
@@ -69,7 +92,11 @@ export function SettingsProvider({ children }) {
   };
 
   const updateSettings = useCallback(async (newSettings) => {
-    const updated = { ...settings, ...newSettings };
+    const patch = { ...newSettings };
+    if (patch.modelVersion != null) {
+      patch.modelVersion = normalizeModelId(patch.modelVersion) || patch.modelVersion;
+    }
+    const updated = { ...settings, ...patch };
     setSettings(updated);
     localStorage.setItem("nexusrbx:settings", JSON.stringify(updated));
 

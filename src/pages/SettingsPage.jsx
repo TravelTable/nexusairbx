@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import {
   User,
   Bot,
@@ -61,7 +61,16 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { clearOnboardingState } from "../lib/onboarding";
+import {
+  DEFAULT_PRO_MODEL,
+  MODEL_ALIAS_LABELS,
+  PROVIDER_LABELS,
+  groupModelsByProvider,
+  isFreeDefaultModel,
+  normalizeModelId,
+  resolveFreeDefaultFromCatalog,
+  sortProviderEntries,
+} from "../lib/modelProviders";
 
 const StatCard = ({ title, value, icon: Icon, color }) => (
   <div className="card-surface p-5 backdrop-blur-xl hover:border-gray-700 transition-colors group">
@@ -144,6 +153,7 @@ const SettingsPage = () => {
 
   const navigate = useNavigate();
   const isPremiumPlan = entitlements.includes("pro") || entitlements.includes("team") || plan === "PRO" || plan === "TEAM";
+  const wasPremiumPlan = useRef(isPremiumPlan);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -151,44 +161,23 @@ const SettingsPage = () => {
     if (tab && TABS.some((t) => t.id === tab)) setActiveTab(tab);
   }, []);
 
-  const MODEL_PROVIDER_LABELS = {
-    openai: "OpenAI",
-    deepseek: "DeepSeek",
-    anthropic: "Anthropic",
-    google: "Google",
-    xai: "xAI",
-    meta: "Meta",
-    alibaba: "Alibaba",
-    mistral: "Mistral",
-    other: "Other",
-  };
-  const MODEL_ALIAS_LABELS = {
-    "deepseek-free": "DeepSeek Core (Free)",
-    "nexus-4": "Nexus (GPT-5.4)",
-    "nexus-3": "Nexus (Legacy)",
-  };
-
   const tierForModel = useCallback((id) => {
-    if (!id || id === "deepseek-free") return "free";
-    if (id === "nexus-4" || id === "nexus-3") return "pro";
-    const m = modelCatalog.find((x) => x.id === id);
-    return m?.tier || "pro";
+    const normalized = normalizeModelId(id);
+    const m = modelCatalog.find((x) => x.id === normalized || x.id === id);
+    if (m?.tier) return m.tier;
+    if (isFreeDefaultModel(id)) return "free";
+    return "pro";
   }, [modelCatalog]);
 
-  const groupedModels = useMemo(() => {
-    const groups = {};
-    for (const m of modelCatalog) {
-      const key = m.provider || "other";
-      (groups[key] = groups[key] || []).push(m);
-    }
-    Object.values(groups).forEach((list) =>
-      list.sort((a, b) => {
-        if (a.tier !== b.tier) return a.tier === "free" ? -1 : 1;
-        return String(a.name).localeCompare(String(b.name));
-      })
-    );
-    return groups;
-  }, [modelCatalog]);
+  const groupedModels = useMemo(
+    () => groupModelsByProvider(modelCatalog),
+    [modelCatalog]
+  );
+
+  const sortedModelProviders = useMemo(
+    () => sortProviderEntries(groupedModels),
+    [groupedModels]
+  );
 
   const fetchUsage = useCallback(async () => {
     if (!user) return;
@@ -281,12 +270,25 @@ const SettingsPage = () => {
   }, [activeTab, fetchDevData, fetchUsage, fetchTeams, fetchRoblox, isAdmin]);
 
   useEffect(() => {
-    // Free/anon users can never keep a pro-tier model selected.
     if (modelCatalog.length === 0) return;
+
+    // Free/anon users can never keep a pro-tier model selected.
     if (!isPremiumPlan && tierForModel(settings.modelVersion) === "pro") {
-      const freeDefault = modelCatalog.find((m) => m.tier === "free")?.id || "deepseek/deepseek-v3.2";
-      updateSettings({ modelVersion: freeDefault });
+      updateSettings({ modelVersion: resolveFreeDefaultFromCatalog(modelCatalog) });
+      return;
     }
+
+    // On upgrade to Pro/Team, move off the free default to the premium flagship model.
+    if (isPremiumPlan && !wasPremiumPlan.current && isFreeDefaultModel(settings.modelVersion)) {
+      updateSettings({ modelVersion: DEFAULT_PRO_MODEL });
+    }
+
+    // Legacy alias still stored server-side before migration runs.
+    if (isPremiumPlan && settings.modelVersion === "deepseek-free") {
+      updateSettings({ modelVersion: DEFAULT_PRO_MODEL });
+    }
+
+    wasPremiumPlan.current = isPremiumPlan;
   }, [isPremiumPlan, settings.modelVersion, modelCatalog, tierForModel, updateSettings]);
 
   const fetchInspectorData = async (uid) => {
@@ -458,8 +460,8 @@ const SettingsPage = () => {
                 </div>
                 <p className="text-gray-400 mb-6">
                   {plan === "FREE" 
-                    ? "Free plan uses DeepSeek Core by default. Upgrade to Pro for premium models (GPT-5.2, Claude, Gemini), 500,000 monthly tokens, and advanced AI features."
-                    : `Your Pro subscription includes Nexus-5 (GPT-5.2) and a 500,000 token monthly allowance. Resets on ${resetsAt ? new Date(resetsAt).toLocaleDateString() : "N/A"}`}
+                    ? "Free plan uses DeepSeek V3.2 by default. Upgrade to Pro for premium models (GPT-5.4, Claude, Gemini), 500,000 monthly tokens, and advanced AI features."
+                    : `Your Pro subscription includes Nexus (GPT-5.4) and a 500,000 token monthly allowance. Resets on ${resetsAt ? new Date(resetsAt).toLocaleDateString() : "N/A"}`}
                 </p>
                 
                 <div className="flex flex-wrap gap-4">
@@ -613,8 +615,8 @@ const SettingsPage = () => {
                         {MODEL_ALIAS_LABELS[settings.modelVersion] || settings.modelVersion}
                       </option>
                     )}
-                    {Object.entries(groupedModels).map(([provider, list]) => (
-                      <optgroup key={provider} label={MODEL_PROVIDER_LABELS[provider] || provider}>
+                    {sortedModelProviders.map(([provider, list]) => (
+                      <optgroup key={provider} label={PROVIDER_LABELS[provider] || provider}>
                         {list.map((m) => (
                           <option key={m.id} value={m.id} disabled={!isPremiumPlan && m.tier === "pro"}>
                             {m.name}
@@ -1136,31 +1138,6 @@ const SettingsPage = () => {
       case "help":
         return (
           <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <div className="card-surface p-8 backdrop-blur-xl">
-              <h3 className="text-xl font-bold text-white mb-2 flex items-center gap-2">
-                <Shield className="w-6 h-6 text-[#00f5d4]" />
-                Workspace Walkthrough
-              </h3>
-              <p className="text-gray-400 mb-8">Replay the Studio workflow walkthrough for plugin install, pairing, Manual Review, approval, and Studio verification.</p>
-              
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <button 
-                  onClick={() => {
-                    clearOnboardingState();
-                    setSuccessMsg("Workspace Walkthrough reset. Visit the AI workspace to replay it.");
-                    setTimeout(() => setSuccessMsg(""), 5000);
-                  }}
-                  className="p-6 rounded-2xl bg-black border border-gray-800 hover:border-[#9b5de5] transition-all text-left group"
-                >
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="font-bold text-white group-hover:text-[#9b5de5] transition-colors">Replay Workspace Walkthrough</span>
-                    <History className="w-5 h-5 text-gray-600 group-hover:text-[#9b5de5]" />
-                  </div>
-                  <p className="text-xs text-gray-500">Reset the single first-run workflow panel in the AI workspace.</p>
-                </button>
-              </div>
-            </div>
-
             <div className="card-surface p-8 backdrop-blur-xl">
               <h3 className="text-xl font-bold text-white mb-2 flex items-center gap-2">
                 <MessageCircle className="w-6 h-6 text-purple-400" />

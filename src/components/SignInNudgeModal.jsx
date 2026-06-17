@@ -80,13 +80,13 @@ export default function SignInNudgeModal({ isOpen, onClose }) {
 
             <div className="flex flex-col gap-3">
               <button
-                onClick={() => navigate("/signup", { state: { from: aiFrom, onboardingSource: "signin_nudge" } })}
+                onClick={() => navigate("/signup", { state: { from: aiFrom } })}
                 className="w-full py-4 rounded-2xl bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-white font-bold text-lg shadow-[0_0_20px_rgba(155,93,229,0.3)] hover:shadow-[0_0_30px_rgba(155,93,229,0.5)] transition-all active:scale-[0.98]"
               >
                 Sign Up
               </button>
               <button
-                onClick={() => navigate("/signin", { state: { from: aiFrom, onboardingSource: "signin_nudge" } })}
+                onClick={() => navigate("/signin", { state: { from: aiFrom } })}
                 className="w-full py-3 rounded-2xl border border-white/10 text-gray-300 hover:text-white hover:border-white/20 text-sm font-medium transition-colors"
               >
                 Already have an account? Sign In

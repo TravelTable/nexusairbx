@@ -59,6 +59,24 @@ export async function getStudioCommand(commandId) {
   return readJsonOrThrow(res, "Failed to load Studio command");
 }
 
+export async function validateNativeModelSpec({ spec }) {
+  const res = await authedFetch("/api/studio/native-model/validate", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ spec }),
+  });
+  return readJsonOrThrow(res, "Failed to validate native model");
+}
+
+export async function buildNativeModelInStudio({ spec, sessionId = null, applyMode = "manual_review" }) {
+  const res = await authedFetch("/api/studio/native-model/build", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ spec, sessionId, applyMode }),
+  });
+  return readJsonOrThrow(res, "Failed to queue native model build");
+}
+
 export async function getStudioTools() {
   const res = await authedFetch("/api/studio/tools", { method: "GET", noCache: true });
   return readJsonOrThrow(res, "Failed to load Studio tools");

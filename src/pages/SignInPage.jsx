@@ -68,14 +68,9 @@ export default function NexusRBXSignInPageContainer() {
   const location = useLocation();
   const from = location.state?.from?.pathname || "/";
   const telemetryRef = useRef(null);
-  const onboardingSource = location.state?.onboardingSource || null;
-  const shouldForceOnboarding = onboardingSource === "signin_nudge";
-  const shouldRedirectToAi = shouldForceOnboarding || from === "/ai";
+  const shouldRedirectToAi = from === "/ai";
   const signUpLinkState = shouldRedirectToAi
-    ? {
-      from: location.state?.from || { pathname: "/ai" },
-      onboardingSource: onboardingSource || "signin_nudge",
-    }
+    ? { from: location.state?.from || { pathname: "/ai" } }
     : undefined;
 
   const [formData, setFormData] = useState({
@@ -104,14 +99,13 @@ export default function NexusRBXSignInPageContainer() {
       surface: "signin_page",
       metadata: {
         from,
-        onboardingSource: onboardingSource || undefined,
       },
     });
     return () => {
       telemetryRef.current?.destroy?.();
       telemetryRef.current = null;
     };
-  }, [from, onboardingSource]);
+  }, [from]);
 
   const trackAuthEvent = (event, metadata = {}) => {
     telemetryRef.current?.track({
@@ -119,7 +113,6 @@ export default function NexusRBXSignInPageContainer() {
       surface: "signin_page",
       metadata: {
         from,
-        onboardingSource: onboardingSource || undefined,
         ...metadata,
       },
     });
@@ -131,15 +124,7 @@ export default function NexusRBXSignInPageContainer() {
     });
     await telemetryRef.current?.flush?.();
     if (shouldRedirectToAi) {
-      navigate("/ai", {
-        replace: true,
-        state: shouldForceOnboarding
-          ? {
-            forceOnboarding: true,
-            onboardingSource: onboardingSource || "signin_nudge",
-          }
-          : undefined,
-      });
+      navigate("/ai", { replace: true });
       return;
     }
     navigate(from, { replace: true });
@@ -332,8 +317,8 @@ function NexusRBXSignInPage({
     },
     {
       id: 3,
-      title: "Nexus-5 Neural Core",
-      description: "Powered by GPT-5.2, fine-tuned for Parallel Luau and Actor patterns. Mastery of complex CFrame math.",
+      title: "Nexus Neural Core",
+      description: "Powered by GPT-5.4, fine-tuned for Parallel Luau and Actor patterns. Mastery of complex CFrame math.",
       icon: Cpu,
       position: "bottom-[25%] left-[8%]",
       delay: 0.6,

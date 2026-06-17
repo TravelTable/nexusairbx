@@ -68,11 +68,8 @@ export default function NexusRBXSignUpPageContainer() {
   const location = useLocation();
   const from = location.state?.from?.pathname || "/";
   const telemetryRef = useRef(null);
-  const signInLinkState = location.state?.onboardingSource
-    ? {
-      from: location.state?.from || { pathname: "/ai" },
-      onboardingSource: location.state.onboardingSource,
-    }
+  const signInLinkState = from === "/ai"
+    ? { from: location.state?.from || { pathname: "/ai" } }
     : undefined;
   const [formData, setFormData] = useState({
     name: "",
@@ -107,14 +104,13 @@ export default function NexusRBXSignUpPageContainer() {
       surface: "signup_page",
       metadata: {
         from,
-        onboardingSource: location.state?.onboardingSource || "signup",
       },
     });
     return () => {
       telemetryRef.current?.destroy?.();
       telemetryRef.current = null;
     };
-  }, [from, location.state?.onboardingSource]);
+  }, [from]);
 
   const trackAuthEvent = (event, metadata = {}) => {
     telemetryRef.current?.track({
@@ -122,22 +118,15 @@ export default function NexusRBXSignUpPageContainer() {
       surface: "signup_page",
       metadata: {
         from,
-        onboardingSource: location.state?.onboardingSource || "signup",
         ...metadata,
       },
     });
   };
 
-  const redirectToAiOnboarding = async (source = "signup") => {
-    trackAuthEvent("signup_redirect_ai", { source });
+  const redirectToAi = async () => {
+    trackAuthEvent("signup_redirect_ai");
     await telemetryRef.current?.flush?.();
-    navigate("/ai", {
-      replace: true,
-      state: {
-        forceOnboarding: true,
-        onboardingSource: source,
-      },
-    });
+    navigate("/ai", { replace: true });
   };
 
   const handleInputChange = (e) => {
@@ -242,7 +231,7 @@ export default function NexusRBXSignUpPageContainer() {
         selectedPlan,
       });
       setTimeout(() => {
-        void redirectToAiOnboarding("signup");
+        void redirectToAi();
       }, 800);
     } catch (error) {
       setFormStatus({
@@ -275,7 +264,7 @@ export default function NexusRBXSignUpPageContainer() {
         selectedPlan,
       });
       setTimeout(() => {
-        void redirectToAiOnboarding("signup");
+        void redirectToAi();
       }, 800);
     } catch (error) {
       setFormStatus({
@@ -308,7 +297,7 @@ export default function NexusRBXSignUpPageContainer() {
         selectedPlan,
       });
       setTimeout(() => {
-        void redirectToAiOnboarding("signup");
+        void redirectToAi();
       }, 800);
     } catch (error) {
       setFormStatus({
@@ -634,7 +623,7 @@ function NexusRBXSignUpPage({
                     <PlanCard 
                       title="Pro" 
                       price="$14.99" 
-                      desc="500k tokens/mo • Nexus-5 (GPT-5.2) • Premium Models" 
+                      desc="500k tokens/mo • Nexus (GPT-5.4) • Premium Models" 
                       icon={Zap} 
                       popular 
                       selected={selectedPlan === "pro"} 
