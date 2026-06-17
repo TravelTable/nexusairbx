@@ -459,6 +459,108 @@ export async function applyProjectAssetIds({ token, projectId, boardState, files
   return handleResponse(res);
 }
 
+export async function searchAssetCatalog({
+  token,
+  projectId,
+  query = "",
+  spec,
+  styleProfileId,
+  organizationId,
+  includeShared = true,
+  includeSystem = true,
+  limit = 24,
+}) {
+  const params = new URLSearchParams();
+  if (projectId) params.set("projectId", projectId);
+  if (query) params.set("q", query);
+  if (spec) params.set("spec", JSON.stringify(spec));
+  if (styleProfileId) params.set("styleProfileId", styleProfileId);
+  if (organizationId) params.set("organizationId", organizationId);
+  params.set("includeShared", String(includeShared));
+  params.set("includeSystem", String(includeSystem));
+  params.set("limit", String(limit));
+  const res = await fetch(`${BACKEND_URL}/api/ui-builder/asset-catalog/search?${params.toString()}`, {
+    headers: authHeaders(token),
+  });
+  return handleResponse(res);
+}
+
+export async function attachReusableProjectAsset({
+  token,
+  projectId,
+  masterAssetId,
+  logicalAssetId,
+  intendedComponent,
+  organizationId,
+  expectedProjectRevision,
+}) {
+  const res = await fetch(
+    `${BACKEND_URL}/api/ui-builder/projects/${encodeURIComponent(projectId)}/assets/attach-reusable`,
+    {
+      method: "POST",
+      headers: authHeaders(token),
+      body: JSON.stringify({ masterAssetId, logicalAssetId, intendedComponent, organizationId, expectedProjectRevision }),
+    }
+  );
+  return handleResponse(res);
+}
+
+export async function requestAssetCatalogPromotion({
+  token,
+  masterAssetId,
+  targetVisibility = "shared_catalog",
+  licenseClass = "original",
+  provenance = {},
+  safeForSharedReuse = false,
+  organizationId,
+}) {
+  const res = await fetch(`${BACKEND_URL}/api/ui-builder/asset-catalog/promotions`, {
+    method: "POST",
+    headers: authHeaders(token),
+    body: JSON.stringify({ masterAssetId, targetVisibility, licenseClass, provenance, safeForSharedReuse, organizationId }),
+  });
+  return handleResponse(res);
+}
+
+export async function listAssetCatalogPromotions({ token, status = "", limit = 50 } = {}) {
+  const params = new URLSearchParams();
+  if (status) params.set("status", status);
+  params.set("limit", String(limit));
+  const res = await fetch(`${BACKEND_URL}/api/ui-builder/asset-catalog/promotions?${params.toString()}`, {
+    headers: authHeaders(token),
+  });
+  return handleResponse(res);
+}
+
+export async function reviewAssetCatalogPromotion({ token, promotionId, decision, reviewerNote = "" }) {
+  const res = await fetch(
+    `${BACKEND_URL}/api/ui-builder/asset-catalog/promotions/${encodeURIComponent(promotionId)}/review`,
+    {
+      method: "POST",
+      headers: authHeaders(token),
+      body: JSON.stringify({ decision, reviewerNote }),
+    }
+  );
+  return handleResponse(res);
+}
+
+export async function getAssetUsageSummary({ token, masterAssetId, limit = 100 } = {}) {
+  const params = new URLSearchParams();
+  if (masterAssetId) params.set("masterAssetId", masterAssetId);
+  params.set("limit", String(limit));
+  const res = await fetch(`${BACKEND_URL}/api/ui-builder/asset-catalog/usage?${params.toString()}`, {
+    headers: authHeaders(token),
+  });
+  return handleResponse(res);
+}
+
+export async function listCuratedSystemPacks({ token }) {
+  const res = await fetch(`${BACKEND_URL}/api/ui-builder/asset-catalog/system-packs`, {
+    headers: authHeaders(token),
+  });
+  return handleResponse(res);
+}
+
 /** Re-plan + re-art a single component ("make the quest panel darker"). */
 export async function aiRegenerateComponent({ token, componentId, boardState, instruction, projectId, regenerateAsset, assetSpec }) {
   const res = await fetch(
