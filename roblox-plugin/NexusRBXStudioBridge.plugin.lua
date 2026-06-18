@@ -2,9 +2,10 @@
 -- Local Studio plugin: website-controlled apply + agent tool runner.
 
 local BACKEND_URL = "https://nexusrbx-backend-production.up.railway.app"
-local PLUGIN_VERSION = "0.5.0-native-models"
+local PLUGIN_VERSION = "0.6.0-uploaded-model-insertion"
 
 local HttpService = game:GetService("HttpService")
+local AssetService = game:GetService("AssetService")
 local ChangeHistoryService = game:GetService("ChangeHistoryService")
 local CollectionService = game:GetService("CollectionService")
 local ScriptEditorService = game:GetService("ScriptEditorService")
@@ -137,6 +138,16 @@ local NATIVE_ALLOWED_ROOTS = {
 	Workspace = Workspace,
 	ReplicatedStorage = ReplicatedStorage,
 	ServerStorage = ServerStorage,
+}
+
+local UPLOADED_MODEL_ALLOWED_ROOTS = NATIVE_ALLOWED_ROOTS
+
+local UPLOADED_MODEL_LIMITS = {
+	maxDescendants = 10000,
+	maxTreeDepth = 64,
+	maxMeshParts = 500,
+	maxBaseParts = 1000,
+	maxConstraints = 500,
 }
 
 local NATIVE_CLASSES = {
@@ -3250,6 +3261,393 @@ local function applyNativeModelPatch(payload, command)
 	}
 end
 
+local function currentExperienceCreator()
+	local creatorId = ""
+	local creatorType = "user"
+	pcall(function()
+		creatorId = tostring(game.CreatorId)
+	end)
+	pcall(function()
+		local text = tostring(game.CreatorType)
+		if string.find(string.lower(text), "group") then
+			creatorType = "group"
+		end
+	end)
+	if creatorId == "" or creatorId == "0" then
+		return nil
+	end
+	return { type = creatorType, id = creatorId }
+end
+
+local function creatorMatches(a, b)
+	return type(a) == "table"
+		and type(b) == "table"
+		and string.lower(tostring(a.type or "")) == string.lower(tostring(b.type or ""))
+		and tostring(a.id or "") == tostring(b.id or "")
+end
+
+local function uploadedModelError(code, message)
+	return {
+		ok = false,
+		success = false,
+		type = "insert_uploaded_roblox_model",
+		code = code,
+		error = { code = code, message = tostring(message or code), retryable = false },
+		warnings = {},
+	}
+end
+
+local function isUploadedBehaviourClass(inst)
+	return inst:IsA("Tool")
+		or inst.ClassName == "HopperBin"
+		or inst:IsA("ProximityPrompt")
+		or inst:IsA("ClickDetector")
+		or inst.ClassName == "TouchTransmitter"
+		or inst:IsA("Humanoid")
+		or inst:IsA("AnimationController")
+		or inst:IsA("Animator")
+		or inst:IsA("Sound")
+		or inst.ClassName == "PackageLink"
+end
+
+local function isUploadedConstraint(inst)
+	return inst:IsA("Constraint") or inst:IsA("JointInstance")
+end
+
+local function isUploadedExecutableOrNetwork(inst)
+	return inst:IsA("LuaSourceContainer")
+		or inst:IsA("RemoteEvent")
+		or inst:IsA("RemoteFunction")
+		or inst.ClassName == "UnreliableRemoteEvent"
+		or inst:IsA("BindableEvent")
+		or inst:IsA("BindableFunction")
+end
+
+local function uploadedFiniteVector3(v)
+	return v.X == v.X and v.Y == v.Y and v.Z == v.Z
+		and math.abs(v.X) < 1000000 and math.abs(v.Y) < 1000000 and math.abs(v.Z) < 1000000
+end
+
+local function uploadedFindIdempotent(idempotencyKey)
+	if tostring(idempotencyKey or "") == "" then
+		return nil
+	end
+	for _, rootInst in pairs(UPLOADED_MODEL_ALLOWED_ROOTS) do
+		for _, inst in ipairs(rootInst:GetDescendants()) do
+			if inst:IsA("Model") and inst:GetAttribute("NexusIdempotencyKey") == idempotencyKey then
+				return inst
+			end
+		end
+	end
+	return nil
+end
+
+local function uploadedEnsureTargetParent(path)
+	local parts = splitPath(path)
+	local rootInst = UPLOADED_MODEL_ALLOWED_ROOTS[parts[1]]
+	if not rootInst then
+		error("INVALID_TARGET_PATH")
+	end
+	local current = rootInst
+	local created = {}
+	for i = 2, #parts do
+		local name = parts[i]
+		if not isSafeNativeName(name) then
+			error("INVALID_TARGET_PATH")
+		end
+		local child = current:FindFirstChild(name)
+		if not child then
+			child = Instance.new("Folder")
+			child.Name = name
+			child.Parent = current
+			table.insert(created, child)
+		elseif not child:IsA("Folder") and not child:IsA("Model") then
+			error("INVALID_TARGET_PATH")
+		end
+		current = child
+	end
+	return current, created
+end
+
+local function uploadedUniqueName(parent, baseName)
+	local clean = tostring(baseName or ""):gsub("[%c]", ""):gsub("%s+", " "):match("^%s*(.-)%s*$")
+	if clean == "" then
+		clean = "RobloxModel"
+	end
+	clean = string.sub(clean, 1, 100)
+	if not parent:FindFirstChild(clean) then
+		return clean
+	end
+	local index = 2
+	while parent:FindFirstChild(("%s (%d)"):format(clean, index)) do
+		index = index + 1
+	end
+	return ("%s (%d)"):format(clean, index)
+end
+
+local function uploadedCleanName(name, fallback)
+	local clean = tostring(name or fallback or "RobloxModel"):gsub("[%c]", ""):gsub("%s+", " "):match("^%s*(.-)%s*$")
+	if clean == "" then
+		clean = fallback or "RobloxModel"
+	end
+	return string.sub(clean, 1, 100)
+end
+
+local function uploadedScanAndSanitize(root)
+	local warnings = {}
+	local removed = { scripts = 0, remotes = 0, bindables = 0 }
+	local flagged = 0
+	for _, inst in ipairs(root:GetDescendants()) do
+		if isUploadedBehaviourClass(inst) then
+			flagged = flagged + 1
+			table.insert(warnings, {
+				code = "BEHAVIOURAL_OBJECT_FLAGGED",
+				className = inst.ClassName,
+				name = string.sub(inst.Name, 1, 100),
+			})
+		end
+	end
+	for _, inst in ipairs(root:GetDescendants()) do
+		if isUploadedExecutableOrNetwork(inst) then
+			if inst:IsA("LuaSourceContainer") then
+				removed.scripts = removed.scripts + 1
+			elseif inst:IsA("RemoteEvent") or inst:IsA("RemoteFunction") or inst.ClassName == "UnreliableRemoteEvent" then
+				removed.remotes = removed.remotes + 1
+			else
+				removed.bindables = removed.bindables + 1
+			end
+			inst:Destroy()
+		end
+	end
+	return warnings, removed, flagged
+end
+
+local function uploadedValidateHierarchy(root)
+	local counts = {
+		totalDescendants = 0,
+		models = root:IsA("Model") and 1 or 0,
+		meshParts = root:IsA("MeshPart") and 1 or 0,
+		baseParts = root:IsA("BasePart") and 1 or 0,
+		attachments = root:IsA("Attachment") and 1 or 0,
+		constraints = isUploadedConstraint(root) and 1 or 0,
+	}
+	local maxDepth = 0
+	local function visit(inst, depth)
+		maxDepth = math.max(maxDepth, depth)
+		if depth > UPLOADED_MODEL_LIMITS.maxTreeDepth then
+			error("ASSET_TREE_TOO_DEEP")
+		end
+		for _, child in ipairs(inst:GetChildren()) do
+			counts.totalDescendants = counts.totalDescendants + 1
+			if counts.totalDescendants > UPLOADED_MODEL_LIMITS.maxDescendants then
+				error("ASSET_TREE_TOO_LARGE")
+			end
+			if child:IsA("Model") then counts.models = counts.models + 1 end
+			if child:IsA("MeshPart") then counts.meshParts = counts.meshParts + 1 end
+			if child:IsA("BasePart") then counts.baseParts = counts.baseParts + 1 end
+			if child:IsA("Attachment") then counts.attachments = counts.attachments + 1 end
+			if isUploadedConstraint(child) then counts.constraints = counts.constraints + 1 end
+			if isUploadedExecutableOrNetwork(child) then
+				error("SANITIZATION_FAILED")
+			end
+			if child:IsA("BasePart") then
+				if not uploadedFiniteVector3(child.Position) or not uploadedFiniteVector3(child.Size) then
+					error("UNEXPECTED_ASSET_STRUCTURE")
+				end
+			end
+			visit(child, depth + 1)
+		end
+	end
+	visit(root, 1)
+	if counts.meshParts > UPLOADED_MODEL_LIMITS.maxMeshParts or counts.baseParts > UPLOADED_MODEL_LIMITS.maxBaseParts or counts.constraints > UPLOADED_MODEL_LIMITS.maxConstraints then
+		error("ASSET_TREE_TOO_LARGE")
+	end
+	if counts.baseParts < 1 then
+		error("NO_USABLE_VISUAL_CONTENT")
+	end
+	counts.maxDepth = maxDepth
+	return counts
+end
+
+local function uploadedNormalizeRoot(loaded, requestedName)
+	if loaded:IsA("Model") then
+		return loaded
+	end
+	local model = Instance.new("Model")
+	model.Name = requestedName
+	if loaded:IsA("BasePart") then
+		loaded.Parent = model
+		model.PrimaryPart = loaded
+		return model
+	end
+	for _, child in ipairs(loaded:GetChildren()) do
+		child.Parent = model
+	end
+	loaded:Destroy()
+	return model
+end
+
+local function applyUploadedModelPolicies(root, anchoringMode, collisionMode)
+	local changes = { partsAnchored = 0, collisionsChanged = 0 }
+	for _, inst in ipairs(root:GetDescendants()) do
+		if inst:IsA("BasePart") then
+			if anchoringMode == "anchor_all" and inst.Anchored ~= true then
+				inst.Anchored = true
+				changes.partsAnchored = changes.partsAnchored + 1
+			end
+			if collisionMode == "disable" then
+				if inst.CanCollide ~= false then changes.collisionsChanged = changes.collisionsChanged + 1 end
+				inst.CanCollide = false
+				inst.CanTouch = false
+			elseif collisionMode == "visual_default" then
+				if inst.CanTouch ~= false then changes.collisionsChanged = changes.collisionsChanged + 1 end
+				inst.CanTouch = false
+			end
+		end
+	end
+	return changes
+end
+
+local function attachUploadedModelMetadata(root, payload, command)
+	root:SetAttribute("NexusManaged", true)
+	root:SetAttribute("NexusImportType", "uploaded_roblox_model")
+	root:SetAttribute("NexusInsertionId", tostring(payload.insertionId or ""))
+	root:SetAttribute("NexusUploadId", tostring(payload.uploadId or ""))
+	root:SetAttribute("NexusRobloxAssetId", tostring(payload.robloxAssetId or ""))
+	root:SetAttribute("NexusSourceSha256Prefix", string.sub(tostring(payload.expectedSourceSha256 or ""), 1, 12))
+	root:SetAttribute("NexusValidationRulesVersion", tostring((payload.validationSummary or {}).rulesVersion or ""))
+	root:SetAttribute("NexusCommandId", command and tostring(command.id or "") or "")
+	root:SetAttribute("NexusIdempotencyKey", tostring(payload.idempotencyKey or ""))
+end
+
+local function insertUploadedRobloxModel(payload, command)
+	if tonumber(payload.schemaVersion or 0) ~= 1 then
+		return uploadedModelError("INVALID_SPEC", "Invalid uploaded model insertion schema")
+	end
+	local assetId = tonumber(payload.robloxAssetId)
+	if not assetId or assetId <= 0 then
+		return uploadedModelError("ASSET_ID_MISSING", "Invalid Roblox asset id")
+	end
+	if tostring(payload.expectedAssetType or "") ~= "Model" then
+		return uploadedModelError("ASSET_TYPE_MISMATCH", "Expected a Roblox Model asset")
+	end
+	local experienceCreator = currentExperienceCreator()
+	if not experienceCreator then
+		return uploadedModelError("EXPERIENCE_CREATOR_UNKNOWN", "The open experience creator could not be verified")
+	end
+	if not creatorMatches(experienceCreator, payload.expectedCreator) then
+		return uploadedModelError("ASSET_CREATOR_MISMATCH", "The asset creator does not match the open experience creator")
+	end
+	local idempotencyKey = tostring(payload.idempotencyKey or "")
+	local existing = uploadedFindIdempotent(idempotencyKey)
+	if existing then
+		return {
+			ok = true,
+			success = true,
+			type = "insert_uploaded_roblox_model",
+			code = "COMMAND_ALREADY_APPLIED",
+			insertionId = tostring(payload.insertionId or ""),
+			commandId = command and tostring(command.id or "") or "",
+			uploadId = tostring(payload.uploadId or ""),
+			robloxAssetId = tostring(payload.robloxAssetId or ""),
+			insertedName = existing.Name,
+			insertedRootPath = fullPath(existing),
+			insertedRootClass = existing.ClassName,
+			scan = { totalDescendants = #existing:GetDescendants(), models = 1, meshParts = 0, baseParts = 0, attachments = 0, constraints = 0, scriptsRemoved = 0, remotesRemoved = 0, bindablesRemoved = 0, behaviouralObjectsFlagged = 0 },
+			changes = { partsAnchored = 0, collisionsChanged = 0 },
+			placement = payload.placement or { mode = "camera_focus" },
+			validationComparison = { expectedMeshes = (payload.validationSummary or {}).meshes or 0, loadedMeshParts = 0, substantialDifference = false },
+			warnings = { "Command already applied; existing model returned." },
+			history = { recorded = true },
+		}
+	end
+
+	local loaded = nil
+	local rootModel = nil
+	local createdTargets = {}
+	local warnings = {}
+	local removed = { scripts = 0, remotes = 0, bindables = 0 }
+	local flagged = 0
+	local counts = nil
+	local changes = nil
+	local insertOk, insertErr = pcall(function()
+		local ok, result = pcall(function()
+			return AssetService:LoadAssetAsync(assetId)
+		end)
+		if not ok or not result then
+			error("ASSET_LOAD_FAILED")
+		end
+		loaded = result
+		if loaded.Parent ~= nil then
+			error("UNEXPECTED_ASSET_STRUCTURE")
+		end
+		rootModel = uploadedNormalizeRoot(loaded, uploadedCleanName(payload.requestedName or ("RobloxModel_" .. tostring(assetId)), "RobloxModel"))
+		local sanitizeWarnings
+		sanitizeWarnings, removed, flagged = uploadedScanAndSanitize(rootModel)
+		for _, warning in ipairs(sanitizeWarnings) do
+			table.insert(warnings, warning)
+		end
+		counts = uploadedValidateHierarchy(rootModel)
+		local expectedMeshes = tonumber((payload.validationSummary or {}).meshes or 0) or 0
+		if expectedMeshes > 0 and math.abs(counts.meshParts - expectedMeshes) > math.max(2, expectedMeshes) then
+			table.insert(warnings, { code = "MESH_COUNT_DIFFERENCE", expected = expectedMeshes, actual = counts.meshParts })
+		end
+		local targetParent
+		targetParent, createdTargets = uploadedEnsureTargetParent(payload.targetParentPath or "Workspace/NexusImports")
+		rootModel.Name = uploadedUniqueName(targetParent, payload.requestedName or ("RobloxModel_" .. tostring(assetId)))
+		changes = applyUploadedModelPolicies(rootModel, tostring(payload.anchoringMode or "anchor_all"), tostring(payload.collisionMode or "visual_default"))
+		attachUploadedModelMetadata(rootModel, payload, command)
+		rootModel.Parent = targetParent
+		rootModel:PivotTo(placementCFrame({
+			placement = payload.placement or { mode = "camera_focus" },
+		}))
+	end)
+	if not insertOk then
+		if rootModel then rootModel:Destroy() end
+		if loaded and loaded.Parent == nil then loaded:Destroy() end
+		cleanupCreatedTargets(createdTargets)
+		local code = tostring(insertErr)
+		code = string.match(code, "([A-Z_]+)$") or "ASSET_LOAD_FAILED"
+		return uploadedModelError(code, code)
+	end
+
+	return {
+		ok = true,
+		success = true,
+		type = "insert_uploaded_roblox_model",
+		insertionId = tostring(payload.insertionId or ""),
+		commandId = command and tostring(command.id or "") or "",
+		uploadId = tostring(payload.uploadId or ""),
+		robloxAssetId = tostring(payload.robloxAssetId or ""),
+		insertedName = rootModel.Name,
+		insertedRootPath = fullPath(rootModel),
+		insertedRootClass = rootModel.ClassName,
+		assetCreator = payload.expectedCreator,
+		experienceCreator = experienceCreator,
+		scan = {
+			totalDescendants = counts.totalDescendants,
+			models = counts.models,
+			meshParts = counts.meshParts,
+			baseParts = counts.baseParts,
+			attachments = counts.attachments,
+			constraints = counts.constraints,
+			scriptsRemoved = removed.scripts,
+			remotesRemoved = removed.remotes,
+			bindablesRemoved = removed.bindables,
+			behaviouralObjectsFlagged = flagged,
+		},
+		changes = changes,
+		placement = payload.placement or { mode = "camera_focus" },
+		validationComparison = {
+			expectedMeshes = tonumber((payload.validationSummary or {}).meshes or 0) or 0,
+			loadedMeshParts = counts.meshParts,
+			substantialDifference = false,
+		},
+		warnings = warnings,
+		history = { recorded = true },
+	}
+end
+
 local TOOL_HANDLERS = {
 	apply_artifact = applyArtifact,
 	get_project_manifest = inspectPlace,
@@ -3272,6 +3670,7 @@ local TOOL_HANDLERS = {
 	build_native_model = buildNativeModel,
 	inspect_native_model = inspectNativeModel,
 	apply_native_model_patch = applyNativeModelPatch,
+	insert_uploaded_roblox_model = insertUploadedRobloxModel,
 	create_script = createScript,
 	write_script = writeScript,
 	patch_script = patchScript,
@@ -3519,6 +3918,8 @@ pairButton.MouseButton1Click:Connect(function()
 		studio = {
 			placeName = game.Name,
 			placeId = tostring(game.PlaceId),
+			universeId = tostring(game.GameId),
+			experienceCreator = currentExperienceCreator(),
 			pluginVersion = PLUGIN_VERSION,
 		},
 	}, nil)

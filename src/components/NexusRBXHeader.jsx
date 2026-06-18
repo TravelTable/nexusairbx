@@ -13,7 +13,8 @@ import {
   Zap,
   Layout,
   Code,
-  ShieldCheck
+  ShieldCheck,
+  Box
 } from "lucide-react";
 import TokensCounterContainer from "./TokensCounterContainer";
 import { useLocation } from "react-router-dom";
@@ -72,6 +73,13 @@ function NexusRBXHeader({
       description: "Browse professional game icons",
       icon: Layout,
       href: "/icons-market",
+      premium: false
+    },
+    {
+      name: "Model Validator",
+      description: "Private GLB compatibility reports",
+      icon: Box,
+      href: "/tools/model-validation",
       premium: false
     },
     {

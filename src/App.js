@@ -37,6 +37,7 @@ const NexusRBXSettingsPageContainer = lazy(() => import("./pages/SettingsPage"))
 const NexusRBXIconGeneratorPage = lazy(() => import("./pages/IconGeneratorPage"));
 const NexusRBXIconsMarketPage = lazy(() => import("./pages/IconsMarketPage"));
 const NexusRBXIconDetailPage = lazy(() => import("./pages/IconDetailPage"));
+const NexusRBXModelValidationPage = lazy(() => import("./pages/ModelValidationPage"));
 const NexusRBXNotFoundPage = lazy(() => import("./pages/NotFoundPage"));
 const ScriptShareModalWrapper = lazy(() => import("./components/ScriptShareModalWrapper"));
 const DebugEntitlementsPage = lazy(() => import("./pages/DebugEntitlementsPage"));
@@ -65,6 +66,7 @@ function App() {
           <Route path="/signup" element={<NexusRBXSignUpPageContainer />} />
           <Route path="/terms" element={<NexusRBXTermsPageContainer />} />
           <Route path="/tools/icon-generator" element={<NexusRBXIconGeneratorPage />} />
+          <Route path="/tools/model-validation" element={<NexusRBXModelValidationPage />} />
           <Route path="/icons-market" element={<NexusRBXIconsMarketPage />} />
           <Route path="/icons/:id" element={<NexusRBXIconDetailPage />} />
           <Route path="/script/:id" element={<ScriptShareModalWrapper />} />

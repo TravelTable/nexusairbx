@@ -1,6 +1,6 @@
 # Studio Tool Protocol
 
-Protocol version: `2026-06-18`
+Protocol version: `2026-06-18-phase8`
 
 The backend validates every Studio command in `backend/src/lib/studioToolProtocol.js` before it is queued. The plugin acknowledges each command with a structured result containing:
 
@@ -27,6 +27,7 @@ The backend validates every Studio command in `backend/src/lib/studioToolProtoco
 - Script tools: `create_script`, `write_script`, `patch_script`, `rename_script`, `move_script`, `duplicate_script`, `delete_script`, `replace_in_files`.
 - Instance tools: `create_instance`, `update_properties`, `update_attributes`, `update_tags`, `rename_instance`, `move_instance`, `duplicate_instance`, `delete_instance`.
 - Native model tools: `build_native_model` constructs one validated editable Roblox-native model from a declarative `NativeModelSpec`; `inspect_native_model` and `apply_native_model_patch` support transactional refinement of managed native models.
+- Uploaded model tools: `insert_uploaded_roblox_model` inserts one Phase 7 Roblox Model upload after backend ownership, moderation, access, creator, destination, and validation provenance checks.
 - Coordination: `batch_operations` runs deterministic sub-operations and rolls back snapshots when `atomic` is true.
 
 Writes should include `expectedSourceHash` when the caller previously read a script. The plugin rejects stale writes with `code: "source_conflict"`.
@@ -83,6 +84,82 @@ Receipts include the inserted root path, counts, bounds, placement mode, warning
 
 Common failure codes include `INVALID_SPEC`, `UNSUPPORTED_CLASS`, `UNSUPPORTED_PROPERTY`, `INVALID_PROPERTY_VALUE`, `INVALID_REFERENCE`, `DUPLICATE_INSTANCE_ID`, `INSTANCE_LIMIT_EXCEEDED`, `PART_LIMIT_EXCEEDED`, `CONSTRAINT_LIMIT_EXCEEDED`, `TREE_DEPTH_EXCEEDED`, `BOUNDS_LIMIT_EXCEEDED`, `INVALID_TARGET_PATH`, `STUDIO_SESSION_MISSING`, `BUILD_FAILED`, `PLACEMENT_FAILED`, and `COMMAND_ALREADY_APPLIED`.
 - Legacy malformed nested item paths produced by slash-bearing version-1 document IDs are not enumerable through normal collection queries and require separate administrative cleanup.
+
+## Uploaded Roblox Model Insertion
+
+Phase 8 adds `insert_uploaded_roblox_model` as a mutating, non-destructive Studio command. The browser never constructs this command directly. The backend builds it only from a completed Phase 7 upload record owned by the authenticated Firebase user.
+
+Official Roblox asset-loading documentation was checked on June 18, 2026. The plugin uses `AssetService:LoadAssetAsync(assetId)`, not `InsertService:LoadAsset`, and does not download asset binaries through NexusRBX. Roblox documents creator ownership/sharing restrictions and the third-party asset-loading setting for this API.
+
+Eligibility rules:
+
+- Upload record must belong to the authenticated user.
+- Upload must have a verified Roblox asset ID and Model asset type.
+- Upload status must be completed and moderation approved; pending moderation is blocked by default.
+- Submission-unknown, failed, cancelled, rejected, deleted, invalid, and active upload states are rejected.
+- Source validation provenance must remain compatible and have no hard failure status.
+- Target Studio session must belong to the same Firebase user.
+- Experience creator must come from trusted plugin session metadata, not the browser.
+- Asset creator from the upload receipt must match the open experience creator unless a future trusted access check proves sharing.
+
+The Studio session reports:
+
+```json
+{
+  "placeId": "123456789",
+  "universeId": "987654321",
+  "experienceCreator": { "type": "user", "id": "111111111" }
+}
+```
+
+Creator mismatch blocks insertion with `ASSET_CREATOR_MISMATCH`. Unknown creator metadata blocks with `EXPERIENCE_CREATOR_UNKNOWN`. NexusRBX does not change Roblox permissions, publish assets publicly, automatically share assets, or enable third-party asset loading.
+
+Command payload:
+
+```json
+{
+  "schemaVersion": 1,
+  "insertionId": "rmi_...",
+  "idempotencyKey": "uploaded-model-insertion:...",
+  "uploadId": "upload_...",
+  "robloxAssetId": "2205400862",
+  "expectedAssetType": "Model",
+  "expectedCreator": { "type": "user", "id": "111111111" },
+  "expectedSourceSha256": "...",
+  "requestedName": "Low Poly Tree",
+  "targetParentPath": "Workspace/NexusImports",
+  "placement": { "mode": "camera_focus", "position": null, "rotation": { "x": 0, "y": 0, "z": 0 } },
+  "sanitizationMode": "strict",
+  "anchoringMode": "anchor_all",
+  "collisionMode": "visual_default",
+  "validationSummary": {
+    "totalTriangles": 12000,
+    "largestMeshTriangles": 8000,
+    "meshes": 2,
+    "materials": 3,
+    "textures": 4,
+    "rulesVersion": "..."
+  }
+}
+```
+
+Allowed destinations are `Workspace/NexusImports`, `ReplicatedStorage/NexusImports`, and `ServerStorage/NexusImports` or safe descendants under those three roots. `ServerScriptService`, StarterPlayer script containers, CoreGui, protected/internal services, traversal syntax, and arbitrary service creation are rejected.
+
+Strict quarantine behavior:
+
+- `AssetService:LoadAssetAsync()` runs inside `pcall`.
+- The returned hierarchy must remain unparented until scan, sanitization, validation, naming, anchoring/collision policy, and destination resolution succeed.
+- `Script`, `LocalScript`, `ModuleScript`, all `LuaSourceContainer` descendants, remotes, unreliable remotes, bindables, and bindable functions are removed recursively.
+- Tools, prompts, click detectors, humanoids, animators, sounds, package links, constraints, and unexpected behavioral objects are reported as warnings.
+- Validation enforces usable visual content, no scripts/remotes/bindables, finite transforms/sizes, maximum 10,000 descendants, depth 64, 500 MeshParts, 1,000 BaseParts, and 500 constraints.
+
+Placement modes are `camera_focus`, `origin`, `explicit_position`, and `selection_relative`. `anchor_all` is the default anchoring mode; `preserve` is available with a physics warning. Collision modes are `visual_default`, `preserve`, and `disable`; Phase 8 does not promise optimized collision generation.
+
+Insertion is idempotent per Firebase user, Studio session, place, upload, asset ID, target path, name, placement, anchoring mode, and collision mode. Replayed commands return the existing inserted root instead of creating a duplicate. Failed insertion destroys the unparented hierarchy and removes empty destination folders created by that command.
+
+Receipts are stored in `users/{uid}/robloxModelInsertions/{insertionId}` and include bounded scan counts, removed-object counts, placement, anchoring/collision changes, inserted path, warnings, and history status. They never store OAuth tokens, plugin tokens, GLB binaries, script source, signed URLs, or raw unbounded plugin payloads.
+
+Common Phase 8 failure codes include `UPLOAD_NOT_FOUND`, `UPLOAD_NOT_OWNED`, `UPLOAD_NOT_COMPLETED`, `UPLOAD_SUBMISSION_UNKNOWN`, `ASSET_ID_MISSING`, `ASSET_TYPE_MISMATCH`, `ASSET_MODERATION_PENDING`, `ASSET_MODERATION_REJECTED`, `ASSET_NOT_ACCESSIBLE`, `EXPERIENCE_CREATOR_UNKNOWN`, `ASSET_CREATOR_MISMATCH`, `ASSET_NOT_SHARED_WITH_EXPERIENCE`, `ASSET_ACCESS_NOT_VERIFIED`, `PLUGIN_PROTOCOL_OUTDATED`, `ASSET_LOAD_FAILED`, `ASSET_LOAD_PERMISSION_DENIED`, `THIRD_PARTY_ASSETS_DISABLED`, `ASSET_TREE_TOO_LARGE`, `ASSET_TREE_TOO_DEEP`, `UNEXPECTED_ASSET_STRUCTURE`, `SANITIZATION_FAILED`, `NO_USABLE_VISUAL_CONTENT`, `INVALID_TARGET_PATH`, `PLACEMENT_FAILED`, `ROLLBACK_FAILED`, and `COMMAND_ALREADY_APPLIED`.
 
 ## Native Model Refinement
 
