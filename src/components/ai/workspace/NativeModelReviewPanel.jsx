@@ -6,6 +6,7 @@ import {
   getStudioStatus,
   validateNativeModelSpec,
 } from "../../../lib/studioBridgeApi";
+import StudioValidationPanel from "./StudioValidationPanel";
 
 function extractSpec(artifact) {
   return artifact?.nativeModelSpec || artifact?.nativeModel?.spec || artifact?.nativeBuild?.spec || null;
@@ -42,6 +43,7 @@ export default function NativeModelReviewPanel({ artifact, notify }) {
   const [studioConnected, setStudioConnected] = useState(false);
   const [showTree, setShowTree] = useState(true);
   const [showRaw, setShowRaw] = useState(false);
+  const [showValidation, setShowValidation] = useState(false);
   const queueingRef = useRef(false);
 
   const hierarchy = useMemo(() => flattenChildren(validation?.normalizedSpec?.root || spec?.root), [validation, spec]);
@@ -54,6 +56,7 @@ export default function NativeModelReviewPanel({ artifact, notify }) {
     setError("");
     setReceipt(null);
     setCommandId("");
+    setShowValidation(false);
     queueingRef.current = false;
     if (!spec) return undefined;
     setStatus("validating");
@@ -87,6 +90,7 @@ export default function NativeModelReviewPanel({ artifact, notify }) {
         if (command.status === "succeeded") {
           setReceipt(command.result || null);
           setStatus("succeeded");
+          setShowValidation(true);
           clearInterval(timer);
         } else if (command.status === "failed") {
           setReceipt(command.result || null);
@@ -241,6 +245,15 @@ export default function NativeModelReviewPanel({ artifact, notify }) {
         </button>
         {!studioConnected && <span className="text-xs text-amber-200">Pair Studio to build.</span>}
       </div>
+
+      {status === "succeeded" && (commandId || receipt?.commandId) && showValidation && (
+        <StudioValidationPanel
+          targetType="managed_native_model"
+          targetReferenceId={commandId || receipt?.commandId}
+          modelId={normalizedSpec?.modelId}
+          onClose={() => setShowValidation(false)}
+        />
+      )}
     </section>
   );
 }

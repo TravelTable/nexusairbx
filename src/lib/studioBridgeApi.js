@@ -131,6 +131,63 @@ export async function getStudioTools() {
   return readJsonOrThrow(res, "Failed to load Studio tools");
 }
 
+export async function prepareStudioValidation({
+  sessionId = null,
+  profile = "standard",
+  targetType,
+  targetReferenceId = "",
+  modelId = "",
+  entireProjectConfirmed = false,
+  playtestDurationSeconds = null,
+}) {
+  const res = await authedFetch("/api/studio/validations/prepare", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      sessionId,
+      profile,
+      targetType,
+      targetReferenceId,
+      modelId,
+      entireProjectConfirmed,
+      playtestDurationSeconds,
+    }),
+  });
+  return readJsonOrThrow(res, "Failed to prepare Studio validation");
+}
+
+export async function startStudioValidation({ preparedValidationId, playtestConfirmed = false }) {
+  const res = await authedFetch("/api/studio/validations", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ preparedValidationId, playtestConfirmed }),
+  });
+  return readJsonOrThrow(res, "Failed to start Studio validation");
+}
+
+export async function getStudioValidation(validationSessionId) {
+  const res = await authedFetch(`/api/studio/validations/${encodeURIComponent(validationSessionId)}`, {
+    method: "GET",
+    noCache: true,
+  });
+  return readJsonOrThrow(res, "Failed to load Studio validation");
+}
+
+export async function getStudioValidationReport(validationSessionId) {
+  const res = await authedFetch(`/api/studio/validations/${encodeURIComponent(validationSessionId)}/report`, {
+    method: "GET",
+    noCache: true,
+  });
+  return readJsonOrThrow(res, "Failed to load Studio validation report");
+}
+
+export async function cancelStudioValidation(validationSessionId) {
+  const res = await authedFetch(`/api/studio/validations/${encodeURIComponent(validationSessionId)}/cancel`, {
+    method: "POST",
+  });
+  return readJsonOrThrow(res, "Failed to cancel Studio validation");
+}
+
 export async function getStudioManifest({ sessionId = null, placeId = null, revision = "", completeOnly = true, limit = 500, cursor = "" } = {}) {
   const params = new URLSearchParams();
   if (sessionId) params.set("sessionId", sessionId);

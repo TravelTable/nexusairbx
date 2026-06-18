@@ -37,6 +37,42 @@ Writes should include `expectedSourceHash` when the caller previously read a scr
 - `create_snapshot`, `restore_snapshot`, `undo_last_batch`.
 - `run_test_service`, `run_play_test`, and `stop_play_test` return structured unsupported errors in the current plugin runtime.
 
+## Studio Validation Quality Gate
+
+Phase 9 adds an optional validation session workflow above the existing Studio commands. The browser calls authenticated backend routes under `/api/studio/validations/*`; the backend resolves the Studio session and target from server-held receipts, prepares a declarative `StudioValidationPlan`, queues existing read-only validation commands, stores a normalized report, and returns findings to the frontend.
+
+Supported targets are:
+
+- `managed_native_model`: resolved from a native model build or refinement receipt. Browser-supplied paths are ignored.
+- `creator_store_import`: resolved from a stored Roblox operation/insertion receipt when that receipt has a trusted inserted Studio path.
+- `uploaded_roblox_model`: resolved from a stored Roblox operation/insertion receipt when that receipt has a trusted inserted Studio path.
+- `entire_project`: requires an explicit user choice and uses stricter object-count limits.
+
+Profiles:
+
+- `quick`: managed identity, hierarchy, script/networking object checks, references, transforms, bounds, duplicate managed IDs, and no playtest.
+- `standard`: all quick checks plus physics, anchoring, collision, constraints, asset references, unsupported descendants, and performance counts. This is the default.
+- `playtest`: standard checks plus explicit playtest intent. The current bridge returns `PLAYTEST_AUTOMATION_UNAVAILABLE` because bounded automatic stopping would require server-side test code to call `StudioTestService:EndTest`, and Phase 9 does not inject arbitrary Luau or modify the validated place.
+
+`StudioValidationPlan` is JSON-compatible, schema-versioned, and contains only target identity, enabled checks, bounded limits, and playtest settings. It contains no executable source. Initial limits are controlled by:
+
+- `STUDIO_VALIDATION_MAX_SECONDS`, default `120`.
+- `STUDIO_VALIDATION_REPORT_TTL_DAYS`, default `30`.
+- `STUDIO_PLAYTEST_DEFAULT_SECONDS`, default `20`.
+- `STUDIO_PLAYTEST_MAX_SECONDS`, default `60`.
+- `STUDIO_PLAYTEST_OUTPUT_LIMIT`, default `500`.
+- `STUDIO_PLAYTEST_DIAGNOSTIC_LIMIT`, default `500`.
+
+Reports use statuses `passed`, `passed_with_warnings`, `failed`, `validation_error`, `cancelled`, and `timed_out`. Findings use severities `info`, `warning`, `error`, and `critical`; critical findings prevent a passed result. Reports include counts, bounds, runtime/playtest status, recommendations, rules version `studio-validation-1`, and a timestamp. They never include plugin tokens, Roblox OAuth tokens, full script source, unbounded output, or private chat content.
+
+Validation never publishes the experience, saves/publishes changes, inserts models, generates Luau, executes ModuleScripts during static validation, applies recommendations, or claims the result is bug-free or Roblox moderation-approved. Recommendations are advisory and can feed a future separate, user-approved refinement flow.
+
+Cancellation stores a `cancelled` report and does not modify the target. Timeout handling marks the session as non-passing and preserves diagnostics collected so far. Active validation requests are deduplicated with an idempotency key over Firebase UID, Studio session, place, target receipt/revision, profile, plan, and rules version.
+
+Normalized error codes include `VALIDATION_TARGET_NOT_FOUND`, `VALIDATION_TARGET_NOT_OWNED`, `VALIDATION_TARGET_MISMATCH`, `VALIDATION_TARGET_CHANGED`, `VALIDATION_TARGET_TOO_LARGE`, `VALIDATION_SESSION_NOT_FOUND`, `VALIDATION_SESSION_NOT_OWNED`, `STUDIO_SESSION_MISSING`, `STUDIO_SESSION_DISCONNECTED`, `PLUGIN_PROTOCOL_OUTDATED`, `STATIC_VALIDATION_FAILED`, `DIAGNOSTIC_COLLECTION_FAILED`, `PLAYTEST_CONFIRMATION_REQUIRED`, `PLAYTEST_AUTOMATION_UNAVAILABLE`, `PLAYTEST_START_FAILED`, `PLAYTEST_STOP_FAILED`, `PLAYTEST_TIMEOUT`, `VALIDATION_TIMEOUT`, `VALIDATION_CANCELLED`, `VALIDATION_REPORT_FAILED`, `COMMAND_ALREADY_RUNNING`, and `VALIDATION_ALREADY_COMPLETED`.
+
+Official Studio testing API verification: on 2026-06-18, Roblox Creator Hub documented `StudioTestService` as a plugin-accessible service for automated Test and Run mode testing, including `ExecutePlayModeAsync` and `EndTest`. The same documentation states `EndTest` must be called from the server DataModel of a running test. Because the NexusRBX bridge must not inject arbitrary test scripts or mutate content during validation, automated bounded playtest is intentionally unavailable in this phase; manual playtest recommendations are reported instead.
+
 ## Manual Verification Checklist
 
 1. Pair Studio from the web UI and confirm `/api/studio/status` shows the session.

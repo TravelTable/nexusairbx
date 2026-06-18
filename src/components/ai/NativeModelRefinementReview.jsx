@@ -6,6 +6,7 @@ import {
   inspectNativeModel,
   validateNativeModelPatch,
 } from "../../lib/studioBridgeApi";
+import StudioValidationPanel from "./workspace/StudioValidationPanel";
 
 async function pollCommand(commandId, { timeoutMs = 45000 } = {}) {
   const started = Date.now();
@@ -42,6 +43,7 @@ export default function NativeModelRefinementReview({
   const [receipt, setReceipt] = useState(null);
   const [error, setError] = useState("");
   const [destructiveConfirmed, setDestructiveConfirmed] = useState(false);
+  const [showValidation, setShowValidation] = useState(false);
 
   const destructive = validation?.destructiveConfirmationRequired === true || validation?.diff?.impact?.destructive === true;
   const canApply = state === "ready" && (!destructive || destructiveConfirmed);
@@ -100,6 +102,7 @@ export default function NativeModelRefinementReview({
       const command = await pollCommand(queued.commandId, { timeoutMs: 60000 });
       setReceipt(command.result || {});
       setState("succeeded");
+      setShowValidation(true);
       onApplied?.(command.result || {});
     } catch (err) {
       setError(err?.message || "Failed to apply native model patch");
@@ -172,6 +175,16 @@ export default function NativeModelRefinementReview({
           Apply changes
         </button>
       </div>
+
+      {state === "succeeded" && receipt?.commandId && showValidation && (
+        <StudioValidationPanel
+          targetType="managed_native_model"
+          targetReferenceId={receipt.commandId}
+          modelId={modelId}
+          sessionId={sessionId}
+          onClose={() => setShowValidation(false)}
+        />
+      )}
     </section>
   );
 }
