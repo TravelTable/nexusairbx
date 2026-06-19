@@ -1,6 +1,8 @@
 # Studio Tool Protocol
 
-Protocol version: `2026-06-19-phases1-9`
+Active protocol version: `2026-06-20-creator-store`
+
+This stage implements Creator Store discovery/import compatibility for phases 1-2. The final `2026-06-19-phases1-9` protocol remains the target architecture for the full multi-stage program and is not complete in this implementation stage.
 
 The backend validates every Studio command in `backend/src/lib/studioToolProtocol.js` before it is queued. The plugin acknowledges each command with a structured result containing:
 
@@ -28,7 +30,7 @@ The backend validates every Studio command in `backend/src/lib/studioToolProtoco
 - Instance tools: `create_instance`, `update_properties`, `update_attributes`, `update_tags`, `rename_instance`, `move_instance`, `duplicate_instance`, `delete_instance`.
 - Native model tools: `build_native_model` constructs one validated editable Roblox-native model from a declarative `NativeModelSpec`; `inspect_native_model` and `apply_native_model_patch` support transactional refinement of managed native models.
 - Creator Store import: `insert_creator_store_asset` imports a server-verified Creator Store `Model` or `Mesh` through Studio asset loading, sanitizes executable/networking descendants while unparented, then places it under an allowed Studio destination.
-- Uploaded Roblox model import: `insert_uploaded_roblox_model` inserts a trusted Phase 7 uploaded `Model` asset ID only after backend ownership/moderation/access checks, then uses the same unparented sanitization and atomic placement path.
+- Uploaded Roblox model import is reserved for a later stage; do not queue uploaded-model insertion from the browser in the Creator Store stage.
 - Coordination: `batch_operations` runs deterministic sub-operations and rolls back snapshots when `atomic` is true.
 
 Writes should include `expectedSourceHash` when the caller previously read a script. The plugin rejects stale writes with `code: "source_conflict"`.

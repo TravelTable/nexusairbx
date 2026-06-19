@@ -21,11 +21,12 @@ async function readJson(res, fallbackMessage) {
 }
 
 export async function searchCreatorStore({ query, assetTypes, pageSize = 20, cursor = null } = {}) {
-  const res = await authedFetch("/api/roblox/creator-store/search", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ query, assetTypes, pageSize, cursor }),
-  });
+  const params = new URLSearchParams();
+  if (query) params.set("keyword", query);
+  if (Array.isArray(assetTypes) && assetTypes.length) params.set("assetTypes", assetTypes.join(","));
+  if (pageSize) params.set("limit", String(pageSize));
+  if (cursor) params.set("cursor", cursor);
+  const res = await authedFetch(`/api/roblox/creator-store/search?${params.toString()}`, { method: "GET" });
   return readJson(res, "Failed to search Creator Store");
 }
 

@@ -2,7 +2,8 @@
 -- Local Studio plugin: website-controlled apply + agent tool runner.
 
 local BACKEND_URL = "https://nexusrbx-backend-production.up.railway.app"
-local PLUGIN_VERSION = "0.6.0-phases1-9"
+local PLUGIN_VERSION = "0.7.0-creator-store"
+local STUDIO_PROTOCOL_VERSION = "2026-06-20-creator-store"
 
 local HttpService = game:GetService("HttpService")
 local AssetService = game:GetService("AssetService")
@@ -909,7 +910,7 @@ local function inspectPlace(payload)
 		table.insert(page, state.items[i])
 	end
 	return {
-		protocolVersion = "2026-06-18",
+		protocolVersion = STUDIO_PROTOCOL_VERSION,
 		revision = tostring(payload.manifestRevision or "") ~= "" and tostring(payload.manifestRevision) or stableHash(tostring(game.PlaceId) .. ":" .. tostring(os.time())),
 		placeName = game.Name,
 		placeId = tostring(game.PlaceId),
@@ -3992,11 +3993,14 @@ local function insertTrustedRobloxAsset(payload, commandType)
 	end
 	local insertedPath = fullPath(loadedRoot)
 	local receipt = {
+		success = true,
 		ok = true,
+		operation = commandType,
 		type = commandType,
 		assetId = assetId,
 		assetName = cleanImportName(payload.assetName, requestedName),
 		insertedName = insertedName,
+		insertedPath = insertedPath,
 		insertedRootPath = insertedPath,
 		insertedRootClass = loadedRoot.ClassName,
 		sanitizationMode = "strict",
@@ -4015,7 +4019,19 @@ local function insertTrustedRobloxAsset(payload, commandType)
 		insertionId = payload.insertionId,
 		sourceHash = payload.expectedSourceSha256,
 		history = { recorded = true },
+		historyRecorded = true,
 		affectedPaths = { insertedPath },
+		removed = {
+			scripts = scan.scriptsRemoved or 0,
+			remotes = scan.remoteObjectsRemoved or 0,
+			bindables = scan.bindableObjectsRemoved or 0,
+			total = scan.removedTotal or 0,
+		},
+		counts = {
+			instances = scan.instances or 0,
+			baseParts = scan.baseParts or 0,
+		},
+		retryable = false,
 	}
 	storeImportedAssetReceipt(idempotencyKey, receipt)
 	return receipt
@@ -4301,6 +4317,7 @@ pairButton.MouseButton1Click:Connect(function()
 			placeName = game.Name,
 			placeId = tostring(game.PlaceId),
 			pluginVersion = PLUGIN_VERSION,
+			protocolVersion = STUDIO_PROTOCOL_VERSION,
 		},
 	}, nil)
 

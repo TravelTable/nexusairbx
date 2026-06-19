@@ -21,6 +21,8 @@ function importErrorMessage(error) {
     return "Roblox Studio blocked this public Creator Store asset. Open Experience Settings and enable Allow Loading Third Party Assets, then retry.";
   }
   if (error?.code === "STUDIO_SESSION_MISSING") return "Connect the NexusRBX Studio plugin before importing.";
+  if (error?.code === "PLUGIN_PROTOCOL_OUTDATED") return "Update the NexusRBX Studio plugin before importing Creator Store assets.";
+  if (error?.code === "CREATOR_STORE_REAUTHORIZATION_REQUIRED") return "Reconnect Roblox and grant Creator Store read access before importing.";
   if (error?.code === "UNSUPPORTED_ASSET_TYPE") return "Only Model and Mesh assets can be imported to Studio.";
   return error?.message || "Creator Store import failed.";
 }
@@ -261,10 +263,10 @@ export default function CreatorStoreAssetDetails({ asset, loading = false, onClo
                       <div className="mt-3 rounded-md border border-emerald-400/20 bg-emerald-400/10 p-3 text-[12px] text-emerald-50">
                         <div className="flex items-center gap-2 font-bold"><ShieldCheck className="h-4 w-4" /> Import queued and applied</div>
                         <div className="mt-2 text-emerald-100">Inserted: {receipt.insertedName || name}</div>
-                        {receipt.insertedRootPath && <div className="mt-1 text-emerald-100">Path: {receipt.insertedRootPath}</div>}
+                        {(receipt.insertedPath || receipt.insertedRootPath) && <div className="mt-1 text-emerald-100">Path: {receipt.insertedPath || receipt.insertedRootPath}</div>}
                         <div className="mt-2 grid gap-1 text-emerald-100 sm:grid-cols-2">
-                          <span>Scripts removed: {receipt.scan?.scriptsRemoved || 0}</span>
-                          <span>Networking removed: {(receipt.scan?.remoteObjectsRemoved || 0) + (receipt.scan?.bindableObjectsRemoved || 0)}</span>
+                          <span>Scripts removed: {receipt.removed?.scripts ?? receipt.scan?.scriptsRemoved ?? 0}</span>
+                          <span>Networking removed: {(receipt.removed?.remotes ?? receipt.scan?.remoteObjectsRemoved ?? 0) + (receipt.removed?.bindables ?? receipt.scan?.bindableObjectsRemoved ?? 0)}</span>
                         </div>
                         {receipt.warnings?.length > 0 && (
                           <ul className="mt-2 list-disc space-y-1 pl-4">

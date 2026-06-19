@@ -36,7 +36,7 @@ export default function CreatorStoreSearch({ notify }) {
 
   const trimmedQuery = query.trim();
   const canSearch = trimmedQuery.length >= 2 && assetTypes.length > 0;
-  const reauthorizationRequired = error?.code === "ROBLOX_REAUTHORIZATION_REQUIRED";
+  const reauthorizationRequired = error?.code === "ROBLOX_REAUTHORIZATION_REQUIRED" || error?.code === "CREATOR_STORE_REAUTHORIZATION_REQUIRED";
 
   const orderedAssetTypes = useMemo(
     () => DEFAULT_ASSET_TYPES.filter((type) => assetTypes.includes(type)),
