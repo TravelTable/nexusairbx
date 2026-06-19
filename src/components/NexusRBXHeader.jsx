@@ -38,8 +38,56 @@ function NexusRBXHeader({
   const location = useLocation();
   const toolsRef = useRef(null);
   const accountRef = useRef(null);
-  const { entitlements } = useBilling();
+  const {
+    entitlements,
+    subRemaining,
+    paygRemaining,
+    subLimit,
+    loading: billingLoading,
+    flags: billingFlags,
+    unlimitedTokens,
+    devOverride,
+  } = useBilling();
   const isPremium = entitlements?.includes("pro") || entitlements?.includes("team");
+
+  const resolvedSubRemaining =
+    typeof subRemaining === "number"
+      ? subRemaining
+      : typeof tokenInfo?.sub?.limit === "number" && typeof tokenInfo?.sub?.used === "number"
+        ? tokenInfo.sub.limit - tokenInfo.sub.used
+        : typeof tokenInfo?.subRemaining === "number"
+          ? tokenInfo.subRemaining
+          : typeof tokenInfo?.limit === "number" && typeof tokenInfo?.used === "number"
+            ? Math.max(0, tokenInfo.limit - tokenInfo.used)
+            : 0;
+
+  const resolvedSubLimit =
+    typeof subLimit === "number"
+      ? subLimit
+      : typeof tokenInfo?.sub?.limit === "number"
+        ? tokenInfo.sub.limit
+        : typeof tokenInfo?.subLimit === "number"
+          ? tokenInfo.subLimit
+          : typeof tokenInfo?.limit === "number"
+            ? tokenInfo.limit
+            : 0;
+
+  const resolvedPaygRemaining =
+    typeof paygRemaining === "number"
+      ? paygRemaining
+      : typeof tokenInfo?.payg?.remaining === "number"
+        ? tokenInfo.payg.remaining
+        : typeof tokenInfo?.paygRemaining === "number"
+          ? tokenInfo.paygRemaining
+          : 0;
+
+  const resolvedFlags = billingFlags || tokenInfo?.flags || {
+    unlimitedTokens: Boolean(unlimitedTokens || tokenInfo?.unlimitedTokens),
+    devOverride: Boolean(devOverride || tokenInfo?.devOverride),
+    isAdmin: Boolean(tokenInfo?.isAdmin),
+  };
+
+  const resolvedTokenLoading = billingLoading || tokenLoading;
 
   const isActive = (path) => location.pathname === path;
 
@@ -177,25 +225,15 @@ function NexusRBXHeader({
               <TokensCounterContainer
                 tokens={{
                   sub: {
-                    remaining:
-                      typeof tokenInfo?.sub?.limit === "number" && typeof tokenInfo?.sub?.used === "number"
-                        ? tokenInfo.sub.limit - tokenInfo.sub.used
-                        : 0,
-                    limit: tokenInfo?.sub?.limit ?? 0,
+                    remaining: resolvedSubRemaining,
+                    limit: resolvedSubLimit,
                   },
                   payg: {
-                    remaining:
-                      typeof tokenInfo?.payg?.remaining === "number"
-                        ? tokenInfo.payg.remaining
-                        : 0,
+                    remaining: resolvedPaygRemaining,
                   },
                 }}
-                flags={tokenInfo?.flags || {
-                  unlimitedTokens: Boolean(tokenInfo?.unlimitedTokens),
-                  devOverride: Boolean(tokenInfo?.devOverride),
-                  isAdmin: Boolean(tokenInfo?.isAdmin),
-                }}
-                isLoading={tokenLoading}
+                flags={resolvedFlags}
+                isLoading={resolvedTokenLoading}
                 showRefreshButton={false}
                 variant="header"
               />
