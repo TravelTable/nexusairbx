@@ -4,6 +4,8 @@ import ChatComposer from "../chat/ChatComposer";
 import AgentPlanPanel from "./AgentPlanPanel";
 import BuildDetailsPanel from "./BuildDetailsPanel";
 import RobloxAssetTray from "./RobloxAssetTray";
+import CreatorStoreSearch from "../../assets/CreatorStoreSearch";
+import ModelFilePipelinePanel from "../../assets/ModelFilePipelinePanel";
 // Primary Studio agent surface. Chat drives the
 // workflow; build progress + setup/testing/security live in the Details view.
 export default function AgentChatPanel({
@@ -139,6 +141,15 @@ export default function AgentChatPanel({
         robloxConnected={robloxConnected}
         uploadAvailable={robloxUploadAvailable}
         assetUploadsEnabled={robloxAssetUploadsEnabled}
+        selectedCreator={robloxSelectedCreator}
+        notify={notify}
+      />
+
+      <CreatorStoreSearch notify={notify} />
+
+      <ModelFilePipelinePanel
+        robloxConnected={robloxConnected}
+        studioConnected={studioConnected}
         selectedCreator={robloxSelectedCreator}
         notify={notify}
       />

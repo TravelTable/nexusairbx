@@ -1,6 +1,6 @@
 # Studio Tool Protocol
 
-Protocol version: `2026-06-18`
+Protocol version: `2026-06-19-phases1-9`
 
 The backend validates every Studio command in `backend/src/lib/studioToolProtocol.js` before it is queued. The plugin acknowledges each command with a structured result containing:
 
@@ -27,6 +27,8 @@ The backend validates every Studio command in `backend/src/lib/studioToolProtoco
 - Script tools: `create_script`, `write_script`, `patch_script`, `rename_script`, `move_script`, `duplicate_script`, `delete_script`, `replace_in_files`.
 - Instance tools: `create_instance`, `update_properties`, `update_attributes`, `update_tags`, `rename_instance`, `move_instance`, `duplicate_instance`, `delete_instance`.
 - Native model tools: `build_native_model` constructs one validated editable Roblox-native model from a declarative `NativeModelSpec`; `inspect_native_model` and `apply_native_model_patch` support transactional refinement of managed native models.
+- Creator Store import: `insert_creator_store_asset` imports a server-verified Creator Store `Model` or `Mesh` through Studio asset loading, sanitizes executable/networking descendants while unparented, then places it under an allowed Studio destination.
+- Uploaded Roblox model import: `insert_uploaded_roblox_model` inserts a trusted Phase 7 uploaded `Model` asset ID only after backend ownership/moderation/access checks, then uses the same unparented sanitization and atomic placement path.
 - Coordination: `batch_operations` runs deterministic sub-operations and rolls back snapshots when `atomic` is true.
 
 Writes should include `expectedSourceHash` when the caller previously read a script. The plugin rejects stale writes with `code: "source_conflict"`.
@@ -56,12 +58,7 @@ Profiles:
 
 `StudioValidationPlan` is JSON-compatible, schema-versioned, and contains only target identity, enabled checks, bounded limits, and playtest settings. It contains no executable source. Initial limits are controlled by:
 
-- `STUDIO_VALIDATION_MAX_SECONDS`, default `120`.
-- `STUDIO_VALIDATION_REPORT_TTL_DAYS`, default `30`.
-- `STUDIO_PLAYTEST_DEFAULT_SECONDS`, default `20`.
-- `STUDIO_PLAYTEST_MAX_SECONDS`, default `60`.
-- `STUDIO_PLAYTEST_OUTPUT_LIMIT`, default `500`.
-- `STUDIO_PLAYTEST_DIAGNOSTIC_LIMIT`, default `500`.
+- `STUDIO_VALIDATION_TIMEOUT_MS`, default `90000`.
 
 Reports use statuses `passed`, `passed_with_warnings`, `failed`, `validation_error`, `cancelled`, and `timed_out`. Findings use severities `info`, `warning`, `error`, and `critical`; critical findings prevent a passed result. Reports include counts, bounds, runtime/playtest status, recommendations, rules version `studio-validation-1`, and a timestamp. They never include plugin tokens, Roblox OAuth tokens, full script source, unbounded output, or private chat content.
 
@@ -83,6 +80,9 @@ Official Studio testing API verification: on 2026-06-18, Roblox Creator Hub docu
 6. Edit the same script in Studio, retry the old `write_script`, and confirm `source_conflict`.
 7. Queue `batch_operations` with create/update/delete operations and verify snapshots.
 8. Queue `undo_last_batch` or `restore_snapshot` and confirm the hierarchy is restored.
+9. Queue `insert_creator_store_asset` for a public Model and confirm Studio inserts it under `Workspace/NexusImports` after removing scripts, remotes, and bindables.
+10. Queue `insert_uploaded_roblox_model` from a trusted upload receipt and confirm Studio inserts only the backend-supplied asset ID.
+11. Run `/api/studio/validations/prepare`, `/api/studio/validations`, and the report endpoint against a native model receipt and confirm stale browser paths are ignored.
 
 ## Firestore Notes
 

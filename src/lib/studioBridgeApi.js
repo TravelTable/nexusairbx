@@ -131,6 +131,21 @@ export async function getStudioTools() {
   return readJsonOrThrow(res, "Failed to load Studio tools");
 }
 
+export async function importCreatorStoreAssetToStudio({
+  assetId,
+  sessionId = null,
+  targetParentPath = "Workspace/NexusImports",
+  requestedName = "",
+  placement = { mode: "camera_focus" },
+}) {
+  const res = await authedFetch("/api/studio/creator-store/import", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ assetId, sessionId, targetParentPath, requestedName, placement }),
+  });
+  return readJsonOrThrow(res, "Failed to import Creator Store asset");
+}
+
 export async function prepareStudioValidation({
   sessionId = null,
   profile = "standard",
