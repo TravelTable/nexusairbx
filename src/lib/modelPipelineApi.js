@@ -23,7 +23,7 @@ export async function createModelUploadSession(file) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       filename: file?.name || "model.glb",
-      sizeBytes: file?.size || 0,
+      size: file?.size || 0,
       contentType: file?.type || "model/gltf-binary",
     }),
   });
@@ -34,7 +34,7 @@ export async function uploadModelFileToSignedUrl(file, upload, onProgress) {
   const xhr = new XMLHttpRequest();
   return new Promise((resolve, reject) => {
     xhr.upload.onprogress = (event) => {
-      if (event.lengthComputable) onProgress?.(Math.round((event.loaded / event.total) * 100));
+      if (event.lengthComputable) onProgress?.({ loaded: event.loaded, total: event.total });
     };
     xhr.onload = () => {
       if (xhr.status >= 200 && xhr.status < 300) resolve();
@@ -46,6 +46,11 @@ export async function uploadModelFileToSignedUrl(file, upload, onProgress) {
     xhr.setRequestHeader("Content-Type", file?.type || "model/gltf-binary");
     xhr.send(file);
   });
+}
+
+export async function getModelFileRules() {
+  const res = await authedFetch("/api/model-files/rules", { method: "GET", noCache: true });
+  return readJson(res, "Failed to load model-file rules");
 }
 
 export async function completeModelUpload(modelFileId) {
@@ -71,6 +76,16 @@ export async function getModelFileReport(modelFileId) {
 export async function getModelPreviewUrl(modelFileId) {
   const res = await authedFetch(`/api/model-files/${encodeURIComponent(modelFileId)}/preview-url`, { method: "GET", noCache: true });
   return readJson(res, "Failed to load preview URL");
+}
+
+export async function getModelDownloadUrl(modelFileId) {
+  const res = await authedFetch(`/api/model-files/${encodeURIComponent(modelFileId)}/download-url`, { method: "GET", noCache: true });
+  return readJson(res, "Failed to load download URL");
+}
+
+export async function cancelModelFile(modelFileId) {
+  const res = await authedFetch(`/api/model-files/${encodeURIComponent(modelFileId)}/cancel`, { method: "POST" });
+  return readJson(res, "Failed to cancel model validation");
 }
 
 export async function deleteModelFile(modelFileId) {
@@ -101,12 +116,42 @@ export async function listDerivatives(modelFileId) {
   return readJson(res, "Failed to load derivatives");
 }
 
+export async function getDerivativeReport(modelFileId, derivativeId) {
+  const res = await authedFetch(`/api/model-files/${encodeURIComponent(modelFileId)}/derivatives/${encodeURIComponent(derivativeId)}/report`, { method: "GET", noCache: true });
+  return readJson(res, "Failed to load derivative report");
+}
+
+export async function getDerivativeComparison(modelFileId, derivativeId) {
+  const res = await authedFetch(`/api/model-files/${encodeURIComponent(modelFileId)}/derivatives/${encodeURIComponent(derivativeId)}/comparison`, { method: "GET", noCache: true });
+  return readJson(res, "Failed to load derivative comparison");
+}
+
+export async function getDerivativePreviewUrl(modelFileId, derivativeId) {
+  const res = await authedFetch(`/api/model-files/${encodeURIComponent(modelFileId)}/derivatives/${encodeURIComponent(derivativeId)}/preview-url`, { method: "GET", noCache: true });
+  return readJson(res, "Failed to load derivative preview URL");
+}
+
+export async function getDerivativeDownloadUrl(modelFileId, derivativeId) {
+  const res = await authedFetch(`/api/model-files/${encodeURIComponent(modelFileId)}/derivatives/${encodeURIComponent(derivativeId)}/download-url`, { method: "GET", noCache: true });
+  return readJson(res, "Failed to load derivative download URL");
+}
+
+export async function cancelDerivative(modelFileId, derivativeId) {
+  const res = await authedFetch(`/api/model-files/${encodeURIComponent(modelFileId)}/derivatives/${encodeURIComponent(derivativeId)}/cancel`, { method: "POST" });
+  return readJson(res, "Failed to cancel derivative");
+}
+
+export async function deleteDerivative(modelFileId, derivativeId) {
+  const res = await authedFetch(`/api/model-files/${encodeURIComponent(modelFileId)}/derivatives/${encodeURIComponent(derivativeId)}`, { method: "DELETE" });
+  return readJson(res, "Failed to delete derivative");
+}
+
 export async function prepareRobloxModelUpload({ modelFileId, derivativeId = null, displayName, description = "", creator = { type: "user" } }) {
   const res = await authedFetch("/api/roblox/model-uploads/prepare", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      sourceType: derivativeId ? "optimized_derivative" : "validated_model_file",
+      sourceType: derivativeId ? "derivative" : "original",
       modelFileId,
       derivativeId,
       displayName,
@@ -121,9 +166,14 @@ export async function confirmRobloxModelUpload(uploadId) {
   const res = await authedFetch(`/api/roblox/model-uploads/${encodeURIComponent(uploadId)}/confirm`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ rightsConfirmed: true, moderationConfirmed: true }),
+    body: JSON.stringify({ rightsConfirmed: true, moderationAcknowledged: true }),
   });
   return readJson(res, "Failed to confirm Roblox model upload");
+}
+
+export async function listRobloxModelUploads() {
+  const res = await authedFetch("/api/roblox/model-uploads", { method: "GET", noCache: true });
+  return readJson(res, "Failed to load Roblox model uploads");
 }
 
 export async function getRobloxModelUpload(uploadId) {
@@ -131,27 +181,60 @@ export async function getRobloxModelUpload(uploadId) {
   return readJson(res, "Failed to load Roblox model upload");
 }
 
+export async function getRobloxModelUploadStatus(uploadId) {
+  const res = await authedFetch(`/api/roblox/model-uploads/${encodeURIComponent(uploadId)}/status`, { method: "GET", noCache: true });
+  return readJson(res, "Failed to load Roblox model upload status");
+}
+
 export async function refreshRobloxModelUpload(uploadId) {
   const res = await authedFetch(`/api/roblox/model-uploads/${encodeURIComponent(uploadId)}/refresh`, { method: "POST" });
   return readJson(res, "Failed to refresh Roblox model upload");
 }
 
-export async function prepareUploadedModelInsertion(uploadId) {
-  const res = await authedFetch(`/api/studio/roblox-model-uploads/${encodeURIComponent(uploadId)}/prepare-insertion`, { method: "POST" });
+export async function cancelRobloxModelUpload(uploadId) {
+  const res = await authedFetch(`/api/roblox/model-uploads/${encodeURIComponent(uploadId)}/cancel`, { method: "POST" });
+  return readJson(res, "Failed to cancel Roblox model upload");
+}
+
+export async function prepareUploadedModelInsertion(uploadId, options = {}) {
+  const res = await authedFetch(`/api/studio/roblox-model-uploads/${encodeURIComponent(uploadId)}/prepare-insertion`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      sessionId: options.sessionId || "",
+      targetParentPath: options.targetParentPath || "Workspace/NexusImports",
+      requestedName: options.requestedName || "",
+      placement: options.placement || { mode: "camera_focus", position: null },
+      anchoredPolicy: options.anchoredPolicy || "preserve",
+      collisionPolicy: options.collisionPolicy || "preserve",
+    }),
+  });
   return readJson(res, "Failed to prepare Studio insertion");
 }
 
-export async function insertUploadedModel(uploadId, requestedName) {
+export async function insertUploadedModel(uploadId, preparedInsertionId) {
   const res = await authedFetch(`/api/studio/roblox-model-uploads/${encodeURIComponent(uploadId)}/insert`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      requestedName,
-      targetParentPath: "Workspace/NexusImports",
-      placement: { mode: "camera_focus" },
-      anchoringMode: "anchor_all",
-      collisionMode: "visual_default",
+      preparedInsertionId,
+      confirmed: true,
     }),
   });
   return readJson(res, "Failed to insert uploaded model");
+}
+
+export async function getUploadedModelInsertion(insertionId) {
+  const res = await authedFetch(`/api/studio/roblox-model-insertions/${encodeURIComponent(insertionId)}`, { method: "GET", noCache: true });
+  return readJson(res, "Failed to load Studio insertion receipt");
+}
+
+export async function listUploadedModelInsertions() {
+  const res = await authedFetch("/api/studio/roblox-model-insertions", { method: "GET", noCache: true });
+  return readJson(res, "Failed to load Studio insertion receipts");
+}
+
+export async function recheckUploadedModelAccess(uploadId) {
+  const res = await authedFetch(`/api/studio/roblox-model-uploads/${encodeURIComponent(uploadId)}/recheck-access`, { method: "POST" });
+  return readJson(res, "Failed to recheck Roblox asset access");
 }

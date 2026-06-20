@@ -5,6 +5,7 @@ import {
   getStudioValidation,
   getStudioValidationReport,
   prepareStudioValidation,
+  rerunStudioValidation,
   startStudioValidation,
 } from "../../../lib/studioBridgeApi";
 
@@ -49,6 +50,7 @@ export default function StudioValidationPanel({
   const [severity, setSeverity] = useState("all");
   const [playtestConfirmed, setPlaytestConfirmed] = useState(false);
   const [error, setError] = useState("");
+  const [rerunning, setRerunning] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -145,6 +147,24 @@ export default function StudioValidationPanel({
       if (reportData?.report) setReport(reportData.report);
     } catch (err) {
       setError(err?.message || "Failed to cancel validation");
+    }
+  };
+
+  const rerun = async () => {
+    if (!session?.validationSessionId || rerunning) return;
+    setError("");
+    setRerunning(true);
+    setStatus("queued");
+    try {
+      const next = await rerunStudioValidation(session.validationSessionId);
+      setReport(null);
+      setSession((current) => ({ ...(current || session), ...next }));
+      setStatus(next.status || "queued");
+    } catch (err) {
+      setError(err?.message || "Failed to rerun validation");
+      setStatus(report?.status || session?.status || "validation_error");
+    } finally {
+      setRerunning(false);
     }
   };
 
@@ -253,6 +273,18 @@ export default function StudioValidationPanel({
             {!issues.length && <div className="rounded-md border border-white/10 p-2 text-white/55">No findings for this filter.</div>}
           </div>
           <div className="text-white/45">Rules: {report.rulesVersion} · Completed: {report.completedAt || "pending"}</div>
+          {session?.reportHistory?.length > 0 && (
+            <div className="rounded-md border border-white/10 bg-black/20 p-2">
+              <div className="font-bold text-white/80">History</div>
+              <div className="mt-1 space-y-1 text-white/55">
+                {session.reportHistory.slice(-5).map((entry, index) => (
+                  <div key={`${entry.executionId || index}-${entry.completedAt || index}`}>
+                    {title(entry.status || "completed")} · {entry.completedAt || entry.executionId || "previous execution"}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -271,8 +303,8 @@ export default function StudioValidationPanel({
           Copy summary
         </button>
         {FINAL_STATES.has(status) && (
-          <button type="button" onClick={() => setStatus("ready")} className="inline-flex items-center gap-2 rounded-md border border-white/10 px-3 py-2 font-bold text-white/70">
-            <RefreshCw className="h-3.5 w-3.5" />
+          <button type="button" onClick={rerun} disabled={rerunning} className="inline-flex items-center gap-2 rounded-md border border-white/10 px-3 py-2 font-bold text-white/70 disabled:opacity-40">
+            {rerunning ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
             Rerun
           </button>
         )}

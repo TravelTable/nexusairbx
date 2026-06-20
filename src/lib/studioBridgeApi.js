@@ -203,6 +203,13 @@ export async function cancelStudioValidation(validationSessionId) {
   return readJsonOrThrow(res, "Failed to cancel Studio validation");
 }
 
+export async function rerunStudioValidation(validationSessionId) {
+  const res = await authedFetch(`/api/studio/validations/${encodeURIComponent(validationSessionId)}/rerun`, {
+    method: "POST",
+  });
+  return readJsonOrThrow(res, "Failed to rerun Studio validation");
+}
+
 export async function getStudioManifest({ sessionId = null, placeId = null, revision = "", completeOnly = true, limit = 500, cursor = "" } = {}) {
   const params = new URLSearchParams();
   if (sessionId) params.set("sessionId", sessionId);

@@ -2,8 +2,8 @@
 -- Local Studio plugin: website-controlled apply + agent tool runner.
 
 local BACKEND_URL = "https://nexusrbx-backend-production.up.railway.app"
-local PLUGIN_VERSION = "0.7.0-creator-store"
-local STUDIO_PROTOCOL_VERSION = "2026-06-20-creator-store"
+local PLUGIN_VERSION = "0.9.0-phases1-9"
+local STUDIO_PROTOCOL_VERSION = "2026-06-20-phases1-9"
 
 local HttpService = game:GetService("HttpService")
 local AssetService = game:GetService("AssetService")
@@ -3888,12 +3888,24 @@ local function pivotImportedAssetRoot(root, placement)
 	return target
 end
 
-local function applyImportedAssetPhysics(root, anchoringMode, collisionMode)
+local function applyImportedAssetPhysics(root, anchoredPolicy, collisionPolicy)
+	local rootPart = nil
+	if root:IsA("BasePart") then
+		rootPart = root
+	elseif root:IsA("Model") then
+		rootPart = root.PrimaryPart or root:FindFirstChildWhichIsA("BasePart", true)
+	else
+		rootPart = root:FindFirstChildWhichIsA("BasePart", true)
+	end
 	local function applyPart(part)
-		if anchoringMode == "anchor_all" then part.Anchored = true end
-		if collisionMode == "disable" then
+		if anchoredPolicy == "anchor_all" then
+			part.Anchored = true
+		elseif anchoredPolicy == "anchor_root" and part == rootPart then
+			part.Anchored = true
+		end
+		if collisionPolicy == "disable_all" then
 			part.CanCollide = false
-		elseif collisionMode == "visual_default" then
+		elseif collisionPolicy == "enable_baseparts" then
 			part.CanCollide = true
 		end
 	end
@@ -3966,9 +3978,25 @@ local function insertTrustedRobloxAsset(payload, commandType)
 		loadedRoot:Destroy()
 		return importedAssetFailure(commandType, assetId, scanCode or "SANITIZATION_FAILED", scanMessage or "Roblox asset import sanitization failed.", warnings)
 	end
-	applyImportedAssetPhysics(loadedRoot, tostring(payload.anchoringMode or "anchor_all"), tostring(payload.collisionMode or "visual_default"))
+	local anchoredPolicy = tostring(payload.anchoredPolicy or payload.anchoringMode or "anchor_all")
+	if anchoredPolicy ~= "preserve" and anchoredPolicy ~= "anchor_all" and anchoredPolicy ~= "anchor_root" then
+		loadedRoot:Destroy()
+		return importedAssetFailure(commandType, assetId, "INVALID_ANCHORED_POLICY", "Invalid anchoredPolicy.", warnings)
+	end
+	local collisionPolicy = tostring(payload.collisionPolicy or payload.collisionMode or "disable_all")
+	if collisionPolicy == "disable" then collisionPolicy = "disable_all" end
+	if collisionPolicy == "visual_default" then collisionPolicy = "enable_baseparts" end
+	if collisionPolicy ~= "preserve" and collisionPolicy ~= "disable_all" and collisionPolicy ~= "enable_baseparts" then
+		loadedRoot:Destroy()
+		return importedAssetFailure(commandType, assetId, "INVALID_COLLISION_POLICY", "Invalid collisionPolicy.", warnings)
+	end
+	applyImportedAssetPhysics(loadedRoot, anchoredPolicy, collisionPolicy)
 	local targetExisted = resolvePath(targetParentPath) ~= nil
-	local parent = ensureParent(targetParentPath .. "/ImportedAsset", true)
+	local parentPath = targetParentPath
+	if commandType == "insert_creator_store_asset" then
+		parentPath = targetParentPath .. "/ImportedAsset"
+	end
+	local parent = ensureParent(parentPath, true)
 	if not parent then
 		loadedRoot:Destroy()
 		return importedAssetFailure(commandType, assetId, "INVALID_TARGET_PATH", "Could not resolve the import destination.", warnings)
@@ -4025,12 +4053,14 @@ local function insertTrustedRobloxAsset(payload, commandType)
 			scripts = scan.scriptsRemoved or 0,
 			remotes = scan.remoteObjectsRemoved or 0,
 			bindables = scan.bindableObjectsRemoved or 0,
-			total = scan.removedTotal or 0,
+			total = (scan.scriptsRemoved or 0) + (scan.remoteObjectsRemoved or 0) + (scan.bindableObjectsRemoved or 0),
 		},
 		counts = {
-			instances = scan.instances or 0,
-			baseParts = scan.baseParts or 0,
+			instances = (scan.totalDescendants or 0) + 1,
+			baseParts = (scan.parts or 0) + (scan.meshParts or 0),
 		},
+		anchoredPolicy = anchoredPolicy,
+		collisionPolicy = collisionPolicy,
 		retryable = false,
 	}
 	storeImportedAssetReceipt(idempotencyKey, receipt)

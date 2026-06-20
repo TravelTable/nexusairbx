@@ -1,70 +1,119 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { CheckCircle2, CloudUpload, FileArchive, Loader2, RefreshCw, Trash2, UploadCloud } from "lucide-react";
 import {
+  CheckCircle2,
+  Download,
+  Eye,
+  FileArchive,
+  Loader2,
+  RefreshCw,
+  Square,
+  Trash2,
+  UploadCloud,
+} from "lucide-react";
+import {
+  cancelDerivative,
+  cancelModelFile,
   completeModelUpload,
-  confirmRobloxModelUpload,
   createDerivative,
   createModelUploadSession,
   createOptimizationPlan,
+  deleteDerivative,
   deleteModelFile,
+  getDerivativeComparison,
+  getDerivativeDownloadUrl,
+  getDerivativePreviewUrl,
+  getModelDownloadUrl,
   getModelFile,
   getModelFileReport,
+  getModelFileRules,
   getModelPreviewUrl,
   getRobloxModelUpload,
-  insertUploadedModel,
   listDerivatives,
   listModelFiles,
   prepareRobloxModelUpload,
   prepareUploadedModelInsertion,
+  confirmRobloxModelUpload,
+  insertUploadedModel,
   refreshRobloxModelUpload,
+  recheckUploadedModelAccess,
   uploadModelFileToSignedUrl,
 } from "../../lib/modelPipelineApi";
 
-const VALIDATED = new Set(["compatible", "compatible_with_warnings", "valid", "valid_with_warnings"]);
+const VALIDATED = new Set(["valid", "valid_with_warnings"]);
+const FINAL = new Set(["valid", "valid_with_warnings", "invalid", "failed", "cancelled", "deleted", "expired"]);
+const ACTIVE_MODEL = new Set(["awaiting_upload", "uploaded", "queued", "validating"]);
+const ACTIVE_DERIVATIVE = new Set(["queued", "optimizing", "validating"]);
 
 function statusText(value) {
   return String(value || "unknown").replace(/_/g, " ");
 }
 
-function primaryModel(files) {
+function formatBytes(value) {
+  const bytes = Number(value || 0);
+  if (!bytes) return "0 B";
+  const units = ["B", "KB", "MB", "GB"];
+  const index = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
+  return `${(bytes / (1024 ** index)).toFixed(index ? 1 : 0)} ${units[index]}`;
+}
+
+function firstModel(files) {
   return (files || []).find((file) => file.status !== "deleted") || null;
 }
 
-export default function ModelFilePipelinePanel({ robloxConnected = false, studioConnected = false, selectedCreator = null, notify }) {
+export default function ModelFilePipelinePanel({ notify }) {
+  const [rules, setRules] = useState(null);
   const [active, setActive] = useState(null);
   const [report, setReport] = useState(null);
   const [derivatives, setDerivatives] = useState([]);
-  const [upload, setUpload] = useState(null);
-  const [previewUrl, setPreviewUrl] = useState("");
+  const [plan, setPlan] = useState(null);
+  const [profile, setProfile] = useState("roblox_balanced");
+  const [aggressiveConfirmed, setAggressiveConfirmed] = useState(false);
+  const [comparison, setComparison] = useState(null);
+  const [uploadPrep, setUploadPrep] = useState(null);
+  const [uploadStatus, setUploadStatus] = useState(null);
+  const [uploadName, setUploadName] = useState("");
+  const [uploadDescription, setUploadDescription] = useState("");
+  const [rightsConfirmed, setRightsConfirmed] = useState(false);
+  const [moderationAcknowledged, setModerationAcknowledged] = useState(false);
+  const [insertionReview, setInsertionReview] = useState(null);
+  const [insertionReceipt, setInsertionReceipt] = useState(null);
+  const [link, setLink] = useState("");
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
   const [progress, setProgress] = useState(null);
   const fileInputRef = useRef(null);
   const pollRef = useRef(null);
 
-  const activeStatus = active?.status || "";
-  const canOptimize = active?.id && VALIDATED.has(activeStatus);
-  const canUploadToRoblox = canOptimize || activeStatus === "compatible_with_warnings";
-  const uploadReadyForInsertion = upload?.upload?.robloxAssetId || upload?.robloxAssetId;
-  const displayName = useMemo(() => {
-    const base = active?.originalFilename || active?.safeFilename || "Nexus model";
-    return base.replace(/\.glb$/i, "").slice(0, 50) || "Nexus model";
+  const canOptimize = active?.id && VALIDATED.has(active.status);
+  const canPrepareRobloxUpload = active?.id && VALIDATED.has(active.status);
+  const activeDerivative = derivatives.find((item) => ACTIVE_DERIVATIVE.has(item.status));
+  const currentUpload = uploadStatus?.upload || uploadStatus;
+  const progressPercent = progress?.total ? Math.round((progress.loaded / progress.total) * 100) : null;
+  const sizeLimit = rules?.limits?.maxBytes || 25 * 1024 * 1024;
+
+  const activeLabel = useMemo(() => {
+    if (!active) return "Private GLB upload, validation, optimization";
+    return `${active.originalFilename || active.safeFilename || active.id} · ${statusText(active.status)}${active.validationStage ? ` · ${statusText(active.validationStage)}` : ""}`;
   }, [active]);
 
   const refresh = async () => {
     const data = await listModelFiles();
     const list = data.items || data.modelFiles || data.files || data.results || [];
-    const next = active?.id ? list.find((file) => file.id === active.id) : primaryModel(list);
-    if (next) {
-      setActive(next);
-      if (VALIDATED.has(next.status) || ["invalid", "incompatible", "validation_failed"].includes(next.status)) {
-        getModelFileReport(next.id).then((data) => setReport(data.report)).catch(() => {});
-        listDerivatives(next.id).then((data) => setDerivatives(data.derivatives || data.results || [])).catch(() => {});
+    const next = active?.id ? list.find((file) => file.id === active.id) : firstModel(list);
+    setActive(next || null);
+    if (next?.id) {
+      if (FINAL.has(next.status)) {
+        getModelFileReport(next.id).then((payload) => setReport(payload.report)).catch(() => setReport(null));
       }
+      listDerivatives(next.id).then((payload) => setDerivatives(payload.items || payload.derivatives || payload.results || [])).catch(() => {});
+    } else {
+      setReport(null);
+      setDerivatives([]);
     }
   };
 
   useEffect(() => {
+    getModelFileRules().then((payload) => setRules(payload)).catch(() => {});
     refresh().catch(() => {});
     return () => {
       if (pollRef.current) window.clearInterval(pollRef.current);
@@ -79,7 +128,10 @@ export default function ModelFilePipelinePanel({ robloxConnected = false, studio
         const data = await getModelFile(modelFileId);
         const modelFile = data.modelFile;
         setActive(modelFile);
-        if (VALIDATED.has(modelFile?.status) || ["invalid", "incompatible", "validation_failed"].includes(modelFile?.status)) {
+        if (modelFile?.id) {
+          listDerivatives(modelFile.id).then((payload) => setDerivatives(payload.items || payload.derivatives || [])).catch(() => {});
+        }
+        if (FINAL.has(modelFile?.status) && !activeDerivative) {
           window.clearInterval(pollRef.current);
           pollRef.current = null;
           await refresh();
@@ -92,15 +144,27 @@ export default function ModelFilePipelinePanel({ robloxConnected = false, studio
     const file = event.target.files?.[0];
     event.target.value = "";
     if (!file) return;
+    if (!file.name.toLowerCase().endsWith(".glb")) {
+      setError("Choose a .glb file.");
+      return;
+    }
+    if (file.size > sizeLimit) {
+      setError(`File is larger than ${formatBytes(sizeLimit)}.`);
+      return;
+    }
     setError("");
     setBusy("upload");
-    setProgress(0);
+    setProgress({ loaded: 0, total: file.size });
     try {
       const session = await createModelUploadSession(file);
       await uploadModelFileToSignedUrl(file, session.upload, setProgress);
+      setBusy("complete");
       const completed = await completeModelUpload(session.modelFileId);
       notify?.({ type: "success", message: "GLB uploaded. Validation queued." });
-      setActive({ id: session.modelFileId, status: completed.status, originalFilename: file.name });
+      setActive({ ...(session.modelFile || {}), id: session.modelFileId, status: completed.status, originalFilename: file.name });
+      setReport(null);
+      setPlan(null);
+      setComparison(null);
       startPolling(session.modelFileId);
       await refresh();
     } catch (err) {
@@ -111,98 +175,214 @@ export default function ModelFilePipelinePanel({ robloxConnected = false, studio
     }
   };
 
-  const optimize = async () => {
+  const createPlan = async () => {
     if (!active?.id) return;
-    setBusy("optimize");
+    setBusy("plan");
     setError("");
     try {
-      const plan = await createOptimizationPlan(active.id, "roblox_balanced");
-      const derivative = await createDerivative(active.id, plan.planId || plan.optimizationPlan?.id || plan.id);
-      notify?.({ type: "success", message: "Optimization queued." });
+      const next = await createOptimizationPlan(active.id, profile);
+      setPlan(next);
+      setAggressiveConfirmed(false);
+    } catch (err) {
+      setError(err?.message || "Could not create optimization plan");
+    } finally {
+      setBusy("");
+    }
+  };
+
+  const queueDerivative = async () => {
+    if (!active?.id || !plan?.planId) return;
+    setBusy("derivative");
+    setError("");
+    try {
+      const derivative = await createDerivative(active.id, plan.planId, aggressiveConfirmed);
+      notify?.({ type: "success", message: "Derivative queued." });
       setDerivatives((current) => [derivative, ...current]);
+      startPolling(active.id);
       await refresh();
     } catch (err) {
-      setError(err?.message || "Optimization failed");
+      setError(err?.message || "Could not queue derivative");
     } finally {
       setBusy("");
     }
   };
 
-  const preview = async () => {
+  const openSourceUrl = async (kind) => {
     if (!active?.id) return;
-    setBusy("preview");
+    setBusy(kind);
     try {
-      const data = await getModelPreviewUrl(active.id);
-      setPreviewUrl(data.preview?.url || data.previewUrl || "");
+      const payload = kind === "download" ? await getModelDownloadUrl(active.id) : await getModelPreviewUrl(active.id);
+      const url = payload.download?.url || payload.preview?.url || "";
+      setLink(url);
+      if (url) window.open(url, "_blank", "noopener,noreferrer");
     } catch (err) {
-      setError(err?.message || "Preview unavailable");
+      setError(err?.message || "Signed URL unavailable");
     } finally {
       setBusy("");
     }
   };
 
-  const uploadToRoblox = async () => {
-    if (!active?.id || !robloxConnected) return;
-    setBusy("roblox");
-    setError("");
+  const showDerivativeComparison = async (derivativeId) => {
+    if (!active?.id || !derivativeId) return;
+    setBusy(`comparison:${derivativeId}`);
     try {
-      const prepared = await prepareRobloxModelUpload({
-        modelFileId: active.id,
-        displayName,
-        description: "Uploaded from NexusRBX after private GLB validation.",
-        creator: selectedCreator || { type: "user" },
-      });
-      const confirmed = await confirmRobloxModelUpload(prepared.uploadId);
-      setUpload({ ...prepared, ...confirmed });
-      notify?.({ type: "success", message: "Roblox model upload queued." });
+      const payload = await getDerivativeComparison(active.id, derivativeId);
+      setComparison(payload.comparison);
     } catch (err) {
-      setError(err?.message || "Roblox upload failed");
+      setError(err?.message || "Comparison unavailable");
     } finally {
       setBusy("");
     }
   };
 
-  const refreshUpload = async () => {
-    const uploadId = upload?.uploadId || upload?.upload?.id;
-    if (!uploadId) return;
-    setBusy("refresh_upload");
+  const openDerivativeUrl = async (derivativeId, kind) => {
+    if (!active?.id || !derivativeId) return;
+    setBusy(`${kind}:${derivativeId}`);
     try {
-      const data = await refreshRobloxModelUpload(uploadId).catch(() => getRobloxModelUpload(uploadId));
-      setUpload(data.upload || data);
+      const payload = kind === "derivative_download"
+        ? await getDerivativeDownloadUrl(active.id, derivativeId)
+        : await getDerivativePreviewUrl(active.id, derivativeId);
+      const url = payload.download?.url || payload.preview?.url || "";
+      setLink(url);
+      if (url) window.open(url, "_blank", "noopener,noreferrer");
     } catch (err) {
-      setError(err?.message || "Upload refresh failed");
+      setError(err?.message || "Derivative URL unavailable");
     } finally {
       setBusy("");
     }
   };
 
-  const insertInStudio = async () => {
-    const uploadId = upload?.uploadId || upload?.id || upload?.upload?.id;
-    if (!uploadId || !studioConnected) return;
-    setBusy("insert");
-    setError("");
+  const cancelActive = async () => {
+    if (!active?.id) return;
+    setBusy("cancel");
     try {
-      await prepareUploadedModelInsertion(uploadId);
-      const inserted = await insertUploadedModel(uploadId, displayName);
-      notify?.({ type: "success", message: "Studio insertion queued." });
-      setUpload((current) => ({ ...(current || {}), insertion: inserted }));
+      await cancelModelFile(active.id);
+      await refresh();
     } catch (err) {
-      setError(err?.message || "Studio insertion failed");
+      setError(err?.message || "Cancel failed");
     } finally {
       setBusy("");
     }
   };
 
-  const remove = async () => {
+  const removeModel = async () => {
     if (!active?.id) return;
     setBusy("delete");
     try {
       await deleteModelFile(active.id);
       setActive(null);
       setReport(null);
-      await refresh();
+      setDerivatives([]);
+      setPlan(null);
+      setComparison(null);
     } catch (err) {
       setError(err?.message || "Delete failed");
+    } finally {
+      setBusy("");
+    }
+  };
+
+  const removeDerivative = async (derivativeId) => {
+    if (!active?.id || !derivativeId) return;
+    await deleteDerivative(active.id, derivativeId).then(refresh).catch((err) => setError(err?.message || "Delete derivative failed"));
+  };
+
+  const stopDerivative = async (derivativeId) => {
+    if (!active?.id || !derivativeId) return;
+    await cancelDerivative(active.id, derivativeId).then(refresh).catch((err) => setError(err?.message || "Cancel derivative failed"));
+  };
+
+  const prepareRobloxUpload = async (derivativeId = null) => {
+    if (!active?.id) return;
+    setBusy("roblox_prepare");
+    setError("");
+    setUploadPrep(null);
+    setUploadStatus(null);
+    setInsertionReview(null);
+    setInsertionReceipt(null);
+    try {
+      const prepared = await prepareRobloxModelUpload({
+        modelFileId: active.id,
+        derivativeId,
+        displayName: uploadName || active.originalFilename || active.safeFilename || "NexusRBX Model",
+        description: uploadDescription,
+        creator: { type: "User" },
+      });
+      setUploadPrep(prepared);
+      setUploadName(prepared.uploadName || prepared.review?.displayName || uploadName);
+      setUploadDescription(prepared.uploadDescription || prepared.review?.description || uploadDescription);
+      setRightsConfirmed(false);
+      setModerationAcknowledged(false);
+    } catch (err) {
+      setError(err?.message || "Could not prepare Roblox upload");
+    } finally {
+      setBusy("");
+    }
+  };
+
+  const confirmRobloxUpload = async () => {
+    if (!uploadPrep?.uploadId || !rightsConfirmed || !moderationAcknowledged) return;
+    setBusy("roblox_confirm");
+    setError("");
+    try {
+      const queued = await confirmRobloxModelUpload(uploadPrep.uploadId);
+      setUploadStatus(queued);
+      notify?.({ type: "success", message: "Roblox model upload queued." });
+    } catch (err) {
+      setError(err?.message || "Could not confirm Roblox upload");
+    } finally {
+      setBusy("");
+    }
+  };
+
+  const refreshRobloxUpload = async () => {
+    const uploadId = uploadPrep?.uploadId || currentUpload?.id || currentUpload?.uploadId;
+    if (!uploadId) return;
+    setBusy("roblox_refresh");
+    setError("");
+    try {
+      const refreshed = await refreshRobloxModelUpload(uploadId).catch(() => getRobloxModelUpload(uploadId));
+      setUploadStatus(refreshed.upload || refreshed);
+    } catch (err) {
+      setError(err?.message || "Could not refresh Roblox upload");
+    } finally {
+      setBusy("");
+    }
+  };
+
+  const prepareInsertion = async () => {
+    const uploadId = currentUpload?.id || currentUpload?.uploadId || uploadPrep?.uploadId;
+    if (!uploadId) return;
+    setBusy("insertion_prepare");
+    setError("");
+    try {
+      await recheckUploadedModelAccess(uploadId).catch(() => null);
+      const review = await prepareUploadedModelInsertion(uploadId, {
+        requestedName: currentUpload?.displayName || uploadPrep?.uploadName || uploadName,
+        targetParentPath: "Workspace/NexusImports",
+        placement: { mode: "camera_focus", position: null },
+        anchoredPolicy: "preserve",
+        collisionPolicy: "preserve",
+      });
+      setInsertionReview(review);
+    } catch (err) {
+      setError(err?.message || "Could not prepare Studio insertion");
+    } finally {
+      setBusy("");
+    }
+  };
+
+  const confirmInsertion = async () => {
+    const uploadId = currentUpload?.id || currentUpload?.uploadId || uploadPrep?.uploadId;
+    if (!uploadId || !insertionReview?.preparedInsertionId) return;
+    setBusy("insertion_confirm");
+    setError("");
+    try {
+      const receipt = await insertUploadedModel(uploadId, insertionReview.preparedInsertionId);
+      setInsertionReceipt(receipt);
+      notify?.({ type: "success", message: "Studio insertion queued." });
+    } catch (err) {
+      setError(err?.message || "Could not queue Studio insertion");
     } finally {
       setBusy("");
     }
@@ -214,14 +394,14 @@ export default function ModelFilePipelinePanel({ robloxConnected = false, studio
         <div className="flex min-w-0 items-center gap-2">
           <FileArchive className="h-4 w-4 text-cyan-300" />
           <div className="min-w-0">
-            <div className="font-black">GLB model pipeline</div>
-            <div className="truncate text-white/45">{active ? `${active.originalFilename || active.safeFilename || active.id} · ${statusText(active.status)}` : "Private upload, validation, optimization, Roblox upload, Studio insert"}</div>
+            <div className="font-black">GLB model files</div>
+            <div className="truncate text-white/45">{activeLabel}</div>
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
           <input ref={fileInputRef} type="file" accept=".glb,model/gltf-binary" className="hidden" onChange={handleFile} />
           <button type="button" onClick={() => fileInputRef.current?.click()} className="inline-flex items-center gap-1 rounded-md border border-white/10 px-2 py-1 font-bold text-white/70 hover:bg-white/5">
-            {busy === "upload" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <UploadCloud className="h-3.5 w-3.5" />}
+            {busy === "upload" || busy === "complete" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <UploadCloud className="h-3.5 w-3.5" />}
             Upload GLB
           </button>
           <button type="button" onClick={refresh} className="rounded-md border border-white/10 p-1.5 text-white/60 hover:bg-white/5" aria-label="Refresh model files">
@@ -230,55 +410,203 @@ export default function ModelFilePipelinePanel({ robloxConnected = false, studio
         </div>
       </div>
 
-      {progress !== null && <div className="mt-2 h-1.5 overflow-hidden rounded bg-white/10"><div className="h-full bg-cyan-300" style={{ width: `${progress}%` }} /></div>}
+      <div className="mt-2 text-white/45">Limit: {formatBytes(sizeLimit)}</div>
+      {progress && (
+        <div className="mt-2">
+          <div className="h-1.5 overflow-hidden rounded bg-white/10">
+            <div className="h-full bg-cyan-300" style={{ width: `${progressPercent || 0}%` }} />
+          </div>
+          <div className="mt-1 text-white/45">{busy === "complete" ? "Verifying upload" : `${formatBytes(progress.loaded)} / ${formatBytes(progress.total)}`}</div>
+        </div>
+      )}
       {error && <div className="mt-2 rounded-md border border-rose-300/25 bg-rose-300/10 p-2 text-rose-100">{error}</div>}
 
       {active && (
-        <div className="mt-3 grid gap-2 md:grid-cols-[1fr_auto]">
-          <div className="flex flex-wrap gap-2">
-            <button type="button" onClick={preview} disabled={busy === "preview"} className="rounded-md border border-white/10 px-2 py-1 font-bold text-white/70 disabled:opacity-40">Preview URL</button>
-            <button type="button" onClick={optimize} disabled={!canOptimize || busy === "optimize"} className="rounded-md border border-white/10 px-2 py-1 font-bold text-white/70 disabled:opacity-40">Optimize</button>
-            <button type="button" onClick={uploadToRoblox} disabled={!canUploadToRoblox || !robloxConnected || busy === "roblox"} className="inline-flex items-center gap-1 rounded-md border border-white/10 px-2 py-1 font-bold text-white/70 disabled:opacity-40">
-              <CloudUpload className="h-3.5 w-3.5" />
-              Upload to Roblox
-            </button>
-            <button type="button" onClick={refreshUpload} disabled={!upload?.uploadId && !upload?.id} className="rounded-md border border-white/10 px-2 py-1 font-bold text-white/70 disabled:opacity-40">Refresh upload</button>
-            <button type="button" onClick={insertInStudio} disabled={!uploadReadyForInsertion || !studioConnected || busy === "insert"} className="rounded-md border border-emerald-300/30 px-2 py-1 font-bold text-emerald-100 disabled:opacity-40">Insert in Studio</button>
-          </div>
-          <button type="button" onClick={remove} disabled={busy === "delete"} className="rounded-md border border-white/10 p-1.5 text-white/50 hover:bg-white/5" aria-label="Delete model file">
+        <div className="mt-3 flex flex-wrap gap-2">
+          <button type="button" onClick={() => openSourceUrl("preview")} disabled={!VALIDATED.has(active.status) || busy === "preview"} className="inline-flex items-center gap-1 rounded-md border border-white/10 px-2 py-1 font-bold text-white/70 disabled:opacity-40">
+            <Eye className="h-3.5 w-3.5" /> Preview
+          </button>
+          <button type="button" onClick={() => openSourceUrl("download")} disabled={!VALIDATED.has(active.status) || busy === "download"} className="inline-flex items-center gap-1 rounded-md border border-white/10 px-2 py-1 font-bold text-white/70 disabled:opacity-40">
+            <Download className="h-3.5 w-3.5" /> Download
+          </button>
+          <button type="button" onClick={cancelActive} disabled={!ACTIVE_MODEL.has(active.status) || busy === "cancel"} className="inline-flex items-center gap-1 rounded-md border border-white/10 px-2 py-1 font-bold text-white/70 disabled:opacity-40">
+            <Square className="h-3.5 w-3.5" /> Cancel
+          </button>
+          <button type="button" onClick={removeModel} disabled={busy === "delete"} className="rounded-md border border-white/10 p-1.5 text-white/50 hover:bg-white/5" aria-label="Delete model file">
             <Trash2 className="h-3.5 w-3.5" />
           </button>
         </div>
       )}
 
-      {(report || derivatives.length > 0 || upload || previewUrl) && (
-        <div className="mt-3 grid gap-2 md:grid-cols-2">
-          {report && (
-            <div className="rounded-md border border-white/10 bg-black/20 p-2">
-              <div className="flex items-center gap-1 font-black text-emerald-100"><CheckCircle2 className="h-3.5 w-3.5" />Validation report</div>
-              <div className="mt-1 text-white/60">Status: {statusText(report.status)} · Triangles: {report.summary?.triangles ?? 0} · Issues: {report.issues?.length ?? 0}</div>
-            </div>
-          )}
-          {derivatives.length > 0 && (
-            <div className="rounded-md border border-white/10 bg-black/20 p-2">
-              <div className="font-black">Derivatives</div>
-              <div className="mt-1 text-white/60">{derivatives.slice(0, 3).map((item) => `${item.id || item.derivativeId}: ${statusText(item.status)}`).join(" · ")}</div>
-            </div>
-          )}
-          {upload && (
-            <div className="rounded-md border border-white/10 bg-black/20 p-2">
-              <div className="font-black">Roblox upload</div>
-              <div className="mt-1 text-white/60">Status: {statusText(upload.status || upload.upload?.status)} · Asset: {upload.robloxAssetId || upload.upload?.robloxAssetId || "pending"}</div>
-            </div>
-          )}
-          {previewUrl && (
-            <div className="rounded-md border border-white/10 bg-black/20 p-2">
-              <div className="font-black">Preview</div>
-              <a href={previewUrl} target="_blank" rel="noreferrer" className="mt-1 block truncate text-cyan-200">{previewUrl}</a>
+      {report && (
+        <div className="mt-3 rounded-md border border-white/10 bg-black/20 p-2">
+          <div className="flex items-center gap-1 font-black text-emerald-100"><CheckCircle2 className="h-3.5 w-3.5" />Validation report</div>
+          <div className="mt-1 text-white/60">
+            Status: {statusText(report.status)} · Errors: {report.summary?.errors ?? 0} · Warnings: {report.summary?.warnings ?? 0} · Triangles: {report.metrics?.triangles ?? report.summary?.triangles ?? 0}
+          </div>
+          <div className="mt-1 truncate text-white/45">Rules: {report.rulesVersion} · SHA-256: {report.sourceSha256 || report.sha256 || "pending"}</div>
+          {report.issues?.length > 0 && (
+            <div className="mt-2 grid gap-1">
+              {report.issues.slice(0, 4).map((issue, index) => (
+                <div key={`${issue.code}-${index}`} className="rounded border border-white/10 bg-white/[0.03] px-2 py-1 text-white/65">
+                  <span className="font-bold text-white/80">{issue.code}</span> · {issue.message}
+                </div>
+              ))}
             </div>
           )}
         </div>
       )}
+
+      {canPrepareRobloxUpload && (
+        <div className="mt-3 rounded-md border border-white/10 bg-black/20 p-2">
+          <div className="font-black text-white">Roblox upload</div>
+          <div className="mt-2 grid gap-2 sm:grid-cols-[1fr_1fr_auto]">
+            <input
+              value={uploadName}
+              onChange={(event) => setUploadName(event.target.value.slice(0, 50))}
+              placeholder={active.originalFilename || "Model name"}
+              className="rounded-md border border-white/10 bg-black px-2 py-1 text-white"
+            />
+            <input
+              value={uploadDescription}
+              onChange={(event) => setUploadDescription(event.target.value.slice(0, 1000))}
+              placeholder="Description"
+              className="rounded-md border border-white/10 bg-black px-2 py-1 text-white"
+            />
+            <button type="button" onClick={() => prepareRobloxUpload(null)} disabled={busy === "roblox_prepare"} className="rounded-md border border-cyan-300/30 px-2 py-1 font-bold text-cyan-100 disabled:opacity-40">
+              Prepare original
+            </button>
+          </div>
+          {derivatives.some((item) => String(item.status).startsWith("completed")) && (
+            <div className="mt-2 flex flex-wrap gap-1">
+              {derivatives.filter((item) => String(item.status).startsWith("completed")).slice(0, 4).map((item) => (
+                <button
+                  key={`upload-${item.id || item.derivativeId}`}
+                  type="button"
+                  onClick={() => prepareRobloxUpload(item.id || item.derivativeId)}
+                  className="rounded border border-white/10 px-2 py-1 text-white/65 hover:bg-white/5"
+                >
+                  Prepare derivative {String(item.id || item.derivativeId).slice(0, 8)}
+                </button>
+              ))}
+            </div>
+          )}
+          {uploadPrep && (
+            <div className="mt-3 rounded border border-white/10 bg-white/[0.03] p-2 text-white/65">
+              <div className="font-bold text-white">Review {uploadPrep.uploadName}</div>
+              <div className="mt-1">Source: {uploadPrep.sourceType} · {formatBytes(uploadPrep.sourceBytes)} · SHA-256 {uploadPrep.trustedSourceSha256}</div>
+              <div>Creator: {uploadPrep.creator?.type} {uploadPrep.creator?.id} · File: {uploadPrep.expectedFilename} · {uploadPrep.expectedMimeType}</div>
+              <label className="mt-2 flex items-start gap-2">
+                <input type="checkbox" checked={rightsConfirmed} onChange={(event) => setRightsConfirmed(event.target.checked)} />
+                <span>{uploadPrep.rightsConfirmationText || "I confirm I have rights to upload this model."}</span>
+              </label>
+              <label className="mt-1 flex items-start gap-2">
+                <input type="checkbox" checked={moderationAcknowledged} onChange={(event) => setModerationAcknowledged(event.target.checked)} />
+                <span>{uploadPrep.moderationWarning || "Roblox moderation/access can remain pending after upload."}</span>
+              </label>
+              <div className="mt-2 flex flex-wrap gap-2">
+                <button type="button" onClick={confirmRobloxUpload} disabled={!rightsConfirmed || !moderationAcknowledged || busy === "roblox_confirm"} className="rounded-md border border-cyan-300/30 px-2 py-1 font-bold text-cyan-100 disabled:opacity-40">
+                  Confirm upload
+                </button>
+                <button type="button" onClick={refreshRobloxUpload} disabled={busy === "roblox_refresh"} className="rounded-md border border-white/10 px-2 py-1 text-white/65 disabled:opacity-40">
+                  Refresh
+                </button>
+              </div>
+            </div>
+          )}
+          {currentUpload && (
+            <div className="mt-2 rounded border border-white/10 bg-white/[0.03] p-2 text-white/65">
+              <div>Status: {statusText(currentUpload.state || currentUpload.status)} · Moderation/access: {statusText(currentUpload.moderationState)}</div>
+              {currentUpload.robloxAssetId && <div>Trusted asset ID: {currentUpload.robloxAssetId}</div>}
+              {(currentUpload.state === "submission_unknown" || currentUpload.status === "submission_unknown") && (
+                <div className="mt-1 text-amber-100">The create request may have reached Roblox. Automatic retry is disabled; use Refresh to reconcile.</div>
+              )}
+              <button type="button" onClick={prepareInsertion} disabled={!currentUpload.robloxAssetId || busy === "insertion_prepare"} className="mt-2 rounded-md border border-white/10 px-2 py-1 font-bold text-white/70 disabled:opacity-40">
+                Prepare Studio insertion
+              </button>
+            </div>
+          )}
+          {insertionReview && (
+            <div className="mt-2 rounded border border-white/10 bg-white/[0.03] p-2 text-white/65">
+              <div>Studio: {insertionReview.experience?.name || insertionReview.experience?.placeId || "paired session"} · Creator: {insertionReview.experience?.creator?.type} {insertionReview.experience?.creator?.id}</div>
+              <div>Destination: {insertionReview.insertion?.targetParentPath} · Placement: {statusText(insertionReview.insertion?.placement?.mode)}</div>
+              <button type="button" onClick={confirmInsertion} disabled={busy === "insertion_confirm"} className="mt-2 rounded-md border border-cyan-300/30 px-2 py-1 font-bold text-cyan-100 disabled:opacity-40">
+                Confirm insertion
+              </button>
+            </div>
+          )}
+          {insertionReceipt && (
+            <div className="mt-2 rounded border border-emerald-300/20 bg-emerald-300/10 p-2 text-emerald-50">
+              Insertion {statusText(insertionReceipt.status)} · {insertionReceipt.commandId || insertionReceipt.insertionId}
+            </div>
+          )}
+        </div>
+      )}
+
+      {canOptimize && (
+        <div className="mt-3 rounded-md border border-white/10 bg-black/20 p-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <select value={profile} onChange={(event) => setProfile(event.target.value)} className="rounded-md border border-white/10 bg-black px-2 py-1 text-white">
+              <option value="conservative">Conservative</option>
+              <option value="roblox_balanced">Roblox balanced</option>
+              <option value="aggressive">Aggressive</option>
+            </select>
+            <button type="button" onClick={createPlan} disabled={busy === "plan"} className="rounded-md border border-white/10 px-2 py-1 font-bold text-white/70 disabled:opacity-40">
+              Review plan
+            </button>
+            <button type="button" onClick={queueDerivative} disabled={!plan || (plan.confirmationRequired && !aggressiveConfirmed) || busy === "derivative"} className="rounded-md border border-cyan-300/30 px-2 py-1 font-bold text-cyan-100 disabled:opacity-40">
+              Queue derivative
+            </button>
+          </div>
+          {plan && (
+            <div className="mt-2 text-white/60">
+              <div>Plan: {plan.planId} · Lossy: {(plan.lossyOperations || []).join(", ") || "none"}</div>
+              <div>Tools: {Object.entries(plan.toolVersions || {}).map(([key, value]) => `${key} ${value}`).join(" · ") || "nexusrbx optimizer"}</div>
+              {plan.confirmationRequired && (
+                <label className="mt-2 flex items-center gap-2 text-white/70">
+                  <input type="checkbox" checked={aggressiveConfirmed} onChange={(event) => setAggressiveConfirmed(event.target.checked)} />
+                  Confirm aggressive lossy optimization
+                </label>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {derivatives.length > 0 && (
+        <div className="mt-3 rounded-md border border-white/10 bg-black/20 p-2">
+          <div className="font-black">Derivatives</div>
+          <div className="mt-2 grid gap-2">
+            {derivatives.slice(0, 5).map((item) => (
+              <div key={item.id || item.derivativeId} className="flex flex-wrap items-center justify-between gap-2 rounded border border-white/10 bg-white/[0.03] px-2 py-1">
+                <div className="min-w-0">
+                  <div className="truncate font-bold">{item.id || item.derivativeId}</div>
+                  <div className="text-white/45">{statusText(item.status)}{item.stage ? ` · ${statusText(item.stage)}` : ""}</div>
+                </div>
+                <div className="flex gap-1">
+                  <button type="button" onClick={() => showDerivativeComparison(item.id || item.derivativeId)} disabled={!String(item.status).startsWith("completed")} className="rounded border border-white/10 px-2 py-1 text-white/60 disabled:opacity-40">Compare</button>
+                  <button type="button" onClick={() => openDerivativeUrl(item.id || item.derivativeId, "derivative_preview")} disabled={!String(item.status).startsWith("completed")} className="rounded border border-white/10 p-1.5 text-white/60 disabled:opacity-40" aria-label="Preview derivative"><Eye className="h-3.5 w-3.5" /></button>
+                  <button type="button" onClick={() => openDerivativeUrl(item.id || item.derivativeId, "derivative_download")} disabled={!String(item.status).startsWith("completed")} className="rounded border border-white/10 p-1.5 text-white/60 disabled:opacity-40" aria-label="Download derivative"><Download className="h-3.5 w-3.5" /></button>
+                  <button type="button" onClick={() => stopDerivative(item.id || item.derivativeId)} disabled={!ACTIVE_DERIVATIVE.has(item.status)} className="rounded border border-white/10 p-1.5 text-white/60 disabled:opacity-40" aria-label="Cancel derivative"><Square className="h-3.5 w-3.5" /></button>
+                  <button type="button" onClick={() => removeDerivative(item.id || item.derivativeId)} className="rounded border border-white/10 p-1.5 text-white/50" aria-label="Delete derivative"><Trash2 className="h-3.5 w-3.5" /></button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {comparison && (
+        <div className="mt-3 rounded-md border border-white/10 bg-black/20 p-2 text-white/60">
+          <div className="font-black text-white">Before / after</div>
+          <div className="mt-1">Bytes: {formatBytes(comparison.sourceBytes)} to {formatBytes(comparison.derivativeBytes)} · {comparison.byteReductionPercent}% smaller</div>
+          <div>Triangles: {comparison.source?.triangles ?? 0} to {comparison.derivative?.triangles ?? 0}</div>
+          <div>Textures: {comparison.source?.textures ?? 0} to {comparison.derivative?.textures ?? 0}</div>
+          {(comparison.warnings || []).length > 0 && <div className="mt-1 text-amber-100">Warnings: {(comparison.warnings || []).map((warning) => warning.code || warning.message || warning).join(", ")}</div>}
+        </div>
+      )}
+
+      {link && <a href={link} target="_blank" rel="noreferrer" className="mt-2 block truncate text-cyan-200">{link}</a>}
     </section>
   );
 }
