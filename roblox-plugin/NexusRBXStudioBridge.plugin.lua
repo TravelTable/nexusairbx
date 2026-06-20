@@ -3626,12 +3626,14 @@ local function applyNativeModelPatch(payload, command)
 	}
 end
 
-local IMPORTED_ASSET_MAX_DESCENDANTS = 10000
-local IMPORTED_ASSET_MAX_DEPTH = 64
-local IMPORTED_ASSET_RECEIPTS_SETTING = "nexusrbxImportedAssetReceipts"
-local IMPORTED_ASSET_RECEIPT_ORDER_SETTING = "nexusrbxImportedAssetReceiptOrder"
+local ImportedAsset = {
+	MAX_DESCENDANTS = 10000,
+	MAX_DEPTH = 64,
+	RECEIPTS_SETTING = "nexusrbxImportedAssetReceipts",
+	RECEIPT_ORDER_SETTING = "nexusrbxImportedAssetReceiptOrder",
+}
 
-local function importedAssetFailure(commandType, assetId, code, message, warnings)
+function ImportedAsset.failure(commandType, assetId, code, message, warnings)
 	return {
 		ok = false,
 		type = commandType,
@@ -3642,7 +3644,7 @@ local function importedAssetFailure(commandType, assetId, code, message, warning
 	}
 end
 
-local function importSettingTable(key)
+function ImportedAsset.settingTable(key)
 	local ok, value = pcall(function()
 		return plugin:GetSetting(key)
 	end)
@@ -3652,21 +3654,21 @@ local function importSettingTable(key)
 	return {}
 end
 
-local function getStoredImportedAssetReceipt(idempotencyKey)
+function ImportedAsset.getStoredReceipt(idempotencyKey)
 	if tostring(idempotencyKey or "") == "" then
 		return nil
 	end
-	local receipts = importSettingTable(IMPORTED_ASSET_RECEIPTS_SETTING)
+	local receipts = ImportedAsset.settingTable(ImportedAsset.RECEIPTS_SETTING)
 	return receipts[tostring(idempotencyKey)]
 end
 
-local function storeImportedAssetReceipt(idempotencyKey, receipt)
+function ImportedAsset.storeReceipt(idempotencyKey, receipt)
 	if tostring(idempotencyKey or "") == "" or type(receipt) ~= "table" then
 		return
 	end
 	local key = tostring(idempotencyKey)
-	local receipts = importSettingTable(IMPORTED_ASSET_RECEIPTS_SETTING)
-	local order = importSettingTable(IMPORTED_ASSET_RECEIPT_ORDER_SETTING)
+	local receipts = ImportedAsset.settingTable(ImportedAsset.RECEIPTS_SETTING)
+	local order = ImportedAsset.settingTable(ImportedAsset.RECEIPT_ORDER_SETTING)
 	if not receipts[key] then
 		table.insert(order, key)
 	end
@@ -3676,12 +3678,12 @@ local function storeImportedAssetReceipt(idempotencyKey, receipt)
 		receipts[oldKey] = nil
 	end
 	pcall(function()
-		plugin:SetSetting(IMPORTED_ASSET_RECEIPTS_SETTING, receipts)
-		plugin:SetSetting(IMPORTED_ASSET_RECEIPT_ORDER_SETTING, order)
+		plugin:SetSetting(ImportedAsset.RECEIPTS_SETTING, receipts)
+		plugin:SetSetting(ImportedAsset.RECEIPT_ORDER_SETTING, order)
 	end)
 end
 
-local function cleanImportName(value, fallback)
+function ImportedAsset.cleanName(value, fallback)
 	local text = tostring(value or ""):gsub("[%c]", ""):gsub("^%s+", ""):gsub("%s+$", "")
 	if text == "" then
 		text = fallback or "NexusImportedAsset"
@@ -3692,8 +3694,8 @@ local function cleanImportName(value, fallback)
 	return text
 end
 
-local function uniqueChildName(parent, desiredName)
-	local base = cleanImportName(desiredName, "NexusImportedAsset")
+function ImportedAsset.uniqueChildName(parent, desiredName)
+	local base = ImportedAsset.cleanName(desiredName, "NexusImportedAsset")
 	if not parent:FindFirstChild(base) then
 		return base
 	end
@@ -3706,7 +3708,7 @@ local function uniqueChildName(parent, desiredName)
 	return base .. " (" .. tostring(HttpService:GenerateGUID(false)) .. ")"
 end
 
-local function isAllowedImportedAssetTarget(path)
+function ImportedAsset.isAllowedTarget(path)
 	local parts = splitPath(path)
 	local root = parts[1]
 	if root ~= "Workspace" and root ~= "ReplicatedStorage" and root ~= "ServerStorage" then
@@ -3720,26 +3722,26 @@ local function isAllowedImportedAssetTarget(path)
 	return #parts >= 1
 end
 
-local function safeIsA(inst, className)
+function ImportedAsset.safeIsA(inst, className)
 	local ok, result = pcall(function()
 		return inst:IsA(className)
 	end)
 	return ok and result == true
 end
 
-local function countTreeDepth(inst, depth)
+function ImportedAsset.countTreeDepth(inst, depth)
 	local maxDepth = depth or 0
 	for _, child in ipairs(inst:GetChildren()) do
-		maxDepth = math.max(maxDepth, countTreeDepth(child, (depth or 0) + 1))
+		maxDepth = math.max(maxDepth, ImportedAsset.countTreeDepth(child, (depth or 0) + 1))
 	end
 	return maxDepth
 end
 
-local function belongsToRoot(value, root)
+function ImportedAsset.belongsToRoot(value, root)
 	return typeof(value) == "Instance" and (value == root or value:IsDescendantOf(root))
 end
 
-local function scanAndSanitizeImportedAssetRoot(root, requestedAssetType)
+function ImportedAsset.scanAndSanitizeRoot(root, requestedAssetType)
 	local scan = {
 		totalDescendants = 0,
 		scriptsRemoved = 0,
@@ -3761,10 +3763,10 @@ local function scanAndSanitizeImportedAssetRoot(root, requestedAssetType)
 	local blocked = {}
 	local descendants = root:GetDescendants()
 	scan.totalDescendants = #descendants
-	if scan.totalDescendants > IMPORTED_ASSET_MAX_DESCENDANTS then
+	if scan.totalDescendants > ImportedAsset.MAX_DESCENDANTS then
 		return nil, "ASSET_TREE_TOO_LARGE", "The asset contains too many descendants.", scan, warnings
 	end
-	if countTreeDepth(root, 0) > IMPORTED_ASSET_MAX_DEPTH then
+	if ImportedAsset.countTreeDepth(root, 0) > ImportedAsset.MAX_DEPTH then
 		return nil, "ASSET_TREE_TOO_DEEP", "The asset tree is too deeply nested.", scan, warnings
 	end
 	if root:IsA("MeshPart") then
@@ -3775,10 +3777,10 @@ local function scanAndSanitizeImportedAssetRoot(root, requestedAssetType)
 		scan.models = scan.models + 1
 	end
 	for _, inst in ipairs(descendants) do
-		if safeIsA(inst, "LuaSourceContainer") or SCRIPT_CLASSES[inst.ClassName] then
+		if ImportedAsset.safeIsA(inst, "LuaSourceContainer") or SCRIPT_CLASSES[inst.ClassName] then
 			scan.scriptsRemoved = scan.scriptsRemoved + 1
 			table.insert(blocked, inst)
-		elseif inst:IsA("RemoteEvent") or inst:IsA("RemoteFunction") or safeIsA(inst, "UnreliableRemoteEvent") then
+		elseif inst:IsA("RemoteEvent") or inst:IsA("RemoteFunction") or ImportedAsset.safeIsA(inst, "UnreliableRemoteEvent") then
 			scan.remoteObjectsRemoved = scan.remoteObjectsRemoved + 1
 			table.insert(blocked, inst)
 		elseif inst:IsA("BindableEvent") or inst:IsA("BindableFunction") then
@@ -3812,7 +3814,7 @@ local function scanAndSanitizeImportedAssetRoot(root, requestedAssetType)
 			scan.packages = scan.packages + 1
 			scan.behaviouralObjectsFlagged = scan.behaviouralObjectsFlagged + 1
 		end
-		if safeIsA(inst, "Constraint") then
+		if ImportedAsset.safeIsA(inst, "Constraint") then
 			scan.constraints = scan.constraints + 1
 			local okAttachment0, attachment0 = pcall(function()
 				return inst.Attachment0
@@ -3820,7 +3822,7 @@ local function scanAndSanitizeImportedAssetRoot(root, requestedAssetType)
 			local okAttachment1, attachment1 = pcall(function()
 				return inst.Attachment1
 			end)
-			if (okAttachment0 and attachment0 and not belongsToRoot(attachment0, root)) or (okAttachment1 and attachment1 and not belongsToRoot(attachment1, root)) then
+			if (okAttachment0 and attachment0 and not ImportedAsset.belongsToRoot(attachment0, root)) or (okAttachment1 and attachment1 and not ImportedAsset.belongsToRoot(attachment1, root)) then
 				scan.invalidReferencesFound = scan.invalidReferencesFound + 1
 			end
 		end
@@ -3850,7 +3852,7 @@ local function scanAndSanitizeImportedAssetRoot(root, requestedAssetType)
 	return true, nil, nil, scan, warnings
 end
 
-local function targetCFrameForImportedAsset(placement)
+function ImportedAsset.targetCFrame(placement)
 	local mode = tostring((placement or {}).mode or "camera_focus")
 	if mode == "explicit_position" and type(placement.position) == "table" then
 		local pos = placement.position
@@ -3868,8 +3870,8 @@ local function targetCFrameForImportedAsset(placement)
 	return CFrame.new(0, 3, 0)
 end
 
-local function pivotImportedAssetRoot(root, placement)
-	local target = targetCFrameForImportedAsset(placement)
+function ImportedAsset.pivotRoot(root, placement)
+	local target = ImportedAsset.targetCFrame(placement)
 	if root:IsA("Model") then
 		root:PivotTo(target)
 	elseif root:IsA("BasePart") then
@@ -3888,7 +3890,7 @@ local function pivotImportedAssetRoot(root, placement)
 	return target
 end
 
-local function applyImportedAssetPhysics(root, anchoredPolicy, collisionPolicy)
+function ImportedAsset.applyPhysics(root, anchoredPolicy, collisionPolicy)
 	local rootPart = nil
 	if root:IsA("BasePart") then
 		rootPart = root
@@ -3915,29 +3917,29 @@ local function applyImportedAssetPhysics(root, anchoredPolicy, collisionPolicy)
 	end
 end
 
-local function insertTrustedRobloxAsset(payload, commandType)
+function ImportedAsset.insertTrustedRobloxAsset(payload, commandType)
 	payload = payload or {}
 	local assetId = tostring(payload.assetId or payload.robloxAssetId or "")
 	local idempotencyKey = tostring(payload.idempotencyKey or "")
-	local replay = getStoredImportedAssetReceipt(idempotencyKey)
+	local replay = ImportedAsset.getStoredReceipt(idempotencyKey)
 	if replay then
 		replay.replayed = true
 		replay.code = "COMMAND_ALREADY_APPLIED"
 		return replay
 	end
 	if not assetId:match("^[1-9]%d*$") then
-		return importedAssetFailure(commandType, assetId, "INVALID_ASSET_ID", "assetId must be a positive integer.")
+		return ImportedAsset.failure(commandType, assetId, "INVALID_ASSET_ID", "assetId must be a positive integer.")
 	end
 	local assetType = tostring(payload.assetType or payload.expectedAssetType or "Model")
 	if commandType == "insert_creator_store_asset" and assetType ~= "Model" and assetType ~= "Mesh" then
-		return importedAssetFailure(commandType, assetId, "UNSUPPORTED_ASSET_TYPE", "Only Model and Mesh Creator Store assets can be imported.")
+		return ImportedAsset.failure(commandType, assetId, "UNSUPPORTED_ASSET_TYPE", "Only Model and Mesh Creator Store assets can be imported.")
 	end
 	if commandType == "insert_uploaded_roblox_model" and assetType ~= "Model" then
-		return importedAssetFailure(commandType, assetId, "ASSET_TYPE_MISMATCH", "Uploaded Roblox insertion only supports Model assets.")
+		return ImportedAsset.failure(commandType, assetId, "ASSET_TYPE_MISMATCH", "Uploaded Roblox insertion only supports Model assets.")
 	end
 	local targetParentPath = tostring(payload.targetParentPath or "Workspace/NexusImports")
-	if not isAllowedImportedAssetTarget(targetParentPath) then
-		return importedAssetFailure(commandType, assetId, "INVALID_TARGET_PATH", "Imports can only target Workspace, ReplicatedStorage, or ServerStorage.")
+	if not ImportedAsset.isAllowedTarget(targetParentPath) then
+		return ImportedAsset.failure(commandType, assetId, "INVALID_TARGET_PATH", "Imports can only target Workspace, ReplicatedStorage, or ServerStorage.")
 	end
 	if commandType == "insert_creator_store_asset" then
 		local allowFreeAssets = false
@@ -3945,7 +3947,7 @@ local function insertTrustedRobloxAsset(payload, commandType)
 			allowFreeAssets = AssetService.AllowInsertFreeAssets == true
 		end)
 		if not allowFreeAssets then
-			return importedAssetFailure(commandType, assetId, "THIRD_PARTY_ASSETS_DISABLED", "Enable Allow Loading Third Party Assets in Studio Experience Settings.", {
+			return ImportedAsset.failure(commandType, assetId, "THIRD_PARTY_ASSETS_DISABLED", "Enable Allow Loading Third Party Assets in Studio Experience Settings.", {
 				"Roblox Studio blocked public Creator Store asset loading for this experience.",
 			})
 		end
@@ -3966,31 +3968,31 @@ local function insertTrustedRobloxAsset(payload, commandType)
 		else
 			message = "The Roblox asset could not be loaded."
 		end
-		return importedAssetFailure(commandType, assetId, code, message)
+		return ImportedAsset.failure(commandType, assetId, code, message)
 	end
 	local loadedRoot = loadedOrErr
 	if typeof(loadedRoot) ~= "Instance" then
-		return importedAssetFailure(commandType, assetId, "ASSET_LOAD_FAILED", "The Roblox asset returned an invalid object.")
+		return ImportedAsset.failure(commandType, assetId, "ASSET_LOAD_FAILED", "The Roblox asset returned an invalid object.")
 	end
 	loadedRoot.Parent = nil
-	local scanOk, scanCode, scanMessage, scan, warnings = scanAndSanitizeImportedAssetRoot(loadedRoot, assetType)
+	local scanOk, scanCode, scanMessage, scan, warnings = ImportedAsset.scanAndSanitizeRoot(loadedRoot, assetType)
 	if not scanOk then
 		loadedRoot:Destroy()
-		return importedAssetFailure(commandType, assetId, scanCode or "SANITIZATION_FAILED", scanMessage or "Roblox asset import sanitization failed.", warnings)
+		return ImportedAsset.failure(commandType, assetId, scanCode or "SANITIZATION_FAILED", scanMessage or "Roblox asset import sanitization failed.", warnings)
 	end
 	local anchoredPolicy = tostring(payload.anchoredPolicy or payload.anchoringMode or "anchor_all")
 	if anchoredPolicy ~= "preserve" and anchoredPolicy ~= "anchor_all" and anchoredPolicy ~= "anchor_root" then
 		loadedRoot:Destroy()
-		return importedAssetFailure(commandType, assetId, "INVALID_ANCHORED_POLICY", "Invalid anchoredPolicy.", warnings)
+		return ImportedAsset.failure(commandType, assetId, "INVALID_ANCHORED_POLICY", "Invalid anchoredPolicy.", warnings)
 	end
 	local collisionPolicy = tostring(payload.collisionPolicy or payload.collisionMode or "disable_all")
 	if collisionPolicy == "disable" then collisionPolicy = "disable_all" end
 	if collisionPolicy == "visual_default" then collisionPolicy = "enable_baseparts" end
 	if collisionPolicy ~= "preserve" and collisionPolicy ~= "disable_all" and collisionPolicy ~= "enable_baseparts" then
 		loadedRoot:Destroy()
-		return importedAssetFailure(commandType, assetId, "INVALID_COLLISION_POLICY", "Invalid collisionPolicy.", warnings)
+		return ImportedAsset.failure(commandType, assetId, "INVALID_COLLISION_POLICY", "Invalid collisionPolicy.", warnings)
 	end
-	applyImportedAssetPhysics(loadedRoot, anchoredPolicy, collisionPolicy)
+	ImportedAsset.applyPhysics(loadedRoot, anchoredPolicy, collisionPolicy)
 	local targetExisted = resolvePath(targetParentPath) ~= nil
 	local parentPath = targetParentPath
 	if commandType == "insert_creator_store_asset" then
@@ -3999,16 +4001,16 @@ local function insertTrustedRobloxAsset(payload, commandType)
 	local parent = ensureParent(parentPath, true)
 	if not parent then
 		loadedRoot:Destroy()
-		return importedAssetFailure(commandType, assetId, "INVALID_TARGET_PATH", "Could not resolve the import destination.", warnings)
+		return ImportedAsset.failure(commandType, assetId, "INVALID_TARGET_PATH", "Could not resolve the import destination.", warnings)
 	end
-	local requestedName = cleanImportName(payload.requestedName, cleanImportName(payload.assetName, "NexusImportedAsset_" .. assetId))
-	local insertedName = uniqueChildName(parent, requestedName)
+	local requestedName = ImportedAsset.cleanName(payload.requestedName, ImportedAsset.cleanName(payload.assetName, "NexusImportedAsset_" .. assetId))
+	local insertedName = ImportedAsset.uniqueChildName(parent, requestedName)
 	loadedRoot.Name = insertedName
 	local placementCFrame = nil
 	local placementOk = pcall(function()
 		ChangeHistoryService:SetWaypoint("NexusRBX import start")
 		loadedRoot.Parent = parent
-		placementCFrame = pivotImportedAssetRoot(loadedRoot, payload.placement or {})
+		placementCFrame = ImportedAsset.pivotRoot(loadedRoot, payload.placement or {})
 		ChangeHistoryService:SetWaypoint("NexusRBX import complete")
 	end)
 	if not placementOk then
@@ -4017,7 +4019,7 @@ local function insertTrustedRobloxAsset(payload, commandType)
 			local target = resolvePath(targetParentPath)
 			if target and #target:GetChildren() == 0 then target:Destroy() end
 		end
-		return importedAssetFailure(commandType, assetId, "PLACEMENT_FAILED", "The sanitized asset could not be placed in Studio.", warnings)
+		return ImportedAsset.failure(commandType, assetId, "PLACEMENT_FAILED", "The sanitized asset could not be placed in Studio.", warnings)
 	end
 	local insertedPath = fullPath(loadedRoot)
 	local receipt = {
@@ -4026,7 +4028,7 @@ local function insertTrustedRobloxAsset(payload, commandType)
 		operation = commandType,
 		type = commandType,
 		assetId = assetId,
-		assetName = cleanImportName(payload.assetName, requestedName),
+		assetName = ImportedAsset.cleanName(payload.assetName, requestedName),
 		insertedName = insertedName,
 		insertedPath = insertedPath,
 		insertedRootPath = insertedPath,
@@ -4063,22 +4065,18 @@ local function insertTrustedRobloxAsset(payload, commandType)
 		collisionPolicy = collisionPolicy,
 		retryable = false,
 	}
-	storeImportedAssetReceipt(idempotencyKey, receipt)
+	ImportedAsset.storeReceipt(idempotencyKey, receipt)
 	return receipt
-end
-
-local function insertCreatorStoreAsset(payload)
-	return insertTrustedRobloxAsset(payload, "insert_creator_store_asset")
-end
-
-local function insertUploadedRobloxModel(payload)
-	return insertTrustedRobloxAsset(payload, "insert_uploaded_roblox_model")
 end
 
 local TOOL_HANDLERS = {
 	apply_artifact = applyArtifact,
-	insert_creator_store_asset = insertCreatorStoreAsset,
-	insert_uploaded_roblox_model = insertUploadedRobloxModel,
+	insert_creator_store_asset = function(payload)
+		return ImportedAsset.insertTrustedRobloxAsset(payload, "insert_creator_store_asset")
+	end,
+	insert_uploaded_roblox_model = function(payload)
+		return ImportedAsset.insertTrustedRobloxAsset(payload, "insert_uploaded_roblox_model")
+	end,
 	get_project_manifest = inspectPlace,
 	list_children = listChildren,
 	inspect_place = inspectPlace,
