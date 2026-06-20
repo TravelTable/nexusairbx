@@ -36,6 +36,12 @@ import {
 } from "../lib/streaming";
 import { emitStreamMetric } from "../lib/streamMetrics";
 import { AI_EVENTS, emitAiEvent, onAiEvent } from "../lib/aiEvents";
+import { useBilling } from "../context/BillingContext";
+import {
+  isInsufficientTokensError,
+  insufficientTokensToast,
+  parseApiErrorPayload,
+} from "../lib/billingErrors";
 
 const STREAM_MAX_RETRIES = 3;
 const RESULT_MAX_POLLS = 45;
@@ -90,6 +96,8 @@ function buildAssistantMessagePayload(data, { requestId, jobId, currentMode, isA
 }
 
 export function useAiChat(user, settings, refreshBilling, notify) {
+  const { totalRemaining, unlimitedTokens, plan } = useBilling();
+  const planKey = String(plan || "FREE").toLowerCase();
   const [messages, setMessages] = useState([]);
   const [currentChatId, setCurrentChatId] = useState(null);
   const [currentChatMeta, setCurrentChatMeta] = useState(null);
@@ -357,6 +365,11 @@ export function useAiChat(user, settings, refreshBilling, notify) {
     if (!content && attachments.length === 0) return;
     if (!user) return;
 
+    if (!unlimitedTokens && totalRemaining <= 0) {
+      notify(insufficientTokensToast(planKey));
+      return;
+    }
+
     const currentMode = actNow ? "act" : chatMode;
     const requestId = existingRequestId || uuidv4();
 
@@ -462,11 +475,22 @@ export function useAiChat(user, settings, refreshBilling, notify) {
       
       if (!jobRes.ok) {
         let errorMsg = "Failed to create generation job";
+        let errorCode = null;
         try {
           const contentType = jobRes.headers.get("content-type");
           if (contentType && contentType.includes("application/json")) {
             const errData = await jobRes.json();
-            errorMsg = errData.error || errorMsg;
+            const billingFailure = parseApiErrorPayload(errData);
+            if (billingFailure) {
+              notify(insufficientTokensToast(planKey));
+              setBusy(false);
+              setPending(null);
+              setStage("");
+              if (activeChatId) delete streamStatesRef.current[activeChatId];
+              return;
+            }
+            errorMsg = errData.message || errData.error || errorMsg;
+            errorCode = errData.code || null;
           } else {
             const text = await jobRes.text();
             console.error("Server returned non-JSON error:", text);
@@ -475,7 +499,9 @@ export function useAiChat(user, settings, refreshBilling, notify) {
         } catch (e) {
           console.error("Error parsing error response:", e);
         }
-        throw new Error(errorMsg);
+        const err = new Error(errorMsg);
+        if (errorCode) err.code = errorCode;
+        throw err;
       }
       
       const jobData = await jobRes.json();
@@ -525,12 +551,25 @@ export function useAiChat(user, settings, refreshBilling, notify) {
             continue;
           }
 
-          if (!res.ok) {
-            const text = await res.text().catch(() => "");
-            throw new Error(text || `Failed to recover result (${res.status})`);
+          const contentType = res.headers.get("content-type") || "";
+          const data = contentType.includes("application/json")
+            ? await res.json().catch(() => ({}))
+            : {};
+
+          const billingFailure = parseApiErrorPayload(data);
+          if (billingFailure || res.status === 402) {
+            const err = new Error(billingFailure?.message || data.message || "You're out of tokens.");
+            err.code = "INSUFFICIENT_TOKENS";
+            throw err;
           }
 
-          const data = await res.json();
+          if (!res.ok) {
+            const text = typeof data?.message === "string"
+              ? data.message
+              : await res.text().catch(() => "");
+            throw new Error(text || data?.error || `Failed to recover result (${res.status})`);
+          }
+
           const pending = data?.status === "pending" || data?.done === false;
           if (pending) {
             await wait(RESULT_POLL_BASE_MS * (attempt + 1));
@@ -614,6 +653,7 @@ export function useAiChat(user, settings, refreshBilling, notify) {
             updateDoc(assistantMsgRef, {
               pending: false,
               stage: "failed",
+              errorCode: err?.code || null,
               error: err?.message || "Generation failed",
               updatedAt: serverTimestamp(),
             }).catch(() => {});
@@ -624,6 +664,45 @@ export function useAiChat(user, settings, refreshBilling, notify) {
           setStage("");
           delete streamStatesRef.current[activeChatId];
           reject(err instanceof Error ? err : new Error(String(err || "Generation failed")));
+        };
+
+        const failInsufficientTokens = async (payload = {}) => {
+          if (finalized) return;
+          finalized = true;
+          receivedDone = true;
+          eventSource?.close?.();
+
+          const message = payload.message || insufficientTokensToast(planKey).message;
+          emitStreamMetric("error", {
+            jobId,
+            tag: "billing",
+            message,
+            retries: retryCount,
+          });
+
+          if (agentRunId) {
+            await setDoc(assistantMsgRef, {
+              role: "assistant",
+              content: "",
+              pending: false,
+              stage: "failed",
+              errorCode: "INSUFFICIENT_TOKENS",
+              error: message,
+              requestId,
+              jobId,
+              runId: agentRunId,
+              updatedAt: serverTimestamp(),
+            }, { merge: true }).catch(() => {});
+          }
+
+          refreshBilling();
+          notify(insufficientTokensToast(planKey));
+          setBusy(false);
+          if (streamFlushTimer) clearTimeout(streamFlushTimer);
+          setPending(null);
+          setStage("");
+          delete streamStatesRef.current[activeChatId];
+          resolve();
         };
 
         const finalizeWithData = async (data, source = "done") => {
@@ -670,6 +749,10 @@ export function useAiChat(user, settings, refreshBilling, notify) {
 
         const recoverFromStreamFailure = async (rawError = null) => {
           if (finalized || receivedDone) return;
+          if (isInsufficientTokensError(rawError)) {
+            await failInsufficientTokens(rawError);
+            return;
+          }
 
           if (retryCount < STREAM_MAX_RETRIES) {
             retryCount += 1;
@@ -693,9 +776,33 @@ export function useAiChat(user, settings, refreshBilling, notify) {
             await finalizeWithData(recovered, "fallback");
             resolve();
           } catch (fallbackErr) {
+            if (isInsufficientTokensError(fallbackErr)) {
+              await failInsufficientTokens(fallbackErr);
+              return;
+            }
             const errorMsg = rawError?.message || fallbackErr?.message || "Generation failed";
             failAndReject(new Error(errorMsg), "timeout");
           }
+        };
+
+        const handleStreamErrorEvent = async (event) => {
+          if (!event?.data) return false;
+          try {
+            const data = JSON.parse(event.data);
+            if (isInsufficientTokensError(data)) {
+              eventSource?.close?.();
+              await failInsufficientTokens(data);
+              return true;
+            }
+            if (data?.code && data.retryable === false) {
+              eventSource?.close?.();
+              failAndReject(new Error(data.message || "Generation failed"), data.code);
+              return true;
+            }
+          } catch (err) {
+            console.error("Failed to parse stream error event:", err);
+          }
+          return false;
         };
 
         const setupListeners = (es) => {
@@ -793,7 +900,8 @@ export function useAiChat(user, settings, refreshBilling, notify) {
             }
           });
 
-          es.addEventListener("error", async () => {
+          es.addEventListener("error", async (e) => {
+            if (await handleStreamErrorEvent(e)) return;
             es.close();
             emitStreamMetric("error", { jobId, tag: "network", retryCount });
             await recoverFromStreamFailure();
@@ -812,7 +920,11 @@ export function useAiChat(user, settings, refreshBilling, notify) {
 
     } catch (e) {
       console.error(e);
-      notify({ message: e.message || "Generation failed", type: "error" });
+      if (isInsufficientTokensError(e)) {
+        notify(insufficientTokensToast(planKey));
+      } else {
+        notify({ message: e.message || "Generation failed", type: "error" });
+      }
       setBusy(false);
       setPending(null);
       setStage("");
