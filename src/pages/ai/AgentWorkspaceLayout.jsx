@@ -98,6 +98,10 @@ export default function AgentWorkspaceLayout({ controller }) {
     handleStudioAutoPushEnabledChange,
     handleStudioAutoPushPolicyChange,
     handleRobloxAssetUploadsEnabledChange,
+    handleOpenAssetLibrary,
+    handleCloseAssetLibrary,
+    handleConfirmProjectAssets,
+    handleRemoveProjectAsset,
   } = handlers;
 
   const { chatEndRef } = refs;
@@ -229,6 +233,10 @@ export default function AgentWorkspaceLayout({ controller }) {
           setStudioManifest(items);
         } else {
           const data = await getStudioManifest({ sessionId: studio?.lastAuthorizedSessionId || null, limit: 1000 });
+          if (data.disconnected) {
+            setStudioManifest([]);
+            return;
+          }
           setStudioManifest(data.manifest?.items || []);
         }
       } catch (err) {
@@ -250,7 +258,7 @@ export default function AgentWorkspaceLayout({ controller }) {
 
   useEffect(() => {
     const sessionId = studio?.lastAuthorizedSessionId;
-    if (!sessionId) return;
+    if (!sessionId || !studio?.connected) return;
 
     const autoRefreshKey = `${sessionId}:${studio?.connected ? "live" : "cached"}`;
     if (autoManifestRefreshKeyRef.current === autoRefreshKey) return;
@@ -674,9 +682,22 @@ export default function AgentWorkspaceLayout({ controller }) {
       robloxLoading={roblox?.loading}
       robloxSelectedCreator={roblox?.selectedCreator}
       robloxUploadAvailable={roblox?.uploadAvailable}
+      robloxUploadState={roblox?.uploadState}
+      robloxUploadDisabledReason={roblox?.uploadDisabledReason}
       robloxAssetUploadsEnabled={roblox?.assetUploadsEnabled}
       robloxAssetProjectId={roblox?.assetProjectId}
       onRobloxAssetUploadsEnabledChange={handleRobloxAssetUploadsEnabledChange}
+      robloxAssetLibraryAvailable={roblox?.assetLibraryAvailable}
+      robloxAssetLibraryDisabledReason={roblox?.assetLibraryDisabledReason}
+      robloxProjectAssets={roblox?.selectedAssets || []}
+      onOpenAssetLibrary={handleOpenAssetLibrary}
+      assetLibraryOpen={roblox?.assetLibraryOpen}
+      onCloseAssetLibrary={handleCloseAssetLibrary}
+      onConfirmProjectAssets={handleConfirmProjectAssets}
+      onRemoveProjectAsset={handleRemoveProjectAsset}
+      projectAssetSaving={roblox?.projectAssetSaving}
+      selectedAssetProjectId={roblox?.selectedAssetProjectId}
+      robloxStatus={roblox?.status}
     />
   );
 

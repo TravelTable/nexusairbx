@@ -4,6 +4,7 @@ import { UnifiedStatusBar, TokenBar } from "../AiComponents";
 import { CHAT_MODES } from "../chatConstants";
 import StudioControls from "../workspace/StudioControls";
 import RobloxCloudControls from "../workspace/RobloxCloudControls";
+import AssetLibraryModal from "../workspace/AssetLibraryModal";
 import { Segmented } from "../../ui";
 
 function ModeSelector({ mode, onModeChange, disabled }) {
@@ -121,8 +122,21 @@ export default function ChatComposer({
   robloxLoading,
   robloxSelectedCreator,
   robloxUploadAvailable,
+  robloxUploadState,
+  robloxUploadDisabledReason,
   robloxAssetUploadsEnabled,
   onRobloxAssetUploadsEnabledChange,
+  robloxAssetLibraryAvailable,
+  robloxAssetLibraryDisabledReason,
+  robloxProjectAssets = [],
+  onOpenAssetLibrary,
+  assetLibraryOpen = false,
+  onCloseAssetLibrary,
+  onConfirmProjectAssets,
+  onRemoveProjectAsset,
+  projectAssetSaving = false,
+  assetProjectId = null,
+  robloxStatus,
 }) {
   return (
     <div className="p-4 bg-gradient-to-t from-black via-black/80 to-transparent">
@@ -181,6 +195,32 @@ export default function ChatComposer({
                       onClick={() => setAttachments((prev) => prev.filter((_, i) => i !== idx))}
                       className="absolute right-1 top-1/2 -translate-y-1/2 p-1 text-gray-500 hover:text-red-400 transition-colors"
                       aria-label={`Remove ${file.name}`}
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {robloxProjectAssets.length > 0 && (
+              <div className="flex flex-wrap gap-2 px-2 pt-2" aria-label="Selected Roblox assets">
+                {robloxProjectAssets.map((asset) => (
+                  <div key={asset.assetId} className="relative group/file bg-[#00f5d4]/10 border border-[#00f5d4]/20 rounded-lg p-2 flex items-center gap-2 pr-8">
+                    {asset.thumbnailUrl ? (
+                      <img src={asset.thumbnailUrl} alt="" className="w-7 h-7 rounded object-cover" />
+                    ) : (
+                      <span className="text-[#00f5d4] text-xs font-black">{asset.assetType || "ASSET"}</span>
+                    )}
+                    <span className="min-w-0">
+                      <span className="block text-[10px] font-bold text-[#d7fff8] truncate max-w-[130px]">{asset.name || `Asset ${asset.assetId}`}</span>
+                      <span className="block text-[9px] text-[#00f5d4]/70 truncate max-w-[130px]">{asset.assetType} · {asset.assetId}</span>
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => onRemoveProjectAsset?.(asset.assetId)}
+                      className="absolute right-1 top-1/2 -translate-y-1/2 p-1 text-[#00f5d4]/60 hover:text-red-300 transition-colors"
+                      aria-label={`Remove ${asset.name || asset.assetId}`}
                     >
                       <X className="w-3 h-3" />
                     </button>
@@ -249,8 +289,14 @@ export default function ChatComposer({
                   loading={robloxLoading}
                   selectedCreator={robloxSelectedCreator}
                   uploadAvailable={robloxUploadAvailable}
+                  uploadState={robloxUploadState}
+                  uploadDisabledReason={robloxUploadDisabledReason}
                   assetUploadsEnabled={robloxAssetUploadsEnabled}
                   onAssetUploadsEnabledChange={onRobloxAssetUploadsEnabledChange}
+                  selectedAssetCount={robloxProjectAssets.length}
+                  onOpenAssetLibrary={onOpenAssetLibrary}
+                  assetLibraryAvailable={robloxAssetLibraryAvailable}
+                  assetLibraryDisabledReason={robloxAssetLibraryDisabledReason}
                 />
               </div>
             </div>
@@ -306,6 +352,16 @@ export default function ChatComposer({
           </div>
         </div>
       </div>
+      <AssetLibraryModal
+        open={assetLibraryOpen}
+        onClose={onCloseAssetLibrary}
+        projectId={assetProjectId}
+        robloxIdentity={robloxStatus?.connection || null}
+        destination={robloxSelectedCreator}
+        persistedAssets={robloxProjectAssets}
+        onConfirm={onConfirmProjectAssets}
+        saving={projectAssetSaving}
+      />
     </div>
   );
 }

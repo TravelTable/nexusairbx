@@ -12,6 +12,7 @@ import { BACKEND_URL } from "../config";
 import { v4 as uuidv4 } from "uuid";
 import { useAiChat } from "./useAiChat";
 import { orchestrate, approveWorkflowPlan } from "../lib/workflowApi";
+import { isExplicitPlanApproval } from "../lib/planApproval";
 
 const THINKING_PLACEHOLDER = {
   role: "assistant",
@@ -122,6 +123,24 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
         isImage: a.isImage,
       }));
 
+      if (decision.status === "conversation") {
+        const text = decision.message || "";
+        await setDoc(
+          doc(db, "users", user.uid, "chats", activeChatId, "messages", `${requestId}-assistant`),
+          {
+            role: "assistant",
+            stage: "conversation",
+            intent: decision.intent || null,
+            content: text,
+            explanation: text,
+            createdAt: serverTimestamp(),
+            requestId,
+          }
+        );
+        await touchChat(activeChatId, text || "Conversation");
+        return;
+      }
+
       if (decision.status === "needs_clarification") {
         await setDoc(
           doc(db, "users", user.uid, "chats", activeChatId, "messages", `${requestId}-clarify`),
@@ -148,6 +167,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
           classification: decision.classification || "script",
           aiSummary: decision.aiSummary || "",
           aiSteps: Array.isArray(decision.aiSteps) ? decision.aiSteps : [],
+          aiAssumptions: Array.isArray(decision.aiAssumptions) ? decision.aiAssumptions : [],
           planSteps: Array.isArray(decision.planSteps) ? decision.planSteps : [],
           originPrompt,
           attachments: attMeta,
@@ -168,6 +188,30 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
       await chat.handleSubmit(prompt, activeChatId, requestId, null, true, attachments, baseArtifact);
     },
     [chat]
+  );
+
+  const approvePlanInternal = useCallback(
+    async (message, baseArtifact = null) => {
+      if (!user || !message?.planId) return;
+      if (isGenerating) return;
+
+      const activeChatId = chat.currentChatId;
+      if (!activeChatId) return;
+
+      await approveWorkflowPlan(message.planId);
+      await updateDoc(
+        doc(db, "users", user.uid, "chats", activeChatId, "messages", message.id),
+        { stage: "plan_approved", updatedAt: serverTimestamp() }
+      );
+      await runGeneration(
+        activeChatId,
+        message.classification || "script",
+        message.originPrompt || "",
+        message.attachments || [],
+        baseArtifact
+      );
+    },
+    [user, isGenerating, chat.currentChatId, runGeneration]
   );
 
   // ASK mode: read-only conversational streaming. No orchestrate, no plan, no job.
@@ -220,7 +264,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
   // Stage 1: route by operating mode.
   //  - ask   -> conversational stream (read-only)
   //  - plan  -> orchestrate (may clarify) -> plan card -> user approves
-  //  - agent -> orchestrate (no questions) -> auto-approve -> build, plan shown inline
+  //  - agent -> orchestrate (may clarify) -> plan card -> user approves
   //  - debug -> same as agent, with debug framing
   const handleSubmit = useCallback(
     async (currentPrompt, currentAttachments = [], baseArtifact = null) => {
@@ -236,6 +280,19 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
       if (isGenerating) return;
 
       const mode = chat.activeMode || "agent";
+      const pendingPlan = [...(chat.messages || [])]
+        .reverse()
+        .find((m) => m?.stage === "plan" && m.planId);
+      if (pendingPlan && isExplicitPlanApproval(prompt)) {
+        try {
+          await approvePlanInternal(pendingPlan, baseArtifact);
+        } catch (err) {
+          console.error("Approve/generate error:", err);
+          notify?.({ message: err?.message || "Build failed. You can try again.", type: "error" });
+        }
+        return;
+      }
+
       const requestId = uuidv4();
       let activeChatId = chat.currentChatId;
       try {
@@ -263,19 +320,6 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
           currentAttachments
         );
 
-        // Agent & Debug build immediately (no approval gate); the plan is shown inline.
-        if ((mode === "agent" || mode === "debug") && decision.status === "awaiting_approval" && decision.planId) {
-          try {
-            await approveWorkflowPlan(decision.planId);
-            await updateDoc(
-              doc(db, "users", user.uid, "chats", activeChatId, "messages", `${requestId}-plan`),
-              { stage: "plan_approved", updatedAt: serverTimestamp() }
-            );
-          } catch (_) {
-            /* non-fatal: continue to generation */
-          }
-          await runGeneration(activeChatId, decision.classification || "project", prompt, currentAttachments, baseArtifact);
-        }
       } catch (err) {
         console.error("Orchestration error:", err);
         notify?.({ message: err?.message || "Could not start the build", type: "error" });
@@ -290,10 +334,10 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
       ensureChat,
       setFlowBusyForChat,
       chat.currentChatId,
+      approvePlanInternal,
       writeUserMessage,
       writeOrchestrationResult,
       handleAskSubmit,
-      runGeneration,
       chat.messages,
       chat.activeMode,
       notify,
@@ -346,31 +390,14 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
   // Stage 3 (plan): user approves the plan -> generate.
   const approvePlan = useCallback(
     async (message, baseArtifact = null) => {
-      if (!user || !message?.planId) return;
-      if (isGenerating) return;
-
-      const activeChatId = chat.currentChatId;
-      if (!activeChatId) return;
-
       try {
-        await approveWorkflowPlan(message.planId);
-        await updateDoc(
-          doc(db, "users", user.uid, "chats", activeChatId, "messages", message.id),
-          { stage: "plan_approved", updatedAt: serverTimestamp() }
-        );
-        await runGeneration(
-          activeChatId,
-          message.classification || "script",
-          message.originPrompt || "",
-          message.attachments || [],
-          baseArtifact
-        );
+        await approvePlanInternal(message, baseArtifact);
       } catch (err) {
         console.error("Approve/generate error:", err);
         notify?.({ message: err?.message || "Build failed. You can try again.", type: "error" });
       }
     },
-    [user, isGenerating, chat.currentChatId, runGeneration, notify]
+    [approvePlanInternal, notify]
   );
 
   // Stage 5 (refine): re-run generation with a refinement instruction, passing

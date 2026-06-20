@@ -46,9 +46,22 @@ export default function AgentChatPanel({
   robloxLoading,
   robloxSelectedCreator,
   robloxUploadAvailable,
+  robloxUploadState,
+  robloxUploadDisabledReason,
   robloxAssetUploadsEnabled,
   robloxAssetProjectId,
   onRobloxAssetUploadsEnabledChange,
+  robloxAssetLibraryAvailable,
+  robloxAssetLibraryDisabledReason,
+  robloxProjectAssets = [],
+  onOpenAssetLibrary,
+  assetLibraryOpen,
+  onCloseAssetLibrary,
+  onConfirmProjectAssets,
+  onRemoveProjectAsset,
+  projectAssetSaving,
+  selectedAssetProjectId,
+  robloxStatus,
   // composer
   prompt,
   setPrompt,
@@ -196,8 +209,21 @@ export default function AgentChatPanel({
         robloxLoading={robloxLoading}
         robloxSelectedCreator={robloxSelectedCreator}
         robloxUploadAvailable={robloxUploadAvailable}
+        robloxUploadState={robloxUploadState}
+        robloxUploadDisabledReason={robloxUploadDisabledReason}
         robloxAssetUploadsEnabled={robloxAssetUploadsEnabled}
         onRobloxAssetUploadsEnabledChange={onRobloxAssetUploadsEnabledChange}
+        robloxAssetLibraryAvailable={robloxAssetLibraryAvailable}
+        robloxAssetLibraryDisabledReason={robloxAssetLibraryDisabledReason}
+        robloxProjectAssets={robloxProjectAssets}
+        onOpenAssetLibrary={onOpenAssetLibrary}
+        assetLibraryOpen={assetLibraryOpen}
+        onCloseAssetLibrary={onCloseAssetLibrary}
+        onConfirmProjectAssets={onConfirmProjectAssets}
+        onRemoveProjectAsset={onRemoveProjectAsset}
+        projectAssetSaving={projectAssetSaving}
+        assetProjectId={selectedAssetProjectId}
+        robloxStatus={robloxStatus}
       />
     </div>
   );

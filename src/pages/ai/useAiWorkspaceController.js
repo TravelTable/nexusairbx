@@ -37,11 +37,13 @@ import {
   upsertAgentStep,
 } from "../../lib/agentSteps";
 import { useStudioConnection } from "../../hooks/useStudioConnection";
+import { getStudioStatus } from "../../lib/studioBridgeApi";
 import { AI_EVENTS, emitAiEvent, onAiEvent } from "../../lib/aiEvents";
 import { createAiTelemetryClient } from "../../lib/aiTelemetry";
 import { useAiNotifications } from "./useAiNotifications";
 import { saveWorkspaceArtifact } from "../../lib/artifactWorkspaceApi";
 import { getRobloxOAuthStatus } from "../../lib/robloxOAuthApi";
+import { useProjectAssets } from "../../hooks/useProjectAssets";
 
 const IS_AI_PAGE_V2_ENABLED = AI_PAGE_V2_ENABLED;
 
@@ -100,6 +102,7 @@ export function useAiWorkspaceController() {
   const [studioApplyMode, setStudioApplyModeState] = useState(() => getStudioApplyMode());
   const [robloxStatus, setRobloxStatus] = useState(null);
   const [robloxLoading, setRobloxLoading] = useState(false);
+  const [assetLibraryOpen, setAssetLibraryOpen] = useState(false);
   const [approvingStepId, setApprovingStepId] = useState(null);
   const [restoringRun, setRestoringRun] = useState(false);
   const [chatProjectSnapshot, setChatProjectSnapshot] = useState(null);
@@ -150,6 +153,11 @@ export function useAiWorkspaceController() {
   const chat = unified;
   const game = useGameProfile(settings, updateSettings);
   const scriptManager = useAiScripts(user, notify);
+  const selectedAssetProjectId = chat.currentChatId || null;
+  const projectAssets = useProjectAssets(selectedAssetProjectId, {
+    enabled: Boolean(user && selectedAssetProjectId),
+    notify,
+  });
 
   const workspace = useArtifactWorkspace(chat.messages, {
     isGenerating: unified.isGenerating,
@@ -414,6 +422,29 @@ export function useAiWorkspaceController() {
     updateSettings,
   ]);
 
+  useEffect(() => {
+    if (!user || studioConnection.loading) return;
+    const savedSessionId = settings?.lastAuthorizedStudioSessionId;
+    if (!savedSessionId) return;
+    if (studioConnection.connected && studioConnection.sessionId === savedSessionId) return;
+
+    getStudioStatus()
+      .then(({ sessions }) => {
+        const stillExists = (sessions || []).some((session) => session.id === savedSessionId);
+        if (!stillExists) {
+          updateSettings({ lastAuthorizedStudioSessionId: null }).catch(() => {});
+        }
+      })
+      .catch(() => {});
+  }, [
+    user,
+    studioConnection.loading,
+    studioConnection.connected,
+    studioConnection.sessionId,
+    settings?.lastAuthorizedStudioSessionId,
+    updateSettings,
+  ]);
+
   const handlePromptSubmit = useCallback(async (e, overridePrompt = null) => {
     if (e && typeof e.preventDefault === "function") e.preventDefault();
 
@@ -571,11 +602,38 @@ export function useAiWorkspaceController() {
     }).catch(() => {});
   }, [updateSettings]);
 
-  const handleRobloxAssetUploadsEnabledChange = useCallback((enabled) => {
-    updateSettings({
-      robloxAssetUploadsEnabled: Boolean(enabled),
-    });
-  }, [updateSettings]);
+  const handleRobloxAssetUploadsEnabledChange = useCallback(async (enabled) => {
+    if (!selectedAssetProjectId) {
+      notify({ message: "Open or create a chat before enabling generated asset uploads", type: "info" });
+      return;
+    }
+    try {
+      await projectAssets.setAutoUploadEnabled(Boolean(enabled));
+      updateSettings({ robloxAssetUploadsEnabled: Boolean(enabled) }).catch(() => {});
+    } catch (_) {
+      // The project asset hook already surfaces the backend's typed error.
+    }
+  }, [notify, projectAssets, selectedAssetProjectId, updateSettings]);
+
+  const handleOpenAssetLibrary = useCallback(() => {
+    if (!user) {
+      setShowSignInNudge(true);
+      return;
+    }
+    if (!selectedAssetProjectId) {
+      notify({ message: "Open or create a chat before selecting assets", type: "info" });
+      return;
+    }
+    if (robloxStatus?.connected !== true) {
+      notify({ message: "Connect Roblox before selecting assets", type: "info" });
+      return;
+    }
+    setAssetLibraryOpen(true);
+  }, [notify, robloxStatus?.connected, selectedAssetProjectId, user]);
+
+  const handleConfirmProjectAssets = useCallback(async (assets) => {
+    await projectAssets.attachAssets(assets);
+  }, [projectAssets]);
 
   const syncAgentRunSteps = useCallback(
     async (runId, fallbackStep = null) => {
@@ -743,6 +801,10 @@ export function useAiWorkspaceController() {
       handleStudioAutoPushEnabledChange,
       handleStudioAutoPushPolicyChange,
       handleRobloxAssetUploadsEnabledChange,
+      handleOpenAssetLibrary,
+      handleCloseAssetLibrary: () => setAssetLibraryOpen(false),
+      handleConfirmProjectAssets,
+      handleRemoveProjectAsset: projectAssets.removeAsset,
     },
     studio: {
       connected: studioConnection.connected,
@@ -762,13 +824,26 @@ export function useAiWorkspaceController() {
       connected: robloxStatus?.connected === true,
       loading: robloxLoading,
       selectedCreator: robloxStatus?.connection?.selectedCreator || null,
-      uploadAvailable: Boolean(
-        robloxStatus?.connected &&
-        (robloxStatus?.capabilities?.granted || []).some((cap) => cap.id === "roblox_upload_asset")
-      ),
-      assetUploadsEnabled: Boolean(settings?.robloxAssetUploadsEnabled),
+      uploadAvailable: Boolean(projectAssets.uploadSettings?.available),
+      uploadState: projectAssets.uploadSettings?.state || "disabled",
+      uploadDisabledReason: (projectAssets.uploadSettings?.missingRequirements || [])[0]?.message || "",
+      assetUploadsEnabled: Boolean(projectAssets.uploadSettings?.enabled),
       status: robloxStatus,
       assetProjectId,
+      selectedAssetProjectId,
+      selectedAssets: projectAssets.assets,
+      projectAssetSaving: projectAssets.saving,
+      projectAssetLoading: projectAssets.loading,
+      assetLibraryOpen,
+      assetLibraryAvailable: Boolean(user && selectedAssetProjectId && robloxStatus?.connected === true),
+      assetLibraryDisabledReason: !user
+        ? "Sign in before selecting Roblox assets."
+        : !selectedAssetProjectId
+          ? "Open or create a chat before selecting assets."
+          : robloxStatus?.connected !== true
+            ? "Connect Roblox before selecting assets."
+            : "",
+      uploadStatus: projectAssets.uploadStatus,
       refresh: refreshRobloxStatus,
     },
   };
