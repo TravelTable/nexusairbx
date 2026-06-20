@@ -20,7 +20,7 @@ function safeResults(value) {
   return Array.isArray(value?.results) ? value.results : [];
 }
 
-export default function CreatorStoreSearch({ notify }) {
+export default function CreatorStoreSearch({ notify, className = "mx-3 mb-2" }) {
   const [query, setQuery] = useState("");
   const [assetTypes, setAssetTypes] = useState(DEFAULT_ASSET_TYPES);
   const [results, setResults] = useState([]);
@@ -114,7 +114,7 @@ export default function CreatorStoreSearch({ notify }) {
   };
 
   return (
-    <section className="mx-3 mb-2 rounded-lg border border-white/10 bg-black/35 backdrop-blur-xl overflow-hidden">
+    <section className={`${className} rounded-lg border border-white/10 bg-black/35 backdrop-blur-xl overflow-hidden`}>
       <div className="flex flex-col gap-3 border-b border-white/10 px-3 py-3">
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">

@@ -1,5 +1,17 @@
-import React, { useEffect, useRef, useState } from "react";
-import { Plus, X, Sparkles, Loader, RefreshCw, Wand2, ChevronDown, Check, MessageSquare, ClipboardList } from "lucide-react";
+import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
+import {
+  Plus,
+  X,
+  Sparkles,
+  Loader,
+  RefreshCw,
+  Wand2,
+  ChevronDown,
+  Check,
+  MessageSquare,
+  ClipboardList,
+  SlidersHorizontal,
+} from "lucide-react";
 import { UnifiedStatusBar, TokenBar } from "../AiComponents";
 import { CHAT_MODES } from "../chatConstants";
 import StudioControls from "../workspace/StudioControls";
@@ -27,7 +39,7 @@ function ModeSelector({ mode, onModeChange, disabled }) {
         type="button"
         onClick={() => setOpen((o) => !o)}
         disabled={disabled}
-        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider border transition-all disabled:opacity-40 ${current.bg} ${current.color} border-white/10 hover:bg-white/10`}
+        className={`inline-flex h-8 items-center gap-1.5 px-2.5 rounded-lg text-[10px] font-bold uppercase tracking-wider border transition-all focus-ring disabled:opacity-40 disabled:cursor-not-allowed ${current.bg} ${current.color} border-white/10 hover:bg-white/10`}
         title="Select mode"
         aria-haspopup="listbox"
         aria-expanded={open}
@@ -71,6 +83,64 @@ function ModeSelector({ mode, onModeChange, disabled }) {
           })}
         </div>
       )}
+    </div>
+  );
+}
+
+function FileContextChip({ file, index, onRemove }) {
+  const name = file?.name || "Attachment";
+
+  return (
+    <div className="group/file relative flex h-10 max-w-[190px] shrink-0 items-center gap-2 rounded-lg border border-white/10 bg-white/[0.045] pl-1.5 pr-7">
+      {file?.isImage ? (
+        <img src={file.data} alt={name} className="h-7 w-7 shrink-0 rounded-md object-cover" />
+      ) : (
+        <span className="inline-flex h-7 shrink-0 items-center rounded-md border border-white/10 bg-black/35 px-1.5 text-[9px] font-black text-gray-400">
+          FILE
+        </span>
+      )}
+      <span className="min-w-0 truncate text-[10px] font-bold text-gray-300">{name}</span>
+      <button
+        type="button"
+        onClick={() => onRemove(index)}
+        className="absolute right-1 top-1/2 -translate-y-1/2 rounded-md p-1 text-gray-500 transition-colors hover:bg-red-500/10 hover:text-red-300 focus-ring"
+        aria-label={`Remove ${name}`}
+        title={`Remove ${name}`}
+      >
+        <X className="h-3 w-3" />
+      </button>
+    </div>
+  );
+}
+
+function RobloxAssetContextChip({ asset, onRemove }) {
+  const name = asset?.name || `Asset ${asset?.assetId}`;
+  const type = asset?.assetType || "Asset";
+
+  return (
+    <div className="group/file relative flex h-10 max-w-[240px] shrink-0 items-center gap-2 rounded-lg border border-[#00f5d4]/20 bg-[#00f5d4]/10 pl-1.5 pr-7">
+      {asset?.thumbnailUrl ? (
+        <img src={asset.thumbnailUrl} alt="" className="h-7 w-7 shrink-0 rounded-md object-cover" />
+      ) : (
+        <span className="inline-flex h-7 max-w-[54px] shrink-0 items-center truncate rounded-md border border-[#00f5d4]/20 bg-black/30 px-1.5 text-[8px] font-black uppercase text-[#00f5d4]">
+          {type}
+        </span>
+      )}
+      <span className="min-w-0">
+        <span className="block truncate text-[10px] font-bold text-[#d7fff8]">{name}</span>
+        <span className="block truncate text-[9px] font-semibold text-[#00f5d4]/70">
+          {type} · {asset?.assetId}
+        </span>
+      </span>
+      <button
+        type="button"
+        onClick={() => onRemove?.(asset?.assetId)}
+        className="absolute right-1 top-1/2 -translate-y-1/2 rounded-md p-1 text-[#00f5d4]/60 transition-colors hover:bg-red-500/10 hover:text-red-300 focus-ring"
+        aria-label={`Remove ${name}`}
+        title={`Remove ${name}`}
+      >
+        <X className="h-3 w-3" />
+      </button>
     </div>
   );
 }
@@ -138,12 +208,39 @@ export default function ChatComposer({
   assetProjectId = null,
   robloxStatus,
 }) {
+  const [controlsOpen, setControlsOpen] = useState(false);
+  const [isComposing, setIsComposing] = useState(false);
+  const textareaRef = useRef(null);
+  const controlsId = "chat-composer-controls";
+  const contextItemCount = attachments.length + robloxProjectAssets.length;
+
+  useLayoutEffect(() => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    textarea.style.height = "0px";
+    const nextHeight = Math.min(Math.max(textarea.scrollHeight, 42), 160);
+    textarea.style.height = `${nextHeight}px`;
+    textarea.style.overflowY = textarea.scrollHeight > 160 ? "auto" : "hidden";
+  }, [prompt]);
+
+  const removeAttachment = (index) => {
+    setAttachments((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handlePromptKeyDown = (e) => {
+    if (e.key === "Enter" && !e.shiftKey && !isComposing && !e.nativeEvent?.isComposing) {
+      e.preventDefault();
+      onSubmit?.();
+    }
+  };
+
   return (
-    <div className="p-4 bg-gradient-to-t from-black via-black/80 to-transparent">
-      <div className="max-w-5xl mx-auto space-y-3">
+    <div className="bg-gradient-to-t from-black via-black/80 to-transparent p-3">
+      <div className="mx-auto max-w-5xl space-y-2.5">
         <UnifiedStatusBar isGenerating={isGenerating} stage={generationStage} />
 
-        <div className="px-2 flex items-center justify-between gap-4 flex-wrap">
+        <div className="flex flex-wrap items-center justify-between gap-3 px-1">
           <TokenBar
             tokensLeft={tokensLeft}
             tokensLimit={tokensLimit}
@@ -155,17 +252,18 @@ export default function ChatComposer({
         </div>
 
         {refineTarget && (
-          <div className="px-2">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#00f5d4]/10 border border-[#00f5d4]/20 text-[#00f5d4] text-[11px] font-bold">
-              <RefreshCw className="w-3.5 h-3.5" />
-              Refining: {refineTarget.title || "current artifact"}
+          <div className="px-1">
+            <div className="inline-flex max-w-full items-center gap-2 rounded-lg border border-[#00f5d4]/20 bg-[#00f5d4]/10 px-2.5 py-1 text-[11px] font-bold text-[#00f5d4]">
+              <RefreshCw className="h-3.5 w-3.5 shrink-0" />
+              <span className="truncate">Refining: {refineTarget.title || "current artifact"}</span>
               <button
                 type="button"
                 onClick={onCancelRefine}
-                className="ml-1 text-[#00f5d4]/70 hover:text-white transition-colors"
+                className="ml-0.5 rounded-md p-0.5 text-[#00f5d4]/70 transition-colors hover:bg-white/10 hover:text-white focus-ring"
                 aria-label="Cancel refine"
+                title="Cancel refine"
               >
-                <X className="w-3.5 h-3.5" />
+                <X className="h-3.5 w-3.5" />
               </button>
             </div>
           </div>
@@ -173,89 +271,57 @@ export default function ChatComposer({
 
         <div className="relative group z-20">
           <div
-            className="absolute -inset-0.5 rounded-2xl blur opacity-20 group-focus-within:opacity-40 transition duration-500"
+            className="absolute -inset-0.5 rounded-2xl blur opacity-15 transition duration-500 group-focus-within:opacity-35"
             style={{
               background: `linear-gradient(to right, ${themePrimary || "#9b5de5"}, ${themeSecondary || "#00f5d4"})`,
             }}
             aria-hidden="true"
           />
-          <div className="relative bg-ink-800/90 border border-white/10 rounded-2xl2 p-2 shadow-panel backdrop-blur-xl flex flex-col gap-2">
-            {attachments.length > 0 && (
-              <div className="flex flex-wrap gap-2 px-2 pt-2" aria-label="Attached files">
-                {attachments.map((file, idx) => (
-                  <div key={idx} className="relative group/file bg-white/5 border border-white/10 rounded-lg p-2 flex items-center gap-2 pr-8">
-                    {file.isImage ? (
-                      <img src={file.data} alt={file.name} className="w-6 h-6 rounded object-cover" />
-                    ) : (
-                      <span className="text-gray-500 text-xs font-bold">FILE</span>
-                    )}
-                    <span className="text-[10px] font-bold text-gray-300 truncate max-w-[100px]">{file.name}</span>
-                    <button
-                      type="button"
-                      onClick={() => setAttachments((prev) => prev.filter((_, i) => i !== idx))}
-                      className="absolute right-1 top-1/2 -translate-y-1/2 p-1 text-gray-500 hover:text-red-400 transition-colors"
-                      aria-label={`Remove ${file.name}`}
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {robloxProjectAssets.length > 0 && (
-              <div className="flex flex-wrap gap-2 px-2 pt-2" aria-label="Selected Roblox assets">
-                {robloxProjectAssets.map((asset) => (
-                  <div key={asset.assetId} className="relative group/file bg-[#00f5d4]/10 border border-[#00f5d4]/20 rounded-lg p-2 flex items-center gap-2 pr-8">
-                    {asset.thumbnailUrl ? (
-                      <img src={asset.thumbnailUrl} alt="" className="w-7 h-7 rounded object-cover" />
-                    ) : (
-                      <span className="text-[#00f5d4] text-xs font-black">{asset.assetType || "ASSET"}</span>
-                    )}
-                    <span className="min-w-0">
-                      <span className="block text-[10px] font-bold text-[#d7fff8] truncate max-w-[130px]">{asset.name || `Asset ${asset.assetId}`}</span>
-                      <span className="block text-[9px] text-[#00f5d4]/70 truncate max-w-[130px]">{asset.assetType} · {asset.assetId}</span>
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => onRemoveProjectAsset?.(asset.assetId)}
-                      className="absolute right-1 top-1/2 -translate-y-1/2 p-1 text-[#00f5d4]/60 hover:text-red-300 transition-colors"
-                      aria-label={`Remove ${asset.name || asset.assetId}`}
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            <div className="flex items-center gap-2 px-2 pt-2 flex-wrap">
+          <div className="relative flex flex-col gap-2 rounded-2xl border border-white/10 bg-ink-800/95 p-2 shadow-panel backdrop-blur-xl">
+            <div className="flex flex-wrap items-center gap-2">
               <ModeSelector mode={mode} onModeChange={onModeChange} disabled={disabled} />
               <div
-                className={`px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest transition-all ${
+                className={`inline-flex h-8 items-center rounded-lg border px-2.5 text-[10px] font-black uppercase tracking-widest transition-all ${
                   isGenerating ? "bg-[#00f5d4] text-black animate-pulse" : "bg-white/5 text-gray-500"
-                }`}
+                } ${isGenerating ? "border-[#00f5d4]" : "border-white/10"}`}
+                aria-live="polite"
               >
                 {isGenerating ? generationStage || "Working" : "Ready"}
               </div>
-              <div className="h-px flex-1 min-w-[0.5rem] bg-white/5" />
+              <div className="hidden h-px min-w-[1rem] flex-1 bg-white/5 sm:block" />
               {onImprovePrompt && (
                 <button
                   type="button"
                   onClick={() => onImprovePrompt()}
                   disabled={disabled || isImproving || !prompt?.trim()}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider text-[#9b5de5] bg-[#9b5de5]/10 border border-[#9b5de5]/20 hover:bg-[#9b5de5]/20 hover:text-white transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-[#9b5de5]/25 bg-[#9b5de5]/10 px-2.5 text-[10px] font-bold uppercase tracking-wider text-[#c9b3f7] transition-all hover:bg-[#9b5de5]/20 hover:text-white focus-ring disabled:cursor-not-allowed disabled:opacity-40"
                   title="Expand your prompt into a detailed brief"
                   aria-label="Improve my prompt"
                 >
                   {isImproving ? (
-                    <Loader className="w-3 h-3 animate-spin" />
+                    <Loader className="h-3 w-3 animate-spin" />
                   ) : (
-                    <Wand2 className="w-3 h-3" />
+                    <Wand2 className="h-3 w-3" />
                   )}
                   {isImproving ? "Improving" : "Improve"}
                 </button>
               )}
+              <button
+                type="button"
+                onClick={() => setControlsOpen((open) => !open)}
+                className={`inline-flex h-8 items-center gap-1.5 rounded-lg border px-2.5 text-[10px] font-bold uppercase tracking-wider transition-all focus-ring ${
+                  controlsOpen
+                    ? "border-[#00f5d4]/30 bg-[#00f5d4]/10 text-[#00f5d4]"
+                    : "border-white/10 bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white"
+                }`}
+                aria-expanded={controlsOpen}
+                aria-controls={controlsId}
+                title={controlsOpen ? "Hide Studio and Roblox controls" : "Show Studio and Roblox controls"}
+              >
+                <SlidersHorizontal className="h-3.5 w-3.5" />
+                Controls
+                <ChevronDown className={`h-3 w-3 transition-transform ${controlsOpen ? "rotate-180" : ""}`} />
+              </button>
               {onViewChange && (
                 <Segmented
                   size="sm"
@@ -265,43 +331,60 @@ export default function ChatComposer({
                   ]}
                   value={view}
                   onChange={onViewChange}
+                  className="h-8 rounded-lg"
                 />
               )}
             </div>
 
-            <div className="px-2">
-              <div className="flex items-center gap-2 flex-wrap">
-                <StudioControls
-                  connected={studioConnected}
-                  loading={studioLoading}
-                  studioEnabled={studioEnabled}
-                  onStudioEnabledChange={onStudioEnabledChange}
-                  applyMode={studioApplyMode}
-                  onApplyModeChange={onStudioApplyModeChange}
-                  autoPushEnabled={studioAutoPushEnabled}
-                  onAutoPushEnabledChange={onStudioAutoPushEnabledChange}
-                  autoPushPolicy={studioAutoPushPolicy}
-                  onAutoPushPolicyChange={onStudioAutoPushPolicyChange}
-                  autoPushAuthorized={studioAutoPushAuthorized}
-                />
-                <RobloxCloudControls
-                  connected={robloxConnected}
-                  loading={robloxLoading}
-                  selectedCreator={robloxSelectedCreator}
-                  uploadAvailable={robloxUploadAvailable}
-                  uploadState={robloxUploadState}
-                  uploadDisabledReason={robloxUploadDisabledReason}
-                  assetUploadsEnabled={robloxAssetUploadsEnabled}
-                  onAssetUploadsEnabledChange={onRobloxAssetUploadsEnabledChange}
-                  selectedAssetCount={robloxProjectAssets.length}
-                  onOpenAssetLibrary={onOpenAssetLibrary}
-                  assetLibraryAvailable={robloxAssetLibraryAvailable}
-                  assetLibraryDisabledReason={robloxAssetLibraryDisabledReason}
-                />
+            {controlsOpen && (
+              <div id={controlsId} className="rounded-xl border border-white/10 bg-black/25 px-2.5 py-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  <StudioControls
+                    connected={studioConnected}
+                    loading={studioLoading}
+                    studioEnabled={studioEnabled}
+                    onStudioEnabledChange={onStudioEnabledChange}
+                    applyMode={studioApplyMode}
+                    onApplyModeChange={onStudioApplyModeChange}
+                    autoPushEnabled={studioAutoPushEnabled}
+                    onAutoPushEnabledChange={onStudioAutoPushEnabledChange}
+                    autoPushPolicy={studioAutoPushPolicy}
+                    onAutoPushPolicyChange={onStudioAutoPushPolicyChange}
+                    autoPushAuthorized={studioAutoPushAuthorized}
+                  />
+                  <RobloxCloudControls
+                    connected={robloxConnected}
+                    loading={robloxLoading}
+                    selectedCreator={robloxSelectedCreator}
+                    uploadAvailable={robloxUploadAvailable}
+                    uploadState={robloxUploadState}
+                    uploadDisabledReason={robloxUploadDisabledReason}
+                    assetUploadsEnabled={robloxAssetUploadsEnabled}
+                    onAssetUploadsEnabledChange={onRobloxAssetUploadsEnabledChange}
+                    selectedAssetCount={robloxProjectAssets.length}
+                    onOpenAssetLibrary={onOpenAssetLibrary}
+                    assetLibraryAvailable={robloxAssetLibraryAvailable}
+                    assetLibraryDisabledReason={robloxAssetLibraryDisabledReason}
+                  />
+                </div>
               </div>
-            </div>
+            )}
 
-            <div className="flex items-center gap-2 p-2 pt-0">
+            {contextItemCount > 0 && (
+              <div
+                className="flex gap-2 overflow-x-auto px-0.5 pb-1 [scrollbar-width:thin]"
+                aria-label="Prompt context items"
+              >
+                {attachments.map((file, idx) => (
+                  <FileContextChip key={`${file?.name || "file"}-${idx}`} file={file} index={idx} onRemove={removeAttachment} />
+                ))}
+                {robloxProjectAssets.map((asset) => (
+                  <RobloxAssetContextChip key={asset.assetId} asset={asset} onRemove={onRemoveProjectAsset} />
+                ))}
+              </div>
+            )}
+
+            <div className="flex items-end gap-2 rounded-xl border border-white/10 bg-black/30 p-1.5 transition-all focus-within:border-[#00f5d4]/35 focus-within:shadow-[0_0_24px_rgba(0,245,212,0.10)]">
               <div className="relative">
                 <input
                   type="file"
@@ -313,7 +396,7 @@ export default function ChatComposer({
                 />
                 <label
                   htmlFor="chat-composer-file-upload"
-                  className="p-3 rounded-xl bg-white/5 text-gray-500 hover:text-white hover:bg-white/10 transition-all cursor-pointer flex items-center justify-center"
+                  className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-lg bg-white/5 text-gray-500 transition-all hover:bg-white/10 hover:text-white focus-ring"
                   title="Upload image or file"
                   aria-label="Upload image or file"
                 >
@@ -322,20 +405,18 @@ export default function ChatComposer({
               </div>
 
               <textarea
+                ref={textareaRef}
                 id="tour-prompt-box"
-                className="flex-1 bg-transparent border-none rounded-xl p-3 resize-none focus:ring-0 text-gray-100 placeholder-gray-500 text-[14px] md:text-[15px] leading-relaxed disabled:opacity-50 min-h-[44px]"
+                className="min-h-[42px] flex-1 resize-none rounded-lg border-none bg-transparent px-2 py-2.5 text-[14px] leading-relaxed text-gray-100 placeholder-gray-500 outline-none focus:ring-0 disabled:opacity-50 md:text-[15px]"
                 rows={1}
                 placeholder={placeholder}
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
                 disabled={disabled}
                 aria-label="Prompt input"
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault();
-                    onSubmit?.();
-                  }
-                }}
+                onCompositionStart={() => setIsComposing(true)}
+                onCompositionEnd={() => setIsComposing(false)}
+                onKeyDown={handlePromptKeyDown}
               />
 
               <button
@@ -343,11 +424,21 @@ export default function ChatComposer({
                 id="tour-generate-button"
                 onClick={() => onSubmit?.()}
                 disabled={disabled || (!prompt?.trim() && attachments.length === 0)}
-                className="p-3 rounded-xl transition-all disabled:opacity-50 disabled:active:scale-100 bg-nexus-cyan text-black hover:shadow-[0_0_24px_rgba(0,245,212,0.45)] active:scale-95 focus-ring"
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-nexus-cyan text-black transition-all hover:shadow-[0_0_24px_rgba(0,245,212,0.45)] active:scale-95 focus-ring disabled:opacity-50 disabled:active:scale-100"
                 aria-label={isGenerating ? "Generation in progress" : "Send prompt"}
+                title={isGenerating ? "Generation in progress" : "Send prompt"}
               >
                 {isGenerating ? <Loader className="h-5 w-5 animate-spin" /> : <Sparkles className="h-5 w-5" />}
               </button>
+            </div>
+
+            <div className="flex flex-wrap items-center justify-between gap-2 px-1 text-[10px] font-semibold text-gray-500">
+              <span>Enter to send · Shift + Enter for a new line</span>
+              {contextItemCount > 0 && (
+                <span className="text-gray-400">
+                  {contextItemCount} context {contextItemCount === 1 ? "item" : "items"}
+                </span>
+              )}
             </div>
           </div>
         </div>
