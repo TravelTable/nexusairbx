@@ -5,7 +5,7 @@
 const isDev = process.env.NODE_ENV === 'development';
 
 export const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || "https://nexusrbx-backend-production.up.railway.app";
-export const STREAM_V2_ENABLED = process.env.REACT_APP_STREAM_V2 === "true";
+export const STREAM_V2_ENABLED = process.env.REACT_APP_STREAM_V2 !== "false";
 export const SYSTEM_ONLY_PREMIUM_ENABLED = process.env.REACT_APP_SYSTEM_ONLY_PREMIUM === "true";
 export const AI_PAGE_V2_ENABLED = process.env.REACT_APP_AI_PAGE_V2 !== "false";
 

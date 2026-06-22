@@ -56,7 +56,29 @@ function statusIcon(status, reconnecting = false) {
   return <Loader2 className="w-3.5 h-3.5 text-[#00f5d4] motion-safe:animate-spin" />;
 }
 
+const IN_PROGRESS_STATUSES = new Set([
+  "running",
+  "writing",
+  "queued",
+  "delivered",
+  "reconnecting",
+  "recovering",
+]);
+
+function isInProgressActivity(item) {
+  const status = String(item?.status || "").toLowerCase();
+  if (IN_PROGRESS_STATUSES.has(status)) return true;
+  if (item?.type === "file_chunk" || item?.type === "file_start") return true;
+  if (item?.type === "tool_step" && status && !["succeeded", "failed", "done", "validated", "ready"].includes(status)) {
+    return true;
+  }
+  return false;
+}
+
 function ActivityIcon({ item }) {
+  if (isInProgressActivity(item)) {
+    return <Loader2 className="w-3.5 h-3.5 text-[#00f5d4] motion-safe:animate-spin" />;
+  }
   if (item.type === "thinking" || item.type === "stage") return <TerminalSquare className="w-3.5 h-3.5 text-[#00f5d4]" />;
   if (item.type === "tool_step") return <Wrench className="w-3.5 h-3.5 text-amber-300" />;
   const meta = kindMeta(item.kind);

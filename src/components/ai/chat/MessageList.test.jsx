@@ -217,4 +217,29 @@ describe("MessageList pending activity", () => {
     expect(screen.getAllByText("Reconnecting to generation stream...").length).toBeGreaterThan(0);
     expect(screen.getByText("Writing ReplicatedStorage/ShopConfig.lua")).toBeTruthy();
   });
+
+  test("shows LiveWorkStream during orchestration with staged activity", () => {
+    render(
+      <MessageList
+        {...baseProps}
+        generationStage="Analyzing request..."
+        pendingMessage={{
+          role: "assistant",
+          content: "",
+          stage: "Analyzing request...",
+          streamState: {
+            activity: [
+              { id: "stage-1", type: "stage", text: "Understanding your task...", status: "Understanding your task..." },
+              { id: "stage-2", type: "stage", text: "Analyzing request...", status: "Analyzing request..." },
+            ],
+          },
+        }}
+      />
+    );
+
+    expect(screen.getByText("Thinking")).toBeTruthy();
+    expect(screen.getByText("Understanding your task...")).toBeTruthy();
+    expect(screen.getAllByText("Analyzing request...").length).toBeGreaterThan(0);
+    expect(screen.queryByText("Nexus is working")).toBeNull();
+  });
 });

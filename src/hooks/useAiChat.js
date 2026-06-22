@@ -41,6 +41,7 @@ import {
   getPendingStreamSnapshot,
 } from "../lib/streaming";
 import { emitStreamMetric } from "../lib/streamMetrics";
+import { createIdlePulseController, stageSlug } from "../lib/streamEngagement";
 import { AI_EVENTS, emitAiEvent, onAiEvent } from "../lib/aiEvents";
 import { useBilling } from "../context/BillingContext";
 import {
@@ -393,8 +394,39 @@ export function useAiChat(user, settings, refreshBilling, notify) {
     const setStage = (value) => setStageForChat(activeChatId, value);
     const setBusy = (value) => setGeneratingForChat(activeChatId, value);
 
+    const publishGenerationStage = (chatId, label, { id, status, extraPending } = {}) => {
+      if (!label || !chatId) return;
+      streamStatesRef.current[chatId] = applyStreamActivity(
+        streamStatesRef.current[chatId] || createPendingStreamState(),
+        {
+          id: id || `stage-${stageSlug(label)}`,
+          type: "stage",
+          status: status || label,
+          text: label,
+        }
+      );
+      const snapshot = getPendingStreamSnapshot(streamStatesRef.current[chatId]);
+      setStageForChat(chatId, label);
+      setPendingForChat(chatId, (prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          stage: label,
+          streamState: snapshot,
+          streamStatus: null,
+          ...(extraPending || {}),
+        };
+      });
+    };
+
     const beginGenerationState = (chatId) => {
       setGeneratingForChat(chatId, true);
+      const initialState = applyStreamActivity(createPendingStreamState(), {
+        type: "stage",
+        text: "Analyzing Request...",
+        status: "Analyzing Request...",
+      });
+      streamStatesRef.current[chatId] = initialState;
       setPendingForChat(chatId, {
         role: "assistant",
         content: "",
@@ -403,7 +435,7 @@ export function useAiChat(user, settings, refreshBilling, notify) {
         mode: currentMode,
         requestId,
         stage: "Analyzing Request...",
-        streamState: getPendingStreamSnapshot(createPendingStreamState()),
+        streamState: getPendingStreamSnapshot(initialState),
       });
       setStageForChat(chatId, "Analyzing Request...");
     };
@@ -433,8 +465,7 @@ export function useAiChat(user, settings, refreshBilling, notify) {
         });
       }
 
-      setStage("Preparing Job...");
-      setPending((prev) => (prev ? { ...prev, stage: "Preparing Job..." } : prev));
+      publishGenerationStage(activeChatId, "Preparing Job...");
       const token = await user.getIdToken();
       
       const idemKey = `chat-${requestId}`;
@@ -515,13 +546,9 @@ export function useAiChat(user, settings, refreshBilling, notify) {
       if (!jobId) throw new Error("Failed to create generation job");
       const agentRunId = jobData.runId || null;
       const resultUrl = resolveResultUrl(jobId, jobData.resultUrl);
-      const enableDeltaStreaming =
-        FEATURE_FLAGS.streamV2 &&
-        (jobData.streamVersion === "v2" || !jobData.streamVersion);
       const assistantMsgRef = doc(db, "users", user.uid, "chats", activeChatId, "messages", `${requestId}-assistant`);
 
-      setStage("Generating...");
-      setPending((prev) => (prev ? { ...prev, stage: "Generating...", steps: [], runId: agentRunId } : prev));
+      publishGenerationStage(activeChatId, "Generating...", { extraPending: { steps: [], runId: agentRunId } });
       if (agentRunId) {
         await setDoc(assistantMsgRef, {
           role: "assistant",
@@ -541,10 +568,8 @@ export function useAiChat(user, settings, refreshBilling, notify) {
           steps: [],
         }, { merge: true });
       }
-      streamStatesRef.current[activeChatId] = createPendingStreamState();
 
-      setStage("Connecting...");
-      setPending((prev) => (prev ? { ...prev, stage: "Connecting..." } : prev));
+      publishGenerationStage(activeChatId, "Connecting...");
       await ensureStreamSession(token);
 
       // 2. Connect to stream (tails worker events; auth via HttpOnly cookie)
@@ -565,6 +590,7 @@ export function useAiChat(user, settings, refreshBilling, notify) {
           deltaCount: 0,
           usedFallback: false,
         };
+        let idlePulse = null;
 
         const flushPendingStreamState = () => {
           streamFlushTimer = null;
@@ -602,19 +628,33 @@ export function useAiChat(user, settings, refreshBilling, notify) {
             streamStatesRef.current[activeChatId],
             entry
           );
+          idlePulse?.notifyActivity();
           schedulePendingStreamFlush(immediate);
+        };
+
+        const publishStage = (label, { id, status, streamStatus = null } = {}) => {
+          if (!label) return;
+          setStage(label);
+          recordStreamActivity({
+            id: id || `stage-${stageSlug(label)}`,
+            type: "stage",
+            status: status || label,
+            text: label,
+          }, false);
+          setPending((prev) => {
+            if (!prev) return prev;
+            return { ...prev, stage: label, streamStatus };
+          });
+        };
+
+        const stopIdlePulse = () => {
+          idlePulse?.dispose();
+          idlePulse = null;
         };
 
         const applyRecoveryStage = (payload) => {
           const label = formatRecoveryStage(payload);
-          setStage(label);
-          recordStreamActivity({
-            id: "stream-recovering",
-            type: "stage",
-            status: "Recovering",
-            text: label,
-          });
-          setPending((prev) => (prev ? { ...prev, stage: label, streamStatus: "recovering" } : prev));
+          publishStage(label, { id: "stream-recovering", status: "Recovering", streamStatus: "recovering" });
         };
 
         const tryFetchCompletedResult = async () => {
@@ -659,6 +699,7 @@ export function useAiChat(user, settings, refreshBilling, notify) {
           }
           setBusy(false);
           if (streamFlushTimer) clearTimeout(streamFlushTimer);
+          stopIdlePulse();
           setPending(null);
           setStage("");
           delete streamStatesRef.current[activeChatId];
@@ -698,6 +739,7 @@ export function useAiChat(user, settings, refreshBilling, notify) {
           notify(insufficientTokensToast(planKey));
           setBusy(false);
           if (streamFlushTimer) clearTimeout(streamFlushTimer);
+          stopIdlePulse();
           setPending(null);
           setStage("");
           delete streamStatesRef.current[activeChatId];
@@ -707,9 +749,9 @@ export function useAiChat(user, settings, refreshBilling, notify) {
         const finalizeWithData = async (data, source = "done") => {
           if (finalized) return;
           finalized = true;
+          stopIdlePulse();
 
-          setStage("Finalizing...");
-          setPending((prev) => (prev ? { ...prev, stage: "Finalizing..." } : prev));
+          publishStage("Finalizing...");
 
           const msgPayload = buildAssistantMessagePayload(data, {
             requestId,
@@ -761,14 +803,11 @@ export function useAiChat(user, settings, refreshBilling, notify) {
               retryCount += 1;
               emitStreamMetric("retry", { jobId, retryCount });
               const reconnectLabel = "Stream interrupted — reconnecting...";
-              setStage(reconnectLabel);
-              recordStreamActivity({
+              publishStage(reconnectLabel, {
                 id: "stream-reconnect",
-                type: "stage",
                 status: "Reconnecting",
-                text: reconnectLabel,
+                streamStatus: "reconnecting",
               });
-              setPending((prev) => (prev ? { ...prev, stage: reconnectLabel, streamStatus: "reconnecting" } : prev));
               setTimeout(() => {
                 connect();
               }, 1000 * retryCount);
@@ -777,14 +816,11 @@ export function useAiChat(user, settings, refreshBilling, notify) {
 
             metrics.usedFallback = true;
             const recoveringLabel = "Catching up with generation...";
-            setStage(recoveringLabel);
-            recordStreamActivity({
+            publishStage(recoveringLabel, {
               id: "stream-recovering",
-              type: "stage",
               status: "Recovering",
-              text: recoveringLabel,
+              streamStatus: "recovering",
             });
-            setPending((prev) => (prev ? { ...prev, stage: recoveringLabel, streamStatus: "recovering" } : prev));
             emitStreamMetric("fallback_start", { jobId });
 
             if (!dualStreamAttempted) {
@@ -852,12 +888,7 @@ export function useAiChat(user, settings, refreshBilling, notify) {
               const data = JSON.parse(e.data);
               lastSeq = updateSeqFromPayload(lastSeq, data);
               if (data?.message) {
-                setStage(data.message);
-                recordStreamActivity({ type: "stage", status: data.message, text: data.message }, false);
-                setPending((prev) => {
-                  if (!prev) return prev;
-                  return { ...prev, stage: data.message, streamStatus: null };
-                });
+                publishStage(data.message, { id: `stage-${stageSlug(data.message)}` });
                 if (agentRunId) {
                   updateDoc(assistantMsgRef, {
                     stage: data.message,
@@ -871,7 +902,7 @@ export function useAiChat(user, settings, refreshBilling, notify) {
           });
 
           es.addEventListener("delta", (e) => {
-            if (!enableDeltaStreaming) return;
+            if (!FEATURE_FLAGS.streamV2) return;
             try {
               const data = JSON.parse(e.data);
               lastSeq = updateSeqFromPayload(lastSeq, data);
@@ -879,6 +910,7 @@ export function useAiChat(user, settings, refreshBilling, notify) {
                 streamStatesRef.current[activeChatId],
                 data
               );
+              idlePulse?.notifyActivity();
               metrics.deltaCount += 1;
               if (!metrics.firstDeltaAt) {
                 metrics.firstDeltaAt = Date.now();
@@ -924,7 +956,7 @@ export function useAiChat(user, settings, refreshBilling, notify) {
                 };
               });
               if (step.label || step.type) {
-                setStage(step.label || step.type);
+                publishStage(step.label || step.type, { id: `stage-${stageSlug(step.label || step.type)}` });
               }
             } catch (err) {
               console.error("Failed to parse tool_step:", err);
@@ -965,6 +997,15 @@ export function useAiChat(user, settings, refreshBilling, notify) {
           eventSource = new EventSource(url, { withCredentials: true });
           emitStreamMetric("connect", { jobId, retryCount, afterSeq: lastSeq });
           setupListeners(eventSource);
+          stopIdlePulse();
+          idlePulse = createIdlePulseController({
+            onPulse: (message) => {
+              publishStage(message, { id: "idle-pulse", status: "Working" });
+            },
+            getActivitySeq: () => streamStatesRef.current[activeChatId]?.activitySeq || 0,
+            getContext: () => ({ studioConnected: Boolean(studioSessionId) }),
+          });
+          idlePulse.start();
         };
 
         connect();

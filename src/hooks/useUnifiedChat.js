@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import {
   addDoc,
   collection,
@@ -13,14 +13,29 @@ import { v4 as uuidv4 } from "uuid";
 import { useAiChat } from "./useAiChat";
 import { orchestrate, approveWorkflowPlan } from "../lib/workflowApi";
 import { isExplicitPlanApproval } from "../lib/planApproval";
+import {
+  applyStreamActivity,
+  createPendingStreamState,
+  getPendingStreamSnapshot,
+} from "../lib/streaming";
+import { stageSlug } from "../lib/streamEngagement";
 
-const THINKING_PLACEHOLDER = {
-  role: "assistant",
-  content: "",
-  thought: "Understanding your task...",
-  prompt: "",
-  stage: "Understanding your task...",
-};
+function seedOrchestrationStream(stage = "Understanding your task...") {
+  return applyStreamActivity(createPendingStreamState(), {
+    type: "stage",
+    text: stage,
+    status: stage,
+  });
+}
+
+function buildOrchestrationPending(state, stage) {
+  return {
+    role: "assistant",
+    content: "",
+    stage,
+    streamState: getPendingStreamSnapshot(state),
+  };
+}
 
 /**
  * Linear product loop for the code-first /ai workspace:
@@ -38,6 +53,8 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
   // The pre-generation "flow" phase (orchestration / Ask streaming) is tracked
   // per originating chat, mirroring how useAiChat scopes the generation phase.
   const [flowBusyChats, setFlowBusyChats] = useState({}); // chatId -> bool
+  const [orchestrationPendingByChat, setOrchestrationPendingByChat] = useState({});
+  const orchestrationStreamRef = useRef({});
   const setFlowBusyForChat = useCallback((chatId, value) => {
     if (!chatId) return;
     setFlowBusyChats((prev) => {
@@ -48,19 +65,64 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
 
   const flowBusy = !!flowBusyChats[chat.currentChatId];
 
+  const publishOrchestrationStage = useCallback((chatId, label) => {
+    if (!chatId || !label) return;
+    orchestrationStreamRef.current[chatId] = applyStreamActivity(
+      orchestrationStreamRef.current[chatId] || createPendingStreamState(),
+      {
+        id: `stage-${stageSlug(label)}`,
+        type: "stage",
+        text: label,
+        status: label,
+      }
+    );
+    const pending = {
+      role: "assistant",
+      content: "",
+      stage: label,
+      streamState: getPendingStreamSnapshot(orchestrationStreamRef.current[chatId]),
+    };
+    setOrchestrationPendingByChat((prev) => ({ ...prev, [chatId]: pending }));
+  }, []);
+
+  const beginOrchestrationPending = useCallback((chatId) => {
+    const state = seedOrchestrationStream();
+    orchestrationStreamRef.current[chatId] = state;
+    setOrchestrationPendingByChat((prev) => ({
+      ...prev,
+      [chatId]: buildOrchestrationPending(state, "Understanding your task..."),
+    }));
+  }, []);
+
+  const clearOrchestrationPending = useCallback((chatId) => {
+    if (!chatId) return;
+    delete orchestrationStreamRef.current[chatId];
+    setOrchestrationPendingByChat((prev) => {
+      if (!prev[chatId]) return prev;
+      const next = { ...prev };
+      delete next[chatId];
+      return next;
+    });
+  }, []);
+
   const isGenerating = chat.isGenerating || flowBusy;
 
   const pendingMessage = useMemo(() => {
     if (chat.pendingMessage) return chat.pendingMessage;
-    if (flowBusy) return THINKING_PLACEHOLDER;
+    if (flowBusy && chat.currentChatId) {
+      return orchestrationPendingByChat[chat.currentChatId]
+        || buildOrchestrationPending(seedOrchestrationStream(), "Understanding your task...");
+    }
     return null;
-  }, [chat.pendingMessage, flowBusy]);
+  }, [chat.pendingMessage, chat.currentChatId, flowBusy, orchestrationPendingByChat]);
 
   const generationStage = useMemo(() => {
     if (chat.generationStage) return chat.generationStage;
-    if (flowBusy) return "Understanding your task...";
+    if (flowBusy) {
+      return orchestrationPendingByChat[chat.currentChatId]?.stage || "Understanding your task...";
+    }
     return "";
-  }, [chat.generationStage, flowBusy]);
+  }, [chat.generationStage, chat.currentChatId, flowBusy, orchestrationPendingByChat]);
 
   // Chats with any in-flight work (orchestration or generation) — for sidebar badges.
   const generatingChatIds = useMemo(() => {
@@ -299,6 +361,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
       try {
         activeChatId = await ensureChat(prompt || "New build");
         setFlowBusyForChat(activeChatId, true);
+        beginOrchestrationPending(activeChatId);
         await writeUserMessage(activeChatId, requestId, prompt);
 
         if (mode === "ask") {
@@ -306,6 +369,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
           return;
         }
 
+        publishOrchestrationStage(activeChatId, "Analyzing request...");
         const decision = await orchestrate({
           prompt,
           history: chat.messages,
@@ -314,6 +378,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
           gameSpec: settings?.gameSpec || "",
         });
 
+        publishOrchestrationStage(activeChatId, "Preparing response...");
         await writeOrchestrationResult(
           activeChatId,
           requestId,
@@ -327,6 +392,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
         notify?.({ message: err?.message || "Could not start the build", type: "error" });
       } finally {
         setFlowBusyForChat(activeChatId, false);
+        clearOrchestrationPending(activeChatId);
       }
     },
     [
@@ -335,6 +401,9 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
       onSignInNudge,
       ensureChat,
       setFlowBusyForChat,
+      beginOrchestrationPending,
+      publishOrchestrationStage,
+      clearOrchestrationPending,
       chat.currentChatId,
       approvePlanInternal,
       writeUserMessage,
@@ -359,6 +428,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
       const activeChatId = chat.currentChatId;
       if (!activeChatId) return;
       setFlowBusyForChat(activeChatId, true);
+      beginOrchestrationPending(activeChatId);
       try {
 
         const answerText = Object.entries(answers || {})
@@ -372,6 +442,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
           { stage: "clarify_answered", answers: answers || {}, updatedAt: serverTimestamp() }
         );
 
+        publishOrchestrationStage(activeChatId, "Analyzing request...");
         const decision = await orchestrate({
           prompt,
           answers,
@@ -380,15 +451,17 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
           gameSpec: settings?.gameSpec || "",
         });
 
+        publishOrchestrationStage(activeChatId, "Preparing response...");
         await writeOrchestrationResult(activeChatId, requestId, decision, prompt, attachments);
       } catch (err) {
         console.error("Clarify error:", err);
         notify?.({ message: err?.message || "Could not continue", type: "error" });
       } finally {
         setFlowBusyForChat(activeChatId, false);
+        clearOrchestrationPending(activeChatId);
       }
     },
-    [user, isGenerating, chat.currentChatId, chat.messages, settings, writeUserMessage, writeOrchestrationResult, setFlowBusyForChat, notify]
+    [user, isGenerating, chat.currentChatId, chat.messages, settings, writeUserMessage, writeOrchestrationResult, setFlowBusyForChat, beginOrchestrationPending, publishOrchestrationStage, clearOrchestrationPending, notify]
   );
 
   // Stage 3 (plan): user approves the plan -> generate.
