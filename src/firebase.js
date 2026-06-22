@@ -1,6 +1,10 @@
-import { initializeApp, getApps } from "firebase/app";
+import { initializeApp, getApps, setLogLevel } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { initializeFirestore } from "firebase/firestore";
+
+// Keep Firebase SDK transport retries off the browser console; failures are
+// reported server-side via deferredClientLog when they persist.
+setLogLevel("silent");
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
@@ -19,7 +23,7 @@ const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 // Core SDKs
 export const auth = getAuth(app);
 export const db = initializeFirestore(app, {
-  experimentalAutoDetectLongPolling: true,
+  experimentalForceLongPolling: true,
 });
 
 // Safe, optional Analytics loader

@@ -6,6 +6,7 @@ import {
   consumeAuthRedirectResult,
   readRedirectContext,
 } from "../lib/firebaseAuth";
+import { scheduleDeferredClientLog } from "../lib/deferredClientLog";
 
 export default function AuthRedirectHandler() {
   const navigate = useNavigate();
@@ -35,7 +36,12 @@ export default function AuthRedirectHandler() {
       navigate(destination, { replace: true });
     })().catch((error) => {
       if (cancelled) return;
-      console.warn("Auth redirect handling failed:", error);
+      scheduleDeferredClientLog({
+        key: "auth:redirect",
+        source: "firebase-auth",
+        message: error?.message || "Auth redirect handling failed",
+        metadata: { code: error?.code || null },
+      });
     });
 
     return () => {
