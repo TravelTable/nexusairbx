@@ -168,6 +168,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
           aiSummary: decision.aiSummary || "",
           aiSteps: Array.isArray(decision.aiSteps) ? decision.aiSteps : [],
           aiAssumptions: Array.isArray(decision.aiAssumptions) ? decision.aiAssumptions : [],
+          planMarkdown: decision.planMarkdown || "",
           planSteps: Array.isArray(decision.planSteps) ? decision.planSteps : [],
           originPrompt,
           attachments: attMeta,
@@ -310,6 +311,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
           history: chat.messages,
           attachments: currentAttachments,
           mode,
+          gameSpec: settings?.gameSpec || "",
         });
 
         await writeOrchestrationResult(
@@ -340,6 +342,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
       handleAskSubmit,
       chat.messages,
       chat.activeMode,
+      settings,
       notify,
     ]
   );
@@ -374,6 +377,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
           answers,
           history: chat.messages,
           attachments,
+          gameSpec: settings?.gameSpec || "",
         });
 
         await writeOrchestrationResult(activeChatId, requestId, decision, prompt, attachments);
@@ -384,7 +388,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
         setFlowBusyForChat(activeChatId, false);
       }
     },
-    [user, isGenerating, chat.currentChatId, chat.messages, writeUserMessage, writeOrchestrationResult, setFlowBusyForChat, notify]
+    [user, isGenerating, chat.currentChatId, chat.messages, settings, writeUserMessage, writeOrchestrationResult, setFlowBusyForChat, notify]
   );
 
   // Stage 3 (plan): user approves the plan -> generate.

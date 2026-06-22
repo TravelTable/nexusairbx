@@ -1,6 +1,6 @@
 import { authedFetch } from "./billing";
 
-export async function orchestrate({ prompt, answers = null, history = [], attachments = [], mode = "agent" }) {
+export async function orchestrate({ prompt, answers = null, history = [], attachments = [], mode = "agent", gameSpec = "" }) {
   const res = await authedFetch("/api/ai/orchestrate", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -9,6 +9,7 @@ export async function orchestrate({ prompt, answers = null, history = [], attach
       answers,
       history,
       mode,
+      gameSpec,
       attachments: (attachments || []).map((a) => ({ name: a.name, type: a.type })),
     }),
   });

@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Check, HelpCircle, ListChecks, Sparkles, Pencil, Loader } from "lucide-react";
+import MarkdownMessage from "./MarkdownMessage";
 
 const CLASSIFICATION_LABELS = {
   ui: "Roblox UI",
@@ -103,6 +104,8 @@ export function ClarifyCard({ message, onSubmit, disabled }) {
 export function PlanCard({ message, onApprove, onEdit, disabled }) {
   const steps = Array.isArray(message.aiSteps) ? message.aiSteps : [];
   const assumptions = Array.isArray(message.aiAssumptions) ? message.aiAssumptions : [];
+  const planMarkdown = String(message.planMarkdown || "").trim();
+  const hasMarkdownPlan = planMarkdown.length > 0;
   const approved = message.stage === "plan_approved";
   const label = CLASSIFICATION_LABELS[message.classification] || "Artifact";
   const lifecycle = Array.isArray(message.planSteps) ? message.planSteps : [];
@@ -118,40 +121,46 @@ export function PlanCard({ message, onApprove, onEdit, disabled }) {
         </span>
       </div>
 
-      {message.aiSummary && (
-        <div className="space-y-1">
-          <div className="text-[10px] font-black uppercase tracking-widest text-gray-500">Goal</div>
-          <div className="text-[14px] text-gray-100 leading-relaxed">{message.aiSummary}</div>
-        </div>
-      )}
+      {hasMarkdownPlan ? (
+        <MarkdownMessage text={planMarkdown} />
+      ) : (
+        <>
+          {message.aiSummary && (
+            <div className="space-y-1">
+              <div className="text-[10px] font-black uppercase tracking-widest text-gray-500">Goal</div>
+              <div className="text-[14px] text-gray-100 leading-relaxed">{message.aiSummary}</div>
+            </div>
+          )}
 
-      {steps.length > 0 && (
-        <div className="space-y-2">
-          <div className="text-[10px] font-black uppercase tracking-widest text-gray-500">Implementation</div>
-          <ol className="space-y-2">
-            {steps.map((step, idx) => (
-              <li key={idx} className="flex items-start gap-3 text-[13px] text-gray-300">
-                <span className="mt-0.5 w-5 h-5 shrink-0 rounded-full bg-black/40 border border-white/10 flex items-center justify-center text-[10px] font-black text-[#00f5d4]">
-                  {idx + 1}
-                </span>
-                <span>{step}</span>
-              </li>
-            ))}
-          </ol>
-        </div>
-      )}
+          {steps.length > 0 && (
+            <div className="space-y-2">
+              <div className="text-[10px] font-black uppercase tracking-widest text-gray-500">Implementation</div>
+              <ol className="space-y-2">
+                {steps.map((step, idx) => (
+                  <li key={idx} className="flex items-start gap-3 text-[13px] text-gray-300">
+                    <span className="mt-0.5 w-5 h-5 shrink-0 rounded-full bg-black/40 border border-white/10 flex items-center justify-center text-[10px] font-black text-[#00f5d4]">
+                      {idx + 1}
+                    </span>
+                    <span>{step}</span>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          )}
 
-      {assumptions.length > 0 && (
-        <div className="space-y-2">
-          <div className="text-[10px] font-black uppercase tracking-widest text-gray-500">Assumptions</div>
-          <ul className="space-y-1.5">
-            {assumptions.map((assumption, idx) => (
-              <li key={idx} className="text-[13px] text-gray-400 leading-relaxed">
-                {assumption}
-              </li>
-            ))}
-          </ul>
-        </div>
+          {assumptions.length > 0 && (
+            <div className="space-y-2">
+              <div className="text-[10px] font-black uppercase tracking-widest text-gray-500">Assumptions</div>
+              <ul className="space-y-1.5">
+                {assumptions.map((assumption, idx) => (
+                  <li key={idx} className="text-[13px] text-gray-400 leading-relaxed">
+                    {assumption}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </>
       )}
 
       {lifecycle.length > 0 && (

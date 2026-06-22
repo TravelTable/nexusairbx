@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo } from "react";
-import { NexusRBXAvatar, UserAvatar, FormatText, SkeletonArtifact } from "../AiComponents";
+import { NexusRBXAvatar, UserAvatar, SkeletonArtifact } from "../AiComponents";
+import MarkdownMessage from "./MarkdownMessage";
 import { stripTags } from "./stripTags";
 import MessageBubble from "./MessageBubble";
 import LiveWorkStream from "./LiveWorkStream";
@@ -170,9 +171,7 @@ export default function MessageList({
                     {pendingParsed.hasStructured ? (
                       <div className="space-y-4">
                         {pendingParsed.explanation && (
-                          <div className="text-[15px] md:text-[16px] whitespace-pre-wrap leading-relaxed text-gray-100">
-                            <FormatText text={pendingParsed.explanation} />
-                          </div>
+                          <MarkdownMessage text={pendingParsed.explanation} />
                         )}
                         {pendingParsed.code && (
                           <div className="rounded-2xl border border-white/10 bg-black/40 overflow-hidden">
@@ -185,15 +184,11 @@ export default function MessageList({
                           </div>
                         )}
                         {pendingParsed.plain && (
-                          <div className="text-[14px] whitespace-pre-wrap leading-relaxed text-gray-300">
-                            <FormatText text={pendingParsed.plain} />
-                          </div>
+                          <MarkdownMessage text={pendingParsed.plain} className="text-gray-300" />
                         )}
                       </div>
                     ) : (
-                      <div className="text-[15px] md:text-[16px] whitespace-pre-wrap leading-relaxed text-gray-100">
-                        <FormatText text={stripTags(pendingMessage.content)} />
-                      </div>
+                      <MarkdownMessage text={stripTags(pendingMessage.content)} />
                     )}
                   </div>
                   {pendingMessage.type === "ui" && <SkeletonArtifact type="ui" />}

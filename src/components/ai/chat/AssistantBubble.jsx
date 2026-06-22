@@ -1,7 +1,6 @@
 import React from "react";
 import {
   NexusRBXAvatar,
-  FormatText,
   SecurityReport,
   PerformanceAudit,
   ArtifactCard,
@@ -10,6 +9,7 @@ import QaScoreBadge from "../QaScoreBadge";
 import { Activity, ShieldAlert, FolderOpen, FileCode2, Loader2 } from "lucide-react";
 import { stripTags } from "./stripTags";
 import { ClarifyCard, PlanCard } from "./FlowCards";
+import MarkdownMessage from "./MarkdownMessage";
 import ThinkingDisclosure from "./ThinkingDisclosure";
 import { AI_EVENTS, emitAiEvent } from "../../../lib/aiEvents";
 import AgentStepList from "../workspace/AgentStepList";
@@ -97,13 +97,11 @@ export default function AssistantBubble({
       )}
 
       {m.explanation ? (
-        <div className="text-[15px] whitespace-pre-wrap leading-relaxed text-gray-100">
-          <FormatText text={stripTags(m.explanation)} />
-        </div>
+        <MarkdownMessage text={stripTags(m.explanation)} />
       ) : (
         m.content && (
-          <div className="text-[15px] whitespace-pre-wrap leading-relaxed text-gray-400 italic">
-            <FormatText text={stripTags(m.content)} />
+          <div className="text-gray-400 italic">
+            <MarkdownMessage text={stripTags(m.content)} />
           </div>
         )
       )}

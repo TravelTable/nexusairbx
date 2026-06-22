@@ -14,6 +14,7 @@
     "framer-motion": "^11.3.31",
     "jszip": "^3.10.1",
     "lucide-react": "^0.468.0",
+    "mermaid": "^11.15.0",
     "openai": "^5.10.2",
     "react": "18.3.1",
     "react-dom": "18.3.1",
@@ -26,6 +27,7 @@
     "react-virtualized-auto-sizer": "^2.0.2",
     "react-window": "^1.8.11",
     "recharts": "^3.6.0",
+    "remark-gfm": "^4.0.1",
     "uuid": "^11.1.1",
     "web-vitals": "^2.1.4"
   },
@@ -70,5 +72,15 @@
   "engines": {
     "node": "22.x",
     "npm": ">=9"
+  },
+  "jest": {
+    "moduleNameMapper": {
+      "^mermaid$": "<rootDir>/src/testMocks/mermaid.js",
+      "^react-markdown$": "<rootDir>/src/testMocks/reactMarkdown.jsx",
+      "^remark-gfm$": "<rootDir>/src/testMocks/remarkGfm.js"
+    },
+    "transformIgnorePatterns": [
+      "node_modules/(?!(react-markdown|remark-.*|rehype-.*|unified|bail|is-plain-obj|trough|vfile|unist-.*|mdast-.*|micromark.*|decode-named-character-reference|character-entities|property-information|space-separated-tokens|comma-separated-tokens|hast-util-.*|estree-util-is-identifier-name|html-url-attributes|devlop)/)"
+    ]
   }
 }
