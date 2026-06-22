@@ -19,12 +19,12 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { auth } from "../firebase";
+import { signInWithEmailAndPassword, GoogleAuthProvider, GithubAuthProvider } from "firebase/auth";
 import {
-  signInWithEmailAndPassword,
-  GoogleAuthProvider,
-  GithubAuthProvider,
-  signInWithPopup
-} from "firebase/auth";
+  applyAuthPersistence,
+  getFriendlyAuthErrorMessage,
+  signInWithOAuthProvider,
+} from "../lib/firebaseAuth";
 import NexusRBXFooter from "../components/NexusRBXFooter";
 import { AI_PAGE_V2_ENABLED } from "../config";
 import { createAiTelemetryClient } from "../lib/aiTelemetry";
@@ -130,17 +130,8 @@ export default function NexusRBXSignInPageContainer() {
     navigate(from, { replace: true });
   };
 
-  // Set persistence based on rememberMe
   useEffect(() => {
-    if (rememberMe) {
-      import("firebase/auth").then(({ browserLocalPersistence, setPersistence }) => {
-        setPersistence(auth, browserLocalPersistence);
-      });
-    } else {
-      import("firebase/auth").then(({ browserSessionPersistence, setPersistence }) => {
-        setPersistence(auth, browserSessionPersistence);
-      });
-    }
+    void applyAuthPersistence(auth, rememberMe);
   }, [rememberMe]);
 
   const handleInputChange = (e) => {
@@ -202,7 +193,7 @@ export default function NexusRBXSignInPageContainer() {
     } catch (error) {
       setFormStatus({
         status: "error",
-        message: error.message
+        message: getFriendlyAuthErrorMessage(error)
       });
     }
   };
@@ -215,8 +206,12 @@ export default function NexusRBXSignInPageContainer() {
     trackAuthEvent("signin_submitted", { method: "google" });
 
     try {
-      const provider = new GoogleAuthProvider();
-      const credential = await signInWithPopup(auth, provider);
+      const credential = await signInWithOAuthProvider(auth, GoogleAuthProvider, {
+        rememberMe,
+        returnPath: shouldRedirectToAi ? "/ai" : from,
+        method: "google",
+      });
+      if (!credential) return;
       await credential.user.getIdToken();
       setFormStatus({
         status: "success",
@@ -228,7 +223,7 @@ export default function NexusRBXSignInPageContainer() {
     } catch (error) {
       setFormStatus({
         status: "error",
-        message: error.message
+        message: getFriendlyAuthErrorMessage(error)
       });
     }
   };
@@ -241,8 +236,12 @@ export default function NexusRBXSignInPageContainer() {
     trackAuthEvent("signin_submitted", { method: "github" });
 
     try {
-      const provider = new GithubAuthProvider();
-      const credential = await signInWithPopup(auth, provider);
+      const credential = await signInWithOAuthProvider(auth, GithubAuthProvider, {
+        rememberMe,
+        returnPath: shouldRedirectToAi ? "/ai" : from,
+        method: "github",
+      });
+      if (!credential) return;
       await credential.user.getIdToken();
       setFormStatus({
         status: "success",
@@ -254,7 +253,7 @@ export default function NexusRBXSignInPageContainer() {
     } catch (error) {
       setFormStatus({
         status: "error",
-        message: error.message
+        message: getFriendlyAuthErrorMessage(error)
       });
     }
   };

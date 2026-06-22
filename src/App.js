@@ -1,6 +1,7 @@
 import React, { Suspense, lazy, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { useBilling } from "./context/BillingContext";
+import AuthRedirectHandler from "./components/AuthRedirectHandler";
 
 // Suppress ResizeObserver loop error (Monaco Editor/Chrome bug) AND expose auth for console tests
 import { getAuth } from "firebase/auth";
@@ -52,6 +53,7 @@ function App() {
   return (
     <Router>
       <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-white bg-black">Loading...</div>}>
+        <AuthRedirectHandler />
         <Routes>
           <Route path="/" element={<NexusRBXHomepageContainer />} />
           <Route path="/docs" element={<NexusRBXDocsPageContainer />} />

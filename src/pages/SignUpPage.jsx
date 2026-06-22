@@ -19,12 +19,11 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { auth } from "../firebase";
-import { 
-  createUserWithEmailAndPassword, 
-  GoogleAuthProvider, 
-  GithubAuthProvider, 
-  signInWithPopup
-} from "firebase/auth";
+import { createUserWithEmailAndPassword, GoogleAuthProvider, GithubAuthProvider } from "firebase/auth";
+import {
+  getFriendlyAuthErrorMessage,
+  signInWithOAuthProvider,
+} from "../lib/firebaseAuth";
 import NexusRBXFooter from "../components/NexusRBXFooter";
 import { AI_PAGE_V2_ENABLED } from "../config";
 import { createAiTelemetryClient } from "../lib/aiTelemetry";
@@ -252,8 +251,11 @@ export default function NexusRBXSignUpPageContainer() {
     });
 
     try {
-      const provider = new GoogleAuthProvider();
-      const credential = await signInWithPopup(auth, provider);
+      const credential = await signInWithOAuthProvider(auth, GoogleAuthProvider, {
+        returnPath: "/ai",
+        method: "google",
+      });
+      if (!credential) return;
       await credential.user.getIdToken();
       setFormStatus({
         status: "success",
@@ -269,7 +271,7 @@ export default function NexusRBXSignUpPageContainer() {
     } catch (error) {
       setFormStatus({
         status: "error",
-        message: error.message
+        message: getFriendlyAuthErrorMessage(error)
       });
     }
   };
@@ -285,8 +287,11 @@ export default function NexusRBXSignUpPageContainer() {
     });
 
     try {
-      const provider = new GithubAuthProvider();
-      const credential = await signInWithPopup(auth, provider);
+      const credential = await signInWithOAuthProvider(auth, GithubAuthProvider, {
+        returnPath: "/ai",
+        method: "github",
+      });
+      if (!credential) return;
       await credential.user.getIdToken();
       setFormStatus({
         status: "success",
@@ -302,7 +307,7 @@ export default function NexusRBXSignUpPageContainer() {
     } catch (error) {
       setFormStatus({
         status: "error",
-        message: error.message
+        message: getFriendlyAuthErrorMessage(error)
       });
     }
   };
