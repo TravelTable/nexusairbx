@@ -806,7 +806,7 @@ export default function AgentWorkspaceLayout({ controller }) {
               <input
                 value={terminalCwd}
                 onChange={(e) => setTerminalCwd(e.target.value)}
-                placeholder="."
+                placeholder="relative path, e.g. src"
                 className="min-w-0 flex-1 bg-transparent text-[11px] text-gray-200 placeholder:text-gray-600 outline-none"
               />
             </label>
