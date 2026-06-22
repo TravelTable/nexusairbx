@@ -55,6 +55,24 @@ describe("streaming utils", () => {
     expect(formatPendingStreamContent(state)).toBe("Visible answer");
   });
 
+  test("replaces stream activity entries when id matches", () => {
+    let state = createPendingStreamState();
+    state = applyStreamActivity(state, {
+      id: "stream-reconnect",
+      type: "stage",
+      text: "Reconnecting...",
+      status: "Reconnecting",
+    });
+    state = applyStreamActivity(state, {
+      id: "stream-reconnect",
+      type: "stage",
+      text: "Reconnecting again...",
+      status: "Reconnecting",
+    });
+    expect(state.activity).toHaveLength(1);
+    expect(state.activity[0].text).toBe("Reconnecting again...");
+  });
+
   test("builds ordered work-stream activity from reasoning, stage, file, and tool events", () => {
     let state = createPendingStreamState();
     state = applyStreamDelta(state, { seq: 1, channel: "reasoning", text: "I will split the system into server and shared modules." });

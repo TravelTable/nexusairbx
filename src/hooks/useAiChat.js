@@ -18,6 +18,12 @@ import { v4 as uuidv4 } from "uuid";
 import { auth, db } from "../firebase";
 import { BACKEND_URL } from "../config";
 import { ensureStreamSession } from "../lib/streamSession";
+import {
+  buildStreamUrl,
+  formatRecoveryStage,
+  pollJobResult,
+  updateSeqFromPayload,
+} from "../lib/streamRecovery";
 import { FEATURE_FLAGS } from "../lib/featureFlags";
 import {
   getStudioApplyMode,
@@ -536,50 +542,6 @@ export function useAiChat(user, settings, refreshBilling, notify) {
         }, { merge: true });
       }
       streamStatesRef.current[activeChatId] = createPendingStreamState();
-      
-      const fetchFinalResult = async () => {
-        for (let attempt = 0; attempt < RESULT_MAX_POLLS; attempt++) {
-          const res = await fetch(resultUrl, {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              Accept: "application/json",
-            },
-          });
-
-          if (res.status === 202) {
-            await wait(RESULT_POLL_BASE_MS * (attempt + 1));
-            continue;
-          }
-
-          const contentType = res.headers.get("content-type") || "";
-          const data = contentType.includes("application/json")
-            ? await res.json().catch(() => ({}))
-            : {};
-
-          const billingFailure = parseApiErrorPayload(data);
-          if (billingFailure || res.status === 402) {
-            const err = new Error(billingFailure?.message || data.message || "You're out of tokens.");
-            err.code = "INSUFFICIENT_TOKENS";
-            throw err;
-          }
-
-          if (!res.ok) {
-            const text = typeof data?.message === "string"
-              ? data.message
-              : await res.text().catch(() => "");
-            throw new Error(text || data?.error || `Failed to recover result (${res.status})`);
-          }
-
-          const pending = data?.status === "pending" || data?.done === false;
-          if (pending) {
-            await wait(RESULT_POLL_BASE_MS * (attempt + 1));
-            continue;
-          }
-          return data?.result || data;
-        }
-
-        throw new Error("Timed out while recovering streamed generation");
-      };
 
       setStage("Connecting...");
       setPending((prev) => (prev ? { ...prev, stage: "Connecting..." } : prev));
@@ -590,6 +552,9 @@ export function useAiChat(user, settings, refreshBilling, notify) {
         let eventSource = null;
         let receivedDone = false;
         let finalized = false;
+        let recoverInFlight = false;
+        let dualStreamAttempted = false;
+        let lastSeq = 0;
         const isAutoExecuting = currentMode === "act";
         let retryCount = 0;
         let streamFlushTimer = null;
@@ -600,8 +565,6 @@ export function useAiChat(user, settings, refreshBilling, notify) {
           deltaCount: 0,
           usedFallback: false,
         };
-
-        const streamUrl = `${BACKEND_URL}/api/generate/stream?jobId=${encodeURIComponent(jobId)}&mode=${encodeURIComponent(currentMode)}`;
 
         const flushPendingStreamState = () => {
           streamFlushTimer = null;
@@ -640,6 +603,42 @@ export function useAiChat(user, settings, refreshBilling, notify) {
             entry
           );
           schedulePendingStreamFlush(immediate);
+        };
+
+        const applyRecoveryStage = (payload) => {
+          const label = formatRecoveryStage(payload);
+          setStage(label);
+          recordStreamActivity({
+            id: "stream-recovering",
+            type: "stage",
+            status: "Recovering",
+            text: label,
+          });
+          setPending((prev) => (prev ? { ...prev, stage: label, streamStatus: "recovering" } : prev));
+        };
+
+        const tryFetchCompletedResult = async () => {
+          const res = await fetch(resultUrl, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              Accept: "application/json",
+            },
+          });
+          const contentType = res.headers.get("content-type") || "";
+          const data = contentType.includes("application/json")
+            ? await res.json().catch(() => ({}))
+            : {};
+          if (data?.done === true || data?.status === "done") {
+            await finalizeWithData(data.result || data, "result_poll");
+            resolve();
+            return true;
+          }
+          if (data?.status === "failed") {
+            const err = new Error(data?.message || data?.error || "Generation failed");
+            err.code = data?.code || "GENERATION_FAILED";
+            throw err;
+          }
+          return false;
         };
 
         const failAndReject = (err, tag = "network") => {
@@ -748,31 +747,59 @@ export function useAiChat(user, settings, refreshBilling, notify) {
         };
 
         const recoverFromStreamFailure = async (rawError = null) => {
-          if (finalized || receivedDone) return;
-          if (isInsufficientTokensError(rawError)) {
-            await failInsufficientTokens(rawError);
-            return;
-          }
-
-          if (retryCount < STREAM_MAX_RETRIES) {
-            retryCount += 1;
-            emitStreamMetric("retry", { jobId, retryCount });
-            setStage("Reconnecting to generation stream...");
-            recordStreamActivity({ type: "stage", status: "Reconnecting", text: "Reconnecting to generation stream..." });
-            setPending((prev) => (prev ? { ...prev, stage: "Reconnecting to generation stream...", streamStatus: "reconnecting" } : prev));
-            setTimeout(() => {
-              connect();
-            }, 1000 * retryCount);
-            return;
-          }
-
+          if (finalized || receivedDone || recoverInFlight) return;
+          recoverInFlight = true;
           try {
+            if (isInsufficientTokensError(rawError)) {
+              await failInsufficientTokens(rawError);
+              return;
+            }
+
+            if (await tryFetchCompletedResult()) return;
+
+            if (retryCount < STREAM_MAX_RETRIES) {
+              retryCount += 1;
+              emitStreamMetric("retry", { jobId, retryCount });
+              const reconnectLabel = "Stream interrupted — reconnecting...";
+              setStage(reconnectLabel);
+              recordStreamActivity({
+                id: "stream-reconnect",
+                type: "stage",
+                status: "Reconnecting",
+                text: reconnectLabel,
+              });
+              setPending((prev) => (prev ? { ...prev, stage: reconnectLabel, streamStatus: "reconnecting" } : prev));
+              setTimeout(() => {
+                connect();
+              }, 1000 * retryCount);
+              return;
+            }
+
             metrics.usedFallback = true;
-            setStage("Recovering stream...");
-            recordStreamActivity({ type: "stage", status: "Recovering", text: "Recovering stream..." });
-            setPending((prev) => (prev ? { ...prev, stage: "Recovering stream...", streamStatus: "recovering" } : prev));
+            const recoveringLabel = "Catching up with generation...";
+            setStage(recoveringLabel);
+            recordStreamActivity({
+              id: "stream-recovering",
+              type: "stage",
+              status: "Recovering",
+              text: recoveringLabel,
+            });
+            setPending((prev) => (prev ? { ...prev, stage: recoveringLabel, streamStatus: "recovering" } : prev));
             emitStreamMetric("fallback_start", { jobId });
-            const recovered = await fetchFinalResult();
+
+            if (!dualStreamAttempted) {
+              dualStreamAttempted = true;
+              connect();
+            }
+
+            const recovered = await pollJobResult({
+              resultUrl,
+              token,
+              maxPolls: RESULT_MAX_POLLS,
+              pollBaseMs: RESULT_POLL_BASE_MS,
+              waitImpl: wait,
+              onPending: applyRecoveryStage,
+            });
             await finalizeWithData(recovered, "fallback");
             resolve();
           } catch (fallbackErr) {
@@ -781,7 +808,12 @@ export function useAiChat(user, settings, refreshBilling, notify) {
               return;
             }
             const errorMsg = rawError?.message || fallbackErr?.message || "Generation failed";
-            failAndReject(new Error(errorMsg), "timeout");
+            if (fallbackErr?.code === "RECOVERY_TIMEOUT") {
+              notify?.({ type: "error", message: errorMsg });
+            }
+            failAndReject(new Error(errorMsg), fallbackErr?.code === "RECOVERY_TIMEOUT" ? "timeout" : "network");
+          } finally {
+            recoverInFlight = false;
           }
         };
 
@@ -806,9 +838,19 @@ export function useAiChat(user, settings, refreshBilling, notify) {
         };
 
         const setupListeners = (es) => {
+          es.addEventListener("heartbeat", (e) => {
+            try {
+              const data = JSON.parse(e.data);
+              lastSeq = updateSeqFromPayload(lastSeq, data);
+            } catch (_) {
+              /* keepalive only */
+            }
+          });
+
           es.addEventListener("stage", (e) => {
             try {
               const data = JSON.parse(e.data);
+              lastSeq = updateSeqFromPayload(lastSeq, data);
               if (data?.message) {
                 setStage(data.message);
                 recordStreamActivity({ type: "stage", status: data.message, text: data.message }, false);
@@ -832,6 +874,7 @@ export function useAiChat(user, settings, refreshBilling, notify) {
             if (!enableDeltaStreaming) return;
             try {
               const data = JSON.parse(e.data);
+              lastSeq = updateSeqFromPayload(lastSeq, data);
               streamStatesRef.current[activeChatId] = applyStreamDelta(
                 streamStatesRef.current[activeChatId],
                 data
@@ -852,6 +895,7 @@ export function useAiChat(user, settings, refreshBilling, notify) {
             if (!FEATURE_FLAGS.unifiedAgent) return;
             try {
               const data = JSON.parse(e.data);
+              lastSeq = updateSeqFromPayload(lastSeq, data);
               const step = normalizeToolStep(data.step || data);
               recordStreamActivity({
                 type: "tool_step",
@@ -892,6 +936,7 @@ export function useAiChat(user, settings, refreshBilling, notify) {
             receivedDone = true;
             try {
               const data = JSON.parse(e.data);
+              lastSeq = updateSeqFromPayload(lastSeq, data);
               es.close();
               await finalizeWithData(data, "done");
               resolve();
@@ -901,6 +946,7 @@ export function useAiChat(user, settings, refreshBilling, notify) {
           });
 
           es.addEventListener("error", async (e) => {
+            if (finalized || receivedDone) return;
             if (await handleStreamErrorEvent(e)) return;
             es.close();
             emitStreamMetric("error", { jobId, tag: "network", retryCount });
@@ -908,10 +954,16 @@ export function useAiChat(user, settings, refreshBilling, notify) {
           });
         };
 
-        const connect = () => {
+        const connect = async () => {
           eventSource?.close?.();
-          eventSource = new EventSource(streamUrl, { withCredentials: true });
-          emitStreamMetric("connect", { jobId, retryCount });
+          try {
+            await ensureStreamSession(token);
+          } catch (err) {
+            console.warn("Stream session refresh failed:", err?.message || err);
+          }
+          const url = buildStreamUrl({ jobId, mode: currentMode, afterSeq: lastSeq });
+          eventSource = new EventSource(url, { withCredentials: true });
+          emitStreamMetric("connect", { jobId, retryCount, afterSeq: lastSeq });
           setupListeners(eventSource);
         };
 

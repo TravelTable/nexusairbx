@@ -310,8 +310,22 @@ export function applyStreamActivity(currentState, entry) {
     const updated = appendOrUpdateThinking(next, entry.text || "");
     return { ...next, ...updated };
   }
+  const entryId = entry?.id || nextActivityId(next, type);
+  const existingIndex = entry?.id
+    ? (next.activity || []).findIndex((item) => item.id === entry.id)
+    : -1;
+  if (existingIndex >= 0) {
+    const activity = [...(next.activity || [])];
+    activity[existingIndex] = {
+      ...activity[existingIndex],
+      ...entry,
+      id: entryId,
+      ts: Date.now(),
+    };
+    return { ...next, activity: trimActivity(activity) };
+  }
   const appended = appendActivity(next, {
-    id: entry?.id || nextActivityId(next, type),
+    id: entryId,
     type,
     text: entry?.text || "",
     status: entry?.status || "",

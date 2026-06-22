@@ -122,9 +122,14 @@ export default function LiveWorkStream({
     [streamState, pendingMessage]
   );
   const reconnecting = pendingMessage?.streamStatus === "reconnecting" || pendingMessage?.streamStatus === "recovering";
+  const backendStage = pendingMessage?.stage || generationStage || "";
   const status = reconnecting
-    ? "Reconnecting to generation stream..."
-    : pendingMessage?.stage || generationStage || "Working...";
+    ? (backendStage && !/reconnect|recover/i.test(backendStage)
+        ? backendStage
+        : pendingMessage?.streamStatus === "recovering"
+          ? "Catching up with generation..."
+          : "Stream interrupted — reconnecting...")
+    : backendStage || "Working...";
   const scrollerRef = useRef(null);
   const [stickToBottom, setStickToBottom] = useState(true);
 
