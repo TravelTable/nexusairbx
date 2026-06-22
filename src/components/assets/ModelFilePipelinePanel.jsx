@@ -97,18 +97,26 @@ export default function ModelFilePipelinePanel({ notify }) {
   }, [active]);
 
   const refresh = async () => {
-    const data = await listModelFiles();
-    const list = data.items || data.modelFiles || data.files || data.results || [];
-    const next = active?.id ? list.find((file) => file.id === active.id) : firstModel(list);
-    setActive(next || null);
-    if (next?.id) {
-      if (FINAL.has(next.status)) {
-        getModelFileReport(next.id).then((payload) => setReport(payload.report)).catch(() => setReport(null));
+    try {
+      const data = await listModelFiles();
+      const list = data.items || data.modelFiles || data.files || data.results || [];
+      const next = active?.id ? list.find((file) => file.id === active.id) : firstModel(list);
+      setActive(next || null);
+      if (next?.id) {
+        if (FINAL.has(next.status)) {
+          getModelFileReport(next.id).then((payload) => setReport(payload.report)).catch(() => setReport(null));
+        }
+        listDerivatives(next.id).then((payload) => setDerivatives(payload.items || payload.derivatives || payload.results || [])).catch(() => {});
+      } else {
+        setReport(null);
+        setDerivatives([]);
       }
-      listDerivatives(next.id).then((payload) => setDerivatives(payload.items || payload.derivatives || payload.results || [])).catch(() => {});
-    } else {
-      setReport(null);
-      setDerivatives([]);
+    } catch (err) {
+      if (err?.status === 404) {
+        setError("Model pipeline API is not available on this backend yet.");
+      } else {
+        setError(err?.message || "Could not load model files");
+      }
     }
   };
 
@@ -404,7 +412,7 @@ export default function ModelFilePipelinePanel({ notify }) {
             {busy === "upload" || busy === "complete" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <UploadCloud className="h-3.5 w-3.5" />}
             Upload GLB
           </button>
-          <button type="button" onClick={refresh} className="rounded-md border border-white/10 p-1.5 text-white/60 hover:bg-white/5" aria-label="Refresh model files">
+          <button type="button" onClick={() => refresh().catch(() => {})} className="rounded-md border border-white/10 p-1.5 text-white/60 hover:bg-white/5" aria-label="Refresh model files">
             <RefreshCw className="h-3.5 w-3.5" />
           </button>
         </div>
