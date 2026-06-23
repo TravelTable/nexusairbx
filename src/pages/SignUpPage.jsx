@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { AlertCircle, Check, Eye, EyeOff, Github, Loader2, Lock, Mail, Sparkles, User } from "lucide-react";
-import { createUserWithEmailAndPassword, GithubAuthProvider, GoogleAuthProvider } from "firebase/auth";
+import { createUserWithEmailAndPassword, GithubAuthProvider, GoogleAuthProvider, updateProfile } from "firebase/auth";
 import { auth } from "../firebase";
 import { getFriendlyAuthErrorMessage, signInWithOAuthProvider } from "../lib/firebaseAuth";
 import { PLAN } from "../lib/prices";
@@ -46,7 +46,8 @@ export default function SignUpPage() {
     if (error) return setStatus({ loading: false, error });
     setStatus({ loading: true, error: "" });
     try {
-      await createUserWithEmailAndPassword(auth, form.email.trim(), form.password);
+      const credential = await createUserWithEmailAndPassword(auth, form.email.trim(), form.password);
+      await updateProfile(credential.user, { displayName: form.name.trim() });
       navigate(destination, { replace: true, state: selectedPlan === PLAN.FREE ? undefined : { selectedPlan } });
     } catch (authError) {
       setStatus({ loading: false, error: getFriendlyAuthErrorMessage(authError) });
