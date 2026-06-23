@@ -14,6 +14,12 @@ jobs:
         with:
           node-version: 22
           cache: npm
-      - run: npm ci
+      - name: Install dependencies
+        run: |
+          if [ -f package-lock.json ] || [ -f npm-shrinkwrap.json ]; then
+            npm ci
+          else
+            npm install --legacy-peer-deps
+          fi
       - run: CI=true npm test -- --watchAll=false
       - run: npm run build
