@@ -1,243 +1,63 @@
-import React, { useState, useEffect, useRef } from "react";
-import { Coins, AlertCircle, RefreshCw } from "lucide-react";
+import React from "react";
+import { AlertCircle, Coins, Wallet } from "lucide-react";
+import { useBilling } from "../context/BillingContext";
 
-// Container component for business logic
-/**
- * Supports showing both subscription and prepaid usage if passed as an object:
- *   tokens={{ sub: { remaining, limit }, payg: { remaining } }}
- * Or as a single number for legacy usage.
- */
+function formatMoney(micros) {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    minimumFractionDigits: 2,
+  }).format(Math.max(0, Number(micros || 0)) / 1_000_000);
+}
+
+function UsagePill({ icon: Icon, label, value, warning = false, variant = "default" }) {
+  const header = variant === "header";
+  return (
+    <div className={`flex items-center gap-1.5 rounded-full border px-2.5 py-1 ${warning ? "border-amber-500/30 bg-amber-500/10" : "border-white/10 bg-white/5"}`}>
+      <Icon className={`${header ? "h-3.5 w-3.5" : "h-4 w-4"} ${warning ? "text-amber-300" : "text-[#00f5d4]"}`} />
+      <span className={`${header ? "text-[10px]" : "text-xs"} font-bold uppercase tracking-wider text-gray-500`}>{label}</span>
+      <span className={`${header ? "text-xs" : "text-sm"} font-mono font-bold ${warning ? "text-amber-200" : "text-white"}`}>{value}</span>
+      {warning && <AlertCircle className="h-3 w-3 text-amber-300" />}
+    </div>
+  );
+}
+
 export default function TokensCounterContainer({
   tokens = 0,
   maxTokens = null,
   isLoading = false,
-  onRefresh = null,
-  showRefreshButton = false,
-  lowTokenThreshold = 100,
   className = "",
   variant = "default",
   flags = null,
 }) {
-  const isUnlimited = Boolean(flags?.unlimitedTokens);
+  const billing = useBilling() || {};
+  const included = billing.includedUsage;
+  const premium = billing.premiumBalance;
+  const unlimited = Boolean(flags?.unlimitedTokens || billing.unlimitedTokens);
 
-  if (isUnlimited) {
-    const containerClasses = variant === "header"
-      ? `flex items-center gap-2 bg-white/5 backdrop-blur-sm border border-white/10 rounded-full px-1 py-1 ${className}`
-      : `flex flex-col gap-1 ${className}`;
-
-    return (
-      <div className={containerClasses}>
-        <SingleTokenCounter
-          label={flags?.devOverride ? "Dev" : "Unlimited"}
-          tokens={0}
-          isLoading={isLoading}
-          showRefreshButton={showRefreshButton}
-          onRefresh={onRefresh}
-          variant={variant}
-          unlimited
-        />
-      </div>
-    );
+  if (isLoading || billing.loading) {
+    return <div className={`h-7 w-28 animate-pulse rounded-full bg-white/10 ${className}`} />;
   }
-
-  // If tokens is an object with sub/payg, render both counters.
-  if (
-    tokens &&
-    typeof tokens === "object" &&
-    (tokens.sub || tokens.payg)
-  ) {
-    const containerClasses = variant === "header" 
-      ? `flex items-center gap-2 bg-white/5 backdrop-blur-sm border border-white/10 rounded-full px-1 py-1 ${className}`
-      : `flex flex-col gap-1 ${className}`;
-
-    return (
-      <div className={containerClasses}>
-        {tokens.sub && (
-          <SingleTokenCounter
-            label="Included"
-            tokens={tokens.sub.remaining}
-            maxTokens={tokens.sub.limit}
-            isLoading={isLoading}
-            onRefresh={onRefresh}
-            showRefreshButton={showRefreshButton}
-            lowTokenThreshold={lowTokenThreshold}
-            variant={variant}
-          />
-        )}
-        {tokens.payg && (
-          <SingleTokenCounter
-            label="Premium"
-            tokens={tokens.payg.remaining}
-            maxTokens={null}
-            isLoading={isLoading}
-            onRefresh={onRefresh}
-            showRefreshButton={showRefreshButton}
-            lowTokenThreshold={lowTokenThreshold}
-            variant={variant}
-          />
-        )}
-      </div>
-    );
-  }
-
-  // Legacy: single counter
-  return (
-    <SingleTokenCounter
-      tokens={tokens}
-      maxTokens={maxTokens}
-      isLoading={isLoading}
-      onRefresh={onRefresh}
-      showRefreshButton={showRefreshButton}
-      lowTokenThreshold={lowTokenThreshold}
-      className={className}
-    />
-  );
-}
-
-// SingleTokenCounter is the old TokensCounterUI, with optional label
-function SingleTokenCounter({
-  tokens = 0,
-  maxTokens = null,
-  isLoading = false,
-  onRefresh = null,
-  showRefreshButton = false,
-  lowTokenThreshold = 100,
-  className = "",
-  label = null,
-  variant = "default",
-  unlimited = false,
-}) {
-  const [isAnimating, setIsAnimating] = useState(false);
-  const prevTokensRef = useRef(tokens);
-
-  useEffect(() => {
-    if (tokens !== prevTokensRef.current) {
-      setIsAnimating(true);
-      const timer = setTimeout(() => {
-        setIsAnimating(false);
-      }, 1000);
-      prevTokensRef.current = tokens;
-      return () => clearTimeout(timer);
-    }
-  }, [tokens]);
-
-  const handleRefresh = () => {
-    if (typeof onRefresh === "function") {
-      onRefresh();
-    }
-  };
 
   if (unlimited) {
-    const isHeader = variant === "header";
+    return <div className={className}><UsagePill icon={Coins} label={billing.devOverride ? "Dev" : "Usage"} value="Unlimited" variant={variant} /></div>;
+  }
+
+  if (included) {
+    const percentRemaining = Math.max(0, Math.min(100, Number(included.percentRemaining ?? (100 - Number(included.percentUsed || 0)))));
+    const balanceMicros = Math.max(0, Number(premium?.balanceMicros || 0));
     return (
-      <div className={`flex items-center gap-1.5 ${className}`}>
-        <div className={`flex items-center gap-1.5 rounded-md px-2.5 py-1 transition-all duration-300 ${
-          isHeader ? "bg-transparent border-none" : "bg-gray-800 border border-gray-700"
-        }`}>
-          <Coins
-            className={`${isHeader ? "h-3.5 w-3.5" : "h-4 w-4"} text-[#00f5d4] drop-shadow-sm`}
-            style={{
-              filter: "drop-shadow(0 1px 1px rgba(0,0,0,0.3))",
-              color: "#00f5d4"
-            }}
-          />
-          <div className="flex items-baseline">
-            {label && (
-              <span className={`font-medium text-white mr-1 ${isHeader ? "text-[10px] uppercase tracking-wider opacity-60" : "text-xs"}`}>
-                {label}:
-              </span>
-            )}
-            {isLoading ? (
-              <div className="w-10 h-4 bg-gray-700 animate-pulse rounded"></div>
-            ) : (
-              <span className={`font-mono ${isHeader ? "text-xs" : "text-sm"} text-[#00f5d4] transition-colors duration-300`}>
-                Unlimited
-              </span>
-            )}
-          </div>
-        </div>
-        {showRefreshButton && (
-          <button
-            onClick={handleRefresh}
-            className="p-1 rounded-md hover:bg-gray-700 transition-colors focus:outline-none focus:ring-1 focus:ring-gray-500 ml-1"
-            title="Refresh token count"
-            disabled={isLoading}
-          >
-            <RefreshCw className={`h-4 w-4 text-gray-400 ${isLoading ? "animate-spin" : ""}`} />
-          </button>
-        )}
+      <div className={`flex items-center gap-2 ${className}`}>
+        <UsagePill icon={Coins} label="Included" value={`${percentRemaining}% left`} warning={percentRemaining <= 10} variant={variant} />
+        {balanceMicros > 0 && <UsagePill icon={Wallet} label="Premium" value={formatMoney(balanceMicros)} variant={variant} />}
       </div>
     );
   }
 
-  const isLowTokens =
-    (maxTokens !== null && tokens <= lowTokenThreshold) ||
-    (maxTokens === null && tokens <= lowTokenThreshold);
-
-  // Format large numbers with commas
-  const formatNumber = (num) => {
-    if (typeof num !== "number" || isNaN(num)) return "0";
-    return num.toLocaleString();
-  };
-
-  const isHeader = variant === "header";
-
-  return (
-    <div className={`flex items-center gap-1.5 ${className}`}>
-      <div className={`flex items-center gap-1.5 rounded-md px-2.5 py-1 transition-all duration-300 ${
-        isHeader 
-          ? `bg-transparent border-none ${isLowTokens ? "bg-amber-500/10" : ""}`
-          : `bg-gray-800 border ${isLowTokens ? "border-amber-700/50" : "border-gray-700"}`
-      }`}>
-        <div className={`relative ${isAnimating ? "animate-bounce" : ""}`}>
-          <Coins 
-            className={`${isHeader ? "h-3.5 w-3.5" : "h-4 w-4"} text-yellow-300 drop-shadow-sm`} 
-            style={{
-              filter: "drop-shadow(0 1px 1px rgba(0,0,0,0.3))",
-              color: "#fcd34d"
-            }}
-          />
-          <div 
-            className="absolute inset-0 rounded-full opacity-30 pointer-events-none"
-            style={{
-              background: "radial-gradient(circle, rgba(252,211,77,0.4) 0%, rgba(252,211,77,0) 70%)",
-              filter: "blur(1px)"
-            }}
-          ></div>
-        </div>
-        <div className="flex items-baseline">
-          {label && (
-            <span className={`font-medium text-white mr-1 ${isHeader ? "text-[10px] uppercase tracking-wider opacity-60" : "text-xs"}`}>
-              {label}:
-            </span>
-          )}
-          {isLoading ? (
-            <div className="w-10 h-4 bg-gray-700 animate-pulse rounded"></div>
-          ) : (
-            <span className={`font-mono ${isHeader ? "text-xs" : "text-sm"} ${
-              isAnimating ? "text-green-400" : isLowTokens ? "text-amber-400" : "text-gray-200"
-            } transition-colors duration-300`}>
-              {formatNumber(tokens)}
-              {maxTokens !== null && (
-                <span className="text-gray-400 text-[10px] ml-0.5">/{formatNumber(maxTokens)}</span>
-              )}
-            </span>
-          )}
-        </div>
-        {isLowTokens && (
-          <AlertCircle className={`${isHeader ? "h-3 w-3" : "h-3.5 w-3.5"} text-amber-400 ml-1`} />
-        )}
-      </div>
-      {showRefreshButton && (
-        <button 
-          onClick={handleRefresh}
-          className="p-1 rounded-md hover:bg-gray-700 transition-colors focus:outline-none focus:ring-1 focus:ring-gray-500 ml-1"
-          title="Refresh token count"
-          disabled={isLoading}
-        >
-          <RefreshCw className={`h-4 w-4 text-gray-400 ${isLoading ? "animate-spin" : ""}`} />
-        </button>
-      )}
-    </div>
-  );
+  const remaining = typeof tokens === "object"
+    ? Number(tokens?.sub?.remaining || 0) + Number(tokens?.payg?.remaining || 0)
+    : Number(tokens || 0);
+  const limit = typeof tokens === "object" ? Number(tokens?.sub?.limit || 0) : Number(maxTokens || 0);
+  const percentRemaining = limit > 0 ? Math.max(0, Math.min(100, Math.round((remaining / limit) * 100))) : 100;
+  return <div className={className}><UsagePill icon={Coins} label="Usage" value={`${percentRemaining}% left`} variant={variant} /></div>;
 }
