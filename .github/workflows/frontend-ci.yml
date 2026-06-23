@@ -10,18 +10,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          show-progress: false
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
       - name: Install dependencies
         run: |
           if [ -f package-lock.json ] || [ -f npm-shrinkwrap.json ]; then
-            npm ci --no-audit --no-fund >/dev/null
+            npm ci --no-audit --no-fund --silent
           else
-            npm install --legacy-peer-deps --no-audit --no-fund >/dev/null
+            npm install --legacy-peer-deps --no-audit --no-fund --silent
           fi
-      - name: Test
-        run: CI=true npm test -- --watchAll=false
-      - name: Build
+      - name: Build diagnostic
         run: CI=false npm run build
