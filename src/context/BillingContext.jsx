@@ -2,7 +2,7 @@
 import React, { createContext, useContext, useEffect, useMemo, useState, useCallback } from "react";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "../firebase"; // keep your existing init
-import { getEntitlements, summarizeEntitlements, startCheckout, openPortal, cancelSubscription } from "../lib/billing";
+import { getEntitlements, summarizeEntitlements, startCheckout, openPortal, cancelSubscription, submitBrowserTimezone } from "../lib/billing";
 import { onAiEvent } from "../lib/aiEvents";
 
 const BillingCtx = createContext(null);
@@ -27,6 +27,11 @@ export function BillingProvider({ children, pollMs = 60_000 }) {
       devOverride: false,
     },
     entitlements: [],
+    modelAccess: null,
+    dailyUsage: null,
+    fairUse: null,
+    limits: null,
+    isFreeUsagePlan: true,
   });
 
   useEffect(() => {
@@ -77,11 +82,22 @@ export function BillingProvider({ children, pollMs = 60_000 }) {
     refresh();
     const id = setInterval(refresh, pollMs);
     const unbindJob = onAiEvent("JOB_COMPLETE", () => refresh());
+    const unbindJobFail = onAiEvent("JOB_FAILURE", () => refresh());
+    const onFocus = () => refresh();
+    window.addEventListener("focus", onFocus);
     return () => {
       clearInterval(id);
       unbindJob();
+      unbindJobFail();
+      window.removeEventListener("focus", onFocus);
     };
   }, [refresh, pollMs]);
+
+  useEffect(() => {
+    if (!user) return;
+    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    submitBrowserTimezone(timezone).catch(() => {});
+  }, [user]);
 
   const actions = useMemo(() => ({
     refresh,

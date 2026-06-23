@@ -41,6 +41,7 @@ import { signOut } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
 import ConfirmationModal from "../components/ConfirmationModal";
 import BrutalAuditor from "../components/ai/BrutalAuditor";
+import FreeUsageMeter from "../components/FreeUsageMeter";
 import {
   beginRobloxOAuth,
   beginRobloxReauthorization,
@@ -62,13 +63,13 @@ import {
   YAxis,
 } from "recharts";
 import {
+  DEFAULT_FREE_MODEL,
   DEFAULT_PRO_MODEL,
   MODEL_ALIAS_LABELS,
   PROVIDER_LABELS,
   groupModelsByProvider,
   isFreeDefaultModel,
   normalizeModelId,
-  resolveFreeDefaultFromCatalog,
   sortProviderEntries,
 } from "../lib/modelProviders";
 
@@ -131,7 +132,7 @@ const SettingsPage = () => {
   const { settings, updateSettings } = useSettings();
   const { models: modelCatalog } = useModelCatalog();
   const [codingStandards, setCodingStandards] = useState(settings.codingStandards || "");
-  const { plan, totalRemaining, subLimit, resetsAt, portal, cancel, entitlements = [] } = useBilling();
+  const { plan, totalRemaining, subLimit, resetsAt, portal, cancel, entitlements = [], dailyUsage, fairUse } = useBilling();
   const [usageData, setUsageData] = useState({ logs: [], chartData: [] });
   const [devStats, setDevStats] = useState(null);
   const [devUsers, setDevUsers] = useState([]);
@@ -273,8 +274,8 @@ const SettingsPage = () => {
     if (modelCatalog.length === 0) return;
 
     // Free/anon users can never keep a pro-tier model selected.
-    if (!isPremiumPlan && tierForModel(settings.modelVersion) === "pro") {
-      updateSettings({ modelVersion: resolveFreeDefaultFromCatalog(modelCatalog) });
+    if (!isPremiumPlan && settings.modelVersion !== DEFAULT_FREE_MODEL) {
+      updateSettings({ modelVersion: DEFAULT_FREE_MODEL });
       return;
     }
 
@@ -601,36 +602,42 @@ const SettingsPage = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <label className="text-sm text-gray-400">Default Model</label>
-                  <select 
-                    value={settings.modelVersion}
-                    onChange={(e) => {
-                      const next = e.target.value;
-                      if (!isPremiumPlan && tierForModel(next) === "pro") return;
-                      updateSettings({ modelVersion: next });
-                    }}
-                    className="w-full bg-black border border-gray-800 rounded-xl p-3 text-white outline-none focus:border-purple-500 transition-colors"
-                  >
-                    {!modelCatalog.some((m) => m.id === settings.modelVersion) && settings.modelVersion && (
-                      <option value={settings.modelVersion}>
-                        {MODEL_ALIAS_LABELS[settings.modelVersion] || settings.modelVersion}
-                      </option>
-                    )}
-                    {sortedModelProviders.map(([provider, list]) => (
-                      <optgroup key={provider} label={PROVIDER_LABELS[provider] || provider}>
-                        {list.map((m) => (
-                          <option key={m.id} value={m.id} disabled={!isPremiumPlan && m.tier === "pro"}>
-                            {m.name}
-                            {m.tier === "pro" ? " — Pro" : ""}
-                            {m.contextLength ? ` (${Math.round(m.contextLength / 1000)}k)` : ""}
-                          </option>
-                        ))}
-                      </optgroup>
-                    ))}
-                  </select>
-                  {!isPremiumPlan && (
-                    <p className="text-[11px] text-gray-500">Upgrade to Pro to unlock premium model selection.</p>
+                  {!isPremiumPlan ? (
+                    <div className="rounded-xl border border-gray-800 bg-black p-3">
+                      <div className="text-white font-bold">Nexus Free Auto</div>
+                      <p className="mt-1 text-xs text-gray-500">Automatically selects the best available Free model.</p>
+                      <p className="mt-2 text-[11px] text-[#00f5d4]">Upgrade to Pro to choose GPT, Claude, Gemini, Grok and other supported models.</p>
+                    </div>
+                  ) : (
+                    <select 
+                      value={settings.modelVersion}
+                      onChange={(e) => updateSettings({ modelVersion: e.target.value })}
+                      className="w-full bg-black border border-gray-800 rounded-xl p-3 text-white outline-none focus:border-purple-500 transition-colors"
+                    >
+                      {!modelCatalog.some((m) => m.id === settings.modelVersion) && settings.modelVersion && (
+                        <option value={settings.modelVersion}>
+                          {MODEL_ALIAS_LABELS[settings.modelVersion] || settings.modelVersion}
+                        </option>
+                      )}
+                      {sortedModelProviders.map(([provider, list]) => (
+                        <optgroup key={provider} label={PROVIDER_LABELS[provider] || provider}>
+                          {list.map((m) => (
+                            <option key={m.id} value={m.id}>
+                              {m.name}
+                              {m.tier === "pro" ? " — Pro" : ""}
+                              {m.contextLength ? ` (${Math.round(m.contextLength / 1000)}k)` : ""}
+                            </option>
+                          ))}
+                        </optgroup>
+                      ))}
+                    </select>
                   )}
                 </div>
+                {!isPremiumPlan && (
+                  <div className="md:col-span-2">
+                    <FreeUsageMeter dailyUsage={dailyUsage} fairUse={fairUse} />
+                  </div>
+                )}
                 <div className="space-y-2">
                   <label className="text-sm text-gray-400">Creativity Level</label>
                   <select 

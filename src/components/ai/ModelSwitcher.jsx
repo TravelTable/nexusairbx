@@ -76,6 +76,31 @@ export default function ModelSwitcher({ value, onChange, isPremium, onProNudge, 
   );
   const currentLabel = current?.name || MODEL_ALIAS_LABELS[value] || MODEL_ALIAS_LABELS[normalizedValue] || value || "Select model";
 
+  useEffect(() => {
+    if (!isPremium && value !== "nexus-free-auto") {
+      onChange?.("nexus-free-auto");
+    }
+  }, [isPremium, onChange, value]);
+
+  if (!isPremium) {
+    return (
+      <div className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 max-w-[260px]">
+        <div className="text-[10px] font-black uppercase tracking-widest text-gray-500">Default model</div>
+        <div className="mt-1 flex items-center gap-2 text-sm font-bold text-white">
+          <Cpu className="h-3.5 w-3.5 text-[#00f5d4]" />
+          Nexus Free Auto
+        </div>
+        <button
+          type="button"
+          onClick={() => onProNudge?.("Premium AI Models")}
+          className="mt-1 text-left text-[11px] text-[#00f5d4] hover:text-white"
+        >
+          Upgrade to Pro to choose GPT, Claude, Gemini, Grok and other supported models.
+        </button>
+      </div>
+    );
+  }
+
   const handleSelect = (model) => {
     const locked = model.tier === "pro" && !isPremium;
     if (locked) {

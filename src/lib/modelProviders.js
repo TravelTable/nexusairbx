@@ -1,8 +1,10 @@
-export const DEFAULT_FREE_MODEL = "deepseek/deepseek-v3.2";
+export const DEFAULT_FREE_MODEL = "nexus-free-auto";
 export const DEFAULT_PRO_MODEL = "openai/gpt-5.4";
 
 export const MODEL_ID_ALIASES = Object.freeze({
   "deepseek-free": DEFAULT_FREE_MODEL,
+  "deepseek/deepseek-v3.2": DEFAULT_FREE_MODEL,
+  "openai/gpt-5-mini": DEFAULT_FREE_MODEL,
   "nexus-4": DEFAULT_PRO_MODEL,
   "nexus-3": DEFAULT_PRO_MODEL,
 });
@@ -10,6 +12,9 @@ export const MODEL_ID_ALIASES = Object.freeze({
 // Fallback display labels for legacy IDs not yet present in the live catalog.
 export const MODEL_ALIAS_LABELS = Object.freeze({
   "deepseek-free": "DeepSeek V3.2",
+  "nexus-free-auto": "Nexus Free Auto",
+  "deepseek/deepseek-v3.2": "Nexus Free Auto",
+  "openai/gpt-5-mini": "Nexus Free Auto",
   "nexus-4": "Nexus (GPT-5.4)",
   "nexus-3": "Nexus (Legacy)",
 });
@@ -89,8 +94,7 @@ export function sortProviderEntries(grouped) {
 
 export function resolveFreeDefaultFromCatalog(modelCatalog = []) {
   return (
-    modelCatalog.find((m) => m.id === DEFAULT_FREE_MODEL)?.id
-    || modelCatalog.find((m) => m.recommended && m.tier === "free")?.id
+  modelCatalog.find((m) => m.id === DEFAULT_FREE_MODEL)?.id
     || DEFAULT_FREE_MODEL
   );
 }

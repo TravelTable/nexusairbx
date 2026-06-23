@@ -26,19 +26,22 @@ const plans = [
   {
     id: "free",
     name: "Free",
-    description: "For hobbyists and beginners",
+    description: "For hobbyists and developers exploring NexusRBX",
     monthlyUSD: 0,
     yearlyUSD: 0,
-    tokenAllowancePM: 20_000,
-    approxScriptsPM: "~15–20 short scripts",
+    allowanceTitle: "Daily Free Usage",
+    allowanceDetail: "Resets every day",
+    allowanceSubcopy: "Request size and complexity affect usage.",
     features: [
-      { text: "AI UI & Script generation (Basic)", included: true },
-      { text: "20k tokens / month (resets)", included: true },
-      { text: "Community support", included: true },
-      { text: "Script history (7 days)", included: true },
-      { text: "Nexus (GPT-5.4) access", included: false },
-      { text: "Pro-Grade UI Engine", included: false },
-      { text: "Premium model selection (Claude, Gemini, Grok)", included: false },
+      { text: "Nexus Free Auto", included: true },
+      { text: "Daily AI usage that resets every day", included: true },
+      { text: "Script generation, debugging and small revisions", included: true },
+      { text: "Basic Roblox-native UI generation", included: true },
+      { text: "One active project", included: true },
+      { text: "Seven-day history", included: true },
+      { text: "Save, copy and export generated code", included: true },
+      { text: "One AI job at a time", included: true },
+      { text: "Premium model selection not included", included: false },
     ],
     cta: "Get Started",
     popular: false,
@@ -103,19 +106,25 @@ const faqs = [
     id: "billing",
     question: "How does billing work?",
     answer:
-      "Choose a monthly or annual subscription; token allowance resets monthly. You can also buy Pay‑As‑You‑Go packs that never expire.",
+      "Free usage resets daily. Pro and Team use the existing subscription and PAYG billing system.",
   },
   {
     id: "tokens",
-    question: "What are tokens and how are they used?",
+    question: "How does Free usage work?",
     answer:
-      "We meter GPT-5.4 input + output tokens. Each request deducts the exact tokens used, with a 1,000-token minimum per request to prevent abuse.",
+      "Free accounts receive a daily AI allowance through Nexus Free Auto. Usage resets each day, and larger or more complex requests use more of the daily allowance.",
   },
   {
     id: "allowance",
-    question: "What happens if I run out of tokens?",
+    question: "What happens when Free usage runs out?",
     answer:
-      "You can either wait for your monthly reset or buy a Pay‑As‑You‑Go pack to top up instantly.",
+      "Wait for the daily reset or upgrade to Pro for higher usage and full model selection.",
+  },
+  {
+    id: "models",
+    question: "Which models are available on Free?",
+    answer:
+      "Free accounts use Nexus Free Auto, which automatically selects an available Free model. Pro and Team members can choose supported GPT, Claude, Gemini, Grok and other models.",
   },
   {
     id: "rollover",
@@ -515,9 +524,16 @@ function PricingCard({ plan, cycle, delay, isCurrent, onSelect }) {
         </div>
 
         <div className="p-4 rounded-2xl bg-white/5 border border-white/5 space-y-1">
-          <div className="text-xs font-bold text-gray-400 uppercase tracking-wider">Monthly Allowance</div>
-          <div className="text-lg font-bold text-white">{plan.tokenAllowancePM.toLocaleString()} Tokens</div>
-          <div className="text-[11px] text-gray-500">{plan.approxScriptsPM}</div>
+          <div className="text-xs font-bold text-gray-400 uppercase tracking-wider">
+            {plan.id === "free" ? "Free Allowance" : "Monthly Allowance"}
+          </div>
+          <div className="text-lg font-bold text-white">
+            {plan.id === "free" ? plan.allowanceTitle : `${plan.tokenAllowancePM.toLocaleString()} Tokens`}
+          </div>
+          <div className="text-[11px] text-gray-500">
+            {plan.id === "free" ? plan.allowanceDetail : plan.approxScriptsPM}
+          </div>
+          {plan.id === "free" && <div className="text-[11px] text-gray-500">{plan.allowanceSubcopy}</div>}
         </div>
       </div>
 

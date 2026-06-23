@@ -104,7 +104,23 @@ export function summarizeEntitlements(e) {
     devOverride: flags.devOverride,
     flags,
     entitlements: e?.entitlements || [],
+    modelAccess: e?.modelAccess || null,
+    dailyUsage: e?.dailyUsage || null,
+    fairUse: e?.fairUse || null,
+    limits: e?.limits || null,
+    isFreeUsagePlan: plan === "FREE" || plan === "ANON",
   };
+}
+
+export async function submitBrowserTimezone(timezone) {
+  if (!timezone) return null;
+  const r = await authedFetch("/api/billing/timezone", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ timezone }),
+  });
+  if (!r.ok) return null;
+  return r.json().catch(() => null);
 }
 
 export async function startCheckout(priceId, mode = "subscription", topupTokens) {

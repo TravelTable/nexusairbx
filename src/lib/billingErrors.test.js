@@ -22,4 +22,10 @@ describe("billingErrors", () => {
     expect(insufficientTokensToast("pro").cta?.label).toBe("Add tokens");
     expect(insufficientTokensToast("team").cta).toBeUndefined();
   });
+
+  it("maps Free usage backend codes to friendly messages", () => {
+    const parsed = parseApiErrorPayload({ code: "FREE_CONCURRENT_JOB_LIMIT" });
+    expect(parsed.message).toMatch(/one AI job/i);
+    expect(parsed.message).not.toMatch(/FREE_CONCURRENT_JOB_LIMIT/);
+  });
 });

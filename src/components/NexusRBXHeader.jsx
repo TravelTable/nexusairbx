@@ -16,6 +16,7 @@ import {
   ShieldCheck
 } from "lucide-react";
 import TokensCounterContainer from "./TokensCounterContainer";
+import FreeUsageMeter from "./FreeUsageMeter";
 import { useLocation } from "react-router-dom";
 import { auth } from "../firebase";
 import { signOut } from "firebase/auth";
@@ -47,6 +48,10 @@ function NexusRBXHeader({
     flags: billingFlags,
     unlimitedTokens,
     devOverride,
+    plan,
+    dailyUsage,
+    fairUse,
+    isFreeUsagePlan,
   } = useBilling();
   const isPremium = entitlements?.includes("pro") || entitlements?.includes("team");
 
@@ -222,21 +227,25 @@ function NexusRBXHeader({
         <div className="flex items-center gap-4">
           {user && (
             <div className="hidden lg:block">
-              <TokensCounterContainer
-                tokens={{
-                  sub: {
-                    remaining: resolvedSubRemaining,
-                    limit: resolvedSubLimit,
-                  },
-                  payg: {
-                    remaining: resolvedPaygRemaining,
-                  },
-                }}
-                flags={resolvedFlags}
-                isLoading={resolvedTokenLoading}
-                showRefreshButton={false}
-                variant="header"
-              />
+              {isFreeUsagePlan || plan === "FREE" || plan === "ANON" ? (
+                <FreeUsageMeter dailyUsage={dailyUsage} fairUse={fairUse} compact />
+              ) : (
+                <TokensCounterContainer
+                  tokens={{
+                    sub: {
+                      remaining: resolvedSubRemaining,
+                      limit: resolvedSubLimit,
+                    },
+                    payg: {
+                      remaining: resolvedPaygRemaining,
+                    },
+                  }}
+                  flags={resolvedFlags}
+                  isLoading={resolvedTokenLoading}
+                  showRefreshButton={false}
+                  variant="header"
+                />
+              )}
             </div>
           )}
 
