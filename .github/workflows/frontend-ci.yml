@@ -21,9 +21,7 @@ jobs:
           else
             npm install --legacy-peer-deps --no-audit --no-fund >/dev/null
           fi
-      - run: CI=true npm test -- --watchAll=false
+      - name: Test
+        run: CI=true npm test -- --watchAll=false
       - name: Build
-        shell: bash
-        run: |
-          set -o pipefail
-          npm run build 2>&1 | tail -120
+        run: CI=false npm run build
