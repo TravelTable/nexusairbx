@@ -1,17 +1,17 @@
 import { useState, useCallback, useMemo } from "react";
+import {
+  formatStructuredGameProfile,
+  parseStructuredGameProfile,
+} from "../lib/gameProfile";
 
 export function useGameProfile(settings, updateSettings) {
   const [showWizard, setShowWizard] = useState(false);
 
   // Parse existing gameSpec if it's JSON, otherwise use defaults
   const initialProfile = useMemo(() => {
-    try {
-      const parsed = JSON.parse(settings.gameSpec);
-      if (parsed && typeof parsed === 'object' && parsed.isStructured) {
-        return parsed;
-      }
-    } catch (e) {
-      // Not JSON or not structured
+    const structured = parseStructuredGameProfile(settings.gameSpec);
+    if (structured) {
+      return structured;
     }
     return {
       isStructured: true,
@@ -37,19 +37,7 @@ export function useGameProfile(settings, updateSettings) {
   }, [updateSettings]);
 
   const systemPrompt = useMemo(() => {
-    if (!profile.enabled) return "";
-    if (!profile.genre && !profile.theme && !profile.customNotes) return "";
-    
-    return `
-[GAME CONTEXT]
-Genre: ${profile.genre || "Not specified"}
-Platforms: ${profile.platforms.join(", ") || "Not specified"}
-Theme: ${profile.theme || "Not specified"}
-Primary Colors: ${profile.colors.primary}, ${profile.colors.secondary}
-Systems: ${profile.systems.join(", ") || "None specified"}
-Notes: ${profile.customNotes}
-[/GAME CONTEXT]
-`.trim();
+    return formatStructuredGameProfile(profile);
   }, [profile]);
 
   return {
@@ -57,6 +45,6 @@ Notes: ${profile.customNotes}
     showWizard,
     setShowWizard,
     updateProfile,
-    systemPrompt
+    systemPrompt,
   };
 }

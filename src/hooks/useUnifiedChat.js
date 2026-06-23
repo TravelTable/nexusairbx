@@ -19,6 +19,7 @@ import {
   getPendingStreamSnapshot,
 } from "../lib/streaming";
 import { stageSlug } from "../lib/streamEngagement";
+import { resolveGameSpecForPrompt } from "../lib/gameProfile";
 
 function seedOrchestrationStream(stage = "Understanding your task...") {
   return applyStreamActivity(createPendingStreamState(), {
@@ -47,6 +48,10 @@ function buildOrchestrationPending(state, stage) {
  */
 export function useUnifiedChat(user, settings, refreshBilling, notify, options = {}) {
   const { onSignInNudge } = options;
+  const effectiveGameSpec = useMemo(
+    () => resolveGameSpecForPrompt(settings?.gameSpec),
+    [settings?.gameSpec]
+  );
 
   const chat = useAiChat(user, settings, refreshBilling, notify);
 
@@ -289,7 +294,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
           headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
           body: JSON.stringify({
             prompt,
-            gameSpec: settings?.gameSpec || "",
+            gameSpec: effectiveGameSpec,
             conversation: chat.messages.slice(-10).map((m) => ({ role: m.role, content: m.content || m.explanation })),
           }),
         });
@@ -321,7 +326,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
       await touchChat(activeChatId, text);
       refreshBilling?.();
     },
-    [user, chat, settings, touchChat, refreshBilling]
+    [user, chat, effectiveGameSpec, touchChat, refreshBilling]
   );
 
   // Stage 1: route by operating mode.
@@ -375,7 +380,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
           history: chat.messages,
           attachments: currentAttachments,
           mode,
-          gameSpec: settings?.gameSpec || "",
+          gameSpec: effectiveGameSpec,
         });
 
         publishOrchestrationStage(activeChatId, "Preparing response...");
@@ -411,7 +416,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
       handleAskSubmit,
       chat.messages,
       chat.activeMode,
-      settings,
+      effectiveGameSpec,
       notify,
     ]
   );
@@ -448,7 +453,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
           answers,
           history: chat.messages,
           attachments,
-          gameSpec: settings?.gameSpec || "",
+          gameSpec: effectiveGameSpec,
         });
 
         publishOrchestrationStage(activeChatId, "Preparing response...");
@@ -461,7 +466,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
         clearOrchestrationPending(activeChatId);
       }
     },
-    [user, isGenerating, chat.currentChatId, chat.messages, settings, writeUserMessage, writeOrchestrationResult, setFlowBusyForChat, beginOrchestrationPending, publishOrchestrationStage, clearOrchestrationPending, notify]
+    [user, isGenerating, chat.currentChatId, chat.messages, effectiveGameSpec, writeUserMessage, writeOrchestrationResult, setFlowBusyForChat, beginOrchestrationPending, publishOrchestrationStage, clearOrchestrationPending, notify]
   );
 
   // Stage 3 (plan): user approves the plan -> generate.

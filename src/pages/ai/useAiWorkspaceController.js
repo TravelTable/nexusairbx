@@ -22,6 +22,7 @@ import { useBilling } from "../../context/BillingContext";
 import { useSettings } from "../../context/SettingsContext";
 import { useUnifiedChat } from "../../hooks/useUnifiedChat";
 import { useArtifactWorkspace } from "../../hooks/useArtifactWorkspace";
+import { resolveGameSpecForPrompt } from "../../lib/gameProfile";
 import { useGameProfile } from "../../hooks/useGameProfile";
 import { useAiScripts } from "../../hooks/useAiScripts";
 import { CHAT_MODES } from "../../components/ai/chatConstants";
@@ -523,7 +524,7 @@ export function useAiWorkspaceController() {
       const res = await fetch(`${BACKEND_URL}/api/ai/improve-prompt`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ prompt: current, gameSpec: settings?.gameSpec || "" }),
+        body: JSON.stringify({ prompt: current, gameSpec: resolveGameSpecForPrompt(settings?.gameSpec) }),
       });
       if (!res.ok) throw new Error("Improve prompt request failed");
       const data = await res.json();

@@ -31,6 +31,7 @@ import {
   normalizeToolStep,
   upsertAgentStep,
 } from "../lib/agentSteps";
+import { resolveGameSpecForPrompt } from "../lib/gameProfile";
 import { getStudioStatus } from "../lib/studioBridgeApi";
 import { getAgentRun } from "../lib/workflowApi";
 import {
@@ -495,7 +496,10 @@ export function useAiChat(user, settings, refreshBilling, notify) {
         body: JSON.stringify({ 
           prompt: content, 
           requestId,
-          settings,
+          settings: {
+            ...settings,
+            gameSpec: resolveGameSpecForPrompt(settings?.gameSpec),
+          },
           chatId: activeChatId,
           chatMode: expertMode,
           mode: currentMode,
