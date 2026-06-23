@@ -17,9 +17,13 @@ jobs:
       - name: Install dependencies
         run: |
           if [ -f package-lock.json ] || [ -f npm-shrinkwrap.json ]; then
-            npm ci
+            npm ci --no-audit --no-fund >/dev/null
           else
-            npm install --legacy-peer-deps
+            npm install --legacy-peer-deps --no-audit --no-fund >/dev/null
           fi
       - run: CI=true npm test -- --watchAll=false
-      - run: npm run build
+      - name: Build
+        shell: bash
+        run: |
+          set -o pipefail
+          npm run build 2>&1 | tail -120
