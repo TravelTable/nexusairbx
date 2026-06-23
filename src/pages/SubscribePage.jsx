@@ -1,162 +1,134 @@
-import React, { useEffect, useState, useRef, useCallback } from "react";
-import {
-  Home,
-  Check,
-  CreditCard,
-  Zap,
-  Settings,
-  BookOpen,
-  ChevronDown,
-  Sparkles,
-  Loader2,
-  CheckCircle,
-  ArrowRight,
-} from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { Check, ChevronDown, CreditCard, Home, Loader2, Settings } from "lucide-react";
 import NexusRBXHeader from "../components/NexusRBXHeader";
 import NexusRBXFooter from "../components/NexusRBXFooter";
-import { getEntitlements, startCheckout, openPortal } from "../lib/billing";
+import { getEntitlements, openPortal, startSubscriptionCheckout } from "../lib/billing";
+import { BILLING_INTERVAL, PLAN } from "../lib/prices";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
 import { getFirestore, doc, onSnapshot } from "firebase/firestore";
-import { PRICE } from "../lib/prices";
 
-// Subscription plan definitions
-const plans = [
+const PLANS = [
   {
-    id: "free",
+    id: PLAN.FREE,
     name: "Free",
-    description: "For hobbyists and developers exploring NexusRBX",
-    monthlyUSD: 0,
-    yearlyUSD: 0,
-    allowanceTitle: "Daily Free Usage",
-    allowanceDetail: "Resets every day",
-    allowanceSubcopy: "Request size and complexity affect usage.",
-    features: [
-      { text: "Nexus Free Auto", included: true },
-      { text: "Daily AI usage that resets every day", included: true },
-      { text: "Script generation, debugging and small revisions", included: true },
-      { text: "Basic Roblox-native UI generation", included: true },
-      { text: "One active project", included: true },
-      { text: "Seven-day history", included: true },
-      { text: "Save, copy and export generated code", included: true },
-      { text: "One AI job at a time", included: true },
-      { text: "Premium model selection not included", included: false },
-    ],
+    audience: "For developers exploring NexusRBX",
+    monthly: 0,
+    yearly: 0,
     cta: "Get Started",
-    popular: false,
-    highlight: false,
-    stripePriceId: null,
-    color: "from-gray-500 to-gray-700",
+    features: [
+      "Nexus Free Auto",
+      "Daily AI usage",
+      "Script generation, debugging and small revisions",
+      "Basic Roblox-native UI generation",
+      "One active project",
+      "Seven-day history",
+      "One AI job at a time",
+    ],
   },
   {
-    id: "pro",
+    id: PLAN.PRO,
     name: "Pro",
-    description: "For serious Roblox developers",
-    monthlyUSD: 14.99,
-    yearlyUSD: 133.99,
-    tokenAllowancePM: 500_000,
-    approxScriptsPM: "~70–100 medium scripts",
-    features: [
-      { text: "Nexus (GPT-5.4) Neural Core", included: true },
-      { text: "500k tokens / month (resets)", included: true },
-      { text: "Pro-Grade UI Engine (Responsive)", included: true },
-      { text: "Deep Luau Integration (Task/Signal)", included: true },
-      { text: "Premium model selection (Claude, Gemini, Grok)", included: true },
-      { text: "Script history (unlimited)", included: true },
-      { text: "Custom templates (up to 10)", included: true },
-      { text: "Public API Access (Coming Soon)", included: true },
-    ],
+    audience: "For individual Roblox developers",
+    monthly: 19.99,
+    yearly: 199,
     cta: "Upgrade to Pro",
-    popular: true,
-    highlight: true,
-    stripePriceId: (cycle) =>
-      cycle === "monthly" ? PRICE.sub.proMonthly : PRICE.sub.proYearly,
-    color: "from-[#9b5de5] to-[#00f5d4]",
+    features: [
+      "Nexus Auto",
+      "Higher included AI usage",
+      "Full model selection",
+      "Larger projects and context",
+      "Multi-file script generation",
+      "Unlimited generation history",
+      "Premium Direct model support",
+    ],
   },
   {
-    id: "team",
-    name: "Team",
-    description: "For development teams",
-    monthlyUSD: 49.99,
-    yearlyUSD: 449.91,
-    tokenAllowancePM: 1_500_000,
-    approxScriptsPM: "~200–300 medium scripts",
+    id: PLAN.PRO_PLUS,
+    name: "Pro+",
+    audience: "For serious builders and larger projects",
+    monthly: 39.99,
+    yearly: 399,
+    cta: "Upgrade to Pro+",
+    recommended: true,
     features: [
-      { text: "Everything in Pro", included: true },
-      { text: "Up to 5 seats included", included: true },
-      { text: "Team collaboration tools", included: true },
-      { text: "Priority support", included: true },
-      { text: "Custom templates (unlimited)", included: true },
-      { text: "Full Public API Access (Coming Soon)", included: true },
-      { text: "Optional custom fine‑tuning add‑on", included: true },
-      { text: "Dedicated account manager (add‑on)", included: false },
+      "Everything in Pro",
+      "Significantly higher included usage",
+      "Larger context windows",
+      "Longer autonomous workflows",
+      "Larger multi-file changes",
+      "Priority processing",
+      "Premium Direct model support",
     ],
-    cta: "Upgrade to Team",
-    popular: false,
-    highlight: false,
-    stripePriceId: (cycle) =>
-      cycle === "monthly" ? PRICE.sub.teamMonthly : PRICE.sub.teamYearly,
-    color: "from-[#00f5d4] to-[#9b5de5]",
+  },
+  {
+    id: PLAN.TEAM,
+    name: "Team",
+    audience: "For studios and development teams",
+    monthly: 29,
+    yearly: 290,
+    cta: "Start Team",
+    perSeat: true,
+    features: [
+      "Everything in Pro+",
+      "Shared team workspaces",
+      "Pooled included AI usage",
+      "Member and administrator roles",
+      "Centralized billing",
+      "Team collaboration",
+      "Priority support",
+    ],
   },
 ];
 
-const faqs = [
+const FAQS = [
   {
-    id: "billing",
-    question: "How does billing work?",
-    answer:
-      "Free usage resets daily. Pro and Team use the existing subscription and PAYG billing system.",
+    q: "What is Included Usage?",
+    a: "Included Usage is the AI capacity bundled with each paid subscription. Nexus Auto and supported included models draw from this allowance. It resets at the end of each billing period.",
   },
   {
-    id: "tokens",
-    question: "How does Free usage work?",
-    answer:
-      "Free accounts receive a daily AI allowance through Nexus Free Auto. Usage resets each day, and larger or more complex requests use more of the daily allowance.",
+    q: "What is Premium Balance?",
+    a: "Premium Balance is prepaid usage credit for supported Premium Direct models. It does not expire automatically and is separate from your subscription’s Included Usage.",
   },
   {
-    id: "allowance",
-    question: "What happens when Free usage runs out?",
-    answer:
-      "Wait for the daily reset or upgrade to Pro for higher usage and full model selection.",
+    q: "Can paid users choose their model?",
+    a: "Yes. Pro, Pro+ and Team members can choose supported models. Included models use the subscription allowance, while higher-cost Premium Direct models use Premium Balance.",
   },
   {
-    id: "models",
-    question: "Which models are available on Free?",
-    answer:
-      "Free accounts use Nexus Free Auto, which automatically selects an available Free model. Pro and Team members can choose supported GPT, Claude, Gemini, Grok and other models.",
+    q: "What happens when Included Usage runs out?",
+    a: "Wait for the next billing-period reset, choose to continue with Premium Balance where supported, or move to a plan with a higher included allowance.",
   },
   {
-    id: "rollover",
-    question: "Do unused subscription tokens roll over?",
-    answer:
-      "No rollover on subscriptions. PAYG packs never expire and stack with your subscription.",
+    q: "Do Team plans share usage?",
+    a: "Yes. Team Included Usage and Premium Balance are pooled across the team. The included allowance grows with the number of paid seats.",
   },
   {
-    id: "refunds",
-    question: "Can I cancel or get a refund?",
-    answer:
-      "Cancel anytime. Pro-rated refunds aren’t available during an active billing period.",
-  },
-  {
-    id: "api",
-    question: "Is API access included?",
-    answer:
-      "Public API access is coming soon! Pro will include rate‑limited API access with your token balance. Team will increase limits and support service accounts.",
+    q: "What happens to existing subscribers?",
+    a: "Existing subscribers remain on their current Stripe price unless they cancel, change plans or are migrated separately.",
   },
 ];
+
+function formatMoney(value) {
+  if (value === 0) return "$0";
+  return Number.isInteger(value) ? `$${value}` : `$${value.toFixed(2)}`;
+}
+
+function currentPlanMatches(entitlements, planId) {
+  return String(entitlements?.plan || "FREE") === planId;
+}
 
 export default function SubscribePage() {
-  const [billingCycle, setBillingCycle] = useState("monthly");
-  const [showFaq, setShowFaq] = useState({});
+  const [interval, setIntervalValue] = useState(BILLING_INTERVAL.MONTH);
+  const [seatCount, setSeatCount] = useState(2);
   const [user, setUser] = useState(null);
-  const [portalLoading, setPortalLoading] = useState(false);
   const [authReady, setAuthReady] = useState(false);
   const [entitlements, setEntitlements] = useState(null);
-
-  const navigate = useNavigate();
+  const [openFaq, setOpenFaq] = useState(null);
+  const [busyPlan, setBusyPlan] = useState(null);
+  const [portalLoading, setPortalLoading] = useState(false);
+  const [error, setError] = useState("");
   const sessionUnsubs = useRef([]);
-  const portalUnsubs = useRef([]);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const unsub = onAuthStateChanged(getAuth(), (currentUser) => {
@@ -166,92 +138,79 @@ export default function SubscribePage() {
     return () => unsub();
   }, []);
 
-  const refreshEntitlements = useCallback(async () => {
-    if (!user) {
+  useEffect(() => {
+    if (!authReady || !user) return;
+    getEntitlements({ noCache: true }).then(setEntitlements).catch(() => {});
+  }, [authReady, user]);
+
+  useEffect(() => () => {
+    sessionUnsubs.current.forEach((unsub) => unsub?.());
+    sessionUnsubs.current = [];
+  }, []);
+
+  const total = useMemo(() => {
+    const teamPlan = PLANS.find((p) => p.id === PLAN.TEAM);
+    const unit = interval === BILLING_INTERVAL.YEAR ? teamPlan.yearly : teamPlan.monthly;
+    return unit * seatCount;
+  }, [interval, seatCount]);
+
+  async function beginCheckout(planId) {
+    if (planId === PLAN.FREE) {
+      navigate("/ai");
       return;
     }
-    try {
-      const apiEnt = await getEntitlements({ noCache: true });
-      setEntitlements({
-        plan: apiEnt.plan || "FREE",
-        cycle: apiEnt.cycle || null,
-        limit: apiEnt?.sub?.limit || 0,
-        used: apiEnt?.sub?.used || 0,
-        subRemaining: Math.max(0, (apiEnt?.sub?.limit || 0) - (apiEnt?.sub?.used || 0)),
-        paygRemaining: apiEnt?.payg?.remaining || 0,
-        resetsAt: apiEnt?.sub?.resetsAt || null,
-      });
-    } catch (e) {
-      console.error(e);
-    }
-  }, [user]);
-
-  useEffect(() => {
-    if (authReady) refreshEntitlements();
-  }, [authReady, refreshEntitlements]);
-
-  const handleCheckout = async (priceId, mode) => {
     if (!user) {
       navigate("/signin", { state: { from: { pathname: "/subscribe" } } });
       return;
     }
+    setBusyPlan(planId);
+    setError("");
     try {
-      const r = await startCheckout(priceId, mode);
-      if (r?.url) {
-        window.location.href = r.url;
+      const result = await startSubscriptionCheckout({
+        plan: planId,
+        interval,
+        ...(planId === PLAN.TEAM ? { seatCount } : {}),
+      });
+      if (result?.url) {
+        window.location.href = result.url;
         return;
       }
-      if (r?.sessionDocPath) {
-        const db = getFirestore();
-        const unsub = onSnapshot(doc(db, r.sessionDocPath), (snap) => {
+      if (result?.sessionDocPath) {
+        const unsubscribe = onSnapshot(doc(getFirestore(), result.sessionDocPath), (snap) => {
           const data = snap.data();
           if (data?.url) window.location.href = data.url;
-          if (data?.error) {
-            console.error(data.error.message);
-          }
+          if (data?.error) setError(data.error.message || "Could not start checkout.");
         });
-        sessionUnsubs.current.push(unsub);
+        sessionUnsubs.current.push(unsubscribe);
       }
-    } catch (e) {
-      console.error(e);
+    } catch (err) {
+      setError(
+        err?.code === "ACTIVE_SUBSCRIPTION_EXISTS"
+          ? "You already have an active NexusRBX subscription. Manage or change it through billing settings."
+          : err?.message || "Could not start checkout."
+      );
+    } finally {
+      setBusyPlan(null);
     }
-  };
+  }
 
-  const handlePortal = async () => {
+  async function manageBilling() {
     setPortalLoading(true);
     try {
-      const r = await openPortal();
-      if (r?.url) {
-        window.location.href = r.url;
-      } else if (r?.portalDocPath) {
-        const db = getFirestore();
-        const unsub = onSnapshot(doc(db, r.portalDocPath), (snap) => {
-          const data = snap.data();
-          if (data?.url) window.location.href = data.url;
-        });
-        portalUnsubs.current.push(unsub);
-      }
-    } catch (e) {
-      console.error(e);
+      const result = await openPortal();
+      if (result?.url) window.location.href = result.url;
     } finally {
       setPortalLoading(false);
     }
-  };
-
-  const toggleFaq = (id) => setShowFaq((prev) => ({ ...prev, [id]: !prev[id] }));
+  }
 
   return (
-    <div className="min-h-screen bg-[#050505] text-white font-sans flex flex-col relative overflow-x-hidden">
-      {/* Background Decorative Elements */}
-      <div className="fixed top-[-10%] left-[-10%] w-[50%] h-[50%] bg-[#9b5de5]/10 blur-[120px] rounded-full pointer-events-none" />
-      <div className="fixed bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-[#00f5d4]/10 blur-[120px] rounded-full pointer-events-none" />
-      <div className="fixed inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 pointer-events-none" />
-      
+    <div className="min-h-screen bg-[#08090d] text-white flex flex-col">
       <NexusRBXHeader
         navLinks={[
           { id: 1, text: "Home", href: "/", icon: Home },
           { id: 2, text: "AI Console", href: "/ai" },
-          { id: 3, text: "Docs", href: "/docs", icon: BookOpen },
+          { id: 3, text: "Docs", href: "/docs" },
           { id: 4, text: "Contact", href: "/contact" },
         ]}
         navigate={navigate}
@@ -259,339 +218,207 @@ export default function SubscribePage() {
         tokenInfo={entitlements}
       />
 
-      <main className="flex-grow relative z-10">
-        {/* Hero Section */}
-        <section className="pt-12 pb-8 px-4">
-          <div className="max-w-5xl mx-auto text-center space-y-4">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-[#00f5d4] text-xs font-bold"
-            >
-              <Sparkles className="w-3 h-3" />
-              <span>Simple, Usage-Based Pricing</span>
-            </motion.div>
-            
-            <motion.h1
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-              className="font-display text-4xl md:text-6xl font-extrabold tracking-tight"
-            >
-              Build Faster with <br />
-              <span className="bg-gradient-to-r from-[#9b5de5] via-[#00f5d4] to-[#9b5de5] text-transparent bg-clip-text bg-[length:200%_auto] animate-[shimmer_4s_linear_infinite]">
-                Nexus Premium
-              </span>
-            </motion.h1>
-            
-            <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-              className="text-gray-400 text-lg max-w-2xl mx-auto leading-relaxed"
-            >
-              Unlock the full potential of AI-powered Roblox development. Choose the plan that fits your workflow.
-            </motion.p>
-
-            {/* Billing Toggle */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-              className="flex flex-col items-center gap-4 pt-8"
-            >
-              <div className="bg-white/5 p-1.5 rounded-2xl border border-white/10 flex items-center gap-1">
+      <main className="flex-1">
+        <section className="px-4 pt-10 pb-6">
+          <div className="max-w-7xl mx-auto">
+            <div className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
+              <div>
+                <h1 className="font-display text-4xl md:text-5xl font-bold tracking-tight">NexusRBX Pricing</h1>
+                <p className="mt-3 max-w-2xl text-gray-400">
+                  Choose the plan that matches your Roblox development workflow. Paid plans include model selection,
+                  Included Usage, and optional Premium Direct access through Premium Balance.
+                </p>
+              </div>
+              <div className="inline-flex rounded-lg border border-white/10 bg-white/5 p-1 w-fit">
                 <button
-                  onClick={() => setBillingCycle("monthly")}
-                  className={`px-8 py-3 rounded-xl text-sm font-bold transition-all ${
-                    billingCycle === "monthly"
-                      ? "bg-white text-black shadow-xl"
-                      : "text-gray-400 hover:text-white"
-                  }`}
+                  type="button"
+                  onClick={() => setIntervalValue(BILLING_INTERVAL.MONTH)}
+                  className={`px-4 py-2 rounded-md text-sm font-bold ${interval === BILLING_INTERVAL.MONTH ? "bg-white text-black" : "text-gray-300"}`}
                 >
                   Monthly
                 </button>
                 <button
-                  onClick={() => setBillingCycle("yearly")}
-                  className={`px-8 py-3 rounded-xl text-sm font-bold transition-all flex items-center gap-2 ${
-                    billingCycle === "yearly"
-                      ? "bg-white text-black shadow-xl"
-                      : "text-gray-400 hover:text-white"
-                  }`}
+                  type="button"
+                  onClick={() => setIntervalValue(BILLING_INTERVAL.YEAR)}
+                  className={`px-4 py-2 rounded-md text-sm font-bold ${interval === BILLING_INTERVAL.YEAR ? "bg-white text-black" : "text-gray-300"}`}
                 >
-                  Yearly
-                  <span className="px-2 py-0.5 rounded-md bg-[#00f5d4] text-black text-[10px] font-black uppercase">
-                    Save 25%
-                  </span>
+                  Yearly <span className="ml-1 text-xs text-[#00f5d4]">Save 17%</span>
                 </button>
               </div>
-            </motion.div>
-          </div>
-        </section>
+            </div>
 
-        {/* Pricing Cards */}
-        <section className="pb-24 px-4">
-          <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
-            {plans.map((plan, idx) => (
-              <PricingCard
-                key={plan.id}
-                plan={plan}
-                cycle={billingCycle}
-                delay={idx * 0.1}
-                isCurrent={entitlements?.plan === plan.id.toUpperCase()}
-                onSelect={() => {
-                  const pid = typeof plan.stripePriceId === "function" 
-                    ? plan.stripePriceId(billingCycle) 
-                    : plan.stripePriceId;
-                  if (pid) handleCheckout(pid, "subscription");
-                  else if (plan.id === "free") navigate("/ai");
-                }}
-              />
-            ))}
-          </div>
-        </section>
+            {error && (
+              <div className="mt-6 rounded-md border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-100">
+                {error}
+              </div>
+            )}
 
-        {/* Current Plan Status (If Logged In) */}
-        <AnimatePresence>
-          {user && entitlements && (
-            <motion.section
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 20 }}
-              className="max-w-4xl mx-auto px-4 mb-24"
-            >
-              <div className="p-8 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-xl relative overflow-hidden group">
-                <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:opacity-20 transition-opacity">
-                  <CreditCard className="w-32 h-32" />
-                </div>
-                
-                <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8">
-                  <div className="space-y-4 text-center md:text-left">
-                    <div className="flex items-center justify-center md:justify-start gap-3">
-                      <div className="w-3 h-3 rounded-full bg-[#00f5d4] animate-pulse" />
-                      <span className="text-sm font-bold text-gray-400 uppercase tracking-widest">Current Subscription</span>
-                    </div>
-                    <h2 className="text-3xl font-bold">
-                      {entitlements.plan} <span className="text-gray-500 font-normal">Plan</span>
-                    </h2>
-                    <div className="flex items-center gap-6 text-sm text-gray-400">
-                      <div className="flex items-center gap-2">
-                        <Zap className="w-4 h-4 text-[#9b5de5]" />
-                        <span>{entitlements.subRemaining.toLocaleString()} tokens left</span>
+            <div className="mt-8 grid grid-cols-1 gap-4 lg:grid-cols-4">
+              {PLANS.map((plan) => {
+                const unitPrice = interval === BILLING_INTERVAL.YEAR ? plan.yearly : plan.monthly;
+                const isCurrent = currentPlanMatches(entitlements, plan.id);
+                return (
+                  <section
+                    key={plan.id}
+                    className={`relative rounded-lg border p-5 bg-[#11131a] flex flex-col min-h-[520px] ${
+                      plan.recommended ? "border-[#00f5d4]/70" : "border-white/10"
+                    }`}
+                  >
+                    {plan.recommended && (
+                      <div className="absolute right-4 top-4 rounded-md bg-[#00f5d4] px-2 py-1 text-[10px] font-black uppercase tracking-wide text-black">
+                        Recommended
                       </div>
-                      {entitlements.resetsAt && (
-                        <div className="flex items-center gap-2">
-                          <CheckCircle className="w-4 h-4 text-[#00f5d4]" />
-                          <span>Resets {new Date(entitlements.resetsAt).toLocaleDateString()}</span>
+                    )}
+                    <h2 className="text-2xl font-bold">{plan.name}</h2>
+                    <p className="mt-1 min-h-[42px] text-sm text-gray-400">{plan.audience}</p>
+                    <div className="mt-5">
+                      <div className="text-4xl font-black">
+                        {formatMoney(unitPrice)}
+                        {plan.perSeat && unitPrice > 0 && <span className="text-base font-semibold text-gray-400">/user</span>}
+                      </div>
+                      {unitPrice > 0 && (
+                        <div className="mt-1 text-sm text-gray-500">
+                          per {interval === BILLING_INTERVAL.YEAR ? "year" : "month"}
+                        </div>
+                      )}
+                      {plan.id === PLAN.TEAM && (
+                        <div className="mt-4 rounded-md border border-white/10 bg-white/[0.03] p-3">
+                          <label className="text-xs font-bold uppercase tracking-wide text-gray-400" htmlFor="team-seats">
+                            Seats: 2 - 50
+                          </label>
+                          <input
+                            id="team-seats"
+                            type="number"
+                            min="2"
+                            max="50"
+                            value={seatCount}
+                            onChange={(event) => setSeatCount(Math.min(50, Math.max(2, Number(event.target.value) || 2)))}
+                            className="mt-2 w-full rounded-md border border-white/10 bg-black/30 px-3 py-2 text-white"
+                          />
+                          <div className="mt-2 text-sm font-bold text-white">
+                            {seatCount} seats
+                            <span className="ml-2 text-[#00f5d4]">
+                              {formatMoney(total)}/{interval === BILLING_INTERVAL.YEAR ? "year" : "month"}
+                            </span>
+                          </div>
+                          <div className="mt-1 text-xs text-gray-500">Minimum 2 users</div>
                         </div>
                       )}
                     </div>
-                  </div>
-                  
-                  <button
-                    onClick={handlePortal}
-                    disabled={portalLoading}
-                    className="px-8 py-4 rounded-2xl bg-white text-black font-bold hover:bg-gray-200 transition-all flex items-center gap-2 shadow-xl active:scale-95 disabled:opacity-50"
-                  >
-                    {portalLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Settings className="w-5 h-5" />}
-                    Manage Billing
-                  </button>
-                </div>
-              </div>
-            </motion.section>
-          )}
-        </AnimatePresence>
-
-        {/* FAQ Section */}
-        <section className="pb-24 px-4">
-          <div className="max-w-3xl mx-auto space-y-12">
-            <div className="text-center space-y-4">
-              <h2 className="font-display text-4xl font-bold">Common Questions</h2>
-              <p className="text-gray-400">Everything you need to know about Nexus billing.</p>
+                    <ul className="mt-6 space-y-3 text-sm text-gray-300 flex-1">
+                      {plan.features.map((feature) => (
+                        <li key={feature} className="flex gap-2">
+                          <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#00f5d4]" />
+                          <span>{feature}</span>
+                        </li>
+                      ))}
+                    </ul>
+                    <button
+                      type="button"
+                      disabled={isCurrent || busyPlan === plan.id}
+                      onClick={() => beginCheckout(plan.id)}
+                      className={`mt-6 h-11 rounded-md px-4 text-sm font-bold transition ${
+                        isCurrent
+                          ? "bg-white/5 text-gray-500"
+                          : plan.recommended
+                            ? "bg-[#00f5d4] text-black hover:bg-[#23ffe0]"
+                            : "bg-white text-black hover:bg-gray-200"
+                      }`}
+                    >
+                      {busyPlan === plan.id ? <Loader2 className="mx-auto h-4 w-4 animate-spin" /> : isCurrent ? "Current Plan" : plan.cta}
+                    </button>
+                  </section>
+                );
+              })}
             </div>
-            
-            <div className="space-y-4">
-              {faqs.map((faq) => (
-                <div
-                  key={faq.id}
-                  className="rounded-2xl bg-white/5 border border-white/10 overflow-hidden transition-all hover:border-white/20"
-                >
+          </div>
+        </section>
+
+        <section className="px-4 py-10 border-y border-white/10 bg-[#0d1017]">
+          <div className="max-w-7xl mx-auto grid gap-4 md:grid-cols-3">
+            <InfoBlock
+              title="Included Usage"
+              body="Included Usage powers Nexus Auto and supported economical models. It resets at the end of each subscription billing period."
+            />
+            <InfoBlock
+              title="Premium Direct"
+              body="Premium Direct lets paid members choose higher-cost models such as flagship GPT, Claude, Gemini and Grok models. Premium Direct usage is deducted from a prepaid Premium Balance."
+            />
+            <InfoBlock
+              title="Premium Balance"
+              body="Premium Balance is prepaid usage credit. Add funds only when you need higher-cost models, and keep full control over spending."
+            />
+          </div>
+        </section>
+
+        {user && entitlements && (
+          <section className="px-4 py-10">
+            <div className="max-w-4xl mx-auto rounded-lg border border-white/10 bg-[#11131a] p-5 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+              <div>
+                <div className="text-xs font-bold uppercase tracking-wide text-gray-500">Current Subscription</div>
+                <div className="mt-1 text-2xl font-bold">{entitlements.plan || "FREE"}</div>
+                {entitlements.includedUsage && (
+                  <div className="mt-1 text-sm text-gray-400">
+                    Included Usage: {entitlements.includedUsage.percentUsed || 0}% used
+                  </div>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={manageBilling}
+                disabled={portalLoading}
+                className="inline-flex items-center justify-center gap-2 rounded-md bg-white px-4 py-2 text-sm font-bold text-black"
+              >
+                {portalLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Settings className="h-4 w-4" />}
+                Manage Billing
+              </button>
+            </div>
+          </section>
+        )}
+
+        <section className="px-4 py-12">
+          <div className="max-w-3xl mx-auto">
+            <h2 className="text-3xl font-bold">Pricing FAQs</h2>
+            <div className="mt-6 space-y-3">
+              {FAQS.map((faq, index) => (
+                <div key={faq.q} className="rounded-lg border border-white/10 bg-[#11131a]">
                   <button
-                    onClick={() => toggleFaq(faq.id)}
-                    className="w-full p-6 text-left flex items-center justify-between gap-4"
+                    type="button"
+                    onClick={() => setOpenFaq(openFaq === index ? null : index)}
+                    className="flex w-full items-center justify-between gap-4 p-4 text-left font-bold"
                   >
-                    <span className="font-bold text-lg">{faq.question}</span>
-                    <ChevronDown className={`w-5 h-5 text-gray-500 transition-transform ${showFaq[faq.id] ? 'rotate-180' : ''}`} />
+                    {faq.q}
+                    <ChevronDown className={`h-4 w-4 text-gray-500 transition ${openFaq === index ? "rotate-180" : ""}`} />
                   </button>
-                  <AnimatePresence>
-                    {showFaq[faq.id] && (
-                      <motion.div
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: 'auto', opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        className="px-6 pb-6 text-gray-400 leading-relaxed"
-                      >
-                        <div className="pt-4 border-t border-white/5">
-                          {faq.answer}
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
+                  {openFaq === index && <div className="px-4 pb-4 text-sm leading-6 text-gray-400">{faq.a}</div>}
                 </div>
               ))}
             </div>
           </div>
         </section>
-
-        {/* Final CTA */}
-        <section className="pb-24 px-4">
-          <div className="max-w-5xl mx-auto p-12 rounded-[3rem] bg-gradient-to-br from-[#9b5de5]/20 to-[#00f5d4]/20 border border-white/10 text-center space-y-8 relative overflow-hidden">
-            <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 pointer-events-none" />
-            <div className="relative z-10 space-y-6">
-              <h2 className="font-display text-4xl md:text-5xl font-bold">Ready to build the future?</h2>
-              <p className="text-gray-400 text-lg max-w-xl mx-auto">
-                Join thousands of developers using Nexus to ship high-quality Roblox games faster than ever.
-              </p>
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
-                <button
-                  onClick={() => navigate("/ai")}
-                  className="px-10 py-4 rounded-2xl bg-white text-black font-bold text-lg hover:shadow-[0_0_30px_rgba(255,255,255,0.3)] transition-all active:scale-95"
-                >
-                  Open AI Console
-                </button>
-                <button
-                  onClick={() => navigate("/contact")}
-                  className="px-10 py-4 rounded-2xl bg-white/5 border border-white/10 font-bold text-lg hover:bg-white/10 transition-all active:scale-95"
-                >
-                  Contact Sales
-                </button>
-              </div>
-            </div>
-          </div>
-        </section>
       </main>
 
-      <NexusRBXFooter 
+      <NexusRBXFooter
         footerLinks={[
           { id: 1, text: "Terms of Service", href: "/terms" },
           { id: 2, text: "Privacy Policy", href: "/privacy" },
           { id: 3, text: "Contact", href: "/contact" },
           { id: 4, text: "Docs", href: "/docs" },
         ]}
-        navigate={navigate} 
+        navigate={navigate}
       />
-
-      <style>{`
-        @keyframes shimmer {
-          0% { background-position: 0% 50%; }
-          50% { background-position: 100% 50%; }
-          100% { background-position: 0% 50%; }
-        }
-      `}</style>
     </div>
   );
 }
 
-function PricingCard({ plan, cycle, delay, isCurrent, onSelect }) {
-  const price = cycle === "monthly" ? plan.monthlyUSD : (plan.yearlyUSD / 12).toFixed(2);
-  
+function InfoBlock({ title, body }) {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay }}
-      className={`relative p-6 rounded-[2rem] bg-[#0f1117] border transition-all duration-500 flex flex-col group ${
-        plan.highlight 
-          ? 'border-[#9b5de5] shadow-[0_0_50px_rgba(155,93,229,0.15)] scale-105 z-20' 
-          : 'border-white/10 hover:border-white/20 z-10'
-      }`}
-    >
-      {plan.popular && (
-        <div className="absolute -top-4 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-white text-[10px] font-black uppercase tracking-widest shadow-xl">
-          Most Popular
-        </div>
-      )}
-
-      <div className="space-y-6 mb-8">
-        <div className="space-y-2">
-          <h3 className="text-2xl font-bold">{plan.name}</h3>
-          <p className="text-gray-500 text-sm leading-relaxed">{plan.description}</p>
-        </div>
-
-        <div className="flex items-baseline gap-1">
-          <span className="text-5xl font-black">${price}</span>
-          <span className="text-gray-500 font-medium">/mo</span>
-        </div>
-
-        <div className="p-4 rounded-2xl bg-white/5 border border-white/5 space-y-1">
-          <div className="text-xs font-bold text-gray-400 uppercase tracking-wider">
-            {plan.id === "free" ? "Free Allowance" : "Monthly Allowance"}
-          </div>
-          <div className="text-lg font-bold text-white">
-            {plan.id === "free" ? plan.allowanceTitle : `${plan.tokenAllowancePM.toLocaleString()} Tokens`}
-          </div>
-          <div className="text-[11px] text-gray-500">
-            {plan.id === "free" ? plan.allowanceDetail : plan.approxScriptsPM}
-          </div>
-          {plan.id === "free" && <div className="text-[11px] text-gray-500">{plan.allowanceSubcopy}</div>}
-        </div>
+    <div className="rounded-lg border border-white/10 bg-[#141821] p-5">
+      <div className="flex items-center gap-2 text-lg font-bold">
+        <CreditCard className="h-4 w-4 text-[#00f5d4]" />
+        {title}
       </div>
-
-      <div className="flex-grow space-y-4 mb-8">
-        {plan.features.map((feature, i) => (
-          <div key={i} className={`flex items-start gap-3 text-sm ${feature.included ? 'text-gray-300' : 'text-gray-600'}`}>
-            {feature.included ? (
-              <Check className="w-5 h-5 text-[#00f5d4] flex-shrink-0" />
-            ) : (
-              <X className="w-5 h-5 text-gray-800 flex-shrink-0" />
-            )}
-            <span className={feature.included ? '' : 'line-through'}>{feature.text}</span>
-          </div>
-        ))}
-      </div>
-
-      <button
-        onClick={onSelect}
-        disabled={isCurrent}
-        className={`w-full py-4 rounded-2xl font-bold text-lg transition-all flex items-center justify-center gap-2 group/btn ${
-          isCurrent
-            ? 'bg-white/5 text-gray-500 cursor-default'
-            : plan.highlight
-              ? 'bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-white shadow-xl hover:shadow-[0_0_30px_rgba(155,93,229,0.4)] active:scale-95'
-              : 'bg-white text-black hover:bg-gray-200 active:scale-95'
-        }`}
-      >
-        {isCurrent ? (
-          <>
-            <CheckCircle className="w-5 h-5" />
-            Current Plan
-          </>
-        ) : (
-          <>
-            {plan.cta}
-            <ArrowRight className="w-5 h-5 group-hover/btn:translate-x-1 transition-transform" />
-          </>
-        )}
-      </button>
-    </motion.div>
-  );
-}
-
-function X({ className }) {
-  return (
-    <svg 
-      xmlns="http://www.w3.org/2000/svg" 
-      width="24" 
-      height="24" 
-      viewBox="0 0 24 24" 
-      fill="none" 
-      stroke="currentColor" 
-      strokeWidth="2" 
-      strokeLinecap="round" 
-      strokeLinejoin="round" 
-      className={className}
-    >
-      <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
-    </svg>
+      <p className="mt-3 text-sm leading-6 text-gray-400">{body}</p>
+    </div>
   );
 }

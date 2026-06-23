@@ -3,15 +3,26 @@ import { createPortal } from "react-dom";
 import { Cpu, ChevronDown, Lock, Check, Sparkles } from "lucide-react";
 import { useModelCatalog } from "../../hooks/useModelCatalog";
 import {
+  DEFAULT_FREE_MODEL,
   MODEL_ALIAS_LABELS,
   PROVIDER_LABELS,
   groupModelsByProvider,
+  isModelSelectable,
   normalizeModelId,
   sortProviderEntries,
 } from "../../lib/modelProviders";
 
 const MENU_WIDTH = 288;
 const VIEWPORT_GUTTER = 8;
+
+const SYNTHETIC_FREE_MODEL = {
+  id: DEFAULT_FREE_MODEL,
+  name: "Nexus Free Auto",
+  provider: "nexus",
+  billingCategory: "INCLUDED",
+  billingLabel: "Included",
+  recommended: true,
+};
 
 function formatContext(len) {
   if (!len) return null;
@@ -20,10 +31,16 @@ function formatContext(len) {
 }
 
 /**
- * Compact in-workspace model picker driven by the dynamic AI Gateway catalog.
- * Pro-tier models are locked for non-premium users and route to the ProNudge flow.
+ * Compact model picker driven by the dynamic AI Gateway catalog.
+ * Free users see the full catalog with locks; only Nexus Free Auto is selectable.
  */
-export default function ModelSwitcher({ value, onChange, isPremium, onProNudge, compact = true }) {
+export default function ModelSwitcher({
+  value,
+  onChange,
+  isPremium,
+  onProNudge,
+  fullWidth = false,
+}) {
   const { models, loading } = useModelCatalog();
   const [open, setOpen] = useState(false);
   const [menuPosition, setMenuPosition] = useState(null);
@@ -32,6 +49,11 @@ export default function ModelSwitcher({ value, onChange, isPremium, onProNudge, 
   const menuRef = useRef(null);
 
   const normalizedValue = useMemo(() => normalizeModelId(value), [value]);
+
+  const catalogModels = useMemo(() => {
+    if (models.some((m) => m.id === DEFAULT_FREE_MODEL)) return models;
+    return [SYNTHETIC_FREE_MODEL, ...models];
+  }, [models]);
 
   const updateMenuPosition = useCallback(() => {
     const rect = buttonRef.current?.getBoundingClientRect();
@@ -67,43 +89,28 @@ export default function ModelSwitcher({ value, onChange, isPremium, onProNudge, 
     };
   }, [open, updateMenuPosition]);
 
-  const grouped = useMemo(() => groupModelsByProvider(models), [models]);
+  const grouped = useMemo(() => groupModelsByProvider(catalogModels), [catalogModels]);
   const sortedProviders = useMemo(() => sortProviderEntries(grouped), [grouped]);
 
   const current = useMemo(
-    () => models.find((m) => m.id === normalizedValue || m.id === value),
-    [models, normalizedValue, value]
+    () => catalogModels.find((m) => m.id === normalizedValue || m.id === value),
+    [catalogModels, normalizedValue, value]
   );
-  const currentLabel = current?.name || MODEL_ALIAS_LABELS[value] || MODEL_ALIAS_LABELS[normalizedValue] || value || "Select model";
+  const currentLabel =
+    current?.name
+    || MODEL_ALIAS_LABELS[value]
+    || MODEL_ALIAS_LABELS[normalizedValue]
+    || value
+    || "Select model";
 
   useEffect(() => {
-    if (!isPremium && value !== "nexus-free-auto") {
-      onChange?.("nexus-free-auto");
+    if (!isPremium && value !== DEFAULT_FREE_MODEL) {
+      onChange?.(DEFAULT_FREE_MODEL);
     }
   }, [isPremium, onChange, value]);
 
-  if (!isPremium) {
-    return (
-      <div className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 max-w-[260px]">
-        <div className="text-[10px] font-black uppercase tracking-widest text-gray-500">Default model</div>
-        <div className="mt-1 flex items-center gap-2 text-sm font-bold text-white">
-          <Cpu className="h-3.5 w-3.5 text-[#00f5d4]" />
-          Nexus Free Auto
-        </div>
-        <button
-          type="button"
-          onClick={() => onProNudge?.("Premium AI Models")}
-          className="mt-1 text-left text-[11px] text-[#00f5d4] hover:text-white"
-        >
-          Upgrade to Pro to choose GPT, Claude, Gemini, Grok and other supported models.
-        </button>
-      </div>
-    );
-  }
-
   const handleSelect = (model) => {
-    const locked = model.tier === "pro" && !isPremium;
-    if (locked) {
+    if (!isModelSelectable(model, { isPremium })) {
       onProNudge?.("Premium AI Models");
       setOpen(false);
       return;
@@ -135,10 +142,11 @@ export default function ModelSwitcher({ value, onChange, isPremium, onProNudge, 
                   {PROVIDER_LABELS[provider] || provider}
                 </div>
                 {list.map((model) => {
-                  const locked = model.tier === "pro" && !isPremium;
+                  const billingCategory = model.billingCategory || (model.tier === "pro" ? "PREMIUM_DIRECT" : "INCLUDED");
+                  const locked = !isModelSelectable(model, { isPremium });
                   const selected = model.id === normalizedValue || model.id === value;
                   const ctx = formatContext(model.contextLength);
-                  const costLabel = model.costTierLabel || (model.creditMultiplier ? `${model.creditMultiplier}x credits` : null);
+                  const billingLabel = model.billingLabel || (billingCategory === "PREMIUM_DIRECT" ? "Premium Balance" : "Included");
                   return (
                     <button
                       key={model.id}
@@ -159,12 +167,14 @@ export default function ModelSwitcher({ value, onChange, isPremium, onProNudge, 
                           {ctx && <span className="text-[9px] text-gray-500 font-mono">{ctx}</span>}
                           <span
                             className={`text-[8px] font-black uppercase tracking-widest ${
-                              model.tier === "pro" ? "text-[#9b5de5]" : "text-gray-500"
+                              billingCategory === "PREMIUM_DIRECT" ? "text-[#9b5de5]" : "text-[#00f5d4]"
                             }`}
                           >
-                            {model.tier === "pro" ? "Pro" : "Free"}
+                            {billingLabel}
                           </span>
-                          {costLabel && <span className="text-[9px] text-gray-500 font-mono">{costLabel}</span>}
+                          {billingCategory === "PREMIUM_DIRECT" && (
+                            <span className="text-[9px] text-gray-500">Uses Premium Balance</span>
+                          )}
                         </div>
                       </div>
                       {locked ? (
@@ -177,13 +187,18 @@ export default function ModelSwitcher({ value, onChange, isPremium, onProNudge, 
                 })}
               </div>
             ))}
+            {!isPremium && (
+              <p className="px-2 py-2 text-[10px] text-gray-500 text-center border-t border-white/5 mt-1">
+                Upgrade to Pro to unlock model selection
+              </p>
+            )}
           </div>,
           document.body
         )
       : null;
 
   return (
-    <div className="relative" ref={rootRef}>
+    <div className={`relative ${fullWidth ? "w-full" : ""}`} ref={rootRef}>
       <button
         ref={buttonRef}
         type="button"
@@ -191,13 +206,17 @@ export default function ModelSwitcher({ value, onChange, isPremium, onProNudge, 
           updateMenuPosition();
           setOpen((o) => !o);
         }}
-        className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-xs font-bold text-gray-300 hover:text-white hover:bg-white/10 transition-all max-w-[220px]"
+        className={`inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-xs font-bold text-gray-300 hover:text-white hover:bg-white/10 transition-all ${
+          fullWidth ? "w-full justify-between" : "max-w-[220px]"
+        }`}
         title="Select AI model"
         aria-haspopup="listbox"
         aria-expanded={open}
       >
-        <Cpu className="w-3.5 h-3.5 text-[#00f5d4] shrink-0" />
-        <span className="truncate">{loading ? "Loading models…" : currentLabel}</span>
+        <span className="inline-flex items-center gap-2 min-w-0">
+          <Cpu className="w-3.5 h-3.5 text-[#00f5d4] shrink-0" />
+          <span className="truncate">{loading ? "Loading models…" : currentLabel}</span>
+        </span>
         <ChevronDown className={`w-3.5 h-3.5 shrink-0 transition-transform ${open ? "rotate-180" : ""}`} />
       </button>
 

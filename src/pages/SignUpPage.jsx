@@ -620,7 +620,7 @@ function NexusRBXSignUpPage({
                     <PlanCard 
                       title="Free" 
                       price="$0" 
-                      desc="20k tokens/mo • Basic AI UI & Scripting" 
+                      desc="Daily usage • Basic AI UI & Scripting"
                       icon={Info} 
                       selected={selectedPlan === "free"} 
                       onClick={() => handlePlanSelect("free")} 
@@ -628,7 +628,7 @@ function NexusRBXSignUpPage({
                     <PlanCard 
                       title="Pro" 
                       price="$14.99" 
-                      desc="500k tokens/mo • Nexus (GPT-5.4) • Premium Models" 
+                      desc="Included Usage • Full model selection • Premium Direct support"
                       icon={Zap} 
                       popular 
                       selected={selectedPlan === "pro"} 
@@ -637,7 +637,7 @@ function NexusRBXSignUpPage({
                     <PlanCard 
                       title="Team" 
                       price="$39.99" 
-                      desc="1.5M tokens/mo • 5 Seats • Team Collaboration" 
+                      desc="Pooled usage • Seats • Team collaboration"
                       icon={Shield} 
                       selected={selectedPlan === "team"} 
                       onClick={() => handlePlanSelect("team")} 

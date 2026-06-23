@@ -40,6 +40,8 @@ import { auth } from "../firebase";
 import { signOut } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
 import ConfirmationModal from "../components/ConfirmationModal";
+import ProNudgeModal from "../components/ProNudgeModal";
+import ModelSwitcher from "../components/ai/ModelSwitcher";
 import BrutalAuditor from "../components/ai/BrutalAuditor";
 import FreeUsageMeter from "../components/FreeUsageMeter";
 import {
@@ -65,12 +67,7 @@ import {
 import {
   DEFAULT_FREE_MODEL,
   DEFAULT_PRO_MODEL,
-  MODEL_ALIAS_LABELS,
-  PROVIDER_LABELS,
-  groupModelsByProvider,
   isFreeDefaultModel,
-  normalizeModelId,
-  sortProviderEntries,
 } from "../lib/modelProviders";
 
 const StatCard = ({ title, value, icon: Icon, color }) => (
@@ -151,6 +148,8 @@ const SettingsPage = () => {
   const [robloxStatus, setRobloxStatus] = useState(null);
   const [robloxOperations, setRobloxOperations] = useState([]);
   const [robloxLoading, setRobloxLoading] = useState(false);
+  const [showProNudge, setShowProNudge] = useState(false);
+  const [proNudgeReason, setProNudgeReason] = useState("");
 
   const navigate = useNavigate();
   const isPremiumPlan = entitlements.includes("pro") || entitlements.includes("team") || plan === "PRO" || plan === "TEAM";
@@ -161,24 +160,6 @@ const SettingsPage = () => {
     const tab = params.get("tab");
     if (tab && TABS.some((t) => t.id === tab)) setActiveTab(tab);
   }, []);
-
-  const tierForModel = useCallback((id) => {
-    const normalized = normalizeModelId(id);
-    const m = modelCatalog.find((x) => x.id === normalized || x.id === id);
-    if (m?.tier) return m.tier;
-    if (isFreeDefaultModel(id)) return "free";
-    return "pro";
-  }, [modelCatalog]);
-
-  const groupedModels = useMemo(
-    () => groupModelsByProvider(modelCatalog),
-    [modelCatalog]
-  );
-
-  const sortedModelProviders = useMemo(
-    () => sortProviderEntries(groupedModels),
-    [groupedModels]
-  );
 
   const fetchUsage = useCallback(async () => {
     if (!user) return;
@@ -290,7 +271,7 @@ const SettingsPage = () => {
     }
 
     wasPremiumPlan.current = isPremiumPlan;
-  }, [isPremiumPlan, settings.modelVersion, modelCatalog, tierForModel, updateSettings]);
+  }, [isPremiumPlan, settings.modelVersion, modelCatalog, updateSettings]);
 
   const fetchInspectorData = async (uid) => {
     setDevLoading(true);
@@ -460,9 +441,9 @@ const SettingsPage = () => {
                   )}
                 </div>
                 <p className="text-gray-400 mb-6">
-                  {plan === "FREE" 
-                    ? "Free plan uses DeepSeek V3.2 by default. Upgrade to Pro for premium models (GPT-5.4, Claude, Gemini), 500,000 monthly tokens, and advanced AI features."
-                    : `Your Pro subscription includes Nexus (GPT-5.4) and a 500,000 token monthly allowance. Resets on ${resetsAt ? new Date(resetsAt).toLocaleDateString() : "N/A"}`}
+                  {plan === "FREE"
+                    ? "Free uses Nexus Free Auto by default. Upgrade to Pro for full model selection, higher included usage, Premium Direct support, and advanced AI features."
+                    : `Your paid subscription includes Included Usage and Premium Direct support. Resets on ${resetsAt ? new Date(resetsAt).toLocaleDateString() : "N/A"}`}
                 </p>
                 
                 <div className="flex flex-wrap gap-4">
@@ -497,7 +478,7 @@ const SettingsPage = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="card-surface p-6">
-                <h4 className="text-white font-bold mb-4">Token Balance</h4>
+                <h4 className="text-white font-bold mb-4">Included Usage</h4>
                 <div className="h-48">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
@@ -527,11 +508,11 @@ const SettingsPage = () => {
               <div className="card-surface p-6 flex flex-col justify-center">
                 <div className="space-y-4">
                   <div className="flex justify-between items-center">
-                    <span className="text-gray-400">Monthly Allowance</span>
+                    <span className="text-gray-400">Included Usage</span>
                     <span className="text-white font-bold">{subLimit?.toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-gray-400">Used this month</span>
+                    <span className="text-gray-400">Used this period</span>
                     <span className="text-purple-400 font-bold">{(subLimit - totalRemaining)?.toLocaleString()}</span>
                   </div>
                   <div className="h-2 w-full bg-gray-800 rounded-full overflow-hidden">
@@ -602,36 +583,16 @@ const SettingsPage = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <label className="text-sm text-gray-400">Default Model</label>
-                  {!isPremiumPlan ? (
-                    <div className="rounded-xl border border-gray-800 bg-black p-3">
-                      <div className="text-white font-bold">Nexus Free Auto</div>
-                      <p className="mt-1 text-xs text-gray-500">Automatically selects the best available Free model.</p>
-                      <p className="mt-2 text-[11px] text-[#00f5d4]">Upgrade to Pro to choose GPT, Claude, Gemini, Grok and other supported models.</p>
-                    </div>
-                  ) : (
-                    <select 
-                      value={settings.modelVersion}
-                      onChange={(e) => updateSettings({ modelVersion: e.target.value })}
-                      className="w-full bg-black border border-gray-800 rounded-xl p-3 text-white outline-none focus:border-purple-500 transition-colors"
-                    >
-                      {!modelCatalog.some((m) => m.id === settings.modelVersion) && settings.modelVersion && (
-                        <option value={settings.modelVersion}>
-                          {MODEL_ALIAS_LABELS[settings.modelVersion] || settings.modelVersion}
-                        </option>
-                      )}
-                      {sortedModelProviders.map(([provider, list]) => (
-                        <optgroup key={provider} label={PROVIDER_LABELS[provider] || provider}>
-                          {list.map((m) => (
-                            <option key={m.id} value={m.id}>
-                              {m.name}
-                              {m.tier === "pro" ? " — Pro" : ""}
-                              {m.contextLength ? ` (${Math.round(m.contextLength / 1000)}k)` : ""}
-                            </option>
-                          ))}
-                        </optgroup>
-                      ))}
-                    </select>
-                  )}
+                  <ModelSwitcher
+                    value={settings.modelVersion}
+                    isPremium={isPremiumPlan}
+                    onChange={(id) => updateSettings({ modelVersion: id })}
+                    onProNudge={(reason) => {
+                      setProNudgeReason(reason || "Premium AI Models");
+                      setShowProNudge(true);
+                    }}
+                    fullWidth
+                  />
                 </div>
                 {!isPremiumPlan && (
                   <div className="md:col-span-2">
@@ -1279,7 +1240,7 @@ const SettingsPage = () => {
                             <div className="flex justify-between"><span className="text-gray-500">Plan</span><span className="text-purple-400 font-bold">{inspectorData.profile?.plan || "FREE"}</span></div>
                             <div className="flex justify-between"><span className="text-gray-500">Sub Used</span><span className="text-white">{inspectorData.profile?.subUsed?.toLocaleString() || 0}</span></div>
                             <div className="flex justify-between"><span className="text-gray-500">Sub Limit</span><span className="text-white">{inspectorData.profile?.subLimit?.toLocaleString() || 0}</span></div>
-                            <div className="flex justify-between"><span className="text-gray-500">PAYG Balance</span><span className="text-cyan-400 font-bold">{inspectorData.tokens?.balance?.toLocaleString() || 0}</span></div>
+                            <div className="flex justify-between"><span className="text-gray-500">Premium Balance</span><span className="text-cyan-400 font-bold">{inspectorData.tokens?.balance?.toLocaleString() || 0}</span></div>
                           </div>
                         </div>
 
@@ -1470,6 +1431,11 @@ const SettingsPage = () => {
         </div>
       </main>
 
+      <ProNudgeModal
+        isOpen={showProNudge}
+        onClose={() => setShowProNudge(false)}
+        reason={proNudgeReason}
+      />
       <ConfirmationModal
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}

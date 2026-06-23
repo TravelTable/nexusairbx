@@ -105,6 +105,12 @@ export function summarizeEntitlements(e) {
     flags,
     entitlements: e?.entitlements || [],
     modelAccess: e?.modelAccess || null,
+    subscription: e?.subscription || null,
+    pricingVersion: e?.pricingVersion || "CURRENT",
+    grandfathered: Boolean(e?.grandfathered),
+    includedUsage: e?.includedUsage || null,
+    premiumBalance: e?.premiumBalance || null,
+    team: e?.team || null,
     dailyUsage: e?.dailyUsage || null,
     fairUse: e?.fairUse || null,
     limits: e?.limits || null,
@@ -123,26 +129,42 @@ export async function submitBrowserTimezone(timezone) {
   return r.json().catch(() => null);
 }
 
-export async function startCheckout(priceId, mode = "subscription", topupTokens) {
-  if (!priceId) throw new Error("Missing priceId");
-  if (!["subscription", "payment"].includes(mode)) throw new Error("Invalid checkout mode");
-
-  const user = getAuth().currentUser;
-  const uid = user?.uid;
-  const body = { priceId, mode, uid };
-  if (topupTokens) body.topupTokens = topupTokens;
-
+async function postCheckout(body) {
   const r = await authedFetch("/api/checkout", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
   if (!r.ok) {
-    const text = await r.text();
-    throw new Error(`checkout ${r.status}: ${text}`);
+    const payload = await r.json().catch(async () => ({ error: await r.text().catch(() => "") }));
+    const err = new Error(payload?.error || `checkout ${r.status}`);
+    err.code = payload?.code || null;
+    err.status = r.status;
+    throw err;
   }
-  // IMPORTANT: do NOT redirect here. Let the page decide.
   return r.json().catch(() => ({})); // {url} OR {sessionDocPath}
+}
+
+export async function startSubscriptionCheckout({ plan, interval, seatCount } = {}) {
+  if (!plan) throw new Error("Missing plan");
+  if (!["month", "year"].includes(interval)) throw new Error("Invalid billing interval");
+  return postCheckout({ mode: "subscription", plan, interval, ...(seatCount ? { seatCount } : {}) });
+}
+
+export async function startPremiumBalanceCheckout({ packageKey, teamId } = {}) {
+  if (!packageKey) throw new Error("Missing Premium Balance package");
+  return postCheckout({ mode: "payment", package: packageKey, ...(teamId ? { teamId } : {}) });
+}
+
+export async function startCheckout(firstArg, mode = "subscription", thirdArg) {
+  if (typeof firstArg === "object" && firstArg !== null) return postCheckout(firstArg);
+  if (mode === "subscription") {
+    return startSubscriptionCheckout({
+      plan: firstArg,
+      interval: thirdArg || "month",
+    });
+  }
+  return startPremiumBalanceCheckout({ packageKey: firstArg });
 }
 
 export async function openPortal() {

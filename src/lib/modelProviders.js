@@ -1,12 +1,12 @@
 export const DEFAULT_FREE_MODEL = "nexus-free-auto";
-export const DEFAULT_PRO_MODEL = "openai/gpt-5.4";
+export const DEFAULT_PRO_MODEL = "openai/gpt-5-mini";
 
 export const MODEL_ID_ALIASES = Object.freeze({
   "deepseek-free": DEFAULT_FREE_MODEL,
   "deepseek/deepseek-v3.2": DEFAULT_FREE_MODEL,
   "openai/gpt-5-mini": DEFAULT_FREE_MODEL,
-  "nexus-4": DEFAULT_PRO_MODEL,
-  "nexus-3": DEFAULT_PRO_MODEL,
+  "nexus-4": "openai/gpt-5.4",
+  "nexus-3": "openai/gpt-5.4",
 });
 
 // Fallback display labels for legacy IDs not yet present in the live catalog.
@@ -20,6 +20,7 @@ export const MODEL_ALIAS_LABELS = Object.freeze({
 });
 
 export const PROVIDER_ORDER = [
+  "nexus",
   "deepseek",
   "openai",
   "anthropic",
@@ -32,6 +33,7 @@ export const PROVIDER_ORDER = [
 ];
 
 export const PROVIDER_LABELS = Object.freeze({
+  nexus: "Free",
   openai: "OpenAI",
   deepseek: "DeepSeek",
   anthropic: "Anthropic",
@@ -59,9 +61,17 @@ export function isFreeDefaultModel(id) {
   return FREE_MODEL_IDS.has(id) || FREE_MODEL_IDS.has(normalized) || normalized === DEFAULT_FREE_MODEL;
 }
 
+export function isModelSelectable(model, { isPremium }) {
+  if (!model?.id) return false;
+  if (!isPremium) return model.id === DEFAULT_FREE_MODEL;
+  const billing = model.billingCategory || (model.tier === "pro" ? "PREMIUM_DIRECT" : "INCLUDED");
+  return billing === "INCLUDED" || isPremium;
+}
+
 export function sortModelsInGroup(list) {
   return [...list].sort((a, b) => {
     if (!!b.recommended !== !!a.recommended) return b.recommended ? 1 : -1;
+    if (a.billingCategory !== b.billingCategory) return a.billingCategory === "INCLUDED" ? -1 : 1;
     if (a.tier !== b.tier) return a.tier === "free" ? -1 : 1;
     return String(a.name).localeCompare(String(b.name));
   });

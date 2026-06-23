@@ -2,7 +2,16 @@
 import React, { createContext, useContext, useEffect, useMemo, useState, useCallback } from "react";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "../firebase"; // keep your existing init
-import { getEntitlements, summarizeEntitlements, startCheckout, openPortal, cancelSubscription, submitBrowserTimezone } from "../lib/billing";
+import {
+  getEntitlements,
+  summarizeEntitlements,
+  startCheckout,
+  startSubscriptionCheckout,
+  startPremiumBalanceCheckout,
+  openPortal,
+  cancelSubscription,
+  submitBrowserTimezone,
+} from "../lib/billing";
 import { onAiEvent } from "../lib/aiEvents";
 
 const BillingCtx = createContext(null);
@@ -101,7 +110,9 @@ export function BillingProvider({ children, pollMs = 60_000 }) {
 
   const actions = useMemo(() => ({
     refresh,
-    checkout: async (priceId, mode) => user && startCheckout(priceId, mode),
+    checkout: async (payload) => user && startCheckout(payload),
+    subscriptionCheckout: async (payload) => user && startSubscriptionCheckout(payload),
+    premiumBalanceCheckout: async (payload) => user && startPremiumBalanceCheckout(payload),
     portal: async () => user && openPortal(),
     cancel: async () => {
       if (!user) return;

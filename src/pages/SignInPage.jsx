@@ -317,7 +317,7 @@ function NexusRBXSignInPage({
     {
       id: 3,
       title: "Nexus Neural Core",
-      description: "Powered by GPT-5.4, fine-tuned for Parallel Luau and Actor patterns. Mastery of complex CFrame math.",
+      description: "Use supported Included and Premium Direct models for Parallel Luau, Actor patterns, and complex CFrame math.",
       icon: Cpu,
       position: "bottom-[25%] left-[8%]",
       delay: 0.6,

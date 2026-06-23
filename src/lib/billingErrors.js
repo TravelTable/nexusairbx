@@ -9,6 +9,14 @@ export const FREE_USAGE_ERROR_CODES = new Set([
   "FREE_FEATURE_REQUIRES_PRO",
   "FREE_MODEL_REQUIRES_PRO",
   "FREE_PRICING_NOT_CONFIGURED",
+  "INCLUDED_USAGE_LIMIT_REACHED",
+  "INCLUDED_REQUEST_TOO_LARGE",
+  "PREMIUM_BALANCE_INSUFFICIENT",
+  "MODEL_REQUIRES_PREMIUM_BALANCE",
+  "MODEL_PRICING_NOT_CONFIGURED",
+  "PLAN_REQUIRED",
+  "TEAM_SEAT_LIMIT_REACHED",
+  "TEAM_BILLING_PERMISSION_REQUIRED",
 ]);
 
 const FREE_USAGE_MESSAGES = {
@@ -19,10 +27,18 @@ const FREE_USAGE_MESSAGES = {
   FREE_FEATURE_REQUIRES_PRO: "This feature requires Pro.",
   FREE_MODEL_REQUIRES_PRO: "Premium model selection requires Pro. Upgrade to choose GPT, Claude, Gemini, Grok and other supported models.",
   FREE_PRICING_NOT_CONFIGURED: "Free usage is temporarily unavailable. Please try again later.",
+  INCLUDED_USAGE_LIMIT_REACHED: "Included usage reached. Continue with Premium Balance where supported, or wait until your usage resets.",
+  INCLUDED_REQUEST_TOO_LARGE: "This request is larger than your remaining Included Usage. Reduce the request, choose Premium Balance where supported, or wait for the reset.",
+  PREMIUM_BALANCE_INSUFFICIENT: "Your Premium Balance is too low for this request. Add funds, choose an included model, or reduce the request size.",
+  MODEL_REQUIRES_PREMIUM_BALANCE: "This model uses Premium Balance. Add funds or choose an included model.",
+  MODEL_PRICING_NOT_CONFIGURED: "This model is temporarily unavailable because usage pricing is not configured.",
+  PLAN_REQUIRED: "This feature requires a paid NexusRBX plan.",
+  TEAM_SEAT_LIMIT_REACHED: "Team seat count must stay within the allowed seat limits.",
+  TEAM_BILLING_PERMISSION_REQUIRED: "Only team owners or billing administrators can manage team billing.",
 };
 
 export const DEFAULT_INSUFFICIENT_TOKENS_MESSAGE =
-  "You're out of tokens. Upgrade to keep generating.";
+  "Usage limit reached. Upgrade, add Premium Balance, or wait for your reset.";
 
 export function isInsufficientTokensError(input) {
   if (!input) return false;
@@ -47,7 +63,7 @@ export function insufficientTokensToast(planKey = "free", { navigate } = {}) {
   };
   if (key !== "team") {
     toast.cta = {
-      label: key === "pro" ? "Add tokens" : "View plans",
+      label: key === "pro" || key === "pro_plus" ? "Add balance" : "View plans",
       primary: true,
       onClick: () => {
         if (typeof navigate === "function") {

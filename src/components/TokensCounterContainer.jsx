@@ -3,7 +3,7 @@ import { Coins, AlertCircle, RefreshCw } from "lucide-react";
 
 // Container component for business logic
 /**
- * Supports showing both subscription and PAYG tokens if passed as an object:
+ * Supports showing both subscription and prepaid usage if passed as an object:
  *   tokens={{ sub: { remaining, limit }, payg: { remaining } }}
  * Or as a single number for legacy usage.
  */
@@ -40,7 +40,7 @@ export default function TokensCounterContainer({
     );
   }
 
-  // If tokens is an object with sub/payg, render both counters
+  // If tokens is an object with sub/payg, render both counters.
   if (
     tokens &&
     typeof tokens === "object" &&
@@ -54,7 +54,7 @@ export default function TokensCounterContainer({
       <div className={containerClasses}>
         {tokens.sub && (
           <SingleTokenCounter
-            label="Subscription"
+            label="Included"
             tokens={tokens.sub.remaining}
             maxTokens={tokens.sub.limit}
             isLoading={isLoading}
@@ -66,7 +66,7 @@ export default function TokensCounterContainer({
         )}
         {tokens.payg && (
           <SingleTokenCounter
-            label="PAYG"
+            label="Premium"
             tokens={tokens.payg.remaining}
             maxTokens={null}
             isLoading={isLoading}

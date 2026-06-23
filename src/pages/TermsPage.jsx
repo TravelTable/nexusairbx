@@ -353,7 +353,7 @@ function BillingContent() {
       <div className="space-y-6">
         <section>
           <h3 className="text-xl font-bold text-[#9b5de5] mb-2">Tokens and Usage</h3>
-          <p className="text-gray-400">NexusRBX uses a token system to meter AI usage. Each Subscription plan provides a monthly allowance of tokens that resets each billing period. PAYG packs provide additional tokens that do not expire. Unused subscription tokens do not roll over.</p>
+          <p className="text-gray-400">NexusRBX meters paid AI usage through Included Usage and Premium Balance. Included Usage resets at the end of each subscription billing period. Premium Balance is prepaid usage credit for supported Premium Direct models and does not expire automatically.</p>
         </section>
 
         <section className="grid grid-cols-1 md:grid-cols-2 gap-4">

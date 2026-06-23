@@ -6,13 +6,13 @@ import { BACKEND_URL } from "../config";
  * in-module for the session so multiple consumers (workspace switcher, settings)
  * share a single network request.
  *
- * Each model: { id, name, provider, contextLength, tier, recommended, creditMultiplier, costTierLabel }.
+ * Each model: { id, name, provider, contextLength, tier, billingCategory, billingLabel, recommended }.
  */
 
 const FALLBACK_MODELS = [
-  { id: "deepseek/deepseek-v3.2", name: "DeepSeek V3.2", provider: "deepseek", contextLength: 128000, tier: "free", recommended: true, creditMultiplier: 1, costTierLabel: "1x credits" },
-  { id: "openai/gpt-5-mini", name: "GPT-5 mini", provider: "openai", contextLength: 256000, tier: "free", recommended: true, creditMultiplier: 1, costTierLabel: "1x credits" },
-  { id: "openai/gpt-5.4", name: "GPT-5.4", provider: "openai", contextLength: 256000, tier: "pro", recommended: true, creditMultiplier: 8, costTierLabel: "8x credits" },
+  { id: "deepseek/deepseek-v3.2", name: "DeepSeek V3.2", provider: "deepseek", contextLength: 128000, tier: "free", billingCategory: "INCLUDED", billingLabel: "Included", recommended: true },
+  { id: "openai/gpt-5-mini", name: "GPT-5 mini", provider: "openai", contextLength: 256000, tier: "free", billingCategory: "INCLUDED", billingLabel: "Included", recommended: true },
+  { id: "openai/gpt-5.4", name: "GPT-5.4", provider: "openai", contextLength: 256000, tier: "pro", billingCategory: "PREMIUM_DIRECT", billingLabel: "Premium Balance", recommended: true },
 ];
 
 let moduleCache = null;

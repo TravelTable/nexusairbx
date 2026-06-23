@@ -17,9 +17,9 @@ describe("billingErrors", () => {
   });
 
   it("builds plan-aware toast copy", () => {
-    expect(insufficientTokensMessage("free")).toMatch(/out of tokens/i);
+    expect(insufficientTokensMessage("free")).toMatch(/Free usage/i);
     expect(insufficientTokensToast("free").cta?.label).toBe("View plans");
-    expect(insufficientTokensToast("pro").cta?.label).toBe("Add tokens");
+    expect(insufficientTokensToast("pro").cta?.label).toBe("Add balance");
     expect(insufficientTokensToast("team").cta).toBeUndefined();
   });
 

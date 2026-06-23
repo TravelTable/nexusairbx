@@ -87,8 +87,8 @@ export function TokenBar({ tokensLeft, tokensLimit, resetsAt, plan, unlimitedTok
             <Zap className="w-3 h-3 fill-current" /> Explore Team
           </a>
         ) : (
-          <a href="/docs#tokens" className="flex items-center gap-1 text-xs text-[#9b5de5] hover:text-[#00f5d4] underline" title="How tokens work">
-            <Info className="w-4 h-4" /> How tokens work
+          <a href="/docs#usage" className="flex items-center gap-1 text-xs text-[#9b5de5] hover:text-[#00f5d4] underline" title="How usage works">
+            <Info className="w-4 h-4" /> How usage works
           </a>
         )}
       </div>
