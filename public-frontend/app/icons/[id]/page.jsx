@@ -4,12 +4,19 @@ import StructuredData from "../../../components/StructuredData";
 import icons from "../../../data/generated/qualified-icons.json";
 import { buildPublicMetadata, canonicalUrl, SITE_NAME } from "../../../../src/lib/seo";
 
+const PRERENDER_ICON_LIMIT = Number(process.env.PRERENDER_ICON_LIMIT || 150);
+
+function prerenderIcons() {
+  if (!Number.isFinite(PRERENDER_ICON_LIMIT) || PRERENDER_ICON_LIMIT <= 0) return [];
+  return icons.slice(0, Math.floor(PRERENDER_ICON_LIMIT));
+}
+
 function iconById(id) {
   return icons.find((icon) => icon.id === id) || null;
 }
 
 export function generateStaticParams() {
-  return icons.map((icon) => ({ id: icon.id }));
+  return prerenderIcons().map((icon) => ({ id: icon.id }));
 }
 
 export async function generateMetadata({ params }) {

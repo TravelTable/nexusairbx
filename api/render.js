@@ -8,12 +8,14 @@ const {
   evaluateIconIndexability,
   isDeletedOrRestricted,
 } = require("../server/iconIndexability");
+const { isPrerenderedIconId } = require("../server/prerenderIcons");
 
 const ROOT_DIR = path.join(__dirname, "..");
 const BACKEND_URL = (process.env.REACT_APP_BACKEND_URL || "https://nexusrbx-backend-production.up.railway.app").replace(/\/+$/, "");
 const ICON_CACHE_TTL_MS = 5 * 60 * 1000;
 const iconCache = new Map();
 let generatedIconIds = null;
+let qualifiedIcons = null;
 
 const CONTENT_TYPES = {
   ".css": "text/css; charset=utf-8",
@@ -34,18 +36,24 @@ const CONTENT_TYPES = {
   ".xml": "application/xml; charset=utf-8",
 };
 
+function loadQualifiedIcons() {
+  if (qualifiedIcons) return qualifiedIcons;
+  try {
+    qualifiedIcons = require("../public-frontend/data/generated/qualified-icons.json");
+    if (!Array.isArray(qualifiedIcons)) qualifiedIcons = [];
+  } catch {
+    qualifiedIcons = [];
+  }
+  return qualifiedIcons;
+}
+
 function loadGeneratedIconIds() {
   if (generatedIconIds) return generatedIconIds;
-  try {
-    const generatedIcons = require("../public-frontend/data/generated/qualified-icons.json");
-    generatedIconIds = new Set(
-      (Array.isArray(generatedIcons) ? generatedIcons : [])
-        .map((icon) => String(icon?.id || "").trim())
-        .filter(Boolean),
-    );
-  } catch {
-    generatedIconIds = new Set();
-  }
+  generatedIconIds = new Set(
+    loadQualifiedIcons()
+      .map((icon) => String(icon?.id || "").trim())
+      .filter(Boolean),
+  );
   return generatedIconIds;
 }
 
@@ -216,12 +224,11 @@ module.exports = async function render(req, res) {
     const iconMatch = pathname.match(/^\/icons\/([^/]+)$/);
     if (iconMatch) {
       const id = decodeURIComponent(iconMatch[1]);
-      if (loadGeneratedIconIds().has(id)) {
+      if (isPrerenderedIconId(id, loadQualifiedIcons())) {
         const served = serveStaticFile(res, [
           resolveProjectPath("build", "icons", id, "index.html"),
+          resolveProjectPath("build", "icons", `${id}.html`),
           resolveProjectPath("build", `icons/${encodeURIComponent(id)}.html`),
-          resolveProjectPath("public-frontend", "out", "icons", id, "index.html"),
-          resolveProjectPath("public-frontend", "out", `icons/${encodeURIComponent(id)}.html`),
         ]);
         if (served) return;
       }

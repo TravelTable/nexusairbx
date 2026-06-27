@@ -16,13 +16,13 @@
   ],
   "rewrites": [
     {
-      "source": "/:path*",
-      "destination": "/api/render?path=/:path*"
+      "source": "/((?!api/|_next/|static/|assets/|sitemaps/|sitemap\\.xml|robots\\.txt|favicon\\.ico|manifest\\.json).*)",
+      "destination": "/api/render?path=/$1"
     }
   ],
   "functions": {
     "api/render.js": {
-      "includeFiles": "{build/**,public-frontend/out/**,public-frontend/data/generated/**}"
+      "includeFiles": "{build/__spa-shell.html,build/index.html,public-frontend/data/generated/**}"
     }
   }
 }
