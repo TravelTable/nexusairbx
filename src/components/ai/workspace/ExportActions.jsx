@@ -4,6 +4,7 @@ import { buildRojoZip, buildStudioLoader, buildPlacementZip, safeProjectName } f
 import { getStudioStatus, getStudioCommand, applyArtifactToStudio } from "../../../lib/studioBridgeApi";
 import { buildBaseArtifactSnapshot } from "../../../lib/artifactState";
 import { verifyRobloxReadiness } from "../../../lib/workflowApi";
+import { trackProductEvent } from "../../../lib/productAnalytics";
 
 function downloadBlob(blob, filename) {
   const url = URL.createObjectURL(blob);
@@ -58,6 +59,10 @@ export default function ExportActions({ artifact, activeFile, notify }) {
   const handleCopyFile = async () => {
     if (!activeFile) return;
     await navigator.clipboard.writeText(activeFile.content || "");
+    void trackProductEvent("code_copied", {
+      output_type: activeFile.kind || "file",
+      file_count: 1,
+    }, { dedupeKey: `copy_file:${artifact.artifactId || ""}:${activeFile.name || ""}` });
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -67,6 +72,10 @@ export default function ExportActions({ artifact, activeFile, notify }) {
       .map((f) => `-- ===== ${f.placement}/${f.name} (${f.kind}) =====\n${f.content}`)
       .join("\n\n");
     await navigator.clipboard.writeText(text);
+    void trackProductEvent("code_copied", {
+      output_type: "project",
+      file_count: files.length,
+    }, { dedupeKey: `copy_all:${artifact.artifactId || ""}:${files.length}` });
     setCopiedAll(true);
     setTimeout(() => setCopiedAll(false), 2000);
   };
@@ -75,6 +84,11 @@ export default function ExportActions({ artifact, activeFile, notify }) {
     if (!activeFile) return;
     const ext = activeFile.kind === "docs" ? "md" : activeFile.kind === "config" ? "json" : activeFile.kind === "server" ? "server.lua" : activeFile.kind === "client" ? "client.lua" : "lua";
     downloadBlob(new Blob([activeFile.content || ""], { type: "text/plain;charset=utf-8" }), `${activeFile.name}.${ext}`);
+    void trackProductEvent("artifact_downloaded", {
+      output_type: activeFile.kind || "file",
+      file_count: 1,
+      download_type: "single_file",
+    }, { dedupeKey: `download_file:${artifact.artifactId || ""}:${activeFile.name || ""}` });
   };
 
   const handleDownloadZip = async () => {
@@ -83,6 +97,11 @@ export default function ExportActions({ artifact, activeFile, notify }) {
     try {
       const blob = await buildPlacementZip(artifact);
       downloadBlob(blob, `${safeName}.zip`);
+      void trackProductEvent("artifact_downloaded", {
+        output_type: "project",
+        file_count: files.length,
+        download_type: "placement_zip",
+      }, { dedupeKey: `download_zip:${artifact.artifactId || ""}:${files.length}` });
       notify?.({ message: "Project exported (folders match Studio placement)", type: "success" });
     } catch (err) {
       notify?.({ message: "Failed to build project zip", type: "error" });
@@ -97,6 +116,11 @@ export default function ExportActions({ artifact, activeFile, notify }) {
     try {
       const blob = await buildRojoZip(rojoInputFromArtifact(artifact));
       downloadBlob(blob, `${safeName}_rojo.zip`);
+      void trackProductEvent("artifact_downloaded", {
+        output_type: "rojo_project",
+        file_count: files.length,
+        download_type: "rojo_zip",
+      }, { dedupeKey: `download_rojo:${artifact.artifactId || ""}:${files.length}` });
       notify?.({ message: "Rojo project exported", type: "success" });
     } catch (err) {
       notify?.({ message: "Failed to build Rojo project", type: "error" });
@@ -109,6 +133,10 @@ export default function ExportActions({ artifact, activeFile, notify }) {
     try {
       const snippet = buildStudioLoader(rojoInputFromArtifact(artifact));
       await navigator.clipboard.writeText(snippet);
+      void trackProductEvent("code_copied", {
+        output_type: "studio_loader",
+        file_count: files.length,
+      }, { dedupeKey: `copy_loader:${artifact.artifactId || ""}:${files.length}` });
       setLoaderCopied(true);
       setTimeout(() => setLoaderCopied(false), 2000);
       notify?.({ message: "Studio loader copied — paste into the Studio command bar", type: "success" });

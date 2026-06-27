@@ -37,15 +37,21 @@
     "@babel/plugin-transform-private-property-in-object": "^7.21.11",
     "autoprefixer": "^10.4.21",
     "eslint": "^8.57.0",
+    "next": "^16.2.9",
     "postcss": "^8.5.6",
     "tailwindcss": "^3.3.5"
   },
   "scripts": {
     "start": "react-scripts start",
-    "build": "react-scripts build",
+    "build": "react-scripts build && npm run public:build",
+    "build:app": "react-scripts build",
+    "public:build": "next build public-frontend",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "sitemap": "node scripts/generate-sitemap.js"
+    "plugin:build": "node roblox-plugin/build/bundle-plugin.js",
+    "sitemap": "node scripts/generate-sitemap.js",
+    "test:production-routing": "node --test server/productionRouting.test.js",
+    "test:public-frontend": "node --test server/publicFrontendHtml.test.js"
   },
   "eslintConfig": {
     "extends": [

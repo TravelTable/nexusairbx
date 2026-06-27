@@ -1,0 +1,2 @@
+-- Shared UI helpers are defined in BridgePanel for the bundled plugin runtime.
+-- This file is kept as the editing home for extracted reusable UI primitives as the dock grows.

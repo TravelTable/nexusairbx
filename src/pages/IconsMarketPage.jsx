@@ -455,7 +455,7 @@ export default function IconsMarketPage() {
                   <h1 className="text-4xl font-black tracking-tight">Icons Market</h1>
                 </div>
                 <p className="text-gray-400 max-w-xl">
-                  Browse thousands of professional, game-ready icons. One-click export to Roblox Studio.
+                  Browse curated, game-ready icons. One-click export to Roblox Studio.
                 </p>
               </div>
 

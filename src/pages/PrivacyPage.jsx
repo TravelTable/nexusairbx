@@ -291,7 +291,7 @@ function UseContent() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="bg-gray-900/40 p-5 rounded-xl border border-gray-800">
           <h3 className="text-lg font-bold mb-3 text-[#9b5de5]">Provide and Improve</h3>
-          <p className="text-sm text-gray-400">To operate the NexusRBX platform and its features, including generating scripts via AI, maintaining your account, and optimizing performance. Usage data helps us debug issues, train and enhance our AI models (using anonymized prompt/code data), and develop new features.</p>
+          <p className="text-sm text-gray-400">To operate the NexusRBX platform and its features, including generating scripts via AI, maintaining your account, and optimizing performance. Usage analytics help us debug issues and improve product reliability without sending private prompt text or generated code payloads to analytics.</p>
         </div>
         
         <div className="bg-gray-900/40 p-5 rounded-xl border border-gray-800">

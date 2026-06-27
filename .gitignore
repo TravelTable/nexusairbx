@@ -12,6 +12,8 @@ backend/node_modules/
 
 # production
 /build
+/public-frontend/.next
+/public-frontend/out
 
 # misc
 .DS_Store

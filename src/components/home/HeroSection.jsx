@@ -2,6 +2,7 @@ import React from "react";
 import { motion } from "framer-motion";
 import { Loader, ChevronRight } from "lucide-react";
 import FloatingToolCard from "./FloatingToolCard";
+import { getHomepageCtaCopy } from "../../lib/experiments";
 
 export default function HeroSection({
   advertisedTools,
@@ -12,6 +13,14 @@ export default function HeroSection({
   loading,
   error
 }) {
+  const ctaCopy = getHomepageCtaCopy();
+
+  const submitFromEnter = (e) => {
+    if (e.key !== "Enter" || e.nativeEvent?.isComposing) return;
+    e.preventDefault();
+    handleSubmit(e, "enter");
+  };
+
   return (
     <section className="min-h-[80vh] flex items-center justify-center py-20 px-4 relative z-10 overflow-visible">
       <div className="max-w-6xl mx-auto relative w-full">
@@ -47,11 +56,11 @@ export default function HeroSection({
                 </div>
               ))}
               <div className="w-10 h-10 rounded-full border-2 border-[#0D0D0D] bg-gray-800 flex items-center justify-center text-[10px] font-bold text-gray-400 shadow-lg">
-                +5k
+                RBX
               </div>
             </div>
             <p className="text-sm font-medium text-gray-400">
-              Helping <span className="text-white font-bold">5,000+</span> Roblox Developers
+              Built for Roblox creators shipping scripts, UI, and Studio workflows.
             </p>
           </motion.div>
 
@@ -69,7 +78,10 @@ export default function HeroSection({
             />
           </motion.div>
           <form
-            onSubmit={handleSubmit}
+            onSubmit={(e) => {
+              const method = e.nativeEvent?.submitter?.dataset?.submitMethod || "button";
+              handleSubmit(e, method);
+            }}
             className="mt-12 flex flex-col md:flex-row gap-3 max-w-2xl mx-auto relative z-20"
           >
             <input
@@ -79,20 +91,17 @@ export default function HeroSection({
               placeholder="Describe a UI or script idea..."
               className="flex-grow px-4 py-3 rounded-lg bg-gray-900/60 border border-gray-700 focus:border-[#9b5de5] focus:outline-none focus:ring-2 focus:ring-[#9b5de5]/50 transition-all duration-300"
               disabled={loading}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                }
-              }}
+              onKeyDown={submitFromEnter}
               aria-label="Type your Roblox UI or script idea"
               autoComplete="off"
               name="roblox-idea"
             />
             <button
               type="submit"
+              data-submit-method="button"
               className="px-6 py-3 rounded-lg bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-white font-medium hover:shadow-lg hover:shadow-[#9b5de5]/20 transform hover:translate-y-[-2px] transition-all duration-300 flex items-center justify-center"
               disabled={!inputValue.trim() || loading}
-              aria-label="Generate with AI"
+              aria-label={ctaCopy}
             >
               {loading ? (
                 <>
@@ -101,7 +110,7 @@ export default function HeroSection({
                 </>
               ) : (
                 <>
-                  Generate with AI
+                  {ctaCopy}
                   <ChevronRight className="ml-2 h-5 w-5" />
                 </>
               )}
@@ -111,7 +120,7 @@ export default function HeroSection({
             <div className="text-red-400 mt-2" role="alert">{error}</div>
           )}
           <div className="text-sm text-gray-500 mt-2">
-            <span>Describe your idea and press <b>Enter</b> or click "Generate with AI"</span>
+            <span>Describe your idea and press <b>Enter</b> or click "{ctaCopy}"</span>
           </div>
         </motion.div>
       </div>

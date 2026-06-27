@@ -20,6 +20,7 @@ import {
 } from "../lib/streaming";
 import { stageSlug } from "../lib/streamEngagement";
 import { resolveGameSpecForPrompt } from "../lib/gameProfile";
+import { categorizePrompt, trackProductEvent } from "../lib/productAnalytics";
 
 function seedOrchestrationStream(stage = "Understanding your task...") {
   return applyStreamActivity(createPendingStreamState(), {
@@ -209,6 +210,11 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
       }
 
       if (decision.status === "needs_clarification") {
+        void trackProductEvent("clarification_requested", {
+          generator_mode: chat.activeMode || "agent",
+          prompt_category: categorizePrompt(originPrompt),
+          attachment_count: attachments?.length || 0,
+        }, { dedupeKey: `clarify:${activeChatId}:${requestId}` });
         await setDoc(
           doc(db, "users", user.uid, "chats", activeChatId, "messages", `${requestId}-clarify`),
           {
@@ -243,9 +249,14 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
           requestId,
         }
       );
+      void trackProductEvent("plan_displayed", {
+        generator_mode: chat.activeMode || "agent",
+        output_type: decision.classification || "script",
+        prompt_category: categorizePrompt(originPrompt),
+      }, { dedupeKey: `plan:${activeChatId}:${requestId}:${decision.planId || ""}` });
       await touchChat(activeChatId, decision.aiSummary || "Build plan ready");
     },
-    [user, touchChat]
+    [user, touchChat, chat.activeMode]
   );
 
   // Dispatch generation for an approved plan. All classifications now run the
@@ -267,6 +278,11 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
       if (!activeChatId) return;
 
       await approveWorkflowPlan(message.planId);
+      void trackProductEvent("plan_approved", {
+        generator_mode: chat.activeMode || "agent",
+        output_type: message.classification || "script",
+        prompt_category: categorizePrompt(message.originPrompt || ""),
+      }, { dedupeKey: `plan_approved:${message.planId}` });
       await updateDoc(
         doc(db, "users", user.uid, "chats", activeChatId, "messages", message.id),
         { stage: "plan_approved", updatedAt: serverTimestamp() }
@@ -279,7 +295,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
         baseArtifact
       );
     },
-    [user, isGenerating, chat.currentChatId, runGeneration]
+    [user, isGenerating, chat.currentChatId, chat.activeMode, runGeneration]
   );
 
   // ASK mode: read-only conversational streaming. No orchestrate, no plan, no job.
@@ -335,19 +351,31 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
   //  - agent -> orchestrate (may clarify) -> plan card -> user approves
   //  - debug -> same as agent, with debug framing
   const handleSubmit = useCallback(
-    async (currentPrompt, currentAttachments = [], baseArtifact = null) => {
+    async (currentPrompt, currentAttachments = [], baseArtifact = null, options = {}) => {
       const prompt = (currentPrompt || "").trim();
+      const mode = options?.mode || chat.activeMode || "agent";
       if (!prompt && currentAttachments.length === 0) {
-        if (!user && onSignInNudge) onSignInNudge();
+        if (!user && onSignInNudge) {
+          void trackProductEvent("signin_nudge_viewed", {
+            landing_page: "/ai",
+            generator_mode: mode,
+            prompt_category: "empty",
+          }, { dedupeKey: `signin_nudge:empty:${mode}` });
+          onSignInNudge();
+        }
         return;
       }
       if (!user) {
+        void trackProductEvent("signin_nudge_viewed", {
+          landing_page: "/ai",
+          generator_mode: mode,
+          prompt_category: categorizePrompt(prompt),
+        }, { dedupeKey: `signin_nudge:${prompt.slice(0, 40)}:${mode}` });
         onSignInNudge?.();
         return;
       }
       if (isGenerating) return;
 
-      const mode = chat.activeMode || "agent";
       const pendingPlan = [...(chat.messages || [])]
         .reverse()
         .find((m) => m?.stage === "plan" && m.planId);

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Menu, FolderTree, History, FileCode2, MessageSquare, ClipboardList, Search, RefreshCw, TerminalSquare, ArrowLeft } from "lucide-react";
+import { Menu, FolderTree, History, FileCode2, MessageSquare, ClipboardList, Search, RefreshCw, TerminalSquare, ArrowLeft, Bot } from "lucide-react";
 
 import SidebarContent from "../../components/SidebarContent";
 import CodeDrawer from "../../components/CodeDrawer";
@@ -19,8 +19,10 @@ import CodeFileTree from "../../components/ai/workspace/CodeFileTree";
 import CodeWorkspace from "../../components/ai/workspace/CodeWorkspace";
 import AgentChatPanel from "../../components/ai/workspace/AgentChatPanel";
 import BuildDetailsPanel from "../../components/ai/workspace/BuildDetailsPanel";
+import QuickScriptWorkspace from "./QuickScriptWorkspace";
 import { getStudioCommand, getStudioManifest, getStudioManifestStatus, queueStudioTool } from "../../lib/studioBridgeApi";
 import { cancelWorkspaceCommand, createWorkspaceCommand, getWorkspaceCommand, streamWorkspaceCommandEvents } from "../../lib/workspaceApi";
+import { PENDING_AUTH_ACTIONS } from "../../lib/pendingAuthAction";
 
 const MOBILE_TABS = [
   { id: "chat", label: "Chat", icon: MessageSquare },
@@ -48,6 +50,8 @@ export default function AgentWorkspaceLayout({ controller }) {
     isMobile,
     sidebarOpen,
     mobileTab,
+    generatorMode,
+    quickScript,
     prompt,
     isImproving,
     refineTarget,
@@ -56,6 +60,7 @@ export default function AgentWorkspaceLayout({ controller }) {
     projectContext,
     architecturePanelOpen,
     showSignInNudge,
+    signInNudgeReason,
     showProNudge,
     proNudgeReason,
     codeDrawerOpen,
@@ -71,6 +76,7 @@ export default function AgentWorkspaceLayout({ controller }) {
     setMobileTab,
     setActiveTab,
     setPrompt,
+    setGeneratorMode,
     setAttachments,
     setArchitecturePanelOpen,
     setShowSignInNudge,
@@ -80,6 +86,14 @@ export default function AgentWorkspaceLayout({ controller }) {
     dismissToast,
     updateSettings,
     handlePromptSubmit,
+    runQuickScript,
+    handleQuickScriptCopy,
+    handleQuickScriptSave,
+    handleQuickScriptExport,
+    handleQuickScriptStudioPush,
+    handleQuickScriptContinueEditing,
+    handleQuickScriptOpenAgentBuild,
+    handleAuthRequired,
     onApprovePlan,
     onClarifySubmit,
     handleEditPlan,
@@ -599,9 +613,9 @@ export default function AgentWorkspaceLayout({ controller }) {
     }
   }, [notify, terminalLines]);
 
-  const requireUser = (fallback) => {
+  const requireUser = (fallback, actionType = PENDING_AUTH_ACTIONS.RESTRICTED_GENERATION, source = "workspace_gate") => {
     if (!user) {
-      setShowSignInNudge(true);
+      handleAuthRequired?.(actionType, source);
       return false;
     }
     if (typeof fallback === "function") fallback();
@@ -622,7 +636,6 @@ export default function AgentWorkspaceLayout({ controller }) {
   const onRefine = (m) => {
     if (!requirePremium("Refinement & Iteration")) return;
     handleStartRefine(m);
-    track("artifact_action_used", { action: "refine_start" });
   };
 
   const agentChat = (
@@ -866,7 +879,7 @@ export default function AgentWorkspaceLayout({ controller }) {
   );
 
   return (
-    <div className="h-screen ai-page font-sans flex flex-col relative overflow-hidden" role="application" aria-label="Nexus AI Workspace">
+    <div className="h-[100dvh] min-h-[100svh] ai-page font-sans flex flex-col relative overflow-hidden" role="application" aria-label="Nexus AI Workspace">
       <div
         className="fixed top-[-10%] left-[-10%] w-[40%] h-[40%] blur-[120px] rounded-full pointer-events-none transition-colors duration-1000"
         style={{ backgroundColor: `${currentTheme.primary}14` }}
@@ -880,6 +893,7 @@ export default function AgentWorkspaceLayout({ controller }) {
 
       <div className="flex flex-1 min-h-0 overflow-hidden">
         {/* LEFT: project / artifacts / file tree / history */}
+        {generatorMode === "agent_build" && (
         <aside
           className={`fixed inset-y-0 left-0 z-40 w-80 bg-[#0D0D0D]/95 backdrop-blur-2xl border-r border-white/5 flex flex-col transform transition-all duration-300 ease-in-out ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} lg:relative lg:translate-x-0 ${sidebarOpen ? "lg:w-80" : "lg:w-0 lg:opacity-0 lg:pointer-events-none"}`}
           aria-label="Project sidebar"
@@ -940,6 +954,7 @@ export default function AgentWorkspaceLayout({ controller }) {
             )}
           </div>
         </aside>
+        )}
 
         {/* CENTER: Studio agent chat */}
         <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
@@ -965,48 +980,101 @@ export default function AgentWorkspaceLayout({ controller }) {
                 <Menu className="h-5 w-5" />
               </button>
               <div className="h-4 w-px bg-white/10 hidden sm:block" aria-hidden="true" />
-              <ModelSwitcher
-                value={settings.modelVersion}
-                isPremium={isPremium}
-                onChange={(id) => updateSettings({ modelVersion: id })}
-                onProNudge={(reason) => {
-                  if (!requireUser()) return;
-                  setProNudgeReason(reason || "Premium AI Models");
-                  setShowProNudge(true);
-                }}
+              <Segmented
+                size="sm"
+                options={[
+                  { id: "quick_script", label: "Quick Script", icon: FileCode2 },
+                  { id: "agent_build", label: "Agent Build", icon: Bot },
+                ]}
+                value={generatorMode}
+                onChange={(mode) => setGeneratorMode(mode, "mode_control")}
+                className="hidden md:inline-flex"
               />
-              <div className="h-4 w-px bg-white/10 hidden sm:block" aria-hidden="true" />
+              <div className="h-4 w-px bg-white/10 hidden md:block" aria-hidden="true" />
+              {generatorMode === "agent_build" && (
+                <>
+                  <ModelSwitcher
+                    value={settings.modelVersion}
+                    isPremium={isPremium}
+                    onChange={(id) => updateSettings({ modelVersion: id })}
+                    onProNudge={(reason) => {
+                      if (!requireUser()) return;
+                      setProNudgeReason(reason || "Premium AI Models");
+                      setShowProNudge(true);
+                    }}
+                  />
+                  <div className="h-4 w-px bg-white/10 hidden sm:block" aria-hidden="true" />
+                </>
+              )}
               <StudioPairControl
                 connected={studio?.connected}
                 loading={studio?.loading}
                 refresh={studio?.refresh}
                 notify={notify}
-                requireUser={requireUser}
+                requireUser={(next) => requireUser(next, PENDING_AUTH_ACTIONS.STUDIO_CONNECTION, "studio_pair_control")}
               />
             </div>
             <div className="flex items-center gap-3">
-              <DailyPromptBadge
-                totalRemaining={totalRemaining}
-                subLimit={subLimit}
-                resetsAt={resetsAt}
-                planKey={planKey}
-                unlimitedTokens={unlimitedTokens}
-                devOverride={devOverride}
-              />
-              <div className="h-4 w-px bg-white/10 hidden sm:block" aria-hidden="true" />
-              <ProjectContextStatus
-                context={projectContext}
-                plan={planKey}
-                onViewStructure={() => setArchitecturePanelOpen(true)}
-                onSync={async () => {
-                  if (!requireUser()) return;
-                  game.setShowWizard(true);
-                }}
-              />
+              {generatorMode === "agent_build" ? (
+                <>
+                  <DailyPromptBadge
+                    totalRemaining={totalRemaining}
+                    subLimit={subLimit}
+                    resetsAt={resetsAt}
+                    planKey={planKey}
+                    unlimitedTokens={unlimitedTokens}
+                    devOverride={devOverride}
+                  />
+                  <div className="h-4 w-px bg-white/10 hidden sm:block" aria-hidden="true" />
+                  <ProjectContextStatus
+                    context={projectContext}
+                    plan={planKey}
+                    onViewStructure={() => setArchitecturePanelOpen(true)}
+                    onSync={async () => {
+                      if (!requireUser()) return;
+                      game.setShowWizard(true);
+                    }}
+                  />
+                </>
+              ) : (
+                <div className="hidden text-right text-[11px] font-semibold text-gray-500 sm:block">
+                  No plan approval in Quick Script
+                </div>
+              )}
             </div>
           </div>
 
           {/* Desktop center + right; mobile single-pane via tabs */}
+          {generatorMode === "quick_script" ? (
+            <div className="flex-1 min-h-0 flex flex-col">
+              <div className="shrink-0 border-b border-white/5 bg-black/20 px-4 py-2 md:hidden">
+                <Segmented
+                  fullWidth
+                  size="sm"
+                  options={[
+                    { id: "quick_script", label: "Quick Script", icon: FileCode2 },
+                    { id: "agent_build", label: "Agent Build", icon: Bot },
+                  ]}
+                  value={generatorMode}
+                  onChange={(mode) => setGeneratorMode(mode, "mode_control")}
+                />
+              </div>
+              <QuickScriptWorkspace
+                prompt={prompt}
+                setPrompt={setPrompt}
+                quickScript={quickScript}
+                user={user}
+                onGenerate={() => runQuickScript(prompt, { source: "composer" })}
+                onRetry={() => runQuickScript(quickScript?.prompt || prompt, { source: quickScript?.source || "retry", retry: true })}
+                onCopy={handleQuickScriptCopy}
+                onSave={handleQuickScriptSave}
+                onExport={handleQuickScriptExport}
+                onStudioPush={handleQuickScriptStudioPush}
+                onContinueEditing={handleQuickScriptContinueEditing}
+                onOpenAgentBuild={handleQuickScriptOpenAgentBuild}
+              />
+            </div>
+          ) : (
           <div className="flex-1 min-h-0 flex">
             <div className={`flex-1 min-w-0 ${isMobile ? (mobileTab === "chat" ? "flex pb-16" : "hidden") : "flex"} flex-col`}>
               {agentChat}
@@ -1035,6 +1103,7 @@ export default function AgentWorkspaceLayout({ controller }) {
               {codeWorkspace}
             </div>
           </div>
+          )}
         </main>
 
         {architecturePanelOpen && (
@@ -1053,7 +1122,7 @@ export default function AgentWorkspaceLayout({ controller }) {
       </div>
 
       {/* Mobile tab bar */}
-      {isMobile && (
+      {isMobile && generatorMode === "agent_build" && (
         <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 bg-black/80 backdrop-blur-xl border border-white/10 rounded-full p-1.5 flex items-center gap-1 shadow-2xl">
           {MOBILE_TABS.map((t) => {
             const Icon = t.icon;
@@ -1083,7 +1152,7 @@ export default function AgentWorkspaceLayout({ controller }) {
         onSaveScript={async (title, code) => {
           await scriptManager.handleCreateScript(title, code, "logic");
           notify({ message: "Script saved to library", type: "success" });
-          track("artifact_action_used", { action: "save_script_from_drawer" });
+          track("project_saved", { output_type: "script" });
         }}
       />
 
@@ -1096,11 +1165,15 @@ export default function AgentWorkspaceLayout({ controller }) {
         />
       )}
 
-      <SignInNudgeModal isOpen={showSignInNudge} onClose={() => setShowSignInNudge(false)} />
+      <SignInNudgeModal
+        isOpen={showSignInNudge}
+        onClose={() => setShowSignInNudge(false)}
+        reason={signInNudgeReason}
+      />
       <ProNudgeModal isOpen={showProNudge} onClose={() => setShowProNudge(false)} reason={proNudgeReason} />
 
       {currentToast && (
-        <div className="fixed bottom-8 right-8 z-[120]" role="status" aria-live="polite">
+        <div className="fixed inset-x-3 bottom-[max(1rem,env(safe-area-inset-bottom))] z-[120] sm:inset-x-auto sm:bottom-8 sm:right-8" role="status" aria-live="polite">
           <NotificationToast
             message={currentToast.count > 1 ? `${currentToast.message} (x${currentToast.count})` : currentToast.message}
             type={currentToast.type}

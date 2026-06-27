@@ -50,7 +50,7 @@ export default function ProNudgeModal({ isOpen, onClose, reason = "this icon" })
             </h2>
 
             <p className="text-gray-400 text-[15px] leading-relaxed mb-8">
-              To download or export <span className="text-white font-bold">{reason}</span>, you'll need a Pro subscription. Join thousands of top Roblox developers today.
+              To download or export <span className="text-white font-bold">{reason}</span>, you'll need a Pro subscription. Upgrade when you're ready to save, export, and keep Studio-ready assets organized.
             </p>
 
             <div className="space-y-3 mb-8">
@@ -94,7 +94,7 @@ export default function ProNudgeModal({ isOpen, onClose, reason = "this icon" })
           <div className="p-4 bg-white/[0.02] border-t border-white/5 text-center">
             <div className="flex items-center justify-center gap-2 text-[10px] font-black text-gray-500 uppercase tracking-widest">
               <ShieldCheck className="w-3 h-3" />
-              Cancel Anytime • Instant Access
+              Cancel Anytime - Instant Access
             </div>
           </div>
         </motion.div>

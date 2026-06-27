@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { 
   Mail, 
@@ -19,14 +19,14 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { auth } from "../firebase";
-import { createUserWithEmailAndPassword, GoogleAuthProvider, GithubAuthProvider } from "firebase/auth";
+import { createUserWithEmailAndPassword, GoogleAuthProvider, GithubAuthProvider, onAuthStateChanged } from "firebase/auth";
 import {
   getFriendlyAuthErrorMessage,
   signInWithOAuthProvider,
 } from "../lib/firebaseAuth";
 import NexusRBXFooter from "../components/NexusRBXFooter";
-import { AI_PAGE_V2_ENABLED } from "../config";
-import { createAiTelemetryClient } from "../lib/aiTelemetry";
+import { trackProductEvent } from "../lib/productAnalytics";
+import { getPendingAuthReturnPath, readPendingAuthAction } from "../lib/pendingAuthAction";
 
 // Inline SVG for Google Icon
 function GoogleIcon({ className = "", ...props }) {
@@ -66,9 +66,10 @@ export default function NexusRBXSignUpPageContainer() {
   const navigate = useNavigate();
   const location = useLocation();
   const from = location.state?.from?.pathname || "/";
-  const telemetryRef = useRef(null);
-  const signInLinkState = from === "/ai"
-    ? { from: location.state?.from || { pathname: "/ai" } }
+  const pendingAction = useMemo(() => readPendingAuthAction({ includeExpired: true }), []);
+  const authReturnPath = pendingAction ? getPendingAuthReturnPath("/ai") : from;
+  const signInLinkState = authReturnPath === "/ai"
+    ? { from: { pathname: authReturnPath } }
     : undefined;
   const [formData, setFormData] = useState({
     name: "",
@@ -89,44 +90,17 @@ export default function NexusRBXSignUpPageContainer() {
     feedback: ""
   });
 
-  useEffect(() => {
-    telemetryRef.current?.destroy?.();
-    telemetryRef.current = createAiTelemetryClient({
-      enabled: AI_PAGE_V2_ENABLED,
-      getToken: async () => {
-        if (!auth.currentUser) return null;
-        return auth.currentUser.getIdToken();
-      },
-    });
-    telemetryRef.current.track({
-      event: "signup_page_view",
-      surface: "signup_page",
-      metadata: {
-        from,
-      },
-    });
-    return () => {
-      telemetryRef.current?.destroy?.();
-      telemetryRef.current = null;
-    };
-  }, [from]);
-
-  const trackAuthEvent = (event, metadata = {}) => {
-    telemetryRef.current?.track({
-      event,
-      surface: "signup_page",
-      metadata: {
-        from,
-        ...metadata,
-      },
-    });
-  };
-
   const redirectToAi = async () => {
-    trackAuthEvent("signup_redirect_ai");
-    await telemetryRef.current?.flush?.();
-    navigate("/ai", { replace: true });
+    navigate(authReturnPath || "/ai", { replace: true });
   };
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      if (!currentUser || formStatus.status === "submitting") return;
+      if (pendingAction) navigate(authReturnPath || "/ai", { replace: true });
+    });
+    return () => unsubscribe();
+  }, [authReturnPath, formStatus.status, navigate, pendingAction]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -213,10 +187,11 @@ export default function NexusRBXSignUpPageContainer() {
       status: "submitting",
       message: "Creating your account..."
     });
-    trackAuthEvent("signup_submitted", {
+    void trackProductEvent("signup_started", {
+      landing_page: from,
       method: "password",
-      selectedPlan,
-    });
+      subscription_plan: selectedPlan,
+    }, { dedupeKey: `signup_started:password:${from}` });
 
     try {
       const credential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
@@ -225,10 +200,11 @@ export default function NexusRBXSignUpPageContainer() {
         status: "success",
         message: "Account created successfully! Opening the AI workspace..."
       });
-      trackAuthEvent("signup_success", {
+      void trackProductEvent("signup_completed", {
+        landing_page: from,
         method: "password",
-        selectedPlan,
-      });
+        subscription_plan: selectedPlan,
+      }, { dedupeKey: `signup_completed:${credential.user.uid}` });
       setTimeout(() => {
         void redirectToAi();
       }, 800);
@@ -245,14 +221,15 @@ export default function NexusRBXSignUpPageContainer() {
       status: "submitting",
       message: "Connecting to Google..."
     });
-    trackAuthEvent("signup_submitted", {
+    void trackProductEvent("signup_started", {
+      landing_page: from,
       method: "google",
-      selectedPlan,
-    });
+      subscription_plan: selectedPlan,
+    }, { dedupeKey: `signup_started:google:${from}` });
 
     try {
       const credential = await signInWithOAuthProvider(auth, GoogleAuthProvider, {
-        returnPath: "/ai",
+        returnPath: authReturnPath || "/ai",
         method: "google",
       });
       if (!credential) return;
@@ -261,10 +238,11 @@ export default function NexusRBXSignUpPageContainer() {
         status: "success",
         message: "Google sign up successful! Opening the AI workspace..."
       });
-      trackAuthEvent("signup_success", {
+      void trackProductEvent("signup_completed", {
+        landing_page: from,
         method: "google",
-        selectedPlan,
-      });
+        subscription_plan: selectedPlan,
+      }, { dedupeKey: `signup_completed:${credential.user.uid}` });
       setTimeout(() => {
         void redirectToAi();
       }, 800);
@@ -281,14 +259,15 @@ export default function NexusRBXSignUpPageContainer() {
       status: "submitting",
       message: "Connecting to GitHub..."
     });
-    trackAuthEvent("signup_submitted", {
+    void trackProductEvent("signup_started", {
+      landing_page: from,
       method: "github",
-      selectedPlan,
-    });
+      subscription_plan: selectedPlan,
+    }, { dedupeKey: `signup_started:github:${from}` });
 
     try {
       const credential = await signInWithOAuthProvider(auth, GithubAuthProvider, {
-        returnPath: "/ai",
+        returnPath: authReturnPath || "/ai",
         method: "github",
       });
       if (!credential) return;
@@ -297,10 +276,11 @@ export default function NexusRBXSignUpPageContainer() {
         status: "success",
         message: "GitHub sign up successful! Opening the AI workspace..."
       });
-      trackAuthEvent("signup_success", {
+      void trackProductEvent("signup_completed", {
+        landing_page: from,
         method: "github",
-        selectedPlan,
-      });
+        subscription_plan: selectedPlan,
+      }, { dedupeKey: `signup_completed:${credential.user.uid}` });
       setTimeout(() => {
         void redirectToAi();
       }, 800);

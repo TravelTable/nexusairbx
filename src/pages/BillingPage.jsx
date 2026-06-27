@@ -10,6 +10,7 @@ import {
   startSubscriptionCheckout,
 } from "../lib/billing";
 import { BILLING_INTERVAL, PLAN, PREMIUM_BALANCE_PACKAGE } from "../lib/prices";
+import { trackProductEvent } from "../lib/productAnalytics";
 
 const PLAN_CHOICES = [
   { plan: PLAN.PRO, label: "Pro", month: "$19.99/month", year: "$199/year" },
@@ -52,6 +53,13 @@ export default function BillingPage() {
   const [teamSeats, setTeamSeats] = useState(2);
   const unsubRef = useRef([]);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    void trackProductEvent("subscription_viewed", {
+      landing_page: "/billing",
+      subscription_plan: entitlements?.plan || "unknown",
+    }, { dedupeKey: "billing" });
+  }, [entitlements?.plan]);
 
   useEffect(() => {
     const unsub = onAuthStateChanged(getAuth(), (currentUser) => {

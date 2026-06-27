@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   Mail,
@@ -19,15 +19,14 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { auth } from "../firebase";
-import { signInWithEmailAndPassword, GoogleAuthProvider, GithubAuthProvider } from "firebase/auth";
+import { signInWithEmailAndPassword, GoogleAuthProvider, GithubAuthProvider, onAuthStateChanged } from "firebase/auth";
 import {
   applyAuthPersistence,
   getFriendlyAuthErrorMessage,
   signInWithOAuthProvider,
 } from "../lib/firebaseAuth";
 import NexusRBXFooter from "../components/NexusRBXFooter";
-import { AI_PAGE_V2_ENABLED } from "../config";
-import { createAiTelemetryClient } from "../lib/aiTelemetry";
+import { getPendingAuthReturnPath, readPendingAuthAction } from "../lib/pendingAuthAction";
 
 // Floating Tool Card Component (Matching Homepage)
 const FloatingToolCard = ({ tool }) => (
@@ -67,10 +66,11 @@ export default function NexusRBXSignInPageContainer() {
   const navigate = useNavigate();
   const location = useLocation();
   const from = location.state?.from?.pathname || "/";
-  const telemetryRef = useRef(null);
-  const shouldRedirectToAi = from === "/ai";
+  const pendingAction = useMemo(() => readPendingAuthAction({ includeExpired: true }), []);
+  const authReturnPath = pendingAction ? getPendingAuthReturnPath("/ai") : from;
+  const shouldRedirectToAi = from === "/ai" || authReturnPath === "/ai";
   const signUpLinkState = shouldRedirectToAi
-    ? { from: location.state?.from || { pathname: "/ai" } }
+    ? { from: { pathname: authReturnPath || "/ai" } }
     : undefined;
 
   const [formData, setFormData] = useState({
@@ -85,54 +85,21 @@ export default function NexusRBXSignInPageContainer() {
   const [rememberMe, setRememberMe] = useState(false);
   const [agreeToTerms, setAgreeToTerms] = useState(false);
 
-  useEffect(() => {
-    telemetryRef.current?.destroy?.();
-    telemetryRef.current = createAiTelemetryClient({
-      enabled: AI_PAGE_V2_ENABLED,
-      getToken: async () => {
-        if (!auth.currentUser) return null;
-        return auth.currentUser.getIdToken();
-      },
-    });
-    telemetryRef.current.track({
-      event: "signin_page_view",
-      surface: "signin_page",
-      metadata: {
-        from,
-      },
-    });
-    return () => {
-      telemetryRef.current?.destroy?.();
-      telemetryRef.current = null;
-    };
-  }, [from]);
-
-  const trackAuthEvent = (event, metadata = {}) => {
-    telemetryRef.current?.track({
-      event,
-      surface: "signin_page",
-      metadata: {
-        from,
-        ...metadata,
-      },
-    });
-  };
-
   const finishSignInRedirect = async () => {
-    trackAuthEvent("signin_success", {
-      destination: shouldRedirectToAi ? "/ai" : from,
-    });
-    await telemetryRef.current?.flush?.();
-    if (shouldRedirectToAi) {
-      navigate("/ai", { replace: true });
-      return;
-    }
-    navigate(from, { replace: true });
+    navigate(authReturnPath || "/", { replace: true });
   };
 
   useEffect(() => {
     void applyAuthPersistence(auth, rememberMe);
   }, [rememberMe]);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      if (!currentUser || formStatus.status === "submitting") return;
+      if (pendingAction) navigate(authReturnPath || "/", { replace: true });
+    });
+    return () => unsubscribe();
+  }, [authReturnPath, formStatus.status, navigate, pendingAction]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -178,8 +145,6 @@ export default function NexusRBXSignInPageContainer() {
       status: "submitting",
       message: "Signing in..."
     });
-    trackAuthEvent("signin_submitted", { method: "password" });
-
     try {
       const credential = await signInWithEmailAndPassword(auth, formData.email, formData.password);
       await credential.user.getIdToken();
@@ -203,12 +168,10 @@ export default function NexusRBXSignInPageContainer() {
       status: "submitting",
       message: "Connecting to Google..."
     });
-    trackAuthEvent("signin_submitted", { method: "google" });
-
     try {
       const credential = await signInWithOAuthProvider(auth, GoogleAuthProvider, {
         rememberMe,
-        returnPath: shouldRedirectToAi ? "/ai" : from,
+        returnPath: authReturnPath || "/",
         method: "google",
       });
       if (!credential) return;
@@ -233,12 +196,10 @@ export default function NexusRBXSignInPageContainer() {
       status: "submitting",
       message: "Connecting to GitHub..."
     });
-    trackAuthEvent("signin_submitted", { method: "github" });
-
     try {
       const credential = await signInWithOAuthProvider(auth, GithubAuthProvider, {
         rememberMe,
-        returnPath: shouldRedirectToAi ? "/ai" : from,
+        returnPath: authReturnPath || "/",
         method: "github",
       });
       if (!credential) return;

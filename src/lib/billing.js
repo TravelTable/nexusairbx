@@ -1,6 +1,7 @@
 // src/lib/billing.js
 import { getAuth } from "firebase/auth";
 import { BACKEND_URL } from "../config";
+import { getProductAnalyticsHeaders } from "./productAnalytics";
 
 const API_ORIGIN = BACKEND_URL;
 
@@ -25,6 +26,7 @@ export async function authedFetch(path, init = {}) {
     cache: "no-store",
     headers: {
       Accept: "application/json",
+      ...getProductAnalyticsHeaders(),
       ...(init.headers || {}),
       Authorization: `Bearer ${token}`,
       "Cache-Control": "no-cache, no-store, max-age=0",
@@ -42,6 +44,7 @@ export async function authedFetch(path, init = {}) {
       cache: "no-store",
       headers: {
         Accept: "application/json",
+        ...getProductAnalyticsHeaders(),
         ...(init.headers || {}),
         Authorization: `Bearer ${token}`,
         "Cache-Control": "no-cache, no-store, max-age=0",

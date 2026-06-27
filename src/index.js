@@ -2,9 +2,9 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
 import "./index.css";
-import { initAnalytics } from "./firebase";
 import { SettingsProvider } from "./context/SettingsContext";
 import { BillingProvider } from "./context/BillingContext";
+import { initProductAnalytics } from "./lib/productAnalytics";
 
 // Suppress ResizeObserver loop error (Monaco Editor/Chrome bug)
 if (typeof window !== "undefined") {
@@ -40,6 +40,6 @@ root.render(
   </React.StrictMode>
 );
 
-// Fire-and-forget analytics AFTER mount.
-// In dev it no-ops; in prod it loads the chunk with a neutral name and won't crash if blocked.
-initAnalytics();
+// Fire-and-forget analytics AFTER mount. The product analytics module handles
+// provider loading, anonymous identity, consent/opt-out, and local debug mode.
+initProductAnalytics();

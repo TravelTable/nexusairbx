@@ -1,0 +1,7 @@
+{
+  "private": true,
+  "name": "nexusrbx-public-frontend",
+  "scripts": {
+    "build": "next build"
+  }
+}

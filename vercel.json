@@ -1,0 +1,26 @@
+{
+  "redirects": [
+    {
+      "source": "/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "nexusrbx.com"
+        }
+      ],
+      "destination": "https://www.nexusrbx.com/:path*",
+      "permanent": true
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/:path*",
+      "destination": "/api/render?path=/:path*"
+    }
+  ],
+  "functions": {
+    "api/render.js": {
+      "includeFiles": "{build/**,public-frontend/out/**}"
+    }
+  }
+}

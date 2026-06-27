@@ -7,6 +7,7 @@ import {
   readRedirectContext,
 } from "../lib/firebaseAuth";
 import { scheduleDeferredClientLog } from "../lib/deferredClientLog";
+import { getPendingAuthReturnPath, readPendingAuthAction } from "../lib/pendingAuthAction";
 
 export default function AuthRedirectHandler() {
   const navigate = useNavigate();
@@ -32,7 +33,10 @@ export default function AuthRedirectHandler() {
       clearRedirectContext();
 
       const fromState = location.state?.from?.pathname;
-      const destination = fromState || stored.returnPath || "/";
+      const pending = readPendingAuthAction({ includeExpired: true });
+      const destination = pending?.returnPath
+        ? getPendingAuthReturnPath("/ai")
+        : fromState || stored.returnPath || "/";
       navigate(destination, { replace: true });
     })().catch((error) => {
       if (cancelled) return;

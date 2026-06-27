@@ -24,6 +24,7 @@ import NexusRBXHeader from "../components/NexusRBXHeader";
 import NexusRBXFooter from "../components/NexusRBXFooter";
 import ProNudgeModal from "../components/ProNudgeModal";
 import { BACKEND_URL } from "../config";
+import { canonicalUrl } from "../lib/seo";
 
 const API_BASE = BACKEND_URL.replace(/\/+$/, "");
 
@@ -161,6 +162,10 @@ export default function IconDetailPage() {
   if (error || !icon) {
     return (
       <div className="min-h-screen bg-[#0D0D0D] flex flex-col items-center justify-center text-white p-4">
+        <Helmet>
+          <title>Icon Not Found | NexusRBX</title>
+          <meta name="robots" content="noindex, nofollow" />
+        </Helmet>
         <h1 className="text-4xl font-black mb-4">Icon Not Found</h1>
         <button onClick={() => navigate("/icons-market")} className="flex items-center gap-2 text-[#00f5d4] font-bold">
           <ArrowLeft className="w-5 h-5" /> Back to Market
@@ -181,7 +186,9 @@ export default function IconDetailPage() {
       <Helmet>
         <title>{`${icon.name} - Roblox Icon | NexusRBX`}</title>
         <meta name="description" content={`Download the ${icon.name} icon for your Roblox game. Professional ${icon.style} style ${icon.category} asset. One-click export to Studio.`} />
+        <link rel="canonical" href={canonicalUrl(`/icons/${id}`)} />
         <meta property="og:title" content={`${icon.name} - Professional Roblox Icon`} />
+        <meta property="og:url" content={canonicalUrl(`/icons/${id}`)} />
         <meta property="og:image" content={icon.imageUrl} />
         <meta name="twitter:card" content="summary_large_image" />
       </Helmet>

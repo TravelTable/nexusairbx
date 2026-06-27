@@ -11,19 +11,34 @@ import { Helmet } from "react-helmet";
 import HeroSection from "../components/home/HeroSection";
 import FeaturesSection from "../components/home/FeaturesSection";
 import CommunityCreationsSection from "../components/home/CommunityCreationsSection";
+import {
+  submitHomepagePrompt,
+  trackHomepagePromptStarted,
+} from "../lib/homepageActivation";
+import { trackProductEvent } from "../lib/productAnalytics";
+import { canonicalUrl, PUBLIC_SITE_ORIGIN } from "../lib/seo";
 
 // Container Component
 export default function NexusRBXHomepageContainer() {
   const [inputValue, setInputValue] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const [currentTypewriterIndex, setCurrentTypewriterIndex] = useState(0);
-  const [loading] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [user, setUser] = useState(null);
   const [tokenInfo, setTokenInfo] = useState(null);
   const [tokenLoading, setTokenLoading] = useState(false);
+  const promptStartedRef = useRef(false);
+  const submittingRef = useRef(false);
 
   const navigate = useNavigate();
+
+  useEffect(() => {
+    void trackProductEvent("landing_page_view", {
+      landing_page: "/",
+      landing_page_category: "homepage",
+    }, { dedupeKey: "homepage" });
+  }, []);
 
   // Listen for Firebase authentication state
   useEffect(() => {
@@ -63,22 +78,24 @@ export default function NexusRBXHomepageContainer() {
   };
 
   const handleInputChange = (e) => {
+    trackHomepagePromptStarted({
+      value: e.target.value,
+      promptStartedRef,
+    });
     setInputValue(e.target.value);
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    setError("");
-    if (!inputValue.trim()) return;
-
-    // Pass prompt to /ai page, but do not trigger generation
-    navigate("/ai", {
-      state: {
-        initialPrompt: inputValue.trim(),
-        aiResult: null
-      }
+  const handleSubmit = (e, method = "button") => {
+    if (e && typeof e.preventDefault === "function") e.preventDefault();
+    submitHomepagePrompt({
+      inputValue,
+      method,
+      submittingRef,
+      navigate,
+      setError,
+      setLoading,
+      clearInput: () => setInputValue(""),
     });
-    setInputValue("");
   };
 
   useEffect(() => {
@@ -291,12 +308,12 @@ function NexusRBXHomepage({
       <Helmet>
         <title>NexusRBX — AI Roblox UI Builder & Script Generator</title>
         <meta name="description" content="NexusRBX is the ultimate AI-powered Roblox UI builder and script generator. Design stunning interfaces and complex game logic in seconds with artificial intelligence. Try our AI UI Engine today." />
-        <link rel="canonical" href={typeof window !== "undefined" ? window.location.origin : "https://nexusrbx.com"} />
+        <link rel="canonical" href={canonicalUrl("/")} />
         <meta property="og:type" content="website" />
         <meta property="og:site_name" content="NexusRBX" />
         <meta property="og:title" content="NexusRBX — AI Roblox UI Builder & Script Generator" />
         <meta property="og:description" content="The best AI-powered Roblox UI builder and script generator. Generate professional interfaces and Luau code instantly. Fast, optimized, and built for Roblox creators." />
-        <meta property="og:url" content={typeof window !== "undefined" ? window.location.href : "https://nexusrbx.com"} />
+        <meta property="og:url" content={canonicalUrl("/")} />
         <meta property="og:image" content="/social-card.png" />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content="NexusRBX — AI Roblox UI Builder & Script Generator" />
@@ -314,7 +331,7 @@ function NexusRBXHomepage({
             "@context":"https://schema.org",
             "@type":"Organization",
             "name":"NexusRBX",
-            "url":"https://nexusrbx.com",
+            "url": PUBLIC_SITE_ORIGIN,
             "logo":"/logo.png",
             "sameAs":[ "https://discord.gg/", "https://github.com/TravelTable/nexusairbx" ]
           })}

@@ -7,6 +7,7 @@ import { BILLING_INTERVAL, PLAN } from "../lib/prices";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
 import { getFirestore, doc, onSnapshot } from "firebase/firestore";
+import { trackProductEvent } from "../lib/productAnalytics";
 
 const PLANS = [
   {
@@ -129,6 +130,13 @@ export default function SubscribePage() {
   const [error, setError] = useState("");
   const sessionUnsubs = useRef([]);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    void trackProductEvent("subscription_viewed", {
+      landing_page: "/subscribe",
+      subscription_plan: entitlements?.plan || "unknown",
+    }, { dedupeKey: "subscribe" });
+  }, [entitlements?.plan]);
 
   useEffect(() => {
     const unsub = onAuthStateChanged(getAuth(), (currentUser) => {

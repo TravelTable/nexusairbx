@@ -13,6 +13,7 @@ jest.mock("firebase/auth", () => ({
 }));
 
 jest.mock("firebase/firestore", () => ({
+  initializeFirestore: jest.fn(() => ({})),
   getFirestore: jest.fn(),
   doc: jest.fn(),
   onSnapshot: jest.fn(),
