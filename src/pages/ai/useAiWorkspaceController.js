@@ -891,7 +891,7 @@ export function useAiWorkspaceController() {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        throw new Error(data?.error || data?.message || "Improve prompt request failed");
+        throw new Error(data?.error || data?.message || data?.detail || "Improve prompt request failed");
       }
       const improved = (data?.improvedPrompt || "").trim();
       if (improved && improved !== current) {
