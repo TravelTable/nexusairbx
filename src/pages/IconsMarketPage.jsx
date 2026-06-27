@@ -32,6 +32,7 @@ import NexusRBXFooter from "../components/NexusRBXFooter";
 import ProNudgeModal from "../components/ProNudgeModal";
 import { useBilling } from "../context/BillingContext";
 import { BACKEND_URL } from "../config";
+import { filterMarketplaceIcons } from "../lib/iconMarket";
 
 const API_BASE = BACKEND_URL.replace(/\/+$/, "");
 
@@ -72,7 +73,7 @@ export default function IconsMarketPage() {
       if (!res.ok) throw new Error(`Server responded with ${res.status}`);
       const data = await res.json();
       
-      const newIcons = Array.isArray(data.icons) ? data.icons : [];
+      const newIcons = filterMarketplaceIcons(Array.isArray(data.icons) ? data.icons : []);
 
       if (loadMore) {
         setIcons(prev => [...prev, ...newIcons]);
@@ -466,7 +467,7 @@ export default function IconsMarketPage() {
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="Search icons (e.g. 'dragon', 'sword')..."
-                  className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-sm focus:border-[#9b5de5] outline-none transition-all backdrop-blur-xl shadow-2xl"
+                  className="nexus-input w-full py-4 pl-12 pr-4"
                 />
               </div>
             </header>
@@ -494,7 +495,7 @@ export default function IconsMarketPage() {
                     <img 
                       src={icon.imageUrl} 
                       alt={icon.name} 
-                      className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-500"
+                      className="w-full h-full object-contain transition-opacity duration-200 group-hover:opacity-95"
                       loading="lazy"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-center p-4">
@@ -544,11 +545,11 @@ export default function IconsMarketPage() {
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative w-full max-w-4xl bg-[#121212] border border-white/10 rounded-[32px] overflow-hidden shadow-2xl flex flex-col md:flex-row"
+              className="nexus-page-card relative flex w-full max-w-4xl flex-col overflow-hidden md:flex-row"
             >
               <button 
                 onClick={() => setSelectedIcon(null)}
-                className="absolute top-6 right-6 p-2 bg-white/5 rounded-full hover:bg-white/10 transition-colors z-50"
+                className="nexus-icon-button absolute right-6 top-6 z-50 rounded-full"
               >
                 <X className="h-5 w-5 text-gray-400" />
               </button>
@@ -607,7 +608,7 @@ export default function IconsMarketPage() {
                   <div className="grid grid-cols-2 gap-3">
                     <button
                       onClick={() => handlePostToRoblox(selectedIcon)}
-                      className="py-4 rounded-2xl bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-white font-black text-sm shadow-lg shadow-[#9b5de5]/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                      className="focus-ring flex items-center justify-center gap-2 rounded-xl bg-[#00f5d4] py-4 text-sm font-black text-black shadow-[0_0_24px_rgba(0,245,212,0.28)] transition-all hover:shadow-[0_0_32px_rgba(0,245,212,0.42)] active:scale-[0.98]"
                     >
                       {selectedIcon.isPro && !isPremium ? <ShieldCheck className="h-5 w-5" /> : <ExternalLink className="h-5 w-5" />}
                       {selectedIcon.isPro && !isPremium ? "Unlock" : (copied ? "Copied!" : "Post to Roblox")}
@@ -626,12 +627,12 @@ export default function IconsMarketPage() {
                       <button className="w-full py-4 rounded-2xl bg-white/5 border border-white/10 text-white font-black text-sm hover:bg-white/10 transition-all flex items-center justify-center gap-2">
                         <FolderPlus className="h-5 w-5" /> Add to Collection
                       </button>
-                      <div className="absolute bottom-full left-0 w-full mb-2 bg-[#1A1A1A] border border-white/10 rounded-2xl p-2 shadow-2xl opacity-0 invisible group-hover/coll:opacity-100 group-hover/coll:visible transition-all z-50 max-h-48 overflow-y-auto">
+                      <div className="nexus-menu-surface invisible absolute bottom-full left-0 z-50 mb-2 max-h-48 w-full overflow-y-auto p-2 opacity-0 transition-all group-hover/coll:visible group-hover/coll:opacity-100">
                         {collections.map(c => (
                           <button
                             key={c.id}
                             onClick={() => handleAddToCollection(c.id, selectedIcon.id)}
-                            className="w-full text-left px-4 py-2 rounded-lg text-xs font-bold text-gray-400 hover:text-white hover:bg-white/5 transition-all flex items-center gap-2"
+                            className="nexus-menu-item flex w-full items-center gap-2 text-left"
                           >
                             <Folder className="h-3 w-3" /> {c.name}
                           </button>
@@ -678,7 +679,7 @@ export default function IconsMarketPage() {
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}
-              className="relative w-full max-w-md bg-[#121212] border border-white/10 rounded-3xl p-8 shadow-2xl"
+              className="nexus-page-card relative w-full max-w-md p-8"
             >
               <h3 className="text-xl font-black mb-6">New Collection</h3>
               <input 
@@ -686,7 +687,7 @@ export default function IconsMarketPage() {
                 value={newCollectionName}
                 onChange={(e) => setNewCollectionName(e.target.value)}
                 placeholder="Collection name (e.g. 'My RPG Project')"
-                className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-sm focus:border-[#9b5de5] outline-none mb-6"
+                className="nexus-input mb-6 w-full p-4"
                 autoFocus
               />
               <div className="flex gap-3">

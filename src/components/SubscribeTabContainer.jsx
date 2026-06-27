@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Crown, Check, ChevronRight, Users } from "lucide-react";
 import { useBilling } from "../context/BillingContext";
+import { Button } from "./ui";
 
 // Container component for business logic
 export default function SubscribeTabContainer({
@@ -40,14 +41,14 @@ function SubscribeTabUI({
 }) {
   return (
     <div 
-      className={`bg-gray-900 rounded-lg shadow-md border border-gray-800 overflow-hidden ${className}`}
+      className={`nexus-page-card overflow-hidden ${className}`}
     >
       <div className="p-4 relative">
         {/* Header */}
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center">
-            <div className="bg-gradient-to-r from-purple-600 to-indigo-600 p-1.5 rounded-md mr-2">
-              <Crown className="h-4 w-4 text-white" />
+            <div className="mr-2 rounded-lg border border-[#00f5d4]/20 bg-[#00f5d4]/10 p-1.5 text-[#00f5d4]">
+              <Crown className="h-4 w-4" />
             </div>
             <h3 className="text-base font-bold text-white">
               {isSubscribed ? "Your Subscription" : "Premium Features"}
@@ -79,22 +80,18 @@ function SubscribeTabUI({
 
         {/* Subscribe button */}
         {!isSubscribed ? (
-          <button
+          <Button
             onClick={onSubscribe}
             onMouseEnter={() => setIsHovering(true)}
             onMouseLeave={() => setIsHovering(false)}
-            className={`w-full py-2 px-4 rounded-md font-medium text-white flex items-center justify-center gap-1.5 transition-all duration-300 text-sm ${
-              isHovering 
-                ? "bg-gradient-to-r from-purple-600 to-indigo-600 shadow-md" 
-                : "bg-gradient-to-r from-purple-700 to-indigo-700"
-            }`}
+            className="w-full"
           >
             <span>Subscribe for Premium</span>
             <ChevronRight className={`h-4 w-4 transition-transform duration-300 ${isHovering ? 'translate-x-0.5' : ''}`} />
-          </button>
+          </Button>
         ) : (
           <div className="space-y-3">
-            <div className="bg-green-900/20 border border-green-800 rounded-md p-2 text-center">
+            <div className="rounded-lg border border-emerald-400/25 bg-emerald-400/10 p-2 text-center">
               <span className="text-green-400 text-sm font-medium flex items-center justify-center gap-1.5">
                 <Check className="h-4 w-4" />
                 Active Subscription
@@ -102,20 +99,22 @@ function SubscribeTabUI({
             </div>
             {/* Subtle Team Upgrade */}
             {isSubscribed && !className.includes("team") && (
-              <button
+              <Button
                 onClick={onSubscribe}
-                className="w-full py-2 text-xs font-bold text-gray-500 hover:text-white transition-colors flex items-center justify-center gap-2"
+                variant="subtle"
+                size="sm"
+                className="w-full"
               >
                 <Users className="w-3 h-3" />
                 Upgrade to Team
-              </button>
+              </Button>
             )}
           </div>
         )}
 
         {/* Terms - smaller text */}
         <p className="text-gray-500 text-xs text-center mt-3">
-          Cancel anytime. <span className="text-indigo-400 hover:underline cursor-pointer">Terms apply</span>.
+          Cancel anytime. <span className="text-[#00f5d4] hover:underline cursor-pointer">Terms apply</span>.
         </p>
       </div>
     </div>

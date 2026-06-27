@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { Loader, ChevronRight } from "lucide-react";
 import FloatingToolCard from "./FloatingToolCard";
 import { getHomepageCtaCopy } from "../../lib/experiments";
+import { Button } from "../ui";
 
 export default function HeroSection({
   advertisedTools,
@@ -35,7 +36,7 @@ export default function HeroSection({
           transition={{ duration: 0.8, ease: "easeOut" }}
           className="text-center space-y-8 relative z-10"
         >
-          <h1 className="text-4xl md:text-7xl font-bold tracking-tight bg-gradient-to-r from-[#9b5de5] via-[#f15bb5] to-[#00f5d4] text-transparent bg-clip-text leading-tight">
+          <h1 className="font-display text-4xl md:text-7xl font-bold tracking-tight bg-gradient-to-r from-[#9b5de5] via-[#f15bb5] to-[#00f5d4] text-transparent bg-clip-text leading-tight">
             The Ultimate AI UI Builder <br className="hidden md:block" /> & Script Generator
           </h1>
           <p className="text-lg md:text-2xl text-gray-400 max-w-3xl mx-auto leading-relaxed">
@@ -89,17 +90,18 @@ export default function HeroSection({
               value={inputValue}
               onChange={handleInputChange}
               placeholder="Describe a UI or script idea..."
-              className="flex-grow px-4 py-3 rounded-lg bg-gray-900/60 border border-gray-700 focus:border-[#9b5de5] focus:outline-none focus:ring-2 focus:ring-[#9b5de5]/50 transition-all duration-300"
+              className="nexus-input min-h-12 flex-grow"
               disabled={loading}
               onKeyDown={submitFromEnter}
               aria-label="Type your Roblox UI or script idea"
               autoComplete="off"
               name="roblox-idea"
             />
-            <button
+            <Button
               type="submit"
               data-submit-method="button"
-              className="px-6 py-3 rounded-lg bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-white font-medium hover:shadow-lg hover:shadow-[#9b5de5]/20 transform hover:translate-y-[-2px] transition-all duration-300 flex items-center justify-center"
+              size="lg"
+              className="min-h-12 shrink-0"
               disabled={!inputValue.trim() || loading}
               aria-label={ctaCopy}
             >
@@ -114,7 +116,7 @@ export default function HeroSection({
                   <ChevronRight className="ml-2 h-5 w-5" />
                 </>
               )}
-            </button>
+            </Button>
           </form>
           {error && (
             <div className="text-red-400 mt-2" role="alert">{error}</div>

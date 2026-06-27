@@ -55,6 +55,26 @@ function isDeletedOrRestricted(icon = {}) {
   return ["rejected", "blocked", "removed", "deleted", "quarantined"].includes(moderation);
 }
 
+function isMacOsMetadataArtifact(icon = {}) {
+  const tags = Array.isArray(icon.tags)
+    ? icon.tags.map((tag) => text(tag).toLowerCase())
+    : [];
+  if (tags.includes("__macosx")) return true;
+
+  const name = text(icon.name);
+  if (name === ".DS_Store") return true;
+  if (/^\.\s/.test(name) || /^\._/.test(name)) return true;
+  return false;
+}
+
+function isMarketplaceEligible(icon = {}) {
+  if (!icon || typeof icon !== "object") return false;
+  if (isMacOsMetadataArtifact(icon)) return false;
+  if (isDeletedOrRestricted(icon)) return false;
+  if (!isAccessibleImageUrl(icon.imageUrl)) return false;
+  return true;
+}
+
 function isAccessibleImageUrl(imageUrl) {
   try {
     const url = new URL(text(imageUrl));
@@ -100,6 +120,7 @@ function isUsefulDescription(icon = {}) {
 function isRelatedNavigationCandidate(icon = {}) {
   return isStablePublicId(icon.id)
     && isPublicIcon(icon)
+    && !isMacOsMetadataArtifact(icon)
     && !isDeletedOrRestricted(icon)
     && isAccessibleImageUrl(icon.imageUrl)
     && isUsefulName(icon.name)
@@ -196,6 +217,7 @@ function evaluateIconIndexability(icon = {}, allIcons = [], relatedIcons = null)
 
   if (!isStablePublicId(icon.id)) reasons.push("unstable_id");
   if (!isPublicIcon(icon)) reasons.push("not_public");
+  if (isMacOsMetadataArtifact(icon)) reasons.push("macos_metadata_artifact");
   if (isDeletedOrRestricted(icon)) reasons.push("deleted_or_restricted");
   if (!isAccessibleImageUrl(icon.imageUrl)) reasons.push("missing_accessible_image");
   if (!isUsefulName(icon.name)) reasons.push("thin_or_duplicate_name");
@@ -339,6 +361,8 @@ module.exports = {
   iconRouteStatusFromRecord,
   iconLastmod,
   isDeletedOrRestricted,
+  isMacOsMetadataArtifact,
+  isMarketplaceEligible,
   marketplaceFilterIndexability,
   publicIconRecord,
 };

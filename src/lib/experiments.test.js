@@ -5,6 +5,8 @@ import {
   getExperimentRequestHeaders,
   getExperimentVariant,
   getHomepageCtaCopy,
+  isMobileViewport,
+  resolveInitialGeneratorMode,
   resetExperimentsForTests,
   shouldGateFirstValueBeforeSignup,
 } from "./experiments";
@@ -67,6 +69,25 @@ describe("experiments", () => {
     expect(shouldGateFirstValueBeforeSignup()).toBe(true);
     expect(chooseHomepageGeneratorMode("Make a shop button script")).toBe("agent_build");
     expect(getHomepageCtaCopy()).toBe("Generate Roblox Script");
+  });
+
+  test("opens Agent Build on desktop and Quick Script on mobile by default", () => {
+    expect(isMobileViewport(1280)).toBe(false);
+    expect(isMobileViewport(1023)).toBe(true);
+    expect(resolveInitialGeneratorMode({ viewportWidth: 1280 })).toBe("agent_build");
+    expect(resolveInitialGeneratorMode({ viewportWidth: 390 })).toBe("quick_script");
+    expect(
+      resolveInitialGeneratorMode({
+        restoredSession: { generatorMode: "agent_build" },
+        viewportWidth: 390,
+      })
+    ).toBe("agent_build");
+    expect(
+      resolveInitialGeneratorMode({
+        restoredSession: { generatorMode: "quick_script" },
+        viewportWidth: 1280,
+      })
+    ).toBe("quick_script");
   });
 
   test("never forces clearly complex prompts into Quick Script", () => {

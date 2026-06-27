@@ -4,6 +4,7 @@ import {
   Home, 
   Mail, 
   MessageSquare, 
+  Menu,
   Send, 
   Github, 
   Twitter, 
@@ -19,6 +20,7 @@ import {
   Clock, 
   Users
 } from "lucide-react";
+import { Button } from "../components/ui";
 
 // Container Component
 export default function NexusRBXContactPageContainer() {
@@ -149,7 +151,7 @@ function NexusRBXContactPage({
   return (
     <div className="min-h-screen bg-[#0D0D0D] text-white font-sans flex flex-col">
       {/* Header */}
-      <header className="border-b border-gray-800 bg-black/30 backdrop-blur-md sticky top-0 z-50">
+      <header className="border-b border-white/10 bg-[#0D0D0D]/85 backdrop-blur-xl shadow-panel sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <div className="flex items-center">
             <div className="text-2xl font-bold bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-transparent bg-clip-text">
@@ -158,26 +160,24 @@ function NexusRBXContactPage({
             <div className="ml-2 text-sm text-gray-400">Contact</div>
           </div>
           
-          <nav className="hidden md:flex space-x-6">
-            <a href="/" className="text-gray-300 hover:text-white transition-colors duration-300 flex items-center">
+          <nav className="hidden md:flex items-center gap-2">
+            <a href="/" className="focus-ring rounded-lg px-3 py-2 text-sm font-medium text-gray-300 hover:bg-white/5 hover:text-white transition-colors duration-200 flex items-center">
               <Home className="h-4 w-4 mr-1" />
               Home
             </a>
-            <a href="/ai" className="text-gray-300 hover:text-white transition-colors duration-300">AI Console</a>
-            <a href="/docs" className="text-gray-300 hover:text-white transition-colors duration-300 flex items-center">
+            <a href="/ai" className="focus-ring rounded-lg px-3 py-2 text-sm font-medium text-gray-300 hover:bg-white/5 hover:text-white transition-colors duration-200">AI Console</a>
+            <a href="/docs" className="focus-ring rounded-lg px-3 py-2 text-sm font-medium text-gray-300 hover:bg-white/5 hover:text-white transition-colors duration-200 flex items-center">
               <BookOpen className="h-4 w-4 mr-1" />
               Docs
             </a>
-            <a href="/terms" className="text-gray-300 hover:text-white transition-colors duration-300 flex items-center">
+            <a href="/terms" className="focus-ring rounded-lg px-3 py-2 text-sm font-medium text-gray-300 hover:bg-white/5 hover:text-white transition-colors duration-200 flex items-center">
               <FileText className="h-4 w-4 mr-1" />
               Terms
             </a>
           </nav>
           
-          <button className="md:hidden text-gray-300">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
+          <button className="nexus-icon-button md:hidden" aria-label="Open navigation menu">
+            <Menu className="h-5 w-5" />
           </button>
         </div>
       </header>
@@ -197,7 +197,7 @@ function NexusRBXContactPage({
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Contact Information */}
             <div className="lg:col-span-1">
-              <div className="bg-gray-900/30 border border-gray-800 rounded-xl p-6 h-full">
+              <div className="nexus-page-card p-6 h-full">
                 <h2 className="text-xl font-bold mb-6">Contact Information</h2>
                 
                 <div className="space-y-6">
@@ -234,7 +234,7 @@ function NexusRBXContactPage({
                   </div>
                 </div>
                 
-                <div className="mt-8 pt-6 border-t border-gray-800">
+                <div className="mt-8 pt-6 border-t border-white/10">
                   <h3 className="font-medium mb-4">Connect With Us</h3>
                   <div className="flex space-x-4">
                     {companyInfo.socialLinks.map(link => (
@@ -243,7 +243,7 @@ function NexusRBXContactPage({
                         href={link.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="p-2 bg-gray-800 rounded-full hover:bg-gray-700 transition-colors duration-300"
+                        className="nexus-icon-button"
                         aria-label={link.name}
                       >
                         <link.icon className="h-5 w-5" />
@@ -256,13 +256,13 @@ function NexusRBXContactPage({
             
             {/* Contact Form */}
             <div className="lg:col-span-2">
-              <div className="bg-gray-900/30 border border-gray-800 rounded-xl p-6">
+              <div className="nexus-page-card p-6">
                 <h2 className="text-xl font-bold mb-6">Send Us a Message</h2>
                 
                 <form onSubmit={handleSubmit}>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                     <div>
-                      <label htmlFor="name" className="block text-sm font-medium mb-2">
+                      <label htmlFor="name" className="nexus-field-label mb-2">
                         Name <span className="text-[#f15bb5]">*</span>
                       </label>
                       <input
@@ -271,14 +271,14 @@ function NexusRBXContactPage({
                         name="name"
                         value={formData.name}
                         onChange={handleInputChange}
-                        className="w-full px-4 py-3 bg-gray-800/60 border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#9b5de5]/50 focus:border-[#9b5de5] transition-all duration-300"
+                        className="nexus-input px-4 py-3"
                         placeholder="Your name"
                         required
                       />
                     </div>
                     
                     <div>
-                      <label htmlFor="email" className="block text-sm font-medium mb-2">
+                      <label htmlFor="email" className="nexus-field-label mb-2">
                         Email <span className="text-[#f15bb5]">*</span>
                       </label>
                       <input
@@ -287,7 +287,7 @@ function NexusRBXContactPage({
                         name="email"
                         value={formData.email}
                         onChange={handleInputChange}
-                        className="w-full px-4 py-3 bg-gray-800/60 border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#9b5de5]/50 focus:border-[#9b5de5] transition-all duration-300"
+                        className="nexus-input px-4 py-3"
                         placeholder="your.email@example.com"
                         required
                       />
@@ -295,7 +295,7 @@ function NexusRBXContactPage({
                   </div>
                   
                   <div className="mb-6">
-                    <label htmlFor="subject" className="block text-sm font-medium mb-2">
+                    <label htmlFor="subject" className="nexus-field-label mb-2">
                       Subject
                     </label>
                     <select
@@ -303,7 +303,7 @@ function NexusRBXContactPage({
                       name="subject"
                       value={formData.subject}
                       onChange={handleInputChange}
-                      className="w-full px-4 py-3 bg-gray-800/60 border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#9b5de5]/50 focus:border-[#9b5de5] transition-all duration-300"
+                      className="nexus-input px-4 py-3"
                     >
                       {contactOptions.map(option => (
                         <option key={option.id} value={option.id}>
@@ -314,7 +314,7 @@ function NexusRBXContactPage({
                   </div>
                   
                   <div className="mb-6">
-                    <label htmlFor="message" className="block text-sm font-medium mb-2">
+                    <label htmlFor="message" className="nexus-field-label mb-2">
                       Message <span className="text-[#f15bb5]">*</span>
                     </label>
                     <textarea
@@ -323,19 +323,19 @@ function NexusRBXContactPage({
                       value={formData.message}
                       onChange={handleInputChange}
                       rows="6"
-                      className="w-full px-4 py-3 bg-gray-800/60 border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#9b5de5]/50 focus:border-[#9b5de5] transition-all duration-300"
+                      className="nexus-textarea px-4 py-3"
                       placeholder="How can we help you?"
                       required
                     ></textarea>
                   </div>
-                  
+
                   {formStatus.status !== "idle" && (
                     <div className={`mb-6 p-4 rounded-lg ${
-                      formStatus.status === "error" 
-                        ? "bg-red-900/20 border border-red-800" 
+                      formStatus.status === "error"
+                        ? "bg-red-500/10 border border-red-500/25"
                         : formStatus.status === "success"
-                          ? "bg-green-900/20 border border-green-800"
-                          : "bg-gray-800/50 border border-gray-700"
+                          ? "bg-emerald-500/10 border border-emerald-500/25"
+                          : "bg-white/[0.04] border border-white/10"
                     }`}>
                       <div className="flex items-center">
                         {formStatus.status === "error" && (
@@ -360,25 +360,14 @@ function NexusRBXContactPage({
                     </div>
                   )}
                   
-                  <button
+                  <Button
                     type="submit"
                     disabled={formStatus.status === "submitting"}
-                    className={`px-6 py-3 rounded-lg bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-white font-medium hover:shadow-lg hover:shadow-[#9b5de5]/20 transform hover:translate-y-[-2px] transition-all duration-300 flex items-center justify-center ${
-                      formStatus.status === "submitting" ? "opacity-70 cursor-not-allowed" : ""
-                    }`}
+                    icon={formStatus.status === "submitting" ? Loader : Send}
+                    className={formStatus.status === "submitting" ? "[&>svg]:animate-spin" : ""}
                   >
-                    {formStatus.status === "submitting" ? (
-                      <>
-                        <Loader className="animate-spin h-5 w-5 mr-2" />
-                        Sending...
-                      </>
-                    ) : (
-                      <>
-                        <Send className="h-5 w-5 mr-2" />
-                        Send Message
-                      </>
-                    )}
-                  </button>
+                    {formStatus.status === "submitting" ? "Sending..." : "Send Message"}
+                  </Button>
                 </form>
               </div>
             </div>
@@ -391,18 +380,18 @@ function NexusRBXContactPage({
               {contactOptions.map(option => (
                 <div 
                   key={option.id}
-                  className="bg-gray-900/20 border border-gray-800 rounded-xl p-6 hover:border-gray-700 transition-all duration-300"
+                  className="nexus-page-card p-6 transition-all duration-200 hover:border-white/20"
                 >
                   <div className="flex items-center mb-4">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#9b5de5] to-[#00f5d4] flex items-center justify-center mr-3">
-                      <option.icon className="h-5 w-5 text-white" />
+                    <div className="w-10 h-10 rounded-xl bg-nexus-cyan/10 border border-nexus-cyan/20 flex items-center justify-center mr-3">
+                      <option.icon className="h-5 w-5 text-nexus-cyan" />
                     </div>
                     <h3 className="font-bold">{option.title}</h3>
                   </div>
                   <p className="text-gray-400 text-sm mb-4">{option.description}</p>
                   <a 
                     href={`mailto:${option.email}`}
-                    className="text-[#9b5de5] hover:text-[#00f5d4] transition-colors duration-300 flex items-center text-sm font-medium"
+                    className="focus-ring rounded-lg text-nexus-cyan hover:text-white transition-colors duration-200 inline-flex items-center text-sm font-semibold"
                   >
                     <Mail className="h-4 w-4 mr-2" />
                     {option.email}
@@ -416,28 +405,28 @@ function NexusRBXContactPage({
           <div className="mt-16">
             <h2 className="text-2xl font-bold mb-8 text-center">Frequently Asked Questions</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="bg-gray-900/20 border border-gray-800 rounded-xl p-6">
+              <div className="nexus-page-card p-6">
                 <h3 className="font-bold mb-3">What is NexusRBX?</h3>
                 <p className="text-gray-400 text-sm">
                   NexusRBX is an AI-driven platform for generating, simulating, and testing Roblox scripts and mods without the need for complex development environments or risking your Roblox account.
                 </p>
               </div>
               
-              <div className="bg-gray-900/20 border border-gray-800 rounded-xl p-6">
+              <div className="nexus-page-card p-6">
                 <h3 className="font-bold mb-3">Do I need coding experience to use NexusRBX?</h3>
                 <p className="text-gray-400 text-sm">
                   No, you don't need prior coding experience. Our AI can generate scripts based on natural language prompts. However, basic understanding of Roblox concepts will help you get better results.
                 </p>
               </div>
               
-              <div className="bg-gray-900/20 border border-gray-800 rounded-xl p-6">
+              <div className="nexus-page-card p-6">
                 <h3 className="font-bold mb-3">Is there a free trial available?</h3>
                 <p className="text-gray-400 text-sm">
                   Yes, we offer a free tier with limited features so you can try NexusRBX before subscribing to a paid plan. Check our pricing page for more details on what's included in each plan.
                 </p>
               </div>
               
-              <div className="bg-gray-900/20 border border-gray-800 rounded-xl p-6">
+              <div className="nexus-page-card p-6">
                 <h3 className="font-bold mb-3">How secure is NexusRBX?</h3>
                 <p className="text-gray-400 text-sm">
                   Security is our priority. All scripts are executed in a secure, sandboxed environment. We implement strong encryption, access controls, and regular security assessments to protect your data.
@@ -449,7 +438,7 @@ function NexusRBXContactPage({
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-gray-800 py-6 px-4 bg-black/40">
+      <footer className="border-t border-white/10 py-6 px-4 bg-black/40">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center">
           <div className="flex items-center mb-4 md:mb-0">
             <div className="text-xl font-bold bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-transparent bg-clip-text mr-2">
@@ -459,12 +448,12 @@ function NexusRBXContactPage({
           </div>
           
           <div className="flex flex-wrap justify-center gap-6">
-            <a href="/terms" className="text-gray-400 hover:text-white transition-colors duration-300">Terms</a>
-            <a href="/privacy" className="text-gray-400 hover:text-white transition-colors duration-300">Privacy</a>
-            <a href="/contact" className="text-white transition-colors duration-300">Contact</a>
+            <a href="/terms" className="focus-ring rounded-lg px-2 py-1 text-gray-400 hover:text-white transition-colors duration-200">Terms</a>
+            <a href="/privacy" className="focus-ring rounded-lg px-2 py-1 text-gray-400 hover:text-white transition-colors duration-200">Privacy</a>
+            <a href="/contact" className="focus-ring rounded-lg px-2 py-1 text-white transition-colors duration-200">Contact</a>
             <a 
               href="https://github.com/TravelTable/nexusairbx" 
-              className="text-gray-400 hover:text-white transition-colors duration-300 flex items-center gap-2"
+              className="focus-ring rounded-lg px-2 py-1 text-gray-400 hover:text-white transition-colors duration-200 flex items-center gap-2"
             >
               <Github className="h-4 w-4" />
               GitHub

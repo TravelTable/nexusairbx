@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import {
   Home,
   Shield,
+  Menu,
   Lock,
   Eye,
   Database,
@@ -84,7 +85,7 @@ function NexusRBXPrivacyPage({
   return (
     <div className="min-h-screen bg-[#0D0D0D] text-white font-sans flex flex-col">
       {/* Header */}
-      <header className="border-b border-gray-800 bg-black/30 backdrop-blur-md sticky top-0 z-50">
+      <header className="border-b border-white/10 bg-[#0D0D0D]/85 backdrop-blur-xl shadow-panel sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <div
             className="flex items-center cursor-pointer"
@@ -96,11 +97,11 @@ function NexusRBXPrivacyPage({
             <div className="ml-2 text-sm text-gray-400">Privacy Policy</div>
           </div>
 
-          <nav className="hidden md:flex space-x-6">
+          <nav className="hidden md:flex items-center gap-2">
             <a
               href="/"
               onClick={handleNavClick("/", false)}
-              className="text-gray-300 hover:text-white transition-colors duration-300 flex items-center"
+              className="focus-ring rounded-lg px-3 py-2 text-sm font-medium text-gray-300 hover:bg-white/5 hover:text-white transition-colors duration-200 flex items-center"
             >
               <Home className="h-4 w-4 mr-1" />
               Home
@@ -108,14 +109,14 @@ function NexusRBXPrivacyPage({
             <a
               href="/ai"
               onClick={handleNavClick("/ai", false)}
-              className="text-gray-300 hover:text-white transition-colors duration-300"
+              className="focus-ring rounded-lg px-3 py-2 text-sm font-medium text-gray-300 hover:bg-white/5 hover:text-white transition-colors duration-200"
             >
               AI Console
             </a>
             <a
               href="/docs"
               onClick={handleNavClick("/docs", false)}
-              className="text-gray-300 hover:text-white transition-colors duration-300 flex items-center"
+              className="focus-ring rounded-lg px-3 py-2 text-sm font-medium text-gray-300 hover:bg-white/5 hover:text-white transition-colors duration-200 flex items-center"
             >
               <BookOpen className="h-4 w-4 mr-1" />
               Docs
@@ -123,23 +124,12 @@ function NexusRBXPrivacyPage({
           </nav>
 
           <button
-            className="md:hidden text-gray-300"
+            className="nexus-icon-button md:hidden"
             onClick={() => setMobileMenuOpen((v) => !v)}
+            aria-label="Toggle navigation menu"
+            aria-expanded={mobileMenuOpen}
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-6 w-6"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M4 6h16M4 12h16M4 18h16"
-              />
-            </svg>
+            <Menu className="h-5 w-5" />
           </button>
         </div>
       </header>
@@ -163,10 +153,10 @@ function NexusRBXPrivacyPage({
                     <button
                       key={section.id}
                       onClick={() => handleSectionChange(section.id)}
-                      className={`w-full flex items-center p-2.5 rounded-lg transition-colors duration-300 text-sm ${
+                      className={`focus-ring w-full flex items-center p-2.5 rounded-lg border transition-colors duration-200 text-sm ${
                         activeSection === section.id
-                          ? "bg-[#9b5de5]/20 border border-[#9b5de5]/30 text-white"
-                          : "text-gray-400 hover:bg-gray-800/50 hover:text-white"
+                          ? "bg-nexus-cyan/10 border-nexus-cyan/25 text-white"
+                          : "border-transparent text-gray-400 hover:bg-white/5 hover:text-white"
                       }`}
                     >
                       <section.icon className="h-4 w-4 mr-3" />
@@ -175,7 +165,7 @@ function NexusRBXPrivacyPage({
                   ))}
                 </nav>
 
-                <div className="mt-8 p-4 rounded-lg bg-gray-900/40 border border-gray-800">
+                <div className="nexus-page-card mt-8 p-4">
                   <h3 className="font-medium mb-2 flex items-center text-sm">
                     <Mail className="h-4 w-4 mr-2 text-[#9b5de5]" />
                     Privacy Support
@@ -185,7 +175,7 @@ function NexusRBXPrivacyPage({
                   </p>
                   <a
                     href="mailto:support@nexusrbx.com"
-                    className="text-xs px-4 py-2 rounded-md bg-[#9b5de5]/20 border border-[#9b5de5]/30 text-[#9b5de5] hover:bg-[#9b5de5]/30 transition-colors duration-300 inline-block w-full text-center"
+                    className="focus-ring text-xs px-4 py-2 rounded-lg bg-nexus-cyan/10 border border-nexus-cyan/25 text-nexus-cyan hover:bg-nexus-cyan/15 hover:text-white transition-colors duration-200 inline-block w-full text-center font-semibold"
                   >
                     support@nexusrbx.com
                   </a>
@@ -213,7 +203,7 @@ function NexusRBXPrivacyPage({
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-gray-800 py-6 px-4 bg-black/40">
+      <footer className="border-t border-white/10 py-6 px-4 bg-black/40">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center">
           <div className="flex items-center mb-4 md:mb-0">
             <div className="text-xl font-bold bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-transparent bg-clip-text mr-2">
@@ -275,7 +265,7 @@ function CollectionContent() {
         </section>
       </div>
 
-      <div className="mt-8 p-4 bg-gray-900/40 border border-gray-800 rounded-lg">
+      <div className="mt-8 p-4 nexus-page-card">
         <p className="text-sm text-gray-400">We do not knowingly collect personal information from children under 13. Our Service is not intended for users under 13, and if we learn we’ve collected information from a child under 13, we will delete it. (See “Children’s Privacy” below.)</p>
       </div>
     </div>
@@ -289,32 +279,32 @@ function UseContent() {
       <p className="text-gray-300 mb-6">We use the collected information for the following purposes:</p>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-gray-900/40 p-5 rounded-xl border border-gray-800">
+        <div className="nexus-page-card p-5">
           <h3 className="text-lg font-bold mb-3 text-[#9b5de5]">Provide and Improve</h3>
           <p className="text-sm text-gray-400">To operate the NexusRBX platform and its features, including generating scripts via AI, maintaining your account, and optimizing performance. Usage analytics help us debug issues and improve product reliability without sending private prompt text or generated code payloads to analytics.</p>
         </div>
         
-        <div className="bg-gray-900/40 p-5 rounded-xl border border-gray-800">
+        <div className="nexus-page-card p-5">
           <h3 className="text-lg font-bold mb-3 text-[#9b5de5]">Personalization</h3>
           <p className="text-sm text-gray-400">To remember your settings and preferences (such as saved scripts or interface customizations) and provide a tailored user experience.</p>
         </div>
 
-        <div className="bg-gray-900/40 p-5 rounded-xl border border-gray-800">
+        <div className="nexus-page-card p-5">
           <h3 className="text-lg font-bold mb-3 text-[#9b5de5]">Communication</h3>
           <p className="text-sm text-gray-400">To send service-related communications such as confirmations, technical and security notices, updates, and if you opt-in, occasional promotional emails. We may also respond to your inquiries or support requests.</p>
         </div>
 
-        <div className="bg-gray-900/40 p-5 rounded-xl border border-gray-800">
+        <div className="nexus-page-card p-5">
           <h3 className="text-lg font-bold mb-3 text-[#9b5de5]">Analytics and Research</h3>
           <p className="text-sm text-gray-400">To understand aggregate usage trends and user engagement with our Service. This helps us improve usability and guide product development.</p>
         </div>
 
-        <div className="bg-gray-900/40 p-5 rounded-xl border border-gray-800">
+        <div className="nexus-page-card p-5">
           <h3 className="text-lg font-bold mb-3 text-[#9b5de5]">Security and Fraud</h3>
           <p className="text-sm text-gray-400">To monitor, investigate, and prevent fraud, abuse, security incidents, and other malicious activities. For example, we may use automated tools to detect scripts that violate our policies or Roblox’s rules.</p>
         </div>
 
-        <div className="bg-gray-900/40 p-5 rounded-xl border border-gray-800">
+        <div className="nexus-page-card p-5">
           <h3 className="text-lg font-bold mb-3 text-[#9b5de5]">Legal Compliance</h3>
           <p className="text-sm text-gray-400">To comply with applicable laws and regulations, such as fulfilling lawful requests from authorities or enforcing our Terms and policies.</p>
         </div>
@@ -332,22 +322,22 @@ function SharingContent() {
       <p className="text-gray-300 mb-6">We value your privacy – we do not sell your personal information. We only share information in the following circumstances:</p>
       
       <div className="space-y-6">
-        <section className="bg-gray-900/40 p-5 rounded-xl border border-gray-800">
+        <section className="nexus-page-card p-5">
           <h3 className="text-lg font-bold mb-2 text-[#9b5de5]">Service Providers</h3>
           <p className="text-sm text-gray-400">We share data with trusted third-party service providers as necessary to operate our business. For example, we use cloud hosting providers to store data, email/SMS services to send verification codes or notifications, payment processors (like Stripe) to handle billing, and analytics providers to help us understand usage. These providers only receive the information needed to perform their specific services on our behalf and are contractually obligated to protect it.</p>
         </section>
 
-        <section className="bg-gray-900/40 p-5 rounded-xl border border-gray-800">
+        <section className="nexus-page-card p-5">
           <h3 className="text-lg font-bold mb-2 text-[#9b5de5]">Business Transfers</h3>
           <p className="text-sm text-gray-400">If NexusRBX is involved in a merger, acquisition, bankruptcy or asset sale, your information may be transferred to a successor or affiliate as part of that transaction. In such cases, we will ensure the new owner honors the commitments we’ve made in this Privacy Policy.</p>
         </section>
 
-        <section className="bg-gray-900/40 p-5 rounded-xl border border-gray-800">
+        <section className="nexus-page-card p-5">
           <h3 className="text-lg font-bold mb-2 text-[#9b5de5]">Legal Requirements</h3>
           <p className="text-sm text-gray-400">We may disclose your information if required to do so by law or in response to valid legal requests (e.g. subpoenas, court orders), or when we believe in good faith that disclosure is necessary to protect our rights, investigate fraud, or ensure the safety of our users or others.</p>
         </section>
 
-        <section className="bg-gray-900/40 p-5 rounded-xl border border-gray-800">
+        <section className="nexus-page-card p-5">
           <h3 className="text-lg font-bold mb-2 text-[#9b5de5]">With Your Consent</h3>
           <p className="text-sm text-gray-400">We will share your personal information with third parties in any other situation where you provide explicit consent. For instance, if you integrate a third-party tool with NexusRBX or request us to share data with another platform, we will do so only with your authorization.</p>
         </section>
@@ -371,19 +361,19 @@ function CookiesContent() {
       <p className="text-gray-300 mb-6">Cookies are small text files placed on your device to store information. NexusRBX uses cookies and similar technologies for several reasons:</p>
       
       <div className="space-y-4">
-        <div className="p-4 bg-gray-900/40 border border-gray-800 rounded-lg">
+        <div className="p-4 nexus-page-card">
           <h4 className="font-bold text-[#9b5de5]">Essential Cookies</h4>
           <p className="text-sm text-gray-400">These are necessary for the Service to function. For example, they keep you logged in and protect against fraudulent use of your account. You cannot opt-out of essential cookies as the Service cannot run properly without them.</p>
         </div>
-        <div className="p-4 bg-gray-900/40 border border-gray-800 rounded-lg">
+        <div className="p-4 nexus-page-card">
           <h4 className="font-bold text-[#9b5de5]">Preference Cookies</h4>
           <p className="text-sm text-gray-400">These remember your settings and preferences, such as theme choices or language, so we can personalize your experience.</p>
         </div>
-        <div className="p-4 bg-gray-900/40 border border-gray-800 rounded-lg">
+        <div className="p-4 nexus-page-card">
           <h4 className="font-bold text-[#9b5de5]">Analytics Cookies</h4>
           <p className="text-sm text-gray-400">These help us understand how users navigate and use our site, allowing us to improve functionality and user experience. We use tools like Google Analytics (which may set its own cookies) to collect non-identifying usage data in aggregate form.</p>
         </div>
-        <div className="p-4 bg-gray-900/40 border border-gray-800 rounded-lg">
+        <div className="p-4 nexus-page-card">
           <h4 className="font-bold text-[#9b5de5]">Marketing Cookies</h4>
           <p className="text-sm text-gray-400">(If applicable) We currently do not run third-party ads, but if we ever do, marketing or advertising cookies would be used to track effectiveness of campaigns and limit repetitive ads. Such cookies would only be used with your consent.</p>
         </div>
@@ -415,19 +405,19 @@ function RetentionContent() {
       <p className="text-gray-300 mb-6">We retain personal information only for as long as necessary to fulfill the purposes outlined in this policy or as required by law. The retention period can vary depending on the type of data:</p>
       
       <div className="space-y-4">
-        <div className="flex items-start p-4 bg-gray-900/40 border border-gray-800 rounded-lg">
+        <div className="flex items-start p-4 nexus-page-card">
           <div className="w-32 shrink-0 font-bold text-[#9b5de5]">Account Data</div>
           <div className="text-sm text-gray-400">Information associated with your account (profile info, settings, generated content) is kept for as long as your account is active. If you delete your account or request deletion, we will remove or anonymize your personal data within a reasonable time frame, except where retention is required for legal obligations or legitimate business purposes.</div>
         </div>
-        <div className="flex items-start p-4 bg-gray-900/40 border border-gray-800 rounded-lg">
+        <div className="flex items-start p-4 nexus-page-card">
           <div className="w-32 shrink-0 font-bold text-[#9b5de5]">Usage Logs</div>
           <div className="text-sm text-gray-400">Basic log data (IP addresses, device info, usage logs) is typically retained for a shorter period (e.g. 90 days to 1 year) for security, analysis, and improving the Service. Aggregate data derived from logs (that no longer identifies you) may be kept longer.</div>
         </div>
-        <div className="flex items-start p-4 bg-gray-900/40 border border-gray-800 rounded-lg">
+        <div className="flex items-start p-4 nexus-page-card">
           <div className="w-32 shrink-0 font-bold text-[#9b5de5]">Communications</div>
           <div className="text-sm text-gray-400">Support emails or chat logs may be retained for a period of time to assist you with any further issues and for training/customer service improvements.</div>
         </div>
-        <div className="flex items-start p-4 bg-gray-900/40 border border-gray-800 rounded-lg">
+        <div className="flex items-start p-4 nexus-page-card">
           <div className="w-32 shrink-0 font-bold text-[#9b5de5]">Payment Records</div>
           <div className="text-sm text-gray-400">Transaction records are kept as long as needed for accounting and compliance (e.g. tax, financial reporting), typically at least 7 years or as mandated by law. Crucially, remember that full payment details (credit card numbers) are not stored by us directly.</div>
         </div>
@@ -454,7 +444,7 @@ function RightsContent() {
       </ul>
 
       <div className="space-y-8">
-        <section className="p-6 bg-gray-900/40 border border-gray-800 rounded-xl">
+        <section className="p-6 nexus-page-card">
           <h3 className="text-xl font-bold mb-4 text-white">California Residents (CCPA/CPRA)</h3>
           <p className="text-sm text-gray-400 mb-4">If you are a resident of California, you have specific rights under the California Consumer Privacy Act (CCPA) as amended by the CPRA:</p>
           <ul className="text-xs text-gray-500 space-y-2 list-disc list-inside">
@@ -466,7 +456,7 @@ function RightsContent() {
           </ul>
         </section>
 
-        <section className="p-6 bg-gray-900/40 border border-gray-800 rounded-xl">
+        <section className="p-6 nexus-page-card">
           <h3 className="text-xl font-bold mb-4 text-white">EU/EEA Residents (GDPR)</h3>
           <p className="text-sm text-gray-400 mb-4">If you are in the European Economic Area (or the UK or other jurisdictions with similar laws), you have the following additional rights under the General Data Protection Regulation (GDPR):</p>
           <ul className="text-xs text-gray-500 space-y-2 list-disc list-inside">
@@ -514,7 +504,7 @@ function ChildrenContent() {
       <h1 className="text-3xl font-bold mb-6">Children’s Privacy</h1>
       <p className="text-gray-300 mb-6">NexusRBX is not intended for children under 13 years of age. We do not knowingly collect personal information from children under 13. If you are under 13, please do not use the Service or provide any information about yourself to us. In the event we learn that we have inadvertently collected personal data from a child under 13, we will take prompt action to delete such data from our records.</p>
       
-      <div className="p-6 bg-gray-900/40 border border-gray-800 rounded-xl">
+      <div className="p-6 nexus-page-card">
         <p className="text-gray-400">If you are a parent or guardian and you believe that your child under 13 has provided us with personal information without your consent, please contact us immediately at <a href="mailto:support@nexusrbx.com" className="text-[#9b5de5]">support@nexusrbx.com</a>. We will then work with you to investigate and, if verified, delete the child’s information.</p>
       </div>
     </div>
@@ -538,14 +528,14 @@ function ContactContent() {
       <p className="text-gray-300 mb-8">If you have any questions, concerns, or comments about this Privacy Policy or our data practices, please contact us:</p>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <div className="bg-gray-900/40 p-6 rounded-xl border border-gray-800 flex flex-col items-center text-center">
+        <div className="nexus-page-card p-6 flex flex-col items-center text-center">
           <Mail className="h-10 w-10 text-[#9b5de5] mb-4" />
           <h3 className="text-xl font-bold mb-2">Email Support</h3>
           <p className="text-sm text-gray-400 mb-4">For the fastest response, please email our privacy team.</p>
           <a href="mailto:support@nexusrbx.com" className="text-[#9b5de5] font-bold hover:underline">support@nexusrbx.com</a>
         </div>
 
-        <div className="bg-gray-900/40 p-6 rounded-xl border border-gray-800 flex flex-col items-center text-center">
+        <div className="nexus-page-card p-6 flex flex-col items-center text-center">
           <Globe className="h-10 w-10 text-[#00f5d4] mb-4" />
           <h3 className="text-xl font-bold mb-2">Mailing Address</h3>
           <p className="text-sm text-gray-400 mb-4">NexusRBX Privacy Team<br />PO Box 123, Sydney<br />NSW 2000, Australia</p>

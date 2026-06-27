@@ -53,6 +53,7 @@ test("Sign-in nudge remains dismissible and accessible on narrow viewports", () 
 test("Quick Script activation contracts keep value before authentication", () => {
   const controller = read("src/pages/ai/useAiWorkspaceController.js");
 
+  assert.match(controller, /resolveInitialGeneratorMode/);
   assert.match(controller, /if \(quickScript\.status === "generating"\) return null;/);
   assert.match(controller, /navigator\.clipboard\.writeText\(code\)/);
   assert.match(controller, /PENDING_AUTH_ACTIONS\.SAVE_PROJECT/);

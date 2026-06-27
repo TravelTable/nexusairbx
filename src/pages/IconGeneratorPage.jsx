@@ -26,6 +26,7 @@ import { getEntitlements } from "../lib/billing";
 import NexusRBXHeader from "../components/NexusRBXHeader";
 import NexusRBXFooter from "../components/NexusRBXFooter";
 import ProNudgeModal from "../components/ProNudgeModal";
+import { Button, Toggle, cx } from "../components/ui";
 import { useBilling } from "../context/BillingContext";
 import { BACKEND_URL } from "../config";
 
@@ -246,7 +247,7 @@ export default function IconGeneratorPage() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
             {/* Left Sidebar: Controls */}
             <div className="lg:col-span-4 space-y-6">
-              <section className="bg-white/[0.02] backdrop-blur-xl border border-white/10 rounded-2xl p-6 shadow-xl">
+              <section className="nexus-page-card p-6">
                 <h2 className="text-sm font-black text-gray-500 uppercase tracking-widest mb-6 flex items-center gap-2">
                   <Box className="h-4 w-4" /> Configuration
                 </h2>
@@ -255,11 +256,11 @@ export default function IconGeneratorPage() {
                   {/* Subject */}
                   <div>
                     <div className="flex justify-between items-center mb-2">
-                      <label className="block text-xs font-bold text-gray-400 uppercase">Icon Subject</label>
+                      <label className="nexus-field-label block">Icon Subject</label>
                       <button 
                         onClick={handleEnhancePrompt}
                         disabled={enhancing || !filters.subject}
-                        className="text-[10px] font-black text-[#9b5de5] hover:text-[#00f5d4] transition-colors flex items-center gap-1 disabled:opacity-50"
+                        className="focus-ring flex items-center gap-1 rounded-lg px-2 py-1 text-[10px] font-black text-[#00f5d4] transition hover:bg-[#00f5d4]/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
                       >
                         {enhancing ? <Loader2 className="h-3 w-3 animate-spin" /> : <Wand2 className="h-3 w-3" />}
                         Magic Enhance
@@ -269,25 +270,26 @@ export default function IconGeneratorPage() {
                       value={filters.subject}
                       onChange={(e) => setFilters({...filters, subject: e.target.value})}
                       placeholder="e.g. A legendary flaming dragon sword with blue aura"
-                      className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-sm focus:border-[#9b5de5] outline-none transition-all h-24 resize-none"
+                      className="nexus-textarea h-24 p-3"
                     />
                   </div>
 
                   {/* Reference Image */}
                   <div>
-                    <label className="block text-xs font-bold text-gray-400 mb-2 uppercase">Reference Image (Optional)</label>
+                    <label className="nexus-field-label mb-2 block">Reference Image (Optional)</label>
                     {referenceImage ? (
                       <div className="relative w-full h-32 rounded-xl overflow-hidden border border-white/10">
                         <img src={referenceImage} alt="Reference" className="w-full h-full object-cover" />
                         <button 
                           onClick={() => setReferenceImage(null)}
-                          className="absolute top-2 right-2 p-1 bg-black/60 rounded-full hover:bg-red-500 transition-colors"
+                          className="nexus-icon-button absolute top-2 right-2 h-8 w-8 border-white/15 bg-black/70 hover:border-red-500/40 hover:bg-red-500/15 hover:text-red-100"
+                          aria-label="Remove reference image"
                         >
                           <X className="h-4 w-4" />
                         </button>
                       </div>
                     ) : (
-                      <label className="flex flex-col items-center justify-center w-full h-32 bg-black/40 border-2 border-dashed border-white/10 rounded-xl cursor-pointer hover:border-[#9b5de5]/50 transition-all">
+                      <label className="focus-within:ring-2 focus-within:ring-[#00f5d4]/45 flex h-32 w-full cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-white/10 bg-black/40 transition hover:border-[#00f5d4]/35 hover:bg-[#00f5d4]/5">
                         <Upload className="h-6 w-6 text-gray-500 mb-2" />
                         <span className="text-[10px] font-bold text-gray-500">Upload Reference</span>
                         <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} />
@@ -297,13 +299,13 @@ export default function IconGeneratorPage() {
 
                   {/* Style Grid */}
                   <div>
-                    <label className="block text-xs font-bold text-gray-400 mb-2 uppercase">Visual Style</label>
+                    <label className="nexus-field-label mb-2 block">Visual Style</label>
                     <div className="grid grid-cols-3 gap-2">
                       {styles.map(s => (
                         <button
                           key={s}
                           onClick={() => setFilters({...filters, style: s})}
-                          className={`px-2 py-2 rounded-lg text-[10px] font-bold border transition-all ${filters.style === s ? 'bg-[#9b5de5]/20 border-[#9b5de5] text-white' : 'bg-white/5 border-transparent text-gray-500 hover:text-gray-300'}`}
+                          className={cx("nexus-select-pill", filters.style === s && "nexus-select-pill-active")}
                         >
                           {s}
                         </button>
@@ -315,20 +317,20 @@ export default function IconGeneratorPage() {
                         value={filters.customStyle}
                         onChange={(e) => setFilters({...filters, customStyle: e.target.value})}
                         placeholder="Enter custom style..."
-                        className="w-full mt-2 bg-black/40 border border-white/10 rounded-lg p-2 text-xs focus:border-[#9b5de5] outline-none"
+                        className="nexus-input mt-2 p-2 text-xs"
                       />
                     )}
                   </div>
 
                   {/* Mood */}
                   <div>
-                    <label className="block text-xs font-bold text-gray-400 mb-2 uppercase">Color Mood</label>
+                    <label className="nexus-field-label mb-2 block">Color Mood</label>
                     <div className="grid grid-cols-3 gap-2">
                       {moods.map(m => (
                         <button
                           key={m}
                           onClick={() => setFilters({...filters, colorMood: m})}
-                          className={`px-2 py-2 rounded-lg text-[10px] font-bold border transition-all ${filters.colorMood === m ? 'bg-[#00f5d4]/20 border-[#00f5d4] text-white' : 'bg-white/5 border-transparent text-gray-500 hover:text-gray-300'}`}
+                          className={cx("nexus-select-pill", filters.colorMood === m && "nexus-select-pill-active")}
                         >
                           {m}
                         </button>
@@ -340,20 +342,20 @@ export default function IconGeneratorPage() {
                         value={filters.customMood}
                         onChange={(e) => setFilters({...filters, customMood: e.target.value})}
                         placeholder="Enter custom mood..."
-                        className="w-full mt-2 bg-black/40 border border-white/10 rounded-lg p-2 text-xs focus:border-[#00f5d4] outline-none"
+                        className="nexus-input mt-2 p-2 text-xs"
                       />
                     )}
                   </div>
 
                   {/* Extra Details */}
                   <div>
-                    <label className="block text-xs font-bold text-gray-400 mb-2 uppercase">Extra Details (Optional)</label>
+                    <label className="nexus-field-label mb-2 block">Extra Details (Optional)</label>
                     <input 
                       type="text"
                       value={filters.extraDetails}
                       onChange={(e) => setFilters({...filters, extraDetails: e.target.value})}
                       placeholder="e.g. glowing particles, cinematic fog"
-                      className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-sm focus:border-[#9b5de5] outline-none transition-all"
+                      className="nexus-input p-3"
                     />
                   </div>
 
@@ -363,15 +365,14 @@ export default function IconGeneratorPage() {
                       <Layers className="h-4 w-4 text-[#00f5d4]" />
                       <span className="text-xs font-bold text-gray-300">Remove Background</span>
                     </div>
-                    <button 
-                      onClick={() => setNoBackground(!noBackground)}
-                      className={`w-10 h-5 rounded-full transition-all relative ${noBackground ? 'bg-[#00f5d4]' : 'bg-gray-700'}`}
-                    >
-                      <div className={`absolute top-1 w-3 h-3 rounded-full bg-white transition-all ${noBackground ? 'left-6' : 'left-1'}`} />
-                    </button>
+                        <Toggle
+                          checked={noBackground}
+                          onChange={setNoBackground}
+                          aria-label="Remove background"
+                        />
                   </div>
 
-                  <button
+                  <Button
                     onClick={() => {
                       if (!isPremium) {
                         setShowProNudge(true);
@@ -380,12 +381,12 @@ export default function IconGeneratorPage() {
                       handleGenerate();
                     }}
                     disabled={loading}
-                    className="w-full py-4 rounded-xl bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-white font-black text-sm shadow-lg shadow-[#9b5de5]/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full py-4 text-sm font-black"
                   >
                     {!isPremium && <ShieldCheck className="h-5 w-5" />}
                     {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : (isPremium ? <Zap className="h-5 w-5 fill-white" /> : null)}
                     {loading ? "Generating..." : (isPremium ? "Generate Icon" : "Upgrade to Unlock")}
-                  </button>
+                  </Button>
 
                   <div className="flex items-center justify-center gap-2 text-[10px] text-gray-500 font-bold">
                     <Zap className="h-3 w-3" /> Cost: 1,000 Tokens
@@ -407,7 +408,7 @@ export default function IconGeneratorPage() {
 
             {/* Main Area: Preview */}
             <div className="lg:col-span-8 space-y-8">
-              <div className="bg-white/[0.02] backdrop-blur-xl border border-white/10 rounded-3xl p-8 flex flex-col items-center justify-center min-h-[500px] relative overflow-hidden shadow-2xl">
+              <div className="nexus-page-card relative flex min-h-[500px] flex-col items-center justify-center overflow-hidden p-8">
                 <AnimatePresence mode="wait">
                   {loading ? (
                     <motion.div 
@@ -447,7 +448,7 @@ export default function IconGeneratorPage() {
                       <div className="flex flex-wrap justify-center gap-3 relative z-10">
                         <button 
                           onClick={handleDownload}
-                          className="px-6 py-3 rounded-xl bg-white text-black font-bold text-sm flex items-center gap-2 hover:bg-gray-200 transition-all"
+                          className="focus-ring flex items-center gap-2 rounded-xl border border-[#00f5d4]/30 bg-[#00f5d4] px-6 py-3 text-sm font-bold text-black shadow-panel transition hover:bg-[#5fffee] active:bg-[#00d9bf]"
                         >
                           <Download className="h-4 w-4" /> Download PNG
                         </button>
@@ -455,7 +456,7 @@ export default function IconGeneratorPage() {
                           href="https://create.roblox.com/dashboard/creations?activeTab=Decal" 
                           target="_blank" 
                           rel="noopener noreferrer"
-                          className="px-6 py-3 rounded-xl bg-[#00f5d4]/10 border border-[#00f5d4]/20 text-[#00f5d4] font-bold text-sm flex items-center gap-2 hover:bg-[#00f5d4]/20 transition-all"
+                          className="focus-ring flex items-center gap-2 rounded-xl border border-[#00f5d4]/20 bg-[#00f5d4]/10 px-6 py-3 text-sm font-bold text-[#00f5d4] transition hover:border-[#00f5d4]/35 hover:bg-[#00f5d4]/15 hover:text-white"
                         >
                           <ExternalLink className="h-4 w-4" /> Publish to Roblox
                         </a>
@@ -465,7 +466,7 @@ export default function IconGeneratorPage() {
                             setCopied(true);
                             setTimeout(() => setCopied(false), 2000);
                           }}
-                          className="px-6 py-3 rounded-xl bg-white/5 border border-white/10 text-white font-bold text-sm flex items-center gap-2 hover:bg-white/10 transition-all"
+                          className="focus-ring flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-6 py-3 text-sm font-bold text-white transition hover:border-white/20 hover:bg-white/[0.07]"
                         >
                           {copied ? <Check className="h-4 w-4 text-green-400" /> : <Copy className="h-4 w-4" />}
                           {copied ? "Copied URL" : "Copy URL"}
@@ -473,7 +474,7 @@ export default function IconGeneratorPage() {
                         <button 
                           onClick={() => handleGenerate(generatedImage)}
                           disabled={loading}
-                          className="px-6 py-3 rounded-xl bg-[#9b5de5]/10 border border-[#9b5de5]/20 text-[#9b5de5] font-bold text-sm flex items-center gap-2 hover:bg-[#9b5de5]/20 transition-all disabled:opacity-50"
+                          className="focus-ring flex items-center gap-2 rounded-xl border border-[#9b5de5]/20 bg-[#9b5de5]/10 px-6 py-3 text-sm font-bold text-[#c9b3f7] transition hover:border-[#9b5de5]/35 hover:bg-[#9b5de5]/15 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
                         >
                           <Sparkles className="h-4 w-4" /> Create Variation
                         </button>
@@ -493,7 +494,7 @@ export default function IconGeneratorPage() {
                       animate={{ opacity: 1 }}
                       className="flex flex-col items-center text-center gap-4"
                     >
-                      <div className="w-24 h-24 rounded-3xl bg-white/5 flex items-center justify-center mb-2">
+                      <div className="w-24 h-24 rounded-2xl bg-white/5 flex items-center justify-center mb-2">
                         <ImageIcon className="h-10 w-10 text-gray-600" />
                       </div>
                       <div>
@@ -516,7 +517,7 @@ export default function IconGeneratorPage() {
                       <button 
                         key={item.id || i} 
                         onClick={() => setGeneratedImage(item.imageUrl)}
-                        className={`shrink-0 w-24 h-24 rounded-xl border-2 transition-all overflow-hidden ${generatedImage === item.imageUrl ? 'border-[#9b5de5]' : 'border-transparent opacity-60 hover:opacity-100'}`}
+                        className={`focus-ring h-24 w-24 shrink-0 overflow-hidden rounded-xl border-2 transition ${generatedImage === item.imageUrl ? 'border-[#00f5d4]' : 'border-transparent opacity-60 hover:opacity-100'}`}
                       >
                         <img src={item.imageUrl} alt="History" className="w-full h-full object-cover" />
                       </button>

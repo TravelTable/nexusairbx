@@ -42,15 +42,6 @@ export default function FeaturesSection({ featureCards, navigate }) {
                     isSubscribed={false}
                     className="!bg-transparent !border-none !shadow-none p-0"
                   />
-                  <img
-                    src="/feature-premium.webp"
-                    alt="Premium AI features for Roblox development"
-                    width="800"
-                    height="600"
-                    loading="lazy"
-                    decoding="async"
-                    className="rounded-lg border border-gray-800 mb-4 w-full"
-                  />
                 </>
               ) : (
                 <>
@@ -62,21 +53,10 @@ export default function FeaturesSection({ featureCards, navigate }) {
                   {/* Optional image placeholder for Script AI and Secure Testing */}
                   {card.id === 1 && (
                     <img
-                      src="/feature-script-ai.webp"
+                      src="/ai-preview.png"
                       alt="Roblox script generator preview"
-                      width="800"
-                      height="600"
-                      loading="lazy"
-                      decoding="async"
-                      className="rounded-lg border border-gray-800 mb-4 w-full"
-                    />
-                  )}
-                  {card.id === 3 && (
-                    <img
-                      src="/feature-secure.webp"
-                      alt="Secure testing environment for Roblox mods"
-                      width="800"
-                      height="600"
+                      width="1536"
+                      height="1024"
                       loading="lazy"
                       decoding="async"
                       className="rounded-lg border border-gray-800 mb-4 w-full"

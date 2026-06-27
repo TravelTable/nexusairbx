@@ -312,7 +312,7 @@ function NexusRBXSignInPage({
         <button
           type="button"
           onClick={() => navigate("/")}
-          className="absolute top-6 left-4 sm:left-6 inline-flex items-center gap-2 rounded-full border border-white/10 bg-black/30 px-4 py-2 text-xs font-bold uppercase tracking-[0.24em] text-gray-200 backdrop-blur-xl transition hover:border-[#00f5d4]/40 hover:text-white"
+        className="focus-ring absolute top-6 left-4 sm:left-6 inline-flex items-center gap-2 rounded-xl border border-white/10 bg-black/30 px-4 py-2 text-xs font-bold uppercase tracking-widest text-gray-200 backdrop-blur-xl transition hover:border-[#00f5d4]/40 hover:bg-white/5 hover:text-white"
         >
           <ArrowRight className="h-3.5 w-3.5 rotate-180" />
           Return home
@@ -330,7 +330,7 @@ function NexusRBXSignInPage({
           className="w-full max-w-md"
         >
           {/* Sign In Card */}
-          <div className="bg-white/[0.02] backdrop-blur-xl border border-white/10 rounded-2xl overflow-hidden shadow-2xl">
+          <div className="nexus-page-card overflow-hidden">
             {/* Card Header */}
             <div className="p-8 border-b border-white/5 text-center">
               <div className="inline-flex p-3 rounded-2xl bg-gradient-to-br from-[#9b5de5]/20 to-[#00f5d4]/20 mb-4">
@@ -348,9 +348,9 @@ function NexusRBXSignInPage({
                 <button
                   onClick={handleGoogleSignIn}
                   disabled={formStatus.status === "submitting"}
-                  className="flex items-center justify-center py-3 px-4 bg-white/5 hover:bg-white/10 rounded-xl border border-white/10 transition-all duration-300 group"
+                  className="focus-ring group flex items-center justify-center rounded-xl border border-white/10 bg-white/5 px-4 py-3 transition-all duration-200 hover:border-white/20 hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  <span className="mr-2 flex items-center transition-transform group-hover:scale-110">
+                  <span className="mr-2 flex items-center">
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 48 48">
                       <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"></path>
                       <path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"></path>
@@ -364,9 +364,9 @@ function NexusRBXSignInPage({
                 <button
                   onClick={handleGithubSignIn}
                   disabled={formStatus.status === "submitting"}
-                  className="flex items-center justify-center py-3 px-4 bg-white/5 hover:bg-white/10 rounded-xl border border-white/10 transition-all duration-300 group"
+                  className="focus-ring group flex items-center justify-center rounded-xl border border-white/10 bg-white/5 px-4 py-3 transition-all duration-200 hover:border-white/20 hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  <Github className="h-5 w-5 mr-2 transition-transform group-hover:scale-110" />
+                  <Github className="h-5 w-5 mr-2" />
                   <span className="text-sm font-bold">GitHub</span>
                 </button>
               </div>
@@ -422,7 +422,7 @@ function NexusRBXSignInPage({
                       value={formData.email}
                       onChange={handleInputChange}
                       autoComplete="email"
-                      className="w-full pl-12 pr-4 py-3.5 bg-black/40 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9b5de5]/20 focus:border-[#9b5de5] transition-all duration-300 text-sm"
+                      className="nexus-input py-3.5 pl-12 pr-4"
                       placeholder="your.email@example.com"
                       disabled={formStatus.status === "submitting"}
                       required
@@ -449,7 +449,7 @@ function NexusRBXSignInPage({
                       value={formData.password}
                       onChange={handleInputChange}
                       autoComplete="current-password"
-                      className="w-full pl-12 pr-12 py-3.5 bg-black/40 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9b5de5]/20 focus:border-[#9b5de5] transition-all duration-300 text-sm"
+                      className="nexus-input py-3.5 pl-12 pr-12"
                       placeholder="••••••••"
                       disabled={formStatus.status === "submitting"}
                       required
@@ -457,7 +457,7 @@ function NexusRBXSignInPage({
                     <button
                       type="button"
                       onClick={togglePasswordVisibility}
-                      className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-white transition-colors"
+                      className="focus-ring absolute right-3 top-1/2 -translate-y-1/2 rounded-lg p-1 text-gray-500 transition-colors hover:bg-white/5 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
                       disabled={formStatus.status === "submitting" || formStatus.status === "success"}
                     >
                       {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
@@ -488,10 +488,10 @@ function NexusRBXSignInPage({
                 <button
                   type="submit"
                   disabled={formStatus.status === "submitting" || formStatus.status === "success"}
-                  className={`w-full py-4 rounded-xl font-black text-sm flex items-center justify-center gap-2 shadow-xl transition-all duration-300 ${
+                  className={`focus-ring flex w-full items-center justify-center gap-2 rounded-xl py-4 text-sm font-black shadow-panel transition-all duration-200 ${
                     formStatus.status === "submitting" || formStatus.status === "success"
                       ? "bg-white/5 text-gray-500 cursor-not-allowed"
-                      : "bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-white hover:scale-[1.02] active:scale-[0.98] shadow-[#9b5de5]/20"
+                      : "bg-[#00f5d4] text-black hover:shadow-[0_0_24px_rgba(0,245,212,0.45)] active:scale-[0.98]"
                   }`}
                 >
                   {formStatus.status === "submitting" ? (
@@ -519,7 +519,7 @@ function NexusRBXSignInPage({
                   New to NexusRBX?{" "}
                   <button 
                     onClick={() => navigate("/signup", signUpLinkState ? { state: signUpLinkState } : undefined)}
-                    className="text-[#9b5de5] hover:text-[#00f5d4] transition-colors ml-1"
+                    className="focus-ring rounded-md px-1 text-[#9b5de5] transition-colors hover:text-[#00f5d4]"
                   >
                     Create Account
                   </button>

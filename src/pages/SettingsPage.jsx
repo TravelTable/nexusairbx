@@ -41,6 +41,7 @@ import { signOut } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
 import ConfirmationModal from "../components/ConfirmationModal";
 import ProNudgeModal from "../components/ProNudgeModal";
+import { Button, Toggle, cx } from "../components/ui";
 import ModelSwitcher from "../components/ai/ModelSwitcher";
 import BrutalAuditor from "../components/ai/BrutalAuditor";
 import FreeUsageMeter from "../components/FreeUsageMeter";
@@ -71,9 +72,9 @@ import {
 } from "../lib/modelProviders";
 
 const StatCard = ({ title, value, icon: Icon, color }) => (
-  <div className="card-surface p-5 backdrop-blur-xl hover:border-gray-700 transition-colors group">
+  <div className="card-surface p-5 backdrop-blur-xl hover:border-white/20 transition-colors group">
     <div className="flex justify-between items-start mb-3">
-      <div className={`p-2 rounded-xl bg-gray-800 group-hover:scale-110 transition-transform ${color}`}>
+      <div className={`p-2 rounded-xl border border-white/10 bg-white/5 transition-colors group-hover:bg-white/10 ${color}`}>
         <Icon className="w-5 h-5" />
       </div>
     </div>
@@ -448,29 +449,27 @@ const SettingsPage = () => {
                 
                 <div className="flex flex-wrap gap-4">
                   {plan !== "FREE" && (
-                    <button 
-                      onClick={portal}
-                      className="px-6 py-3 rounded-xl bg-white text-black font-bold flex items-center gap-2 hover:scale-105 transition-transform shadow-xl"
-                    >
-                      <CreditCard className="w-5 h-5" />
+                    <Button onClick={portal} variant="ghost" size="lg" icon={CreditCard}>
                       Manage Billing & Invoices
-                    </button>
+                    </Button>
                   )}
-                  <button 
+                  <Button
                     onClick={() => navigate("/subscribe")}
-                    className={`px-6 py-3 rounded-xl font-bold flex items-center gap-2 hover:scale-105 transition-transform ${plan === "FREE" ? 'bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-white shadow-[0_0_30px_rgba(155,93,229,0.3)]' : 'bg-gray-800 text-white hover:bg-gray-700'}`}
+                    variant={plan === "FREE" ? "primary" : "secondary"}
+                    size="lg"
+                    icon={ArrowUpCircle}
                   >
-                    <ArrowUpCircle className="w-5 h-5" />
                     {plan === "FREE" ? "Upgrade to Pro" : "Change Plan"}
-                  </button>
+                  </Button>
                   {plan !== "FREE" && (
-                    <button 
+                    <Button
                       onClick={() => handleTriggerClear("cancel_sub")}
-                      className="px-6 py-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 font-bold flex items-center gap-2 hover:bg-red-500/20 transition-all"
+                      variant="danger"
+                      size="lg"
+                      icon={X}
                     >
-                      <X className="w-5 h-5" />
                       Cancel Subscription
-                    </button>
+                    </Button>
                   )}
                 </div>
               </div>
@@ -515,7 +514,7 @@ const SettingsPage = () => {
                     <span className="text-gray-400">Used this period</span>
                     <span className="text-purple-400 font-bold">{(subLimit - totalRemaining)?.toLocaleString()}</span>
                   </div>
-                  <div className="h-2 w-full bg-gray-800 rounded-full overflow-hidden">
+                  <div className="h-2 w-full bg-white/10 rounded-full overflow-hidden">
                     <div 
                       className="h-full bg-gradient-to-r from-[#9b5de5] to-[#00f5d4]" 
                       style={{ width: `${((subLimit - totalRemaining) / subLimit) * 100}%` }}
@@ -531,23 +530,23 @@ const SettingsPage = () => {
         return (
           <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <div className="card-surface overflow-hidden backdrop-blur-xl">
-              <div className="p-6 border-b border-gray-800 flex justify-between items-center">
+              <div className="p-6 border-b border-white/10 flex justify-between items-center">
                 <h3 className="font-display text-lg font-bold text-white">Recent Activity</h3>
-                <button onClick={fetchUsage} className="text-purple-400 hover:text-purple-300 text-sm flex items-center gap-1">
-                  <History className="w-4 h-4" /> Refresh
-                </button>
+                <Button onClick={fetchUsage} variant="subtle" size="sm" icon={History}>
+                  Refresh
+                </Button>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full text-left">
                   <thead>
-                    <tr className="text-gray-500 text-sm border-b border-gray-800">
+                    <tr className="text-gray-500 text-sm border-b border-white/10">
                       <th className="px-6 py-4 font-medium">Action</th>
                       <th className="px-6 py-4 font-medium">Tokens</th>
                       <th className="px-6 py-4 font-medium">Date</th>
                       <th className="px-6 py-4 font-medium">Status</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-800">
+                  <tbody className="divide-y divide-white/10">
                     {usageData.logs.map((log) => (
                       <tr key={log.id} className="text-gray-300 hover:bg-white/5 transition-colors">
                         <td className="px-6 py-4">
@@ -600,11 +599,11 @@ const SettingsPage = () => {
                   </div>
                 )}
                 <div className="space-y-2">
-                  <label className="text-sm text-gray-400">Creativity Level</label>
+                  <label className="nexus-field-label">Creativity Level</label>
                   <select 
                     value={settings.creativity}
                     onChange={(e) => updateSettings({ creativity: parseFloat(e.target.value) })}
-                    className="w-full bg-black border border-gray-800 rounded-xl p-3 text-white outline-none focus:border-purple-500 transition-colors"
+                    className="nexus-input"
                   >
                     <option value="0.3">Strict (Code Optimized)</option>
                     <option value="0.7">Balanced</option>
@@ -612,11 +611,11 @@ const SettingsPage = () => {
                   </select>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm text-gray-400">Default Mode</label>
+                  <label className="nexus-field-label">Default Mode</label>
                   <select 
                     value={settings.chatMode || "agent"}
                     onChange={(e) => updateSettings({ chatMode: e.target.value })}
-                    className="w-full bg-black border border-gray-800 rounded-xl p-3 text-white outline-none focus:border-purple-500 transition-colors"
+                    className="nexus-input"
                   >
                     {CHAT_MODES.map(mode => (
                       <option key={mode.id} value={mode.id}>{mode.label}</option>
@@ -627,33 +626,31 @@ const SettingsPage = () => {
                   </p>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm text-gray-400">Show Chain of Thought</label>
-                  <div className="flex items-center justify-between p-3 bg-black border border-gray-800 rounded-xl">
+                  <label className="nexus-field-label">Show Chain of Thought</label>
+                  <div className="flex items-center justify-between p-3 bg-black/40 border border-white/10 rounded-xl">
                     <span className="text-xs text-gray-500">Stream the agent's live thinking in chat</span>
-                    <button 
-                      onClick={() => updateSettings({ showThinking: settings.showThinking === false })}
-                      className={`w-12 h-6 rounded-full transition-all relative ${settings.showThinking !== false ? 'bg-[#00f5d4]' : 'bg-gray-700'}`}
-                    >
-                      <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${settings.showThinking !== false ? 'left-7' : 'left-1'}`} />
-                    </button>
+                    <Toggle
+                      checked={settings.showThinking !== false}
+                      onChange={(checked) => updateSettings({ showThinking: checked })}
+                      aria-label="Show Chain of Thought"
+                    />
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm text-gray-400">Game Profile Wizard</label>
-                  <div className="flex items-center justify-between p-3 bg-black border border-gray-800 rounded-xl">
+                  <label className="nexus-field-label">Game Profile Wizard</label>
+                  <div className="flex items-center justify-between p-3 bg-black/40 border border-white/10 rounded-xl">
                     <span className="text-xs text-gray-500">Enable the step-by-step game setup wizard</span>
-                    <button 
-                      onClick={() => updateSettings({ enableGameWizard: !settings.enableGameWizard })}
-                      className={`w-12 h-6 rounded-full transition-all relative ${settings.enableGameWizard !== false ? 'bg-[#00f5d4]' : 'bg-gray-700'}`}
-                    >
-                      <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${settings.enableGameWizard !== false ? 'left-7' : 'left-1'}`} />
-                    </button>
+                    <Toggle
+                      checked={settings.enableGameWizard !== false}
+                      onChange={(checked) => updateSettings({ enableGameWizard: checked })}
+                      aria-label="Game Profile Wizard"
+                    />
                   </div>
                 </div>
               </div>
 
               <div className="mt-8 space-y-2">
-                <label className="text-sm text-gray-400 flex items-center gap-2">
+                <label className="nexus-field-label flex items-center gap-2">
                   <Code className="w-4 h-4 text-purple-400" />
                   Custom Coding Standards
                 </label>
@@ -664,7 +661,7 @@ const SettingsPage = () => {
                     updateSettings({ codingStandards: e.target.value });
                   }}
                   placeholder="e.g. Always use the Knit framework. Follow OOP patterns for modules. Use camelCase for variables."
-                  className="w-full h-32 bg-black border border-gray-800 rounded-xl p-4 text-white outline-none focus:border-purple-500 transition-colors resize-none font-mono text-sm"
+                  className="nexus-textarea h-32 font-mono"
                 />
                 <p className="text-[10px] text-gray-500 italic">These rules will be injected into every AI generation and QA audit.</p>
               </div>
@@ -680,7 +677,7 @@ const SettingsPage = () => {
                 value={settings.gameSpec}
                 onChange={(e) => updateSettings({ gameSpec: e.target.value })}
                 placeholder="e.g. My game is a military simulator set in a desert environment. The UI should be tactical and use dark green and orange accents..."
-                className="w-full h-40 bg-black border border-gray-800 rounded-xl p-4 text-white outline-none focus:border-cyan-500 transition-colors resize-none"
+                className="nexus-textarea h-40"
               />
             </div>
           </div>
@@ -724,27 +721,27 @@ const SettingsPage = () => {
                   <p className="text-sm text-gray-500">Connect a Roblox creator account so the agent can use authorized Open Cloud tools.</p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className={`px-3 py-1 rounded-lg border text-xs font-bold uppercase ${connected ? "border-[#00f5d4]/30 bg-[#00f5d4]/10 text-[#00f5d4]" : "border-gray-800 bg-black text-gray-500"}`}>
+                  <span className={`px-3 py-1 rounded-lg border text-xs font-bold uppercase ${connected ? "border-[#00f5d4]/30 bg-[#00f5d4]/10 text-[#00f5d4]" : "border-white/10 bg-black/40 text-gray-500"}`}>
                     {robloxLoading ? "Loading" : connected ? "Connected" : "Disconnected"}
                   </span>
-                  <button
+                  <Button
                     onClick={() => startConnect(["core"], connected)}
                     disabled={robloxLoading}
-                    className="px-4 py-2 rounded-xl bg-[#00f5d4] text-black font-bold text-sm hover:scale-105 transition-transform disabled:opacity-60"
+                    size="md"
                   >
                     {connected ? "Reconnect" : "Connect Roblox"}
-                  </button>
+                  </Button>
                 </div>
               </div>
 
               {connected ? (
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                  <div className="lg:col-span-1 p-4 rounded-xl bg-black/40 border border-gray-800">
+                  <div className="lg:col-span-1 p-4 rounded-xl bg-black/40 border border-white/10">
                     <div className="flex items-center gap-3 mb-4">
                       {profile.picture ? (
-                        <img src={profile.picture} alt="" className="w-12 h-12 rounded-xl bg-gray-900" />
+                        <img src={profile.picture} alt="" className="w-12 h-12 rounded-xl bg-white/5" />
                       ) : (
-                        <div className="w-12 h-12 rounded-xl bg-gray-900 flex items-center justify-center">
+                        <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center">
                           <User className="w-5 h-5 text-gray-500" />
                         </div>
                       )}
@@ -754,7 +751,7 @@ const SettingsPage = () => {
                       </div>
                     </div>
 
-                    <label className="text-xs text-gray-500 uppercase font-bold mb-2 block">Target Creator</label>
+                    <label className="nexus-field-label mb-2 block">Target Creator</label>
                     <select
                       value={selectedCreatorKey}
                       onChange={async (e) => {
@@ -766,7 +763,7 @@ const SettingsPage = () => {
                           setErrorMsg(err?.message || "Failed to update Roblox creator");
                         }
                       }}
-                      className="w-full bg-black border border-gray-800 rounded-xl p-3 text-white outline-none focus:border-[#00f5d4]"
+                      className="nexus-input"
                     >
                       {creators.map((creator) => (
                         <option key={`${creator.type}:${creator.id}`} value={`${creator.type}:${creator.id}`}>
@@ -776,13 +773,13 @@ const SettingsPage = () => {
                     </select>
 
                     <div className="mt-4">
-                      <label className="text-xs text-gray-500 uppercase font-bold mb-2 block">Granted Scopes</label>
-                      <p className="text-xs text-gray-400 break-words bg-black border border-gray-900 rounded-lg p-3 min-h-[54px]">
+                      <label className="nexus-field-label mb-2 block">Granted Scopes</label>
+                      <p className="text-xs text-gray-400 break-words bg-black/40 border border-white/10 rounded-lg p-3 min-h-[54px]">
                         {scopeText || "No scopes reported yet"}
                       </p>
                     </div>
 
-                    <button
+                    <Button
                       onClick={async () => {
                         setRobloxLoading(true);
                         try {
@@ -795,14 +792,15 @@ const SettingsPage = () => {
                           setRobloxLoading(false);
                         }
                       }}
-                      className="mt-4 w-full py-2 rounded-xl border border-red-500/30 bg-red-500/10 text-red-300 text-sm font-bold hover:bg-red-500/20"
+                      variant="danger"
+                      className="mt-4 w-full"
                     >
                       Disconnect Roblox
-                    </button>
+                    </Button>
                   </div>
 
                   <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="p-4 rounded-xl bg-black/40 border border-gray-800">
+                    <div className="p-4 rounded-xl bg-black/40 border border-white/10">
                       <h4 className="text-sm font-bold text-white mb-3 flex items-center gap-2">
                         <CheckCircle className="w-4 h-4 text-[#00f5d4]" />
                         Available Capabilities
@@ -817,7 +815,7 @@ const SettingsPage = () => {
                       </div>
                     </div>
 
-                    <div className="p-4 rounded-xl bg-black/40 border border-gray-800">
+                    <div className="p-4 rounded-xl bg-black/40 border border-white/10">
                       <h4 className="text-sm font-bold text-white mb-3 flex items-center gap-2">
                         <LinkIcon className="w-4 h-4 text-purple-400" />
                         Add-On Authorization
@@ -827,12 +825,13 @@ const SettingsPage = () => {
                           <div key={cap.id} className="p-3 rounded-lg bg-purple-500/5 border border-purple-500/10">
                             <div className="text-sm text-white font-bold">{cap.label}</div>
                             <div className="text-[10px] text-gray-500 mb-2">{cap.missingScopes.join(" ")}</div>
-                            <button
+                            <Button
                               onClick={() => startConnect([cap.bundle || "core"], true)}
-                              className="px-3 py-1 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold"
+                              variant="secondary"
+                              size="sm"
                             >
                               Reauthorize
-                            </button>
+                            </Button>
                           </div>
                         ))}
                       </div>
@@ -840,16 +839,16 @@ const SettingsPage = () => {
                   </div>
                 </div>
               ) : (
-                <div className="p-6 rounded-xl bg-black/40 border border-gray-800 text-center">
+                <div className="p-6 rounded-xl bg-black/40 border border-white/10 text-center">
                   <Globe className="w-10 h-10 text-gray-600 mx-auto mb-3" />
                   <p className="text-gray-400 mb-4">Roblox is not connected. Connect to let the agent upload generated assets and read authorized creator resources.</p>
-                  <button
+                  <Button
                     onClick={() => startConnect(["core"], false)}
                     disabled={robloxLoading}
-                    className="px-5 py-3 rounded-xl bg-[#00f5d4] text-black font-bold hover:scale-105 transition-transform disabled:opacity-60"
+                    size="lg"
                   >
                     Connect Roblox
-                  </button>
+                  </Button>
                 </div>
               )}
             </div>
@@ -860,7 +859,7 @@ const SettingsPage = () => {
                 Roblox Operation History
               </h3>
               {robloxOperations.length ? (
-                <div className="divide-y divide-gray-800">
+                <div className="divide-y divide-white/10">
                   {robloxOperations.map((op) => (
                     <div key={op.id} className="py-3 flex items-center justify-between gap-4">
                       <div>
@@ -900,43 +899,45 @@ const SettingsPage = () => {
                 </h3>
                 <form onSubmit={handleAdjustTokens} className="space-y-4">
                   <div>
-                    <label className="text-xs text-gray-500 uppercase font-bold mb-1 block">User ID (UID)</label>
+                    <label className="nexus-field-label mb-1 block">User ID (UID)</label>
                     <input 
                       type="text" 
                       value={tokenForm.uid}
                       onChange={e => setTokenForm({...tokenForm, uid: e.target.value})}
                       placeholder="Paste Firebase UID here..."
-                      className="w-full bg-black border border-gray-800 rounded-xl p-3 text-white outline-none focus:border-pink-500 transition-colors"
+                      className="nexus-input"
                     />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="text-xs text-gray-500 uppercase font-bold mb-1 block">Amount</label>
+                      <label className="nexus-field-label mb-1 block">Amount</label>
                       <input 
                         type="number" 
                         value={tokenForm.amount}
                         onChange={e => setTokenForm({...tokenForm, amount: parseInt(e.target.value)})}
-                        className="w-full bg-black border border-gray-800 rounded-xl p-3 text-white outline-none focus:border-pink-500 transition-colors"
+                        className="nexus-input"
                       />
                     </div>
                     <div>
-                      <label className="text-xs text-gray-500 uppercase font-bold mb-1 block">Reason</label>
+                      <label className="nexus-field-label mb-1 block">Reason</label>
                       <input 
                         type="text" 
                         value={tokenForm.reason}
                         onChange={e => setTokenForm({...tokenForm, reason: e.target.value})}
                         placeholder="Support, Gift, etc."
-                        className="w-full bg-black border border-gray-800 rounded-xl p-3 text-white outline-none focus:border-pink-500 transition-colors"
+                        className="nexus-input"
                       />
                     </div>
                   </div>
-                  <button 
+                  <Button
                     type="submit"
                     disabled={devLoading}
-                    className="w-full py-3 rounded-xl bg-pink-600 hover:bg-pink-500 text-white font-bold transition-colors flex items-center justify-center gap-2"
+                    variant="secondary"
+                    size="lg"
+                    className="w-full"
                   >
                     {devLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Inject Tokens"}
-                  </button>
+                  </Button>
                 </form>
               </div>
 
@@ -947,15 +948,15 @@ const SettingsPage = () => {
                   System Status
                 </h3>
                 <div className="space-y-3">
-                  <div className="flex justify-between p-3 rounded-xl bg-black/40 border border-gray-800">
+                  <div className="flex justify-between p-3 rounded-xl bg-black/40 border border-white/10">
                     <span className="text-gray-400">Backend API</span>
                     <span className="text-green-400 font-bold flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></div> Operational</span>
                   </div>
-                  <div className="flex justify-between p-3 rounded-xl bg-black/40 border border-gray-800">
+                  <div className="flex justify-between p-3 rounded-xl bg-black/40 border border-white/10">
                     <span className="text-gray-400">Database (Firestore)</span>
                     <span className="text-green-400 font-bold flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></div> Connected</span>
                   </div>
-                  <div className="flex justify-between p-3 rounded-xl bg-black/40 border border-gray-800">
+                  <div className="flex justify-between p-3 rounded-xl bg-black/40 border border-white/10">
                     <span className="text-gray-400">AI Models (Comet)</span>
                     <span className="text-green-400 font-bold flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></div> Online</span>
                   </div>
@@ -968,7 +969,7 @@ const SettingsPage = () => {
 
             {/* User List */}
             <div className="card-surface overflow-hidden backdrop-blur-xl">
-              <div className="p-6 border-b border-gray-800 flex flex-col md:flex-row justify-between items-center gap-4">
+              <div className="p-6 border-b border-white/10 flex flex-col md:flex-row justify-between items-center gap-4">
                 <h3 className="font-display text-lg font-bold text-white">User Directory (Recent 100)</h3>
                 <div className="flex items-center gap-3 w-full md:w-auto">
                   <div className="relative flex-grow">
@@ -978,18 +979,18 @@ const SettingsPage = () => {
                       value={userSearch}
                       onChange={e => setUserSearch(e.target.value)}
                       placeholder="Search email or UID..."
-                      className="w-full md:w-64 pl-10 pr-4 py-2 bg-black border border-gray-800 rounded-xl text-sm text-white outline-none focus:border-purple-500 transition-colors"
+                      className="nexus-input w-full md:w-64 pl-10 pr-4 py-2"
                     />
                   </div>
-                  <button onClick={fetchDevData} className="text-purple-400 hover:text-purple-300 text-sm flex items-center gap-1 whitespace-nowrap">
-                    <History className="w-4 h-4" /> Refresh
-                  </button>
+                  <Button onClick={fetchDevData} variant="subtle" size="sm" icon={History} className="whitespace-nowrap">
+                    Refresh
+                  </Button>
                 </div>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full text-left">
                   <thead>
-                    <tr className="text-gray-500 text-sm border-b border-gray-800">
+                    <tr className="text-gray-500 text-sm border-b border-white/10">
                       <th className="px-6 py-4 font-medium">User</th>
                       <th className="px-6 py-4 font-medium">Plan</th>
                       <th className="px-6 py-4 font-medium">Used</th>
@@ -997,7 +998,7 @@ const SettingsPage = () => {
                       <th className="px-6 py-4 font-medium">UID</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-800">
+                  <tbody className="divide-y divide-white/10">
                     {filteredUsers.map((u) => (
                       <tr 
                         key={u.uid} 
@@ -1053,9 +1054,9 @@ const SettingsPage = () => {
                   value={newTeamName}
                   onChange={(e) => setNewTeamName(e.target.value)}
                   placeholder="Enter team name..."
-                  className="flex-1 bg-black border border-gray-800 rounded-xl px-4 py-3 text-white outline-none focus:border-[#00f5d4] transition-all"
+                  className="nexus-input flex-1"
                 />
-                <button 
+                <Button
                   onClick={async () => {
                     if (!newTeamName.trim()) return;
                     const token = await user.getIdToken();
@@ -1070,17 +1071,17 @@ const SettingsPage = () => {
                       setSuccessMsg("Team created successfully!");
                     }
                   }}
-                  className="px-6 py-3 rounded-xl bg-[#00f5d4] text-black font-bold hover:scale-105 transition-transform"
+                  size="lg"
                 >
                   Create Team
-                </button>
+                </Button>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {teams.map(team => (
-                  <div key={team.id} className="p-5 rounded-2xl bg-black border border-gray-800 flex items-center justify-between group hover:border-[#00f5d4]/50 transition-all">
+                  <div key={team.id} className="p-5 rounded-2xl bg-black/40 border border-white/10 flex items-center justify-between group hover:border-[#00f5d4]/50 transition-all">
                     <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 rounded-xl bg-gray-800 flex items-center justify-center text-[#00f5d4] font-bold">
+                      <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-[#00f5d4] font-bold">
                         {team.name[0].toUpperCase()}
                       </div>
                       <div>
@@ -1088,13 +1089,13 @@ const SettingsPage = () => {
                         <div className="text-[10px] text-gray-500 uppercase tracking-widest">{team.members?.length || 1} Members</div>
                       </div>
                     </div>
-                    <button className="p-2 rounded-lg hover:bg-white/5 text-gray-500 hover:text-white transition-colors">
+                    <button className="nexus-icon-button rounded-lg">
                       <ChevronRight className="w-5 h-5" />
                     </button>
                   </div>
                 ))}
                 {teams.length === 0 && (
-                  <div className="col-span-full py-12 text-center border border-dashed border-gray-800 rounded-2xl">
+                  <div className="col-span-full py-12 text-center border border-dashed border-white/10 rounded-2xl">
                     <p className="text-sm text-gray-500">You haven't joined any teams yet.</p>
                   </div>
                 )}
@@ -1113,10 +1114,10 @@ const SettingsPage = () => {
               </h3>
               <p className="text-gray-400 mb-6">Join our community to get help, share your creations, and stay updated on new features.</p>
               <div className="flex flex-wrap gap-4">
-                <a href="https://discord.gg/" target="_blank" rel="noreferrer" className="px-6 py-3 rounded-xl bg-[#5865F2] text-white font-bold flex items-center gap-2 hover:scale-105 transition-transform">
+                <a href="https://discord.gg/" target="_blank" rel="noreferrer" className="inline-flex items-center justify-center rounded-xl border border-[#5865F2]/40 bg-[#5865F2]/90 px-6 py-3 font-bold text-white transition-all hover:bg-[#5865F2] focus-ring">
                   Join Discord
                 </a>
-                <a href="/contact" className="px-6 py-3 rounded-xl bg-gray-800 text-white font-bold hover:bg-gray-700 transition-colors">
+                <a href="/contact" className="inline-flex items-center justify-center rounded-xl border border-white/10 bg-white/5 px-6 py-3 font-bold text-white transition-all hover:bg-white/10 focus-ring">
                   Contact Support
                 </a>
               </div>
@@ -1140,7 +1141,7 @@ const SettingsPage = () => {
               
               <button 
                 onClick={handleLogout}
-                className="w-full py-3 rounded-xl border border-gray-800 text-gray-400 hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/50 transition-all flex items-center justify-center gap-2 font-bold"
+                className="w-full py-3 rounded-xl border border-white/10 text-gray-400 hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/50 transition-all flex items-center justify-center gap-2 font-bold focus-ring"
               >
                 <LogOut className="w-5 h-5" /> Sign Out
               </button>
@@ -1155,7 +1156,7 @@ const SettingsPage = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <button 
                   onClick={() => handleTriggerClear("chats")}
-                  className="p-4 rounded-xl bg-black border border-gray-800 hover:border-red-500/50 transition-colors text-left group"
+                  className="p-4 rounded-xl bg-black/40 border border-white/10 hover:border-red-500/50 transition-colors text-left group focus-ring"
                 >
                   <div className="flex justify-between items-center mb-1">
                     <span className="font-bold text-white group-hover:text-red-400 transition-colors">Clear Chat History</span>
@@ -1165,7 +1166,7 @@ const SettingsPage = () => {
                 </button>
                 <button 
                   onClick={() => handleTriggerClear("scripts")}
-                  className="p-4 rounded-xl bg-black border border-gray-800 hover:border-red-500/50 transition-colors text-left group"
+                  className="p-4 rounded-xl bg-black/40 border border-white/10 hover:border-red-500/50 transition-colors text-left group focus-ring"
                 >
                   <div className="flex justify-between items-center mb-1">
                     <span className="font-bold text-white group-hover:text-red-400 transition-colors">Delete All Scripts</span>
@@ -1188,8 +1189,8 @@ const SettingsPage = () => {
       {/* User Inspector Modal */}
       {inspectorUser && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-300">
-          <div className="bg-gray-900 border border-gray-800 rounded-3xl w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl">
-            <div className="p-6 border-b border-gray-800 flex justify-between items-center bg-gray-900/50">
+          <div className="nexus-page-card w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
+            <div className="p-6 border-b border-white/10 flex justify-between items-center bg-black/20">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-cyan-500 flex items-center justify-center text-xl font-bold text-white">
                   {inspectorUser.email?.[0].toUpperCase() || "?"}
@@ -1199,9 +1200,10 @@ const SettingsPage = () => {
                   <p className="text-xs text-gray-500 font-mono">{inspectorUser.uid}</p>
                 </div>
               </div>
-              <button 
+              <button
+                type="button"
                 onClick={() => { setInspectorUser(null); setInspectorData(null); setShowRawJson(false); }}
-                className="p-2 hover:bg-white/5 rounded-full transition-colors"
+                className="nexus-icon-button rounded-full"
               >
                 <X className="w-6 h-6 text-gray-400" />
               </button>
@@ -1218,21 +1220,21 @@ const SettingsPage = () => {
                   <div className="flex justify-end">
                     <button 
                       onClick={() => setShowRawJson(!showRawJson)}
-                      className="text-xs font-bold px-3 py-1.5 rounded-lg border border-gray-800 text-gray-400 hover:text-white hover:border-gray-600 transition-all"
+                      className="text-xs font-bold px-3 py-1.5 rounded-lg border border-white/10 bg-white/5 text-gray-400 hover:text-white hover:border-white/20 transition-all focus-ring"
                     >
                       {showRawJson ? "View Formatted" : "View Raw JSON"}
                     </button>
                   </div>
 
                   {showRawJson ? (
-                    <pre className="bg-black/50 p-6 rounded-2xl border border-gray-800 text-[10px] font-mono text-cyan-400 overflow-x-auto">
+                    <pre className="bg-black/50 p-6 rounded-2xl border border-white/10 text-[10px] font-mono text-cyan-400 overflow-x-auto">
                       {JSON.stringify(inspectorData, null, 2)}
                     </pre>
                   ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       {/* Profile & Billing */}
                       <div className="space-y-6">
-                        <div className="bg-black/30 border border-gray-800 rounded-2xl p-5">
+                        <div className="bg-black/30 border border-white/10 rounded-2xl p-5">
                           <h4 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
                             <User className="w-4 h-4" /> Account Profile
                           </h4>
@@ -1244,7 +1246,7 @@ const SettingsPage = () => {
                           </div>
                         </div>
 
-                        <div className="bg-black/30 border border-gray-800 rounded-2xl p-5">
+                        <div className="bg-black/30 border border-white/10 rounded-2xl p-5">
                           <h4 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
                             <CreditCard className="w-4 h-4" /> Stripe Data
                           </h4>
@@ -1261,27 +1263,27 @@ const SettingsPage = () => {
 
                       {/* Activity Summary */}
                       <div className="space-y-6">
-                        <div className="bg-black/30 border border-gray-800 rounded-2xl p-5">
+                        <div className="bg-black/30 border border-white/10 rounded-2xl p-5">
                           <h4 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
                             <Activity className="w-4 h-4" /> Activity Summary
                           </h4>
                           <div className="grid grid-cols-3 gap-4 text-center">
-                            <div className="p-3 rounded-xl bg-gray-800/50">
+                            <div className="p-3 rounded-xl bg-white/5 border border-white/10">
                               <div className="text-xl font-bold text-white">{inspectorData.projects?.length || 0}</div>
                               <div className="text-[10px] text-gray-500 uppercase">Projects</div>
                             </div>
-                            <div className="p-3 rounded-xl bg-gray-800/50">
+                            <div className="p-3 rounded-xl bg-white/5 border border-white/10">
                               <div className="text-xl font-bold text-white">{inspectorData.scripts?.length || 0}</div>
                               <div className="text-[10px] text-gray-500 uppercase">Scripts</div>
                             </div>
-                            <div className="p-3 rounded-xl bg-gray-800/50">
+                            <div className="p-3 rounded-xl bg-white/5 border border-white/10">
                               <div className="text-xl font-bold text-white">{inspectorData.chats?.length || 0}</div>
                               <div className="text-[10px] text-gray-500 uppercase">Chats</div>
                             </div>
                           </div>
                         </div>
 
-                        <div className="bg-black/30 border border-gray-800 rounded-2xl p-5 max-h-64 overflow-y-auto">
+                        <div className="bg-black/30 border border-white/10 rounded-2xl p-5 max-h-64 overflow-y-auto">
                           <h4 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
                             <History className="w-4 h-4" /> Recent Usage Logs
                           </h4>
@@ -1302,9 +1304,9 @@ const SettingsPage = () => {
               ) : null}
             </div>
 
-            <div className="p-6 border-t border-gray-800 bg-gray-900/50 flex flex-col gap-6">
+            <div className="p-6 border-t border-white/10 bg-black/20 flex flex-col gap-6">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="bg-black/20 p-4 rounded-xl border border-gray-800">
+                <div className="bg-black/20 p-4 rounded-xl border border-white/10">
                   <h5 className="text-[10px] font-bold text-gray-500 uppercase mb-2 flex items-center gap-1"><Code className="w-3 h-3" /> Recent Projects</h5>
                   <div className="space-y-1">
                     {inspectorData?.projects?.slice(0, 3).map(p => (
@@ -1313,7 +1315,7 @@ const SettingsPage = () => {
                     {(!inspectorData?.projects || inspectorData.projects.length === 0) && <div className="text-[10px] text-gray-600 italic">None</div>}
                   </div>
                 </div>
-                <div className="bg-black/20 p-4 rounded-xl border border-gray-800">
+                <div className="bg-black/20 p-4 rounded-xl border border-white/10">
                   <h5 className="text-[10px] font-bold text-gray-500 uppercase mb-2 flex items-center gap-1"><MessageCircle className="w-3 h-3" /> Recent Chats</h5>
                   <div className="space-y-1">
                     {inspectorData?.chats?.slice(0, 3).map(c => (
@@ -1322,7 +1324,7 @@ const SettingsPage = () => {
                     {(!inspectorData?.chats || inspectorData.chats.length === 0) && <div className="text-[10px] text-gray-600 italic">None</div>}
                   </div>
                 </div>
-                <div className="bg-black/20 p-4 rounded-xl border border-gray-800">
+                <div className="bg-black/20 p-4 rounded-xl border border-white/10">
                   <h5 className="text-[10px] font-bold text-gray-500 uppercase mb-2 flex items-center gap-1"><Database className="w-3 h-3" /> Recent Scripts</h5>
                   <div className="space-y-1">
                     {inspectorData?.scripts?.slice(0, 3).map(s => (
@@ -1335,19 +1337,19 @@ const SettingsPage = () => {
 
               <div className="flex justify-between items-center">
                 <div className="flex gap-3">
-                  <button 
+                  <Button
                     onClick={() => { setTokenForm({...tokenForm, uid: inspectorUser.uid}); setInspectorUser(null); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-                    className="px-4 py-2 rounded-xl bg-pink-600/20 text-pink-400 border border-pink-500/30 text-sm font-bold hover:bg-pink-600/30 transition-all"
+                    variant="secondary"
                   >
                     Inject Tokens
-                  </button>
+                  </Button>
                 </div>
-                <button 
+                <Button
                   onClick={() => { setInspectorUser(null); setInspectorData(null); }}
-                  className="px-6 py-2 rounded-xl bg-gray-800 text-white text-sm font-bold hover:bg-gray-700 transition-all"
+                  variant="ghost"
                 >
                   Close Inspector
-                </button>
+                </Button>
               </div>
             </div>
           </div>
@@ -1355,12 +1357,12 @@ const SettingsPage = () => {
       )}
 
       {/* Sidebar Navigation */}
-      <aside className="w-full md:w-72 bg-gray-900/50 border-r border-gray-800 p-6 flex flex-col gap-8 backdrop-blur-2xl">
+      <aside className="w-full md:w-72 bg-[#121212]/70 border-r border-white/10 p-6 flex flex-col gap-8 backdrop-blur-2xl">
         <div className="flex flex-col gap-4 px-2">
           <button
             type="button"
             onClick={() => navigate("/")}
-            className="inline-flex w-fit items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-[10px] font-bold uppercase tracking-[0.22em] text-gray-300 transition hover:border-white/20 hover:text-white"
+            className="inline-flex w-fit items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-[10px] font-bold uppercase tracking-[0.22em] text-gray-300 transition hover:border-white/20 hover:text-white focus-ring"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
             Return home
@@ -1379,11 +1381,11 @@ const SettingsPage = () => {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 ${
+              className={cx("flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 focus-ring",
                 activeTab === tab.id
                   ? "bg-gradient-to-r from-[#9b5de5]/20 to-[#00f5d4]/20 text-white border border-purple-500/30 shadow-lg shadow-purple-500/5"
                   : "text-gray-500 hover:text-gray-300 hover:bg-white/5"
-              }`}
+              )}
             >
               <tab.icon className={`w-5 h-5 ${activeTab === tab.id ? "text-purple-400" : ""}`} />
               <span className="font-bold text-sm">{tab.label}</span>

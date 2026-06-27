@@ -1,6 +1,7 @@
 import React from "react";
 import { Github } from "lucide-react";
 import { useLocation } from "react-router-dom";
+import { cx } from "./ui";
 
 /**
  * NexusRBXFooter
@@ -25,7 +26,7 @@ export default function NexusRBXFooter({
   };
 
   return (
-    <footer className="border-t border-gray-800 py-8 px-4 bg-gradient-to-t from-black/60 to-transparent">
+    <footer className="border-t border-white/10 py-8 px-4 bg-gradient-to-t from-black/60 to-transparent">
       <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center">
         <div
           className="text-xl font-bold bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-transparent bg-clip-text mb-4 md:mb-0 cursor-pointer"
@@ -43,7 +44,7 @@ export default function NexusRBXFooter({
               <a
                 key={link.id}
                 href={link.href}
-                className="text-gray-400 hover:text-white transition-colors duration-300"
+                className="focus-ring rounded-lg px-1.5 py-1 text-gray-400 hover:text-white transition-colors duration-200"
                 rel="noopener noreferrer"
                 target="_blank"
               >
@@ -54,16 +55,12 @@ export default function NexusRBXFooter({
                 key={link.id}
                 type="button"
                 onClick={() => navigate(link.href)}
-                className={`text-gray-400 hover:text-white transition-colors duration-300 bg-transparent border-none outline-none cursor-pointer font-sans text-base ${
-                  isActive(link.href) ? "font-bold underline underline-offset-4 text-white" : ""
-                }`}
+                className={cx(
+                  "focus-ring rounded-lg px-1.5 py-1 text-gray-400 hover:text-white transition-colors duration-200 bg-transparent border-none cursor-pointer font-sans text-base",
+                  isActive(link.href) && "font-bold underline underline-offset-4 text-white"
+                )}
                 aria-current={isActive(link.href) ? "page" : undefined}
                 tabIndex={0}
-                style={{
-                  background: "none",
-                  padding: 0,
-                  margin: 0,
-                }}
               >
                 {link.text}
               </button>
@@ -71,7 +68,7 @@ export default function NexusRBXFooter({
           )}
           <a
             href="https://github.com/"
-            className="text-gray-400 hover:text-white transition-colors duration-300 flex items-center gap-2"
+            className="focus-ring rounded-lg px-1.5 py-1 text-gray-400 hover:text-white transition-colors duration-200 flex items-center gap-2"
             rel="noopener noreferrer"
             target="_blank"
           >

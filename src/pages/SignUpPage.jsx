@@ -25,6 +25,7 @@ import {
   signInWithOAuthProvider,
 } from "../lib/firebaseAuth";
 import NexusRBXFooter from "../components/NexusRBXFooter";
+import { cx } from "../components/ui";
 import { trackProductEvent } from "../lib/productAnalytics";
 import { getPendingAuthReturnPath, readPendingAuthAction } from "../lib/pendingAuthAction";
 
@@ -356,7 +357,7 @@ function NexusRBXSignUpPage({
         <button
           type="button"
           onClick={() => navigate("/")}
-          className="absolute top-6 left-4 sm:left-6 inline-flex items-center gap-2 rounded-full border border-white/10 bg-black/30 px-4 py-2 text-xs font-bold uppercase tracking-[0.24em] text-gray-200 backdrop-blur-xl transition hover:border-[#00f5d4]/40 hover:text-white"
+          className="focus-ring absolute top-6 left-4 sm:left-6 inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-2 text-xs font-black uppercase tracking-widest text-gray-200 backdrop-blur-xl transition hover:border-[#00f5d4]/35 hover:bg-[#00f5d4]/10 hover:text-white"
         >
           <ArrowRight className="h-3.5 w-3.5 rotate-180" />
           Return home
@@ -369,7 +370,7 @@ function NexusRBXSignUpPage({
           className="w-full max-w-2xl"
         >
           {/* Sign Up Card */}
-          <div className="bg-white/[0.02] backdrop-blur-xl border border-white/10 rounded-2xl overflow-hidden shadow-2xl">
+          <div className="nexus-page-card overflow-hidden">
             {/* Card Header */}
             <div className="p-8 border-b border-white/5 text-center">
               <div className="inline-flex p-3 rounded-2xl bg-gradient-to-br from-[#9b5de5]/20 to-[#00f5d4]/20 mb-4">
@@ -387,18 +388,18 @@ function NexusRBXSignUpPage({
                 <button
                   onClick={handleGoogleSignUp}
                   disabled={formStatus.status === "submitting"}
-                  className="flex items-center justify-center py-3 px-4 bg-white/5 hover:bg-white/10 rounded-xl border border-white/10 transition-all duration-300 group"
+                  className="focus-ring group flex items-center justify-center rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-gray-100 transition hover:border-white/20 hover:bg-white/[0.07] disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  <GoogleIcon className="h-5 w-5 mr-2 transition-transform group-hover:scale-110" />
+                  <GoogleIcon className="h-5 w-5 mr-2" />
                   <span className="text-sm font-bold">Google</span>
                 </button>
                 
                 <button
                   onClick={handleGithubSignUp}
                   disabled={formStatus.status === "submitting"}
-                  className="flex items-center justify-center py-3 px-4 bg-white/5 hover:bg-white/10 rounded-xl border border-white/10 transition-all duration-300 group"
+                  className="focus-ring group flex items-center justify-center rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-gray-100 transition hover:border-white/20 hover:bg-white/[0.07] disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  <Github className="h-5 w-5 mr-2 transition-transform group-hover:scale-110" />
+                  <Github className="h-5 w-5 mr-2" />
                   <span className="text-sm font-bold">GitHub</span>
                 </button>
               </div>
@@ -443,7 +444,7 @@ function NexusRBXSignUpPage({
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   {/* Name Field */}
                   <div>
-                    <label htmlFor="name" className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2 ml-1">
+                    <label htmlFor="name" className="nexus-field-label mb-2 ml-1 block">
                       Full Name
                     </label>
                     <div className="relative group">
@@ -455,7 +456,7 @@ function NexusRBXSignUpPage({
                         value={formData.name}
                         onChange={handleInputChange}
                         autoComplete="name"
-                        className="w-full pl-12 pr-4 py-3.5 bg-black/40 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9b5de5]/20 focus:border-[#9b5de5] transition-all duration-300 text-sm"
+                        className="nexus-input py-3.5 pl-12 pr-4"
                         placeholder="John Doe"
                         disabled={formStatus.status === "submitting" || formStatus.status === "success"}
                         required
@@ -465,7 +466,7 @@ function NexusRBXSignUpPage({
                   
                   {/* Email Field */}
                   <div>
-                    <label htmlFor="email" className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2 ml-1">
+                    <label htmlFor="email" className="nexus-field-label mb-2 ml-1 block">
                       Email Address
                     </label>
                     <div className="relative group">
@@ -477,7 +478,7 @@ function NexusRBXSignUpPage({
                         value={formData.email}
                         onChange={handleInputChange}
                         autoComplete="email"
-                        className="w-full pl-12 pr-4 py-3.5 bg-black/40 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9b5de5]/20 focus:border-[#9b5de5] transition-all duration-300 text-sm"
+                        className="nexus-input py-3.5 pl-12 pr-4"
                         placeholder="your.email@example.com"
                         disabled={formStatus.status === "submitting" || formStatus.status === "success"}
                         required
@@ -489,7 +490,7 @@ function NexusRBXSignUpPage({
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   {/* Password Field */}
                   <div>
-                    <label htmlFor="password" className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2 ml-1">
+                    <label htmlFor="password" className="nexus-field-label mb-2 ml-1 block">
                       Password
                     </label>
                     <div className="relative group">
@@ -501,7 +502,7 @@ function NexusRBXSignUpPage({
                         value={formData.password}
                         onChange={handleInputChange}
                         autoComplete="new-password"
-                        className="w-full pl-12 pr-12 py-3.5 bg-black/40 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#9b5de5]/20 focus:border-[#9b5de5] transition-all duration-300 text-sm"
+                        className="nexus-input py-3.5 pl-12 pr-12"
                         placeholder="••••••••"
                         disabled={formStatus.status === "submitting" || formStatus.status === "success"}
                         required
@@ -509,7 +510,7 @@ function NexusRBXSignUpPage({
                       <button
                         type="button"
                         onClick={togglePasswordVisibility}
-                        className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-white transition-colors"
+                        className="focus-ring absolute right-2 top-1/2 -translate-y-1/2 rounded-lg p-2 text-gray-500 transition hover:bg-white/5 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
                         disabled={formStatus.status === "submitting" || formStatus.status === "success"}
                       >
                         {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
@@ -556,7 +557,7 @@ function NexusRBXSignUpPage({
                   
                   {/* Confirm Password Field */}
                   <div>
-                    <label htmlFor="confirmPassword" className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2 ml-1">
+                    <label htmlFor="confirmPassword" className="nexus-field-label mb-2 ml-1 block">
                       Confirm Password
                     </label>
                     <div className="relative group">
@@ -567,10 +568,10 @@ function NexusRBXSignUpPage({
                         name="confirmPassword"
                         onChange={handleInputChange}
                         autoComplete="new-password"
-                        className={`w-full pl-12 pr-12 py-3.5 bg-black/40 border rounded-xl focus:outline-none focus:ring-2 transition-all duration-300 text-sm ${
+                        className={`nexus-input py-3.5 pl-12 pr-12 ${
                           formData.confirmPassword && formData.password !== formData.confirmPassword
-                            ? "border-red-600 focus:ring-red-600/20 focus:border-red-600"
-                            : "border-white/10 focus:ring-[#9b5de5]/20 focus:border-[#9b5de5]"
+                            ? "border-red-600 focus:border-red-600 focus-visible:ring-red-600/40"
+                            : ""
                         }`}
                         placeholder="••••••••"
                         disabled={formStatus.status === "submitting" || formStatus.status === "success"}
@@ -579,7 +580,7 @@ function NexusRBXSignUpPage({
                       <button
                         type="button"
                         onClick={toggleConfirmPasswordVisibility}
-                        className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-white transition-colors"
+                        className="focus-ring absolute right-2 top-1/2 -translate-y-1/2 rounded-lg p-2 text-gray-500 transition hover:bg-white/5 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
                         disabled={formStatus.status === "submitting" || formStatus.status === "success"}
                       >
                         {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
@@ -593,7 +594,7 @@ function NexusRBXSignUpPage({
                 
                 {/* Plan Selection */}
                 <div className="pt-2">
-                  <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-3 ml-1">
+                  <label className="nexus-field-label mb-3 ml-1 block">
                     Choose Your Plan
                   </label>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -626,10 +627,16 @@ function NexusRBXSignUpPage({
                 </div>
                 
                 {/* Terms Agreement Checkbox */}
-                <div className="flex items-start gap-3 cursor-pointer group pt-2" onClick={handleAgreeToTermsChange}>
-                  <div className={`w-5 h-5 rounded-lg border transition-all flex items-center justify-center shrink-0 mt-0.5 ${agreeToTerms ? 'bg-[#9b5de5] border-[#9b5de5] shadow-lg shadow-[#9b5de5]/20' : 'bg-black/40 border-white/10 group-hover:border-white/20'}`}>
-                    {agreeToTerms && <Check className="h-3 w-3 text-white stroke-[4px]" />}
-                  </div>
+                <div className="flex items-start gap-3 pt-2">
+                  <button
+                    type="button"
+                    className={`focus-ring mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-lg border transition-all ${agreeToTerms ? 'border-[#00f5d4] bg-[#00f5d4] text-black shadow-[0_0_18px_rgba(0,245,212,0.22)]' : 'border-white/10 bg-black/40 hover:border-white/20'}`}
+                    onClick={handleAgreeToTermsChange}
+                    aria-pressed={agreeToTerms}
+                    aria-label="Agree to Terms and Privacy Policy"
+                  >
+                    {agreeToTerms && <Check className="h-3 w-3 text-black stroke-[4px]" />}
+                  </button>
                   <span className="text-xs text-gray-500 font-medium select-none leading-relaxed">
                     I agree to the <a href="/terms" className="text-white hover:underline">Terms</a> and <a href="/privacy" className="text-white hover:underline">Privacy Policy</a>
                   </span>
@@ -639,10 +646,10 @@ function NexusRBXSignUpPage({
                 <button
                   type="submit"
                   disabled={formStatus.status === "submitting" || formStatus.status === "success"}
-                  className={`w-full py-4 rounded-xl font-black text-sm flex items-center justify-center gap-2 shadow-xl transition-all duration-300 ${
+                  className={`focus-ring flex w-full items-center justify-center gap-2 rounded-xl px-5 py-4 text-sm font-black transition ${
                     formStatus.status === "submitting" || formStatus.status === "success"
-                      ? "bg-white/5 text-gray-500 cursor-not-allowed"
-                      : "bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-white hover:scale-[1.02] active:scale-[0.98] shadow-[#9b5de5]/20"
+                      ? "cursor-not-allowed border border-white/10 bg-white/5 text-gray-500"
+                      : "border border-[#00f5d4]/30 bg-[#00f5d4] text-black shadow-panel hover:bg-[#5fffee] active:bg-[#00d9bf]"
                   }`}
                 >
                   {formStatus.status === "submitting" ? (
@@ -670,7 +677,7 @@ function NexusRBXSignUpPage({
                   Already have an account?{" "}
                   <button 
                     onClick={() => navigate("/signin", signInLinkState ? { state: signInLinkState } : undefined)}
-                    className="text-[#9b5de5] hover:text-[#00f5d4] transition-colors ml-1"
+                    className="focus-ring rounded-lg px-1 text-[#00f5d4] transition-colors hover:text-white"
                   >
                     Sign In
                   </button>
@@ -689,28 +696,31 @@ function NexusRBXSignUpPage({
 
 function PlanCard({ title, price, desc, icon: Icon, popular, selected, onClick }) {
   return (
-    <div 
-      className={`relative border rounded-xl p-4 cursor-pointer transition-all duration-300 group ${
+    <button
+      type="button"
+      className={cx(
+        "focus-ring group relative cursor-pointer rounded-xl border p-4 text-left transition",
         selected
-          ? "bg-[#9b5de5]/10 border-[#9b5de5] shadow-lg shadow-[#9b5de5]/10"
-          : "bg-black/40 border-white/10 hover:border-white/20"
-      }`}
+          ? "border-[#00f5d4]/45 bg-[#00f5d4]/10 shadow-[0_0_22px_rgba(0,245,212,0.12)]"
+          : "border-white/10 bg-black/40 hover:border-white/20 hover:bg-white/[0.03]"
+      )}
       onClick={onClick}
+      aria-pressed={selected}
     >
       {popular && (
-        <div className="absolute -right-1 -top-1 bg-gradient-to-r from-[#9b5de5] to-[#f15bb5] text-[8px] font-black text-white px-2 py-0.5 rounded-full uppercase tracking-tighter shadow-lg">
+        <div className="absolute -right-1 -top-1 rounded-md border border-[#f15bb5]/30 bg-[#f15bb5]/90 px-2 py-0.5 text-[8px] font-black uppercase tracking-wider text-white shadow-lg">
           Popular
         </div>
       )}
       <div className="flex justify-between items-start mb-2">
-        <div className={`p-1.5 rounded-lg ${selected ? 'bg-[#9b5de5]/20 text-[#9b5de5]' : 'bg-white/5 text-gray-500 group-hover:text-gray-300'}`}>
+        <div className={`p-1.5 rounded-lg ${selected ? 'bg-[#00f5d4]/15 text-[#00f5d4]' : 'bg-white/5 text-gray-500 group-hover:text-gray-300'}`}>
           <Icon className="h-3.5 w-3.5" />
         </div>
-        {selected && <Check className="h-3.5 w-3.5 text-[#9b5de5] stroke-[3px]" />}
+        {selected && <Check className="h-3.5 w-3.5 text-[#00f5d4] stroke-[3px]" />}
       </div>
       <h3 className={`text-xs font-black uppercase tracking-widest mb-1 ${selected ? 'text-white' : 'text-gray-400'}`}>{title}</h3>
       <p className="text-lg font-black text-white mb-1">{price}</p>
       <p className="text-[10px] text-gray-500 font-medium leading-tight">{desc}</p>
-    </div>
+    </button>
   );
 }

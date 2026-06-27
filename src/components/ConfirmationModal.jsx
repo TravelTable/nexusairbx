@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { Button } from "./ui";
 
 const ConfirmationModal = ({
   isOpen,
@@ -21,22 +22,22 @@ const ConfirmationModal = ({
   const isMatch = inputValue === warningKeyword;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-70 backdrop-blur-sm">
-      <div className="bg-gray-900 border border-gray-700 rounded-lg p-6 max-w-md w-full shadow-2xl">
-        <h3 className="text-xl font-bold text-red-500 mb-2">{title}</h3>
-        <p className="text-gray-300 mb-4 text-sm">{message}</p>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm px-4">
+      <div className="nexus-page-card max-w-md w-full p-6">
+        <h3 className="font-display text-xl font-bold text-red-300 mb-2">{title}</h3>
+        <p className="text-gray-300 mb-4 text-sm leading-relaxed">{message}</p>
 
         <div className="mb-6">
-          <label className="block text-gray-400 text-xs uppercase font-bold mb-2">
+          <label className="nexus-field-label mb-2">
             Type{" "}
-            <span className="text-white bg-gray-700 px-1 rounded select-all">
+            <span className="rounded-md border border-white/10 bg-white/10 px-1.5 py-0.5 text-white select-all">
               {warningKeyword}
             </span>{" "}
             to confirm
           </label>
           <input
             type="text"
-            className="w-full bg-black border border-gray-600 rounded p-2 text-white focus:outline-none focus:border-red-500 transition-colors"
+            className="nexus-input focus:border-red-400/70 focus-visible:ring-red-400/50"
             placeholder={`Type "${warningKeyword}"`}
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
@@ -44,23 +45,19 @@ const ConfirmationModal = ({
         </div>
 
         <div className="flex justify-end gap-3">
-          <button
+          <Button
+            variant="ghost"
             onClick={onClose}
-            className="px-4 py-2 rounded text-gray-300 hover:text-white hover:bg-gray-800 transition-colors"
           >
             Cancel
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="danger"
             onClick={onConfirm}
             disabled={!isMatch}
-            className={`px-4 py-2 rounded font-bold transition-all ${
-              isMatch
-                ? "bg-red-600 hover:bg-red-700 text-white cursor-pointer shadow-lg shadow-red-900/50"
-                : "bg-gray-800 text-gray-500 cursor-not-allowed"
-            }`}
           >
             Delete Data
-          </button>
+          </Button>
         </div>
       </div>
     </div>

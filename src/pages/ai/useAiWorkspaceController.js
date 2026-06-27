@@ -47,7 +47,7 @@ import {
   consumeGenerationIntent,
   restoreGenerationIntent,
 } from "../../lib/generationIntent";
-import { shouldGateFirstValueBeforeSignup } from "../../lib/experiments";
+import { resolveInitialGeneratorMode, shouldGateFirstValueBeforeSignup } from "../../lib/experiments";
 import { categorizePrompt, trackProductEvent } from "../../lib/productAnalytics";
 import {
   createQuickScriptIdempotencyKey,
@@ -153,10 +153,9 @@ export function useAiWorkspaceController() {
   const [sidebarOpen, setSidebarOpen] = useState(typeof window !== "undefined" ? window.innerWidth > 1024 : true);
 
   const [prompt, setPrompt] = useState("");
-  const [generatorMode, setGeneratorModeState] = useState(() => {
-    const restored = loadQuickScriptSession();
-    return restored?.generatorMode === "agent_build" ? "agent_build" : "quick_script";
-  });
+  const [generatorMode, setGeneratorModeState] = useState(() => (
+    resolveInitialGeneratorMode({ restoredSession: loadQuickScriptSession() })
+  ));
   const [quickScript, setQuickScript] = useState(() => {
     const restored = loadQuickScriptSession();
     return {

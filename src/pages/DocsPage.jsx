@@ -206,7 +206,7 @@ export default function NexusRBXDocsPageContainer() {
 
       <div className="mx-auto grid max-w-7xl gap-8 px-4 py-8 lg:grid-cols-[260px_minmax(0,1fr)]">
         <aside className="lg:sticky lg:top-24 lg:self-start">
-          <div className="rounded-3xl border border-white/10 bg-black/30 p-4 backdrop-blur-xl">
+          <div className="nexus-page-card p-4">
             <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[10px] font-black uppercase tracking-[0.22em] text-gray-400">
               <BookOpen className="h-3.5 w-3.5" />
               Guide

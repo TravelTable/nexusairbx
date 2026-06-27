@@ -31,16 +31,16 @@ export default function Modal({ onClose, title, children, isOpen = true }) {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             transition={{ type: "spring", duration: 0.4, bounce: 0.3 }}
-            className="bg-[#0b1220] border border-white/10 rounded-2xl p-8 shadow-2xl w-full max-w-lg relative mx-4"
+            className="nexus-page-card w-full max-w-lg relative mx-4 p-8"
           >
             <button
-              className="absolute top-4 right-4 p-2 rounded-xl hover:bg-white/5 transition-colors group"
+              className="nexus-icon-button absolute top-4 right-4 border-transparent"
               onClick={onClose}
               aria-label="Close modal"
             >
-              <X className="h-5 w-5 text-gray-500 group-hover:text-white transition-colors" />
+              <X className="h-5 w-5" />
             </button>
-            <h2 id="modal-title" className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
+            <h2 id="modal-title" className="font-display text-2xl font-bold text-white mb-6 flex items-center gap-3">
               {title}
             </h2>
             <div className="text-gray-300">

@@ -30,7 +30,7 @@ export default function SignInNudgeModal({ isOpen, onClose, reason = "" }) {
           role="dialog"
           aria-modal="true"
           aria-labelledby="signin-nudge-title"
-          className="relative w-full max-w-md max-h-[min(92svh,720px)] overflow-y-auto bg-[#0f1117] border border-white/10 rounded-2xl sm:rounded-3xl shadow-[0_0_50px_rgba(155,93,229,0.2)]"
+          className="nexus-page-card relative w-full max-w-md max-h-[min(92svh,720px)] overflow-y-auto"
         >
           {/* Top Glow */}
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-1 bg-gradient-to-r from-transparent via-[#9b5de5] to-transparent" />
@@ -38,7 +38,7 @@ export default function SignInNudgeModal({ isOpen, onClose, reason = "" }) {
           <button
             onClick={onClose}
             aria-label="Dismiss sign-in prompt"
-            className="absolute top-3 right-3 inline-flex min-h-11 min-w-11 items-center justify-center rounded-full hover:bg-white/5 text-gray-400 hover:text-white transition-colors sm:top-4 sm:right-4"
+            className="nexus-icon-button absolute top-3 right-3 rounded-full sm:top-4 sm:right-4"
           >
             <X className="w-5 h-5" />
           </button>
@@ -85,19 +85,19 @@ export default function SignInNudgeModal({ isOpen, onClose, reason = "" }) {
             <div className="flex flex-col gap-3">
               <button
                 onClick={() => navigate("/signup", { state: { from: aiFrom } })}
-                className="w-full min-h-11 py-3 sm:py-4 rounded-2xl bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-white font-bold text-base sm:text-lg shadow-[0_0_20px_rgba(155,93,229,0.3)] hover:shadow-[0_0_30px_rgba(155,93,229,0.5)] transition-all active:scale-[0.98]"
+                className="focus-ring w-full min-h-11 py-3 sm:py-4 rounded-xl border border-[#00f5d4]/30 bg-[#00f5d4] text-black font-bold text-base sm:text-lg shadow-panel transition hover:bg-[#5fffee] active:bg-[#00d9bf]"
               >
                 Sign Up
               </button>
               <button
                 onClick={() => navigate("/signin", { state: { from: aiFrom } })}
-                className="w-full min-h-11 py-3 rounded-2xl border border-white/10 text-gray-300 hover:text-white hover:border-white/20 text-sm font-medium transition-colors"
+                className="focus-ring w-full min-h-11 py-3 rounded-xl border border-white/10 bg-white/[0.03] text-gray-300 hover:bg-white/[0.07] hover:text-white hover:border-white/20 text-sm font-medium transition-colors"
               >
                 Already have an account? Sign In
               </button>
               <button
                 onClick={onClose}
-                className="w-full min-h-11 py-3 rounded-2xl text-gray-500 hover:text-white text-sm font-medium transition-colors"
+                className="focus-ring w-full min-h-11 py-3 rounded-xl text-gray-500 hover:bg-white/5 hover:text-white text-sm font-medium transition-colors"
               >
                 Maybe Later
               </button>

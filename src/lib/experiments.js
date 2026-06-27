@@ -180,6 +180,21 @@ export function isClearlyComplexPrompt(prompt = "") {
   );
 }
 
+export function isMobileViewport(width = typeof window !== "undefined" ? window.innerWidth : 1280) {
+  return Number(width) < 1024;
+}
+
+export function resolveInitialGeneratorMode({
+  restoredSession = null,
+  viewportWidth = typeof window !== "undefined" ? window.innerWidth : 1280,
+} = {}) {
+  const restoredMode = restoredSession?.generatorMode;
+  if (restoredMode === "agent_build" || restoredMode === "quick_script") {
+    return restoredMode;
+  }
+  return isMobileViewport(viewportWidth) ? "quick_script" : "agent_build";
+}
+
 export function chooseHomepageGeneratorMode(prompt = "", requestedMode = null) {
   if (requestedMode === "quick_script" || requestedMode === "agent_build") return requestedMode;
   if (isClearlyComplexPrompt(prompt)) return "agent_build";

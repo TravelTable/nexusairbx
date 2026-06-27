@@ -25,20 +25,21 @@ export default function ProNudgeModal({ isOpen, onClose, reason = "this icon" })
           initial={{ opacity: 0, scale: 0.9, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.9, y: 20 }}
-          className="relative w-full max-w-md bg-[#0f1117] border border-[#9b5de5]/30 rounded-[32px] overflow-hidden shadow-[0_0_50px_rgba(155,93,229,0.3)]"
+          className="nexus-page-card relative w-full max-w-md overflow-hidden"
         >
           {/* Top Glow */}
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-1.5 bg-gradient-to-r from-transparent via-[#9b5de5] to-transparent" />
           
           <button
             onClick={onClose}
-            className="absolute top-6 right-6 p-2 rounded-full hover:bg-white/5 text-gray-400 hover:text-white transition-colors z-10"
+            aria-label="Close upgrade prompt"
+            className="nexus-icon-button absolute top-6 right-6 rounded-full z-10"
           >
             <X className="w-5 h-5" />
           </button>
 
           <div className="p-8 pt-12 text-center">
-            <div className="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-gradient-to-br from-[#9b5de5] to-[#00f5d4] p-0.5 mb-6 relative group">
+            <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-[#9b5de5] to-[#00f5d4] p-0.5 mb-6 relative group">
               <div className="absolute inset-0 bg-[#9b5de5] blur-2xl opacity-40 group-hover:opacity-60 transition-opacity" />
               <div className="w-full h-full rounded-[22px] bg-[#0f1117] flex items-center justify-center relative z-10">
                 <Zap className="w-10 h-10 text-[#00f5d4]" />
@@ -77,13 +78,13 @@ export default function ProNudgeModal({ isOpen, onClose, reason = "this icon" })
             <div className="flex flex-col gap-3">
               <button
                 onClick={() => navigate("/subscribe")}
-                className="w-full py-4 rounded-2xl bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-white font-black text-lg shadow-[0_0_30px_rgba(155,93,229,0.4)] hover:scale-[1.02] active:scale-[0.98] transition-all"
+                className="focus-ring w-full py-4 rounded-xl border border-[#00f5d4]/30 bg-[#00f5d4] text-black font-black text-lg shadow-panel transition hover:bg-[#5fffee] active:bg-[#00d9bf]"
               >
                 Upgrade to Pro
               </button>
               <button
                 onClick={onClose}
-                className="w-full py-3 rounded-2xl text-gray-500 hover:text-white text-sm font-bold transition-colors"
+                className="focus-ring w-full py-3 rounded-xl text-gray-500 hover:bg-white/5 hover:text-white text-sm font-bold transition-colors"
               >
                 Maybe Later
               </button>

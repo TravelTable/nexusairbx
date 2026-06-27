@@ -109,7 +109,15 @@ export function SectionHeader({ icon: Icon, title, subtitle, right, className = 
 
 // --- Toggle -----------------------------------------------------------------
 
-export function Toggle({ checked, onChange, disabled = false, label, "aria-label": ariaLabel }) {
+export function Toggle({
+  checked,
+  onChange,
+  disabled = false,
+  label,
+  className = "",
+  "aria-label": ariaLabel,
+  ...rest
+}) {
   return (
     <button
       type="button"
@@ -120,8 +128,10 @@ export function Toggle({ checked, onChange, disabled = false, label, "aria-label
       onClick={() => onChange?.(!checked)}
       className={cx(
         "relative w-12 h-6 rounded-full transition-colors focus-ring shrink-0 disabled:opacity-50",
-        checked ? "bg-nexus-cyan" : "bg-white/15"
+        checked ? "bg-nexus-cyan" : "bg-white/15",
+        className
       )}
+      {...rest}
     >
       <span
         className={cx(

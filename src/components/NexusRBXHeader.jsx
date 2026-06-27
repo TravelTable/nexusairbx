@@ -21,6 +21,7 @@ import { useLocation } from "react-router-dom";
 import { auth } from "../firebase";
 import { signOut } from "firebase/auth";
 import { useBilling } from "../context/BillingContext";
+import { Button, cx } from "./ui";
 
 /**
  * NexusRBXHeader - Upgraded Floating Glass UI
@@ -147,7 +148,7 @@ function NexusRBXHeader({
 
   return (
     <div className={`fixed top-4 left-0 right-0 z-50 px-4 flex justify-center pointer-events-none ${isAiPage ? 'max-w-none' : ''}`}>
-      <header className={`${isAiPage ? 'w-full' : 'w-full max-w-6xl'} bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl px-6 py-2.5 flex items-center justify-between pointer-events-auto shadow-2xl transition-all duration-500`}>
+      <header className={`${isAiPage ? 'w-full' : 'w-full max-w-6xl'} bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl px-6 py-2.5 flex items-center justify-between pointer-events-auto shadow-panel transition-all duration-500`}>
         {/* Logo */}
         <div 
           className="text-xl font-black bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-transparent bg-clip-text cursor-pointer flex items-center gap-2"
@@ -169,7 +170,11 @@ function NexusRBXHeader({
             <button 
               onMouseEnter={() => setIsToolsOpen(true)}
               onClick={() => setIsToolsOpen(!isToolsOpen)}
-              className={`px-4 py-2 rounded-xl text-sm font-medium transition-all flex items-center gap-1.5 ${isToolsOpen ? 'bg-white/10 text-white' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
+              className={cx(
+                "focus-ring flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-medium transition-all",
+                isToolsOpen ? "bg-white/10 text-white" : "text-gray-400 hover:bg-white/5 hover:text-white"
+              )}
+              aria-expanded={isToolsOpen}
             >
               Tools
               <ChevronDown className={`h-4 w-4 transition-transform duration-300 ${isToolsOpen ? 'rotate-180' : ''}`} />
@@ -182,7 +187,7 @@ function NexusRBXHeader({
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 10, scale: 0.95 }}
                   onMouseLeave={() => setIsToolsOpen(false)}
-                  className="absolute top-full left-0 mt-2 w-72 bg-[#0D0D0D] border border-white/10 rounded-2xl p-2 shadow-2xl overflow-hidden"
+                  className="nexus-menu-surface absolute top-full left-0 mt-2 w-72 overflow-hidden p-2"
                 >
                   <div className="grid gap-1">
                     {tools.map((tool) => (
@@ -195,7 +200,10 @@ function NexusRBXHeader({
                             setIsToolsOpen(false);
                           }
                         }}
-                        className={`w-full flex items-start gap-3 p-3 rounded-xl transition-all text-left group ${tool.comingSoon ? 'opacity-50 cursor-not-allowed' : 'hover:bg-white/5'}`}
+                        className={cx(
+                          "focus-ring group flex w-full items-start gap-3 rounded-xl p-3 text-left transition-all",
+                          tool.comingSoon ? "cursor-not-allowed opacity-50" : "hover:bg-white/5"
+                        )}
                       >
                         <div className={`p-2 rounded-lg bg-gradient-to-br ${tool.comingSoon ? 'from-gray-800 to-gray-900' : 'from-[#9b5de5]/20 to-[#00f5d4]/20 group-hover:from-[#9b5de5]/30 group-hover:to-[#00f5d4]/30'}`}>
                           <tool.icon className={`h-4 w-4 ${tool.comingSoon ? 'text-gray-500' : 'text-[#00f5d4]'}`} />
@@ -253,7 +261,9 @@ function NexusRBXHeader({
             <div className="relative" ref={accountRef}>
               <button 
                 onClick={() => setIsAccountOpen(!isAccountOpen)}
-                className="h-9 w-9 rounded-full bg-gradient-to-br from-[#9b5de5] to-[#00f5d4] p-0.5 transition-transform hover:scale-105 active:scale-95"
+                className="focus-ring h-9 w-9 rounded-full bg-gradient-to-br from-[#9b5de5] to-[#00f5d4] p-0.5 transition-shadow hover:shadow-[0_0_18px_rgba(0,245,212,0.22)]"
+                aria-label="Open account menu"
+                aria-expanded={isAccountOpen}
               >
                 <div className="h-full w-full rounded-full bg-[#0D0D0D] flex items-center justify-center text-sm font-bold text-white">
                   {user.email?.[0].toUpperCase()}
@@ -266,7 +276,7 @@ function NexusRBXHeader({
                     initial={{ opacity: 0, y: 10, scale: 0.95 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                    className="absolute top-full right-0 mt-2 w-56 bg-[#0D0D0D] border border-white/10 rounded-2xl p-2 shadow-2xl"
+                    className="nexus-menu-surface absolute top-full right-0 mt-2 w-56 p-2"
                   >
                     <div className="px-3 py-2 border-b border-white/5 mb-1">
                       <p className="text-xs text-gray-500 truncate">{user.email}</p>
@@ -280,18 +290,20 @@ function NexusRBXHeader({
               </AnimatePresence>
             </div>
           ) : (
-            <button 
+            <Button
               onClick={handleLogin}
-              className="px-5 py-2 rounded-xl bg-white text-black text-sm font-bold hover:bg-gray-200 transition-colors"
+              size="md"
             >
               Login
-            </button>
+            </Button>
           )}
 
           {/* Mobile Menu Toggle */}
           <button 
-            className="md:hidden p-2 text-gray-400 hover:text-white"
+            className="nexus-icon-button md:hidden"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            aria-label={isMobileMenuOpen ? "Close navigation menu" : "Open navigation menu"}
+            aria-expanded={isMobileMenuOpen}
           >
             {isMobileMenuOpen ? <X /> : <Menu />}
           </button>
@@ -336,7 +348,10 @@ function NavButton({ label, active, onClick, icon: Icon }) {
   return (
     <button 
       onClick={onClick}
-      className={`px-4 py-2 rounded-xl text-sm font-medium transition-all flex items-center gap-2 ${active ? 'bg-white/10 text-white' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
+      className={cx(
+        "focus-ring flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition-all",
+        active ? "bg-white/10 text-white" : "text-gray-400 hover:bg-white/5 hover:text-white"
+      )}
     >
       {Icon && <Icon className="h-4 w-4" />}
       {label}
@@ -349,7 +364,11 @@ function MobileNavButton({ label, active, onClick, disabled, badge }) {
     <button 
       onClick={onClick}
       disabled={disabled}
-      className={`w-full flex items-center justify-between px-4 py-4 rounded-2xl text-lg font-bold transition-all ${active ? 'bg-white/10 text-white' : 'text-gray-400'} ${disabled ? 'opacity-50' : ''}`}
+      className={cx(
+        "focus-ring flex w-full items-center justify-between rounded-2xl px-4 py-4 text-base font-bold transition-all",
+        active ? "bg-white/10 text-white" : "text-gray-400 hover:bg-white/5 hover:text-white",
+        disabled && "cursor-not-allowed opacity-50 hover:bg-transparent hover:text-gray-400"
+      )}
     >
       {label}
       {badge && (
@@ -365,7 +384,10 @@ function AccountMenuItem({ icon: Icon, label, onClick, danger }) {
   return (
     <button 
       onClick={onClick}
-      className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm transition-all ${danger ? 'text-red-400 hover:bg-red-400/10' : 'text-gray-400 hover:bg-white/5 hover:text-white'}`}
+      className={cx(
+        "focus-ring flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm transition-all",
+        danger ? "text-red-400 hover:bg-red-400/10 hover:text-red-200" : "text-gray-400 hover:bg-white/5 hover:text-white"
+      )}
     >
       <Icon className="h-4 w-4" />
       {label}

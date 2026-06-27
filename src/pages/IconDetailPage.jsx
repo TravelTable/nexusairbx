@@ -25,6 +25,7 @@ import NexusRBXFooter from "../components/NexusRBXFooter";
 import ProNudgeModal from "../components/ProNudgeModal";
 import { BACKEND_URL } from "../config";
 import { canonicalUrl } from "../lib/seo";
+import { filterMarketplaceIcons, isMarketplaceEligible } from "../lib/iconMarket";
 
 const API_BASE = BACKEND_URL.replace(/\/+$/, "");
 
@@ -53,7 +54,7 @@ export default function IconDetailPage() {
       const params = new URLSearchParams({ category, style, limit: 6 });
       const res = await fetch(`${API_BASE}/api/icons/market?${params.toString()}`);
       const data = await res.json();
-      setRelatedIcons(data.icons?.filter((i) => i.id !== id) || []);
+      setRelatedIcons(filterMarketplaceIcons(data.icons || []).filter((i) => i.id !== id));
     } catch (e) {
       console.error("Failed to fetch related icons", e);
     }
@@ -73,6 +74,7 @@ export default function IconDetailPage() {
         const res = await fetch(`${API_BASE}/api/icons/${id}`);
         if (!res.ok) throw new Error("Icon not found");
         const data = await res.json();
+        if (!isMarketplaceEligible(data)) throw new Error("Icon not found");
         setIcon(data);
         fetchRelated(data.category, data.style);
       } catch (e) {
@@ -199,7 +201,7 @@ export default function IconDetailPage() {
         <div className="max-w-7xl mx-auto">
           <button 
             onClick={() => navigate("/icons-market")}
-            className="flex items-center gap-2 text-gray-500 hover:text-white transition-colors mb-8 font-bold text-sm"
+            className="focus-ring mb-8 flex items-center gap-2 rounded-xl px-2 py-1 text-sm font-bold text-gray-500 transition-colors hover:text-white"
           >
             <ArrowLeft className="w-4 h-4" /> Back to Marketplace
           </button>
@@ -207,12 +209,12 @@ export default function IconDetailPage() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
             {/* Left: Preview Section */}
             <div className="lg:col-span-7 space-y-8">
-              <div className={`relative aspect-square rounded-[40px] overflow-hidden border border-white/10 shadow-2xl flex items-center justify-center transition-colors duration-500 ${bgClasses[previewBg]}`}>
+              <div className={`relative aspect-square overflow-hidden rounded-2xl border border-white/10 shadow-panel flex items-center justify-center transition-colors duration-500 ${bgClasses[previewBg]}`}>
                 <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
                 <img 
                   src={icon.imageUrl} 
                   alt={icon.name} 
-                  className="w-2/3 h-2/3 object-contain relative z-10 transition-transform duration-500 hover:scale-110"
+                  className="w-2/3 h-2/3 object-contain relative z-10 transition-opacity duration-200 hover:opacity-95"
                   style={{ filter: tintColor !== "#ffffff" ? `drop-shadow(0 0 0 ${tintColor})` : undefined, color: tintColor }}
                 />
                 
@@ -231,7 +233,7 @@ export default function IconDetailPage() {
               </div>
 
               {/* Scale Preview */}
-              <div className="p-8 rounded-[32px] bg-white/[0.02] border border-white/10">
+              <div className="nexus-page-card p-8">
                 <h3 className="text-sm font-black uppercase tracking-widest text-gray-500 mb-6 flex items-center gap-2">
                   <Maximize2 className="w-4 h-4" /> Scale Preview
                 </h3>
@@ -271,7 +273,7 @@ export default function IconDetailPage() {
               </div>
 
               <div className="space-y-6 mb-12">
-                <div className="p-6 rounded-3xl bg-white/5 border border-white/10 space-y-4">
+                <div className="nexus-page-card p-6 space-y-4">
                   <div className="flex items-center justify-between">
                     <h3 className="text-xs font-black uppercase tracking-widest text-gray-500">ImageColor3 Tint</h3>
                     <input 
@@ -297,7 +299,7 @@ export default function IconDetailPage() {
                   </div>
                 </div>
 
-                <div className="p-6 rounded-3xl bg-[#00f5d4]/5 border border-[#00f5d4]/20 flex items-start gap-4">
+                <div className="nexus-page-card flex items-start gap-4 border-[#00f5d4]/20 bg-[#00f5d4]/5 p-6">
                   <Info className="w-5 h-5 text-[#00f5d4] shrink-0 mt-0.5" />
                   <p className="text-xs text-gray-400 leading-relaxed">
                     This asset is licensed for use in Roblox experiences. High-contrast lighting and centered composition ensure visibility across all devices.
@@ -309,7 +311,7 @@ export default function IconDetailPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <button
                     onClick={handlePostToRoblox}
-                    className="py-5 rounded-2xl bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-white font-black text-sm shadow-xl shadow-[#9b5de5]/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                    className="focus-ring flex items-center justify-center gap-2 rounded-xl bg-[#00f5d4] py-5 text-sm font-black text-black shadow-[0_0_24px_rgba(0,245,212,0.28)] transition-all hover:shadow-[0_0_32px_rgba(0,245,212,0.42)] active:scale-[0.98]"
                   >
                     {icon.isPro && !isPremium ? <ShieldCheck className="h-5 w-5" /> : <ExternalLink className="h-5 w-5" />}
                     {icon.isPro && !isPremium ? "Unlock Pro" : (copied ? "Copied Lua!" : "Post to Roblox")}
@@ -317,7 +319,7 @@ export default function IconDetailPage() {
                   
                   <button
                     onClick={handleDownload}
-                    className="py-5 rounded-2xl bg-white/5 border border-white/10 text-white font-black text-sm hover:bg-white/10 transition-all flex items-center justify-center gap-2"
+                    className="focus-ring flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 py-5 text-sm font-black text-white transition-all hover:bg-white/10"
                   >
                     <Download className="h-5 w-5" /> Download PNG
                   </button>
