@@ -25,40 +25,14 @@ try {
   generatedIconIds = new Set();
 }
 
-const NEXT_PUBLIC_ROUTES = new Map([
-  ["/", ["public-frontend/out/index.html"]],
-  ["/docs", ["public-frontend/out/docs/index.html", "public-frontend/out/docs.html"]],
-  ["/roblox-ai-scripter", ["public-frontend/out/roblox-ai-scripter/index.html", "public-frontend/out/roblox-ai-scripter.html"]],
-  ["/roblox-gui-maker", ["public-frontend/out/roblox-gui-maker/index.html", "public-frontend/out/roblox-gui-maker.html"]],
-  ["/roblox-lua-script-generator", ["public-frontend/out/roblox-lua-script-generator/index.html", "public-frontend/out/roblox-lua-script-generator.html"]],
-  ["/roblox-script-generator", ["public-frontend/out/roblox-script-generator/index.html", "public-frontend/out/roblox-script-generator.html"]],
-  ["/roblox-studio-script-generator", ["public-frontend/out/roblox-studio-script-generator/index.html", "public-frontend/out/roblox-studio-script-generator.html"]],
-]);
+const SPA_SHELL_CANDIDATES = [
+  path.join(process.cwd(), "build", "__spa-shell.html"),
+  path.join(process.cwd(), "build", "index.html"),
+  path.join(process.cwd(), "public", "index.html"),
+];
 
-const CONTENT_TYPES = {
-  ".css": "text/css; charset=utf-8",
-  ".gif": "image/gif",
-  ".html": "text/html; charset=utf-8",
-  ".ico": "image/x-icon",
-  ".jpg": "image/jpeg",
-  ".jpeg": "image/jpeg",
-  ".js": "application/javascript; charset=utf-8",
-  ".json": "application/json; charset=utf-8",
-  ".png": "image/png",
-  ".svg": "image/svg+xml",
-  ".txt": "text/plain; charset=utf-8",
-  ".webp": "image/webp",
-  ".woff": "font/woff",
-  ".woff2": "font/woff2",
-  ".xml": "application/xml; charset=utf-8",
-};
-
-function firstExistingPath(candidates) {
-  return candidates.find((candidate) => fs.existsSync(candidate));
-}
-
-function readTextFile(candidates) {
-  const filePath = firstExistingPath(candidates);
+function readSpaShell() {
+  const filePath = SPA_SHELL_CANDIDATES.find((candidate) => fs.existsSync(candidate));
   if (!filePath) return null;
   return fs.readFileSync(filePath, "utf8");
 }
@@ -71,61 +45,6 @@ function getRequestPath(req) {
 
   const url = new URL(req.url || "/", "https://www.nexusrbx.com");
   return url.pathname;
-}
-
-function serveStaticText(res, pathname) {
-  const body = readTextFile([
-    path.join(process.cwd(), "build", pathname.slice(1)),
-    path.join(process.cwd(), "public", pathname.slice(1)),
-  ]);
-  if (body == null) return false;
-
-  res.statusCode = 200;
-  res.setHeader("content-type", pathname.endsWith(".xml") ? "application/xml; charset=utf-8" : "text/plain; charset=utf-8");
-  res.end(body);
-  return true;
-}
-
-function setStaticHeaders(res, filePath) {
-  const ext = path.extname(filePath).toLowerCase();
-  res.setHeader("content-type", CONTENT_TYPES[ext] || "application/octet-stream");
-  if (filePath.includes(`${path.sep}_next${path.sep}static${path.sep}`)) {
-    res.setHeader("cache-control", "public, max-age=31536000, immutable");
-  }
-}
-
-function serveStaticFile(res, candidates, statusCode = 200) {
-  const filePath = firstExistingPath(candidates.map((candidate) => path.join(process.cwd(), candidate)));
-  if (!filePath) return false;
-
-  res.statusCode = statusCode;
-  setStaticHeaders(res, filePath);
-  fs.createReadStream(filePath).pipe(res);
-  return true;
-}
-
-function serveNextPublicRoute(res, pathname) {
-  const candidates = NEXT_PUBLIC_ROUTES.get(pathname);
-  if (!candidates) return false;
-  return serveStaticFile(res, candidates, 200);
-}
-
-function serveGeneratedIconRoute(res, pathname) {
-  const iconMatch = pathname.match(/^\/icons\/([^/]+)$/);
-  if (!iconMatch) return false;
-
-  const id = decodeURIComponent(iconMatch[1]);
-  if (!generatedIconIds.has(id)) return false;
-
-  return serveStaticFile(res, [
-    `public-frontend/out/icons/${encodeURIComponent(id)}/index.html`,
-    `public-frontend/out/icons/${encodeURIComponent(id)}.html`,
-  ], 200);
-}
-
-function serveNextStaticAsset(res, pathname) {
-  if (!pathname.startsWith("/_next/")) return false;
-  return serveStaticFile(res, [`public-frontend/out${pathname}`], 200);
 }
 
 async function iconExists(id) {
@@ -191,21 +110,7 @@ async function iconStatus(id) {
 
 module.exports = async function render(req, res) {
   const pathname = normalizePathname(getRequestPath(req));
-  if (serveNextStaticAsset(res, pathname)) return;
-  if (serveGeneratedIconRoute(res, pathname)) return;
-  if (serveNextPublicRoute(res, pathname)) return;
-
-  if (pathname === "/sitemap.xml" || pathname === "/robots.txt") {
-    if (serveStaticText(res, pathname)) return;
-  }
-  if (pathname.startsWith("/sitemaps/") && pathname.endsWith(".xml")) {
-    if (serveStaticText(res, pathname)) return;
-  }
-
-  const html = readTextFile([
-    path.join(process.cwd(), "build", "index.html"),
-    path.join(process.cwd(), "public", "index.html"),
-  ]);
+  const html = readSpaShell();
 
   if (!html) {
     res.statusCode = 500;

@@ -41,6 +41,7 @@ export function BillingProvider({ children, pollMs = 60_000 }) {
     fairUse: null,
     limits: null,
     isFreeUsagePlan: true,
+    isPremium: false,
   });
 
   useEffect(() => {
@@ -66,6 +67,7 @@ export function BillingProvider({ children, pollMs = 60_000 }) {
           unlimitedTokens: false,
           devOverride: false,
         },
+        isPremium: false,
       }));
       return;
     }

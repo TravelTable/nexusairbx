@@ -43,7 +43,7 @@
   },
   "scripts": {
     "start": "react-scripts start",
-    "build": "react-scripts build && npm run public:build",
+    "build": "react-scripts build && npm run public:build && node scripts/merge-public-export.js",
     "build:app": "react-scripts build",
     "public:build": "next build public-frontend",
     "test": "react-scripts test",

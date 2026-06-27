@@ -9,8 +9,7 @@ export default function SubscribeTabContainer({
   isSubscribed: isSubscribedProp = false,
   className = ""
 }) {
-  const { entitlements } = useBilling();
-  const isPremium = entitlements?.includes("pro") || entitlements?.includes("team");
+  const { isPremium } = useBilling();
   const isSubscribed = isSubscribedProp || isPremium;
   const [isHovering, setIsHovering] = useState(false);
 

@@ -1,4 +1,4 @@
-import { summarizeEntitlements } from "./billing";
+import { summarizeEntitlements, isPremiumPlan } from "./billing";
 
 describe("summarizeEntitlements", () => {
   test("preserves dev override flags", () => {
@@ -23,5 +23,18 @@ describe("summarizeEntitlements", () => {
       unlimitedTokens: true,
       devOverride: true,
     });
+  });
+
+  test("marks Pro Plus as premium", () => {
+    const summary = summarizeEntitlements({
+      plan: "PRO_PLUS",
+      sub: { limit: 100000, used: 0, resetsAt: null },
+      payg: { remaining: 0 },
+      entitlements: ["subscriber", "pro_plus"],
+    });
+
+    expect(summary.isPremium).toBe(true);
+    expect(isPremiumPlan("PRO_PLUS", ["subscriber", "pro_plus"])).toBe(true);
+    expect(isPremiumPlan("FREE", [])).toBe(false);
   });
 });

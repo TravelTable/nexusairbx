@@ -50,8 +50,7 @@ export default function IconsMarketPage() {
   const [hasMore, setHasMore] = useState(true);
   const [selectedIcon, setSelectedIcon] = useState(null);
   const [copied, setCopied] = useState(false);
-  const { entitlements } = useBilling();
-  const [isPremium, setIsPremium] = useState(false);
+  const { isPremium } = useBilling();
   const [showProNudge, setShowProNudge] = useState(false);
   const [collections, setCollections] = useState([]);
   const [activeMarketTab, setActiveMarketTab] = useState("browse"); // "browse" or "collections"
@@ -112,10 +111,6 @@ export default function IconsMarketPage() {
   }, [navigate]);
 
   useEffect(() => {
-    setIsPremium(entitlements?.includes("pro") || entitlements?.includes("team"));
-  }, [entitlements]);
-
-  useEffect(() => {
     const fetchCollections = async () => {
       try {
         const token = await user.getIdToken();
@@ -153,8 +148,6 @@ export default function IconsMarketPage() {
     try {
       const data = await getEntitlements();
       setTokenInfo(data);
-      const premium = data.entitlements?.includes("pro") || data.entitlements?.includes("team");
-      setIsPremium(premium);
     } catch (e) {
       console.error(e);
     } finally {

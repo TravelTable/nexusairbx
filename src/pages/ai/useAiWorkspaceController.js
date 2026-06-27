@@ -134,6 +134,7 @@ export function useAiWorkspaceController() {
     resetsAt,
     refresh: refreshBilling,
     entitlements,
+    isPremium,
     isAdmin,
     unlimitedTokens,
     devOverride,
@@ -230,7 +231,6 @@ export function useAiWorkspaceController() {
     queueNotify(payload || {});
   }, [queueNotify]);
 
-  const isPremium = entitlements?.includes("pro") || entitlements?.includes("team");
   const planKey = plan?.toLowerCase() || "free";
 
   const unified = useUnifiedChat(user, settings, refreshBilling, notify, {

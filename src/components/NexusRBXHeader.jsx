@@ -53,8 +53,8 @@ function NexusRBXHeader({
     dailyUsage,
     fairUse,
     isFreeUsagePlan,
+    isPremium,
   } = useBilling();
-  const isPremium = entitlements?.includes("pro") || entitlements?.includes("team");
 
   const resolvedSubRemaining =
     typeof subRemaining === "number"

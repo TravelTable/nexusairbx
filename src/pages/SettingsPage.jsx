@@ -130,7 +130,7 @@ const SettingsPage = () => {
   const { settings, updateSettings } = useSettings();
   const { models: modelCatalog } = useModelCatalog();
   const [codingStandards, setCodingStandards] = useState(settings.codingStandards || "");
-  const { plan, totalRemaining, subLimit, resetsAt, portal, cancel, entitlements = [], dailyUsage, fairUse } = useBilling();
+  const { plan, totalRemaining, subLimit, resetsAt, portal, cancel, entitlements = [], dailyUsage, fairUse, isPremium: isPremiumPlan } = useBilling();
   const [usageData, setUsageData] = useState({ logs: [], chartData: [] });
   const [devStats, setDevStats] = useState(null);
   const [devUsers, setDevUsers] = useState([]);
@@ -153,7 +153,6 @@ const SettingsPage = () => {
   const [proNudgeReason, setProNudgeReason] = useState("");
 
   const navigate = useNavigate();
-  const isPremiumPlan = entitlements.includes("pro") || entitlements.includes("team") || plan === "PRO" || plan === "TEAM";
   const wasPremiumPlan = useRef(isPremiumPlan);
 
   useEffect(() => {

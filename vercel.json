@@ -20,7 +20,7 @@
   ],
   "functions": {
     "api/render.js": {
-      "includeFiles": "{build/**,public-frontend/out/**}"
+      "includeFiles": "build/__spa-shell.html"
     }
   }
 }

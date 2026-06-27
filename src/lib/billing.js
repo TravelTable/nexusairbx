@@ -81,6 +81,13 @@ export async function getEntitlements({ noCache = true } = {}) {
   return r.json();
 }
 
+export function isPremiumPlan(plan, entitlements = []) {
+  const normalized = String(plan || "FREE").toUpperCase();
+  if (normalized === "PRO" || normalized === "PRO_PLUS" || normalized === "TEAM") return true;
+  const list = Array.isArray(entitlements) ? entitlements : [];
+  return list.includes("pro") || list.includes("pro_plus") || list.includes("team");
+}
+
 export function summarizeEntitlements(e) {
   const plan = e?.plan || "FREE";
   const cycle = e?.cycle || null;
@@ -118,6 +125,7 @@ export function summarizeEntitlements(e) {
     fairUse: e?.fairUse || null,
     limits: e?.limits || null,
     isFreeUsagePlan: plan === "FREE" || plan === "ANON",
+    isPremium: isPremiumPlan(plan, e?.entitlements),
   };
 }
 

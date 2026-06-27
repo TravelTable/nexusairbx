@@ -41,8 +41,7 @@ export default function IconGeneratorPage() {
   const [generatedImage, setGeneratedImage] = useState(null);
   const [history, setHistory] = useState([]);
   const [copied, setCopied] = useState(false);
-  const { entitlements } = useBilling();
-  const [isPremium, setIsPremium] = useState(false);
+  const { isPremium } = useBilling();
   const [showProNudge, setShowProNudge] = useState(false);
   const [enhancing, setEnhancing] = useState(false);
   const [referenceImage, setReferenceImage] = useState(null);
@@ -66,10 +65,6 @@ export default function IconGeneratorPage() {
     });
     return () => unsubscribe();
   }, [navigate]);
-
-  useEffect(() => {
-    setIsPremium(entitlements?.includes("pro") || entitlements?.includes("team"));
-  }, [entitlements]);
 
   useEffect(() => {
     const fetchHistory = async () => {
@@ -108,8 +103,6 @@ export default function IconGeneratorPage() {
     try {
       const data = await getEntitlements();
       setTokenInfo(data);
-      const premium = data.entitlements?.includes("pro") || data.entitlements?.includes("team");
-      setIsPremium(premium);
     } catch (e) {
       console.error(e);
     } finally {
