@@ -1,4 +1,6 @@
 {
+  "buildCommand": "npm run build",
+  "outputDirectory": "build",
   "redirects": [
     {
       "source": "/:path*",
@@ -20,7 +22,7 @@
   ],
   "functions": {
     "api/render.js": {
-      "includeFiles": "build/__spa-shell.html"
+      "includeFiles": "{build/**,public-frontend/out/**,public-frontend/data/generated/**}"
     }
   }
 }
