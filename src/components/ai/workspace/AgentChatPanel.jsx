@@ -80,6 +80,9 @@ export default function AgentChatPanel({
   planKey,
   unlimitedTokens,
   devOverride,
+  dailyUsage,
+  includedUsage,
+  isFreeUsagePlan,
   themePrimary,
   themeSecondary,
   onModeChange,
@@ -248,6 +251,9 @@ export default function AgentChatPanel({
         planKey={planKey}
         unlimitedTokens={unlimitedTokens}
         devOverride={devOverride}
+        dailyUsage={dailyUsage}
+        includedUsage={includedUsage}
+        isFreeUsagePlan={isFreeUsagePlan}
         themePrimary={themePrimary}
         themeSecondary={themeSecondary}
         onFileUpload={onFileUpload}

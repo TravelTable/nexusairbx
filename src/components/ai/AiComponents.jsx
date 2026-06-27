@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { 
-  Info, 
   ChevronDown, 
   ChevronUp, 
   Sparkles, 
@@ -20,7 +19,8 @@ import {
   RefreshCw
 } from "lucide-react";
 import PLAN_INFO from "../../lib/planInfo";
-import { getGravatarUrl, getUserInitials, formatNumber, formatResetDate } from "../../lib/aiUtils";
+import { resolveUsagePercent } from "../../lib/billing";
+import { getGravatarUrl, getUserInitials, formatResetDate } from "../../lib/aiUtils";
 
 export const FormatText = React.memo(({ text }) => {
   if (!text) return null;
@@ -41,63 +41,86 @@ export const FormatText = React.memo(({ text }) => {
   );
 });
 
-export function TokenBar({ tokensLeft, tokensLimit, resetsAt, plan, unlimitedTokens = false, devOverride = false }) {
+export function TokenBar({
+  tokensLeft,
+  tokensLimit,
+  resetsAt,
+  plan,
+  unlimitedTokens = false,
+  devOverride = false,
+  dailyUsage = null,
+  includedUsage = null,
+  isFreeUsagePlan = false,
+}) {
+  const planInfo = PLAN_INFO[plan] || PLAN_INFO.free;
+  const usageLabel = isFreeUsagePlan ? "Daily usage" : "Included usage";
+  const effectiveResetsAt = isFreeUsagePlan && dailyUsage?.resetsAt ? dailyUsage.resetsAt : resetsAt;
+
   if (unlimitedTokens) {
-    const planInfo = PLAN_INFO[plan] || PLAN_INFO.free;
     return (
-      <div id="tour-token-bar" className="w-full flex flex-col gap-1 relative z-10">
-        <div className="flex items-center justify-between mb-1">
-          <div className="text-xs text-gray-300 font-medium">
-            Tokens: <span className="text-[#00f5d4] font-bold">{devOverride ? "Dev unlimited" : "Unlimited"}</span>
+      <div id="tour-token-bar" className="relative z-10 flex w-full flex-col gap-1.5 px-0.5">
+        <div className="flex items-center justify-between gap-2">
+          <div className="text-[11px] font-semibold text-gray-300">
+            {usageLabel}: <span className="font-bold text-[#00f5d4]">{devOverride ? "Dev unlimited" : "Unlimited"}</span>
           </div>
-          <span className="flex items-center gap-1 text-xs text-[#00f5d4]" title="Unlimited token override is active">
-            <Zap className="w-4 h-4" /> Active
+          <span className="flex items-center gap-1 text-[10px] text-[#00f5d4]" title="Unlimited token override is active">
+            <Zap className="h-3.5 w-3.5" /> Active
           </span>
         </div>
-        <div className="w-full h-3 bg-gray-800/50 rounded-full overflow-hidden relative border border-white/5">
-          <div className="h-full rounded-full transition-all duration-500 bg-gradient-to-r from-[#00f5d4] to-[#9b5de5]" style={{ width: "100%" }}></div>
-        </div>
-        <div className="flex items-center justify-between mt-1 text-xs text-gray-400">
-          <span>{devOverride ? "Dev override active" : ""}</span>
-          <span className="text-gray-500">{devOverride ? "Unlimited override" : planInfo.capText}</span>
+        <div className="h-1.5 w-full overflow-hidden rounded-full border border-white/5 bg-gray-800/50">
+          <div className="h-full w-full rounded-full bg-gradient-to-r from-[#00f5d4] to-[#9b5de5]" />
         </div>
       </div>
     );
   }
 
-  const percent = typeof tokensLeft === "number" && typeof tokensLimit === "number"
-      ? Math.max(0, Math.min(100, (tokensLeft / tokensLimit) * 100))
-      : 100;
-  const planInfo = PLAN_INFO[plan] || PLAN_INFO.free;
-  const isLow = percent < 15;
+  const percentUsed = resolveUsagePercent({
+    isFreeUsagePlan,
+    dailyUsage,
+    includedUsage,
+    tokensLeft,
+    tokensLimit,
+  });
+  const isLow = percentUsed >= 85;
 
   return (
-    <div id="tour-token-bar" className="w-full flex flex-col gap-1 relative z-10">
-      <div className="flex items-center justify-between mb-1">
-        <div className="text-xs text-gray-300 font-medium">
-          Tokens: <span className="text-white font-bold">{typeof tokensLeft === "number" ? formatNumber(tokensLeft) : "∞"}</span>{" "}
-          <span className="text-gray-400">/ {formatNumber(tokensLimit)}</span>
+    <div id="tour-token-bar" className="relative z-10 flex w-full flex-col gap-1.5 px-0.5">
+      <div className="flex items-center justify-between gap-2">
+        <div className="text-[11px] font-semibold text-gray-300">
+          {usageLabel}: <span className="font-bold text-white">{percentUsed}%</span> used
         </div>
         {isLow && plan === "free" ? (
-          <a href="/subscribe" className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-[#00f5d4] hover:brightness-125 transition-all animate-pulse">
-            <Zap className="w-3 h-3 fill-current" /> Upgrade to Pro
+          <a href="/subscribe" className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-[#00f5d4] transition-all hover:brightness-125 animate-pulse">
+            <Zap className="h-3 w-3 fill-current" /> Upgrade to Pro
           </a>
         ) : isLow && plan === "pro" ? (
-          <a href="/subscribe" className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-[#9b5de5] hover:brightness-125 transition-all animate-pulse">
-            <Zap className="w-3 h-3 fill-current" /> Explore Team
+          <a href="/subscribe" className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-[#9b5de5] transition-all hover:brightness-125 animate-pulse">
+            <Zap className="h-3 w-3 fill-current" /> Explore Team
           </a>
         ) : (
-          <a href="/docs#usage" className="flex items-center gap-1 text-xs text-[#9b5de5] hover:text-[#00f5d4] underline" title="How usage works">
-            <Info className="w-4 h-4" /> How usage works
-          </a>
+          <span className="text-[10px] text-gray-500">
+            {typeof effectiveResetsAt === "string" || effectiveResetsAt instanceof Date ? `Resets ${formatResetDate(effectiveResetsAt)}` : planInfo.capText}
+          </span>
         )}
       </div>
-      <div className="w-full h-3 bg-gray-800/50 rounded-full overflow-hidden relative border border-white/5">
-        <div className={`h-full rounded-full transition-all duration-500 ${plan === "team" ? "bg-gradient-to-r from-[#00f5d4] to-[#9b5de5]" : plan === "pro" ? "bg-gradient-to-r from-[#9b5de5] to-[#00f5d4]" : "bg-gray-400"} ${isLow ? 'animate-pulse shadow-[0_0_10px_rgba(255,0,0,0.5)]' : ''}`} style={{ width: `${percent}%` }}></div>
-      </div>
-      <div className="flex items-center justify-between mt-1 text-xs text-gray-400">
-        <span>{typeof resetsAt === "string" || resetsAt instanceof Date ? `Resets on ${formatResetDate(resetsAt)}` : ""}</span>
-        <span className="text-gray-500">{planInfo.capText}</span>
+      <div
+        className="h-1.5 w-full overflow-hidden rounded-full border border-white/5 bg-gray-800/50"
+        role="progressbar"
+        aria-label={usageLabel}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={percentUsed}
+      >
+        <div
+          className={`h-full rounded-full transition-all duration-500 ${
+            plan === "team"
+              ? "bg-gradient-to-r from-[#00f5d4] to-[#9b5de5]"
+              : plan === "pro"
+                ? "bg-gradient-to-r from-[#9b5de5] to-[#00f5d4]"
+                : "bg-[#00f5d4]"
+          } ${isLow ? "animate-pulse shadow-[0_0_10px_rgba(255,0,0,0.5)]" : ""}`}
+          style={{ width: `${percentUsed}%` }}
+        />
       </div>
     </div>
   );

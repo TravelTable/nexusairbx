@@ -60,7 +60,7 @@ export default function RobloxAssetTray({
       const token = await auth.currentUser.getIdToken();
       const [assetData, stateData] = await Promise.all([
         listUiProjectAssets({ token, projectId }),
-        getUiProjectState({ token, projectId }).catch(() => null),
+        getUiProjectState({ token, projectId, optional: true }).catch(() => null),
       ]);
       setAssets(Array.isArray(assetData?.assets) ? assetData.assets : []);
       setProjectRevision(stateData?.state?.revision || null);

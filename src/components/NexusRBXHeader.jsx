@@ -41,7 +41,6 @@ function NexusRBXHeader({
   const toolsRef = useRef(null);
   const accountRef = useRef(null);
   const {
-    entitlements,
     subRemaining,
     paygRemaining,
     subLimit,

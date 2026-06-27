@@ -8,19 +8,33 @@ import {
   setProjectAssetUploadSettings,
 } from "../lib/robloxAssetLibraryApi";
 
+const EMPTY_UPLOAD_STATUS = { status: "idle", records: [] };
+
+function isAccessBlockedError(err) {
+  return err?.status === 401 || err?.status === 403;
+}
+
+function messageWithRequestId(err, fallback) {
+  const message = err?.message || fallback;
+  return err?.requestId ? `${message} (Request ID: ${err.requestId})` : message;
+}
+
 export function useProjectAssets(projectId, { enabled = true, notify } = {}) {
   const [assets, setAssets] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [accessBlockedError, setAccessBlockedError] = useState(null);
   const [uploadSettings, setUploadSettings] = useState(null);
-  const [uploadStatus, setUploadStatus] = useState({ status: "idle", records: [] });
+  const [uploadStatus, setUploadStatus] = useState(EMPTY_UPLOAD_STATUS);
   const [saving, setSaving] = useState(false);
 
   const refresh = useCallback(async () => {
     if (!enabled || !projectId) {
       setAssets([]);
       setUploadSettings(null);
-      setUploadStatus({ status: "idle", records: [] });
+      setUploadStatus(EMPTY_UPLOAD_STATUS);
+      setAccessBlockedError(null);
+      setError(null);
       return;
     }
     setLoading(true);
@@ -33,10 +47,12 @@ export function useProjectAssets(projectId, { enabled = true, notify } = {}) {
       ]);
       setAssets(Array.isArray(assetData.assets) ? assetData.assets : []);
       setUploadSettings(settingsData || null);
-      setUploadStatus(statusData || { status: "idle", records: [] });
+      setUploadStatus(statusData || EMPTY_UPLOAD_STATUS);
+      setAccessBlockedError(null);
     } catch (err) {
       setError(err);
-      notify?.({ type: "error", message: err?.message || "Failed to load project assets" });
+      if (isAccessBlockedError(err)) setAccessBlockedError(err);
+      notify?.({ type: "error", message: messageWithRequestId(err, "Failed to load project assets") });
     } finally {
       setLoading(false);
     }
@@ -47,14 +63,19 @@ export function useProjectAssets(projectId, { enabled = true, notify } = {}) {
   }, [refresh]);
 
   useEffect(() => {
-    if (!enabled || !projectId) return undefined;
+    if (!enabled || !projectId || accessBlockedError) return undefined;
     const timer = window.setInterval(() => {
       getGeneratedAssetUploadStatus(projectId)
-        .then((statusData) => setUploadStatus(statusData || { status: "idle", records: [] }))
-        .catch(() => {});
+        .then((statusData) => setUploadStatus(statusData || EMPTY_UPLOAD_STATUS))
+        .catch((err) => {
+          if (isAccessBlockedError(err)) {
+            setAccessBlockedError(err);
+            setError(err);
+          }
+        });
     }, 12000);
     return () => window.clearInterval(timer);
-  }, [enabled, projectId]);
+  }, [enabled, projectId, accessBlockedError]);
 
   const attachAssets = useCallback(async (nextAssets) => {
     if (!projectId) throw new Error("Open a project before selecting assets.");
@@ -111,6 +132,7 @@ export function useProjectAssets(projectId, { enabled = true, notify } = {}) {
     error,
     uploadSettings,
     uploadStatus,
+    accessBlockedError,
     refresh,
     attachAssets,
     removeAsset,

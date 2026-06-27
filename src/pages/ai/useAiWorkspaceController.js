@@ -43,6 +43,7 @@ import { useAiNotifications } from "./useAiNotifications";
 import { saveWorkspaceArtifact } from "../../lib/artifactWorkspaceApi";
 import { getRobloxOAuthStatus } from "../../lib/robloxOAuthApi";
 import { useProjectAssets } from "../../hooks/useProjectAssets";
+import { createImprovePromptError, formatImprovePromptErrorMessage } from "../../lib/aiPromptErrors";
 import {
   consumeGenerationIntent,
   restoreGenerationIntent,
@@ -139,6 +140,9 @@ export function useAiWorkspaceController() {
     unlimitedTokens,
     devOverride,
     flags,
+    dailyUsage,
+    includedUsage,
+    isFreeUsagePlan,
   } = useBilling();
   const { settings, updateSettings } = useSettings();
   const navigate = useNavigate();
@@ -891,7 +895,7 @@ export function useAiWorkspaceController() {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        throw new Error(data?.error || data?.message || data?.detail || "Improve prompt request failed");
+        throw createImprovePromptError(res, data);
       }
       const improved = (data?.improvedPrompt || "").trim();
       if (improved && improved !== current) {
@@ -902,7 +906,7 @@ export function useAiWorkspaceController() {
       }
     } catch (err) {
       notify({
-        message: err?.message || "Couldn't improve prompt, try again",
+        message: formatImprovePromptErrorMessage(err),
         type: "error",
       });
     } finally {
@@ -1420,6 +1424,9 @@ export function useAiWorkspaceController() {
       devOverride,
       flags,
       entitlements,
+      dailyUsage,
+      includedUsage,
+      isFreeUsagePlan,
     },
     navigation: {
       navigate,

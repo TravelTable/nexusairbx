@@ -15,7 +15,10 @@ async function handleResponse(res) {
     const msg = data?.error || data?.message || `Request failed (${res.status})`;
     const err = new Error(msg);
     err.status = res.status;
-    if (data?.code) err.code = data.code;
+    err.code = data?.code || null;
+    err.requestId = data?.requestId || res.headers.get("x-request-id") || null;
+    err.retryable = typeof data?.retryable === "boolean" ? data.retryable : null;
+    err.missingScopes = Array.isArray(data?.missingScopes) ? data.missingScopes : [];
     throw err;
   }
   return data;
@@ -359,9 +362,10 @@ export async function createStyleProfile({ token, projectId, profile }) {
   return handleResponse(res);
 }
 
-export async function getUiProjectState({ token, projectId }) {
+export async function getUiProjectState({ token, projectId, optional = false }) {
+  const params = optional ? "?optional=1" : "";
   const res = await fetch(
-    `${BACKEND_URL}/api/ui-builder/projects/${encodeURIComponent(projectId)}/state`,
+    `${BACKEND_URL}/api/ui-builder/projects/${encodeURIComponent(projectId)}/state${params}`,
     { headers: authHeaders(token) }
   );
   return handleResponse(res);

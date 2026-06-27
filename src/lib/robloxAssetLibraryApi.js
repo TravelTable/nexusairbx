@@ -16,6 +16,7 @@ async function readJson(res, fallbackMessage) {
     error.details = data?.details || null;
     error.requestId = data?.requestId || null;
     error.missingScopes = Array.isArray(data?.missingScopes) ? data.missingScopes : [];
+    error.retryable = typeof data?.retryable === "boolean" ? data.retryable : null;
     throw error;
   }
   return data || {};

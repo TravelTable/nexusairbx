@@ -1,4 +1,4 @@
-import { summarizeEntitlements, isPremiumPlan } from "./billing";
+import { summarizeEntitlements, isPremiumPlan, resolveUsagePercent } from "./billing";
 
 describe("summarizeEntitlements", () => {
   test("preserves dev override flags", () => {
@@ -36,5 +36,32 @@ describe("summarizeEntitlements", () => {
     expect(summary.isPremium).toBe(true);
     expect(isPremiumPlan("PRO_PLUS", ["subscriber", "pro_plus"])).toBe(true);
     expect(isPremiumPlan("FREE", [])).toBe(false);
+  });
+});
+
+describe("resolveUsagePercent", () => {
+  test("prefers daily usage for free plans", () => {
+    expect(resolveUsagePercent({
+      isFreeUsagePlan: true,
+      dailyUsage: { percentUsed: 42 },
+      tokensLeft: 900,
+      tokensLimit: 1000,
+    })).toBe(42);
+  });
+
+  test("uses included usage for paid plans", () => {
+    expect(resolveUsagePercent({
+      isFreeUsagePlan: false,
+      includedUsage: { percentUsed: 67 },
+      tokensLeft: 100,
+      tokensLimit: 1000,
+    })).toBe(67);
+  });
+
+  test("falls back to token math", () => {
+    expect(resolveUsagePercent({
+      tokensLeft: 250,
+      tokensLimit: 1000,
+    })).toBe(75);
   });
 });

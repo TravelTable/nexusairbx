@@ -71,6 +71,7 @@ describe("RobloxAssetTray", () => {
 
     await waitFor(() => expect(screen.getByText("Upload quota reached")).toBeTruthy());
 
+    expect(getUiProjectState).toHaveBeenCalledWith(expect.objectContaining({ projectId: "project_1", optional: true }));
     expect(screen.getByText("Retry Upload")).toBeTruthy();
     expect(screen.queryByText("Approve")).toBeNull();
     expect(screen.getByText("Poll")).toBeTruthy();

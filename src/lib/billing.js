@@ -81,6 +81,31 @@ export async function getEntitlements({ noCache = true } = {}) {
   return r.json();
 }
 
+function clampPercent(value) {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return 0;
+  return Math.max(0, Math.min(100, Math.round(n)));
+}
+
+export function resolveUsagePercent({
+  isFreeUsagePlan = false,
+  dailyUsage = null,
+  includedUsage = null,
+  tokensLeft = null,
+  tokensLimit = null,
+} = {}) {
+  if (isFreeUsagePlan && dailyUsage?.percentUsed != null) {
+    return clampPercent(dailyUsage.percentUsed);
+  }
+  if (includedUsage?.percentUsed != null) {
+    return clampPercent(includedUsage.percentUsed);
+  }
+  if (typeof tokensLeft === "number" && typeof tokensLimit === "number" && tokensLimit > 0) {
+    return clampPercent(((tokensLimit - tokensLeft) / tokensLimit) * 100);
+  }
+  return 0;
+}
+
 export function isPremiumPlan(plan, entitlements = []) {
   const normalized = String(plan || "FREE").toUpperCase();
   if (normalized === "PRO" || normalized === "PRO_PLUS" || normalized === "TEAM") return true;

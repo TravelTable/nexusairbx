@@ -43,7 +43,7 @@ async function pollStudioCommand(commandId, { timeoutMs = 30000 } = {}) {
 
 export default function AgentWorkspaceLayout({ controller }) {
   const { billing, navigation, uiState, refs, modules, handlers, studio, roblox } = controller;
-  const { planKey, totalRemaining, subLimit, resetsAt, isPremium, unlimitedTokens, devOverride } = billing;
+  const { planKey, totalRemaining, subLimit, resetsAt, isPremium, unlimitedTokens, devOverride, dailyUsage, includedUsage, isFreeUsagePlan } = billing;
   const { navigate } = navigation;
   const {
     user,
@@ -671,6 +671,9 @@ export default function AgentWorkspaceLayout({ controller }) {
       planKey={planKey}
       unlimitedTokens={unlimitedTokens}
       devOverride={devOverride}
+      dailyUsage={dailyUsage}
+      includedUsage={includedUsage}
+      isFreeUsagePlan={isFreeUsagePlan}
       themePrimary={currentTheme.primary}
       themeSecondary={currentTheme.secondary}
       onModeChange={(m) => chat.updateChatMode(chat.currentChatId, m)}

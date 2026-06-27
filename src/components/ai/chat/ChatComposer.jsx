@@ -165,6 +165,9 @@ export default function ChatComposer({
   planKey,
   unlimitedTokens,
   devOverride,
+  dailyUsage,
+  includedUsage,
+  isFreeUsagePlan,
   themePrimary,
   themeSecondary,
   refineTarget,
@@ -239,17 +242,6 @@ export default function ChatComposer({
     <div className="bg-gradient-to-t from-black via-black/80 to-transparent p-3">
       <div className="mx-auto max-w-5xl space-y-2.5">
         <UnifiedStatusBar isGenerating={isGenerating} stage={generationStage} />
-
-        <div className="flex flex-wrap items-center justify-between gap-3 px-1">
-          <TokenBar
-            tokensLeft={tokensLeft}
-            tokensLimit={tokensLimit}
-            resetsAt={resetsAt}
-            plan={planKey}
-            unlimitedTokens={unlimitedTokens}
-            devOverride={devOverride}
-          />
-        </div>
 
         {refineTarget && (
           <div className="px-1">
@@ -383,6 +375,18 @@ export default function ChatComposer({
                 ))}
               </div>
             )}
+
+            <TokenBar
+              tokensLeft={tokensLeft}
+              tokensLimit={tokensLimit}
+              resetsAt={resetsAt}
+              plan={planKey}
+              unlimitedTokens={unlimitedTokens}
+              devOverride={devOverride}
+              dailyUsage={dailyUsage}
+              includedUsage={includedUsage}
+              isFreeUsagePlan={isFreeUsagePlan}
+            />
 
             <div className="flex items-end gap-2 rounded-xl border border-white/10 bg-black/30 p-1.5 transition-all focus-within:border-[#00f5d4]/35 focus-within:shadow-[0_0_24px_rgba(0,245,212,0.10)]">
               <div className="relative">

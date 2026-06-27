@@ -130,7 +130,7 @@ const SettingsPage = () => {
   const { settings, updateSettings } = useSettings();
   const { models: modelCatalog } = useModelCatalog();
   const [codingStandards, setCodingStandards] = useState(settings.codingStandards || "");
-  const { plan, totalRemaining, subLimit, resetsAt, portal, cancel, entitlements = [], dailyUsage, fairUse, isPremium: isPremiumPlan } = useBilling();
+  const { plan, totalRemaining, subLimit, resetsAt, portal, cancel, dailyUsage, fairUse, isPremium: isPremiumPlan } = useBilling();
   const [usageData, setUsageData] = useState({ logs: [], chartData: [] });
   const [devStats, setDevStats] = useState(null);
   const [devUsers, setDevUsers] = useState([]);
