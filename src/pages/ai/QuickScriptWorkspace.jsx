@@ -15,6 +15,7 @@ import {
   ShieldCheck,
   Sparkles,
   TerminalSquare,
+  Wand2,
 } from "lucide-react";
 
 import { Button, cx } from "../../components/ui";
@@ -86,6 +87,8 @@ export default function QuickScriptWorkspace({
   onStudioPush,
   onContinueEditing,
   onOpenAgentBuild,
+  onImprovePrompt,
+  isImproving = false,
 }) {
   const textareaRef = useRef(null);
   const [isComposing, setIsComposing] = useState(false);
@@ -160,9 +163,28 @@ export default function QuickScriptWorkspace({
               }}
               className="scroll-mt-4 rounded-lg border border-white/10 bg-[#111116]/95 p-3 shadow-panel"
             >
-              <label htmlFor="quick-script-prompt" className="text-[11px] font-black uppercase tracking-[0.18em] text-gray-400">
-                Script prompt
-              </label>
+              <div className="flex items-center justify-between gap-2">
+                <label htmlFor="quick-script-prompt" className="text-[11px] font-black uppercase tracking-[0.18em] text-gray-400">
+                  Script prompt
+                </label>
+                {onImprovePrompt && (
+                  <button
+                    type="button"
+                    onClick={() => onImprovePrompt()}
+                    disabled={isGenerating || isImproving || !String(prompt || "").trim()}
+                    className="inline-flex h-7 items-center gap-1.5 rounded-lg border border-[#9b5de5]/25 bg-[#9b5de5]/10 px-2 text-[10px] font-bold uppercase tracking-wider text-[#c9b3f7] transition-all hover:bg-[#9b5de5]/20 hover:text-white focus-ring disabled:cursor-not-allowed disabled:opacity-40"
+                    title="Expand your prompt into a detailed brief"
+                    aria-label="Improve my prompt"
+                  >
+                    {isImproving ? (
+                      <Loader className="h-3 w-3 animate-spin" />
+                    ) : (
+                      <Wand2 className="h-3 w-3" />
+                    )}
+                    {isImproving ? "Improving" : "Improve"}
+                  </button>
+                )}
+              </div>
               <textarea
                 id="quick-script-prompt"
                 ref={textareaRef}

@@ -69,7 +69,7 @@ export default function SidebarContent({
   generatingChatIds = [],
   user = null,
 }) {
-  const { isPremium } = useBilling();
+  const { isPremium, entitlements } = useBilling();
 
   // --- Library Data ---
   const { chats } = useAiLibrary(user);

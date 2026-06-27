@@ -889,8 +889,10 @@ export function useAiWorkspaceController() {
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ prompt: current, gameSpec: resolveGameSpecForPrompt(settings?.gameSpec) }),
       });
-      if (!res.ok) throw new Error("Improve prompt request failed");
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data?.error || data?.message || "Improve prompt request failed");
+      }
       const improved = (data?.improvedPrompt || "").trim();
       if (improved && improved !== current) {
         setPrompt(improved);
@@ -899,7 +901,10 @@ export function useAiWorkspaceController() {
         notify({ message: "Prompt already looks good", type: "info" });
       }
     } catch (err) {
-      notify({ message: "Couldn't improve prompt, try again", type: "error" });
+      notify({
+        message: err?.message || "Couldn't improve prompt, try again",
+        type: "error",
+      });
     } finally {
       setIsImproving(false);
     }

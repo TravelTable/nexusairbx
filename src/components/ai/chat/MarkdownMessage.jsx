@@ -2,6 +2,7 @@ import React, { useEffect, useId, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import mermaid from "mermaid";
+import { sanitizeMermaidChart } from "../../../lib/sanitizeMermaid";
 
 let mermaidInitialized = false;
 
@@ -28,15 +29,32 @@ function MermaidBlock({ chart }) {
     const renderId = `mermaid-${reactId.replace(/:/g, "")}`;
 
     async function renderChart() {
+      const trimmed = chart.trim();
+      const candidates = [trimmed, sanitizeMermaidChart(trimmed)].filter(
+        (value, index, list) => value && list.indexOf(value) === index
+      );
+
       try {
         ensureMermaidInit();
-        const { svg } = await mermaid.render(renderId, chart.trim());
-        if (!cancelled && containerRef.current) {
-          containerRef.current.innerHTML = svg;
-          setError(null);
+        let lastError = null;
+
+        for (const candidate of candidates) {
+          try {
+            const { svg } = await mermaid.render(renderId, candidate);
+            if (!cancelled && containerRef.current) {
+              containerRef.current.innerHTML = svg;
+              setError(null);
+            }
+            return;
+          } catch (err) {
+            lastError = err;
+          }
         }
+
+        throw lastError || new Error("Could not render diagram");
       } catch (err) {
         if (!cancelled) {
+          if (containerRef.current) containerRef.current.innerHTML = "";
           setError(err?.message || "Could not render diagram");
         }
       }
@@ -50,9 +68,14 @@ function MermaidBlock({ chart }) {
 
   if (error) {
     return (
-      <pre className="my-3 p-3 rounded-xl border border-white/10 bg-black/40 text-[12px] text-gray-300 overflow-x-auto whitespace-pre-wrap font-mono">
-        {chart}
-      </pre>
+      <div className="my-4 space-y-2">
+        <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-[12px] text-amber-100">
+          Could not render diagram. Showing source instead.
+        </div>
+        <pre className="p-3 rounded-xl border border-white/10 bg-black/40 text-[12px] text-gray-300 overflow-x-auto whitespace-pre-wrap font-mono">
+          {chart}
+        </pre>
+      </div>
     );
   }
 

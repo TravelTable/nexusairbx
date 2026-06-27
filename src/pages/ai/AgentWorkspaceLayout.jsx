@@ -1072,6 +1072,8 @@ export default function AgentWorkspaceLayout({ controller }) {
                 onStudioPush={handleQuickScriptStudioPush}
                 onContinueEditing={handleQuickScriptContinueEditing}
                 onOpenAgentBuild={handleQuickScriptOpenAgentBuild}
+                onImprovePrompt={handleImprovePrompt}
+                isImproving={isImproving}
               />
             </div>
           ) : (
