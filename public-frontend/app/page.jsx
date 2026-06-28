@@ -179,8 +179,8 @@ export default function HomePage() {
             <span>NexusRBX</span>
           </a>
           <nav aria-label="Footer navigation">
-            <a href="/terms">Terms</a>
-            <a href="/privacy">Privacy</a>
+            <a href="/legal/terms">Terms</a>
+            <a href="/legal/privacy">Privacy</a>
             <a href="/contact">Contact</a>
             <a href="/docs">Docs</a>
           </nav>

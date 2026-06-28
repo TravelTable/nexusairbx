@@ -15,6 +15,27 @@ const {
 
 const html = '<!doctype html><html><head><title>NexusRBX</title></head><body><div id="root"></div></body></html>';
 const validIconId = "omFibOqM24B7fVibHfan";
+const docsRouteSources = [
+  "/docs",
+  "/docs/getting-started",
+  "/docs/studio-plugin",
+  "/docs/script-generation",
+  "/docs/ui-generation",
+  "/docs/assets",
+  "/docs/projects",
+  "/docs/account",
+  "/docs/api",
+  "/docs/troubleshooting",
+  "/docs/faq",
+];
+const legalRouteSources = [
+  "/legal",
+  "/legal/terms",
+  "/legal/privacy",
+  "/legal/acceptable-use",
+  "/legal/refunds",
+  "/legal/cookies",
+];
 
 function iconExists(id) {
   return Promise.resolve(id === validIconId);
@@ -84,10 +105,15 @@ test("route classifier assigns explicit Next public and SPA owners", async () =>
 });
 
 test("valid public route returns 200 with route-specific canonical ownership", async () => {
-  const route = await classifyRoute("/docs", { iconExists, iconStatus });
+  const route = await classifyRoute("/docs/studio-plugin", { iconExists, iconStatus });
   assert.equal(route.status, 200);
   assert.equal(route.frontend, "next");
-  assert.equal(route.canonicalPath, "/docs");
+  assert.equal(route.canonicalPath, "/docs/studio-plugin");
+
+  const legalRoute = await classifyRoute("/legal/privacy", { iconExists, iconStatus });
+  assert.equal(legalRoute.status, 200);
+  assert.equal(legalRoute.frontend, "next");
+  assert.equal(legalRoute.canonicalPath, "/legal/privacy");
 });
 
 test("valid authenticated route returns 200 noindex without canonical", async () => {
@@ -155,7 +181,8 @@ test("vercel rewrites enumerate route owners without a broad fallback", () => {
   const sources = renderRewrites.map((entry) => entry.source);
   const expectedSources = [
     "/",
-    "/docs",
+    ...docsRouteSources,
+    ...legalRouteSources,
     "/roblox-script-generator",
     "/roblox-ai-scripter",
     "/roblox-lua-script-generator",

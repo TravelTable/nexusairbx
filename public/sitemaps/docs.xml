@@ -3,4 +3,34 @@
   <url>
     <loc>https://www.nexusrbx.com/docs</loc>
   </url>
+  <url>
+    <loc>https://www.nexusrbx.com/docs/account</loc>
+  </url>
+  <url>
+    <loc>https://www.nexusrbx.com/docs/api</loc>
+  </url>
+  <url>
+    <loc>https://www.nexusrbx.com/docs/assets</loc>
+  </url>
+  <url>
+    <loc>https://www.nexusrbx.com/docs/faq</loc>
+  </url>
+  <url>
+    <loc>https://www.nexusrbx.com/docs/getting-started</loc>
+  </url>
+  <url>
+    <loc>https://www.nexusrbx.com/docs/projects</loc>
+  </url>
+  <url>
+    <loc>https://www.nexusrbx.com/docs/script-generation</loc>
+  </url>
+  <url>
+    <loc>https://www.nexusrbx.com/docs/studio-plugin</loc>
+  </url>
+  <url>
+    <loc>https://www.nexusrbx.com/docs/troubleshooting</loc>
+  </url>
+  <url>
+    <loc>https://www.nexusrbx.com/docs/ui-generation</loc>
+  </url>
 </urlset>

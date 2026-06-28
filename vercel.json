@@ -24,6 +24,70 @@
       "destination": "/api/render?path=/docs"
     },
     {
+      "source": "/docs/getting-started",
+      "destination": "/api/render?path=/docs/getting-started"
+    },
+    {
+      "source": "/docs/studio-plugin",
+      "destination": "/api/render?path=/docs/studio-plugin"
+    },
+    {
+      "source": "/docs/script-generation",
+      "destination": "/api/render?path=/docs/script-generation"
+    },
+    {
+      "source": "/docs/ui-generation",
+      "destination": "/api/render?path=/docs/ui-generation"
+    },
+    {
+      "source": "/docs/assets",
+      "destination": "/api/render?path=/docs/assets"
+    },
+    {
+      "source": "/docs/projects",
+      "destination": "/api/render?path=/docs/projects"
+    },
+    {
+      "source": "/docs/account",
+      "destination": "/api/render?path=/docs/account"
+    },
+    {
+      "source": "/docs/api",
+      "destination": "/api/render?path=/docs/api"
+    },
+    {
+      "source": "/docs/troubleshooting",
+      "destination": "/api/render?path=/docs/troubleshooting"
+    },
+    {
+      "source": "/docs/faq",
+      "destination": "/api/render?path=/docs/faq"
+    },
+    {
+      "source": "/legal",
+      "destination": "/api/render?path=/legal"
+    },
+    {
+      "source": "/legal/terms",
+      "destination": "/api/render?path=/legal/terms"
+    },
+    {
+      "source": "/legal/privacy",
+      "destination": "/api/render?path=/legal/privacy"
+    },
+    {
+      "source": "/legal/acceptable-use",
+      "destination": "/api/render?path=/legal/acceptable-use"
+    },
+    {
+      "source": "/legal/refunds",
+      "destination": "/api/render?path=/legal/refunds"
+    },
+    {
+      "source": "/legal/cookies",
+      "destination": "/api/render?path=/legal/cookies"
+    },
+    {
       "source": "/roblox-script-generator",
       "destination": "/api/render?path=/roblox-script-generator"
     },

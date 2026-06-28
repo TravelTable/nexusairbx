@@ -17,6 +17,25 @@ const CORE_ROUTES = [
 
 const DOC_ROUTES = [
   { path: "/docs", lastmod: null },
+  { path: "/docs/account", lastmod: null },
+  { path: "/docs/api", lastmod: null },
+  { path: "/docs/assets", lastmod: null },
+  { path: "/docs/faq", lastmod: null },
+  { path: "/docs/getting-started", lastmod: null },
+  { path: "/docs/projects", lastmod: null },
+  { path: "/docs/script-generation", lastmod: null },
+  { path: "/docs/studio-plugin", lastmod: null },
+  { path: "/docs/troubleshooting", lastmod: null },
+  { path: "/docs/ui-generation", lastmod: null },
+];
+
+const LEGAL_ROUTES = [
+  { path: "/legal", lastmod: null },
+  { path: "/legal/acceptable-use", lastmod: null },
+  { path: "/legal/cookies", lastmod: null },
+  { path: "/legal/privacy", lastmod: null },
+  { path: "/legal/refunds", lastmod: null },
+  { path: "/legal/terms", lastmod: null },
 ];
 
 const EXAMPLE_ROUTES = [
@@ -124,6 +143,7 @@ function buildSitemapDocuments({ icons = [] } = {}) {
     "sitemaps/docs.xml": urlSet(sortRoutes(DOC_ROUTES)),
     "sitemaps/examples.xml": urlSet(sortRoutes(EXAMPLE_ROUTES)),
     "sitemaps/icons.xml": urlSet(iconRoutes, { image: true }),
+    "sitemaps/legal.xml": urlSet(sortRoutes(LEGAL_ROUTES)),
   };
 
   docs["sitemap.xml"] = sitemapIndex([
@@ -131,6 +151,7 @@ function buildSitemapDocuments({ icons = [] } = {}) {
     { path: "/sitemaps/docs.xml", lastmod: maxLastmod(DOC_ROUTES) },
     { path: "/sitemaps/examples.xml", lastmod: maxLastmod(EXAMPLE_ROUTES) },
     { path: "/sitemaps/icons.xml", lastmod: maxLastmod(iconRoutes) },
+    { path: "/sitemaps/legal.xml", lastmod: maxLastmod(LEGAL_ROUTES) },
   ]);
 
   return {
@@ -144,6 +165,7 @@ function buildSitemapDocuments({ icons = [] } = {}) {
       docs: DOC_ROUTES.length,
       examples: EXAMPLE_ROUTES.length,
       icons: iconRoutes.length,
+      legal: LEGAL_ROUTES.length,
       excludedIcons: report.excluded.length,
       indexableCategories: categoryReport.indexable.length,
       excludedCategories: categoryReport.excluded.length,
@@ -163,6 +185,7 @@ module.exports = {
   CORE_ROUTES,
   DOC_ROUTES,
   EXAMPLE_ROUTES,
+  LEGAL_ROUTES,
   absoluteUrl,
   buildSitemapDocuments,
   dedupeRoutes,

@@ -12,4 +12,7 @@
   <sitemap>
     <loc>https://www.nexusrbx.com/sitemaps/icons.xml</loc>
   </sitemap>
+  <sitemap>
+    <loc>https://www.nexusrbx.com/sitemaps/legal.xml</loc>
+  </sitemap>
 </sitemapindex>

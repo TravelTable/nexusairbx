@@ -109,6 +109,29 @@ const landingPages = [
   },
 ];
 
+const docsRoutes = [
+  "/docs",
+  "/docs/getting-started",
+  "/docs/studio-plugin",
+  "/docs/script-generation",
+  "/docs/ui-generation",
+  "/docs/assets",
+  "/docs/projects",
+  "/docs/account",
+  "/docs/api",
+  "/docs/troubleshooting",
+  "/docs/faq",
+];
+
+const legalRoutes = [
+  "/legal",
+  "/legal/terms",
+  "/legal/privacy",
+  "/legal/acceptable-use",
+  "/legal/refunds",
+  "/legal/cookies",
+];
+
 test("homepage raw HTML is meaningful before client JavaScript", () => {
   const html = readHtml("/");
   assert.match(html, /<title>NexusRBX - AI Roblox Script Generator<\/title>/);
@@ -132,12 +155,25 @@ test("homepage raw HTML is meaningful before client JavaScript", () => {
 
 test("docs raw HTML has route-specific metadata and content", () => {
   const html = readHtml("/docs");
-  assert.match(html, /<title>NexusRBX Docs - Studio Bridge and AI Workspace Guide<\/title>/);
-  assert.match(html, /<h1[^>]*>Use NexusRBX with Roblox Studio without guessing the workflow\.<\/h1>/);
-  assert.match(html, /Quick Script produces immediate focused code/);
+  assert.match(html, /<title>NexusRBX Documentation \| Studio Bridge and AI Workspace<\/title>/);
+  assert.match(html, /<h1[^>]*>NexusRBX documentation<\/h1>/);
+  assert.match(html, /Quick Script/);
+  assert.match(html, /Agent Build/);
+  assert.match(html, /Studio bridge/);
   assert.match(html, /Open AI workspace/);
   assert.equal(countCanonical(html), 1);
   assert.match(html, /href="https:\/\/www\.nexusrbx\.com\/docs"/);
+  assert.doesNotMatch(html, /Monaco|AgentWorkspaceLayout|CodeEditorTabs/);
+});
+
+test("legal raw HTML has route-specific metadata and content", () => {
+  const html = readHtml("/legal/privacy");
+  assert.match(html, /<title>NexusRBX Privacy Notice \| Privacy and Data Use<\/title>/);
+  assert.match(html, /<h1[^>]*>Privacy notice<\/h1>/);
+  assert.match(html, /without sending us your private prompt text/);
+  assert.match(html, /Information we collect/);
+  assert.equal(countCanonical(html), 1);
+  assert.equal(extractCanonical(html), "https://www.nexusrbx.com/legal/privacy");
   assert.doesNotMatch(html, /Monaco|AgentWorkspaceLayout|CodeEditorTabs/);
 });
 
@@ -191,12 +227,17 @@ test("search landing pages include valid structured data", () => {
 test("search landing page internal links resolve to known public or app routes", () => {
   const knownRoutes = new Set([
     "/",
-    "/docs",
-    "/tools/icon-generator",
-    "/icons-market",
-    "/subscribe",
-    "/signin",
     "/ai",
+    "/contact",
+    "/icons-market",
+    "/legal/privacy",
+    "/legal/terms",
+    "/settings",
+    "/signin",
+    "/subscribe",
+    "/tools/icon-generator",
+    ...docsRoutes,
+    ...legalRoutes,
     ...landingPages.map((page) => page.route),
   ]);
 
@@ -218,6 +259,21 @@ test("search landing pages are present in sitemap", () => {
   for (const page of landingPages) {
     assert.match(sitemap, new RegExp(`<loc>https://www\\.nexusrbx\\.com${page.route}</loc>`));
   }
+});
+
+test("docs and legal pages are present in public sitemaps", () => {
+  const sitemapIndex = fs.readFileSync(path.join(__dirname, "..", "public", "sitemap.xml"), "utf8");
+  const docsSitemap = fs.readFileSync(path.join(__dirname, "..", "public", "sitemaps", "docs.xml"), "utf8");
+  const legalSitemap = fs.readFileSync(path.join(__dirname, "..", "public", "sitemaps", "legal.xml"), "utf8");
+
+  assert.match(sitemapIndex, /<loc>https:\/\/www\.nexusrbx\.com\/sitemaps\/docs\.xml<\/loc>/);
+  assert.match(sitemapIndex, /<loc>https:\/\/www\.nexusrbx\.com\/sitemaps\/legal\.xml<\/loc>/);
+  docsRoutes.forEach((route) => {
+    assert.match(docsSitemap, new RegExp(`<loc>https://www\\.nexusrbx\\.com${route}</loc>`));
+  });
+  legalRoutes.forEach((route) => {
+    assert.match(legalSitemap, new RegExp(`<loc>https://www\\.nexusrbx\\.com${route}</loc>`));
+  });
 });
 
 test("public frontend CSS includes mobile landing layout rules", () => {

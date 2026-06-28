@@ -63,8 +63,8 @@ export const searchLandingPages = [
       },
     ],
     docsLinks: [
-      { href: "/docs#generation-modes", label: "Generation modes" },
-      { href: "/docs#safe-workflow", label: "Safe workflow" },
+      { href: "/docs/script-generation", label: "Generation modes" },
+      { href: "/docs/troubleshooting", label: "Safe workflow" },
     ],
     toolLinks: [
       { href: "/roblox-lua-script-generator", label: "Luau generator" },
@@ -136,8 +136,8 @@ export const searchLandingPages = [
       },
     ],
     docsLinks: [
-      { href: "/docs#overview", label: "Workspace overview" },
-      { href: "/docs#safe-workflow", label: "Debug safely" },
+      { href: "/docs", label: "Workspace overview" },
+      { href: "/docs/troubleshooting", label: "Debug safely" },
     ],
     toolLinks: [
       { href: "/roblox-script-generator", label: "Quick script generator" },
@@ -209,8 +209,8 @@ export const searchLandingPages = [
       },
     ],
     docsLinks: [
-      { href: "/docs#generation-modes", label: "Quick Script vs Agent Build" },
-      { href: "/docs#studio-bridge", label: "Studio bridge" },
+      { href: "/docs/script-generation", label: "Quick Script vs Agent Build" },
+      { href: "/docs/studio-plugin", label: "Studio bridge" },
     ],
     toolLinks: [
       { href: "/roblox-script-generator", label: "General script generator" },
@@ -282,8 +282,8 @@ export const searchLandingPages = [
       },
     ],
     docsLinks: [
-      { href: "/docs#studio-bridge", label: "Studio connection guide" },
-      { href: "/docs#safe-workflow", label: "Safe Studio workflow" },
+      { href: "/docs/studio-plugin", label: "Studio connection guide" },
+      { href: "/docs/troubleshooting", label: "Safe Studio workflow" },
     ],
     toolLinks: [
       { href: "/roblox-ai-scripter", label: "AI scripter" },
@@ -355,8 +355,8 @@ export const searchLandingPages = [
       },
     ],
     docsLinks: [
-      { href: "/docs#generation-modes", label: "Mode selection" },
-      { href: "/docs#studio-bridge", label: "Studio workflow" },
+      { href: "/docs/script-generation", label: "Mode selection" },
+      { href: "/docs/studio-plugin", label: "Studio workflow" },
     ],
     toolLinks: [
       { href: "/tools/icon-generator", label: "Icon generator" },
