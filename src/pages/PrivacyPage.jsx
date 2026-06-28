@@ -19,6 +19,8 @@ import {
   Scale
 } from "lucide-react";
 
+const DOCUMENT_ROUTES = new Set(["/", "/docs"]);
+
 // Container Component
 export default function NexusRBXPrivacyPageContainer() {
   const [activeSection, setActiveSection] = useState("overview");
@@ -35,6 +37,8 @@ export default function NexusRBXPrivacyPageContainer() {
     setMobileMenuOpen(false);
     if (external) {
       window.open(href, "_blank", "noopener noreferrer");
+    } else if (DOCUMENT_ROUTES.has(href)) {
+      window.location.assign(href);
     } else {
       navigate(href);
     }
@@ -66,7 +70,6 @@ export default function NexusRBXPrivacyPageContainer() {
       mobileMenuOpen={mobileMenuOpen}
       setMobileMenuOpen={setMobileMenuOpen}
       handleNavClick={handleNavClick}
-      navigate={navigate}
     />
   );
 }
@@ -80,7 +83,6 @@ function NexusRBXPrivacyPage({
   mobileMenuOpen,
   setMobileMenuOpen,
   handleNavClick,
-  navigate,
 }) {
   return (
     <div className="min-h-screen bg-[#0D0D0D] text-white font-sans flex flex-col">
@@ -89,7 +91,7 @@ function NexusRBXPrivacyPage({
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <div
             className="flex items-center cursor-pointer"
-            onClick={() => navigate("/")}
+            onClick={() => window.location.assign("/")}
           >
             <div className="text-2xl font-bold bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-transparent bg-clip-text">
               NexusRBX

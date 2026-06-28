@@ -34,7 +34,7 @@ export default function AdminRoute({ children }) {
   }
 
   if (!state.allowed) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/signin" replace />;
   }
 
   return children;

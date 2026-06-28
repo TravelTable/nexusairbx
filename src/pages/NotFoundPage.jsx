@@ -6,10 +6,10 @@ import { Link } from "react-router-dom";
 
 export default function NexusRBXNotFoundPage() {
   const links = [
-    { to: "/", label: "Home", icon: Home },
+    { to: "/", label: "Home", icon: Home, document: true },
     { to: "/ai", label: "AI Workspace", icon: Sparkles },
     { to: "/tools/icon-generator", label: "Icon Generator", icon: Wand2 },
-    { to: "/docs", label: "Docs", icon: BookOpen },
+    { to: "/docs", label: "Docs", icon: BookOpen, document: true },
     { to: "/contact", label: "Contact", icon: Mail },
   ];
 
@@ -29,23 +29,35 @@ export default function NexusRBXNotFoundPage() {
           The link may be outdated, private, or mistyped. Choose a tool below instead of starting over at a blank homepage.
         </p>
         <div className="grid gap-3 sm:grid-cols-2">
-          {links.map(({ to, label, icon: Icon }, index) => (
-            <Link
+          {links.map(({ to, label, icon: Icon, document }, index) => {
+            const className = `group inline-flex min-h-14 items-center justify-between rounded-lg border px-4 py-3 font-bold outline-none transition focus-visible:ring-2 focus-visible:ring-[#00f5d4] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0D0D0D] ${
+              index === 0
+                ? "border-[#00f5d4]/50 bg-[#00f5d4] text-[#071010] hover:bg-[#5fffe5]"
+                : "border-white/10 bg-white/[0.04] text-white hover:border-white/25 hover:bg-white/[0.08]"
+            }`;
+            const content = (
+              <>
+                <span className="inline-flex items-center gap-3">
+                  <Icon className="h-5 w-5" aria-hidden="true" />
+                  {label}
+                </span>
+                <span className="text-lg transition-transform group-hover:translate-x-0.5" aria-hidden="true">&gt;</span>
+              </>
+            );
+            return document ? (
+              <a key={to} href={to} className={className}>
+                {content}
+              </a>
+            ) : (
+              <Link
               key={to}
               to={to}
-              className={`group inline-flex min-h-14 items-center justify-between rounded-lg border px-4 py-3 font-bold outline-none transition focus-visible:ring-2 focus-visible:ring-[#00f5d4] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0D0D0D] ${
-                index === 0
-                  ? "border-[#00f5d4]/50 bg-[#00f5d4] text-[#071010] hover:bg-[#5fffe5]"
-                  : "border-white/10 bg-white/[0.04] text-white hover:border-white/25 hover:bg-white/[0.08]"
-              }`}
+              className={className}
             >
-              <span className="inline-flex items-center gap-3">
-                <Icon className="h-5 w-5" aria-hidden="true" />
-                {label}
-              </span>
-              <span className="text-lg transition-transform group-hover:translate-x-0.5" aria-hidden="true">&gt;</span>
+              {content}
             </Link>
-          ))}
+            );
+          })}
         </div>
       </main>
     </div>

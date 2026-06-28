@@ -202,6 +202,10 @@ export default function IconsMarketPage() {
     navigate("/tools/icon-generator", { state: { referenceImage: icon.imageUrl, subject: icon.name } });
   };
 
+  const openIconDetail = (iconId) => {
+    window.location.assign(`/icons/${encodeURIComponent(iconId)}`);
+  };
+
   const handleCreateCollection = async () => {
     if (!newCollectionName) return;
     try {
@@ -473,7 +477,7 @@ export default function IconsMarketPage() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: (index % 20) * 0.02 }}
-                  onClick={() => navigate(`/icons/${icon.id}`)}
+                  onClick={() => openIconDetail(icon.id)}
                   className="group relative bg-white/[0.02] border border-white/10 rounded-2xl p-4 hover:bg-white/[0.05] hover:border-[#9b5de5]/50 transition-all cursor-pointer overflow-hidden"
                 >
                   {icon.isPro && !isPremium && (

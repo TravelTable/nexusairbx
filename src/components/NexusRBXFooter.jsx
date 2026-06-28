@@ -3,6 +3,16 @@ import { Github } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import { cx } from "./ui";
 
+const DOCUMENT_ROUTES = new Set([
+  "/",
+  "/docs",
+  "/roblox-ai-scripter",
+  "/roblox-gui-maker",
+  "/roblox-lua-script-generator",
+  "/roblox-script-generator",
+  "/roblox-studio-script-generator",
+]);
+
 /**
  * NexusRBXFooter
  * - Internal links use <button> and navigate() for SPA navigation (no reload)
@@ -24,19 +34,18 @@ export default function NexusRBXFooter({
     const link = href.replace(/\/$/, "");
     return current === link;
   };
+  const isDocumentRoute = (href) => DOCUMENT_ROUTES.has(href);
 
   return (
     <footer className="border-t border-white/10 py-8 px-4 bg-gradient-to-t from-black/60 to-transparent">
       <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center">
-        <div
+        <a
+          href="/"
           className="text-xl font-bold bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-transparent bg-clip-text mb-4 md:mb-0 cursor-pointer"
-          onClick={() => navigate("/")}
-          tabIndex={0}
           aria-label="Go to homepage"
-          onKeyDown={e => { if (e.key === "Enter") navigate("/"); }}
         >
           NexusRBX
-        </div>
+        </a>
 
         <div className="flex flex-wrap justify-center gap-6">
           {footerLinks.map((link) =>
@@ -47,6 +56,18 @@ export default function NexusRBXFooter({
                 className="focus-ring rounded-lg px-1.5 py-1 text-gray-400 hover:text-white transition-colors duration-200"
                 rel="noopener noreferrer"
                 target="_blank"
+              >
+                {link.text}
+              </a>
+            ) : isDocumentRoute(link.href) ? (
+              <a
+                key={link.id}
+                href={link.href}
+                className={cx(
+                  "focus-ring rounded-lg px-1.5 py-1 text-gray-400 hover:text-white transition-colors duration-200",
+                  isActive(link.href) && "font-bold underline underline-offset-4 text-white"
+                )}
+                aria-current={isActive(link.href) ? "page" : undefined}
               >
                 {link.text}
               </a>

@@ -113,9 +113,15 @@ test("homepage raw HTML is meaningful before client JavaScript", () => {
   const html = readHtml("/");
   assert.match(html, /<title>NexusRBX - AI Roblox Script Generator<\/title>/);
   assert.match(html, /<meta name="description" content="Generate focused Luau scripts, Roblox UI, and Studio-ready workflows for Roblox Studio with NexusRBX\./);
-  assert.match(html, /<h1[^>]*>[\s\S]*Generate[\s\S]*Luau scripts[\s\S]*Roblox UI/);
-  assert.match(html, /Generate Script/);
+  assert.match(html, /<h1[^>]*>[\s\S]*The Ultimate AI UI Builder[\s\S]*Script Generator/);
+  assert.match(html, /Generate with AI/);
   assert.match(html, /data-generation-intent-form="homepage"/);
+  assert.match(html, /Powerful AI Tools for Roblox Creators/);
+  assert.match(html, /Pro-Grade UI Engine/);
+  assert.match(html, /Deep Luau Integration/);
+  assert.match(html, /Nexus Neural Core/);
+  assert.match(html, /Studio-Ready Workflow/);
+  assert.match(html, /\/ai-preview\.png/);
   assert.match(html, /property="og:title"/);
   assert.match(html, /name="twitter:card"/);
   assert.match(html, /application\/ld\+json/);

@@ -311,7 +311,7 @@ function NexusRBXSignInPage({
       <main className="flex-grow flex items-center justify-center p-4 pt-24 pb-8 relative z-10 overflow-visible">
         <button
           type="button"
-          onClick={() => navigate("/")}
+          onClick={() => window.location.assign("/")}
         className="focus-ring absolute top-6 left-4 sm:left-6 inline-flex items-center gap-2 rounded-xl border border-white/10 bg-black/30 px-4 py-2 text-xs font-bold uppercase tracking-widest text-gray-200 backdrop-blur-xl transition hover:border-[#00f5d4]/40 hover:bg-white/5 hover:text-white"
         >
           <ArrowRight className="h-3.5 w-3.5 rotate-180" />

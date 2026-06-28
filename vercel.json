@@ -16,13 +16,101 @@
   ],
   "rewrites": [
     {
-      "source": "/((?!api/|_next/|static/|assets/|sitemaps/|sitemap\\.xml|robots\\.txt|favicon\\.ico|manifest\\.json).*)",
-      "destination": "/api/render?path=/$1"
+      "source": "/",
+      "destination": "/api/render?path=/"
+    },
+    {
+      "source": "/docs",
+      "destination": "/api/render?path=/docs"
+    },
+    {
+      "source": "/roblox-script-generator",
+      "destination": "/api/render?path=/roblox-script-generator"
+    },
+    {
+      "source": "/roblox-ai-scripter",
+      "destination": "/api/render?path=/roblox-ai-scripter"
+    },
+    {
+      "source": "/roblox-lua-script-generator",
+      "destination": "/api/render?path=/roblox-lua-script-generator"
+    },
+    {
+      "source": "/roblox-studio-script-generator",
+      "destination": "/api/render?path=/roblox-studio-script-generator"
+    },
+    {
+      "source": "/roblox-gui-maker",
+      "destination": "/api/render?path=/roblox-gui-maker"
+    },
+    {
+      "source": "/icons/:id",
+      "destination": "/api/render?path=/icons/:id"
+    },
+    {
+      "source": "/ai",
+      "destination": "/api/render?path=/ai"
+    },
+    {
+      "source": "/settings",
+      "destination": "/api/render?path=/settings"
+    },
+    {
+      "source": "/billing",
+      "destination": "/api/render?path=/billing"
+    },
+    {
+      "source": "/signin",
+      "destination": "/api/render?path=/signin"
+    },
+    {
+      "source": "/signup",
+      "destination": "/api/render?path=/signup"
+    },
+    {
+      "source": "/subscribe",
+      "destination": "/api/render?path=/subscribe"
+    },
+    {
+      "source": "/contact",
+      "destination": "/api/render?path=/contact"
+    },
+    {
+      "source": "/privacy",
+      "destination": "/api/render?path=/privacy"
+    },
+    {
+      "source": "/terms",
+      "destination": "/api/render?path=/terms"
+    },
+    {
+      "source": "/tools/icon-generator",
+      "destination": "/api/render?path=/tools/icon-generator"
+    },
+    {
+      "source": "/icons-market",
+      "destination": "/api/render?path=/icons-market"
+    },
+    {
+      "source": "/script/:id",
+      "destination": "/api/render?path=/script/:id"
+    },
+    {
+      "source": "/debug/entitlements",
+      "destination": "/api/render?path=/debug/entitlements"
+    },
+    {
+      "source": "/__/auth/:path*",
+      "destination": "/api/render?path=/__/auth/:path*"
+    },
+    {
+      "source": "/auth/:path*",
+      "destination": "/api/render?path=/auth/:path*"
     }
   ],
   "functions": {
     "api/render.js": {
-      "includeFiles": "{build/__spa-shell.html,build/index.html,public-frontend/data/generated/**}"
+      "includeFiles": "{build/__spa-shell.html,build/__public/**,public-frontend/data/generated/**}"
     }
   }
 }

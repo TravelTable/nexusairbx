@@ -1360,7 +1360,7 @@ const SettingsPage = () => {
         <div className="flex flex-col gap-4 px-2">
           <button
             type="button"
-            onClick={() => navigate("/")}
+            onClick={() => window.location.assign("/")}
             className="inline-flex w-fit items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-[10px] font-bold uppercase tracking-[0.22em] text-gray-300 transition hover:border-white/20 hover:text-white focus-ring"
           >
             <ArrowLeft className="w-3.5 h-3.5" />

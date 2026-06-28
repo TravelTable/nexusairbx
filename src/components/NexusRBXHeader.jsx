@@ -23,6 +23,16 @@ import { signOut } from "firebase/auth";
 import { useBilling } from "../context/BillingContext";
 import { Button, cx } from "./ui";
 
+const DOCUMENT_ROUTES = new Set([
+  "/",
+  "/docs",
+  "/roblox-ai-scripter",
+  "/roblox-gui-maker",
+  "/roblox-lua-script-generator",
+  "/roblox-script-generator",
+  "/roblox-studio-script-generator",
+]);
+
 /**
  * NexusRBXHeader - Upgraded Floating Glass UI
  */
@@ -95,6 +105,13 @@ function NexusRBXHeader({
   const resolvedTokenLoading = billingLoading || tokenLoading;
 
   const isActive = (path) => location.pathname === path;
+  const openRoute = (href) => {
+    if (DOCUMENT_ROUTES.has(href) && typeof window !== "undefined") {
+      window.location.assign(href);
+      return;
+    }
+    navigate(href);
+  };
 
   const handleLogout = async () => {
     await signOut(auth);
@@ -151,7 +168,7 @@ function NexusRBXHeader({
         {/* Logo */}
         <div 
           className="text-xl font-black bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-transparent bg-clip-text cursor-pointer flex items-center gap-2"
-          onClick={() => navigate("/")}
+          onClick={() => openRoute("/")}
         >
           <Zap className="h-5 w-5 text-[#00f5d4] fill-[#00f5d4]" />
           <div className="flex items-center gap-1.5">
@@ -227,7 +244,7 @@ function NexusRBXHeader({
             </AnimatePresence>
           </div>
 
-          <NavButton label="Docs" active={isActive("/docs")} onClick={() => navigate("/docs")} icon={Layout} />
+          <NavButton label="Docs" active={isActive("/docs")} onClick={() => openRoute("/docs")} icon={Layout} />
         </nav>
 
         {/* Right Side: Tokens & Account */}
@@ -333,7 +350,7 @@ function NexusRBXHeader({
                 />
               ))}
               <div className="h-px bg-white/5 my-2" />
-              <MobileNavButton label="Docs" active={isActive("/docs")} onClick={() => { navigate("/docs"); setIsMobileMenuOpen(false); }} />
+              <MobileNavButton label="Docs" active={isActive("/docs")} onClick={() => { openRoute("/docs"); setIsMobileMenuOpen(false); }} />
               <MobileNavButton label="Account" active={isActive("/settings")} onClick={() => { navigate("/settings"); setIsMobileMenuOpen(false); }} />
             </nav>
           </motion.div>

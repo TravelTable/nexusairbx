@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import {
   Home,
   FileText,
@@ -24,7 +23,6 @@ export default function TermsPageContainer() {
   const [activeSection, setActiveSection] = useState("terms");
   const [showBackToTop, setShowBackToTop] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const navigate = useNavigate();
 
   const lastUpdated = "January 12, 2026";
 
@@ -78,7 +76,6 @@ export default function TermsPageContainer() {
       searchQuery={searchQuery}
       handleSectionChange={handleSectionChange}
       handleSearchChange={handleSearchChange}
-      navigate={navigate}
     />
   );
 }
@@ -91,15 +88,14 @@ function TermsPage({
   showBackToTop,
   searchQuery,
   handleSectionChange,
-  handleSearchChange,
-  navigate
+  handleSearchChange
 }) {
   return (
     <div className="min-h-screen bg-[#0D0D0D] text-white font-sans flex flex-col">
       {/* Header */}
       <header className="border-b border-white/10 bg-[#0D0D0D]/85 backdrop-blur-xl shadow-panel sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <div className="flex items-center cursor-pointer" onClick={() => navigate("/")}>
+          <div className="flex items-center cursor-pointer" onClick={() => window.location.assign("/")}>
             <div className="text-2xl font-bold bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-transparent bg-clip-text">
               NexusRBX
             </div>

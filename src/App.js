@@ -25,8 +25,6 @@ if (typeof window !== "undefined") {
 }
 
 const NexusRBXBillingPageContainer = lazy(() => import("./pages/BillingPage"));
-const NexusRBXHomepageContainer = lazy(() => import("./pages/Homepage"));
-const NexusRBXDocsPageContainer = lazy(() => import("./pages/DocsPage"));
 const NexusRBXAIPageContainer = lazy(() => import("./pages/AiPage"));
 const NexusRBXContactPageContainer = lazy(() => import("./pages/ContactPage"));
 const NexusRBXPrivacyPageContainer = lazy(() => import("./pages/PrivacyPage"));
@@ -37,7 +35,6 @@ const NexusRBXTermsPageContainer = lazy(() => import("./pages/TermsPage"));
 const NexusRBXSettingsPageContainer = lazy(() => import("./pages/SettingsPage"));
 const NexusRBXIconGeneratorPage = lazy(() => import("./pages/IconGeneratorPage"));
 const NexusRBXIconsMarketPage = lazy(() => import("./pages/IconsMarketPage"));
-const NexusRBXIconDetailPage = lazy(() => import("./pages/IconDetailPage"));
 const NexusRBXNotFoundPage = lazy(() => import("./pages/NotFoundPage"));
 const ScriptShareModalWrapper = lazy(() => import("./components/ScriptShareModalWrapper"));
 const DebugEntitlementsPage = lazy(() => import("./pages/DebugEntitlementsPage"));
@@ -55,8 +52,6 @@ function App() {
       <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-white bg-black">Loading...</div>}>
         <AuthRedirectHandler />
         <Routes>
-          <Route path="/" element={<NexusRBXHomepageContainer />} />
-          <Route path="/docs" element={<NexusRBXDocsPageContainer />} />
           <Route path="/ai" element={<NexusRBXAIPageContainer />} />
           <Route path="/settings" element={<NexusRBXSettingsPageContainer />} />
           <Route path="/billing" element={<NexusRBXBillingPageContainer />} />
@@ -68,7 +63,6 @@ function App() {
           <Route path="/terms" element={<NexusRBXTermsPageContainer />} />
           <Route path="/tools/icon-generator" element={<NexusRBXIconGeneratorPage />} />
           <Route path="/icons-market" element={<NexusRBXIconsMarketPage />} />
-          <Route path="/icons/:id" element={<NexusRBXIconDetailPage />} />
           <Route path="/script/:id" element={<ScriptShareModalWrapper />} />
           {/* NEW: on-screen entitlements debugger */}
           <Route path="/debug/entitlements" element={<AdminRoute><DebugEntitlementsPage /></AdminRoute>} />

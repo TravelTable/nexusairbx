@@ -219,7 +219,7 @@ export default function BillingPage() {
         <button
           type="button"
           className="inline-flex items-center gap-2 rounded-md px-2 py-1 text-sm text-gray-400 hover:text-white"
-          onClick={() => navigate("/")}
+          onClick={() => window.location.assign("/")}
         >
           <ArrowLeft className="h-4 w-4" />
           Back to Home
