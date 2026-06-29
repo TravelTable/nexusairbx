@@ -14,13 +14,11 @@ import {
   FileCode2,
   ArrowRight,
   ShieldCheck,
-  Save,
-  TerminalSquare
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useBilling } from "../context/BillingContext";
 import { BACKEND_URL } from "../config";
-import { Button, Card, Segmented } from "../components/ui";
+import { Button, Card } from "../components/ui";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "../components/shadcn/tabs";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "../components/shadcn/tooltip";
 import { Separator } from "../components/shadcn/separator";
@@ -98,7 +96,6 @@ export default function ScriptPage() {
   const [shareCopied, setShareCopied] = useState(false);
   const [tags, setTags] = useState([]);
   const [allVersions, setAllVersions] = useState([]);
-  const [versionLoading, setVersionLoading] = useState(false);
   const [selectedVersion, setSelectedVersion] = useState(null);
   const [aiLoading, setAiLoading] = useState(false);
   const [aiResult, setAiResult] = useState("");
@@ -114,13 +111,9 @@ export default function ScriptPage() {
         setTags(res.tags || []);
         setSelectedVersion(res);
         if (res.baseScriptId) {
-          setVersionLoading(true);
           fetchVersions(res.baseScriptId)
-            .then((versions) => {
-              setAllVersions(versions || []);
-              setVersionLoading(false);
-            })
-            .catch(() => setVersionLoading(false));
+            .then((versions) => setAllVersions(versions || []))
+            .catch(() => {});
         }
         setLoading(false);
       })
