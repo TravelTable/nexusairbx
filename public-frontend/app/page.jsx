@@ -1,19 +1,13 @@
-import HomepageLanding from "../../src/components/homepage/HomepageLanding";
-import { homepageMetadata } from "../../src/content/homepageLanding";
+import { homepageV2Metadata } from "../../src/content/homepageV2";
 import { buildPublicMetadata } from "../../src/lib/seo";
-import PublicAccountState from "../components/PublicAccountState";
+import HomepageV2Client from "../components/HomepageV2Client";
 
 export const metadata = buildPublicMetadata({
-  title: homepageMetadata.title,
-  description: homepageMetadata.description,
+  title: homepageV2Metadata.title,
+  description: homepageV2Metadata.description,
   path: "/",
 });
 
 export default function HomePage() {
-  return (
-    <HomepageLanding
-      surface="public_next_homepage"
-      accountSlot={<PublicAccountState />}
-    />
-  );
+  return <HomepageV2Client />;
 }

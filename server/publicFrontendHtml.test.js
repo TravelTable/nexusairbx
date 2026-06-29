@@ -134,11 +134,12 @@ const legalRoutes = [
 
 test("homepage raw HTML is meaningful before client JavaScript", () => {
   const html = readHtml("/");
-  assert.match(html, /<title>NexusRBX: Intelligent Roblox Studio Code Agent<\/title>/);
-  assert.match(html, /<meta name="description" content="Boost productivity, generate scripts, and debug faster with AI integrated directly into your Roblox Studio workflow\./);
-  assert.match(html, /<h1[^>]*>NexusRBX: Your Intelligent Roblox Studio Code Agent<\/h1>/);
-  assert.match(html, /href="\/ai"[^>]*>Get Started for Free/);
-  assert.match(html, /href="#workflow"[^>]*>Watch Demo/);
+  assert.match(html, /<title>NexusRBX — AI Roblox Studio Code Agent<\/title>/);
+  assert.match(html, /<meta name="description" content="Describe what you want to build\. NexusRBX generates production-ready Luau code for Roblox Studio — powered by AI\./);
+  assert.match(html, /<h1[^>]*>NexusRBX<\/h1>/);
+  assert.match(html, /Your Intelligent Roblox Studio Code Agent/);
+  assert.match(html, /Describe what you want to build\. NexusRBX generates production-ready Luau code\./);
+  assert.match(html, />Generate</);
   assert.match(html, /AI-Powered Code Generation/);
   assert.match(html, /Real-time Debugging &amp; Optimization/);
   assert.match(html, /Roblox API Integration/);
@@ -149,7 +150,7 @@ test("homepage raw HTML is meaningful before client JavaScript", () => {
   assert.match(html, /Trusted by Top Roblox Developers/);
   assert.match(html, /NexusRBX is a game-changer! It saves me hours of coding every day\./);
   assert.match(html, /src="\/logo\.png"/);
-  assert.match(html, /src="\/imageeeeAI\.png"/);
+  assert.doesNotMatch(html, /src="\/imageeeeAI\.png"/);
   assert.match(html, /data-generation-intent-form="homepage"/);
   assert.match(html, /placeholder="Make a round timer script with intermission and victory rewards\.\.\."/);
   assert.match(html, /property="og:title"/);
