@@ -30,6 +30,7 @@ import {
   ArrowLeft,
   Skull,
   Link as LinkIcon,
+  HelpCircle,
 } from "lucide-react";
 import { useSettings } from "../context/SettingsContext";
 import { useBilling } from "../context/BillingContext";
@@ -678,6 +679,24 @@ const SettingsPage = () => {
                 placeholder="e.g. My game is a military simulator set in a desert environment. The UI should be tactical and use dark green and orange accents..."
                 className="nexus-textarea h-40"
               />
+            </div>
+
+            <div className="card-surface p-6">
+              <h3 className="font-display text-lg font-bold text-white mb-2 flex items-center gap-2">
+                <HelpCircle className="w-5 h-5 text-[#00f5d4]" />
+                Help & Onboarding
+              </h3>
+              <p className="text-sm text-gray-500 mb-4">Need a refresher on how the AI workspace works? Restart the interactive onboarding tutorial.</p>
+              <button
+                type="button"
+                onClick={() => {
+                  localStorage.removeItem("nexus_tutorial_completed");
+                  navigate("/ai");
+                }}
+                className="inline-flex items-center gap-2 rounded-xl border border-[#00f5d4]/45 bg-[#00f5d4]/10 px-4 py-2.5 text-sm font-bold text-[#00f5d4] transition hover:bg-[#00f5d4]/20 hover:text-white focus:outline-none"
+              >
+                Restart Onboarding Tutorial
+              </button>
             </div>
           </div>
         );

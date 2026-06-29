@@ -7,7 +7,7 @@ import NexusRBXFooter from "../components/NexusRBXFooter";
 import { auth } from "../firebase";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { getEntitlements, summarizeEntitlements } from "../lib/billing";
-import { Helmet } from "react-helmet";
+import { Helmet } from "react-helmet-async";
 import HeroSection from "../components/home/HeroSection";
 import FeaturesSection from "../components/home/FeaturesSection";
 import CommunityCreationsSection from "../components/home/CommunityCreationsSection";

@@ -58,6 +58,22 @@ describe("homepageActivation", () => {
     expect(JSON.stringify(trackEvent.mock.calls)).not.toContain("private admin UI");
   });
 
+  test("tracks prompt start with a custom surface", () => {
+    const promptStartedRef = { current: false };
+    const trackEvent = jest.fn();
+
+    trackHomepagePromptStarted({
+      value: "Create a private admin UI",
+      promptStartedRef,
+      surface: "public_next_homepage",
+      trackEvent,
+    });
+
+    expect(trackEvent).toHaveBeenCalledWith("homepage_prompt_started", {
+      surface: "public_next_homepage",
+    });
+  });
+
   test("rejects blank and whitespace-only prompts before creating an intent", () => {
     const harness = createHarness();
 
@@ -112,6 +128,53 @@ describe("homepageActivation", () => {
     expect(harness.navigate).toHaveBeenCalledWith("/ai", {
       state: { generationIntentId: "intent-123" },
     });
+  });
+
+  test("creates intents with custom public homepage source and surface", () => {
+    const harness = createHarness();
+
+    submitHomepagePrompt({
+      ...harness,
+      inputValue: "Create a round system",
+      method: "button",
+      surface: "public_next_homepage",
+      source: "public_next_homepage",
+    });
+
+    expect(harness.createIntent).toHaveBeenCalledWith({
+      prompt: "Create a round system",
+      mode: "quick_script",
+      source: "public_next_homepage",
+    });
+    expect(harness.trackEvent).toHaveBeenCalledWith(
+      "homepage_prompt_submitted",
+      expect.objectContaining({
+        surface: "public_next_homepage",
+      })
+    );
+    expect(harness.trackEvent).toHaveBeenCalledWith(
+      "generation_intent_created",
+      expect.objectContaining({
+        source: "public_next_homepage",
+        surface: "public_next_homepage",
+      })
+    );
+  });
+
+  test("supports a Next-style navigation adapter", () => {
+    const assign = jest.fn();
+    const harness = createHarness({
+      navigate: (to) => assign(to),
+    });
+
+    submitHomepagePrompt({
+      ...harness,
+      inputValue: "Create a round system",
+      surface: "public_next_homepage",
+      source: "public_next_homepage",
+    });
+
+    expect(assign).toHaveBeenCalledWith("/ai");
   });
 
   test("complex homepage prompts are routed to Agent Build regardless of experiment defaults", () => {

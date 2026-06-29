@@ -5,19 +5,23 @@ import { categorizePrompt, trackProductEvent } from "./productAnalytics";
 export function trackHomepagePromptStarted({
   value,
   promptStartedRef,
+  surface = "homepage",
   trackEvent = trackProductEvent,
 }) {
   if (!promptStartedRef || promptStartedRef.current || !String(value || "").trim()) return;
 
   promptStartedRef.current = true;
   void trackEvent("homepage_prompt_started", {
-    surface: "homepage",
+    surface,
   });
 }
 
 export function submitHomepagePrompt({
   inputValue,
   method = "button",
+  surface = "homepage",
+  source = surface,
+  emptyError = "Describe what you want to build first.",
   submittingRef,
   navigate,
   setError,
@@ -31,7 +35,7 @@ export function submitHomepagePrompt({
   setError?.("");
   const prompt = String(inputValue || "").trim();
   if (!prompt) {
-    setError?.("Describe what you want to build first.");
+    setError?.(emptyError);
     return { status: "rejected" };
   }
 
@@ -40,7 +44,7 @@ export function submitHomepagePrompt({
   const mode = chooseHomepageGeneratorMode(prompt);
 
   void trackEvent("homepage_prompt_submitted", {
-    surface: "homepage",
+    surface,
     method,
     generator_mode: mode,
     prompt_length: prompt.length,
@@ -51,18 +55,18 @@ export function submitHomepagePrompt({
     const intent = createIntent({
       prompt,
       mode,
-      source: "homepage",
+      source,
     });
 
     void trackEvent("generation_intent_created", {
-      surface: "homepage",
+      surface,
       generator_mode: intent.mode,
       source: intent.source,
       prompt_length: prompt.length,
       prompt_category: categorizePrompt(prompt),
     });
 
-    navigate("/ai", {
+    navigate?.("/ai", {
       state: {
         generationIntentId: intent.id,
       },

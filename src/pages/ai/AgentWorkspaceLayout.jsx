@@ -23,6 +23,8 @@ import QuickScriptWorkspace from "./QuickScriptWorkspace";
 import { getStudioCommand, getStudioManifest, getStudioManifestStatus, queueStudioTool } from "../../lib/studioBridgeApi";
 import { cancelWorkspaceCommand, createWorkspaceCommand, getWorkspaceCommand, streamWorkspaceCommandEvents } from "../../lib/workspaceApi";
 import { PENDING_AUTH_ACTIONS } from "../../lib/pendingAuthAction";
+import TutorialOverlay from "../../components/onboarding/TutorialOverlay";
+import { useTutorial } from "../../components/onboarding/useTutorial";
 
 const MOBILE_TABS = [
   { id: "chat", label: "Chat", icon: MessageSquare },
@@ -120,6 +122,15 @@ export default function AgentWorkspaceLayout({ controller }) {
   const { chatEndRef } = refs;
 
   const [leftView, setLeftView] = useState("files");
+  const tutorial = useTutorial();
+
+  useEffect(() => {
+    const handleRestartTour = () => {
+      tutorial.startTutorial();
+    };
+    window.addEventListener("nexus-restart-tour", handleRestartTour);
+    return () => window.removeEventListener("nexus-restart-tour", handleRestartTour);
+  }, [tutorial]);
   const [studioManifest, setStudioManifest] = useState([]);
   const [studioSearch, setStudioSearch] = useState("");
   const [studioFiles, setStudioFiles] = useState([]);
@@ -982,16 +993,17 @@ export default function AgentWorkspaceLayout({ controller }) {
                 <Menu className="h-5 w-5" />
               </button>
               <div className="h-4 w-px bg-white/10 hidden sm:block" aria-hidden="true" />
-              <Segmented
-                size="sm"
-                options={[
-                  { id: "quick_script", label: "Quick Script", icon: FileCode2 },
-                  { id: "agent_build", label: "Agent Build", icon: Bot },
-                ]}
-                value={generatorMode}
-                onChange={(mode) => setGeneratorMode(mode, "mode_control")}
-                className="hidden md:inline-flex"
-              />
+              <div data-tour="mode-switcher" className="hidden md:inline-flex">
+                <Segmented
+                  size="sm"
+                  options={[
+                    { id: "quick_script", label: "Quick Script", icon: FileCode2 },
+                    { id: "agent_build", label: "Agent Build", icon: Bot },
+                  ]}
+                  value={generatorMode}
+                  onChange={(mode) => setGeneratorMode(mode, "mode_control")}
+                />
+              </div>
               <div className="h-4 w-px bg-white/10 hidden md:block" aria-hidden="true" />
               {generatorMode === "agent_build" && (
                 <>
@@ -1008,13 +1020,15 @@ export default function AgentWorkspaceLayout({ controller }) {
                   <div className="h-4 w-px bg-white/10 hidden sm:block" aria-hidden="true" />
                 </>
               )}
-              <StudioPairControl
-                connected={studio?.connected}
-                loading={studio?.loading}
-                refresh={studio?.refresh}
-                notify={notify}
-                requireUser={(next) => requireUser(next, PENDING_AUTH_ACTIONS.STUDIO_CONNECTION, "studio_pair_control")}
-              />
+              <div data-tour="studio-pair">
+                <StudioPairControl
+                  connected={studio?.connected}
+                  loading={studio?.loading}
+                  refresh={studio?.refresh}
+                  notify={notify}
+                  requireUser={(next) => requireUser(next, PENDING_AUTH_ACTIONS.STUDIO_CONNECTION, "studio_pair_control")}
+                />
+              </div>
             </div>
             <div className="flex items-center gap-3">
               {generatorMode === "agent_build" ? (
@@ -1175,6 +1189,14 @@ export default function AgentWorkspaceLayout({ controller }) {
         reason={signInNudgeReason}
       />
       <ProNudgeModal isOpen={showProNudge} onClose={() => setShowProNudge(false)} reason={proNudgeReason} />
+
+      <TutorialOverlay
+        activeStep={tutorial.activeStep}
+        isActive={tutorial.isActive}
+        nextStep={tutorial.nextStep}
+        prevStep={tutorial.prevStep}
+        skipTutorial={tutorial.skipTutorial}
+      />
 
       {currentToast && (
         <div className="fixed inset-x-3 bottom-[max(1rem,env(safe-area-inset-bottom))] z-[120] sm:inset-x-auto sm:bottom-8 sm:right-8" role="status" aria-live="polite">

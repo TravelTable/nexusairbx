@@ -1,5 +1,6 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
+import { HelmetProvider } from "react-helmet-async";
 import App from "./App";
 import "./index.css";
 import { SettingsProvider } from "./context/SettingsContext";
@@ -32,11 +33,13 @@ if (typeof window !== "undefined") {
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(
   <React.StrictMode>
-    <BillingProvider>
-      <SettingsProvider>
-        <App />
-      </SettingsProvider>
-    </BillingProvider>
+    <HelmetProvider>
+      <BillingProvider>
+        <SettingsProvider>
+          <App />
+        </SettingsProvider>
+      </BillingProvider>
+    </HelmetProvider>
   </React.StrictMode>
 );
 

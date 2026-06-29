@@ -1,7 +1,7 @@
 // src/pages/NotFoundPage.jsx
 import React from "react";
 import { AlertCircle, BookOpen, Home, Mail, Sparkles, Wand2 } from "lucide-react";
-import { Helmet } from "react-helmet";
+import { Helmet } from "react-helmet-async";
 import { Link } from "react-router-dom";
 
 export default function NexusRBXNotFoundPage() {

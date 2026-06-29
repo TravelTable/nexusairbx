@@ -14,7 +14,7 @@ import {
   Upload
 } from "lucide-react";
 import { motion } from "framer-motion";
-import { Helmet } from "react-helmet";
+import { Helmet } from "react-helmet-async";
 import { auth } from "../firebase";
 import { onAuthStateChanged } from "firebase/auth";
 import { getEntitlements } from "../lib/billing";

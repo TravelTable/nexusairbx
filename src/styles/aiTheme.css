@@ -1,15 +1,6 @@
-:root {
-  --ai-bg: #050505;
-  --ai-surface: #121212;
-  --ai-surface-muted: rgba(255, 255, 255, 0.04);
-  --ai-border: rgba(255, 255, 255, 0.1);
-  --ai-text: #f8fafc;
-  --ai-text-muted: #9ca3af;
-  --ai-accent: #00f5d4;
-  --ai-accent-2: #9b5de5;
-  --ai-info: #00bbf9;
-  --ai-danger: #ff3860;
-}
+/* AI theme utility classes.
+   Variables are now defined globally in index.css :root.
+   This file provides convenience classes for AI-specific surfaces. */
 
 .ai-page {
   background-color: var(--ai-bg);

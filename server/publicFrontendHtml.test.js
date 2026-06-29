@@ -134,22 +134,30 @@ const legalRoutes = [
 
 test("homepage raw HTML is meaningful before client JavaScript", () => {
   const html = readHtml("/");
-  assert.match(html, /<title>NexusRBX - AI Roblox Script Generator<\/title>/);
-  assert.match(html, /<meta name="description" content="Generate focused Luau scripts, Roblox UI, and Studio-ready workflows for Roblox Studio with NexusRBX\./);
-  assert.match(html, /<h1[^>]*>[\s\S]*The Ultimate AI UI Builder[\s\S]*Script Generator/);
-  assert.match(html, /Generate with AI/);
+  assert.match(html, /<title>NexusRBX: Intelligent Roblox Studio Code Agent<\/title>/);
+  assert.match(html, /<meta name="description" content="Boost productivity, generate scripts, and debug faster with AI integrated directly into your Roblox Studio workflow\./);
+  assert.match(html, /<h1[^>]*>NexusRBX: Your Intelligent Roblox Studio Code Agent<\/h1>/);
+  assert.match(html, /href="\/ai"[^>]*>Get Started for Free/);
+  assert.match(html, /href="#workflow"[^>]*>Watch Demo/);
+  assert.match(html, /AI-Powered Code Generation/);
+  assert.match(html, /Real-time Debugging &amp; Optimization/);
+  assert.match(html, /Roblox API Integration/);
+  assert.match(html, /Snippet Library &amp; Collaboration/);
+  assert.match(html, /Install Plugin/);
+  assert.match(html, /Describe Your Need/);
+  assert.match(html, /Review &amp; Insert/);
+  assert.match(html, /Trusted by Top Roblox Developers/);
+  assert.match(html, /NexusRBX is a game-changer! It saves me hours of coding every day\./);
+  assert.match(html, /src="\/logo\.png"/);
+  assert.match(html, /src="\/imageeeeAI\.png"/);
   assert.match(html, /data-generation-intent-form="homepage"/);
-  assert.match(html, /Powerful AI Tools for Roblox Creators/);
-  assert.match(html, /Pro-Grade UI Engine/);
-  assert.match(html, /Deep Luau Integration/);
-  assert.match(html, /Nexus Neural Core/);
-  assert.match(html, /Studio-Ready Workflow/);
-  assert.match(html, /\/ai-preview\.png/);
+  assert.match(html, /placeholder="Make a round timer script with intermission and victory rewards\.\.\."/);
   assert.match(html, /property="og:title"/);
   assert.match(html, /name="twitter:card"/);
   assert.match(html, /application\/ld\+json/);
   assert.equal(countCanonical(html), 1);
   assert.match(html, /href="https:\/\/www\.nexusrbx\.com\/"/);
+  assert.doesNotMatch(html, /\/ai-preview\.png/);
   assert.doesNotMatch(html, /Monaco|AgentWorkspaceLayout|CodeEditorTabs/);
 });
 

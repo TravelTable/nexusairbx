@@ -26,6 +26,7 @@ if (typeof window !== "undefined") {
 
 const NexusRBXBillingPageContainer = lazy(() => import("./pages/BillingPage"));
 const NexusRBXAIPageContainer = lazy(() => import("./pages/AiPage"));
+const NexusRBXHomepageV2 = lazy(() => import("./pages/HomepageV2"));
 const NexusRBXContactPageContainer = lazy(() => import("./pages/ContactPage"));
 const NexusRBXPrivacyPageContainer = lazy(() => import("./pages/PrivacyPage"));
 const NexusRBXSubscribePageContainer = lazy(() => import("./pages/SubscribePage"));
@@ -36,7 +37,7 @@ const NexusRBXSettingsPageContainer = lazy(() => import("./pages/SettingsPage"))
 const NexusRBXIconGeneratorPage = lazy(() => import("./pages/IconGeneratorPage"));
 const NexusRBXIconsMarketPage = lazy(() => import("./pages/IconsMarketPage"));
 const NexusRBXNotFoundPage = lazy(() => import("./pages/NotFoundPage"));
-const ScriptShareModalWrapper = lazy(() => import("./components/ScriptShareModalWrapper"));
+const NexusRBXScriptPage = lazy(() => import("./pages/ScriptPage"));
 const DebugEntitlementsPage = lazy(() => import("./pages/DebugEntitlementsPage"));
 const AdminRoute = lazy(() => import("./components/AdminRoute"));
 
@@ -52,6 +53,7 @@ function App() {
       <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-white bg-black">Loading...</div>}>
         <AuthRedirectHandler />
         <Routes>
+          <Route path="/" element={<NexusRBXHomepageV2 />} />
           <Route path="/ai" element={<NexusRBXAIPageContainer />} />
           <Route path="/settings" element={<NexusRBXSettingsPageContainer />} />
           <Route path="/billing" element={<NexusRBXBillingPageContainer />} />
@@ -63,7 +65,7 @@ function App() {
           <Route path="/terms" element={<NexusRBXTermsPageContainer />} />
           <Route path="/tools/icon-generator" element={<NexusRBXIconGeneratorPage />} />
           <Route path="/icons-market" element={<NexusRBXIconsMarketPage />} />
-          <Route path="/script/:id" element={<ScriptShareModalWrapper />} />
+          <Route path="/script/:id" element={<NexusRBXScriptPage />} />
           {/* NEW: on-screen entitlements debugger */}
           <Route path="/debug/entitlements" element={<AdminRoute><DebugEntitlementsPage /></AdminRoute>} />
           <Route path="*" element={<NexusRBXNotFoundPage />} />

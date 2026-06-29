@@ -6,6 +6,26 @@
 
 @layer base {
   :root {
+    --background: 222 36% 4%;
+    --foreground: 0 0% 100%;
+    --card: 225 22% 8%;
+    --card-foreground: 0 0% 100%;
+    --popover: 225 22% 8%;
+    --popover-foreground: 0 0% 100%;
+    --primary: 234 90% 59%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 220 18% 14%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 220 14% 17%;
+    --muted-foreground: 240 5% 64%;
+    --accent: 174 100% 48%;
+    --accent-foreground: 222 36% 4%;
+    --destructive: 347 96% 70%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 220 13% 22%;
+    --input: 220 13% 22%;
+    --ring: 234 90% 59%;
+    --radius: 0.625rem;
     --nexus-bg: #0d0d0d;
     --nexus-surface: rgba(18, 18, 22, 0.8);
     --nexus-surface-strong: rgba(7, 7, 10, 0.9);
@@ -19,12 +39,25 @@
     --nexus-radius-md: 0.75rem;
     --nexus-radius-lg: 1rem;
     --nexus-shadow-panel: 0 24px 80px rgba(0, 0, 0, 0.45);
+    /* AI theme variables (unified from aiTheme.css) */
+    --ai-bg: #050505;
+    --ai-surface: #121212;
+    --ai-surface-muted: rgba(255, 255, 255, 0.04);
+    --ai-border: rgba(255, 255, 255, 0.1);
+    --ai-text: #f8fafc;
+    --ai-text-muted: #9ca3af;
+    --ai-accent: #00f5d4;
+    --ai-accent-2: #9b5de5;
+    --ai-info: #00bbf9;
+    --ai-danger: #ff3860;
   }
 
   body {
     font-family: "Manrope", ui-sans-serif, system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
+    background-color: var(--ai-bg);
+    color: var(--ai-text);
   }
 }
 
