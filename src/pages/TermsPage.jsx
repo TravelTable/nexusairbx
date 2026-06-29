@@ -1,11 +1,9 @@
 import { useEffect, useState } from "react";
 import {
-  Home,
   FileText,
   Shield,
   AlertTriangle,
   Info,
-  BookOpen,
   Mail,
   Search,
   ArrowUp,
@@ -92,29 +90,6 @@ function TermsPage({
 }) {
   return (
     <div className="min-h-screen bg-[#0D0D0D] text-white font-sans flex flex-col">
-      {/* Header */}
-      <header className="border-b border-white/10 bg-[#0D0D0D]/85 backdrop-blur-xl shadow-panel sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <div className="flex items-center cursor-pointer" onClick={() => window.location.assign("/")}>
-            <div className="text-2xl font-bold bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-transparent bg-clip-text">
-              NexusRBX
-            </div>
-            <div className="ml-2 text-sm text-gray-400">Legal</div>
-          </div>
-          <nav className="hidden md:flex items-center gap-2">
-            <a href="/" className="focus-ring rounded-lg px-3 py-2 text-sm font-medium text-gray-300 hover:bg-white/5 hover:text-white transition-colors duration-200 flex items-center">
-              <Home className="h-4 w-4 mr-1" />
-              Home
-            </a>
-            <a href="/ai" className="focus-ring rounded-lg px-3 py-2 text-sm font-medium text-gray-300 hover:bg-white/5 hover:text-white transition-colors duration-200">AI Console</a>
-            <a href="/docs" className="focus-ring rounded-lg px-3 py-2 text-sm font-medium text-gray-300 hover:bg-white/5 hover:text-white transition-colors duration-200 flex items-center">
-              <BookOpen className="h-4 w-4 mr-1" />
-              Docs
-            </a>
-          </nav>
-        </div>
-      </header>
-
       <main className="flex-grow">
         <div className="max-w-6xl mx-auto px-4 py-8">
           {/* Page Title */}

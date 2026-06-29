@@ -125,7 +125,7 @@ export function BillingProvider({ children, pollMs = 60_000 }) {
   }), [user, refresh]);
 
   return (
-    <BillingCtx.Provider value={{ ...state, ...actions }}>
+    <BillingCtx.Provider value={{ user, ...state, ...actions }}>
       {children}
     </BillingCtx.Provider>
   );

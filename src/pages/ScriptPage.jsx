@@ -214,8 +214,8 @@ export default function ScriptPage() {
         <div className="fixed top-[-10%] left-[-10%] w-[40%] h-[40%] blur-[120px] rounded-full bg-[#00f5d4]/5 pointer-events-none" />
         <div className="fixed bottom-[-15%] right-[-10%] w-[45%] h-[45%] blur-[140px] rounded-full bg-[#9b5de5]/5 pointer-events-none" />
 
-        {/* Header Bar */}
-        <header className="sticky top-0 z-30 border-b border-white/5 bg-black/30 backdrop-blur-md shrink-0">
+        {/* Script action bar */}
+        <div className="z-20 border-b border-white/5 bg-black/30 backdrop-blur-md shrink-0">
           <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
             <div className="flex items-center gap-3 min-w-0">
               <button
@@ -255,7 +255,7 @@ export default function ScriptPage() {
               </Tooltip>
             </div>
           </div>
-        </header>
+        </div>
 
         {/* Main Content Layout */}
         <main className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-4 py-6 sm:px-6 lg:px-8">

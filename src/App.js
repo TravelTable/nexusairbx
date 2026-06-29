@@ -2,6 +2,7 @@ import React, { Suspense, lazy, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { useBilling } from "./context/BillingContext";
 import AuthRedirectHandler from "./components/AuthRedirectHandler";
+import SiteShell from "./components/site/SiteShell";
 
 // Suppress ResizeObserver loop error (Monaco Editor/Chrome bug) AND expose auth for console tests
 import { getAuth } from "firebase/auth";
@@ -36,10 +37,15 @@ const NexusRBXTermsPageContainer = lazy(() => import("./pages/TermsPage"));
 const NexusRBXSettingsPageContainer = lazy(() => import("./pages/SettingsPage"));
 const NexusRBXIconGeneratorPage = lazy(() => import("./pages/IconGeneratorPage"));
 const NexusRBXIconsMarketPage = lazy(() => import("./pages/IconsMarketPage"));
+const NexusRBXIconDetailPage = lazy(() => import("./pages/IconDetailPage"));
 const NexusRBXNotFoundPage = lazy(() => import("./pages/NotFoundPage"));
 const NexusRBXScriptPage = lazy(() => import("./pages/ScriptPage"));
 const DebugEntitlementsPage = lazy(() => import("./pages/DebugEntitlementsPage"));
 const AdminRoute = lazy(() => import("./components/AdminRoute"));
+
+function withSiteShell(element, variant) {
+  return <SiteShell variant={variant}>{element}</SiteShell>;
+}
 
 function App() {
   const { portal } = useBilling();
@@ -53,22 +59,23 @@ function App() {
       <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-white bg-black">Loading...</div>}>
         <AuthRedirectHandler />
         <Routes>
-          <Route path="/" element={<NexusRBXHomepageV2 />} />
+          <Route path="/" element={withSiteShell(<NexusRBXHomepageV2 />, "marketing")} />
           <Route path="/ai" element={<NexusRBXAIPageContainer />} />
-          <Route path="/settings" element={<NexusRBXSettingsPageContainer />} />
-          <Route path="/billing" element={<NexusRBXBillingPageContainer />} />
-          <Route path="/contact" element={<NexusRBXContactPageContainer />} />
-          <Route path="/privacy" element={<NexusRBXPrivacyPageContainer />} />
-          <Route path="/subscribe" element={<NexusRBXSubscribePageContainer />} />
-          <Route path="/signin" element={<NexusRBXSignInPageContainer />} />
-          <Route path="/signup" element={<NexusRBXSignUpPageContainer />} />
-          <Route path="/terms" element={<NexusRBXTermsPageContainer />} />
-          <Route path="/tools/icon-generator" element={<NexusRBXIconGeneratorPage />} />
-          <Route path="/icons-market" element={<NexusRBXIconsMarketPage />} />
-          <Route path="/script/:id" element={<NexusRBXScriptPage />} />
+          <Route path="/settings" element={withSiteShell(<NexusRBXSettingsPageContainer />, "account")} />
+          <Route path="/billing" element={withSiteShell(<NexusRBXBillingPageContainer />, "account")} />
+          <Route path="/contact" element={withSiteShell(<NexusRBXContactPageContainer />, "legal")} />
+          <Route path="/privacy" element={withSiteShell(<NexusRBXPrivacyPageContainer />, "legal")} />
+          <Route path="/subscribe" element={withSiteShell(<NexusRBXSubscribePageContainer />, "account")} />
+          <Route path="/signin" element={withSiteShell(<NexusRBXSignInPageContainer />, "auth")} />
+          <Route path="/signup" element={withSiteShell(<NexusRBXSignUpPageContainer />, "auth")} />
+          <Route path="/terms" element={withSiteShell(<NexusRBXTermsPageContainer />, "legal")} />
+          <Route path="/tools/icon-generator" element={withSiteShell(<NexusRBXIconGeneratorPage />, "tools")} />
+          <Route path="/icons-market" element={withSiteShell(<NexusRBXIconsMarketPage />, "tools")} />
+          <Route path="/icons/:id" element={withSiteShell(<NexusRBXIconDetailPage />, "tools")} />
+          <Route path="/script/:id" element={withSiteShell(<NexusRBXScriptPage />, "tools")} />
           {/* NEW: on-screen entitlements debugger */}
-          <Route path="/debug/entitlements" element={<AdminRoute><DebugEntitlementsPage /></AdminRoute>} />
-          <Route path="*" element={<NexusRBXNotFoundPage />} />
+          <Route path="/debug/entitlements" element={withSiteShell(<AdminRoute><DebugEntitlementsPage /></AdminRoute>, "account")} />
+          <Route path="*" element={withSiteShell(<NexusRBXNotFoundPage />, "marketing")} />
         </Routes>
       </Suspense>
     </Router>

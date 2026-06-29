@@ -5,6 +5,10 @@ export const MODEL_ID_ALIASES = Object.freeze({
   "deepseek-free": DEFAULT_FREE_MODEL,
   "deepseek/deepseek-v3.2": DEFAULT_FREE_MODEL,
   "openai/gpt-5-mini": DEFAULT_FREE_MODEL,
+  "gpt-4o": DEFAULT_FREE_MODEL,
+  "gpt-4o-mini": DEFAULT_FREE_MODEL,
+  "gpt-4.1": DEFAULT_FREE_MODEL,
+  "gpt-4.1-mini": DEFAULT_FREE_MODEL,
   "nexus-4": "openai/gpt-5.4",
   "nexus-3": "openai/gpt-5.4",
 });
@@ -15,6 +19,10 @@ export const MODEL_ALIAS_LABELS = Object.freeze({
   "nexus-free-auto": "Nexus Free Auto",
   "deepseek/deepseek-v3.2": "Nexus Free Auto",
   "openai/gpt-5-mini": "Nexus Free Auto",
+  "gpt-4o": "Nexus Free Auto",
+  "gpt-4o-mini": "Nexus Free Auto",
+  "gpt-4.1": "Nexus Free Auto",
+  "gpt-4.1-mini": "Nexus Free Auto",
   "nexus-4": "Nexus (GPT-5.4)",
   "nexus-3": "Nexus (Legacy)",
 });

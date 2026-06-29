@@ -12,6 +12,7 @@ import StudioPairControl from "../../components/ai/StudioPairControl";
 import DailyPromptBadge from "../../components/ai/DailyPromptBadge";
 import ProjectArchitecturePanel from "../../components/ai/ProjectArchitecturePanel";
 import { ProjectContextStatus } from "../../components/ai/AiComponents";
+import SiteHeader from "../../components/site/SiteHeader";
 import { AI_EVENTS } from "../../lib/aiEvents";
 import { Segmented } from "../../components/ui";
 
@@ -971,94 +972,101 @@ export default function AgentWorkspaceLayout({ controller }) {
 
         {/* CENTER: Studio agent chat */}
         <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
-          <div className="relative z-30 flex items-center justify-between px-4 py-2.5 border-b border-white/5 bg-black/30 backdrop-blur-md gap-3">
-            <div className="flex items-center gap-3 min-w-0">
-              <button
-                type="button"
-                onClick={() => window.location.assign("/")}
-                className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-[10px] font-bold uppercase tracking-[0.22em] text-gray-300 transition hover:border-white/20 hover:text-white"
-                aria-label="Return home"
-                title="Return home"
-              >
-                <ArrowLeft className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">Return home</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setSidebarOpen(!sidebarOpen)}
-                className={`p-2 rounded-xl transition-all ${sidebarOpen ? "bg-[#00f5d4]/10 text-[#00f5d4]" : "bg-white/5 text-gray-400 hover:text-white"}`}
-                title="Toggle sidebar"
-                aria-label="Toggle sidebar"
-              >
-                <Menu className="h-5 w-5" />
-              </button>
-              <div className="h-4 w-px bg-white/10 hidden sm:block" aria-hidden="true" />
-              <div data-tour="mode-switcher" className="hidden md:inline-flex">
-                <Segmented
-                  size="sm"
-                  options={[
-                    { id: "quick_script", label: "Quick Script", icon: FileCode2 },
-                    { id: "agent_build", label: "Agent Build", icon: Bot },
-                  ]}
-                  value={generatorMode}
-                  onChange={(mode) => setGeneratorMode(mode, "mode_control")}
-                />
-              </div>
-              <div className="h-4 w-px bg-white/10 hidden md:block" aria-hidden="true" />
-              {generatorMode === "agent_build" && (
-                <>
-                  <ModelSwitcher
-                    value={settings.modelVersion}
-                    isPremium={isPremium}
-                    onChange={(id) => updateSettings({ modelVersion: id })}
-                    onProNudge={(reason) => {
-                      if (!requireUser()) return;
-                      setProNudgeReason(reason || "Premium AI Models");
-                      setShowProNudge(true);
-                    }}
+        <SiteHeader
+          variant="workspace"
+          robloxStatusOverride={roblox?.status ?? null}
+          robloxLoadingOverride={Boolean(roblox?.loading)}
+            workspaceLeft={(
+              <>
+                <button
+                  type="button"
+                  onClick={() => window.location.assign("/")}
+                  className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-[10px] font-bold uppercase tracking-[0.22em] text-gray-300 transition hover:border-white/20 hover:text-white"
+                  aria-label="Return home"
+                  title="Return home"
+                >
+                  <ArrowLeft className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline">Return home</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSidebarOpen(!sidebarOpen)}
+                  className={`p-2 rounded-xl transition-all ${sidebarOpen ? "bg-[#00f5d4]/10 text-[#00f5d4]" : "bg-white/5 text-gray-400 hover:text-white"}`}
+                  title="Toggle sidebar"
+                  aria-label="Toggle sidebar"
+                >
+                  <Menu className="h-5 w-5" />
+                </button>
+                <div className="h-4 w-px bg-white/10 hidden sm:block" aria-hidden="true" />
+                <div data-tour="mode-switcher" className="hidden md:inline-flex">
+                  <Segmented
+                    size="sm"
+                    options={[
+                      { id: "quick_script", label: "Quick Script", icon: FileCode2 },
+                      { id: "agent_build", label: "Agent Build", icon: Bot },
+                    ]}
+                    value={generatorMode}
+                    onChange={(mode) => setGeneratorMode(mode, "mode_control")}
                   />
-                  <div className="h-4 w-px bg-white/10 hidden sm:block" aria-hidden="true" />
-                </>
-              )}
-              <div data-tour="studio-pair">
-                <StudioPairControl
-                  connected={studio?.connected}
-                  loading={studio?.loading}
-                  refresh={studio?.refresh}
-                  notify={notify}
-                  requireUser={(next) => requireUser(next, PENDING_AUTH_ACTIONS.STUDIO_CONNECTION, "studio_pair_control")}
-                />
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              {generatorMode === "agent_build" ? (
-                <>
-                  <DailyPromptBadge
-                    totalRemaining={totalRemaining}
-                    subLimit={subLimit}
-                    resetsAt={resetsAt}
-                    planKey={planKey}
-                    unlimitedTokens={unlimitedTokens}
-                    devOverride={devOverride}
-                  />
-                  <div className="h-4 w-px bg-white/10 hidden sm:block" aria-hidden="true" />
-                  <ProjectContextStatus
-                    context={projectContext}
-                    plan={planKey}
-                    onViewStructure={() => setArchitecturePanelOpen(true)}
-                    onSync={async () => {
-                      if (!requireUser()) return;
-                      game.setShowWizard(true);
-                    }}
-                  />
-                </>
-              ) : (
-                <div className="hidden text-right text-[11px] font-semibold text-gray-500 sm:block">
-                  No plan approval in Quick Script
                 </div>
-              )}
-            </div>
-          </div>
+                <div className="h-4 w-px bg-white/10 hidden md:block" aria-hidden="true" />
+                {generatorMode === "agent_build" && (
+                  <>
+                    <ModelSwitcher
+                      value={settings.modelVersion}
+                      isPremium={isPremium}
+                      onChange={(id) => updateSettings({ modelVersion: id })}
+                      onProNudge={(reason) => {
+                        if (!requireUser()) return;
+                        setProNudgeReason(reason || "Premium AI Models");
+                        setShowProNudge(true);
+                      }}
+                    />
+                    <div className="h-4 w-px bg-white/10 hidden sm:block" aria-hidden="true" />
+                  </>
+                )}
+                <div data-tour="studio-pair">
+                  <StudioPairControl
+                    connected={studio?.connected}
+                    loading={studio?.loading}
+                    refresh={studio?.refresh}
+                    notify={notify}
+                    requireUser={(next) => requireUser(next, PENDING_AUTH_ACTIONS.STUDIO_CONNECTION, "studio_pair_control")}
+                  />
+                </div>
+              </>
+            )}
+            workspaceRight={(
+              <>
+                {generatorMode === "agent_build" ? (
+                  <>
+                    <DailyPromptBadge
+                      totalRemaining={totalRemaining}
+                      subLimit={subLimit}
+                      resetsAt={resetsAt}
+                      planKey={planKey}
+                      unlimitedTokens={unlimitedTokens}
+                      devOverride={devOverride}
+                    />
+                    <div className="h-4 w-px bg-white/10 hidden sm:block" aria-hidden="true" />
+                    <ProjectContextStatus
+                      context={projectContext}
+                      plan={planKey}
+                      onViewStructure={() => setArchitecturePanelOpen(true)}
+                      onSync={async () => {
+                        if (!requireUser()) return;
+                        game.setShowWizard(true);
+                      }}
+                    />
+                  </>
+                ) : (
+                  <div className="hidden text-right text-[11px] font-semibold text-gray-500 sm:block">
+                    No plan approval in Quick Script
+                  </div>
+                )}
+              </>
+            )}
+          />
 
           {/* Desktop center + right; mobile single-pane via tabs */}
           {generatorMode === "quick_script" ? (

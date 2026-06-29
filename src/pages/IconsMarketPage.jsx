@@ -25,9 +25,7 @@ import JSZip from "jszip";
 import { useNavigate } from "react-router-dom";
 import { auth } from "../firebase";
 import { onAuthStateChanged } from "firebase/auth";
-import { getEntitlements } from "../lib/billing";
 import { exportIcon } from "../lib/uiBuilderApi";
-import NexusRBXHeader from "../components/NexusRBXHeader";
 import NexusRBXFooter from "../components/NexusRBXFooter";
 import ProNudgeModal from "../components/ProNudgeModal";
 import { useBilling } from "../context/BillingContext";
@@ -38,8 +36,6 @@ const API_BASE = BACKEND_URL.replace(/\/+$/, "");
 
 export default function IconsMarketPage() {
   const [user, setUser] = useState(null);
-  const [tokenInfo, setTokenInfo] = useState(null);
-  const [tokenLoading, setTokenLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [icons, setIcons] = useState([]);
   const [search, setSearch] = useState("");
@@ -125,7 +121,6 @@ export default function IconsMarketPage() {
     };
 
     if (!user) return;
-    fetchTokens();
     fetchIcons();
     fetchCollections();
   }, [user, search, style, category, isPro, fetchIcons]);
@@ -142,19 +137,6 @@ export default function IconsMarketPage() {
       console.error("Failed to fetch collections", e);
     }
   };
-
-  const fetchTokens = async () => {
-    setTokenLoading(true);
-    try {
-      const data = await getEntitlements();
-      setTokenInfo(data);
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setTokenLoading(false);
-    }
-  };
-
 
   const handleDownload = async (icon) => {
     try {
@@ -304,14 +286,7 @@ export default function IconsMarketPage() {
         <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-[#00f5d4]/5 blur-[120px]" />
       </div>
 
-      <NexusRBXHeader 
-        navigate={navigate} 
-        user={user} 
-        tokenInfo={tokenInfo} 
-        tokenLoading={tokenLoading} 
-      />
-
-      <main className="flex-grow flex relative z-10 mt-16">
+      <main className="flex-grow flex relative z-10">
         <aside className="w-72 border-r border-white/10 bg-black/20 backdrop-blur-xl p-8 hidden lg:block sticky top-16 h-[calc(100vh-64px)] overflow-y-auto">
           <div className="flex border-b border-white/10 mb-8">
             <button 

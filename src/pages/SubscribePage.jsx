@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Check, ChevronDown, CreditCard, Home, Loader2, Settings } from "lucide-react";
-import NexusRBXHeader from "../components/NexusRBXHeader";
+import { Check, ChevronDown, CreditCard, Loader2, Settings } from "lucide-react";
 import NexusRBXFooter from "../components/NexusRBXFooter";
 import { getEntitlements, openPortal, startSubscriptionCheckout } from "../lib/billing";
 import { BILLING_INTERVAL, PLAN } from "../lib/prices";
@@ -214,18 +213,6 @@ export default function SubscribePage() {
 
   return (
     <div className="min-h-screen bg-[#08090d] text-white flex flex-col">
-      <NexusRBXHeader
-        navLinks={[
-          { id: 1, text: "Home", href: "/", icon: Home },
-          { id: 2, text: "AI Console", href: "/ai" },
-          { id: 3, text: "Docs", href: "/docs" },
-          { id: 4, text: "Contact", href: "/contact" },
-        ]}
-        navigate={navigate}
-        user={user}
-        tokenInfo={entitlements}
-      />
-
       <main className="flex-1">
         <section className="px-4 pt-10 pb-6">
           <div className="max-w-7xl mx-auto">

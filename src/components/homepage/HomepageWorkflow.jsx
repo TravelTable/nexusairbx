@@ -15,13 +15,21 @@ export default function HomepageWorkflow() {
         {homepageWorkflow.map((step, index) => (
           <Card key={step.title} className="relative border-white/10 bg-white/[0.035] text-left">
             <CardContent className="p-5">
-              <div
-                className="grid min-h-36 place-items-center rounded-xl border border-white/10 bg-[linear-gradient(135deg,rgba(0,245,212,0.1),rgba(56,85,246,0.12)_55%,rgba(255,255,255,0.035))] text-xs font-black uppercase tracking-[0.16em] text-zinc-500"
-                role="img"
-                aria-label={`${step.title} workflow preview placeholder`}
-              >
-                Workflow preview
-              </div>
+              {step.image ? (
+                <img
+                  src={step.image.src}
+                  alt={step.image.alt}
+                  className="h-36 w-full rounded-xl border border-white/10 bg-black object-contain"
+                />
+              ) : (
+                <div
+                  className="grid min-h-36 place-items-center rounded-xl border border-white/10 bg-[linear-gradient(135deg,rgba(0,245,212,0.1),rgba(56,85,246,0.12)_55%,rgba(255,255,255,0.035))] text-xs font-black uppercase tracking-[0.16em] text-zinc-500"
+                  role="img"
+                  aria-label={`${step.title} workflow preview placeholder`}
+                >
+                  Workflow preview
+                </div>
+              )}
               <Separator className="my-5 bg-white/10" />
               <p className="text-sm font-black uppercase tracking-[0.14em] text-cyan-200">Step {index + 1}</p>
               <h3 className="mt-2 text-2xl font-black text-white">{step.title}</h3>

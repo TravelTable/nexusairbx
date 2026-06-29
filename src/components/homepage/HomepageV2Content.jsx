@@ -9,12 +9,10 @@ import HomepageWorkflow from "./HomepageWorkflow";
 import HomepageTestimonial from "./HomepageTestimonial";
 import HomepageFooter from "./HomepageFooter";
 import RobloxTrustStrip from "./RobloxTrustStrip";
-import HomepageHeader from "./HomepageHeader";
 
 export default function HomepageV2Content({
   surface = "homepage",
   navigate,
-  accountSlot,
 }) {
   const [prompt, setPrompt] = useState("");
   const [error, setError] = useState("");
@@ -55,8 +53,6 @@ export default function HomepageV2Content({
         <div className="absolute -left-40 -top-40 h-[420px] w-[420px] rounded-full bg-[#00f5d4]/10 blur-[120px] animate-pulse" />
         <div className="absolute -bottom-40 -right-40 h-[420px] w-[420px] rounded-full bg-[#9b5de5]/10 blur-[120px] animate-pulse" />
       </div>
-
-      <HomepageHeader accountSlot={accountSlot} />
 
       <section className="flex min-h-screen flex-col items-center justify-center px-4 pt-20 pb-16">
         <div className="relative mb-6 flex items-center justify-center">

@@ -22,8 +22,6 @@ import {
 import { useNavigate } from "react-router-dom";
 import { auth } from "../firebase";
 import { onAuthStateChanged } from "firebase/auth";
-import { getEntitlements } from "../lib/billing";
-import NexusRBXHeader from "../components/NexusRBXHeader";
 import NexusRBXFooter from "../components/NexusRBXFooter";
 import ProNudgeModal from "../components/ProNudgeModal";
 import { Button, Toggle, cx } from "../components/ui";
@@ -34,14 +32,12 @@ const API_BASE = BACKEND_URL.replace(/\/+$/, "");
 
 export default function IconGeneratorPage() {
   const [user, setUser] = useState(null);
-  const [tokenInfo, setTokenInfo] = useState(null);
-  const [tokenLoading, setTokenLoading] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [generatedImage, setGeneratedImage] = useState(null);
   const [history, setHistory] = useState([]);
   const [copied, setCopied] = useState(false);
-  const { isPremium } = useBilling();
+  const { isPremium, refresh: refreshBilling } = useBilling();
   const [showProNudge, setShowProNudge] = useState(false);
   const [enhancing, setEnhancing] = useState(false);
   const [referenceImage, setReferenceImage] = useState(null);
@@ -81,7 +77,6 @@ export default function IconGeneratorPage() {
     };
 
     if (!user) return;
-    fetchTokens();
     fetchHistory();
   }, [user]);
 
@@ -95,18 +90,6 @@ export default function IconGeneratorPage() {
       if (data.history) setHistory(data.history);
     } catch (e) {
       console.error("Failed to fetch history", e);
-    }
-  };
-
-  const fetchTokens = async () => {
-    setTokenLoading(true);
-    try {
-      const data = await getEntitlements();
-      setTokenInfo(data);
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setTokenLoading(false);
     }
   };
 
@@ -141,8 +124,7 @@ export default function IconGeneratorPage() {
       if (!res.ok) throw new Error(data.error || "Generation failed");
 
       setGeneratedImage(data.imageUrl);
-      if (data.entitlements) setTokenInfo(data.entitlements);
-      fetchTokens();
+      refreshBilling?.();
       fetchHistory();
     } catch (e) {
       setError(e.message);
@@ -213,14 +195,7 @@ export default function IconGeneratorPage() {
         <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-[#00f5d4]/5 blur-[120px]" />
       </div>
 
-      <NexusRBXHeader 
-        navigate={navigate} 
-        user={user} 
-        tokenInfo={tokenInfo} 
-        tokenLoading={tokenLoading} 
-      />
-
-      <main className="flex-grow container mx-auto px-4 py-12 relative z-10 mt-16">
+      <main className="flex-grow container mx-auto px-4 py-12 relative z-10">
         <div className="max-w-6xl mx-auto">
           <header className="mb-12">
             <div className="flex items-center gap-3 mb-2">

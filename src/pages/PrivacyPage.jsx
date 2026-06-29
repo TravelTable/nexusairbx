@@ -1,9 +1,6 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import {
-  Home,
   Shield,
-  Menu,
   Lock,
   Eye,
   Database,
@@ -11,7 +8,6 @@ import {
   Globe,
   FileText,
   Mail,
-  BookOpen,
   UserCheck,
   Clock,
   Cookie,
@@ -19,29 +15,13 @@ import {
   Scale
 } from "lucide-react";
 
-const DOCUMENT_ROUTES = new Set(["/", "/docs"]);
-
 // Container Component
 export default function NexusRBXPrivacyPageContainer() {
   const [activeSection, setActiveSection] = useState("overview");
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const navigate = useNavigate();
 
   const handleSectionChange = (section) => {
     setActiveSection(section);
     window.scrollTo(0, 0);
-  };
-
-  const handleNavClick = (href, external) => (e) => {
-    e.preventDefault();
-    setMobileMenuOpen(false);
-    if (external) {
-      window.open(href, "_blank", "noopener noreferrer");
-    } else if (DOCUMENT_ROUTES.has(href)) {
-      window.location.assign(href);
-    } else {
-      navigate(href);
-    }
   };
 
   const sections = [
@@ -67,9 +47,6 @@ export default function NexusRBXPrivacyPageContainer() {
       sections={sections}
       lastUpdated={lastUpdated}
       handleSectionChange={handleSectionChange}
-      mobileMenuOpen={mobileMenuOpen}
-      setMobileMenuOpen={setMobileMenuOpen}
-      handleNavClick={handleNavClick}
     />
   );
 }
@@ -80,62 +57,9 @@ function NexusRBXPrivacyPage({
   sections,
   lastUpdated,
   handleSectionChange,
-  mobileMenuOpen,
-  setMobileMenuOpen,
-  handleNavClick,
 }) {
   return (
     <div className="min-h-screen bg-[#0D0D0D] text-white font-sans flex flex-col">
-      {/* Header */}
-      <header className="border-b border-white/10 bg-[#0D0D0D]/85 backdrop-blur-xl shadow-panel sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <div
-            className="flex items-center cursor-pointer"
-            onClick={() => window.location.assign("/")}
-          >
-            <div className="text-2xl font-bold bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-transparent bg-clip-text">
-              NexusRBX
-            </div>
-            <div className="ml-2 text-sm text-gray-400">Privacy Policy</div>
-          </div>
-
-          <nav className="hidden md:flex items-center gap-2">
-            <a
-              href="/"
-              onClick={handleNavClick("/", false)}
-              className="focus-ring rounded-lg px-3 py-2 text-sm font-medium text-gray-300 hover:bg-white/5 hover:text-white transition-colors duration-200 flex items-center"
-            >
-              <Home className="h-4 w-4 mr-1" />
-              Home
-            </a>
-            <a
-              href="/ai"
-              onClick={handleNavClick("/ai", false)}
-              className="focus-ring rounded-lg px-3 py-2 text-sm font-medium text-gray-300 hover:bg-white/5 hover:text-white transition-colors duration-200"
-            >
-              AI Console
-            </a>
-            <a
-              href="/docs"
-              onClick={handleNavClick("/docs", false)}
-              className="focus-ring rounded-lg px-3 py-2 text-sm font-medium text-gray-300 hover:bg-white/5 hover:text-white transition-colors duration-200 flex items-center"
-            >
-              <BookOpen className="h-4 w-4 mr-1" />
-              Docs
-            </a>
-          </nav>
-
-          <button
-            className="nexus-icon-button md:hidden"
-            onClick={() => setMobileMenuOpen((v) => !v)}
-            aria-label="Toggle navigation menu"
-            aria-expanded={mobileMenuOpen}
-          >
-            <Menu className="h-5 w-5" />
-          </button>
-        </div>
-      </header>
-
       <main className="flex-grow">
         <div className="max-w-6xl mx-auto px-4 py-8">
           <div className="flex flex-col md:flex-row gap-8">

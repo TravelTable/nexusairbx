@@ -63,14 +63,26 @@ export const homepageWorkflow = [
   {
     title: "Install Plugin",
     description: "Add the NexusRBX plugin to Roblox Studio in minutes.",
+    image: {
+      src: "/luginimageeeeeeeee.png",
+      alt: "NexusRBX plugin connecting to Roblox Studio",
+    },
   },
   {
     title: "Describe Your Need",
     description: "Use the integrated console or chat to describe what you want to build.",
+    image: {
+      src: "/promptbox.png",
+      alt: "NexusRBX prompt box for describing what to build",
+    },
   },
   {
     title: "Review & Insert",
     description: "NexusRBX provides the code, ready to be reviewed, edited, and inserted directly into your game.",
+    image: {
+      src: "/generated-files.png",
+      alt: "Generated Luau script files ready to review and insert into Roblox Studio",
+    },
   },
 ];
 

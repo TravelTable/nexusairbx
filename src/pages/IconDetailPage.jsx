@@ -17,10 +17,8 @@ import { motion } from "framer-motion";
 import { Helmet } from "react-helmet-async";
 import { auth } from "../firebase";
 import { onAuthStateChanged } from "firebase/auth";
-import { getEntitlements } from "../lib/billing";
 import { exportIcon } from "../lib/uiBuilderApi";
 import { useBilling } from "../context/BillingContext";
-import NexusRBXHeader from "../components/NexusRBXHeader";
 import NexusRBXFooter from "../components/NexusRBXFooter";
 import ProNudgeModal from "../components/ProNudgeModal";
 import { BACKEND_URL } from "../config";
@@ -38,8 +36,6 @@ export default function IconDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const { isPremium } = useBilling();
-  const [tokenInfo, setTokenInfo] = useState(null);
-  const [tokenLoading, setTokenLoading] = useState(false);
   const [copied, setCopied] = useState(false);
   const [showProNudge, setShowProNudge] = useState(false);
   
@@ -83,20 +79,7 @@ export default function IconDetailPage() {
       }
     };
 
-    const fetchTokens = async () => {
-      setTokenLoading(true);
-      try {
-        const data = await getEntitlements();
-        setTokenInfo(data);
-      } catch (e) {
-        console.error(e);
-      } finally {
-        setTokenLoading(false);
-      }
-    };
-
     fetchIcon();
-    fetchTokens();
   }, [fetchRelated, id]);
 
 
@@ -188,9 +171,7 @@ export default function IconDetailPage() {
         <meta name="twitter:card" content="summary_large_image" />
       </Helmet>
 
-      <NexusRBXHeader navigate={navigate} user={user} tokenInfo={tokenInfo} tokenLoading={tokenLoading} />
-
-      <main className="flex-grow pt-24 pb-20 px-4 md:px-8">
+      <main className="flex-grow pt-12 pb-20 px-4 md:px-8">
         <div className="max-w-7xl mx-auto">
           <button 
             onClick={() => navigate("/icons-market")}

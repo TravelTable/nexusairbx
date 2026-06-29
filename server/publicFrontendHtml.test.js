@@ -145,6 +145,9 @@ test("homepage raw HTML is meaningful before client JavaScript", () => {
   assert.match(html, /Roblox API Integration/);
   assert.match(html, /Snippet Library &amp; Collaboration/);
   assert.match(html, /Install Plugin/);
+  assert.match(html, /src="\/luginimageeeeeeeee\.png"/);
+  assert.match(html, /src="\/promptbox\.png"/);
+  assert.match(html, /src="\/generated-files\.png"/);
   assert.match(html, /Describe Your Need/);
   assert.match(html, /Review &amp; Insert/);
   assert.match(html, /Trusted by Top Roblox Developers/);
