@@ -35,10 +35,10 @@ function ListSection({ title, items, empty, icon, isWarning }) {
   return (
     <div
       className={cx(
-        "rounded-xl border p-4 transition-all duration-300",
+        "rounded-xl border p-4 transition-all duration-200",
         isWarning
-          ? "border-amber-500/20 bg-amber-500/[0.02] hover:border-amber-500/30"
-          : "border-white/10 bg-white/[0.02] hover:border-white/15"
+          ? "border-amber-500/10 bg-amber-500/[0.01] hover:border-amber-500/20"
+          : "border-white/5 bg-white/[0.01] hover:border-white/10"
       )}
     >
       <div
@@ -51,7 +51,7 @@ function ListSection({ title, items, empty, icon, isWarning }) {
         <h3
           className={cx(
             "text-[10px] font-black uppercase tracking-[0.2em]",
-            isWarning ? "text-amber-200" : "text-gray-400"
+            isWarning ? "text-amber-200/80" : "text-gray-400"
           )}
         >
           {title}
@@ -64,7 +64,7 @@ function ListSection({ title, items, empty, icon, isWarning }) {
               <span
                 className={cx(
                   "mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full",
-                  isWarning ? "bg-amber-400" : "bg-[#00f5d4]"
+                  isWarning ? "bg-amber-500/60" : "bg-[#00f5d4]/60"
                 )}
                 aria-hidden="true"
               />
@@ -90,9 +90,9 @@ function QuickScriptStatus({ status, stage, error }) {
       className={cx(
         "inline-flex min-h-8 items-center gap-2 rounded-lg border px-2.5 py-1.5 text-[11px] font-bold",
         isReady
-          ? "border-[#00f5d4]/25 bg-[#00f5d4]/10 text-[#00f5d4]"
+          ? "border-[#00f5d4]/20 bg-[#00f5d4]/5 text-[#00f5d4]"
           : error || needsAgent
-            ? "border-amber-400/25 bg-amber-400/10 text-amber-200"
+            ? "border-amber-500/20 bg-amber-500/5 text-amber-200"
             : "border-white/10 bg-white/5 text-gray-400"
       )}
       role="status"
@@ -138,7 +138,7 @@ export default function QuickScriptWorkspace({
     const textarea = textareaRef.current;
     if (!textarea) return;
     textarea.style.height = "0px";
-    textarea.style.height = `${Math.min(Math.max(textarea.scrollHeight, 92), 180)}px`;
+    textarea.style.height = `${Math.min(Math.max(textarea.scrollHeight, 72), 140)}px`;
   }, [prompt]);
 
   const keepPromptVisible = () => {
@@ -172,298 +172,280 @@ export default function QuickScriptWorkspace({
   };
 
   return (
-    <section className="flex h-full min-h-0 flex-col overflow-hidden bg-[#050505]" aria-label="Quick Script generator">
-      <div className="border-b border-white/5 bg-black/40 px-4 py-3 sm:px-6">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3">
-          <div className="min-w-0">
-            <div className="flex items-center gap-2">
-              <div className="rounded-lg bg-[#00f5d4]/10 p-1.5 text-[#00f5d4]">
-                <FileCode2 className="h-4 w-4" aria-hidden="true" />
-              </div>
-              <div>
-                <h1 className="font-display text-sm font-black uppercase tracking-[0.2em] text-white">
-                  Quick Script
-                </h1>
-                <p className="mt-0.5 text-[10px] text-gray-500">
-                  Immediate single-file script compiler & diagnostics
-                </p>
-              </div>
-            </div>
+    <section className="flex h-full min-h-0 flex-col lg:flex-row overflow-hidden bg-[#050505]" aria-label="Quick Script generator">
+      
+      {/* LEFT PANE (Composer + Examples) */}
+      <div className="flex-1 min-w-0 flex flex-col min-h-0 bg-[#0d0d10]">
+        <div className="shrink-0 flex items-center justify-between gap-3 px-4 py-3 border-b border-white/5 bg-black/20 h-[60px]">
+          <div className="flex items-center gap-2">
+            <FileCode2 className="h-4 w-4 text-[#00f5d4]" aria-hidden="true" />
+            <h1 className="font-display text-xs font-black uppercase tracking-[0.2em] text-white">
+              Quick Script
+            </h1>
           </div>
           <QuickScriptStatus status={status} stage={quickScript?.stage} error={quickScript?.error} />
         </div>
-      </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-5 sm:px-6">
-        <div className="mx-auto grid max-w-6xl gap-6 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
-          <div className="space-y-4">
-            <form
-              onSubmit={(event) => {
-                event.preventDefault();
-                if (canSubmit) onGenerate?.();
-              }}
-              className="rounded-2xl border border-white/10 bg-[#0d0d10]/80 p-5 shadow-panel backdrop-blur-xl transition-all duration-300 hover:border-white/15"
-            >
-              <div className="flex items-center justify-between gap-2">
-                <label htmlFor="quick-script-prompt" className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">
-                  Script prompt
-                </label>
-                {onImprovePrompt && (
+        {/* Scrollable area */}
+        <div className="flex-1 min-h-0 overflow-y-auto px-4 py-5 space-y-4 scrollbar-thin">
+          {isGenerating && (
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <Loader className="h-6 w-6 text-[#00f5d4] animate-spin" />
+              <p className="mt-3 text-xs text-gray-400 font-mono">{quickScript?.stage || "Compiling script..."}</p>
+            </div>
+          )}
+
+          {!result && status === "idle" && (
+            <div className="space-y-3">
+              <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">Try one</h2>
+              <div className="grid gap-2.5">
+                {EXAMPLES.map((example) => (
                   <button
+                    key={example}
                     type="button"
-                    onClick={() => onImprovePrompt()}
-                    disabled={isGenerating || isImproving || !String(prompt || "").trim()}
-                    data-tour="improve-btn"
-                    className="inline-flex h-7 items-center gap-1.5 rounded-lg border border-[#9b5de5]/25 bg-[#9b5de5]/10 px-2.5 text-[10px] font-bold uppercase tracking-wider text-[#c9b3f7] transition-all hover:bg-[#9b5de5]/20 hover:text-white focus-ring disabled:cursor-not-allowed disabled:opacity-40"
-                    title="Expand your prompt into a detailed brief"
-                    aria-label="Improve my prompt"
+                    onClick={() => setPrompt(example)}
+                    className="rounded-xl border border-white/5 bg-white/[0.02] p-4 text-left text-xs leading-relaxed text-gray-300 transition-all hover:border-[#00f5d4]/30 hover:bg-[#00f5d4]/5 hover:text-white text-wrap"
                   >
-                    {isImproving ? (
-                      <Loader className="h-3 w-3 animate-spin" />
-                    ) : (
-                      <Wand2 className="h-3 w-3" />
-                    )}
-                    {isImproving ? "Improving" : "Improve"}
+                    {example}
                   </button>
-                )}
+                ))}
               </div>
-              <div className="relative mt-3">
-                <textarea
-                  id="quick-script-prompt"
-                  ref={textareaRef}
-                  value={prompt}
-                  onChange={(event) => setPrompt(event.target.value)}
-                  onFocus={keepPromptVisible}
-                  onKeyDown={handleKeyDown}
-                  onCompositionStart={() => setIsComposing(true)}
-                  onCompositionEnd={() => setIsComposing(false)}
-                  disabled={isGenerating}
-                  data-tour="prompt-input"
-                  placeholder="Describe one Roblox script. Include where it should go if you know."
-                  className="w-full min-h-[92px] resize-none rounded-xl border border-white/10 bg-black/40 px-4 py-3.5 text-base leading-relaxed text-gray-100 outline-none transition-all duration-300 focus:border-[#00f5d4]/50 focus:shadow-[0_0_20px_rgba(0,245,212,0.12)] disabled:opacity-60 md:text-sm"
-                  aria-describedby="quick-script-help"
-                  aria-invalid={Boolean(quickScript?.error && !result)}
-                />
-              </div>
-              <div id="quick-script-help" className="mt-2.5 flex flex-wrap items-center justify-between gap-2 text-[10px] text-gray-500">
-                <span className="flex items-center gap-1">
-                  <span className="rounded bg-white/5 px-1 py-0.5 text-[9px] font-mono border border-white/5">Enter</span> generates. 
-                  <span className="rounded bg-white/5 px-1 py-0.5 text-[9px] font-mono border border-white/5">Shift + Enter</span> new line.
-                </span>
-                <span>{String(prompt || "").trim().length} characters</span>
-              </div>
-              <div className="mt-4 flex flex-wrap items-center gap-2">
-                <Button 
-                  type="submit" 
-                  icon={isGenerating ? Loader : Send} 
-                  disabled={!canSubmit} 
-                  data-tour="generate-btn" 
-                  className="min-h-11 bg-gradient-to-r from-[#00f5d4]/90 to-[#9b5de5]/90 hover:from-[#00f5d4] hover:to-[#9b5de5] text-black font-bold border-none transition-all duration-300"
-                >
-                  {isGenerating ? "Generating" : result ? "Generate Update" : "Generate Script"}
-                </Button>
-                {quickScript?.error?.retryable && (
-                  <Button variant="ghost" icon={RefreshCw} onClick={onRetry} disabled={isGenerating} className="min-h-11 border border-white/10 hover:bg-white/5">
-                    Retry
-                  </Button>
-                )}
-              </div>
-            </form>
+            </div>
+          )}
 
-            {!result && status === "idle" && (
-              <div className="rounded-2xl border border-white/10 bg-[#0d0d10]/40 p-5 backdrop-blur-xl">
-                <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Try one</h2>
-                <div className="mt-3 grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
-                  {EXAMPLES.map((example) => (
-                    <button
-                      key={example}
-                      type="button"
-                      onClick={() => setPrompt(example)}
-                      className="min-h-16 rounded-xl border border-white/10 bg-black/30 p-3.5 text-left text-xs leading-relaxed text-gray-300 transition-all duration-300 hover:-translate-y-0.5 hover:border-[#00f5d4]/40 hover:bg-[#00f5d4]/5 hover:text-white focus-ring shadow-sm"
-                    >
-                      {example}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {quickScript?.error && (
-              <section className="rounded-2xl border border-amber-400/25 bg-amber-400/10 p-5" aria-live="polite">
-                <div className="flex items-start gap-3">
-                  <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-200" />
-                  <div>
-                    <h2 className="text-sm font-bold text-amber-100 font-display uppercase tracking-wider">
-                      {quickScript.error.code === "AGENT_BUILD_RECOMMENDED" ? "Agent Build recommended" : "Quick Script could not finish"}
-                    </h2>
-                    <p className="mt-1.5 text-sm leading-relaxed text-amber-100/80">{quickScript.error.message}</p>
-                    <div className="mt-4 flex flex-wrap gap-2">
-                      {quickScript.error.retryable && (
-                        <Button variant="ghost" size="sm" icon={RefreshCw} onClick={onRetry} disabled={isGenerating} className="min-h-11">
-                          Retry
-                        </Button>
-                      )}
-                      <Button variant="secondary" size="sm" iconRight={ArrowRight} onClick={onOpenAgentBuild} className="min-h-11 bg-amber-400/20 hover:bg-amber-400/30 text-amber-100 border-none">
-                        Open as Agent Build
+          {quickScript?.error && (
+            <section className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-4 animate-fadeIn" role="alert" aria-live="polite">
+              <div className="flex items-start gap-2.5">
+                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-400" />
+                <div>
+                  <h2 className="text-xs font-bold text-amber-200 font-display uppercase tracking-wider">
+                    {quickScript.error.code === "AGENT_BUILD_RECOMMENDED" ? "Agent Build recommended" : "Quick Script could not finish"}
+                  </h2>
+                  <p className="mt-1 text-xs leading-relaxed text-amber-200/80">{quickScript.error.message}</p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {quickScript.error.retryable && (
+                      <Button variant="ghost" size="sm" icon={RefreshCw} onClick={onRetry} disabled={isGenerating} className="h-8 text-xs">
+                        Retry
                       </Button>
-                    </div>
-                  </div>
-                </div>
-              </section>
-            )}
-
-            {result && !user && (
-              <div className="rounded-xl border border-[#00f5d4]/20 bg-[#00f5d4]/5 p-4 text-xs leading-relaxed text-[#d8fff9]">
-                The generated code stays visible. Sign up only when you save, export, push to Studio, or continue with more restricted generation.
-              </div>
-            )}
-          </div>
-
-          <div className="min-w-0">
-            {result ? (
-              <div className="space-y-4">
-                <div className="rounded-2xl border border-white/10 bg-[#0d0d10]/80 p-5 shadow-panel backdrop-blur-xl">
-                  <div className="flex flex-wrap items-start justify-between gap-3 border-b border-white/5 pb-4 mb-4">
-                    <div className="min-w-0">
-                      <h2 className="text-xl font-bold tracking-tight text-white font-display">{result.title || "Quick Script"}</h2>
-                      <div className="mt-2.5 flex flex-wrap gap-1.5">
-                        <span className="rounded-md border border-[#00f5d4]/20 bg-[#00f5d4]/10 px-2.5 py-0.5 text-[9px] font-black uppercase tracking-widest text-[#00f5d4]">
-                          {result.scriptType || "Script"}
-                        </span>
-                        <span className="rounded-md border border-white/10 bg-white/5 px-2.5 py-0.5 text-[9px] font-black uppercase tracking-widest text-gray-300">
-                          {result.studioLocation || "ServerScriptService"}
-                        </span>
-                        <span className="rounded-md border border-white/10 bg-white/5 px-2.5 py-0.5 text-[9px] font-black uppercase tracking-widest text-gray-300">
-                          Luau
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <Tabs defaultValue="code" className="w-full">
-                    <TabsList className="grid w-full grid-cols-3">
-                      <TabsTrigger value="code">Code</TabsTrigger>
-                      <TabsTrigger value="setup">Setup</TabsTrigger>
-                      <TabsTrigger value="diagnostics">Diagnostics</TabsTrigger>
-                    </TabsList>
-
-                    <TabsContent value="code" className="mt-4 focus-visible:ring-0">
-                      <div className="relative rounded-xl border border-white/10 bg-black/40 overflow-hidden" data-tour="code-output">
-                        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/5 bg-white/[0.02] px-4 py-2">
-                          <div className="flex items-center gap-2 text-[10px] text-gray-500">
-                            <FileCode2 className="h-3.5 w-3.5 text-[#00f5d4]" />
-                            <span className="font-mono">{result.studioLocation || "ServerScriptService"}</span>
-                          </div>
-                          <div className="flex flex-wrap gap-1.5" data-tour="code-actions">
-                            <Button variant="ghost" size="sm" icon={copied ? Check : Clipboard} onClick={handleCopyClick} className="h-8 py-0 px-2.5 text-xs hover:bg-white/5">
-                              {copied ? "Copied" : "Copy"}
-                            </Button>
-                            <Button variant="ghost" size="sm" icon={Save} onClick={onSave} className="h-8 py-0 px-2.5 text-xs hover:bg-white/5">Save</Button>
-                            <Button variant="ghost" size="sm" icon={Download} onClick={onExport} className="h-8 py-0 px-2.5 text-xs hover:bg-white/5">Export</Button>
-                            <Button variant="secondary" size="sm" icon={TerminalSquare} onClick={onStudioPush} className="h-8 py-0 px-2.5 text-xs bg-white/10 text-white hover:bg-white/15">Studio</Button>
-                          </div>
-                        </div>
-                        <div
-                          className="quick-script-code-scroll max-w-full overflow-x-auto overscroll-x-contain"
-                          tabIndex={0}
-                          aria-label="Generated Luau code. Scroll horizontally to read long lines."
-                        >
-                          <Suspense fallback={<pre className="m-0 min-h-40 bg-black/40 p-4 text-sm text-gray-400">Loading code view...</pre>}>
-                            <QuickScriptCodeBlock code={result.code || "-- No code returned"} />
-                          </Suspense>
-                        </div>
-                      </div>
-                    </TabsContent>
-
-                    <TabsContent value="setup" className="mt-4 focus-visible:ring-0 space-y-4">
-                      <ListSection
-                        title="Required Objects"
-                        items={result.requiredObjects}
-                        empty="No required objects listed."
-                        icon={<Code2 className="h-4 w-4 text-[#00f5d4]" />}
-                      />
-                      <ListSection
-                        title="Setup & Placement"
-                        items={result.setup}
-                        empty="Paste the script in the placement shown above."
-                        icon={<Pencil className="h-4 w-4 text-[#00f5d4]" />}
-                      />
-                      <ListSection
-                        title="Verification & Testing"
-                        items={result.testing}
-                        empty="Run Play mode and verify the intended behavior."
-                        icon={<TerminalSquare className="h-4 w-4 text-[#00f5d4]" />}
-                      />
-                    </TabsContent>
-
-                    <TabsContent value="diagnostics" className="mt-4 focus-visible:ring-0">
-                      <ListSection
-                        title="Warnings & Limitations"
-                        items={warnings}
-                        empty="No warnings or limitations reported."
-                        icon={<AlertTriangle className="h-4 w-4 text-amber-400" />}
-                        isWarning={true}
-                      />
-                    </TabsContent>
-                  </Tabs>
-                </div>
-
-                <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-white/10 bg-gradient-to-r from-white/[0.01] to-white/[0.03] p-5 transition-all duration-300 hover:border-white/15">
-                  <div className="flex items-start gap-3">
-                    <div className="mt-0.5 rounded-lg bg-[#00f5d4]/10 p-2 text-[#00f5d4] shrink-0">
-                      <ShieldCheck className="h-4 w-4" />
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-bold text-white font-display">Need a complex multi-file system?</h4>
-                      <p className="mt-1 text-xs text-gray-400 max-w-md leading-relaxed">
-                        Agent Build plans, creates, and verifies larger features across multiple scripts in your Roblox workspace.
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    <Button variant="ghost" size="sm" icon={Pencil} onClick={onContinueEditing} className="min-h-10 border border-white/10 hover:bg-white/5">
-                      Continue editing
-                    </Button>
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      iconRight={ArrowRight}
-                      onClick={onOpenAgentBuild}
-                      className="min-h-10 bg-white/10 text-white hover:bg-white/15"
-                    >
+                    )}
+                    <Button variant="secondary" size="sm" iconRight={ArrowRight} onClick={onOpenAgentBuild} className="h-8 text-xs bg-white/10 text-white hover:bg-white/15">
                       Open as Agent Build
                     </Button>
                   </div>
                 </div>
               </div>
-            ) : (
-              <div className="flex min-h-[420px] flex-col items-center justify-center rounded-2xl border border-dashed border-white/10 bg-[#0d0d10]/40 p-8 text-center" data-tour="code-output">
-                <div className="relative flex h-16 w-16 items-center justify-center rounded-full bg-[#00f5d4]/5 border border-[#00f5d4]/10 shadow-[0_0_50px_rgba(0,245,212,0.05)] mb-5">
-                  <Code2 className="h-7 w-7 text-[#00f5d4]" />
-                  <span className="absolute -right-1 -top-1 flex h-3 w-3">
-                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#9b5de5] opacity-75"></span>
-                    <span className="relative inline-flex h-3 w-3 rounded-full bg-[#9b5de5]"></span>
-                  </span>
-                </div>
-                <h2 className="font-display text-base font-black tracking-widest text-white uppercase">One prompt, one focused script</h2>
-                <p className="mt-3 max-w-sm text-sm leading-relaxed text-gray-400">
-                  Quick Script returns fully functional Luau code, placement directories, step-by-step setup guides, verification tests, and syntax diagnostics instantly.
-                </p>
-                <div className="mt-6 flex flex-wrap justify-center gap-4 text-xs border-t border-white/5 pt-5 w-full max-w-xs">
-                  <a href="/roblox-lua-script-generator" className="inline-flex items-center gap-1.5 text-gray-400 hover:text-[#00f5d4] transition-all">
-                    <Sparkles className="h-3.5 w-3.5 text-[#00f5d4]" />
-                    Luau examples
-                  </a>
-                  <span className="text-gray-700">|</span>
-                  <a href="/roblox-gui-maker" className="inline-flex items-center gap-1.5 text-gray-400 hover:text-[#00f5d4] transition-all">
-                    <TerminalSquare className="h-3.5 w-3.5 text-[#00f5d4]" />
-                    GUI scripting help
-                  </a>
+            </section>
+          )}
+
+          {result && (
+            <div className="rounded-xl border border-white/5 bg-white/[0.01] p-4 space-y-3">
+              <div className="flex items-start gap-2.5">
+                <ShieldCheck className="h-4 w-4 text-[#00f5d4] shrink-0 mt-0.5" />
+                <div>
+                  <h4 className="text-xs font-bold text-white">Need a complex multi-file system?</h4>
+                  <p className="mt-0.5 text-xs text-gray-500 leading-relaxed">
+                    Agent Build plans, creates, and verifies larger features across multiple scripts in your Roblox workspace.
+                  </p>
                 </div>
               </div>
-            )}
-          </div>
+              <div className="flex flex-wrap gap-1.5 pt-1">
+                <Button variant="ghost" size="sm" icon={Pencil} onClick={onContinueEditing} className="h-8 text-xs border border-white/5">
+                  Continue editing
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  iconRight={ArrowRight}
+                  onClick={onOpenAgentBuild}
+                  className="h-8 text-xs bg-white/10 text-white hover:bg-white/15"
+                >
+                  Open as Agent Build
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {result && !user && (
+            <div className="rounded-xl border border-[#00f5d4]/10 bg-[#00f5d4]/5 p-3.5 text-[11px] leading-relaxed text-[#a8fff4]">
+              The generated code remains visible. Sign up to save, export, push to Studio, or continue editing.
+            </div>
+          )}
         </div>
+
+        {/* Docked bottom area */}
+        <div className="shrink-0 border-t border-white/5 bg-black/20 p-4">
+          <form
+            onSubmit={(event) => {
+              event.preventDefault();
+              if (canSubmit) onGenerate?.();
+            }}
+            className="relative flex flex-col gap-2 rounded-xl border border-white/10 bg-[#0a0a0a] p-3 focus-within:border-[#00f5d4]/45 focus-within:shadow-[0_0_15px_rgba(0,245,212,0.06)] transition-all duration-200"
+          >
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-[9px] font-black uppercase tracking-[0.25em] text-gray-500">
+                Prompt Composer
+              </span>
+              {onImprovePrompt && (
+                <button
+                  type="button"
+                  onClick={() => onImprovePrompt()}
+                  disabled={isGenerating || isImproving || !String(prompt || "").trim()}
+                  data-tour="improve-btn"
+                  className="inline-flex h-6 items-center gap-1 rounded-md border border-[#9b5de5]/25 bg-[#9b5de5]/10 px-2 text-[9px] font-bold uppercase tracking-wider text-[#c9b3f7] transition-all hover:bg-[#9b5de5]/20 hover:text-white disabled:opacity-40 disabled:cursor-not-allowed"
+                  title="Expand your prompt into a detailed brief"
+                >
+                  {isImproving ? <Loader className="h-2.5 w-2.5 animate-spin" /> : <Wand2 className="h-2.5 w-2.5" />}
+                  {isImproving ? "Improving" : "Improve"}
+                </button>
+              )}
+            </div>
+            <textarea
+              id="quick-script-prompt"
+              ref={textareaRef}
+              value={prompt}
+              onChange={(event) => setPrompt(event.target.value)}
+              onFocus={keepPromptVisible}
+              onKeyDown={handleKeyDown}
+              onCompositionStart={() => setIsComposing(true)}
+              onCompositionEnd={() => setIsComposing(false)}
+              disabled={isGenerating}
+              data-tour="prompt-input"
+              placeholder="Describe one Roblox script. Include where it should go if you know."
+              className="w-full min-h-[72px] max-h-[140px] resize-none bg-transparent text-sm leading-relaxed text-gray-100 outline-none placeholder:text-gray-600 disabled:opacity-60"
+              aria-describedby="quick-script-help"
+              aria-invalid={Boolean(quickScript?.error && !result)}
+            />
+            <div className="flex items-center justify-between gap-2 border-t border-white/5 pt-2.5">
+              <div id="quick-script-help" className="text-[9px] text-gray-500 flex items-center gap-1.5">
+                <span><kbd className="rounded bg-white/5 border border-white/5 px-1 font-mono text-[8px]">Enter</kbd> send</span>
+                <span>•</span>
+                <span>{String(prompt || "").trim().length} chars</span>
+              </div>
+              <div className="flex items-center gap-2">
+                {quickScript?.error?.retryable && (
+                  <Button variant="ghost" size="sm" icon={RefreshCw} onClick={onRetry} disabled={isGenerating} className="h-8 text-xs font-bold border border-white/5">
+                    Retry
+                  </Button>
+                )}
+                <Button
+                  type="submit"
+                  icon={isGenerating ? Loader : Send}
+                  disabled={!canSubmit}
+                  data-tour="generate-btn"
+                  className="h-8 px-4 text-xs font-bold bg-[#00f5d4] hover:bg-[#00f5d4]/90 text-black border-none transition-all duration-200"
+                >
+                  {isGenerating ? "Generating" : result ? "Generate Update" : "Generate Script"}
+                </Button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      {/* RIGHT PANE (Workspace Tabs) */}
+      <div className="w-full lg:w-[46%] xl:w-[42%] 2xl:w-[38%] lg:min-w-[420px] lg:max-w-[720px] lg:shrink-0 border-t lg:border-t-0 lg:border-l border-white/10 flex flex-col min-h-0 bg-[#07070a]">
+        {result ? (
+          <Tabs defaultValue="code" className="flex-1 flex flex-col min-h-0">
+            <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-white/10 bg-black/30 shrink-0 h-[60px]">
+              <div className="min-w-0">
+                <div className="font-display text-sm font-bold text-white truncate">{result.title || "Quick Script"}</div>
+                <div className="mt-1 flex items-center gap-1.5">
+                  <span className="rounded bg-[#00f5d4]/10 border border-[#00f5d4]/20 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-widest text-[#00f5d4]">
+                    {result.scriptType || "Script"}
+                  </span>
+                  <span className="rounded bg-white/5 border border-white/10 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-widest text-gray-300">
+                    {result.studioLocation || "ServerScriptService"}
+                  </span>
+                </div>
+              </div>
+              <TabsList className="h-8 border border-white/5 bg-black/40 w-auto rounded-lg p-0.5 gap-0.5">
+                <TabsTrigger value="code" className="px-3 py-1 text-[10px] rounded-md">Code</TabsTrigger>
+                <TabsTrigger value="setup" className="px-3 py-1 text-[10px] rounded-md">Setup</TabsTrigger>
+                <TabsTrigger value="diagnostics" className="px-3 py-1 text-[10px] rounded-md">Diagnostics</TabsTrigger>
+              </TabsList>
+            </div>
+
+            <div className="flex-1 min-h-0 bg-[#07070a] flex flex-col">
+              <TabsContent value="code" className="flex-1 min-h-0 mt-0 focus-visible:ring-0 flex flex-col">
+                <div className="flex-1 min-h-0 flex flex-col relative" data-tour="code-output">
+                  <div className="flex items-center justify-between gap-3 border-b border-white/5 bg-black/20 px-4 py-2 shrink-0">
+                    <div className="flex items-center gap-2 text-[10px] text-gray-500 font-mono">
+                      <TerminalSquare className="h-3.5 w-3.5 text-[#00f5d4]" />
+                      <span>{result.studioLocation || "ServerScriptService"}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5" data-tour="code-actions">
+                      <Button variant="ghost" size="sm" icon={copied ? Check : Clipboard} onClick={handleCopyClick} className="h-7 py-0 px-2 text-[10px] hover:bg-white/5">
+                        {copied ? "Copied" : "Copy"}
+                      </Button>
+                      <Button variant="ghost" size="sm" icon={Save} onClick={onSave} className="h-7 py-0 px-2 text-[10px] hover:bg-white/5">Save</Button>
+                      <Button variant="ghost" size="sm" icon={Download} onClick={onExport} className="h-7 py-0 px-2 text-[10px] hover:bg-white/5">Export</Button>
+                      <Button variant="secondary" size="sm" icon={TerminalSquare} onClick={onStudioPush} className="h-7 py-0 px-2.5 text-[10px] bg-white/10 text-white hover:bg-white/15">Studio</Button>
+                    </div>
+                  </div>
+                  <div
+                    className="flex-1 min-h-0 overflow-y-auto overscroll-contain quick-script-code-scroll bg-black/20 scrollbar-thin"
+                    tabIndex={0}
+                    aria-label="Generated Luau code. Scroll to read."
+                  >
+                    <Suspense fallback={<div className="flex h-40 items-center justify-center text-sm text-gray-500"><Loader className="h-5 w-5 animate-spin mr-2" />Loading code view...</div>}>
+                      <QuickScriptCodeBlock code={result.code || "-- No code returned"} />
+                    </Suspense>
+                  </div>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="setup" className="flex-1 min-h-0 mt-0 focus-visible:ring-0 overflow-y-auto p-4 space-y-4 scrollbar-thin">
+                <ListSection
+                  title="Required Objects"
+                  items={result.requiredObjects}
+                  empty="No required objects listed."
+                  icon={<Code2 className="h-4 w-4 text-[#00f5d4]" />}
+                />
+                <ListSection
+                  title="Setup & Placement"
+                  items={result.setup}
+                  empty="Paste the script in the placement shown above."
+                  icon={<Pencil className="h-4 w-4 text-[#00f5d4]" />}
+                />
+                <ListSection
+                  title="Verification & Testing"
+                  items={result.testing}
+                  empty="Run Play mode and verify the intended behavior."
+                  icon={<TerminalSquare className="h-4 w-4 text-[#00f5d4]" />}
+                />
+              </TabsContent>
+
+              <TabsContent value="diagnostics" className="flex-1 min-h-0 mt-0 focus-visible:ring-0 overflow-y-auto p-4 space-y-4 scrollbar-thin">
+                <ListSection
+                  title="Warnings & Limitations"
+                  items={warnings}
+                  empty="No warnings or limitations reported."
+                  icon={<AlertTriangle className="h-4 w-4 text-amber-400" />}
+                  isWarning={true}
+                />
+              </TabsContent>
+            </div>
+          </Tabs>
+        ) : (
+          <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-[#07070a]" data-tour="code-output">
+            <div className="p-4 rounded-2xl bg-[#00f5d4]/[0.02] border border-[#00f5d4]/10 mb-4 shadow-[0_0_40px_-15px_rgba(0,245,212,0.2)]">
+              <Code2 className="h-8 w-8 text-[#00f5d4]" />
+            </div>
+            <h2 className="font-display text-sm font-bold text-gray-200">One prompt, one focused script</h2>
+            <p className="mt-2 text-xs text-gray-500 max-w-xs leading-relaxed">
+              Quick Script compiles functional Luau code, placement directories, step-by-step setup guides, verification tests, and syntax diagnostics instantly.
+            </p>
+            <div className="mt-5 flex items-center gap-3 text-[10px] border-t border-white/5 pt-4 w-full max-w-[200px] justify-center">
+              <a href="/roblox-lua-script-generator" className="text-gray-400 hover:text-[#00f5d4] transition-all">
+                Luau examples
+              </a>
+              <span className="text-gray-700">|</span>
+              <a href="/roblox-gui-maker" className="text-gray-400 hover:text-[#00f5d4] transition-all">
+                GUI help
+              </a>
+            </div>
+          </div>
+        )}
       </div>
     </section>
   );
