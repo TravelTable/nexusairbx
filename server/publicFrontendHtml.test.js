@@ -294,6 +294,16 @@ test("public frontend CSS includes mobile landing layout rules", () => {
   assert.match(css, /@media \(max-width: 420px\) \{[\s\S]*\.account-link \{[\s\S]*display: none;/);
 });
 
+test("exported public CSS includes Tailwind utilities used by the homepage", () => {
+  const cssDir = path.join(outDir, "_next", "static", "chunks");
+  const cssPath = fs.readdirSync(cssDir).find((file) => file.endsWith(".css"));
+  assert.ok(cssPath, "Expected exported CSS chunk. Run npm run public:build first.");
+  const css = fs.readFileSync(path.join(cssDir, cssPath), "utf8");
+  assert.match(css, /box-sizing:border-box;border:0 solid #e5e7eb/);
+  assert.match(css, /\.flex\{/);
+  assert.match(css, /max-w-6xl/);
+});
+
 test("public header keeps Firebase auth in a small lazy client island", () => {
   const header = fs.readFileSync(path.join(__dirname, "..", "public-frontend", "components", "PublicHeader.jsx"), "utf8");
   const accountState = fs.readFileSync(path.join(__dirname, "..", "public-frontend", "components", "PublicAccountState.jsx"), "utf8");
