@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Coins, AlertCircle, RefreshCw } from "lucide-react";
+import { Coins, AlertCircle, RefreshCw } from "lib/icons";
 
 // Container component for business logic
 /**

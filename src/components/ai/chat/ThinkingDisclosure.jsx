@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Brain, ChevronDown } from "lucide-react";
+import { Brain, ChevronDown } from "lib/icons";
 
 /**
  * Collapsible display-safe build log for finalized messages. Hidden when there

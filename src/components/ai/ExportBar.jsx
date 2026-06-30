@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import JSZip from "jszip";
-import { Copy, Check, Download, ShieldCheck, Loader, Package, Bookmark, RefreshCw, Boxes, Terminal, Link2, Send, Radio } from "lucide-react";
+import { Copy, Check, Download, ShieldCheck, Loader, Package, Bookmark, RefreshCw, Boxes, Terminal, Link2, Send, Radio } from "lib/icons";
 import { verifyRobloxReadiness } from "../../lib/workflowApi";
 import { buildRojoZip, buildStudioLoader } from "../../lib/rojoExport";
 import { buildStudioPayload } from "../../lib/studioPayload";

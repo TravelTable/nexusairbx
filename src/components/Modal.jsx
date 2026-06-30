@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X } from "lucide-react";
+import { X } from "lib/icons";
 
 export default function Modal({ onClose, title, children, isOpen = true }) {
   const modalRef = useRef(null);

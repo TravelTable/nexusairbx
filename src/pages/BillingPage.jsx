@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { AlertTriangle, ArrowLeft, CheckCircle, CreditCard, Loader2, Plus, Settings, Zap } from "lucide-react";
+import { AlertTriangle, ArrowLeft, CheckCircle, CreditCard, Loader2, Plus, Settings, Zap } from "lib/icons";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { getFirestore, doc, onSnapshot } from "firebase/firestore";
 import { useNavigate } from "react-router-dom";

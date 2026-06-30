@@ -1,6 +1,6 @@
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Zap, ShieldCheck, Bookmark, Download, ExternalLink } from "lucide-react";
+import { X, Zap, ShieldCheck, Bookmark, Download, ExternalLink } from "lib/icons";
 import { useNavigate } from "react-router-dom";
 
 export default function ProNudgeModal({ isOpen, onClose, reason = "this icon" }) {

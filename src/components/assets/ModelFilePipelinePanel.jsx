@@ -9,7 +9,7 @@ import {
   Square,
   Trash2,
   UploadCloud,
-} from "lucide-react";
+} from "lib/icons";
 import {
   cancelDerivative,
   cancelModelFile,

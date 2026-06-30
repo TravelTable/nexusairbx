@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Check, HelpCircle, ListChecks, Sparkles, Pencil, Loader } from "lucide-react";
+import { Check, HelpCircle, ListChecks, Sparkles, Pencil, Loader } from "lib/icons";
 import MarkdownMessage from "./MarkdownMessage";
 
 const CLASSIFICATION_LABELS = {

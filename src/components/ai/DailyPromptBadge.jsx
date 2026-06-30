@@ -1,5 +1,5 @@
 import React from "react";
-import { Zap } from "lucide-react";
+import { Zap } from "lib/icons";
 
 // Friendly "prompts left" framing layered on top of the token system.
 //

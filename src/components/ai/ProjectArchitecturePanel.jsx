@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { X, ChevronDown, ChevronRight, Folder, Code2, Zap, Tag, Layout, Server } from "lucide-react";
+import { X, ChevronDown, ChevronRight, Folder, Code2, Zap, Tag, Layout, Server } from "lib/icons";
 
 /**
  * Normalize projectContext for display (supports backend schema + legacy top-level remoteEvents/modules/tags).

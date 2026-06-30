@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Radio, ChevronDown, Copy, Check, Loader2, RefreshCw, Link2, Unlink } from "lucide-react";
+import { Radio, ChevronDown, Copy, Check, Loader2, RefreshCw, Link2, Unlink } from "lib/icons";
 import { startStudioPairing, disconnectStudio } from "../../lib/studioBridgeApi";
 
 const MENU_WIDTH = 320;

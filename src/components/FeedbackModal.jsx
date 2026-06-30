@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import Modal from "./Modal";
-import { ThumbsUp, ThumbsDown } from "lucide-react";
+import { ThumbsUp, ThumbsDown } from "lib/icons";
 import { Button, cx } from "./ui";
 
 export default function FeedbackModal({ onClose, onSubmit }) {

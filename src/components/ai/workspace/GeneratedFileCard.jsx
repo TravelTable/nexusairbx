@@ -1,5 +1,5 @@
 import React from "react";
-import { Circle, AlertTriangle } from "lucide-react";
+import { Circle, AlertTriangle } from "lib/icons";
 import { kindMeta, statusMeta } from "./workspaceMeta";
 
 // Compact row for a single generated file in the file tree.

@@ -1,4 +1,4 @@
-import { ArrowRight } from "lucide-react";
+import { ArrowRight } from "lib/icons";
 
 import { Badge } from "../shadcn/badge";
 import { Button } from "../shadcn/button";

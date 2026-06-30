@@ -1,5 +1,5 @@
 import React, { useMemo } from "react";
-import { FolderOpen, Folder, FileQuestion, AlertTriangle } from "lucide-react";
+import { FolderOpen, Folder, FileQuestion, AlertTriangle } from "lib/icons";
 import GeneratedFileCard from "./GeneratedFileCard";
 import QaScoreBadge from "../QaScoreBadge";
 import { ROBLOX_PLACEMENTS } from "./workspaceMeta";

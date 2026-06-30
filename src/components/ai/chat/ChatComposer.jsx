@@ -11,7 +11,7 @@ import {
   MessageSquare,
   ClipboardList,
   SlidersHorizontal,
-} from "lucide-react";
+} from "lib/icons";
 import { UnifiedStatusBar, TokenBar } from "../AiComponents";
 import { CHAT_MODES } from "../chatConstants";
 import StudioControls from "../workspace/StudioControls";

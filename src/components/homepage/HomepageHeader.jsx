@@ -1,4 +1,4 @@
-import { Gamepad2 } from "lucide-react";
+import { Gamepad2 } from "lib/icons";
 import { Button } from "../shadcn/button";
 import { homepageFooterLinks, homepageHero } from "../../content/homepageLanding";
 

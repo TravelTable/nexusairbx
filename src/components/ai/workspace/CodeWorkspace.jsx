@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect } from "react";
 import Editor, { DiffEditor } from "@monaco-editor/react";
-import { Copy, Check, Pencil, Eye, RotateCcw, FileCode2, Save, RefreshCw, Files } from "lucide-react";
+import { Copy, Check, Pencil, Eye, RotateCcw, FileCode2, Save, RefreshCw, Files } from "lib/icons";
 import CodeEditorTabs from "./CodeEditorTabs";
 import ArtifactInspector from "./ArtifactInspector";
 import ExportActions from "./ExportActions";

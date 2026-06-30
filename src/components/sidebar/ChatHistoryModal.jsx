@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
-import { Search, MessageSquare, Loader2 } from "lucide-react";
+import { Search, MessageSquare, Loader2 } from "lib/icons";
 import Modal from "../Modal";
 import ChatRow from "./ChatRow";
 

@@ -1,5 +1,5 @@
 import React from "react";
-import { ShieldCheck, ShieldAlert, Wrench } from "lucide-react";
+import { ShieldCheck, ShieldAlert, Wrench } from "lib/icons";
 
 /**
  * Visible QA score badge for generated artifacts.

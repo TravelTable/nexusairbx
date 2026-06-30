@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback, useMemo } from "react";
-import { FileCode, XCircle } from "lucide-react";
+import { FileCode, XCircle } from "lib/icons";
 import { AI_EVENTS, emitAiEvent } from "../lib/aiEvents";
 
 export default function ScriptLoadingBarContainer({

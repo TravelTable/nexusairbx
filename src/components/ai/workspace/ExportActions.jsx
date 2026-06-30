@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Copy, Check, Download, FileDown, Boxes, Terminal, Send, ShieldCheck, Loader, Radio, Files } from "lucide-react";
+import { Copy, Check, Download, FileDown, Boxes, Terminal, Send, ShieldCheck, Loader, Radio, Files } from "lib/icons";
 import { buildRojoZip, buildStudioLoader, buildPlacementZip, safeProjectName } from "../../../lib/rojoExport";
 import { getStudioStatus, getStudioCommand, applyArtifactToStudio } from "../../../lib/studioBridgeApi";
 import { buildBaseArtifactSnapshot } from "../../../lib/artifactState";

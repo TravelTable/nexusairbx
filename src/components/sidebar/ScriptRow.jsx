@@ -1,5 +1,5 @@
 import React, { useMemo } from "react";
-import { Edit, Trash2, Monitor, Smartphone } from "lucide-react";
+import { Edit, Trash2, Monitor, Smartphone } from "lib/icons";
 import { getVersionStr, fromNow } from "../../lib/sidebarUtils";
 
 const ScriptRow = React.memo(function ScriptRow({

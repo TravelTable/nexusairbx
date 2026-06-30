@@ -5,7 +5,7 @@ import { stripTags } from "./stripTags";
 import MessageBubble from "./MessageBubble";
 import LiveWorkStream from "./LiveWorkStream";
 import { parsePendingStreamContent } from "../../../lib/streaming";
-import { Clock3, Loader2, RotateCcw } from "lucide-react";
+import { Clock3, Loader2, RotateCcw } from "lib/icons";
 
 function resolveActivityStage(pendingMessage, generationStage, parsed) {
   const stage = pendingMessage?.stage || generationStage || "";

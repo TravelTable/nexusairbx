@@ -22,7 +22,7 @@ import {
   Trash2,
   Users,
   Wand2,
-} from "lucide-react";
+} from "lib/icons";
 import {
   Area,
   AreaChart,

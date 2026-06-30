@@ -1,5 +1,5 @@
 import React from "react";
-import { Cloud, ImagePlus, Loader2 } from "lucide-react";
+import { Cloud, ImagePlus, Loader2 } from "lib/icons";
 
 export default function RobloxCloudControls({
   connected = false,

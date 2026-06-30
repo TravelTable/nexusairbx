@@ -1,5 +1,5 @@
 import React from "react";
-import { Sparkles, Layout, Code2, Rocket, LayoutGrid } from "lucide-react";
+import { Sparkles, Layout, Code2, Rocket, LayoutGrid } from "lib/icons";
 
 const EXAMPLES = [
   {

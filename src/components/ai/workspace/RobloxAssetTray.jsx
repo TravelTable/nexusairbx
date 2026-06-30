@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { Check, CloudUpload, Copy, ImageIcon, Loader2, RefreshCw, ShieldAlert } from "lucide-react";
+import { Check, CloudUpload, Copy, ImageIcon, Loader2, RefreshCw, ShieldAlert } from "lib/icons";
 import { auth } from "../../../firebase";
 import {
   approveProjectAssets,

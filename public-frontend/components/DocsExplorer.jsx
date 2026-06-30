@@ -19,7 +19,7 @@ import {
   Search,
   Shield,
   X,
-} from "lucide-react";
+} from "../../src/lib/icons";
 
 const RECENT_SEARCH_KEY = "nexusrbx.docs.recentSearches";
 const SEARCH_LIMIT = 8;

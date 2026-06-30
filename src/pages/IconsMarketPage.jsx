@@ -20,7 +20,7 @@ import {
   Trash2,
   Upload,
   Sparkles
-} from "lucide-react";
+} from "lib/icons";
 import JSZip from "jszip";
 import { useNavigate } from "react-router-dom";
 import { auth } from "../firebase";

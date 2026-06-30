@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Eye, ImageIcon } from "lucide-react";
+import { Eye, ImageIcon } from "lib/icons";
 
 function creatorLabel(creator) {
   return creator?.name || (creator?.id ? `${creator.type || "Creator"} ${creator.id}` : "Unknown creator");

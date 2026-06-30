@@ -1,5 +1,5 @@
 import React from "react";
-import { Loader2, ListChecks, RotateCcw } from "lucide-react";
+import { Loader2, ListChecks, RotateCcw } from "lib/icons";
 import AgentStepList from "./AgentStepList";
 import { FEATURE_FLAGS } from "../../../lib/featureFlags";
 

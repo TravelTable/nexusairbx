@@ -1,6 +1,6 @@
 import React from "react";
 import { motion } from "framer-motion";
-import { Loader, ChevronRight } from "lucide-react";
+import { Loader, ChevronRight } from "lib/icons";
 import FloatingToolCard from "./FloatingToolCard";
 import { getHomepageCtaCopy } from "../../lib/experiments";
 import { Button } from "../ui";

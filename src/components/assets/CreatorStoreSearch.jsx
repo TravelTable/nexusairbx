@@ -1,5 +1,5 @@
 import React, { useMemo, useRef, useState } from "react";
-import { Loader2, RefreshCw, Search, ShieldAlert } from "lucide-react";
+import { Loader2, RefreshCw, Search, ShieldAlert } from "lib/icons";
 import { beginRobloxReauthorization } from "../../lib/robloxOAuthApi";
 import { getCreatorStoreAsset, searchCreatorStore } from "../../lib/robloxCreatorStoreApi";
 import CreatorStoreAssetDetails from "./CreatorStoreAssetDetails";

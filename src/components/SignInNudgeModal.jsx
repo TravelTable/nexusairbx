@@ -1,6 +1,6 @@
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Gift, Zap, ShieldCheck, Save } from "lucide-react";
+import { X, Gift, Zap, ShieldCheck, Save } from "lib/icons";
 import { useNavigate, useLocation } from "react-router-dom";
 
 export default function SignInNudgeModal({ isOpen, onClose, reason = "" }) {

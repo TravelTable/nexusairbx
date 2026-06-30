@@ -1,4 +1,4 @@
-import { ArrowRight } from "lucide-react";
+import { ArrowRight } from "lib/icons";
 
 import { Card, CardContent } from "../shadcn/card";
 import { Separator } from "../shadcn/separator";

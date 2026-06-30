@@ -1,5 +1,5 @@
 import React from "react";
-import { Radio, Loader2 } from "lucide-react";
+import { Radio, Loader2 } from "lib/icons";
 import {
   getStudioApplyMode,
   getStudioEnabledPreference,

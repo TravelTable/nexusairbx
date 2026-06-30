@@ -1,5 +1,5 @@
 import React from "react";
-import { ClipboardList } from "lucide-react";
+import { ClipboardList } from "lib/icons";
 import AgentPlanPanel from "./AgentPlanPanel";
 import SetupStepsPanel from "./SetupStepsPanel";
 import TestingStepsPanel from "./TestingStepsPanel";

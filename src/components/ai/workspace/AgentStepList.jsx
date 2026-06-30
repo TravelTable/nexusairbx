@@ -1,5 +1,5 @@
 import React from "react";
-import { CheckCircle2, Circle, Loader2, ShieldAlert, XCircle } from "lucide-react";
+import { CheckCircle2, Circle, Loader2, ShieldAlert, XCircle } from "lib/icons";
 import { summarizeStepResult, TERMINAL_STEP_STATUSES } from "../../../lib/agentSteps";
 
 export function StepStatusIcon({ status }) {

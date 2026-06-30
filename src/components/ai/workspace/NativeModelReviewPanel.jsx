@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { AlertTriangle, Box, CheckCircle2, ChevronDown, ChevronRight, Hammer, Loader2, Radio, XCircle } from "lucide-react";
+import { AlertTriangle, Box, CheckCircle2, ChevronDown, ChevronRight, Hammer, Loader2, Radio, XCircle } from "lib/icons";
 import {
   buildNativeModelInStudio,
   getStudioCommand,

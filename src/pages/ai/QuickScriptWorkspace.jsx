@@ -17,7 +17,7 @@ import {
   TerminalSquare,
   Wand2,
   Check,
-} from "lucide-react";
+} from "lib/icons";
 
 import { Button, cx } from "../../components/ui";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "../../components/shadcn/tabs";

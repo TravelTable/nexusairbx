@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Check, ChevronDown, CreditCard, Loader2, Settings } from "lucide-react";
+import { Check, ChevronDown, CreditCard, Loader2, Settings } from "lib/icons";
 import NexusRBXFooter from "../components/NexusRBXFooter";
 import { getEntitlements, openPortal, startSubscriptionCheckout } from "../lib/billing";
 import { BILLING_INTERVAL, PLAN } from "../lib/prices";

@@ -1,4 +1,4 @@
-import { Gamepad2, Code } from "lucide-react";
+import { Gamepad2, Code } from "lib/icons";
 
 function GoogleIcon({ className = "" }) {
   return (

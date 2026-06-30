@@ -14,7 +14,7 @@ import {
   FileCode2,
   ArrowRight,
   ShieldCheck,
-} from "lucide-react";
+} from "lib/icons";
 import { motion } from "framer-motion";
 import { useBilling } from "../context/BillingContext";
 import { BACKEND_URL } from "../config";

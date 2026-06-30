@@ -18,7 +18,7 @@ import {
   Wand2,
   Layers,
   X
-} from "lucide-react";
+} from "lib/icons";
 import { useNavigate } from "react-router-dom";
 import { auth } from "../firebase";
 import { onAuthStateChanged } from "firebase/auth";

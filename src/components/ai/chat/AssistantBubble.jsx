@@ -6,7 +6,7 @@ import {
   ArtifactCard,
 } from "../AiComponents";
 import QaScoreBadge from "../QaScoreBadge";
-import { Activity, ShieldAlert, FolderOpen, FileCode2, Loader2 } from "lucide-react";
+import { Activity, ShieldAlert, FolderOpen, FileCode2, Loader2 } from "lib/icons";
 import { stripTags } from "./stripTags";
 import { ClarifyCard, PlanCard } from "./FlowCards";
 import MarkdownMessage from "./MarkdownMessage";

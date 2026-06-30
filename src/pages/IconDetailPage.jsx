@@ -12,7 +12,7 @@ import {
   Maximize2,
   Box,
   Upload
-} from "lucide-react";
+} from "lib/icons";
 import { motion } from "framer-motion";
 import { Helmet } from "react-helmet-async";
 import { auth } from "../firebase";

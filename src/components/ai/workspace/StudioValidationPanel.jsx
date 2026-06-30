@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { AlertTriangle, CheckCircle2, Clipboard, Loader2, Play, RefreshCw, ShieldCheck, StopCircle, XCircle } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Clipboard, Loader2, Play, RefreshCw, ShieldCheck, StopCircle, XCircle } from "lib/icons";
 import {
   cancelStudioValidation,
   getStudioValidation,

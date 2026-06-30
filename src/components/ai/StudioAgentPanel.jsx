@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Bot, Loader2, Play, RotateCcw, ShieldAlert, TerminalSquare } from "lucide-react";
+import { Bot, Loader2, Play, RotateCcw, ShieldAlert, TerminalSquare } from "lib/icons";
 import { continueStudioAgent, getStudioAgentRun, restoreStudioAgent, startStudioAgent } from "../../lib/studioBridgeApi";
 import AgentStepList from "./workspace/AgentStepList";
 

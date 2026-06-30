@@ -1,6 +1,6 @@
 import React from "react";
 import { motion } from "framer-motion";
-import { Loader, Circle } from "lucide-react";
+import { Loader, Circle } from "lib/icons";
 export default function TokenBar({
   tokensLeft,
   plan,

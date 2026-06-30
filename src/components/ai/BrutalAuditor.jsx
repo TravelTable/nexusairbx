@@ -12,7 +12,7 @@ import {
   Loader2,
   AlertTriangle,
   RefreshCw
-} from 'lucide-react';
+} from "lib/icons";
 import { BACKEND_URL } from '../../config';
 import { auth } from '../../firebase';
 

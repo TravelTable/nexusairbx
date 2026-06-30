@@ -16,7 +16,7 @@ import {
   Users,
   ChevronRight,
   FileCode,
-} from "lucide-react";
+} from "lib/icons";
 import SidebarTab from "./SidebarTab";
 import Modal from "./Modal";
 import ScriptRow from "./sidebar/ScriptRow";

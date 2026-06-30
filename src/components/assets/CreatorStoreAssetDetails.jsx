@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Check, Copy, ImageIcon, Loader2, Send, ShieldCheck, X } from "lucide-react";
+import { Check, Copy, ImageIcon, Loader2, Send, ShieldCheck, X } from "lib/icons";
 import {
   getStudioCommand,
   getStudioStatus,

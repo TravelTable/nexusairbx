@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { Github, Mail, ShieldCheck } from "lucide-react";
+import { Github, Mail, ShieldCheck } from "lib/icons";
 import { auth } from "../firebase";
 import { signInWithEmailAndPassword, GoogleAuthProvider, GithubAuthProvider, onAuthStateChanged } from "firebase/auth";
 import {

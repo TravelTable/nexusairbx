@@ -1,5 +1,5 @@
 import React from "react";
-import { Edit, Trash2, Loader2 } from "lucide-react";
+import { Edit, Trash2, Loader2 } from "lib/icons";
 
 export default function ChatRow({
   chat,

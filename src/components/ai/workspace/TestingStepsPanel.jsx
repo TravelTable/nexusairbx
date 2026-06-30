@@ -1,5 +1,5 @@
 import React from "react";
-import { FlaskConical, CheckCircle2 } from "lucide-react";
+import { FlaskConical, CheckCircle2 } from "lib/icons";
 
 // How to test the generated system in Studio.
 export default function TestingStepsPanel({ steps = [] }) {

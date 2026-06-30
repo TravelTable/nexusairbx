@@ -1,5 +1,5 @@
 import React from "react";
-import { Info, GitBranch, AlertTriangle, ShieldCheck, MapPin } from "lucide-react";
+import { Info, GitBranch, AlertTriangle, ShieldCheck, MapPin } from "lib/icons";
 import { kindMeta, statusMeta } from "./workspaceMeta";
 
 // Metadata strip beneath the editor: what the selected file is for, where it

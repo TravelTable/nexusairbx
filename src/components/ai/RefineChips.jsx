@@ -8,7 +8,7 @@ import {
   Square,
   Sparkles,
   Circle,
-} from "lucide-react";
+} from "lib/icons";
 
 // One-click refine suggestions. Each chip submits its `text` through the
 // existing refine flow (PreviewTab's onRefine), so iteration is one tap.

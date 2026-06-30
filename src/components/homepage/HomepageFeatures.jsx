@@ -1,4 +1,4 @@
-import { Blocks, Library, SearchCheck, WandSparkles } from "lucide-react";
+import { Blocks, Library, SearchCheck, WandSparkles } from "lib/icons";
 
 import { Card, CardContent, CardHeader, CardTitle } from "../shadcn/card";
 import { homepageFeatures } from "../../content/homepageLanding";

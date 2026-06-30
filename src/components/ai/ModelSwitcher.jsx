@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Cpu, ChevronDown, Lock, Check, Sparkles } from "lucide-react";
+import { Cpu, ChevronDown, Lock, Check, Sparkles } from "lib/icons";
 import { useModelCatalog } from "../../hooks/useModelCatalog";
 import {
   DEFAULT_FREE_MODEL,

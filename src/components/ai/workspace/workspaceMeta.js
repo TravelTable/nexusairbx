@@ -1,5 +1,5 @@
 // Shared display metadata for the code-first workspace.
-import { Server, Code2, Package, Layout, Settings2, FileText, FileCode } from "lucide-react";
+import { Server, Code2, Package, Layout, Settings2, FileText, FileCode } from "lib/icons";
 import { ROBLOX_PLACEMENTS } from "../../../lib/normalizeArtifact";
 
 export const KIND_META = {

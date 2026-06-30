@@ -16,7 +16,7 @@ import {
   Phone, 
   Clock, 
   Users
-} from "lucide-react";
+} from "lib/icons";
 import { Button } from "../components/ui";
 
 // Container Component

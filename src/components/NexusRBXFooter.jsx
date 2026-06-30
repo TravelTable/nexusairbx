@@ -1,5 +1,5 @@
 import React from "react";
-import { Github } from "lucide-react";
+import { Github } from "lib/icons";
 import { useLocation } from "react-router-dom";
 import { cx } from "./ui";
 

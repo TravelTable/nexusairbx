@@ -1,5 +1,5 @@
 import React from "react";
-import { X } from "lucide-react";
+import { X } from "lib/icons";
 import { kindMeta } from "./workspaceMeta";
 
 // Horizontal tab strip for the open artifact's files (center workspace).

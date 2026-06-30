@@ -1,6 +1,6 @@
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Bell, Sparkles } from "lucide-react";
+import { X, Bell, Sparkles } from "lib/icons";
 
 export default function NotificationToast({ open, message, cta, onCta, onClose }) {
   return (

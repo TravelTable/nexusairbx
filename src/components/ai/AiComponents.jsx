@@ -17,7 +17,7 @@ import {
   Globe,
   Rocket,
   RefreshCw
-} from "lucide-react";
+} from "lib/icons";
 import PLAN_INFO from "../../lib/planInfo";
 import { resolveUsagePercent } from "../../lib/billing";
 import { getGravatarUrl, getUserInitials, formatResetDate } from "../../lib/aiUtils";

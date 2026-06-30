@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Search, X } from "lucide-react";
+import { Search, X } from "lib/icons";
 import ChatView from "../ChatView";
 import ChatComposer from "../chat/ChatComposer";
 import AgentPlanPanel from "./AgentPlanPanel";

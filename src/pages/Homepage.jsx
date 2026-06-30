@@ -1,7 +1,7 @@
 // IMPORTS BLOCK (with Helmet import added)
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { Zap, Layout, Code, Cpu, Download } from "lucide-react";
+import { Zap, Layout, Code, Cpu, Download } from "lib/icons";
 import NexusRBXHeader from "../components/NexusRBXHeader";
 import NexusRBXFooter from "../components/NexusRBXFooter";
 import { auth } from "../firebase";

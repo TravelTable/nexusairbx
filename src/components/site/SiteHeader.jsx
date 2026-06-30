@@ -16,7 +16,7 @@ import {
   Sparkles,
   Store,
   Wrench,
-} from "lucide-react";
+} from "lib/icons";
 
 import { Avatar, AvatarFallback, AvatarImage } from "../shadcn/avatar";
 import { Badge } from "../shadcn/badge";

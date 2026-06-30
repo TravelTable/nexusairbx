@@ -1,5 +1,5 @@
 import React from "react";
-import { ShieldAlert, AlertTriangle, ShieldCheck } from "lucide-react";
+import { ShieldAlert, AlertTriangle, ShieldCheck } from "lib/icons";
 
 // Security notes, warnings, and overall QA/validation for the active artifact.
 export default function ValidationReportPanel({ artifact }) {

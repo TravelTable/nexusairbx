@@ -13,7 +13,7 @@ import {
   Cookie,
   Users,
   Scale
-} from "lucide-react";
+} from "lib/icons";
 
 // Container Component
 export default function NexusRBXPrivacyPageContainer() {

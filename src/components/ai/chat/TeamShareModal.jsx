@@ -1,5 +1,5 @@
 import React from "react";
-import { Users, X, ChevronRight } from "lucide-react";
+import { Users, X, ChevronRight } from "lib/icons";
 
 export default function TeamShareModal({
   sharingId,

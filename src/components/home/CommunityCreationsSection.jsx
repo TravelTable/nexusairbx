@@ -1,5 +1,5 @@
 import React from "react";
-import { Layout } from "lucide-react";
+import { Layout } from "lib/icons";
 
 export default function CommunityCreationsSection() {
   return (

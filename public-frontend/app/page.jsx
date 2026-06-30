@@ -1,6 +1,7 @@
 import { homepageV2Metadata } from "../../src/content/homepageV2";
 import { buildPublicMetadata } from "../../src/lib/seo";
 import HomepageV2Client from "../components/HomepageV2Client";
+import PublicHeader from "../components/PublicHeader";
 
 export const metadata = buildPublicMetadata({
   title: homepageV2Metadata.title,
@@ -9,5 +10,10 @@ export const metadata = buildPublicMetadata({
 });
 
 export default function HomePage() {
-  return <HomepageV2Client />;
+  return (
+    <>
+      <PublicHeader />
+      <HomepageV2Client />
+    </>
+  );
 }

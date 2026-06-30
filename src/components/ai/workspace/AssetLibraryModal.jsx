@@ -15,7 +15,7 @@ import {
   X,
   ZoomIn,
   ZoomOut,
-} from "lucide-react";
+} from "lib/icons";
 import { Button, Segmented, cx } from "../../ui";
 import {
   getRobloxAsset,

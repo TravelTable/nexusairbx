@@ -1,5 +1,5 @@
 import React from "react";
-import { Wrench } from "lucide-react";
+import { Wrench } from "lib/icons";
 
 // Numbered Studio setup instructions for the active artifact.
 export default function SetupStepsPanel({ steps = [] }) {

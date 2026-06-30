@@ -1,5 +1,5 @@
 import React from "react";
-import { Loader } from "lucide-react";
+import { Loader } from "lib/icons";
 
 const stages = [
   { id: "planning", label: "Planning Layout", match: ["Planning Layout..."] },

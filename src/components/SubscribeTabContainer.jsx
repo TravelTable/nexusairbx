@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Crown, Check, ChevronRight, Users } from "lucide-react";
+import { Crown, Check, ChevronRight, Users } from "lib/icons";
 import { useBilling } from "../context/BillingContext";
 import { Button } from "./ui";
 

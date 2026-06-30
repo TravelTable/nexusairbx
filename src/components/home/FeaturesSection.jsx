@@ -1,6 +1,6 @@
 import React from "react";
 import { motion } from "framer-motion";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight } from "lib/icons";
 import SubscribeTabContainer from "../SubscribeTabContainer";
 
 export default function FeaturesSection({ featureCards, navigate }) {

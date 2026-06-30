@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { CheckCircle2, Circle, FileCode2, Loader2, RotateCcw, TerminalSquare, Wrench } from "lucide-react";
+import { CheckCircle2, Circle, FileCode2, Loader2, RotateCcw, TerminalSquare, Wrench } from "lib/icons";
 import { kindMeta } from "../workspace/workspaceMeta";
 
 function cleanText(value = "") {

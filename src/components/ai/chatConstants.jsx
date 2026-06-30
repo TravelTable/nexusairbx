@@ -1,4 +1,4 @@
-import { Infinity as InfinityIcon, ClipboardList, Bug, MessageCircle } from "lucide-react";
+import { Infinity as InfinityIcon, ClipboardList, Bug, MessageCircle } from "lib/icons";
 
 /**
  * Cursor-style operating modes (replaces the legacy expert personas).

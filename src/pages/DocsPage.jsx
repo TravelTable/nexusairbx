@@ -12,7 +12,7 @@ import {
   Sparkles,
   TerminalSquare,
   Wrench,
-} from "lucide-react";
+} from "lib/icons";
 
 const PROMPTS = [
   "Inspect my paired Studio place and explain which scripts control player speed when touching this pad.",

@@ -1,5 +1,5 @@
 import { fireEvent, render, screen } from "@testing-library/react";
-import { Zap } from "lucide-react";
+import { Zap } from "lib/icons";
 import HeroSection from "./HeroSection";
 
 function renderHero(overrides = {}) {

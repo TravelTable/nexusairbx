@@ -1,4 +1,4 @@
-import { ArrowLeft, ArrowRight, Check, CheckCircle, Eye, EyeOff, Loader, AlertCircle } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, CheckCircle, Eye, EyeOff, Loader, AlertCircle } from "lib/icons";
 import { motion } from "framer-motion";
 import NexusRBXFooter from "../NexusRBXFooter";
 import { Button } from "../shadcn/button";

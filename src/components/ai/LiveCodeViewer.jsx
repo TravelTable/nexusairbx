@@ -1,5 +1,5 @@
 import React, { useMemo } from "react";
-import { Terminal, Code2, FileText, Sparkles } from "lucide-react";
+import { Terminal, Code2, FileText, Sparkles } from "lib/icons";
 import { FormatText } from "./AiComponents";
 
 export default function LiveCodeViewer({ content = "" }) {

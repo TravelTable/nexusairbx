@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { ArrowLeft, X } from "lucide-react";
+import { ArrowLeft, X } from "lib/icons";
 import { Button } from "../ui";
 
 export default function TutorialTooltip({

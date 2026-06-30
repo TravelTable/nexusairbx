@@ -14,7 +14,7 @@ import {
   CreditCard,
   Database,
   Zap
-} from "lucide-react";
+} from "lib/icons";
 
 // Container Component
 export default function TermsPageContainer() {

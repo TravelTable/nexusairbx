@@ -14,7 +14,7 @@ import {
   Layout,
   Code,
   ShieldCheck
-} from "lucide-react";
+} from "lib/icons";
 import TokensCounterContainer from "./TokensCounterContainer";
 import FreeUsageMeter from "./FreeUsageMeter";
 import { useLocation } from "react-router-dom";
