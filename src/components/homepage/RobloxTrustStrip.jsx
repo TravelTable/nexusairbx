@@ -42,10 +42,15 @@ export default function RobloxTrustStrip() {
       </a>
 
       {/* Studio badge */}
-      <span className={pillClass}>
+      <a
+        href="https://create.roblox.com/store/asset/83865885181263/NexusRBX-Ai"
+        target="_blank"
+        rel="noopener noreferrer"
+        className={pillClass + " transition hover:text-zinc-300 hover:border-white/20"}
+      >
         <Code className="h-3.5 w-3.5" />
         Built for Roblox Studio
-      </span>
+      </a>
     </div>
   );
 }
