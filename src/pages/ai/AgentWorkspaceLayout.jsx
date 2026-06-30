@@ -1061,7 +1061,7 @@ export default function AgentWorkspaceLayout({ controller }) {
           {/* Desktop center + right; mobile single-pane via tabs */}
           {generatorMode === "quick_script" ? (
             <div className="flex-1 min-h-0 flex flex-col">
-              <div className="shrink-0 border-b border-white/5 bg-black/20 px-4 py-2 md:hidden">
+              <div data-tour="mobile-mode-switcher" className="shrink-0 border-b border-white/5 bg-black/20 px-4 py-2 md:hidden">
                 <Segmented
                   fullWidth
                   size="sm"

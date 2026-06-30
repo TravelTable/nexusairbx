@@ -1,125 +1,104 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import { ArrowLeft, X } from "lib/icons";
 import { Button } from "../ui";
+import { DEFAULT_TOOLTIP_SIZE } from "./tutorialGeometry";
 
 export default function TutorialTooltip({
   step,
+  placement,
   currentStepIndex,
   totalSteps,
   onNext,
   onPrev,
   onSkip,
+  onSizeChange,
 }) {
-  const { target, title, content, position } = step;
-  const [coords, setCoords] = useState({
-    top: 0,
-    left: 0,
-    transform: "translate(-50%, -50%)",
-    hasTarget: false,
-  });
+  const { title, content } = step;
+  const dialogRef = useRef(null);
+  const closeRef = useRef(null);
+  const coords = placement || {
+    top: 16,
+    left: 16,
+    width: DEFAULT_TOOLTIP_SIZE.width,
+    placement: "bottom",
+    arrow: null,
+  };
 
   useEffect(() => {
-    const updateCoords = () => {
-      const el = document.querySelector(target);
-      if (!el) {
-        setCoords({
-          top: window.innerHeight / 2,
-          left: window.innerWidth / 2,
-          transform: "translate(-50%, -50%)",
-          hasTarget: false,
-        });
-        return;
-      }
+    closeRef.current?.focus({ preventScroll: true });
+  }, [currentStepIndex]);
 
-      const rect = el.getBoundingClientRect();
-      let top = 0;
-      let left = 0;
-      let transform = "";
-      const gap = 14;
+  useEffect(() => {
+    const node = dialogRef.current;
+    if (!node || !onSizeChange) return undefined;
 
-      switch (position) {
-        case "top":
-          top = rect.top - gap;
-          left = rect.left + rect.width / 2;
-          transform = "translate(-50%, -100%)";
-          break;
-        case "bottom":
-          top = rect.bottom + gap;
-          left = rect.left + rect.width / 2;
-          transform = "translate(-50%, 0)";
-          break;
-        case "left":
-          top = rect.top + rect.height / 2;
-          left = rect.left - gap;
-          transform = "translate(-100%, -50%)";
-          break;
-        case "right":
-          top = rect.top + rect.height / 2;
-          left = rect.right + gap;
-          transform = "translate(0, -50%)";
-          break;
-        default:
-          top = window.innerHeight / 2;
-          left = window.innerWidth / 2;
-          transform = "translate(-50%, -50%)";
-          break;
-      }
-
-      setCoords({
-        top,
-        left,
-        transform,
-        hasTarget: true,
+    const publishSize = () => {
+      const rect = node.getBoundingClientRect();
+      onSizeChange({
+        width: rect.width || DEFAULT_TOOLTIP_SIZE.width,
+        height: rect.height || DEFAULT_TOOLTIP_SIZE.height,
       });
     };
 
-    updateCoords();
+    publishSize();
 
-    const el = document.querySelector(target);
-    let observer;
-    if (el) {
-      observer = new ResizeObserver(updateCoords);
-      observer.observe(el);
-      observer.observe(document.body);
-    }
+    if (typeof ResizeObserver === "undefined") return undefined;
 
-    window.addEventListener("resize", updateCoords);
-    window.addEventListener("scroll", updateCoords, { passive: true, capture: true });
+    const observer = new ResizeObserver(publishSize);
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [onSizeChange, title, content]);
 
-    return () => {
-      if (observer) observer.disconnect();
-      window.removeEventListener("resize", updateCoords);
-      window.removeEventListener("scroll", updateCoords, { capture: true });
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") onSkip?.();
     };
-  }, [target, position]);
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onSkip]);
+
+  const arrow = coords.arrow;
+  const arrowStyle = arrow
+    ? arrow.side === "top" || arrow.side === "bottom"
+      ? { [arrow.side]: -6, left: arrow.offset }
+      : { [arrow.side]: -6, top: arrow.offset }
+    : null;
+
+  const arrowClass =
+    arrow?.side === "top"
+      ? "border-l border-t -translate-x-1/2"
+      : arrow?.side === "bottom"
+        ? "border-r border-b -translate-x-1/2"
+        : arrow?.side === "left"
+          ? "border-l border-b -translate-y-1/2"
+          : arrow?.side === "right"
+            ? "border-r border-t -translate-y-1/2"
+            : "";
 
   return (
     <div
+      ref={dialogRef}
       style={{
         position: "fixed",
         top: coords.top,
         left: coords.left,
-        transform: coords.transform,
+        width: coords.width,
+        maxWidth: "calc(100vw - 32px)",
         zIndex: 110,
       }}
-      className="w-[320px] rounded-2xl border border-white/10 bg-[#121216]/95 p-5 shadow-[0_20px_50px_rgba(0,0,0,0.5)] backdrop-blur-xl transition-all duration-250 ease-out"
+      className="rounded-xl border border-white/10 bg-[#121216]/95 p-5 shadow-[0_20px_50px_rgba(0,0,0,0.5)] backdrop-blur-xl transition-[top,left,width] duration-200 ease-out focus:outline-none"
       role="dialog"
+      aria-modal="true"
       aria-labelledby="tour-title"
       aria-describedby="tour-content"
+      tabIndex={-1}
     >
-      {coords.hasTarget ? (
+      {arrow ? (
         <div
-          className={`absolute h-3 w-3 rotate-45 bg-[#121216] border-white/10 ${
-            position === "top"
-              ? "bottom-[-6px] left-1/2 -translate-x-1/2 border-r border-b"
-              : position === "bottom"
-              ? "top-[-6px] left-1/2 -translate-x-1/2 border-l border-t"
-              : position === "left"
-              ? "right-[-6px] top-1/2 -translate-y-1/2 border-r border-t"
-              : position === "right"
-              ? "left-[-6px] top-1/2 -translate-y-1/2 border-l border-b"
-              : ""
-          }`}
+          className={`absolute h-3 w-3 rotate-45 bg-[#121216] border-white/10 ${arrowClass}`}
+          style={arrowStyle}
+          aria-hidden="true"
         />
       ) : null}
 
@@ -128,8 +107,9 @@ export default function TutorialTooltip({
           Step {currentStepIndex + 1} of {totalSteps}
         </span>
         <button
+          ref={closeRef}
           onClick={onSkip}
-          className="text-zinc-500 hover:text-white transition-colors"
+          className="rounded-md p-1 text-zinc-500 transition-colors hover:bg-white/5 hover:text-white focus-ring"
           title="Skip Tour"
           aria-label="Skip onboarding tour"
         >

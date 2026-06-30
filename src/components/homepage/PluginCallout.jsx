@@ -3,10 +3,10 @@ const CALLOUT_GRADIENT_ID = "plugin-callout-gradient";
 export default function PluginCallout({ className = "" }) {
   return (
     <div
-      className={`pointer-events-none absolute -left-5 -top-[4.5rem] w-[min(300px,42vw)] aspect-[3.2/1] sm:-left-8 sm:-top-[4.75rem] ${className}`}
+      className={`pointer-events-none absolute left-1/2 top-[calc(100%-6px)] z-10 w-[min(270px,36vw)] -translate-x-[24%] aspect-[3.2/1] ${className}`}
       aria-hidden="true"
     >
-      <span className="absolute left-[38%] top-[58%] whitespace-nowrap text-[clamp(9px,0.9vw,15px)] font-medium tracking-tight text-[#aeb5bf]">
+      <span className="absolute left-[38%] top-[58%] whitespace-nowrap text-[13px] font-medium tracking-tight text-zinc-400">
         Download our plugin here!
       </span>
       <svg viewBox="0 0 300 94" fill="none" className="absolute inset-0 h-full w-full overflow-visible">

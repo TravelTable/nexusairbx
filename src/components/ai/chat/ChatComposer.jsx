@@ -286,6 +286,7 @@ export default function ChatComposer({
                   type="button"
                   onClick={() => onImprovePrompt()}
                   disabled={disabled || isImproving || !prompt?.trim()}
+                  data-tour="improve-btn"
                   className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-[#9b5de5]/25 bg-[#9b5de5]/10 px-2.5 text-[10px] font-bold uppercase tracking-wider text-[#c9b3f7] transition-all hover:bg-[#9b5de5]/20 hover:text-white focus-ring disabled:cursor-not-allowed disabled:opacity-40"
                   title="Expand your prompt into a detailed brief"
                   aria-label="Improve my prompt"
@@ -411,6 +412,7 @@ export default function ChatComposer({
               <textarea
                 ref={textareaRef}
                 id="tour-prompt-box"
+                data-tour="prompt-input"
                 className="min-h-[42px] flex-1 resize-none rounded-lg border-none bg-transparent px-2 py-2.5 text-[14px] leading-relaxed text-gray-100 placeholder-gray-500 outline-none focus:ring-0 disabled:opacity-50 md:text-[15px]"
                 rows={1}
                 placeholder={placeholder}
@@ -426,6 +428,7 @@ export default function ChatComposer({
               <button
                 type="button"
                 id="tour-generate-button"
+                data-tour="generate-btn"
                 onClick={() => onSubmit?.()}
                 disabled={disabled || (!prompt?.trim() && attachments.length === 0)}
                 className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-nexus-cyan text-black transition-all hover:shadow-[0_0_24px_rgba(0,245,212,0.45)] active:scale-95 focus-ring disabled:opacity-50 disabled:active:scale-100"

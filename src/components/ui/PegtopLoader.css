@@ -1,0 +1,111 @@
+/* Peg Top Loader — Uiverse.io by andrew-manzyk (MIT) */
+.pegtop-loader {
+  --pegtop-fill-color: #9b5de5;
+  --pegtop-shine-color: #9b5de533;
+  --pegtop-scale: 0.22;
+  width: 100px;
+  height: auto;
+  position: relative;
+  filter: drop-shadow(0 0 10px var(--pegtop-shine-color));
+  transform: scale(var(--pegtop-scale));
+  transform-origin: center center;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--pegtop-fill-color);
+}
+
+.pegtop-loader #pegtopone {
+  position: absolute;
+  animation: pegtop-flowe-one 1s linear infinite;
+}
+
+.pegtop-loader #pegtoptwo {
+  position: absolute;
+  opacity: 0;
+  transform: scale(0) translateY(-200px) translateX(-100px);
+  animation: pegtop-flowe-two 1s linear infinite;
+  animation-delay: 0.3s;
+}
+
+.pegtop-loader #pegtopthree {
+  position: absolute;
+  opacity: 0;
+  transform: scale(0) translateY(-200px) translateX(100px);
+  animation: pegtop-flowe-three 1s linear infinite;
+  animation-delay: 0.6s;
+}
+
+.pegtop-loader svg g path:first-child {
+  fill: var(--pegtop-fill-color);
+}
+
+@keyframes pegtop-flowe-one {
+  0% {
+    transform: scale(0.5) translateY(-200px);
+    opacity: 0;
+  }
+  25% {
+    transform: scale(0.75) translateY(-100px);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1) translateY(0px);
+    opacity: 1;
+  }
+  75% {
+    transform: scale(0.5) translateY(50px);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(0) translateY(100px);
+    opacity: 0;
+  }
+}
+
+@keyframes pegtop-flowe-two {
+  0% {
+    transform: scale(0.5) rotateZ(-10deg) translateY(-200px) translateX(-100px);
+    opacity: 0;
+  }
+  25% {
+    transform: scale(1) rotateZ(-5deg) translateY(-100px) translateX(-50px);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1) rotateZ(0deg) translateY(0px) translateX(-25px);
+    opacity: 1;
+  }
+  75% {
+    transform: scale(0.5) rotateZ(5deg) translateY(50px) translateX(0px);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(0) rotateZ(10deg) translateY(100px) translateX(25px);
+    opacity: 0;
+  }
+}
+
+@keyframes pegtop-flowe-three {
+  0% {
+    transform: scale(0.5) rotateZ(10deg) translateY(-200px) translateX(100px);
+    opacity: 0;
+  }
+  25% {
+    transform: scale(1) rotateZ(5deg) translateY(-100px) translateX(50px);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1) rotateZ(0deg) translateY(0px) translateX(25px);
+    opacity: 1;
+  }
+  75% {
+    transform: scale(0.5) rotateZ(-5deg) translateY(50px) translateX(0px);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(0) rotateZ(-10deg) translateY(100px) translateX(-25px);
+    opacity: 0;
+  }
+}

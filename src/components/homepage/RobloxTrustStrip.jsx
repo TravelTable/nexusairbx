@@ -30,31 +30,30 @@ export default function RobloxTrustStrip() {
     "inline-flex items-center gap-2 bg-white/[0.06] border border-white/10 rounded-full px-4 py-2 text-xs font-semibold text-zinc-400";
 
   return (
-    <div className="mt-6 flex flex-wrap items-center justify-center gap-3 overflow-visible">
-      {/* Roblox OAuth badge */}
-      <span className={pillClass}>
-        <Gamepad2 className="h-3.5 w-3.5" />
-        Roblox OAuth Verified
-      </span>
+    <div className="relative mt-6 w-full max-w-2xl pb-10 lg:pb-11">
+      <div className="flex flex-wrap items-center justify-center gap-3">
+        <span className={pillClass}>
+          <Gamepad2 className="h-3.5 w-3.5" />
+          Roblox OAuth Verified
+        </span>
 
-      {/* Google Sign-in badge */}
-      <a href="/signin" className={pillClass + " transition hover:text-zinc-300 hover:border-white/20"}>
-        <GoogleIcon />
-        Sign in with Google
-      </a>
-
-      {/* Studio badge */}
-      <div className="relative inline-flex">
-        <PluginCallout className="hidden sm:block" />
-        <a
-          href="https://create.roblox.com/store/asset/83865885181263/NexusRBX-Ai"
-          target="_blank"
-          rel="noopener noreferrer"
-          className={pillClass + " transition hover:text-zinc-300 hover:border-white/20"}
-        >
-          <Code className="h-3.5 w-3.5" />
-          Built for Roblox Studio
+        <a href="/signin" className={pillClass + " transition hover:text-zinc-300 hover:border-white/20"}>
+          <GoogleIcon />
+          Sign in with Google
         </a>
+
+        <div className="relative inline-flex">
+          <a
+            href="https://create.roblox.com/store/asset/83865885181263/NexusRBX-Ai"
+            target="_blank"
+            rel="noopener noreferrer"
+            className={pillClass + " transition hover:text-zinc-300 hover:border-white/20"}
+          >
+            <Code className="h-3.5 w-3.5" />
+            Built for Roblox Studio
+          </a>
+          <PluginCallout className="hidden lg:block" />
+        </div>
       </div>
     </div>
   );

@@ -47,14 +47,14 @@ export default function HomepageV2Content({
   }
 
   return (
-    <div className="min-h-screen overflow-hidden bg-[#07090f] pt-16 text-white">
+    <div className="min-h-screen overflow-x-hidden bg-[#07090f] pt-16 text-white">
       <div className="pointer-events-none fixed inset-0 -z-10 bg-[linear-gradient(rgba(255,255,255,0.035)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.035)_1px,transparent_1px)] bg-[size:56px_56px] opacity-50 [mask-image:linear-gradient(to_bottom,black,transparent_78%)]" />
       <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
         <div className="absolute -left-40 -top-40 h-[420px] w-[420px] rounded-full bg-[#00f5d4]/10 blur-[120px] animate-pulse" />
         <div className="absolute -bottom-40 -right-40 h-[420px] w-[420px] rounded-full bg-[#9b5de5]/10 blur-[120px] animate-pulse" />
       </div>
 
-      <section className="flex min-h-[calc(100vh-4rem)] flex-col items-center justify-center px-4 pt-20 pb-16">
+      <section className="flex min-h-[calc(100vh-4rem)] flex-col items-center justify-center overflow-visible px-4 pt-20 pb-16">
         <div className="relative mb-6 flex items-center justify-center">
           <div className="absolute h-24 w-24 rounded-full bg-[#00f5d4]/20 blur-2xl" />
           <img

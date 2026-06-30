@@ -92,8 +92,8 @@ const OVERRIDES = {
   Link2: "Link02Icon",
   ListChecks: "CheckListIcon",
   ListTodo: "TaskDaily01Icon",
-  Loader: "Loading01Icon",
-  Loader2: "Loading03Icon",
+  Loader: null,
+  Loader2: null,
   Lock: "SquareLock01Icon",
   LogOut: "Logout01Icon",
   Mail: "Mail01Icon",
@@ -204,6 +204,10 @@ const missing = [];
 const mapping = {};
 for (const lucide of [...lucideSet].sort()) {
   const huge = OVERRIDES[lucide];
+  if (huge === null) {
+    mapping[lucide] = null;
+    continue;
+  }
   if (!huge) {
     missing.push({ lucide, reason: "no override" });
     continue;
@@ -220,22 +224,34 @@ if (missing.length) {
   process.exit(1);
 }
 
-const imports = [...new Set(Object.values(mapping))].sort();
-const exports = Object.keys(mapping)
+const imports = [...new Set(Object.values(mapping).filter(Boolean))].sort();
+const iconExports = Object.keys(mapping)
   .sort()
+  .filter((lucide) => mapping[lucide] !== null)
   .map((lucide) => `export const ${lucide} = createIcon(${mapping[lucide]});`)
   .join("\n");
+
+const loaderExports = mapping.Loader === null
+  ? `import PegtopLoader from "../components/ui/PegtopLoader";
+
+export const Loader = PegtopLoader;
+export const Loader2 = PegtopLoader;
+export const SendPrompt = createIcon(FirstBracketCircleIcon);`
+  : "";
+
+const bracketImport = mapping.Loader === null ? "  FirstBracketCircleIcon,\n" : "";
 
 const content = `/**
  * Lucide-compatible icon exports backed by Hugeicons Free (Stroke Rounded).
  * Central registry — swap Hugeicons Pro packs here without touching call sites.
  */
 import {
-  ${imports.join(",\n  ")}
+  ${bracketImport}${imports.join(",\n  ")}
 } from "@hugeicons/core-free-icons";
 import { createIcon } from "./createIcon";
 
-${exports}
+${iconExports}
+${loaderExports ? `\n${loaderExports}` : ""}
 `;
 
 fs.writeFileSync(path.join(root, "src/lib/icons.js"), content);

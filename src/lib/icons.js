@@ -81,8 +81,7 @@ import {
   Link01Icon,
   Link02Icon,
   LinkSquare01Icon,
-  Loading01Icon,
-  Loading03Icon,
+  FirstBracketCircleIcon,
   Location01Icon,
   Logout01Icon,
   MagicWand01Icon,
@@ -149,6 +148,7 @@ import {
   ZoomOutAreaIcon
 } from "@hugeicons/core-free-icons";
 import { createIcon } from "./createIcon";
+import PegtopLoader from "../components/ui/PegtopLoader";
 
 export const Activity = createIcon(Activity01Icon);
 export const AlertCircle = createIcon(AlertCircleIcon);
@@ -235,8 +235,9 @@ export const Link = createIcon(Link01Icon);
 export const Link2 = createIcon(Link02Icon);
 export const ListChecks = createIcon(CheckListIcon);
 export const ListTodo = createIcon(TaskDaily01Icon);
-export const Loader = createIcon(Loading01Icon);
-export const Loader2 = createIcon(Loading03Icon);
+export const Loader = PegtopLoader;
+export const Loader2 = PegtopLoader;
+export const SendPrompt = createIcon(FirstBracketCircleIcon);
 export const Lock = createIcon(SquareLock01Icon);
 export const LogOut = createIcon(Logout01Icon);
 export const Mail = createIcon(Mail01Icon);
