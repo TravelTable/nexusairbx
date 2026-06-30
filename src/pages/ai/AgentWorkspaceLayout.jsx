@@ -20,6 +20,7 @@ import CodeFileTree from "../../components/ai/workspace/CodeFileTree";
 import CodeWorkspace from "../../components/ai/workspace/CodeWorkspace";
 import AgentChatPanel from "../../components/ai/workspace/AgentChatPanel";
 import BuildDetailsPanel from "../../components/ai/workspace/BuildDetailsPanel";
+import RobloxDecalUploadDropdown from "../../components/ai/workspace/RobloxDecalUploadDropdown";
 import QuickScriptWorkspace from "./QuickScriptWorkspace";
 import { getStudioCommand, getStudioManifest, getStudioManifestStatus, queueStudioTool } from "../../lib/studioBridgeApi";
 import { cancelWorkspaceCommand, createWorkspaceCommand, getWorkspaceCommand, streamWorkspaceCommandEvents } from "../../lib/workspaceApi";
@@ -1037,6 +1038,13 @@ export default function AgentWorkspaceLayout({ controller }) {
                       planKey={planKey}
                       unlimitedTokens={unlimitedTokens}
                       devOverride={devOverride}
+                    />
+                    <RobloxDecalUploadDropdown
+                      user={user}
+                      planKey={planKey}
+                      roblox={roblox}
+                      onAuthRequired={handleAuthRequired}
+                      notify={notify}
                     />
                     <div className="h-4 w-px bg-white/10 hidden sm:block" aria-hidden="true" />
                     <ProjectContextStatus
