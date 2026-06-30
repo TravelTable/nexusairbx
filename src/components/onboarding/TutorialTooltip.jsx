@@ -11,26 +11,27 @@ export default function TutorialTooltip({
   onSkip,
 }) {
   const { target, title, content, position } = step;
-  const [coords, setCoords] = useState({ top: 0, left: 0, transform: "", position: "fixed" });
+  const [coords, setCoords] = useState({
+    top: 0,
+    left: 0,
+    transform: "translate(-50%, -50%)",
+    hasTarget: false,
+  });
 
   useEffect(() => {
     const updateCoords = () => {
       const el = document.querySelector(target);
       if (!el) {
-        // Center of the viewport fallback
         setCoords({
           top: window.innerHeight / 2,
           left: window.innerWidth / 2,
           transform: "translate(-50%, -50%)",
-          position: "fixed",
+          hasTarget: false,
         });
         return;
       }
 
       const rect = el.getBoundingClientRect();
-      const scrollY = window.scrollY;
-      const scrollX = window.scrollX;
-
       let top = 0;
       let left = 0;
       let transform = "";
@@ -38,23 +39,23 @@ export default function TutorialTooltip({
 
       switch (position) {
         case "top":
-          top = rect.top + scrollY - gap;
-          left = rect.left + scrollX + rect.width / 2;
+          top = rect.top - gap;
+          left = rect.left + rect.width / 2;
           transform = "translate(-50%, -100%)";
           break;
         case "bottom":
-          top = rect.bottom + scrollY + gap;
-          left = rect.left + scrollX + rect.width / 2;
+          top = rect.bottom + gap;
+          left = rect.left + rect.width / 2;
           transform = "translate(-50%, 0)";
           break;
         case "left":
-          top = rect.top + scrollY + rect.height / 2;
-          left = rect.left + scrollX - gap;
+          top = rect.top + rect.height / 2;
+          left = rect.left - gap;
           transform = "translate(-100%, -50%)";
           break;
         case "right":
-          top = rect.top + scrollY + rect.height / 2;
-          left = rect.right + scrollX + gap;
+          top = rect.top + rect.height / 2;
+          left = rect.right + gap;
           transform = "translate(0, -50%)";
           break;
         default:
@@ -68,13 +69,12 @@ export default function TutorialTooltip({
         top,
         left,
         transform,
-        position: "absolute",
+        hasTarget: true,
       });
     };
 
     updateCoords();
 
-    // Use ResizeObserver for more accurate coordination updates
     const el = document.querySelector(target);
     let observer;
     if (el) {
@@ -84,33 +84,32 @@ export default function TutorialTooltip({
     }
 
     window.addEventListener("resize", updateCoords);
-    window.addEventListener("scroll", updateCoords, { passive: true });
+    window.addEventListener("scroll", updateCoords, { passive: true, capture: true });
 
     return () => {
       if (observer) observer.disconnect();
       window.removeEventListener("resize", updateCoords);
-      window.removeEventListener("scroll", updateCoords);
+      window.removeEventListener("scroll", updateCoords, { capture: true });
     };
   }, [target, position]);
 
   return (
     <div
       style={{
-        position: coords.position,
+        position: "fixed",
         top: coords.top,
         left: coords.left,
         transform: coords.transform,
-        zIndex: 100,
+        zIndex: 110,
       }}
       className="w-[320px] rounded-2xl border border-white/10 bg-[#121216]/95 p-5 shadow-[0_20px_50px_rgba(0,0,0,0.5)] backdrop-blur-xl transition-all duration-250 ease-out"
       role="dialog"
       aria-labelledby="tour-title"
       aria-describedby="tour-content"
     >
-      {/* Arrow Indicator */}
-      {coords.position === "absolute" && (
+      {coords.hasTarget ? (
         <div
-          className={`absolute w-3 h-3 bg-[#121216] border-white/10 rotate-45 ${
+          className={`absolute h-3 w-3 rotate-45 bg-[#121216] border-white/10 ${
             position === "top"
               ? "bottom-[-6px] left-1/2 -translate-x-1/2 border-r border-b"
               : position === "bottom"
@@ -122,9 +121,8 @@ export default function TutorialTooltip({
               : ""
           }`}
         />
-      )}
+      ) : null}
 
-      {/* Header Info */}
       <div className="flex items-center justify-between mb-2">
         <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#00f5d4]">
           Step {currentStepIndex + 1} of {totalSteps}
@@ -139,7 +137,6 @@ export default function TutorialTooltip({
         </button>
       </div>
 
-      {/* Content */}
       <h4 id="tour-title" className="text-sm font-bold text-white mb-1.5 leading-snug">
         {title}
       </h4>
@@ -147,7 +144,6 @@ export default function TutorialTooltip({
         {content}
       </p>
 
-      {/* Navigation Buttons */}
       <div className="flex items-center justify-between gap-2 border-t border-white/5 pt-3">
         <button
           onClick={onSkip}

@@ -1,5 +1,7 @@
 import { Gamepad2, Code } from "lib/icons";
 
+import PluginCallout from "./PluginCallout";
+
 function GoogleIcon({ className = "" }) {
   return (
     <svg className={className} width="14" height="14" viewBox="0 0 20 20" fill="none">
@@ -28,7 +30,7 @@ export default function RobloxTrustStrip() {
     "inline-flex items-center gap-2 bg-white/[0.06] border border-white/10 rounded-full px-4 py-2 text-xs font-semibold text-zinc-400";
 
   return (
-    <div className="flex items-center justify-center gap-3 flex-wrap mt-6">
+    <div className="mt-6 flex flex-wrap items-center justify-center gap-3 overflow-visible">
       {/* Roblox OAuth badge */}
       <span className={pillClass}>
         <Gamepad2 className="h-3.5 w-3.5" />
@@ -42,15 +44,18 @@ export default function RobloxTrustStrip() {
       </a>
 
       {/* Studio badge */}
-      <a
-        href="https://create.roblox.com/store/asset/83865885181263/NexusRBX-Ai"
-        target="_blank"
-        rel="noopener noreferrer"
-        className={pillClass + " transition hover:text-zinc-300 hover:border-white/20"}
-      >
-        <Code className="h-3.5 w-3.5" />
-        Built for Roblox Studio
-      </a>
+      <div className="relative inline-flex">
+        <PluginCallout className="hidden sm:block" />
+        <a
+          href="https://create.roblox.com/store/asset/83865885181263/NexusRBX-Ai"
+          target="_blank"
+          rel="noopener noreferrer"
+          className={pillClass + " transition hover:text-zinc-300 hover:border-white/20"}
+        >
+          <Code className="h-3.5 w-3.5" />
+          Built for Roblox Studio
+        </a>
+      </div>
     </div>
   );
 }
