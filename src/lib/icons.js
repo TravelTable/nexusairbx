@@ -9,6 +9,7 @@ import {
   AlertCircleIcon,
   AlertDiamondIcon,
   Archive01Icon,
+  ArrowBigRightDashIcon,
   ArrowDown01Icon,
   ArrowLeft01Icon,
   ArrowRight01Icon,
@@ -81,7 +82,6 @@ import {
   Link01Icon,
   Link02Icon,
   LinkSquare01Icon,
-  FirstBracketCircleIcon,
   Location01Icon,
   Logout01Icon,
   MagicWand01Icon,
@@ -237,7 +237,7 @@ export const ListChecks = createIcon(CheckListIcon);
 export const ListTodo = createIcon(TaskDaily01Icon);
 export const Loader = PegtopLoader;
 export const Loader2 = PegtopLoader;
-export const SendPrompt = createIcon(FirstBracketCircleIcon);
+export const SendPrompt = createIcon(ArrowBigRightDashIcon);
 export const Lock = createIcon(SquareLock01Icon);
 export const LogOut = createIcon(Logout01Icon);
 export const Mail = createIcon(Mail01Icon);

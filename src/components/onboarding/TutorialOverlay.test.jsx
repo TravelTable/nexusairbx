@@ -3,6 +3,8 @@ import { act, fireEvent, render, screen, waitFor } from "@testing-library/react"
 import TutorialOverlay from "./TutorialOverlay";
 import { useTutorial } from "./useTutorial";
 
+const ACTIVE_TARGET_CLASS = "nexus-tour-active-target";
+
 function mockRect(element, rect) {
   element.getBoundingClientRect = jest.fn(() => ({
     top: rect.top,
@@ -128,5 +130,55 @@ describe("TutorialOverlay", () => {
 
     await waitFor(() => expect(screen.getByText("Choose Your Mode")).toBeTruthy());
     expect(Element.prototype.scrollIntoView).toHaveBeenCalled();
+    expect(target.classList.contains(ACTIVE_TARGET_CLASS)).toBe(true);
+    expect(target.getAttribute("aria-describedby")).toBe("tour-content");
+  });
+
+  it("moves the highlight to the current valid step and restores existing descriptions", async () => {
+    const nextStep = jest.fn();
+    const modeTarget = document.createElement("button");
+    const promptTarget = document.createElement("textarea");
+
+    modeTarget.dataset.tour = "mode-switcher";
+    modeTarget.setAttribute("aria-describedby", "existing-mode-help");
+    promptTarget.dataset.tour = "prompt-input";
+    mockRect(modeTarget, { top: 80, left: 80, width: 160, height: 40 });
+    mockRect(promptTarget, { top: 180, left: 80, width: 280, height: 120 });
+    document.body.append(modeTarget, promptTarget);
+
+    const { rerender } = render(
+      <TutorialOverlay
+        activeStep={0}
+        isActive
+        nextStep={nextStep}
+        prevStep={jest.fn()}
+        skipTutorial={jest.fn()}
+      />
+    );
+
+    act(() => {
+      jest.advanceTimersByTime(0);
+    });
+
+    await waitFor(() => expect(modeTarget.classList.contains(ACTIVE_TARGET_CLASS)).toBe(true));
+
+    rerender(
+      <TutorialOverlay
+        activeStep={1}
+        isActive
+        nextStep={nextStep}
+        prevStep={jest.fn()}
+        skipTutorial={jest.fn()}
+      />
+    );
+
+    act(() => {
+      jest.advanceTimersByTime(0);
+    });
+
+    await waitFor(() => expect(promptTarget.classList.contains(ACTIVE_TARGET_CLASS)).toBe(true));
+    expect(modeTarget.classList.contains(ACTIVE_TARGET_CLASS)).toBe(false);
+    expect(modeTarget.getAttribute("aria-describedby")).toBe("existing-mode-help");
+    expect(promptTarget.getAttribute("aria-describedby")).toBe("tour-content");
   });
 });

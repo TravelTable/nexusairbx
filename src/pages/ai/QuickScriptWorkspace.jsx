@@ -11,7 +11,7 @@ import {
   Pencil,
   RefreshCw,
   Save,
-  Send,
+  SendPrompt,
   ShieldCheck,
   Sparkles,
   TerminalSquare,
@@ -329,7 +329,7 @@ export default function QuickScriptWorkspace({
                 )}
                 <Button
                   type="submit"
-                  icon={isGenerating ? Loader : Send}
+                  icon={isGenerating ? Loader : SendPrompt}
                   disabled={!canSubmit}
                   data-tour="generate-btn"
                   className="h-8 px-4 text-xs font-bold bg-[#00f5d4] hover:bg-[#00f5d4]/90 text-black border-none transition-all duration-200"

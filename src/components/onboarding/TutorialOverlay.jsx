@@ -1,13 +1,81 @@
-import React, { useCallback, useEffect, useId, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import TutorialTooltip from "./TutorialTooltip";
 import { TOUR_STEPS } from "./tourSteps";
-import {
-  DEFAULT_TOOLTIP_SIZE,
-  createSpotlightRect,
-  getTooltipPlacement,
-  resolveTourTarget,
-} from "./tutorialGeometry";
+import { resolveTourTarget } from "./tutorialGeometry";
+
+const TOUR_TARGET_CLASS = "nexus-tour-active-target";
+const TOUR_TARGET_LABEL = "data-nexus-tour-label";
+const RING_STYLE_ID = "nexus-tour-target-style";
+
+function ensureRingStyles() {
+  if (document.getElementById(RING_STYLE_ID)) return;
+
+  const style = document.createElement("style");
+  style.id = RING_STYLE_ID;
+  style.textContent = `
+    .${TOUR_TARGET_CLASS} {
+      position: relative !important;
+      z-index: 70 !important;
+      outline: 2px solid rgba(0, 245, 212, 0.95) !important;
+      outline-offset: 5px !important;
+      box-shadow:
+        0 0 0 7px rgba(0, 245, 212, 0.14),
+        0 0 30px rgba(0, 245, 212, 0.26) !important;
+      border-radius: 12px !important;
+      transition:
+        outline-color 160ms ease,
+        outline-offset 160ms ease,
+        box-shadow 160ms ease !important;
+    }
+
+    .${TOUR_TARGET_CLASS}::after {
+      content: attr(${TOUR_TARGET_LABEL});
+      position: absolute;
+      right: -6px;
+      top: -6px;
+      transform: translateY(-100%);
+      border: 1px solid rgba(0, 245, 212, 0.28);
+      border-radius: 999px;
+      background: rgba(7, 7, 10, 0.96);
+      color: #a8fff4;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      line-height: 1;
+      padding: 5px 7px;
+      text-transform: uppercase;
+      white-space: nowrap;
+      pointer-events: none;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.32);
+    }
+
+    @media (max-width: 640px) {
+      .${TOUR_TARGET_CLASS} {
+        outline-offset: 3px !important;
+      }
+
+      .${TOUR_TARGET_CLASS}::after {
+        right: 0;
+        top: 0;
+        transform: translateY(calc(-100% - 4px));
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .${TOUR_TARGET_CLASS} {
+        transition: none !important;
+      }
+    }
+  `;
+  document.head.appendChild(style);
+}
+
+function clearTargetHighlight(element) {
+  if (!element) return;
+  element.classList.remove(TOUR_TARGET_CLASS);
+  element.removeAttribute(TOUR_TARGET_LABEL);
+}
 
 export default function TutorialOverlay({
   activeStep,
@@ -16,80 +84,84 @@ export default function TutorialOverlay({
   prevStep,
   skipTutorial,
 }) {
-  const maskId = useId().replace(/:/g, "");
+  const highlightedRef = useRef(null);
+  const previousDescriptionRef = useRef(null);
   const pendingFrameRef = useRef(null);
-  const pendingTimeoutRef = useRef(null);
-  const [tooltipSize, setTooltipSize] = useState(DEFAULT_TOOLTIP_SIZE);
+  const pendingSkipRef = useRef(null);
   const [targetState, setTargetState] = useState({
-    rect: null,
-    spotlight: null,
-    tooltip: null,
-    selector: null,
+    hasTarget: false,
   });
-  const [viewport, setViewport] = useState({ width: 0, height: 0 });
 
-  const measureStep = useCallback(() => {
+  const clearCurrentHighlight = useCallback(() => {
+    const element = highlightedRef.current;
+    if (!element) return;
+
+    clearTargetHighlight(element);
+    const previousDescription = previousDescriptionRef.current;
+    if (previousDescription?.element === element && previousDescription.value) {
+      element.setAttribute("aria-describedby", previousDescription.value);
+    } else {
+      element.removeAttribute("aria-describedby");
+    }
+
+    highlightedRef.current = null;
+    previousDescriptionRef.current = null;
+  }, []);
+
+  const resolveStepTarget = useCallback(() => {
     const step = TOUR_STEPS[activeStep];
-    const nextViewport = {
-      width: window.innerWidth,
-      height: window.innerHeight,
-    };
-
-    setViewport(nextViewport);
-
     if (!step) {
-      setTargetState({ rect: null, spotlight: null, tooltip: null, selector: null });
+      clearCurrentHighlight();
+      setTargetState({ hasTarget: false });
       return null;
     }
 
-    const { element, selector } = resolveTourTarget(step, nextViewport.width);
+    const { element } = resolveTourTarget(step, window.innerWidth);
     if (!element) {
-      setTargetState({ rect: null, spotlight: null, tooltip: null, selector: null });
+      clearCurrentHighlight();
+      setTargetState({ hasTarget: false });
       return null;
     }
 
-    const rect = element.getBoundingClientRect();
-    const spotlight = createSpotlightRect(rect);
-    const tooltip = getTooltipPlacement({
-      targetRect: rect,
-      preferredPosition: step.position,
-      tooltipSize,
-      viewport: nextViewport,
-    });
+    if (highlightedRef.current !== element) {
+      clearCurrentHighlight();
+      highlightedRef.current = element;
+      previousDescriptionRef.current = {
+        element,
+        value: element.getAttribute("aria-describedby"),
+      };
+    }
 
-    setTargetState({ rect, spotlight, tooltip, selector });
+    ensureRingStyles();
+    element.classList.add(TOUR_TARGET_CLASS);
+    element.setAttribute(TOUR_TARGET_LABEL, `Step ${activeStep + 1}`);
+    element.setAttribute("aria-describedby", "tour-content");
+    setTargetState({ hasTarget: true });
     return element;
-  }, [activeStep, tooltipSize]);
+  }, [activeStep, clearCurrentHighlight]);
 
-  const scheduleMeasure = useCallback(() => {
+  const scheduleResolve = useCallback(() => {
     if (pendingFrameRef.current) cancelAnimationFrame(pendingFrameRef.current);
     pendingFrameRef.current = requestAnimationFrame(() => {
       pendingFrameRef.current = null;
-      measureStep();
+      resolveStepTarget();
     });
-  }, [measureStep]);
-
-  const handleTooltipSizeChange = useCallback((nextSize) => {
-    setTooltipSize((currentSize) => {
-      if (currentSize.width === nextSize.width && currentSize.height === nextSize.height) {
-        return currentSize;
-      }
-
-      return nextSize;
-    });
-  }, []);
+  }, [resolveStepTarget]);
 
   useEffect(() => {
-    if (!isActive) return undefined;
+    if (!isActive) {
+      clearCurrentHighlight();
+      return undefined;
+    }
 
     const step = TOUR_STEPS[activeStep];
-    const element = measureStep();
+    const element = resolveStepTarget();
 
     if (!step) return undefined;
 
     if (!element) {
-      const skipTimer = window.setTimeout(() => nextStep(TOUR_STEPS.length), 80);
-      return () => window.clearTimeout(skipTimer);
+      pendingSkipRef.current = window.setTimeout(() => nextStep(TOUR_STEPS.length), 80);
+      return () => window.clearTimeout(pendingSkipRef.current);
     }
 
     const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
@@ -99,109 +171,43 @@ export default function TutorialOverlay({
       behavior: reduceMotion ? "auto" : "smooth",
     });
 
-    scheduleMeasure();
-    pendingTimeoutRef.current = window.setTimeout(scheduleMeasure, reduceMotion ? 40 : 220);
+    scheduleResolve();
 
     let observer;
     if (typeof ResizeObserver !== "undefined") {
-      observer = new ResizeObserver(scheduleMeasure);
+      observer = new ResizeObserver(scheduleResolve);
       observer.observe(element);
       observer.observe(document.body);
     }
 
-    window.addEventListener("resize", scheduleMeasure);
-    window.addEventListener("scroll", scheduleMeasure, { passive: true, capture: true });
+    window.addEventListener("resize", scheduleResolve);
+    window.addEventListener("scroll", scheduleResolve, { passive: true, capture: true });
 
     return () => {
       if (pendingFrameRef.current) cancelAnimationFrame(pendingFrameRef.current);
-      if (pendingTimeoutRef.current) window.clearTimeout(pendingTimeoutRef.current);
+      if (pendingSkipRef.current) window.clearTimeout(pendingSkipRef.current);
       if (observer) observer.disconnect();
-      window.removeEventListener("resize", scheduleMeasure);
-      window.removeEventListener("scroll", scheduleMeasure, { capture: true });
+      window.removeEventListener("resize", scheduleResolve);
+      window.removeEventListener("scroll", scheduleResolve, { capture: true });
     };
-  }, [activeStep, isActive, measureStep, nextStep, scheduleMeasure]);
+  }, [activeStep, clearCurrentHighlight, isActive, nextStep, resolveStepTarget, scheduleResolve]);
 
-  useEffect(() => {
-    if (isActive) scheduleMeasure();
-  }, [isActive, scheduleMeasure, tooltipSize]);
+  useEffect(() => clearCurrentHighlight, [clearCurrentHighlight]);
 
   if (!isActive) return null;
 
   const currentStep = TOUR_STEPS[activeStep];
-  const spotlight = targetState.spotlight;
-  const maskStyle = {
-    maskImage: `url(#${maskId})`,
-    WebkitMaskImage: `url(#${maskId})`,
-  };
+  if (!currentStep || !targetState.hasTarget) return null;
 
-  const overlay = (
-    <div className="fixed inset-0 z-[100] pointer-events-none select-none">
-      <svg
-        className="absolute inset-0 h-full w-full pointer-events-none"
-        aria-hidden="true"
-        viewBox={`0 0 ${viewport.width || 1} ${viewport.height || 1}`}
-        preserveAspectRatio="none"
-      >
-        <defs>
-          <mask
-            id={maskId}
-            maskUnits="userSpaceOnUse"
-            x="0"
-            y="0"
-            width={viewport.width || 1}
-            height={viewport.height || 1}
-          >
-            <rect x="0" y="0" width={viewport.width || 1} height={viewport.height || 1} fill="white" />
-            {spotlight ? (
-              <rect
-                x={spotlight.left}
-                y={spotlight.top}
-                width={spotlight.width}
-                height={spotlight.height}
-                rx={spotlight.radius}
-                ry={spotlight.radius}
-                fill="black"
-              />
-            ) : null}
-          </mask>
-        </defs>
-      </svg>
-
-      <div
-        className="absolute inset-0 bg-slate-950/35 backdrop-blur-[3px] pointer-events-auto transition-opacity duration-200"
-        style={maskStyle}
-        aria-hidden="true"
-      />
-
-      {spotlight ? (
-        <div
-          className="absolute pointer-events-none rounded-xl border border-[#00f5d4]/35 shadow-[0_0_0_1px_rgba(0,245,212,0.12),0_0_28px_rgba(0,245,212,0.1)] transition-all duration-200"
-          style={{
-            top: spotlight.top,
-            left: spotlight.left,
-            width: spotlight.width,
-            height: spotlight.height,
-          }}
-          aria-hidden="true"
-        />
-      ) : null}
-
-      {currentStep && targetState.tooltip ? (
-        <div className="pointer-events-auto">
-          <TutorialTooltip
-            step={currentStep}
-            placement={targetState.tooltip}
-            currentStepIndex={activeStep}
-            totalSteps={TOUR_STEPS.length}
-            onNext={() => nextStep(TOUR_STEPS.length)}
-            onPrev={prevStep}
-            onSkip={skipTutorial}
-            onSizeChange={handleTooltipSizeChange}
-          />
-        </div>
-      ) : null}
-    </div>
+  return createPortal(
+    <TutorialTooltip
+      step={currentStep}
+      currentStepIndex={activeStep}
+      totalSteps={TOUR_STEPS.length}
+      onNext={() => nextStep(TOUR_STEPS.length)}
+      onPrev={prevStep}
+      onSkip={skipTutorial}
+    />,
+    document.body
   );
-
-  return createPortal(overlay, document.body);
 }

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Check, HelpCircle, ListChecks, Sparkles, Pencil, Loader } from "lib/icons";
+import { Check, HelpCircle, ListChecks, SendPrompt, Pencil, Loader } from "lib/icons";
 import MarkdownMessage from "./MarkdownMessage";
 
 const CLASSIFICATION_LABELS = {
@@ -87,7 +87,7 @@ export function ClarifyCard({ message, onSubmit, disabled }) {
         onClick={() => onSubmit?.(message, answers)}
         className="w-full py-2.5 rounded-xl bg-[#9b5de5] text-white font-black text-sm flex items-center justify-center gap-2 hover:scale-[1.01] active:scale-[0.99] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        {disabled ? <Loader className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+        {disabled ? <Loader className="w-4 h-4" /> : <SendPrompt className="w-4 h-4" />}
         Continue
       </button>
       {!hasAnswer && (
@@ -202,7 +202,7 @@ export function PlanCard({ message, onApprove, onEdit, disabled }) {
               onClick={() => onApprove?.(message)}
               className="flex-1 py-2.5 rounded-xl bg-[#00f5d4] text-black font-black text-sm flex items-center justify-center gap-2 hover:scale-[1.01] active:scale-[0.99] transition-all shadow-[0_0_20px_rgba(0,245,212,0.3)] disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {disabled ? <Loader className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4 fill-current" />}
+              {disabled ? <Loader className="w-4 h-4" /> : <SendPrompt className="w-4 h-4" />}
               Approve &amp; Build
             </button>
             <button

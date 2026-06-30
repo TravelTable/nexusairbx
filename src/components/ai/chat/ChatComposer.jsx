@@ -2,7 +2,7 @@ import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import {
   Plus,
   X,
-  Sparkles,
+  SendPrompt,
   Loader,
   RefreshCw,
   Wand2,
@@ -292,7 +292,7 @@ export default function ChatComposer({
                   aria-label="Improve my prompt"
                 >
                   {isImproving ? (
-                    <Loader className="h-3 w-3 animate-spin" />
+                    <Loader className="h-3 w-3" />
                   ) : (
                     <Wand2 className="h-3 w-3" />
                   )}
@@ -435,7 +435,7 @@ export default function ChatComposer({
                 aria-label={isGenerating ? "Generation in progress" : "Send prompt"}
                 title={isGenerating ? "Generation in progress" : "Send prompt"}
               >
-                {isGenerating ? <Loader className="h-5 w-5 animate-spin" /> : <Sparkles className="h-5 w-5" />}
+                {isGenerating ? <Loader className="h-5 w-5" /> : <SendPrompt className="h-5 w-5" />}
               </button>
             </div>
 

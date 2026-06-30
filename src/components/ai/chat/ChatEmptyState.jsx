@@ -1,5 +1,5 @@
 import React from "react";
-import { Sparkles, Layout, Code2, Rocket, LayoutGrid } from "lib/icons";
+import { Layout, Code2, Rocket, LayoutGrid } from "lib/icons";
 
 const EXAMPLES = [
   {
@@ -27,7 +27,7 @@ export default function ChatEmptyState({ onQuickStart, onOpenTemplates }) {
     <div className="min-h-[60vh] flex flex-col items-center justify-center text-center space-y-10 py-12 animate-fade-in-up">
       <div className="space-y-4 max-w-xl">
         <div className="mx-auto w-14 h-14 rounded-2xl bg-nexus-cyan/10 border border-nexus-cyan/20 flex items-center justify-center shadow-[0_0_40px_-8px_rgba(0,245,212,0.4)]">
-          <Sparkles className="w-7 h-7 text-nexus-cyan" />
+          <img src="/logo.png" alt="" className="w-9 h-9 object-contain" />
         </div>
         <h1 className="font-display text-3xl md:text-4xl font-extrabold tracking-tight">
           <span className="gradient-text">What should the Studio agent do?</span>

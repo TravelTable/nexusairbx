@@ -30,7 +30,7 @@ export default function SignInNudgeModal({ isOpen, onClose, reason = "" }) {
           role="dialog"
           aria-modal="true"
           aria-labelledby="signin-nudge-title"
-          className="nexus-page-card relative w-full max-w-md max-h-[min(92svh,720px)] overflow-y-auto"
+          className="nexus-page-card relative w-full max-w-md overflow-hidden"
         >
           {/* Top Glow */}
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-1 bg-gradient-to-r from-transparent via-[#9b5de5] to-transparent" />
@@ -52,7 +52,7 @@ export default function SignInNudgeModal({ isOpen, onClose, reason = "" }) {
             <h2 id="signin-nudge-title" className="text-xl font-bold text-white mb-3 sm:text-2xl">
               Sign up to access <br />
               <span className="bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-transparent bg-clip-text">
-                tokens and features
+                the AI
               </span>
             </h2>
 
@@ -66,8 +66,8 @@ export default function SignInNudgeModal({ isOpen, onClose, reason = "" }) {
                   <Zap className="w-4 h-4 text-[#9b5de5]" />
                 </div>
                 <div>
-                  <div className="text-sm font-bold text-white">20k Tokens Every Month</div>
-                  <div className="text-xs text-gray-500">Refreshed automatically for free.</div>
+                  <div className="text-sm font-bold text-white">Use the AI</div>
+                  <div className="text-xs text-gray-500">Generate scripts and chat with the agent.</div>
                 </div>
               </div>
 

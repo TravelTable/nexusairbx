@@ -236,10 +236,10 @@ const loaderExports = mapping.Loader === null
 
 export const Loader = PegtopLoader;
 export const Loader2 = PegtopLoader;
-export const SendPrompt = createIcon(FirstBracketCircleIcon);`
+export const SendPrompt = createIcon(ArrowBigRightDashIcon);`
   : "";
 
-const bracketImport = mapping.Loader === null ? "  FirstBracketCircleIcon,\n" : "";
+const bracketImport = mapping.Loader === null ? "  ArrowBigRightDashIcon,\n" : "";
 
 const content = `/**
  * Lucide-compatible icon exports backed by Hugeicons Free (Stroke Rounded).
