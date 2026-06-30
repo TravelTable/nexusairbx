@@ -82,7 +82,7 @@ const OVERRIDES = {
   Image: "Image01Icon",
   ImageIcon: "Image01Icon",
   ImagePlus: "ImageAdd01Icon",
-  Infinity: "Infinity01Icon",
+  InfinityIcon: "Infinity01Icon",
   Info: "InformationCircleIcon",
   Layers: "Layers01Icon",
   Layout: "Layout01Icon",
