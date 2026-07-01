@@ -168,6 +168,36 @@ describe("RobloxDecalUploadDropdown", () => {
     expect(screen.getByText(/1 decal uploaded/i)).toBeTruthy();
   });
 
+  test("passes projectId and refreshes attached project assets after upload", async () => {
+    const onAttached = jest.fn().mockResolvedValue(undefined);
+    uploadRobloxDecalBatch.mockImplementation(async ({ items, projectId }) => ({
+      batchId: "batch-2",
+      projectId,
+      attachedAssets: [{ assetId: "9001", assetType: "Decal", name: "Decal" }],
+      results: [
+        {
+          clientId: items[0].clientId,
+          fileName: "decal.png",
+          displayName: "Decal",
+          status: "succeeded",
+          assetId: "9001",
+          contentUri: "rbxassetid://9001",
+        },
+      ],
+    }));
+
+    await openDropdown({ projectId: "chat-abc", onAttached });
+
+    fireEvent.change(screen.getByLabelText(/choose decal images/i), {
+      target: { files: [file("decal.png")] },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /upload 1 decal/i }));
+
+    await waitFor(() => expect(uploadRobloxDecalBatch).toHaveBeenCalledTimes(1));
+    expect(uploadRobloxDecalBatch.mock.calls[0][0].projectId).toBe("chat-abc");
+    await waitFor(() => expect(onAttached).toHaveBeenCalledTimes(1));
+  });
+
   test("supports retrying failed-only uploads after a partial failure", async () => {
     uploadRobloxDecalBatch
       .mockImplementationOnce(async ({ items }) => ({

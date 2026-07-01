@@ -59,6 +59,8 @@ export default function AgentWorkspaceLayout({ controller }) {
     isImproving,
     refineTarget,
     attachments,
+    robloxImageUploading,
+    robloxImageUploads,
     scripts,
     projectContext,
     architecturePanelOpen,
@@ -671,6 +673,8 @@ export default function AgentWorkspaceLayout({ controller }) {
       setPrompt={setPrompt}
       attachments={attachments}
       setAttachments={setAttachments}
+      robloxImageUploading={robloxImageUploading}
+      robloxImageUploads={robloxImageUploads}
       onSubmit={(e) => handlePromptSubmit(e)}
       refineTarget={refineTarget}
       onCancelRefine={cancelRefine}
@@ -1043,6 +1047,8 @@ export default function AgentWorkspaceLayout({ controller }) {
                       user={user}
                       planKey={planKey}
                       roblox={roblox}
+                      projectId={roblox?.selectedAssetProjectId}
+                      onAttached={roblox?.refreshProjectAssets}
                       onAuthRequired={handleAuthRequired}
                       notify={notify}
                     />

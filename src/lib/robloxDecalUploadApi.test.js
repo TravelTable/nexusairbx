@@ -18,6 +18,7 @@ describe("uploadRobloxDecalBatch", () => {
 
     const payload = await uploadRobloxDecalBatch({
       requestId: "request-1",
+      projectId: "chat-abc",
       files: [new File(["image"], "decal.png", { type: "image/png" })],
       items: [{ clientId: "one", fileName: "decal.png", displayName: "Decal" }],
     });
@@ -27,6 +28,8 @@ describe("uploadRobloxDecalBatch", () => {
       method: "POST",
       body: expect.any(FormData),
     });
+    const form = authedFetch.mock.calls[0][1].body;
+    expect(form.get("projectId")).toBe("chat-abc");
     expect(authedFetch.mock.calls[0][1].headers).toBeUndefined();
   });
 

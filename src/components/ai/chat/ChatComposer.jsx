@@ -18,6 +18,7 @@ import StudioControls from "../workspace/StudioControls";
 import RobloxCloudControls from "../workspace/RobloxCloudControls";
 import AssetLibraryModal from "../workspace/AssetLibraryModal";
 import { Segmented } from "../../ui";
+import { ROBLOX_DECAL_ACCEPT } from "../../../hooks/useRobloxImageUpload";
 
 function ModeSelector({ mode, onModeChange, disabled }) {
   const [open, setOpen] = useState(false);
@@ -87,18 +88,24 @@ function ModeSelector({ mode, onModeChange, disabled }) {
   );
 }
 
+function ImageUploadChip({ upload }) {
+  const name = upload?.fileName || "Image";
+  return (
+    <div className="flex h-10 max-w-[190px] shrink-0 items-center gap-2 rounded-lg border border-amber-400/25 bg-amber-400/10 pl-1.5 pr-2">
+      <Loader className="h-4 w-4 shrink-0 animate-spin text-amber-200" />
+      <span className="min-w-0 truncate text-[10px] font-bold text-amber-100">Uploading {name}</span>
+    </div>
+  );
+}
+
 function FileContextChip({ file, index, onRemove }) {
   const name = file?.name || "Attachment";
 
   return (
     <div className="group/file relative flex h-10 max-w-[190px] shrink-0 items-center gap-2 rounded-lg border border-white/10 bg-white/[0.045] pl-1.5 pr-7">
-      {file?.isImage ? (
-        <img src={file.data} alt={name} className="h-7 w-7 shrink-0 rounded-md object-cover" />
-      ) : (
-        <span className="inline-flex h-7 shrink-0 items-center rounded-md border border-white/10 bg-black/35 px-1.5 text-[9px] font-black text-gray-400">
-          FILE
-        </span>
-      )}
+      <span className="inline-flex h-7 shrink-0 items-center rounded-md border border-white/10 bg-black/35 px-1.5 text-[9px] font-black text-gray-400">
+        FILE
+      </span>
       <span className="min-w-0 truncate text-[10px] font-bold text-gray-300">{name}</span>
       <button
         type="button"
@@ -155,6 +162,8 @@ export default function ChatComposer({
   setPrompt,
   attachments,
   setAttachments,
+  robloxImageUploading = false,
+  robloxImageUploads = [],
   onSubmit,
   isGenerating,
   generationStage,
@@ -215,7 +224,7 @@ export default function ChatComposer({
   const [isComposing, setIsComposing] = useState(false);
   const textareaRef = useRef(null);
   const controlsId = "chat-composer-controls";
-  const contextItemCount = attachments.length + robloxProjectAssets.length;
+  const contextItemCount = attachments.length + robloxProjectAssets.length + robloxImageUploads.length;
 
   useLayoutEffect(() => {
     const textarea = textareaRef.current;
@@ -368,6 +377,9 @@ export default function ChatComposer({
                 className="flex gap-2 overflow-x-auto px-0.5 pb-1 [scrollbar-width:thin]"
                 aria-label="Prompt context items"
               >
+                {robloxImageUploads.map((upload) => (
+                  <ImageUploadChip key={upload.id} upload={upload} />
+                ))}
                 {attachments.map((file, idx) => (
                   <FileContextChip key={`${file?.name || "file"}-${idx}`} file={file} index={idx} onRemove={removeAttachment} />
                 ))}
@@ -397,15 +409,18 @@ export default function ChatComposer({
                   className="hidden"
                   multiple
                   onChange={onFileUpload}
-                  accept="image/*,.lua,.txt,.json"
+                  accept={`${ROBLOX_DECAL_ACCEPT},.lua,.txt,.json`}
+                  disabled={disabled || robloxImageUploading}
                 />
                 <label
                   htmlFor="chat-composer-file-upload"
-                  className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-lg bg-white/5 text-gray-500 transition-all hover:bg-white/10 hover:text-white focus-ring"
-                  title="Upload image or file"
-                  aria-label="Upload image or file"
+                  className={`flex h-10 w-10 cursor-pointer items-center justify-center rounded-lg bg-white/5 text-gray-500 transition-all hover:bg-white/10 hover:text-white focus-ring ${
+                    disabled || robloxImageUploading ? "pointer-events-none opacity-50" : ""
+                  }`}
+                  title="Upload image to Roblox or attach a code/text file"
+                  aria-label="Upload image to Roblox or attach a code/text file"
                 >
-                  <Plus className="h-5 w-5" />
+                  {robloxImageUploading ? <Loader className="h-5 w-5 animate-spin" /> : <Plus className="h-5 w-5" />}
                 </label>
               </div>
 

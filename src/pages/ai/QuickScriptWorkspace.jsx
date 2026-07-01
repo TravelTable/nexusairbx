@@ -2,7 +2,6 @@ import React, { Suspense, lazy, useEffect, useLayoutEffect, useMemo, useRef, use
 import {
   AlertTriangle,
   ArrowRight,
-  CheckCircle2,
   Clipboard,
   Code2,
   Download,
@@ -13,7 +12,6 @@ import {
   Save,
   SendPrompt,
   ShieldCheck,
-  Sparkles,
   TerminalSquare,
   Wand2,
   Check,
@@ -75,31 +73,6 @@ function ListSection({ title, items, empty, icon, isWarning }) {
       ) : (
         <p className="mt-3 text-xs text-gray-500">{empty}</p>
       )}
-    </div>
-  );
-}
-
-function QuickScriptStatus({ status, stage, error }) {
-  const isBusy = status === "generating";
-  const isReady = status === "succeeded";
-  const needsAgent = status === "needs_agent_build";
-  const Icon = isBusy ? Loader : isReady ? CheckCircle2 : needsAgent ? ArrowRight : error ? AlertTriangle : Sparkles;
-
-  return (
-    <div
-      className={cx(
-        "inline-flex min-h-8 items-center gap-2 rounded-lg border px-2.5 py-1.5 text-[11px] font-bold",
-        isReady
-          ? "border-[#00f5d4]/20 bg-[#00f5d4]/5 text-[#00f5d4]"
-          : error || needsAgent
-            ? "border-amber-500/20 bg-amber-500/5 text-amber-200"
-            : "border-white/10 bg-white/5 text-gray-400"
-      )}
-      role="status"
-      aria-live="polite"
-    >
-      <Icon className={cx("h-3.5 w-3.5", isBusy && "animate-spin")} />
-      {stage || "Ready"}
     </div>
   );
 }
@@ -176,14 +149,13 @@ export default function QuickScriptWorkspace({
       
       {/* LEFT PANE (Composer + Examples) */}
       <div className="flex-1 min-w-0 flex flex-col min-h-0 bg-[#0d0d10]">
-        <div className="shrink-0 flex items-center justify-between gap-3 px-4 py-3 border-b border-white/5 bg-black/20 h-[60px]">
+        <div className="shrink-0 flex items-center gap-3 px-4 py-3 border-b border-white/5 bg-black/20 h-[60px]">
           <div className="flex items-center gap-2">
             <FileCode2 className="h-4 w-4 text-[#00f5d4]" aria-hidden="true" />
             <h1 className="font-display text-xs font-black uppercase tracking-[0.2em] text-white">
               Quick Script
             </h1>
           </div>
-          <QuickScriptStatus status={status} stage={quickScript?.stage} error={quickScript?.error} />
         </div>
 
         {/* Scrollable area */}

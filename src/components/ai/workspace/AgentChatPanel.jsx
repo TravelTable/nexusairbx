@@ -68,6 +68,8 @@ export default function AgentChatPanel({
   setPrompt,
   attachments,
   setAttachments,
+  robloxImageUploading = false,
+  robloxImageUploads = [],
   onSubmit,
   refineTarget,
   onCancelRefine,
@@ -239,6 +241,8 @@ export default function AgentChatPanel({
         setPrompt={setPrompt}
         attachments={attachments}
         setAttachments={setAttachments}
+        robloxImageUploading={robloxImageUploading}
+        robloxImageUploads={robloxImageUploads}
         onSubmit={onSubmit}
         isGenerating={isBusy}
         generationStage={generationStage}

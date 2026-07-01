@@ -73,6 +73,8 @@ export default function RobloxDecalUploadDropdown({
   user = null,
   planKey = "free",
   roblox = null,
+  projectId = null,
+  onAttached,
   onAuthRequired,
   notify,
 }) {
@@ -220,6 +222,7 @@ export default function RobloxDecalUploadDropdown({
           fileName: item.fileName,
           displayName: item.displayName,
         })),
+        projectId: projectId || undefined,
       });
       const results = new Map((payload.results || []).map((item) => [item.clientId, item]));
       setItems((current) => current.map((item) => {
@@ -237,6 +240,11 @@ export default function RobloxDecalUploadDropdown({
       }));
       setBatch(payload);
       roblox?.refresh?.();
+      if (payload.attachedAssets?.length) {
+        await onAttached?.();
+      } else if (projectId && (payload.results || []).some((item) => item.status === "succeeded")) {
+        await onAttached?.();
+      }
       if (notify) {
         const successCount = (payload.results || []).filter((item) => item.status === "succeeded").length;
         const failedCount = (payload.results || []).filter((item) => item.status === "failed").length;
@@ -251,7 +259,7 @@ export default function RobloxDecalUploadDropdown({
     } finally {
       setUploading(false);
     }
-  }, [failedItems, notify, roblox, uploading, validItems]);
+  }, [failedItems, notify, onAttached, projectId, roblox, uploading, validItems]);
 
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>

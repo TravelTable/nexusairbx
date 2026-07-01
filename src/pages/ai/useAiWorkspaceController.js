@@ -43,6 +43,7 @@ import { useAiNotifications } from "./useAiNotifications";
 import { saveWorkspaceArtifact } from "../../lib/artifactWorkspaceApi";
 import { getRobloxOAuthStatus } from "../../lib/robloxOAuthApi";
 import { useProjectAssets } from "../../hooks/useProjectAssets";
+import { useRobloxImageUpload, isRobloxDecalImage } from "../../hooks/useRobloxImageUpload";
 import { createImprovePromptError, formatImprovePromptErrorMessage } from "../../lib/aiPromptErrors";
 import {
   consumeGenerationIntent,
@@ -263,6 +264,16 @@ export function useAiWorkspaceController() {
   const projectAssets = useProjectAssets(selectedAssetProjectId, {
     enabled: Boolean(user && selectedAssetProjectId),
     notify,
+  });
+
+  const robloxImageUpload = useRobloxImageUpload({
+    user,
+    robloxStatus,
+    currentChatId: chat.currentChatId,
+    openChatById: chat.openChatById,
+    onRefreshProjectAssets: projectAssets.refresh,
+    notify,
+    onSignInRequired: () => setShowSignInNudge(true),
   });
 
   const workspace = useArtifactWorkspace(chat.messages, {
@@ -923,9 +934,19 @@ export function useAiWorkspaceController() {
     setPrompt(message?.originPrompt || "");
   }, []);
 
-  const handleFileUpload = useCallback((e) => {
+  const handleFileUpload = useCallback(async (e) => {
     const files = Array.from(e.target.files || []);
-    files.forEach((file) => {
+    if (e.target) e.target.value = "";
+    if (!files.length) return;
+
+    const imageFiles = files.filter((file) => file.type?.startsWith("image/") || isRobloxDecalImage(file));
+    const textFiles = files.filter((file) => !file.type?.startsWith("image/") && !isRobloxDecalImage(file));
+
+    if (imageFiles.length) {
+      await robloxImageUpload.uploadImages(imageFiles);
+    }
+
+    textFiles.forEach((file) => {
       const reader = new FileReader();
       reader.onloadend = () => {
         setAttachments((prev) => [
@@ -935,18 +956,13 @@ export function useAiWorkspaceController() {
             type: file.type,
             size: file.size,
             data: reader.result,
-            isImage: file.type.startsWith("image/"),
+            isImage: false,
           },
         ]);
       };
-
-      if (file.type.startsWith("image/")) {
-        reader.readAsDataURL(file);
-      } else {
-        reader.readAsText(file);
-      }
+      reader.readAsText(file);
     });
-  }, []);
+  }, [robloxImageUpload]);
 
   const handleStudioEnabledChange = useCallback((enabled) => {
     setStudioEnabled(enabled);
@@ -1444,6 +1460,8 @@ export function useAiWorkspaceController() {
       isImproving,
       refineTarget,
       attachments,
+      robloxImageUploading: robloxImageUpload.uploading,
+      robloxImageUploads: robloxImageUpload.activeUploads,
       scripts,
       projectContext,
       architecturePanelOpen,
@@ -1559,6 +1577,7 @@ export function useAiWorkspaceController() {
             : "",
       uploadStatus: projectAssets.uploadStatus,
       refresh: refreshRobloxStatus,
+      refreshProjectAssets: projectAssets.refresh,
     },
   };
 }

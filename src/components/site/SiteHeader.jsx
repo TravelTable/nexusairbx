@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
   AlertTriangle,
@@ -167,7 +167,7 @@ function NavLinks({ links, pathname, mobile = false }) {
   );
 }
 
-function AccountMenu({ identity, compact = false, portalContainer }) {
+function AccountMenu({ identity, compact = false }) {
   const {
     user,
     displayName,
@@ -242,9 +242,8 @@ function AccountMenu({ identity, compact = false, portalContainer }) {
         align="end"
         sideOffset={8}
         collisionPadding={12}
-        container={portalContainer}
         style={{ width: "min(320px, calc(100vw - 1.5rem))" }}
-        className="max-w-[calc(100vw-1.5rem)] border-white/10 bg-[#080b13] p-2 text-white shadow-2xl"
+        className="z-[100] max-w-[calc(100vw-1.5rem)] border-white/10 bg-[#080b13] p-2 text-white shadow-2xl"
       >
         <DropdownMenuLabel className="p-2 font-normal">
           <div className="flex items-start gap-3">
@@ -451,7 +450,6 @@ export default function SiteHeader({
   const config = HEADER_CONFIG[resolvedVariant] || HEADER_CONFIG.marketing;
   const isWorkspace = resolvedVariant === "workspace";
   const identity = useHeaderIdentity({ robloxStatusOverride, robloxLoadingOverride });
-  const [workspaceMenuContainer, setWorkspaceMenuContainer] = useState(null);
 
   const ctaIcon = config.cta?.icon;
   const headerClass = cn(
@@ -474,7 +472,7 @@ export default function SiteHeader({
   ), [isWorkspace, workspaceLeft, workspaceRight]);
 
   return (
-    <header ref={isWorkspace ? setWorkspaceMenuContainer : undefined} className={headerClass}>
+    <header className={headerClass}>
       <div className={innerClass}>
         {isWorkspace ? (
           <>
@@ -482,7 +480,7 @@ export default function SiteHeader({
               <Brand compact subtitle={config.label} />
             </div>
             {workspaceControls}
-            <AccountMenu identity={identity} compact portalContainer={workspaceMenuContainer} />
+            <AccountMenu identity={identity} compact />
             <MobileMenu config={config} identity={identity} pathname={location.pathname} isWorkspace />
           </>
         ) : (

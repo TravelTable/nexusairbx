@@ -1,12 +1,13 @@
 import { authedFetch } from "./billing";
 
-export async function uploadRobloxDecalBatch({ files = [], items = [], requestId }) {
+export async function uploadRobloxDecalBatch({ files = [], items = [], requestId, projectId } = {}) {
   const form = new FormData();
   files.forEach((file) => {
     form.append("files", file, file.name);
   });
   form.append("items", JSON.stringify(items));
   form.append("requestId", requestId || "");
+  if (projectId) form.append("projectId", String(projectId));
 
   const response = await authedFetch("/api/roblox/decal-uploads", {
     method: "POST",
