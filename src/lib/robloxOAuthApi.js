@@ -73,3 +73,54 @@ export async function beginRobloxReauthorization(options) {
   if (data.authorizationUrl) window.location.assign(data.authorizationUrl);
   return data;
 }
+
+export const CREATOR_STORE_READ_BUNDLES = ["core", "creator_store_read"];
+
+function getRobloxCapability(robloxStatus, capabilityId) {
+  const caps = robloxStatus?.capabilities;
+  if (!caps) return null;
+  if (caps[capabilityId]) return caps[capabilityId];
+  const fromGranted = Array.isArray(caps.granted)
+    ? caps.granted.find((item) => item.id === capabilityId)
+    : null;
+  if (fromGranted) {
+    return {
+      authorized: fromGranted.available !== false,
+      missingScopes: Array.isArray(fromGranted.missingScopes) ? fromGranted.missingScopes : [],
+    };
+  }
+  const fromMissing = Array.isArray(caps.missing)
+    ? caps.missing.find((item) => item.id === capabilityId)
+    : null;
+  if (fromMissing) {
+    return {
+      authorized: false,
+      missingScopes: Array.isArray(fromMissing.missingScopes) ? fromMissing.missingScopes : [],
+    };
+  }
+  return null;
+}
+
+export function isCreatorStoreReadAuthorized(robloxStatus) {
+  if (robloxStatus?.connected !== true) return false;
+  const capability = getRobloxCapability(robloxStatus, "roblox_search_creator_store");
+  if (!capability) return false;
+  return capability.authorized !== false && !(capability.missingScopes?.length > 0);
+}
+
+export function isRobloxReauthorizationError(code) {
+  return code === "ROBLOX_REAUTHORIZATION_REQUIRED"
+    || code === "CREATOR_STORE_REAUTHORIZATION_REQUIRED"
+    || code === "ROBLOX_AUTH_REQUIRED";
+}
+
+export function creatorStoreAccessError() {
+  const error = new Error("Reauthorize Roblox to grant Creator Store read access.");
+  error.code = "CREATOR_STORE_REAUTHORIZATION_REQUIRED";
+  error.recovery = "Reconnect Roblox and grant the required asset permissions.";
+  return error;
+}
+
+export async function beginCreatorStoreReauthorization(returnPath = "/ai") {
+  return beginRobloxReauthorization({ bundles: CREATOR_STORE_READ_BUNDLES, returnPath });
+}

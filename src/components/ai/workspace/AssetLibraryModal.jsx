@@ -22,6 +22,12 @@ import {
   getRobloxAssetPreview,
   listRobloxAssets,
 } from "../../../lib/robloxAssetLibraryApi";
+import {
+  beginCreatorStoreReauthorization,
+  creatorStoreAccessError,
+  isCreatorStoreReadAuthorized,
+  isRobloxReauthorizationError,
+} from "../../../lib/robloxOAuthApi";
 
 const ASSET_TYPES = ["Model", "Mesh", "Image", "Decal", "Audio", "Animation", "Package", "Plugin"];
 const SORTS = [
@@ -45,8 +51,9 @@ function formatCreator(asset) {
   return [creator.name, creator.type, creator.id].filter(Boolean).join(" · ");
 }
 
-function ErrorState({ error, onRetry }) {
+function ErrorState({ error, onRetry, onReauthorize }) {
   if (!error) return null;
+  const reauthorizationRequired = isRobloxReauthorizationError(error?.code);
   return (
     <div className="rounded-lg border border-red-500/25 bg-red-500/10 p-3 text-sm text-red-100" role="alert">
       <div className="flex items-start gap-2">
@@ -56,11 +63,18 @@ function ErrorState({ error, onRetry }) {
           {error.recovery ? <div className="mt-1 text-xs text-red-100/75">{error.recovery}</div> : null}
           {error.requestId ? <div className="mt-1 text-[10px] text-red-100/50">Request ID: {error.requestId}</div> : null}
         </div>
-        {onRetry ? (
-          <button type="button" onClick={onRetry} className="rounded-md border border-red-200/20 px-2 py-1 text-xs font-bold hover:bg-red-200/10">
-            Retry
-          </button>
-        ) : null}
+        <div className="flex shrink-0 flex-col gap-1">
+          {reauthorizationRequired && onReauthorize ? (
+            <button type="button" onClick={onReauthorize} className="rounded-md border border-red-200/20 px-2 py-1 text-xs font-bold hover:bg-red-200/10">
+              Reauthorize Roblox
+            </button>
+          ) : null}
+          {onRetry ? (
+            <button type="button" onClick={onRetry} className="rounded-md border border-red-200/20 px-2 py-1 text-xs font-bold hover:bg-red-200/10">
+              Retry
+            </button>
+          ) : null}
+        </div>
       </div>
     </div>
   );
@@ -185,6 +199,7 @@ export default function AssetLibraryModal({
   onClose,
   projectId,
   robloxIdentity,
+  robloxStatus = null,
   destination,
   persistedAssets = [],
   onConfirm,
@@ -234,6 +249,16 @@ export default function AssetLibraryModal({
     return assets;
   }, [assets, persistedAssets, selection, source]);
   const previewAssetId = previewAsset?.assetId || "";
+  const creatorStoreAuthorized = isCreatorStoreReadAuthorized(robloxStatus);
+  const remoteSourceActive = open && !["project", "recent", "selected"].includes(source);
+
+  const reauthorize = useCallback(async () => {
+    try {
+      await beginCreatorStoreReauthorization("/ai");
+    } catch (err) {
+      setError(err);
+    }
+  }, []);
 
   const displayedAssets = useMemo(() => {
     const q = debouncedSearch.toLowerCase();
@@ -251,6 +276,13 @@ export default function AssetLibraryModal({
 
   const loadAssets = useCallback(async ({ append = false, cursor = "" } = {}) => {
     if (!open || ["project", "recent", "selected"].includes(source)) return;
+    if (!creatorStoreAuthorized) {
+      setError(creatorStoreAccessError());
+      setAssets([]);
+      setNextCursor(null);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
@@ -278,7 +310,7 @@ export default function AssetLibraryModal({
     } finally {
       setLoading(false);
     }
-  }, [assetTypes, debouncedSearch, open, sort, source]);
+  }, [assetTypes, creatorStoreAuthorized, debouncedSearch, open, sort, source]);
 
   useEffect(() => {
     setAssets([]);
@@ -289,6 +321,13 @@ export default function AssetLibraryModal({
   useEffect(() => {
     if (!previewAssetId) {
       setPreview(null);
+      return undefined;
+    }
+    if (!creatorStoreAuthorized) {
+      setPreview({
+        preview: { renderer: "unsupported", reason: creatorStoreAccessError().message },
+      });
+      setPreviewLoading(false);
       return undefined;
     }
     let cancelled = false;
@@ -311,7 +350,7 @@ export default function AssetLibraryModal({
     return () => {
       cancelled = true;
     };
-  }, [previewAssetId]);
+  }, [creatorStoreAuthorized, previewAssetId]);
 
   useEffect(() => {
     if (!open) return undefined;
@@ -450,7 +489,11 @@ export default function AssetLibraryModal({
                   </button>
                 ))}
               </div>
-              <ErrorState error={error} onRetry={() => loadAssets({ append: false, cursor: "" })} />
+              <ErrorState
+                error={error}
+                onRetry={remoteSourceActive && creatorStoreAuthorized ? () => loadAssets({ append: false, cursor: "" }) : null}
+                onReauthorize={reauthorize}
+              />
             </div>
 
             <div className="min-h-0 flex-1 overflow-auto p-3" aria-live="polite">

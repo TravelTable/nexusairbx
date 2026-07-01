@@ -41,7 +41,7 @@ import { applyArtifactToStudio, getStudioStatus } from "../../lib/studioBridgeAp
 import { AI_EVENTS, emitAiEvent, onAiEvent } from "../../lib/aiEvents";
 import { useAiNotifications } from "./useAiNotifications";
 import { saveWorkspaceArtifact } from "../../lib/artifactWorkspaceApi";
-import { getRobloxOAuthStatus } from "../../lib/robloxOAuthApi";
+import { getRobloxOAuthStatus, beginCreatorStoreReauthorization, isCreatorStoreReadAuthorized } from "../../lib/robloxOAuthApi";
 import { useProjectAssets } from "../../hooks/useProjectAssets";
 import { useRobloxImageUpload, isRobloxDecalImage } from "../../hooks/useRobloxImageUpload";
 import { createImprovePromptError, formatImprovePromptErrorMessage } from "../../lib/aiPromptErrors";
@@ -1015,8 +1015,15 @@ export function useAiWorkspaceController() {
       notify({ message: "Connect Roblox before selecting assets", type: "info" });
       return;
     }
+    if (!isCreatorStoreReadAuthorized(robloxStatus)) {
+      notify({ message: "Reauthorize Roblox to browse your assets.", type: "info" });
+      beginCreatorStoreReauthorization("/ai").catch((err) => {
+        notify({ message: err?.message || "Failed to start Roblox reauthorization.", type: "error" });
+      });
+      return;
+    }
     setAssetLibraryOpen(true);
-  }, [notify, robloxStatus?.connected, selectedAssetProjectId, user]);
+  }, [notify, robloxStatus, selectedAssetProjectId, user]);
 
   const handleConfirmProjectAssets = useCallback(async (assets) => {
     await projectAssets.attachAssets(assets);
@@ -1567,14 +1574,18 @@ export function useAiWorkspaceController() {
       projectAssetSaving: projectAssets.saving,
       projectAssetLoading: projectAssets.loading,
       assetLibraryOpen,
-      assetLibraryAvailable: Boolean(user && selectedAssetProjectId && robloxStatus?.connected === true),
+      assetLibraryAvailable: Boolean(
+        user && selectedAssetProjectId && robloxStatus?.connected === true && isCreatorStoreReadAuthorized(robloxStatus)
+      ),
       assetLibraryDisabledReason: !user
         ? "Sign in before selecting Roblox assets."
         : !selectedAssetProjectId
           ? "Open or create a chat before selecting assets."
           : robloxStatus?.connected !== true
             ? "Connect Roblox before selecting assets."
-            : "",
+            : !isCreatorStoreReadAuthorized(robloxStatus)
+              ? "Reauthorize Roblox to browse your assets."
+              : "",
       uploadStatus: projectAssets.uploadStatus,
       refresh: refreshRobloxStatus,
       refreshProjectAssets: projectAssets.refresh,

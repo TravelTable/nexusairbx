@@ -469,6 +469,7 @@ export default function ChatComposer({
         open={assetLibraryOpen}
         onClose={onCloseAssetLibrary}
         projectId={assetProjectId}
+        robloxStatus={robloxStatus}
         robloxIdentity={robloxStatus?.connection || null}
         destination={robloxSelectedCreator}
         persistedAssets={robloxProjectAssets}

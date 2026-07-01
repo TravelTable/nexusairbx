@@ -1,4 +1,5 @@
-import React, { useMemo } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Link, useLocation } from "react-router-dom";
 import {
   AlertTriangle,
@@ -21,14 +22,6 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "../shadcn/avatar";
 import { Badge } from "../shadcn/badge";
 import { Button } from "../shadcn/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "../shadcn/dropdown-menu";
 import { Separator } from "../shadcn/separator";
 import {
   Sheet,
@@ -101,6 +94,9 @@ const HEADER_CONFIG = {
   },
 };
 
+const ACCOUNT_MENU_WIDTH = 320;
+const VIEWPORT_GUTTER = 12;
+
 function isActivePath(pathname, target) {
   if (target === "/") return pathname === "/";
   return pathname === target || pathname.startsWith(`${target}/`);
@@ -167,6 +163,20 @@ function NavLinks({ links, pathname, mobile = false }) {
   );
 }
 
+function AccountMenuItemLink({ to, icon: Icon, label, onNavigate }) {
+  return (
+    <Link
+      to={to}
+      onClick={onNavigate}
+      className="relative flex cursor-pointer select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-white/[0.08] hover:text-white focus:bg-white/[0.08] focus:text-white"
+      role="menuitem"
+    >
+      <Icon className="h-4 w-4 shrink-0" />
+      {label}
+    </Link>
+  );
+}
+
 function AccountMenu({ identity, compact = false }) {
   const {
     user,
@@ -184,6 +194,58 @@ function AccountMenu({ identity, compact = false }) {
     refreshRobloxStatus,
     signOutUser,
   } = identity;
+
+  const [open, setOpen] = useState(false);
+  const [menuPosition, setMenuPosition] = useState(null);
+  const rootRef = useRef(null);
+  const buttonRef = useRef(null);
+  const menuRef = useRef(null);
+
+  const updateMenuPosition = useCallback(() => {
+    const rect = buttonRef.current?.getBoundingClientRect();
+    if (!rect) return;
+
+    const width = Math.min(ACCOUNT_MENU_WIDTH, window.innerWidth - VIEWPORT_GUTTER * 2);
+    const maxLeft = Math.max(VIEWPORT_GUTTER, window.innerWidth - width - VIEWPORT_GUTTER);
+
+    setMenuPosition({
+      top: rect.bottom + 8,
+      left: Math.min(Math.max(VIEWPORT_GUTTER, rect.right - width), maxLeft),
+      width,
+      maxHeight: Math.max(200, window.innerHeight - rect.bottom - VIEWPORT_GUTTER),
+    });
+  }, []);
+
+  useEffect(() => {
+    const onClickOutside = (event) => {
+      if (rootRef.current?.contains(event.target) || menuRef.current?.contains(event.target)) return;
+      setOpen(false);
+    };
+    document.addEventListener("mousedown", onClickOutside);
+    return () => document.removeEventListener("mousedown", onClickOutside);
+  }, []);
+
+  useEffect(() => {
+    if (!open) return undefined;
+
+    updateMenuPosition();
+    window.addEventListener("resize", updateMenuPosition);
+    window.addEventListener("scroll", updateMenuPosition, true);
+    return () => {
+      window.removeEventListener("resize", updateMenuPosition);
+      window.removeEventListener("scroll", updateMenuPosition, true);
+    };
+  }, [open, updateMenuPosition]);
+
+  useEffect(() => {
+    if (!open) return undefined;
+
+    const onKeyDown = (event) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [open]);
 
   if (!user) {
     return (
@@ -215,131 +277,142 @@ function AccountMenu({ identity, compact = false }) {
       ? "Checking Roblox"
       : "Roblox not connected";
 
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <button
-          type="button"
-          className={cn(
-            "inline-flex min-h-10 items-center gap-2 rounded-md border border-white/10 bg-white/[0.04] px-2 py-1 text-left text-sm text-gray-200 transition-colors hover:border-white/20 hover:bg-white/[0.07] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00f5d4]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black",
-            compact && "border-transparent bg-transparent px-0 hover:bg-white/[0.04]"
-          )}
-          aria-label="Open account menu"
+  const closeMenu = () => setOpen(false);
+
+  const menu = open && menuPosition
+    ? createPortal(
+        <div
+          ref={menuRef}
+          role="menu"
+          aria-label="Account menu"
+          style={{
+            position: "fixed",
+            top: menuPosition.top,
+            left: menuPosition.left,
+            width: menuPosition.width,
+            maxHeight: menuPosition.maxHeight,
+            zIndex: 100,
+          }}
+          className="overflow-y-auto rounded-md border border-white/10 bg-[#080b13] p-2 text-white shadow-2xl"
         >
-          <HeaderAvatar identity={identity} className="h-8 w-8" />
-          {!compact && (
-            <>
-              <span className="hidden min-w-0 max-w-[160px] lg:block">
-                <span className="block truncate text-xs font-semibold text-white">{displayName}</span>
-                <span className="block truncate text-[11px] text-gray-500">{planLabel}</span>
-              </span>
-              <ChevronDown className="hidden h-4 w-4 text-gray-500 lg:block" />
-            </>
-          )}
-        </button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent
-        align="end"
-        sideOffset={8}
-        collisionPadding={12}
-        style={{ width: "min(320px, calc(100vw - 1.5rem))" }}
-        className="z-[100] max-w-[calc(100vw-1.5rem)] border-white/10 bg-[#080b13] p-2 text-white shadow-2xl"
-      >
-        <DropdownMenuLabel className="p-2 font-normal">
-          <div className="flex items-start gap-3">
-            <HeaderAvatar identity={identity} className="h-11 w-11" />
-            <div className="min-w-0 flex-1">
-              <div className="truncate text-sm font-semibold text-white">{displayName}</div>
-              {email && <div className="truncate text-xs text-gray-500">{email}</div>}
-              <div className="mt-2 flex flex-wrap items-center gap-2">
-                <Badge className="border border-[#00f5d4]/30 bg-[#00f5d4]/10 text-[#00f5d4] hover:bg-[#00f5d4]/10">
-                  {planLabel}
-                </Badge>
-                <Badge className={cn(
-                  "border bg-white/[0.04] hover:bg-white/[0.04]",
-                  robloxConnected ? "border-emerald-400/30 text-emerald-300" : "border-white/10 text-gray-400"
-                )}>
-                  {robloxLabel}
-                </Badge>
+          <div className="p-2 font-normal">
+            <div className="flex items-start gap-3">
+              <HeaderAvatar identity={identity} className="h-11 w-11" />
+              <div className="min-w-0 flex-1">
+                <div className="truncate text-sm font-semibold text-white">{displayName}</div>
+                {email && <div className="truncate text-xs text-gray-500">{email}</div>}
+                <div className="mt-2 flex flex-wrap items-center gap-2">
+                  <Badge className="border border-[#00f5d4]/30 bg-[#00f5d4]/10 text-[#00f5d4] hover:bg-[#00f5d4]/10">
+                    {planLabel}
+                  </Badge>
+                  <Badge className={cn(
+                    "border bg-white/[0.04] hover:bg-white/[0.04]",
+                    robloxConnected ? "border-emerald-400/30 text-emerald-300" : "border-white/10 text-gray-400"
+                  )}>
+                    {robloxLabel}
+                  </Badge>
+                </div>
               </div>
             </div>
           </div>
-        </DropdownMenuLabel>
-        <div className="grid grid-cols-2 gap-2 px-2 pb-2">
-          <div className="rounded-md border border-white/10 bg-white/[0.04] p-2">
-            <div className="text-[11px] text-gray-500">Plan</div>
-            <div className="mt-1 truncate text-sm font-semibold text-white">{planLabel}</div>
-          </div>
-          <div className="rounded-md border border-white/10 bg-white/[0.04] p-2">
-            <div className="text-[11px] text-gray-500">Usage</div>
-            <div className="mt-1 truncate text-sm font-semibold text-white">{tokensLabel}</div>
-          </div>
-        </div>
-        <div className="px-2 pb-2">
-          {robloxLoading ? (
-            <div className="space-y-2 rounded-md border border-white/10 bg-white/[0.04] p-3">
-              <Skeleton className="h-3 w-28 bg-white/10" />
-              <Skeleton className="h-8 w-full bg-white/10" />
+          <div className="grid grid-cols-2 gap-2 px-2 pb-2">
+            <div className="rounded-md border border-white/10 bg-white/[0.04] p-2">
+              <div className="text-[11px] text-gray-500">Plan</div>
+              <div className="mt-1 truncate text-sm font-semibold text-white">{planLabel}</div>
             </div>
-          ) : (
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              disabled={Boolean(robloxAction)}
-              onClick={robloxConnected ? reconnectRoblox : connectRoblox}
-              className="w-full border-white/10 bg-white/[0.04] text-gray-100 hover:bg-white/[0.08]"
-            >
-              <PlugZap className="h-4 w-4" />
-              {robloxAction ? "Opening Roblox..." : robloxConnected ? "Reconnect Roblox" : "Connect Roblox"}
-            </Button>
-          )}
-          {robloxError && (
-            <div className="mt-2 flex items-start gap-2 rounded-md border border-amber-400/20 bg-amber-400/10 p-2 text-xs text-amber-100">
-              <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-              <span className="min-w-0 flex-1">{robloxError}</span>
-              <button
+            <div className="rounded-md border border-white/10 bg-white/[0.04] p-2">
+              <div className="text-[11px] text-gray-500">Usage</div>
+              <div className="mt-1 truncate text-sm font-semibold text-white">{tokensLabel}</div>
+            </div>
+          </div>
+          <div className="px-2 pb-2">
+            {robloxLoading ? (
+              <div className="space-y-2 rounded-md border border-white/10 bg-white/[0.04] p-3">
+                <Skeleton className="h-3 w-28 bg-white/10" />
+                <Skeleton className="h-8 w-full bg-white/10" />
+              </div>
+            ) : (
+              <Button
                 type="button"
-                onClick={() => refreshRobloxStatus()}
-                className="shrink-0 rounded text-amber-50 underline-offset-4 hover:underline"
+                variant="outline"
+                size="sm"
+                disabled={Boolean(robloxAction)}
+                onClick={robloxConnected ? reconnectRoblox : connectRoblox}
+                className="w-full border-white/10 bg-white/[0.04] text-gray-100 hover:bg-white/[0.08]"
               >
-                Retry
-              </button>
-            </div>
-          )}
-        </div>
-        <DropdownMenuSeparator className="bg-white/10" />
-        <DropdownMenuItem asChild className="cursor-pointer focus:bg-white/[0.08] focus:text-white">
-          <Link to="/ai"><Bot className="mr-2 h-4 w-4" />AI Workspace</Link>
-        </DropdownMenuItem>
-        <DropdownMenuItem asChild className="cursor-pointer focus:bg-white/[0.08] focus:text-white">
-          <Link to="/tools/icon-generator"><Sparkles className="mr-2 h-4 w-4" />Icon Generator</Link>
-        </DropdownMenuItem>
-        <DropdownMenuItem asChild className="cursor-pointer focus:bg-white/[0.08] focus:text-white">
-          <Link to="/icons-market"><Store className="mr-2 h-4 w-4" />Icon Market</Link>
-        </DropdownMenuItem>
-        <DropdownMenuItem asChild className="cursor-pointer focus:bg-white/[0.08] focus:text-white">
-          <Link to="/settings"><Settings className="mr-2 h-4 w-4" />Settings</Link>
-        </DropdownMenuItem>
-        <DropdownMenuItem asChild className="cursor-pointer focus:bg-white/[0.08] focus:text-white">
-          <Link to="/billing"><CreditCard className="mr-2 h-4 w-4" />Billing</Link>
-        </DropdownMenuItem>
-        <DropdownMenuItem asChild className="cursor-pointer focus:bg-white/[0.08] focus:text-white">
-          <Link to="/contact"><HelpCircle className="mr-2 h-4 w-4" />Contact</Link>
-        </DropdownMenuItem>
-        <DropdownMenuSeparator className="bg-white/10" />
-        <DropdownMenuItem
-          onSelect={(event) => {
-            event.preventDefault();
-            void signOutUser();
-          }}
-          className="cursor-pointer text-red-200 focus:bg-red-500/10 focus:text-red-100"
-        >
-          <LogOut className="mr-2 h-4 w-4" />
-          Sign out
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+                <PlugZap className="h-4 w-4" />
+                {robloxAction ? "Opening Roblox..." : robloxConnected ? "Reconnect Roblox" : "Connect Roblox"}
+              </Button>
+            )}
+            {robloxError && (
+              <div className="mt-2 flex items-start gap-2 rounded-md border border-amber-400/20 bg-amber-400/10 p-2 text-xs text-amber-100">
+                <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                <span className="min-w-0 flex-1">{robloxError}</span>
+                <button
+                  type="button"
+                  onClick={() => refreshRobloxStatus()}
+                  className="shrink-0 rounded text-amber-50 underline-offset-4 hover:underline"
+                >
+                  Retry
+                </button>
+              </div>
+            )}
+          </div>
+          <Separator className="my-1 bg-white/10" />
+          <AccountMenuItemLink to="/ai" icon={Bot} label="AI Workspace" onNavigate={closeMenu} />
+          <AccountMenuItemLink to="/tools/icon-generator" icon={Sparkles} label="Icon Generator" onNavigate={closeMenu} />
+          <AccountMenuItemLink to="/icons-market" icon={Store} label="Icon Market" onNavigate={closeMenu} />
+          <AccountMenuItemLink to="/settings" icon={Settings} label="Settings" onNavigate={closeMenu} />
+          <AccountMenuItemLink to="/billing" icon={CreditCard} label="Billing" onNavigate={closeMenu} />
+          <AccountMenuItemLink to="/contact" icon={HelpCircle} label="Contact" onNavigate={closeMenu} />
+          <Separator className="my-1 bg-white/10" />
+          <button
+            type="button"
+            onClick={() => {
+              closeMenu();
+              void signOutUser();
+            }}
+            className="relative flex w-full cursor-pointer select-none items-center gap-2 rounded-sm px-2 py-1.5 text-left text-sm text-red-200 outline-none transition-colors hover:bg-red-500/10 hover:text-red-100 focus:bg-red-500/10 focus:text-red-100"
+            role="menuitem"
+          >
+            <LogOut className="h-4 w-4 shrink-0" />
+            Sign out
+          </button>
+        </div>,
+        document.body
+      )
+    : null;
+
+  return (
+    <div className="relative shrink-0" ref={rootRef}>
+      <button
+        ref={buttonRef}
+        type="button"
+        onClick={() => {
+          updateMenuPosition();
+          setOpen((value) => !value);
+        }}
+        className={cn(
+          "inline-flex min-h-10 items-center gap-2 rounded-md border border-white/10 bg-white/[0.04] px-2 py-1 text-left text-sm text-gray-200 transition-colors hover:border-white/20 hover:bg-white/[0.07] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00f5d4]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black",
+          compact && "border-transparent bg-transparent px-0 hover:bg-white/[0.04]"
+        )}
+        aria-label="Open account menu"
+        aria-haspopup="menu"
+        aria-expanded={open}
+      >
+        <HeaderAvatar identity={identity} className="h-8 w-8" />
+        {!compact && (
+          <>
+            <span className="hidden min-w-0 max-w-[160px] lg:block">
+              <span className="block truncate text-xs font-semibold text-white">{displayName}</span>
+              <span className="block truncate text-[11px] text-gray-500">{planLabel}</span>
+            </span>
+            <ChevronDown className={cn("hidden h-4 w-4 text-gray-500 transition-transform lg:block", open && "rotate-180")} />
+          </>
+        )}
+      </button>
+      {menu}
+    </div>
   );
 }
 
