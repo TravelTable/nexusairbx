@@ -101,7 +101,7 @@ export function useRobloxImageUpload({
       notify?.({ message: readiness.message, type: "info" });
       if (readiness.action === "connect") {
         try {
-          await beginRobloxOAuth({ bundles: ["core"], returnPath: "/ai", forceConsent: false });
+          await beginRobloxOAuth({ bundles: ["core"], returnPath: "/ai" });
         } catch (err) {
           notify?.({ message: err.message || "Failed to start Roblox authorization.", type: "error" });
         }

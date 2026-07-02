@@ -9,6 +9,10 @@ import {
 
 export const AUTH_REDIRECT_RETURN_KEY = "nexusrbx:authRedirectReturn";
 export const AUTH_REDIRECT_METHOD_KEY = "nexusrbx:authRedirectMethod";
+export const AUTH_PERSISTENCE_PREFERENCE_KEY = "nexusrbx:authPersistencePreference";
+
+const AUTH_PERSISTENCE_LOCAL = "local";
+const AUTH_PERSISTENCE_SESSION = "session";
 
 const MISSING_REDIRECT_STATE_RE =
   /missing initial state|sessionStorage is inaccessible|sessionStorage is unavailable/i;
@@ -29,6 +33,28 @@ export function getFriendlyAuthErrorMessage(error) {
     return "Sign-in was cancelled before it finished.";
   }
   return error?.message || "Sign-in failed. Please try again.";
+}
+
+export function readAuthPersistencePreference() {
+  try {
+    const value = localStorage.getItem(AUTH_PERSISTENCE_PREFERENCE_KEY);
+    if (value === AUTH_PERSISTENCE_SESSION) return false;
+    if (value === AUTH_PERSISTENCE_LOCAL) return true;
+  } catch (_) {
+    // Ignore storage failures and fall back to the secure default.
+  }
+  return true;
+}
+
+export function writeAuthPersistencePreference(rememberMe) {
+  try {
+    localStorage.setItem(
+      AUTH_PERSISTENCE_PREFERENCE_KEY,
+      rememberMe ? AUTH_PERSISTENCE_LOCAL : AUTH_PERSISTENCE_SESSION
+    );
+  } catch (_) {
+    // Ignore storage failures; sign-in still applies persistence for this attempt.
+  }
 }
 
 export async function applyAuthPersistence(auth, rememberMe = false) {

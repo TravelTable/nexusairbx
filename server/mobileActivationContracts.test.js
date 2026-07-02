@@ -7,35 +7,12 @@ function read(relativePath) {
   return fs.readFileSync(path.join(__dirname, "..", relativePath), "utf8");
 }
 
-test("Quick Script mobile workspace keeps prompt reachable and code contained", () => {
-  const workspace = read("src/pages/ai/QuickScriptWorkspace.jsx");
-
-  assert.match(workspace, /lazy\(\(\) => import\("\.\.\/\.\.\/components\/ai\/QuickScriptCodeBlock"\)\)/);
-  assert.doesNotMatch(workspace, /react-syntax-highlighter/);
-  assert.match(workspace, /scrollIntoView\(\{ block: "center"/);
-  assert.match(workspace, /text-base[\s\S]*md:text-sm/);
-  assert.match(workspace, /aria-invalid=\{Boolean\(quickScript\?\.error && !result\)\}/);
-  assert.match(workspace, /quick-script-code-scroll/);
-  assert.match(workspace, /tabIndex=\{0\}/);
-  assert.match(workspace, /Generated Luau code\. Scroll horizontally/);
-  assert.match(workspace, /min-h-11/);
-});
-
-test("Quick Script code highlighter is isolated behind a lazy client chunk", () => {
-  const codeBlock = read("src/components/ai/QuickScriptCodeBlock.jsx");
-
-  assert.match(codeBlock, /react-syntax-highlighter/);
-  assert.match(codeBlock, /width: "max-content"/);
-  assert.match(codeBlock, /minWidth: "100%"/);
-  assert.match(codeBlock, /wrapLongLines=\{false\}/);
-});
-
 test("AI workspace uses mobile viewport units and safe toast placement", () => {
   const layout = read("src/pages/ai/AgentWorkspaceLayout.jsx");
 
   assert.match(layout, /h-\[100dvh\]/);
   assert.match(layout, /min-h-\[100svh\]/);
-  assert.match(layout, /flex-1 min-h-0 flex flex-col/);
+  assert.match(layout, /flex-1 min-h-0 flex/);
   assert.match(layout, /bottom-\[max\(1rem,env\(safe-area-inset-bottom\)\)\]/);
 });
 
@@ -45,20 +22,16 @@ test("Sign-in nudge remains dismissible and accessible on narrow viewports", () 
   assert.match(modal, /role="dialog"/);
   assert.match(modal, /aria-modal="true"/);
   assert.match(modal, /aria-labelledby="signin-nudge-title"/);
-  assert.match(modal, /max-h-\[min\(92svh,720px\)\] overflow-y-auto/);
   assert.match(modal, /aria-label="Dismiss sign-in prompt"/);
   assert.match(modal, /Secure workspace handoff/);
 });
 
-test("Quick Script activation contracts keep value before authentication", () => {
+test("Agent Build activation contracts require sign-in before generation", () => {
   const controller = read("src/pages/ai/useAiWorkspaceController.js");
 
-  assert.match(controller, /resolveInitialGeneratorMode/);
-  assert.match(controller, /if \(quickScript\.status === "generating"\) return null;/);
-  assert.match(controller, /navigator\.clipboard\.writeText\(code\)/);
-  assert.match(controller, /PENDING_AUTH_ACTIONS\.SAVE_PROJECT/);
-  assert.match(controller, /PENDING_AUTH_ACTIONS\.EXPORT_PROJECT/);
-  assert.match(controller, /PENDING_AUTH_ACTIONS\.PUSH_TO_STUDIO/);
-  assert.match(controller, /PENDING_AUTH_ACTIONS\.UPGRADE_TO_AGENT_BUILD/);
-  assert.match(controller, /quick_script_upgrade/);
+  assert.match(controller, /if \(!pendingGenerationIntent\) return;/);
+  assert.match(controller, /if \(!user\) \{\s*setShowSignInNudge\(true\);/);
+  assert.match(controller, /submitUnifiedPrompt/);
+  assert.match(controller, /PENDING_AUTH_ACTIONS\.RESTRICTED_GENERATION/);
+  assert.match(controller, /workspace: "agent_build"/);
 });

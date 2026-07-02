@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Menu, FolderTree, History, FileCode2, MessageSquare, ClipboardList, Search, RefreshCw, TerminalSquare, Bot } from "lib/icons";
+import { Menu, FolderTree, History, FileCode2, MessageSquare, ClipboardList, Search, RefreshCw, TerminalSquare } from "lib/icons";
 
 import SidebarContent from "../../components/SidebarContent";
 import CodeDrawer from "../../components/CodeDrawer";
@@ -21,7 +21,6 @@ import CodeWorkspace from "../../components/ai/workspace/CodeWorkspace";
 import AgentChatPanel from "../../components/ai/workspace/AgentChatPanel";
 import BuildDetailsPanel from "../../components/ai/workspace/BuildDetailsPanel";
 import RobloxDecalUploadDropdown from "../../components/ai/workspace/RobloxDecalUploadDropdown";
-import QuickScriptWorkspace from "./QuickScriptWorkspace";
 import { getStudioCommand, getStudioManifest, getStudioManifestStatus, queueStudioTool } from "../../lib/studioBridgeApi";
 import { cancelWorkspaceCommand, createWorkspaceCommand, getWorkspaceCommand, streamWorkspaceCommandEvents } from "../../lib/workspaceApi";
 import { PENDING_AUTH_ACTIONS } from "../../lib/pendingAuthAction";
@@ -53,8 +52,6 @@ export default function AgentWorkspaceLayout({ controller }) {
     isMobile,
     sidebarOpen,
     mobileTab,
-    generatorMode,
-    quickScript,
     prompt,
     isImproving,
     refineTarget,
@@ -81,7 +78,6 @@ export default function AgentWorkspaceLayout({ controller }) {
     setMobileTab,
     setActiveTab,
     setPrompt,
-    setGeneratorMode,
     setAttachments,
     setArchitecturePanelOpen,
     setShowSignInNudge,
@@ -91,13 +87,6 @@ export default function AgentWorkspaceLayout({ controller }) {
     dismissToast,
     updateSettings,
     handlePromptSubmit,
-    runQuickScript,
-    handleQuickScriptCopy,
-    handleQuickScriptSave,
-    handleQuickScriptExport,
-    handleQuickScriptStudioPush,
-    handleQuickScriptContinueEditing,
-    handleQuickScriptOpenAgentBuild,
     handleAuthRequired,
     onApprovePlan,
     onClarifySubmit,
@@ -912,7 +901,6 @@ export default function AgentWorkspaceLayout({ controller }) {
 
       <div className="flex flex-1 min-h-0 overflow-hidden">
         {/* LEFT: project / artifacts / file tree / history */}
-        {generatorMode === "agent_build" && (
         <aside
           className={`fixed inset-y-0 left-0 z-40 w-80 bg-[#0D0D0D]/95 backdrop-blur-2xl border-r border-white/5 flex flex-col transform transition-all duration-300 ease-in-out ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} lg:relative lg:translate-x-0 ${sidebarOpen ? "lg:w-80" : "lg:w-0 lg:opacity-0 lg:pointer-events-none"}`}
           aria-label="Project sidebar"
@@ -973,7 +961,6 @@ export default function AgentWorkspaceLayout({ controller }) {
             )}
           </div>
         </aside>
-        )}
 
         {/* CENTER: Studio agent chat */}
         <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
@@ -993,33 +980,17 @@ export default function AgentWorkspaceLayout({ controller }) {
                   <Menu className="h-5 w-5" />
                 </button>
                 <div className="h-4 w-px bg-white/10 hidden sm:block" aria-hidden="true" />
-                <div data-tour="mode-switcher" className="hidden md:inline-flex">
-                  <Segmented
-                    size="sm"
-                    options={[
-                      { id: "quick_script", label: "Quick Script", icon: FileCode2 },
-                      { id: "agent_build", label: "Agent Build", icon: Bot },
-                    ]}
-                    value={generatorMode}
-                    onChange={(mode) => setGeneratorMode(mode, "mode_control")}
-                  />
-                </div>
-                <div className="h-4 w-px bg-white/10 hidden md:block" aria-hidden="true" />
-                {generatorMode === "agent_build" && (
-                  <>
-                    <ModelSwitcher
-                      value={settings.modelVersion}
-                      isPremium={isPremium}
-                      onChange={(id) => updateSettings({ modelVersion: id })}
-                      onProNudge={(reason) => {
-                        if (!requireUser()) return;
-                        setProNudgeReason(reason || "Premium AI Models");
-                        setShowProNudge(true);
-                      }}
-                    />
-                    <div className="h-4 w-px bg-white/10 hidden sm:block" aria-hidden="true" />
-                  </>
-                )}
+                <ModelSwitcher
+                  value={settings.modelVersion}
+                  isPremium={isPremium}
+                  onChange={(id) => updateSettings({ modelVersion: id })}
+                  onProNudge={(reason) => {
+                    if (!requireUser()) return;
+                    setProNudgeReason(reason || "Premium AI Models");
+                    setShowProNudge(true);
+                  }}
+                />
+                <div className="h-4 w-px bg-white/10 hidden sm:block" aria-hidden="true" />
                 <div data-tour="studio-pair">
                   <StudioPairControl
                     connected={studio?.connected}
@@ -1033,78 +1004,38 @@ export default function AgentWorkspaceLayout({ controller }) {
             )}
             workspaceRight={(
               <>
-                {generatorMode === "agent_build" ? (
-                  <>
-                    <DailyPromptBadge
-                      totalRemaining={totalRemaining}
-                      subLimit={subLimit}
-                      resetsAt={resetsAt}
-                      planKey={planKey}
-                      unlimitedTokens={unlimitedTokens}
-                      devOverride={devOverride}
-                    />
-                    <RobloxDecalUploadDropdown
-                      user={user}
-                      planKey={planKey}
-                      roblox={roblox}
-                      projectId={roblox?.selectedAssetProjectId}
-                      onAttached={roblox?.refreshProjectAssets}
-                      onAuthRequired={handleAuthRequired}
-                      notify={notify}
-                    />
-                    <div className="h-4 w-px bg-white/10 hidden sm:block" aria-hidden="true" />
-                    <ProjectContextStatus
-                      context={projectContext}
-                      plan={planKey}
-                      onViewStructure={() => setArchitecturePanelOpen(true)}
-                      onSync={async () => {
-                        if (!requireUser()) return;
-                        game.setShowWizard(true);
-                      }}
-                    />
-                  </>
-                ) : (
-                  <div className="hidden text-right text-[11px] font-semibold text-gray-500 sm:block">
-                    No plan approval in Quick Script
-                  </div>
-                )}
+                <DailyPromptBadge
+                  totalRemaining={totalRemaining}
+                  subLimit={subLimit}
+                  resetsAt={resetsAt}
+                  planKey={planKey}
+                  unlimitedTokens={unlimitedTokens}
+                  devOverride={devOverride}
+                />
+                <RobloxDecalUploadDropdown
+                  user={user}
+                  planKey={planKey}
+                  roblox={roblox}
+                  projectId={roblox?.selectedAssetProjectId}
+                  onAttached={roblox?.refreshProjectAssets}
+                  onAuthRequired={handleAuthRequired}
+                  notify={notify}
+                />
+                <div className="h-4 w-px bg-white/10 hidden sm:block" aria-hidden="true" />
+                <ProjectContextStatus
+                  context={projectContext}
+                  plan={planKey}
+                  onViewStructure={() => setArchitecturePanelOpen(true)}
+                  onSync={async () => {
+                    if (!requireUser()) return;
+                    game.setShowWizard(true);
+                  }}
+                />
               </>
             )}
           />
 
           {/* Desktop center + right; mobile single-pane via tabs */}
-          {generatorMode === "quick_script" ? (
-            <div className="flex-1 min-h-0 flex flex-col">
-              <div data-tour="mobile-mode-switcher" className="shrink-0 border-b border-white/5 bg-black/20 px-4 py-2 md:hidden">
-                <Segmented
-                  fullWidth
-                  size="sm"
-                  options={[
-                    { id: "quick_script", label: "Quick Script", icon: FileCode2 },
-                    { id: "agent_build", label: "Agent Build", icon: Bot },
-                  ]}
-                  value={generatorMode}
-                  onChange={(mode) => setGeneratorMode(mode, "mode_control")}
-                />
-              </div>
-              <QuickScriptWorkspace
-                prompt={prompt}
-                setPrompt={setPrompt}
-                quickScript={quickScript}
-                user={user}
-                onGenerate={() => runQuickScript(prompt, { source: "composer" })}
-                onRetry={() => runQuickScript(quickScript?.prompt || prompt, { source: quickScript?.source || "retry", retry: true })}
-                onCopy={handleQuickScriptCopy}
-                onSave={handleQuickScriptSave}
-                onExport={handleQuickScriptExport}
-                onStudioPush={handleQuickScriptStudioPush}
-                onContinueEditing={handleQuickScriptContinueEditing}
-                onOpenAgentBuild={handleQuickScriptOpenAgentBuild}
-                onImprovePrompt={handleImprovePrompt}
-                isImproving={isImproving}
-              />
-            </div>
-          ) : (
           <div className="flex-1 min-h-0 flex">
             <div className={`flex-1 min-w-0 ${isMobile ? (mobileTab === "chat" ? "flex pb-16" : "hidden") : "flex"} flex-col`}>
               {agentChat}
@@ -1133,7 +1064,6 @@ export default function AgentWorkspaceLayout({ controller }) {
               {codeWorkspace}
             </div>
           </div>
-          )}
         </main>
 
         {architecturePanelOpen && (
@@ -1152,7 +1082,7 @@ export default function AgentWorkspaceLayout({ controller }) {
       </div>
 
       {/* Mobile tab bar */}
-      {isMobile && generatorMode === "agent_build" && (
+      {isMobile && (
         <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 bg-black/80 backdrop-blur-xl border border-white/10 rounded-full p-1.5 flex items-center gap-1 shadow-2xl">
           {MOBILE_TABS.map((t) => {
             const Icon = t.icon;

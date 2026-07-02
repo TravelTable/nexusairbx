@@ -180,6 +180,7 @@ function AccountMenuItemLink({ to, icon: Icon, label, onNavigate }) {
 function AccountMenu({ identity, compact = false }) {
   const {
     user,
+    authReady,
     displayName,
     email,
     planLabel,
@@ -246,6 +247,15 @@ function AccountMenu({ identity, compact = false }) {
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
   }, [open]);
+
+  if (!authReady) {
+    return (
+      <div className="hidden items-center gap-2 sm:flex">
+        <Skeleton className="h-8 w-16 rounded-md" />
+        {!compact && <Skeleton className="h-8 w-28 rounded-md" />}
+      </div>
+    );
+  }
 
   if (!user) {
     return (
@@ -438,7 +448,7 @@ function MobileMenu({ config, identity, pathname, isWorkspace }) {
           <SheetDescription className="text-gray-500">{config.label}</SheetDescription>
         </SheetHeader>
         <div className="mt-6 space-y-6">
-          {identity.user ? (
+          {identity.authReady && identity.user ? (
             <div className="flex items-center gap-3 rounded-md border border-white/10 bg-white/[0.04] p-3">
               <HeaderAvatar identity={identity} />
               <div className="min-w-0 flex-1">
@@ -446,7 +456,7 @@ function MobileMenu({ config, identity, pathname, isWorkspace }) {
                 <div className="truncate text-xs text-gray-500">{identity.tokensLabel}</div>
               </div>
             </div>
-          ) : (
+          ) : identity.authReady ? (
             <div className="grid grid-cols-2 gap-2">
               <SheetClose asChild>
                 <Button asChild variant="outline" className="border-white/10 bg-white/[0.04] text-white hover:bg-white/[0.08]">
@@ -458,6 +468,11 @@ function MobileMenu({ config, identity, pathname, isWorkspace }) {
                   <Link to="/signup">Sign up</Link>
                 </Button>
               </SheetClose>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <Skeleton className="h-10 w-full rounded-md" />
+              <Skeleton className="h-10 w-full rounded-md" />
             </div>
           )}
           {!isWorkspace && <NavLinks links={config.nav} pathname={pathname} mobile />}

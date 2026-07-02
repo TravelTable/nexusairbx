@@ -5,7 +5,13 @@ import App from "./App";
 import "./index.css";
 import { SettingsProvider } from "./context/SettingsContext";
 import { BillingProvider } from "./context/BillingContext";
+import { auth } from "./firebase";
+import { applyAuthPersistence, readAuthPersistencePreference } from "./lib/firebaseAuth";
 import { initProductAnalytics } from "./lib/productAnalytics";
+
+if (typeof window !== "undefined") {
+  void applyAuthPersistence(auth, readAuthPersistencePreference());
+}
 
 // Suppress ResizeObserver loop error (Monaco Editor/Chrome bug)
 if (typeof window !== "undefined") {

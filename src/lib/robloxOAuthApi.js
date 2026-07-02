@@ -17,11 +17,11 @@ export async function getRobloxOAuthStatus() {
   return readJsonOrThrow(res, "Failed to load Roblox connection");
 }
 
-export async function startRobloxOAuth({ bundles = ["core"], returnPath = "/settings?tab=roblox", forceConsent = false } = {}) {
+export async function startRobloxOAuth({ bundles = ["core"], returnPath = "/settings?tab=roblox", prompt = null } = {}) {
   const res = await authedFetch("/api/roblox/oauth/start", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ bundles, returnPath, forceConsent }),
+    body: JSON.stringify({ bundles, returnPath, ...(prompt ? { prompt } : {}) }),
   });
   return readJsonOrThrow(res, "Failed to start Roblox authorization");
 }

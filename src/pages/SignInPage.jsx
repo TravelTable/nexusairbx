@@ -6,7 +6,9 @@ import { signInWithEmailAndPassword, GoogleAuthProvider, GithubAuthProvider, onA
 import {
   applyAuthPersistence,
   getFriendlyAuthErrorMessage,
+  readAuthPersistencePreference,
   signInWithOAuthProvider,
+  writeAuthPersistencePreference,
 } from "../lib/firebaseAuth";
 import { getPendingAuthReturnPath, readPendingAuthAction } from "../lib/pendingAuthAction";
 import {
@@ -43,16 +45,12 @@ export default function NexusRBXSignInPageContainer() {
     status: "idle", // idle, submitting, success, error
     message: ""
   });
-  const [rememberMe, setRememberMe] = useState(false);
+  const [rememberMe, setRememberMe] = useState(() => readAuthPersistencePreference());
   const [agreeToTerms, setAgreeToTerms] = useState(false);
 
   const finishSignInRedirect = async () => {
     navigate(authReturnPath || "/", { replace: true });
   };
-
-  useEffect(() => {
-    void applyAuthPersistence(auth, rememberMe);
-  }, [rememberMe]);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -74,8 +72,12 @@ export default function NexusRBXSignInPageContainer() {
     setShowPassword(prev => !prev);
   };
 
-  const handleRememberMeChange = () => {
-    setRememberMe(prev => !prev);
+  const handleSharedDeviceChange = () => {
+    setRememberMe((prev) => {
+      const nextRememberMe = !prev;
+      writeAuthPersistencePreference(nextRememberMe);
+      return nextRememberMe;
+    });
   };
 
   const handleAgreeToTermsChange = () => {
@@ -107,6 +109,8 @@ export default function NexusRBXSignInPageContainer() {
       message: "Signing in..."
     });
     try {
+      await applyAuthPersistence(auth, rememberMe);
+      writeAuthPersistencePreference(rememberMe);
       const credential = await signInWithEmailAndPassword(auth, formData.email, formData.password);
       await credential.user.getIdToken();
       setFormStatus({
@@ -130,6 +134,7 @@ export default function NexusRBXSignInPageContainer() {
       message: "Connecting to Google..."
     });
     try {
+      writeAuthPersistencePreference(rememberMe);
       const credential = await signInWithOAuthProvider(auth, GoogleAuthProvider, {
         rememberMe,
         returnPath: authReturnPath || "/",
@@ -158,6 +163,7 @@ export default function NexusRBXSignInPageContainer() {
       message: "Connecting to GitHub..."
     });
     try {
+      writeAuthPersistencePreference(rememberMe);
       const credential = await signInWithOAuthProvider(auth, GithubAuthProvider, {
         rememberMe,
         returnPath: authReturnPath || "/",
@@ -190,7 +196,7 @@ export default function NexusRBXSignInPageContainer() {
       signUpLinkState={signUpLinkState}
       handleInputChange={handleInputChange}
       togglePasswordVisibility={togglePasswordVisibility}
-      handleRememberMeChange={handleRememberMeChange}
+      handleSharedDeviceChange={handleSharedDeviceChange}
       handleAgreeToTermsChange={handleAgreeToTermsChange}
       handleSubmit={handleSubmit}
       handleGoogleSignIn={handleGoogleSignIn}
@@ -210,7 +216,7 @@ function NexusRBXSignInPage({
   signUpLinkState,
   handleInputChange,
   togglePasswordVisibility,
-  handleRememberMeChange,
+  handleSharedDeviceChange,
   handleAgreeToTermsChange,
   handleSubmit,
   handleGoogleSignIn,
@@ -237,7 +243,7 @@ function NexusRBXSignInPage({
         },
         {
           title: "Keep this browser ready",
-          description: "Remember me can keep this device signed in for future Studio-connected work.",
+          description: "Stay signed in on this device, or choose shared-device mode when you sign in.",
         },
       ]}
     >
@@ -294,12 +300,12 @@ function NexusRBXSignInPage({
 
           <div className="grid gap-3">
             <AuthCheckbox
-              id="signin-remember"
-              checked={rememberMe}
-              onChange={handleRememberMeChange}
+              id="signin-shared-device"
+              checked={!rememberMe}
+              onChange={handleSharedDeviceChange}
               disabled={isLocked}
             >
-              Remember this browser for future NexusRBX sessions.
+              Sign out when I close this browser (shared device).
             </AuthCheckbox>
             <AuthCheckbox
               id="signin-terms"

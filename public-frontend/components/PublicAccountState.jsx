@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 
 export default function PublicAccountState() {
   const [email, setEmail] = useState("");
+  const [authReady, setAuthReady] = useState(false);
 
   useEffect(() => {
     let unsubscribe = () => {};
@@ -18,9 +19,10 @@ export default function PublicAccountState() {
         if (cancelled) return;
         unsubscribe = onAuthStateChanged(auth, (user) => {
           setEmail(user?.email || "");
+          setAuthReady(true);
         });
       } catch (_) {
-        // Public pages keep the anonymous sign-in link if Firebase is unavailable.
+        if (!cancelled) setAuthReady(true);
       }
     }
 
@@ -31,6 +33,18 @@ export default function PublicAccountState() {
       unsubscribe();
     };
   }, []);
+
+  if (!authReady) {
+    return (
+      <span
+        className="account-link account-link--loading"
+        aria-hidden="true"
+        style={{ visibility: "hidden" }}
+      >
+        Loading
+      </span>
+    );
+  }
 
   if (email) {
     return (

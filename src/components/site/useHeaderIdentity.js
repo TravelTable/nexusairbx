@@ -18,6 +18,7 @@ export default function useHeaderIdentity({
 } = {}) {
   const billing = useBilling() || {};
   const user = billing.user || null;
+  const authReady = billing.authReady === true;
   const location = useLocation();
   const navigate = useNavigate();
   const [robloxStatus, setRobloxStatus] = useState(null);
@@ -120,6 +121,7 @@ export default function useHeaderIdentity({
 
   return {
     user,
+    authReady,
     billing,
     avatar,
     displayName,

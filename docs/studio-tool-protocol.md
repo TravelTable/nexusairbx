@@ -30,7 +30,7 @@ The backend validates every Studio command in `backend/src/lib/studioToolProtoco
 - Instance tools: `create_instance`, `update_properties`, `update_attributes`, `update_tags`, `rename_instance`, `move_instance`, `duplicate_instance`, `delete_instance`.
 - Native model tools: `build_native_model` constructs one validated editable Roblox-native model from a declarative `NativeModelSpec`; `inspect_native_model` and `apply_native_model_patch` support transactional refinement of managed native models.
 - Creator Store import: `insert_creator_store_asset` imports a server-verified Creator Store `Model` or `Mesh` through Studio asset loading, sanitizes executable/networking descendants while unparented, then places it under an allowed Studio destination.
-- Uploaded Roblox model import: `insert_uploaded_roblox_model` imports a backend-verified uploaded Roblox `Model` asset. The payload is generated from the trusted upload receipt and contains `assetId`, `assetName`, `assetType`, `creator`, `targetParentPath`, `requestedName`, `placement`, `anchoredPolicy`, `collisionPolicy`, `sanitizationMode`, and `idempotencyKey`.
+- Uploaded Roblox model import: `insert_uploaded_roblox_model` imports a backend-verified uploaded Roblox `Model` asset. The command can only be queued by the backend insertion review flow. The payload is generated from the trusted upload receipt and contains `uploadId`, `insertionId`, `assetId`, `assetName`, `assetType`, `targetParentPath`, `requestedName`, `placement`, `anchoredPolicy`, `collisionPolicy`, `sanitizationMode`, `trustedSource`, and `idempotencyKey`.
 - Coordination: `batch_operations` runs deterministic sub-operations and rolls back snapshots when `atomic` is true.
 
 Writes should include `expectedSourceHash` when the caller previously read a script. The plugin rejects stale writes with `code: "source_conflict"`.
@@ -83,7 +83,7 @@ Official Studio testing API verification: on 2026-06-18, Roblox Creator Hub docu
 7. Queue `batch_operations` with create/update/delete operations and verify snapshots.
 8. Queue `undo_last_batch` or `restore_snapshot` and confirm the hierarchy is restored.
 9. Queue `insert_creator_store_asset` for a public Model and confirm Studio inserts it under `Workspace/NexusImports` after removing scripts, remotes, and bindables.
-10. Queue `insert_uploaded_roblox_model` from a trusted upload receipt and confirm Studio inserts only the backend-supplied asset ID under `Workspace/NexusImports`.
+10. Confirm an uploaded-model insertion from a trusted upload receipt and confirm Studio receives `insert_uploaded_roblox_model` with only the backend-supplied asset ID under `Workspace/NexusImports`.
 11. Run `/api/studio/validations/prepare`, `/api/studio/validations`, and the report endpoint against a native model receipt and confirm stale browser paths are ignored.
 
 ## Firestore Notes

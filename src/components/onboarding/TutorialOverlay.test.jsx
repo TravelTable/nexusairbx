@@ -27,8 +27,8 @@ function TestTutorial() {
       <button type="button" onClick={tutorial.startTutorial}>
         Restart tour
       </button>
-      <button data-tour="mode-switcher" type="button">
-        Mode switcher
+      <button data-tour="prompt-input" type="button">
+        Prompt input
       </button>
       <TutorialOverlay
         activeStep={tutorial.activeStep}
@@ -109,18 +109,18 @@ describe("TutorialOverlay", () => {
       jest.advanceTimersByTime(90);
     });
 
-    await waitFor(() => expect(nextStep).toHaveBeenCalledWith(7));
-    expect(screen.queryByText("Choose Your Mode")).toBeNull();
+    await waitFor(() => expect(nextStep).toHaveBeenCalledWith(4));
+    expect(screen.queryByText("Describe Your Needs")).toBeNull();
   });
 
   it("restart flow activates the first valid step", async () => {
     localStorage.setItem("nexus_tutorial_completed", "true");
     render(<TestTutorial />);
 
-    const target = screen.getByText("Mode switcher");
+    const target = screen.getByText("Prompt input");
     mockRect(target, { top: 80, left: 80, width: 160, height: 40 });
 
-    expect(screen.queryByText("Choose Your Mode")).toBeNull();
+    expect(screen.queryByText("Describe Your Needs")).toBeNull();
 
     fireEvent.click(screen.getByText("Restart tour"));
 
@@ -128,7 +128,7 @@ describe("TutorialOverlay", () => {
       jest.advanceTimersByTime(0);
     });
 
-    await waitFor(() => expect(screen.getByText("Choose Your Mode")).toBeTruthy());
+    await waitFor(() => expect(screen.getByText("Describe Your Needs")).toBeTruthy());
     expect(Element.prototype.scrollIntoView).toHaveBeenCalled();
     expect(target.classList.contains(ACTIVE_TARGET_CLASS)).toBe(true);
     expect(target.getAttribute("aria-describedby")).toBe("tour-content");
@@ -136,15 +136,15 @@ describe("TutorialOverlay", () => {
 
   it("moves the highlight to the current valid step and restores existing descriptions", async () => {
     const nextStep = jest.fn();
-    const modeTarget = document.createElement("button");
     const promptTarget = document.createElement("textarea");
+    const improveTarget = document.createElement("button");
 
-    modeTarget.dataset.tour = "mode-switcher";
-    modeTarget.setAttribute("aria-describedby", "existing-mode-help");
     promptTarget.dataset.tour = "prompt-input";
-    mockRect(modeTarget, { top: 80, left: 80, width: 160, height: 40 });
-    mockRect(promptTarget, { top: 180, left: 80, width: 280, height: 120 });
-    document.body.append(modeTarget, promptTarget);
+    promptTarget.setAttribute("aria-describedby", "existing-prompt-help");
+    improveTarget.dataset.tour = "improve-btn";
+    mockRect(promptTarget, { top: 80, left: 80, width: 280, height: 120 });
+    mockRect(improveTarget, { top: 180, left: 80, width: 160, height: 40 });
+    document.body.append(promptTarget, improveTarget);
 
     const { rerender } = render(
       <TutorialOverlay
@@ -160,7 +160,7 @@ describe("TutorialOverlay", () => {
       jest.advanceTimersByTime(0);
     });
 
-    await waitFor(() => expect(modeTarget.classList.contains(ACTIVE_TARGET_CLASS)).toBe(true));
+    await waitFor(() => expect(promptTarget.classList.contains(ACTIVE_TARGET_CLASS)).toBe(true));
 
     rerender(
       <TutorialOverlay
@@ -176,9 +176,9 @@ describe("TutorialOverlay", () => {
       jest.advanceTimersByTime(0);
     });
 
-    await waitFor(() => expect(promptTarget.classList.contains(ACTIVE_TARGET_CLASS)).toBe(true));
-    expect(modeTarget.classList.contains(ACTIVE_TARGET_CLASS)).toBe(false);
-    expect(modeTarget.getAttribute("aria-describedby")).toBe("existing-mode-help");
-    expect(promptTarget.getAttribute("aria-describedby")).toBe("tour-content");
+    await waitFor(() => expect(improveTarget.classList.contains(ACTIVE_TARGET_CLASS)).toBe(true));
+    expect(promptTarget.classList.contains(ACTIVE_TARGET_CLASS)).toBe(false);
+    expect(promptTarget.getAttribute("aria-describedby")).toBe("existing-prompt-help");
+    expect(improveTarget.getAttribute("aria-describedby")).toBe("tour-content");
   });
 });

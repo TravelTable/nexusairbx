@@ -36,7 +36,7 @@ describe("experiments", () => {
     expect(getExperimentVariant(EXPERIMENT_IDS.SIGNUP_GATE)).toBe("post_value_signup");
     expect(getExperimentVariant(EXPERIMENT_IDS.GENERATOR_DEFAULT)).toBe("quick_script_default");
     expect(getExperimentVariant(EXPERIMENT_IDS.HOMEPAGE_CTA)).toBe("generate_with_ai");
-    expect(chooseHomepageGeneratorMode("Make a sprint script")).toBe("quick_script");
+    expect(chooseHomepageGeneratorMode("Make a sprint script")).toBe("agent_build");
     expect(getHomepageCtaCopy()).toBe("Generate with AI");
   });
 
@@ -71,11 +71,11 @@ describe("experiments", () => {
     expect(getHomepageCtaCopy()).toBe("Generate Roblox Script");
   });
 
-  test("opens Agent Build on desktop and Quick Script on mobile by default", () => {
+  test("always opens Agent Build regardless of viewport", () => {
     expect(isMobileViewport(1280)).toBe(false);
     expect(isMobileViewport(1023)).toBe(true);
     expect(resolveInitialGeneratorMode({ viewportWidth: 1280 })).toBe("agent_build");
-    expect(resolveInitialGeneratorMode({ viewportWidth: 390 })).toBe("quick_script");
+    expect(resolveInitialGeneratorMode({ viewportWidth: 390 })).toBe("agent_build");
     expect(
       resolveInitialGeneratorMode({
         restoredSession: { generatorMode: "agent_build" },
@@ -87,10 +87,10 @@ describe("experiments", () => {
         restoredSession: { generatorMode: "quick_script" },
         viewportWidth: 1280,
       })
-    ).toBe("quick_script");
+    ).toBe("agent_build");
   });
 
-  test("never forces clearly complex prompts into Quick Script", () => {
+  test("never routes homepage prompts to Quick Script", () => {
     localStorage.setItem(
       `nexusrbx:experiments:force:${EXPERIMENT_IDS.GENERATOR_DEFAULT}`,
       "quick_script_default"
@@ -101,6 +101,7 @@ describe("experiments", () => {
         "Build an inventory system with DataStore, RemoteEvents, ModuleScripts, server and client scripts"
       )
     ).toBe("agent_build");
+    expect(chooseHomepageGeneratorMode("Make a shop button script")).toBe("agent_build");
   });
 
   test("exposes privacy-safe analytics properties and request headers", () => {

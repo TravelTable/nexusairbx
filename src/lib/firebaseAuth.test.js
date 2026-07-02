@@ -1,9 +1,16 @@
 import {
+  AUTH_PERSISTENCE_PREFERENCE_KEY,
   getFriendlyAuthErrorMessage,
   isMissingRedirectStateError,
+  readAuthPersistencePreference,
+  writeAuthPersistencePreference,
 } from "./firebaseAuth";
 
 describe("firebaseAuth", () => {
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
   test("detects missing redirect state errors", () => {
     expect(
       isMissingRedirectStateError(
@@ -26,5 +33,19 @@ describe("firebaseAuth", () => {
     expect(
       getFriendlyAuthErrorMessage({ code: "auth/popup-blocked", message: "raw" })
     ).toContain("popup was blocked");
+  });
+
+  test("defaults auth persistence preference to local", () => {
+    expect(readAuthPersistencePreference()).toBe(true);
+  });
+
+  test("reads and writes auth persistence preference", () => {
+    writeAuthPersistencePreference(false);
+    expect(localStorage.getItem(AUTH_PERSISTENCE_PREFERENCE_KEY)).toBe("session");
+    expect(readAuthPersistencePreference()).toBe(false);
+
+    writeAuthPersistencePreference(true);
+    expect(localStorage.getItem(AUTH_PERSISTENCE_PREFERENCE_KEY)).toBe("local");
+    expect(readAuthPersistencePreference()).toBe(true);
   });
 });

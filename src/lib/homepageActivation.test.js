@@ -105,7 +105,7 @@ describe("homepageActivation", () => {
     expect(harness.createIntent).toHaveBeenCalledTimes(1);
     expect(harness.createIntent).toHaveBeenCalledWith({
       prompt: "Create a tycoon UI",
-      mode: "quick_script",
+      mode: "agent_build",
       source: "homepage",
     });
     expect(harness.navigate).toHaveBeenCalledWith("/ai", {
@@ -143,7 +143,7 @@ describe("homepageActivation", () => {
 
     expect(harness.createIntent).toHaveBeenCalledWith({
       prompt: "Create a round system",
-      mode: "quick_script",
+      mode: "agent_build",
       source: "public_next_homepage",
     });
     expect(harness.trackEvent).toHaveBeenCalledWith(

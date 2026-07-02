@@ -2,7 +2,7 @@ import React from "react";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import RobloxDecalUploadDropdown from "./RobloxDecalUploadDropdown";
-import { uploadRobloxDecalBatch } from "../../../lib/robloxDecalUploadApi";
+import { uploadRobloxDecalBatchStream } from "../../../lib/robloxDecalUploadApi";
 
 jest.mock("@hugeicons/react", () => ({
   HugeiconsIcon: () => <svg aria-hidden="true" data-testid="folder-upload-icon" />,
@@ -18,41 +18,70 @@ jest.mock("../../../lib/robloxOAuthApi", () => ({
 }));
 
 jest.mock("../../../lib/robloxDecalUploadApi", () => ({
-  uploadRobloxDecalBatch: jest.fn(),
+  uploadRobloxDecalBatchStream: jest.fn(),
 }));
 
-jest.mock("../../shadcn/dropdown-menu", () => {
+jest.mock("../../shadcn/dialog", () => {
   const React = require("react");
-  const DropdownContext = React.createContext({ open: false, onOpenChange: null });
+  const DialogContext = React.createContext({ open: false, onOpenChange: null });
 
-  function DropdownMenu({ open, onOpenChange, children }) {
+  function Dialog({ open, onOpenChange, children }) {
     return React.createElement(
-      DropdownContext.Provider,
+      DialogContext.Provider,
       { value: { open, onOpenChange } },
       children
     );
   }
 
-  function DropdownMenuTrigger({ children }) {
-    const context = React.useContext(DropdownContext);
-    const child = React.Children.only(children);
-    return React.cloneElement(child, {
-      "aria-expanded": context.open ? "true" : "false",
-      onClick: (event) => {
-        child.props.onClick?.(event);
-        context.onOpenChange?.(!context.open);
-      },
-    });
-  }
-
-  function DropdownMenuContent({ children, className }) {
-    const context = React.useContext(DropdownContext);
+  function DialogContent({ children, onInteractOutside, onPointerDownOutside, onEscapeKeyDown }) {
+    const context = React.useContext(DialogContext);
     if (!context.open) return null;
-    return React.createElement("div", { role: "menu", className }, children);
+    return React.createElement(
+      "div",
+      {
+        role: "dialog",
+        onMouseDown: (event) => {
+          if (event.target === event.currentTarget) onInteractOutside?.(event);
+        },
+        onKeyDown: (event) => {
+          if (event.key === "Escape") onEscapeKeyDown?.(event);
+        },
+      },
+      children,
+      React.createElement(
+        "button",
+        {
+          type: "button",
+          "aria-label": "Close",
+          onClick: () => context.onOpenChange?.(false),
+        },
+        "Close"
+      )
+    );
   }
 
-  return { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent };
+  return {
+    Dialog,
+    DialogContent,
+    DialogHeader: ({ children }) => <div>{children}</div>,
+    DialogTitle: ({ children }) => <div>{children}</div>,
+    DialogDescription: ({ children }) => <div>{children}</div>,
+  };
 });
+
+jest.mock("react-window", () => ({
+  FixedSizeList: ({ itemCount, children: Row, itemData }) => (
+    <div data-testid="virtual-list">
+      {Array.from({ length: itemCount }, (_, index) => (
+        <Row key={index} index={index} style={{}} data={itemData} />
+      ))}
+    </div>
+  ),
+}));
+
+jest.mock("react-virtualized-auto-sizer", () => ({
+  AutoSizer: ({ children }) => children({ height: 320, width: 400 }),
+}));
 
 function file(name, type = "image/png", body = "image") {
   return new File([body], name, { type });
@@ -76,7 +105,7 @@ function roblox(overrides = {}) {
   };
 }
 
-async function openDropdown(props = {}) {
+async function openUploadDialog(props = {}) {
   render(
     <RobloxDecalUploadDropdown
       user={{ uid: "user-1" }}
@@ -104,15 +133,27 @@ beforeEach(() => {
 
 describe("RobloxDecalUploadDropdown", () => {
   test("opens from the header icon and shows the plan cap", async () => {
-    await openDropdown({ planKey: "pro_plus" });
+    await openUploadDialog({ planKey: "pro_plus" });
 
     expect(screen.getByText("Upload decals")).toBeTruthy();
     expect(screen.getByText(/Pro Plus: 50 per batch/i)).toBeTruthy();
     expect(screen.getByText(/No decal images selected/i)).toBeTruthy();
   });
 
+  test("stays open after selecting files", async () => {
+    await openUploadDialog();
+
+    fireEvent.change(screen.getByLabelText(/choose decal images/i), {
+      target: { files: [file("decal.png")] },
+    });
+
+    expect(screen.getByRole("dialog")).toBeTruthy();
+    expect(screen.getByText("Upload decals")).toBeTruthy();
+    expect(screen.getByRole("button", { name: /upload 1 decal/i })).toBeTruthy();
+  });
+
   test("shows skipped-file messaging for unsupported selections", async () => {
-    await openDropdown();
+    await openUploadDialog();
 
     fireEvent.change(screen.getByLabelText(/choose decal images/i), {
       target: { files: [file("script.lua", "text/plain", "print('x')")] },
@@ -124,7 +165,7 @@ describe("RobloxDecalUploadDropdown", () => {
   });
 
   test("enforces the free plan batch limit before upload", async () => {
-    await openDropdown({ planKey: "free" });
+    await openUploadDialog({ planKey: "free" });
 
     fireEvent.change(screen.getByLabelText(/choose decal images/i), {
       target: {
@@ -134,86 +175,119 @@ describe("RobloxDecalUploadDropdown", () => {
 
     expect(screen.getByText(/Free can upload 5 decals at a time/i)).toBeTruthy();
     expect(screen.getByRole("button", { name: /upload 6 decals/i }).disabled).toBe(true);
-    expect(uploadRobloxDecalBatch).not.toHaveBeenCalled();
+    expect(uploadRobloxDecalBatchStream).not.toHaveBeenCalled();
   });
 
-  test("uploads reviewed decals and renders returned asset uri", async () => {
-    uploadRobloxDecalBatch.mockImplementation(async ({ items }) => ({
-      batchId: "batch-1",
-      plan: "FREE",
-      limit: 5,
-      accepted: 1,
-      rejected: 0,
-      results: [
-        {
-          clientId: items[0].clientId,
-          fileName: "decal.png",
-          displayName: "Decal",
-          status: "succeeded",
-          assetId: "9001",
-          contentUri: "rbxassetid://9001",
-          operationId: "op-1",
-        },
-      ],
-    }));
-    await openDropdown();
+  test("shows only five inline items and a show more button for larger selections", async () => {
+    await openUploadDialog({ planKey: "pro" });
+
+    fireEvent.change(screen.getByLabelText(/choose decal images/i), {
+      target: {
+        files: Array.from({ length: 7 }, (_, index) => file(`decal-${index}.png`)),
+      },
+    });
+
+    expect(screen.getAllByLabelText(/display name for decal-/i)).toHaveLength(5);
+    expect(screen.getByRole("button", { name: /show 2 more/i })).toBeTruthy();
+  });
+
+  test("opens the all-items dialog from show more", async () => {
+    await openUploadDialog({ planKey: "pro" });
+
+    fireEvent.change(screen.getByLabelText(/choose decal images/i), {
+      target: {
+        files: Array.from({ length: 7 }, (_, index) => file(`decal-${index}.png`)),
+      },
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: /show 2 more/i }));
+
+    expect(screen.getAllByRole("dialog")).toHaveLength(2);
+    expect(screen.getByText(/7 images selected/i)).toBeTruthy();
+    expect(screen.getByTestId("virtual-list")).toBeTruthy();
+  });
+
+  test("uploads reviewed decals with streamed progress and renders returned asset uri", async () => {
+    uploadRobloxDecalBatchStream.mockImplementation(async ({ items, onProgress }) => {
+      const result = {
+        clientId: items[0].clientId,
+        fileName: "decal.png",
+        displayName: "Decal",
+        status: "succeeded",
+        assetId: "9001",
+        contentUri: "rbxassetid://9001",
+        operationId: "op-1",
+      };
+      onProgress?.(result);
+      return {
+        batchId: "batch-1",
+        plan: "FREE",
+        limit: 5,
+        accepted: 1,
+        rejected: 0,
+        results: [result],
+      };
+    });
+    await openUploadDialog();
 
     fireEvent.change(screen.getByLabelText(/choose decal images/i), {
       target: { files: [file("decal.png")] },
     });
     fireEvent.click(screen.getByRole("button", { name: /upload 1 decal/i }));
 
-    await waitFor(() => expect(uploadRobloxDecalBatch).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(uploadRobloxDecalBatchStream).toHaveBeenCalledTimes(1));
     await screen.findByText("rbxassetid://9001");
     expect(screen.getByText(/1 decal uploaded/i)).toBeTruthy();
   });
 
   test("passes projectId and refreshes attached project assets after upload", async () => {
     const onAttached = jest.fn().mockResolvedValue(undefined);
-    uploadRobloxDecalBatch.mockImplementation(async ({ items, projectId }) => ({
-      batchId: "batch-2",
-      projectId,
-      attachedAssets: [{ assetId: "9001", assetType: "Decal", name: "Decal" }],
-      results: [
-        {
-          clientId: items[0].clientId,
-          fileName: "decal.png",
-          displayName: "Decal",
-          status: "succeeded",
-          assetId: "9001",
-          contentUri: "rbxassetid://9001",
-        },
-      ],
-    }));
+    uploadRobloxDecalBatchStream.mockImplementation(async ({ items, projectId, onProgress }) => {
+      const result = {
+        clientId: items[0].clientId,
+        fileName: "decal.png",
+        displayName: "Decal",
+        status: "succeeded",
+        assetId: "9001",
+        contentUri: "rbxassetid://9001",
+      };
+      onProgress?.(result);
+      return {
+        batchId: "batch-2",
+        projectId,
+        attachedAssets: [{ assetId: "9001", assetType: "Decal", name: "Decal" }],
+        results: [result],
+      };
+    });
 
-    await openDropdown({ projectId: "chat-abc", onAttached });
+    await openUploadDialog({ projectId: "chat-abc", onAttached });
 
     fireEvent.change(screen.getByLabelText(/choose decal images/i), {
       target: { files: [file("decal.png")] },
     });
     fireEvent.click(screen.getByRole("button", { name: /upload 1 decal/i }));
 
-    await waitFor(() => expect(uploadRobloxDecalBatch).toHaveBeenCalledTimes(1));
-    expect(uploadRobloxDecalBatch.mock.calls[0][0].projectId).toBe("chat-abc");
+    await waitFor(() => expect(uploadRobloxDecalBatchStream).toHaveBeenCalledTimes(1));
+    expect(uploadRobloxDecalBatchStream.mock.calls[0][0].projectId).toBe("chat-abc");
     await waitFor(() => expect(onAttached).toHaveBeenCalledTimes(1));
   });
 
   test("supports retrying failed-only uploads after a partial failure", async () => {
-    uploadRobloxDecalBatch
-      .mockImplementationOnce(async ({ items }) => ({
-        batchId: "batch-1",
-        results: [
+    uploadRobloxDecalBatchStream
+      .mockImplementationOnce(async ({ items, onProgress }) => {
+        const results = [
           { clientId: items[0].clientId, fileName: "one.png", displayName: "One", status: "succeeded", assetId: "9001", contentUri: "rbxassetid://9001" },
           { clientId: items[1].clientId, fileName: "two.png", displayName: "Two", status: "failed", error: "Rejected", code: "ROBLOX_ASSET_UPLOAD_FAILED" },
-        ],
-      }))
-      .mockImplementationOnce(async ({ items }) => ({
-        batchId: "batch-2",
-        results: [
-          { clientId: items[0].clientId, fileName: "two.png", displayName: "Two", status: "succeeded", assetId: "9002", contentUri: "rbxassetid://9002" },
-        ],
-      }));
-    await openDropdown({ planKey: "pro" });
+        ];
+        results.forEach((result) => onProgress?.(result));
+        return { batchId: "batch-1", results };
+      })
+      .mockImplementationOnce(async ({ items, onProgress }) => {
+        const result = { clientId: items[0].clientId, fileName: "two.png", displayName: "Two", status: "succeeded", assetId: "9002", contentUri: "rbxassetid://9002" };
+        onProgress?.(result);
+        return { batchId: "batch-2", results: [result] };
+      });
+    await openUploadDialog({ planKey: "pro" });
 
     fireEvent.change(screen.getByLabelText(/choose decal images/i), {
       target: { files: [file("one.png"), file("two.png")] },
@@ -223,8 +297,8 @@ describe("RobloxDecalUploadDropdown", () => {
 
     fireEvent.click(screen.getByRole("button", { name: /retry failed/i }));
 
-    await waitFor(() => expect(uploadRobloxDecalBatch).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(uploadRobloxDecalBatchStream).toHaveBeenCalledTimes(2));
     await screen.findByText("rbxassetid://9002");
-    expect(uploadRobloxDecalBatch.mock.calls[1][0].files).toHaveLength(1);
+    expect(uploadRobloxDecalBatchStream.mock.calls[1][0].files).toHaveLength(1);
   });
 });

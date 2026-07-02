@@ -4,8 +4,11 @@ import { Github, Info, Mail, Shield, Sparkles, User, Zap } from "lib/icons";
 import { auth } from "../firebase";
 import { createUserWithEmailAndPassword, GoogleAuthProvider, GithubAuthProvider, onAuthStateChanged } from "firebase/auth";
 import {
+  applyAuthPersistence,
   getFriendlyAuthErrorMessage,
+  readAuthPersistencePreference,
   signInWithOAuthProvider,
+  writeAuthPersistencePreference,
 } from "../lib/firebaseAuth";
 import { trackProductEvent } from "../lib/productAnalytics";
 import { getPendingAuthReturnPath, readPendingAuthAction } from "../lib/pendingAuthAction";
@@ -46,6 +49,7 @@ export default function NexusRBXSignUpPageContainer() {
     message: ""
   });
   const [agreeToTerms, setAgreeToTerms] = useState(false);
+  const [rememberMe, setRememberMe] = useState(() => readAuthPersistencePreference());
   const [selectedPlan, setSelectedPlan] = useState("free");
   const [passwordStrength, setPasswordStrength] = useState({
     score: 0, // 0-4 where 4 is strongest
@@ -113,6 +117,14 @@ export default function NexusRBXSignUpPageContainer() {
     setAgreeToTerms(prev => !prev);
   };
 
+  const handleSharedDeviceChange = () => {
+    setRememberMe((prev) => {
+      const nextRememberMe = !prev;
+      writeAuthPersistencePreference(nextRememberMe);
+      return nextRememberMe;
+    });
+  };
+
   const handlePlanSelect = (plan) => {
     setSelectedPlan(plan);
   };
@@ -156,6 +168,8 @@ export default function NexusRBXSignUpPageContainer() {
     }, { dedupeKey: `signup_started:password:${from}` });
 
     try {
+      await applyAuthPersistence(auth, rememberMe);
+      writeAuthPersistencePreference(rememberMe);
       const credential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
       await credential.user.getIdToken();
       setFormStatus({
@@ -190,7 +204,9 @@ export default function NexusRBXSignUpPageContainer() {
     }, { dedupeKey: `signup_started:google:${from}` });
 
     try {
+      writeAuthPersistencePreference(rememberMe);
       const credential = await signInWithOAuthProvider(auth, GoogleAuthProvider, {
+        rememberMe,
         returnPath: authReturnPath || "/ai",
         method: "google",
       });
@@ -228,7 +244,9 @@ export default function NexusRBXSignUpPageContainer() {
     }, { dedupeKey: `signup_started:github:${from}` });
 
     try {
+      writeAuthPersistencePreference(rememberMe);
       const credential = await signInWithOAuthProvider(auth, GithubAuthProvider, {
+        rememberMe,
         returnPath: authReturnPath || "/ai",
         method: "github",
       });
@@ -261,6 +279,7 @@ export default function NexusRBXSignUpPageContainer() {
       showConfirmPassword={showConfirmPassword}
       formStatus={formStatus}
       agreeToTerms={agreeToTerms}
+      rememberMe={rememberMe}
       selectedPlan={selectedPlan}
       passwordStrength={passwordStrength}
       signInLinkState={signInLinkState}
@@ -268,6 +287,7 @@ export default function NexusRBXSignUpPageContainer() {
       togglePasswordVisibility={togglePasswordVisibility}
       toggleConfirmPasswordVisibility={toggleConfirmPasswordVisibility}
       handleAgreeToTermsChange={handleAgreeToTermsChange}
+      handleSharedDeviceChange={handleSharedDeviceChange}
       handlePlanSelect={handlePlanSelect}
       handleSubmit={handleSubmit}
       handleGoogleSignUp={handleGoogleSignUp}
@@ -284,6 +304,7 @@ function NexusRBXSignUpPage({
   showConfirmPassword,
   formStatus,
   agreeToTerms,
+  rememberMe,
   selectedPlan,
   passwordStrength,
   signInLinkState,
@@ -291,6 +312,7 @@ function NexusRBXSignUpPage({
   togglePasswordVisibility,
   toggleConfirmPasswordVisibility,
   handleAgreeToTermsChange,
+  handleSharedDeviceChange,
   handlePlanSelect,
   handleSubmit,
   handleGoogleSignUp,
@@ -454,6 +476,15 @@ function NexusRBXSignUpPage({
               />
             </div>
           </fieldset>
+
+          <AuthCheckbox
+            id="signup-shared-device"
+            checked={!rememberMe}
+            onChange={handleSharedDeviceChange}
+            disabled={isLocked}
+          >
+            Sign out when I close this browser (shared device).
+          </AuthCheckbox>
 
           <AuthCheckbox
             id="signup-terms"

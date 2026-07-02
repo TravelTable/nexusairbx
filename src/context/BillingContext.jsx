@@ -18,6 +18,7 @@ const BillingCtx = createContext(null);
 
 export function BillingProvider({ children, pollMs = 60_000 }) {
   const [user, setUser] = useState(auth.currentUser);
+  const [authReady, setAuthReady] = useState(false);
   const [state, setState] = useState({
     loading: true,
     error: null,
@@ -45,7 +46,10 @@ export function BillingProvider({ children, pollMs = 60_000 }) {
   });
 
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, setUser);
+    const unsub = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      setAuthReady(true);
+    });
     return () => unsub();
   }, []);
 
@@ -125,7 +129,7 @@ export function BillingProvider({ children, pollMs = 60_000 }) {
   }), [user, refresh]);
 
   return (
-    <BillingCtx.Provider value={{ user, ...state, ...actions }}>
+    <BillingCtx.Provider value={{ user, authReady, ...state, ...actions }}>
       {children}
     </BillingCtx.Provider>
   );
