@@ -7,31 +7,38 @@ function creatorLabel(creator) {
 }
 
 export default function CreatorStoreResultCard({ asset, onViewDetails }) {
-  const [imageFailed, setImageFailed] = useState(false);
   const name = asset?.name || `Asset ${asset?.assetId || ""}`.trim();
   const description = asset?.description || "";
-  const previewAssetId = asset?.previewAssetIds?.[0] || asset?.assetId;
-  const thumbnailUrl =
-    asset?.thumbnailUrl ||
-    (previewAssetId
-      ? `${BACKEND_URL}/api/roblox/thumbnail?assetId=${encodeURIComponent(previewAssetId)}&size=420x420`
-      : null);
+  const thumbnailCandidates = [
+    asset?.thumbnailUrl,
+    ...(asset?.previewAssetIds || []).map(
+      (id) =>
+        `${BACKEND_URL}/api/roblox/thumbnail?assetId=${encodeURIComponent(id)}&size=420x420`
+    ),
+    asset?.assetId
+      ? `${BACKEND_URL}/api/roblox/thumbnail?assetId=${encodeURIComponent(asset.assetId)}&size=420x420`
+      : null,
+  ].filter(Boolean);
+  const [thumbnailIndex, setThumbnailIndex] = useState(0);
+  const thumbnailUrl = thumbnailCandidates[thumbnailIndex] || null;
 
   return (
     <article className="rounded-md border border-white/10 bg-white/[0.03] overflow-hidden flex flex-col min-h-[260px]">
       <div className="aspect-square bg-black/35 border-b border-white/10 flex items-center justify-center overflow-hidden">
-        {thumbnailUrl && !imageFailed ? (
+        {thumbnailUrl ? (
           <img
             src={thumbnailUrl}
             alt={`${name} thumbnail`}
-            className="w-full h-full object-cover"
+            className="h-full w-full object-cover"
             loading="lazy"
-            onError={() => setImageFailed(true)}
+            onError={() => setThumbnailIndex((current) => current + 1)}
           />
         ) : (
           <div className="flex flex-col items-center gap-2 text-gray-500">
-            <ImageIcon className="w-7 h-7" />
-            <span className="text-[10px] font-bold uppercase tracking-wider">No preview</span>
+            <ImageIcon className="h-7 w-7" />
+            <span className="text-[10px] font-bold uppercase tracking-wider">
+              No preview
+            </span>
           </div>
         )}
       </div>
