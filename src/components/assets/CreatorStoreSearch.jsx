@@ -1,9 +1,10 @@
 import React, { useMemo, useRef, useState } from "react";
-import { Loader2, RefreshCw, Search, ShieldAlert } from "lib/icons";
-import { CREATOR_STORE_READ_CAPABILITIES, ensureRobloxCapabilities } from "../../lib/robloxOAuthApi";
+import { Loader2, RefreshCw, Search } from "lib/icons";
+import { CREATOR_STORE_READ_CAPABILITIES, ensureRobloxCapabilities, formatRobloxApiError } from "../../lib/robloxOAuthApi";
 import { getCreatorStoreAsset, searchCreatorStore } from "../../lib/robloxCreatorStoreApi";
 import CreatorStoreAssetDetails from "./CreatorStoreAssetDetails";
 import CreatorStoreResultCard from "./CreatorStoreResultCard";
+import RobloxAuthorizationRequired from "../roblox/RobloxAuthorizationRequired";
 
 const DEFAULT_ASSET_TYPES = ["Model", "Mesh"];
 const PAGE_SIZE = 20;
@@ -37,6 +38,7 @@ export default function CreatorStoreSearch({ notify, className = "mx-3 mb-2" }) 
   const trimmedQuery = query.trim();
   const canSearch = trimmedQuery.length >= 2 && assetTypes.length > 0;
   const reauthorizationRequired = error?.code === "ROBLOX_REAUTHORIZATION_REQUIRED" || error?.code === "CREATOR_STORE_REAUTHORIZATION_REQUIRED";
+  const errorMessage = error ? formatRobloxApiError(error) : "";
 
   const orderedAssetTypes = useMemo(
     () => DEFAULT_ASSET_TYPES.filter((type) => assetTypes.includes(type)),
@@ -182,23 +184,19 @@ export default function CreatorStoreSearch({ notify, className = "mx-3 mb-2" }) 
       </div>
 
       {error && (
-        <div className="border-b border-red-400/15 bg-red-500/10 px-3 py-2 text-[12px] text-red-100">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-2">
-              <ShieldAlert className="h-4 w-4 shrink-0" />
-              <span>{reauthorizationRequired ? "Creator Store access needs additional Roblox permission." : error.message}</span>
-            </div>
-            {reauthorizationRequired && (
-              <button
-                type="button"
-                onClick={reauthorize}
-                className="inline-flex items-center justify-center rounded-md border border-red-300/25 bg-red-300/10 px-3 py-1.5 text-[11px] font-black text-red-50 hover:bg-red-300/20"
-              >
-                Reauthorize Roblox
-              </button>
-            )}
+        reauthorizationRequired ? (
+          <div className="border-b border-amber-400/15 px-3 py-2">
+            <RobloxAuthorizationRequired
+              connected
+              capabilityIds={CREATOR_STORE_READ_CAPABILITIES}
+              onAuthorize={reauthorize}
+            />
           </div>
-        </div>
+        ) : (
+          <div className="border-b border-red-400/15 bg-red-500/10 px-3 py-2 text-[12px] text-red-100">
+            {errorMessage}
+          </div>
+        )
       )}
 
       <div className="p-3">

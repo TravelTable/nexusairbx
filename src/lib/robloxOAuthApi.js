@@ -1,4 +1,5 @@
 import { authedFetch } from "./billing";
+import { formatRobloxErrorMessage } from "./robloxAuthorizationMessages";
 
 async function readJsonOrThrow(res, fallbackMessage) {
   const text = await res.text().catch(() => "");
@@ -190,11 +191,23 @@ function getRobloxCapability(robloxStatus, capabilityId) {
   return null;
 }
 
-export function isCreatorStoreReadAuthorized(robloxStatus) {
+export function isCapabilityAuthorized(robloxStatus, capabilityId) {
   if (robloxStatus?.connected !== true) return false;
-  const capability = getRobloxCapability(robloxStatus, "roblox_search_creator_store");
+  const capability = getRobloxCapability(robloxStatus, capabilityId);
   if (!capability) return false;
   return capability.authorized !== false && !(capability.missingScopes?.length > 0);
+}
+
+export function needsRobloxUpgrade(robloxStatus) {
+  return robloxStatus?.upgradeRequired === true || (Array.isArray(robloxStatus?.missingScopes) && robloxStatus.missingScopes.length > 0);
+}
+
+export function formatRobloxApiError(error) {
+  return formatRobloxErrorMessage(error);
+}
+
+export function isCreatorStoreReadAuthorized(robloxStatus) {
+  return isCapabilityAuthorized(robloxStatus, "roblox_search_creator_store");
 }
 
 export function isRobloxReauthorizationError(code) {

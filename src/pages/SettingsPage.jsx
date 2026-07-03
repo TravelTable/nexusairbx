@@ -41,10 +41,14 @@ import {
   beginRobloxOAuth,
   beginRobloxReauthorization,
   disconnectRobloxOAuth,
+  ensureRobloxCapabilities,
   getRobloxOAuthStatus,
   getRobloxOperations,
+  needsRobloxUpgrade,
+  ROBLOX_PRODUCT_DEFAULT_CAPABILITIES,
   setRobloxTargetCreator,
 } from "../lib/robloxOAuthApi";
+import RobloxAuthorizationRequired from "../components/roblox/RobloxAuthorizationRequired";
 import { DEFAULT_SETTINGS } from "../lib/settingsSchema";
 import { CHAT_MODES } from "../components/ai/chatConstants";
 import ModelSwitcher from "../components/ai/ModelSwitcher";
@@ -383,6 +387,7 @@ export default function SettingsPage() {
   const navItems = useMemo(() => (isAdmin ? [...NAV_ITEMS, ADMIN_ITEM] : NAV_ITEMS), [isAdmin]);
   const robloxStatus = robloxState.statusData;
   const robloxConnected = Boolean(robloxStatus?.connected);
+  const robloxUpgradeRequired = needsRobloxUpgrade(robloxStatus);
   const selectedCreator = robloxStatus?.connection?.selectedCreator || null;
   const creators = Array.isArray(robloxStatus?.connection?.creators) ? robloxStatus.connection.creators : [];
   const selectedCreatorKey = selectedCreator ? `${selectedCreator.type}:${selectedCreator.id}` : "none";
@@ -827,6 +832,20 @@ export default function SettingsPage() {
         }
       >
         <DataStateAlert state={robloxState} onRetry={loadRoblox} label="Roblox" />
+        {robloxConnected && robloxUpgradeRequired && (
+          <RobloxAuthorizationRequired
+            connected
+            upgradeRequired
+            capabilityIds={ROBLOX_PRODUCT_DEFAULT_CAPABILITIES}
+            onAuthorize={async () => {
+              await ensureRobloxCapabilities({
+                capabilities: ROBLOX_PRODUCT_DEFAULT_CAPABILITIES,
+                returnPath: "/settings?tab=roblox",
+              });
+            }}
+            className="border-amber-500/25 bg-amber-500/10 text-amber-50"
+          />
+        )}
         {robloxState.status !== "loading" && (
           <div className="space-y-5">
             <div className="flex flex-col gap-3 rounded-lg border border-border p-4 sm:flex-row sm:items-center sm:justify-between">

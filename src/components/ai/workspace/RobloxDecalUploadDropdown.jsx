@@ -6,6 +6,7 @@ import { cn } from "../../../lib/utils";
 import { PENDING_AUTH_ACTIONS } from "../../../lib/pendingAuthAction";
 import { uploadRobloxDecalBatchStream } from "../../../lib/robloxDecalUploadApi";
 import { ensureRobloxCapabilities, ROBLOX_UPLOAD_ASSET_CAPABILITIES } from "../../../lib/robloxOAuthApi";
+import RobloxAuthorizationRequired from "../../roblox/RobloxAuthorizationRequired";
 import {
   Dialog,
   DialogContent,
@@ -393,21 +394,19 @@ export default function RobloxDecalUploadDropdown({
                 </AlertDescription>
               </Alert>
             ) : needsReauthorization ? (
-              <Alert className="border-amber-400/30 bg-amber-400/10 text-amber-50">
-                <AlertTitle>Roblox needs reauthorization</AlertTitle>
-                <AlertDescription className="mt-2 space-y-3 text-xs text-amber-50/80">
-                  <p>Authorize asset upload access again before this batch can continue.</p>
-                  <Button type="button" size="sm" onClick={startReauthorization}>Reauthorize Roblox</Button>
-                </AlertDescription>
-              </Alert>
+              <RobloxAuthorizationRequired
+                connected
+                capabilityIds={ROBLOX_UPLOAD_ASSET_CAPABILITIES}
+                onAuthorize={startReauthorization}
+                className="border-amber-400/30 bg-amber-400/10 text-amber-50"
+              />
             ) : !connected ? (
-              <Alert className="border-white/10 bg-white/[0.04] text-white">
-                <AlertTitle>Connect Roblox</AlertTitle>
-                <AlertDescription className="mt-2 space-y-3 text-xs text-white/65">
-                  <p>Connect Roblox OAuth to upload decals through Open Cloud.</p>
-                  <Button type="button" size="sm" onClick={startConnect}>Connect Roblox</Button>
-                </AlertDescription>
-              </Alert>
+              <RobloxAuthorizationRequired
+                capabilityIds={ROBLOX_UPLOAD_ASSET_CAPABILITIES}
+                onAuthorize={startConnect}
+                className="border-white/10 bg-white/[0.04] text-white"
+                actionLabel="Connect Roblox"
+              />
             ) : !selectedCreator ? (
               <Alert className="border-amber-400/30 bg-amber-400/10 text-amber-50">
                 <AlertTitle>Choose a creator target</AlertTitle>

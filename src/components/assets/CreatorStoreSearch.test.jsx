@@ -19,6 +19,7 @@ jest.mock("../../lib/robloxCreatorStoreApi", () => ({
 jest.mock("../../lib/robloxOAuthApi", () => ({
   CREATOR_STORE_READ_CAPABILITIES: ["roblox_search_creator_store"],
   ensureRobloxCapabilities: jest.fn(),
+  formatRobloxApiError: (error) => error?.message || "Roblox request failed",
 }));
 
 jest.mock("../../lib/studioBridgeApi", () => ({
@@ -137,8 +138,8 @@ describe("CreatorStoreSearch", () => {
     fireEvent.change(screen.getByLabelText("Search Creator Store"), { target: { value: "tree" } });
     fireEvent.click(screen.getByRole("button", { name: /^Search$/ }));
 
-    expect(await screen.findByText("Creator Store access needs additional Roblox permission.")).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: "Reauthorize Roblox" }));
+    expect(await screen.findByText(/Roblox needs additional permission to search the Creator Store/i)).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: /Continue with Roblox/i }));
 
     await waitFor(() => expect(ensureRobloxCapabilities).toHaveBeenLastCalledWith({
       capabilities: ["roblox_search_creator_store"],

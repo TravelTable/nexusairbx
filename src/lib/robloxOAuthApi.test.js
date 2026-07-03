@@ -2,9 +2,12 @@ import {
   beginCreatorStoreReauthorization,
   ensureRobloxCapabilities,
   creatorStoreAccessError,
+  isCapabilityAuthorized,
   isCreatorStoreReadAuthorized,
   isRobloxReauthorizationError,
+  needsRobloxUpgrade,
   readPendingRobloxAction,
+  ROBLOX_PRODUCT_DEFAULT_CAPABILITIES,
 } from "./robloxOAuthApi";
 
 jest.mock("./billing", () => ({
@@ -111,5 +114,47 @@ describe("robloxOAuthApi capability helpers", () => {
       }),
     }));
     expect(window.location.assign).toHaveBeenCalledWith("https://roblox.example/oauth");
+  });
+
+  test("ensureRobloxCapabilities does not redirect when already authorized", async () => {
+    authedFetch.mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify({ authorized: true, missingScopes: [] }),
+    });
+    const result = await ensureRobloxCapabilities({
+      capabilities: ROBLOX_PRODUCT_DEFAULT_CAPABILITIES,
+      returnPath: "/ai",
+    });
+    expect(result.authorized).toBe(true);
+    expect(window.location.assign).not.toHaveBeenCalled();
+  });
+
+  test("ensureRobloxCapabilities can request multiple capabilities in one call", async () => {
+    authedFetch.mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify({ authorized: true }),
+    });
+    await ensureRobloxCapabilities({
+      capabilities: ["roblox_upload_asset", "roblox_search_creator_store"],
+      returnPath: "/ai",
+    });
+    expect(authedFetch).toHaveBeenCalledWith("/api/roblox/oauth/ensure", expect.objectContaining({
+      body: JSON.stringify({
+        capabilities: ["roblox_search_creator_store", "roblox_upload_asset"],
+        returnPath: "/ai",
+      }),
+    }));
+  });
+
+  test("capability helpers detect upgrade and authorization state", () => {
+    expect(needsRobloxUpgrade({ connected: true, upgradeRequired: true })).toBe(true);
+    expect(isCapabilityAuthorized({
+      connected: true,
+      capabilities: { roblox_upload_asset: { authorized: true, missingScopes: [] } },
+    }, "roblox_upload_asset")).toBe(true);
+    expect(isCreatorStoreReadAuthorized({
+      connected: true,
+      capabilities: { roblox_search_creator_store: { authorized: false, missingScopes: ["creator-store-product:read"] } },
+    })).toBe(false);
   });
 });
