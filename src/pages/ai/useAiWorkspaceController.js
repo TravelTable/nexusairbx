@@ -41,7 +41,13 @@ import { getStudioStatus } from "../../lib/studioBridgeApi";
 import { AI_EVENTS, emitAiEvent, onAiEvent } from "../../lib/aiEvents";
 import { useAiNotifications } from "./useAiNotifications";
 import { saveWorkspaceArtifact } from "../../lib/artifactWorkspaceApi";
-import { getRobloxOAuthStatus, beginCreatorStoreReauthorization, isCreatorStoreReadAuthorized } from "../../lib/robloxOAuthApi";
+import {
+  getRobloxOAuthStatus,
+  beginCreatorStoreReauthorization,
+  isCreatorStoreReadAuthorized,
+  readPendingRobloxAction,
+  clearPendingRobloxAction,
+} from "../../lib/robloxOAuthApi";
 import { useProjectAssets } from "../../hooks/useProjectAssets";
 import { useRobloxImageUpload, isRobloxDecalImage } from "../../hooks/useRobloxImageUpload";
 import { createImprovePromptError, formatImprovePromptErrorMessage } from "../../lib/aiPromptErrors";
@@ -151,6 +157,7 @@ export function useAiWorkspaceController() {
   const restoredIntentIdRef = useRef(null);
   const autoIntentInFlightRef = useRef(null);
   const pendingAuthResumeRef = useRef(null);
+  const pendingRobloxResumeRef = useRef(false);
 
   const {
     notify: queueNotify,
@@ -873,6 +880,40 @@ export function useAiWorkspaceController() {
     pendingAuthResumeRef.current = `completed:${completed.id}`;
     clearCompletedPendingAuthAction(completed.id);
   }, [user]);
+
+  useEffect(() => {
+    if (!user || pendingRobloxResumeRef.current) return;
+    pendingRobloxResumeRef.current = true;
+
+    const pending = readPendingRobloxAction();
+    if (!pending) return;
+
+    clearPendingRobloxAction();
+
+    if (pending.requiresFileReselect) {
+      notify({
+        message: "Roblox authorization is ready. Select your local files again to continue the upload.",
+        type: "info",
+        duration: 8000,
+      });
+      return;
+    }
+
+    if (pending.type === "creator_store_search") {
+      notify({
+        message: "Roblox authorization is ready. Continue your Creator Store search.",
+        type: "success",
+        duration: 6000,
+      });
+      return;
+    }
+
+    notify({
+      message: "Roblox authorization is ready. Continue your Roblox action.",
+      type: "success",
+      duration: 6000,
+    });
+  }, [notify, user]);
 
   useEffect(() => {
     if (!user) return;

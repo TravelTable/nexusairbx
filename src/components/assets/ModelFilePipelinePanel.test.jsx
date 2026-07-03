@@ -6,6 +6,11 @@ import * as api from "../../lib/modelPipelineApi";
 
 jest.mock("../../lib/modelPipelineApi");
 
+const mockBillingUser = { uid: "test-user" };
+jest.mock("../../context/BillingContext", () => ({
+  useBilling: () => ({ authReady: true, user: mockBillingUser }),
+}));
+
 function file(name, size, type = "model/gltf-binary") {
   return new File([new Uint8Array(size)], name, { type });
 }

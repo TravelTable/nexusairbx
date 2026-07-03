@@ -2,7 +2,7 @@ import React from "react";
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import CreatorStoreSearch from "./CreatorStoreSearch";
-import { beginRobloxReauthorization } from "../../lib/robloxOAuthApi";
+import { ensureRobloxCapabilities } from "../../lib/robloxOAuthApi";
 import { getCreatorStoreAsset, searchCreatorStore } from "../../lib/robloxCreatorStoreApi";
 import {
   getStudioCommand,
@@ -17,7 +17,8 @@ jest.mock("../../lib/robloxCreatorStoreApi", () => ({
 }));
 
 jest.mock("../../lib/robloxOAuthApi", () => ({
-  beginRobloxReauthorization: jest.fn(),
+  CREATOR_STORE_READ_CAPABILITIES: ["roblox_search_creator_store"],
+  ensureRobloxCapabilities: jest.fn(),
 }));
 
 jest.mock("../../lib/studioBridgeApi", () => ({
@@ -50,6 +51,7 @@ const asset = {
 describe("CreatorStoreSearch", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    ensureRobloxCapabilities.mockResolvedValue({ authorized: true });
     getStudioStatus.mockResolvedValue({ sessions: [{ id: "studio-1", status: "connected" }] });
     Object.assign(navigator, {
       clipboard: {
@@ -67,12 +69,12 @@ describe("CreatorStoreSearch", () => {
     fireEvent.click(screen.getByRole("button", { name: /^Search$/ }));
 
     expect(screen.getByText("Searching Creator Store")).toBeTruthy();
-    expect(searchCreatorStore).toHaveBeenCalledWith({
+    await waitFor(() => expect(searchCreatorStore).toHaveBeenCalledWith({
       query: "low poly tree",
       assetTypes: ["Model", "Mesh"],
       pageSize: 20,
       cursor: null,
-    });
+    }));
 
     pending.resolve({ query: "low poly tree", results: [asset], nextCursor: "next-1" });
     expect(await screen.findByText("Low Poly Tree")).toBeTruthy();
@@ -129,7 +131,7 @@ describe("CreatorStoreSearch", () => {
     err.code = "ROBLOX_REAUTHORIZATION_REQUIRED";
     err.missingScopes = ["creator-store-product:read"];
     searchCreatorStore.mockRejectedValueOnce(err);
-    beginRobloxReauthorization.mockResolvedValueOnce({ authorizationUrl: "https://roblox.example/auth" });
+    ensureRobloxCapabilities.mockResolvedValue({ authorized: true });
 
     render(<CreatorStoreSearch />);
     fireEvent.change(screen.getByLabelText("Search Creator Store"), { target: { value: "tree" } });
@@ -138,9 +140,10 @@ describe("CreatorStoreSearch", () => {
     expect(await screen.findByText("Creator Store access needs additional Roblox permission.")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Reauthorize Roblox" }));
 
-    await waitFor(() => expect(beginRobloxReauthorization).toHaveBeenCalledWith({
-      bundles: ["core", "creator_store_read"],
+    await waitFor(() => expect(ensureRobloxCapabilities).toHaveBeenLastCalledWith({
+      capabilities: ["roblox_search_creator_store"],
       returnPath: "/ai?roblox=creator-store",
+      pendingAction: { type: "creator_store_search" },
     }));
   });
 

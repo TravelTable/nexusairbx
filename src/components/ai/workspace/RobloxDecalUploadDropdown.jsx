@@ -5,7 +5,7 @@ import { AlertCircle, CheckCircle2, UploadCloud, RefreshCw, X } from "../../../l
 import { cn } from "../../../lib/utils";
 import { PENDING_AUTH_ACTIONS } from "../../../lib/pendingAuthAction";
 import { uploadRobloxDecalBatchStream } from "../../../lib/robloxDecalUploadApi";
-import { beginRobloxOAuth, beginRobloxReauthorization } from "../../../lib/robloxOAuthApi";
+import { ensureRobloxCapabilities, ROBLOX_UPLOAD_ASSET_CAPABILITIES } from "../../../lib/robloxOAuthApi";
 import {
   Dialog,
   DialogContent,
@@ -241,7 +241,11 @@ export default function RobloxDecalUploadDropdown({
       return;
     }
     try {
-      await beginRobloxOAuth({ bundles: ["core"], returnPath: "/ai" });
+      await ensureRobloxCapabilities({
+        capabilities: ROBLOX_UPLOAD_ASSET_CAPABILITIES,
+        returnPath: "/ai",
+        pendingAction: { type: "roblox_decal_upload", requiresFileReselect: true },
+      });
     } catch (err) {
       setError(err.message || "Failed to start Roblox authorization.");
     }
@@ -249,7 +253,11 @@ export default function RobloxDecalUploadDropdown({
 
   const startReauthorization = useCallback(async () => {
     try {
-      await beginRobloxReauthorization({ bundles: ["core"], returnPath: "/ai" });
+      await ensureRobloxCapabilities({
+        capabilities: ROBLOX_UPLOAD_ASSET_CAPABILITIES,
+        returnPath: "/ai",
+        pendingAction: { type: "roblox_decal_upload", requiresFileReselect: true },
+      });
     } catch (err) {
       setError(err.message || "Failed to start Roblox reauthorization.");
     }
@@ -263,6 +271,18 @@ export default function RobloxDecalUploadDropdown({
   const confirmUpload = useCallback(async ({ failedOnly = false } = {}) => {
     const uploadItems = (failedOnly ? failedItems : validItems).filter((item) => item.status !== "succeeded");
     if (!uploadItems.length || uploading) return;
+
+    try {
+      const authorization = await ensureRobloxCapabilities({
+        capabilities: ROBLOX_UPLOAD_ASSET_CAPABILITIES,
+        returnPath: "/ai",
+        pendingAction: { type: "roblox_decal_upload", requiresFileReselect: true },
+      });
+      if (authorization.authorized === false) return;
+    } catch (err) {
+      setError(err.message || "Failed to verify Roblox authorization.");
+      return;
+    }
 
     const targetIds = new Set(uploadItems.map((item) => item.clientId));
     uploadTargetIdsRef.current = targetIds;

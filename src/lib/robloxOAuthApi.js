@@ -35,6 +35,91 @@ export async function reauthorizeRoblox({ bundles = ["core"], returnPath = "/set
   return readJsonOrThrow(res, "Failed to start Roblox reauthorization");
 }
 
+const ROBLOX_PENDING_ACTION_STORAGE_KEY = "nexusrbx.roblox.pendingAction";
+
+export const ROBLOX_PRODUCT_DEFAULT_CAPABILITIES = [
+  "roblox_get_connection",
+  "roblox_upload_asset",
+  "roblox_get_asset",
+  "roblox_search_creator_store",
+];
+export const ROBLOX_UPLOAD_ASSET_CAPABILITIES = ["roblox_upload_asset"];
+export const CREATOR_STORE_READ_CAPABILITIES = ["roblox_search_creator_store"];
+
+function normalizeCapabilities(capabilities) {
+  const values = Array.isArray(capabilities) ? capabilities : [capabilities];
+  const ids = values.map((id) => String(id || "").trim()).filter(Boolean);
+  return Array.from(new Set(ids.length ? ids : ROBLOX_PRODUCT_DEFAULT_CAPABILITIES)).sort();
+}
+
+function capabilitiesForBundles(bundles = ["product_default"]) {
+  const ids = new Set();
+  for (const bundle of Array.isArray(bundles) ? bundles : [bundles]) {
+    if (bundle === "creator_store_read") {
+      ids.add("roblox_search_creator_store");
+    } else {
+      ROBLOX_PRODUCT_DEFAULT_CAPABILITIES.forEach((capability) => ids.add(capability));
+    }
+  }
+  return Array.from(ids).sort();
+}
+
+function persistPendingAction(pendingAction, returnPath) {
+  if (!pendingAction || typeof window === "undefined" || !window.sessionStorage) return;
+  const type = String(pendingAction.type || "").trim();
+  if (!type) return;
+  const safeAction = {
+    type,
+    ...(pendingAction.id ? { id: String(pendingAction.id) } : {}),
+    ...(pendingAction.requiresFileReselect === true ? { requiresFileReselect: true } : {}),
+    returnPath: String(returnPath || "/ai"),
+    expiresAt: Date.now() + 10 * 60 * 1000,
+  };
+  window.sessionStorage.setItem(ROBLOX_PENDING_ACTION_STORAGE_KEY, JSON.stringify(safeAction));
+}
+
+export function readPendingRobloxAction() {
+  if (typeof window === "undefined" || !window.sessionStorage) return null;
+  const raw = window.sessionStorage.getItem(ROBLOX_PENDING_ACTION_STORAGE_KEY);
+  if (!raw) return null;
+  try {
+    const action = JSON.parse(raw);
+    if (!action?.type || Number(action.expiresAt || 0) < Date.now()) {
+      window.sessionStorage.removeItem(ROBLOX_PENDING_ACTION_STORAGE_KEY);
+      return null;
+    }
+    return action;
+  } catch (_) {
+    window.sessionStorage.removeItem(ROBLOX_PENDING_ACTION_STORAGE_KEY);
+    return null;
+  }
+}
+
+export function clearPendingRobloxAction() {
+  if (typeof window !== "undefined" && window.sessionStorage) {
+    window.sessionStorage.removeItem(ROBLOX_PENDING_ACTION_STORAGE_KEY);
+  }
+}
+
+export async function ensureRobloxCapabilities({ capabilities, returnPath = "/settings?tab=roblox", pendingAction = null } = {}) {
+  const requestedCapabilities = normalizeCapabilities(capabilities);
+  const res = await authedFetch("/api/roblox/oauth/ensure", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      capabilities: requestedCapabilities,
+      returnPath,
+      ...(pendingAction ? { pendingAction } : {}),
+    }),
+  });
+  const data = await readJsonOrThrow(res, "Failed to verify Roblox authorization");
+  if (data.authorizationUrl) {
+    persistPendingAction(pendingAction, returnPath);
+    window.location.assign(data.authorizationUrl);
+  }
+  return data;
+}
+
 export async function disconnectRobloxOAuth() {
   const res = await authedFetch("/api/roblox/oauth/disconnect", { method: "POST" });
   return readJsonOrThrow(res, "Failed to disconnect Roblox");
@@ -63,18 +148,22 @@ export async function getRobloxOperations({ limit = 50 } = {}) {
 }
 
 export async function beginRobloxOAuth(options) {
-  const data = await startRobloxOAuth(options);
-  if (data.authorizationUrl) window.location.assign(data.authorizationUrl);
-  return data;
+  const { bundles, capabilities, returnPath, pendingAction } = options || {};
+  return ensureRobloxCapabilities({
+    capabilities: capabilities || capabilitiesForBundles(bundles),
+    returnPath: returnPath || "/settings?tab=roblox",
+    pendingAction,
+  });
 }
 
 export async function beginRobloxReauthorization(options) {
-  const data = await reauthorizeRoblox(options);
-  if (data.authorizationUrl) window.location.assign(data.authorizationUrl);
-  return data;
+  const { bundles, capabilities, returnPath, pendingAction } = options || {};
+  return ensureRobloxCapabilities({
+    capabilities: capabilities || capabilitiesForBundles(bundles),
+    returnPath: returnPath || "/settings?tab=roblox",
+    pendingAction,
+  });
 }
-
-export const CREATOR_STORE_READ_BUNDLES = ["core", "creator_store_read"];
 
 function getRobloxCapability(robloxStatus, capabilityId) {
   const caps = robloxStatus?.capabilities;
@@ -122,5 +211,9 @@ export function creatorStoreAccessError() {
 }
 
 export async function beginCreatorStoreReauthorization(returnPath = "/ai") {
-  return beginRobloxReauthorization({ bundles: CREATOR_STORE_READ_BUNDLES, returnPath });
+  return ensureRobloxCapabilities({
+    capabilities: CREATOR_STORE_READ_CAPABILITIES,
+    returnPath,
+    pendingAction: { type: "creator_store_search" },
+  });
 }

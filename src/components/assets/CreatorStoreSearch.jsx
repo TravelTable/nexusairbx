@@ -1,6 +1,6 @@
 import React, { useMemo, useRef, useState } from "react";
 import { Loader2, RefreshCw, Search, ShieldAlert } from "lib/icons";
-import { beginRobloxReauthorization } from "../../lib/robloxOAuthApi";
+import { CREATOR_STORE_READ_CAPABILITIES, ensureRobloxCapabilities } from "../../lib/robloxOAuthApi";
 import { getCreatorStoreAsset, searchCreatorStore } from "../../lib/robloxCreatorStoreApi";
 import CreatorStoreAssetDetails from "./CreatorStoreAssetDetails";
 import CreatorStoreResultCard from "./CreatorStoreResultCard";
@@ -69,6 +69,12 @@ export default function CreatorStoreSearch({ notify, className = "mx-3 mb-2" }) 
       setNextCursor(null);
     }
     try {
+      const authorization = await ensureRobloxCapabilities({
+        capabilities: CREATOR_STORE_READ_CAPABILITIES,
+        returnPath: "/ai?roblox=creator-store",
+        pendingAction: { type: "creator_store_search" },
+      });
+      if (authorization.authorized === false) return;
       const data = await searchCreatorStore({
         query: trimmedQuery,
         assetTypes: orderedAssetTypes,
@@ -103,9 +109,10 @@ export default function CreatorStoreSearch({ notify, className = "mx-3 mb-2" }) 
 
   const reauthorize = async () => {
     try {
-      await beginRobloxReauthorization({
-        bundles: ["core", "creator_store_read"],
+      await ensureRobloxCapabilities({
+        capabilities: CREATOR_STORE_READ_CAPABILITIES,
         returnPath: "/ai?roblox=creator-store",
+        pendingAction: { type: "creator_store_search" },
       });
     } catch (err) {
       setError(err);

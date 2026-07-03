@@ -38,6 +38,7 @@ import {
   recheckUploadedModelAccess,
   uploadModelFileToSignedUrl,
 } from "../../lib/modelPipelineApi";
+import { useBilling } from "../../context/BillingContext";
 
 const VALIDATED = new Set(["valid", "valid_with_warnings"]);
 const FINAL = new Set(["valid", "valid_with_warnings", "invalid", "failed", "cancelled", "deleted", "expired"]);
@@ -61,6 +62,7 @@ function firstModel(files) {
 }
 
 export default function ModelFilePipelinePanel({ notify }) {
+  const { authReady, user } = useBilling();
   const [rules, setRules] = useState(null);
   const [active, setActive] = useState(null);
   const [report, setReport] = useState(null);
@@ -112,6 +114,7 @@ export default function ModelFilePipelinePanel({ notify }) {
         setDerivatives([]);
       }
     } catch (err) {
+      if (err?.message === "Not signed in") return;
       if (err?.status === 404) {
         setError("Model pipeline API is not available on this backend yet.");
       } else {
@@ -121,13 +124,21 @@ export default function ModelFilePipelinePanel({ notify }) {
   };
 
   useEffect(() => {
+    if (!authReady) return undefined;
+    if (!user) {
+      setError("Not signed in");
+      return () => {
+        if (pollRef.current) window.clearInterval(pollRef.current);
+      };
+    }
+    setError("");
     getModelFileRules().then((payload) => setRules(payload)).catch(() => {});
     refresh().catch(() => {});
     return () => {
       if (pollRef.current) window.clearInterval(pollRef.current);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [authReady, user?.uid]);
 
   const startPolling = (modelFileId) => {
     if (pollRef.current) window.clearInterval(pollRef.current);

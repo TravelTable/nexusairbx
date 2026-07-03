@@ -845,7 +845,7 @@ export default function SettingsPage() {
                   onClick={async () => {
                     setRobloxAction("connect");
                     try {
-                      await beginRobloxOAuth({ bundles: ["core", "creator_store_write"], returnPath: "/settings?tab=roblox" });
+                      await beginRobloxOAuth({ returnPath: "/settings?tab=roblox" });
                     } finally {
                       setRobloxAction("");
                     }
@@ -863,7 +863,7 @@ export default function SettingsPage() {
                       onClick={async () => {
                         setRobloxAction("reauthorize");
                         try {
-                          await beginRobloxReauthorization({ bundles: ["core", "creator_store_write"], returnPath: "/settings?tab=roblox" });
+                          await beginRobloxReauthorization({ returnPath: "/settings?tab=roblox" });
                         } finally {
                           setRobloxAction("");
                         }

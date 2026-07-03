@@ -2,7 +2,7 @@ import { useCallback, useState } from "react";
 import { addDoc, collection, serverTimestamp } from "firebase/firestore";
 import { db } from "../firebase";
 import { uploadRobloxDecalBatch } from "../lib/robloxDecalUploadApi";
-import { beginRobloxOAuth, beginRobloxReauthorization } from "../lib/robloxOAuthApi";
+import { ensureRobloxCapabilities, ROBLOX_UPLOAD_ASSET_CAPABILITIES } from "../lib/robloxOAuthApi";
 
 const ACCEPTED_EXTENSIONS = new Set([".png", ".jpg", ".jpeg", ".bmp", ".tga"]);
 export const ROBLOX_DECAL_ACCEPT = ".png,.jpg,.jpeg,.bmp,.tga,image/png,image/jpeg,image/bmp,image/x-tga,image/tga";
@@ -101,13 +101,21 @@ export function useRobloxImageUpload({
       notify?.({ message: readiness.message, type: "info" });
       if (readiness.action === "connect") {
         try {
-          await beginRobloxOAuth({ bundles: ["core"], returnPath: "/ai" });
+          await ensureRobloxCapabilities({
+            capabilities: ROBLOX_UPLOAD_ASSET_CAPABILITIES,
+            returnPath: "/ai",
+            pendingAction: { type: "roblox_image_upload", requiresFileReselect: true },
+          });
         } catch (err) {
           notify?.({ message: err.message || "Failed to start Roblox authorization.", type: "error" });
         }
       } else if (readiness.action === "reauthorize") {
         try {
-          await beginRobloxReauthorization({ bundles: ["core"], returnPath: "/ai" });
+          await ensureRobloxCapabilities({
+            capabilities: ROBLOX_UPLOAD_ASSET_CAPABILITIES,
+            returnPath: "/ai",
+            pendingAction: { type: "roblox_image_upload", requiresFileReselect: true },
+          });
         } catch (err) {
           notify?.({ message: err.message || "Failed to start Roblox reauthorization.", type: "error" });
         }
@@ -178,7 +186,11 @@ export function useRobloxImageUpload({
       notify?.({ message: err?.message || "Roblox image upload failed.", type: "error" });
       if (err?.code === "ROBLOX_REAUTHORIZATION_REQUIRED") {
         try {
-          await beginRobloxReauthorization({ bundles: ["core"], returnPath: "/ai" });
+          await ensureRobloxCapabilities({
+            capabilities: ROBLOX_UPLOAD_ASSET_CAPABILITIES,
+            returnPath: "/ai",
+            pendingAction: { type: "roblox_image_upload", requiresFileReselect: true },
+          });
         } catch (reauthErr) {
           notify?.({ message: reauthErr.message || "Failed to start Roblox reauthorization.", type: "error" });
         }

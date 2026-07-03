@@ -79,7 +79,7 @@ export default function useHeaderIdentity({
     setRobloxAction("connect");
     setRobloxError("");
     try {
-      await beginRobloxOAuth({ returnPath, bundles: ["core"] });
+      await beginRobloxOAuth({ returnPath });
     } catch (err) {
       setRobloxError(err?.message || "Could not start Roblox connection.");
     } finally {
@@ -95,7 +95,7 @@ export default function useHeaderIdentity({
     setRobloxAction("reconnect");
     setRobloxError("");
     try {
-      await beginRobloxReauthorization({ returnPath, bundles: ["core"] });
+      await beginRobloxReauthorization({ returnPath });
     } catch (err) {
       setRobloxError(err?.message || "Could not start Roblox reauthorization.");
     } finally {

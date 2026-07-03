@@ -1,12 +1,30 @@
 // src/lib/billing.js
-import { getAuth } from "firebase/auth";
+import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { BACKEND_URL } from "../config";
 import { getProductAnalyticsHeaders } from "./productAnalytics";
 
 const API_ORIGIN = BACKEND_URL;
 
+let authInitPromise = null;
+
+function waitForAuthInit() {
+  const auth = getAuth();
+  if (auth.currentUser) {
+    return Promise.resolve(auth.currentUser);
+  }
+  if (!authInitPromise) {
+    authInitPromise = new Promise((resolve) => {
+      const unsub = onAuthStateChanged(auth, (user) => {
+        unsub();
+        resolve(user);
+      });
+    });
+  }
+  return authInitPromise;
+}
+
 async function getIdToken({ force = false } = {}) {
-  const user = getAuth().currentUser;
+  const user = getAuth().currentUser || (await waitForAuthInit());
   if (!user) throw new Error("Not signed in");
   return user.getIdToken(force);
 }

@@ -3,6 +3,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import RobloxDecalUploadDropdown from "./RobloxDecalUploadDropdown";
 import { uploadRobloxDecalBatchStream } from "../../../lib/robloxDecalUploadApi";
+import { ensureRobloxCapabilities } from "../../../lib/robloxOAuthApi";
 
 jest.mock("@hugeicons/react", () => ({
   HugeiconsIcon: () => <svg aria-hidden="true" data-testid="folder-upload-icon" />,
@@ -13,8 +14,7 @@ jest.mock("@hugeicons/core-free-icons", () => ({
 }));
 
 jest.mock("../../../lib/robloxOAuthApi", () => ({
-  beginRobloxOAuth: jest.fn(),
-  beginRobloxReauthorization: jest.fn(),
+  ensureRobloxCapabilities: jest.fn(),
 }));
 
 jest.mock("../../../lib/robloxDecalUploadApi", () => ({
@@ -129,6 +129,7 @@ beforeAll(() => {
 
 beforeEach(() => {
   jest.clearAllMocks();
+  ensureRobloxCapabilities.mockResolvedValue({ authorized: true });
 });
 
 describe("RobloxDecalUploadDropdown", () => {
