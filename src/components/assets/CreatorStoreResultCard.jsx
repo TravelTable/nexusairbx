@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Eye, ImageIcon } from "lib/icons";
+import { BACKEND_URL } from "../../config";
 
 function creatorLabel(creator) {
   return creator?.name || (creator?.id ? `${creator.type || "Creator"} ${creator.id}` : "Unknown creator");
@@ -9,13 +10,19 @@ export default function CreatorStoreResultCard({ asset, onViewDetails }) {
   const [imageFailed, setImageFailed] = useState(false);
   const name = asset?.name || `Asset ${asset?.assetId || ""}`.trim();
   const description = asset?.description || "";
+  const previewAssetId = asset?.previewAssetIds?.[0] || asset?.assetId;
+  const thumbnailUrl =
+    asset?.thumbnailUrl ||
+    (previewAssetId
+      ? `${BACKEND_URL}/api/roblox/thumbnail?assetId=${encodeURIComponent(previewAssetId)}&size=420x420`
+      : null);
 
   return (
     <article className="rounded-md border border-white/10 bg-white/[0.03] overflow-hidden flex flex-col min-h-[260px]">
       <div className="aspect-square bg-black/35 border-b border-white/10 flex items-center justify-center overflow-hidden">
-        {asset?.thumbnailUrl && !imageFailed ? (
+        {thumbnailUrl && !imageFailed ? (
           <img
-            src={asset.thumbnailUrl}
+            src={thumbnailUrl}
             alt={`${name} thumbnail`}
             className="w-full h-full object-cover"
             loading="lazy"

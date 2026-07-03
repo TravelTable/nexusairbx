@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Check, Copy, ImageIcon, Loader2, Send, ShieldCheck, X } from "lib/icons";
+import { BACKEND_URL } from "../../config";
 import {
   getStudioCommand,
   getStudioStatus,
@@ -51,6 +52,12 @@ export default function CreatorStoreAssetDetails({ asset, loading = false, onClo
 
   const name = asset?.name || "Creator Store asset";
   const assetId = asset?.assetId || "";
+  const previewAssetId = asset?.previewAssetIds?.[0] || assetId;
+  const thumbnailUrl =
+    asset?.thumbnailUrl ||
+    (previewAssetId
+      ? `${BACKEND_URL}/api/roblox/thumbnail?assetId=${encodeURIComponent(previewAssetId)}&size=420x420`
+      : null);
   const canImportAsset = IMPORTABLE_TYPES.has(asset?.assetType);
   const studioConnected = Boolean(studioSession?.id);
 
@@ -166,9 +173,9 @@ export default function CreatorStoreAssetDetails({ asset, loading = false, onClo
 
         <div className="grid gap-4 p-4 md:grid-cols-[220px_1fr]">
           <div className="aspect-square rounded-md border border-white/10 bg-black/35 overflow-hidden flex items-center justify-center">
-            {asset?.thumbnailUrl && !imageFailed ? (
+            {thumbnailUrl && !imageFailed ? (
               <img
-                src={asset.thumbnailUrl}
+                src={thumbnailUrl}
                 alt={`${name} thumbnail`}
                 className="h-full w-full object-cover"
                 onError={() => setImageFailed(true)}
@@ -302,7 +309,7 @@ export default function CreatorStoreAssetDetails({ asset, loading = false, onClo
           <div className="w-full max-w-md rounded-lg border border-white/10 bg-[#0b0d16] p-4 shadow-2xl">
             <div className="flex items-start gap-3">
               <div className="h-16 w-16 shrink-0 overflow-hidden rounded-md border border-white/10 bg-black/30">
-                {asset?.thumbnailUrl && !imageFailed ? <img src={asset.thumbnailUrl} alt="" className="h-full w-full object-cover" /> : null}
+                {thumbnailUrl && !imageFailed ? <img src={thumbnailUrl} alt="" className="h-full w-full object-cover" /> : null}
               </div>
               <div className="min-w-0">
                 <h3 className="text-sm font-black text-white">Import safely</h3>
