@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { Eye, ImageIcon } from "lib/icons";
-import { BACKEND_URL } from "../../config";
+import { buildCreatorStoreThumbnailCandidates } from "../../lib/creatorStoreThumbnail";
 
 function creatorLabel(creator) {
   return creator?.name || (creator?.id ? `${creator.type || "Creator"} ${creator.id}` : "Unknown creator");
@@ -9,16 +9,10 @@ function creatorLabel(creator) {
 export default function CreatorStoreResultCard({ asset, onViewDetails }) {
   const name = asset?.name || `Asset ${asset?.assetId || ""}`.trim();
   const description = asset?.description || "";
-  const thumbnailCandidates = [
-    asset?.thumbnailUrl,
-    ...(asset?.previewAssetIds || []).map(
-      (id) =>
-        `${BACKEND_URL}/api/roblox/thumbnail?assetId=${encodeURIComponent(id)}&size=420x420`
-    ),
-    asset?.assetId
-      ? `${BACKEND_URL}/api/roblox/thumbnail?assetId=${encodeURIComponent(asset.assetId)}&size=420x420`
-      : null,
-  ].filter(Boolean);
+  const thumbnailCandidates = useMemo(
+    () => buildCreatorStoreThumbnailCandidates(asset),
+    [asset]
+  );
   const [thumbnailIndex, setThumbnailIndex] = useState(0);
   const thumbnailUrl = thumbnailCandidates[thumbnailIndex] || null;
 
@@ -27,11 +21,16 @@ export default function CreatorStoreResultCard({ asset, onViewDetails }) {
       <div className="aspect-square bg-black/35 border-b border-white/10 flex items-center justify-center overflow-hidden">
         {thumbnailUrl ? (
           <img
+            key={thumbnailUrl}
             src={thumbnailUrl}
             alt={`${name} thumbnail`}
             className="h-full w-full object-cover"
             loading="lazy"
-            onError={() => setThumbnailIndex((current) => current + 1)}
+            onError={() => {
+              setThumbnailIndex((current) => (
+                current + 1 < thumbnailCandidates.length ? current + 1 : thumbnailCandidates.length
+              ));
+            }}
           />
         ) : (
           <div className="flex flex-col items-center gap-2 text-gray-500">
