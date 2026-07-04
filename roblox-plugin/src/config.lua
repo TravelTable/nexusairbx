@@ -1,7 +1,7 @@
 -- NexusRBX Studio Bridge
 -- Local Studio plugin: website-controlled apply + agent tool runner.
 
-local BACKEND_URL = "https://nexusrbx-backend-production.up.railway.app"
+local BACKEND_URL = "https://api.nexusrbx.com"
 local PLUGIN_VERSION = "0.9.0-phases1-9"
 local STUDIO_PROTOCOL_VERSION = "2026-06-20-phases1-9"
 

@@ -23,8 +23,15 @@ local function pairStudio()
 
 	setBusy(false)
 	if not ok then
+		local message = tostring(dataOrError)
+		local parsed = string.match(message, '"error"%s*:%s*"([^"]+)"')
+			or string.match(message, '"message"%s*:%s*"([^"]+)"')
+		if parsed then
+			message = parsed
+		end
 		setStatus("pair failed")
-		setLast(tostring(dataOrError))
+		setLast(message)
+		showToast(message, "error")
 		codeBox:CaptureFocus()
 		return
 	end

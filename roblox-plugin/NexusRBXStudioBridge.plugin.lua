@@ -5,7 +5,7 @@
 -- NexusRBX Studio Bridge
 -- Local Studio plugin: website-controlled apply + agent tool runner.
 
-local BACKEND_URL = "https://nexusrbx-backend-production.up.railway.app"
+local BACKEND_URL = "https://api.nexusrbx.com"
 local PLUGIN_VERSION = "0.9.0-phases1-9"
 local STUDIO_PROTOCOL_VERSION = "2026-06-20-phases1-9"
 
@@ -46,9 +46,11 @@ local function jsonDecode(value)
 end
 
 local function getBackendUrl()
-	local override = plugin:GetSetting("nexusrbxBackendUrl")
-	if type(override) == "string" and override ~= "" then
-		return override:gsub("/+$", "")
+	if plugin:GetSetting("nexusrbxDevMode") == true then
+		local override = plugin:GetSetting("nexusrbxBackendUrl")
+		if type(override) == "string" and override ~= "" then
+			return override:gsub("/+$", "")
+		end
 	end
 	return BACKEND_URL
 end
@@ -893,7 +895,7 @@ end
 -- END src/studio/snapshot.lua
 
 -- BEGIN src/ui/BridgePanel.lua
-local setStatus, setLast, setBusy, setActive, setRun, setProgress, pushActivity, showToast, setHealth, setPollingPulse, showApprovalGate, hideApprovalGate, waitForApproval, getApprovalModeEnabledExport, handleSessionExpired, localSnapshots, applying, pairButton, codeBox, pullButton, restoreButton, disconnectButton, confirmRestoreButton, cancelRestoreButton, approvalToggleButton, approvalConfirmButton, approvalDeclineButton, refreshControls, showRestoreConfirmation, hideRestoreConfirmation, updateSnapshotLabel, widget, toggleButton, healthLabel, progressLabel, feedEmptyLabel, approvalCopy
+local setStatus, setLast, setBusy, setActive, setRun, setProgress, pushActivity, showToast, setHealth, setPollingPulse, showApprovalGate, hideApprovalGate, waitForApproval, getApprovalModeEnabledExport, handleSessionExpired, localSnapshots, applying, pairButton, codeBox, pullButton, restoreButton, disconnectButton, confirmRestoreButton, cancelRestoreButton, approvalToggleButton, approvalConfirmButton, approvalDeclineButton, refreshControls, runSetupCheck, showOnboarding, hideOnboarding, checkSetupButton, onboardingDismissButton, showRestoreConfirmation, hideRestoreConfirmation, updateSnapshotLabel, widget, toggleButton, healthLabel, progressLabel, feedEmptyLabel, approvalCopy
 do
 -- NexusRBX Studio Bridge UI
 -- Dock panel: pairing, activity feed, recovery, approval gate, health.
@@ -1157,6 +1159,31 @@ applyCorner(codeBox, 6)
 applyStroke(codeBox, COLORS.primary, 0.45)
 pairButton = makeButton(pairSection, "PairButton", "Pair Studio", COLORS.primary)
 
+setupSteps = makeText(
+	pairSection,
+	"SetupSteps",
+	table.concat({
+		"<b>Setup</b>",
+		"1. On nexusrbx.com: Pair Studio, generate a code",
+		"2. Paste the code above",
+		"3. Click Pair Studio (Enter works too)",
+		"4. Accept the HTTP permission prompt for api.nexusrbx.com",
+		"5. Game Settings -> Security -> Allow HTTP Requests",
+	}, "\n"),
+	nil,
+	11,
+	false,
+	themeColor(Enum.StudioStyleGuideColor.DimmedText),
+	true
+)
+setupSteps.TextWrapped = true
+
+checkSetupButton = makeButton(pairSection, "CheckSetupButton", "Check setup", themeColor(Enum.StudioStyleGuideColor.Button))
+
+setupResult = makeText(pairSection, "SetupResult", "", nil, 11, false, themeColor(Enum.StudioStyleGuideColor.DimmedText), true)
+setupResult.TextWrapped = true
+setupResult.Visible = false
+
 local activitySection = makeSection("Activity")
 makeText(activitySection, "ActivityTitle", "Bridge Activity", 18, 13, true)
 progressLabel = makeText(activitySection, "Progress", "Run: none", 20, 12, false, themeColor(Enum.StudioStyleGuideColor.DimmedText))
@@ -1328,6 +1355,57 @@ approvalConfirmButton.Size = UDim2.new(0.5, -4, 0, 34)
 approvalDeclineButton = makeButton(approvalRow, "ApprovalDecline", "Decline", COLORS.error)
 approvalDeclineButton.Size = UDim2.new(0.5, -4, 0, 34)
 
+local onboardingOverlay = Instance.new("Frame")
+onboardingOverlay.Name = "OnboardingOverlay"
+onboardingOverlay.Size = UDim2.fromScale(1, 1)
+onboardingOverlay.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+onboardingOverlay.BackgroundTransparency = 0.35
+onboardingOverlay.Visible = false
+onboardingOverlay.ZIndex = 14
+onboardingOverlay.Parent = root
+
+local onboardingSheet = Instance.new("Frame")
+onboardingSheet.Name = "OnboardingSheet"
+onboardingSheet.AnchorPoint = Vector2.new(0.5, 0.5)
+onboardingSheet.Position = UDim2.fromScale(0.5, 0.5)
+onboardingSheet.Size = UDim2.new(1, -32, 0, 0)
+onboardingSheet.AutomaticSize = Enum.AutomaticSize.Y
+onboardingSheet.BackgroundColor3 = themeColor(Enum.StudioStyleGuideColor.MainBackground)
+onboardingSheet.ZIndex = 15
+onboardingSheet.Parent = onboardingOverlay
+applyCorner(onboardingSheet, 6)
+applyStroke(onboardingSheet)
+local onboardingPadding = Instance.new("UIPadding")
+onboardingPadding.PaddingTop = UDim.new(0, 14)
+onboardingPadding.PaddingBottom = UDim.new(0, 14)
+onboardingPadding.PaddingLeft = UDim.new(0, 14)
+onboardingPadding.PaddingRight = UDim.new(0, 14)
+onboardingPadding.Parent = onboardingSheet
+local onboardingList = Instance.new("UIListLayout")
+onboardingList.Padding = UDim.new(0, 10)
+onboardingList.SortOrder = Enum.SortOrder.LayoutOrder
+onboardingList.Parent = onboardingSheet
+makeText(onboardingSheet, "OnboardingTitle", "Welcome to NexusRBX", 24, 15, true)
+local onboardingCopy = makeText(
+	onboardingSheet,
+	"OnboardingCopy",
+	table.concat({
+		"Connect this plugin to your NexusRBX workspace:",
+		"",
+		"1. On nexusrbx.com, open the AI workspace and click Pair Studio.",
+		"2. Copy the pairing code it shows.",
+		"3. Paste the code here and click Pair Studio.",
+		"4. If Studio asks, allow HTTP access to api.nexusrbx.com.",
+		"5. Enable Game Settings -> Security -> Allow HTTP Requests.",
+	}, "\n"),
+	nil,
+	12,
+	false,
+	themeColor(Enum.StudioStyleGuideColor.DimmedText)
+)
+onboardingCopy.TextWrapped = true
+onboardingDismissButton = makeButton(onboardingSheet, "OnboardingDismiss", "Got it", COLORS.primary)
+
 local function formatTime(ts)
 	if not ts then
 		return "--:--"
@@ -1337,14 +1415,32 @@ end
 
 local function statusColor(text)
 	local lowered = string.lower(tostring(text or ""))
-	if string.find(lowered, "connected") or string.find(lowered, "paired") then
+	if string.find(lowered, "connected") and not string.find(lowered, "not connected") then
 		return COLORS.success, "CONNECTED"
-	elseif string.find(lowered, "expired") or string.find(lowered, "failed") or string.find(lowered, "error") or string.find(lowered, "unsupported") then
+	elseif string.find(lowered, "pair failed") then
+		return COLORS.error, "PAIR FAILED"
+	elseif string.find(lowered, "expired") or string.find(lowered, "session expired") then
+		return COLORS.error, "RE-PAIR"
+	elseif string.find(lowered, "poll failed") then
+		return COLORS.error, "POLL FAILED"
+	elseif string.find(lowered, "unsupported") then
+		return COLORS.error, "UPDATE PLUGIN"
+	elseif string.find(lowered, "failed") or string.find(lowered, "error") then
 		return COLORS.error, "ACTION NEEDED"
-	elseif string.find(lowered, "pairing") or string.find(lowered, "poll") or string.find(lowered, "working") or string.find(lowered, "disconnecting") then
+	elseif string.find(lowered, "ready to pair") then
+		return COLORS.primary, "READY"
+	elseif string.find(lowered, "pairing") or string.find(lowered, "poll") or string.find(lowered, "working") or string.find(lowered, "disconnecting") or string.find(lowered, "awaiting approval") then
 		return COLORS.warning, "WORKING"
 	end
 	return COLORS.muted, "NOT PAIRED"
+end
+
+local function clearErrorBanner()
+	lastErrorText = nil
+	diagnosticsOpen = false
+	banner.Visible = false
+	banner.Text = ""
+	banner.Size = UDim2.new(1, 0, 0, 0)
 end
 
 local function setBanner(kind, text)
@@ -1479,10 +1575,33 @@ setHealth = function(syncedAt, latencyMs)
 	end
 end
 
+local function errorHelpFor(value)
+	local lowered = string.lower(tostring(value or ""))
+	if string.find(lowered, "http") and (string.find(lowered, "disabled") or string.find(lowered, "not enabled") or string.find(lowered, "not allowed")) then
+		return "Enable Game Settings -> Security -> Allow HTTP Requests."
+	elseif string.find(lowered, "code expired") or string.find(lowered, "pairing code expired") then
+		return "Generate a fresh code on nexusrbx.com (codes are single-use)."
+	elseif string.find(lowered, "already used") then
+		return "That code was used. Generate a new one on the website."
+	elseif string.find(lowered, "not found") then
+		return "Copy the code exactly, or generate a fresh one."
+	elseif string.find(lowered, "firebase id token") then
+		return "Backend is updating. Try again shortly."
+	elseif string.find(lowered, "unsupported") then
+		return "Reinstall the latest plugin via Plugins -> Manage Plugins."
+	elseif string.find(lowered, "expired") then
+		return "Session expired. Pair Studio again from the website."
+	elseif string.find(lowered, "http") or string.find(lowered, "connect") or string.find(lowered, "request") then
+		return "Allow HTTP Requests and accept the api.nexusrbx.com permission."
+	end
+	return nil
+end
+
 setLast = function(text)
 	local value = tostring(text or "none")
 	if string.find(string.lower(value), "failed") or string.find(string.lower(value), "unsupported") or string.find(string.lower(value), "expired") then
-		lastErrorText = value
+		local hint = errorHelpFor(value)
+		lastErrorText = hint and (value .. "\n" .. hint) or value
 		setBanner("error", value .. "  ·  Click for details")
 	elseif string.find(string.lower(value), "succeeded") or string.find(string.lower(value), "paired session") or string.find(string.lower(value), "restore complete") or string.find(string.lower(value), "restored snapshot") then
 		setBanner("success", value)
@@ -1688,6 +1807,14 @@ codeBox:GetPropertyChangedSignal("Text"):Connect(function()
 	if cleaned ~= codeBox.Text then
 		codeBox.Text = cleaned
 	end
+	if getToken() == nil then
+		clearErrorBanner()
+		if cleaned ~= "" then
+			setStatus("ready to pair")
+		else
+			setStatus("not paired")
+		end
+	end
 	refreshControls()
 end)
 
@@ -1698,8 +1825,58 @@ pcall(function()
 	end)
 end)
 
+runSetupCheck = function()
+	setupResult.Visible = true
+	setupResult.Text = "Checking setup..."
+	local httpOk = false
+	pcall(function()
+		httpOk = game:GetService("Services.HttpService").HttpEnabled == true
+	end)
+	local healthOk, latency = false, nil
+	pcall(function()
+		healthOk, latency = pingHealth()
+	end)
+	local lines = {}
+	if httpOk then
+		table.insert(lines, '<font color="#39A65C">OK</font> HTTP requests enabled')
+	else
+		table.insert(lines, '<font color="#D64550">X</font> Enable Game Settings -> Security -> Allow HTTP Requests')
+	end
+	if healthOk then
+		local latencyText = latency and (" (" .. tostring(latency) .. "ms)") or ""
+		table.insert(lines, '<font color="#39A65C">OK</font> Backend reachable' .. latencyText)
+	elseif not httpOk then
+		table.insert(lines, '<font color="#D39127">--</font> Backend check skipped until HTTP is on')
+	else
+		table.insert(lines, '<font color="#D64550">X</font> Backend unreachable. Accept the api.nexusrbx.com permission.')
+	end
+	setupResult.Text = table.concat(lines, "\n")
+end
+
+showOnboarding = function()
+	onboardingOverlay.Visible = true
+end
+
+hideOnboarding = function()
+	onboardingOverlay.Visible = false
+	plugin:SetSetting("nexusrbxOnboardingSeen", true)
+end
+
+checkSetupButton.MouseButton1Click:Connect(function()
+	if checkSetupButton:GetAttribute("NexusEnabled") ~= true then
+		return
+	end
+	runSetupCheck()
+end)
+
+onboardingDismissButton.MouseButton1Click:Connect(hideOnboarding)
+
 refreshApprovalToggle()
 refreshControls()
+
+if getToken() == nil and plugin:GetSetting("nexusrbxOnboardingSeen") ~= true then
+	task.defer(showOnboarding)
+end
 end
 -- END src/ui/BridgePanel.lua
 
@@ -5397,8 +5574,15 @@ local function pairStudio()
 
 	setBusy(false)
 	if not ok then
+		local message = tostring(dataOrError)
+		local parsed = string.match(message, '"error"%s*:%s*"([^"]+)"')
+			or string.match(message, '"message"%s*:%s*"([^"]+)"')
+		if parsed then
+			message = parsed
+		end
 		setStatus("pair failed")
-		setLast(tostring(dataOrError))
+		setLast(message)
+		showToast(message, "error")
 		codeBox:CaptureFocus()
 		return
 	end

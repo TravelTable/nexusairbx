@@ -37,6 +37,7 @@ This writes:
 6. Confirm the script does **not** contain a `src/` folder in Explorer.
 7. Right-click **that script only** → **Publish as Plugin** (or **Save as Plugin** then publish from Creator Dashboard).
 8. Enable **Allow HTTP Requests** in any experience that uses the bridge.
+9. The first backend request prompts for HTTP permission to **api.nexusrbx.com** — accept it. Manage or revoke later under **Plugins → Manage Plugins**.
 
 ## Update an existing published plugin (your `cloud_...` asset)
 

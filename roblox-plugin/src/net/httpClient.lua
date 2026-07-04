@@ -10,9 +10,11 @@ local function jsonDecode(value)
 end
 
 local function getBackendUrl()
-	local override = plugin:GetSetting("nexusrbxBackendUrl")
-	if type(override) == "string" and override ~= "" then
-		return override:gsub("/+$", "")
+	if plugin:GetSetting("nexusrbxDevMode") == true then
+		local override = plugin:GetSetting("nexusrbxBackendUrl")
+		if type(override) == "string" and override ~= "" then
+			return override:gsub("/+$", "")
+		end
 	end
 	return BACKEND_URL
 end

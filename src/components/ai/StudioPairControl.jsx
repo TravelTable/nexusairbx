@@ -232,6 +232,8 @@ export default function StudioPairControl({ connected = false, loading = false, 
                 <ol className="space-y-1.5 text-[11px] text-gray-400 leading-relaxed mb-3 list-decimal list-inside">
                   <li>Open Roblox Studio with the NexusRBX plugin installed.</li>
                   <li>Enter this code in the plugin and click <span className="text-white font-semibold">Pair Studio</span>.</li>
+                  <li>If Studio prompts, allow HTTP access to <span className="text-white font-semibold">api.nexusrbx.com</span>.</li>
+                  <li>Enable <span className="text-white font-semibold">Game Settings → Security → Allow HTTP Requests</span>.</li>
                 </ol>
 
                 {!codeExpired && (

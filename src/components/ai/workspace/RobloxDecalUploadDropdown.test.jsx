@@ -73,20 +73,6 @@ jest.mock("../../shadcn/dialog", () => {
   };
 });
 
-jest.mock("react-window", () => ({
-  FixedSizeList: ({ itemCount, children: Row, itemData }) => (
-    <div data-testid="virtual-list">
-      {Array.from({ length: itemCount }, (_, index) => (
-        <Row key={index} index={index} style={{}} data={itemData} />
-      ))}
-    </div>
-  ),
-}));
-
-jest.mock("react-virtualized-auto-sizer", () => ({
-  AutoSizer: ({ children }) => children({ height: 320, width: 400 }),
-}));
-
 function file(name, type = "image/png", body = "image") {
   return new File([body], name, { type });
 }
@@ -209,7 +195,7 @@ describe("RobloxDecalUploadDropdown", () => {
 
     expect(screen.getAllByRole("dialog")).toHaveLength(2);
     expect(screen.getByText(/7 images selected/i)).toBeTruthy();
-    expect(screen.getByTestId("virtual-list")).toBeTruthy();
+    expect(screen.getByTestId("decal-all-items-list")).toBeTruthy();
   });
 
   test("uploads reviewed decals with streamed progress and renders returned asset uri", async () => {

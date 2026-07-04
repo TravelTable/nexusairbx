@@ -12,7 +12,7 @@ const {
 const { isPrerenderedIconId } = require("../server/prerenderIcons");
 
 const ROOT_DIR = path.join(__dirname, "..");
-const BACKEND_URL = (process.env.REACT_APP_BACKEND_URL || "https://nexusrbx-backend-production.up.railway.app").replace(/\/+$/, "");
+const BACKEND_URL = (process.env.REACT_APP_BACKEND_URL || "https://api.nexusrbx.com").replace(/\/+$/, "");
 const BUILD_DIR = resolveProjectPath("build");
 const PUBLIC_EXPORT_DIR = resolveProjectPath("build", "__public");
 const PUBLIC_OUT_DIR = resolveProjectPath("public-frontend", "out");

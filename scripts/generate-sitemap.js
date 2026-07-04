@@ -3,7 +3,7 @@ const path = require("path");
 const https = require("https");
 const { buildSitemapDocuments, writeSitemapDocuments } = require("../server/sitemapBuilder");
 
-const BACKEND_URL = (process.env.REACT_APP_BACKEND_URL || "https://nexusrbx-backend-production.up.railway.app").replace(/\/+$/, "");
+const BACKEND_URL = (process.env.REACT_APP_BACKEND_URL || "https://api.nexusrbx.com").replace(/\/+$/, "");
 const PAGE_LIMIT = Number(process.env.SITEMAP_ICON_PAGE_LIMIT || 500);
 const MAX_PAGES = Number(process.env.SITEMAP_ICON_MAX_PAGES || 50);
 const OUTPUT_DIR = path.join(__dirname, "..", "public");
