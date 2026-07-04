@@ -19,17 +19,26 @@ Rebuild the installable plugin after editing source:
 npm run plugin:build
 ```
 
+Install directly into Roblox Studio's local plugins folder:
+
+```sh
+npm run plugin:install
+```
+
+This writes `~/Documents/Roblox/Plugins/NexusRBXStudioBridge.rbxmx` as a **single bundled script** and removes legacy broken installs like `Plugin.rbxmx`.
+
 If `npm` is not on your PATH in a minimal shell, run the bundler directly with your Node binary:
 
 ```sh
 node roblox-plugin/build/bundle-plugin.js
+node roblox-plugin/build/install-local-plugin.js
 ```
 
 ## Local install
 
-1. In Roblox Studio, create a new `Script` in `ServerStorage`.
-2. Paste `NexusRBXStudioBridge.plugin.lua` into it.
-3. Use **Plugins > Save as Local Plugin**.
+1. Run `npm run plugin:install` (recommended), then restart Studio if it was open.
+2. Manual fallback: create one new `Script`, paste **only** `NexusRBXStudioBridge.plugin.lua`, and use **Plugins > Save as Local Plugin**.
+3. **Do not** save the `roblox-plugin/src/` folder or a place folder containing `src/` as a plugin.
 4. Open the **NexusRBX** toolbar button.
 5. On the website, click **Pair Studio** and enter the shown code in the plugin.
 6. Click **Push Studio** on a generated artifact.
@@ -40,8 +49,12 @@ The plugin creates NexusRBX-managed folders under the target Roblox services and
 
 If the website queues tools like `get_project_manifest` and the plugin reports **Unsupported Studio command**, your local plugin is out of date.
 
-1. In Studio, open **Plugins > Manage Plugins** and remove the old **NexusRBX** local plugin.
-2. Run `npm run plugin:build` if you edited files under `roblox-plugin/src/`.
-3. Create a new `Script` in `ServerStorage`, paste the latest `NexusRBXStudioBridge.plugin.lua`, and **Save as Local Plugin** again.
-4. Reopen the NexusRBX dock and **Pair Studio** again (pairing codes are session-specific).
+1. In Studio, open **Plugins > Manage Plugins** and remove any old **Plugin** or **NexusRBX** local plugin.
+2. Run `npm run plugin:install` (or `npm run plugin:build` plus manual paste if you prefer).
+3. Restart Studio and reopen the NexusRBX dock.
+4. **Pair Studio** again (pairing codes are session-specific).
 5. Confirm the dock shows the expected plugin version under the title.
+
+## Publishing to Roblox (cloud plugin)
+
+See [PUBLISH.md](./PUBLISH.md). You must upload **only** the bundled `NexusRBXStudioBridge.plugin.lua` as a **single script**. Publishing the `src/` folder causes `Plugin.src.commands.*` parse errors in Studio.

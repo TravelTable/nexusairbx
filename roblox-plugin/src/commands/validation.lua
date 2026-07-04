@@ -394,3 +394,14 @@ local function collectOutput()
 end
 
 local function getServiceRoot(serviceName)
+	if serviceName == "ServerScriptService" then
+		return ServerScriptService
+	elseif serviceName == "StarterPlayerScripts" then
+		return getStarterPlayerScripts()
+	elseif serviceName == "StarterGui" then
+		return StarterGui
+	else
+		return ReplicatedStorage
+	end
+end
+

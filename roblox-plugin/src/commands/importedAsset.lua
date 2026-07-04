@@ -1,5 +1,3 @@
-end
-
 local ImportedAsset = {
 	MAX_DESCENDANTS = 10000,
 	MAX_DEPTH = 64,

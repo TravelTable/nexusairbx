@@ -67,6 +67,7 @@
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "plugin:build": "node roblox-plugin/build/bundle-plugin.js",
+    "plugin:install": "node roblox-plugin/build/install-local-plugin.js",
     "sitemap": "node scripts/generate-sitemap.js",
     "test:production-routing": "node --test server/productionRouting.test.js",
     "test:public-frontend": "node --test server/publicFrontendHtml.test.js"

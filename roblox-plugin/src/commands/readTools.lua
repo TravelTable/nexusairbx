@@ -434,3 +434,9 @@ local function readProperties(payload)
 end
 
 local function getSelectionTool()
+	local out = {}
+	for _, inst in ipairs(Selection:Get()) do
+		table.insert(out, serializeFlat(inst, false, true, true))
+	end
+	return { selection = out }
+end

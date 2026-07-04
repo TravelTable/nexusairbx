@@ -981,3 +981,6 @@ local function applyNativeModelPatch(payload, command)
 		warnings = {},
 		history = { recorded = true },
 		snapshots = snapshots,
+	}
+end
+

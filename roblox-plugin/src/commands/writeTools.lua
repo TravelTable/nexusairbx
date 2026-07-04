@@ -1,9 +1,3 @@
-	for _, inst in ipairs(selectionService:Get()) do
-		table.insert(out, serializeFlat(inst, false, true, true))
-	end
-	return { selection = out }
-end
-
 local function getStudioContext()
 	local roots = {}
 	for _, inst in ipairs(getInspectionRoots()) do
@@ -405,17 +399,6 @@ local function parseLuau(payload)
 		sourceHash = stableHash(source),
 		sourceLength = #source,
 	}
-end
-
-	if serviceName == "ServerScriptService" then
-		return ServerScriptService
-	elseif serviceName == "StarterPlayerScripts" then
-		return getStarterPlayerScripts()
-	elseif serviceName == "StarterGui" then
-		return StarterGui
-	else
-		return ReplicatedStorage
-	end
 end
 
 local function ensureCleanFolder(parent, folderName, snapshots)
@@ -995,3 +978,6 @@ local function applyArtifact(payload)
 		validation = { failures = 0, total = #operations },
 		warnings = payload.warnings or {},
 		snapshots = snapshots,
+	}
+end
+

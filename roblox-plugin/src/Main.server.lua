@@ -34,6 +34,12 @@ local function pairStudio()
 	codeBox.Text = ""
 	setStatus("connected")
 	setLast("paired session " .. tostring(dataOrError.sessionId))
+	pushActivity({
+		commandType = "pair",
+		status = "succeeded",
+		detail = tostring(dataOrError.sessionId),
+	})
+	showToast("Studio paired", "success")
 	refreshControls()
 end
 
@@ -47,7 +53,11 @@ end)
 
 pullButton.MouseButton1Click:Connect(function()
 	if pullButton:GetAttribute("NexusEnabled") == true then
-		pullOnce()
+		local result = pullOnce(2000)
+		setHealth(os.time(), getLastLatencyMs())
+		if result and result.error and not result.authFailed then
+			showToast("Pull failed", "error")
+		end
 	end
 end)
 
@@ -72,9 +82,16 @@ confirmRestoreButton.MouseButton1Click:Connect(function()
 	if ok then
 		finishRecording(recording, true)
 		setLast(("local restore complete: %d restored, %d removed"):format(resultOrError.restored or 0, resultOrError.removed or 0))
+		pushActivity({
+			commandType = "restore_all",
+			status = "succeeded",
+			detail = tostring(#localSnapshots) .. " snapshots",
+		})
+		showToast("Snapshots restored", "success")
 	else
 		finishRecording(recording, false)
 		setLast("local restore failed: " .. tostring(resultOrError))
+		showToast("Restore failed", "error")
 	end
 	updateSnapshotLabel()
 end)
@@ -96,10 +113,11 @@ disconnectButton.MouseButton1Click:Connect(function()
 	plugin:SetSetting("nexusrbxStudioToken", nil)
 	plugin:SetSetting("nexusrbxStudioSessionId", nil)
 	codeBox.Text = ""
-	setRun(nil)
+	setProgress({})
 	setActive("none")
 	setStatus("not paired")
 	setLast("disconnected")
+	showToast("Studio disconnected", "info")
 	refreshControls()
 end)
 
@@ -107,11 +125,63 @@ toggleButton.Click:Connect(function()
 	widget.Enabled = not widget.Enabled
 end)
 
+local function shouldAutoPull()
+	local setting = plugin:GetSetting("nexusrbxAutoPull")
+	return setting ~= false
+end
+
+task.spawn(function()
+	local idleWaitMs = 2000
+	local failureBackoff = 0
+
+	while true do
+		if not getToken() then
+			task.wait(2)
+			continue
+		end
+		if not shouldAutoPull() then
+			task.wait(2)
+			continue
+		end
+
+		local result = pullOnce(idleWaitMs)
+		setHealth(os.time(), getLastLatencyMs())
+
+		if result.skipped then
+			task.wait(0.5)
+			continue
+		end
+
+		if result.authFailed then
+			idleWaitMs = 2000
+			failureBackoff = 0
+			task.wait(2)
+		elseif result.error then
+			failureBackoff = math.min(failureBackoff > 0 and (failureBackoff * 2) or 2, 30)
+			idleWaitMs = 2000
+			task.wait(failureBackoff)
+		elseif result.hadCommand then
+			idleWaitMs = 2000
+			failureBackoff = 0
+			task.wait(0.35)
+		elseif result.idle then
+			failureBackoff = 0
+			idleWaitMs = math.min(idleWaitMs + 2000, 24000)
+			task.wait(0.25)
+		else
+			task.wait(1)
+		end
+	end
+end)
+
 task.spawn(function()
 	while true do
-		task.wait(2)
+		task.wait(60)
 		if getToken() then
-			pullOnce()
+			local ok, latency = pingHealth()
+			if ok then
+				setHealth(os.time(), latency)
+			end
 		end
 	end
 end)

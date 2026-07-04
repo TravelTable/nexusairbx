@@ -1,3 +1,33 @@
+local MUTATING_COMMANDS = {
+	apply_artifact = true,
+	create_script = true,
+	write_script = true,
+	patch_script = true,
+	rename_script = true,
+	move_script = true,
+	duplicate_script = true,
+	delete_script = true,
+	format_script = true,
+	replace_in_files = true,
+	create_instance = true,
+	update_properties = true,
+	update_attributes = true,
+	update_tags = true,
+	rename_instance = true,
+	move_instance = true,
+	duplicate_instance = true,
+	delete_instance = true,
+	batch_operations = true,
+	build_native_model = true,
+	insert_creator_store_asset = true,
+	insert_uploaded_roblox_model = true,
+	apply_native_model_patch = true,
+	restore_snapshot = true,
+	undo_last_batch = true,
+}
+
+local executedCommandCount = 0
+
 local TOOL_HANDLERS = {
 	apply_artifact = applyArtifact,
 	insert_creator_store_asset = function(payload)
@@ -65,6 +95,10 @@ local TOOL_HANDLERS = {
 	run_smoke_check = runSmokeCheck,
 }
 
+local function isMutatingCommand(commandType)
+	return MUTATING_COMMANDS[tostring(commandType or "")] == true
+end
+
 local function batchOperations(payload)
 	local snapshots = {}
 	local results = {}
@@ -123,7 +157,7 @@ local function ack(commandId, status, result, errorMessage)
 		status = status,
 		result = result,
 		error = errorMessage,
-	}, token)
+	}, token, { idempotent = true })
 end
 
 local function executeCommand(command)
@@ -136,7 +170,12 @@ local function executeCommand(command)
 			PLUGIN_VERSION
 		))
 	end
-	setRun(command.runId)
+	executedCommandCount += 1
+	setProgress({
+		runId = command.runId,
+		stepId = command.stepId,
+		executedCount = executedCommandCount,
+	})
 	setActive((command.label or commandType) .. " (" .. commandType .. ")")
 	local payload = command.payload or {}
 	local started = nowMs()
@@ -199,45 +238,28 @@ local function executeCommand(command)
 	return result
 end
 
-local function pullOnce()
-	if applying then
-		return
-	end
-	local token = getToken()
-	if not token then
-		setStatus("not paired")
-		return
-	end
-	setBusy(true)
-	local ok, data, statusCode = request("GET", "/api/studio/commands/next?waitMs=1000", nil, token)
-	if not ok then
-		setStatus("poll failed")
-		setLast(tostring(data))
-		setBusy(false)
-		return
-	end
-	if statusCode == 204 or not data or not data.command then
-		setStatus("connected")
-		setActive("none")
-		setBusy(false)
-		return
-	end
-
-	local command = data.command
-	local recording = beginRecording("NexusRBX " .. tostring(command.type or "command"))
-	local applyOk, resultOrError = pcall(function()
-		return executeCommand(command)
-	end)
+local function finalizeCommandOutcome(command, applyOk, resultOrError)
+	local commandType = command.type or "command"
+	local snapshotCount = (type(resultOrError) == "table" and #(resultOrError.snapshots or {})) or 0
+	local duration = type(resultOrError) == "table" and resultOrError.duration or nil
 
 	if applyOk and type(resultOrError) == "table" and resultOrError.ok == false then
-		finishRecording(recording, false)
-		ack(command.id, "failed", resultOrError, tostring(resultOrError.error or "Studio command failed"))
-		setLast((command.type or "command") .. " failed: " .. tostring(resultOrError.error or "Studio command failed"))
-		setStatus("connected")
-	elseif applyOk then
-		finishRecording(recording, true)
+		local message = tostring(resultOrError.error or "Studio command failed")
+		ack(command.id, "failed", resultOrError, message)
+		setLast(commandType .. " failed: " .. message)
+		pushActivity({
+			commandType = commandType,
+			status = "failed",
+			duration = duration,
+			snapshotCount = snapshotCount,
+			detail = message,
+		})
+		showToast(commandType .. " failed", "error")
+		return "failed"
+	end
+
+	if applyOk then
 		ack(command.id, "succeeded", resultOrError, nil)
-		local snapshotCount = (type(resultOrError) == "table" and #(resultOrError.snapshots or {})) or 0
 		local extra = ""
 		if type(resultOrError) == "table" and resultOrError.validation then
 			local v = resultOrError.validation
@@ -248,14 +270,107 @@ local function pullOnce()
 		if snapshotCount > 0 then
 			extra = extra .. (" (" .. snapshotCount .. " snapshot(s))")
 		end
-		setLast(("%s succeeded%s"):format(command.type or "command", extra))
+		setLast(("%s succeeded%s"):format(commandType, extra))
+		pushActivity({
+			commandType = commandType,
+			status = "succeeded",
+			duration = duration,
+			snapshotCount = snapshotCount,
+			detail = extra ~= "" and extra or nil,
+		})
+		showToast(commandType .. " succeeded", "success")
+		return "succeeded"
+	end
+
+	local message = tostring(resultOrError)
+	ack(command.id, "failed", nil, message)
+	setLast(commandType .. " failed: " .. message)
+	pushActivity({
+		commandType = commandType,
+		status = "failed",
+		duration = duration,
+		detail = message,
+	})
+	showToast(commandType .. " failed", "error")
+	return "failed"
+end
+
+function pullOnce(waitMs)
+	if applying then
+		return { skipped = true }
+	end
+	local token = getToken()
+	if not token then
+		setStatus("not paired")
+		return { authFailed = false, idle = true, hadCommand = false, error = false }
+	end
+
+	local pollWait = math.clamp(tonumber(waitMs) or 2000, 500, 24000)
+	setBusy(true)
+	setPollingPulse(true)
+	setStatus("polling...")
+	local ok, data, statusCode = request(
+		"GET",
+		"/api/studio/commands/next?waitMs=" .. tostring(pollWait),
+		nil,
+		token
+	)
+	setPollingPulse(false)
+
+	if statusCode == 401 or statusCode == 403 then
+		setBusy(false)
+		handleSessionExpired()
+		return { authFailed = true, idle = false, hadCommand = false, error = true }
+	end
+
+	if not ok then
+		setStatus("poll failed")
+		setLast(tostring(data))
+		setBusy(false)
+		return { authFailed = false, idle = false, hadCommand = false, error = true }
+	end
+
+	if statusCode == 204 or not data or not data.command then
 		setStatus("connected")
+		setActive("none")
+		setBusy(false)
+		return { authFailed = false, idle = true, hadCommand = false, error = false }
+	end
+
+	local command = data.command
+	if getApprovalModeEnabledExport() and isMutatingCommand(command.type) then
+		setStatus("awaiting approval")
+		local approved = waitForApproval(command)
+		if not approved then
+			ack(command.id, "failed", nil, "declined in Studio")
+			setLast((command.type or "command") .. " declined in Studio")
+			pushActivity({
+				commandType = command.type or "command",
+				status = "failed",
+				detail = "declined in Studio",
+			})
+			showToast("Command declined", "error")
+			setActive("none")
+			setBusy(false)
+			setStatus("connected")
+			return { authFailed = false, idle = false, hadCommand = true, error = false, declined = true }
+		end
+	end
+
+	local recording = beginRecording("NexusRBX " .. tostring(command.type or "command"))
+	local applyOk, resultOrError = pcall(function()
+		return executeCommand(command)
+	end)
+
+	if applyOk then
+		finishRecording(recording, type(resultOrError) == "table" and resultOrError.ok ~= false)
 	else
 		finishRecording(recording, false)
-		ack(command.id, "failed", nil, tostring(resultOrError))
-		setLast((command.type or "command") .. " failed: " .. tostring(resultOrError))
-		setStatus("connected")
 	end
+
+	finalizeCommandOutcome(command, applyOk, resultOrError)
 	setActive("none")
 	setBusy(false)
+	setStatus("connected")
+	return { authFailed = false, idle = false, hadCommand = true, error = false }
 end
