@@ -111,16 +111,27 @@ const landingPages = [
 
 const docsRoutes = [
   "/docs",
+  "/docs/installation",
   "/docs/getting-started",
   "/docs/studio-plugin",
+  "/docs/basic-workflow",
+  "/docs/reviewing-and-inserting-generated-code",
+  "/docs/generating-your-first-script",
+  "/docs/prompting-guide",
+  "/docs/understanding-script-types",
+  "/docs/common-use-cases",
+  "/docs/debugging-guide",
+  "/docs/troubleshooting",
+  "/docs/safety-permissions-privacy",
+  "/docs/faq",
+  "/docs/changelog",
+  "/docs/support-and-bug-reports",
   "/docs/script-generation",
   "/docs/ui-generation",
   "/docs/assets",
   "/docs/projects",
   "/docs/account",
   "/docs/api",
-  "/docs/troubleshooting",
-  "/docs/faq",
 ];
 
 const legalRoutes = [
@@ -167,12 +178,12 @@ test("homepage raw HTML is meaningful before client JavaScript", () => {
 
 test("docs raw HTML has route-specific metadata and content", () => {
   const html = readHtml("/docs");
-  assert.match(html, /<title>NexusRBX Documentation \| Studio Bridge and AI Workspace<\/title>/);
-  assert.match(html, /<h1[^>]*>NexusRBX documentation<\/h1>/);
-  assert.match(html, /Quick Script/);
-  assert.match(html, /Agent Build/);
-  assert.match(html, /Studio bridge/);
-  assert.match(html, /Open AI workspace/);
+  assert.match(html, /<title>NexusRBX AI Documentation \| NexusRBX AI Docs<\/title>/);
+  assert.match(html, /<h1[^>]*>NexusRBX AI Documentation<\/h1>/);
+  assert.match(html, /Creator Store summary/);
+  assert.match(html, /AI-assisted Luau scripting help/);
+  assert.match(html, /Connect Studio when needed/);
+  assert.match(html, /Open NexusRBX AI/);
   assert.equal(countCanonical(html), 1);
   assert.match(html, /href="https:\/\/www\.nexusrbx\.com\/docs"/);
   assert.doesNotMatch(html, /Monaco|AgentWorkspaceLayout|CodeEditorTabs/);
@@ -300,9 +311,11 @@ test("public frontend CSS includes mobile landing layout rules", () => {
 
 test("exported public CSS includes Tailwind utilities used by the homepage", () => {
   const cssDir = path.join(outDir, "_next", "static", "chunks");
-  const cssPath = fs.readdirSync(cssDir).find((file) => file.endsWith(".css"));
-  assert.ok(cssPath, "Expected exported CSS chunk. Run npm run public:build first.");
-  const css = fs.readFileSync(path.join(cssDir, cssPath), "utf8");
+  const cssPaths = fs.readdirSync(cssDir).filter((file) => file.endsWith(".css"));
+  assert.ok(cssPaths.length > 0, "Expected exported CSS chunks. Run npm run public:build first.");
+  const css = cssPaths
+    .map((file) => fs.readFileSync(path.join(cssDir, file), "utf8"))
+    .join("\n");
   assert.match(css, /box-sizing:border-box;border:0 solid #e5e7eb/);
   assert.match(css, /\.flex\{/);
   assert.match(css, /max-w-6xl/);

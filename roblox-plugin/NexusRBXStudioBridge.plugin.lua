@@ -6,7 +6,7 @@
 -- Local Studio plugin: website-controlled apply + agent tool runner.
 
 local BACKEND_URL = "https://api.nexusrbx.com"
-local PLUGIN_VERSION = "0.9.0-phases1-9"
+local PLUGIN_VERSION = "0.9.1-bundle-exports-fix"
 local STUDIO_PROTOCOL_VERSION = "2026-06-20-phases1-9"
 
 local Services = {
@@ -261,7 +261,7 @@ end
 -- END src/net/httpClient.lua
 
 -- BEGIN src/studio/serialization.lua
-local SCRIPT_CLASSES, stableHash, readManagedId, attributesOf, propertyHash, scriptHash, propertiesOf, structuredUnsupported, lastBatchSnapshots
+local SCRIPT_CLASSES, stableHash, nowMs, readManagedId, attributesOf, propertyHash, scriptHash, propertiesOf, structuredUnsupported, lastBatchSnapshots
 do
 
 local SERVICE_ROOTS = {
@@ -466,7 +466,7 @@ stableHash = function(value)
 	return string.format("%08x", hash)
 end
 
-local function nowMs()
+nowMs = function()
 	return math.floor(os.clock() * 1000)
 end
 
@@ -605,7 +605,7 @@ end
 -- END src/studio/serialization.lua
 
 -- BEGIN src/studio/path.lua
-local fullPath, resolvePath, readScriptSource, writeScriptSource, getInspectionRoots, getStarterPlayerScripts, classNameForKind, nowMs
+local fullPath, resolvePath, readScriptSource, writeScriptSource, getStarterPlayerScripts
 do
 local function splitPath(path)
 	local parts = {}
@@ -1111,9 +1111,18 @@ header.Parent = scrollRoot
 
 local title = makeText(header, "Title", "NexusRBX", 22, 16, true)
 title.Size = UDim2.new(1, -120, 0, 22)
+title.LayoutOrder = 1
 local subtitle = makeText(header, "Subtitle", "Plugin " .. displayPluginVersion, 18, 11, false, themeColor(Enum.StudioStyleGuideColor.DimmedText))
 subtitle.Size = UDim2.new(1, -120, 0, 18)
+subtitle.LayoutOrder = 2
 healthLabel = makeText(header, "Health", "Not synced yet", 16, 11, false, themeColor(Enum.StudioStyleGuideColor.DimmedText))
+healthLabel.Size = UDim2.new(1, -120, 0, 16)
+healthLabel.LayoutOrder = 3
+
+local headerList = Instance.new("UIListLayout")
+headerList.Padding = UDim.new(0, 2)
+headerList.SortOrder = Enum.SortOrder.LayoutOrder
+headerList.Parent = header
 
 local statusPill = Instance.new("TextLabel")
 statusPill.Name = "StatusPill"
@@ -1362,6 +1371,7 @@ onboardingOverlay.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
 onboardingOverlay.BackgroundTransparency = 0.35
 onboardingOverlay.Visible = false
 onboardingOverlay.ZIndex = 14
+onboardingOverlay.Active = false
 onboardingOverlay.Parent = root
 
 local onboardingSheet = Instance.new("Frame")
@@ -1589,6 +1599,8 @@ local function errorHelpFor(value)
 		return "Backend is updating. Try again shortly."
 	elseif string.find(lowered, "unsupported") then
 		return "Reinstall the latest plugin via Plugins -> Manage Plugins."
+	elseif string.find(lowered, "cloud_") or string.find(lowered, "attempt to call a nil value") then
+		return "Disable the Creator Store NexusRBX plugin (Plugins -> Manage Plugins), restart Studio, then use the local install from npm run plugin:install."
 	elseif string.find(lowered, "expired") then
 		return "Session expired. Pair Studio again from the website."
 	elseif string.find(lowered, "http") or string.find(lowered, "connect") or string.find(lowered, "request") then
@@ -1873,15 +1885,11 @@ onboardingDismissButton.MouseButton1Click:Connect(hideOnboarding)
 
 refreshApprovalToggle()
 refreshControls()
-
-if getToken() == nil and plugin:GetSetting("nexusrbxOnboardingSeen") ~= true then
-	task.defer(showOnboarding)
-end
 end
 -- END src/ui/BridgePanel.lua
 
 -- BEGIN src/commands/readTools.lua
-local inspectPlace, listChildren, inspectInstances, searchProject, searchSource, readScript, writeScript, readInstance, readProperties, getSelectionTool, serializeFlat
+local getInspectionRoots, inspectPlace, listChildren, inspectInstances, searchProject, searchSource, readScript, writeScript, readInstance, readProperties, getSelectionTool, serializeFlat
 do
 local function serializeInstance(inst, path, depth, maxDepth, state, includeSource, sourceMaxChars, parentPath)
 	state.count = state.count + 1
@@ -1940,7 +1948,7 @@ local function serializeInstance(inst, path, depth, maxDepth, state, includeSour
 	return item
 end
 
-local function getInspectionRoots()
+getInspectionRoots = function()
 	local roots = {}
 	local seen = {}
 	local preferred = {
@@ -5331,10 +5339,17 @@ ack = function(commandId, status, result, errorMessage)
 	}, token, { idempotent = true })
 end
 
+local function commandStartedMs()
+	if type(nowMs) == "function" then
+		return nowMs()
+	end
+	return math.floor(os.clock() * 1000)
+end
+
 executeCommand = function(command)
 	local commandType = command.type or "apply_artifact"
 	local handler = TOOL_HANDLERS[commandType]
-	if not handler then
+	if type(handler) ~= "function" then
 		error(string.format(
 			"Unsupported Studio command: %s (plugin %s). Reinstall the latest NexusRBXStudioBridge.plugin.lua via Plugins > Manage Plugins.",
 			tostring(commandType),
@@ -5349,7 +5364,7 @@ executeCommand = function(command)
 	})
 	setActive((command.label or commandType) .. " (" .. commandType .. ")")
 	local payload = command.payload or {}
-	local started = nowMs()
+	local started = commandStartedMs()
 	local result = handler(payload, command)
 	if type(result) ~= "table" then
 		result = { output = result }
@@ -5396,7 +5411,7 @@ executeCommand = function(command)
 	result.warnings = result.warnings or {}
 	result.diagnostics = result.diagnostics or {}
 	result.output = result.output or {}
-	result.duration = math.max(0, nowMs() - started)
+	result.duration = math.max(0, commandStartedMs() - started)
 	result.snapshotIds = result.snapshotIds or snapshotIds
 	result.retryable = result.retryable == true
 	if result.ok == false and type(result.error) ~= "table" then

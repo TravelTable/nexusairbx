@@ -2,7 +2,7 @@
 -- Local Studio plugin: website-controlled apply + agent tool runner.
 
 local BACKEND_URL = "https://api.nexusrbx.com"
-local PLUGIN_VERSION = "0.9.0-phases1-9"
+local PLUGIN_VERSION = "0.9.1-bundle-exports-fix"
 local STUDIO_PROTOCOL_VERSION = "2026-06-20-phases1-9"
 
 local Services = {

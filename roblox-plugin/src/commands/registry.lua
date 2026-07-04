@@ -160,10 +160,17 @@ local function ack(commandId, status, result, errorMessage)
 	}, token, { idempotent = true })
 end
 
+local function commandStartedMs()
+	if type(nowMs) == "function" then
+		return nowMs()
+	end
+	return math.floor(os.clock() * 1000)
+end
+
 local function executeCommand(command)
 	local commandType = command.type or "apply_artifact"
 	local handler = TOOL_HANDLERS[commandType]
-	if not handler then
+	if type(handler) ~= "function" then
 		error(string.format(
 			"Unsupported Studio command: %s (plugin %s). Reinstall the latest NexusRBXStudioBridge.plugin.lua via Plugins > Manage Plugins.",
 			tostring(commandType),
@@ -178,7 +185,7 @@ local function executeCommand(command)
 	})
 	setActive((command.label or commandType) .. " (" .. commandType .. ")")
 	local payload = command.payload or {}
-	local started = nowMs()
+	local started = commandStartedMs()
 	local result = handler(payload, command)
 	if type(result) ~= "table" then
 		result = { output = result }
@@ -225,7 +232,7 @@ local function executeCommand(command)
 	result.warnings = result.warnings or {}
 	result.diagnostics = result.diagnostics or {}
 	result.output = result.output or {}
-	result.duration = math.max(0, nowMs() - started)
+	result.duration = math.max(0, commandStartedMs() - started)
 	result.snapshotIds = result.snapshotIds or snapshotIds
 	result.retryable = result.retryable == true
 	if result.ok == false and type(result.error) ~= "table" then

@@ -13,13 +13,40 @@
     <loc>https://www.nexusrbx.com/docs/assets</loc>
   </url>
   <url>
+    <loc>https://www.nexusrbx.com/docs/basic-workflow</loc>
+  </url>
+  <url>
+    <loc>https://www.nexusrbx.com/docs/changelog</loc>
+  </url>
+  <url>
+    <loc>https://www.nexusrbx.com/docs/common-use-cases</loc>
+  </url>
+  <url>
+    <loc>https://www.nexusrbx.com/docs/debugging-guide</loc>
+  </url>
+  <url>
     <loc>https://www.nexusrbx.com/docs/faq</loc>
+  </url>
+  <url>
+    <loc>https://www.nexusrbx.com/docs/generating-your-first-script</loc>
   </url>
   <url>
     <loc>https://www.nexusrbx.com/docs/getting-started</loc>
   </url>
   <url>
+    <loc>https://www.nexusrbx.com/docs/installation</loc>
+  </url>
+  <url>
     <loc>https://www.nexusrbx.com/docs/projects</loc>
+  </url>
+  <url>
+    <loc>https://www.nexusrbx.com/docs/prompting-guide</loc>
+  </url>
+  <url>
+    <loc>https://www.nexusrbx.com/docs/reviewing-and-inserting-generated-code</loc>
+  </url>
+  <url>
+    <loc>https://www.nexusrbx.com/docs/safety-permissions-privacy</loc>
   </url>
   <url>
     <loc>https://www.nexusrbx.com/docs/script-generation</loc>
@@ -28,9 +55,15 @@
     <loc>https://www.nexusrbx.com/docs/studio-plugin</loc>
   </url>
   <url>
+    <loc>https://www.nexusrbx.com/docs/support-and-bug-reports</loc>
+  </url>
+  <url>
     <loc>https://www.nexusrbx.com/docs/troubleshooting</loc>
   </url>
   <url>
     <loc>https://www.nexusrbx.com/docs/ui-generation</loc>
+  </url>
+  <url>
+    <loc>https://www.nexusrbx.com/docs/understanding-script-types</loc>
   </url>
 </urlset>

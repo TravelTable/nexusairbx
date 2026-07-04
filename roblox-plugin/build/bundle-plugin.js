@@ -102,6 +102,7 @@ const MODULE_EXPORTS = {
   "src/studio/serialization.lua": [
     "SCRIPT_CLASSES",
     "stableHash",
+    "nowMs",
     "readManagedId",
     "attributesOf",
     "propertyHash",
@@ -116,10 +117,7 @@ const MODULE_EXPORTS = {
     "resolvePath",
     "readScriptSource",
     "writeScriptSource",
-    "getInspectionRoots",
     "getStarterPlayerScripts",
-    "classNameForKind",
-    "nowMs",
   ],
   "src/studio/snapshot.lua": [
     "snapshotInstance",
@@ -129,6 +127,7 @@ const MODULE_EXPORTS = {
     "restoreSnapshots",
   ],
   "src/commands/readTools.lua": [
+    "getInspectionRoots",
     "inspectPlace",
     "listChildren",
     "inspectInstances",

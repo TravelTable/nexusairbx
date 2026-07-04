@@ -212,9 +212,18 @@ header.Parent = scrollRoot
 
 local title = makeText(header, "Title", "NexusRBX", 22, 16, true)
 title.Size = UDim2.new(1, -120, 0, 22)
+title.LayoutOrder = 1
 local subtitle = makeText(header, "Subtitle", "Plugin " .. displayPluginVersion, 18, 11, false, themeColor(Enum.StudioStyleGuideColor.DimmedText))
 subtitle.Size = UDim2.new(1, -120, 0, 18)
+subtitle.LayoutOrder = 2
 healthLabel = makeText(header, "Health", "Not synced yet", 16, 11, false, themeColor(Enum.StudioStyleGuideColor.DimmedText))
+healthLabel.Size = UDim2.new(1, -120, 0, 16)
+healthLabel.LayoutOrder = 3
+
+local headerList = Instance.new("UIListLayout")
+headerList.Padding = UDim.new(0, 2)
+headerList.SortOrder = Enum.SortOrder.LayoutOrder
+headerList.Parent = header
 
 local statusPill = Instance.new("TextLabel")
 statusPill.Name = "StatusPill"
@@ -463,6 +472,7 @@ onboardingOverlay.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
 onboardingOverlay.BackgroundTransparency = 0.35
 onboardingOverlay.Visible = false
 onboardingOverlay.ZIndex = 14
+onboardingOverlay.Active = false
 onboardingOverlay.Parent = root
 
 local onboardingSheet = Instance.new("Frame")
@@ -690,6 +700,8 @@ local function errorHelpFor(value)
 		return "Backend is updating. Try again shortly."
 	elseif string.find(lowered, "unsupported") then
 		return "Reinstall the latest plugin via Plugins -> Manage Plugins."
+	elseif string.find(lowered, "cloud_") or string.find(lowered, "attempt to call a nil value") then
+		return "Disable the Creator Store NexusRBX plugin (Plugins -> Manage Plugins), restart Studio, then use the local install from npm run plugin:install."
 	elseif string.find(lowered, "expired") then
 		return "Session expired. Pair Studio again from the website."
 	elseif string.find(lowered, "http") or string.find(lowered, "connect") or string.find(lowered, "request") then
@@ -974,7 +986,3 @@ onboardingDismissButton.MouseButton1Click:Connect(hideOnboarding)
 
 refreshApprovalToggle()
 refreshControls()
-
-if getToken() == nil and plugin:GetSetting("nexusrbxOnboardingSeen") ~= true then
-	task.defer(showOnboarding)
-end
