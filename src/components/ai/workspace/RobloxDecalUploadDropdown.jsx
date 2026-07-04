@@ -5,7 +5,7 @@ import { AlertCircle, CheckCircle2, UploadCloud, RefreshCw, X } from "../../../l
 import { cn } from "../../../lib/utils";
 import { PENDING_AUTH_ACTIONS } from "../../../lib/pendingAuthAction";
 import { uploadRobloxDecalBatchStream } from "../../../lib/robloxDecalUploadApi";
-import { ensureRobloxCapabilities, ROBLOX_UPLOAD_ASSET_CAPABILITIES } from "../../../lib/robloxOAuthApi";
+import { ensureRobloxCapabilities, getRobloxCapability, isCapabilityAuthorized, ROBLOX_UPLOAD_ASSET_CAPABILITIES } from "../../../lib/robloxOAuthApi";
 import RobloxAuthorizationRequired from "../../roblox/RobloxAuthorizationRequired";
 import {
   Dialog,
@@ -126,10 +126,8 @@ export default function RobloxDecalUploadDropdown({
   const limit = limitForPlan(planKey);
   const connected = roblox?.connected === true || roblox?.status?.connected === true;
   const selectedCreator = roblox?.selectedCreator || roblox?.status?.connection?.selectedCreator || null;
-  const capability = roblox?.status?.capabilities?.roblox_upload_asset || roblox?.status?.capabilities?.asset_upload || null;
-  const capabilityAuthorized =
-    capability?.authorized === true &&
-    !(capability?.missingScopes?.length > 0);
+  const capability = getRobloxCapability(roblox?.status, "roblox_upload_asset");
+  const capabilityAuthorized = isCapabilityAuthorized(roblox?.status, "roblox_upload_asset");
   const needsReauthorization =
     !capabilityAuthorized &&
     (
@@ -168,10 +166,10 @@ export default function RobloxDecalUploadDropdown({
   }, [open, user, roblox]);
 
   useEffect(() => {
-    if (capabilityAuthorized) {
-      setReauthorizationRequired(false);
-      setError(null);
-    }
+    if (!capabilityAuthorized) return;
+
+    setReauthorizationRequired(false);
+    setError(null);
   }, [capabilityAuthorized]);
 
   useEffect(() => {

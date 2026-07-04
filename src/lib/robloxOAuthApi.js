@@ -166,7 +166,7 @@ export async function beginRobloxReauthorization(options) {
   });
 }
 
-function getRobloxCapability(robloxStatus, capabilityId) {
+export function getRobloxCapability(robloxStatus, capabilityId) {
   const caps = robloxStatus?.capabilities;
   if (!caps) return null;
   if (caps[capabilityId]) return caps[capabilityId];

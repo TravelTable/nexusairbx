@@ -13,9 +13,13 @@ jest.mock("@hugeicons/core-free-icons", () => ({
   FolderUploadIcon: {},
 }));
 
-jest.mock("../../../lib/robloxOAuthApi", () => ({
-  ensureRobloxCapabilities: jest.fn(),
-}));
+jest.mock("../../../lib/robloxOAuthApi", () => {
+  const actual = jest.requireActual("../../../lib/robloxOAuthApi");
+  return {
+    ...actual,
+    ensureRobloxCapabilities: jest.fn(),
+  };
+});
 
 jest.mock("../../../lib/robloxDecalUploadApi", () => ({
   uploadRobloxDecalBatchStream: jest.fn(),
@@ -301,5 +305,58 @@ describe("RobloxDecalUploadDropdown", () => {
     await waitFor(() => expect(uploadRobloxDecalBatchStream).toHaveBeenCalledTimes(2));
     await screen.findByText("rbxassetid://9002");
     expect(uploadRobloxDecalBatchStream.mock.calls[1][0].files).toHaveLength(1);
+  });
+
+  test("clears stale reauthorization state when server confirms upload capability", async () => {
+    const notify = jest.fn();
+    const { rerender } = render(
+      <RobloxDecalUploadDropdown
+        user={{ uid: "user-1" }}
+        planKey="free"
+        roblox={roblox({
+          status: {
+            connected: true,
+            capabilities: {
+              roblox_upload_asset: { authorized: false, missingScopes: ["asset:read"] },
+            },
+            connection: {
+              selectedCreator: { type: "User", id: "123" },
+            },
+          },
+        })}
+        notify={notify}
+      />
+    );
+
+    await userEvent.click(screen.getByRole("button", { name: /upload roblox decals/i }));
+    expect(screen.getByText(/Roblox needs additional permission/i)).toBeTruthy();
+
+    rerender(
+      <RobloxDecalUploadDropdown
+        user={{ uid: "user-1" }}
+        planKey="free"
+        roblox={roblox({
+          status: {
+            connected: true,
+            capabilities: {
+              granted: [{ id: "roblox_upload_asset", available: true, missingScopes: [] }],
+              missing: [],
+            },
+            connection: {
+              selectedCreator: { type: "User", id: "123" },
+            },
+          },
+        })}
+        notify={notify}
+      />
+    );
+
+    expect(screen.queryByText(/Roblox needs additional permission/i)).toBeNull();
+
+    fireEvent.change(screen.getByLabelText(/choose decal images/i), {
+      target: { files: [file("decal.png")] },
+    });
+
+    expect(screen.getByRole("button", { name: /upload 1 decal/i }).disabled).toBe(false);
   });
 });
