@@ -70,7 +70,6 @@ export async function pollJobResult({
   waitImpl = (ms) => new Promise((r) => setTimeout(r, ms)),
 } = {}) {
   const startedAt = Date.now();
-  let waitedMs = 0;
   let effectiveDeadline = startedAt + wallTimeoutMs;
 
   for (let attempt = 0; attempt < maxPolls; attempt++) {
@@ -123,7 +122,6 @@ export async function pollJobResult({
       }
       const delay = pollBaseMs * (attempt + 1);
       await waitImpl(delay);
-      waitedMs += delay;
       continue;
     }
 
