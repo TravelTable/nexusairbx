@@ -6,7 +6,8 @@
 -- Local Studio plugin: website-controlled apply + agent tool runner.
 
 local BACKEND_URL = "https://api.nexusrbx.com"
-local PLUGIN_VERSION = "0.9.1-bundle-exports-fix"
+local BACKEND_HOST = "api.nexusrbx.com"
+local PLUGIN_VERSION = "0.9.2-cloud-dedupe-fix"
 local STUDIO_PROTOCOL_VERSION = "2026-06-20-phases1-9"
 
 local Services = {
@@ -572,6 +573,9 @@ end
 
 scriptHash = function(inst)
 	if not inst or not SCRIPT_CLASSES[inst.ClassName] then
+		return nil
+	end
+	if type(readScriptSource) ~= "function" then
 		return nil
 	end
 	local ok, source = readScriptSource(inst)
@@ -1176,8 +1180,9 @@ setupSteps = makeText(
 		"1. On nexusrbx.com: Pair Studio, generate a code",
 		"2. Paste the code above",
 		"3. Click Pair Studio (Enter works too)",
-		"4. Accept the HTTP permission prompt for api.nexusrbx.com",
+		"4. Accept the HTTP permission prompt for " .. BACKEND_HOST,
 		"5. Game Settings -> Security -> Allow HTTP Requests",
+		"6. If commands fail with cloud_ in the error, disable the Creator Store NexusRBX plugin and restart Studio",
 	}, "\n"),
 	nil,
 	11,
@@ -1405,7 +1410,7 @@ local onboardingCopy = makeText(
 		"1. On nexusrbx.com, open the AI workspace and click Pair Studio.",
 		"2. Copy the pairing code it shows.",
 		"3. Paste the code here and click Pair Studio.",
-		"4. If Studio asks, allow HTTP access to api.nexusrbx.com.",
+		"4. If Studio asks, allow HTTP access to " .. BACKEND_HOST .. ".",
 		"5. Enable Game Settings -> Security -> Allow HTTP Requests.",
 	}, "\n"),
 	nil,
@@ -1600,11 +1605,13 @@ local function errorHelpFor(value)
 	elseif string.find(lowered, "unsupported") then
 		return "Reinstall the latest plugin via Plugins -> Manage Plugins."
 	elseif string.find(lowered, "cloud_") or string.find(lowered, "attempt to call a nil value") then
-		return "Disable the Creator Store NexusRBX plugin (Plugins -> Manage Plugins), restart Studio, then use the local install from npm run plugin:install."
+		return "The Creator Store copy of this plugin is still running. Plugins -> Manage Plugins -> disable NexusRBX cloud plugin -> restart Studio. Keep only the local install from npm run plugin:install."
 	elseif string.find(lowered, "expired") then
 		return "Session expired. Pair Studio again from the website."
+	elseif string.find(lowered, "dnsresolve") or string.find(lowered, "could not resolve") then
+		return "The plugin API host could not be resolved. Reinstall the latest plugin (npm run plugin:install) and allow HTTP for " .. BACKEND_HOST .. "."
 	elseif string.find(lowered, "http") or string.find(lowered, "connect") or string.find(lowered, "request") then
-		return "Allow HTTP Requests and accept the api.nexusrbx.com permission."
+		return "Allow HTTP Requests and accept the " .. BACKEND_HOST .. " permission."
 	end
 	return nil
 end
@@ -1860,7 +1867,7 @@ runSetupCheck = function()
 	elseif not httpOk then
 		table.insert(lines, '<font color="#D39127">--</font> Backend check skipped until HTTP is on')
 	else
-		table.insert(lines, '<font color="#D64550">X</font> Backend unreachable. Accept the api.nexusrbx.com permission.')
+		table.insert(lines, '<font color="#D64550">X</font> Backend unreachable. Accept the ' .. BACKEND_HOST .. ' permission.')
 	end
 	setupResult.Text = table.concat(lines, "\n")
 end
@@ -5564,6 +5571,13 @@ end
 -- END src/commands/registry.lua
 
 -- BEGIN src/Main.server.lua
+do
+	local override = plugin:GetSetting("nexusrbxBackendUrl")
+	if type(override) == "string" and string.find(string.lower(override), "railway%.app", 1, true) then
+		plugin:SetSetting("nexusrbxBackendUrl", nil)
+	end
+end
+
 local function pairStudio()
 	if pairButton:GetAttribute("NexusEnabled") ~= true then
 		return

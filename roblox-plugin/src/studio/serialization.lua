@@ -309,6 +309,9 @@ local function scriptHash(inst)
 	if not inst or not SCRIPT_CLASSES[inst.ClassName] then
 		return nil
 	end
+	if type(readScriptSource) ~= "function" then
+		return nil
+	end
 	local ok, source = readScriptSource(inst)
 	return ok and stableHash(source) or nil
 end

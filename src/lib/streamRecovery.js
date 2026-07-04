@@ -2,7 +2,12 @@ import { BACKEND_URL } from "../config";
 import { parseApiErrorPayload } from "./billingErrors";
 
 export const RECOVERY_WALL_TIMEOUT_MS = Number(
-  process.env.REACT_APP_RECOVERY_WALL_TIMEOUT_MS || 5 * 60 * 1000
+  process.env.REACT_APP_RECOVERY_WALL_TIMEOUT_MS || 15 * 60 * 1000
+);
+
+/** Extra wall-clock grace while a job is blocked on Studio plugin round-trips. */
+export const STUDIO_WAIT_GRACE_MS = Number(
+  process.env.REACT_APP_STUDIO_WAIT_GRACE_MS || 10 * 60 * 1000
 );
 
 const STAGE_LABELS = {
@@ -16,17 +21,24 @@ const STAGE_LABELS = {
   planning: "Planning...",
 };
 
-export function buildStreamUrl({ jobId, mode, afterSeq = 0 }) {
+export function isStudioWaitPayload(payload = {}) {
+  return payload.waitingFor === "studio" || payload.jobStatus === "waiting_for_tool";
+}
+
+export function buildStreamUrl({ jobId, mode, afterSeq = 0, streamToken = null }) {
   const params = new URLSearchParams({
     jobId: String(jobId),
     mode: String(mode || "plan"),
     afterSeq: String(Number(afterSeq) || 0),
   });
+  if (streamToken) {
+    params.set("streamToken", String(streamToken));
+  }
   return `${BACKEND_URL}/api/generate/stream?${params.toString()}`;
 }
 
 export function formatRecoveryStage(payload = {}) {
-  if (payload.waitingFor === "studio" || payload.jobStatus === "waiting_for_tool") {
+  if (isStudioWaitPayload(payload)) {
     return STAGE_LABELS.inspecting;
   }
   const stage = String(payload.stage || payload.jobStatus || "").toLowerCase();
@@ -59,9 +71,10 @@ export async function pollJobResult({
 } = {}) {
   const startedAt = Date.now();
   let waitedMs = 0;
+  let effectiveDeadline = startedAt + wallTimeoutMs;
 
   for (let attempt = 0; attempt < maxPolls; attempt++) {
-    if (Date.now() - startedAt >= wallTimeoutMs || waitedMs >= wallTimeoutMs) {
+    if (Date.now() >= effectiveDeadline) {
       throw Object.assign(
         new Error(
           "Generation timed out while recovering the stream. The job may still be running on the server — try refreshing or starting a new chat."
@@ -105,6 +118,9 @@ export async function pollJobResult({
 
     if (res.status === 202 || data?.status === "pending") {
       onPending?.(data);
+      if (isStudioWaitPayload(data)) {
+        effectiveDeadline = Math.max(effectiveDeadline, Date.now() + STUDIO_WAIT_GRACE_MS);
+      }
       const delay = pollBaseMs * (attempt + 1);
       await waitImpl(delay);
       waitedMs += delay;
@@ -119,5 +135,7 @@ export async function pollJobResult({
     return data?.result || data;
   }
 
-  throw new Error("Timed out while recovering streamed generation");
+  throw Object.assign(new Error("Timed out while recovering streamed generation"), {
+    code: "RECOVERY_TIMEOUT",
+  });
 }

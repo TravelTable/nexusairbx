@@ -277,8 +277,9 @@ setupSteps = makeText(
 		"1. On nexusrbx.com: Pair Studio, generate a code",
 		"2. Paste the code above",
 		"3. Click Pair Studio (Enter works too)",
-		"4. Accept the HTTP permission prompt for api.nexusrbx.com",
+		"4. Accept the HTTP permission prompt for " .. BACKEND_HOST,
 		"5. Game Settings -> Security -> Allow HTTP Requests",
+		"6. If commands fail with cloud_ in the error, disable the Creator Store NexusRBX plugin and restart Studio",
 	}, "\n"),
 	nil,
 	11,
@@ -506,7 +507,7 @@ local onboardingCopy = makeText(
 		"1. On nexusrbx.com, open the AI workspace and click Pair Studio.",
 		"2. Copy the pairing code it shows.",
 		"3. Paste the code here and click Pair Studio.",
-		"4. If Studio asks, allow HTTP access to api.nexusrbx.com.",
+		"4. If Studio asks, allow HTTP access to " .. BACKEND_HOST .. ".",
 		"5. Enable Game Settings -> Security -> Allow HTTP Requests.",
 	}, "\n"),
 	nil,
@@ -701,11 +702,13 @@ local function errorHelpFor(value)
 	elseif string.find(lowered, "unsupported") then
 		return "Reinstall the latest plugin via Plugins -> Manage Plugins."
 	elseif string.find(lowered, "cloud_") or string.find(lowered, "attempt to call a nil value") then
-		return "Disable the Creator Store NexusRBX plugin (Plugins -> Manage Plugins), restart Studio, then use the local install from npm run plugin:install."
+		return "The Creator Store copy of this plugin is still running. Plugins -> Manage Plugins -> disable NexusRBX cloud plugin -> restart Studio. Keep only the local install from npm run plugin:install."
 	elseif string.find(lowered, "expired") then
 		return "Session expired. Pair Studio again from the website."
+	elseif string.find(lowered, "dnsresolve") or string.find(lowered, "could not resolve") then
+		return "The plugin API host could not be resolved. Reinstall the latest plugin (npm run plugin:install) and allow HTTP for " .. BACKEND_HOST .. "."
 	elseif string.find(lowered, "http") or string.find(lowered, "connect") or string.find(lowered, "request") then
-		return "Allow HTTP Requests and accept the api.nexusrbx.com permission."
+		return "Allow HTTP Requests and accept the " .. BACKEND_HOST .. " permission."
 	end
 	return nil
 end
@@ -961,7 +964,7 @@ function runSetupCheck()
 	elseif not httpOk then
 		table.insert(lines, '<font color="#D39127">--</font> Backend check skipped until HTTP is on')
 	else
-		table.insert(lines, '<font color="#D64550">X</font> Backend unreachable. Accept the api.nexusrbx.com permission.')
+		table.insert(lines, '<font color="#D64550">X</font> Backend unreachable. Accept the ' .. BACKEND_HOST .. ' permission.')
 	end
 	setupResult.Text = table.concat(lines, "\n")
 end

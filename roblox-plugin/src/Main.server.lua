@@ -1,3 +1,10 @@
+do
+	local override = plugin:GetSetting("nexusrbxBackendUrl")
+	if type(override) == "string" and string.find(string.lower(override), "railway%.app", 1, true) then
+		plugin:SetSetting("nexusrbxBackendUrl", nil)
+	end
+end
+
 local function pairStudio()
 	if pairButton:GetAttribute("NexusEnabled") ~= true then
 		return

@@ -22,6 +22,7 @@ import {
   buildStreamUrl,
   formatRecoveryStage,
   pollJobResult,
+  RECOVERY_WALL_TIMEOUT_MS,
   updateSeqFromPayload,
 } from "../lib/streamRecovery";
 import { FEATURE_FLAGS } from "../lib/featureFlags";
@@ -574,9 +575,9 @@ export function useAiChat(user, settings, refreshBilling, notify) {
       }
 
       publishGenerationStage(activeChatId, "Connecting...");
-      await ensureStreamSession(token);
+      const initialStreamSession = await ensureStreamSession(token, { retries: 1 }).catch(() => ({ token: null }));
 
-      // 2. Connect to stream (tails worker events; auth via HttpOnly cookie)
+      // 2. Connect to stream (tails worker events; auth via HttpOnly cookie + query token)
       return new Promise((resolve, reject) => {
         let eventSource = null;
         let receivedDone = false;
@@ -584,6 +585,8 @@ export function useAiChat(user, settings, refreshBilling, notify) {
         let recoverInFlight = false;
         let dualStreamAttempted = false;
         let lastSeq = 0;
+        let streamSessionToken = initialStreamSession?.token || null;
+        let sseSessionUnavailable = !streamSessionToken;
         const isAutoExecuting = currentMode === "act";
         let retryCount = 0;
         let streamFlushTimer = null;
@@ -710,6 +713,53 @@ export function useAiChat(user, settings, refreshBilling, notify) {
           reject(err instanceof Error ? err : new Error(String(err || "Generation failed")));
         };
 
+        const handoffRecoveryTimeout = () => {
+          emitStreamMetric("error", {
+            jobId,
+            tag: "timeout",
+            message: "Recovery wall timeout; background poll continues",
+            retries: retryCount,
+          });
+          eventSource?.close?.();
+          if (agentRunId) {
+            updateDoc(assistantMsgRef, {
+              pending: true,
+              stage: "Still working in background...",
+              jobId,
+              requestId,
+              runId: agentRunId,
+              updatedAt: serverTimestamp(),
+            }).catch(() => {});
+          } else {
+            setDoc(
+              assistantMsgRef,
+              {
+                role: "assistant",
+                content: "",
+                pending: true,
+                stage: "Still working in background...",
+                requestId,
+                jobId,
+                createdAt: serverTimestamp(),
+                updatedAt: serverTimestamp(),
+              },
+              { merge: true }
+            ).catch(() => {});
+          }
+          notify?.({
+            type: "info",
+            message:
+              "Connection lost — still working in the background. Results will appear when ready.",
+          });
+          setBusy(false);
+          if (streamFlushTimer) clearTimeout(streamFlushTimer);
+          stopIdlePulse();
+          setPending(null);
+          setStage("");
+          delete streamStatesRef.current[activeChatId];
+          resolve();
+        };
+
         const failInsufficientTokens = async (payload = {}) => {
           if (finalized) return;
           finalized = true;
@@ -803,7 +853,7 @@ export function useAiChat(user, settings, refreshBilling, notify) {
 
             if (await tryFetchCompletedResult()) return;
 
-            if (retryCount < STREAM_MAX_RETRIES) {
+            if (retryCount < STREAM_MAX_RETRIES && !sseSessionUnavailable) {
               retryCount += 1;
               emitStreamMetric("retry", { jobId, retryCount });
               const reconnectLabel = "Stream interrupted — reconnecting...";
@@ -827,7 +877,7 @@ export function useAiChat(user, settings, refreshBilling, notify) {
             });
             emitStreamMetric("fallback_start", { jobId });
 
-            if (!dualStreamAttempted) {
+            if (!dualStreamAttempted && !sseSessionUnavailable) {
               dualStreamAttempted = true;
               connect();
             }
@@ -837,6 +887,7 @@ export function useAiChat(user, settings, refreshBilling, notify) {
               token,
               maxPolls: RESULT_MAX_POLLS,
               pollBaseMs: RESULT_POLL_BASE_MS,
+              wallTimeoutMs: RECOVERY_WALL_TIMEOUT_MS,
               waitImpl: wait,
               onPending: applyRecoveryStage,
             });
@@ -847,11 +898,12 @@ export function useAiChat(user, settings, refreshBilling, notify) {
               await failInsufficientTokens(fallbackErr);
               return;
             }
-            const errorMsg = rawError?.message || fallbackErr?.message || "Generation failed";
             if (fallbackErr?.code === "RECOVERY_TIMEOUT") {
-              notify?.({ type: "error", message: errorMsg });
+              handoffRecoveryTimeout();
+              return;
             }
-            failAndReject(new Error(errorMsg), fallbackErr?.code === "RECOVERY_TIMEOUT" ? "timeout" : "network");
+            const errorMsg = rawError?.message || fallbackErr?.message || "Generation failed";
+            failAndReject(new Error(errorMsg), "network");
           } finally {
             recoverInFlight = false;
           }
@@ -990,14 +1042,34 @@ export function useAiChat(user, settings, refreshBilling, notify) {
           });
         };
 
-        const connect = async () => {
-          eventSource?.close?.();
+        const mintStreamSession = async () => {
           try {
-            await ensureStreamSession(token);
+            const session = await ensureStreamSession(token, { retries: 1 });
+            streamSessionToken = session?.token || null;
+            sseSessionUnavailable = !streamSessionToken;
+            return Boolean(streamSessionToken);
           } catch (err) {
             console.warn("Stream session refresh failed:", err?.message || err);
+            streamSessionToken = null;
+            sseSessionUnavailable = true;
+            return false;
           }
-          const url = buildStreamUrl({ jobId, mode: currentMode, afterSeq: lastSeq });
+        };
+
+        const connect = async () => {
+          eventSource?.close?.();
+          const sessionOk = await mintStreamSession();
+          if (!sessionOk) {
+            emitStreamMetric("error", { jobId, tag: "network", message: "stream_session_unavailable" });
+            await recoverFromStreamFailure();
+            return;
+          }
+          const url = buildStreamUrl({
+            jobId,
+            mode: currentMode,
+            afterSeq: lastSeq,
+            streamToken: streamSessionToken,
+          });
           eventSource = new EventSource(url, { withCredentials: true });
           emitStreamMetric("connect", { jobId, retryCount, afterSeq: lastSeq });
           setupListeners(eventSource);
@@ -1012,7 +1084,11 @@ export function useAiChat(user, settings, refreshBilling, notify) {
           idlePulse.start();
         };
 
-        connect();
+        if (sseSessionUnavailable) {
+          recoverFromStreamFailure();
+        } else {
+          connect();
+        }
       });
 
     } catch (e) {

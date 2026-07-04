@@ -22,9 +22,7 @@ const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 
 // Core SDKs
 export const auth = getAuth(app);
-export const db = initializeFirestore(app, {
-  experimentalForceLongPolling: true,
-});
+export const db = initializeFirestore(app);
 
 // Safe, optional Analytics loader
 export async function initAnalytics() {
