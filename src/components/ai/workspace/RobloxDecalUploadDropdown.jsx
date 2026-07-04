@@ -54,7 +54,8 @@ function normalizePlanKey(planKey) {
   return String(planKey || "free").trim().toLowerCase().replace(/\s+/g, "_");
 }
 
-function limitForPlan(planKey) {
+function limitForPlan(planKey, devOverride = false) {
+  if (devOverride) return Number.POSITIVE_INFINITY;
   return PLAN_LIMITS[normalizePlanKey(planKey)] || PLAN_LIMITS.free;
 }
 
@@ -103,6 +104,7 @@ function mergeUploadResult(item, result) {
 export default function RobloxDecalUploadDropdown({
   user = null,
   planKey = "free",
+  devOverride = false,
   roblox = null,
   projectId = null,
   onAttached,
@@ -123,7 +125,8 @@ export default function RobloxDecalUploadDropdown({
   const itemsRef = useRef([]);
   const uploadTargetIdsRef = useRef(new Set());
 
-  const limit = limitForPlan(planKey);
+  const limit = limitForPlan(planKey, devOverride);
+  const hasFiniteLimit = Number.isFinite(limit);
   const connected = roblox?.connected === true || roblox?.status?.connected === true;
   const selectedCreator = roblox?.selectedCreator || roblox?.status?.connection?.selectedCreator || null;
   const capability = getRobloxCapability(roblox?.status, "roblox_upload_asset");
@@ -140,7 +143,7 @@ export default function RobloxDecalUploadDropdown({
   const invalidItems = items.filter((item) => item.status === "rejected");
   const uploadedItems = items.filter((item) => item.status === "succeeded");
   const pendingItems = validItems.filter((item) => item.status !== "succeeded" && item.status !== "uploading");
-  const overLimit = validItems.length > limit;
+  const overLimit = hasFiniteLimit && validItems.length > limit;
   const uploadReady = Boolean(user && connected && selectedCreator && !needsReauthorization && !overLimit && !uploading);
   const canUpload = Boolean(uploadReady && pendingItems.length > 0);
   const canRetryFailed = Boolean(uploadReady && failedItems.length > 0);
@@ -392,7 +395,7 @@ export default function RobloxDecalUploadDropdown({
                   </DialogDescription>
                 </div>
                 <Badge variant="outline" className="shrink-0 border-white/15 bg-white/[0.04] text-[11px] text-white/70">
-                  {planLabel}: {limit} per batch
+                  {devOverride ? "Dev: Unlimited per batch" : `${planLabel}: ${limit} per batch`}
                 </Badge>
               </div>
             </DialogHeader>

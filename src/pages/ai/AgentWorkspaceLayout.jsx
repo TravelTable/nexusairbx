@@ -1015,6 +1015,7 @@ export default function AgentWorkspaceLayout({ controller }) {
                 <RobloxDecalUploadDropdown
                   user={user}
                   planKey={planKey}
+                  devOverride={devOverride}
                   roblox={roblox}
                   projectId={roblox?.selectedAssetProjectId}
                   onAttached={roblox?.refreshProjectAssets}

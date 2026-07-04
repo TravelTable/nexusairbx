@@ -169,6 +169,40 @@ describe("RobloxDecalUploadDropdown", () => {
     expect(uploadRobloxDecalBatchStream).not.toHaveBeenCalled();
   });
 
+  test("allows unlimited decal batches for dev override accounts", async () => {
+    uploadRobloxDecalBatchStream.mockResolvedValue({
+      batchId: "batch-dev",
+      plan: "TEAM",
+      limit: null,
+      accepted: 6,
+      rejected: 0,
+      results: Array.from({ length: 6 }, (_, index) => ({
+        clientId: `c${index}`,
+        fileName: `decal-${index}.png`,
+        displayName: `Decal ${index}`,
+        status: "succeeded",
+        assetId: String(9000 + index),
+        contentUri: `rbxassetid://${9000 + index}`,
+      })),
+    });
+
+    await openUploadDialog({ planKey: "free", devOverride: true });
+
+    expect(screen.getByText(/Dev: Unlimited per batch/i)).toBeTruthy();
+
+    fireEvent.change(screen.getByLabelText(/choose decal images/i), {
+      target: {
+        files: Array.from({ length: 6 }, (_, index) => file(`decal-${index}.png`)),
+      },
+    });
+
+    expect(screen.queryByText(/can upload 5 decals at a time/i)).toBeNull();
+    expect(screen.getByRole("button", { name: /upload 6 decals/i }).disabled).toBe(false);
+
+    fireEvent.click(screen.getByRole("button", { name: /upload 6 decals/i }));
+    await waitFor(() => expect(uploadRobloxDecalBatchStream).toHaveBeenCalledTimes(1));
+  });
+
   test("shows only five inline items and a show more button for larger selections", async () => {
     await openUploadDialog({ planKey: "pro" });
 
