@@ -883,37 +883,37 @@ export function useAiWorkspaceController() {
 
   useEffect(() => {
     if (!user || pendingRobloxResumeRef.current) return;
-    pendingRobloxResumeRef.current = true;
-
     const pending = readPendingRobloxAction();
     if (!pending) return;
-
+    pendingRobloxResumeRef.current = true;
     clearPendingRobloxAction();
-
-    if (pending.requiresFileReselect) {
+    const resumeRobloxAction = async () => {
+      await refreshRobloxStatus();
+      if (pending.requiresFileReselect) {
+        notify({
+          message:
+            "Roblox authorization is ready. Select your local files again to continue the upload.",
+          type: "info",
+          duration: 8000,
+        });
+        return;
+      }
+      if (pending.type === "creator_store_search") {
+        notify({
+          message: "Roblox authorization is ready. Continue your Creator Store search.",
+          type: "success",
+          duration: 6000,
+        });
+        return;
+      }
       notify({
-        message: "Roblox authorization is ready. Select your local files again to continue the upload.",
-        type: "info",
-        duration: 8000,
-      });
-      return;
-    }
-
-    if (pending.type === "creator_store_search") {
-      notify({
-        message: "Roblox authorization is ready. Continue your Creator Store search.",
+        message: "Roblox authorization is ready. Continue your Roblox action.",
         type: "success",
         duration: 6000,
       });
-      return;
-    }
-
-    notify({
-      message: "Roblox authorization is ready. Continue your Roblox action.",
-      type: "success",
-      duration: 6000,
-    });
-  }, [notify, user]);
+    };
+    void resumeRobloxAction();
+  }, [notify, user, refreshRobloxStatus]);
 
   useEffect(() => {
     if (!user) return;

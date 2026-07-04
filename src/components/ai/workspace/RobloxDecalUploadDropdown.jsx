@@ -127,7 +127,16 @@ export default function RobloxDecalUploadDropdown({
   const connected = roblox?.connected === true || roblox?.status?.connected === true;
   const selectedCreator = roblox?.selectedCreator || roblox?.status?.connection?.selectedCreator || null;
   const capability = roblox?.status?.capabilities?.roblox_upload_asset || roblox?.status?.capabilities?.asset_upload || null;
-  const needsReauthorization = reauthorizationRequired || capability?.authorized === false || capability?.missingScopes?.length > 0;
+  const capabilityAuthorized =
+    capability?.authorized === true &&
+    !(capability?.missingScopes?.length > 0);
+  const needsReauthorization =
+    !capabilityAuthorized &&
+    (
+      reauthorizationRequired ||
+      capability?.authorized === false ||
+      capability?.missingScopes?.length > 0
+    );
   const validItems = items.filter((item) => item.status !== "rejected");
   const failedItems = items.filter((item) => item.status === "failed");
   const invalidItems = items.filter((item) => item.status === "rejected");
@@ -157,6 +166,13 @@ export default function RobloxDecalUploadDropdown({
   useEffect(() => {
     if (open && user) roblox?.refresh?.();
   }, [open, user, roblox]);
+
+  useEffect(() => {
+    if (capabilityAuthorized) {
+      setReauthorizationRequired(false);
+      setError(null);
+    }
+  }, [capabilityAuthorized]);
 
   useEffect(() => {
     itemsRef.current = items;
