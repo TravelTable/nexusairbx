@@ -1,6 +1,5 @@
 import { getAuth } from "firebase/auth";
 import { BACKEND_URL } from "../config";
-import { buildExampleContextRequest } from "./exampleContextRequest";
 import { getProductAnalyticsHeaders } from "./productAnalytics";
 
 function randomKey(prefix = "qs") {
@@ -41,8 +40,6 @@ export function createQuickScriptIdempotencyKey() {
 export async function generateQuickScript({
   prompt,
   idempotencyKey = createQuickScriptIdempotencyKey(),
-  useExamples = false,
-  selectedExampleIds = [],
 } = {}) {
   const headers = {
     Accept: "application/json",
@@ -59,7 +56,6 @@ export async function generateQuickScript({
     body: JSON.stringify({
       prompt,
       generatorMode: "quick_script",
-      ...buildExampleContextRequest({ useExamples, selectedExampleIds }),
     }),
   });
   return parseJsonResponse(res);

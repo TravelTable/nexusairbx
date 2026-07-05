@@ -12,7 +12,6 @@ import StudioPairControl from "../../components/ai/StudioPairControl";
 import DailyPromptBadge from "../../components/ai/DailyPromptBadge";
 import ProjectArchitecturePanel from "../../components/ai/ProjectArchitecturePanel";
 import { ProjectContextStatus } from "../../components/ai/AiComponents";
-import ExampleContextControl from "../../components/ai/ExampleContextControl";
 import SiteHeader from "../../components/site/SiteHeader";
 import { AI_EVENTS } from "../../lib/aiEvents";
 import { Segmented } from "../../components/ui";
@@ -56,7 +55,6 @@ export default function AgentWorkspaceLayout({ controller }) {
     mobileTab,
     generatorMode,
     quickScript,
-    exampleContext,
     prompt,
     isImproving,
     refineTarget,
@@ -118,8 +116,6 @@ export default function AgentWorkspaceLayout({ controller }) {
     handleStudioApplyModeChange,
     handleStudioAutoPushEnabledChange,
     handleStudioAutoPushPolicyChange,
-    handleUseExamplesChange,
-    handleSelectedExampleIdsChange,
     handleRobloxAssetUploadsEnabledChange,
     handleOpenAssetLibrary,
     handleCloseAssetLibrary,
@@ -658,16 +654,6 @@ export default function AgentWorkspaceLayout({ controller }) {
 
   const agentChat = (
     <div className="flex min-h-0 flex-1 flex-col">
-      <ExampleContextControl
-        examples={exampleContext?.examples}
-        status={exampleContext?.status}
-        error={exampleContext?.error}
-        available={exampleContext?.available}
-        useExamples={Boolean(exampleContext?.useExamples)}
-        selectedExampleIds={exampleContext?.selectedExampleIds}
-        onUseExamplesChange={handleUseExamplesChange}
-        onSelectedExampleIdsChange={handleSelectedExampleIdsChange}
-      />
       <div className="min-h-0 flex-1">
         <AgentChatPanel
           messages={chat.messages}
@@ -1121,11 +1107,6 @@ export default function AgentWorkspaceLayout({ controller }) {
                 onOpenAgentBuild={handleQuickScriptOpenAgentBuild}
                 onImprovePrompt={handleImprovePrompt}
                 isImproving={isImproving}
-                exampleContext={exampleContext}
-                useExamples={Boolean(exampleContext?.useExamples)}
-                selectedExampleIds={exampleContext?.selectedExampleIds || []}
-                onUseExamplesChange={handleUseExamplesChange}
-                onSelectedExampleIdsChange={handleSelectedExampleIdsChange}
               />
             </div>
           ) : (

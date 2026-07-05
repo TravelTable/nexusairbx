@@ -69,7 +69,6 @@ import {
   saveQuickScriptSession,
   quickScriptResultToAgentPrompt,
 } from "../../lib/quickScriptSession";
-import { fetchRobloxExamples } from "../../lib/robloxExamplesApi";
 import { buildBaseArtifactSnapshot } from "../../lib/artifactState";
 import {
   PENDING_AUTH_ACTIONS,
@@ -207,53 +206,7 @@ export function useAiWorkspaceController() {
   const [approvingStepId, setApprovingStepId] = useState(null);
   const [restoringRun, setRestoringRun] = useState(false);
   const [chatProjectSnapshot, setChatProjectSnapshot] = useState(null);
-  const [exampleContext, setExampleContext] = useState({
-    examples: [],
-    status: "idle",
-    error: "",
-    available: false,
-    totals: null,
-    generatedAt: null,
-  });
-
-  const selectedExampleIds = useMemo(
-    () => (Array.isArray(settings?.selectedExampleIds) ? settings.selectedExampleIds : []),
-    [settings?.selectedExampleIds]
-  );
-  const useExamples = Boolean(settings?.useExamples);
-
   const studioConnection = useStudioConnection();
-
-  useEffect(() => {
-    let cancelled = false;
-    setExampleContext((prev) => ({ ...prev, status: "loading", error: "" }));
-    fetchRobloxExamples()
-      .then((payload) => {
-        if (cancelled) return;
-        setExampleContext({
-          examples: Array.isArray(payload?.examples) ? payload.examples : [],
-          status: "ready",
-          error: "",
-          available: Boolean(payload?.available),
-          totals: payload?.totals || null,
-          generatedAt: payload?.generatedAt || null,
-        });
-      })
-      .catch((err) => {
-        if (cancelled) return;
-        setExampleContext({
-          examples: [],
-          status: "error",
-          error: err?.message || "Failed to load Roblox examples",
-          available: false,
-          totals: null,
-          generatedAt: null,
-        });
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   const refreshRobloxStatus = useCallback(async () => {
     if (!user) {
@@ -765,8 +718,6 @@ export function useAiWorkspaceController() {
       const response = await generateQuickScript({
         prompt: currentPrompt,
         idempotencyKey,
-        useExamples,
-        selectedExampleIds,
       });
       const next = {
         prompt: currentPrompt,
@@ -835,10 +786,8 @@ export function useAiWorkspaceController() {
     quickScript.result,
     recordPendingAuthGate,
     refreshBilling,
-    selectedExampleIds,
     setGeneratorMode,
     track,
-    useExamples,
     user,
   ]);
 
@@ -1048,19 +997,6 @@ export function useAiWorkspaceController() {
       studioAutoPushPolicy: nextPolicy,
     }).catch(() => {});
   }, [updateSettings]);
-
-  const handleUseExamplesChange = useCallback((enabled) => {
-    updateSettings({ useExamples: Boolean(enabled) }).catch((err) => {
-      notify({ message: err?.message || "Failed to update example setting", type: "error" });
-    });
-  }, [notify, updateSettings]);
-
-  const handleSelectedExampleIdsChange = useCallback((ids) => {
-    const selected = Array.isArray(ids) ? ids.filter(Boolean).slice(0, 12) : [];
-    updateSettings({ selectedExampleIds: selected }).catch((err) => {
-      notify({ message: err?.message || "Failed to update selected examples", type: "error" });
-    });
-  }, [notify, updateSettings]);
 
   const handleRobloxAssetUploadsEnabledChange = useCallback(async (enabled) => {
     if (!selectedAssetProjectId) {
@@ -1570,11 +1506,6 @@ export function useAiWorkspaceController() {
       mobileTab,
       generatorMode,
       quickScript,
-      exampleContext: {
-        ...exampleContext,
-        useExamples,
-        selectedExampleIds,
-      },
       prompt,
       isImproving,
       refineTarget,
@@ -1621,8 +1552,6 @@ export function useAiWorkspaceController() {
       setCodeDrawerOpen,
       dismissToast,
       updateSettings,
-      handleUseExamplesChange,
-      handleSelectedExampleIdsChange,
 
       handlePromptSubmit,
       runQuickScript,

@@ -25,12 +25,10 @@ describe("quickScriptApi", () => {
     jest.clearAllMocks();
   });
 
-  it("sends optional example context settings with Quick Script generation", async () => {
+  it("leaves example context selection to the backend for Quick Script generation", async () => {
     await generateQuickScript({
       prompt: "make a shop ui",
       idempotencyKey: "test-key",
-      useExamples: true,
-      selectedExampleIds: ["ItemShopUI"],
     });
 
     expect(global.fetch).toHaveBeenCalledTimes(1);
@@ -40,8 +38,6 @@ describe("quickScriptApi", () => {
     expect(JSON.parse(options.body)).toEqual({
       prompt: "make a shop ui",
       generatorMode: "quick_script",
-      useExamples: true,
-      selectedExampleIds: ["itemshopui"],
     });
   });
 });

@@ -19,7 +19,6 @@ import {
 
 import { Button, cx } from "../../components/ui";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "../../components/shadcn/tabs";
-import ExampleContextControl from "../../components/ai/ExampleContextControl";
 
 const QuickScriptCodeBlock = lazy(() => import("../../components/ai/QuickScriptCodeBlock"));
 
@@ -93,11 +92,6 @@ export default function QuickScriptWorkspace({
   onOpenAgentBuild,
   onImprovePrompt,
   isImproving = false,
-  exampleContext = null,
-  useExamples = false,
-  selectedExampleIds = [],
-  onUseExamplesChange,
-  onSelectedExampleIdsChange,
 }) {
   const textareaRef = useRef(null);
   const [isComposing, setIsComposing] = useState(false);
@@ -153,7 +147,7 @@ export default function QuickScriptWorkspace({
   return (
     <section className="flex h-full min-h-0 flex-col lg:flex-row overflow-hidden bg-[#050505]" aria-label="Quick Script generator">
       
-      {/* LEFT PANE (Composer + Examples) */}
+      {/* LEFT PANE (Composer + Result) */}
       <div className="flex-1 min-w-0 flex flex-col min-h-0 bg-[#0d0d10]">
         <div className="shrink-0 flex items-center gap-3 px-4 py-3 border-b border-white/5 bg-black/20 h-[60px]">
           <div className="flex items-center gap-2">
@@ -163,17 +157,6 @@ export default function QuickScriptWorkspace({
             </h1>
           </div>
         </div>
-
-        <ExampleContextControl
-          examples={exampleContext?.examples}
-          status={exampleContext?.status}
-          error={exampleContext?.error}
-          available={exampleContext?.available}
-          useExamples={useExamples}
-          selectedExampleIds={selectedExampleIds}
-          onUseExamplesChange={onUseExamplesChange}
-          onSelectedExampleIdsChange={onSelectedExampleIdsChange}
-        />
 
         {/* Scrollable area */}
         <div className="flex-1 min-h-0 overflow-y-auto px-4 py-5 space-y-4 scrollbar-thin">

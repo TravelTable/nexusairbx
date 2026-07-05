@@ -17,7 +17,6 @@ import {
 import { v4 as uuidv4 } from "uuid";
 import { auth, db } from "../firebase";
 import { BACKEND_URL } from "../config";
-import { buildExampleContextRequest } from "../lib/exampleContextRequest";
 import { ensureStreamSession } from "../lib/streamSession";
 import {
   buildStreamUrl,
@@ -503,7 +502,6 @@ export function useAiChat(user, settings, refreshBilling, notify) {
             ...settings,
             gameSpec: resolveGameSpecForPrompt(settings?.gameSpec),
           },
-          ...buildExampleContextRequest(settings),
           chatId: activeChatId,
           chatMode: expertMode,
           mode: currentMode,
