@@ -2,6 +2,19 @@ import React from "react";
 import { render, screen } from "@testing-library/react";
 import MessageList from "./MessageList";
 
+jest.mock("../../../lib/featureFlags", () => {
+  const flags = {
+    streamV2: true,
+    unifiedAgent: true,
+    rawReasoning: true,
+  };
+  return {
+    __esModule: true,
+    FEATURE_FLAGS: flags,
+    default: flags,
+  };
+});
+
 const baseProps = {
   messages: [],
   user: { email: "builder@example.com" },
@@ -241,5 +254,27 @@ describe("MessageList pending activity", () => {
     expect(screen.getByText("Understanding your task...")).toBeTruthy();
     expect(screen.getAllByText("Analyzing request...").length).toBeGreaterThan(0);
     expect(screen.queryByText("Nexus is working")).toBeNull();
+  });
+
+  test("shows raw reasoning panel when streamState includes rawReasoning", () => {
+    render(
+      <MessageList
+        {...baseProps}
+        pendingMessage={{
+          role: "assistant",
+          content: "",
+          type: "chat",
+          prompt: "Build a shop",
+          streamState: {
+            rawReasoning: "Checking module boundaries before writing files.",
+            activity: [],
+          },
+        }}
+      />
+    );
+
+    expect(screen.getByText("Raw model reasoning")).toBeTruthy();
+    expect(screen.getByText(/not verified truth/i)).toBeTruthy();
+    expect(screen.getByText(/Checking module boundaries/i)).toBeTruthy();
   });
 });

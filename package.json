@@ -54,8 +54,10 @@
     "@hugeicons/mcp-server": "^0.2.2",
     "autoprefixer": "^10.4.21",
     "eslint": "^8.57.0",
+    "fast-xml-parser": "^5.9.3",
     "next": "^16.2.9",
     "postcss": "^8.5.6",
+    "rbxm-parser": "^1.1.4",
     "shadcn": "^4.12.0",
     "tailwindcss": "^3.3.5"
   },
@@ -68,6 +70,7 @@
     "eject": "react-scripts eject",
     "plugin:build": "node roblox-plugin/build/bundle-plugin.js",
     "plugin:install": "node roblox-plugin/build/install-local-plugin.js",
+    "convert:roblox-examples": "node scripts/convertRobloxExamples.js \"Roblox examples for Ai/raw\" \"Roblox examples for Ai/converted\"",
     "sitemap": "node scripts/generate-sitemap.js",
     "test:production-routing": "node --test server/productionRouting.test.js",
     "test:public-frontend": "node --test server/publicFrontendHtml.test.js"

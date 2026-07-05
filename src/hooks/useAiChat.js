@@ -17,6 +17,7 @@ import {
 import { v4 as uuidv4 } from "uuid";
 import { auth, db } from "../firebase";
 import { BACKEND_URL } from "../config";
+import { buildExampleContextRequest } from "../lib/exampleContextRequest";
 import { ensureStreamSession } from "../lib/streamSession";
 import {
   buildStreamUrl,
@@ -38,6 +39,7 @@ import { getAgentRun } from "../lib/workflowApi";
 import {
   applyStreamActivity,
   applyStreamDelta,
+  applyReasoningDelta,
   createPendingStreamState,
   formatPendingStreamContent,
   getPendingStreamSnapshot,
@@ -501,6 +503,7 @@ export function useAiChat(user, settings, refreshBilling, notify) {
             ...settings,
             gameSpec: resolveGameSpecForPrompt(settings?.gameSpec),
           },
+          ...buildExampleContextRequest(settings),
           chatId: activeChatId,
           chatMode: expertMode,
           mode: currentMode,
@@ -954,6 +957,23 @@ export function useAiChat(user, settings, refreshBilling, notify) {
               }
             } catch (err) {
               console.error("Failed to parse stage:", err);
+            }
+          });
+
+          es.addEventListener("reasoning_delta", (e) => {
+            if (!FEATURE_FLAGS.rawReasoning) return;
+            try {
+              const data = JSON.parse(e.data);
+              lastSeq = updateSeqFromPayload(lastSeq, data);
+              streamStatesRef.current[activeChatId] = applyReasoningDelta(
+                streamStatesRef.current[activeChatId],
+                data
+              );
+              idlePulse?.notifyActivity();
+              schedulePendingStreamFlush(false);
+            } catch (err) {
+              console.error("Failed to parse reasoning_delta:", err);
+              emitStreamMetric("error", { jobId, tag: "protocol", message: "reasoning_delta_parse_failed" });
             }
           });
 

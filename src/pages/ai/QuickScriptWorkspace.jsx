@@ -19,6 +19,7 @@ import {
 
 import { Button, cx } from "../../components/ui";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "../../components/shadcn/tabs";
+import ExampleContextControl from "../../components/ai/ExampleContextControl";
 
 const QuickScriptCodeBlock = lazy(() => import("../../components/ai/QuickScriptCodeBlock"));
 
@@ -92,6 +93,11 @@ export default function QuickScriptWorkspace({
   onOpenAgentBuild,
   onImprovePrompt,
   isImproving = false,
+  exampleContext = null,
+  useExamples = false,
+  selectedExampleIds = [],
+  onUseExamplesChange,
+  onSelectedExampleIdsChange,
 }) {
   const textareaRef = useRef(null);
   const [isComposing, setIsComposing] = useState(false);
@@ -157,6 +163,17 @@ export default function QuickScriptWorkspace({
             </h1>
           </div>
         </div>
+
+        <ExampleContextControl
+          examples={exampleContext?.examples}
+          status={exampleContext?.status}
+          error={exampleContext?.error}
+          available={exampleContext?.available}
+          useExamples={useExamples}
+          selectedExampleIds={selectedExampleIds}
+          onUseExamplesChange={onUseExamplesChange}
+          onSelectedExampleIdsChange={onSelectedExampleIdsChange}
+        />
 
         {/* Scrollable area */}
         <div className="flex-1 min-h-0 overflow-y-auto px-4 py-5 space-y-4 scrollbar-thin">

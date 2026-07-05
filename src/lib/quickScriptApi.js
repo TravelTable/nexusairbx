@@ -1,5 +1,6 @@
 import { getAuth } from "firebase/auth";
 import { BACKEND_URL } from "../config";
+import { buildExampleContextRequest } from "./exampleContextRequest";
 import { getProductAnalyticsHeaders } from "./productAnalytics";
 
 function randomKey(prefix = "qs") {
@@ -11,7 +12,7 @@ function randomKey(prefix = "qs") {
 }
 
 async function optionalAuthHeaders() {
-  const user = getAuth().currentUser;
+  const user = getAuth()?.currentUser;
   if (!user) return {};
   const token = await user.getIdToken();
   return { Authorization: `Bearer ${token}` };
@@ -37,7 +38,12 @@ export function createQuickScriptIdempotencyKey() {
   return randomKey("quick_script");
 }
 
-export async function generateQuickScript({ prompt, idempotencyKey = createQuickScriptIdempotencyKey() } = {}) {
+export async function generateQuickScript({
+  prompt,
+  idempotencyKey = createQuickScriptIdempotencyKey(),
+  useExamples = false,
+  selectedExampleIds = [],
+} = {}) {
   const headers = {
     Accept: "application/json",
     "Content-Type": "application/json",
@@ -53,6 +59,7 @@ export async function generateQuickScript({ prompt, idempotencyKey = createQuick
     body: JSON.stringify({
       prompt,
       generatorMode: "quick_script",
+      ...buildExampleContextRequest({ useExamples, selectedExampleIds }),
     }),
   });
   return parseJsonResponse(res);

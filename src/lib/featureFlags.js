@@ -2,6 +2,7 @@ export const FEATURE_FLAGS = Object.freeze({
   streamV2: process.env.REACT_APP_STREAM_V2 !== "false",
   systemOnlyPremium: process.env.REACT_APP_SYSTEM_ONLY_PREMIUM === "true",
   aiPageV2: process.env.REACT_APP_AI_PAGE_V2 !== "false",
+  rawReasoning: process.env.REACT_APP_SHOW_RAW_REASONING === "true",
   /** Unified chat + Studio tool loop (inline steps; retires separate Studio Agent panel). */
   unifiedAgent:
     process.env.REACT_APP_UNIFIED_AGENT !== "false" &&

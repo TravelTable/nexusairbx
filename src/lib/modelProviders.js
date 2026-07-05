@@ -3,6 +3,7 @@ export const DEFAULT_PRO_MODEL = "openai/gpt-5-mini";
 
 export const MODEL_ID_ALIASES = Object.freeze({
   "deepseek-free": DEFAULT_FREE_MODEL,
+  "deepseek/deepseek-v4-flash": DEFAULT_FREE_MODEL,
   "deepseek/deepseek-v3.2": DEFAULT_FREE_MODEL,
   "openai/gpt-5-mini": DEFAULT_FREE_MODEL,
   "gpt-4o": DEFAULT_FREE_MODEL,
@@ -15,8 +16,9 @@ export const MODEL_ID_ALIASES = Object.freeze({
 
 // Fallback display labels for legacy IDs not yet present in the live catalog.
 export const MODEL_ALIAS_LABELS = Object.freeze({
-  "deepseek-free": "DeepSeek V3.2",
+  "deepseek-free": "DeepSeek V4 Flash",
   "nexus-free-auto": "Nexus Free Auto",
+  "deepseek/deepseek-v4-flash": "Nexus Free Auto",
   "deepseek/deepseek-v3.2": "Nexus Free Auto",
   "openai/gpt-5-mini": "Nexus Free Auto",
   "gpt-4o": "Nexus Free Auto",

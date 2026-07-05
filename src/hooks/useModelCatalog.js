@@ -10,8 +10,8 @@ import { BACKEND_URL } from "../config";
  */
 
 const FALLBACK_MODELS = [
-  { id: "deepseek/deepseek-v3.2", name: "DeepSeek V3.2", provider: "deepseek", contextLength: 128000, tier: "free", billingCategory: "INCLUDED", billingLabel: "Included", recommended: true },
-  { id: "openai/gpt-5-mini", name: "GPT-5 mini", provider: "openai", contextLength: 256000, tier: "free", billingCategory: "INCLUDED", billingLabel: "Included", recommended: true },
+  { id: "deepseek/deepseek-v4-flash", name: "DeepSeek V4 Flash", provider: "deepseek", contextLength: 1000000, tier: "free", billingCategory: "INCLUDED", billingLabel: "Included", recommended: true },
+  { id: "openai/gpt-5-mini", name: "GPT-5 mini", provider: "openai", contextLength: 256000, tier: "free", billingCategory: "INCLUDED", billingLabel: "Included", recommended: false },
   { id: "openai/gpt-5.4", name: "GPT-5.4", provider: "openai", contextLength: 256000, tier: "pro", billingCategory: "PREMIUM_DIRECT", billingLabel: "Premium Balance", recommended: true },
 ];
 

@@ -1,0 +1,14 @@
+{
+  "name": "YourRewardsUI!",
+  "tree": {
+    "$className": "DataModel",
+    "ReplicatedStorage": {
+      "$className": "ReplicatedStorage"
+    }
+  },
+  "metadata": {
+    "generatedBy": "scripts/convertRobloxExamples.js",
+    "note": "This is an inferred helper project. instance-tree.json remains the source of truth for the full hierarchy.",
+    "scriptCount": 0
+  }
+}

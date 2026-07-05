@@ -44,6 +44,15 @@ Events:
 5. `error`
 - Payload: `{ jobId, code, message, retryable }`
 
+6. `reasoning_delta` (DeepSeek thinking models, optional)
+- Payload: `{ jobId, seq, text, ts }`
+- Emitted only when `SHOW_RAW_REASONING=true` and the model returns native `reasoning_content`.
+- Carries unfiltered model reasoning; not verified truth.
+
+7. `content_delta` (DeepSeek thinking streams, optional)
+- Payload: `{ jobId, seq, text, ts }`
+- Raw answer token chunks from `delta.content`. Existing `delta` channel streaming remains canonical for artifact/file UI.
+
 ## Recovery endpoint
 `GET /api/generate/result?jobId=...`
 

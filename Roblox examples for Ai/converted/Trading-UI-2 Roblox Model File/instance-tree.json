@@ -1,0 +1,1588 @@
+{
+  "sourceFileName": "Trading-UI-2 Roblox Model File.rbxm",
+  "sourceRelativePath": "Trading-UI-2 Roblox Model File.rbxm",
+  "parser": "rbxm-parser",
+  "generatedAt": "2026-07-05T07:50:51.168Z",
+  "limits": {
+    "maxInputBytes": 104857600,
+    "maxScriptChars": 300000,
+    "maxTotalScriptChars": 1500000,
+    "maxPropertyStringChars": 800,
+    "maxTreeNodes": 12000
+  },
+  "warnings": [],
+  "counts": {
+    "instances": 49,
+    "scripts": {
+      "total": 1,
+      "Script": 0,
+      "LocalScript": 0,
+      "ModuleScript": 1
+    },
+    "ui": 43,
+    "remotes": 0,
+    "dataStoreReferences": 0,
+    "assetReferences": 0,
+    "externalReferences": 1
+  },
+  "roots": [
+    {
+      "ClassName": "ScreenGui",
+      "Name": "Trading_UI_VER2",
+      "path": "/Trading_UI_VER2",
+      "properties": {
+        "Enabled": true,
+        "Name": "Trading_UI_VER2"
+      },
+      "children": [
+        {
+          "ClassName": "Frame",
+          "Name": "Trading_Frame",
+          "path": "/Trading_UI_VER2/Trading_Frame",
+          "properties": {
+            "Active": false,
+            "AnchorPoint": {
+              "X": 0.5,
+              "Y": 0.5
+            },
+            "AutomaticSize": "None",
+            "BackgroundColor3": {
+              "R": 0.988235354423523,
+              "G": 0.988235354423523,
+              "B": 0.988235354423523
+            },
+            "BackgroundTransparency": 0,
+            "BorderColor3": {
+              "R": 0.10588236153125763,
+              "G": 0.16470588743686676,
+              "B": 0.20784315466880798
+            },
+            "BorderSizePixel": 0,
+            "ClipsDescendants": false,
+            "LayoutOrder": 0,
+            "Name": "Trading_Frame",
+            "Position": {
+              "X": {
+                "Scale": 0.5,
+                "Offset": 0
+              },
+              "Y": {
+                "Scale": 0.5,
+                "Offset": 0
+              }
+            },
+            "Rotation": 0,
+            "Selectable": false,
+            "Size": {
+              "X": {
+                "Scale": 0.6759390830993652,
+                "Offset": 0
+              },
+              "Y": {
+                "Scale": 0.8349030017852783,
+                "Offset": 0
+              }
+            },
+            "Visible": true,
+            "ZIndex": 1
+          },
+          "children": [
+            {
+              "ClassName": "UICorner",
+              "Name": "UICorner",
+              "path": "/Trading_UI_VER2/Trading_Frame/UICorner",
+              "properties": {
+                "CornerRadius": {
+                  "Scale": 0,
+                  "Offset": 8
+                },
+                "Name": "UICorner"
+              },
+              "children": []
+            },
+            {
+              "ClassName": "Frame",
+              "Name": "Player_1",
+              "path": "/Trading_UI_VER2/Trading_Frame/Player_1",
+              "properties": {
+                "Active": false,
+                "AnchorPoint": {
+                  "X": 0.5,
+                  "Y": 0.5
+                },
+                "AutomaticSize": "None",
+                "BackgroundColor3": {
+                  "R": 0.8862745761871338,
+                  "G": 0.8862745761871338,
+                  "B": 0.8862745761871338
+                },
+                "BackgroundTransparency": 0,
+                "BorderColor3": {
+                  "R": 0,
+                  "G": 0,
+                  "B": 0
+                },
+                "BorderSizePixel": 0,
+                "ClipsDescendants": false,
+                "LayoutOrder": 0,
+                "Name": "Player_1",
+                "Position": {
+                  "X": {
+                    "Scale": 0.24497999250888824,
+                    "Offset": 0
+                  },
+                  "Y": {
+                    "Scale": 0.41167470812797546,
+                    "Offset": 0
+                  }
+                },
+                "Rotation": 0,
+                "Selectable": false,
+                "Size": {
+                  "X": {
+                    "Scale": 0.44999998807907104,
+                    "Offset": 0
+                  },
+                  "Y": {
+                    "Scale": 0.6499999761581421,
+                    "Offset": 0
+                  }
+                },
+                "Visible": true,
+                "ZIndex": 4
+              },
+              "children": [
+                {
+                  "ClassName": "UICorner",
+                  "Name": "UICorner",
+                  "path": "/Trading_UI_VER2/Trading_Frame/Player_1/UICorner",
+                  "properties": {
+                    "CornerRadius": {
+                      "Scale": 0,
+                      "Offset": 8
+                    },
+                    "Name": "UICorner"
+                  },
+                  "children": []
+                },
+                {
+                  "ClassName": "Frame",
+                  "Name": "Frame",
+                  "path": "/Trading_UI_VER2/Trading_Frame/Player_1/Frame",
+                  "properties": {
+                    "Active": false,
+                    "AnchorPoint": {
+                      "X": 0.5,
+                      "Y": 0.5
+                    },
+                    "AutomaticSize": "None",
+                    "BackgroundColor3": {
+                      "R": 0.5098039507865906,
+                      "G": 0.5098039507865906,
+                      "B": 0.5098039507865906
+                    },
+                    "BackgroundTransparency": 0,
+                    "BorderColor3": {
+                      "R": 0.10588236153125763,
+                      "G": 0.16470588743686676,
+                      "B": 0.20784315466880798
+                    },
+                    "BorderSizePixel": 0,
+                    "ClipsDescendants": false,
+                    "LayoutOrder": 0,
+                    "Name": "Frame",
+                    "Position": {
+                      "X": {
+                        "Scale": 0.26893162727355957,
+                        "Offset": 0
+                      },
+                      "Y": {
+                        "Scale": 0.25834065675735474,
+                        "Offset": 0
+                      }
+                    },
+                    "Rotation": 0,
+                    "Selectable": false,
+                    "Size": {
+                      "X": {
+                        "Scale": 0.4325355291366577,
+                        "Offset": 0
+                      },
+                      "Y": {
+                        "Scale": 0.44567248225212097,
+                        "Offset": 0
+                      }
+                    },
+                    "Visible": true,
+                    "ZIndex": 5
+                  },
+                  "children": [
+                    {
+                      "ClassName": "UICorner",
+                      "Name": "UICorner",
+                      "path": "/Trading_UI_VER2/Trading_Frame/Player_1/Frame/UICorner",
+                      "properties": {
+                        "CornerRadius": {
+                          "Scale": 0,
+                          "Offset": 8
+                        },
+                        "Name": "UICorner"
+                      },
+                      "children": []
+                    }
+                  ]
+                },
+                {
+                  "ClassName": "Frame",
+                  "Name": "Frame",
+                  "path": "/Trading_UI_VER2/Trading_Frame/Player_1/Frame",
+                  "properties": {
+                    "Active": false,
+                    "AnchorPoint": {
+                      "X": 0.5,
+                      "Y": 0.5
+                    },
+                    "AutomaticSize": "None",
+                    "BackgroundColor3": {
+                      "R": 0.5098039507865906,
+                      "G": 0.5098039507865906,
+                      "B": 0.5098039507865906
+                    },
+                    "BackgroundTransparency": 0,
+                    "BorderColor3": {
+                      "R": 0.10588236153125763,
+                      "G": 0.16470588743686676,
+                      "B": 0.20784315466880798
+                    },
+                    "BorderSizePixel": 0,
+                    "ClipsDescendants": false,
+                    "LayoutOrder": 0,
+                    "Name": "Frame",
+                    "Position": {
+                      "X": {
+                        "Scale": 0.7299954295158386,
+                        "Offset": 0
+                      },
+                      "Y": {
+                        "Scale": 0.25834065675735474,
+                        "Offset": 0
+                      }
+                    },
+                    "Rotation": 0,
+                    "Selectable": false,
+                    "Size": {
+                      "X": {
+                        "Scale": 0.4325355291366577,
+                        "Offset": 0
+                      },
+                      "Y": {
+                        "Scale": 0.44567248225212097,
+                        "Offset": 0
+                      }
+                    },
+                    "Visible": true,
+                    "ZIndex": 5
+                  },
+                  "children": [
+                    {
+                      "ClassName": "UICorner",
+                      "Name": "UICorner",
+                      "path": "/Trading_UI_VER2/Trading_Frame/Player_1/Frame/UICorner",
+                      "properties": {
+                        "CornerRadius": {
+                          "Scale": 0,
+                          "Offset": 8
+                        },
+                        "Name": "UICorner"
+                      },
+                      "children": []
+                    }
+                  ]
+                },
+                {
+                  "ClassName": "Frame",
+                  "Name": "Frame",
+                  "path": "/Trading_UI_VER2/Trading_Frame/Player_1/Frame",
+                  "properties": {
+                    "Active": false,
+                    "AnchorPoint": {
+                      "X": 0.5,
+                      "Y": 0.5
+                    },
+                    "AutomaticSize": "None",
+                    "BackgroundColor3": {
+                      "R": 0.5098039507865906,
+                      "G": 0.5098039507865906,
+                      "B": 0.5098039507865906
+                    },
+                    "BackgroundTransparency": 0,
+                    "BorderColor3": {
+                      "R": 0.10588236153125763,
+                      "G": 0.16470588743686676,
+                      "B": 0.20784315466880798
+                    },
+                    "BorderSizePixel": 0,
+                    "ClipsDescendants": false,
+                    "LayoutOrder": 0,
+                    "Name": "Frame",
+                    "Position": {
+                      "X": {
+                        "Scale": 0.7299954295158386,
+                        "Offset": 0
+                      },
+                      "Y": {
+                        "Scale": 0.7371086478233337,
+                        "Offset": 0
+                      }
+                    },
+                    "Rotation": 0,
+                    "Selectable": false,
+                    "Size": {
+                      "X": {
+                        "Scale": 0.4325355291366577,
+                        "Offset": 0
+                      },
+                      "Y": {
+                        "Scale": 0.44567248225212097,
+                        "Offset": 0
+                      }
+                    },
+                    "Visible": true,
+                    "ZIndex": 5
+                  },
+                  "children": [
+                    {
+                      "ClassName": "UICorner",
+                      "Name": "UICorner",
+                      "path": "/Trading_UI_VER2/Trading_Frame/Player_1/Frame/UICorner",
+                      "properties": {
+                        "CornerRadius": {
+                          "Scale": 0,
+                          "Offset": 8
+                        },
+                        "Name": "UICorner"
+                      },
+                      "children": []
+                    }
+                  ]
+                },
+                {
+                  "ClassName": "Frame",
+                  "Name": "Frame",
+                  "path": "/Trading_UI_VER2/Trading_Frame/Player_1/Frame",
+                  "properties": {
+                    "Active": false,
+                    "AnchorPoint": {
+                      "X": 0.5,
+                      "Y": 0.5
+                    },
+                    "AutomaticSize": "None",
+                    "BackgroundColor3": {
+                      "R": 0.5098039507865906,
+                      "G": 0.5098039507865906,
+                      "B": 0.5098039507865906
+                    },
+                    "BackgroundTransparency": 0,
+                    "BorderColor3": {
+                      "R": 0.10588236153125763,
+                      "G": 0.16470588743686676,
+                      "B": 0.20784315466880798
+                    },
+                    "BorderSizePixel": 0,
+                    "ClipsDescendants": false,
+                    "LayoutOrder": 0,
+                    "Name": "Frame",
+                    "Position": {
+                      "X": {
+                        "Scale": 0.26893162727355957,
+                        "Offset": 0
+                      },
+                      "Y": {
+                        "Scale": 0.7371086478233337,
+                        "Offset": 0
+                      }
+                    },
+                    "Rotation": 0,
+                    "Selectable": false,
+                    "Size": {
+                      "X": {
+                        "Scale": 0.4325355291366577,
+                        "Offset": 0
+                      },
+                      "Y": {
+                        "Scale": 0.44567248225212097,
+                        "Offset": 0
+                      }
+                    },
+                    "Visible": true,
+                    "ZIndex": 5
+                  },
+                  "children": [
+                    {
+                      "ClassName": "UICorner",
+                      "Name": "UICorner",
+                      "path": "/Trading_UI_VER2/Trading_Frame/Player_1/Frame/UICorner",
+                      "properties": {
+                        "CornerRadius": {
+                          "Scale": 0,
+                          "Offset": 8
+                        },
+                        "Name": "UICorner"
+                      },
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "ClassName": "Frame",
+              "Name": "Player_2",
+              "path": "/Trading_UI_VER2/Trading_Frame/Player_2",
+              "properties": {
+                "Active": false,
+                "AnchorPoint": {
+                  "X": 0.5,
+                  "Y": 0.5
+                },
+                "AutomaticSize": "None",
+                "BackgroundColor3": {
+                  "R": 0.8862745761871338,
+                  "G": 0.8862745761871338,
+                  "B": 0.8862745761871338
+                },
+                "BackgroundTransparency": 0,
+                "BorderColor3": {
+                  "R": 0,
+                  "G": 0,
+                  "B": 0
+                },
+                "BorderSizePixel": 0,
+                "ClipsDescendants": false,
+                "LayoutOrder": 0,
+                "Name": "Player_2",
+                "Position": {
+                  "X": {
+                    "Scale": 0.755020022392273,
+                    "Offset": 0
+                  },
+                  "Y": {
+                    "Scale": 0.41167470812797546,
+                    "Offset": 0
+                  }
+                },
+                "Rotation": 0,
+                "Selectable": false,
+                "Size": {
+                  "X": {
+                    "Scale": 0.44999998807907104,
+                    "Offset": 0
+                  },
+                  "Y": {
+                    "Scale": 0.6499999761581421,
+                    "Offset": 0
+                  }
+                },
+                "Visible": true,
+                "ZIndex": 4
+              },
+              "children": [
+                {
+                  "ClassName": "UICorner",
+                  "Name": "UICorner",
+                  "path": "/Trading_UI_VER2/Trading_Frame/Player_2/UICorner",
+                  "properties": {
+                    "CornerRadius": {
+                      "Scale": 0,
+                      "Offset": 8
+                    },
+                    "Name": "UICorner"
+                  },
+                  "children": []
+                },
+                {
+                  "ClassName": "Frame",
+                  "Name": "Frame",
+                  "path": "/Trading_UI_VER2/Trading_Frame/Player_2/Frame",
+                  "properties": {
+                    "Active": false,
+                    "AnchorPoint": {
+                      "X": 0.5,
+                      "Y": 0.5
+                    },
+                    "AutomaticSize": "None",
+                    "BackgroundColor3": {
+                      "R": 0.5098039507865906,
+                      "G": 0.5098039507865906,
+                      "B": 0.5098039507865906
+                    },
+                    "BackgroundTransparency": 0,
+                    "BorderColor3": {
+                      "R": 0.10588236153125763,
+                      "G": 0.16470588743686676,
+                      "B": 0.20784315466880798
+                    },
+                    "BorderSizePixel": 0,
+                    "ClipsDescendants": false,
+                    "LayoutOrder": 0,
+                    "Name": "Frame",
+                    "Position": {
+                      "X": {
+                        "Scale": 0.26893162727355957,
+                        "Offset": 0
+                      },
+                      "Y": {
+                        "Scale": 0.25834065675735474,
+                        "Offset": 0
+                      }
+                    },
+                    "Rotation": 0,
+                    "Selectable": false,
+                    "Size": {
+                      "X": {
+                        "Scale": 0.4325355291366577,
+                        "Offset": 0
+                      },
+                      "Y": {
+                        "Scale": 0.44567248225212097,
+                        "Offset": 0
+                      }
+                    },
+                    "Visible": true,
+                    "ZIndex": 5
+                  },
+                  "children": [
+                    {
+                      "ClassName": "UICorner",
+                      "Name": "UICorner",
+                      "path": "/Trading_UI_VER2/Trading_Frame/Player_2/Frame/UICorner",
+                      "properties": {
+                        "CornerRadius": {
+                          "Scale": 0,
+                          "Offset": 8
+                        },
+                        "Name": "UICorner"
+                      },
+                      "children": []
+                    }
+                  ]
+                },
+                {
+                  "ClassName": "Frame",
+                  "Name": "Frame",
+                  "path": "/Trading_UI_VER2/Trading_Frame/Player_2/Frame",
+                  "properties": {
+                    "Active": false,
+                    "AnchorPoint": {
+                      "X": 0.5,
+                      "Y": 0.5
+                    },
+                    "AutomaticSize": "None",
+                    "BackgroundColor3": {
+                      "R": 0.5098039507865906,
+                      "G": 0.5098039507865906,
+                      "B": 0.5098039507865906
+                    },
+                    "BackgroundTransparency": 0,
+                    "BorderColor3": {
+                      "R": 0.10588236153125763,
+                      "G": 0.16470588743686676,
+                      "B": 0.20784315466880798
+                    },
+                    "BorderSizePixel": 0,
+                    "ClipsDescendants": false,
+                    "LayoutOrder": 0,
+                    "Name": "Frame",
+                    "Position": {
+                      "X": {
+                        "Scale": 0.7299954295158386,
+                        "Offset": 0
+                      },
+                      "Y": {
+                        "Scale": 0.25834065675735474,
+                        "Offset": 0
+                      }
+                    },
+                    "Rotation": 0,
+                    "Selectable": false,
+                    "Size": {
+                      "X": {
+                        "Scale": 0.4325355291366577,
+                        "Offset": 0
+                      },
+                      "Y": {
+                        "Scale": 0.44567248225212097,
+                        "Offset": 0
+                      }
+                    },
+                    "Visible": true,
+                    "ZIndex": 5
+                  },
+                  "children": [
+                    {
+                      "ClassName": "UICorner",
+                      "Name": "UICorner",
+                      "path": "/Trading_UI_VER2/Trading_Frame/Player_2/Frame/UICorner",
+                      "properties": {
+                        "CornerRadius": {
+                          "Scale": 0,
+                          "Offset": 8
+                        },
+                        "Name": "UICorner"
+                      },
+                      "children": []
+                    }
+                  ]
+                },
+                {
+                  "ClassName": "Frame",
+                  "Name": "Frame",
+                  "path": "/Trading_UI_VER2/Trading_Frame/Player_2/Frame",
+                  "properties": {
+                    "Active": false,
+                    "AnchorPoint": {
+                      "X": 0.5,
+                      "Y": 0.5
+                    },
+                    "AutomaticSize": "None",
+                    "BackgroundColor3": {
+                      "R": 0.5098039507865906,
+                      "G": 0.5098039507865906,
+                      "B": 0.5098039507865906
+                    },
+                    "BackgroundTransparency": 0,
+                    "BorderColor3": {
+                      "R": 0.10588236153125763,
+                      "G": 0.16470588743686676,
+                      "B": 0.20784315466880798
+                    },
+                    "BorderSizePixel": 0,
+                    "ClipsDescendants": false,
+                    "LayoutOrder": 0,
+                    "Name": "Frame",
+                    "Position": {
+                      "X": {
+                        "Scale": 0.7299954295158386,
+                        "Offset": 0
+                      },
+                      "Y": {
+                        "Scale": 0.7371086478233337,
+                        "Offset": 0
+                      }
+                    },
+                    "Rotation": 0,
+                    "Selectable": false,
+                    "Size": {
+                      "X": {
+                        "Scale": 0.4325355291366577,
+                        "Offset": 0
+                      },
+                      "Y": {
+                        "Scale": 0.44567248225212097,
+                        "Offset": 0
+                      }
+                    },
+                    "Visible": true,
+                    "ZIndex": 5
+                  },
+                  "children": [
+                    {
+                      "ClassName": "UICorner",
+                      "Name": "UICorner",
+                      "path": "/Trading_UI_VER2/Trading_Frame/Player_2/Frame/UICorner",
+                      "properties": {
+                        "CornerRadius": {
+                          "Scale": 0,
+                          "Offset": 8
+                        },
+                        "Name": "UICorner"
+                      },
+                      "children": []
+                    }
+                  ]
+                },
+                {
+                  "ClassName": "Frame",
+                  "Name": "Frame",
+                  "path": "/Trading_UI_VER2/Trading_Frame/Player_2/Frame",
+                  "properties": {
+                    "Active": false,
+                    "AnchorPoint": {
+                      "X": 0.5,
+                      "Y": 0.5
+                    },
+                    "AutomaticSize": "None",
+                    "BackgroundColor3": {
+                      "R": 0.5098039507865906,
+                      "G": 0.5098039507865906,
+                      "B": 0.5098039507865906
+                    },
+                    "BackgroundTransparency": 0,
+                    "BorderColor3": {
+                      "R": 0.10588236153125763,
+                      "G": 0.16470588743686676,
+                      "B": 0.20784315466880798
+                    },
+                    "BorderSizePixel": 0,
+                    "ClipsDescendants": false,
+                    "LayoutOrder": 0,
+                    "Name": "Frame",
+                    "Position": {
+                      "X": {
+                        "Scale": 0.26893162727355957,
+                        "Offset": 0
+                      },
+                      "Y": {
+                        "Scale": 0.7371086478233337,
+                        "Offset": 0
+                      }
+                    },
+                    "Rotation": 0,
+                    "Selectable": false,
+                    "Size": {
+                      "X": {
+                        "Scale": 0.4325355291366577,
+                        "Offset": 0
+                      },
+                      "Y": {
+                        "Scale": 0.44567248225212097,
+                        "Offset": 0
+                      }
+                    },
+                    "Visible": true,
+                    "ZIndex": 5
+                  },
+                  "children": [
+                    {
+                      "ClassName": "UICorner",
+                      "Name": "UICorner",
+                      "path": "/Trading_UI_VER2/Trading_Frame/Player_2/Frame/UICorner",
+                      "properties": {
+                        "CornerRadius": {
+                          "Scale": 0,
+                          "Offset": 8
+                        },
+                        "Name": "UICorner"
+                      },
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "ClassName": "UIAspectRatioConstraint",
+              "Name": "UIAspectRatioConstraint",
+              "path": "/Trading_UI_VER2/Trading_Frame/UIAspectRatioConstraint",
+              "properties": {
+                "Name": "UIAspectRatioConstraint"
+              },
+              "children": []
+            },
+            {
+              "ClassName": "TextButton",
+              "Name": "Close_Trade",
+              "path": "/Trading_UI_VER2/Trading_Frame/Close_Trade",
+              "properties": {
+                "Active": true,
+                "AnchorPoint": {
+                  "X": 0.5,
+                  "Y": 0.5
+                },
+                "AutoButtonColor": true,
+                "AutomaticSize": "None",
+                "BackgroundColor3": {
+                  "R": 0.9176470637321472,
+                  "G": 0.13725490868091583,
+                  "B": 0.15294118225574493
+                },
+                "BackgroundTransparency": 0,
+                "BorderColor3": {
+                  "R": 0.10588236153125763,
+                  "G": 0.16470588743686676,
+                  "B": 0.20784315466880798
+                },
+                "BorderSizePixel": 1,
+                "ClipsDescendants": false,
+                "Font": "",
+                "LayoutOrder": 0,
+                "LineHeight": 1,
+                "Name": "Close_Trade",
+                "Position": {
+                  "X": {
+                    "Scale": 0.988532304763794,
+                    "Offset": 0
+                  },
+                  "Y": {
+                    "Scale": 0.010744757018983364,
+                    "Offset": 0
+                  }
+                },
+                "RichText": false,
+                "Rotation": 7,
+                "Selectable": true,
+                "Size": {
+                  "X": {
+                    "Scale": 0.057072531431913376,
+                    "Offset": 0
+                  },
+                  "Y": {
+                    "Scale": 0.08560878783464432,
+                    "Offset": 0
+                  }
+                },
+                "Text": "X",
+                "TextColor3": {
+                  "R": 1,
+                  "G": 1,
+                  "B": 1
+                },
+                "TextScaled": true,
+                "TextSize": 14,
+                "TextStrokeColor3": {
+                  "R": 0,
+                  "G": 0,
+                  "B": 0
+                },
+                "TextStrokeTransparency": 1,
+                "TextWrapped": true,
+                "TextXAlignment": "Center",
+                "TextYAlignment": "Center",
+                "Visible": true,
+                "ZIndex": 3
+              },
+              "children": [
+                {
+                  "ClassName": "UICorner",
+                  "Name": "UICorner",
+                  "path": "/Trading_UI_VER2/Trading_Frame/Close_Trade/UICorner",
+                  "properties": {
+                    "CornerRadius": {
+                      "Scale": 0,
+                      "Offset": 8
+                    },
+                    "Name": "UICorner"
+                  },
+                  "children": []
+                }
+              ]
+            },
+            {
+              "ClassName": "Folder",
+              "Name": "Trade_Buttons",
+              "path": "/Trading_UI_VER2/Trading_Frame/Trade_Buttons",
+              "properties": {
+                "Name": "Trade_Buttons"
+              },
+              "children": [
+                {
+                  "ClassName": "TextButton",
+                  "Name": "Decline_Button",
+                  "path": "/Trading_UI_VER2/Trading_Frame/Trade_Buttons/Decline_Button",
+                  "properties": {
+                    "Active": true,
+                    "AnchorPoint": {
+                      "X": 0.5,
+                      "Y": 0.5
+                    },
+                    "AutoButtonColor": true,
+                    "AutomaticSize": "None",
+                    "BackgroundColor3": {
+                      "R": 0.6941176652908325,
+                      "G": 0.10196079313755035,
+                      "B": 0.12156863510608673
+                    },
+                    "BackgroundTransparency": 0,
+                    "BorderColor3": {
+                      "R": 0.10588236153125763,
+                      "G": 0.16470588743686676,
+                      "B": 0.20784315466880798
+                    },
+                    "BorderSizePixel": 1,
+                    "ClipsDescendants": false,
+                    "Font": "",
+                    "LayoutOrder": 0,
+                    "LineHeight": 1,
+                    "Name": "Decline_Button",
+                    "Position": {
+                      "X": {
+                        "Scale": 0.2529388964176178,
+                        "Offset": 0
+                      },
+                      "Y": {
+                        "Scale": 0.8553838729858398,
+                        "Offset": 0
+                      }
+                    },
+                    "RichText": false,
+                    "Rotation": 0,
+                    "Selectable": true,
+                    "Size": {
+                      "X": {
+                        "Scale": 0.3639366924762726,
+                        "Offset": 0
+                      },
+                      "Y": {
+                        "Scale": 0.16866405308246613,
+                        "Offset": 0
+                      }
+                    },
+                    "TextColor3": {
+                      "R": 1,
+                      "G": 1,
+                      "B": 1
+                    },
+                    "TextScaled": true,
+                    "TextSize": 14,
+                    "TextStrokeColor3": {
+                      "R": 0,
+                      "G": 0,
+                      "B": 0
+                    },
+                    "TextStrokeTransparency": 1,
+                    "TextWrapped": true,
+                    "TextXAlignment": "Center",
+                    "TextYAlignment": "Center",
+                    "Visible": true,
+                    "ZIndex": 5
+                  },
+                  "children": [
+                    {
+                      "ClassName": "UICorner",
+                      "Name": "UICorner",
+                      "path": "/Trading_UI_VER2/Trading_Frame/Trade_Buttons/Decline_Button/UICorner",
+                      "properties": {
+                        "CornerRadius": {
+                          "Scale": 0,
+                          "Offset": 8
+                        },
+                        "Name": "UICorner"
+                      },
+                      "children": []
+                    },
+                    {
+                      "ClassName": "UITextSizeConstraint",
+                      "Name": "UITextSizeConstraint",
+                      "path": "/Trading_UI_VER2/Trading_Frame/Trade_Buttons/Decline_Button/UITextSizeConstraint",
+                      "properties": {
+                        "Name": "UITextSizeConstraint"
+                      },
+                      "children": []
+                    },
+                    {
+                      "ClassName": "TextButton",
+                      "Name": "TextButton",
+                      "path": "/Trading_UI_VER2/Trading_Frame/Trade_Buttons/Decline_Button/TextButton",
+                      "properties": {
+                        "Active": true,
+                        "AnchorPoint": {
+                          "X": 0.5,
+                          "Y": 0.5
+                        },
+                        "AutoButtonColor": true,
+                        "AutomaticSize": "None",
+                        "BackgroundColor3": {
+                          "R": 0.9176470637321472,
+                          "G": 0.13725490868091583,
+                          "B": 0.15294118225574493
+                        },
+                        "BackgroundTransparency": 0,
+                        "BorderColor3": {
+                          "R": 0.10588236153125763,
+                          "G": 0.16470588743686676,
+                          "B": 0.20784315466880798
+                        },
+                        "BorderSizePixel": 1,
+                        "ClipsDescendants": false,
+                        "Font": "",
+                        "LayoutOrder": 0,
+                        "LineHeight": 1,
+                        "Name": "TextButton",
+                        "Position": {
+                          "X": {
+                            "Scale": 0.5174955129623413,
+                            "Offset": 0
+                          },
+                          "Y": {
+                            "Scale": 0.45735523104667664,
+                            "Offset": 0
+                          }
+                        },
+                        "RichText": false,
+                        "Rotation": 0,
+                        "Selectable": true,
+                        "Size": {
+                          "X": {
+                            "Scale": 0.9650089740753174,
+                            "Offset": 0
+                          },
+                          "Y": {
+                            "Scale": 0.9147102236747742,
+                            "Offset": 0
+                          }
+                        },
+                        "Text": "Decline",
+                        "TextColor3": {
+                          "R": 1,
+                          "G": 1,
+                          "B": 1
+                        },
+                        "TextScaled": true,
+                        "TextSize": 14,
+                        "TextStrokeColor3": {
+                          "R": 0,
+                          "G": 0,
+                          "B": 0
+                        },
+                        "TextStrokeTransparency": 1,
+                        "TextWrapped": true,
+                        "TextXAlignment": "Center",
+                        "TextYAlignment": "Center",
+                        "Visible": true,
+                        "ZIndex": 0
+                      },
+                      "children": [
+                        {
+                          "ClassName": "UICorner",
+                          "Name": "UICorner",
+                          "path": "/Trading_UI_VER2/Trading_Frame/Trade_Buttons/Decline_Button/TextButton/UICorner",
+                          "properties": {
+                            "CornerRadius": {
+                              "Scale": 0,
+                              "Offset": 8
+                            },
+                            "Name": "UICorner"
+                          },
+                          "children": []
+                        },
+                        {
+                          "ClassName": "UITextSizeConstraint",
+                          "Name": "UITextSizeConstraint",
+                          "path": "/Trading_UI_VER2/Trading_Frame/Trade_Buttons/Decline_Button/TextButton/UITextSizeConstraint",
+                          "properties": {
+                            "Name": "UITextSizeConstraint"
+                          },
+                          "children": []
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "ClassName": "TextButton",
+                  "Name": "Accept_Button",
+                  "path": "/Trading_UI_VER2/Trading_Frame/Trade_Buttons/Accept_Button",
+                  "properties": {
+                    "Active": true,
+                    "AnchorPoint": {
+                      "X": 0.5,
+                      "Y": 0.5
+                    },
+                    "AutoButtonColor": true,
+                    "AutomaticSize": "None",
+                    "BackgroundColor3": {
+                      "R": 0.26274511218070984,
+                      "G": 0.7372549176216125,
+                      "B": 0.12156863510608673
+                    },
+                    "BackgroundTransparency": 0,
+                    "BorderColor3": {
+                      "R": 0.10588236153125763,
+                      "G": 0.16470588743686676,
+                      "B": 0.20784315466880798
+                    },
+                    "BorderSizePixel": 1,
+                    "ClipsDescendants": false,
+                    "Font": "",
+                    "LayoutOrder": 0,
+                    "LineHeight": 1,
+                    "Name": "Accept_Button",
+                    "Position": {
+                      "X": {
+                        "Scale": 0.7442823648452759,
+                        "Offset": 0
+                      },
+                      "Y": {
+                        "Scale": 0.8553838729858398,
+                        "Offset": 0
+                      }
+                    },
+                    "RichText": false,
+                    "Rotation": 0,
+                    "Selectable": true,
+                    "Size": {
+                      "X": {
+                        "Scale": 0.3639366924762726,
+                        "Offset": 0
+                      },
+                      "Y": {
+                        "Scale": 0.16866405308246613,
+                        "Offset": 0
+                      }
+                    },
+                    "TextColor3": {
+                      "R": 1,
+                      "G": 1,
+                      "B": 1
+                    },
+                    "TextScaled": true,
+                    "TextSize": 14,
+                    "TextStrokeColor3": {
+                      "R": 0,
+                      "G": 0,
+                      "B": 0
+                    },
+                    "TextStrokeTransparency": 1,
+                    "TextWrapped": true,
+                    "TextXAlignment": "Center",
+                    "TextYAlignment": "Center",
+                    "Visible": true,
+                    "ZIndex": 5
+                  },
+                  "children": [
+                    {
+                      "ClassName": "UICorner",
+                      "Name": "UICorner",
+                      "path": "/Trading_UI_VER2/Trading_Frame/Trade_Buttons/Accept_Button/UICorner",
+                      "properties": {
+                        "CornerRadius": {
+                          "Scale": 0,
+                          "Offset": 8
+                        },
+                        "Name": "UICorner"
+                      },
+                      "children": []
+                    },
+                    {
+                      "ClassName": "UITextSizeConstraint",
+                      "Name": "UITextSizeConstraint",
+                      "path": "/Trading_UI_VER2/Trading_Frame/Trade_Buttons/Accept_Button/UITextSizeConstraint",
+                      "properties": {
+                        "Name": "UITextSizeConstraint"
+                      },
+                      "children": []
+                    },
+                    {
+                      "ClassName": "TextButton",
+                      "Name": "TextButton",
+                      "path": "/Trading_UI_VER2/Trading_Frame/Trade_Buttons/Accept_Button/TextButton",
+                      "properties": {
+                        "Active": true,
+                        "AnchorPoint": {
+                          "X": 0.5,
+                          "Y": 0.5
+                        },
+                        "AutoButtonColor": true,
+                        "AutomaticSize": "None",
+                        "BackgroundColor3": {
+                          "R": 0.3019607961177826,
+                          "G": 0.8666667342185974,
+                          "B": 0.14509804546833038
+                        },
+                        "BackgroundTransparency": 0,
+                        "BorderColor3": {
+                          "R": 0.10588236153125763,
+                          "G": 0.16470588743686676,
+                          "B": 0.20784315466880798
+                        },
+                        "BorderSizePixel": 1,
+                        "ClipsDescendants": false,
+                        "Font": "",
+                        "LayoutOrder": 0,
+                        "LineHeight": 1,
+                        "Name": "TextButton",
+                        "Position": {
+                          "X": {
+                            "Scale": 0.5174955129623413,
+                            "Offset": 0
+                          },
+                          "Y": {
+                            "Scale": 0.45735523104667664,
+                            "Offset": 0
+                          }
+                        },
+                        "RichText": false,
+                        "Rotation": 0,
+                        "Selectable": true,
+                        "Size": {
+                          "X": {
+                            "Scale": 0.9650089740753174,
+                            "Offset": 0
+                          },
+                          "Y": {
+                            "Scale": 0.9147102236747742,
+                            "Offset": 0
+                          }
+                        },
+                        "Text": "Accept",
+                        "TextColor3": {
+                          "R": 1,
+                          "G": 1,
+                          "B": 1
+                        },
+                        "TextScaled": true,
+                        "TextSize": 14,
+                        "TextStrokeColor3": {
+                          "R": 0,
+                          "G": 0,
+                          "B": 0
+                        },
+                        "TextStrokeTransparency": 1,
+                        "TextWrapped": true,
+                        "TextXAlignment": "Center",
+                        "TextYAlignment": "Center",
+                        "Visible": true,
+                        "ZIndex": 0
+                      },
+                      "children": [
+                        {
+                          "ClassName": "UICorner",
+                          "Name": "UICorner",
+                          "path": "/Trading_UI_VER2/Trading_Frame/Trade_Buttons/Accept_Button/TextButton/UICorner",
+                          "properties": {
+                            "CornerRadius": {
+                              "Scale": 0,
+                              "Offset": 8
+                            },
+                            "Name": "UICorner"
+                          },
+                          "children": []
+                        },
+                        {
+                          "ClassName": "UITextSizeConstraint",
+                          "Name": "UITextSizeConstraint",
+                          "path": "/Trading_UI_VER2/Trading_Frame/Trade_Buttons/Accept_Button/TextButton/UITextSizeConstraint",
+                          "properties": {
+                            "Name": "UITextSizeConstraint"
+                          },
+                          "children": []
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "ClassName": "Folder",
+              "Name": "Trading_Details",
+              "path": "/Trading_UI_VER2/Trading_Frame/Trading_Details",
+              "properties": {
+                "Name": "Trading_Details"
+              },
+              "children": [
+                {
+                  "ClassName": "Folder",
+                  "Name": "Decor",
+                  "path": "/Trading_UI_VER2/Trading_Frame/Trading_Details/Decor",
+                  "properties": {
+                    "Name": "Decor"
+                  },
+                  "children": [
+                    {
+                      "ClassName": "Frame",
+                      "Name": "Detailing_Bottom",
+                      "path": "/Trading_UI_VER2/Trading_Frame/Trading_Details/Decor/Detailing_Bottom",
+                      "properties": {
+                        "Active": false,
+                        "AnchorPoint": {
+                          "X": 0.5,
+                          "Y": 0.5
+                        },
+                        "AutomaticSize": "None",
+                        "BackgroundColor3": {
+                          "R": 0.8980392813682556,
+                          "G": 0.8980392813682556,
+                          "B": 0.8980392813682556
+                        },
+                        "BackgroundTransparency": 0,
+                        "BorderColor3": {
+                          "R": 0.10588236153125763,
+                          "G": 0.16470588743686676,
+                          "B": 0.20784315466880798
+                        },
+                        "BorderSizePixel": 0,
+                        "ClipsDescendants": false,
+                        "LayoutOrder": 0,
+                        "Name": "Detailing_Bottom",
+                        "Position": {
+                          "X": {
+                            "Scale": 0.5000000596046448,
+                            "Offset": 0
+                          },
+                          "Y": {
+                            "Scale": 0.9612537026405334,
+                            "Offset": 0
+                          }
+                        },
+                        "Rotation": 0,
+                        "Selectable": false,
+                        "Size": {
+                          "X": {
+                            "Scale": 1,
+                            "Offset": 0
+                          },
+                          "Y": {
+                            "Scale": 0.07999999821186066,
+                            "Offset": 0
+                          }
+                        },
+                        "Visible": true,
+                        "ZIndex": 1
+                      },
+                      "children": [
+                        {
+                          "ClassName": "UICorner",
+                          "Name": "UICorner",
+                          "path": "/Trading_UI_VER2/Trading_Frame/Trading_Details/Decor/Detailing_Bottom/UICorner",
+                          "properties": {
+                            "CornerRadius": {
+                              "Scale": 0,
+                              "Offset": 8
+                            },
+                            "Name": "UICorner"
+                          },
+                          "children": []
+                        },
+                        {
+                          "ClassName": "Frame",
+                          "Name": "Cover",
+                          "path": "/Trading_UI_VER2/Trading_Frame/Trading_Details/Decor/Detailing_Bottom/Cover",
+                          "properties": {
+                            "Active": false,
+                            "AnchorPoint": {
+                              "X": 0.5,
+                              "Y": 0.5
+                            },
+                            "AutomaticSize": "None",
+                            "BackgroundColor3": {
+                              "R": 0.8980392813682556,
+                              "G": 0.8980392813682556,
+                              "B": 0.8980392813682556
+                            },
+                            "BackgroundTransparency": 0,
+                            "BorderColor3": {
+                              "R": 0.10588236153125763,
+                              "G": 0.16470588743686676,
+                              "B": 0.20784315466880798
+                            },
+                            "BorderSizePixel": 0,
+                            "ClipsDescendants": false,
+                            "LayoutOrder": 0,
+                            "Name": "Cover",
+                            "Position": {
+                              "X": {
+                                "Scale": 0.5,
+                                "Offset": 0
+                              },
+                              "Y": {
+                                "Scale": 0.29885315895080566,
+                                "Offset": 0
+                              }
+                            },
+                            "Rotation": 0,
+                            "Selectable": false,
+                            "Size": {
+                              "X": {
+                                "Scale": 1,
+                                "Offset": 0
+                              },
+                              "Y": {
+                                "Scale": 0.5977061986923218,
+                                "Offset": 0
+                              }
+                            },
+                            "Visible": true,
+                            "ZIndex": 2
+                          },
+                          "children": []
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "ClassName": "Folder",
+                  "Name": "TXTINFO",
+                  "path": "/Trading_UI_VER2/Trading_Frame/Trading_Details/TXTINFO",
+                  "properties": {
+                    "Name": "TXTINFO"
+                  },
+                  "children": [
+                    {
+                      "ClassName": "TextLabel",
+                      "Name": "P1",
+                      "path": "/Trading_UI_VER2/Trading_Frame/Trading_Details/TXTINFO/P1",
+                      "properties": {
+                        "Active": false,
+                        "AnchorPoint": {
+                          "X": 0.5,
+                          "Y": 0.5
+                        },
+                        "AutomaticSize": "None",
+                        "BackgroundColor3": {
+                          "R": 1,
+                          "G": 1,
+                          "B": 1
+                        },
+                        "BackgroundTransparency": 1,
+                        "BorderColor3": {
+                          "R": 0.10588236153125763,
+                          "G": 0.16470588743686676,
+                          "B": 0.20784315466880798
+                        },
+                        "BorderSizePixel": 1,
+                        "ClipsDescendants": false,
+                        "Font": "",
+                        "LayoutOrder": 0,
+                        "LineHeight": 1,
+                        "Name": "P1",
+                        "Position": {
+                          "X": {
+                            "Scale": 0.2447386384010315,
+                            "Offset": 0
+                          },
+                          "Y": {
+                            "Scale": 0.08690528571605682,
+                            "Offset": 0
+                          }
+                        },
+                        "RichText": false,
+                        "Rotation": 0,
+                        "Selectable": false,
+                        "Size": {
+                          "X": {
+                            "Scale": 0.4021197259426117,
+                            "Offset": 0
+                          },
+                          "Y": {
+                            "Scale": 0.10154284536838531,
+                            "Offset": 0
+                          }
+                        },
+                        "Text": "ItsPlasmaRBLX",
+                        "TextColor3": {
+                          "R": 0.9921569228172302,
+                          "G": 0.9921569228172302,
+                          "B": 0.9921569228172302
+                        },
+                        "TextScaled": true,
+                        "TextSize": 14,
+                        "TextStrokeColor3": {
+                          "R": 0,
+                          "G": 0,
+                          "B": 0
+                        },
+                        "TextStrokeTransparency": 0.20000000298023224,
+                        "TextWrapped": true,
+                        "TextXAlignment": "Center",
+                        "TextYAlignment": "Center",
+                        "Visible": true,
+                        "ZIndex": 9999
+                      },
+                      "children": []
+                    },
+                    {
+                      "ClassName": "TextLabel",
+                      "Name": "P2",
+                      "path": "/Trading_UI_VER2/Trading_Frame/Trading_Details/TXTINFO/P2",
+                      "properties": {
+                        "Active": false,
+                        "AnchorPoint": {
+                          "X": 0.5,
+                          "Y": 0.5
+                        },
+                        "AutomaticSize": "None",
+                        "BackgroundColor3": {
+                          "R": 1,
+                          "G": 1,
+                          "B": 1
+                        },
+                        "BackgroundTransparency": 1,
+                        "BorderColor3": {
+                          "R": 0.10588236153125763,
+                          "G": 0.16470588743686676,
+                          "B": 0.20784315466880798
+                        },
+                        "BorderSizePixel": 1,
+                        "ClipsDescendants": false,
+                        "Font": "",
+                        "LayoutOrder": 0,
+                        "LineHeight": 1,
+                        "Name": "P2",
+                        "Position": {
+                          "X": {
+                            "Scale": 0.7532423734664917,
+                            "Offset": 0
+                          },
+                          "Y": {
+                            "Scale": 0.07934357970952988,
+                            "Offset": 0
+                          }
+                        },
+                        "RichText": false,
+                        "Rotation": 0,
+                        "Selectable": false,
+                        "Size": {
+                          "X": {
+                            "Scale": 0.4021197259426117,
+                            "Offset": 0
+                          },
+                          "Y": {
+                            "Scale": 0.08641944080591202,
+                            "Offset": 0
+                          }
+                        },
+                        "Text": "CoIeRB",
+                        "TextColor3": {
+                          "R": 0.9921569228172302,
+                          "G": 0.9921569228172302,
+                          "B": 0.9921569228172302
+                        },
+                        "TextScaled": true,
+                        "TextSize": 14,
+                        "TextStrokeColor3": {
+                          "R": 0,
+                          "G": 0,
+                          "B": 0
+                        },
+                        "TextStrokeTransparency": 0.20000000298023224,
+                        "TextWrapped": true,
+                        "TextXAlignment": "Center",
+                        "TextYAlignment": "Center",
+                        "Visible": true,
+                        "ZIndex": 9999
+                      },
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ClassName": "ModuleScript",
+          "Name": "READ",
+          "path": "/Trading_UI_VER2/READ",
+          "properties": {
+            "Name": "READ"
+          },
+          "scriptFile": "scripts/001-Trading_UI_VER2-READ.lua",
+          "children": [
+            {
+              "ClassName": "StringValue",
+              "Name": "By: ItsPlasmaRBLX",
+              "path": "/Trading_UI_VER2/READ/By_ ItsPlasmaRBLX",
+              "properties": {
+                "Name": "By: ItsPlasmaRBLX",
+                "Value": "https://youtu.be/dQw4w9WgXcQ"
+              },
+              "children": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -4,6 +4,7 @@ import MarkdownMessage from "./MarkdownMessage";
 import { stripTags } from "./stripTags";
 import MessageBubble from "./MessageBubble";
 import LiveWorkStream from "./LiveWorkStream";
+import RawReasoningPanel from "./RawReasoningPanel";
 import { parsePendingStreamContent } from "../../../lib/streaming";
 import { Clock3, Loader2, RotateCcw } from "lib/icons";
 
@@ -150,6 +151,10 @@ export default function MessageList({
           <div className="flex justify-start gap-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <NexusRBXAvatar isThinking={true} mode={activeMode} />
             <div className="max-w-[85%] md:max-w-[80%] order-2 space-y-4">
+              <RawReasoningPanel
+                text={pendingMessage?.streamState?.rawReasoning}
+                live={Boolean(pendingMessage)}
+              />
               {showLiveWorkStream ? (
                 <LiveWorkStream
                   pendingMessage={pendingMessage}

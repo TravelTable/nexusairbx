@@ -1,6 +1,7 @@
 import {
   applyStreamActivity,
   applyStreamDelta,
+  applyReasoningDelta,
   createPendingStreamState,
   formatPendingStreamContent,
   getPendingStreamSnapshot,
@@ -53,6 +54,16 @@ describe("streaming utils", () => {
 
     state = applyStreamDelta(state, { seq: 2, channel: "content", text: "Visible answer" });
     expect(formatPendingStreamContent(state)).toBe("Visible answer");
+  });
+
+  test("accumulates raw reasoning deltas separately from thought work log", () => {
+    let state = createPendingStreamState();
+    state = applyReasoningDelta(state, { seq: 1, text: "Step one. " });
+    state = applyReasoningDelta(state, { seq: 2, text: "Step two." });
+    const snapshot = getPendingStreamSnapshot(state);
+    expect(snapshot.rawReasoning).toBe("Step one. Step two.");
+    expect(snapshot.hasRawReasoning).toBe(true);
+    expect(snapshot.thought).toBe("");
   });
 
   test("replaces stream activity entries when id matches", () => {

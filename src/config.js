@@ -6,6 +6,7 @@ const isDev = process.env.NODE_ENV === 'development';
 
 export const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || "https://api.nexusrbx.com";
 export const STREAM_V2_ENABLED = process.env.REACT_APP_STREAM_V2 !== "false";
+export const SHOW_RAW_REASONING = process.env.REACT_APP_SHOW_RAW_REASONING === "true";
 export const SYSTEM_ONLY_PREMIUM_ENABLED = process.env.REACT_APP_SYSTEM_ONLY_PREMIUM === "true";
 export const AI_PAGE_V2_ENABLED = process.env.REACT_APP_AI_PAGE_V2 !== "false";
 
@@ -13,6 +14,7 @@ export const CONFIG = {
   BACKEND_URL,
   IS_DEV: isDev,
   STREAM_V2_ENABLED,
+  SHOW_RAW_REASONING,
   SYSTEM_ONLY_PREMIUM_ENABLED,
   AI_PAGE_V2_ENABLED,
   STRIPE_PRO_PRICE_ID: "price_1SucJPAu3NmqHUAuf44Zz9cy",

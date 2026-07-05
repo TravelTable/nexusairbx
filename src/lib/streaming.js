@@ -213,6 +213,7 @@ function applyFileEvent(filesById, rawEvent, now = Date.now()) {
 export function createPendingStreamState() {
   return {
     thought: "",
+    rawReasoning: "",
     explanation: "",
     code: "",
     content: "",
@@ -295,6 +296,21 @@ export function applyStreamDelta(currentState, delta) {
     next.activitySeq = updated.activitySeq;
   }
   return next;
+}
+
+export function applyReasoningDelta(currentState, delta = {}) {
+  const base = currentState || createPendingStreamState();
+  const text = typeof delta?.text === "string" ? delta.text : "";
+  if (!text) return base;
+  const seq = Number(delta?.seq);
+  if (Number.isFinite(seq) && seq <= (base.rawReasoningSeq ?? base.seq ?? -1)) {
+    return base;
+  }
+  return {
+    ...base,
+    rawReasoning: `${base.rawReasoning || ""}${text}`,
+    rawReasoningSeq: Number.isFinite(seq) ? seq : base.rawReasoningSeq,
+  };
 }
 
 export function applyStreamActivity(currentState, entry) {
@@ -383,6 +399,7 @@ export function getPendingStreamSnapshot(state) {
   const readyCount = files.filter((file) => file.status === "ready" || file.status === "generated").length;
   return {
     thought: base.thought || "",
+    rawReasoning: base.rawReasoning || "",
     explanation: base.explanation || "",
     code: base.code || "",
     content: base.content || "",
@@ -400,6 +417,7 @@ export function getPendingStreamSnapshot(state) {
     hasVisibleOutput: Boolean(base.explanation || base.code || base.content || files.length),
     hasFiles: files.length > 0,
     hasThought: Boolean(base.thought),
+    hasRawReasoning: Boolean(base.rawReasoning),
     seq: Number.isFinite(Number(base.seq)) ? Number(base.seq) : -1,
     startedAt: base.startedAt || Date.now(),
   };

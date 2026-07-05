@@ -1,0 +1,17 @@
+{
+  "name": "Trading-UI-2 Roblox Model File",
+  "tree": {
+    "$className": "DataModel",
+    "ReplicatedStorage": {
+      "$className": "ReplicatedStorage",
+      "Trading-UI-2-Roblox-Model-File": {
+        "$path": "../scripts"
+      }
+    }
+  },
+  "metadata": {
+    "generatedBy": "scripts/convertRobloxExamples.js",
+    "note": "This is an inferred helper project. instance-tree.json remains the source of truth for the full hierarchy.",
+    "scriptCount": 1
+  }
+}

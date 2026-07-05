@@ -1,0 +1,216 @@
+{
+  "rawDir": "/Users/jackrow/nexusairbx/Roblox examples for Ai/raw",
+  "outputDir": "/Users/jackrow/nexusairbx/Roblox examples for Ai/converted",
+  "generatedAt": "2026-07-05T07:50:51.530Z",
+  "supportedExtensions": [
+    ".rbxl",
+    ".rbxlx",
+    ".rbxm",
+    ".rbxmx"
+  ],
+  "totals": {
+    "converted": 7,
+    "skipped": 0,
+    "errors": 0,
+    "scripts": 5,
+    "ui": 1815,
+    "remotes": 0,
+    "assets": 171
+  },
+  "examples": [
+    {
+      "name": "ItemShopUI",
+      "sourceFileName": "ItemShopUI.rbxm",
+      "sourceRelativePath": "ItemShopUI.rbxm",
+      "outputRelativePath": "ItemShopUI",
+      "parser": "rbxm-parser",
+      "status": "converted",
+      "counts": {
+        "instances": 363,
+        "scripts": {
+          "total": 0,
+          "Script": 0,
+          "LocalScript": 0,
+          "ModuleScript": 0
+        },
+        "ui": 363,
+        "remotes": 0,
+        "dataStoreReferences": 0,
+        "assetReferences": 12,
+        "externalReferences": 0
+      },
+      "detectedSystems": [
+        "shop-ui",
+        "ui"
+      ],
+      "summaryPath": "ItemShopUI/summary.md"
+    },
+    {
+      "name": "LoadingScreenJekzter99",
+      "sourceFileName": "LoadingScreenJekzter99.rbxm",
+      "sourceRelativePath": "LoadingScreenJekzter99.rbxm",
+      "outputRelativePath": "LoadingScreenJekzter99",
+      "parser": "rbxm-parser",
+      "status": "converted",
+      "counts": {
+        "instances": 5,
+        "scripts": {
+          "total": 3,
+          "Script": 1,
+          "LocalScript": 1,
+          "ModuleScript": 1
+        },
+        "ui": 0,
+        "remotes": 0,
+        "dataStoreReferences": 0,
+        "assetReferences": 2,
+        "externalReferences": 3
+      },
+      "detectedSystems": [
+        "animation",
+        "asset-preloading",
+        "audio",
+        "external-http",
+        "loading-screen"
+      ],
+      "summaryPath": "LoadingScreenJekzter99/summary.md"
+    },
+    {
+      "name": "Trading-UI-2 Roblox Model File",
+      "sourceFileName": "Trading-UI-2 Roblox Model File.rbxm",
+      "sourceRelativePath": "Trading-UI-2 Roblox Model File.rbxm",
+      "outputRelativePath": "Trading-UI-2 Roblox Model File",
+      "parser": "rbxm-parser",
+      "status": "converted",
+      "counts": {
+        "instances": 49,
+        "scripts": {
+          "total": 1,
+          "Script": 0,
+          "LocalScript": 0,
+          "ModuleScript": 1
+        },
+        "ui": 43,
+        "remotes": 0,
+        "dataStoreReferences": 0,
+        "assetReferences": 0,
+        "externalReferences": 1
+      },
+      "detectedSystems": [
+        "trade-ui",
+        "ui"
+      ],
+      "summaryPath": "Trading-UI-2 Roblox Model File/summary.md"
+    },
+    {
+      "name": "YourRewardsUI!",
+      "sourceFileName": "YourRewardsUI!.rbxm",
+      "sourceRelativePath": "YourRewardsUI!.rbxm",
+      "outputRelativePath": "YourRewardsUI!",
+      "parser": "rbxm-parser",
+      "status": "converted",
+      "counts": {
+        "instances": 112,
+        "scripts": {
+          "total": 0,
+          "Script": 0,
+          "LocalScript": 0,
+          "ModuleScript": 0
+        },
+        "ui": 112,
+        "remotes": 0,
+        "dataStoreReferences": 0,
+        "assetReferences": 12,
+        "externalReferences": 0
+      },
+      "detectedSystems": [
+        "rewards-ui",
+        "ui"
+      ],
+      "summaryPath": "YourRewardsUI!/summary.md"
+    },
+    {
+      "name": "YourTradeUI!",
+      "sourceFileName": "YourTradeUI!.rbxm",
+      "sourceRelativePath": "YourTradeUI!.rbxm",
+      "outputRelativePath": "YourTradeUI!",
+      "parser": "rbxm-parser",
+      "status": "converted",
+      "counts": {
+        "instances": 133,
+        "scripts": {
+          "total": 1,
+          "Script": 0,
+          "LocalScript": 1,
+          "ModuleScript": 0
+        },
+        "ui": 132,
+        "remotes": 0,
+        "dataStoreReferences": 0,
+        "assetReferences": 20,
+        "externalReferences": 0
+      },
+      "detectedSystems": [
+        "animation",
+        "trade-ui",
+        "ui"
+      ],
+      "summaryPath": "YourTradeUI!/summary.md"
+    },
+    {
+      "name": "YourUiPack!",
+      "sourceFileName": "YourUiPack!.rbxm",
+      "sourceRelativePath": "YourUiPack!.rbxm",
+      "outputRelativePath": "YourUiPack!",
+      "parser": "rbxm-parser",
+      "status": "converted",
+      "counts": {
+        "instances": 955,
+        "scripts": {
+          "total": 0,
+          "Script": 0,
+          "LocalScript": 0,
+          "ModuleScript": 0
+        },
+        "ui": 955,
+        "remotes": 0,
+        "dataStoreReferences": 0,
+        "assetReferences": 102,
+        "externalReferences": 0
+      },
+      "detectedSystems": [
+        "rewards-ui",
+        "shop-ui",
+        "ui"
+      ],
+      "summaryPath": "YourUiPack!/summary.md"
+    },
+    {
+      "name": "YourUpgradesUI!",
+      "sourceFileName": "YourUpgradesUI!.rbxm",
+      "sourceRelativePath": "YourUpgradesUI!.rbxm",
+      "outputRelativePath": "YourUpgradesUI!",
+      "parser": "rbxm-parser",
+      "status": "converted",
+      "counts": {
+        "instances": 210,
+        "scripts": {
+          "total": 0,
+          "Script": 0,
+          "LocalScript": 0,
+          "ModuleScript": 0
+        },
+        "ui": 210,
+        "remotes": 0,
+        "dataStoreReferences": 0,
+        "assetReferences": 23,
+        "externalReferences": 0
+      },
+      "detectedSystems": [
+        "ui",
+        "upgrades-ui"
+      ],
+      "summaryPath": "YourUpgradesUI!/summary.md"
+    }
+  ]
+}

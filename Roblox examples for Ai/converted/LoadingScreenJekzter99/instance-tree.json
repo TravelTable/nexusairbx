@@ -1,0 +1,85 @@
+{
+  "sourceFileName": "LoadingScreenJekzter99.rbxm",
+  "sourceRelativePath": "LoadingScreenJekzter99.rbxm",
+  "parser": "rbxm-parser",
+  "generatedAt": "2026-07-05T07:50:51.151Z",
+  "limits": {
+    "maxInputBytes": 104857600,
+    "maxScriptChars": 300000,
+    "maxTotalScriptChars": 1500000,
+    "maxPropertyStringChars": 800,
+    "maxTreeNodes": 12000
+  },
+  "warnings": [],
+  "counts": {
+    "instances": 5,
+    "scripts": {
+      "total": 3,
+      "Script": 1,
+      "LocalScript": 1,
+      "ModuleScript": 1
+    },
+    "ui": 0,
+    "remotes": 0,
+    "dataStoreReferences": 0,
+    "assetReferences": 2,
+    "externalReferences": 3
+  },
+  "roots": [
+    {
+      "ClassName": "Model",
+      "Name": "LoadingScreenbyJekzter99",
+      "path": "/LoadingScreenbyJekzter99",
+      "properties": {
+        "Name": "LoadingScreenbyJekzter99"
+      },
+      "children": [
+        {
+          "ClassName": "Script",
+          "Name": "README!",
+          "path": "/LoadingScreenbyJekzter99/README!",
+          "properties": {
+            "Disabled": true,
+            "Name": "README!",
+            "RunContext": "Legacy"
+          },
+          "scriptFile": "scripts/001-LoadingScreenbyJekzter99-README!.server.lua",
+          "children": []
+        },
+        {
+          "ClassName": "Folder",
+          "Name": "UngroupReplicatedFirst",
+          "path": "/LoadingScreenbyJekzter99/UngroupReplicatedFirst",
+          "properties": {
+            "Name": "UngroupReplicatedFirst"
+          },
+          "children": [
+            {
+              "ClassName": "LocalScript",
+              "Name": "LoadingScreenJekzter99",
+              "path": "/LoadingScreenbyJekzter99/UngroupReplicatedFirst/LoadingScreenJekzter99",
+              "properties": {
+                "Disabled": false,
+                "Name": "LoadingScreenJekzter99",
+                "RunContext": "Legacy"
+              },
+              "scriptFile": "scripts/002-LoadingScreenbyJekzter99-UngroupReplicatedFirst-LoadingScreenJekzter99.client.lua",
+              "children": [
+                {
+                  "ClassName": "ModuleScript",
+                  "Name": "LoadingConfigJekzter99",
+                  "path": "/LoadingScreenbyJekzter99/UngroupReplicatedFirst/LoadingScreenJekzter99/LoadingConfigJekzter99",
+                  "properties": {
+                    "Name": "LoadingConfigJekzter99"
+                  },
+                  "scriptFile": "scripts/003-LoadingScreenbyJekzter99-UngroupReplicatedFirst-LoadingScreenJekzter99-LoadingConfigJekzter99.lua",
+                  "children": []
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

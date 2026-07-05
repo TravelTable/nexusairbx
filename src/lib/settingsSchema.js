@@ -17,6 +17,8 @@ export const DEFAULT_SETTINGS = Object.freeze({
   studioAutoPushPolicy: "after_validation",
   lastAuthorizedStudioSessionId: null,
   robloxAssetUploadsEnabled: false,
+  useExamples: false,
+  selectedExampleIds: Object.freeze([]),
   robloxWritePolicy: Object.freeze({
     assetWrites: "allowed_after_toggle",
     universeWrites: "approval_required",
@@ -79,12 +81,28 @@ function sanitizeValue(key, value, { strict = false } = {}) {
     return value;
   }
 
-  if (["enableGameWizard", "showThinking", "studioAutoPushEnabled", "robloxAssetUploadsEnabled"].includes(key)) {
+  if (["enableGameWizard", "showThinking", "studioAutoPushEnabled", "robloxAssetUploadsEnabled", "useExamples"].includes(key)) {
     if (typeof value !== "boolean") {
       if (strict) throw new Error(`${key} must be a boolean`);
       return DEFAULT_SETTINGS[key];
     }
     return value;
+  }
+
+  if (key === "selectedExampleIds") {
+    if (!Array.isArray(value)) {
+      if (strict) throw new Error("selectedExampleIds must be an array");
+      return [...DEFAULT_SETTINGS.selectedExampleIds];
+    }
+    const seen = new Set();
+    const ids = [];
+    value.forEach((item) => {
+      const id = truncateString(item, 120).trim().toLowerCase();
+      if (!id || seen.has(id)) return;
+      seen.add(id);
+      ids.push(id);
+    });
+    return ids.slice(0, 12);
   }
 
   if (key === "lastAuthorizedStudioSessionId") {
