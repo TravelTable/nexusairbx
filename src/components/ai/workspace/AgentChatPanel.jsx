@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import { Search, X } from "lib/icons";
 import ChatView from "../ChatView";
 import ChatComposer from "../chat/ChatComposer";
-import AgentPlanPanel from "./AgentPlanPanel";
 import BuildDetailsPanel from "./BuildDetailsPanel";
 import RobloxAssetTray from "./RobloxAssetTray";
 import CreatorStoreSearch from "../../assets/CreatorStoreSearch";
@@ -94,14 +93,6 @@ export default function AgentChatPanel({
 }) {
   const [view, setView] = useState("chat");
   const [creatorStoreOpen, setCreatorStoreOpen] = useState(false);
-  const active = [
-    "inspecting",
-    "waiting_for_tool",
-    "waiting_for_approval",
-    "generating",
-    "validating",
-    "applying",
-  ].includes(agentRun?.status);
 
   useEffect(() => {
     if (!creatorStoreOpen) return undefined;
@@ -129,17 +120,6 @@ export default function AgentChatPanel({
           </div>
         ) : (
           <>
-            {active && (
-              <div className="px-3 pt-3">
-                <AgentPlanPanel
-                  agentRun={agentRun}
-                  onApproveStep={onApproveStep}
-                  onRestoreRun={onRestoreRun}
-                  approvingStepId={approvingStepId}
-                  restoring={restoringRun}
-                />
-              </div>
-            )}
             <div className="flex-1 min-h-0 overflow-y-auto px-3 py-4 scrollbar-hide">
               <ChatView
                 messages={messages}
