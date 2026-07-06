@@ -21,6 +21,7 @@ import { ensureStreamSession } from "../lib/streamSession";
 import {
   buildStreamUrl,
   formatRecoveryStage,
+  parseCompletedGenerateResult,
   pollJobResult,
   RECOVERY_WALL_TIMEOUT_MS,
   updateSeqFromPayload,
@@ -294,6 +295,10 @@ export function useAiChat(user, settings, refreshBilling, notify) {
           },
         });
         if (cancelled) return;
+        const contentType = res.headers.get("content-type") || "";
+        const body = contentType.includes("application/json")
+          ? await res.json().catch(() => ({}))
+          : {};
 
         if (res.status === 202) {
           if (currentPending.runId) {
@@ -312,18 +317,44 @@ export function useAiChat(user, settings, refreshBilling, notify) {
           return;
         }
 
-        if (!res.ok) {
+        const billingFailure = parseApiErrorPayload(body);
+        if (billingFailure || res.status === 402) {
           await updateDoc(pendingRef, {
             pending: false,
             stage: "failed",
-            error: `Generation failed (${res.status})`,
+            errorCode: "INSUFFICIENT_TOKENS",
+            error: billingFailure?.message || body?.message || "You're out of tokens.",
             updatedAt: serverTimestamp(),
           }).catch(() => {});
           return;
         }
 
-        const body = await res.json();
-        const data = body?.result || body;
+        let data = null;
+        try {
+          data = parseCompletedGenerateResult(body);
+        } catch (err) {
+          await updateDoc(pendingRef, {
+            pending: false,
+            stage: "failed",
+            errorCode: err?.code || null,
+            error: err?.message || `Generation failed (${res.status})`,
+            updatedAt: serverTimestamp(),
+          }).catch(() => {});
+          return;
+        }
+        if (!data) {
+          if (!res.ok) {
+            await updateDoc(pendingRef, {
+              pending: false,
+              stage: "failed",
+              errorCode: body?.code || null,
+              error: body?.message || body?.error || `Generation failed (${res.status})`,
+              updatedAt: serverTimestamp(),
+            }).catch(() => {});
+            return;
+          }
+          data = body?.result || body;
+        }
         if (data?.status === "pending" || data?.done === false) return;
         const currentMode = currentPending.metadata?.mode || currentPending.mode || chatMode;
         const msgPayload = buildAssistantMessagePayload(data, {
@@ -676,14 +707,15 @@ export function useAiChat(user, settings, refreshBilling, notify) {
           const data = contentType.includes("application/json")
             ? await res.json().catch(() => ({}))
             : {};
-          if (data?.done === true || data?.status === "done") {
-            await finalizeWithData(data.result || data, "result_poll");
+          const completed = parseCompletedGenerateResult(data);
+          if (completed) {
+            await finalizeWithData(completed, "result_poll");
             resolve();
             return true;
           }
-          if (data?.status === "failed") {
-            const err = new Error(data?.message || data?.error || "Generation failed");
-            err.code = data?.code || "GENERATION_FAILED";
+          if (!res.ok) {
+            const err = new Error(data?.message || data?.error || `Failed to fetch result (${res.status})`);
+            err.code = data?.code || "RESULT_FETCH_FAILED";
             throw err;
           }
           return false;

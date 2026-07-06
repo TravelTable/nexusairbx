@@ -21,6 +21,32 @@ const STAGE_LABELS = {
   planning: "Planning...",
 };
 
+const TERMINAL_FAILURE_STATUSES = new Set([
+  "failed",
+  "cancelled",
+  "blocked",
+  "iteration_limit",
+  "timed_out",
+]);
+
+export function getTerminalGenerateFailure(payload = {}) {
+  if (payload?.done !== true) return null;
+  const status = String(payload?.status || payload?.jobStatus || "").toLowerCase();
+  if (!TERMINAL_FAILURE_STATUSES.has(status)) return null;
+  const err = new Error(payload?.message || payload?.error || "Generation failed");
+  err.code = payload?.code || "GENERATION_FAILED";
+  return err;
+}
+
+export function parseCompletedGenerateResult(payload = {}) {
+  const failure = getTerminalGenerateFailure(payload);
+  if (failure) throw failure;
+  if (payload?.done === true && (payload?.status === "done" || payload?.result)) {
+    return payload.result || payload;
+  }
+  return null;
+}
+
 export function isStudioWaitPayload(payload = {}) {
   return payload.waitingFor === "studio" || payload.jobStatus === "waiting_for_tool";
 }
@@ -105,15 +131,8 @@ export async function pollJobResult({
       throw new Error("Generation job not found.");
     }
 
-    if (data?.status === "failed") {
-      const err = new Error(data?.message || data?.error || "Generation failed");
-      err.code = data?.code || "GENERATION_FAILED";
-      throw err;
-    }
-
-    if (data?.done === true || data?.status === "done") {
-      return data.result || data;
-    }
+    const completed = parseCompletedGenerateResult(data);
+    if (completed) return completed;
 
     if (res.status === 202 || data?.status === "pending") {
       onPending?.(data);

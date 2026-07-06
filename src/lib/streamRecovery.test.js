@@ -1,7 +1,9 @@
 import {
   buildStreamUrl,
   formatRecoveryStage,
+  getTerminalGenerateFailure,
   isStudioWaitPayload,
+  parseCompletedGenerateResult,
   pollJobResult,
   STUDIO_WAIT_GRACE_MS,
   updateSeqFromPayload,
@@ -67,11 +69,41 @@ describe("streamRecovery", () => {
     expect(result).toEqual({ title: "Done" });
   });
 
+  test("getTerminalGenerateFailure detects done=true failure envelopes", () => {
+    const failure = getTerminalGenerateFailure({
+      status: "failed",
+      done: true,
+      message: "Worker exploded",
+      code: "GENERATION_FAILED",
+    });
+    expect(failure).toMatchObject({ message: "Worker exploded", code: "GENERATION_FAILED" });
+    expect(() =>
+      parseCompletedGenerateResult({
+        status: "failed",
+        done: true,
+        code: "GENERATION_FAILED",
+        message: "Worker exploded",
+      })
+    ).toThrow("Worker exploded");
+    expect(
+      parseCompletedGenerateResult({
+        status: "done",
+        done: true,
+        result: { title: "Done" },
+      })
+    ).toEqual({ title: "Done" });
+  });
+
   test("pollJobResult fails fast on failed jobs", async () => {
     const fetchImpl = jest.fn().mockResolvedValue({
-      status: 500,
+      status: 409,
       headers: { get: () => "application/json" },
-      json: async () => ({ status: "failed", message: "Worker exploded", code: "GENERATION_FAILED" }),
+      json: async () => ({
+        status: "failed",
+        done: true,
+        message: "Worker exploded",
+        code: "GENERATION_FAILED",
+      }),
     });
 
     await expect(
