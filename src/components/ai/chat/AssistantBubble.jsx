@@ -15,6 +15,15 @@ import { AI_EVENTS, emitAiEvent } from "../../../lib/aiEvents";
 import AgentStepList from "../workspace/AgentStepList";
 import { FEATURE_FLAGS } from "../../../lib/featureFlags";
 
+const RUN_STATE_META = {
+  applied: { label: "Applied to Studio", className: "border-[#00f5d4]/30 bg-[#00f5d4]/10 text-[#00f5d4]" },
+  ready_to_apply: { label: "Ready to push", className: "border-[#00f5d4]/25 bg-[#00f5d4]/5 text-[#00f5d4]" },
+  applying: { label: "Applying to Studio…", className: "border-amber-400/30 bg-amber-400/10 text-amber-200" },
+  push_skipped: { label: "Saved to workspace", className: "border-white/10 bg-white/5 text-gray-400" },
+  conflict: { label: "Studio conflict", className: "border-amber-400/30 bg-amber-400/10 text-amber-200" },
+  failed: { label: "Failed", className: "border-red-400/30 bg-red-400/10 text-red-300" },
+};
+
 function BubbleShell({ activeMode, children }) {
   return (
     <div className="flex justify-start gap-3.5 group animate-fade-in-up">
@@ -60,6 +69,7 @@ export default function AssistantBubble({
 
   const fileCount = Array.isArray(m.files) ? m.files.length : 0;
   const hasArtifact = (fileCount > 0 || m.code) && m.metadata?.mode !== "plan";
+  const runStateMeta = RUN_STATE_META[m.metadata?.runState] || null;
   const qaReport = m.metadata?.qaReport || null;
   const qaIssueCount = Array.isArray(qaReport?.issues) ? qaReport.issues.length : 0;
   const structured = m.metadata?.structuredData;
@@ -136,7 +146,14 @@ export default function AssistantBubble({
                   <FileCode2 className="w-4 h-4" />
                 </div>
                 <div className="min-w-0">
-                  <div className="font-display text-sm font-bold text-white truncate">{m.title || "Generated Roblox Artifact"}</div>
+                  <div className="flex items-center gap-2">
+                    <div className="font-display text-sm font-bold text-white truncate">{m.title || "Generated Roblox Artifact"}</div>
+                    {runStateMeta ? (
+                      <span className={`shrink-0 inline-flex items-center px-1.5 py-0.5 rounded-md border text-[9px] font-black uppercase tracking-widest ${runStateMeta.className}`}>
+                        {runStateMeta.label}
+                      </span>
+                    ) : null}
+                  </div>
                   <div className="text-[11px] text-gray-500">
                     {fileCount > 0 ? `${fileCount} file${fileCount === 1 ? "" : "s"}` : "1 script"} ready in the workspace
                   </div>

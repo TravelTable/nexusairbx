@@ -10,6 +10,7 @@ const bundledPath = path.join(pluginRoot, "NexusRBXStudioBridge.plugin.lua");
 const buildRbxmxPath = path.join(pluginRoot, "build", "NexusRBXStudioBridge.rbxmx");
 const pluginsDir = path.join(os.homedir(), "Documents", "Roblox", "Plugins");
 const installedPath = path.join(pluginsDir, "NexusRBXStudioBridge.rbxmx");
+const buildOnly = process.argv.includes("--build-only");
 const legacyPaths = [
   path.join(pluginsDir, "Plugin.rbxmx"),
   path.join(pluginsDir, "NexusRBXStudioBridge.plugin.rbxmx"),
@@ -59,17 +60,21 @@ const source = fs.readFileSync(bundledPath, "utf8");
 const rbxmx = buildRbxmx(source);
 
 fs.mkdirSync(path.dirname(buildRbxmxPath), { recursive: true });
-fs.mkdirSync(pluginsDir, { recursive: true });
 fs.writeFileSync(buildRbxmxPath, rbxmx, "utf8");
-fs.writeFileSync(installedPath, rbxmx, "utf8");
 
-for (const legacyPath of legacyPaths) {
-  if (fs.existsSync(legacyPath)) {
-    fs.unlinkSync(legacyPath);
-    console.log(`Removed legacy plugin: ${legacyPath}`);
+if (!buildOnly) {
+  fs.mkdirSync(pluginsDir, { recursive: true });
+  fs.writeFileSync(installedPath, rbxmx, "utf8");
+
+  for (const legacyPath of legacyPaths) {
+    if (fs.existsSync(legacyPath)) {
+      fs.unlinkSync(legacyPath);
+      console.log(`Removed legacy plugin: ${legacyPath}`);
+    }
   }
+
+  console.log(`Installed local plugin: ${installedPath}`);
 }
 
-console.log(`Installed local plugin: ${installedPath}`);
 console.log(`Build artifact: ${buildRbxmxPath}`);
 console.log(`Source bytes: ${source.length}`);

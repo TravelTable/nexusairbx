@@ -109,7 +109,7 @@ describe("MessageList pending activity", () => {
     );
 
     expect(screen.getByText("Analyzing Request...")).toBeTruthy();
-    expect(screen.getByText("Thinking")).toBeTruthy();
+    expect(screen.getByText("Working")).toBeTruthy();
     expect(screen.getByText("Reasoning about the datastore approach")).toBeTruthy();
     expect(screen.queryByText("Build reasoning")).toBeNull();
   });
@@ -172,7 +172,7 @@ describe("MessageList pending activity", () => {
       />
     );
 
-    expect(screen.getByText("Thinking")).toBeTruthy();
+    expect(screen.getByText("Working")).toBeTruthy();
     expect(screen.getByText("Writing files...")).toBeTruthy();
     expect(screen.getAllByText("ServerScriptService/InventoryService.server.lua").length).toBeGreaterThan(0);
     expect(screen.getByText(/local InventoryService/)).toBeTruthy();
@@ -250,7 +250,7 @@ describe("MessageList pending activity", () => {
       />
     );
 
-    expect(screen.getByText("Thinking")).toBeTruthy();
+    expect(screen.getByText("Working")).toBeTruthy();
     expect(screen.getByText("Understanding your task...")).toBeTruthy();
     expect(screen.getAllByText("Analyzing request...").length).toBeGreaterThan(0);
     expect(screen.queryByText("Nexus is working")).toBeNull();
@@ -273,8 +273,7 @@ describe("MessageList pending activity", () => {
       />
     );
 
-    expect(screen.getByText("Raw model reasoning")).toBeTruthy();
-    expect(screen.getByText(/not verified truth/i)).toBeTruthy();
+    expect(screen.getByText("Thinking")).toBeTruthy();
     expect(screen.getByText(/Checking module boundaries/i)).toBeTruthy();
   });
 });

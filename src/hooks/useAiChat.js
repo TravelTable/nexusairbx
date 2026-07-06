@@ -57,6 +57,12 @@ import {
 const STREAM_MAX_RETRIES = 3;
 const RESULT_MAX_POLLS = 45;
 const RESULT_POLL_BASE_MS = 1000;
+// Absolute frontend backstop: if the stream never delivers a terminal event
+// (done/error) within this window, poll once for a result and otherwise hand the
+// job off to the background so the UI can never spin/pulse forever.
+const GENERATION_WALL_TIMEOUT_MS = Number(
+  process.env.REACT_APP_GENERATION_WALL_TIMEOUT_MS || 12 * 60 * 1000
+);
 
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -630,6 +636,14 @@ export function useAiChat(user, settings, refreshBilling, notify) {
           usedFallback: false,
         };
         let idlePulse = null;
+        let wallTimer = null;
+
+        const clearWallTimer = () => {
+          if (wallTimer) {
+            clearTimeout(wallTimer);
+            wallTimer = null;
+          }
+        };
 
         const flushPendingStreamState = () => {
           streamFlushTimer = null;
@@ -740,6 +754,7 @@ export function useAiChat(user, settings, refreshBilling, notify) {
           setBusy(false);
           if (streamFlushTimer) clearTimeout(streamFlushTimer);
           stopIdlePulse();
+          clearWallTimer();
           setPending(null);
           setStage("");
           delete streamStatesRef.current[activeChatId];
@@ -787,10 +802,25 @@ export function useAiChat(user, settings, refreshBilling, notify) {
           setBusy(false);
           if (streamFlushTimer) clearTimeout(streamFlushTimer);
           stopIdlePulse();
+          clearWallTimer();
           setPending(null);
           setStage("");
           delete streamStatesRef.current[activeChatId];
           resolve();
+        };
+
+        const startWallTimer = () => {
+          clearWallTimer();
+          wallTimer = setTimeout(async () => {
+            if (finalized || receivedDone) return;
+            try {
+              if (await tryFetchCompletedResult()) return;
+            } catch (_) {
+              /* fall through to background handoff */
+            }
+            if (finalized || receivedDone) return;
+            handoffRecoveryTimeout();
+          }, GENERATION_WALL_TIMEOUT_MS);
         };
 
         const failInsufficientTokens = async (payload = {}) => {
@@ -827,6 +857,7 @@ export function useAiChat(user, settings, refreshBilling, notify) {
           setBusy(false);
           if (streamFlushTimer) clearTimeout(streamFlushTimer);
           stopIdlePulse();
+          clearWallTimer();
           setPending(null);
           setStage("");
           delete streamStatesRef.current[activeChatId];
@@ -837,6 +868,7 @@ export function useAiChat(user, settings, refreshBilling, notify) {
           if (finalized) return;
           finalized = true;
           stopIdlePulse();
+          clearWallTimer();
 
           publishStage("Finalizing...");
 
@@ -1134,6 +1166,7 @@ export function useAiChat(user, settings, refreshBilling, notify) {
           idlePulse.start();
         };
 
+        startWallTimer();
         if (sseSessionUnavailable) {
           recoverFromStreamFailure();
         } else {

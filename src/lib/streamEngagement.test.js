@@ -18,7 +18,7 @@ describe("streamEngagement", () => {
     expect(stageSlug("Stream interrupted — reconnecting...")).toBe("stream-interrupted-reconnecting");
   });
 
-  test("idle pulse fires only when activity is quiet", () => {
+  test("idle pulse fires only after a longer quiet window", () => {
     const pulses = [];
     let activitySeq = 1;
     const controller = createIdlePulseController({
@@ -28,7 +28,8 @@ describe("streamEngagement", () => {
     });
 
     controller.start();
-    jest.advanceTimersByTime(1000);
+    // Needs 3 quiet ticks before the first heartbeat.
+    jest.advanceTimersByTime(2000);
     expect(pulses).toEqual([]);
 
     jest.advanceTimersByTime(1000);
@@ -36,11 +37,12 @@ describe("streamEngagement", () => {
 
     activitySeq = 2;
     controller.notifyActivity();
-    jest.advanceTimersByTime(1000);
+    jest.advanceTimersByTime(2000);
     expect(pulses).toEqual([IDLE_PULSE_MESSAGES[0]]);
 
     jest.advanceTimersByTime(1000);
-    expect(pulses).toEqual([IDLE_PULSE_MESSAGES[0], IDLE_PULSE_MESSAGES[1]]);
+    // A single honest line, reused (upsert by stable id at the call site).
+    expect(pulses).toEqual([IDLE_PULSE_MESSAGES[0], IDLE_PULSE_MESSAGES[0]]);
 
     controller.dispose();
     jest.advanceTimersByTime(5000);
@@ -56,7 +58,8 @@ describe("streamEngagement", () => {
     });
 
     controller.start();
-    jest.advanceTimersByTime(1500);
+    // 4 ticks at 500ms => 2 heartbeats once the 3-tick quiet window passes.
+    jest.advanceTimersByTime(2000);
     expect(pulses.map((p) => p.id)).toEqual(["idle-pulse", "idle-pulse"]);
     controller.dispose();
   });

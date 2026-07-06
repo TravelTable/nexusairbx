@@ -221,12 +221,27 @@ export default function ExportActions({ artifact, activeFile, notify }) {
       <button type="button" onClick={handleCopyLoader} className={`${btn} bg-[#00f5d4]/10 text-[#00f5d4] hover:bg-[#00f5d4]/20`}>
         {loaderCopied ? <Check className="w-3.5 h-3.5" /> : <Terminal className="w-3.5 h-3.5" />} Loader
       </button>
-      <button type="button" onClick={handlePushStudio} disabled={studioBusy} className={`${btn} bg-[#00f5d4]/10 text-[#00f5d4] hover:bg-[#00f5d4]/20`}>
-        {studioBusy ? <Loader className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />} Push
-      </button>
       <button type="button" onClick={handleVerify} disabled={verifying || !activeFile} className={`${btn} bg-white/5 text-gray-300 hover:bg-white/10`}>
         {verifying ? <Loader className="w-3.5 h-3.5 animate-spin" /> : <ShieldCheck className="w-3.5 h-3.5" />} Verify
       </button>
+
+      {/* Primary end-of-run action: send the finished project to Studio. */}
+      <div className="ml-auto flex items-center">
+        <button
+          type="button"
+          onClick={handlePushStudio}
+          disabled={studioBusy || !studioConnected}
+          title={studioConnected ? "Apply this project in Roblox Studio" : "Pair Roblox Studio to enable push"}
+          className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-[11px] font-black uppercase tracking-widest transition-all disabled:cursor-not-allowed ${
+            studioConnected
+              ? "bg-[#00f5d4] text-black hover:bg-[#00f5d4]/90 shadow-lg shadow-[#00f5d4]/20"
+              : "bg-white/5 text-gray-500 border border-white/10"
+          }`}
+        >
+          {studioBusy ? <Loader className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+          {studioConnected ? "Push to Studio" : "Studio offline"}
+        </button>
+      </div>
     </div>
   );
 }

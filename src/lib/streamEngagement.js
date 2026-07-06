@@ -1,16 +1,12 @@
 export const IDLE_PULSE_INTERVAL_MS = 2500;
 
-export const IDLE_PULSE_MESSAGES = Object.freeze([
-  "Breaking down your request...",
-  "Planning project structure...",
-  "Preparing modules...",
-  "Still working...",
-]);
+// A single honest heartbeat line, not a rotating "fake flow". The real model
+// reasoning/file tokens drive the visible activity; this only reassures the user
+// during genuinely quiet gaps (e.g. long tool calls or waiting on Studio).
+export const IDLE_PULSE_MESSAGES = Object.freeze(["Working..."]);
 
 export const STUDIO_IDLE_PULSE_MESSAGES = Object.freeze([
-  "Checking Studio connection...",
-  "Preparing Studio sync...",
-  "Still working...",
+  "Waiting for Studio to respond...",
 ]);
 
 export function stageSlug(label = "") {
@@ -40,7 +36,8 @@ export function createIdlePulseController({
       return;
     }
     quietTicks += 1;
-    if (quietTicks < 2) return;
+    // Only speak up after a longer silence so real streaming carries the UI.
+    if (quietTicks < 3) return;
     const ctx = getContext?.() || {};
     const messages = ctx.studioConnected ? STUDIO_IDLE_PULSE_MESSAGES : IDLE_PULSE_MESSAGES;
     const message = messages[pulseIndex % messages.length];

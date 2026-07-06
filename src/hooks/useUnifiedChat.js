@@ -391,6 +391,32 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
 
       const requestId = uuidv4();
       let activeChatId = chat.currentChatId;
+
+      // Agent & Debug: Cursor-style. No orchestration, no plan card, no canned
+      // stage labels — hand straight to the streaming generation, which emits the
+      // model's raw thinking and streams files into the workspace live.
+      if (mode === "agent" || mode === "debug") {
+        try {
+          activeChatId = await ensureChat(prompt || "New build");
+          // existingRequestId=null lets the generation hook write the user
+          // message itself, so there is exactly one user bubble.
+          await chat.handleSubmit(
+            prompt,
+            activeChatId,
+            null,
+            mode,
+            true,
+            currentAttachments,
+            baseArtifact
+          );
+        } catch (err) {
+          console.error("Generation error:", err);
+          notify?.({ message: err?.message || "Build failed. You can try again.", type: "error" });
+        }
+        return;
+      }
+
+      // Plan & Ask: keep the orchestrate -> (clarify/plan/conversation) flow.
       try {
         activeChatId = await ensureChat(prompt || "New build");
         setFlowBusyForChat(activeChatId, true);
@@ -437,13 +463,11 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
       beginOrchestrationPending,
       publishOrchestrationStage,
       clearOrchestrationPending,
-      chat.currentChatId,
+      chat,
       approvePlanInternal,
       writeUserMessage,
       writeOrchestrationResult,
       handleAskSubmit,
-      chat.messages,
-      chat.activeMode,
       effectiveGameSpec,
       notify,
     ]

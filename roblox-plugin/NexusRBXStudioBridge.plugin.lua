@@ -7,8 +7,8 @@
 
 local BACKEND_URL = "https://api.nexusrbx.com"
 local BACKEND_HOST = "api.nexusrbx.com"
-local PLUGIN_VERSION = "0.9.2-cloud-dedupe-fix"
-local STUDIO_PROTOCOL_VERSION = "2026-06-20-phases1-9"
+local PLUGIN_VERSION = "0.9.3-creator-store-create-instance"
+local STUDIO_PROTOCOL_VERSION = "2026-06-20-creator-store"
 
 local Services = {
 	HttpService = game:GetService("HttpService"),
@@ -906,8 +906,8 @@ do
 
 local TweenService = game:GetService("TweenService")
 
-local displayPluginVersion = PLUGIN_VERSION or "0.9.0-phases1-9"
-local displayProtocolVersion = STUDIO_PROTOCOL_VERSION or "2026-06-20-phases1-9"
+local displayPluginVersion = PLUGIN_VERSION or "0.9.3-creator-store-create-instance"
+local displayProtocolVersion = STUDIO_PROTOCOL_VERSION or "2026-06-20-creator-store"
 local MAX_ACTIVITY_ENTRIES = 25
 
 local toolbar = plugin:CreateToolbar("NexusRBX")

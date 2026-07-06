@@ -1,6 +1,6 @@
 # Studio Tool Protocol
 
-Active protocol version: `2026-06-20-phases1-9`
+Active protocol version: `2026-06-20-creator-store`
 
 This protocol integrates Creator Store import, native model construction/refinement, trusted Roblox Open Cloud Model upload, uploaded-model Studio insertion, and the Phase 9 Studio validation quality gate. Uploaded models and validation targets must come from backend-held receipts; the browser never submits a Roblox asset ID, Studio root path, inserted root path, model revision, insertion identity, or validation status for trusted commands.
 

@@ -171,7 +171,7 @@ export default function LiveWorkStream({
       <div className="flex items-center gap-3 border-b border-white/10 px-4 py-3">
         <div className="shrink-0">{statusIcon(status, reconnecting)}</div>
         <div className="min-w-0 flex-1">
-          <div className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">Thinking</div>
+          <div className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">Working</div>
           <div className="mt-0.5 text-sm font-semibold text-white truncate">{status}</div>
         </div>
       </div>
