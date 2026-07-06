@@ -6,6 +6,7 @@ import MessageBubble from "./MessageBubble";
 import LiveWorkStream from "./LiveWorkStream";
 import RawReasoningPanel from "./RawReasoningPanel";
 import { parsePendingStreamContent } from "../../../lib/streaming";
+import { Separator } from "../../shadcn/separator";
 import { Clock3, Loader2, RotateCcw } from "lib/icons";
 
 function resolveActivityStage(pendingMessage, generationStage, parsed) {
@@ -22,12 +23,18 @@ function resolveActivityStage(pendingMessage, generationStage, parsed) {
  * the thinking disclosure, the agent step log, and the content block — so this
  * header only reflects the current live stage, not a fixed checklist.
  */
-function LiveActivityHeader({ pendingMessage, generationStage, parsed }) {
+function LiveActivityHeader({ pendingMessage, generationStage, parsed, embedded = false }) {
   const stage = resolveActivityStage(pendingMessage, generationStage, parsed);
   const isRecovering = String(stage).toLowerCase().includes("recovering");
 
   return (
-    <div className="flex items-center justify-between gap-3 rounded-2xl bg-white/[0.03] border border-white/10 px-4 py-3">
+    <div
+      className={
+        embedded
+          ? "flex items-center justify-between gap-3 px-4 py-3"
+          : "flex items-center justify-between gap-3 rounded-2xl bg-white/[0.03] border border-white/10 px-4 py-3"
+      }
+    >
       <div className="flex items-center gap-3 min-w-0">
         <span className="shrink-0 text-[#00f5d4]">
           {isRecovering ? (
@@ -79,6 +86,17 @@ export default function MessageList({
     (Array.isArray(pendingMessage?.files) && pendingMessage.files.length) ||
     (Array.isArray(pendingMessage?.steps) && pendingMessage.steps.length)
   );
+  // Real output = files/steps or non-thinking activity. Used to auto-collapse the
+  // reasoning stream once the model starts producing results.
+  const streamState = pendingMessage?.streamState;
+  const hasStreamOutput = Boolean(
+    (Array.isArray(streamState?.files) && streamState.files.length) ||
+    (Array.isArray(pendingMessage?.files) && pendingMessage.files.length) ||
+    (Array.isArray(pendingMessage?.steps) && pendingMessage.steps.length) ||
+    (Array.isArray(streamState?.activity) &&
+      streamState.activity.some((a) => a?.type && a.type !== "thinking"))
+  );
+  const hasRawReasoning = Boolean(String(streamState?.rawReasoning || "").trim());
   const visibleMessages = useMemo(
     () =>
       pendingMessage?.requestId
@@ -134,10 +152,12 @@ export default function MessageList({
       {pendingMessage && (
         <>
           {pendingMessage.prompt ? (
-            <div className="flex justify-end gap-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="flex justify-end gap-3.5 animate-in fade-in slide-in-from-bottom-4 duration-500">
               <div className="max-w-[70%] md:max-w-[60%] order-1">
-                <div className="p-4 md:p-5 rounded-3xl bg-[#121212]/80 border border-white/10 backdrop-blur-xl shadow-2xl text-gray-100">
-                  <div className="text-[15px] whitespace-pre-wrap">{pendingMessage.prompt}</div>
+                <div className="px-4 py-3 md:px-5 md:py-4 rounded-2xl2 rounded-tr-md bg-gradient-to-br from-white/[0.09] to-white/[0.03] border border-white/10 backdrop-blur-xl shadow-panel">
+                  <div className="text-[15px] md:text-[16px] whitespace-pre-wrap leading-relaxed text-white font-medium">
+                    {pendingMessage.prompt}
+                  </div>
                 </div>
               </div>
               <UserAvatar
@@ -148,31 +168,43 @@ export default function MessageList({
             </div>
           ) : null}
 
-          <div className="flex justify-start gap-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <div className="flex justify-start gap-3.5 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <NexusRBXAvatar isThinking={true} mode={activeMode} />
-            <div className="max-w-[85%] md:max-w-[80%] order-2 space-y-4">
-              <RawReasoningPanel
-                text={pendingMessage?.streamState?.rawReasoning}
-                live={Boolean(pendingMessage)}
-              />
+            <div className="max-w-[90%] order-2 space-y-4">
               {showLiveWorkStream ? (
-                <LiveWorkStream
-                  pendingMessage={pendingMessage}
-                  generationStage={generationStage}
-                  onApproveStep={onApproveStep}
-                  approvingStepId={approvingStepId}
-                />
+                <div className="rounded-2xl border border-white/10 bg-[#0b0b0b]/90 shadow-2xl overflow-hidden">
+                  <RawReasoningPanel
+                    text={streamState?.rawReasoning}
+                    live={Boolean(pendingMessage)}
+                    embedded
+                    autoCollapse={hasStreamOutput}
+                  />
+                  {hasRawReasoning ? <Separator className="bg-white/10" /> : null}
+                  <LiveWorkStream
+                    pendingMessage={pendingMessage}
+                    generationStage={generationStage}
+                    onApproveStep={onApproveStep}
+                    approvingStepId={approvingStepId}
+                    embedded
+                  />
+                </div>
               ) : (
-                <LiveActivityHeader
-                  pendingMessage={pendingMessage}
-                  generationStage={generationStage}
-                  parsed={pendingParsed}
-                />
+                <>
+                  <RawReasoningPanel
+                    text={streamState?.rawReasoning}
+                    live={Boolean(pendingMessage)}
+                  />
+                  <LiveActivityHeader
+                    pendingMessage={pendingMessage}
+                    generationStage={generationStage}
+                    parsed={pendingParsed}
+                  />
+                </>
               )}
 
               {pendingMessage.content && !showLiveWorkStream ? (
                 <div className="space-y-4">
-                  <div className="p-4 md:p-6 rounded-3xl bg-[#121212]/80 border border-white/10 backdrop-blur-xl shadow-2xl">
+                  <div className="p-4 md:p-5 rounded-2xl2 rounded-tl-md card-surface shadow-panel">
                     {pendingParsed.hasStructured ? (
                       <div className="space-y-4">
                         {pendingParsed.code && (

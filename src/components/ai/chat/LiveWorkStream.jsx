@@ -135,6 +135,7 @@ export default function LiveWorkStream({
   generationStage,
   onApproveStep,
   approvingStepId,
+  embedded = false,
 }) {
   const streamState = pendingMessage?.streamState;
   const activity = useMemo(
@@ -165,7 +166,13 @@ export default function LiveWorkStream({
   };
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-[#0b0b0b]/90 shadow-2xl overflow-hidden">
+    <div
+      className={
+        embedded
+          ? "overflow-hidden"
+          : "rounded-2xl border border-white/10 bg-[#0b0b0b]/90 shadow-2xl overflow-hidden"
+      }
+    >
       <div className="flex items-center gap-3 border-b border-white/10 px-4 py-3">
         <div className="shrink-0">{statusIcon(status, reconnecting)}</div>
         <div className="min-w-0 flex-1">

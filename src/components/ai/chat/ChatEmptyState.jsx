@@ -1,5 +1,5 @@
 import React from "react";
-import { Layout, Code2, Rocket, LayoutGrid } from "lib/icons";
+import { Layout, Code2, Rocket, LayoutGrid, ArrowRight } from "lib/icons";
 
 const EXAMPLES = [
   {
@@ -43,13 +43,16 @@ export default function ChatEmptyState({ onQuickStart, onOpenTemplates }) {
             key={ex.title}
             type="button"
             onClick={() => onQuickStart?.(ex.prompt)}
-            className="group p-5 rounded-2xl bg-white/[0.03] border border-white/10 hover:border-white/25 hover:bg-white/[0.05] text-left transition-all focus-ring"
+            className="group relative p-5 rounded-2xl bg-white/[0.03] border border-white/10 hover:border-white/25 hover:bg-white/[0.05] hover:-translate-y-0.5 text-left transition-all focus-ring"
           >
-            <div
-              className="mb-3 p-2.5 rounded-xl w-fit bg-white/5 transition-transform group-hover:scale-110"
-              style={{ color: ex.accent }}
-            >
-              <ex.icon className="w-4 h-4" />
+            <div className="flex items-center justify-between">
+              <div
+                className="mb-3 p-2.5 rounded-xl w-fit bg-white/5 transition-transform group-hover:scale-110"
+                style={{ color: ex.accent }}
+              >
+                <ex.icon className="w-4 h-4" />
+              </div>
+              <ArrowRight className="w-4 h-4 text-gray-600 opacity-0 -translate-x-1 transition-all group-hover:opacity-100 group-hover:translate-x-0" />
             </div>
             <div className="font-display font-bold text-white text-sm mb-1">{ex.title}</div>
             <div className="text-[11px] text-gray-500 leading-relaxed">{ex.prompt}</div>
