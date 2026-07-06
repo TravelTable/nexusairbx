@@ -175,9 +175,6 @@ export default function MessageList({
                   <div className="p-4 md:p-6 rounded-3xl bg-[#121212]/80 border border-white/10 backdrop-blur-xl shadow-2xl">
                     {pendingParsed.hasStructured ? (
                       <div className="space-y-4">
-                        {pendingParsed.explanation && (
-                          <MarkdownMessage text={pendingParsed.explanation} />
-                        )}
                         {pendingParsed.code && (
                           <div className="rounded-2xl border border-white/10 bg-black/40 overflow-hidden">
                             <div className="px-3 py-2 border-b border-white/5 text-[10px] font-black uppercase tracking-widest text-gray-500">

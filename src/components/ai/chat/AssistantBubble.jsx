@@ -106,15 +106,11 @@ export default function AssistantBubble({
         </div>
       )}
 
-      {m.explanation ? (
-        <MarkdownMessage text={stripTags(m.explanation)} />
-      ) : (
-        m.content && (
-          <div className="text-gray-400 italic">
-            <MarkdownMessage text={stripTags(m.content)} />
-          </div>
-        )
-      )}
+      {m.summary ? (
+        <MarkdownMessage text={stripTags(m.summary)} />
+      ) : m.content && !hasArtifact ? (
+        <MarkdownMessage text={stripTags(m.content)} />
+      ) : null}
 
       {hasArtifact && (
         <div className="mt-5 space-y-4">

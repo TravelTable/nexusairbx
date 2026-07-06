@@ -18,8 +18,6 @@ function synthesizeActivity(streamState = {}, pendingMessage = {}) {
   const out = [];
   const thought = cleanText(streamState.thought);
   if (thought) out.push({ id: "thinking-fallback", type: "thinking", text: thought });
-  const explanation = cleanText(streamState.explanation);
-  if (explanation) out.push({ id: "explanation-fallback", type: "thinking", text: explanation });
   for (const file of streamState.files || pendingMessage.files || []) {
     out.push({
       id: `file-${file.id || file.path}`,
