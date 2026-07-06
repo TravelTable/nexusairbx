@@ -105,6 +105,22 @@ export default function MessageList({
     [messages, pendingMessage?.requestId]
   );
 
+  // Generation pending carries `prompt` for instant feedback before Firestore syncs.
+  // Once the persisted user message arrives, hide the optimistic bubble to avoid doubles.
+  const showOptimisticUserPrompt = useMemo(() => {
+    const prompt = String(pendingMessage?.prompt || "").trim();
+    if (!prompt) return false;
+    if (
+      pendingMessage?.requestId &&
+      messages.some((m) => m.role === "user" && m.requestId === pendingMessage.requestId)
+    ) {
+      return false;
+    }
+    const lastUser = [...messages].reverse().find((m) => m.role === "user");
+    if (lastUser && String(lastUser.content || "").trim() === prompt) return false;
+    return true;
+  }, [messages, pendingMessage?.prompt, pendingMessage?.requestId]);
+
   useEffect(() => {
     if (!chatEndRef?.current) return;
     const scroll = () =>
@@ -151,12 +167,12 @@ export default function MessageList({
 
       {pendingMessage && (
         <>
-          {pendingMessage.prompt ? (
+          {showOptimisticUserPrompt ? (
             <div className="flex justify-end gap-3.5 animate-in fade-in slide-in-from-bottom-4 duration-500">
               <div className="max-w-[70%] md:max-w-[60%] order-1">
                 <div className="px-4 py-3 md:px-5 md:py-4 rounded-2xl2 rounded-tr-md bg-gradient-to-br from-white/[0.09] to-white/[0.03] border border-white/10 backdrop-blur-xl shadow-panel">
                   <div className="text-[15px] md:text-[16px] whitespace-pre-wrap leading-relaxed text-white font-medium">
-                    {pendingMessage.prompt}
+                    {String(pendingMessage.prompt || "").trim()}
                   </div>
                 </div>
               </div>

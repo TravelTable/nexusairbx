@@ -276,4 +276,36 @@ describe("MessageList pending activity", () => {
     expect(screen.getByText("Thinking")).toBeTruthy();
     expect(screen.getByText(/Checking module boundaries/i)).toBeTruthy();
   });
+
+  test("does not duplicate the user prompt once Firestore has persisted it", () => {
+    render(
+      <MessageList
+        {...baseProps}
+        messages={[
+          {
+            id: "req-1-user",
+            role: "user",
+            content: "generate a fly gui fast",
+            requestId: "req-1",
+          },
+        ]}
+        generationStage="Analyzing Request..."
+        pendingMessage={{
+          role: "assistant",
+          content: "",
+          type: "chat",
+          prompt: "generate a fly gui fast",
+          requestId: "req-1",
+          stage: "Analyzing Request...",
+          streamState: {
+            activity: [
+              { id: "stage-1", type: "stage", text: "Analyzing Request...", status: "Analyzing Request..." },
+            ],
+          },
+        }}
+      />
+    );
+
+    expect(screen.getAllByText("generate a fly gui fast")).toHaveLength(1);
+  });
 });

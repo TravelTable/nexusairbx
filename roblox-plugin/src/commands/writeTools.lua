@@ -477,7 +477,7 @@ local function applyArtifactLegacy(payload)
 	end
 
 	if #(payload.remotes or {}) > 0 then
-		local remoteFolder = serviceFolders.ReplicatedStorage or ensureCleanFolder(ReplicatedStorage, projectName, snapshots)
+		local remoteFolder = serviceFolders["ReplicatedStorage"] or ensureCleanFolder(ReplicatedStorage, projectName, snapshots)
 		for _, remoteSpec in ipairs(payload.remotes or {}) do
 			local remote = Instance.new(remoteSpec.className == "RemoteFunction" and "RemoteFunction" or "RemoteEvent")
 			remote.Name = remoteSpec.name or remote.ClassName

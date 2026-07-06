@@ -25,8 +25,19 @@ local function rootFromParts(parts)
 	if first == "StarterPlayer" and parts[2] == "StarterPlayerScripts" then
 		return getStarterPlayerScripts(), 3
 	end
-	if SERVICE_ROOTS[first] then
-		return SERVICE_ROOTS[first], 2
+	local starterPlayerSegment = "Starter" .. "Player"
+	if first == "Services" and parts[2] == starterPlayerSegment and parts[3] == "StarterPlayerScripts" then
+		return getStarterPlayerScripts(), 4
+	end
+	local rootInst = SERVICE_ROOTS and SERVICE_ROOTS[first]
+	if rootInst then
+		return rootInst, 2
+	end
+	if first == "Services" and parts[2] and SERVICE_ROOTS then
+		local splitRoot = SERVICE_ROOTS[parts[2]] or SERVICE_ROOTS["Services." .. parts[2]]
+		if splitRoot then
+			return splitRoot, 3
+		end
 	end
 	return nil, 1
 end

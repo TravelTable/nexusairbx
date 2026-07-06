@@ -25,6 +25,34 @@ local Services = {
 	Lighting = game:GetService("Lighting"),
 	Selection = game:GetService("Selection"),
 }
+
+-- Shared path roots for apply_artifact and Studio path resolution.
+-- Lives in config (not rewritten by bundle-plugin.js) so every module sees the same string keys.
+SERVICE_ROOTS = {
+	ReplicatedStorage = Services.ReplicatedStorage,
+	ServerScriptService = Services.ServerScriptService,
+	ServerStorage = Services.ServerStorage,
+	StarterGui = Services.StarterGui,
+	StarterPlayer = Services.StarterPlayer,
+	Workspace = Services.Workspace,
+	Lighting = Services.Lighting,
+	["Services.ReplicatedStorage"] = Services.ReplicatedStorage,
+	["Services.ServerScriptService"] = Services.ServerScriptService,
+	["Services.ServerStorage"] = Services.ServerStorage,
+	["Services.StarterGui"] = Services.StarterGui,
+	["Services.StarterPlayer"] = Services.StarterPlayer,
+	["Services.Workspace"] = Services.Workspace,
+	["Services.Lighting"] = Services.Lighting,
+}
+
+NATIVE_ALLOWED_ROOTS = {
+	Workspace = Services.Workspace,
+	ReplicatedStorage = Services.ReplicatedStorage,
+	ServerStorage = Services.ServerStorage,
+	["Services.Workspace"] = Services.Workspace,
+	["Services.ReplicatedStorage"] = Services.ReplicatedStorage,
+	["Services.ServerStorage"] = Services.ServerStorage,
+}
 -- END src/config.lua
 
 -- BEGIN src/ui/components.lua
@@ -264,17 +292,6 @@ end
 -- BEGIN src/studio/serialization.lua
 local SCRIPT_CLASSES, stableHash, nowMs, readManagedId, attributesOf, propertyHash, scriptHash, propertiesOf, structuredUnsupported, lastBatchSnapshots
 do
-
-local SERVICE_ROOTS = {
-	[Services.ReplicatedStorage] = Services.ReplicatedStorage,
-	[Services.ServerScriptService] = Services.ServerScriptService,
-	[Services.ServerStorage] = Services.ServerStorage,
-	[Services.StarterGui] = Services.StarterGui,
-	[Services.StarterPlayer] = Services.StarterPlayer,
-	[Services.Workspace] = Services.Workspace,
-	[Services.Lighting] = Services.Lighting,
-}
-
 local NATIVE_MODEL_LIMITS = {
 	maxInstances = 750,
 	maxBaseParts = 400,
@@ -286,12 +303,6 @@ local NATIVE_MODEL_LIMITS = {
 	maxTagsPerInstance = 20,
 	maxAttributesPerInstance = 30,
 	maxModelExtent = 4096,
-}
-
-local NATIVE_ALLOWED_ROOTS = {
-	[Services.Workspace] = Services.Workspace,
-	[Services.ReplicatedStorage] = Services.ReplicatedStorage,
-	[Services.ServerStorage] = Services.ServerStorage,
 }
 
 local NATIVE_CLASSES = {
@@ -638,8 +649,19 @@ local function rootFromParts(parts)
 	if first == "Services.StarterPlayer" and parts[2] == "StarterPlayerScripts" then
 		return getStarterPlayerScripts(), 3
 	end
-	if SERVICE_ROOTS[first] then
-		return SERVICE_ROOTS[first], 2
+	local starterPlayerSegment = "Starter" .. "Player"
+	if first == "Services" and parts[2] == starterPlayerSegment and parts[3] == "StarterPlayerScripts" then
+		return getStarterPlayerScripts(), 4
+	end
+	local rootInst = SERVICE_ROOTS and SERVICE_ROOTS[first]
+	if rootInst then
+		return rootInst, 2
+	end
+	if first == "Services" and parts[2] and SERVICE_ROOTS then
+		local splitRoot = SERVICE_ROOTS[parts[2]] or SERVICE_ROOTS["Services." .. parts[2]]
+		if splitRoot then
+			return splitRoot, 3
+		end
 	end
 	return nil, 1
 end
@@ -3237,7 +3259,7 @@ local function applyArtifactLegacy(payload)
 	end
 
 	if #(payload.remotes or {}) > 0 then
-		local remoteFolder = serviceFolders.Services.ReplicatedStorage or ensureCleanFolder(Services.ReplicatedStorage, projectName, snapshots)
+		local remoteFolder = serviceFolders["Services.ReplicatedStorage"] or ensureCleanFolder(Services.ReplicatedStorage, projectName, snapshots)
 		for _, remoteSpec in ipairs(payload.remotes or {}) do
 			local remote = Instance.new(remoteSpec.className == "RemoteFunction" and "RemoteFunction" or "RemoteEvent")
 			remote.Name = remoteSpec.name or remote.ClassName

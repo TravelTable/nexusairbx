@@ -1,14 +1,3 @@
-
-local SERVICE_ROOTS = {
-	ReplicatedStorage = ReplicatedStorage,
-	ServerScriptService = ServerScriptService,
-	ServerStorage = ServerStorage,
-	StarterGui = StarterGui,
-	StarterPlayer = StarterPlayer,
-	Workspace = Workspace,
-	Lighting = Lighting,
-}
-
 local NATIVE_MODEL_LIMITS = {
 	maxInstances = 750,
 	maxBaseParts = 400,
@@ -20,12 +9,6 @@ local NATIVE_MODEL_LIMITS = {
 	maxTagsPerInstance = 20,
 	maxAttributesPerInstance = 30,
 	maxModelExtent = 4096,
-}
-
-local NATIVE_ALLOWED_ROOTS = {
-	Workspace = Workspace,
-	ReplicatedStorage = ReplicatedStorage,
-	ServerStorage = ServerStorage,
 }
 
 local NATIVE_CLASSES = {
