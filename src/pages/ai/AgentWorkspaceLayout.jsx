@@ -229,30 +229,56 @@ export default function AgentWorkspaceLayout({ controller }) {
     throw new Error("Studio manifest refresh timed out");
   }, [studio?.lastAuthorizedSessionId]);
 
-  const refreshStudioManifest = useCallback(async () => {
+  const refreshStudioManifest = useCallback(async (options = {}) => {
+    const force = options?.force === true;
     if (manifestRefreshInFlightRef.current) {
       return manifestRefreshInFlightRef.current;
     }
+
+    const MANIFEST_FRESH_TTL_MS = 5 * 60 * 1000;
 
     const refreshPromise = (async () => {
       setStudioBusy(true);
       setStudioConflict(null);
       try {
         let previousRevision = "";
+        let previousStatus = null;
         try {
           const previous = await getStudioManifestStatus({
             sessionId: studio?.lastAuthorizedSessionId || null,
           });
+          previousStatus = previous.status || null;
           previousRevision = previous.status?.lastCompleteRevision || previous.status?.activeRevision || "";
         } catch (_) {
           previousRevision = "";
         }
+
+        // Cache-first: if a complete revision already exists and is recent, load
+        // it from the backend instead of re-indexing the live place. Only an
+        // explicit Rescan (force) or a stale/absent revision triggers a live
+        // get_project_manifest. This stops the manifest from being rebuilt on
+        // every connect.
+        const lastCompleteAt = Number(previousStatus?.lastCompleteAt || 0);
+        const isFresh =
+          Boolean(previousStatus?.lastCompleteRevision) &&
+          !previousStatus?.conflicted &&
+          (!lastCompleteAt || Date.now() - lastCompleteAt < MANIFEST_FRESH_TTL_MS);
+
+        if (!force && isFresh) {
+          const items = await fetchManifestPage(
+            previousStatus.lastCompleteRevision || previousStatus.activeRevision || ""
+          );
+          setStudioManifest(items);
+          appendTerminal("using cached Studio manifest", "state");
+          return;
+        }
+
         if (studio?.connected) {
           const queued = await queueStudioTool({
             type: "get_project_manifest",
             payload: { maxDepth: 24, maxInstances: 10000, pageSize: 500, includeSource: false },
             sessionId: studio?.lastAuthorizedSessionId || null,
-            label: "Refresh Studio manifest",
+            label: force ? "Rescan Studio project" : "Refresh Studio manifest",
             applyMode: "unrestricted_dev",
           });
           appendTerminal(`queued manifest refresh ${queued.commandId}`, "state");
@@ -780,10 +806,10 @@ export default function AgentWorkspaceLayout({ controller }) {
           <div className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Studio Manifest</div>
           <button
             type="button"
-            onClick={refreshStudioManifest}
+            onClick={() => refreshStudioManifest({ force: true })}
             disabled={studioBusy}
             className="p-1.5 rounded-lg border border-white/10 bg-white/5 text-gray-400 hover:text-white disabled:opacity-40"
-            title="Refresh Studio manifest"
+            title="Rescan Studio project (re-index the live place)"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${studioBusy ? "animate-spin" : ""}`} />
           </button>

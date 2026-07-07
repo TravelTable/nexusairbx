@@ -71,6 +71,8 @@ pullButton.MouseButton1Click:Connect(function()
 		setHealth(os.time(), getLastLatencyMs())
 		if result and result.error and not result.authFailed then
 			showToast("Pull failed", "error")
+		elseif result and result.idle then
+			showToast("Up to date", "info")
 		end
 	end
 end)
@@ -144,6 +146,10 @@ local function shouldAutoPull()
 	return setting ~= false
 end
 
+-- Poll loop: continuously long-polls for commands and enqueues them. Because it
+-- never blocks on execution or approval, every poll doubles as a session
+-- heartbeat (the backend refreshes lastSeenAt on each authenticated request),
+-- so the session no longer goes stale while a command is running.
 task.spawn(function()
 	local idleWaitMs = 2000
 	local failureBackoff = 0
@@ -157,14 +163,16 @@ task.spawn(function()
 			task.wait(2)
 			continue
 		end
+		-- Only claim one command at a time. While the executor is busy the ping
+		-- loop keeps the session alive, so we don't over-claim commands that could
+		-- be stranded as "delivered" if Studio closes mid-queue.
+		if isExecutorBusy() or pendingCommandCount() > 0 then
+			task.wait(0.25)
+			continue
+		end
 
 		local result = pullOnce(idleWaitMs)
 		setHealth(os.time(), getLastLatencyMs())
-
-		if result.skipped then
-			task.wait(0.5)
-			continue
-		end
 
 		if result.authFailed then
 			idleWaitMs = 2000
@@ -175,9 +183,10 @@ task.spawn(function()
 			idleWaitMs = 2000
 			task.wait(failureBackoff)
 		elseif result.hadCommand then
+			-- More work likely waiting; poll again quickly to pipeline.
 			idleWaitMs = 2000
 			failureBackoff = 0
-			task.wait(0.35)
+			task.wait(0.2)
 		elseif result.idle then
 			failureBackoff = 0
 			idleWaitMs = math.min(idleWaitMs + 2000, 24000)
@@ -188,13 +197,39 @@ task.spawn(function()
 	end
 end)
 
+-- Executor loop: drains the command queue one command at a time. Runs
+-- independently of polling so long applies / approval prompts can never freeze
+-- the connection.
 task.spawn(function()
 	while true do
-		task.wait(60)
+		if getToken() and pendingCommandCount() > 0 then
+			local ok = pcall(processNextCommand)
+			if ok then
+				task.wait(0.1)
+			else
+				task.wait(0.5)
+			end
+		else
+			task.wait(0.2)
+		end
+	end
+end)
+
+-- Heartbeat loop: an authenticated, side-effect-free ping keeps the session
+-- alive even if the poll loop is briefly backing off, and refreshes latency.
+task.spawn(function()
+	while true do
+		task.wait(15)
 		if getToken() then
-			local ok, latency = pingHealth()
+			local signatureOk, signature = pcall(computePlaceSignature)
+			local ok, latency = pingSession(getToken(), signatureOk and signature or nil)
 			if ok then
 				setHealth(os.time(), latency)
+			else
+				local healthOk, healthLatency = pingHealth()
+				if healthOk then
+					setHealth(os.time(), healthLatency)
+				end
 			end
 		end
 	end
@@ -202,7 +237,7 @@ end)
 
 updateSnapshotLabel()
 if getToken() then
-	setStatus("connected")
+	setBridgeState("connecting")
 else
-	setStatus("not paired")
+	setBridgeState("unpaired")
 end

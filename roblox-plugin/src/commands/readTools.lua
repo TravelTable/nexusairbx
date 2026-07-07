@@ -85,6 +85,20 @@ local function getInspectionRoots()
 	return roots
 end
 
+-- Cheap top-level fingerprint of the place (service child counts). Used as a
+-- fast "did anything structurally change?" signal so the backend can skip a
+-- full re-index when the project is unchanged.
+function computePlaceSignature()
+	local parts = {}
+	for _, inst in ipairs(getInspectionRoots()) do
+		local ok, count = pcall(function()
+			return #inst:GetChildren()
+		end)
+		table.insert(parts, tostring(inst.Name) .. ":" .. tostring(inst.ClassName) .. ":" .. tostring(ok and count or 0))
+	end
+	return stableHash(table.concat(parts, "|"))
+end
+
 local function inspectPlace(payload)
 	local maxDepth = math.clamp(tonumber(payload.maxDepth) or 12, 1, 32)
 	local maxInstances = math.clamp(tonumber(payload.maxInstances) or 500, 20, 10000)
@@ -112,6 +126,7 @@ local function inspectPlace(payload)
 		items = page,
 		nextCursor = (cursor + pageSize < #state.items) and tostring(cursor + pageSize) or nil,
 		roots = roots,
+		placeSignature = computePlaceSignature(),
 	}
 end
 

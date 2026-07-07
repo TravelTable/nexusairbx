@@ -13,6 +13,7 @@ import { v4 as uuidv4 } from "uuid";
 import { useAiChat } from "./useAiChat";
 import { orchestrate, approveWorkflowPlan } from "../lib/workflowApi";
 import { isExplicitPlanApproval } from "../lib/planApproval";
+import { classifyUserIntent, isImplementationIntent } from "../lib/intentClassifier";
 import {
   applyStreamActivity,
   createPendingStreamState,
@@ -396,6 +397,52 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
       // stage labels — hand straight to the streaming generation, which emits the
       // model's raw thinking and streams files into the workspace live.
       if (mode === "agent" || mode === "debug") {
+        // Conversational gate: don't build files on greetings, questions, or
+        // vague chit-chat. Classify locally (zero latency) and only divert
+        // non-build messages through the orchestrate flow, which returns a
+        // conversation reply or an "Implement it / Discuss first" clarify card.
+        // Clear build requests fall through to the fast direct-build path.
+        const intent = classifyUserIntent(prompt);
+        const conversationalOnly =
+          mode === "debug"
+            // Debug: keep it narrow so pasted errors / "why is X nil" still fix.
+            ? ["GREETING", "GENERAL_QUESTION", "CANCELLATION"].includes(intent)
+            : !isImplementationIntent(intent) && !isExplicitPlanApproval(prompt);
+
+        if (prompt && conversationalOnly) {
+          try {
+            activeChatId = await ensureChat(prompt || "New chat");
+            setFlowBusyForChat(activeChatId, true);
+            beginOrchestrationPending(activeChatId);
+            await writeUserMessage(activeChatId, requestId, prompt);
+
+            publishOrchestrationStage(activeChatId, "Thinking...");
+            const decision = await orchestrate({
+              prompt,
+              history: chat.messages,
+              attachments: currentAttachments,
+              mode,
+              gameSpec: effectiveGameSpec,
+            });
+
+            publishOrchestrationStage(activeChatId, "Preparing response...");
+            await writeOrchestrationResult(
+              activeChatId,
+              requestId,
+              decision,
+              prompt,
+              currentAttachments
+            );
+          } catch (err) {
+            console.error("Conversation error:", err);
+            notify?.({ message: err?.message || "Could not respond. You can try again.", type: "error" });
+          } finally {
+            setFlowBusyForChat(activeChatId, false);
+            clearOrchestrationPending(activeChatId);
+          }
+          return;
+        }
+
         try {
           activeChatId = await ensureChat(prompt || "New build");
           // existingRequestId=null lets the generation hook write the user

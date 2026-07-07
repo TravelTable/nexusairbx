@@ -3,7 +3,7 @@
 
 local BACKEND_URL = "https://api.nexusrbx.com"
 local BACKEND_HOST = "api.nexusrbx.com"
-local PLUGIN_VERSION = "0.9.3-creator-store-create-instance"
+local PLUGIN_VERSION = "0.10.0-verified-decoupled"
 local STUDIO_PROTOCOL_VERSION = "2026-06-20-creator-store"
 
 local Services = {

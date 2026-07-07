@@ -7,7 +7,7 @@
 
 local BACKEND_URL = "https://api.nexusrbx.com"
 local BACKEND_HOST = "api.nexusrbx.com"
-local PLUGIN_VERSION = "0.9.3-creator-store-create-instance"
+local PLUGIN_VERSION = "0.10.0-verified-decoupled"
 local STUDIO_PROTOCOL_VERSION = "2026-06-20-creator-store"
 
 local Services = {
@@ -276,6 +276,24 @@ end
 
 pingHealth = function()
 	local result = requestOnce("GET", "/health", nil, nil, { maxAttempts = 1 })
+	return result.ok == true, result.latencyMs or lastLatencyMs
+end
+
+-- Authenticated, side-effect-free liveness ping. Unlike GET /commands/next it
+-- never claims a command, so it is safe to call on a timer to keep the backend
+-- session's lastSeenAt fresh during long-running operations.
+function pingSession(token, placeSignature)
+	if not token then
+		return false, lastLatencyMs
+	end
+	local body = {}
+	if type(placeSignature) == "string" and placeSignature ~= "" then
+		body.placeSignature = placeSignature
+	end
+	local result = requestOnce("POST", "/api/studio/session/ping", body, token, { maxAttempts = 1 })
+	if result.status == 401 or result.status == 403 then
+		return false, result.latencyMs or lastLatencyMs
+	end
 	return result.ok == true, result.latencyMs or lastLatencyMs
 end
 
@@ -956,7 +974,6 @@ local lastErrorText = nil
 local diagnosticsOpen = false
 local pendingApproval = nil
 local selectedSnapshotIds = {}
-local statusPulseTween = nil
 
 local function themeColor(color)
 	return settings().Studio.Theme:GetColor(color)
@@ -977,7 +994,22 @@ local COLORS = {
 	warning = Color3.fromRGB(211, 145, 39),
 	success = Color3.fromRGB(57, 166, 92),
 	muted = Color3.fromRGB(108, 117, 125),
+	live = Color3.fromRGB(0, 200, 150),
 }
+
+-- Single source of truth for the connection state machine. Every visible status
+-- (orb, pill, header tint) is derived from one of these entries so the UI can
+-- never claim "connected" while it is actually failing or idle.
+local BRIDGE_STATES = {
+	unpaired = { label = "NOT PAIRED", color = COLORS.muted, pulse = false },
+	connecting = { label = "CONNECTING", color = COLORS.warning, pulse = true },
+	live = { label = "LIVE", color = COLORS.live, pulse = false },
+	working = { label = "WORKING", color = COLORS.accent, pulse = true },
+	degraded = { label = "RECONNECTING", color = COLORS.warning, pulse = true },
+	error = { label = "ACTION NEEDED", color = COLORS.error, pulse = false },
+}
+
+local currentBridgeState = "unpaired"
 
 local root = Instance.new("Frame")
 root.Name = "NexusBridgeRoot"
@@ -1154,14 +1186,46 @@ local statusPill = Instance.new("TextLabel")
 statusPill.Name = "StatusPill"
 statusPill.AnchorPoint = Vector2.new(1, 0)
 statusPill.Position = UDim2.new(1, 0, 0, 3)
-statusPill.Size = UDim2.new(0, 108, 0, 26)
+statusPill.Size = UDim2.new(0, 118, 0, 26)
 statusPill.BackgroundColor3 = COLORS.muted
 statusPill.TextColor3 = Color3.fromRGB(255, 255, 255)
 statusPill.Font = Enum.Font.GothamBold
 statusPill.TextSize = 11
 statusPill.Text = "NOT PAIRED"
+statusPill.TextXAlignment = Enum.TextXAlignment.Right
 statusPill.Parent = header
 applyCorner(statusPill, 13)
+local statusPillPad = Instance.new("UIPadding")
+statusPillPad.PaddingLeft = UDim.new(0, 24)
+statusPillPad.PaddingRight = UDim.new(0, 10)
+statusPillPad.Parent = statusPill
+
+-- Animated status orb sits inside the left of the pill.
+local statusOrb = Instance.new("Frame")
+statusOrb.Name = "StatusOrb"
+statusOrb.AnchorPoint = Vector2.new(0, 0.5)
+statusOrb.Position = UDim2.new(0, 8, 0.5, 0)
+statusOrb.Size = UDim2.new(0, 10, 0, 10)
+statusOrb.BackgroundColor3 = COLORS.muted
+statusOrb.BorderSizePixel = 0
+statusOrb.ZIndex = 3
+statusOrb.Parent = statusPill
+applyCorner(statusOrb, 5)
+
+local statusOrbRing = Instance.new("Frame")
+statusOrbRing.Name = "OrbRing"
+statusOrbRing.AnchorPoint = Vector2.new(0.5, 0.5)
+statusOrbRing.Position = UDim2.new(0.5, 0, 0.5, 0)
+statusOrbRing.Size = UDim2.new(1, 0, 1, 0)
+statusOrbRing.BackgroundTransparency = 1
+statusOrbRing.ZIndex = 2
+statusOrbRing.Parent = statusOrb
+applyCorner(statusOrbRing, 8)
+local statusOrbStroke = Instance.new("UIStroke")
+statusOrbStroke.Color = COLORS.muted
+statusOrbStroke.Thickness = 2
+statusOrbStroke.Transparency = 1
+statusOrbStroke.Parent = statusOrbRing
 
 local banner = Instance.new("TextButton")
 banner.Name = "Banner"
@@ -1219,6 +1283,58 @@ checkSetupButton = makeButton(pairSection, "CheckSetupButton", "Check setup", th
 setupResult = makeText(pairSection, "SetupResult", "", nil, 11, false, themeColor(Enum.StudioStyleGuideColor.DimmedText), true)
 setupResult.TextWrapped = true
 setupResult.Visible = false
+
+-- Live "what's happening now" strip: reading -> writing -> verifying -> done.
+local AGENT_PHASES, agentPhaseDots = { "idle", "thinking", "reading", "writing", "verifying", "done" }, {}
+local AGENT_PHASE_LABELS = {
+	idle = "Idle",
+	thinking = "Thinking",
+	reading = "Reading",
+	writing = "Writing",
+	verifying = "Verifying",
+	done = "Done",
+}
+
+local agentSection = makeSection("AgentActivity")
+makeText(agentSection, "AgentTitle", "Agent", 18, 13, true)
+local phaseStrip = Instance.new("Frame")
+phaseStrip.Name = "PhaseStrip"
+phaseStrip.BackgroundTransparency = 1
+phaseStrip.Size = UDim2.new(1, 0, 0, 22)
+phaseStrip.Parent = agentSection
+local phaseLayout = Instance.new("UIListLayout")
+phaseLayout.FillDirection = Enum.FillDirection.Horizontal
+phaseLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+phaseLayout.SortOrder = Enum.SortOrder.LayoutOrder
+phaseLayout.Padding = UDim.new(0, 6)
+phaseLayout.Parent = phaseStrip
+for index, phase in ipairs(AGENT_PHASES) do
+	if phase ~= "idle" then
+		local chip = Instance.new("TextLabel")
+		chip.Name = "Phase_" .. phase
+		chip.BackgroundColor3 = themeColor(Enum.StudioStyleGuideColor.MainBackground)
+		chip.BackgroundTransparency = 0.2
+		chip.TextColor3 = themeColor(Enum.StudioStyleGuideColor.DimmedText)
+		chip.Font = Enum.Font.GothamMedium
+		chip.TextSize = 10
+		chip.Text = " " .. AGENT_PHASE_LABELS[phase] .. " "
+		chip.AutomaticSize = Enum.AutomaticSize.X
+		chip.Size = UDim2.new(0, 0, 1, 0)
+		chip.LayoutOrder = index
+		chip.Parent = phaseStrip
+		applyCorner(chip, 9)
+		local chipPad = Instance.new("UIPadding")
+		chipPad.PaddingLeft = UDim.new(0, 8)
+		chipPad.PaddingRight = UDim.new(0, 8)
+		chipPad.Parent = chip
+		agentPhaseDots[phase] = chip
+	end
+end
+
+local manifestSection = makeSection("Manifest")
+makeText(manifestSection, "ManifestTitle", "Project Index", 18, 13, true)
+manifestSummaryLabel = makeText(manifestSection, "ManifestSummary", "Not indexed yet", 18, 12, false, themeColor(Enum.StudioStyleGuideColor.MainText))
+manifestFreshnessLabel = makeText(manifestSection, "ManifestFreshness", "Rescan runs from the website when needed.", 16, 11, false, themeColor(Enum.StudioStyleGuideColor.DimmedText))
 
 local activitySection = makeSection("Activity")
 makeText(activitySection, "ActivityTitle", "Bridge Activity", 18, 13, true)
@@ -1278,6 +1394,7 @@ snapshotLayout.SortOrder = Enum.SortOrder.LayoutOrder
 snapshotLayout.Parent = snapshotList
 
 restoreButton = makeButton(safetySection, "RestoreButton", "Restore Selected Snapshots", COLORS.accent)
+undoBatchButton = makeButton(safetySection, "UndoBatchButton", "Undo Last Batch", themeColor(Enum.StudioStyleGuideColor.Button))
 
 local settingsSection = makeSection("Settings")
 makeText(settingsSection, "SettingsTitle", "Settings", 18, 13, true)
@@ -1365,7 +1482,8 @@ local approvalSheet = Instance.new("Frame")
 approvalSheet.Name = "ApprovalSheet"
 approvalSheet.AnchorPoint = Vector2.new(0.5, 0.5)
 approvalSheet.Position = UDim2.fromScale(0.5, 0.5)
-approvalSheet.Size = UDim2.new(1, -32, 0, 180)
+approvalSheet.Size = UDim2.new(1, -32, 0, 0)
+approvalSheet.AutomaticSize = Enum.AutomaticSize.Y
 approvalSheet.BackgroundColor3 = themeColor(Enum.StudioStyleGuideColor.MainBackground)
 approvalSheet.ZIndex = 13
 approvalSheet.Parent = approvalOverlay
@@ -1382,9 +1500,8 @@ approvalList.Padding = UDim.new(0, 8)
 approvalList.SortOrder = Enum.SortOrder.LayoutOrder
 approvalList.Parent = approvalSheet
 makeText(approvalSheet, "ApprovalTitle", "Review command", 22, 14, true)
-approvalCopy = makeText(approvalSheet, "ApprovalCopy", "", 72, 12, false, themeColor(Enum.StudioStyleGuideColor.DimmedText))
+approvalCopy = makeText(approvalSheet, "ApprovalCopy", "", nil, 12, false, themeColor(Enum.StudioStyleGuideColor.DimmedText), true)
 approvalCopy.TextWrapped = true
-approvalCopy.RichText = true
 local approvalRow = makeRow(approvalSheet, "ApprovalActions", 34)
 approvalConfirmButton = makeButton(approvalRow, "ApprovalConfirm", "Apply", COLORS.primary)
 approvalConfirmButton.Size = UDim2.new(0.5, -4, 0, 34)
@@ -1450,26 +1567,28 @@ local function formatTime(ts)
 	return os.date("%H:%M:%S", ts)
 end
 
-local function statusColor(text)
+-- Map legacy free-text status strings onto the structured state machine so old
+-- call sites keep working without ever mislabeling the connection.
+local function stateFromLegacy(text)
 	local lowered = string.lower(tostring(text or ""))
-	if string.find(lowered, "connected") and not string.find(lowered, "not connected") then
-		return COLORS.success, "CONNECTED"
-	elseif string.find(lowered, "pair failed") then
-		return COLORS.error, "PAIR FAILED"
-	elseif string.find(lowered, "expired") or string.find(lowered, "session expired") then
-		return COLORS.error, "RE-PAIR"
+	if string.find(lowered, "expired") then
+		return "error"
+	elseif string.find(lowered, "unsupported") or string.find(lowered, "pair failed") then
+		return "error"
 	elseif string.find(lowered, "poll failed") then
-		return COLORS.error, "POLL FAILED"
-	elseif string.find(lowered, "unsupported") then
-		return COLORS.error, "UPDATE PLUGIN"
+		return "degraded"
 	elseif string.find(lowered, "failed") or string.find(lowered, "error") then
-		return COLORS.error, "ACTION NEEDED"
+		return "error"
+	elseif string.find(lowered, "connected") and not string.find(lowered, "not connected") then
+		return "live"
+	elseif string.find(lowered, "pairing") or string.find(lowered, "disconnecting") then
+		return "connecting"
+	elseif string.find(lowered, "poll") or string.find(lowered, "working") or string.find(lowered, "approval") then
+		return "working"
 	elseif string.find(lowered, "ready to pair") then
-		return COLORS.primary, "READY"
-	elseif string.find(lowered, "pairing") or string.find(lowered, "poll") or string.find(lowered, "working") or string.find(lowered, "disconnecting") or string.find(lowered, "awaiting approval") then
-		return COLORS.warning, "WORKING"
+		return "connecting"
 	end
-	return COLORS.muted, "NOT PAIRED"
+	return "unpaired"
 end
 
 local function clearErrorBanner()
@@ -1565,6 +1684,8 @@ refreshControls = function()
 	local paired = getToken ~= nil and getToken() ~= nil
 	local busy = applying == true
 	pairSection.Visible = not paired
+	agentSection.Visible = paired
+	manifestSection.Visible = paired
 	activitySection.Visible = paired
 	safetySection.Visible = paired
 	settingsSection.Visible = paired
@@ -1574,32 +1695,51 @@ refreshControls = function()
 	setButtonEnabled(pullButton, paired and (not busy), busy and "Working..." or "Pull Latest")
 	local hasSnapshots = #localSnapshots > 0
 	setButtonEnabled(restoreButton, paired and (not busy) and hasSnapshots, hasSnapshots and "Restore All Snapshots" or "No Snapshots Yet")
+	local hasBatch = type(lastBatchSnapshots) == "table" and #lastBatchSnapshots > 0
+	setButtonEnabled(undoBatchButton, paired and (not busy) and hasBatch, hasBatch and "Undo Last Batch" or "No Batch To Undo")
 	setButtonEnabled(disconnectButton, paired and (not busy), busy and "Command Running" or "Disconnect Studio")
 	refreshApprovalToggle()
 end
 
-setStatus = function(text)
-	local color, label = statusColor(text)
-	statusPill.Text = label
-	TweenService:Create(statusPill, TweenInfo.new(0.16, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { BackgroundColor3 = color }):Play()
+local orbSizeTween, orbFadeTween = nil, nil
+
+local function applyOrbPulse(active)
+	if orbSizeTween then orbSizeTween:Cancel() orbSizeTween = nil end
+	if orbFadeTween then orbFadeTween:Cancel() orbFadeTween = nil end
+	statusOrbRing.Size = UDim2.new(1, 0, 1, 0)
+	statusOrbStroke.Transparency = 1
+	if active then
+		local info = TweenInfo.new(1.1, Enum.EasingStyle.Sine, Enum.EasingDirection.Out, -1, false)
+		statusOrbStroke.Transparency = 0.15
+		orbSizeTween = TweenService:Create(statusOrbRing, info, { Size = UDim2.new(3, 0, 3, 0) })
+		orbFadeTween = TweenService:Create(statusOrbStroke, info, { Transparency = 1 })
+		orbSizeTween:Play()
+		orbFadeTween:Play()
+	end
+end
+
+-- Central state setter. `state` is one of BRIDGE_STATES keys.
+function setBridgeState(state, detail)
+	local key = BRIDGE_STATES[state] and state or "unpaired"
+	local def = BRIDGE_STATES[key]
+	currentBridgeState = key
+	statusPill.Text = def.label
+	TweenService:Create(statusPill, TweenInfo.new(0.16, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { BackgroundColor3 = def.color }):Play()
+	TweenService:Create(statusOrb, TweenInfo.new(0.16, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { BackgroundColor3 = def.color }):Play()
+	applyOrbPulse(def.pulse)
+	if detail ~= nil and tostring(detail) ~= "" and (key == "working" or key == "degraded") then
+		activeLabel.Text = "Active tool: " .. tostring(detail)
+	end
 	refreshControls()
+end
+
+setStatus = function(text)
+	setBridgeState(stateFromLegacy(text), text)
 end
 
 setPollingPulse = function(active)
 	pollingActive = active == true
-	if statusPulseTween then
-		statusPulseTween:Cancel()
-		statusPulseTween = nil
-	end
-	if pollingActive then
-		statusPill.BackgroundTransparency = 0
-		statusPulseTween = TweenService:Create(
-			statusPill,
-			TweenInfo.new(0.8, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true),
-			{ BackgroundTransparency = 0.35 }
-		)
-		statusPulseTween:Play()
-	end
+	statusOrb.BackgroundTransparency = active and 0.35 or 0
 end
 
 setHealth = function(syncedAt, latencyMs)
@@ -1666,6 +1806,61 @@ setActive = function(text)
 	activeLabel.Text = "Active tool: " .. value
 end
 
+function setAgentPhase(phase)
+	local activeIndex = 0
+	for index, candidate in ipairs(AGENT_PHASES) do
+		if candidate == phase then
+			activeIndex = index
+			break
+		end
+	end
+	for index, candidate in ipairs(AGENT_PHASES) do
+		local chip = agentPhaseDots[candidate]
+		if chip then
+			local isCurrent = candidate == phase
+			local reached = activeIndex > 0 and index <= activeIndex
+			local targetColor
+			local textColor
+			if isCurrent and candidate ~= "done" then
+				targetColor = COLORS.accent
+				textColor = Color3.fromRGB(255, 255, 255)
+			elseif candidate == "done" and isCurrent then
+				targetColor = COLORS.success
+				textColor = Color3.fromRGB(255, 255, 255)
+			elseif reached then
+				targetColor = COLORS.primary
+				textColor = Color3.fromRGB(255, 255, 255)
+			else
+				targetColor = themeColor(Enum.StudioStyleGuideColor.MainBackground)
+				textColor = themeColor(Enum.StudioStyleGuideColor.DimmedText)
+			end
+			chip.TextColor3 = textColor
+			chip.BackgroundTransparency = reached and 0 or 0.35
+			TweenService:Create(chip, TweenInfo.new(0.15), { BackgroundColor3 = targetColor }):Play()
+		end
+	end
+end
+
+function setManifestInfo(info)
+	info = info or {}
+	local itemCount = tonumber(info.itemCount) or 0
+	local revision = info.revision and tostring(info.revision) or nil
+	local revShort = revision and (#revision > 10 and ("#" .. string.sub(revision, 1, 8)) or ("#" .. revision)) or "none"
+	manifestSummaryLabel.Text = ("%d instance(s) indexed  ·  %s"):format(itemCount, revShort)
+	local indexedAt = tonumber(info.indexedAt)
+	if indexedAt then
+		local ago = math.max(0, os.time() - indexedAt)
+		local fresh = ago < (info.staleAfter or 300)
+		local freshWord = fresh and "fresh" or "stale"
+		local color = fresh and COLORS.success or COLORS.warning
+		manifestFreshnessLabel.TextColor3 = color
+		manifestFreshnessLabel.Text = ("Indexed %ds ago (%s). Rescan from the website to refresh."):format(ago, freshWord)
+	else
+		manifestFreshnessLabel.TextColor3 = themeColor(Enum.StudioStyleGuideColor.DimmedText)
+		manifestFreshnessLabel.Text = "Rescan runs from the website when needed."
+	end
+end
+
 pushActivity = function(entry)
 	entry = entry or {}
 	feedEmptyLabel.Visible = false
@@ -1683,15 +1878,38 @@ pushActivity = function(entry)
 	row.TextColor3 = themeColor(Enum.StudioStyleGuideColor.MainText)
 	local status = tostring(entry.status or "info")
 	local colorHex = status == "succeeded" and "#39A65C" or (status == "failed" and "#D64550" or "#6C757D")
+	local commandType = tostring(entry.commandType or "command")
+	local icon
+	if string.find(commandType, "read") or string.find(commandType, "inspect") or string.find(commandType, "manifest") or string.find(commandType, "search") then
+		icon = "R"
+	elseif string.find(commandType, "delete") then
+		icon = "D"
+	elseif string.find(commandType, "restore") or string.find(commandType, "undo") or string.find(commandType, "snapshot") then
+		icon = "S"
+	elseif string.find(commandType, "write") or string.find(commandType, "patch") or string.find(commandType, "create") or string.find(commandType, "apply") or string.find(commandType, "update") then
+		icon = "W"
+	else
+		icon = "*"
+	end
 	local durationText = entry.duration and (" · " .. tostring(entry.duration) .. "ms") or ""
 	local snapshotText = entry.snapshotCount and entry.snapshotCount > 0 and (" · " .. tostring(entry.snapshotCount) .. " snap") or ""
 	local detailText = entry.detail and (" · " .. tostring(entry.detail)) or ""
+	local verifiedText = ""
+	if status == "succeeded" then
+		if entry.verified == true then
+			verifiedText = ' <font color="#39A65C">[verified]</font>'
+		elseif entry.verified == false then
+			verifiedText = ' <font color="#D39127">[unverified]</font>'
+		end
+	end
 	row.Text = string.format(
-		'<font color="#888888">%s</font> <b>%s</b> <font color="%s">%s</font>%s%s%s',
+		'<font color="#666666">%s</font> <font color="#845CDF">%s</font> <b>%s</b> <font color="%s">%s</font>%s%s%s%s',
 		formatTime(entry.at or os.time()),
-		tostring(entry.commandType or "command"),
+		icon,
+		commandType,
 		colorHex,
 		status,
+		verifiedText,
 		durationText,
 		snapshotText,
 		detailText
@@ -1765,6 +1983,36 @@ hideRestoreConfirmation = function()
 	confirmOverlay.Visible = false
 end
 
+local function describeAffectedPaths(command)
+	local payload = command.payload or {}
+	local paths = {}
+	local seen = {}
+	local function add(value)
+		if type(value) == "string" and value ~= "" and not seen[value] then
+			seen[value] = true
+			table.insert(paths, value)
+		end
+	end
+	add(payload.path)
+	add(payload.newPath)
+	add(payload.newParentPath)
+	for _, p in ipairs(payload.paths or {}) do
+		add(p)
+	end
+	for _, file in ipairs(payload.files or {}) do
+		if type(file) == "table" then
+			add(file.canonicalPath or file.path)
+		end
+	end
+	for _, op in ipairs(payload.operations or {}) do
+		if type(op) == "table" and type(op.payload) == "table" then
+			add(op.payload.path)
+			add(op.payload.newPath)
+		end
+	end
+	return paths
+end
+
 showApprovalGate = function(command)
 	pendingApproval = {
 		command = command,
@@ -1775,7 +2023,19 @@ showApprovalGate = function(command)
 	local label = tostring(command.label or commandType)
 	local runText = command.runId and ("\nRun: " .. tostring(command.runId)) or ""
 	local stepText = command.stepId and ("\nStep: " .. tostring(command.stepId)) or ""
-	approvalCopy.Text = ("Apply <b>%s</b> (%s)?%s%s\n\nThis command modifies your place."):format(label, commandType, runText, stepText)
+	local paths = describeAffectedPaths(command)
+	local pathsText = ""
+	if #paths > 0 then
+		local shown = {}
+		for index = 1, math.min(#paths, 6) do
+			table.insert(shown, '<font color="#845CDF">•</font> ' .. paths[index])
+		end
+		if #paths > 6 then
+			table.insert(shown, ("...and %d more"):format(#paths - 6))
+		end
+		pathsText = "\n\n<b>Affects:</b>\n" .. table.concat(shown, "\n")
+	end
+	approvalCopy.Text = ("Apply <b>%s</b> (%s)?%s%s%s"):format(label, commandType, runText, stepText, pathsText)
 	approvalOverlay.Visible = true
 end
 
@@ -1828,6 +2088,33 @@ approvalToggleButton.MouseButton1Click:Connect(function()
 	plugin:SetSetting("nexusrbxApprovalMode", nextValue)
 	refreshApprovalToggle()
 	showToast(nextValue and "Review before apply enabled" or "Review before apply disabled", "info")
+end)
+
+undoBatchButton.MouseButton1Click:Connect(function()
+	if undoBatchButton:GetAttribute("NexusEnabled") ~= true then
+		return
+	end
+	local batch = lastBatchSnapshots
+	if type(batch) ~= "table" or #batch == 0 then
+		setLast("no batch to undo")
+		showToast("Nothing to undo", "info")
+		return
+	end
+	local recording = beginRecording("NexusRBX undo last batch")
+	local ok, resultOrError = pcall(function()
+		return restoreSnapshots({ snapshots = batch })
+	end)
+	if ok then
+		finishRecording(recording, true)
+		setLast(("undo batch complete: %d restored, %d removed"):format(resultOrError.restored or 0, resultOrError.removed or 0))
+		pushActivity({ commandType = "undo_last_batch", status = "succeeded", detail = tostring(#batch) .. " snapshots" })
+		showToast("Batch undone", "success")
+	else
+		finishRecording(recording, false)
+		setLast("undo batch failed: " .. tostring(resultOrError))
+		showToast("Undo failed", "error")
+	end
+	updateSnapshotLabel()
 end)
 
 banner.MouseButton1Click:Connect(function()
@@ -2007,6 +2294,20 @@ getInspectionRoots = function()
 	return roots
 end
 
+-- Cheap top-level fingerprint of the place (service child counts). Used as a
+-- fast "did anything structurally change?" signal so the backend can skip a
+-- full re-index when the project is unchanged.
+function computePlaceSignature()
+	local parts = {}
+	for _, inst in ipairs(getInspectionRoots()) do
+		local ok, count = pcall(function()
+			return #inst:GetChildren()
+		end)
+		table.insert(parts, tostring(inst.Name) .. ":" .. tostring(inst.ClassName) .. ":" .. tostring(ok and count or 0))
+	end
+	return stableHash(table.concat(parts, "|"))
+end
+
 inspectPlace = function(payload)
 	local maxDepth = math.clamp(tonumber(payload.maxDepth) or 12, 1, 32)
 	local maxInstances = math.clamp(tonumber(payload.maxInstances) or 500, 20, 10000)
@@ -2034,6 +2335,7 @@ inspectPlace = function(payload)
 		items = page,
 		nextCursor = (cursor + pageSize < #state.items) and tostring(cursor + pageSize) or nil,
 		roots = roots,
+		placeSignature = computePlaceSignature(),
 	}
 end
 
@@ -5375,6 +5677,123 @@ local function commandStartedMs()
 	return math.floor(os.clock() * 1000)
 end
 
+-- Commands whose success can be proven by re-reading the place after the write.
+local DELETE_COMMANDS = {
+	delete_script = true,
+	delete_instance = true,
+}
+
+local SCRIPT_WRITE_COMMANDS = {
+	write_script = true,
+	create_script = true,
+	patch_script = true,
+}
+
+-- Commands that manage their own state (snapshots/batches) where a naive
+-- path re-check would produce false negatives. These are trusted as-is.
+local VERIFY_SKIP_COMMANDS = {
+	restore_snapshot = true,
+	undo_last_batch = true,
+	create_snapshot = true,
+	batch_operations = true,
+}
+
+local function currentScriptHashAt(path)
+	if type(path) ~= "string" or path == "" then
+		return nil, nil
+	end
+	local inst = resolvePath(path)
+	if not inst then
+		return nil, nil
+	end
+	if SCRIPT_CLASSES and SCRIPT_CLASSES[inst.ClassName] and type(scriptHash) == "function" then
+		return inst, scriptHash(inst)
+	end
+	return inst, nil
+end
+
+-- Re-inspect the place after a mutating command to confirm the change is
+-- actually present. Returns verified(boolean), checks(table). This is what
+-- stops the plugin from reporting "succeeded" when nothing really changed.
+local function verifyCommandOutcome(command, payload, result)
+	local commandType = command.type or ""
+	if not isMutatingCommand(commandType) or VERIFY_SKIP_COMMANDS[commandType] then
+		return true, nil
+	end
+
+	local checks = {}
+	local function pass(path)
+		table.insert(checks, { path = path, ok = true })
+	end
+	local function fail(path, reason)
+		table.insert(checks, { path = path, ok = false, reason = reason })
+	end
+
+	if DELETE_COMMANDS[commandType] then
+		local target = result.path or payload.path
+		if type(target) == "string" and target ~= "" and resolvePath(target) then
+			fail(target, "still_present")
+		else
+			pass(target or "")
+		end
+	elseif SCRIPT_WRITE_COMMANDS[commandType] then
+		local target = result.path or payload.path
+		local inst, currentHash = currentScriptHashAt(target)
+		if not inst then
+			fail(target, "missing")
+		elseif result.sourceHash and currentHash and currentHash ~= result.sourceHash then
+			fail(target, "hash_mismatch")
+		else
+			pass(target)
+		end
+	elseif commandType == "apply_artifact" then
+		local files = result.managedFiles or result.files or {}
+		for _, file in ipairs(files) do
+			if type(file) == "table" then
+				local p = file.canonicalPath or file.path
+				if type(p) == "string" and p ~= "" then
+					local inst = resolvePath(p)
+					if not inst then
+						fail(p, "missing")
+					else
+						local expected = file.resultingHash or file.sourceHash
+						if expected and SCRIPT_CLASSES and SCRIPT_CLASSES[inst.ClassName] then
+							local currentHash = scriptHash(inst)
+							if currentHash and currentHash ~= expected then
+								fail(p, "hash_mismatch")
+							else
+								pass(p)
+							end
+						else
+							pass(p)
+						end
+					end
+				end
+			end
+		end
+	else
+		-- Instance/property/native/import mutations: the resulting path must exist.
+		-- previousPath (from rename/move) is intentionally not checked.
+		local target = result.path
+		if type(target) == "string" and target ~= "" then
+			if resolvePath(target) then
+				pass(target)
+			else
+				fail(target, "missing")
+			end
+		end
+	end
+
+	local verified = true
+	for _, check in ipairs(checks) do
+		if not check.ok then
+			verified = false
+			break
+		end
+	end
+	return verified, checks
+end
+
 executeCommand = function(command)
 	local commandType = command.type or "apply_artifact"
 	local handler = TOOL_HANDLERS[commandType]
@@ -5392,6 +5811,13 @@ executeCommand = function(command)
 		executedCount = executedCommandCount,
 	})
 	setActive((command.label or commandType) .. " (" .. commandType .. ")")
+	if string.find(commandType, "read") or string.find(commandType, "inspect") or string.find(commandType, "manifest") or string.find(commandType, "search") or string.find(commandType, "get_") then
+		setAgentPhase("reading")
+	elseif isMutatingCommand(commandType) then
+		setAgentPhase("writing")
+	else
+		setAgentPhase("thinking")
+	end
 	local payload = command.payload or {}
 	local started = commandStartedMs()
 	local result = handler(payload, command)
@@ -5443,6 +5869,53 @@ executeCommand = function(command)
 	result.duration = math.max(0, commandStartedMs() - started)
 	result.snapshotIds = result.snapshotIds or snapshotIds
 	result.retryable = result.retryable == true
+
+	if (commandType == "get_project_manifest" or commandType == "inspect_place") and result.ok ~= false then
+		setManifestInfo({
+			revision = result.revision,
+			itemCount = result.totalInstances or result.count,
+			indexedAt = os.time(),
+			staleAfter = 300,
+		})
+	end
+
+	if result.ok ~= false and isMutatingCommand(commandType) then
+		setAgentPhase("verifying")
+	end
+
+	if result.ok ~= false then
+		local okVerify, verified, checks = pcall(verifyCommandOutcome, command, payload, result)
+		if okVerify then
+			result.verified = verified
+			if checks then
+				result.verificationChecks = checks
+			end
+			if verified == false then
+				local failedPath
+				for _, check in ipairs(checks or {}) do
+					if not check.ok then
+						failedPath = check.path
+						break
+					end
+				end
+				result.ok = false
+				result.success = false
+				result.retryable = true
+				result.code = "apply_unverified"
+				result.error = {
+					code = "apply_unverified",
+					message = "Command reported success but the change could not be verified in Studio"
+						.. (failedPath and (" (" .. tostring(failedPath) .. ")") or ""),
+					retryable = true,
+				}
+			end
+		else
+			-- Verification itself errored; don't mask a real success, just flag it.
+			result.verified = nil
+			result.verificationError = tostring(verified)
+		end
+	end
+
 	if result.ok == false and type(result.error) ~= "table" then
 		result.error = {
 			code = tostring(result.code or "studio_command_failed"),
@@ -5459,7 +5932,13 @@ local function finalizeCommandOutcome(command, applyOk, resultOrError)
 	local duration = type(resultOrError) == "table" and resultOrError.duration or nil
 
 	if applyOk and type(resultOrError) == "table" and resultOrError.ok == false then
-		local message = tostring(resultOrError.error or "Studio command failed")
+		local rawError = resultOrError.error
+		local message
+		if type(rawError) == "table" then
+			message = tostring(rawError.message or rawError.code or "Studio command failed")
+		else
+			message = tostring(rawError or "Studio command failed")
+		end
 		ack(command.id, "failed", resultOrError, message)
 		setLast(commandType .. " failed: " .. message)
 		pushActivity({
@@ -5492,7 +5971,10 @@ local function finalizeCommandOutcome(command, applyOk, resultOrError)
 			duration = duration,
 			snapshotCount = snapshotCount,
 			detail = extra ~= "" and extra or nil,
+			verified = type(resultOrError) == "table" and resultOrError.verified,
+			affectedPaths = type(resultOrError) == "table" and resultOrError.affectedPaths or nil,
 		})
+		setAgentPhase("done")
 		showToast(commandType .. " succeeded", "success")
 		return "succeeded"
 	end
@@ -5510,20 +5992,31 @@ local function finalizeCommandOutcome(command, applyOk, resultOrError)
 	return "failed"
 end
 
+-- Queue of commands claimed by the poll loop but not yet executed. Polling
+-- (which keeps the backend session alive) is decoupled from execution so a long
+-- apply or an approval prompt can never stall the connection.
+local commandQueue, executorBusy, executorStartedAt, EXECUTOR_WATCHDOG_MS = {}, false, 0, 30 * 60 * 1000
+
+function pendingCommandCount()
+	return #commandQueue
+end
+
+function isExecutorBusy()
+	return executorBusy == true
+end
+
+-- Poll the backend exactly once and enqueue any claimed command. This never
+-- executes work itself, so it returns quickly and the session heartbeat implicit
+-- in every poll stays fresh even while the executor is busy.
 pullOnce = function(waitMs)
-	if applying then
-		return { skipped = true }
-	end
 	local token = getToken()
 	if not token then
-		setStatus("not paired")
+		setBridgeState("unpaired")
 		return { authFailed = false, idle = true, hadCommand = false, error = false }
 	end
 
 	local pollWait = math.clamp(tonumber(waitMs) or 2000, 500, 24000)
-	setBusy(true)
 	setPollingPulse(true)
-	setStatus("polling...")
 	local ok, data, statusCode = request(
 		"GET",
 		"/api/studio/commands/next?waitMs=" .. tostring(pollWait),
@@ -5533,61 +6026,90 @@ pullOnce = function(waitMs)
 	setPollingPulse(false)
 
 	if statusCode == 401 or statusCode == 403 then
-		setBusy(false)
 		handleSessionExpired()
 		return { authFailed = true, idle = false, hadCommand = false, error = true }
 	end
 
 	if not ok then
-		setStatus("poll failed")
+		setBridgeState("degraded", "poll failed")
 		setLast(tostring(data))
-		setBusy(false)
 		return { authFailed = false, idle = false, hadCommand = false, error = true }
 	end
 
 	if statusCode == 204 or not data or not data.command then
-		setStatus("connected")
-		setActive("none")
-		setBusy(false)
+		if not executorBusy and #commandQueue == 0 then
+			setBridgeState("live")
+			setActive("none")
+			setAgentPhase("idle")
+		end
 		return { authFailed = false, idle = true, hadCommand = false, error = false }
 	end
 
-	local command = data.command
-	if getApprovalModeEnabledExport() and isMutatingCommand(command.type) then
-		setStatus("awaiting approval")
-		local approved = waitForApproval(command)
-		if not approved then
-			ack(command.id, "failed", nil, "declined in Studio")
-			setLast((command.type or "command") .. " declined in Studio")
-			pushActivity({
-				commandType = command.type or "command",
-				status = "failed",
-				detail = "declined in Studio",
-			})
-			showToast("Command declined", "error")
-			setActive("none")
-			setBusy(false)
-			setStatus("connected")
-			return { authFailed = false, idle = false, hadCommand = true, error = false, declined = true }
+	table.insert(commandQueue, data.command)
+	setBridgeState("working", "queued " .. tostring(data.command.type or "command"))
+	return { authFailed = false, idle = false, hadCommand = true, error = false }
+end
+
+-- Execute a single command from the queue (approval gate + run + ack). Called on
+-- its own loop so it can block for as long as needed without pausing polling.
+function processNextCommand()
+	if executorBusy then
+		if executorStartedAt > 0 and (commandStartedMs() - executorStartedAt) > EXECUTOR_WATCHDOG_MS then
+			-- Safety net: the executor is a synchronous pcall, so this should be
+			-- unreachable, but never let a wedged flag permanently block work.
+			executorBusy = false
+			executorStartedAt = 0
+		else
+			return false
 		end
 	end
-
-	local recording = beginRecording("NexusRBX " .. tostring(command.type or "command"))
-	local applyOk, resultOrError = pcall(function()
-		return executeCommand(command)
-	end)
-
-	if applyOk then
-		finishRecording(recording, type(resultOrError) == "table" and resultOrError.ok ~= false)
-	else
-		finishRecording(recording, false)
+	if #commandQueue == 0 then
+		return false
 	end
 
-	finalizeCommandOutcome(command, applyOk, resultOrError)
+	local command = table.remove(commandQueue, 1)
+	executorBusy = true
+	executorStartedAt = commandStartedMs()
+	setBusy(true)
+	setBridgeState("working", command.label or command.type)
+
+	local finished = pcall(function()
+		if getApprovalModeEnabledExport() and isMutatingCommand(command.type) then
+			setBridgeState("working", "awaiting approval")
+			local approved = waitForApproval(command)
+			if not approved then
+				ack(command.id, "failed", nil, "declined in Studio")
+				setLast((command.type or "command") .. " declined in Studio")
+				pushActivity({
+					commandType = command.type or "command",
+					status = "failed",
+					detail = "declined in Studio",
+				})
+				showToast("Command declined", "error")
+				return
+			end
+		end
+
+		local recording = beginRecording("NexusRBX " .. tostring(command.type or "command"))
+		local applyOk, resultOrError = pcall(function()
+			return executeCommand(command)
+		end)
+		if applyOk then
+			finishRecording(recording, type(resultOrError) == "table" and resultOrError.ok ~= false)
+		else
+			finishRecording(recording, false)
+		end
+		finalizeCommandOutcome(command, applyOk, resultOrError)
+	end)
+
+	executorBusy = false
+	executorStartedAt = 0
 	setActive("none")
 	setBusy(false)
-	setStatus("connected")
-	return { authFailed = false, idle = false, hadCommand = true, error = false }
+	if #commandQueue == 0 then
+		setBridgeState("live")
+	end
+	return finished ~= false
 end
 end
 -- END src/commands/registry.lua
@@ -5666,6 +6188,8 @@ pullButton.MouseButton1Click:Connect(function()
 		setHealth(os.time(), getLastLatencyMs())
 		if result and result.error and not result.authFailed then
 			showToast("Pull failed", "error")
+		elseif result and result.idle then
+			showToast("Up to date", "info")
 		end
 	end
 end)
@@ -5739,6 +6263,10 @@ local function shouldAutoPull()
 	return setting ~= false
 end
 
+-- Poll loop: continuously long-polls for commands and enqueues them. Because it
+-- never blocks on execution or approval, every poll doubles as a session
+-- heartbeat (the backend refreshes lastSeenAt on each authenticated request),
+-- so the session no longer goes stale while a command is running.
 task.spawn(function()
 	local idleWaitMs = 2000
 	local failureBackoff = 0
@@ -5752,14 +6280,16 @@ task.spawn(function()
 			task.wait(2)
 			continue
 		end
+		-- Only claim one command at a time. While the executor is busy the ping
+		-- loop keeps the session alive, so we don't over-claim commands that could
+		-- be stranded as "delivered" if Studio closes mid-queue.
+		if isExecutorBusy() or pendingCommandCount() > 0 then
+			task.wait(0.25)
+			continue
+		end
 
 		local result = pullOnce(idleWaitMs)
 		setHealth(os.time(), getLastLatencyMs())
-
-		if result.skipped then
-			task.wait(0.5)
-			continue
-		end
 
 		if result.authFailed then
 			idleWaitMs = 2000
@@ -5770,9 +6300,10 @@ task.spawn(function()
 			idleWaitMs = 2000
 			task.wait(failureBackoff)
 		elseif result.hadCommand then
+			-- More work likely waiting; poll again quickly to pipeline.
 			idleWaitMs = 2000
 			failureBackoff = 0
-			task.wait(0.35)
+			task.wait(0.2)
 		elseif result.idle then
 			failureBackoff = 0
 			idleWaitMs = math.min(idleWaitMs + 2000, 24000)
@@ -5783,13 +6314,39 @@ task.spawn(function()
 	end
 end)
 
+-- Executor loop: drains the command queue one command at a time. Runs
+-- independently of polling so long applies / approval prompts can never freeze
+-- the connection.
 task.spawn(function()
 	while true do
-		task.wait(60)
+		if getToken() and pendingCommandCount() > 0 then
+			local ok = pcall(processNextCommand)
+			if ok then
+				task.wait(0.1)
+			else
+				task.wait(0.5)
+			end
+		else
+			task.wait(0.2)
+		end
+	end
+end)
+
+-- Heartbeat loop: an authenticated, side-effect-free ping keeps the session
+-- alive even if the poll loop is briefly backing off, and refreshes latency.
+task.spawn(function()
+	while true do
+		task.wait(15)
 		if getToken() then
-			local ok, latency = pingHealth()
+			local signatureOk, signature = pcall(computePlaceSignature)
+			local ok, latency = pingSession(getToken(), signatureOk and signature or nil)
 			if ok then
 				setHealth(os.time(), latency)
+			else
+				local healthOk, healthLatency = pingHealth()
+				if healthOk then
+					setHealth(os.time(), healthLatency)
+				end
 			end
 		end
 	end
@@ -5797,8 +6354,8 @@ end)
 
 updateSnapshotLabel()
 if getToken() then
-	setStatus("connected")
+	setBridgeState("connecting")
 else
-	setStatus("not paired")
+	setBridgeState("unpaired")
 end
 -- END src/Main.server.lua

@@ -31,7 +31,6 @@ local lastErrorText = nil
 local diagnosticsOpen = false
 local pendingApproval = nil
 local selectedSnapshotIds = {}
-local statusPulseTween = nil
 
 local function themeColor(color)
 	return settings().Studio.Theme:GetColor(color)
@@ -52,7 +51,22 @@ local COLORS = {
 	warning = Color3.fromRGB(211, 145, 39),
 	success = Color3.fromRGB(57, 166, 92),
 	muted = Color3.fromRGB(108, 117, 125),
+	live = Color3.fromRGB(0, 200, 150),
 }
+
+-- Single source of truth for the connection state machine. Every visible status
+-- (orb, pill, header tint) is derived from one of these entries so the UI can
+-- never claim "connected" while it is actually failing or idle.
+local BRIDGE_STATES = {
+	unpaired = { label = "NOT PAIRED", color = COLORS.muted, pulse = false },
+	connecting = { label = "CONNECTING", color = COLORS.warning, pulse = true },
+	live = { label = "LIVE", color = COLORS.live, pulse = false },
+	working = { label = "WORKING", color = COLORS.accent, pulse = true },
+	degraded = { label = "RECONNECTING", color = COLORS.warning, pulse = true },
+	error = { label = "ACTION NEEDED", color = COLORS.error, pulse = false },
+}
+
+local currentBridgeState = "unpaired"
 
 local root = Instance.new("Frame")
 root.Name = "NexusBridgeRoot"
@@ -229,14 +243,46 @@ local statusPill = Instance.new("TextLabel")
 statusPill.Name = "StatusPill"
 statusPill.AnchorPoint = Vector2.new(1, 0)
 statusPill.Position = UDim2.new(1, 0, 0, 3)
-statusPill.Size = UDim2.new(0, 108, 0, 26)
+statusPill.Size = UDim2.new(0, 118, 0, 26)
 statusPill.BackgroundColor3 = COLORS.muted
 statusPill.TextColor3 = Color3.fromRGB(255, 255, 255)
 statusPill.Font = Enum.Font.GothamBold
 statusPill.TextSize = 11
 statusPill.Text = "NOT PAIRED"
+statusPill.TextXAlignment = Enum.TextXAlignment.Right
 statusPill.Parent = header
 applyCorner(statusPill, 13)
+local statusPillPad = Instance.new("UIPadding")
+statusPillPad.PaddingLeft = UDim.new(0, 24)
+statusPillPad.PaddingRight = UDim.new(0, 10)
+statusPillPad.Parent = statusPill
+
+-- Animated status orb sits inside the left of the pill.
+local statusOrb = Instance.new("Frame")
+statusOrb.Name = "StatusOrb"
+statusOrb.AnchorPoint = Vector2.new(0, 0.5)
+statusOrb.Position = UDim2.new(0, 8, 0.5, 0)
+statusOrb.Size = UDim2.new(0, 10, 0, 10)
+statusOrb.BackgroundColor3 = COLORS.muted
+statusOrb.BorderSizePixel = 0
+statusOrb.ZIndex = 3
+statusOrb.Parent = statusPill
+applyCorner(statusOrb, 5)
+
+local statusOrbRing = Instance.new("Frame")
+statusOrbRing.Name = "OrbRing"
+statusOrbRing.AnchorPoint = Vector2.new(0.5, 0.5)
+statusOrbRing.Position = UDim2.new(0.5, 0, 0.5, 0)
+statusOrbRing.Size = UDim2.new(1, 0, 1, 0)
+statusOrbRing.BackgroundTransparency = 1
+statusOrbRing.ZIndex = 2
+statusOrbRing.Parent = statusOrb
+applyCorner(statusOrbRing, 8)
+local statusOrbStroke = Instance.new("UIStroke")
+statusOrbStroke.Color = COLORS.muted
+statusOrbStroke.Thickness = 2
+statusOrbStroke.Transparency = 1
+statusOrbStroke.Parent = statusOrbRing
 
 local banner = Instance.new("TextButton")
 banner.Name = "Banner"
@@ -294,6 +340,58 @@ checkSetupButton = makeButton(pairSection, "CheckSetupButton", "Check setup", th
 setupResult = makeText(pairSection, "SetupResult", "", nil, 11, false, themeColor(Enum.StudioStyleGuideColor.DimmedText), true)
 setupResult.TextWrapped = true
 setupResult.Visible = false
+
+-- Live "what's happening now" strip: reading -> writing -> verifying -> done.
+local AGENT_PHASES, agentPhaseDots = { "idle", "thinking", "reading", "writing", "verifying", "done" }, {}
+local AGENT_PHASE_LABELS = {
+	idle = "Idle",
+	thinking = "Thinking",
+	reading = "Reading",
+	writing = "Writing",
+	verifying = "Verifying",
+	done = "Done",
+}
+
+local agentSection = makeSection("AgentActivity")
+makeText(agentSection, "AgentTitle", "Agent", 18, 13, true)
+local phaseStrip = Instance.new("Frame")
+phaseStrip.Name = "PhaseStrip"
+phaseStrip.BackgroundTransparency = 1
+phaseStrip.Size = UDim2.new(1, 0, 0, 22)
+phaseStrip.Parent = agentSection
+local phaseLayout = Instance.new("UIListLayout")
+phaseLayout.FillDirection = Enum.FillDirection.Horizontal
+phaseLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+phaseLayout.SortOrder = Enum.SortOrder.LayoutOrder
+phaseLayout.Padding = UDim.new(0, 6)
+phaseLayout.Parent = phaseStrip
+for index, phase in ipairs(AGENT_PHASES) do
+	if phase ~= "idle" then
+		local chip = Instance.new("TextLabel")
+		chip.Name = "Phase_" .. phase
+		chip.BackgroundColor3 = themeColor(Enum.StudioStyleGuideColor.MainBackground)
+		chip.BackgroundTransparency = 0.2
+		chip.TextColor3 = themeColor(Enum.StudioStyleGuideColor.DimmedText)
+		chip.Font = Enum.Font.GothamMedium
+		chip.TextSize = 10
+		chip.Text = " " .. AGENT_PHASE_LABELS[phase] .. " "
+		chip.AutomaticSize = Enum.AutomaticSize.X
+		chip.Size = UDim2.new(0, 0, 1, 0)
+		chip.LayoutOrder = index
+		chip.Parent = phaseStrip
+		applyCorner(chip, 9)
+		local chipPad = Instance.new("UIPadding")
+		chipPad.PaddingLeft = UDim.new(0, 8)
+		chipPad.PaddingRight = UDim.new(0, 8)
+		chipPad.Parent = chip
+		agentPhaseDots[phase] = chip
+	end
+end
+
+local manifestSection = makeSection("Manifest")
+makeText(manifestSection, "ManifestTitle", "Project Index", 18, 13, true)
+manifestSummaryLabel = makeText(manifestSection, "ManifestSummary", "Not indexed yet", 18, 12, false, themeColor(Enum.StudioStyleGuideColor.MainText))
+manifestFreshnessLabel = makeText(manifestSection, "ManifestFreshness", "Rescan runs from the website when needed.", 16, 11, false, themeColor(Enum.StudioStyleGuideColor.DimmedText))
 
 local activitySection = makeSection("Activity")
 makeText(activitySection, "ActivityTitle", "Bridge Activity", 18, 13, true)
@@ -353,6 +451,7 @@ snapshotLayout.SortOrder = Enum.SortOrder.LayoutOrder
 snapshotLayout.Parent = snapshotList
 
 restoreButton = makeButton(safetySection, "RestoreButton", "Restore Selected Snapshots", COLORS.accent)
+undoBatchButton = makeButton(safetySection, "UndoBatchButton", "Undo Last Batch", themeColor(Enum.StudioStyleGuideColor.Button))
 
 local settingsSection = makeSection("Settings")
 makeText(settingsSection, "SettingsTitle", "Settings", 18, 13, true)
@@ -440,7 +539,8 @@ local approvalSheet = Instance.new("Frame")
 approvalSheet.Name = "ApprovalSheet"
 approvalSheet.AnchorPoint = Vector2.new(0.5, 0.5)
 approvalSheet.Position = UDim2.fromScale(0.5, 0.5)
-approvalSheet.Size = UDim2.new(1, -32, 0, 180)
+approvalSheet.Size = UDim2.new(1, -32, 0, 0)
+approvalSheet.AutomaticSize = Enum.AutomaticSize.Y
 approvalSheet.BackgroundColor3 = themeColor(Enum.StudioStyleGuideColor.MainBackground)
 approvalSheet.ZIndex = 13
 approvalSheet.Parent = approvalOverlay
@@ -457,9 +557,8 @@ approvalList.Padding = UDim.new(0, 8)
 approvalList.SortOrder = Enum.SortOrder.LayoutOrder
 approvalList.Parent = approvalSheet
 makeText(approvalSheet, "ApprovalTitle", "Review command", 22, 14, true)
-approvalCopy = makeText(approvalSheet, "ApprovalCopy", "", 72, 12, false, themeColor(Enum.StudioStyleGuideColor.DimmedText))
+approvalCopy = makeText(approvalSheet, "ApprovalCopy", "", nil, 12, false, themeColor(Enum.StudioStyleGuideColor.DimmedText), true)
 approvalCopy.TextWrapped = true
-approvalCopy.RichText = true
 local approvalRow = makeRow(approvalSheet, "ApprovalActions", 34)
 approvalConfirmButton = makeButton(approvalRow, "ApprovalConfirm", "Apply", COLORS.primary)
 approvalConfirmButton.Size = UDim2.new(0.5, -4, 0, 34)
@@ -525,26 +624,28 @@ local function formatTime(ts)
 	return os.date("%H:%M:%S", ts)
 end
 
-local function statusColor(text)
+-- Map legacy free-text status strings onto the structured state machine so old
+-- call sites keep working without ever mislabeling the connection.
+local function stateFromLegacy(text)
 	local lowered = string.lower(tostring(text or ""))
-	if string.find(lowered, "connected") and not string.find(lowered, "not connected") then
-		return COLORS.success, "CONNECTED"
-	elseif string.find(lowered, "pair failed") then
-		return COLORS.error, "PAIR FAILED"
-	elseif string.find(lowered, "expired") or string.find(lowered, "session expired") then
-		return COLORS.error, "RE-PAIR"
+	if string.find(lowered, "expired") then
+		return "error"
+	elseif string.find(lowered, "unsupported") or string.find(lowered, "pair failed") then
+		return "error"
 	elseif string.find(lowered, "poll failed") then
-		return COLORS.error, "POLL FAILED"
-	elseif string.find(lowered, "unsupported") then
-		return COLORS.error, "UPDATE PLUGIN"
+		return "degraded"
 	elseif string.find(lowered, "failed") or string.find(lowered, "error") then
-		return COLORS.error, "ACTION NEEDED"
+		return "error"
+	elseif string.find(lowered, "connected") and not string.find(lowered, "not connected") then
+		return "live"
+	elseif string.find(lowered, "pairing") or string.find(lowered, "disconnecting") then
+		return "connecting"
+	elseif string.find(lowered, "poll") or string.find(lowered, "working") or string.find(lowered, "approval") then
+		return "working"
 	elseif string.find(lowered, "ready to pair") then
-		return COLORS.primary, "READY"
-	elseif string.find(lowered, "pairing") or string.find(lowered, "poll") or string.find(lowered, "working") or string.find(lowered, "disconnecting") or string.find(lowered, "awaiting approval") then
-		return COLORS.warning, "WORKING"
+		return "connecting"
 	end
-	return COLORS.muted, "NOT PAIRED"
+	return "unpaired"
 end
 
 local function clearErrorBanner()
@@ -640,6 +741,8 @@ local function refreshControls()
 	local paired = getToken ~= nil and getToken() ~= nil
 	local busy = applying == true
 	pairSection.Visible = not paired
+	agentSection.Visible = paired
+	manifestSection.Visible = paired
 	activitySection.Visible = paired
 	safetySection.Visible = paired
 	settingsSection.Visible = paired
@@ -649,32 +752,51 @@ local function refreshControls()
 	setButtonEnabled(pullButton, paired and (not busy), busy and "Working..." or "Pull Latest")
 	local hasSnapshots = #localSnapshots > 0
 	setButtonEnabled(restoreButton, paired and (not busy) and hasSnapshots, hasSnapshots and "Restore All Snapshots" or "No Snapshots Yet")
+	local hasBatch = type(lastBatchSnapshots) == "table" and #lastBatchSnapshots > 0
+	setButtonEnabled(undoBatchButton, paired and (not busy) and hasBatch, hasBatch and "Undo Last Batch" or "No Batch To Undo")
 	setButtonEnabled(disconnectButton, paired and (not busy), busy and "Command Running" or "Disconnect Studio")
 	refreshApprovalToggle()
 end
 
-function setStatus(text)
-	local color, label = statusColor(text)
-	statusPill.Text = label
-	TweenService:Create(statusPill, TweenInfo.new(0.16, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { BackgroundColor3 = color }):Play()
+local orbSizeTween, orbFadeTween = nil, nil
+
+local function applyOrbPulse(active)
+	if orbSizeTween then orbSizeTween:Cancel() orbSizeTween = nil end
+	if orbFadeTween then orbFadeTween:Cancel() orbFadeTween = nil end
+	statusOrbRing.Size = UDim2.new(1, 0, 1, 0)
+	statusOrbStroke.Transparency = 1
+	if active then
+		local info = TweenInfo.new(1.1, Enum.EasingStyle.Sine, Enum.EasingDirection.Out, -1, false)
+		statusOrbStroke.Transparency = 0.15
+		orbSizeTween = TweenService:Create(statusOrbRing, info, { Size = UDim2.new(3, 0, 3, 0) })
+		orbFadeTween = TweenService:Create(statusOrbStroke, info, { Transparency = 1 })
+		orbSizeTween:Play()
+		orbFadeTween:Play()
+	end
+end
+
+-- Central state setter. `state` is one of BRIDGE_STATES keys.
+function setBridgeState(state, detail)
+	local key = BRIDGE_STATES[state] and state or "unpaired"
+	local def = BRIDGE_STATES[key]
+	currentBridgeState = key
+	statusPill.Text = def.label
+	TweenService:Create(statusPill, TweenInfo.new(0.16, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { BackgroundColor3 = def.color }):Play()
+	TweenService:Create(statusOrb, TweenInfo.new(0.16, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { BackgroundColor3 = def.color }):Play()
+	applyOrbPulse(def.pulse)
+	if detail ~= nil and tostring(detail) ~= "" and (key == "working" or key == "degraded") then
+		activeLabel.Text = "Active tool: " .. tostring(detail)
+	end
 	refreshControls()
+end
+
+function setStatus(text)
+	setBridgeState(stateFromLegacy(text), text)
 end
 
 function setPollingPulse(active)
 	pollingActive = active == true
-	if statusPulseTween then
-		statusPulseTween:Cancel()
-		statusPulseTween = nil
-	end
-	if pollingActive then
-		statusPill.BackgroundTransparency = 0
-		statusPulseTween = TweenService:Create(
-			statusPill,
-			TweenInfo.new(0.8, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true),
-			{ BackgroundTransparency = 0.35 }
-		)
-		statusPulseTween:Play()
-	end
+	statusOrb.BackgroundTransparency = active and 0.35 or 0
 end
 
 function setHealth(syncedAt, latencyMs)
@@ -741,6 +863,61 @@ function setActive(text)
 	activeLabel.Text = "Active tool: " .. value
 end
 
+function setAgentPhase(phase)
+	local activeIndex = 0
+	for index, candidate in ipairs(AGENT_PHASES) do
+		if candidate == phase then
+			activeIndex = index
+			break
+		end
+	end
+	for index, candidate in ipairs(AGENT_PHASES) do
+		local chip = agentPhaseDots[candidate]
+		if chip then
+			local isCurrent = candidate == phase
+			local reached = activeIndex > 0 and index <= activeIndex
+			local targetColor
+			local textColor
+			if isCurrent and candidate ~= "done" then
+				targetColor = COLORS.accent
+				textColor = Color3.fromRGB(255, 255, 255)
+			elseif candidate == "done" and isCurrent then
+				targetColor = COLORS.success
+				textColor = Color3.fromRGB(255, 255, 255)
+			elseif reached then
+				targetColor = COLORS.primary
+				textColor = Color3.fromRGB(255, 255, 255)
+			else
+				targetColor = themeColor(Enum.StudioStyleGuideColor.MainBackground)
+				textColor = themeColor(Enum.StudioStyleGuideColor.DimmedText)
+			end
+			chip.TextColor3 = textColor
+			chip.BackgroundTransparency = reached and 0 or 0.35
+			TweenService:Create(chip, TweenInfo.new(0.15), { BackgroundColor3 = targetColor }):Play()
+		end
+	end
+end
+
+function setManifestInfo(info)
+	info = info or {}
+	local itemCount = tonumber(info.itemCount) or 0
+	local revision = info.revision and tostring(info.revision) or nil
+	local revShort = revision and (#revision > 10 and ("#" .. string.sub(revision, 1, 8)) or ("#" .. revision)) or "none"
+	manifestSummaryLabel.Text = ("%d instance(s) indexed  ·  %s"):format(itemCount, revShort)
+	local indexedAt = tonumber(info.indexedAt)
+	if indexedAt then
+		local ago = math.max(0, os.time() - indexedAt)
+		local fresh = ago < (info.staleAfter or 300)
+		local freshWord = fresh and "fresh" or "stale"
+		local color = fresh and COLORS.success or COLORS.warning
+		manifestFreshnessLabel.TextColor3 = color
+		manifestFreshnessLabel.Text = ("Indexed %ds ago (%s). Rescan from the website to refresh."):format(ago, freshWord)
+	else
+		manifestFreshnessLabel.TextColor3 = themeColor(Enum.StudioStyleGuideColor.DimmedText)
+		manifestFreshnessLabel.Text = "Rescan runs from the website when needed."
+	end
+end
+
 function pushActivity(entry)
 	entry = entry or {}
 	feedEmptyLabel.Visible = false
@@ -758,15 +935,38 @@ function pushActivity(entry)
 	row.TextColor3 = themeColor(Enum.StudioStyleGuideColor.MainText)
 	local status = tostring(entry.status or "info")
 	local colorHex = status == "succeeded" and "#39A65C" or (status == "failed" and "#D64550" or "#6C757D")
+	local commandType = tostring(entry.commandType or "command")
+	local icon
+	if string.find(commandType, "read") or string.find(commandType, "inspect") or string.find(commandType, "manifest") or string.find(commandType, "search") then
+		icon = "R"
+	elseif string.find(commandType, "delete") then
+		icon = "D"
+	elseif string.find(commandType, "restore") or string.find(commandType, "undo") or string.find(commandType, "snapshot") then
+		icon = "S"
+	elseif string.find(commandType, "write") or string.find(commandType, "patch") or string.find(commandType, "create") or string.find(commandType, "apply") or string.find(commandType, "update") then
+		icon = "W"
+	else
+		icon = "*"
+	end
 	local durationText = entry.duration and (" · " .. tostring(entry.duration) .. "ms") or ""
 	local snapshotText = entry.snapshotCount and entry.snapshotCount > 0 and (" · " .. tostring(entry.snapshotCount) .. " snap") or ""
 	local detailText = entry.detail and (" · " .. tostring(entry.detail)) or ""
+	local verifiedText = ""
+	if status == "succeeded" then
+		if entry.verified == true then
+			verifiedText = ' <font color="#39A65C">[verified]</font>'
+		elseif entry.verified == false then
+			verifiedText = ' <font color="#D39127">[unverified]</font>'
+		end
+	end
 	row.Text = string.format(
-		'<font color="#888888">%s</font> <b>%s</b> <font color="%s">%s</font>%s%s%s',
+		'<font color="#666666">%s</font> <font color="#845CDF">%s</font> <b>%s</b> <font color="%s">%s</font>%s%s%s%s',
 		formatTime(entry.at or os.time()),
-		tostring(entry.commandType or "command"),
+		icon,
+		commandType,
 		colorHex,
 		status,
+		verifiedText,
 		durationText,
 		snapshotText,
 		detailText
@@ -840,6 +1040,36 @@ function hideRestoreConfirmation()
 	confirmOverlay.Visible = false
 end
 
+local function describeAffectedPaths(command)
+	local payload = command.payload or {}
+	local paths = {}
+	local seen = {}
+	local function add(value)
+		if type(value) == "string" and value ~= "" and not seen[value] then
+			seen[value] = true
+			table.insert(paths, value)
+		end
+	end
+	add(payload.path)
+	add(payload.newPath)
+	add(payload.newParentPath)
+	for _, p in ipairs(payload.paths or {}) do
+		add(p)
+	end
+	for _, file in ipairs(payload.files or {}) do
+		if type(file) == "table" then
+			add(file.canonicalPath or file.path)
+		end
+	end
+	for _, op in ipairs(payload.operations or {}) do
+		if type(op) == "table" and type(op.payload) == "table" then
+			add(op.payload.path)
+			add(op.payload.newPath)
+		end
+	end
+	return paths
+end
+
 function showApprovalGate(command)
 	pendingApproval = {
 		command = command,
@@ -850,7 +1080,19 @@ function showApprovalGate(command)
 	local label = tostring(command.label or commandType)
 	local runText = command.runId and ("\nRun: " .. tostring(command.runId)) or ""
 	local stepText = command.stepId and ("\nStep: " .. tostring(command.stepId)) or ""
-	approvalCopy.Text = ("Apply <b>%s</b> (%s)?%s%s\n\nThis command modifies your place."):format(label, commandType, runText, stepText)
+	local paths = describeAffectedPaths(command)
+	local pathsText = ""
+	if #paths > 0 then
+		local shown = {}
+		for index = 1, math.min(#paths, 6) do
+			table.insert(shown, '<font color="#845CDF">•</font> ' .. paths[index])
+		end
+		if #paths > 6 then
+			table.insert(shown, ("...and %d more"):format(#paths - 6))
+		end
+		pathsText = "\n\n<b>Affects:</b>\n" .. table.concat(shown, "\n")
+	end
+	approvalCopy.Text = ("Apply <b>%s</b> (%s)?%s%s%s"):format(label, commandType, runText, stepText, pathsText)
 	approvalOverlay.Visible = true
 end
 
@@ -903,6 +1145,33 @@ approvalToggleButton.MouseButton1Click:Connect(function()
 	plugin:SetSetting("nexusrbxApprovalMode", nextValue)
 	refreshApprovalToggle()
 	showToast(nextValue and "Review before apply enabled" or "Review before apply disabled", "info")
+end)
+
+undoBatchButton.MouseButton1Click:Connect(function()
+	if undoBatchButton:GetAttribute("NexusEnabled") ~= true then
+		return
+	end
+	local batch = lastBatchSnapshots
+	if type(batch) ~= "table" or #batch == 0 then
+		setLast("no batch to undo")
+		showToast("Nothing to undo", "info")
+		return
+	end
+	local recording = beginRecording("NexusRBX undo last batch")
+	local ok, resultOrError = pcall(function()
+		return restoreSnapshots({ snapshots = batch })
+	end)
+	if ok then
+		finishRecording(recording, true)
+		setLast(("undo batch complete: %d restored, %d removed"):format(resultOrError.restored or 0, resultOrError.removed or 0))
+		pushActivity({ commandType = "undo_last_batch", status = "succeeded", detail = tostring(#batch) .. " snapshots" })
+		showToast("Batch undone", "success")
+	else
+		finishRecording(recording, false)
+		setLast("undo batch failed: " .. tostring(resultOrError))
+		showToast("Undo failed", "error")
+	end
+	updateSnapshotLabel()
 end)
 
 banner.MouseButton1Click:Connect(function()

@@ -11,7 +11,35 @@ The backend validates every Studio command in `backend/src/lib/studioToolProtoco
 - `previousHashes`, `resultingHashes`
 - `warnings`, `diagnostics`, `output`
 - `duration`, `snapshotIds`, `retryable`
+- `verified` (additive, plugin >= 0.10.0): after a mutating command the plugin
+  re-reads the affected script/instance and sets `verified = true` only when the
+  change is actually present. If the change cannot be confirmed the command is
+  acked as `failed` with `error.code = "apply_unverified"` (retryable) instead of
+  a false success. Also `verificationChecks: [{ path, ok, reason }]`. Older
+  backends can ignore these fields.
+- `placeSignature` (additive, on `get_project_manifest` results): a cheap
+  top-level fingerprint of the place used by the backend to detect an unchanged
+  project and skip a full re-index.
 - `error: { code, message, retryable }` when failed
+
+## Session Liveness
+
+- The plugin decouples polling from command execution: a poll/dispatch loop keeps
+  `lastSeenAt` fresh (every authenticated request refreshes it) while a separate
+  executor drains one command at a time, so long applies and approval prompts can
+  never stall the connection.
+- `POST /api/studio/session/ping` (plugin token) is a side-effect-free liveness
+  ping. It refreshes `lastSeenAt` without claiming a command and accepts an
+  optional `{ placeSignature }` body used for manifest freshness.
+
+## Manifest Freshness
+
+- `StudioManifestService.isRevisionFresh({ userId, sessionId, placeId, ttlMs, currentSignature })`
+  gates re-indexing. A completed revision is reused when it is within the TTL
+  (default 5 min, `STUDIO_MANIFEST_FRESH_TTL_MS`) and the place signature has not
+  changed. A changed signature forces a re-index even inside the TTL. Callers:
+  artifact refinement preflight, and the website (cache-first; explicit "Rescan"
+  forces a live `get_project_manifest`).
 
 ## Discovery And Reads
 

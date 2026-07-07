@@ -214,6 +214,24 @@ function pingHealth()
 	return result.ok == true, result.latencyMs or lastLatencyMs
 end
 
+-- Authenticated, side-effect-free liveness ping. Unlike GET /commands/next it
+-- never claims a command, so it is safe to call on a timer to keep the backend
+-- session's lastSeenAt fresh during long-running operations.
+function pingSession(token, placeSignature)
+	if not token then
+		return false, lastLatencyMs
+	end
+	local body = {}
+	if type(placeSignature) == "string" and placeSignature ~= "" then
+		body.placeSignature = placeSignature
+	end
+	local result = requestOnce("POST", "/api/studio/session/ping", body, token, { maxAttempts = 1 })
+	if result.status == 401 or result.status == 403 then
+		return false, result.latencyMs or lastLatencyMs
+	end
+	return result.ok == true, result.latencyMs or lastLatencyMs
+end
+
 function getToken()
 	return plugin:GetSetting("nexusrbxStudioToken")
 end
