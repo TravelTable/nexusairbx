@@ -11,12 +11,14 @@ local toolbar = plugin:CreateToolbar("NexusRBX")
 local toggleButton = toolbar:CreateButton("NexusRBX", "Open NexusRBX Studio Bridge", "")
 toggleButton.ClickableWhenViewportHidden = true
 
+-- Open as a floating, draggable window instead of docked to the side. Studio
+-- still lets the user re-dock it; this only changes the initial state.
 local widgetInfo = DockWidgetPluginGuiInfo.new(
-	Enum.InitialDockState.Right,
+	Enum.InitialDockState.Float,
 	false,
 	false,
-	400,
-	560,
+	420,
+	620,
 	320,
 	360
 )
@@ -26,11 +28,13 @@ widget.Title = "NexusRBX Studio Bridge"
 
 local localSnapshots = {}
 local applying = false
-local pollingActive = false
-local lastErrorText = nil
-local diagnosticsOpen = false
-local pendingApproval = nil
-local selectedSnapshotIds = {}
+local pollingActive, lastErrorText, diagnosticsOpen, pendingApproval, selectedSnapshotIds = false, nil, false, nil, {}
+
+-- Tabbed navigation state. Sections are grouped into tabs and shown/hidden by
+-- `setActiveTab`; `refreshControls` derives per-section visibility from the
+-- active tab plus the paired state. Declared on one line to conserve the
+-- bundler's top-level local budget.
+local tabButtons, activeTab, setActiveTab, tabBar, promptSection = {}, "Agent", nil, nil, nil
 
 local function themeColor(color)
 	return settings().Studio.Theme:GetColor(color)
@@ -55,7 +59,7 @@ local COLORS = {
 }
 
 -- Single source of truth for the connection state machine. Every visible status
--- (orb, pill, header tint) is derived from one of these entries so the UI can
+-- (pill, header tint) is derived from one of these entries so the UI can
 -- never claim "connected" while it is actually failing or idle.
 local BRIDGE_STATES = {
 	unpaired = { label = "NOT PAIRED", color = COLORS.muted, pulse = false },
@@ -67,6 +71,8 @@ local BRIDGE_STATES = {
 }
 
 local currentBridgeState = "unpaired"
+local STATUS_PILL_HEIGHT, STATUS_PILL_TEXT_SIZE = 20, 9
+local STATUS_PILL_MIN_WIDTH, STATUS_PILL_PAD, STATUS_PILL_HEADER_RESERVE = 40, 8, 108
 
 local root = Instance.new("Frame")
 root.Name = "NexusBridgeRoot"
@@ -225,13 +231,13 @@ header.AutomaticSize = Enum.AutomaticSize.Y
 header.Parent = scrollRoot
 
 local title = makeText(header, "Title", "NexusRBX", 22, 16, true)
-title.Size = UDim2.new(1, -120, 0, 22)
+title.Size = UDim2.new(1, -STATUS_PILL_HEADER_RESERVE, 0, 22)
 title.LayoutOrder = 1
 local subtitle = makeText(header, "Subtitle", "Plugin " .. displayPluginVersion, 18, 11, false, themeColor(Enum.StudioStyleGuideColor.DimmedText))
-subtitle.Size = UDim2.new(1, -120, 0, 18)
+subtitle.Size = UDim2.new(1, -STATUS_PILL_HEADER_RESERVE, 0, 18)
 subtitle.LayoutOrder = 2
 healthLabel = makeText(header, "Health", "Not synced yet", 16, 11, false, themeColor(Enum.StudioStyleGuideColor.DimmedText))
-healthLabel.Size = UDim2.new(1, -120, 0, 16)
+healthLabel.Size = UDim2.new(1, -STATUS_PILL_HEADER_RESERVE, 0, 16)
 healthLabel.LayoutOrder = 3
 
 local headerList = Instance.new("UIListLayout")
@@ -243,46 +249,19 @@ local statusPill = Instance.new("TextLabel")
 statusPill.Name = "StatusPill"
 statusPill.AnchorPoint = Vector2.new(1, 0)
 statusPill.Position = UDim2.new(1, 0, 0, 3)
-statusPill.Size = UDim2.new(0, 118, 0, 26)
+statusPill.Size = UDim2.new(0, STATUS_PILL_MIN_WIDTH, 0, STATUS_PILL_HEIGHT)
 statusPill.BackgroundColor3 = COLORS.muted
 statusPill.TextColor3 = Color3.fromRGB(255, 255, 255)
 statusPill.Font = Enum.Font.GothamBold
-statusPill.TextSize = 11
+statusPill.TextSize = STATUS_PILL_TEXT_SIZE
 statusPill.Text = "NOT PAIRED"
-statusPill.TextXAlignment = Enum.TextXAlignment.Right
+statusPill.TextXAlignment = Enum.TextXAlignment.Center
 statusPill.Parent = header
-applyCorner(statusPill, 13)
+applyCorner(statusPill, STATUS_PILL_HEIGHT / 2)
 local statusPillPad = Instance.new("UIPadding")
-statusPillPad.PaddingLeft = UDim.new(0, 24)
-statusPillPad.PaddingRight = UDim.new(0, 10)
+statusPillPad.PaddingLeft = UDim.new(0, STATUS_PILL_PAD)
+statusPillPad.PaddingRight = UDim.new(0, STATUS_PILL_PAD)
 statusPillPad.Parent = statusPill
-
--- Animated status orb sits inside the left of the pill.
-local statusOrb = Instance.new("Frame")
-statusOrb.Name = "StatusOrb"
-statusOrb.AnchorPoint = Vector2.new(0, 0.5)
-statusOrb.Position = UDim2.new(0, 8, 0.5, 0)
-statusOrb.Size = UDim2.new(0, 10, 0, 10)
-statusOrb.BackgroundColor3 = COLORS.muted
-statusOrb.BorderSizePixel = 0
-statusOrb.ZIndex = 3
-statusOrb.Parent = statusPill
-applyCorner(statusOrb, 5)
-
-local statusOrbRing = Instance.new("Frame")
-statusOrbRing.Name = "OrbRing"
-statusOrbRing.AnchorPoint = Vector2.new(0.5, 0.5)
-statusOrbRing.Position = UDim2.new(0.5, 0, 0.5, 0)
-statusOrbRing.Size = UDim2.new(1, 0, 1, 0)
-statusOrbRing.BackgroundTransparency = 1
-statusOrbRing.ZIndex = 2
-statusOrbRing.Parent = statusOrb
-applyCorner(statusOrbRing, 8)
-local statusOrbStroke = Instance.new("UIStroke")
-statusOrbStroke.Color = COLORS.muted
-statusOrbStroke.Thickness = 2
-statusOrbStroke.Transparency = 1
-statusOrbStroke.Parent = statusOrbRing
 
 local banner = Instance.new("TextButton")
 banner.Name = "Banner"
@@ -297,6 +276,47 @@ banner.Visible = false
 banner.AutoButtonColor = false
 banner.Parent = scrollRoot
 applyCorner(banner, 6)
+
+-- Tab bar: one button per top-level view. Only shown once paired (unpaired the
+-- panel is just the pairing card). Click handlers are wired after setActiveTab
+-- is defined further down. Wrapped in a do-block so its locals stay off the
+-- bundler's top-level budget.
+do
+	tabBar = Instance.new("Frame")
+	tabBar.Name = "TabBar"
+	tabBar.BackgroundTransparency = 1
+	tabBar.Size = UDim2.new(1, 0, 0, 32)
+	tabBar.Visible = false
+	tabBar.Parent = scrollRoot
+	local tabBarLayout = Instance.new("UIListLayout")
+	tabBarLayout.FillDirection = Enum.FillDirection.Horizontal
+	tabBarLayout.HorizontalAlignment = Enum.HorizontalAlignment.Left
+	tabBarLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+	tabBarLayout.SortOrder = Enum.SortOrder.LayoutOrder
+	tabBarLayout.Padding = UDim.new(0, 6)
+	tabBarLayout.Parent = tabBar
+	local TAB_ORDER = { "Connect", "Agent", "Activity", "Recovery" }
+	for index, tabName in ipairs(TAB_ORDER) do
+		local tabButton = Instance.new("TextButton")
+		tabButton.Name = "Tab_" .. tabName
+		tabButton.Size = UDim2.new(0.25, -5, 1, 0)
+		tabButton.BackgroundColor3 = themeColor(Enum.StudioStyleGuideColor.Button)
+		tabButton.TextColor3 = themeColor(Enum.StudioStyleGuideColor.DimmedText)
+		tabButton.Font = Enum.Font.GothamBold
+		tabButton.TextSize = 12
+		tabButton.Text = tabName
+		tabButton.AutoButtonColor = false
+		tabButton.LayoutOrder = index
+		tabButton.Parent = tabBar
+		applyCorner(tabButton, 6)
+		tabButton.MouseButton1Click:Connect(function()
+			if setActiveTab then
+				setActiveTab(tabName)
+			end
+		end)
+		tabButtons[tabName] = tabButton
+	end
+end
 
 local pairSection = makeSection("Pairing")
 makeText(pairSection, "PairTitle", "Pair Studio", 18, 13, true)
@@ -393,10 +413,94 @@ makeText(manifestSection, "ManifestTitle", "Project Index", 18, 13, true)
 manifestSummaryLabel = makeText(manifestSection, "ManifestSummary", "Not indexed yet", 18, 12, false, themeColor(Enum.StudioStyleGuideColor.MainText))
 manifestFreshnessLabel = makeText(manifestSection, "ManifestFreshness", "Rescan runs from the website when needed.", 16, 11, false, themeColor(Enum.StudioStyleGuideColor.DimmedText))
 
+-- In-Studio prompt bar (Agent tab). Starts the full agent for the paired user;
+-- resulting commands flow back through the normal poll/execute/approval loop and
+-- the run is mirrored to the website chat. Wrapped in a do-block so its locals
+-- stay off the bundler's top-level budget; promptSection is module-scope so
+-- refreshControls can toggle its visibility per tab.
+do
+	promptSection = makeSection("StudioPrompt")
+	makeText(promptSection, "PromptTitle", "Ask in Studio", 18, 13, true)
+	makeText(promptSection, "PromptHint", "Describe a change. It runs the full agent and mirrors to the website.", 28, 11, false, themeColor(Enum.StudioStyleGuideColor.DimmedText))
+	local promptBox = Instance.new("TextBox")
+	promptBox.Name = "PromptInput"
+	promptBox.Size = UDim2.new(1, 0, 0, 60)
+	promptBox.BackgroundColor3 = themeColor(Enum.StudioStyleGuideColor.MainBackground)
+	promptBox.TextColor3 = themeColor(Enum.StudioStyleGuideColor.MainText)
+	promptBox.PlaceholderText = "e.g. Add a sprint system to the player controller"
+	promptBox.ClearTextOnFocus = false
+	promptBox.MultiLine = true
+	promptBox.TextWrapped = true
+	promptBox.TextXAlignment = Enum.TextXAlignment.Left
+	promptBox.TextYAlignment = Enum.TextYAlignment.Top
+	promptBox.Text = ""
+	promptBox.Font = Enum.Font.Gotham
+	promptBox.TextSize = 13
+	promptBox.Parent = promptSection
+	applyCorner(promptBox, 6)
+	applyStroke(promptBox, COLORS.accent, 0.45)
+	local promptPad = Instance.new("UIPadding")
+	promptPad.PaddingTop = UDim.new(0, 6)
+	promptPad.PaddingBottom = UDim.new(0, 6)
+	promptPad.PaddingLeft = UDim.new(0, 8)
+	promptPad.PaddingRight = UDim.new(0, 8)
+	promptPad.Parent = promptBox
+	local sendButton = makeButton(promptSection, "PromptSend", "Send to Agent", COLORS.accent)
+
+	local function submitPrompt()
+		if sendButton:GetAttribute("NexusEnabled") == false then
+			return
+		end
+		local token = getToken and getToken() or nil
+		if not token then
+			showToast("Pair Studio first", "error")
+			return
+		end
+		local text = (promptBox.Text or ""):gsub("^%s+", ""):gsub("%s+$", "")
+		if text == "" then
+			showToast("Enter a prompt", "info")
+			promptBox:CaptureFocus()
+			return
+		end
+		setButtonEnabled(sendButton, false, "Sending...")
+		local ok, dataOrError = request("POST", "/api/studio/agent/prompt", {
+			prompt = text,
+			chatMode = "agent",
+		}, token)
+		setButtonEnabled(sendButton, true, "Send to Agent")
+		if ok then
+			promptBox.Text = ""
+			setLast("agent run started from Studio")
+			pushActivity({
+				commandType = "agent_prompt",
+				status = "succeeded",
+				detail = text:sub(1, 80),
+			})
+			showToast("Agent run started - watch the activity feed", "success")
+		else
+			local message = tostring(dataOrError)
+			local parsed = string.match(message, '"error"%s*:%s*"([^"]+)"')
+				or string.match(message, '"message"%s*:%s*"([^"]+)"')
+			setLast("agent prompt failed: " .. (parsed or message))
+			showToast(parsed or "Prompt failed", "error")
+		end
+	end
+
+	sendButton.MouseButton1Click:Connect(submitPrompt)
+end
+
 local activitySection = makeSection("Activity")
 makeText(activitySection, "ActivityTitle", "Bridge Activity", 18, 13, true)
 progressLabel = makeText(activitySection, "Progress", "Run: none", 20, 12, false, themeColor(Enum.StudioStyleGuideColor.DimmedText))
 activeLabel = makeText(activitySection, "Active", "Active tool: none", 20, 13, false)
+
+-- Playtest observer surface: reads captured LogService output on demand. Wired in
+-- Main.server.lua where the collectOutput handler is in scope. Exported (no local)
+-- so it lands on the bundler's shared export table without a new top-level local.
+playtestLogsButton = makeButton(activitySection, "PlaytestLogs", "Check playtest output", themeColor(Enum.StudioStyleGuideColor.Button))
+playtestStrip = makeText(activitySection, "PlaytestStrip", "", nil, 11, false, themeColor(Enum.StudioStyleGuideColor.DimmedText), true)
+playtestStrip.TextWrapped = true
+playtestStrip.Visible = false
 
 local feedScroll = Instance.new("ScrollingFrame")
 feedScroll.Name = "ActivityFeed"
@@ -456,6 +560,10 @@ undoBatchButton = makeButton(safetySection, "UndoBatchButton", "Undo Last Batch"
 local settingsSection = makeSection("Settings")
 makeText(settingsSection, "SettingsTitle", "Settings", 18, 13, true)
 approvalToggleButton = makeButton(settingsSection, "ApprovalToggle", "Review before apply: OFF", themeColor(Enum.StudioStyleGuideColor.Button))
+-- Team Create awareness: who else is editing this place (masked identity).
+-- Populated by the heartbeat loop via GET /api/studio/collaborators.
+collaboratorsLabel = makeText(settingsSection, "Collaborators", "Collaborators: checking...", nil, 11, false, themeColor(Enum.StudioStyleGuideColor.DimmedText), true)
+collaboratorsLabel.TextWrapped = true
 
 local footer = Instance.new("Frame")
 footer.Name = "Footer"
@@ -501,7 +609,8 @@ local confirmSheet = Instance.new("Frame")
 confirmSheet.Name = "Sheet"
 confirmSheet.AnchorPoint = Vector2.new(0.5, 0.5)
 confirmSheet.Position = UDim2.fromScale(0.5, 0.52)
-confirmSheet.Size = UDim2.new(1, -32, 0, 154)
+confirmSheet.Size = UDim2.new(1, -32, 0, 0)
+confirmSheet.AutomaticSize = Enum.AutomaticSize.Y
 confirmSheet.BackgroundColor3 = themeColor(Enum.StudioStyleGuideColor.MainBackground)
 confirmSheet.ZIndex = 11
 confirmSheet.Parent = confirmOverlay
@@ -520,6 +629,21 @@ sheetList.Parent = confirmSheet
 makeText(confirmSheet, "ConfirmTitle", "Restore snapshots?", 22, 14, true)
 local confirmCopy = makeText(confirmSheet, "ConfirmCopy", "This restores selected local snapshots from NexusRBX changes.", 38, 12, false, themeColor(Enum.StudioStyleGuideColor.DimmedText))
 confirmCopy.TextWrapped = true
+-- By default restore keeps instances the user edited after the agent's write.
+-- This toggle forces a full revert. State is stored on confirmRestoreButton so no
+-- extra module-scope local is needed. Wrapped in a do-block to keep its locals
+-- off the bundler's top-level budget.
+do
+	local forceToggleButton = makeButton(confirmSheet, "ForceToggle", "Also revert my edits: OFF", themeColor(Enum.StudioStyleGuideColor.Button))
+	forceToggleButton.MouseButton1Click:Connect(function()
+		local nextValue = confirmRestoreButton:GetAttribute("ForceRestore") ~= true
+		confirmRestoreButton:SetAttribute("ForceRestore", nextValue)
+		local baseColor = nextValue and COLORS.warning or themeColor(Enum.StudioStyleGuideColor.Button)
+		forceToggleButton:SetAttribute("BaseColor", baseColor)
+		forceToggleButton.BackgroundColor3 = baseColor
+		forceToggleButton.Text = nextValue and "Also revert my edits: ON" or "Also revert my edits: OFF"
+	end)
+end
 local confirmRow = makeRow(confirmSheet, "ConfirmActions", 34)
 confirmRestoreButton = makeButton(confirmRow, "ConfirmRestoreButton", "Restore", COLORS.accent)
 confirmRestoreButton.Size = UDim2.new(0.5, -4, 0, 34)
@@ -715,8 +839,10 @@ local function rebuildSnapshotList()
 				return
 			end
 			local recording = beginRecording("NexusRBX restore snapshot")
+			-- Explicit per-row restore is a clear intent, so force it past the
+			-- keep-my-edits guard.
 			local ok, resultOrError = pcall(function()
-				return restoreSnapshots({ snapshots = { snap } })
+				return restoreSnapshots({ snapshots = { snap }, force = true })
 			end)
 			if ok then
 				finishRecording(recording, true)
@@ -740,13 +866,19 @@ end
 local function refreshControls()
 	local paired = getToken ~= nil and getToken() ~= nil
 	local busy = applying == true
+	-- Tabs only exist once paired; unpaired the panel is just the pairing card.
+	local tab = paired and activeTab or "Connect"
+	tabBar.Visible = paired
 	pairSection.Visible = not paired
-	agentSection.Visible = paired
-	manifestSection.Visible = paired
-	activitySection.Visible = paired
-	safetySection.Visible = paired
-	settingsSection.Visible = paired
-	footer.Visible = paired
+	agentSection.Visible = paired and tab == "Agent"
+	manifestSection.Visible = paired and tab == "Agent"
+	if promptSection then
+		promptSection.Visible = paired and tab == "Agent"
+	end
+	activitySection.Visible = paired and tab == "Activity"
+	safetySection.Visible = paired and tab == "Recovery"
+	settingsSection.Visible = paired and tab == "Connect"
+	footer.Visible = paired and tab == "Connect"
 	local cleanCode = string.upper((codeBox.Text or ""):gsub("%s+", ""))
 	setButtonEnabled(pairButton, (not paired) and (not busy) and cleanCode ~= "", busy and "Pairing..." or "Pair Studio")
 	setButtonEnabled(pullButton, paired and (not busy), busy and "Working..." or "Pull Latest")
@@ -758,21 +890,46 @@ local function refreshControls()
 	refreshApprovalToggle()
 end
 
-local orbSizeTween, orbFadeTween = nil, nil
-
-local function applyOrbPulse(active)
-	if orbSizeTween then orbSizeTween:Cancel() orbSizeTween = nil end
-	if orbFadeTween then orbFadeTween:Cancel() orbFadeTween = nil end
-	statusOrbRing.Size = UDim2.new(1, 0, 1, 0)
-	statusOrbStroke.Transparency = 1
-	if active then
-		local info = TweenInfo.new(1.1, Enum.EasingStyle.Sine, Enum.EasingDirection.Out, -1, false)
-		statusOrbStroke.Transparency = 0.15
-		orbSizeTween = TweenService:Create(statusOrbRing, info, { Size = UDim2.new(3, 0, 3, 0) })
-		orbFadeTween = TweenService:Create(statusOrbStroke, info, { Transparency = 1 })
-		orbSizeTween:Play()
-		orbFadeTween:Play()
+-- Restyle the tab buttons for the active view, persist the choice, and refresh
+-- section visibility. Assigned to the forward-declared `setActiveTab` upvalue so
+-- the tab button click handlers created earlier can call it.
+function setActiveTab(name)
+	if not tabButtons[name] then
+		name = "Agent"
 	end
+	activeTab = name
+	pcall(function()
+		plugin:SetSetting("nexusrbxActiveTab", name)
+	end)
+	for tabName, tabButton in pairs(tabButtons) do
+		local isActive = tabName == name
+		local baseColor = isActive and COLORS.accent or themeColor(Enum.StudioStyleGuideColor.Button)
+		tabButton:SetAttribute("BaseColor", baseColor)
+		TweenService:Create(tabButton, TweenInfo.new(0.12, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { BackgroundColor3 = baseColor }):Play()
+		tabButton.TextColor3 = isActive and Color3.fromRGB(255, 255, 255) or themeColor(Enum.StudioStyleGuideColor.DimmedText)
+	end
+	refreshControls()
+end
+
+do
+	local stored = nil
+	pcall(function()
+		stored = plugin:GetSetting("nexusrbxActiveTab")
+	end)
+	if type(stored) == "string" and tabButtons[stored] then
+		activeTab = stored
+	end
+end
+
+local function resizeStatusPill(label)
+	local bounds = game:GetService("TextService"):GetTextSize(
+		label,
+		statusPill.TextSize,
+		statusPill.Font,
+		Vector2.new(512, STATUS_PILL_HEIGHT)
+	)
+	local width = math.ceil((STATUS_PILL_PAD * 2) + bounds.X)
+	statusPill.Size = UDim2.new(0, math.max(STATUS_PILL_MIN_WIDTH, width), 0, STATUS_PILL_HEIGHT)
 end
 
 -- Central state setter. `state` is one of BRIDGE_STATES keys.
@@ -781,9 +938,8 @@ function setBridgeState(state, detail)
 	local def = BRIDGE_STATES[key]
 	currentBridgeState = key
 	statusPill.Text = def.label
+	resizeStatusPill(def.label)
 	TweenService:Create(statusPill, TweenInfo.new(0.16, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { BackgroundColor3 = def.color }):Play()
-	TweenService:Create(statusOrb, TweenInfo.new(0.16, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { BackgroundColor3 = def.color }):Play()
-	applyOrbPulse(def.pulse)
 	if detail ~= nil and tostring(detail) ~= "" and (key == "working" or key == "degraded") then
 		activeLabel.Text = "Active tool: " .. tostring(detail)
 	end
@@ -796,7 +952,6 @@ end
 
 function setPollingPulse(active)
 	pollingActive = active == true
-	statusOrb.BackgroundTransparency = active and 0.35 or 0
 end
 
 function setHealth(syncedAt, latencyMs)
@@ -1031,13 +1186,49 @@ function showRestoreConfirmation()
 		setLast("no local snapshots to restore")
 		return false
 	end
-	confirmCopy.Text = ("Restore all %d local snapshot(s)? This can undo recent generated changes."):format(#localSnapshots)
+	confirmCopy.Text = ("Restore all %d local snapshot(s)? Edits you made after the agent's changes are kept unless you turn on full revert."):format(#localSnapshots)
+	-- Reset the force toggle each time the sheet opens.
+	confirmRestoreButton:SetAttribute("ForceRestore", false)
+	local forceToggleButton = confirmSheet:FindFirstChild("ForceToggle")
+	if forceToggleButton then
+		local baseColor = themeColor(Enum.StudioStyleGuideColor.Button)
+		forceToggleButton:SetAttribute("BaseColor", baseColor)
+		forceToggleButton.BackgroundColor3 = baseColor
+		forceToggleButton.Text = "Also revert my edits: OFF"
+	end
 	confirmOverlay.Visible = true
 	return true
 end
 
 function hideRestoreConfirmation()
 	confirmOverlay.Visible = false
+end
+
+-- Render the same-place collaborators list into the Connect tab.
+function updateCollaborators(list)
+	if not collaboratorsLabel then
+		return
+	end
+	if type(list) ~= "table" or #list == 0 then
+		collaboratorsLabel.Text = "Collaborators: none on this place"
+		return
+	end
+	local parts = {}
+	for _, collaborator in ipairs(list) do
+		local who = tostring(collaborator.label or "collaborator")
+		local paths = ""
+		if type(collaborator.activePaths) == "table" and #collaborator.activePaths > 0 then
+			paths = " - " .. tostring(collaborator.activePaths[1])
+			if #collaborator.activePaths > 1 then
+				paths = paths .. (" (+%d)"):format(#collaborator.activePaths - 1)
+			end
+		end
+		table.insert(parts, "- " .. who .. paths)
+		if #parts >= 5 then
+			break
+		end
+	end
+	collaboratorsLabel.Text = ("<b>Collaborators (%d)</b>\n%s"):format(#list, table.concat(parts, "\n"))
 end
 
 local function describeAffectedPaths(command)
@@ -1163,9 +1354,10 @@ undoBatchButton.MouseButton1Click:Connect(function()
 	end)
 	if ok then
 		finishRecording(recording, true)
-		setLast(("undo batch complete: %d restored, %d removed"):format(resultOrError.restored or 0, resultOrError.removed or 0))
-		pushActivity({ commandType = "undo_last_batch", status = "succeeded", detail = tostring(#batch) .. " snapshots" })
-		showToast("Batch undone", "success")
+		local keptText = (resultOrError.kept or 0) > 0 and (", %d kept (you edited them)"):format(resultOrError.kept) or ""
+		setLast(("undo batch complete: %d restored, %d removed%s"):format(resultOrError.restored or 0, resultOrError.removed or 0, keptText))
+		pushActivity({ commandType = "undo_last_batch", status = "succeeded", detail = tostring(#batch) .. " snapshots" .. keptText })
+		showToast((resultOrError.kept or 0) > 0 and ("Batch undone; kept %d of your edits"):format(resultOrError.kept) or "Batch undone", "success")
 	else
 		finishRecording(recording, false)
 		setLast("undo batch failed: " .. tostring(resultOrError))
@@ -1257,4 +1449,4 @@ end)
 onboardingDismissButton.MouseButton1Click:Connect(hideOnboarding)
 
 refreshApprovalToggle()
-refreshControls()
+setActiveTab(activeTab)

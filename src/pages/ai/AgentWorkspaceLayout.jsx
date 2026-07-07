@@ -728,6 +728,7 @@ export default function AgentWorkspaceLayout({ controller }) {
           approvingStepId={studio?.approvingStepId}
           restoringRun={studio?.restoringRun}
           studioConnected={studio?.connected}
+          studioCollaborators={studio?.collaborators}
           studioLoading={studio?.loading}
           studioEnabled={studio?.enabled}
           onStudioEnabledChange={handleStudioEnabledChange}

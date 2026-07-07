@@ -308,7 +308,7 @@ end
 -- END src/net/httpClient.lua
 
 -- BEGIN src/studio/serialization.lua
-local SCRIPT_CLASSES, stableHash, nowMs, readManagedId, attributesOf, propertyHash, scriptHash, propertiesOf, structuredUnsupported, lastBatchSnapshots
+local SCRIPT_CLASSES, stableHash, nowMs, readManagedId, attributesOf, propertyHash, scriptHash, propertiesOf, structuredUnsupported, lastBatchSnapshots, AGENT_ARTIFACT_ID_ATTRIBUTE, AGENT_FILE_ID_ATTRIBUTE
 do
 local NATIVE_MODEL_LIMITS = {
 	maxInstances = 750,
@@ -481,8 +481,8 @@ local CREATABLE_CLASSES = {
 	ModuleScript = true,
 }
 
-local AGENT_ARTIFACT_ID_ATTRIBUTE = "AgentArtifactId"
-local AGENT_FILE_ID_ATTRIBUTE = "AgentFileId"
+AGENT_ARTIFACT_ID_ATTRIBUTE = "AgentArtifactId"
+AGENT_FILE_ID_ATTRIBUTE = "AgentFileId"
 local NEXUS_MANAGED_ID_ATTRIBUTE = "NexusManagedId"
 lastBatchSnapshots = {}
 
@@ -836,8 +836,22 @@ end
 -- END src/studio/path.lua
 
 -- BEGIN src/studio/snapshot.lua
-local snapshotInstance, appendSnapshotTree, beginRecording, finishRecording, restoreSnapshots
+local snapshotInstance, appendSnapshotTree, beginRecording, finishRecording, restoreSnapshots, snapshotStateHash, createOrReplaceInstance
 do
+-- Cheap fingerprint of an instance's mutable state, used to tell whether a human
+-- edited an instance after the agent wrote it. Scripts hash their source; other
+-- instances hash curated properties + attributes + tags.
+snapshotStateHash = function(inst)
+	if not inst then
+		return nil
+	end
+	if SCRIPT_CLASSES[inst.ClassName] then
+		return scriptHash(inst)
+	end
+	local ok, hashValue = pcall(propertyHash, inst)
+	return ok and hashValue or nil
+end
+
 snapshotInstance = function(path)
 	local inst = resolvePath(path)
 	if not inst then
@@ -874,6 +888,11 @@ snapshotInstance = function(path)
 		local ok, source = readScriptSource(inst)
 		snap.source = ok and source or ""
 	end
+
+	-- Pre-edit fingerprint: the state the instance had before the agent touched
+	-- it. `postHash` (the state right after the agent's write) is stamped later
+	-- by the command executor so restore can detect human edits made since.
+	snap.preHash = snapshotStateHash(inst)
 
 	table.insert(localSnapshots, snap)
 	updateSnapshotLabel()
@@ -912,9 +931,13 @@ finishRecording = function(recording, commit)
 	end)
 end
 
-local function createOrReplaceInstance(path, className, properties, createParents)
-	if not CREATABLE_CLASSES[className] then
-		error("Unsupported className: " .. tostring(className))
+createOrReplaceInstance = function(path, className, properties, createParents)
+	local resolvedClass = tostring(className or "")
+	if resolvedClass == "" then
+		error("Missing className for " .. tostring(path))
+	end
+	if not CREATABLE_CLASSES[resolvedClass] then
+		error("Unsupported className: " .. resolvedClass)
 	end
 	local parent, name = ensureParent(path, createParents ~= false)
 	if not parent or not name then
@@ -924,7 +947,7 @@ local function createOrReplaceInstance(path, className, properties, createParent
 	if existing then
 		existing:Destroy()
 	end
-	local inst = Instance.new(className)
+	local inst = Instance.new(resolvedClass)
 	inst.Name = name
 	for key, value in pairs(properties or {}) do
 		local ok, err = safeSetProperty(inst, key, value)
@@ -935,11 +958,70 @@ local function createOrReplaceInstance(path, className, properties, createParent
 	inst.Parent = parent
 	return inst
 end
+
+restoreSnapshots = function(payload)
+	local restored = 0
+	local removed = 0
+	-- `kept` counts instances left untouched because the user edited them after
+	-- the agent's write. `force` bypasses that protection for a full revert.
+	local kept = 0
+	local force = payload.force == true
+	local snapshots = payload.snapshots or localSnapshots
+	for i = #snapshots, 1, -1 do
+		local snap = snapshots[i]
+		if snap.existed == false then
+			local current = resolvePath(snap.path)
+			if current then
+				-- The agent created this. If the user changed it since the agent
+				-- wrote it, keep their version instead of deleting it.
+				if not force and snap.postHash then
+					local currentHash = snapshotStateHash(current)
+					if currentHash and currentHash ~= snap.postHash then
+						kept = kept + 1
+						continue
+					end
+				end
+				current:Destroy()
+				removed = removed + 1
+			end
+		elseif snap.path and snap.className and snap.className ~= "" then
+			-- The agent overwrote/edited this. If the current state no longer
+			-- matches what the agent produced (and isn't already the pre-edit
+			-- state), a human edited it since -> keep their edits.
+			if not force and snap.postHash then
+				local current = resolvePath(snap.path)
+				if current then
+					local currentHash = snapshotStateHash(current)
+					if currentHash and currentHash ~= snap.postHash and currentHash ~= snap.preHash then
+						kept = kept + 1
+						continue
+					end
+				end
+			end
+			local inst = createOrReplaceInstance(snap.path, snap.className, snap.properties or {}, true)
+			if SCRIPT_CLASSES[inst.ClassName] and snap.source ~= nil then
+				writeScriptSource(inst, snap.source)
+			end
+			for key, value in pairs(snap.attributes or {}) do
+				pcall(function()
+					inst:SetAttribute(key, value)
+				end)
+			end
+			for _, tag in ipairs(snap.tags or {}) do
+				pcall(function()
+					Services.CollectionService:AddTag(inst, tag)
+				end)
+			end
+			restored = restored + 1
+		end
+	end
+	return { restored = restored, removed = removed, kept = kept }
+end
 end
 -- END src/studio/snapshot.lua
 
 -- BEGIN src/ui/BridgePanel.lua
-local setStatus, setLast, setBusy, setActive, setRun, setProgress, pushActivity, showToast, setHealth, setPollingPulse, showApprovalGate, hideApprovalGate, waitForApproval, getApprovalModeEnabledExport, handleSessionExpired, localSnapshots, applying, pairButton, codeBox, pullButton, restoreButton, disconnectButton, confirmRestoreButton, cancelRestoreButton, approvalToggleButton, approvalConfirmButton, approvalDeclineButton, refreshControls, runSetupCheck, showOnboarding, hideOnboarding, checkSetupButton, onboardingDismissButton, showRestoreConfirmation, hideRestoreConfirmation, updateSnapshotLabel, widget, toggleButton, healthLabel, progressLabel, feedEmptyLabel, approvalCopy
+local setStatus, setLast, setBusy, setActive, setRun, setProgress, pushActivity, showToast, setHealth, setPollingPulse, showApprovalGate, hideApprovalGate, waitForApproval, getApprovalModeEnabledExport, handleSessionExpired, localSnapshots, applying, pairButton, codeBox, pullButton, restoreButton, disconnectButton, confirmRestoreButton, cancelRestoreButton, approvalToggleButton, approvalConfirmButton, approvalDeclineButton, refreshControls, runSetupCheck, showOnboarding, hideOnboarding, checkSetupButton, onboardingDismissButton, showRestoreConfirmation, hideRestoreConfirmation, updateSnapshotLabel, widget, toggleButton, healthLabel, progressLabel, feedEmptyLabel, approvalCopy, playtestLogsButton, playtestStrip, setButtonEnabled, collaboratorsLabel, updateCollaborators
 do
 -- NexusRBX Studio Bridge UI
 -- Dock panel: pairing, activity feed, recovery, approval gate, health.
@@ -954,12 +1036,14 @@ local toolbar = plugin:CreateToolbar("NexusRBX")
 toggleButton = toolbar:CreateButton("NexusRBX", "Open NexusRBX Studio Bridge", "")
 toggleButton.ClickableWhenViewportHidden = true
 
+-- Open as a floating, draggable window instead of docked to the side. Studio
+-- still lets the user re-dock it; this only changes the initial state.
 local widgetInfo = DockWidgetPluginGuiInfo.new(
-	Enum.InitialDockState.Right,
+	Enum.InitialDockState.Float,
 	false,
 	false,
-	400,
-	560,
+	420,
+	620,
 	320,
 	360
 )
@@ -969,11 +1053,13 @@ widget.Title = "NexusRBX Studio Bridge"
 
 localSnapshots = {}
 applying = false
-local pollingActive = false
-local lastErrorText = nil
-local diagnosticsOpen = false
-local pendingApproval = nil
-local selectedSnapshotIds = {}
+local pollingActive, lastErrorText, diagnosticsOpen, pendingApproval, selectedSnapshotIds = false, nil, false, nil, {}
+
+-- Tabbed navigation state. Sections are grouped into tabs and shown/hidden by
+-- `setActiveTab`; `refreshControls` derives per-section visibility from the
+-- active tab plus the paired state. Declared on one line to conserve the
+-- bundler's top-level local budget.
+local tabButtons, activeTab, setActiveTab, tabBar, promptSection = {}, "Agent", nil, nil, nil
 
 local function themeColor(color)
 	return settings().Studio.Theme:GetColor(color)
@@ -998,7 +1084,7 @@ local COLORS = {
 }
 
 -- Single source of truth for the connection state machine. Every visible status
--- (orb, pill, header tint) is derived from one of these entries so the UI can
+-- (pill, header tint) is derived from one of these entries so the UI can
 -- never claim "connected" while it is actually failing or idle.
 local BRIDGE_STATES = {
 	unpaired = { label = "NOT PAIRED", color = COLORS.muted, pulse = false },
@@ -1010,6 +1096,8 @@ local BRIDGE_STATES = {
 }
 
 local currentBridgeState = "unpaired"
+local STATUS_PILL_HEIGHT, STATUS_PILL_TEXT_SIZE = 20, 9
+local STATUS_PILL_MIN_WIDTH, STATUS_PILL_PAD, STATUS_PILL_HEADER_RESERVE = 40, 8, 108
 
 local root = Instance.new("Frame")
 root.Name = "NexusBridgeRoot"
@@ -1123,7 +1211,7 @@ local function makeRow(parent, name, height)
 	return row
 end
 
-local function setButtonEnabled(button, enabled, labelOverride)
+setButtonEnabled = function(button, enabled, labelOverride)
 	button:SetAttribute("NexusEnabled", enabled == true)
 	button.Active = enabled == true
 	button.AutoButtonColor = false
@@ -1168,13 +1256,13 @@ header.AutomaticSize = Enum.AutomaticSize.Y
 header.Parent = scrollRoot
 
 local title = makeText(header, "Title", "NexusRBX", 22, 16, true)
-title.Size = UDim2.new(1, -120, 0, 22)
+title.Size = UDim2.new(1, -STATUS_PILL_HEADER_RESERVE, 0, 22)
 title.LayoutOrder = 1
 local subtitle = makeText(header, "Subtitle", "Plugin " .. displayPluginVersion, 18, 11, false, themeColor(Enum.StudioStyleGuideColor.DimmedText))
-subtitle.Size = UDim2.new(1, -120, 0, 18)
+subtitle.Size = UDim2.new(1, -STATUS_PILL_HEADER_RESERVE, 0, 18)
 subtitle.LayoutOrder = 2
 healthLabel = makeText(header, "Health", "Not synced yet", 16, 11, false, themeColor(Enum.StudioStyleGuideColor.DimmedText))
-healthLabel.Size = UDim2.new(1, -120, 0, 16)
+healthLabel.Size = UDim2.new(1, -STATUS_PILL_HEADER_RESERVE, 0, 16)
 healthLabel.LayoutOrder = 3
 
 local headerList = Instance.new("UIListLayout")
@@ -1186,46 +1274,19 @@ local statusPill = Instance.new("TextLabel")
 statusPill.Name = "StatusPill"
 statusPill.AnchorPoint = Vector2.new(1, 0)
 statusPill.Position = UDim2.new(1, 0, 0, 3)
-statusPill.Size = UDim2.new(0, 118, 0, 26)
+statusPill.Size = UDim2.new(0, STATUS_PILL_MIN_WIDTH, 0, STATUS_PILL_HEIGHT)
 statusPill.BackgroundColor3 = COLORS.muted
 statusPill.TextColor3 = Color3.fromRGB(255, 255, 255)
 statusPill.Font = Enum.Font.GothamBold
-statusPill.TextSize = 11
+statusPill.TextSize = STATUS_PILL_TEXT_SIZE
 statusPill.Text = "NOT PAIRED"
-statusPill.TextXAlignment = Enum.TextXAlignment.Right
+statusPill.TextXAlignment = Enum.TextXAlignment.Center
 statusPill.Parent = header
-applyCorner(statusPill, 13)
+applyCorner(statusPill, STATUS_PILL_HEIGHT / 2)
 local statusPillPad = Instance.new("UIPadding")
-statusPillPad.PaddingLeft = UDim.new(0, 24)
-statusPillPad.PaddingRight = UDim.new(0, 10)
+statusPillPad.PaddingLeft = UDim.new(0, STATUS_PILL_PAD)
+statusPillPad.PaddingRight = UDim.new(0, STATUS_PILL_PAD)
 statusPillPad.Parent = statusPill
-
--- Animated status orb sits inside the left of the pill.
-local statusOrb = Instance.new("Frame")
-statusOrb.Name = "StatusOrb"
-statusOrb.AnchorPoint = Vector2.new(0, 0.5)
-statusOrb.Position = UDim2.new(0, 8, 0.5, 0)
-statusOrb.Size = UDim2.new(0, 10, 0, 10)
-statusOrb.BackgroundColor3 = COLORS.muted
-statusOrb.BorderSizePixel = 0
-statusOrb.ZIndex = 3
-statusOrb.Parent = statusPill
-applyCorner(statusOrb, 5)
-
-local statusOrbRing = Instance.new("Frame")
-statusOrbRing.Name = "OrbRing"
-statusOrbRing.AnchorPoint = Vector2.new(0.5, 0.5)
-statusOrbRing.Position = UDim2.new(0.5, 0, 0.5, 0)
-statusOrbRing.Size = UDim2.new(1, 0, 1, 0)
-statusOrbRing.BackgroundTransparency = 1
-statusOrbRing.ZIndex = 2
-statusOrbRing.Parent = statusOrb
-applyCorner(statusOrbRing, 8)
-local statusOrbStroke = Instance.new("UIStroke")
-statusOrbStroke.Color = COLORS.muted
-statusOrbStroke.Thickness = 2
-statusOrbStroke.Transparency = 1
-statusOrbStroke.Parent = statusOrbRing
 
 local banner = Instance.new("TextButton")
 banner.Name = "Banner"
@@ -1240,6 +1301,47 @@ banner.Visible = false
 banner.AutoButtonColor = false
 banner.Parent = scrollRoot
 applyCorner(banner, 6)
+
+-- Tab bar: one button per top-level view. Only shown once paired (unpaired the
+-- panel is just the pairing card). Click handlers are wired after setActiveTab
+-- is defined further down. Wrapped in a do-block so its locals stay off the
+-- bundler's top-level budget.
+do
+	tabBar = Instance.new("Frame")
+	tabBar.Name = "TabBar"
+	tabBar.BackgroundTransparency = 1
+	tabBar.Size = UDim2.new(1, 0, 0, 32)
+	tabBar.Visible = false
+	tabBar.Parent = scrollRoot
+	local tabBarLayout = Instance.new("UIListLayout")
+	tabBarLayout.FillDirection = Enum.FillDirection.Horizontal
+	tabBarLayout.HorizontalAlignment = Enum.HorizontalAlignment.Left
+	tabBarLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+	tabBarLayout.SortOrder = Enum.SortOrder.LayoutOrder
+	tabBarLayout.Padding = UDim.new(0, 6)
+	tabBarLayout.Parent = tabBar
+	local TAB_ORDER = { "Connect", "Agent", "Activity", "Recovery" }
+	for index, tabName in ipairs(TAB_ORDER) do
+		local tabButton = Instance.new("TextButton")
+		tabButton.Name = "Tab_" .. tabName
+		tabButton.Size = UDim2.new(0.25, -5, 1, 0)
+		tabButton.BackgroundColor3 = themeColor(Enum.StudioStyleGuideColor.Button)
+		tabButton.TextColor3 = themeColor(Enum.StudioStyleGuideColor.DimmedText)
+		tabButton.Font = Enum.Font.GothamBold
+		tabButton.TextSize = 12
+		tabButton.Text = tabName
+		tabButton.AutoButtonColor = false
+		tabButton.LayoutOrder = index
+		tabButton.Parent = tabBar
+		applyCorner(tabButton, 6)
+		tabButton.MouseButton1Click:Connect(function()
+			if setActiveTab then
+				setActiveTab(tabName)
+			end
+		end)
+		tabButtons[tabName] = tabButton
+	end
+end
 
 local pairSection = makeSection("Pairing")
 makeText(pairSection, "PairTitle", "Pair Studio", 18, 13, true)
@@ -1336,10 +1438,94 @@ makeText(manifestSection, "ManifestTitle", "Project Index", 18, 13, true)
 manifestSummaryLabel = makeText(manifestSection, "ManifestSummary", "Not indexed yet", 18, 12, false, themeColor(Enum.StudioStyleGuideColor.MainText))
 manifestFreshnessLabel = makeText(manifestSection, "ManifestFreshness", "Rescan runs from the website when needed.", 16, 11, false, themeColor(Enum.StudioStyleGuideColor.DimmedText))
 
+-- In-Studio prompt bar (Agent tab). Starts the full agent for the paired user;
+-- resulting commands flow back through the normal poll/execute/approval loop and
+-- the run is mirrored to the website chat. Wrapped in a do-block so its locals
+-- stay off the bundler's top-level budget; promptSection is module-scope so
+-- refreshControls can toggle its visibility per tab.
+do
+	promptSection = makeSection("StudioPrompt")
+	makeText(promptSection, "PromptTitle", "Ask in Studio", 18, 13, true)
+	makeText(promptSection, "PromptHint", "Describe a change. It runs the full agent and mirrors to the website.", 28, 11, false, themeColor(Enum.StudioStyleGuideColor.DimmedText))
+	local promptBox = Instance.new("TextBox")
+	promptBox.Name = "PromptInput"
+	promptBox.Size = UDim2.new(1, 0, 0, 60)
+	promptBox.BackgroundColor3 = themeColor(Enum.StudioStyleGuideColor.MainBackground)
+	promptBox.TextColor3 = themeColor(Enum.StudioStyleGuideColor.MainText)
+	promptBox.PlaceholderText = "e.g. Add a sprint system to the player controller"
+	promptBox.ClearTextOnFocus = false
+	promptBox.MultiLine = true
+	promptBox.TextWrapped = true
+	promptBox.TextXAlignment = Enum.TextXAlignment.Left
+	promptBox.TextYAlignment = Enum.TextYAlignment.Top
+	promptBox.Text = ""
+	promptBox.Font = Enum.Font.Gotham
+	promptBox.TextSize = 13
+	promptBox.Parent = promptSection
+	applyCorner(promptBox, 6)
+	applyStroke(promptBox, COLORS.accent, 0.45)
+	local promptPad = Instance.new("UIPadding")
+	promptPad.PaddingTop = UDim.new(0, 6)
+	promptPad.PaddingBottom = UDim.new(0, 6)
+	promptPad.PaddingLeft = UDim.new(0, 8)
+	promptPad.PaddingRight = UDim.new(0, 8)
+	promptPad.Parent = promptBox
+	local sendButton = makeButton(promptSection, "PromptSend", "Send to Agent", COLORS.accent)
+
+	local function submitPrompt()
+		if sendButton:GetAttribute("NexusEnabled") == false then
+			return
+		end
+		local token = getToken and getToken() or nil
+		if not token then
+			showToast("Pair Studio first", "error")
+			return
+		end
+		local text = (promptBox.Text or ""):gsub("^%s+", ""):gsub("%s+$", "")
+		if text == "" then
+			showToast("Enter a prompt", "info")
+			promptBox:CaptureFocus()
+			return
+		end
+		setButtonEnabled(sendButton, false, "Sending...")
+		local ok, dataOrError = request("POST", "/api/studio/agent/prompt", {
+			prompt = text,
+			chatMode = "agent",
+		}, token)
+		setButtonEnabled(sendButton, true, "Send to Agent")
+		if ok then
+			promptBox.Text = ""
+			setLast("agent run started from Studio")
+			pushActivity({
+				commandType = "agent_prompt",
+				status = "succeeded",
+				detail = text:sub(1, 80),
+			})
+			showToast("Agent run started - watch the activity feed", "success")
+		else
+			local message = tostring(dataOrError)
+			local parsed = string.match(message, '"error"%s*:%s*"([^"]+)"')
+				or string.match(message, '"message"%s*:%s*"([^"]+)"')
+			setLast("agent prompt failed: " .. (parsed or message))
+			showToast(parsed or "Prompt failed", "error")
+		end
+	end
+
+	sendButton.MouseButton1Click:Connect(submitPrompt)
+end
+
 local activitySection = makeSection("Activity")
 makeText(activitySection, "ActivityTitle", "Bridge Activity", 18, 13, true)
 progressLabel = makeText(activitySection, "Progress", "Run: none", 20, 12, false, themeColor(Enum.StudioStyleGuideColor.DimmedText))
 activeLabel = makeText(activitySection, "Active", "Active tool: none", 20, 13, false)
+
+-- Playtest observer surface: reads captured LogService output on demand. Wired in
+-- Main.server.lua where the collectOutput handler is in scope. Exported (no local)
+-- so it lands on the bundler's shared export table without a new top-level local.
+playtestLogsButton = makeButton(activitySection, "PlaytestLogs", "Check playtest output", themeColor(Enum.StudioStyleGuideColor.Button))
+playtestStrip = makeText(activitySection, "PlaytestStrip", "", nil, 11, false, themeColor(Enum.StudioStyleGuideColor.DimmedText), true)
+playtestStrip.TextWrapped = true
+playtestStrip.Visible = false
 
 local feedScroll = Instance.new("ScrollingFrame")
 feedScroll.Name = "ActivityFeed"
@@ -1399,6 +1585,10 @@ undoBatchButton = makeButton(safetySection, "UndoBatchButton", "Undo Last Batch"
 local settingsSection = makeSection("Settings")
 makeText(settingsSection, "SettingsTitle", "Settings", 18, 13, true)
 approvalToggleButton = makeButton(settingsSection, "ApprovalToggle", "Review before apply: OFF", themeColor(Enum.StudioStyleGuideColor.Button))
+-- Team Create awareness: who else is editing this place (masked identity).
+-- Populated by the heartbeat loop via GET /api/studio/collaborators.
+collaboratorsLabel = makeText(settingsSection, "Collaborators", "Collaborators: checking...", nil, 11, false, themeColor(Enum.StudioStyleGuideColor.DimmedText), true)
+collaboratorsLabel.TextWrapped = true
 
 local footer = Instance.new("Frame")
 footer.Name = "Footer"
@@ -1444,7 +1634,8 @@ local confirmSheet = Instance.new("Frame")
 confirmSheet.Name = "Sheet"
 confirmSheet.AnchorPoint = Vector2.new(0.5, 0.5)
 confirmSheet.Position = UDim2.fromScale(0.5, 0.52)
-confirmSheet.Size = UDim2.new(1, -32, 0, 154)
+confirmSheet.Size = UDim2.new(1, -32, 0, 0)
+confirmSheet.AutomaticSize = Enum.AutomaticSize.Y
 confirmSheet.BackgroundColor3 = themeColor(Enum.StudioStyleGuideColor.MainBackground)
 confirmSheet.ZIndex = 11
 confirmSheet.Parent = confirmOverlay
@@ -1463,6 +1654,21 @@ sheetList.Parent = confirmSheet
 makeText(confirmSheet, "ConfirmTitle", "Restore snapshots?", 22, 14, true)
 local confirmCopy = makeText(confirmSheet, "ConfirmCopy", "This restores selected local snapshots from NexusRBX changes.", 38, 12, false, themeColor(Enum.StudioStyleGuideColor.DimmedText))
 confirmCopy.TextWrapped = true
+-- By default restore keeps instances the user edited after the agent's write.
+-- This toggle forces a full revert. State is stored on confirmRestoreButton so no
+-- extra module-scope local is needed. Wrapped in a do-block to keep its locals
+-- off the bundler's top-level budget.
+do
+	local forceToggleButton = makeButton(confirmSheet, "ForceToggle", "Also revert my edits: OFF", themeColor(Enum.StudioStyleGuideColor.Button))
+	forceToggleButton.MouseButton1Click:Connect(function()
+		local nextValue = confirmRestoreButton:GetAttribute("ForceRestore") ~= true
+		confirmRestoreButton:SetAttribute("ForceRestore", nextValue)
+		local baseColor = nextValue and COLORS.warning or themeColor(Enum.StudioStyleGuideColor.Button)
+		forceToggleButton:SetAttribute("BaseColor", baseColor)
+		forceToggleButton.BackgroundColor3 = baseColor
+		forceToggleButton.Text = nextValue and "Also revert my edits: ON" or "Also revert my edits: OFF"
+	end)
+end
 local confirmRow = makeRow(confirmSheet, "ConfirmActions", 34)
 confirmRestoreButton = makeButton(confirmRow, "ConfirmRestoreButton", "Restore", COLORS.accent)
 confirmRestoreButton.Size = UDim2.new(0.5, -4, 0, 34)
@@ -1658,8 +1864,10 @@ local function rebuildSnapshotList()
 				return
 			end
 			local recording = beginRecording("NexusRBX restore snapshot")
+			-- Explicit per-row restore is a clear intent, so force it past the
+			-- keep-my-edits guard.
 			local ok, resultOrError = pcall(function()
-				return restoreSnapshots({ snapshots = { snap } })
+				return restoreSnapshots({ snapshots = { snap }, force = true })
 			end)
 			if ok then
 				finishRecording(recording, true)
@@ -1683,13 +1891,19 @@ end
 refreshControls = function()
 	local paired = getToken ~= nil and getToken() ~= nil
 	local busy = applying == true
+	-- Tabs only exist once paired; unpaired the panel is just the pairing card.
+	local tab = paired and activeTab or "Connect"
+	tabBar.Visible = paired
 	pairSection.Visible = not paired
-	agentSection.Visible = paired
-	manifestSection.Visible = paired
-	activitySection.Visible = paired
-	safetySection.Visible = paired
-	settingsSection.Visible = paired
-	footer.Visible = paired
+	agentSection.Visible = paired and tab == "Agent"
+	manifestSection.Visible = paired and tab == "Agent"
+	if promptSection then
+		promptSection.Visible = paired and tab == "Agent"
+	end
+	activitySection.Visible = paired and tab == "Activity"
+	safetySection.Visible = paired and tab == "Recovery"
+	settingsSection.Visible = paired and tab == "Connect"
+	footer.Visible = paired and tab == "Connect"
 	local cleanCode = string.upper((codeBox.Text or ""):gsub("%s+", ""))
 	setButtonEnabled(pairButton, (not paired) and (not busy) and cleanCode ~= "", busy and "Pairing..." or "Pair Studio")
 	setButtonEnabled(pullButton, paired and (not busy), busy and "Working..." or "Pull Latest")
@@ -1701,21 +1915,46 @@ refreshControls = function()
 	refreshApprovalToggle()
 end
 
-local orbSizeTween, orbFadeTween = nil, nil
-
-local function applyOrbPulse(active)
-	if orbSizeTween then orbSizeTween:Cancel() orbSizeTween = nil end
-	if orbFadeTween then orbFadeTween:Cancel() orbFadeTween = nil end
-	statusOrbRing.Size = UDim2.new(1, 0, 1, 0)
-	statusOrbStroke.Transparency = 1
-	if active then
-		local info = TweenInfo.new(1.1, Enum.EasingStyle.Sine, Enum.EasingDirection.Out, -1, false)
-		statusOrbStroke.Transparency = 0.15
-		orbSizeTween = TweenService:Create(statusOrbRing, info, { Size = UDim2.new(3, 0, 3, 0) })
-		orbFadeTween = TweenService:Create(statusOrbStroke, info, { Transparency = 1 })
-		orbSizeTween:Play()
-		orbFadeTween:Play()
+-- Restyle the tab buttons for the active view, persist the choice, and refresh
+-- section visibility. Assigned to the forward-declared `setActiveTab` upvalue so
+-- the tab button click handlers created earlier can call it.
+function setActiveTab(name)
+	if not tabButtons[name] then
+		name = "Agent"
 	end
+	activeTab = name
+	pcall(function()
+		plugin:SetSetting("nexusrbxActiveTab", name)
+	end)
+	for tabName, tabButton in pairs(tabButtons) do
+		local isActive = tabName == name
+		local baseColor = isActive and COLORS.accent or themeColor(Enum.StudioStyleGuideColor.Button)
+		tabButton:SetAttribute("BaseColor", baseColor)
+		TweenService:Create(tabButton, TweenInfo.new(0.12, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { BackgroundColor3 = baseColor }):Play()
+		tabButton.TextColor3 = isActive and Color3.fromRGB(255, 255, 255) or themeColor(Enum.StudioStyleGuideColor.DimmedText)
+	end
+	refreshControls()
+end
+
+do
+	local stored = nil
+	pcall(function()
+		stored = plugin:GetSetting("nexusrbxActiveTab")
+	end)
+	if type(stored) == "string" and tabButtons[stored] then
+		activeTab = stored
+	end
+end
+
+local function resizeStatusPill(label)
+	local bounds = game:GetService("TextService"):GetTextSize(
+		label,
+		statusPill.TextSize,
+		statusPill.Font,
+		Vector2.new(512, STATUS_PILL_HEIGHT)
+	)
+	local width = math.ceil((STATUS_PILL_PAD * 2) + bounds.X)
+	statusPill.Size = UDim2.new(0, math.max(STATUS_PILL_MIN_WIDTH, width), 0, STATUS_PILL_HEIGHT)
 end
 
 -- Central state setter. `state` is one of BRIDGE_STATES keys.
@@ -1724,9 +1963,8 @@ function setBridgeState(state, detail)
 	local def = BRIDGE_STATES[key]
 	currentBridgeState = key
 	statusPill.Text = def.label
+	resizeStatusPill(def.label)
 	TweenService:Create(statusPill, TweenInfo.new(0.16, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { BackgroundColor3 = def.color }):Play()
-	TweenService:Create(statusOrb, TweenInfo.new(0.16, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { BackgroundColor3 = def.color }):Play()
-	applyOrbPulse(def.pulse)
 	if detail ~= nil and tostring(detail) ~= "" and (key == "working" or key == "degraded") then
 		activeLabel.Text = "Active tool: " .. tostring(detail)
 	end
@@ -1739,7 +1977,6 @@ end
 
 setPollingPulse = function(active)
 	pollingActive = active == true
-	statusOrb.BackgroundTransparency = active and 0.35 or 0
 end
 
 setHealth = function(syncedAt, latencyMs)
@@ -1974,13 +2211,49 @@ showRestoreConfirmation = function()
 		setLast("no local snapshots to restore")
 		return false
 	end
-	confirmCopy.Text = ("Restore all %d local snapshot(s)? This can undo recent generated changes."):format(#localSnapshots)
+	confirmCopy.Text = ("Restore all %d local snapshot(s)? Edits you made after the agent's changes are kept unless you turn on full revert."):format(#localSnapshots)
+	-- Reset the force toggle each time the sheet opens.
+	confirmRestoreButton:SetAttribute("ForceRestore", false)
+	local forceToggleButton = confirmSheet:FindFirstChild("ForceToggle")
+	if forceToggleButton then
+		local baseColor = themeColor(Enum.StudioStyleGuideColor.Button)
+		forceToggleButton:SetAttribute("BaseColor", baseColor)
+		forceToggleButton.BackgroundColor3 = baseColor
+		forceToggleButton.Text = "Also revert my edits: OFF"
+	end
 	confirmOverlay.Visible = true
 	return true
 end
 
 hideRestoreConfirmation = function()
 	confirmOverlay.Visible = false
+end
+
+-- Render the same-place collaborators list into the Connect tab.
+updateCollaborators = function(list)
+	if not collaboratorsLabel then
+		return
+	end
+	if type(list) ~= "table" or #list == 0 then
+		collaboratorsLabel.Text = "Collaborators: none on this place"
+		return
+	end
+	local parts = {}
+	for _, collaborator in ipairs(list) do
+		local who = tostring(collaborator.label or "collaborator")
+		local paths = ""
+		if type(collaborator.activePaths) == "table" and #collaborator.activePaths > 0 then
+			paths = " - " .. tostring(collaborator.activePaths[1])
+			if #collaborator.activePaths > 1 then
+				paths = paths .. (" (+%d)"):format(#collaborator.activePaths - 1)
+			end
+		end
+		table.insert(parts, "- " .. who .. paths)
+		if #parts >= 5 then
+			break
+		end
+	end
+	collaboratorsLabel.Text = ("<b>Collaborators (%d)</b>\n%s"):format(#list, table.concat(parts, "\n"))
 end
 
 local function describeAffectedPaths(command)
@@ -2106,9 +2379,10 @@ undoBatchButton.MouseButton1Click:Connect(function()
 	end)
 	if ok then
 		finishRecording(recording, true)
-		setLast(("undo batch complete: %d restored, %d removed"):format(resultOrError.restored or 0, resultOrError.removed or 0))
-		pushActivity({ commandType = "undo_last_batch", status = "succeeded", detail = tostring(#batch) .. " snapshots" })
-		showToast("Batch undone", "success")
+		local keptText = (resultOrError.kept or 0) > 0 and (", %d kept (you edited them)"):format(resultOrError.kept) or ""
+		setLast(("undo batch complete: %d restored, %d removed%s"):format(resultOrError.restored or 0, resultOrError.removed or 0, keptText))
+		pushActivity({ commandType = "undo_last_batch", status = "succeeded", detail = tostring(#batch) .. " snapshots" .. keptText })
+		showToast((resultOrError.kept or 0) > 0 and ("Batch undone; kept %d of your edits"):format(resultOrError.kept) or "Batch undone", "success")
 	else
 		finishRecording(recording, false)
 		setLast("undo batch failed: " .. tostring(resultOrError))
@@ -2200,7 +2474,7 @@ end)
 onboardingDismissButton.MouseButton1Click:Connect(hideOnboarding)
 
 refreshApprovalToggle()
-refreshControls()
+setActiveTab(activeTab)
 end
 -- END src/ui/BridgePanel.lua
 
@@ -2364,7 +2638,10 @@ end
 
 writeScript = function(payload)
 	local path = payload.path
-	local className = payload.className or "ModuleScript"
+	local className = payload.className
+	if type(className) ~= "string" or className == "" then
+		className = "ModuleScript"
+	end
 	if not SCRIPT_CLASSES[className] then
 		error("write_script requires Script, LocalScript, or ModuleScript")
 	end
@@ -3058,10 +3335,103 @@ collectDiagnostics = function(payload)
 	return runProjectValidation(payload or {})
 end
 
-collectOutput = function()
+-- Output/log observer. LogService.MessageOut fires in the edit-context plugin for
+-- messages printed during Play Solo, so we keep a capped ring buffer and merge it
+-- with LogService:GetLogHistory() (which also includes pre-connection messages).
+local outputLogBuffer, OUTPUT_LOG_LIMIT, LOG_MESSAGE_LEVEL = {}, 500, {
+	[Enum.MessageType.MessageOutput] = "output",
+	[Enum.MessageType.MessageInfo] = "info",
+	[Enum.MessageType.MessageWarning] = "warning",
+	[Enum.MessageType.MessageError] = "error",
+}
+do
+	local ok, logService = pcall(function()
+		return game:GetService("LogService")
+	end)
+	if ok and logService then
+		logService.MessageOut:Connect(function(message, messageType)
+			table.insert(outputLogBuffer, {
+				message = tostring(message),
+				level = LOG_MESSAGE_LEVEL[messageType] or "output",
+				timestamp = os.time(),
+			})
+			if #outputLogBuffer > OUTPUT_LOG_LIMIT then
+				table.remove(outputLogBuffer, 1)
+			end
+		end)
+	end
+end
+
+collectOutput = function(payload)
+	payload = payload or {}
+	local maxMessages = math.clamp(tonumber(payload.maxMessages) or 200, 1, 500)
+	local sinceTimestamp = tonumber(payload.sinceTimestamp) or 0
+	local levelFilter = nil
+	if type(payload.levels) == "table" and #payload.levels > 0 then
+		levelFilter = {}
+		for _, level in ipairs(payload.levels) do
+			levelFilter[tostring(level):lower()] = true
+		end
+	end
+
+	local combined, seen = {}, {}
+	local function push(entry)
+		local key = tostring(entry.timestamp) .. "|" .. tostring(entry.message)
+		if seen[key] then
+			return
+		end
+		seen[key] = true
+		table.insert(combined, entry)
+	end
+
+	local okHistory, history = pcall(function()
+		return game:GetService("LogService"):GetLogHistory()
+	end)
+	if okHistory and type(history) == "table" then
+		for _, item in ipairs(history) do
+			push({
+				message = tostring(item.message),
+				level = LOG_MESSAGE_LEVEL[item.messageType] or "output",
+				timestamp = math.floor(tonumber(item.timestamp) or os.time()),
+			})
+		end
+	end
+	for _, entry in ipairs(outputLogBuffer) do
+		push(entry)
+	end
+
+	local filtered = {}
+	for _, entry in ipairs(combined) do
+		if (not levelFilter or levelFilter[entry.level]) and entry.timestamp >= sinceTimestamp then
+			table.insert(filtered, entry)
+		end
+	end
+	if #filtered > maxMessages then
+		local trimmed = {}
+		for i = #filtered - maxMessages + 1, #filtered do
+			table.insert(trimmed, filtered[i])
+		end
+		filtered = trimmed
+	end
+
+	local errorCount, warningCount = 0, 0
+	for _, entry in ipairs(filtered) do
+		if entry.level == "error" then
+			errorCount += 1
+		elseif entry.level == "warning" then
+			warningCount += 1
+		end
+	end
+
 	return {
-		warnings = { "Roblox Studio output log collection is not exposed to plugins in this bridge runtime." },
-		output = {},
+		ok = true,
+		output = filtered,
+		messages = filtered,
+		summary = {
+			total = #filtered,
+			errors = errorCount,
+			warnings = warningCount,
+		},
 	}
 end
 
@@ -3373,39 +3743,6 @@ createSnapshotTool = function(payload)
 	return { snapshots = snapshots, snapshotCount = #snapshots }
 end
 
-local function restoreSnapshots(payload)
-	local restored = 0
-	local removed = 0
-	local snapshots = payload.snapshots or localSnapshots
-	for i = #snapshots, 1, -1 do
-		local snap = snapshots[i]
-		if snap.existed == false then
-			local current = resolvePath(snap.path)
-			if current then
-				current:Destroy()
-				removed = removed + 1
-			end
-		elseif snap.path and snap.className and snap.className ~= "" then
-			local inst = createOrReplaceInstance(snap.path, snap.className, snap.properties or {}, true)
-			if SCRIPT_CLASSES[inst.ClassName] and snap.source ~= nil then
-				writeScriptSource(inst, snap.source)
-			end
-			for key, value in pairs(snap.attributes or {}) do
-				pcall(function()
-					inst:SetAttribute(key, value)
-				end)
-			end
-			for _, tag in ipairs(snap.tags or {}) do
-				pcall(function()
-					Services.CollectionService:AddTag(inst, tag)
-				end)
-			end
-			restored = restored + 1
-		end
-	end
-	return { restored = restored, removed = removed }
-end
-
 runSmokeCheck = function(payload)
 	local maxScripts = math.clamp(tonumber(payload.maxScripts) or 200, 10, 500)
 	local checked = 0
@@ -3523,6 +3860,24 @@ validateLuauSource = function(source)
 	return #issues == 0, issues
 end
 
+classNameForKind = function(kind)
+	local normalized = string.lower(tostring(kind or "module"))
+	if normalized == "server" then
+		return "Script"
+	elseif normalized == "client" then
+		return "LocalScript"
+	end
+	return "ModuleScript"
+end
+
+local function resolveScriptClassName(className, kind)
+	local normalized = tostring(className or "")
+	if normalized == "" then
+		return classNameForKind(kind)
+	end
+	return normalized
+end
+
 local function applyArtifactLegacy(payload)
 	local projectName = payload.projectName or "NexusRBX_Project"
 	local serviceFolders = {}
@@ -3542,7 +3897,7 @@ local function applyArtifactLegacy(payload)
 			validationFailures = validationFailures + 1
 		end
 		local applyOk, applyErr = pcall(function()
-			local inst = Instance.new(scriptSpec.className or "ModuleScript")
+			local inst = Instance.new(resolveScriptClassName(scriptSpec.className, scriptSpec.kind))
 			inst.Name = name
 			inst.Parent = serviceFolders[serviceName]
 			local ok, err = writeScriptSource(inst, scriptSpec.source or "")
@@ -3593,16 +3948,6 @@ local function applyArtifactLegacy(payload)
 	}
 end
 
-classNameForKind = function(kind)
-	local normalized = string.lower(tostring(kind or "module"))
-	if normalized == "server" then
-		return "Script"
-	elseif normalized == "client" then
-		return "LocalScript"
-	end
-	return "ModuleScript"
-end
-
 local function leafNameFromPath(path)
 	local parts = splitPath(path)
 	return parts[#parts] or ""
@@ -3625,7 +3970,7 @@ local function buildManagedIndexes(payload)
 			placement = file.placement,
 			kind = file.kind,
 			content = file.content or "",
-			className = file.className or classNameForKind(file.kind),
+			className = resolveScriptClassName(file.className, file.kind),
 			name = file.name or leafNameFromPath(path),
 		}
 		if fileId ~= "" then
@@ -3774,7 +4119,7 @@ end
 
 local function resolveManagedTarget(spec, indexes, currentPathOverride)
 	local fileId = tostring(spec.fileId or spec.id or "")
-	local expectedClass = tostring(spec.className or classNameForKind(spec.kind))
+	local expectedClass = resolveScriptClassName(spec.className, spec.kind)
 	local canonicalPath = tostring(currentPathOverride or spec.path or "")
 	local attrMatch, attrError = findManagedInstanceByFileId(fileId, expectedClass)
 	if attrError == "ambiguous" then
@@ -3833,7 +4178,7 @@ end
 
 local function applyManagedUpsert(spec, resolved, indexes, snapshots, seenPaths)
 	local targetPath = tostring(spec.path or "")
-	local expectedClass = tostring(spec.className or classNameForKind(spec.kind))
+	local expectedClass = resolveScriptClassName(spec.className, spec.kind)
 	local inst = resolved.instance
 	if inst then
 		snapshotOnce(inst, snapshots, seenPaths)
@@ -3936,7 +4281,7 @@ applyArtifact = function(payload)
 							path = tostring(op.toPath or ""),
 							kind = manifestEntry and manifestEntry.kind or "module",
 							placement = manifestEntry and manifestEntry.placement or splitPath(op.toPath)[1],
-							className = manifestEntry and manifestEntry.className or classNameForKind(manifestEntry and manifestEntry.kind or "module"),
+							className = resolveScriptClassName(manifestEntry and manifestEntry.className, manifestEntry and manifestEntry.kind or "module"),
 						}
 						spec.artifactId = payload.artifactId
 						local resolved = resolveManagedTarget(spec, indexes, tostring(op.fromPath or ""))
@@ -3973,7 +4318,7 @@ applyArtifact = function(payload)
 							path = tostring(manifestEntry.canonicalPath or op.path or ""),
 							kind = manifestEntry.kind,
 							placement = manifestEntry.placement,
-							className = manifestEntry.className or classNameForKind(manifestEntry.kind),
+							className = resolveScriptClassName(manifestEntry.className, manifestEntry.kind),
 						} or {
 							fileId = tostring(op.id or ""),
 							id = tostring(op.id or ""),
@@ -5916,6 +6261,22 @@ executeCommand = function(command)
 		end
 	end
 
+	-- Stamp the post-write fingerprint on each snapshot this command produced so a
+	-- later restore can tell whether the user edited the instance since the agent
+	-- wrote it (see restoreSnapshots' keep-my-edits logic).
+	if result.ok ~= false and isMutatingCommand(commandType) and type(result.snapshots) == "table" then
+		for _, snap in ipairs(result.snapshots) do
+			if type(snap) == "table" and snap.path then
+				local okHash, hashValue = pcall(function()
+					return snapshotStateHash(resolvePath(snap.path))
+				end)
+				if okHash then
+					snap.postHash = hashValue
+				end
+			end
+		end
+	end
+
 	if result.ok == false and type(result.error) ~= "table" then
 		result.error = {
 			code = tostring(result.code or "studio_command_failed"),
@@ -6203,6 +6564,7 @@ end)
 cancelRestoreButton.MouseButton1Click:Connect(hideRestoreConfirmation)
 
 confirmRestoreButton.MouseButton1Click:Connect(function()
+	local force = confirmRestoreButton:GetAttribute("ForceRestore") == true
 	hideRestoreConfirmation()
 	if #localSnapshots == 0 then
 		setLast("no local snapshots to restore")
@@ -6210,23 +6572,71 @@ confirmRestoreButton.MouseButton1Click:Connect(function()
 	end
 	local recording = beginRecording("NexusRBX restore local snapshots")
 	local ok, resultOrError = pcall(function()
-		return restoreSnapshots({ snapshots = localSnapshots })
+		return restoreSnapshots({ snapshots = localSnapshots, force = force })
 	end)
 	if ok then
 		finishRecording(recording, true)
-		setLast(("local restore complete: %d restored, %d removed"):format(resultOrError.restored or 0, resultOrError.removed or 0))
+		local keptText = (resultOrError.kept or 0) > 0 and (", %d kept (you edited them)"):format(resultOrError.kept) or ""
+		setLast(("local restore complete: %d restored, %d removed%s"):format(resultOrError.restored or 0, resultOrError.removed or 0, keptText))
 		pushActivity({
 			commandType = "restore_all",
 			status = "succeeded",
-			detail = tostring(#localSnapshots) .. " snapshots",
+			detail = tostring(#localSnapshots) .. " snapshots" .. keptText,
 		})
-		showToast("Snapshots restored", "success")
+		showToast((resultOrError.kept or 0) > 0 and ("Restored; kept %d of your edits"):format(resultOrError.kept) or "Snapshots restored", "success")
 	else
 		finishRecording(recording, false)
 		setLast("local restore failed: " .. tostring(resultOrError))
 		showToast("Restore failed", "error")
 	end
 	updateSnapshotLabel()
+end)
+
+playtestLogsButton.MouseButton1Click:Connect(function()
+	if playtestLogsButton:GetAttribute("NexusEnabled") == false then
+		return
+	end
+	setButtonEnabled(playtestLogsButton, false, "Reading output...")
+	local ok, result = pcall(function()
+		return collectOutput({ maxMessages = 200 })
+	end)
+	setButtonEnabled(playtestLogsButton, true, "Check playtest output")
+	if not ok or type(result) ~= "table" then
+		playtestStrip.Visible = true
+		playtestStrip.Text = "Could not read output logs."
+		return
+	end
+	local summary = result.summary or {}
+	local errors = tonumber(summary.errors) or 0
+	local warnings = tonumber(summary.warnings) or 0
+	local total = tonumber(summary.total) or 0
+	local lines = {}
+	if errors > 0 or warnings > 0 then
+		table.insert(lines, ("<b>%d error(s), %d warning(s)</b> of %d message(s)"):format(errors, warnings, total))
+	else
+		table.insert(lines, ("No errors or warnings in %d message(s)."):format(total))
+	end
+	-- Show the last few error/warning lines for quick triage.
+	local shown = 0
+	local messages = result.output or {}
+	for i = #messages, 1, -1 do
+		local entry = messages[i]
+		if entry and (entry.level == "error" or entry.level == "warning") then
+			local prefix = entry.level == "error" and '<font color="#D64550">ERR</font> ' or '<font color="#D39127">WARN</font> '
+			table.insert(lines, prefix .. tostring(entry.message):sub(1, 160))
+			shown += 1
+			if shown >= 5 then
+				break
+			end
+		end
+	end
+	playtestStrip.Visible = true
+	playtestStrip.Text = table.concat(lines, "\n")
+	pushActivity({
+		commandType = "get_output_logs",
+		status = errors > 0 and "failed" or "succeeded",
+		detail = ("%d errors, %d warnings"):format(errors, warnings),
+	})
 end)
 
 disconnectButton.MouseButton1Click:Connect(function()
@@ -6347,6 +6757,11 @@ task.spawn(function()
 				if healthOk then
 					setHealth(os.time(), healthLatency)
 				end
+			end
+			-- Team Create awareness: refresh who else is editing this place.
+			local collabOk, collabData = request("GET", "/api/studio/collaborators", nil, getToken())
+			if collabOk and type(collabData) == "table" then
+				updateCollaborators(collabData.collaborators)
 			end
 		end
 	end

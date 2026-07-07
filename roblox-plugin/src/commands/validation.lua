@@ -386,10 +386,103 @@ local function collectDiagnostics(payload)
 	return runProjectValidation(payload or {})
 end
 
-local function collectOutput()
+-- Output/log observer. LogService.MessageOut fires in the edit-context plugin for
+-- messages printed during Play Solo, so we keep a capped ring buffer and merge it
+-- with LogService:GetLogHistory() (which also includes pre-connection messages).
+local outputLogBuffer, OUTPUT_LOG_LIMIT, LOG_MESSAGE_LEVEL = {}, 500, {
+	[Enum.MessageType.MessageOutput] = "output",
+	[Enum.MessageType.MessageInfo] = "info",
+	[Enum.MessageType.MessageWarning] = "warning",
+	[Enum.MessageType.MessageError] = "error",
+}
+do
+	local ok, logService = pcall(function()
+		return game:GetService("LogService")
+	end)
+	if ok and logService then
+		logService.MessageOut:Connect(function(message, messageType)
+			table.insert(outputLogBuffer, {
+				message = tostring(message),
+				level = LOG_MESSAGE_LEVEL[messageType] or "output",
+				timestamp = os.time(),
+			})
+			if #outputLogBuffer > OUTPUT_LOG_LIMIT then
+				table.remove(outputLogBuffer, 1)
+			end
+		end)
+	end
+end
+
+local function collectOutput(payload)
+	payload = payload or {}
+	local maxMessages = math.clamp(tonumber(payload.maxMessages) or 200, 1, 500)
+	local sinceTimestamp = tonumber(payload.sinceTimestamp) or 0
+	local levelFilter = nil
+	if type(payload.levels) == "table" and #payload.levels > 0 then
+		levelFilter = {}
+		for _, level in ipairs(payload.levels) do
+			levelFilter[tostring(level):lower()] = true
+		end
+	end
+
+	local combined, seen = {}, {}
+	local function push(entry)
+		local key = tostring(entry.timestamp) .. "|" .. tostring(entry.message)
+		if seen[key] then
+			return
+		end
+		seen[key] = true
+		table.insert(combined, entry)
+	end
+
+	local okHistory, history = pcall(function()
+		return game:GetService("LogService"):GetLogHistory()
+	end)
+	if okHistory and type(history) == "table" then
+		for _, item in ipairs(history) do
+			push({
+				message = tostring(item.message),
+				level = LOG_MESSAGE_LEVEL[item.messageType] or "output",
+				timestamp = math.floor(tonumber(item.timestamp) or os.time()),
+			})
+		end
+	end
+	for _, entry in ipairs(outputLogBuffer) do
+		push(entry)
+	end
+
+	local filtered = {}
+	for _, entry in ipairs(combined) do
+		if (not levelFilter or levelFilter[entry.level]) and entry.timestamp >= sinceTimestamp then
+			table.insert(filtered, entry)
+		end
+	end
+	if #filtered > maxMessages then
+		local trimmed = {}
+		for i = #filtered - maxMessages + 1, #filtered do
+			table.insert(trimmed, filtered[i])
+		end
+		filtered = trimmed
+	end
+
+	local errorCount, warningCount = 0, 0
+	for _, entry in ipairs(filtered) do
+		if entry.level == "error" then
+			errorCount += 1
+		elseif entry.level == "warning" then
+			warningCount += 1
+		end
+	end
+
 	return {
-		warnings = { "Roblox Studio output log collection is not exposed to plugins in this bridge runtime." },
-		output = {},
+		ok = true,
+		output = filtered,
+		messages = filtered,
+		summary = {
+			total = #filtered,
+			errors = errorCount,
+			warnings = warningCount,
+		},
 	}
 end
 

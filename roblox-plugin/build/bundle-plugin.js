@@ -98,6 +98,11 @@ const MODULE_EXPORTS = {
     "progressLabel",
     "feedEmptyLabel",
     "approvalCopy",
+    "playtestLogsButton",
+    "playtestStrip",
+    "setButtonEnabled",
+    "collaboratorsLabel",
+    "updateCollaborators",
   ],
   "src/studio/serialization.lua": [
     "SCRIPT_CLASSES",
@@ -110,6 +115,8 @@ const MODULE_EXPORTS = {
     "propertiesOf",
     "structuredUnsupported",
     "lastBatchSnapshots",
+    "AGENT_ARTIFACT_ID_ATTRIBUTE",
+    "AGENT_FILE_ID_ATTRIBUTE",
   ],
   "src/net/httpClient.lua": ["request", "getToken", "setToken", "jsonEncode", "getLastLatencyMs", "pingHealth"],
   "src/studio/path.lua": [
@@ -125,6 +132,8 @@ const MODULE_EXPORTS = {
     "beginRecording",
     "finishRecording",
     "restoreSnapshots",
+    "snapshotStateHash",
+    "createOrReplaceInstance",
   ],
   "src/commands/readTools.lua": [
     "getInspectionRoots",

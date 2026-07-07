@@ -190,6 +190,7 @@ export default function ChatComposer({
   view,
   onViewChange,
   studioConnected,
+  studioCollaborators,
   studioLoading,
   studioEnabled,
   onStudioEnabledChange,
@@ -354,6 +355,16 @@ export default function ChatComposer({
                     onAutoPushPolicyChange={onStudioAutoPushPolicyChange}
                     autoPushAuthorized={studioAutoPushAuthorized}
                   />
+                  {studioConnected && Array.isArray(studioCollaborators) && studioCollaborators.length > 0 && (
+                    <span
+                      className="inline-flex items-center gap-1 rounded-full border border-amber-400/30 bg-amber-400/10 px-2 py-0.5 text-[11px] text-amber-200"
+                      title={studioCollaborators
+                        .map((c) => `${c.label || "collaborator"}${Array.isArray(c.activePaths) && c.activePaths.length ? ` — ${c.activePaths.slice(0, 3).join(", ")}` : ""}`)
+                        .join("\n")}
+                    >
+                      {studioCollaborators.length} collaborator{studioCollaborators.length === 1 ? "" : "s"} on this place
+                    </span>
+                  )}
                   <RobloxCloudControls
                     connected={robloxConnected}
                     loading={robloxLoading}

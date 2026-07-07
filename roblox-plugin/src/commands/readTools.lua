@@ -155,7 +155,10 @@ end
 
 local function writeScript(payload)
 	local path = payload.path
-	local className = payload.className or "ModuleScript"
+	local className = payload.className
+	if type(className) ~= "string" or className == "" then
+		className = "ModuleScript"
+	end
 	if not SCRIPT_CLASSES[className] then
 		error("write_script requires Script, LocalScript, or ModuleScript")
 	end

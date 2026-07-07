@@ -1,3 +1,17 @@
+-- Cheap fingerprint of an instance's mutable state, used to tell whether a human
+-- edited an instance after the agent wrote it. Scripts hash their source; other
+-- instances hash curated properties + attributes + tags.
+local function snapshotStateHash(inst)
+	if not inst then
+		return nil
+	end
+	if SCRIPT_CLASSES[inst.ClassName] then
+		return scriptHash(inst)
+	end
+	local ok, hashValue = pcall(propertyHash, inst)
+	return ok and hashValue or nil
+end
+
 local function snapshotInstance(path)
 	local inst = resolvePath(path)
 	if not inst then
@@ -34,6 +48,11 @@ local function snapshotInstance(path)
 		local ok, source = readScriptSource(inst)
 		snap.source = ok and source or ""
 	end
+
+	-- Pre-edit fingerprint: the state the instance had before the agent touched
+	-- it. `postHash` (the state right after the agent's write) is stamped later
+	-- by the command executor so restore can detect human edits made since.
+	snap.preHash = snapshotStateHash(inst)
 
 	table.insert(localSnapshots, snap)
 	updateSnapshotLabel()
@@ -73,8 +92,12 @@ local function finishRecording(recording, commit)
 end
 
 local function createOrReplaceInstance(path, className, properties, createParents)
-	if not CREATABLE_CLASSES[className] then
-		error("Unsupported className: " .. tostring(className))
+	local resolvedClass = tostring(className or "")
+	if resolvedClass == "" then
+		error("Missing className for " .. tostring(path))
+	end
+	if not CREATABLE_CLASSES[resolvedClass] then
+		error("Unsupported className: " .. resolvedClass)
 	end
 	local parent, name = ensureParent(path, createParents ~= false)
 	if not parent or not name then
@@ -84,7 +107,7 @@ local function createOrReplaceInstance(path, className, properties, createParent
 	if existing then
 		existing:Destroy()
 	end
-	local inst = Instance.new(className)
+	local inst = Instance.new(resolvedClass)
 	inst.Name = name
 	for key, value in pairs(properties or {}) do
 		local ok, err = safeSetProperty(inst, key, value)
@@ -94,4 +117,63 @@ local function createOrReplaceInstance(path, className, properties, createParent
 	end
 	inst.Parent = parent
 	return inst
+end
+
+local function restoreSnapshots(payload)
+	local restored = 0
+	local removed = 0
+	-- `kept` counts instances left untouched because the user edited them after
+	-- the agent's write. `force` bypasses that protection for a full revert.
+	local kept = 0
+	local force = payload.force == true
+	local snapshots = payload.snapshots or localSnapshots
+	for i = #snapshots, 1, -1 do
+		local snap = snapshots[i]
+		if snap.existed == false then
+			local current = resolvePath(snap.path)
+			if current then
+				-- The agent created this. If the user changed it since the agent
+				-- wrote it, keep their version instead of deleting it.
+				if not force and snap.postHash then
+					local currentHash = snapshotStateHash(current)
+					if currentHash and currentHash ~= snap.postHash then
+						kept = kept + 1
+						continue
+					end
+				end
+				current:Destroy()
+				removed = removed + 1
+			end
+		elseif snap.path and snap.className and snap.className ~= "" then
+			-- The agent overwrote/edited this. If the current state no longer
+			-- matches what the agent produced (and isn't already the pre-edit
+			-- state), a human edited it since -> keep their edits.
+			if not force and snap.postHash then
+				local current = resolvePath(snap.path)
+				if current then
+					local currentHash = snapshotStateHash(current)
+					if currentHash and currentHash ~= snap.postHash and currentHash ~= snap.preHash then
+						kept = kept + 1
+						continue
+					end
+				end
+			end
+			local inst = createOrReplaceInstance(snap.path, snap.className, snap.properties or {}, true)
+			if SCRIPT_CLASSES[inst.ClassName] and snap.source ~= nil then
+				writeScriptSource(inst, snap.source)
+			end
+			for key, value in pairs(snap.attributes or {}) do
+				pcall(function()
+					inst:SetAttribute(key, value)
+				end)
+			end
+			for _, tag in ipairs(snap.tags or {}) do
+				pcall(function()
+					CollectionService:AddTag(inst, tag)
+				end)
+			end
+			restored = restored + 1
+		end
+	end
+	return { restored = restored, removed = removed, kept = kept }
 end

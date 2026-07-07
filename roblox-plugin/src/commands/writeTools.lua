@@ -289,39 +289,6 @@ local function createSnapshotTool(payload)
 	return { snapshots = snapshots, snapshotCount = #snapshots }
 end
 
-local function restoreSnapshots(payload)
-	local restored = 0
-	local removed = 0
-	local snapshots = payload.snapshots or localSnapshots
-	for i = #snapshots, 1, -1 do
-		local snap = snapshots[i]
-		if snap.existed == false then
-			local current = resolvePath(snap.path)
-			if current then
-				current:Destroy()
-				removed = removed + 1
-			end
-		elseif snap.path and snap.className and snap.className ~= "" then
-			local inst = createOrReplaceInstance(snap.path, snap.className, snap.properties or {}, true)
-			if SCRIPT_CLASSES[inst.ClassName] and snap.source ~= nil then
-				writeScriptSource(inst, snap.source)
-			end
-			for key, value in pairs(snap.attributes or {}) do
-				pcall(function()
-					inst:SetAttribute(key, value)
-				end)
-			end
-			for _, tag in ipairs(snap.tags or {}) do
-				pcall(function()
-					CollectionService:AddTag(inst, tag)
-				end)
-			end
-			restored = restored + 1
-		end
-	end
-	return { restored = restored, removed = removed }
-end
-
 local function runSmokeCheck(payload)
 	local maxScripts = math.clamp(tonumber(payload.maxScripts) or 200, 10, 500)
 	local checked = 0
@@ -439,6 +406,24 @@ local function validateLuauSource(source)
 	return #issues == 0, issues
 end
 
+local function classNameForKind(kind)
+	local normalized = string.lower(tostring(kind or "module"))
+	if normalized == "server" then
+		return "Script"
+	elseif normalized == "client" then
+		return "LocalScript"
+	end
+	return "ModuleScript"
+end
+
+local function resolveScriptClassName(className, kind)
+	local normalized = tostring(className or "")
+	if normalized == "" then
+		return classNameForKind(kind)
+	end
+	return normalized
+end
+
 local function applyArtifactLegacy(payload)
 	local projectName = payload.projectName or "NexusRBX_Project"
 	local serviceFolders = {}
@@ -458,7 +443,7 @@ local function applyArtifactLegacy(payload)
 			validationFailures = validationFailures + 1
 		end
 		local applyOk, applyErr = pcall(function()
-			local inst = Instance.new(scriptSpec.className or "ModuleScript")
+			local inst = Instance.new(resolveScriptClassName(scriptSpec.className, scriptSpec.kind))
 			inst.Name = name
 			inst.Parent = serviceFolders[serviceName]
 			local ok, err = writeScriptSource(inst, scriptSpec.source or "")
@@ -509,16 +494,6 @@ local function applyArtifactLegacy(payload)
 	}
 end
 
-local function classNameForKind(kind)
-	local normalized = string.lower(tostring(kind or "module"))
-	if normalized == "server" then
-		return "Script"
-	elseif normalized == "client" then
-		return "LocalScript"
-	end
-	return "ModuleScript"
-end
-
 local function leafNameFromPath(path)
 	local parts = splitPath(path)
 	return parts[#parts] or ""
@@ -541,7 +516,7 @@ local function buildManagedIndexes(payload)
 			placement = file.placement,
 			kind = file.kind,
 			content = file.content or "",
-			className = file.className or classNameForKind(file.kind),
+			className = resolveScriptClassName(file.className, file.kind),
 			name = file.name or leafNameFromPath(path),
 		}
 		if fileId ~= "" then
@@ -690,7 +665,7 @@ end
 
 local function resolveManagedTarget(spec, indexes, currentPathOverride)
 	local fileId = tostring(spec.fileId or spec.id or "")
-	local expectedClass = tostring(spec.className or classNameForKind(spec.kind))
+	local expectedClass = resolveScriptClassName(spec.className, spec.kind)
 	local canonicalPath = tostring(currentPathOverride or spec.path or "")
 	local attrMatch, attrError = findManagedInstanceByFileId(fileId, expectedClass)
 	if attrError == "ambiguous" then
@@ -749,7 +724,7 @@ end
 
 local function applyManagedUpsert(spec, resolved, indexes, snapshots, seenPaths)
 	local targetPath = tostring(spec.path or "")
-	local expectedClass = tostring(spec.className or classNameForKind(spec.kind))
+	local expectedClass = resolveScriptClassName(spec.className, spec.kind)
 	local inst = resolved.instance
 	if inst then
 		snapshotOnce(inst, snapshots, seenPaths)
@@ -852,7 +827,7 @@ local function applyArtifact(payload)
 							path = tostring(op.toPath or ""),
 							kind = manifestEntry and manifestEntry.kind or "module",
 							placement = manifestEntry and manifestEntry.placement or splitPath(op.toPath)[1],
-							className = manifestEntry and manifestEntry.className or classNameForKind(manifestEntry and manifestEntry.kind or "module"),
+							className = resolveScriptClassName(manifestEntry and manifestEntry.className, manifestEntry and manifestEntry.kind or "module"),
 						}
 						spec.artifactId = payload.artifactId
 						local resolved = resolveManagedTarget(spec, indexes, tostring(op.fromPath or ""))
@@ -889,7 +864,7 @@ local function applyArtifact(payload)
 							path = tostring(manifestEntry.canonicalPath or op.path or ""),
 							kind = manifestEntry.kind,
 							placement = manifestEntry.placement,
-							className = manifestEntry.className or classNameForKind(manifestEntry.kind),
+							className = resolveScriptClassName(manifestEntry.className, manifestEntry.kind),
 						} or {
 							fileId = tostring(op.id or ""),
 							id = tostring(op.id or ""),

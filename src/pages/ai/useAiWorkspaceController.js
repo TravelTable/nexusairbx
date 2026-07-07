@@ -1592,6 +1592,7 @@ export function useAiWorkspaceController() {
       connected: studioConnection.connected,
       loading: studioConnection.loading,
       sessionId: studioConnection.sessionId,
+      collaborators: studioConnection.collaborators || [],
       refresh: studioConnection.refresh,
       enabled: studioEnabled,
       applyMode: studioApplyMode,

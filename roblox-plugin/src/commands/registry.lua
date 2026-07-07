@@ -406,6 +406,22 @@ local function executeCommand(command)
 		end
 	end
 
+	-- Stamp the post-write fingerprint on each snapshot this command produced so a
+	-- later restore can tell whether the user edited the instance since the agent
+	-- wrote it (see restoreSnapshots' keep-my-edits logic).
+	if result.ok ~= false and isMutatingCommand(commandType) and type(result.snapshots) == "table" then
+		for _, snap in ipairs(result.snapshots) do
+			if type(snap) == "table" and snap.path then
+				local okHash, hashValue = pcall(function()
+					return snapshotStateHash(resolvePath(snap.path))
+				end)
+				if okHash then
+					snap.postHash = hashValue
+				end
+			end
+		end
+	end
+
 	if result.ok == false and type(result.error) ~= "table" then
 		result.error = {
 			code = tostring(result.code or "studio_command_failed"),

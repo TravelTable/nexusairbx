@@ -86,6 +86,7 @@ end)
 cancelRestoreButton.MouseButton1Click:Connect(hideRestoreConfirmation)
 
 confirmRestoreButton.MouseButton1Click:Connect(function()
+	local force = confirmRestoreButton:GetAttribute("ForceRestore") == true
 	hideRestoreConfirmation()
 	if #localSnapshots == 0 then
 		setLast("no local snapshots to restore")
@@ -93,23 +94,71 @@ confirmRestoreButton.MouseButton1Click:Connect(function()
 	end
 	local recording = beginRecording("NexusRBX restore local snapshots")
 	local ok, resultOrError = pcall(function()
-		return restoreSnapshots({ snapshots = localSnapshots })
+		return restoreSnapshots({ snapshots = localSnapshots, force = force })
 	end)
 	if ok then
 		finishRecording(recording, true)
-		setLast(("local restore complete: %d restored, %d removed"):format(resultOrError.restored or 0, resultOrError.removed or 0))
+		local keptText = (resultOrError.kept or 0) > 0 and (", %d kept (you edited them)"):format(resultOrError.kept) or ""
+		setLast(("local restore complete: %d restored, %d removed%s"):format(resultOrError.restored or 0, resultOrError.removed or 0, keptText))
 		pushActivity({
 			commandType = "restore_all",
 			status = "succeeded",
-			detail = tostring(#localSnapshots) .. " snapshots",
+			detail = tostring(#localSnapshots) .. " snapshots" .. keptText,
 		})
-		showToast("Snapshots restored", "success")
+		showToast((resultOrError.kept or 0) > 0 and ("Restored; kept %d of your edits"):format(resultOrError.kept) or "Snapshots restored", "success")
 	else
 		finishRecording(recording, false)
 		setLast("local restore failed: " .. tostring(resultOrError))
 		showToast("Restore failed", "error")
 	end
 	updateSnapshotLabel()
+end)
+
+playtestLogsButton.MouseButton1Click:Connect(function()
+	if playtestLogsButton:GetAttribute("NexusEnabled") == false then
+		return
+	end
+	setButtonEnabled(playtestLogsButton, false, "Reading output...")
+	local ok, result = pcall(function()
+		return collectOutput({ maxMessages = 200 })
+	end)
+	setButtonEnabled(playtestLogsButton, true, "Check playtest output")
+	if not ok or type(result) ~= "table" then
+		playtestStrip.Visible = true
+		playtestStrip.Text = "Could not read output logs."
+		return
+	end
+	local summary = result.summary or {}
+	local errors = tonumber(summary.errors) or 0
+	local warnings = tonumber(summary.warnings) or 0
+	local total = tonumber(summary.total) or 0
+	local lines = {}
+	if errors > 0 or warnings > 0 then
+		table.insert(lines, ("<b>%d error(s), %d warning(s)</b> of %d message(s)"):format(errors, warnings, total))
+	else
+		table.insert(lines, ("No errors or warnings in %d message(s)."):format(total))
+	end
+	-- Show the last few error/warning lines for quick triage.
+	local shown = 0
+	local messages = result.output or {}
+	for i = #messages, 1, -1 do
+		local entry = messages[i]
+		if entry and (entry.level == "error" or entry.level == "warning") then
+			local prefix = entry.level == "error" and '<font color="#D64550">ERR</font> ' or '<font color="#D39127">WARN</font> '
+			table.insert(lines, prefix .. tostring(entry.message):sub(1, 160))
+			shown += 1
+			if shown >= 5 then
+				break
+			end
+		end
+	end
+	playtestStrip.Visible = true
+	playtestStrip.Text = table.concat(lines, "\n")
+	pushActivity({
+		commandType = "get_output_logs",
+		status = errors > 0 and "failed" or "succeeded",
+		detail = ("%d errors, %d warnings"):format(errors, warnings),
+	})
 end)
 
 disconnectButton.MouseButton1Click:Connect(function()
@@ -230,6 +279,11 @@ task.spawn(function()
 				if healthOk then
 					setHealth(os.time(), healthLatency)
 				end
+			end
+			-- Team Create awareness: refresh who else is editing this place.
+			local collabOk, collabData = request("GET", "/api/studio/collaborators", nil, getToken())
+			if collabOk and type(collabData) == "table" then
+				updateCollaborators(collabData.collaborators)
 			end
 		end
 	end
