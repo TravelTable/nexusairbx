@@ -279,12 +279,26 @@ function ConfirmationAction({
   onConfirm,
   destructive = true,
 }) {
+  const [open, setOpen] = useState(false);
   const [value, setValue] = useState("");
   const [running, setRunning] = useState(false);
+  const [error, setError] = useState("");
   const matches = value === confirmationText;
 
+  const reset = () => {
+    setValue("");
+    setError("");
+    setRunning(false);
+  };
+
   return (
-    <AlertDialog onOpenChange={(open) => !open && setValue("")}>
+    <AlertDialog
+      open={open}
+      onOpenChange={(nextOpen) => {
+        setOpen(nextOpen);
+        if (!nextOpen) reset();
+      }}
+    >
       <AlertDialogTrigger asChild>{trigger}</AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
@@ -299,6 +313,7 @@ function ConfirmationAction({
             onChange={(event) => setValue(event.target.value)}
             autoComplete="off"
           />
+          {error && <p className="text-sm text-destructive">{error}</p>}
         </div>
         <AlertDialogFooter>
           <AlertDialogCancel disabled={running}>Cancel</AlertDialogCancel>
@@ -309,8 +324,13 @@ function ConfirmationAction({
               event.preventDefault();
               if (!matches || running) return;
               setRunning(true);
+              setError("");
               try {
                 await onConfirm();
+                setOpen(false);
+                reset();
+              } catch (err) {
+                setError(err?.message || "Action failed.");
               } finally {
                 setRunning(false);
               }
@@ -531,11 +551,17 @@ export default function SettingsPage() {
   };
 
   const clearUserData = async (type) => {
-    const data = await readJson(
-      await authedFetch(`/api/user/data/${type}`, { method: "DELETE" }),
-      `Failed to clear ${type}.`
-    );
-    setNotice(`${type === "chats" ? "Chats" : "Scripts"} cleared (${formatNumber(data.count)} records).`);
+    try {
+      const data = await readJson(
+        await authedFetch(`/api/user/data/${type}`, { method: "DELETE" }),
+        `Failed to clear ${type}.`
+      );
+      setNotice(`${type === "chats" ? "Chats" : "Scripts"} cleared (${formatNumber(data.count)} records).`);
+    } catch (error) {
+      const message = error?.message || `Failed to clear ${type}.`;
+      setNotice(message);
+      throw error;
+    }
   };
 
   const inspectUser = async () => {

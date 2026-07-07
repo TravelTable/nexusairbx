@@ -71,7 +71,6 @@ const MODULE_EXPORTS = {
     "waitForApproval",
     "getApprovalModeEnabledExport",
     "handleSessionExpired",
-    "localSnapshots",
     "applying",
     "pairButton",
     "codeBox",
@@ -117,6 +116,10 @@ const MODULE_EXPORTS = {
     "lastBatchSnapshots",
     "AGENT_ARTIFACT_ID_ATTRIBUTE",
     "AGENT_FILE_ID_ATTRIBUTE",
+    "CREATABLE_CLASSES",
+    "NATIVE_MODEL_LIMITS",
+    "escapePattern",
+    "escapeReplacement",
   ],
   "src/net/httpClient.lua": ["request", "getToken", "setToken", "jsonEncode", "getLastLatencyMs", "pingHealth"],
   "src/studio/path.lua": [
@@ -125,6 +128,9 @@ const MODULE_EXPORTS = {
     "readScriptSource",
     "writeScriptSource",
     "getStarterPlayerScripts",
+    "splitPath",
+    "ensureParent",
+    "safeSetProperty",
   ],
   "src/studio/snapshot.lua": [
     "snapshotInstance",
@@ -186,6 +192,8 @@ const MODULE_EXPORTS = {
   "src/commands/registry.lua": ["pullOnce", "executeCommand", "ack", "TOOL_HANDLERS"],
   "src/Main.server.lua": [],
 };
+
+const SHARED_TOP_LEVEL_LOCALS = ["localSnapshots", "updateSnapshotLabel"];
 
 const header = [
   "-- NexusRBX Studio Bridge",
@@ -249,7 +257,20 @@ const body = sources
   .join("\n");
 
 const bundled = header + body;
-const output = rewriteServices(bundled);
+let output = rewriteServices(bundled);
+const configEndMarker = "-- END src/config.lua";
+const configEnd = output.indexOf(configEndMarker);
+if (configEnd === -1) {
+  throw new Error("Missing config section in bundled plugin");
+}
+const sharedPreamble = [
+  "",
+  "-- Shared cross-module state (declared before snapshot.lua uses it)",
+  `local ${SHARED_TOP_LEVEL_LOCALS.join(", ")}`,
+  "localSnapshots = {}",
+  "",
+].join("\n");
+output = output.slice(0, configEnd + configEndMarker.length) + sharedPreamble + output.slice(configEnd + configEndMarker.length);
 const localCount = (output.match(/^local /gm) || []).length;
 
 if (localCount > 200) {

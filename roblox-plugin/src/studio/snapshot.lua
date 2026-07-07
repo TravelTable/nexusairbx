@@ -54,8 +54,12 @@ local function snapshotInstance(path)
 	-- by the command executor so restore can detect human edits made since.
 	snap.preHash = snapshotStateHash(inst)
 
-	table.insert(localSnapshots, snap)
-	updateSnapshotLabel()
+	if type(localSnapshots) == "table" then
+		table.insert(localSnapshots, snap)
+		if type(updateSnapshotLabel) == "function" then
+			updateSnapshotLabel()
+		end
+	end
 	return snap
 end
 

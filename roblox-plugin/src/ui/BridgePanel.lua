@@ -26,7 +26,7 @@ local widgetInfo = DockWidgetPluginGuiInfo.new(
 local widget = plugin:CreateDockWidgetPluginGui("NexusRBXStudioBridge", widgetInfo)
 widget.Title = "NexusRBX Studio Bridge"
 
-local localSnapshots = {}
+-- `localSnapshots` is initialized in the bundled shared preamble before snapshot.lua.
 local applying = false
 local pollingActive, lastErrorText, diagnosticsOpen, pendingApproval, selectedSnapshotIds = false, nil, false, nil, {}
 
@@ -978,8 +978,10 @@ local function errorHelpFor(value)
 		return "Backend is updating. Try again shortly."
 	elseif string.find(lowered, "unsupported") then
 		return "Reinstall the latest plugin via Plugins -> Manage Plugins."
-	elseif string.find(lowered, "cloud_") or string.find(lowered, "attempt to call a nil value") then
-		return "The Creator Store copy of this plugin is still running. Plugins -> Manage Plugins -> disable NexusRBX cloud plugin -> restart Studio. Keep only the local install from npm run plugin:install."
+	elseif string.find(lowered, "attempt to call a nil value") then
+		return "Plugin bundle is outdated. Run npm run plugin:install from the repo, restart Studio, and try again."
+	elseif string.find(lowered, "cloud_") then
+		return "A Creator Store copy of this plugin may still be enabled. Plugins -> Manage Plugins -> disable the NexusRBX cloud plugin, use only the local install from npm run plugin:install, then restart Studio."
 	elseif string.find(lowered, "expired") then
 		return "Session expired. Pair Studio again from the website."
 	elseif string.find(lowered, "dnsresolve") or string.find(lowered, "could not resolve") then

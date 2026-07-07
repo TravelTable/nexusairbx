@@ -54,6 +54,10 @@ NATIVE_ALLOWED_ROOTS = {
 	["Services.ServerStorage"] = Services.ServerStorage,
 }
 -- END src/config.lua
+-- Shared cross-module state (declared before snapshot.lua uses it)
+local localSnapshots, updateSnapshotLabel
+localSnapshots = {}
+
 
 -- BEGIN src/ui/components.lua
 -- Shared UI helpers are defined in BridgePanel for the bundled plugin runtime.
@@ -308,9 +312,9 @@ end
 -- END src/net/httpClient.lua
 
 -- BEGIN src/studio/serialization.lua
-local SCRIPT_CLASSES, stableHash, nowMs, readManagedId, attributesOf, propertyHash, scriptHash, propertiesOf, structuredUnsupported, lastBatchSnapshots, AGENT_ARTIFACT_ID_ATTRIBUTE, AGENT_FILE_ID_ATTRIBUTE
+local SCRIPT_CLASSES, stableHash, nowMs, readManagedId, attributesOf, propertyHash, scriptHash, propertiesOf, structuredUnsupported, lastBatchSnapshots, AGENT_ARTIFACT_ID_ATTRIBUTE, AGENT_FILE_ID_ATTRIBUTE, CREATABLE_CLASSES, NATIVE_MODEL_LIMITS, escapePattern, escapeReplacement
 do
-local NATIVE_MODEL_LIMITS = {
+NATIVE_MODEL_LIMITS = {
 	maxInstances = 750,
 	maxBaseParts = 400,
 	maxConstraints = 150,
@@ -451,7 +455,7 @@ local NETWORKING_CLASSES = {
 	BindableFunction = true,
 }
 
-local CREATABLE_CLASSES = {
+CREATABLE_CLASSES = {
 	Folder = true,
 	RemoteEvent = true,
 	RemoteFunction = true,
@@ -627,20 +631,20 @@ structuredUnsupported = function(operation, message)
 	}
 end
 
-local function escapePattern(text)
+escapePattern = function(text)
 	return tostring(text or ""):gsub("([^%w])", "%%%1")
 end
 
-local function escapeReplacement(text)
+escapeReplacement = function(text)
 	return tostring(text or ""):gsub("%%", "%%%%")
 end
 end
 -- END src/studio/serialization.lua
 
 -- BEGIN src/studio/path.lua
-local fullPath, resolvePath, readScriptSource, writeScriptSource, getStarterPlayerScripts
+local fullPath, resolvePath, readScriptSource, writeScriptSource, getStarterPlayerScripts, splitPath, ensureParent, safeSetProperty
 do
-local function splitPath(path)
+splitPath = function(path)
 	local parts = {}
 	for part in tostring(path or ""):gmatch("[^/]+") do
 		if part ~= "" and part ~= "game" then
@@ -713,7 +717,7 @@ resolvePath = function(path)
 	return current
 end
 
-local function ensureParent(path, createParents)
+ensureParent = function(path, createParents)
 	local parts = splitPath(path)
 	local rootInst, startIndex = rootFromParts(parts)
 	if not rootInst or #parts < startIndex then
@@ -735,7 +739,7 @@ local function ensureParent(path, createParents)
 	return current, parts[#parts]
 end
 
-local function safeSetProperty(inst, key, value)
+safeSetProperty = function(inst, key, value)
 	local ok, err = pcall(function()
 		if typeof(value) == "table" and value.type == "UDim2" then
 			value = UDim2.new(value.xScale or 0, value.xOffset or 0, value.yScale or 0, value.yOffset or 0)
@@ -894,8 +898,12 @@ snapshotInstance = function(path)
 	-- by the command executor so restore can detect human edits made since.
 	snap.preHash = snapshotStateHash(inst)
 
-	table.insert(localSnapshots, snap)
-	updateSnapshotLabel()
+	if type(localSnapshots) == "table" then
+		table.insert(localSnapshots, snap)
+		if type(updateSnapshotLabel) == "function" then
+			updateSnapshotLabel()
+		end
+	end
 	return snap
 end
 
@@ -1021,7 +1029,7 @@ end
 -- END src/studio/snapshot.lua
 
 -- BEGIN src/ui/BridgePanel.lua
-local setStatus, setLast, setBusy, setActive, setRun, setProgress, pushActivity, showToast, setHealth, setPollingPulse, showApprovalGate, hideApprovalGate, waitForApproval, getApprovalModeEnabledExport, handleSessionExpired, localSnapshots, applying, pairButton, codeBox, pullButton, restoreButton, disconnectButton, confirmRestoreButton, cancelRestoreButton, approvalToggleButton, approvalConfirmButton, approvalDeclineButton, refreshControls, runSetupCheck, showOnboarding, hideOnboarding, checkSetupButton, onboardingDismissButton, showRestoreConfirmation, hideRestoreConfirmation, updateSnapshotLabel, widget, toggleButton, healthLabel, progressLabel, feedEmptyLabel, approvalCopy, playtestLogsButton, playtestStrip, setButtonEnabled, collaboratorsLabel, updateCollaborators
+local setStatus, setLast, setBusy, setActive, setRun, setProgress, pushActivity, showToast, setHealth, setPollingPulse, showApprovalGate, hideApprovalGate, waitForApproval, getApprovalModeEnabledExport, handleSessionExpired, applying, pairButton, codeBox, pullButton, restoreButton, disconnectButton, confirmRestoreButton, cancelRestoreButton, approvalToggleButton, approvalConfirmButton, approvalDeclineButton, refreshControls, runSetupCheck, showOnboarding, hideOnboarding, checkSetupButton, onboardingDismissButton, showRestoreConfirmation, hideRestoreConfirmation, updateSnapshotLabel, widget, toggleButton, healthLabel, progressLabel, feedEmptyLabel, approvalCopy, playtestLogsButton, playtestStrip, setButtonEnabled, collaboratorsLabel, updateCollaborators
 do
 -- NexusRBX Studio Bridge UI
 -- Dock panel: pairing, activity feed, recovery, approval gate, health.
@@ -1051,7 +1059,7 @@ local widgetInfo = DockWidgetPluginGuiInfo.new(
 widget = plugin:CreateDockWidgetPluginGui("NexusRBXStudioBridge", widgetInfo)
 widget.Title = "NexusRBX Studio Bridge"
 
-localSnapshots = {}
+-- `localSnapshots` is initialized in the bundled shared preamble before snapshot.lua.
 applying = false
 local pollingActive, lastErrorText, diagnosticsOpen, pendingApproval, selectedSnapshotIds = false, nil, false, nil, {}
 
@@ -2003,8 +2011,10 @@ local function errorHelpFor(value)
 		return "Backend is updating. Try again shortly."
 	elseif string.find(lowered, "unsupported") then
 		return "Reinstall the latest plugin via Plugins -> Manage Plugins."
-	elseif string.find(lowered, "cloud_") or string.find(lowered, "attempt to call a nil value") then
-		return "The Creator Store copy of this plugin is still running. Plugins -> Manage Plugins -> disable NexusRBX cloud plugin -> restart Studio. Keep only the local install from npm run plugin:install."
+	elseif string.find(lowered, "attempt to call a nil value") then
+		return "Plugin bundle is outdated. Run npm run plugin:install from the repo, restart Studio, and try again."
+	elseif string.find(lowered, "cloud_") then
+		return "A Creator Store copy of this plugin may still be enabled. Plugins -> Manage Plugins -> disable the NexusRBX cloud plugin, use only the local install from npm run plugin:install, then restart Studio."
 	elseif string.find(lowered, "expired") then
 		return "Session expired. Pair Studio again from the website."
 	elseif string.find(lowered, "dnsresolve") or string.find(lowered, "could not resolve") then
