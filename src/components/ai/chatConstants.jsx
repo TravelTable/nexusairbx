@@ -54,7 +54,7 @@ export const CHAT_MODES = [
     color: "text-gray-300",
     bg: "bg-gray-400/10",
     border: "hover:border-gray-400/50",
-    description: "Read-only Q&A about Roblox development. Never edits anything.",
+    description: "Read-only Q&A. When Studio is connected, can list and read scripts from your place.",
     placeholder: "Ask anything about Roblox development…",
     type: "operating-mode",
     requiresPremium: false,

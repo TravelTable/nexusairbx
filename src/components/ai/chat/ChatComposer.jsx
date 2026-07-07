@@ -271,6 +271,12 @@ export default function ChatComposer({
           </div>
         )}
 
+        {mode === "ask" && studioConnected && (
+          <div className="px-1 text-[10px] font-medium text-[#00f5d4]/75">
+            Studio read access enabled for Ask mode.
+          </div>
+        )}
+
         <div className="relative group z-20">
           <div
             className="absolute -inset-0.5 rounded-2xl blur opacity-15 transition duration-500 group-focus-within:opacity-35"

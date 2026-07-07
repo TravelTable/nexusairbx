@@ -22,6 +22,10 @@ import {
 import { stageSlug } from "../lib/streamEngagement";
 import { resolveGameSpecForPrompt } from "../lib/gameProfile";
 import { categorizePrompt, trackProductEvent } from "../lib/productAnalytics";
+import { FEATURE_FLAGS } from "../lib/featureFlags";
+import { getStudioEnabledPreference } from "../lib/agentSteps";
+import { getStudioStatus } from "../lib/studioBridgeApi";
+import { isStudioSessionLive } from "./useStudioConnection";
 
 function seedOrchestrationStream(stage = "Understanding your task...") {
   return applyStreamActivity(createPendingStreamState(), {
@@ -303,7 +307,35 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
   const handleAskSubmit = useCallback(
     async (prompt, _attachments, activeChatId, requestId) => {
       const token = await user.getIdToken();
-      chat.setPendingForChat(activeChatId, { role: "assistant", content: "", type: "chat", prompt, stage: "Thinking..." });
+      chat.setPendingForChat(activeChatId, {
+        role: "assistant",
+        content: "",
+        type: "chat",
+        prompt,
+        stage: "Thinking...",
+      });
+
+      const studioEnabled = FEATURE_FLAGS.unifiedAgent && getStudioEnabledPreference();
+      let studioSessionId = null;
+      if (studioEnabled) {
+        try {
+          const studioStatus = await getStudioStatus();
+          const sessions = studioStatus.sessions || [];
+          const activeSession =
+            sessions.find((session) => isStudioSessionLive(session)) ||
+            sessions.find((session) => session?.status === "connected") ||
+            null;
+          studioSessionId = activeSession?.sessionId || activeSession?.id || null;
+          if (studioSessionId) {
+            chat.setPendingForChat(activeChatId, (prev) =>
+              prev ? { ...prev, stage: "Reading Studio project..." } : prev
+            );
+          }
+        } catch (_) {
+          /* non-fatal: Ask still works without Studio */
+        }
+      }
+
       let full = "";
       try {
         const res = await fetch(`${BACKEND_URL}/api/ai/chat`, {
@@ -313,6 +345,8 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
             prompt,
             gameSpec: effectiveGameSpec,
             conversation: chat.messages.slice(-10).map((m) => ({ role: m.role, content: m.content || m.explanation })),
+            studioEnabled: studioEnabled && Boolean(studioSessionId),
+            studioSessionId,
           }),
         });
         if (!res.ok || !res.body) {
@@ -332,10 +366,15 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
           const snapshot = full;
           chat.setPendingForChat(activeChatId, (prev) => (prev ? { ...prev, content: snapshot, stage: "" } : prev));
         }
+      } catch (err) {
+        throw err instanceof Error ? err : new Error(String(err || "Ask request failed"));
       } finally {
         chat.setPendingForChat(activeChatId, null);
       }
-      const text = full.trim() || "(no response)";
+      if (!full.trim()) {
+        throw new Error("The assistant returned an empty response. Please try again.");
+      }
+      const text = full.trim();
       await setDoc(
         doc(db, "users", user.uid, "chats", activeChatId, "messages", `${requestId}-assistant`),
         { role: "assistant", content: text, explanation: text, createdAt: serverTimestamp(), requestId }
