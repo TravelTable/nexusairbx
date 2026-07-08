@@ -188,10 +188,36 @@ Server-side controls:
 - `QUICK_SCRIPT_ANON_IP_DAILY_LIMIT`, default `12`
 - `QUICK_SCRIPT_RATE_LIMIT_WINDOW_MS`, default `60000`
 - `QUICK_SCRIPT_RATE_LIMIT_MAX`, default `6`
-- `QUICK_SCRIPT_MAX_PROMPT_CHARS`, default `5000`
-- `QUICK_SCRIPT_MAX_OUTPUT_TOKENS`, default `2600`
+- `QUICK_SCRIPT_ANON_MAX_OUTPUT_TOKENS`, default `3500`
+- `QUICK_SCRIPT_ANON_MAX_PROMPT_CHARS`, default `4000`
+- `QUICK_SCRIPT_MAX_PROMPT_CHARS`, default `6500` (free signed-in)
+- `QUICK_SCRIPT_MAX_OUTPUT_TOKENS`, default `5000` (free signed-in)
+- `QUICK_SCRIPT_PRO_MAX_OUTPUT_TOKENS`, default `10000`
+- `QUICK_SCRIPT_PRO_MAX_PROMPT_CHARS`, default `12000`
 - `QUICK_SCRIPT_RESULT_TTL_DAYS`, default `7`
 - `QUICK_SCRIPT_USAGE_TTL_DAYS`, default `30`
+
+## Generation Output Caps
+
+Tier-based output limits are centralized in `backend/src/lib/generationLimits.js`.
+
+| Tier | Quick Script output | Agent Build output | UI generation output |
+|------|--------------------|--------------------|----------------------|
+| Anonymous | 3,500 | N/A | N/A |
+| Free signed-in | 5,000 | 6,000 | 8,000 |
+| Pro | 10,000 | 32,000 | 32,000 |
+| Pro Plus / Team | 10,000 | 48,000 | 48,000 |
+
+Agent Build / UI env overrides:
+
+- `HARD_TOKEN_MAX`, default `65536`
+- `MAX_OUTPUT_TOKENS_FREE`, default `6000`
+- `MAX_OUTPUT_TOKENS_PRO`, default `32000`
+- `MAX_OUTPUT_TOKENS_PRO_PLUS`, default `48000`
+- `MAX_OUTPUT_TOKENS_DEFAULT`, default `24000`
+- `UI_GENERATE_MAX_TOKENS_FREE`, default `8000`
+- `UI_GENERATE_MAX_TOKENS_PRO`, default `32000`
+- `UI_GENERATE_MAX_TOKENS_PRO_PLUS`, default `48000`
 
 The anonymous limit is enforced through hashed anonymous ID plus hashed IP/day counters. The client flag is never trusted. Provider failures release the anonymous reservation so a user is not charged for a failed attempt.
 
