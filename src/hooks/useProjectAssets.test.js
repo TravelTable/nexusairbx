@@ -59,16 +59,18 @@ describe("useProjectAssets", () => {
       .mockResolvedValueOnce({ status: "uploading", records: [] })
       .mockResolvedValueOnce({ status: "processing", records: [] });
 
-    renderHook(() => useProjectAssets("project_1", { enabled: true }));
+    const { result } = renderHook(() => useProjectAssets("project_1", { enabled: true }));
 
-    await waitFor(() => expect(getGeneratedAssetUploadStatus).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(result.current.uploadStatus.status).toBe("uploading"));
     getGeneratedAssetUploadStatus.mockClear();
 
-    act(() => {
+    await act(async () => {
       jest.advanceTimersByTime(12000);
+      await Promise.resolve();
     });
 
     await waitFor(() => expect(getGeneratedAssetUploadStatus).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(result.current.uploadStatus.status).toBe("processing"));
   });
 
   test("stops upload-status polling on terminal states", async () => {
@@ -78,15 +80,16 @@ describe("useProjectAssets", () => {
       .mockResolvedValueOnce({ status: "uploading", records: [] })
       .mockResolvedValueOnce({ status: "completed", records: [] });
 
-    renderHook(() => useProjectAssets("project_1", { enabled: true }));
+    const { result } = renderHook(() => useProjectAssets("project_1", { enabled: true }));
 
-    await waitFor(() => expect(getGeneratedAssetUploadStatus).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(result.current.uploadStatus.status).toBe("uploading"));
 
-    act(() => {
+    await act(async () => {
       jest.advanceTimersByTime(12000);
+      await Promise.resolve();
     });
 
-    await waitFor(() => expect(getGeneratedAssetUploadStatus).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(result.current.uploadStatus.status).toBe("completed"));
     getGeneratedAssetUploadStatus.mockClear();
 
     act(() => {

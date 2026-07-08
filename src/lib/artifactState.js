@@ -12,12 +12,17 @@ export function computeContentHash(content) {
   return stableHash(String(content || ""));
 }
 
+function cloneOptional(value) {
+  if (value === undefined) return undefined;
+  return JSON.parse(JSON.stringify(value));
+}
+
 export function normalizeArtifactFile(rawFile = {}, index = 0) {
   const path = String(rawFile.path || `${rawFile.placement || "ReplicatedStorage"}/${rawFile.name || `Script${index + 1}`}`)
     .replace(/\\/g, "/")
     .replace(/^\/+|\/+$/g, "");
   const content = String(rawFile.content || "");
-  return {
+  const normalized = {
     id: String(rawFile.id || `file_${stableHash(`${path}:${index}`)}`),
     name: String(rawFile.name || path.split("/").filter(Boolean).pop() || `Script${index + 1}`),
     path,
@@ -26,6 +31,18 @@ export function normalizeArtifactFile(rawFile = {}, index = 0) {
     content,
     contentHash: String(rawFile.contentHash || computeContentHash(content)),
   };
+  const optionalFields = {
+    language: rawFile.language,
+    purpose: rawFile.purpose,
+    dependencies: cloneOptional(rawFile.dependencies),
+    warnings: cloneOptional(rawFile.warnings),
+    validation: cloneOptional(rawFile.validation),
+    status: rawFile.status,
+  };
+  Object.entries(optionalFields).forEach(([key, value]) => {
+    if (value !== undefined) normalized[key] = value;
+  });
+  return normalized;
 }
 
 export function computeArtifactRevision(files = []) {
@@ -47,10 +64,25 @@ export function buildBaseArtifactSnapshot(artifact) {
   const files = Array.isArray(artifact.files)
     ? artifact.files.map((file, index) => normalizeArtifactFile(file, index))
     : [];
-  return {
+  const snapshot = {
     artifactId: String(artifact.projectId || artifact.artifactId || artifact.id || ""),
     revision: String(artifact.revision || computeArtifactRevision(files)),
     title: String(artifact.title || "Generated Artifact"),
     files,
   };
+  const optionalFields = {
+    summary: artifact.summary,
+    metadata: cloneOptional(artifact.metadata),
+    warnings: cloneOptional(artifact.warnings),
+    setupSteps: cloneOptional(artifact.setupSteps),
+    testingSteps: cloneOptional(artifact.testingSteps),
+    securityNotes: cloneOptional(artifact.securityNotes),
+    operations: cloneOptional(artifact.operations),
+    lintWarning: artifact.lintWarning,
+    qaReport: cloneOptional(artifact.qaReport),
+  };
+  Object.entries(optionalFields).forEach(([key, value]) => {
+    if (value !== undefined) snapshot[key] = value;
+  });
+  return snapshot;
 }

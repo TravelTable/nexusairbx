@@ -31,9 +31,10 @@ describe("useStudioConnection", () => {
       sessions: [{ sessionId: "studio_1", status: "connected", live: true }],
     });
 
-    renderHook(() => useStudioConnection());
+    const hook = renderHook(() => useStudioConnection());
 
-    await waitFor(() => expect(getStudioStatus).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(hook.result.current.loading).toBe(false));
+    expect(getStudioStatus).toHaveBeenCalledTimes(1);
     getStudioStatus.mockClear();
 
     act(() => {
@@ -41,8 +42,9 @@ describe("useStudioConnection", () => {
     });
     expect(getStudioStatus).not.toHaveBeenCalled();
 
-    act(() => {
+    await act(async () => {
       jest.advanceTimersByTime(1);
+      await Promise.resolve();
     });
 
     await waitFor(() => expect(getStudioStatus).toHaveBeenCalledTimes(1));
@@ -53,20 +55,23 @@ describe("useStudioConnection", () => {
       sessions: [{ sessionId: "studio_1", status: "connected", live: true }],
     });
 
-    renderHook(() => useStudioConnection());
+    const hook = renderHook(() => useStudioConnection());
 
-    await waitFor(() => expect(getStudioStatus).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(hook.result.current.loading).toBe(false));
+    expect(getStudioStatus).toHaveBeenCalledTimes(1);
     hidden = true;
     getStudioStatus.mockClear();
 
-    act(() => {
+    await act(async () => {
       document.dispatchEvent(new Event("visibilitychange"));
       jest.advanceTimersByTime(59999);
+      await Promise.resolve();
     });
     expect(getStudioStatus).not.toHaveBeenCalled();
 
-    act(() => {
+    await act(async () => {
       jest.advanceTimersByTime(1);
+      await Promise.resolve();
     });
 
     await waitFor(() => expect(getStudioStatus).toHaveBeenCalledTimes(1));
@@ -77,7 +82,8 @@ describe("useStudioConnection", () => {
 
     const { result } = renderHook(() => useStudioConnection());
 
-    await waitFor(() => expect(getStudioStatus).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(getStudioStatus).toHaveBeenCalledTimes(1);
     getStudioStatus.mockClear();
 
     await act(async () => {
@@ -91,8 +97,9 @@ describe("useStudioConnection", () => {
     });
     expect(getStudioStatus).not.toHaveBeenCalled();
 
-    act(() => {
+    await act(async () => {
       jest.advanceTimersByTime(1);
+      await Promise.resolve();
     });
     await waitFor(() => expect(getStudioStatus).toHaveBeenCalledTimes(1));
   });
