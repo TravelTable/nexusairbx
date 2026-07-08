@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 
 /**
  * NotificationToast
- * 
+ *
  * Props:
  * - message: string (main message)
  * - type: "info" | "success" | "error"
@@ -24,9 +24,20 @@ export default function NotificationToast({
   const [leaving, setLeaving] = useState(false);
   const [progress, setProgress] = useState(100);
   const intervalRef = useRef();
+  const leaveTimeoutRef = useRef();
+  const onCloseRef = useRef(onClose);
+
+  // Keep the latest onClose without restarting the dismiss timer on every
+  // parent re-render (API/polling updates commonly recreate inline callbacks).
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
 
   useEffect(() => {
     let start = Date.now();
+    setLeaving(false);
+    setProgress(100);
+
     intervalRef.current = setInterval(() => {
       const elapsed = Date.now() - start;
       const percent = Math.max(0, 100 - (elapsed / duration) * 100);
@@ -34,19 +45,24 @@ export default function NotificationToast({
       if (elapsed >= duration) {
         setLeaving(true);
         clearInterval(intervalRef.current);
-        setTimeout(() => {
-          if (onClose) onClose();
+        leaveTimeoutRef.current = setTimeout(() => {
+          onCloseRef.current?.();
         }, 350);
       }
     }, 30);
-    return () => clearInterval(intervalRef.current);
-  }, [duration, onClose]);
+
+    return () => {
+      clearInterval(intervalRef.current);
+      clearTimeout(leaveTimeoutRef.current);
+    };
+  }, [duration]);
 
   const handleClose = () => {
     setLeaving(true);
     clearInterval(intervalRef.current);
-    setTimeout(() => {
-      if (onClose) onClose();
+    clearTimeout(leaveTimeoutRef.current);
+    leaveTimeoutRef.current = setTimeout(() => {
+      onCloseRef.current?.();
     }, 350);
   };
 
@@ -68,20 +84,18 @@ export default function NotificationToast({
       role="alert"
       aria-live="assertive"
     >
-{!leaving && (
-  <button
-    className="absolute top-2 right-2 text-gray-400 hover:text-white text-lg font-bold focus:outline-none"
-    onClick={handleClose}
-    aria-label="Close notification"
-    tabIndex={0}
-  >
-    ×
-  </button>
-)}
-      <div className="pr-6 text-base">{message}</div>
-      {children && (
-        <div className="mt-2">{children}</div>
+      {!leaving && (
+        <button
+          className="absolute top-2 right-2 text-gray-400 hover:text-white text-lg font-bold focus:outline-none"
+          onClick={handleClose}
+          aria-label="Close notification"
+          tabIndex={0}
+        >
+          ×
+        </button>
       )}
+      <div className="pr-6 text-base">{message}</div>
+      {children && <div className="mt-2">{children}</div>}
       {(cta || secondary) && (
         <div className="mt-3 flex gap-2">
           {cta && (

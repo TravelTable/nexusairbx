@@ -10,7 +10,21 @@ export const STUDIO_IDLE_PULSE_MESSAGES = Object.freeze([
 ]);
 
 export function stageSlug(label = "") {
-  return String(label).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  return String(label || "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+}
+
+/** True when the current stage is actually blocked on a Studio round-trip. */
+export function isWaitingForStudioContext(ctx = {}) {
+  if (ctx.waitingForStudio === true) return true;
+  if (ctx.waitingForStudio === false) return false;
+  const stage = String(ctx.stage || "").toLowerCase();
+  if (!stage) return false;
+  return (
+    stage.includes("waiting for studio") ||
+    stage.includes("waiting for roblox studio") ||
+    stage.includes("waiting for tool") ||
+    /\b(inspecting|applying|building studio manifest)\b/.test(stage)
+  );
 }
 
 /**
@@ -39,7 +53,9 @@ export function createIdlePulseController({
     // Only speak up after a longer silence so real streaming carries the UI.
     if (quietTicks < 3) return;
     const ctx = getContext?.() || {};
-    const messages = ctx.studioConnected ? STUDIO_IDLE_PULSE_MESSAGES : IDLE_PULSE_MESSAGES;
+    const messages = isWaitingForStudioContext(ctx)
+      ? STUDIO_IDLE_PULSE_MESSAGES
+      : IDLE_PULSE_MESSAGES;
     const message = messages[pulseIndex % messages.length];
     pulseIndex += 1;
     onPulse?.(message);
