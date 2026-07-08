@@ -80,7 +80,6 @@ export default function MessageList({
   approvingStepId,
 }) {
   const pendingParsed = parsePendingStreamContent(pendingMessage?.content || "");
-  const hasPendingMessage = !!pendingMessage;
   const showLiveWorkStream = Boolean(
     pendingMessage?.streamState ||
     (Array.isArray(pendingMessage?.files) && pendingMessage.files.length) ||
@@ -123,35 +122,12 @@ export default function MessageList({
 
   const streamActivityLen = streamState?.activity?.length ?? 0;
   const streamFilesLen = streamState?.files?.length ?? 0;
-  const pendingFilesLen = pendingMessage?.files?.length ?? 0;
   const pendingStepsLen = pendingMessage?.steps?.length ?? 0;
   const rawReasoningLen = String(streamState?.rawReasoning || "").length;
 
   useEffect(() => {
     if (!chatEndRef?.current) return;
     const scroll = () => {
-      // #region agent log
-      fetch("http://127.0.0.1:7314/ingest/95f6c742-cc5a-4fb7-875d-0de0998fe009", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "bf63a4" },
-        body: JSON.stringify({
-          sessionId: "bf63a4",
-          runId: "post-fix",
-          hypothesisId: "scroll-deps",
-          location: "MessageList.jsx:scroll",
-          message: "scrollIntoView triggered",
-          data: {
-            hasPendingMessage,
-            messageCount: visibleMessages.length,
-            streamActivityLen,
-            streamFilesLen,
-            pendingStepsLen,
-            rawReasoningLen,
-          },
-          timestamp: Date.now(),
-        }),
-      }).catch(() => {});
-      // #endregion
       chatEndRef.current.scrollIntoView({
         behavior: "auto",
         block: "end",
@@ -175,17 +151,16 @@ export default function MessageList({
     pendingMessage?.content,
     pendingMessage?.prompt,
     pendingMessage?.stage,
-    hasPendingMessage,
+    pendingMessage,
     chatEndRef,
     streamActivityLen,
     streamFilesLen,
-    pendingFilesLen,
     pendingStepsLen,
     rawReasoningLen,
   ]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {visibleMessages.map((m) => (
         <MessageBubble
           key={m.id}
@@ -209,10 +184,10 @@ export default function MessageList({
       {pendingMessage && (
         <>
           {showOptimisticUserPrompt ? (
-            <div className="flex justify-end gap-3.5 animate-in fade-in slide-in-from-bottom-4 duration-500">
-              <div className="max-w-[70%] md:max-w-[60%] order-1">
-                <div className="px-4 py-3 md:px-5 md:py-4 rounded-2xl2 rounded-tr-md bg-gradient-to-br from-white/[0.09] to-white/[0.03] border border-white/10 backdrop-blur-xl shadow-panel">
-                  <div className="text-[15px] md:text-[16px] whitespace-pre-wrap leading-relaxed text-white font-medium">
+            <div className="flex justify-end gap-3.5 motion-safe:animate-fade-in-up">
+              <div className="order-1 max-w-[680px]">
+                <div className="rounded-[22px] rounded-tr-lg border border-white/[0.08] bg-gradient-to-br from-white/[0.11] via-white/[0.065] to-[#00f5d4]/[0.045] px-4 py-3.5 shadow-[0_14px_36px_-26px_rgba(0,245,212,0.5)] backdrop-blur-xl">
+                  <div className="whitespace-pre-wrap text-[15px] font-medium leading-7 text-white">
                     {String(pendingMessage.prompt || "").trim()}
                   </div>
                 </div>
@@ -225,11 +200,11 @@ export default function MessageList({
             </div>
           ) : null}
 
-          <div className="flex justify-start gap-3.5 animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <div className="flex justify-start gap-3.5 motion-safe:animate-fade-in-up">
             <NexusRBXAvatar isThinking={true} mode={activeMode} />
-            <div className="max-w-[90%] order-2 space-y-4">
+            <div className="order-2 max-w-[820px] space-y-4">
               {showLiveWorkStream ? (
-                <div className="rounded-2xl border border-white/10 bg-[#0b0b0b]/90 shadow-2xl overflow-hidden">
+                <div className="overflow-hidden rounded-[22px] rounded-tl-lg border border-white/[0.075] bg-white/[0.035] shadow-[0_18px_48px_-34px_rgba(0,0,0,0.95)] backdrop-blur-xl">
                   <RawReasoningPanel
                     text={streamState?.rawReasoning}
                     live={Boolean(pendingMessage)}
@@ -261,11 +236,11 @@ export default function MessageList({
 
               {pendingMessage.content && !showLiveWorkStream ? (
                 <div className="space-y-4">
-                  <div className="p-4 md:p-5 rounded-2xl2 rounded-tl-md card-surface shadow-panel">
+                  <div className="rounded-[22px] rounded-tl-lg border border-white/[0.07] bg-white/[0.035] px-4 py-3.5 shadow-[0_14px_40px_-32px_rgba(0,0,0,0.95)] backdrop-blur-xl">
                     {pendingParsed.hasStructured ? (
                       <div className="space-y-4">
                         {pendingParsed.code && (
-                          <div className="rounded-2xl border border-white/10 bg-black/40 overflow-hidden">
+                          <div className="overflow-hidden rounded-2xl border border-white/10 bg-black/35">
                             <div className="px-3 py-2 border-b border-white/5 text-[10px] font-black uppercase tracking-widest text-gray-500">
                               Streaming Code
                             </div>

@@ -90,44 +90,44 @@ function MermaidBlock({ chart }) {
 
 const markdownComponents = {
   h1: ({ children }) => (
-    <h1 className="text-xl font-bold text-gray-50 mt-4 mb-2 first:mt-0">{children}</h1>
+    <h1 className="mt-4 mb-2 text-xl font-bold leading-tight text-gray-50 first:mt-0">{children}</h1>
   ),
   h2: ({ children }) => (
-    <h2 className="text-lg font-bold text-gray-100 mt-4 mb-2 first:mt-0">{children}</h2>
+    <h2 className="mt-4 mb-2 text-lg font-bold leading-tight text-gray-100 first:mt-0">{children}</h2>
   ),
   h3: ({ children }) => (
-    <h3 className="text-base font-semibold text-gray-100 mt-3 mb-1.5 first:mt-0">{children}</h3>
+    <h3 className="mt-3 mb-1.5 text-base font-semibold leading-snug text-gray-100 first:mt-0">{children}</h3>
   ),
   p: ({ children }) => (
-    <p className="text-[15px] leading-relaxed text-gray-100 mb-3 last:mb-0">{children}</p>
+    <p className="mb-3 text-[15px] leading-7 text-gray-100 last:mb-0">{children}</p>
   ),
   ul: ({ children }) => (
-    <ul className="list-disc pl-5 mb-3 space-y-1 text-[15px] text-gray-200">{children}</ul>
+    <ul className="mb-3 list-disc space-y-1.5 pl-5 text-[15px] text-gray-200">{children}</ul>
   ),
   ol: ({ children }) => (
-    <ol className="list-decimal pl-5 mb-3 space-y-1 text-[15px] text-gray-200">{children}</ol>
+    <ol className="mb-3 list-decimal space-y-1.5 pl-5 text-[15px] text-gray-200">{children}</ol>
   ),
-  li: ({ children }) => <li className="leading-relaxed">{children}</li>,
-  strong: ({ children }) => <strong className="text-[#00f5d4] font-bold">{children}</strong>,
+  li: ({ children }) => <li className="leading-7">{children}</li>,
+  strong: ({ children }) => <strong className="font-bold text-white">{children}</strong>,
   em: ({ children }) => <em className="text-gray-300 italic">{children}</em>,
   a: ({ href, children }) => (
     <a
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      className="text-[#00f5d4] underline underline-offset-2 hover:text-[#9b5de5]"
+      className="text-[#8befff] underline decoration-[#00f5d4]/35 underline-offset-4 transition-colors hover:text-white"
     >
       {children}
     </a>
   ),
   blockquote: ({ children }) => (
-    <blockquote className="border-l-2 border-[#9b5de5]/50 pl-3 my-3 text-gray-300 italic">
+    <blockquote className="my-3 border-l-2 border-[#00f5d4]/35 pl-3 text-gray-300">
       {children}
     </blockquote>
   ),
   hr: () => <hr className="my-4 border-white/10" />,
   table: ({ children }) => (
-    <div className="my-3 overflow-x-auto rounded-xl border border-white/10">
+    <div className="my-3 overflow-x-auto rounded-xl border border-white/10 bg-black/20">
       <table className="w-full text-left text-[13px] text-gray-200">{children}</table>
     </div>
   ),
@@ -150,7 +150,7 @@ const markdownComponents = {
     if (inline) {
       return (
         <code
-          className="px-1.5 py-0.5 rounded bg-black/40 border border-white/10 text-[13px] font-mono text-[#00f5d4]"
+          className="rounded-md border border-white/10 bg-black/35 px-1.5 py-0.5 font-mono text-[13px] text-[#d8fbff]"
           {...props}
         >
           {children}
@@ -159,11 +159,18 @@ const markdownComponents = {
     }
 
     return (
-      <pre className="my-3 p-3 rounded-xl border border-white/10 bg-black/40 overflow-x-auto">
-        <code className="text-[12px] leading-relaxed font-mono text-gray-300" {...props}>
-          {codeText}
-        </code>
-      </pre>
+      <div className="my-4 overflow-hidden rounded-2xl border border-white/10 bg-[#070810]">
+        {language ? (
+          <div className="border-b border-white/[0.06] px-3 py-2 text-[10px] font-black uppercase tracking-widest text-gray-500">
+            {language}
+          </div>
+        ) : null}
+        <pre className="overflow-x-auto p-3.5">
+          <code className="font-mono text-[12px] leading-6 text-gray-300" {...props}>
+            {codeText}
+          </code>
+        </pre>
+      </div>
     );
   },
 };

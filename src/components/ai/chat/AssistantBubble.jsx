@@ -37,14 +37,25 @@ const RUN_STATE_META = {
   failed: { label: "Failed", className: "border-red-400/30 bg-red-400/10 text-red-300" },
 };
 
-function BubbleShell({ activeMode, children }) {
+const BUBBLE_WIDTH = {
+  text: "max-w-[760px]",
+  card: "max-w-[820px]",
+  artifact: "max-w-[940px]",
+};
+
+const SURFACE = {
+  text: "rounded-[22px] rounded-tl-lg border border-white/[0.07] bg-white/[0.035] px-4 py-3.5 shadow-[0_14px_40px_-32px_rgba(0,0,0,0.95)] backdrop-blur-xl",
+  card: "rounded-[22px] rounded-tl-lg border border-white/[0.085] bg-white/[0.045] px-4 py-4 shadow-[0_18px_54px_-34px_rgba(0,0,0,0.95)] backdrop-blur-xl",
+  artifact: "rounded-[24px] rounded-tl-lg border border-[#00f5d4]/[0.13] bg-gradient-to-br from-white/[0.055] via-white/[0.035] to-[#00f5d4]/[0.035] px-4 py-4 shadow-[0_22px_60px_-36px_rgba(0,245,212,0.28)] backdrop-blur-xl",
+  error: "rounded-[22px] rounded-tl-lg border border-red-400/20 bg-red-500/10 px-4 py-3.5 shadow-[0_14px_40px_-32px_rgba(0,0,0,0.95)] backdrop-blur-xl",
+};
+
+function BubbleShell({ activeMode, children, variant = "text", surfaceClassName }) {
   return (
-    <div className="flex justify-start gap-3.5 group animate-fade-in-up">
+    <div className="flex justify-start gap-3.5 group motion-safe:animate-fade-in-up">
       <NexusRBXAvatar mode={activeMode} />
-      <div className="max-w-[90%] order-2">
-        <div className="p-4 md:p-5 rounded-2xl2 rounded-tl-md card-surface shadow-panel">
-          {children}
-        </div>
+      <div className={`order-2 ${BUBBLE_WIDTH[variant] || BUBBLE_WIDTH.text}`}>
+        <div className={surfaceClassName || SURFACE[variant] || SURFACE.text}>{children}</div>
       </div>
     </div>
   );
@@ -65,7 +76,7 @@ export default function AssistantBubble({
   // Stage 2: clarifying questions
   if (m.stage === "clarify" || m.stage === "clarify_answered") {
     return (
-      <BubbleShell activeMode={activeMode}>
+      <BubbleShell activeMode={activeMode} variant="card" surfaceClassName={SURFACE.card}>
         <ClarifyCard message={m} onSubmit={onClarifySubmit} disabled={isBusy} />
       </BubbleShell>
     );
@@ -74,7 +85,7 @@ export default function AssistantBubble({
   // Stage 3: approvable plan
   if (m.stage === "plan" || m.stage === "plan_approved") {
     return (
-      <BubbleShell activeMode={activeMode}>
+      <BubbleShell activeMode={activeMode} variant="card" surfaceClassName={SURFACE.card}>
         <PlanCard message={m} onApprove={onApprovePlan} onEdit={onEditPlan} disabled={isBusy} />
       </BubbleShell>
     );
@@ -88,8 +99,10 @@ export default function AssistantBubble({
   const qaIssueCount = Array.isArray(qaReport?.issues) ? qaReport.issues.length : 0;
   const structured = m.metadata?.structuredData;
 
+  const surfaceVariant = m.error ? "error" : hasArtifact ? "artifact" : "text";
+
   return (
-    <BubbleShell activeMode={activeMode}>
+    <BubbleShell activeMode={activeMode} variant={hasArtifact ? "artifact" : "text"} surfaceClassName={SURFACE[surfaceVariant]}>
       {m.thought ? (
         <div className="mb-3">
           <ThinkingDisclosure text={m.thought} />
@@ -115,7 +128,7 @@ export default function AssistantBubble({
       )}
 
       {m.error && (
-        <div className="text-sm text-red-300">
+        <div className="text-sm font-medium leading-6 text-red-100">
           {m.error}
         </div>
       )}
@@ -150,9 +163,9 @@ export default function AssistantBubble({
               />
             </ArtifactCard>
           ) : (
-            <div className="p-4 rounded-2xl bg-gradient-to-br from-nexus-cyan/[0.06] to-transparent border border-nexus-cyan/15 flex items-center justify-between gap-3 transition-all hover:border-nexus-cyan/30 hover:-translate-y-0.5">
+            <div className="flex items-center justify-between gap-3 rounded-2xl border border-[#00f5d4]/15 bg-black/20 p-4 transition-all hover:border-[#00f5d4]/30 hover:bg-black/25">
               <div className="flex items-center gap-3 min-w-0">
-                <div className="p-2 rounded-xl bg-nexus-cyan/10 text-nexus-cyan shrink-0 shadow-[0_0_16px_rgba(0,245,212,0.25)]">
+                <div className="p-2 rounded-xl bg-nexus-cyan/10 text-nexus-cyan shrink-0 shadow-[0_0_16px_rgba(0,245,212,0.18)]">
                   <FileCode2 className="w-4 h-4" />
                 </div>
                 <div className="min-w-0">
@@ -194,7 +207,7 @@ export default function AssistantBubble({
                       <button
                         type="button"
                         onClick={() => onViewUi?.(m)}
-                        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#00f5d4] text-black text-[11px] font-black uppercase tracking-widest hover:shadow-[0_0_18px_rgba(0,245,212,0.35)] transition-all active:scale-[0.98]"
+                        className="inline-flex items-center gap-1.5 rounded-lg bg-[#00f5d4] px-3 py-2 text-[11px] font-black uppercase tracking-widest text-black transition-all hover:shadow-[0_0_18px_rgba(0,245,212,0.28)] active:scale-[0.98]"
                       >
                         <FolderOpen className="w-3.5 h-3.5" /> Open in editor
                       </button>
@@ -207,7 +220,7 @@ export default function AssistantBubble({
                         <button
                           type="button"
                           onClick={() => onRefine(m)}
-                          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-gray-300 text-[11px] font-black uppercase tracking-widest hover:bg-white/10 transition-all active:scale-[0.98]"
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2 text-[11px] font-black uppercase tracking-widest text-gray-300 transition-all hover:bg-white/[0.08] active:scale-[0.98]"
                         >
                           Refine
                         </button>

@@ -20,10 +20,10 @@ export default function MessageBubble({
 }) {
   if (m.role === "user") {
     return (
-      <div className="flex justify-end gap-3.5 group animate-fade-in-up">
-        <div className="max-w-[70%] md:max-w-[60%] order-1">
-          <div className="px-4 py-3 md:px-5 md:py-4 rounded-2xl2 rounded-tr-md bg-gradient-to-br from-white/[0.09] to-white/[0.03] border border-white/10 backdrop-blur-xl shadow-panel">
-            <div className="text-[15px] md:text-[16px] whitespace-pre-wrap leading-relaxed text-white font-medium">
+      <div className="flex justify-end gap-3.5 group motion-safe:animate-fade-in-up">
+        <div className="order-1 max-w-[680px]">
+          <div className="rounded-[22px] rounded-tr-lg border border-white/[0.08] bg-gradient-to-br from-white/[0.11] via-white/[0.065] to-[#00f5d4]/[0.045] px-4 py-3.5 shadow-[0_14px_36px_-26px_rgba(0,245,212,0.5)] backdrop-blur-xl">
+            <div className="whitespace-pre-wrap text-[15px] font-medium leading-7 text-white">
               {m.content}
             </div>
           </div>

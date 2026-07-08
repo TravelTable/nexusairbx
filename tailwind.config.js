@@ -78,7 +78,7 @@ module.exports = {
       },
       keyframes: {
         "fade-in-up": {
-          "0%": { opacity: "0", transform: "translateY(8px)" },
+          "0%": { opacity: "0", transform: "translateY(4px)" },
           "100%": { opacity: "1", transform: "translateY(0)" },
         },
         shimmer: {
@@ -91,7 +91,7 @@ module.exports = {
         },
       },
       animation: {
-        "fade-in-up": "fade-in-up 0.4s ease-out both",
+        "fade-in-up": "fade-in-up 0.2s ease-out both",
         shimmer: "shimmer 2.2s linear infinite",
         "pulse-soft": "pulse-soft 1.6s ease-in-out infinite",
       },

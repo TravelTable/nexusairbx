@@ -1,6 +1,8 @@
 import {
   createIdlePulseController,
   IDLE_PULSE_MESSAGES,
+  STUDIO_IDLE_PULSE_MESSAGES,
+  isWaitingForStudioContext,
   stageSlug,
 } from "./streamEngagement";
 
@@ -16,6 +18,15 @@ describe("streamEngagement", () => {
   test("stageSlug normalizes labels", () => {
     expect(stageSlug("Analyzing Request...")).toBe("analyzing-request");
     expect(stageSlug("Stream interrupted — reconnecting...")).toBe("stream-interrupted-reconnecting");
+  });
+
+  test("isWaitingForStudioContext only matches real Studio waits", () => {
+    expect(isWaitingForStudioContext({ studioConnected: true })).toBe(false);
+    expect(isWaitingForStudioContext({ stage: "Working..." })).toBe(false);
+    expect(isWaitingForStudioContext({ stage: "Generating Artifact" })).toBe(false);
+    expect(isWaitingForStudioContext({ stage: "Waiting for Studio to respond..." })).toBe(true);
+    expect(isWaitingForStudioContext({ stage: "Building Studio manifest..." })).toBe(true);
+    expect(isWaitingForStudioContext({ waitingForStudio: true })).toBe(true);
   });
 
   test("idle pulse fires only after a longer quiet window", () => {
@@ -47,6 +58,27 @@ describe("streamEngagement", () => {
     controller.dispose();
     jest.advanceTimersByTime(5000);
     expect(pulses).toHaveLength(2);
+  });
+
+  test("idle pulse uses Studio copy only while actually waiting on Studio", () => {
+    const pulses = [];
+    let stage = "Planning...";
+    const controller = createIdlePulseController({
+      onPulse: (message) => pulses.push(message),
+      getActivitySeq: () => 0,
+      getContext: () => ({ stage }),
+      intervalMs: 500,
+    });
+
+    controller.start();
+    jest.advanceTimersByTime(2000);
+    expect(pulses).toEqual([IDLE_PULSE_MESSAGES[0], IDLE_PULSE_MESSAGES[0]]);
+
+    stage = "Waiting for Studio to respond...";
+    jest.advanceTimersByTime(500);
+    expect(pulses.at(-1)).toBe(STUDIO_IDLE_PULSE_MESSAGES[0]);
+
+    controller.dispose();
   });
 
   test("idle pulse upserts through stable id at call site", () => {
