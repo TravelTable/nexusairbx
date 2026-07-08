@@ -2,84 +2,14 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Check, ChevronDown, CreditCard, Loader2, Settings } from "lib/icons";
 import NexusRBXFooter from "../components/NexusRBXFooter";
 import { getEntitlements, openPortal, startSubscriptionCheckout } from "../lib/billing";
+import { formatMoney, SUBSCRIPTION_PLANS } from "../lib/planCatalog";
 import { BILLING_INTERVAL, PLAN } from "../lib/prices";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
 import { getFirestore, doc, onSnapshot } from "firebase/firestore";
 import { trackProductEvent } from "../lib/productAnalytics";
 
-const PLANS = [
-  {
-    id: PLAN.FREE,
-    name: "Free",
-    audience: "For developers exploring NexusRBX",
-    monthly: 0,
-    yearly: 0,
-    cta: "Get Started",
-    features: [
-      "Nexus Free Auto",
-      "Daily AI usage",
-      "Script generation, debugging and small revisions",
-      "Basic Roblox-native UI generation",
-      "One active project",
-      "Seven-day history",
-      "One AI job at a time",
-    ],
-  },
-  {
-    id: PLAN.PRO,
-    name: "Pro",
-    audience: "For individual Roblox developers",
-    monthly: 19.99,
-    yearly: 199,
-    cta: "Upgrade to Pro",
-    features: [
-      "Nexus Auto",
-      "Higher included AI usage",
-      "Full model selection",
-      "Larger projects and context",
-      "Multi-file script generation",
-      "Unlimited generation history",
-      "Premium Direct model support",
-    ],
-  },
-  {
-    id: PLAN.PRO_PLUS,
-    name: "Pro+",
-    audience: "For serious builders and larger projects",
-    monthly: 39.99,
-    yearly: 399,
-    cta: "Upgrade to Pro+",
-    recommended: true,
-    features: [
-      "Everything in Pro",
-      "Significantly higher included usage",
-      "Larger context windows",
-      "Longer autonomous workflows",
-      "Larger multi-file changes",
-      "Priority processing",
-      "Premium Direct model support",
-    ],
-  },
-  {
-    id: PLAN.TEAM,
-    name: "Team",
-    audience: "For studios and development teams",
-    monthly: 29,
-    yearly: 290,
-    cta: "Start Team",
-    perSeat: true,
-    features: [
-      "Everything in Pro+",
-      "Shared team workspaces",
-      "Pooled included AI usage",
-      "Member and administrator roles",
-      "Centralized billing",
-      "Team collaboration",
-      "Priority support",
-    ],
-  },
-];
+const PLANS = SUBSCRIPTION_PLANS;
 
 const FAQS = [
   {
@@ -107,11 +37,6 @@ const FAQS = [
     a: "Existing subscribers remain on their current Stripe price unless they cancel, change plans or are migrated separately.",
   },
 ];
-
-function formatMoney(value) {
-  if (value === 0) return "$0";
-  return Number.isInteger(value) ? `$${value}` : `$${value.toFixed(2)}`;
-}
 
 function currentPlanMatches(entitlements, planId) {
   return String(entitlements?.plan || "FREE") === planId;

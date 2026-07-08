@@ -37,6 +37,7 @@ NexusRBX Ai helps Roblox developers move faster inside Roblox Studio without rem
 | [FAQ](14-faq.md) | Answers common beta, pricing, learning, debugging, and support questions. |
 | [Changelog Template](15-changelog-template.md) | Provides a repeatable release note format. |
 | [Support and Bug Reports](16-support-and-bug-reports.md) | Gives bug report and feature request templates. |
+| [Scenario-Driven AI Foundation](17-scenario-driven-ai-foundation.md) | Documents the deterministic classifier, route hints, context policy, manual review rules, and release gates. |
 | [Creator Store Description](creator-store-description.md) | Short, trustworthy listing copy for Roblox Creator Store. |
 
 ## Placeholder Checklist
@@ -57,4 +58,3 @@ Replace these placeholders before publishing:
 - `[Explain whether script content is sent to NexusRBX servers]`
 - `[Explain whether prompts are stored]`
 - `[Explain whether project data is stored]`
-

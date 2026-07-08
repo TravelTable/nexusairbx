@@ -11,6 +11,8 @@ import {
   writeAuthPersistencePreference,
 } from "../lib/firebaseAuth";
 import { trackProductEvent } from "../lib/productAnalytics";
+import { formatMonthlyPrice, SUBSCRIPTION_PLANS } from "../lib/planCatalog";
+import { PLAN } from "../lib/prices";
 import { getPendingAuthReturnPath, readPendingAuthAction } from "../lib/pendingAuthAction";
 import { cn } from "../lib/utils";
 import {
@@ -25,6 +27,13 @@ import {
   GoogleIcon,
   NexusAuthShell,
 } from "../components/auth/NexusAuthShell";
+
+const SIGNUP_PLAN_ICONS = {
+  [PLAN.FREE]: Info,
+  [PLAN.PRO]: Zap,
+  [PLAN.PRO_PLUS]: Sparkles,
+  [PLAN.TEAM]: Shield,
+};
 
 // Container Component
 export default function NexusRBXSignUpPageContainer() {
@@ -50,7 +59,7 @@ export default function NexusRBXSignUpPageContainer() {
   });
   const [agreeToTerms, setAgreeToTerms] = useState(false);
   const [rememberMe, setRememberMe] = useState(() => readAuthPersistencePreference());
-  const [selectedPlan, setSelectedPlan] = useState("free");
+  const [selectedPlan, setSelectedPlan] = useState(PLAN.FREE);
   const [passwordStrength, setPasswordStrength] = useState({
     score: 0, // 0-4 where 4 is strongest
     feedback: ""
@@ -337,7 +346,7 @@ function NexusRBXSignUpPage({
         },
         {
           title: "Choose a starting plan",
-          description: "Pick Free, Pro, or Team during signup without changing the existing plan analytics path.",
+          description: "Pick Free, Pro, Pro+, or Team during signup with the same prices shown on the pricing page.",
         },
         {
           title: "Continue after auth",
@@ -448,32 +457,19 @@ function NexusRBXSignUpPage({
 
           <fieldset className="grid gap-3">
             <legend className="nexus-field-label">Choose your plan</legend>
-            <div className="grid gap-3 sm:grid-cols-3">
-              <PlanOption
-                title="Free"
-                price="$0"
-                description="Daily usage, basic AI UI and scripting."
-                icon={Info}
-                selected={selectedPlan === "free"}
-                onClick={() => handlePlanSelect("free")}
-              />
-              <PlanOption
-                title="Pro"
-                price="$14.99"
-                description="Full model selection and Premium Direct support."
-                icon={Zap}
-                selected={selectedPlan === "pro"}
-                popular
-                onClick={() => handlePlanSelect("pro")}
-              />
-              <PlanOption
-                title="Team"
-                price="$39.99"
-                description="Pooled usage, seats, and collaboration."
-                icon={Shield}
-                selected={selectedPlan === "team"}
-                onClick={() => handlePlanSelect("team")}
-              />
+            <div className="grid grid-cols-2 gap-3">
+              {SUBSCRIPTION_PLANS.map((plan) => (
+                <PlanOption
+                  key={plan.id}
+                  title={plan.name}
+                  price={formatMonthlyPrice(plan)}
+                  description={plan.audience}
+                  icon={SIGNUP_PLAN_ICONS[plan.id]}
+                  selected={selectedPlan === plan.id}
+                  popular={plan.recommended}
+                  onClick={() => handlePlanSelect(plan.id)}
+                />
+              ))}
             </div>
           </fieldset>
 
@@ -531,7 +527,7 @@ function PlanOption({ title, price, description, icon: Icon, popular, selected, 
     <button
       type="button"
       className={cn(
-        "focus-ring relative min-h-[156px] rounded-lg border p-3 text-left transition",
+        "focus-ring relative min-h-[140px] rounded-lg border p-3 text-left transition",
         selected
           ? "border-[#00f5d4]/45 bg-[#00f5d4]/10 text-foreground"
           : "border-border bg-background/55 text-muted-foreground hover:border-border/80 hover:bg-muted/35"
@@ -541,7 +537,7 @@ function PlanOption({ title, price, description, icon: Icon, popular, selected, 
     >
       {popular && (
         <span className="absolute right-2 top-2 rounded-md border border-[#9b5de5]/30 bg-[#9b5de5]/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#e7d7ff]">
-          Popular
+          Recommended
         </span>
       )}
       <span
