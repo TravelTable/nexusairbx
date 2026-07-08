@@ -242,6 +242,7 @@ export default function ChatComposer({
   devOverride,
   dailyUsage,
   includedUsage,
+  premiumBalance,
   isFreeUsagePlan,
   themePrimary,
   themeSecondary,
@@ -492,6 +493,7 @@ export default function ChatComposer({
               devOverride={devOverride}
               dailyUsage={dailyUsage}
               includedUsage={includedUsage}
+              premiumBalance={premiumBalance}
               isFreeUsagePlan={isFreeUsagePlan}
             />
 

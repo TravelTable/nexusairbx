@@ -19,7 +19,7 @@ import {
   RefreshCw
 } from "lib/icons";
 import PLAN_INFO from "../../lib/planInfo";
-import { resolveUsagePercent } from "../../lib/billing";
+import { dollarsFromMicros, resolveUsagePercent } from "../../lib/billing";
 import { getGravatarUrl, getUserInitials, formatResetDate } from "../../lib/aiUtils";
 
 export const FormatText = React.memo(({ text }) => {
@@ -51,19 +51,30 @@ export function TokenBar({
   dailyUsage = null,
   includedUsage = null,
   isFreeUsagePlan = false,
+  premiumBalance = null,
 }) {
   const planInfo = PLAN_INFO[plan] || PLAN_INFO.free;
   const usageLabel = isFreeUsagePlan ? "Daily usage" : "Included usage";
   const effectiveResetsAt = isFreeUsagePlan && dailyUsage?.resetsAt ? dailyUsage.resetsAt : resetsAt;
+  const premiumMicros = Number(premiumBalance?.balanceMicros);
+  const showPremiumBalance = !isFreeUsagePlan && Number.isFinite(premiumMicros);
+  const premiumDollars = showPremiumBalance ? dollarsFromMicros(premiumMicros) : null;
 
   if (unlimitedTokens) {
     return (
-      <div id="tour-token-bar" className="relative z-10 flex w-full flex-col gap-1.5 px-0.5">
+      <div id="cloud-token-bar" className="relative z-10 flex w-full flex-col gap-1.5 px-0.5">
         <div className="flex items-center justify-between gap-2">
-          <div className="text-[11px] font-semibold text-gray-300">
-            {usageLabel}: <span className="font-bold text-[#00f5d4]">{devOverride ? "Dev unlimited" : "Unlimited"}</span>
+          <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] font-semibold text-gray-300">
+            <span>
+              {usageLabel}: <span className="font-bold text-[#00f5d4]">{devOverride ? "Dev unlimited" : "Unlimited"}</span>
+            </span>
+            {premiumDollars && (
+              <span>
+                Premium Balance: <span className="font-bold text-[#9b5de5]">{premiumDollars}</span>
+              </span>
+            )}
           </div>
-          <span className="flex items-center gap-1 text-[10px] text-[#00f5d4]" title="Unlimited token override is active">
+          <span className="flex shrink-0 items-center gap-1 text-[10px] text-[#00f5d4]" title="Unlimited usage override is active">
             <Zap className="h-3.5 w-3.5" /> Active
           </span>
         </div>
@@ -84,21 +95,28 @@ export function TokenBar({
   const isLow = percentUsed >= 85;
 
   return (
-    <div id="tour-token-bar" className="relative z-10 flex w-full flex-col gap-1.5 px-0.5">
+    <div id="cloud-token-bar" className="relative z-10 flex w-full flex-col gap-1.5 px-0.5">
       <div className="flex items-center justify-between gap-2">
-        <div className="text-[11px] font-semibold text-gray-300">
-          {usageLabel}: <span className="font-bold text-white">{percentUsed}%</span> used
+        <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] font-semibold text-gray-300">
+          <span>
+            {usageLabel}: <span className="font-bold text-white">{percentUsed}%</span> used
+          </span>
+          {premiumDollars && (
+            <span>
+              Premium Balance: <span className="font-bold text-[#9b5de5]">{premiumDollars}</span>
+            </span>
+          )}
         </div>
         {isLow && plan === "free" ? (
-          <a href="/subscribe" className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-[#00f5d4] transition-all hover:brightness-125 animate-pulse">
+          <a href="/subscribe" className="flex shrink-0 items-center gap-1 text-[10px] font-black uppercase tracking-widest text-[#00f5d4] transition-all hover:brightness-125 animate-pulse">
             <Zap className="h-3 w-3 fill-current" /> Upgrade to Pro
           </a>
         ) : isLow && plan === "pro" ? (
-          <a href="/subscribe" className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-[#9b5de5] transition-all hover:brightness-125 animate-pulse">
+          <a href="/subscribe" className="flex shrink-0 items-center gap-1 text-[10px] font-black uppercase tracking-widest text-[#9b5de5] transition-all hover:brightness-125 animate-pulse">
             <Zap className="h-3 w-3 fill-current" /> Explore Team
           </a>
         ) : (
-          <span className="text-[10px] text-gray-500">
+          <span className="shrink-0 text-[10px] text-gray-500">
             {typeof effectiveResetsAt === "string" || effectiveResetsAt instanceof Date ? `Resets ${formatResetDate(effectiveResetsAt)}` : planInfo.capText}
           </span>
         )}
@@ -426,7 +444,7 @@ export const UserAvatar = React.memo(({ email, name = "", photoUrl = "" }) => {
   const url = photoUrl || getGravatarUrl(email);
   const initials = getUserInitials(name || email);
   return (
-    <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#9b5de5] to-[#00f5d4] flex items-center justify-center shadow-2xl overflow-hidden flex-shrink-0 border border-white/20">
+    <div className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center overflow-hidden flex-shrink-0 border border-white/20">
       {url ? (
         <img
           src={url}

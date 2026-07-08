@@ -4,6 +4,7 @@ import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { getFirestore, doc, onSnapshot } from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
 import {
+  dollarsFromMicros,
   getEntitlements,
   openPortal,
   startPremiumBalanceCheckout,
@@ -17,11 +18,6 @@ const PLAN_CHOICES = [
   { plan: PLAN.PRO_PLUS, label: "Pro+", month: "$39.99/month", year: "$399/year" },
   { plan: PLAN.TEAM, label: "Team", month: "$29/user/month", year: "$290/user/year" },
 ];
-
-function dollarsFromMicros(micros) {
-  const value = Math.max(0, Number(micros || 0)) / 1_000_000;
-  return `$${value.toFixed(2)}`;
-}
 
 function formatDate(value) {
   if (!value) return "Not scheduled";

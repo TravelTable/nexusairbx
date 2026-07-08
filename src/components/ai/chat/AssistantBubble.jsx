@@ -10,7 +10,7 @@ import { Activity, ShieldAlert, FolderOpen, FileCode2, Loader2 } from "lib/icons
 import { stripTags } from "./stripTags";
 import { ClarifyCard, PlanCard } from "./FlowCards";
 import MarkdownMessage from "./MarkdownMessage";
-import ThinkingDisclosure from "./ThinkingDisclosure";
+import ReasoningPanel from "./ReasoningPanel";
 import { AI_EVENTS, emitAiEvent } from "../../../lib/aiEvents";
 import AgentStepList from "../workspace/AgentStepList";
 import { FEATURE_FLAGS } from "../../../lib/featureFlags";
@@ -92,7 +92,7 @@ export default function AssistantBubble({
     <BubbleShell activeMode={activeMode}>
       {m.thought ? (
         <div className="mb-3">
-          <ThinkingDisclosure text={m.thought} />
+          <ReasoningPanel text={m.thought} isStreaming={false} requireShowThinking />
         </div>
       ) : null}
 

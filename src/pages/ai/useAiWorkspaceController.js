@@ -150,6 +150,7 @@ export function useAiWorkspaceController() {
     flags,
     dailyUsage,
     includedUsage,
+    premiumBalance,
     isFreeUsagePlan,
   } = useBilling();
   const { settings, updateSettings } = useSettings();
@@ -1561,6 +1562,7 @@ export function useAiWorkspaceController() {
       entitlements,
       dailyUsage,
       includedUsage,
+      premiumBalance,
       isFreeUsagePlan,
     },
     navigation: {

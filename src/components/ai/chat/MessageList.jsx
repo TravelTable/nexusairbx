@@ -1,21 +1,13 @@
-import React, { useEffect, useMemo, useRef } from "react";
+import React, { useMemo } from "react";
 import { NexusRBXAvatar, UserAvatar, SkeletonArtifact } from "../AiComponents";
 import MarkdownMessage from "./MarkdownMessage";
 import { stripTags } from "./stripTags";
 import MessageBubble from "./MessageBubble";
 import LiveWorkStream from "./LiveWorkStream";
-import RawReasoningPanel from "./RawReasoningPanel";
+import ReasoningPanel from "./ReasoningPanel";
 import { parsePendingStreamContent } from "../../../lib/streaming";
 import { Separator } from "../../shadcn/separator";
 import { Clock3, Loader2, RotateCcw } from "lib/icons";
-
-function prefersReducedMotion() {
-  return (
-    typeof window !== "undefined" &&
-    typeof window.matchMedia === "function" &&
-    window.matchMedia("(prefers-reduced-motion: reduce)").matches
-  );
-}
 
 function resolveActivityStage(pendingMessage, generationStage, parsed) {
   const stage = pendingMessage?.stage || generationStage || "";
@@ -43,7 +35,7 @@ function LiveActivityHeader({ pendingMessage, generationStage, parsed, embedded 
           : "flex items-center justify-between gap-3 rounded-2xl bg-white/[0.03] border border-white/10 px-4 py-3"
       }
     >
-      <div className="flex items-center gap-3 min-w-0">
+      <div className="flex items-center gap-3 min-h-0 min-w-0">
         <span className="shrink-0 text-[#00f5d4]">
           {isRecovering ? (
             <RotateCcw className="w-4 h-4 animate-spin" />
@@ -75,7 +67,6 @@ export default function MessageList({
   profile,
   activeMode,
   generationStage,
-  chatEndRef,
   onViewUi,
   onRefine,
   onFixUiAudit,
@@ -88,7 +79,6 @@ export default function MessageList({
   approvingStepId,
 }) {
   const pendingParsed = parsePendingStreamContent(pendingMessage?.content || "");
-  const hasPendingMessage = !!pendingMessage;
   const showLiveWorkStream = Boolean(
     pendingMessage?.streamState ||
     (Array.isArray(pendingMessage?.files) && pendingMessage.files.length) ||
@@ -105,6 +95,7 @@ export default function MessageList({
       streamState.activity.some((a) => a?.type && a.type !== "thinking"))
   );
   const hasRawReasoning = Boolean(String(streamState?.rawReasoning || "").trim());
+  const reasoningStreaming = Boolean(pendingMessage) && !hasStreamOutput;
   const visibleMessages = useMemo(
     () =>
       pendingMessage?.requestId
@@ -128,70 +119,6 @@ export default function MessageList({
     if (lastUser && String(lastUser.content || "").trim() === prompt) return false;
     return true;
   }, [messages, pendingMessage?.prompt, pendingMessage?.requestId]);
-
-  const scrollStateRef = useRef({
-    visibleMessageCount: visibleMessages.length,
-    pendingRequestId: pendingMessage?.requestId || "",
-    hadOptimisticPrompt: false,
-  });
-  const streamActivityLen = streamState?.activity?.length ?? 0;
-  const streamFilesLen = streamState?.files?.length ?? 0;
-  const pendingFilesLen = pendingMessage?.files?.length ?? 0;
-  const pendingStepsLen = pendingMessage?.steps?.length ?? 0;
-  const rawReasoningLen = String(streamState?.rawReasoning || "").length;
-  const visibleMessageCount = visibleMessages.length;
-  const pendingRequestId = pendingMessage?.requestId || "";
-  const pendingContentLen = String(pendingMessage?.content || "").length;
-  const pendingPromptLen = String(pendingMessage?.prompt || "").length;
-
-  useEffect(() => {
-    if (!chatEndRef?.current) return;
-    const previousScrollState = scrollStateRef.current;
-    const newMessageAppeared =
-      visibleMessageCount > previousScrollState.visibleMessageCount ||
-      (pendingRequestId && pendingRequestId !== previousScrollState.pendingRequestId) ||
-      (showOptimisticUserPrompt && !previousScrollState.hadOptimisticPrompt);
-
-    scrollStateRef.current = {
-      visibleMessageCount,
-      pendingRequestId,
-      hadOptimisticPrompt: showOptimisticUserPrompt,
-    };
-
-    const scroll = () => {
-      chatEndRef.current.scrollIntoView({
-        behavior: newMessageAppeared && !prefersReducedMotion() ? "smooth" : "auto",
-        block: "end",
-      });
-    };
-
-    const frameId =
-      typeof window !== "undefined" && typeof window.requestAnimationFrame === "function"
-        ? window.requestAnimationFrame(scroll)
-        : null;
-
-    if (frameId == null) scroll();
-
-    return () => {
-      if (frameId != null && typeof window !== "undefined") {
-        window.cancelAnimationFrame(frameId);
-      }
-    };
-  }, [
-    visibleMessageCount,
-    pendingContentLen,
-    pendingPromptLen,
-    pendingMessage?.stage,
-    pendingRequestId,
-    showOptimisticUserPrompt,
-    hasPendingMessage,
-    chatEndRef,
-    streamActivityLen,
-    streamFilesLen,
-    pendingFilesLen,
-    pendingStepsLen,
-    rawReasoningLen,
-  ]);
 
   return (
     <div className="space-y-6">
@@ -239,12 +166,13 @@ export default function MessageList({
             <div className="max-w-[90%] order-2 space-y-4">
               {showLiveWorkStream ? (
                 <div className="rounded-2xl border border-white/10 bg-[#0b0b0b]/90 shadow-2xl overflow-hidden">
-                  <RawReasoningPanel
-                    text={streamState?.rawReasoning}
-                    live={Boolean(pendingMessage)}
-                    embedded
-                    autoCollapse={hasStreamOutput}
-                  />
+                  <div className="px-4 pt-3">
+                    <ReasoningPanel
+                      text={streamState?.rawReasoning}
+                      isStreaming={reasoningStreaming}
+                      requireRawReasoningFlag
+                    />
+                  </div>
                   {hasRawReasoning ? <Separator className="bg-white/10" /> : null}
                   <LiveWorkStream
                     pendingMessage={pendingMessage}
@@ -252,13 +180,15 @@ export default function MessageList({
                     onApproveStep={onApproveStep}
                     approvingStepId={approvingStepId}
                     embedded
+                    hideThinkingRows={hasRawReasoning}
                   />
                 </div>
               ) : (
                 <>
-                  <RawReasoningPanel
+                  <ReasoningPanel
                     text={streamState?.rawReasoning}
-                    live={Boolean(pendingMessage)}
+                    isStreaming={reasoningStreaming}
+                    requireRawReasoningFlag
                   />
                   <LiveActivityHeader
                     pendingMessage={pendingMessage}
@@ -303,7 +233,6 @@ export default function MessageList({
           </div>
         </>
       )}
-      <div ref={chatEndRef} />
     </div>
   );
 }

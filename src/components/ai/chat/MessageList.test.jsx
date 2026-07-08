@@ -15,12 +15,24 @@ jest.mock("../../../lib/featureFlags", () => {
   };
 });
 
+jest.mock("../../../context/SettingsContext", () => ({
+  useSettings: () => ({ settings: { showThinking: true } }),
+}));
+
+jest.mock("motion/react", () => ({
+  motion: {
+    create: () =>
+      function MotionStub({ children, ...props }) {
+        return <span {...props}>{children}</span>;
+      },
+  },
+}));
+
 const baseProps = {
   messages: [],
   user: { email: "builder@example.com" },
   activeMode: "general",
   generationStage: "",
-  chatEndRef: { current: null },
   onViewUi: jest.fn(),
   onRefine: jest.fn(),
   onFixUiAudit: jest.fn(),
@@ -109,7 +121,6 @@ describe("MessageList pending activity", () => {
     );
 
     expect(screen.getByText("Analyzing Request...")).toBeTruthy();
-    expect(screen.getByText("Working")).toBeTruthy();
     expect(screen.getByText("Reasoning about the datastore approach")).toBeTruthy();
     expect(screen.queryByText("Build reasoning")).toBeNull();
   });
@@ -172,7 +183,6 @@ describe("MessageList pending activity", () => {
       />
     );
 
-    expect(screen.getByText("Working")).toBeTruthy();
     expect(screen.getByText("Writing files...")).toBeTruthy();
     expect(screen.getAllByText("ServerScriptService/InventoryService.server.lua").length).toBeGreaterThan(0);
     expect(screen.getByText(/local InventoryService/)).toBeTruthy();
@@ -250,7 +260,6 @@ describe("MessageList pending activity", () => {
       />
     );
 
-    expect(screen.getByText("Working")).toBeTruthy();
     expect(screen.getByText("Understanding your task...")).toBeTruthy();
     expect(screen.getAllByText("Analyzing request...").length).toBeGreaterThan(0);
     expect(screen.queryByText("Nexus is working")).toBeNull();
@@ -273,7 +282,7 @@ describe("MessageList pending activity", () => {
       />
     );
 
-    expect(screen.getByText("Thinking")).toBeTruthy();
+    expect(screen.getByText(/Thinking/i)).toBeTruthy();
     expect(screen.getByText(/Checking module boundaries/i)).toBeTruthy();
   });
 

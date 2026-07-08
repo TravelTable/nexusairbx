@@ -1,4 +1,4 @@
-import { summarizeEntitlements, isPremiumPlan, resolveUsagePercent } from "./billing";
+import { summarizeEntitlements, isPremiumPlan, resolveUsagePercent, dollarsFromMicros } from "./billing";
 
 describe("summarizeEntitlements", () => {
   test("preserves dev override flags", () => {
@@ -63,5 +63,13 @@ describe("resolveUsagePercent", () => {
       tokensLeft: 250,
       tokensLimit: 1000,
     })).toBe(75);
+  });
+});
+
+describe("dollarsFromMicros", () => {
+  test("formats micros as USD", () => {
+    expect(dollarsFromMicros(18_420_000)).toBe("$18.42");
+    expect(dollarsFromMicros(0)).toBe("$0.00");
+    expect(dollarsFromMicros(null)).toBe("$0.00");
   });
 });

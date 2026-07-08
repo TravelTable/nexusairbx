@@ -105,6 +105,12 @@ function clampPercent(value) {
   return Math.max(0, Math.min(100, Math.round(n)));
 }
 
+/** Format provider-cost micros as a USD string for Premium Balance display. */
+export function dollarsFromMicros(micros) {
+  const value = Math.max(0, Number(micros || 0)) / 1_000_000;
+  return `$${value.toFixed(2)}`;
+}
+
 export function resolveUsagePercent({
   isFreeUsagePlan = false,
   dailyUsage = null,

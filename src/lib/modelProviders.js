@@ -1,3 +1,12 @@
+import {
+  SUGGESTED_MODEL_IDS,
+  isSuggestedModelId,
+  pickSuggestedModels,
+  suggestedModelRank,
+} from "./suggestedModels";
+
+export { SUGGESTED_MODEL_IDS, isSuggestedModelId, pickSuggestedModels, suggestedModelRank };
+
 export const DEFAULT_FREE_MODEL = "nexus-free-auto";
 export const DEFAULT_PRO_MODEL = "openai/gpt-5-mini";
 
@@ -31,13 +40,13 @@ export const MODEL_ALIAS_LABELS = Object.freeze({
 
 export const PROVIDER_ORDER = [
   "nexus",
-  "deepseek",
   "openai",
   "anthropic",
   "google",
+  "deepseek",
+  "xai",
   "meta",
   "mistral",
-  "xai",
   "alibaba",
   "other",
 ];
@@ -54,6 +63,25 @@ export const PROVIDER_LABELS = Object.freeze({
   mistral: "Mistral",
   other: "Other",
 });
+
+/** Map catalog provider keys to @lobehub/icons ProviderIcon keys. */
+export const LOBE_PROVIDER_KEYS = Object.freeze({
+  nexus: "deepseek",
+  openai: "openai",
+  anthropic: "anthropic",
+  google: "google",
+  deepseek: "deepseek",
+  xai: "xai",
+  meta: "meta",
+  mistral: "mistral",
+  alibaba: "alibaba",
+  other: "openai",
+});
+
+export function resolveLobeProviderKey(provider) {
+  const key = String(provider || "other").toLowerCase();
+  return LOBE_PROVIDER_KEYS[key] || key || "openai";
+}
 
 const FREE_MODEL_IDS = new Set([
   DEFAULT_FREE_MODEL,
@@ -80,6 +108,12 @@ export function isModelSelectable(model, { isPremium }) {
 
 export function sortModelsInGroup(list) {
   return [...list].sort((a, b) => {
+    const aSuggested = isSuggestedModelId(a.id);
+    const bSuggested = isSuggestedModelId(b.id);
+    if (aSuggested && bSuggested) {
+      return suggestedModelRank(a.id) - suggestedModelRank(b.id);
+    }
+    if (aSuggested !== bSuggested) return aSuggested ? -1 : 1;
     if (!!b.recommended !== !!a.recommended) return b.recommended ? 1 : -1;
     if (a.billingCategory !== b.billingCategory) return a.billingCategory === "INCLUDED" ? -1 : 1;
     if (a.tier !== b.tier) return a.tier === "free" ? -1 : 1;

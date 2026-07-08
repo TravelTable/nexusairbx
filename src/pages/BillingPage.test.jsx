@@ -20,6 +20,7 @@ jest.mock("firebase/firestore", () => ({
 }));
 
 jest.mock("../lib/billing", () => ({
+  dollarsFromMicros: (micros) => `$${(Math.max(0, Number(micros || 0)) / 1_000_000).toFixed(2)}`,
   getEntitlements: jest.fn(async () => ({
     plan: "PRO",
     pricingVersion: "LEGACY",

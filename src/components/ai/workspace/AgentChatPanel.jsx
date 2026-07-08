@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Search, X } from "lib/icons";
 import ChatView from "../ChatView";
 import ChatComposer from "../chat/ChatComposer";
@@ -11,7 +11,6 @@ import { useMotionPresence } from "../../../hooks/useMotionPresence";
 // workflow; build progress + setup/testing/security live in the Details view.
 export default function AgentChatPanel({
   // chat
-  currentChatId,
   messages,
   pendingMessage,
   generationStage,
@@ -26,7 +25,6 @@ export default function AgentChatPanel({
   onOpenArtifact,
   onQuickStart,
   notify,
-  chatEndRef,
   onApproveStep,
   onRestoreRun,
   approvingStepId,
@@ -85,6 +83,7 @@ export default function AgentChatPanel({
   devOverride,
   dailyUsage,
   includedUsage,
+  premiumBalance,
   isFreeUsagePlan,
   themePrimary,
   themeSecondary,
@@ -96,31 +95,6 @@ export default function AgentChatPanel({
   const [view, setView] = useState("chat");
   const [creatorStoreOpen, setCreatorStoreOpen] = useState(false);
   const creatorStorePresence = useMotionPresence(creatorStoreOpen, 220);
-  const chatScrollRef = useRef(null);
-  const savedChatScrollTop = useRef(0);
-
-  useEffect(() => {
-    const el = chatScrollRef.current;
-    if (!el) return;
-    el.scrollTop = 0;
-  }, [currentChatId]);
-
-  useEffect(() => {
-    if (view === "details") {
-      savedChatScrollTop.current = chatScrollRef.current?.scrollTop ?? 0;
-      return;
-    }
-    const el = chatScrollRef.current;
-    if (!el) return;
-    if (typeof window === "undefined" || typeof window.requestAnimationFrame !== "function") {
-      el.scrollTop = savedChatScrollTop.current;
-      return undefined;
-    }
-    const frameId = window.requestAnimationFrame(() => {
-      el.scrollTop = savedChatScrollTop.current;
-    });
-    return () => window.cancelAnimationFrame(frameId);
-  }, [view]);
 
   useEffect(() => {
     if (!creatorStoreOpen) return undefined;
@@ -147,29 +121,26 @@ export default function AgentChatPanel({
             />
           </div>
         ) : (
-          <>
-            <div ref={chatScrollRef} className="flex-1 min-h-0 overflow-y-auto px-3 py-4 scrollbar-hide motion-safe:animate-panel-in">
-              <ChatView
-                messages={messages}
-                pendingMessage={pendingMessage}
-                generationStage={generationStage}
-                user={user}
-                profile={profile}
-                activeMode={activeMode}
-                isBusy={isBusy}
-                onApprovePlan={onApprovePlan}
-                onClarifySubmit={onClarifySubmit}
-                onEditPlan={onEditPlan}
-                onViewUi={onOpenArtifact}
-                onRefine={onRefine}
-                onQuickStart={onQuickStart}
-                notify={notify}
-                chatEndRef={chatEndRef}
-                onApproveStep={onApproveStep}
-                approvingStepId={approvingStepId}
-              />
-            </div>
-          </>
+          <div className="relative flex-1 min-h-0 flex flex-col">
+            <ChatView
+              messages={messages}
+              pendingMessage={pendingMessage}
+              generationStage={generationStage}
+              user={user}
+              profile={profile}
+              activeMode={activeMode}
+              isBusy={isBusy}
+              onApprovePlan={onApprovePlan}
+              onClarifySubmit={onClarifySubmit}
+              onEditPlan={onEditPlan}
+              onViewUi={onOpenArtifact}
+              onRefine={onRefine}
+              onQuickStart={onQuickStart}
+              notify={notify}
+              onApproveStep={onApproveStep}
+              approvingStepId={approvingStepId}
+            />
+          </div>
         )}
       </div>
 
@@ -276,6 +247,7 @@ export default function AgentChatPanel({
         devOverride={devOverride}
         dailyUsage={dailyUsage}
         includedUsage={includedUsage}
+        premiumBalance={premiumBalance}
         isFreeUsagePlan={isFreeUsagePlan}
         themePrimary={themePrimary}
         themeSecondary={themeSecondary}

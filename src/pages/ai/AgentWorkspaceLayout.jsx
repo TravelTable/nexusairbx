@@ -46,8 +46,8 @@ async function pollStudioCommand(commandId, { timeoutMs = 30000 } = {}) {
 }
 
 export default function AgentWorkspaceLayout({ controller }) {
-  const { billing, uiState, refs, modules, handlers, studio, roblox } = controller;
-  const { planKey, totalRemaining, subLimit, resetsAt, isPremium, unlimitedTokens, devOverride, dailyUsage, includedUsage, isFreeUsagePlan } = billing;
+  const { billing, uiState, modules, handlers, studio, roblox } = controller;
+  const { planKey, totalRemaining, subLimit, resetsAt, isPremium, unlimitedTokens, devOverride, dailyUsage, includedUsage, premiumBalance, isFreeUsagePlan } = billing;
   const {
     user,
     isMobile,
@@ -122,8 +122,6 @@ export default function AgentWorkspaceLayout({ controller }) {
     handleConfirmProjectAssets,
     handleRemoveProjectAsset,
   } = handlers;
-
-  const { chatEndRef } = refs;
 
   const [leftView, setLeftView] = useState("files");
   const tutorial = useTutorial();
@@ -715,7 +713,6 @@ export default function AgentWorkspaceLayout({ controller }) {
           onOpenArtifact={handleOpenArtifact}
           onQuickStart={handleQuickStart}
           notify={notify}
-          chatEndRef={chatEndRef}
           prompt={prompt}
           setPrompt={setPrompt}
           attachments={attachments}
@@ -736,6 +733,7 @@ export default function AgentWorkspaceLayout({ controller }) {
           devOverride={devOverride}
           dailyUsage={dailyUsage}
           includedUsage={includedUsage}
+          premiumBalance={premiumBalance}
           isFreeUsagePlan={isFreeUsagePlan}
           themePrimary={currentTheme.primary}
           themeSecondary={currentTheme.secondary}

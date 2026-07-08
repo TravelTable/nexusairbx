@@ -2,6 +2,11 @@ import React from "react";
 import { CHAT_MODES } from "./chatConstants";
 import ChatEmptyState from "./chat/ChatEmptyState";
 import MessageList from "./chat/MessageList";
+import {
+  Conversation,
+  ConversationContent,
+  ConversationScrollButton,
+} from "../ai-elements/conversation";
 
 export { CHAT_MODES };
 
@@ -22,37 +27,38 @@ export default function ChatView({
   onEditPlan,
   notify,
   isBusy,
-  chatEndRef,
   onApproveStep,
   approvingStepId,
 }) {
   const showEmpty = messages.length === 0 && !pendingMessage;
 
   return (
-    <div className="w-full max-w-5xl mx-auto h-full flex flex-col min-h-0">
-      {showEmpty ? (
-        <ChatEmptyState onQuickStart={onQuickStart} onOpenTemplates={onOpenTemplates} user={user} />
-      ) : (
-        <MessageList
-          messages={messages}
-          pendingMessage={pendingMessage}
-          user={user}
-          profile={profile}
-          activeMode={activeMode}
-          generationStage={generationStage}
-          chatEndRef={chatEndRef}
-          onViewUi={onViewUi}
-          onRefine={onRefine}
-          onFixUiAudit={onFixUiAudit}
-          onApprovePlan={onApprovePlan}
-          onClarifySubmit={onClarifySubmit}
-          onEditPlan={onEditPlan}
-          notify={notify}
-          isBusy={isBusy}
-          onApproveStep={onApproveStep}
-          approvingStepId={approvingStepId}
-        />
-      )}
-    </div>
+    <Conversation className="h-full min-h-0 w-full motion-safe:animate-panel-in">
+      <ConversationContent className="mx-auto w-full max-w-5xl gap-6 px-3 py-4">
+        {showEmpty ? (
+          <ChatEmptyState onQuickStart={onQuickStart} onOpenTemplates={onOpenTemplates} user={user} />
+        ) : (
+          <MessageList
+            messages={messages}
+            pendingMessage={pendingMessage}
+            user={user}
+            profile={profile}
+            activeMode={activeMode}
+            generationStage={generationStage}
+            onViewUi={onViewUi}
+            onRefine={onRefine}
+            onFixUiAudit={onFixUiAudit}
+            onApprovePlan={onApprovePlan}
+            onClarifySubmit={onClarifySubmit}
+            onEditPlan={onEditPlan}
+            notify={notify}
+            isBusy={isBusy}
+            onApproveStep={onApproveStep}
+            approvingStepId={approvingStepId}
+          />
+        )}
+      </ConversationContent>
+      <ConversationScrollButton />
+    </Conversation>
   );
 }
