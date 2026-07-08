@@ -700,6 +700,7 @@ export default function AgentWorkspaceLayout({ controller }) {
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="min-h-0 flex-1">
         <AgentChatPanel
+          currentChatId={chat.currentChatId}
           messages={chat.messages}
           pendingMessage={unified.pendingMessage}
           generationStage={unified.generationStage}

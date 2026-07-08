@@ -121,13 +121,42 @@ export default function MessageList({
     return true;
   }, [messages, pendingMessage?.prompt, pendingMessage?.requestId]);
 
+  const streamActivityLen = streamState?.activity?.length ?? 0;
+  const streamFilesLen = streamState?.files?.length ?? 0;
+  const pendingFilesLen = pendingMessage?.files?.length ?? 0;
+  const pendingStepsLen = pendingMessage?.steps?.length ?? 0;
+  const rawReasoningLen = String(streamState?.rawReasoning || "").length;
+
   useEffect(() => {
     if (!chatEndRef?.current) return;
-    const scroll = () =>
+    const scroll = () => {
+      // #region agent log
+      fetch("http://127.0.0.1:7314/ingest/95f6c742-cc5a-4fb7-875d-0de0998fe009", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "bf63a4" },
+        body: JSON.stringify({
+          sessionId: "bf63a4",
+          runId: "post-fix",
+          hypothesisId: "scroll-deps",
+          location: "MessageList.jsx:scroll",
+          message: "scrollIntoView triggered",
+          data: {
+            hasPendingMessage,
+            messageCount: visibleMessages.length,
+            streamActivityLen,
+            streamFilesLen,
+            pendingStepsLen,
+            rawReasoningLen,
+          },
+          timestamp: Date.now(),
+        }),
+      }).catch(() => {});
+      // #endregion
       chatEndRef.current.scrollIntoView({
-        behavior: hasPendingMessage ? "smooth" : "auto",
+        behavior: "auto",
         block: "end",
       });
+    };
 
     const frameId =
       typeof window !== "undefined" && typeof window.requestAnimationFrame === "function"
@@ -141,10 +170,22 @@ export default function MessageList({
         window.cancelAnimationFrame(frameId);
       }
     };
-  }, [visibleMessages, pendingMessage?.content, pendingMessage?.prompt, pendingMessage?.stage, hasPendingMessage, chatEndRef]);
+  }, [
+    visibleMessages,
+    pendingMessage?.content,
+    pendingMessage?.prompt,
+    pendingMessage?.stage,
+    hasPendingMessage,
+    chatEndRef,
+    streamActivityLen,
+    streamFilesLen,
+    pendingFilesLen,
+    pendingStepsLen,
+    rawReasoningLen,
+  ]);
 
   return (
-    <div className="flex-1 overflow-y-auto scrollbar-hide space-y-6">
+    <div className="space-y-6">
       {visibleMessages.map((m) => (
         <MessageBubble
           key={m.id}

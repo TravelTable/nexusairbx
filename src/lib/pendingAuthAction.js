@@ -7,6 +7,7 @@ export const PENDING_AUTH_ACTIONS = Object.freeze({
   SAVE_PROJECT: "save_project",
   CONTINUE_EDITING: "continue_editing",
   RESTRICTED_GENERATION: "restricted_generation",
+  CHAT_SUBMIT: "chat_submit",
   EXPORT_PROJECT: "export_project",
   PUSH_TO_STUDIO: "push_to_studio",
   UPGRADE_TO_AGENT_BUILD: "upgrade_to_agent_build",
@@ -18,6 +19,7 @@ const ACTION_LABELS = {
   [PENDING_AUTH_ACTIONS.SAVE_PROJECT]: "save your project",
   [PENDING_AUTH_ACTIONS.CONTINUE_EDITING]: "continue editing",
   [PENDING_AUTH_ACTIONS.RESTRICTED_GENERATION]: "generate another output",
+  [PENDING_AUTH_ACTIONS.CHAT_SUBMIT]: "continue your chat",
   [PENDING_AUTH_ACTIONS.EXPORT_PROJECT]: "export your project",
   [PENDING_AUTH_ACTIONS.PUSH_TO_STUDIO]: "push to Studio",
   [PENDING_AUTH_ACTIONS.UPGRADE_TO_AGENT_BUILD]: "open Agent Build",
@@ -58,9 +60,10 @@ function safePath(value) {
 function normalizeAction(action = {}) {
   const createdAt = Number(action.createdAt || now());
   const expiresAt = Number(action.expiresAt || createdAt + DEFAULT_TTL_MS);
+  const actionType = String(action.action || PENDING_AUTH_ACTIONS.RESTRICTED_GENERATION);
   return {
     id: String(action.id || createId()),
-    action: String(action.action || PENDING_AUTH_ACTIONS.RESTRICTED_GENERATION),
+    action: actionType,
     returnPath: safePath(action.returnPath || "/ai"),
     workspace: action.workspace === "agent_build" ? "agent_build" : "quick_script",
     source: String(action.source || "auth_gate").slice(0, 80),
@@ -68,11 +71,33 @@ function normalizeAction(action = {}) {
     createdAt,
     expiresAt,
     inProgressAt: Number(action.inProgressAt || 0),
-    payload: sanitizePayload(action.payload),
+    payload: sanitizePayload(action.payload, actionType),
   };
 }
 
-function sanitizePayload(payload = {}) {
+function sanitizePendingChatAttachments(attachments = []) {
+  if (!Array.isArray(attachments)) return [];
+  return attachments.slice(0, 6).map((attachment) => {
+    if (!attachment || typeof attachment !== "object") return null;
+    const type = String(attachment.type || attachment.mimeType || "application/octet-stream")
+      .replace(/\s+/g, " ")
+      .trim()
+      .slice(0, 120);
+    const isImage = Boolean(attachment.isImage || /^image\//i.test(type));
+    const out = {
+      name: String(attachment.name || attachment.fileName || "attachment")
+        .replace(/\s+/g, " ")
+        .trim()
+        .slice(0, 160),
+      type,
+      isImage,
+    };
+    if (attachment.data != null) out.data = String(attachment.data).slice(0, 120000);
+    return out;
+  }).filter(Boolean);
+}
+
+function sanitizePayload(payload = {}, actionType = "") {
   const out = {};
   const allowed = [
     "quickScriptResultId",
@@ -88,6 +113,13 @@ function sanitizePayload(payload = {}) {
     if (value == null) continue;
     if (typeof value === "boolean") out[key] = value;
     else out[key] = String(value).replace(/\s+/g, " ").trim().slice(0, 120);
+  }
+  if (actionType === PENDING_AUTH_ACTIONS.CHAT_SUBMIT) {
+    if (payload?.prompt != null) out.prompt = String(payload.prompt).slice(0, 12000);
+    if (payload?.chatMode != null) out.chatMode = String(payload.chatMode).replace(/\s+/g, " ").trim().slice(0, 32);
+    if (payload?.modelVersion != null) out.modelVersion = String(payload.modelVersion).replace(/\s+/g, " ").trim().slice(0, 80);
+    const attachments = sanitizePendingChatAttachments(payload?.attachments);
+    if (attachments.length) out.attachments = attachments;
   }
   return out;
 }

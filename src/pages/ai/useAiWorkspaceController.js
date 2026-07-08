@@ -81,6 +81,7 @@ import {
   readCompletedPendingAuthAction,
   readPendingAuthAction,
 } from "../../lib/pendingAuthAction";
+import { normalizeChatAttachments } from "../../lib/chatAttachments";
 
 const MODE_COLORS = {
   general: { primary: "#9b5de5", secondary: "#00f5d4" },
@@ -247,14 +248,18 @@ export function useAiWorkspaceController() {
   const unified = useUnifiedChat(user, settings, refreshBilling, notify, {
     onSignInNudge: () => {
       createPendingAuthAction({
-        action: PENDING_AUTH_ACTIONS.RESTRICTED_GENERATION,
+        action: PENDING_AUTH_ACTIONS.CHAT_SUBMIT,
         returnPath: "/ai",
         workspace: "agent_build",
         source: "agent_build_prompt",
         payload: {
+          prompt,
+          attachments: normalizeChatAttachments(attachments),
+          chatMode: settings?.chatMode || "agent",
+          modelVersion: settings?.modelVersion || "",
           generatorMode: "agent_build",
           promptCategory: categorizePrompt(prompt),
-          actionLabel: actionLabel(PENDING_AUTH_ACTIONS.RESTRICTED_GENERATION),
+          actionLabel: actionLabel(PENDING_AUTH_ACTIONS.CHAT_SUBMIT),
         },
       });
       setSignInNudgeReason("Sign up to continue this workspace conversation and keep your generated work attached to your account.");
@@ -598,8 +603,12 @@ export function useAiWorkspaceController() {
 
     const currentPrompt = (overridePrompt ?? prompt).trim();
     const currentAttachments = [...attachments];
+    const hasProjectAssets = projectAssets.assets.length > 0;
 
-    if (!currentPrompt && currentAttachments.length === 0) return;
+    if (!currentPrompt && currentAttachments.length === 0 && !hasProjectAssets) return;
+
+    const promptToSend =
+      currentPrompt || (hasProjectAssets ? "Use the attached Roblox assets in this project." : "");
 
     if (activeTab !== "chat") setActiveTab("chat");
     if (isMobile) setMobileTab("chat");
@@ -607,14 +616,18 @@ export function useAiWorkspaceController() {
     // Auth gate: preserve draft so unauthenticated users don't lose their work
     if (!user) {
       createPendingAuthAction({
-        action: PENDING_AUTH_ACTIONS.RESTRICTED_GENERATION,
+        action: PENDING_AUTH_ACTIONS.CHAT_SUBMIT,
         returnPath: "/ai",
         workspace: generatorMode,
         source: "chat_submit",
         payload: {
+          prompt: currentPrompt,
+          attachments: normalizeChatAttachments(currentAttachments),
+          chatMode: settings?.chatMode || "agent",
+          modelVersion: settings?.modelVersion || "",
           generatorMode,
           promptCategory: categorizePrompt(currentPrompt),
-          actionLabel: actionLabel(PENDING_AUTH_ACTIONS.RESTRICTED_GENERATION),
+          actionLabel: actionLabel(PENDING_AUTH_ACTIONS.CHAT_SUBMIT),
         },
       });
       setSignInNudgeReason("Sign up to continue this workspace conversation and keep your generated work attached to your account.");
@@ -635,16 +648,17 @@ export function useAiWorkspaceController() {
     if (user) {
       track("prompt_submitted", {
         attachment_count: currentAttachments.length,
-        prompt_length: currentPrompt.length,
-        prompt_category: categorizePrompt(currentPrompt),
+        prompt_length: promptToSend.length,
+        prompt_category: categorizePrompt(promptToSend),
       });
     }
 
-    await unified.handleSubmit(currentPrompt, currentAttachments, workspace.projectArtifactSnapshot);
+    await unified.handleSubmit(promptToSend, currentAttachments, workspace.projectArtifactSnapshot);
   }, [
     user,
     prompt,
     attachments,
+    projectAssets.assets,
     activeTab,
     isMobile,
     refineTarget,
@@ -652,6 +666,8 @@ export function useAiWorkspaceController() {
     workspace.projectArtifactSnapshot,
     track,
     generatorMode,
+    settings?.chatMode,
+    settings?.modelVersion,
   ]);
 
   const recordPendingAuthGate = useCallback((actionType, source = "quick_script_gate") => {
@@ -1437,6 +1453,35 @@ export function useAiWorkspaceController() {
           case PENDING_AUTH_ACTIONS.UPGRADE_TO_AGENT_BUILD:
             await handleQuickScriptOpenAgentBuild();
             break;
+          case PENDING_AUTH_ACTIONS.CHAT_SUBMIT: {
+            const resumedPrompt = String(pending.payload?.prompt || "").trim();
+            const resumedAttachments = normalizeChatAttachments(pending.payload?.attachments);
+            const resumedMode = pending.payload?.chatMode || settings?.chatMode || "agent";
+            const resumedModel = pending.payload?.modelVersion || "";
+            if (resumedModel && resumedModel !== settings?.modelVersion) {
+              await updateSettings({ modelVersion: resumedModel });
+            }
+            setActiveTab("chat");
+            if (isMobile) setMobileTab("chat");
+            setPrompt("");
+            setAttachments([]);
+            if (resumedPrompt || resumedAttachments.length) {
+              await unified.handleSubmit(
+                resumedPrompt,
+                resumedAttachments,
+                workspace.projectArtifactSnapshot,
+                { mode: resumedMode }
+              );
+            } else {
+              outcome = "restored";
+              notify({
+                message: "Sign-in restored your workspace. Add a prompt to continue.",
+                type: "success",
+                duration: 7000,
+              });
+            }
+            break;
+          }
           case PENDING_AUTH_ACTIONS.RESTRICTED_GENERATION:
             await runQuickScript(quickScript.prompt || prompt, { source: "pending_auth_resume" });
             break;
@@ -1483,14 +1528,20 @@ export function useAiWorkspaceController() {
     handleQuickScriptOpenAgentBuild,
     handleQuickScriptSave,
     handleQuickScriptStudioPush,
+    isMobile,
     notify,
     prompt,
     quickScript.claim,
     quickScript.prompt,
     runQuickScript,
+    settings?.chatMode,
+    settings?.modelVersion,
     studioConnection.connected,
     track,
+    unified,
+    updateSettings,
     user,
+    workspace.projectArtifactSnapshot,
   ]);
 
   return {

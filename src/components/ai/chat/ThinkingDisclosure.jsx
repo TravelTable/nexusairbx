@@ -1,23 +1,16 @@
 import React, { useState } from "react";
 import { Brain, ChevronDown } from "lib/icons";
+import { useSettings } from "../../../context/SettingsContext";
 
 /**
  * Collapsible display-safe build log for finalized messages. Hidden when there
  * is no text or when the user disables thinking/progress display.
  */
-function thoughtEnabled() {
-  try {
-    const s = JSON.parse(localStorage.getItem("nexusrbx:settings") || "{}");
-    return s.showThinking !== false;
-  } catch (_) {
-    return true;
-  }
-}
-
 export default function ThinkingDisclosure({ text, live = false, defaultOpen = false, label = null }) {
+  const { settings } = useSettings();
   const clean = String(text || "").replace(/<\/?thinking>/gi, "").trim();
   const [open, setOpen] = useState(defaultOpen || live);
-  if (!clean || !thoughtEnabled()) return null;
+  if (!clean || settings.showThinking === false) return null;
 
   return (
     <div className="rounded-2xl border border-white/10 bg-black/30 overflow-hidden">

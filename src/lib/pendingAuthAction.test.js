@@ -48,6 +48,48 @@ describe("pendingAuthAction", () => {
     expect(JSON.stringify(restored)).not.toContain("print");
   });
 
+  test("stores sanitized chat submissions for auth resume", () => {
+    createPendingAuthAction({
+      action: PENDING_AUTH_ACTIONS.CHAT_SUBMIT,
+      returnPath: "/ai",
+      workspace: "agent_build",
+      payload: {
+        prompt: "Build from this attached spec",
+        code: "print('still secret')",
+        chatMode: "ask",
+        modelVersion: "gpt-4.1-mini",
+        attachments: [
+          {
+            name: " spec.txt ",
+            type: "text/plain",
+            data: "Make a lobby",
+            isImage: false,
+          },
+        ],
+      },
+    });
+
+    const restored = readPendingAuthAction();
+    expect(restored).toMatchObject({
+      action: PENDING_AUTH_ACTIONS.CHAT_SUBMIT,
+      workspace: "agent_build",
+      payload: {
+        prompt: "Build from this attached spec",
+        chatMode: "ask",
+        modelVersion: "gpt-4.1-mini",
+        attachments: [
+          {
+            name: "spec.txt",
+            type: "text/plain",
+            data: "Make a lobby",
+            isImage: false,
+          },
+        ],
+      },
+    });
+    expect(JSON.stringify(restored)).not.toContain("still secret");
+  });
+
   test("expires safely and returns recoverable expired action", () => {
     createPendingAuthAction({
       action: PENDING_AUTH_ACTIONS.EXPORT_PROJECT,

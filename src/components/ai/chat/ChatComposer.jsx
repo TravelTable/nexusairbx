@@ -1,4 +1,5 @@
-import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import {
   Plus,
   X,
@@ -22,23 +23,66 @@ import { ROBLOX_DECAL_ACCEPT } from "../../../hooks/useRobloxImageUpload";
 
 function ModeSelector({ mode, onModeChange, disabled }) {
   const [open, setOpen] = useState(false);
-  const ref = useRef(null);
+  const [menuPosition, setMenuPosition] = useState(null);
+  const rootRef = useRef(null);
+  const buttonRef = useRef(null);
+  const menuRef = useRef(null);
+
+  const updateMenuPosition = useCallback(() => {
+    const rect = buttonRef.current?.getBoundingClientRect();
+    if (!rect) return;
+
+    const menuWidth = 256;
+    const menuHeight = 280;
+    const gutter = 8;
+    const spaceAbove = rect.top;
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const openUp = spaceAbove >= menuHeight || spaceAbove > spaceBelow;
+
+    setMenuPosition({
+      left: Math.min(Math.max(gutter, rect.left), window.innerWidth - menuWidth - gutter),
+      top: openUp ? rect.top - gutter : rect.bottom + gutter,
+      transform: openUp ? "translateY(-100%)" : "none",
+      width: menuWidth,
+      maxHeight: Math.max(160, openUp ? spaceAbove - gutter * 2 : spaceBelow - gutter * 2),
+    });
+  }, []);
 
   useEffect(() => {
     const onClickOutside = (e) => {
-      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+      if (rootRef.current?.contains(e.target) || menuRef.current?.contains(e.target)) return;
+      setOpen(false);
     };
     document.addEventListener("mousedown", onClickOutside);
     return () => document.removeEventListener("mousedown", onClickOutside);
   }, []);
 
+  useEffect(() => {
+    if (!open) return undefined;
+    updateMenuPosition();
+    const onLayout = () => updateMenuPosition();
+    window.addEventListener("resize", onLayout);
+    window.addEventListener("scroll", onLayout, true);
+    return () => {
+      window.removeEventListener("resize", onLayout);
+      window.removeEventListener("scroll", onLayout, true);
+    };
+  }, [open, updateMenuPosition]);
+
   const current = CHAT_MODES.find((m) => m.id === mode) || CHAT_MODES[0];
 
   return (
-    <div className="relative" ref={ref}>
+    <div className="relative" ref={rootRef}>
       <button
+        ref={buttonRef}
         type="button"
-        onClick={() => setOpen((o) => !o)}
+        onClick={() => {
+          setOpen((o) => {
+            const next = !o;
+            if (next) requestAnimationFrame(updateMenuPosition);
+            return next;
+          });
+        }}
         disabled={disabled}
         className={`inline-flex h-8 items-center gap-1.5 px-2.5 rounded-lg text-[10px] font-bold uppercase tracking-wider border transition-all focus-ring disabled:opacity-40 disabled:cursor-not-allowed ${current.bg} ${current.color} border-white/10 hover:bg-white/10`}
         title="Select mode"
@@ -50,40 +94,51 @@ function ModeSelector({ mode, onModeChange, disabled }) {
         <ChevronDown className={`w-3 h-3 transition-transform ${open ? "rotate-180" : ""}`} />
       </button>
 
-      {open && (
-        <div
-          className="absolute bottom-full left-0 mb-2 w-64 rounded-2xl border border-white/10 bg-[#0D0D0D] backdrop-blur-2xl shadow-2xl z-50 p-1.5"
-          role="listbox"
-        >
-          {CHAT_MODES.map((m) => {
-            const selected = m.id === mode;
-            return (
-              <button
-                key={m.id}
-                type="button"
-                role="option"
-                aria-selected={selected}
-                onClick={() => {
-                  onModeChange?.(m.id);
-                  setOpen(false);
-                }}
-                className={`w-full flex items-start gap-2.5 px-2.5 py-2 rounded-xl text-left transition-all ${
-                  selected ? "bg-white/[0.07] border border-white/10" : "border border-transparent hover:bg-white/5"
-                }`}
-              >
-                <span className={`mt-0.5 ${m.color}`}>{m.icon}</span>
-                <span className="flex-1 min-w-0">
-                  <span className="flex items-center gap-1.5">
-                    <span className="text-xs font-bold text-white">{m.label}</span>
-                    {selected && <Check className="w-3 h-3 text-[#00f5d4]" />}
-                  </span>
-                  <span className="block text-[10px] text-gray-500 leading-snug mt-0.5">{m.description}</span>
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      )}
+      {open && menuPosition && typeof document !== "undefined"
+        ? createPortal(
+            <div
+              ref={menuRef}
+              className="fixed overflow-y-auto rounded-2xl border border-white/10 bg-[#0D0D0D] backdrop-blur-2xl shadow-2xl z-[9999] p-1.5"
+              style={{
+                left: menuPosition.left,
+                top: menuPosition.top,
+                width: menuPosition.width,
+                maxHeight: menuPosition.maxHeight,
+                transform: menuPosition.transform,
+              }}
+              role="listbox"
+            >
+              {CHAT_MODES.map((m) => {
+                const selected = m.id === mode;
+                return (
+                  <button
+                    key={m.id}
+                    type="button"
+                    role="option"
+                    aria-selected={selected}
+                    onClick={() => {
+                      onModeChange?.(m.id);
+                      setOpen(false);
+                    }}
+                    className={`w-full flex items-start gap-2.5 px-2.5 py-2 rounded-xl text-left transition-all ${
+                      selected ? "bg-white/[0.07] border border-white/10" : "border border-transparent hover:bg-white/5"
+                    }`}
+                  >
+                    <span className={`mt-0.5 ${m.color}`}>{m.icon}</span>
+                    <span className="flex-1 min-w-0">
+                      <span className="flex items-center gap-1.5">
+                        <span className="text-xs font-bold text-white">{m.label}</span>
+                        {selected && <Check className="w-3 h-3 text-[#00f5d4]" />}
+                      </span>
+                      <span className="block text-[10px] text-gray-500 leading-snug mt-0.5">{m.description}</span>
+                    </span>
+                  </button>
+                );
+              })}
+            </div>,
+            document.body
+          )
+        : null}
     </div>
   );
 }
@@ -226,6 +281,8 @@ export default function ChatComposer({
   const textareaRef = useRef(null);
   const controlsId = "chat-composer-controls";
   const contextItemCount = attachments.length + robloxProjectAssets.length + robloxImageUploads.length;
+  const canSendWithContext =
+    Boolean(prompt?.trim()) || attachments.length > 0 || robloxProjectAssets.length > 0;
 
   useLayoutEffect(() => {
     const textarea = textareaRef.current;
@@ -462,7 +519,7 @@ export default function ChatComposer({
                 id="tour-generate-button"
                 data-tour="generate-btn"
                 onClick={() => onSubmit?.()}
-                disabled={disabled || (!prompt?.trim() && attachments.length === 0)}
+                disabled={disabled || !canSendWithContext}
                 className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-nexus-cyan text-black transition-all hover:shadow-[0_0_24px_rgba(0,245,212,0.45)] active:scale-95 focus-ring disabled:opacity-50 disabled:active:scale-100"
                 aria-label={isGenerating ? "Generation in progress" : "Send prompt"}
                 title={isGenerating ? "Generation in progress" : "Send prompt"}

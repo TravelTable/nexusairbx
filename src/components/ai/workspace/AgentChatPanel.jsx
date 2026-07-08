@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Search, X } from "lib/icons";
 import ChatView from "../ChatView";
 import ChatComposer from "../chat/ChatComposer";
@@ -10,6 +10,7 @@ import ModelFilePipelinePanel from "../../assets/ModelFilePipelinePanel";
 // workflow; build progress + setup/testing/security live in the Details view.
 export default function AgentChatPanel({
   // chat
+  currentChatId,
   messages,
   pendingMessage,
   generationStage,
@@ -93,6 +94,42 @@ export default function AgentChatPanel({
 }) {
   const [view, setView] = useState("chat");
   const [creatorStoreOpen, setCreatorStoreOpen] = useState(false);
+  const chatScrollRef = useRef(null);
+  const savedChatScrollTop = useRef(0);
+
+  useEffect(() => {
+    const el = chatScrollRef.current;
+    if (!el) return;
+    el.scrollTop = 0;
+    // #region agent log
+    fetch("http://127.0.0.1:7314/ingest/95f6c742-cc5a-4fb7-875d-0de0998fe009", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "bf63a4" },
+      body: JSON.stringify({
+        sessionId: "bf63a4",
+        runId: "post-fix",
+        hypothesisId: "chat-switch",
+        location: "AgentChatPanel.jsx:chatSwitch",
+        message: "chat scroll reset on switch",
+        data: { currentChatId: currentChatId || null },
+        timestamp: Date.now(),
+      }),
+    }).catch(() => {});
+    // #endregion
+  }, [currentChatId]);
+
+  useEffect(() => {
+    if (view === "details") {
+      savedChatScrollTop.current = chatScrollRef.current?.scrollTop ?? 0;
+      return;
+    }
+    const el = chatScrollRef.current;
+    if (!el) return;
+    const frameId = requestAnimationFrame(() => {
+      el.scrollTop = savedChatScrollTop.current;
+    });
+    return () => cancelAnimationFrame(frameId);
+  }, [view]);
 
   useEffect(() => {
     if (!creatorStoreOpen) return undefined;
@@ -120,7 +157,7 @@ export default function AgentChatPanel({
           </div>
         ) : (
           <>
-            <div className="flex-1 min-h-0 overflow-y-auto px-3 py-4 scrollbar-hide">
+            <div ref={chatScrollRef} className="flex-1 min-h-0 overflow-y-auto px-3 py-4 scrollbar-hide">
               <ChatView
                 messages={messages}
                 pendingMessage={pendingMessage}
@@ -176,13 +213,18 @@ export default function AgentChatPanel({
       </div>
 
       {creatorStoreOpen && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm" role="presentation">
+        <div
+          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm"
+          role="presentation"
+          onClick={() => setCreatorStoreOpen(false)}
+        >
           <div
             id="creator-store-drawer"
             className="absolute inset-y-0 right-0 flex w-full max-w-2xl flex-col border-l border-white/10 bg-[#080a12] shadow-2xl"
             role="dialog"
             aria-modal="true"
             aria-label="Creator Store search"
+            onClick={(event) => event.stopPropagation()}
           >
             <div className="flex items-center justify-between gap-3 border-b border-white/10 px-4 py-3">
               <div className="flex min-w-0 items-center gap-2">

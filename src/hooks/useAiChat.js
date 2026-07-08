@@ -53,6 +53,11 @@ import {
   insufficientTokensToast,
   parseApiErrorPayload,
 } from "../lib/billingErrors";
+import {
+  describeChatAttachments,
+  messageToConversationEntry,
+  normalizeChatAttachments,
+} from "../lib/chatAttachments";
 
 const STREAM_MAX_RETRIES = 3;
 const RESULT_MAX_POLLS = 45;
@@ -408,8 +413,11 @@ export function useAiChat(user, settings, refreshBilling, notify) {
     attachments = [],
     baseArtifact = null
   ) => {
-    const content = prompt.trim();
-    if (!content && attachments.length === 0) return;
+    const normalizedAttachments = normalizeChatAttachments(attachments);
+    const content = String(prompt || "").trim();
+    const displayContent = content || describeChatAttachments(normalizedAttachments) || "Attached file(s)";
+    const requestPrompt = content || "Please use the attached file(s) for this request.";
+    if (!content && normalizedAttachments.length === 0) return;
     if (!user) return;
 
     if (!unlimitedTokens && totalRemaining <= 0) {
@@ -471,7 +479,7 @@ export function useAiChat(user, settings, refreshBilling, notify) {
         role: "assistant",
         content: "",
         type: "chat",
-        prompt: content,
+        prompt: displayContent,
         mode: currentMode,
         requestId,
         stage: "Analyzing Request...",
@@ -485,7 +493,7 @@ export function useAiChat(user, settings, refreshBilling, notify) {
     try {
       if (!activeChatId) {
         const newChatRef = await addDoc(collection(db, "users", user.uid, "chats"), {
-          title: content.slice(0, 30) + (content.length > 30 ? "..." : ""),
+          title: displayContent.slice(0, 30) + (displayContent.length > 30 ? "..." : ""),
           activeMode: expertMode,
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
@@ -499,7 +507,8 @@ export function useAiChat(user, settings, refreshBilling, notify) {
         const userMsgRef = doc(db, "users", user.uid, "chats", activeChatId, "messages", `${requestId}-user`);
         await setDoc(userMsgRef, {
           role: "user",
-          content: content,
+          content: displayContent,
+          ...(normalizedAttachments.length ? { attachments: normalizedAttachments } : {}),
           createdAt: serverTimestamp(),
           requestId,
         });
@@ -533,7 +542,7 @@ export function useAiChat(user, settings, refreshBilling, notify) {
           "Idempotency-Key": idemKey
         },
         body: JSON.stringify({ 
-          prompt: content, 
+          prompt: requestPrompt,
           requestId,
           settings: {
             ...settings,
@@ -542,8 +551,8 @@ export function useAiChat(user, settings, refreshBilling, notify) {
           chatId: activeChatId,
           chatMode: expertMode,
           mode: currentMode,
-          conversation: messages.slice(-10).map(m => ({ role: m.role, content: m.content || m.explanation })),
-          attachments: attachments.map(a => ({ name: a.name, type: a.type, data: a.data, isImage: a.isImage })),
+          conversation: messages.slice(-10).map(messageToConversationEntry).filter(Boolean),
+          attachments: normalizedAttachments,
           studioEnabled: studioEnabled && Boolean(studioSessionId),
           applyMode: getStudioApplyMode(),
           studioSessionId,
@@ -862,7 +871,7 @@ export function useAiChat(user, settings, refreshBilling, notify) {
 
           await updateDoc(doc(db, "users", user.uid, "chats", activeChatId), {
             updatedAt: serverTimestamp(),
-            lastMessage: content.slice(0, 50),
+            lastMessage: displayContent.slice(0, 50),
           });
 
           emitStreamMetric("complete", {
