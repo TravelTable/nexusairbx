@@ -6,6 +6,7 @@ import BuildDetailsPanel from "./BuildDetailsPanel";
 import RobloxAssetTray from "./RobloxAssetTray";
 import CreatorStoreSearch from "../../assets/CreatorStoreSearch";
 import ModelFilePipelinePanel from "../../assets/ModelFilePipelinePanel";
+import { useMotionPresence } from "../../../hooks/useMotionPresence";
 // Primary Studio agent surface. Chat drives the
 // workflow; build progress + setup/testing/security live in the Details view.
 export default function AgentChatPanel({
@@ -94,6 +95,7 @@ export default function AgentChatPanel({
 }) {
   const [view, setView] = useState("chat");
   const [creatorStoreOpen, setCreatorStoreOpen] = useState(false);
+  const creatorStorePresence = useMotionPresence(creatorStoreOpen, 220);
   const chatScrollRef = useRef(null);
   const savedChatScrollTop = useRef(0);
 
@@ -110,10 +112,14 @@ export default function AgentChatPanel({
     }
     const el = chatScrollRef.current;
     if (!el) return;
-    const frameId = requestAnimationFrame(() => {
+    if (typeof window === "undefined" || typeof window.requestAnimationFrame !== "function") {
+      el.scrollTop = savedChatScrollTop.current;
+      return undefined;
+    }
+    const frameId = window.requestAnimationFrame(() => {
       el.scrollTop = savedChatScrollTop.current;
     });
-    return () => cancelAnimationFrame(frameId);
+    return () => window.cancelAnimationFrame(frameId);
   }, [view]);
 
   useEffect(() => {
@@ -137,7 +143,7 @@ export default function AgentChatPanel({
       />
       <div className="flex-1 min-h-0 flex flex-col">
         {view === "details" ? (
-          <div className="relative flex-1 min-h-0">
+          <div className="relative flex-1 min-h-0 motion-safe:animate-panel-in">
             <BuildDetailsPanel
               artifact={artifact}
               agentRun={agentRun}
@@ -150,7 +156,7 @@ export default function AgentChatPanel({
           </div>
         ) : (
           <>
-            <div className="relative flex-1 min-h-0">
+            <div className="relative flex-1 min-h-0 motion-safe:animate-panel-in">
               <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-14 bg-gradient-to-b from-[#060711] to-transparent" />
               <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-20 bg-gradient-to-t from-[#060711] to-transparent" />
               <div ref={chatScrollRef} className="relative z-0 h-full overflow-y-auto px-4 py-8 scrollbar-hide">
@@ -211,15 +217,21 @@ export default function AgentChatPanel({
         </button>
       </div>
 
-      {creatorStoreOpen && (
+      {creatorStorePresence.present && (
         <div
-          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm"
+          className={`fixed inset-0 z-50 bg-black/60 backdrop-blur-sm transition-opacity duration-200 ease-out motion-reduce:transition-none ${
+            creatorStorePresence.entering ? "opacity-100" : "pointer-events-none opacity-0"
+          }`}
           role="presentation"
           onClick={() => setCreatorStoreOpen(false)}
         >
           <div
             id="creator-store-drawer"
-            className="absolute inset-y-0 right-0 flex w-full max-w-2xl flex-col border-l border-white/10 bg-[#080a12] shadow-2xl"
+            className={`absolute inset-y-0 right-0 flex w-full max-w-2xl flex-col border-l border-white/10 bg-[#080a12] shadow-2xl transition-[opacity,transform] duration-200 ease-out motion-reduce:transition-none ${
+              creatorStorePresence.entering
+                ? "translate-x-0 opacity-100 motion-safe:animate-drawer-in"
+                : "translate-x-6 opacity-0"
+            }`}
             role="dialog"
             aria-modal="true"
             aria-label="Creator Store search"

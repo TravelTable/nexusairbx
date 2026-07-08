@@ -20,6 +20,7 @@ import RobloxCloudControls from "../workspace/RobloxCloudControls";
 import AssetLibraryModal from "../workspace/AssetLibraryModal";
 import { Segmented } from "../../ui";
 import { ROBLOX_DECAL_ACCEPT } from "../../../hooks/useRobloxImageUpload";
+import { useMotionPresence } from "../../../hooks/useMotionPresence";
 
 function ModeSelector({ mode, onModeChange, disabled }) {
   const [open, setOpen] = useState(false);
@@ -27,6 +28,7 @@ function ModeSelector({ mode, onModeChange, disabled }) {
   const rootRef = useRef(null);
   const buttonRef = useRef(null);
   const menuRef = useRef(null);
+  const menuPresence = useMotionPresence(open, 150);
 
   const updateMenuPosition = useCallback(() => {
     const rect = buttonRef.current?.getBoundingClientRect();
@@ -43,6 +45,7 @@ function ModeSelector({ mode, onModeChange, disabled }) {
       left: Math.min(Math.max(gutter, rect.left), window.innerWidth - menuWidth - gutter),
       top: openUp ? rect.top - gutter : rect.bottom + gutter,
       transform: openUp ? "translateY(-100%)" : "none",
+      transformOrigin: openUp ? "bottom left" : "top left",
       width: menuWidth,
       maxHeight: Math.max(160, openUp ? spaceAbove - gutter * 2 : spaceBelow - gutter * 2),
     });
@@ -79,34 +82,42 @@ function ModeSelector({ mode, onModeChange, disabled }) {
         onClick={() => {
           setOpen((o) => {
             const next = !o;
-            if (next) requestAnimationFrame(updateMenuPosition);
+            if (next && typeof window !== "undefined" && typeof window.requestAnimationFrame === "function") {
+              window.requestAnimationFrame(updateMenuPosition);
+            }
             return next;
           });
         }}
         disabled={disabled}
-        className={`inline-flex h-8 items-center gap-1.5 px-2.5 rounded-lg text-[10px] font-bold uppercase tracking-wider border transition-all focus-ring disabled:opacity-40 disabled:cursor-not-allowed ${current.bg} ${current.color} border-white/10 hover:bg-white/10`}
+        className={`inline-flex h-8 items-center gap-1.5 px-2.5 rounded-lg text-[10px] font-bold uppercase tracking-wider border transition-all duration-150 ease-out active:scale-[0.98] focus-ring disabled:cursor-not-allowed disabled:opacity-40 disabled:active:scale-100 ${current.bg} ${current.color} border-white/10 hover:bg-white/10`}
         title="Select mode"
         aria-haspopup="listbox"
         aria-expanded={open}
       >
         {current.icon}
         {current.label}
-        <ChevronDown className={`w-3 h-3 transition-transform ${open ? "rotate-180" : ""}`} />
+        <ChevronDown className={`w-3 h-3 transition-transform duration-150 ease-out ${open ? "rotate-180" : ""}`} />
       </button>
 
-      {open && menuPosition && typeof document !== "undefined"
+      {menuPresence.present && menuPosition && typeof document !== "undefined"
         ? createPortal(
             <div
               ref={menuRef}
-              className="fixed overflow-y-auto rounded-2xl border border-white/10 bg-[#0D0D0D] backdrop-blur-2xl shadow-2xl z-[9999] p-1.5"
+              className={`fixed z-[9999] overflow-y-auto rounded-2xl border border-white/10 bg-[#0D0D0D] p-1.5 shadow-2xl backdrop-blur-2xl transition-[opacity,transform] duration-150 ease-out motion-reduce:transition-none ${
+                menuPresence.entering ? "opacity-100" : "pointer-events-none opacity-0"
+              }`}
               style={{
                 left: menuPosition.left,
                 top: menuPosition.top,
                 width: menuPosition.width,
                 maxHeight: menuPosition.maxHeight,
-                transform: menuPosition.transform,
+                transform: `${menuPosition.transform === "none" ? "" : menuPosition.transform} ${
+                  menuPresence.entering ? "scale(1)" : "scale(0.985)"
+                }`.trim() || "scale(1)",
+                transformOrigin: menuPosition.transformOrigin,
               }}
               role="listbox"
+              aria-hidden={!open}
             >
               {CHAT_MODES.map((m) => {
                 const selected = m.id === mode;
@@ -120,7 +131,7 @@ function ModeSelector({ mode, onModeChange, disabled }) {
                       onModeChange?.(m.id);
                       setOpen(false);
                     }}
-                    className={`w-full flex items-start gap-2.5 px-2.5 py-2 rounded-xl text-left transition-all ${
+                    className={`w-full flex items-start gap-2.5 px-2.5 py-2 rounded-xl text-left transition-[background-color,border-color,transform] duration-150 ease-out hover:translate-x-0.5 ${
                       selected ? "bg-white/[0.07] border border-white/10" : "border border-transparent hover:bg-white/5"
                     }`}
                   >
@@ -146,7 +157,7 @@ function ModeSelector({ mode, onModeChange, disabled }) {
 function ImageUploadChip({ upload }) {
   const name = upload?.fileName || "Image";
   return (
-    <div className="flex h-10 max-w-[190px] shrink-0 items-center gap-2 rounded-lg border border-amber-400/25 bg-amber-400/10 pl-1.5 pr-2">
+    <div className="flex h-10 max-w-[190px] shrink-0 items-center gap-2 rounded-lg border border-amber-400/25 bg-amber-400/10 pl-1.5 pr-2 transition-[border-color,background-color,opacity,transform] duration-150 ease-out motion-safe:animate-fade-in-scale motion-reduce:transition-none">
       <Loader className="h-4 w-4 shrink-0 animate-spin text-amber-200" />
       <span className="min-w-0 truncate text-[10px] font-bold text-amber-100">Uploading {name}</span>
     </div>
@@ -157,7 +168,7 @@ function FileContextChip({ file, index, onRemove }) {
   const name = file?.name || "Attachment";
 
   return (
-    <div className="group/file relative flex h-10 max-w-[190px] shrink-0 items-center gap-2 rounded-lg border border-white/10 bg-white/[0.045] pl-1.5 pr-7">
+    <div className="group/file relative flex h-10 max-w-[190px] shrink-0 items-center gap-2 rounded-lg border border-white/10 bg-white/[0.045] pl-1.5 pr-7 transition-[border-color,background-color,opacity,transform] duration-150 ease-out motion-safe:animate-fade-in-scale motion-reduce:transition-none">
       <span className="inline-flex h-7 shrink-0 items-center rounded-md border border-white/10 bg-black/35 px-1.5 text-[9px] font-black text-gray-400">
         FILE
       </span>
@@ -165,7 +176,7 @@ function FileContextChip({ file, index, onRemove }) {
       <button
         type="button"
         onClick={() => onRemove(index)}
-        className="absolute right-1 top-1/2 -translate-y-1/2 rounded-md p-1 text-gray-500 transition-colors hover:bg-red-500/10 hover:text-red-300 focus-ring"
+        className="absolute right-1 top-1/2 -translate-y-1/2 rounded-md p-1 text-gray-500 transition-[background-color,color,transform] duration-150 ease-out hover:bg-red-500/10 hover:text-red-300 active:scale-95 focus-ring"
         aria-label={`Remove ${name}`}
         title={`Remove ${name}`}
       >
@@ -180,7 +191,7 @@ function RobloxAssetContextChip({ asset, onRemove }) {
   const type = asset?.assetType || "Asset";
 
   return (
-    <div className="group/file relative flex h-10 max-w-[240px] shrink-0 items-center gap-2 rounded-lg border border-[#00f5d4]/20 bg-[#00f5d4]/10 pl-1.5 pr-7">
+    <div className="group/file relative flex h-10 max-w-[240px] shrink-0 items-center gap-2 rounded-lg border border-[#00f5d4]/20 bg-[#00f5d4]/10 pl-1.5 pr-7 transition-[border-color,background-color,opacity,transform] duration-150 ease-out motion-safe:animate-fade-in-scale motion-reduce:transition-none">
       {asset?.thumbnailUrl ? (
         <img src={asset.thumbnailUrl} alt="" className="h-7 w-7 shrink-0 rounded-md object-cover" />
       ) : (
@@ -197,7 +208,7 @@ function RobloxAssetContextChip({ asset, onRemove }) {
       <button
         type="button"
         onClick={() => onRemove?.(asset?.assetId)}
-        className="absolute right-1 top-1/2 -translate-y-1/2 rounded-md p-1 text-[#00f5d4]/60 transition-colors hover:bg-red-500/10 hover:text-red-300 focus-ring"
+        className="absolute right-1 top-1/2 -translate-y-1/2 rounded-md p-1 text-[#00f5d4]/60 transition-[background-color,color,transform] duration-150 ease-out hover:bg-red-500/10 hover:text-red-300 active:scale-95 focus-ring"
         aria-label={`Remove ${name}`}
         title={`Remove ${name}`}
       >
@@ -217,7 +228,7 @@ function StatusPill({ label, tone = "muted", loading = false, title }) {
 
   return (
     <span
-      className={`inline-flex h-8 max-w-[210px] items-center gap-1.5 truncate rounded-lg border px-2.5 text-[10px] font-black uppercase tracking-widest ${toneClass}`}
+      className={`inline-flex h-8 max-w-[210px] items-center gap-1.5 truncate rounded-lg border px-2.5 text-[10px] font-black uppercase tracking-widest transition-[border-color,background-color,color,opacity] duration-150 ease-out ${toneClass}`}
       title={title || label}
       aria-label={label}
     >
@@ -303,6 +314,7 @@ export default function ChatComposer({
   const [controlsOpen, setControlsOpen] = useState(false);
   const [isComposing, setIsComposing] = useState(false);
   const textareaRef = useRef(null);
+  const controlsPresence = useMotionPresence(controlsOpen, 180);
   const controlsId = "chat-composer-controls";
   const contextItemCount = attachments.length + robloxProjectAssets.length + robloxImageUploads.length;
   const canSendWithContext =
@@ -361,15 +373,15 @@ export default function ChatComposer({
             <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent" aria-hidden="true" />
 
             {(refineTarget || mode === "ask" || contextItemCount > 0) && (
-              <div className="flex items-center gap-2 overflow-x-auto border-b border-white/[0.055] px-3 py-2 [scrollbar-width:thin]">
+              <div className="flex items-center gap-2 overflow-x-auto border-b border-white/[0.055] px-3 py-2 motion-safe:animate-fade-in-up [scrollbar-width:thin]">
                 {refineTarget && (
-                  <div className="inline-flex max-w-[360px] shrink-0 items-center gap-2 rounded-lg border border-[#00f5d4]/20 bg-[#00f5d4]/10 px-2.5 py-1.5 text-[11px] font-bold text-[#d8fff9]">
+                  <div className="inline-flex max-w-[360px] shrink-0 items-center gap-2 rounded-lg border border-[#00f5d4]/20 bg-[#00f5d4]/10 px-2.5 py-1.5 text-[11px] font-bold text-[#d8fff9] transition-[border-color,background-color,opacity,transform] duration-150 ease-out motion-safe:animate-fade-in-scale motion-reduce:transition-none">
                     <RefreshCw className="h-3.5 w-3.5 shrink-0" />
                     <span className="truncate">Refining {refineTarget.title || "current artifact"}</span>
                     <button
                       type="button"
                       onClick={onCancelRefine}
-                      className="ml-0.5 rounded-md p-0.5 text-[#00f5d4]/70 transition-colors hover:bg-white/10 hover:text-white focus-ring"
+                      className="ml-0.5 rounded-md p-0.5 text-[#00f5d4]/70 transition-[background-color,color,transform] duration-150 ease-out hover:bg-white/10 hover:text-white active:scale-95 focus-ring"
                       aria-label="Cancel refine"
                       title="Cancel refine"
                     >
@@ -393,7 +405,7 @@ export default function ChatComposer({
             )}
 
             <div className="p-2.5">
-              <div className="flex items-end gap-2 rounded-[18px] border border-white/[0.075] bg-black/25 p-2 transition-all focus-within:border-[#00f5d4]/35 focus-within:bg-black/30 focus-within:shadow-[0_0_26px_rgba(0,245,212,0.10)]">
+              <div className="flex items-end gap-2 rounded-[18px] border border-white/[0.075] bg-black/25 p-2 transition-[border-color,background-color,box-shadow] duration-200 ease-out focus-within:border-[#00f5d4]/35 focus-within:bg-black/30 focus-within:shadow-[0_0_26px_rgba(0,245,212,0.10)] motion-reduce:transition-none">
                 <div className="relative shrink-0">
                   <input
                     type="file"
@@ -406,7 +418,7 @@ export default function ChatComposer({
                   />
                   <label
                     htmlFor="chat-composer-file-upload"
-                    className={`flex h-11 w-11 cursor-pointer items-center justify-center rounded-xl border border-white/[0.075] bg-white/[0.04] text-gray-400 transition-all hover:border-white/15 hover:bg-white/[0.075] hover:text-white focus-ring ${
+                    className={`flex h-11 w-11 cursor-pointer items-center justify-center rounded-xl border border-white/[0.075] bg-white/[0.04] text-gray-400 transition-[border-color,background-color,color,transform,box-shadow] duration-150 ease-out hover:border-white/15 hover:bg-white/[0.075] hover:text-white active:scale-95 focus-ring ${
                       disabled || robloxImageUploading ? "pointer-events-none opacity-50" : ""
                     }`}
                     title="Upload image to Roblox or attach a code/text file"
@@ -420,7 +432,7 @@ export default function ChatComposer({
                   ref={textareaRef}
                   id="tour-prompt-box"
                   data-tour="prompt-input"
-                  className="min-h-[48px] flex-1 resize-none rounded-xl border-none bg-transparent px-2.5 py-3 text-[15px] leading-7 text-gray-100 placeholder-gray-500 outline-none focus:ring-0 disabled:opacity-50"
+                  className="min-h-[48px] flex-1 resize-none rounded-xl border-none bg-transparent px-2.5 py-3 text-[15px] leading-7 text-gray-100 placeholder-gray-500 outline-none transition-[height,color,opacity] duration-150 ease-out focus:ring-0 disabled:opacity-50 motion-reduce:transition-none"
                   rows={1}
                   placeholder={placeholder}
                   value={prompt}
@@ -438,7 +450,7 @@ export default function ChatComposer({
                     onClick={() => onImprovePrompt()}
                     disabled={disabled || isImproving || !prompt?.trim()}
                     data-tour="improve-btn"
-                    className="inline-flex h-11 shrink-0 items-center gap-1.5 rounded-xl border border-[#9b5de5]/25 bg-[#9b5de5]/10 px-3 text-[10px] font-black uppercase tracking-widest text-[#d9c8ff] transition-all hover:bg-[#9b5de5]/18 hover:text-white focus-ring disabled:cursor-not-allowed disabled:opacity-40"
+                    className="inline-flex h-11 shrink-0 items-center gap-1.5 rounded-xl border border-[#9b5de5]/25 bg-[#9b5de5]/10 px-3 text-[10px] font-black uppercase tracking-widest text-[#d9c8ff] transition-[border-color,background-color,color,transform,box-shadow] duration-150 ease-out hover:bg-[#9b5de5]/18 hover:text-white active:scale-[0.98] focus-ring disabled:cursor-not-allowed disabled:opacity-40 disabled:active:scale-100"
                     title="Expand your prompt into a detailed brief"
                     aria-label="Improve my prompt"
                   >
@@ -453,7 +465,7 @@ export default function ChatComposer({
                   data-tour="generate-btn"
                   onClick={() => onSubmit?.()}
                   disabled={disabled || !canSendWithContext}
-                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#00f5d4] text-black transition-all hover:shadow-[0_0_24px_rgba(0,245,212,0.35)] active:scale-95 focus-ring disabled:opacity-45 disabled:active:scale-100"
+                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#00f5d4] text-black transition-[transform,box-shadow,opacity,background-color] duration-150 ease-out hover:shadow-[0_0_24px_rgba(0,245,212,0.35)] active:scale-95 focus-ring disabled:opacity-45 disabled:active:scale-100"
                   aria-label={isGenerating ? "Generation in progress" : "Send prompt"}
                   title={isGenerating ? "Generation in progress" : "Send prompt"}
                 >
@@ -497,7 +509,7 @@ export default function ChatComposer({
                 <button
                   type="button"
                   onClick={() => setControlsOpen((open) => !open)}
-                  className={`inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg border px-2.5 text-[10px] font-black uppercase tracking-widest transition-all focus-ring ${
+                  className={`inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg border px-2.5 text-[10px] font-black uppercase tracking-widest transition-[border-color,background-color,color,transform] duration-150 ease-out active:scale-[0.98] focus-ring ${
                     controlsOpen
                       ? "border-[#00f5d4]/30 bg-[#00f5d4]/10 text-[#00f5d4]"
                       : "border-white/[0.08] bg-white/[0.035] text-gray-400 hover:bg-white/[0.07] hover:text-white"
@@ -508,7 +520,7 @@ export default function ChatComposer({
                 >
                   <SlidersHorizontal className="h-3.5 w-3.5" />
                   Controls
-                  <ChevronDown className={`h-3 w-3 transition-transform ${controlsOpen ? "rotate-180" : ""}`} />
+                  <ChevronDown className={`h-3 w-3 transition-transform duration-150 ease-out ${controlsOpen ? "rotate-180" : ""}`} />
                 </button>
 
                 {onViewChange && (
@@ -525,9 +537,17 @@ export default function ChatComposer({
                 )}
               </div>
 
-              {controlsOpen && (
-                <div id={controlsId} className="mt-2 rounded-2xl border border-white/[0.075] bg-black/25 px-3 py-2.5">
-                  <div className="flex flex-wrap items-center gap-2">
+              {controlsPresence.present && (
+                <div
+                  id={controlsId}
+                  className={`mt-2 overflow-hidden rounded-2xl border border-white/[0.075] bg-black/25 px-3 transition-[max-height,opacity,transform,padding] duration-200 ease-out motion-reduce:transition-none ${
+                    controlsPresence.entering
+                      ? "max-h-80 translate-y-0 py-2.5 opacity-100"
+                      : "pointer-events-none max-h-0 -translate-y-1 py-0 opacity-0"
+                  }`}
+                  aria-hidden={!controlsOpen}
+                >
+                  <div className="flex flex-wrap items-center gap-2 motion-safe:animate-fade-in-up">
                     <StudioControls
                       connected={studioConnected}
                       loading={studioLoading}

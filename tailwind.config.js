@@ -78,8 +78,24 @@ module.exports = {
       },
       keyframes: {
         "fade-in-up": {
-          "0%": { opacity: "0", transform: "translateY(4px)" },
+          "0%": { opacity: "0", transform: "translateY(6px)" },
           "100%": { opacity: "1", transform: "translateY(0)" },
+        },
+        "fade-in-scale": {
+          "0%": { opacity: "0", transform: "translateY(6px) scale(0.985)" },
+          "100%": { opacity: "1", transform: "translateY(0) scale(1)" },
+        },
+        "panel-in": {
+          "0%": { opacity: "0", transform: "translateY(8px) scale(0.995)" },
+          "100%": { opacity: "1", transform: "translateY(0) scale(1)" },
+        },
+        "row-in": {
+          "0%": { opacity: "0", transform: "translateY(5px)" },
+          "100%": { opacity: "1", transform: "translateY(0)" },
+        },
+        "drawer-in": {
+          "0%": { opacity: "0", transform: "translateX(20px)" },
+          "100%": { opacity: "1", transform: "translateX(0)" },
         },
         shimmer: {
           "0%": { backgroundPosition: "-200% 0" },
@@ -91,7 +107,12 @@ module.exports = {
         },
       },
       animation: {
-        "fade-in-up": "fade-in-up 0.2s ease-out both",
+        "fade-in-up": "fade-in-up 180ms cubic-bezier(0.16, 1, 0.3, 1) both",
+        "fade-in-scale": "fade-in-scale 180ms cubic-bezier(0.16, 1, 0.3, 1) both",
+        "message-in": "fade-in-scale 190ms cubic-bezier(0.16, 1, 0.3, 1) both",
+        "panel-in": "panel-in 220ms cubic-bezier(0.16, 1, 0.3, 1) both",
+        "row-in": "row-in 160ms cubic-bezier(0.16, 1, 0.3, 1) both",
+        "drawer-in": "drawer-in 220ms cubic-bezier(0.16, 1, 0.3, 1) both",
         shimmer: "shimmer 2.2s linear infinite",
         "pulse-soft": "pulse-soft 1.6s ease-in-out infinite",
       },

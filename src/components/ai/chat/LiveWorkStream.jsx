@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { CheckCircle2, ChevronDown, Circle, FileCode2, Loader2, RotateCcw, TerminalSquare, Wrench } from "lib/icons";
 import { kindMeta } from "../workspace/workspaceMeta";
+import { useMotionPresence } from "../../../hooks/useMotionPresence";
 
 function cleanText(value = "") {
   return String(value || "").replace(/<\/?(thinking|progress)>/gi, "").trim();
@@ -95,6 +96,14 @@ function isInProgressActivity(item) {
   return false;
 }
 
+function prefersReducedMotion() {
+  return (
+    typeof window !== "undefined" &&
+    typeof window.matchMedia === "function" &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches
+  );
+}
+
 function ActivityIcon({ item }) {
   if (isInProgressActivity(item)) {
     return <Loader2 className="w-3.5 h-3.5 text-[#00f5d4] motion-safe:animate-spin" />;
@@ -106,17 +115,18 @@ function ActivityIcon({ item }) {
   return <Icon className="w-3.5 h-3.5" style={{ color: meta.accent }} />;
 }
 
-function ActivityRow({ item, onApproveStep, approvingStepId, pendingMessage, revealCode }) {
+function ActivityRow({ item, onApproveStep, approvingStepId, pendingMessage, revealCode, codeRevealing }) {
   const isThinking = item.type === "thinking";
   const isCode = item.type === "file_chunk" || item.type === "file_ready";
   const showCode = isCode && item.code && (revealCode || isInProgressActivity(item));
+  const codeOpen = codeRevealing || isInProgressActivity(item);
   const step = item.type === "tool_step"
     ? (pendingMessage?.steps || []).find((s) => `tool-${s.id}` === item.id || s.id === item.id?.replace(/^tool-/, ""))
     : null;
   const awaiting = step?.status === "awaiting_approval";
 
   return (
-    <div className="flex gap-2.5">
+    <div className="flex gap-2.5 transition-[background-color,opacity,transform] duration-150 ease-out motion-safe:animate-row-in motion-reduce:transition-none">
       <div className="pt-0.5 shrink-0">
         <ActivityIcon item={item} />
       </div>
@@ -137,14 +147,18 @@ function ActivityRow({ item, onApproveStep, approvingStepId, pendingMessage, rev
             type="button"
             onClick={() => onApproveStep(step)}
             disabled={approvingStepId === step.id}
-            className="mt-2 inline-flex items-center gap-1.5 rounded-md border border-amber-400/30 bg-amber-400/10 px-2 py-1 text-[10px] font-black uppercase tracking-widest text-amber-100 disabled:opacity-40"
+            className="mt-2 inline-flex items-center gap-1.5 rounded-md border border-amber-400/30 bg-amber-400/10 px-2 py-1 text-[10px] font-black uppercase tracking-widest text-amber-100 transition-[background-color,border-color,transform,opacity] duration-150 ease-out active:scale-[0.98] disabled:opacity-40"
           >
             {approvingStepId === step.id ? <Loader2 className="w-3 h-3 motion-safe:animate-spin" /> : <Wrench className="w-3 h-3" />}
             Approve step
           </button>
         ) : null}
         {showCode ? (
-          <pre className="mt-2 max-h-52 overflow-auto rounded-lg border border-white/10 bg-black/40 p-3 text-[11px] leading-relaxed text-gray-300 whitespace-pre">
+          <pre
+            className={`mt-2 overflow-auto rounded-lg border border-white/10 bg-black/40 p-3 text-[11px] leading-relaxed text-gray-300 whitespace-pre transition-[max-height,opacity,transform] duration-[180ms] ease-out motion-reduce:transition-none ${
+              codeOpen ? "max-h-52 translate-y-0 opacity-100" : "max-h-0 -translate-y-1 opacity-0"
+            }`}
+          >
             {codeTail(item.code)}
           </pre>
         ) : null}
@@ -176,16 +190,29 @@ export default function LiveWorkStream({
     : backendStage || "Working...";
   const displayStatus = humanizeStatus(status, activity);
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const detailsPresence = useMotionPresence(detailsOpen, 180);
   const visibleActivity = activity.slice(-5);
-  const renderedActivity = detailsOpen ? activity : visibleActivity;
+  const renderedActivity = detailsPresence.present ? activity : visibleActivity;
   const hiddenCount = Math.max(0, activity.length - visibleActivity.length);
   const scrollerRef = useRef(null);
+  const previousActivityCountRef = useRef(activity.length);
   const [stickToBottom, setStickToBottom] = useState(true);
 
   useEffect(() => {
     if (!stickToBottom || !scrollerRef.current) return;
-    scrollerRef.current.scrollTop = scrollerRef.current.scrollHeight;
-  }, [activity, status, stickToBottom]);
+    const addedRow = activity.length > previousActivityCountRef.current;
+    previousActivityCountRef.current = activity.length;
+    const nextTop = scrollerRef.current.scrollHeight;
+    if (
+      addedRow &&
+      !prefersReducedMotion() &&
+      typeof scrollerRef.current.scrollTo === "function"
+    ) {
+      scrollerRef.current.scrollTo({ top: nextTop, behavior: "smooth" });
+      return;
+    }
+    scrollerRef.current.scrollTop = nextTop;
+  }, [activity.length, status, stickToBottom]);
 
   const handleScroll = () => {
     const el = scrollerRef.current;
@@ -211,7 +238,7 @@ export default function LiveWorkStream({
           ) : null}
         </div>
         <span
-          className={`shrink-0 rounded-md border px-2 py-1 text-[10px] font-black uppercase tracking-widest ${
+          className={`shrink-0 rounded-md border px-2 py-1 text-[10px] font-black uppercase tracking-widest transition-[border-color,background-color,color] duration-150 ease-out ${
             reconnecting
               ? "border-amber-400/25 bg-amber-400/10 text-amber-200"
               : "border-[#00f5d4]/20 bg-[#00f5d4]/10 text-[#00f5d4]"
@@ -226,7 +253,7 @@ export default function LiveWorkStream({
         onScroll={handleScroll}
         className="max-h-[24rem] overflow-y-auto px-4 py-4"
       >
-        <div className="space-y-3.5">
+        <div key={detailsPresence.present ? "detail" : "summary"} className="space-y-3.5 motion-safe:animate-row-in">
           {activity.length ? (
             renderedActivity.map((item) => (
               <ActivityRow
@@ -235,7 +262,8 @@ export default function LiveWorkStream({
                 onApproveStep={onApproveStep}
                 approvingStepId={approvingStepId}
                 pendingMessage={pendingMessage}
-                revealCode={detailsOpen}
+                revealCode={detailsPresence.present}
+                codeRevealing={detailsPresence.entering}
               />
             ))
           ) : (
@@ -249,10 +277,10 @@ export default function LiveWorkStream({
           <button
             type="button"
             onClick={() => setDetailsOpen((open) => !open)}
-            className="mt-4 inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.04] px-2.5 py-1.5 text-[10px] font-black uppercase tracking-widest text-gray-400 transition-all hover:bg-white/[0.08] hover:text-white focus-ring"
+            className="mt-4 inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.04] px-2.5 py-1.5 text-[10px] font-black uppercase tracking-widest text-gray-400 transition-[background-color,border-color,color,transform] duration-150 ease-out hover:bg-white/[0.08] hover:text-white active:scale-[0.98] focus-ring"
             aria-expanded={detailsOpen}
           >
-            <ChevronDown className={`h-3.5 w-3.5 transition-transform ${detailsOpen ? "rotate-180" : ""}`} />
+            <ChevronDown className={`h-3.5 w-3.5 transition-transform duration-150 ease-out ${detailsOpen ? "rotate-180" : ""}`} />
             {detailsOpen ? "Hide detail" : hiddenCount > 0 ? `Show ${hiddenCount} older` : "Show code detail"}
           </button>
         )}

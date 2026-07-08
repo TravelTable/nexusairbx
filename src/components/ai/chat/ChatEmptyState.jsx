@@ -44,12 +44,13 @@ export default function ChatEmptyState({ onQuickStart, onOpenTemplates }) {
       </div>
 
       <div className="grid w-full max-w-5xl grid-cols-4 gap-3">
-        {EXAMPLES.map((ex) => (
+        {EXAMPLES.map((ex, index) => (
           <button
             key={ex.title}
             type="button"
             onClick={() => onQuickStart?.(ex.prompt)}
-            className="group relative rounded-[18px] border border-white/[0.075] bg-white/[0.035] p-4 text-left transition-all hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/[0.055] focus-ring"
+            className="group relative rounded-[18px] border border-white/[0.075] bg-white/[0.035] p-4 text-left transition-[border-color,background-color,transform,box-shadow] duration-200 ease-out hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/[0.055] motion-safe:animate-fade-in-scale focus-ring"
+            style={{ animationDelay: `${index * 45}ms` }}
           >
             <div className="flex items-center justify-between">
               <div

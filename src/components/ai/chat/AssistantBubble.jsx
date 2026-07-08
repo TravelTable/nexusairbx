@@ -52,7 +52,7 @@ const SURFACE = {
 
 function BubbleShell({ activeMode, children, variant = "text", surfaceClassName }) {
   return (
-    <div className="flex justify-start gap-3.5 group motion-safe:animate-fade-in-up">
+    <div className="flex justify-start gap-3.5 group motion-safe:animate-message-in">
       <NexusRBXAvatar mode={activeMode} />
       <div className={`order-2 ${BUBBLE_WIDTH[variant] || BUBBLE_WIDTH.text}`}>
         <div className={surfaceClassName || SURFACE[variant] || SURFACE.text}>{children}</div>
@@ -163,7 +163,7 @@ export default function AssistantBubble({
               />
             </ArtifactCard>
           ) : (
-            <div className="flex items-center justify-between gap-3 rounded-2xl border border-[#00f5d4]/15 bg-black/20 p-4 transition-all hover:border-[#00f5d4]/30 hover:bg-black/25">
+            <div className="flex items-center justify-between gap-3 rounded-2xl border border-[#00f5d4]/15 bg-black/20 p-4 transition-[border-color,background-color,transform] duration-200 ease-out hover:border-[#00f5d4]/30 hover:bg-black/25">
               <div className="flex items-center gap-3 min-w-0">
                 <div className="p-2 rounded-xl bg-nexus-cyan/10 text-nexus-cyan shrink-0 shadow-[0_0_16px_rgba(0,245,212,0.18)]">
                   <FileCode2 className="w-4 h-4" />

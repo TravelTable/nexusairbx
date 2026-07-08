@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from "react";
+import React, { useEffect, useMemo, useRef } from "react";
 import { NexusRBXAvatar, UserAvatar, SkeletonArtifact } from "../AiComponents";
 import MarkdownMessage from "./MarkdownMessage";
 import { stripTags } from "./stripTags";
@@ -8,6 +8,14 @@ import RawReasoningPanel from "./RawReasoningPanel";
 import { parsePendingStreamContent } from "../../../lib/streaming";
 import { Separator } from "../../shadcn/separator";
 import { Clock3, Loader2, RotateCcw } from "lib/icons";
+
+function prefersReducedMotion() {
+  return (
+    typeof window !== "undefined" &&
+    typeof window.matchMedia === "function" &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches
+  );
+}
 
 function resolveActivityStage(pendingMessage, generationStage, parsed) {
   const stage = pendingMessage?.stage || generationStage || "";
@@ -120,16 +128,37 @@ export default function MessageList({
     return true;
   }, [messages, pendingMessage?.prompt, pendingMessage?.requestId]);
 
+  const scrollStateRef = useRef({
+    visibleMessageCount: visibleMessages.length,
+    pendingRequestId: pendingMessage?.requestId || "",
+    hadOptimisticPrompt: false,
+  });
   const streamActivityLen = streamState?.activity?.length ?? 0;
   const streamFilesLen = streamState?.files?.length ?? 0;
   const pendingStepsLen = pendingMessage?.steps?.length ?? 0;
   const rawReasoningLen = String(streamState?.rawReasoning || "").length;
+  const visibleMessageCount = visibleMessages.length;
+  const pendingRequestId = pendingMessage?.requestId || "";
+  const pendingContentLen = String(pendingMessage?.content || "").length;
+  const pendingPromptLen = String(pendingMessage?.prompt || "").length;
 
   useEffect(() => {
     if (!chatEndRef?.current) return;
+    const previousScrollState = scrollStateRef.current;
+    const newMessageAppeared =
+      visibleMessageCount > previousScrollState.visibleMessageCount ||
+      (pendingRequestId && pendingRequestId !== previousScrollState.pendingRequestId) ||
+      (showOptimisticUserPrompt && !previousScrollState.hadOptimisticPrompt);
+
+    scrollStateRef.current = {
+      visibleMessageCount,
+      pendingRequestId,
+      hadOptimisticPrompt: showOptimisticUserPrompt,
+    };
+
     const scroll = () => {
       chatEndRef.current.scrollIntoView({
-        behavior: "auto",
+        behavior: newMessageAppeared && !prefersReducedMotion() ? "smooth" : "auto",
         block: "end",
       });
     };
@@ -147,11 +176,12 @@ export default function MessageList({
       }
     };
   }, [
-    visibleMessages,
-    pendingMessage?.content,
-    pendingMessage?.prompt,
+    visibleMessageCount,
+    pendingContentLen,
+    pendingPromptLen,
     pendingMessage?.stage,
-    pendingMessage,
+    pendingRequestId,
+    showOptimisticUserPrompt,
     chatEndRef,
     streamActivityLen,
     streamFilesLen,
@@ -184,7 +214,7 @@ export default function MessageList({
       {pendingMessage && (
         <>
           {showOptimisticUserPrompt ? (
-            <div className="flex justify-end gap-3.5 motion-safe:animate-fade-in-up">
+            <div className="flex justify-end gap-3.5 motion-safe:animate-message-in">
               <div className="order-1 max-w-[680px]">
                 <div className="rounded-[22px] rounded-tr-lg border border-white/[0.08] bg-gradient-to-br from-white/[0.11] via-white/[0.065] to-[#00f5d4]/[0.045] px-4 py-3.5 shadow-[0_14px_36px_-26px_rgba(0,245,212,0.5)] backdrop-blur-xl">
                   <div className="whitespace-pre-wrap text-[15px] font-medium leading-7 text-white">
@@ -200,7 +230,7 @@ export default function MessageList({
             </div>
           ) : null}
 
-          <div className="flex justify-start gap-3.5 motion-safe:animate-fade-in-up">
+          <div className="flex justify-start gap-3.5 motion-safe:animate-message-in">
             <NexusRBXAvatar isThinking={true} mode={activeMode} />
             <div className="order-2 max-w-[820px] space-y-4">
               {showLiveWorkStream ? (
