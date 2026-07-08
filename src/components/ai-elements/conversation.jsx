@@ -4,14 +4,24 @@ import { ArrowDownIcon, DownloadIcon } from "lucide-react";
 import { useCallback } from "react";
 import { StickToBottom, useStickToBottomContext } from "use-stick-to-bottom";
 
+// Snap on resize instead of spring-chasing subpixel layout shifts (streaming tokens,
+// collapsible panels, enter animations) which caused bottom-of-chat jank.
+const SCROLL_TO_BOTTOM_THRESHOLD_PX = 2;
+
+function resolveTargetScrollTop(target) {
+  return target <= SCROLL_TO_BOTTOM_THRESHOLD_PX ? 0 : target;
+}
+
 export const Conversation = ({
   className,
+  targetScrollTop = resolveTargetScrollTop,
   ...props
 }) => (
   <StickToBottom
     className={cn("relative flex-1 overflow-y-hidden", className)}
-    initial="smooth"
-    resize="smooth"
+    initial="instant"
+    resize="instant"
+    targetScrollTop={targetScrollTop}
     role="log"
     {...props}
   />
@@ -19,9 +29,14 @@ export const Conversation = ({
 
 export const ConversationContent = ({
   className,
+  scrollClassName,
   ...props
 }) => (
-  <StickToBottom.Content className={cn("flex flex-col gap-8 p-4", className)} {...props} />
+  <StickToBottom.Content
+    className={cn("flex flex-col gap-8 p-4", className)}
+    scrollClassName={cn("overscroll-y-contain [overflow-anchor:none]", scrollClassName)}
+    {...props}
+  />
 );
 
 export const ConversationEmptyState = ({

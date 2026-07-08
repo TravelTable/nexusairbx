@@ -42,6 +42,9 @@ export function BillingProvider({ children, pollMs = 60_000 }) {
     fairUse: null,
     limits: null,
     isFreeUsagePlan: true,
+    isStarter: false,
+    isSubscriber: false,
+    isStarterOrAbove: false,
     isPremium: false,
   });
 
@@ -71,6 +74,9 @@ export function BillingProvider({ children, pollMs = 60_000 }) {
           unlimitedTokens: false,
           devOverride: false,
         },
+        isStarter: false,
+        isSubscriber: false,
+        isStarterOrAbove: false,
         isPremium: false,
       }));
       return;

@@ -3,6 +3,7 @@
 
 export const PLAN = {
   FREE: "FREE",
+  STARTER: "STARTER",
   PRO: "PRO",
   PRO_PLUS: "PRO_PLUS",
   TEAM: "TEAM",
@@ -21,6 +22,7 @@ export const PREMIUM_BALANCE_PACKAGE = {
 
 export const PRICE = {
   sub: {
+    starterMonthly: PLAN.STARTER,
     proMonthly: PLAN.PRO,
     proYearly: PLAN.PRO,
     proPlusMonthly: PLAN.PRO_PLUS,
@@ -33,6 +35,7 @@ export const PRICE = {
 
 export const PLAN_LIMITS = {
   FREE: 20_000,
+  STARTER: 75_000,
   PRO: 500_000,
   PRO_PLUS: 1_000_000,
   TEAM: 1_500_000,

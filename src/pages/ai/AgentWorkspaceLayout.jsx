@@ -5,6 +5,7 @@ import SidebarContent from "../../components/SidebarContent";
 import CodeDrawer from "../../components/CodeDrawer";
 import SignInNudgeModal from "../../components/SignInNudgeModal";
 import ProNudgeModal from "../../components/ProNudgeModal";
+import StarterPromoModal from "../../components/StarterPromoModal";
 import NotificationToast from "../../components/NotificationToast";
 import GameProfileWizard from "../../components/ai/GameProfileWizard";
 import ModelSwitcher from "../../components/ai/ModelSwitcher";
@@ -46,8 +47,8 @@ async function pollStudioCommand(commandId, { timeoutMs = 30000 } = {}) {
 }
 
 export default function AgentWorkspaceLayout({ controller }) {
-  const { billing, uiState, modules, handlers, studio, roblox } = controller;
-  const { planKey, totalRemaining, subLimit, resetsAt, isPremium, unlimitedTokens, devOverride, dailyUsage, includedUsage, premiumBalance, isFreeUsagePlan } = billing;
+  const { billing, uiState, modules, handlers, studio, roblox, starterPromo } = controller;
+  const { planKey, totalRemaining, subLimit, resetsAt, isPremium, isStarterOrAbove, unlimitedTokens, devOverride, dailyUsage, includedUsage, premiumBalance, isFreeUsagePlan } = billing;
   const {
     user,
     isMobile,
@@ -678,6 +679,16 @@ export default function AgentWorkspaceLayout({ controller }) {
     return true;
   };
 
+  const requireStarterOrAbove = (reason, next) => {
+    if (!requireUser()) return false;
+    if (!isStarterOrAbove) {
+      starterPromo?.notifyStarterGate(reason || "This feature");
+      return false;
+    }
+    if (typeof next === "function") next();
+    return true;
+  };
+
   const requirePremium = (reason, next) => {
     if (!requireUser()) return false;
     if (!isPremium) {
@@ -690,7 +701,7 @@ export default function AgentWorkspaceLayout({ controller }) {
   };
 
   const onRefine = (m) => {
-    if (!requirePremium("Refinement & Iteration")) return;
+    if (!requireStarterOrAbove("Refinement & Iteration")) return;
     handleStartRefine(m);
   };
 
@@ -1058,11 +1069,16 @@ export default function AgentWorkspaceLayout({ controller }) {
                     <ModelSwitcher
                       value={settings.modelVersion}
                       isPremium={isPremium}
+                      isStarterOrAbove={isStarterOrAbove}
                       onChange={(id) => updateSettings({ modelVersion: id })}
                       onProNudge={(reason) => {
                         if (!requireUser()) return;
                         setProNudgeReason(reason || "Premium AI Models");
                         setShowProNudge(true);
+                      }}
+                      onStarterNudge={(reason) => {
+                        if (!requireUser()) return;
+                        starterPromo?.notifyStarterGate(reason || "Model Selection");
                       }}
                     />
                     <div className="h-4 w-px bg-white/10 hidden sm:block" aria-hidden="true" />
@@ -1250,6 +1266,16 @@ export default function AgentWorkspaceLayout({ controller }) {
         reason={signInNudgeReason}
       />
       <ProNudgeModal isOpen={showProNudge} onClose={() => setShowProNudge(false)} reason={proNudgeReason} />
+      <StarterPromoModal
+        isOpen={starterPromo?.isOpen}
+        trigger={starterPromo?.trigger}
+        dailyUsagePercent={starterPromo?.dailyUsagePercent}
+        checkoutBusy={starterPromo?.checkoutBusy}
+        setCheckoutBusy={starterPromo?.setCheckoutBusy}
+        onClose={starterPromo?.handleClose}
+        onDismiss={starterPromo?.handleClose}
+        onDismissLong={starterPromo?.handleDismissLong}
+      />
 
       <TutorialOverlay
         activeStep={tutorial.activeStep}

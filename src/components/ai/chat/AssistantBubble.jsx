@@ -3,7 +3,6 @@ import {
   NexusRBXAvatar,
   SecurityReport,
   PerformanceAudit,
-  ArtifactCard,
 } from "../AiComponents";
 import QaScoreBadge from "../QaScoreBadge";
 import { Activity, ShieldAlert, FolderOpen, FileCode2, Loader2 } from "lib/icons";
@@ -15,7 +14,15 @@ import { AI_EVENTS, emitAiEvent } from "../../../lib/aiEvents";
 import AgentStepList from "../workspace/AgentStepList";
 import { FEATURE_FLAGS } from "../../../lib/featureFlags";
 import { Badge } from "../../shadcn/badge";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../../shadcn/tooltip";
+import { Button } from "../../shadcn/button";
+import {
+  Artifact,
+  ArtifactActions,
+  ArtifactContent,
+  ArtifactDescription,
+  ArtifactHeader,
+  ArtifactTitle,
+} from "../../ai-elements/artifact";
 import { kindMeta } from "../workspace/workspaceMeta";
 import { cn } from "../../../lib/utils";
 
@@ -136,88 +143,101 @@ export default function AssistantBubble({
           )}
 
           {structured?.report ? (
-            <ArtifactCard title="Security Audit" subtitle="Vulnerability Scan Results" icon={ShieldAlert} type="report" qaReport={qaReport} actions={[]}>
-              <SecurityReport
-                report={structured.report}
-                onFix={() => emitAiEvent(AI_EVENTS.APPLY_CODE_PATCH, { code: structured.patchedCode || m.code, messageId: m.id })}
-              />
-            </ArtifactCard>
+            <Artifact>
+              <ArtifactHeader>
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="p-2 rounded-lg text-red-400 bg-red-400/10 border border-red-400/20">
+                    <ShieldAlert className="w-4 h-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <ArtifactTitle>Security Audit</ArtifactTitle>
+                    <ArtifactDescription>Vulnerability Scan Results</ArtifactDescription>
+                  </div>
+                </div>
+              </ArtifactHeader>
+              <ArtifactContent className="p-0">
+                <SecurityReport
+                  report={structured.report}
+                  onFix={() => emitAiEvent(AI_EVENTS.APPLY_CODE_PATCH, { code: structured.patchedCode || m.code, messageId: m.id })}
+                />
+              </ArtifactContent>
+            </Artifact>
           ) : structured?.audit ? (
-            <ArtifactCard title="Performance Audit" subtitle="Optimization Analysis" icon={Activity} type="report" qaReport={qaReport} actions={[]}>
-              <PerformanceAudit
-                audit={structured.audit}
-                onOptimize={() => emitAiEvent(AI_EVENTS.APPLY_CODE_PATCH, { code: structured.optimizedCode || m.code, messageId: m.id })}
-              />
-            </ArtifactCard>
+            <Artifact>
+              <ArtifactHeader>
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="p-2 rounded-lg text-[#00f5d4] bg-[#00f5d4]/10 border border-[#00f5d4]/20">
+                    <Activity className="w-4 h-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <ArtifactTitle>Performance Audit</ArtifactTitle>
+                    <ArtifactDescription>Optimization Analysis</ArtifactDescription>
+                  </div>
+                </div>
+              </ArtifactHeader>
+              <ArtifactContent className="p-0">
+                <PerformanceAudit
+                  audit={structured.audit}
+                  onOptimize={() => emitAiEvent(AI_EVENTS.APPLY_CODE_PATCH, { code: structured.optimizedCode || m.code, messageId: m.id })}
+                />
+              </ArtifactContent>
+            </Artifact>
           ) : (
-            <div className="p-4 rounded-2xl bg-gradient-to-br from-nexus-cyan/[0.06] to-transparent border border-nexus-cyan/15 flex items-center justify-between gap-3 transition-all hover:border-nexus-cyan/30 hover:-translate-y-0.5">
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="p-2 rounded-xl bg-nexus-cyan/10 text-nexus-cyan shrink-0 shadow-[0_0_16px_rgba(0,245,212,0.25)]">
-                  <FileCode2 className="w-4 h-4" />
-                </div>
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <div className="font-display text-sm font-bold text-white truncate">{m.title || "Generated Roblox Artifact"}</div>
-                    {runStateMeta ? (
-                      <Badge className={cn("rounded-md px-1.5 py-0.5 text-[10px] font-black uppercase tracking-widest", runStateMeta.className)}>
-                        {runStateMeta.label}
-                      </Badge>
-                    ) : null}
+            <Artifact>
+              <ArtifactHeader>
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="p-2 rounded-xl bg-nexus-cyan/10 text-nexus-cyan shrink-0">
+                    <FileCode2 className="w-4 h-4" />
                   </div>
-                  {fileChips.length > 0 ? (
-                    <div className="mt-1 flex items-center gap-1.5 flex-wrap">
-                      {fileChips.map((meta) => {
-                        const ChipIcon = meta.icon;
-                        return (
-                          <Badge
-                            key={meta.label}
-                            variant="outline"
-                            className="gap-1 rounded-md border-white/10 bg-white/[0.03] px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-widest"
-                            style={{ color: meta.accent }}
-                          >
-                            {ChipIcon ? <ChipIcon className="w-3 h-3" /> : null}
-                            {meta.label}
-                          </Badge>
-                        );
-                      })}
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <ArtifactTitle>{m.title || "Generated Roblox Artifact"}</ArtifactTitle>
+                      {runStateMeta ? (
+                        <Badge className={cn("rounded-md px-1.5 py-0.5 text-[10px] font-black uppercase tracking-widest", runStateMeta.className)}>
+                          {runStateMeta.label}
+                        </Badge>
+                      ) : null}
                     </div>
-                  ) : null}
-                  <div className="mt-1 text-[11px] text-gray-500">
-                    {fileCount > 0 ? `${fileCount} file${fileCount === 1 ? "" : "s"}` : "1 script"} ready in the workspace
+                    {fileChips.length > 0 ? (
+                      <div className="mt-1 flex items-center gap-1.5 flex-wrap">
+                        {fileChips.map((meta) => {
+                          const ChipIcon = meta.icon;
+                          return (
+                            <Badge
+                              key={meta.label}
+                              variant="outline"
+                              className="gap-1 rounded-md border-white/10 bg-white/[0.03] px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-widest"
+                              style={{ color: meta.accent }}
+                            >
+                              {ChipIcon ? <ChipIcon className="w-3 h-3" /> : null}
+                              {meta.label}
+                            </Badge>
+                          );
+                        })}
+                      </div>
+                    ) : null}
+                    <ArtifactDescription className="mt-1">
+                      {fileCount > 0 ? `${fileCount} file${fileCount === 1 ? "" : "s"}` : "1 script"} ready in the workspace
+                    </ArtifactDescription>
                   </div>
                 </div>
-              </div>
-              <TooltipProvider delayDuration={200}>
-                <div className="flex items-center gap-2 shrink-0">
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <button
-                        type="button"
-                        onClick={() => onViewUi?.(m)}
-                        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#00f5d4] text-black text-[11px] font-black uppercase tracking-widest hover:shadow-[0_0_18px_rgba(0,245,212,0.35)] transition-all active:scale-[0.98]"
-                      >
-                        <FolderOpen className="w-3.5 h-3.5" /> Open in editor
-                      </button>
-                    </TooltipTrigger>
-                    <TooltipContent>Open these files in the code editor</TooltipContent>
-                  </Tooltip>
-                  {onRefine && (
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <button
-                          type="button"
-                          onClick={() => onRefine(m)}
-                          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-gray-300 text-[11px] font-black uppercase tracking-widest hover:bg-white/10 transition-all active:scale-[0.98]"
-                        >
-                          Refine
-                        </button>
-                      </TooltipTrigger>
-                      <TooltipContent>Ask for changes to this artifact</TooltipContent>
-                    </Tooltip>
-                  )}
-                </div>
-              </TooltipProvider>
-            </div>
+                <ArtifactActions>
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={() => onViewUi?.(m)}
+                    className="bg-[#00f5d4] text-black font-black uppercase tracking-widest hover:bg-[#00f5d4]/90"
+                  >
+                    <FolderOpen className="w-3.5 h-3.5" /> Open in editor
+                  </Button>
+                  {onRefine ? (
+                    <Button type="button" size="sm" variant="outline" onClick={() => onRefine(m)}>
+                      Refine
+                    </Button>
+                  ) : null}
+                </ArtifactActions>
+              </ArtifactHeader>
+            </Artifact>
           )}
         </div>
       )}

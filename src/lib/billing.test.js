@@ -1,4 +1,4 @@
-import { summarizeEntitlements, isPremiumPlan, resolveUsagePercent, dollarsFromMicros } from "./billing";
+import { summarizeEntitlements, isPremiumPlan, isStarterPlan, isStarterOrAbove, resolveUsagePercent, dollarsFromMicros } from "./billing";
 
 describe("summarizeEntitlements", () => {
   test("preserves dev override flags", () => {
@@ -25,7 +25,7 @@ describe("summarizeEntitlements", () => {
     });
   });
 
-  test("marks Pro Plus as premium", () => {
+  test("marks Pro Plus as premium but Starter as subscriber-only", () => {
     const summary = summarizeEntitlements({
       plan: "PRO_PLUS",
       sub: { limit: 100000, used: 0, resetsAt: null },
@@ -36,6 +36,14 @@ describe("summarizeEntitlements", () => {
     expect(summary.isPremium).toBe(true);
     expect(isPremiumPlan("PRO_PLUS", ["subscriber", "pro_plus"])).toBe(true);
     expect(isPremiumPlan("FREE", [])).toBe(false);
+    expect(isStarterPlan("STARTER", ["subscriber", "starter"])).toBe(true);
+    expect(isStarterOrAbove("STARTER", ["subscriber", "starter"])).toBe(true);
+    expect(summarizeEntitlements({
+      plan: "STARTER",
+      sub: { limit: 75000, used: 0, resetsAt: null },
+      payg: { remaining: 0 },
+      entitlements: ["subscriber", "starter"],
+    }).isPremium).toBe(false);
   });
 });
 

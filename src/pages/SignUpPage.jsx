@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { Github, Info, Mail, Shield, Sparkles, User, Zap } from "lib/icons";
+import { Github, Gift, Info, Mail, Shield, Sparkles, User, Zap } from "lib/icons";
 import { auth } from "../firebase";
 import { createUserWithEmailAndPassword, GoogleAuthProvider, GithubAuthProvider, onAuthStateChanged } from "firebase/auth";
 import {
@@ -30,6 +30,7 @@ import {
 
 const SIGNUP_PLAN_ICONS = {
   [PLAN.FREE]: Info,
+  [PLAN.STARTER]: Gift,
   [PLAN.PRO]: Zap,
   [PLAN.PRO_PLUS]: Sparkles,
   [PLAN.TEAM]: Shield,

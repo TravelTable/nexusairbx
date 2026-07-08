@@ -5,7 +5,7 @@ import { getEntitlements, openPortal, startSubscriptionCheckout } from "../lib/b
 import { formatMoney, SUBSCRIPTION_PLANS } from "../lib/planCatalog";
 import { BILLING_INTERVAL, PLAN } from "../lib/prices";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { getFirestore, doc, onSnapshot } from "firebase/firestore";
 import { trackProductEvent } from "../lib/productAnalytics";
 
@@ -13,7 +13,10 @@ const PLANS = SUBSCRIPTION_PLANS;
 
 const FAQS = [
   {
-    q: "What is Included Usage?",
+    q: "What is Starter?",
+    a: "Starter is a $2/month plan for builders who want model selection, saved scripts, more daily AI, and 30-day chat history without committing to Pro. Icon Generator, Premium Direct, and Studio Agent remain on Pro.",
+  },
+  {
     a: "Included Usage is the AI capacity bundled with each paid subscription. Nexus Auto and supported included models draw from this allowance. It resets at the end of each billing period.",
   },
   {
@@ -54,6 +57,14 @@ export default function SubscribePage() {
   const [error, setError] = useState("");
   const sessionUnsubs = useRef([]);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const highlightPlan = searchParams.get("highlight");
+
+  useEffect(() => {
+    if (highlightPlan !== "starter") return;
+    const el = document.getElementById("plan-starter");
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [highlightPlan, entitlements?.plan]);
 
   useEffect(() => {
     void trackProductEvent("subscription_viewed", {
@@ -98,9 +109,10 @@ export default function SubscribePage() {
     setBusyPlan(planId);
     setError("");
     try {
+      const checkoutInterval = planId === PLAN.STARTER ? BILLING_INTERVAL.MONTH : interval;
       const result = await startSubscriptionCheckout({
         plan: planId,
-        interval,
+        interval: checkoutInterval,
         ...(planId === PLAN.TEAM ? { seatCount } : {}),
       });
       if (result?.url) {
@@ -173,20 +185,29 @@ export default function SubscribePage() {
               </div>
             )}
 
-            <div className="mt-8 grid grid-cols-1 gap-4 lg:grid-cols-4">
+            <div className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
               {PLANS.map((plan) => {
-                const unitPrice = interval === BILLING_INTERVAL.YEAR ? plan.yearly : plan.monthly;
+                const unitPrice = plan.id === PLAN.STARTER
+                  ? plan.monthly
+                  : (interval === BILLING_INTERVAL.YEAR ? plan.yearly : plan.monthly);
                 const isCurrent = currentPlanMatches(entitlements, plan.id);
+                const isHighlighted = highlightPlan === "starter" && plan.id === PLAN.STARTER;
                 return (
                   <section
                     key={plan.id}
+                    id={plan.id === PLAN.STARTER ? "plan-starter" : undefined}
                     className={`relative rounded-lg border p-5 bg-[#11131a] flex flex-col min-h-[520px] ${
-                      plan.recommended ? "border-[#00f5d4]/70" : "border-white/10"
+                      plan.recommended || isHighlighted ? "border-[#00f5d4]/70 ring-1 ring-[#00f5d4]/30" : "border-white/10"
                     }`}
                   >
                     {plan.recommended && (
                       <div className="absolute right-4 top-4 rounded-md bg-[#00f5d4] px-2 py-1 text-[10px] font-black uppercase tracking-wide text-black">
                         Recommended
+                      </div>
+                    )}
+                    {plan.starterBadge && !plan.recommended && (
+                      <div className="absolute right-4 top-4 rounded-md bg-[#9b5de5] px-2 py-1 text-[10px] font-black uppercase tracking-wide text-white">
+                        {plan.starterBadge}
                       </div>
                     )}
                     <h2 className="text-2xl font-bold">{plan.name}</h2>

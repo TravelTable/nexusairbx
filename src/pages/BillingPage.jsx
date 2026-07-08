@@ -29,6 +29,7 @@ function formatDate(value) {
 function planLabel(plan) {
   if (plan === PLAN.PRO_PLUS) return "Pro+";
   if (plan === PLAN.PRO) return "Pro";
+  if (plan === PLAN.STARTER) return "Starter";
   if (plan === PLAN.TEAM) return "Team";
   return "Free";
 }
@@ -205,7 +206,7 @@ export default function BillingPage() {
   const included = entitlements?.includedUsage || {};
   const subscription = entitlements?.subscription || {};
   const premiumBalance = entitlements?.premiumBalance || {};
-  const isPaid = [PLAN.PRO, PLAN.PRO_PLUS, PLAN.TEAM].includes(entitlements?.plan);
+  const isPaid = [PLAN.STARTER, PLAN.PRO, PLAN.PRO_PLUS, PLAN.TEAM].includes(entitlements?.plan);
   const percentUsed = Number.isFinite(Number(included.percentUsed)) ? Number(included.percentUsed) : 0;
   const percentRemaining = Number.isFinite(Number(included.percentRemaining)) ? Number(included.percentRemaining) : 100;
 

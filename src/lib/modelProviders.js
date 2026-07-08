@@ -9,6 +9,7 @@ export { SUGGESTED_MODEL_IDS, isSuggestedModelId, pickSuggestedModels, suggested
 
 export const DEFAULT_FREE_MODEL = "nexus-free-auto";
 export const DEFAULT_PRO_MODEL = "openai/gpt-5-mini";
+export const NEXUS_AGENT_LOGO = "/logo.png";
 
 export const MODEL_ID_ALIASES = Object.freeze({
   "deepseek-free": DEFAULT_FREE_MODEL,
@@ -83,6 +84,12 @@ export function resolveLobeProviderKey(provider) {
   return LOBE_PROVIDER_KEYS[key] || key || "openai";
 }
 
+export function isNexusAgentModel({ provider, modelId } = {}) {
+  const id = String(modelId || "").trim();
+  const key = String(provider || "").toLowerCase();
+  return key === "nexus" || id === DEFAULT_FREE_MODEL;
+}
+
 const FREE_MODEL_IDS = new Set([
   DEFAULT_FREE_MODEL,
   ...Object.keys(MODEL_ID_ALIASES).filter((k) => MODEL_ID_ALIASES[k] === DEFAULT_FREE_MODEL),
@@ -99,11 +106,16 @@ export function isFreeDefaultModel(id) {
   return FREE_MODEL_IDS.has(id) || FREE_MODEL_IDS.has(normalized) || normalized === DEFAULT_FREE_MODEL;
 }
 
-export function isModelSelectable(model, { isPremium }) {
+export function isModelSelectable(model, { isPremium, isStarterOrAbove = false } = {}) {
   if (!model?.id) return false;
-  if (!isPremium) return model.id === DEFAULT_FREE_MODEL;
   const billing = model.billingCategory || (model.tier === "pro" ? "PREMIUM_DIRECT" : "INCLUDED");
-  return billing === "INCLUDED" || isPremium;
+  if (!isStarterOrAbove && !isPremium) {
+    return model.id === DEFAULT_FREE_MODEL;
+  }
+  if (billing === "PREMIUM_DIRECT" || billing === "premium_direct") {
+    return Boolean(isPremium);
+  }
+  return billing === "INCLUDED" || billing === "included";
 }
 
 export function sortModelsInGroup(list) {

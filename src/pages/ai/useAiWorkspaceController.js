@@ -40,6 +40,7 @@ import { useStudioConnection } from "../../hooks/useStudioConnection";
 import { applyArtifactToStudio, getStudioStatus } from "../../lib/studioBridgeApi";
 import { AI_EVENTS, emitAiEvent, onAiEvent } from "../../lib/aiEvents";
 import { useAiNotifications } from "./useAiNotifications";
+import { useStarterPromo } from "../../hooks/useStarterPromo";
 import {
   getRobloxOAuthStatus,
   beginCreatorStoreReauthorization,
@@ -68,6 +69,7 @@ import {
   loadQuickScriptSession,
   saveQuickScriptSession,
   quickScriptResultToAgentPrompt,
+  normalizeQuickScriptResult,
 } from "../../lib/quickScriptSession";
 import { buildBaseArtifactSnapshot } from "../../lib/artifactState";
 import {
@@ -144,6 +146,7 @@ export function useAiWorkspaceController() {
     refresh: refreshBilling,
     entitlements,
     isPremium,
+    isStarterOrAbove,
     isAdmin,
     unlimitedTokens,
     devOverride,
@@ -172,11 +175,12 @@ export function useAiWorkspaceController() {
   ));
   const [quickScript, setQuickScript] = useState(() => {
     const restored = loadQuickScriptSession();
+    const restoredResult = restored?.result ? normalizeQuickScriptResult(restored.result, restored?.prompt || "") : null;
     return {
       prompt: restored?.prompt || "",
       status: restored?.status || "idle",
       stage: restored?.stage || "Ready",
-      result: restored?.result || null,
+      result: restoredResult,
       error: restored?.error || null,
       claim: restored?.claim || null,
       anonymous: Boolean(restored?.anonymous),
@@ -267,6 +271,16 @@ export function useAiWorkspaceController() {
       setShowSignInNudge(true);
     },
     isPremium,
+    isStarterOrAbove,
+  });
+
+  const starterPromo = useStarterPromo({
+    isFreeUsagePlan,
+    isSubscriber: isStarterOrAbove,
+    dailyUsage,
+    includedUsage,
+    user,
+    isGenerating: unified.isGenerating,
   });
 
   const chat = unified;
@@ -513,9 +527,8 @@ export function useAiWorkspaceController() {
     });
 
     const unbindSaveScript = onAiEvent(AI_EVENTS.SAVE_SCRIPT, async (e) => {
-      if (!isPremium) {
-        setProNudgeReason("Saved Scripts Library");
-        setShowProNudge(true);
+      if (!isStarterOrAbove) {
+        starterPromo.notifyStarterGate("Saved Scripts Library");
         return;
       }
 
@@ -530,7 +543,7 @@ export function useAiWorkspaceController() {
       unbindOpenCodeDrawer();
       unbindSaveScript();
     };
-  }, [chat, isPremium, notify, scriptManager, track]);
+  }, [chat, isStarterOrAbove, notify, scriptManager, track, starterPromo]);
 
   useEffect(() => {
     if (!user) return;
@@ -752,15 +765,21 @@ export function useAiWorkspaceController() {
     }, { dedupeKey: `quick_script_started:${idempotencyKey}` });
 
     try {
+      const priorResult = quickScript.result?.code && !options.retry
+        ? quickScript.result
+        : null;
       const response = await generateQuickScript({
         prompt: currentPrompt,
+        priorResult,
         idempotencyKey,
       });
       const next = {
         prompt: currentPrompt,
         status: "succeeded",
         stage: response?.anonymous ? "Anonymous result ready" : "Result ready",
-        result: response?.result || null,
+        result: response?.result
+          ? normalizeQuickScriptResult(response.result, currentPrompt)
+          : null,
         error: null,
         claim: response?.claim || null,
         anonymous: Boolean(response?.anonymous),
@@ -1554,8 +1573,9 @@ export function useAiWorkspaceController() {
       paygRemaining,
       subLimit,
       resetsAt,
-      isPremium,
-      isAdmin,
+    isPremium,
+    isStarterOrAbove,
+    isAdmin,
       unlimitedTokens,
       devOverride,
       flags,
@@ -1565,6 +1585,7 @@ export function useAiWorkspaceController() {
       premiumBalance,
       isFreeUsagePlan,
     },
+    starterPromo,
     navigation: {
       navigate,
       location,

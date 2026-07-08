@@ -112,29 +112,29 @@ body > .resize-observer-error {
   display: none !important;
 }
 
-/* Universal discreet scrollbar — hairline grey thumb, no visible track.
+/* Universal custom scrollbar — rounded track + thumb (stone/neutral palette).
    More specific rules like .scrollbar-hide still win via specificity. */
 * {
   scrollbar-width: thin;
-  scrollbar-color: rgba(120, 120, 120, 0.35) transparent;
+  scrollbar-color: #737373 #404040;
 }
 *::-webkit-scrollbar {
-  width: 3px;
-  height: 3px;
+  width: 0.5rem;
+  height: 0.5rem;
 }
 *::-webkit-scrollbar-track {
-  background: transparent;
+  background: #404040;
+  border-radius: 9999px;
 }
 *::-webkit-scrollbar-thumb {
-  background-color: rgba(120, 120, 120, 0.35);
+  background-color: #737373;
   border-radius: 9999px;
-  border: none;
 }
 *::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(140, 140, 140, 0.55);
+  background-color: #a3a3a3;
 }
 *::-webkit-scrollbar-corner {
-  background: transparent;
+  background: #404040;
 }
 
 /* Custom Scrollbar */
@@ -146,20 +146,21 @@ body > .resize-observer-error {
   scrollbar-width: none;
 }
 
-/* Thin, themed scrollbar for scroll regions that should show one. */
+/* Alias for scroll regions that explicitly opt in (inherits global styles). */
 .scrollbar-thin::-webkit-scrollbar {
-  width: 3px;
-  height: 3px;
+  width: 0.5rem;
+  height: 0.5rem;
 }
 .scrollbar-thin::-webkit-scrollbar-thumb {
-  background: rgba(120, 120, 120, 0.35);
+  background: #737373;
   border-radius: 9999px;
 }
 .scrollbar-thin::-webkit-scrollbar-thumb:hover {
-  background: rgba(140, 140, 140, 0.55);
+  background: #a3a3a3;
 }
 .scrollbar-thin::-webkit-scrollbar-track {
-  background: transparent;
+  background: #404040;
+  border-radius: 9999px;
 }
 
 /* Respect reduced-motion preferences. */

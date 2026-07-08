@@ -69,10 +69,12 @@ export default function SidebarContent({
   generatingChatIds = [],
   user = null,
 }) {
-  const { isPremium, entitlements } = useBilling();
+  const { isPremium, isFreeUsagePlan, limits, plan } = useBilling();
+
+  const retentionDays = limits?.chatRetentionDays ?? (isFreeUsagePlan ? 7 : (String(plan || "").toUpperCase() === "STARTER" ? 30 : null));
 
   // --- Library Data ---
-  const { chats } = useAiLibrary(user);
+  const { chats, hiddenChatCount } = useAiLibrary(user, { retentionDays });
 
   // --- State ---
   const [notification, setNotification] = useState(null);
@@ -452,6 +454,18 @@ export default function SidebarContent({
                   <span className="text-xs font-bold truncate">New conversation</span>
                 </button>
               </div>
+
+              {hiddenChatCount > 0 && (
+                <div className="mb-3 rounded-xl border border-[#00f5d4]/20 bg-[#00f5d4]/5 px-3 py-2 text-[10px] text-gray-400 leading-relaxed">
+                  {hiddenChatCount} older chat{hiddenChatCount === 1 ? "" : "s"} hidden on Free.
+                  {" "}
+                  <a href="/subscribe?highlight=starter" className="text-[#00f5d4] font-bold underline">
+                    Upgrade to Starter
+                  </a>
+                  {" "}
+                  for 30-day history.
+                </div>
+              )}
 
               {chats.length === 0 ? (
                 <div className="text-center py-8 px-4 rounded-2xl bg-white/[0.02] border border-dashed border-white/5">

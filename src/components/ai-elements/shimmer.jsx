@@ -2,6 +2,7 @@ import { cn } from "lib/utils";
 import { motion } from "motion/react";
 import { memo, useMemo } from "react";
 
+// Cache motion components at module level to avoid creating during render
 const motionComponentCache = new Map();
 
 const getMotionComponent = (element) => {
@@ -13,7 +14,13 @@ const getMotionComponent = (element) => {
   return component;
 };
 
-const ShimmerComponent = ({ children, as: Component = "p", className, duration = 2, spread = 2 }) => {
+const ShimmerComponent = ({
+  children,
+  as: Component = "p",
+  className,
+  duration = 2,
+  spread = 2
+}) => {
   const MotionComponent = getMotionComponent(Component);
 
   const dynamicSpread = useMemo(() => (children?.length ?? 0) * spread, [children, spread]);
@@ -27,17 +34,19 @@ const ShimmerComponent = ({ children, as: Component = "p", className, duration =
         className
       )}
       initial={{ backgroundPosition: "100% center" }}
-      style={{
-        "--spread": `${dynamicSpread}px`,
-        backgroundImage:
-          "var(--bg), linear-gradient(var(--color-muted-foreground), var(--color-muted-foreground))",
-      }}
+      style={
+        {
+          "--spread": `${dynamicSpread}px`,
+
+          backgroundImage:
+            "var(--bg), linear-gradient(var(--color-muted-foreground), var(--color-muted-foreground))"
+        }
+      }
       transition={{
         duration,
         ease: "linear",
         repeat: Number.POSITIVE_INFINITY,
-      }}
-    >
+      }}>
       {children}
     </MotionComponent>
   );

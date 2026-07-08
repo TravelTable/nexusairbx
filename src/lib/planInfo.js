@@ -36,6 +36,44 @@ const PLAN_INFO = {
     sidebarCtaText: "Upgrade to Pro",
     sidebarCtaSub: "Studio Agent, Included Usage, Premium Direct support.",
   },
+  starter: {
+    label: "Starter",
+    badge: "filled",
+    color: "cyan",
+    cap: 75000,
+    capText: "Included Usage",
+    promptCap: 900,
+    promptPlaceholder: "Describe your idea (up to 900 chars).",
+    upgradeLine: "Pro unlocks Premium Direct, Icon Generator, and Studio Agent workflows.",
+    upgradeCta: "Upgrade to Pro",
+    upgradeDesc: "Upgrade to Pro for Premium Direct models, Icon Generator, and higher included usage.",
+    badgeClass: "bg-[#00f5d4]/20 text-[#00f5d4] border border-[#00f5d4]/40",
+    badgeFilled: true,
+    planNudge: "Generated with Starter Plan",
+    sidebarStrip: (
+      <span>
+        Starter —{" "}
+        <button
+          type="button"
+          className="text-[#00f5d4] underline hover:text-[#9b5de5] transition-colors"
+          onClick={() => window.portal && window.portal()}
+        >
+          Manage Billing
+        </button>
+      </span>
+    ),
+    welcome: "Starter is active — model selection and saved scripts are unlocked.",
+    welcomeCta: "See Plans",
+    welcomeTokens: "Included Usage resets at the end of your billing period.",
+    toastNudge: "Need Icon Generator or Premium Direct? Upgrade to Pro.",
+    toastZero: "Included Usage reached. Upgrade to Pro or wait for the reset.",
+    sidebarCta: "Upgrade",
+    sidebarCtaLink: "/subscribe",
+    sidebarCtaDesc: "Upgrade to Pro for Premium Direct and Icon Generator.",
+    sidebarCtaColor: "bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-white",
+    sidebarCtaText: "Upgrade to Pro",
+    sidebarCtaSub: "Premium Direct, Icon Generator, Studio Agent.",
+  },
   pro: {
     label: "Pro",
     badge: "filled",

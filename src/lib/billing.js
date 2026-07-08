@@ -130,11 +130,30 @@ export function resolveUsagePercent({
   return 0;
 }
 
+export function normalizePlanKey(plan) {
+  return String(plan || "FREE").toUpperCase();
+}
+
+export function isStarterPlan(plan, entitlements = []) {
+  const normalized = normalizePlanKey(plan);
+  if (normalized === "STARTER") return true;
+  const list = Array.isArray(entitlements) ? entitlements : [];
+  return list.includes("starter");
+}
+
 export function isPremiumPlan(plan, entitlements = []) {
-  const normalized = String(plan || "FREE").toUpperCase();
+  const normalized = normalizePlanKey(plan);
   if (normalized === "PRO" || normalized === "PRO_PLUS" || normalized === "TEAM") return true;
   const list = Array.isArray(entitlements) ? entitlements : [];
   return list.includes("pro") || list.includes("pro_plus") || list.includes("team");
+}
+
+export function isSubscriberPlan(plan, entitlements = []) {
+  return isStarterPlan(plan, entitlements) || isPremiumPlan(plan, entitlements);
+}
+
+export function isStarterOrAbove(plan, entitlements = []) {
+  return isSubscriberPlan(plan, entitlements);
 }
 
 export function summarizeEntitlements(e) {
@@ -174,6 +193,9 @@ export function summarizeEntitlements(e) {
     fairUse: e?.fairUse || null,
     limits: e?.limits || null,
     isFreeUsagePlan: plan === "FREE" || plan === "ANON",
+    isStarter: isStarterPlan(plan, e?.entitlements),
+    isSubscriber: isSubscriberPlan(plan, e?.entitlements),
+    isStarterOrAbove: isStarterOrAbove(plan, e?.entitlements),
     isPremium: isPremiumPlan(plan, e?.entitlements),
   };
 }

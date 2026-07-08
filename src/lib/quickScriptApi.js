@@ -39,8 +39,16 @@ export function createQuickScriptIdempotencyKey() {
 
 export async function generateQuickScript({
   prompt,
+  priorResult = null,
   idempotencyKey = createQuickScriptIdempotencyKey(),
 } = {}) {
+  const body = {
+    prompt,
+    generatorMode: "quick_script",
+  };
+  if (priorResult && typeof priorResult === "object" && priorResult.code) {
+    body.priorResult = priorResult;
+  }
   const headers = {
     Accept: "application/json",
     "Content-Type": "application/json",
@@ -53,10 +61,7 @@ export async function generateQuickScript({
     mode: "cors",
     cache: "no-store",
     headers,
-    body: JSON.stringify({
-      prompt,
-      generatorMode: "quick_script",
-    }),
+    body: JSON.stringify(body),
   });
   return parseJsonResponse(res);
 }

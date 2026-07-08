@@ -55,6 +55,8 @@ export const PRODUCT_EVENTS = Object.freeze({
   STUDIO_CONNECTION_COMPLETED: "studio_connection_completed",
   ARTIFACT_PUSHED_TO_STUDIO: "artifact_pushed_to_studio",
   SUBSCRIPTION_VIEWED: "subscription_viewed",
+  STARTER_PROMO_VIEWED: "starter_promo_viewed",
+  STARTER_PROMO_DISMISSED: "starter_promo_dismissed",
   CHECKOUT_STARTED: "checkout_started",
   PURCHASE_COMPLETED: "purchase_completed",
 });

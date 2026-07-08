@@ -47,7 +47,7 @@ function ModelRow({ model, selected, locked, onSelect }) {
         selected ? "bg-[#00f5d4]/10 border border-[#00f5d4]/30" : "border border-transparent hover:bg-white/5"
       } ${locked ? "opacity-60" : ""}`}
     >
-      <ModelProviderGlyph provider={model.provider} size={16} type="color" />
+      <ModelProviderGlyph provider={model.provider} modelId={model.id} size={16} type="color" />
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-1.5">
           <span className="text-xs font-bold text-white truncate">{model.name}</span>
@@ -81,7 +81,9 @@ export default function ModelSwitcher({
   value,
   onChange,
   isPremium,
+  isStarterOrAbove = false,
   onProNudge,
+  onStarterNudge,
   fullWidth = false,
 }) {
   const { models, loading } = useModelCatalog();
@@ -102,14 +104,19 @@ export default function ModelSwitcher({
   const suggestedModels = useMemo(() => {
     const picked = pickSuggestedModels(catalogModels);
     // Free users keep Nexus Free Auto pinned at the top of Suggested.
-    if (!isPremium) {
+    if (!isStarterOrAbove && !isPremium) {
       const free = catalogModels.find((m) => m.id === DEFAULT_FREE_MODEL);
       if (free && !picked.some((m) => m.id === DEFAULT_FREE_MODEL)) {
         return [free, ...picked];
       }
     }
     return picked;
-  }, [catalogModels, isPremium]);
+  }, [catalogModels, isPremium, isStarterOrAbove]);
+
+  const modelSelectOpts = useMemo(
+    () => ({ isPremium, isStarterOrAbove }),
+    [isPremium, isStarterOrAbove]
+  );
 
   const suggestedIds = useMemo(() => new Set(suggestedModels.map((m) => m.id)), [suggestedModels]);
 
@@ -170,14 +177,19 @@ export default function ModelSwitcher({
     || "Select model";
 
   useEffect(() => {
-    if (!isPremium && value !== DEFAULT_FREE_MODEL) {
+    if (!isStarterOrAbove && !isPremium && value !== DEFAULT_FREE_MODEL) {
       onChange?.(DEFAULT_FREE_MODEL);
     }
-  }, [isPremium, onChange, value]);
+  }, [isPremium, isStarterOrAbove, onChange, value]);
 
   const handleSelect = (model) => {
-    if (!isModelSelectable(model, { isPremium })) {
-      onProNudge?.("Premium AI Models");
+    if (!isModelSelectable(model, modelSelectOpts)) {
+      const billing = model.billingCategory || (model.tier === "pro" ? "PREMIUM_DIRECT" : "INCLUDED");
+      if (billing === "PREMIUM_DIRECT" || billing === "premium_direct") {
+        onProNudge?.("Premium AI Models");
+      } else {
+        onStarterNudge?.("Model Selection");
+      }
       setOpen(false);
       return;
     }
@@ -210,7 +222,7 @@ export default function ModelSwitcher({
                     key={model.id}
                     model={model}
                     selected={model.id === normalizedValue || model.id === value}
-                    locked={!isModelSelectable(model, { isPremium })}
+                    locked={!isModelSelectable(model, modelSelectOpts)}
                     onSelect={handleSelect}
                   />
                 ))}
@@ -245,7 +257,7 @@ export default function ModelSwitcher({
                             key={model.id}
                             model={model}
                             selected={model.id === normalizedValue || model.id === value}
-                            locked={!isModelSelectable(model, { isPremium })}
+                            locked={!isModelSelectable(model, modelSelectOpts)}
                             onSelect={handleSelect}
                           />
                         ))}
@@ -260,9 +272,14 @@ export default function ModelSwitcher({
               <div className="px-3 py-4 text-xs text-gray-500 text-center">No models available.</div>
             )}
 
-            {!isPremium && (
+            {!isStarterOrAbove && !isPremium && (
               <p className="px-2 py-2 text-[10px] text-gray-500 text-center border-t border-white/5 mt-1">
-                Upgrade to Pro to unlock model selection
+                Upgrade to Starter to unlock model selection
+              </p>
+            )}
+            {isStarterOrAbove && !isPremium && (
+              <p className="px-2 py-2 text-[10px] text-gray-500 text-center border-t border-white/5 mt-1">
+                Premium Direct models require Pro
               </p>
             )}
           </div>,
@@ -288,7 +305,7 @@ export default function ModelSwitcher({
       >
         <span className="inline-flex items-center gap-2 min-w-0">
           {current ? (
-            <ModelProviderGlyph provider={current.provider} size={14} type="mono" />
+            <ModelProviderGlyph provider={current.provider} modelId={current.id} size={14} type="mono" />
           ) : (
             <ModelProviderGlyph provider="openai" size={14} type="mono" />
           )}

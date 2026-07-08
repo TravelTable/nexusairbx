@@ -20,6 +20,10 @@
     "@radix-ui/react-tabs": "^1.1.15",
     "@radix-ui/react-tooltip": "^1.2.10",
     "@radix-ui/react-use-controllable-state": "^1.2.3",
+    "@streamdown/cjk": "^1.0.3",
+    "@streamdown/code": "^1.1.1",
+    "@streamdown/math": "^1.0.2",
+    "@streamdown/mermaid": "^1.0.2",
     "@stripe/stripe-js": "^7.9.0",
     "@testing-library/dom": "^10.4.0",
     "@testing-library/jest-dom": "^6.6.3",
@@ -49,6 +53,7 @@
     "react-window": "^1.8.11",
     "recharts": "^3.6.0",
     "remark-gfm": "^4.0.1",
+    "streamdown": "^2.5.0",
     "tailwind-merge": "^3.6.0",
     "use-stick-to-bottom": "^1.1.6",
     "uuid": "^11.1.1",
@@ -113,7 +118,8 @@
     "moduleNameMapper": {
       "^mermaid$": "<rootDir>/src/testMocks/mermaid.js",
       "^react-markdown$": "<rootDir>/src/testMocks/reactMarkdown.jsx",
-      "^remark-gfm$": "<rootDir>/src/testMocks/remarkGfm.js"
+      "^remark-gfm$": "<rootDir>/src/testMocks/remarkGfm.js",
+      "^.+/ai-elements/message$": "<rootDir>/src/testMocks/aiElementsMessage.jsx"
     },
     "transformIgnorePatterns": [
       "node_modules/(?!(react-markdown|remark-.*|rehype-.*|unified|bail|is-plain-obj|trough|vfile|unist-.*|mdast-.*|micromark.*|decode-named-character-reference|character-entities|property-information|space-separated-tokens|comma-separated-tokens|hast-util-.*|estree-util-is-identifier-name|html-url-attributes|devlop)/)"

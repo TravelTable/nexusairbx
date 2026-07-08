@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   getFirestore,
   collection,
@@ -8,10 +8,21 @@ import {
   onSnapshot,
 } from "firebase/firestore";
 import { cancelDeferredClientLog, scheduleDeferredClientLog } from "../lib/deferredClientLog";
+import { filterChatsByRetention, countHiddenChats } from "../lib/starterPromo";
 
-export function useAiLibrary(user) {
+export function useAiLibrary(user, { retentionDays = null } = {}) {
   const [chats, setChats] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  const visibleChats = useMemo(
+    () => filterChatsByRetention(chats, retentionDays),
+    [chats, retentionDays]
+  );
+
+  const hiddenChatCount = useMemo(
+    () => countHiddenChats(chats, retentionDays),
+    [chats, retentionDays]
+  );
 
   useEffect(() => {
     if (!user) {
@@ -54,5 +65,5 @@ export function useAiLibrary(user) {
     };
   }, [user]);
 
-  return { chats, loading };
+  return { chats: visibleChats, allChats: chats, hiddenChatCount, loading };
 }

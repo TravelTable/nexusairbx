@@ -1,6 +1,18 @@
 import React, { useState } from "react";
 import { Check, HelpCircle, ListChecks, SendPrompt, Pencil, Loader } from "lib/icons";
 import MarkdownMessage from "./MarkdownMessage";
+import {
+  Plan,
+  PlanAction,
+  PlanContent,
+  PlanDescription,
+  PlanFooter,
+  PlanHeader,
+  PlanTitle,
+  PlanTrigger,
+} from "../../ai-elements/plan";
+import { Badge } from "../../shadcn/badge";
+import { Button } from "../../shadcn/button";
 
 const CLASSIFICATION_LABELS = {
   ui: "Roblox UI",
@@ -111,111 +123,124 @@ export function PlanCard({ message, onApprove, onEdit, disabled }) {
   const lifecycle = Array.isArray(message.planSteps) ? message.planSteps : [];
 
   return (
-    <div className="rounded-2xl border border-[#00f5d4]/25 bg-[#00f5d4]/5 p-4 space-y-4">
-      <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2 font-display text-sm font-bold text-[#00f5d4]">
-          <ListChecks className="w-4 h-4" /> Implementation plan
+    <Plan defaultOpen className="border-[#00f5d4]/25 bg-[#00f5d4]/5">
+      <PlanHeader className="pb-4">
+        <div className="space-y-1">
+          <PlanTitle className="flex items-center gap-2 text-sm font-bold text-[#00f5d4]">
+            <ListChecks className="w-4 h-4" /> Implementation plan
+          </PlanTitle>
+          {message.aiSummary && !hasMarkdownPlan ? (
+            <PlanDescription className="text-gray-300">{message.aiSummary}</PlanDescription>
+          ) : null}
         </div>
-        <span className="px-2 py-1 rounded-md bg-black/30 border border-white/10 text-[10px] font-black uppercase tracking-widest text-gray-300">
-          {label}
-        </span>
-      </div>
+        <PlanAction className="flex items-center gap-1">
+          <Badge variant="outline" className="text-[10px] font-black uppercase tracking-widest">
+            {label}
+          </Badge>
+          <PlanTrigger />
+        </PlanAction>
+      </PlanHeader>
 
-      {hasMarkdownPlan ? (
-        <MarkdownMessage text={planMarkdown} />
-      ) : (
-        <>
-          {message.aiSummary && (
-            <div className="space-y-1">
-              <div className="text-[10px] font-black uppercase tracking-widest text-gray-500">Goal</div>
-              <div className="text-[14px] text-gray-100 leading-relaxed">{message.aiSummary}</div>
-            </div>
-          )}
+      <PlanContent className="space-y-4 pt-0">
+        {hasMarkdownPlan ? (
+          <MarkdownMessage text={planMarkdown} />
+        ) : (
+          <>
+            {message.aiSummary && (
+              <div className="space-y-1">
+                <div className="text-[10px] font-black uppercase tracking-widest text-gray-500">Goal</div>
+                <div className="text-[14px] text-gray-100 leading-relaxed">{message.aiSummary}</div>
+              </div>
+            )}
 
-          {steps.length > 0 && (
-            <div className="space-y-2">
-              <div className="text-[10px] font-black uppercase tracking-widest text-gray-500">Implementation</div>
-              <ol className="space-y-2">
-                {steps.map((step, idx) => (
-                  <li key={idx} className="flex items-start gap-3 text-[13px] text-gray-300">
-                    <span className="mt-0.5 w-5 h-5 shrink-0 rounded-full bg-black/40 border border-white/10 flex items-center justify-center text-[10px] font-black text-[#00f5d4]">
-                      {idx + 1}
-                    </span>
-                    <span>{step}</span>
-                  </li>
-                ))}
-              </ol>
-            </div>
-          )}
+            {steps.length > 0 && (
+              <div className="space-y-2">
+                <div className="text-[10px] font-black uppercase tracking-widest text-gray-500">Implementation</div>
+                <ol className="space-y-2">
+                  {steps.map((step, idx) => (
+                    <li key={idx} className="flex items-start gap-3 text-[13px] text-gray-300">
+                      <span className="mt-0.5 w-5 h-5 shrink-0 rounded-full bg-black/40 border border-white/10 flex items-center justify-center text-[10px] font-black text-[#00f5d4]">
+                        {idx + 1}
+                      </span>
+                      <span>{step}</span>
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            )}
 
-          {assumptions.length > 0 && (
-            <div className="space-y-2">
-              <div className="text-[10px] font-black uppercase tracking-widest text-gray-500">Assumptions</div>
-              <ul className="space-y-1.5">
-                {assumptions.map((assumption, idx) => (
-                  <li key={idx} className="text-[13px] text-gray-400 leading-relaxed">
-                    {assumption}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-        </>
-      )}
+            {assumptions.length > 0 && (
+              <div className="space-y-2">
+                <div className="text-[10px] font-black uppercase tracking-widest text-gray-500">Assumptions</div>
+                <ul className="space-y-1.5">
+                  {assumptions.map((assumption, idx) => (
+                    <li key={idx} className="text-[13px] text-gray-400 leading-relaxed">
+                      {assumption}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </>
+        )}
 
-      {lifecycle.length > 0 && (
-        <div className="flex items-center gap-1.5 flex-wrap pt-1">
-          {lifecycle.map((s, idx) => {
-            const done = s.status === "done" || (approved && s.id === "scope");
-            return (
-              <React.Fragment key={s.id || idx}>
-                <span
-                  className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-[9px] font-black uppercase tracking-wider border ${
-                    done
-                      ? "bg-[#00f5d4]/10 border-[#00f5d4]/30 text-[#00f5d4]"
-                      : "bg-black/30 border-white/10 text-gray-500"
-                  }`}
-                >
-                  {done && <Check className="w-2.5 h-2.5" />}
-                  {s.label || s.id}
-                </span>
-                {idx < lifecycle.length - 1 && <span className="text-gray-700 text-[10px]">→</span>}
-              </React.Fragment>
-            );
-          })}
-        </div>
-      )}
-
-      {approved ? (
-        <div className="w-full py-2.5 rounded-xl bg-black/30 border border-white/10 text-gray-400 font-bold text-sm flex items-center justify-center gap-2">
-          <Check className="w-4 h-4 text-[#00f5d4]" /> Approved — building…
-        </div>
-      ) : (
-        <div className="space-y-3">
-          <div className="text-[12px] text-gray-400 leading-relaxed">
-            Reply with <span className="font-bold text-gray-200">Start build</span> to approve this plan, or tell me what you want changed.
+        {lifecycle.length > 0 && (
+          <div className="flex items-center gap-1.5 flex-wrap pt-1">
+            {lifecycle.map((s, idx) => {
+              const done = s.status === "done" || (approved && s.id === "scope");
+              return (
+                <React.Fragment key={s.id || idx}>
+                  <span
+                    className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-[9px] font-black uppercase tracking-wider border ${
+                      done
+                        ? "bg-[#00f5d4]/10 border-[#00f5d4]/30 text-[#00f5d4]"
+                        : "bg-black/30 border-white/10 text-gray-500"
+                    }`}
+                  >
+                    {done && <Check className="w-2.5 h-2.5" />}
+                    {s.label || s.id}
+                  </span>
+                  {idx < lifecycle.length - 1 && <span className="text-gray-700 text-[10px]">→</span>}
+                </React.Fragment>
+              );
+            })}
           </div>
-          <div className="flex flex-col sm:flex-row gap-2">
-            <button
-              type="button"
-              disabled={disabled}
-              onClick={() => onApprove?.(message)}
-              className="flex-1 py-2.5 rounded-xl bg-[#00f5d4] text-black font-black text-sm flex items-center justify-center gap-2 hover:scale-[1.01] active:scale-[0.99] transition-all shadow-[0_0_20px_rgba(0,245,212,0.3)] disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {disabled ? <Loader className="w-4 h-4" /> : <SendPrompt className="w-4 h-4" />}
-              Approve &amp; Build
-            </button>
-            <button
-              type="button"
-              disabled={disabled}
-              onClick={() => onEdit?.(message)}
-              className="py-2.5 px-4 rounded-xl bg-white/5 border border-white/10 text-gray-300 font-bold text-sm flex items-center justify-center gap-2 hover:bg-white/10 transition-all disabled:opacity-50"
-            >
-              <Pencil className="w-3.5 h-3.5" /> Edit
-            </button>
+        )}
+      </PlanContent>
+
+      <PlanFooter className="flex-col items-stretch gap-3 pt-0">
+        {approved ? (
+          <div className="w-full py-2.5 rounded-xl bg-black/30 border border-white/10 text-gray-400 font-bold text-sm flex items-center justify-center gap-2">
+            <Check className="w-4 h-4 text-[#00f5d4]" /> Approved — building…
           </div>
-        </div>
-      )}
-    </div>
+        ) : (
+          <>
+            <div className="text-[12px] text-gray-400 leading-relaxed">
+              Reply with <span className="font-bold text-gray-200">Start build</span> to approve this plan, or tell me what you want changed.
+            </div>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <Button
+                type="button"
+                disabled={disabled}
+                onClick={() => onApprove?.(message)}
+                className="flex-1 bg-[#00f5d4] text-black font-black hover:bg-[#00f5d4]/90"
+              >
+                {disabled ? <Loader className="w-4 h-4" /> : <SendPrompt className="w-4 h-4" />}
+                Approve &amp; Build
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={disabled}
+                onClick={() => onEdit?.(message)}
+                className="font-bold"
+              >
+                <Pencil className="w-3.5 h-3.5" /> Edit
+              </Button>
+            </div>
+          </>
+        )}
+      </PlanFooter>
+    </Plan>
   );
 }

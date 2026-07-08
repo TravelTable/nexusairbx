@@ -40,4 +40,28 @@ describe("quickScriptApi", () => {
       generatorMode: "quick_script",
     });
   });
+
+  it("sends priorResult when updating an existing Quick Script", async () => {
+    await generateQuickScript({
+      prompt: "add altitude controls",
+      priorResult: {
+        title: "Fly GUI",
+        scriptType: "LocalScript",
+        studioLocation: "StarterPlayer/StarterPlayerScripts",
+        code: 'local flying = false',
+      },
+      idempotencyKey: "update-key",
+    });
+
+    expect(JSON.parse(global.fetch.mock.calls[0][1].body)).toEqual({
+      prompt: "add altitude controls",
+      generatorMode: "quick_script",
+      priorResult: {
+        title: "Fly GUI",
+        scriptType: "LocalScript",
+        studioLocation: "StarterPlayer/StarterPlayerScripts",
+        code: 'local flying = false',
+      },
+    });
+  });
 });

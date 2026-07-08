@@ -28,6 +28,7 @@ const INGEST_CHUNK_SIZE = 20;
 const PLAN_LIMITS = {
   free: 5,
   anon: 5,
+  starter: 20,
   pro: 50,
   pro_plus: 50,
   proplus: 50,

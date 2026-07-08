@@ -711,8 +711,10 @@ export default function SettingsPage() {
             <ModelSwitcher
               value={settings.modelVersion}
               isPremium={billing.isPremium}
+              isStarterOrAbove={billing.isStarterOrAbove}
               onChange={(modelVersion) => updateSetting({ modelVersion })}
               onProNudge={(reason) => setProNudgeReason(reason)}
+              onStarterNudge={() => navigate("/subscribe?highlight=starter")}
               fullWidth
             />
           </div>

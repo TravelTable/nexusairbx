@@ -1,6 +1,6 @@
 import React from "react";
 import { render } from "@testing-library/react";
-import ModelProviderGlyph, { iconUrl } from "../ModelProviderGlyph";
+import ModelProviderGlyph, { iconUrl, NEXUS_AGENT_LOGO } from "../ModelProviderGlyph";
 
 test("renders openai glyph image", () => {
   const { container } = render(<ModelProviderGlyph provider="openai" size={16} type="mono" />);
@@ -15,7 +15,7 @@ test("uses color asset for deepseek when available", () => {
   expect(container.querySelector("img").getAttribute("src")).toContain("deepseek-color");
 });
 
-test("maps nexus provider to deepseek icon", () => {
-  const { container } = render(<ModelProviderGlyph provider="nexus" size={14} type="mono" />);
-  expect(container.querySelector("img").getAttribute("src")).toContain("deepseek.svg");
+test("uses site logo for nexus agent model", () => {
+  const { container } = render(<ModelProviderGlyph provider="nexus" modelId="nexus-free-auto" size={14} type="mono" />);
+  expect(container.querySelector("img").getAttribute("src")).toBe(NEXUS_AGENT_LOGO);
 });
