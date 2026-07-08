@@ -4,7 +4,7 @@ export const TOUR_STEPS = [
     targets: ['[data-tour="mode-switcher"]'],
     mobileTargets: ['[data-tour="mobile-mode-switcher"]'],
     title: "Choose Your Mode",
-    content: "Switch between Quick Script for instant, standalone scripts, or Agent Build for complex multi-file projects.",
+    content: "Switch between Quick for instant, standalone scripts, or Agent Build for complex multi-file projects.",
     position: "bottom"
   },
   {

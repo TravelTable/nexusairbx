@@ -331,7 +331,7 @@ function SearchDialog({ documents, query, setQuery, onClose, recentSearches, set
             <div className="docs-empty" role="status">
               <FileText aria-hidden="true" size={22} />
               <strong>No matching pages</strong>
-              <span>Try Studio bridge, uploads, privacy, billing, or Quick Script.</span>
+              <span>Try Studio bridge, uploads, privacy, billing, or Quick.</span>
             </div>
           )}
         </div>

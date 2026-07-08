@@ -3100,7 +3100,7 @@ export const DOC_PAGES = [
       },
       {
         "id": "quick-script-and-agent-build",
-        "title": "Quick Script and Agent Build",
+        "title": "Quick and Agent Build",
         "blocks": [
           {
             "type": "table",
@@ -3111,7 +3111,7 @@ export const DOC_PAGES = [
             ],
             "rows": [
               [
-                "Quick Script",
+                "Quick",
                 "You need focused Luau with placement notes and setup steps.",
                 "/docs/generating-your-first-script"
               ],

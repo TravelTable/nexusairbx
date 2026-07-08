@@ -1056,7 +1056,7 @@ export default function AgentWorkspaceLayout({ controller }) {
                   <Segmented
                     size="sm"
                     options={[
-                      { id: "quick_script", label: "Quick Script", icon: FileCode2 },
+                      { id: "quick_script", label: "Quick", icon: FileCode2 },
                       { id: "agent_build", label: "Agent Build", icon: Bot },
                     ]}
                     value={generatorMode}
@@ -1130,7 +1130,7 @@ export default function AgentWorkspaceLayout({ controller }) {
                   </>
                 ) : (
                   <div className="hidden text-right text-[11px] font-semibold text-gray-500 sm:block">
-                    No plan approval in Quick Script
+                    No plan approval in Quick
                   </div>
                 )}
               </>
@@ -1145,7 +1145,7 @@ export default function AgentWorkspaceLayout({ controller }) {
                   fullWidth
                   size="sm"
                   options={[
-                    { id: "quick_script", label: "Quick Script", icon: FileCode2 },
+                    { id: "quick_script", label: "Quick", icon: FileCode2 },
                     { id: "agent_build", label: "Agent Build", icon: Bot },
                   ]}
                   value={generatorMode}

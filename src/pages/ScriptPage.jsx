@@ -231,7 +231,7 @@ export default function ScriptPage() {
               <div className="flex items-center gap-2 min-w-0">
                 <FileCode2 className="h-4 w-4 text-[#00f5d4] shrink-0" />
                 <span className="font-display text-sm font-black uppercase tracking-[0.18em] text-white truncate max-w-[200px] sm:max-w-none">
-                  Quick Script Shared
+                  Quick Shared
                 </span>
               </div>
             </div>
@@ -435,7 +435,7 @@ export default function ScriptPage() {
                 <div className="flex flex-wrap items-start justify-between gap-3 border-b border-white/10 px-4 py-3 bg-black/20">
                   <div className="min-w-0">
                     <h2 className="truncate text-base font-bold text-white">
-                      {selectedVersion?.title || script?.title || "Quick Script"}
+                      {selectedVersion?.title || script?.title || "Quick"}
                     </h2>
                     <div className="mt-2 flex flex-wrap gap-2">
                       <span className="rounded-md border border-[#00f5d4]/20 bg-[#00f5d4]/10 px-2 py-0.5 text-[9px] font-black uppercase tracking-widest text-[#00f5d4]">

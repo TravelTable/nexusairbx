@@ -145,7 +145,7 @@ export default function QuickScriptWorkspace({
   };
 
   return (
-    <section className="flex h-full min-h-0 flex-col lg:flex-row overflow-hidden bg-[#050505]" aria-label="Quick Script generator">
+    <section className="flex h-full min-h-0 flex-col lg:flex-row overflow-hidden bg-[#050505]" aria-label="Quick generator">
       
       {/* LEFT PANE (Composer + Result) */}
       <div className="flex-1 min-w-0 flex flex-col min-h-0 bg-[#0d0d10]">
@@ -153,7 +153,7 @@ export default function QuickScriptWorkspace({
           <div className="flex items-center gap-2">
             <FileCode2 className="h-4 w-4 text-[#00f5d4]" aria-hidden="true" />
             <h1 className="font-display text-xs font-black uppercase tracking-[0.2em] text-white">
-              Quick Script
+              Quick
             </h1>
           </div>
         </div>
@@ -191,7 +191,7 @@ export default function QuickScriptWorkspace({
                 <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-400" />
                 <div>
                   <h2 className="text-xs font-bold text-amber-200 font-display uppercase tracking-wider">
-                    {quickScript.error.code === "AGENT_BUILD_RECOMMENDED" ? "Agent Build recommended" : "Quick Script could not finish"}
+                    {quickScript.error.code === "AGENT_BUILD_RECOMMENDED" ? "Agent Build recommended" : "Quick could not finish"}
                   </h2>
                   <p className="mt-1 text-xs leading-relaxed text-amber-200/80">{quickScript.error.message}</p>
                   <div className="mt-3 flex flex-wrap gap-2">
@@ -320,7 +320,7 @@ export default function QuickScriptWorkspace({
           <Tabs defaultValue="code" className="flex-1 flex flex-col min-h-0">
             <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-white/10 bg-black/30 shrink-0 h-[60px]">
               <div className="min-w-0">
-                <div className="font-display text-sm font-bold text-white truncate">{result.title || "Quick Script"}</div>
+                <div className="font-display text-sm font-bold text-white truncate">{result.title || "Quick"}</div>
                 <div className="mt-1 flex items-center gap-1.5">
                   <span className="rounded bg-[#00f5d4]/10 border border-[#00f5d4]/20 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-widest text-[#00f5d4]">
                     {result.scriptType || "Script"}
@@ -405,7 +405,7 @@ export default function QuickScriptWorkspace({
             </div>
             <h2 className="font-display text-sm font-bold text-gray-200">One prompt, one focused script</h2>
             <p className="mt-2 text-xs text-gray-500 max-w-xs leading-relaxed">
-              Quick Script compiles functional Luau code, placement directories, step-by-step setup guides, verification tests, and syntax diagnostics instantly.
+              Quick compiles functional Luau code, placement directories, step-by-step setup guides, verification tests, and syntax diagnostics instantly.
             </p>
             <div className="mt-5 flex items-center gap-3 text-[10px] border-t border-white/5 pt-4 w-full max-w-[200px] justify-center">
               <a href="/roblox-lua-script-generator" className="text-gray-400 hover:text-[#00f5d4] transition-all">

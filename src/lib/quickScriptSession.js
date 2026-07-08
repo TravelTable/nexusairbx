@@ -123,7 +123,7 @@ export function normalizeQuickScriptResult(raw, prompt = "") {
   const scriptType = String(parsed.scriptType || parsed.script_type || inferScriptType(`${prompt}\n${code}`)).trim() || "Script";
 
   return {
-    title: String(parsed.title || "Quick Script").replace(/\s+/g, " ").trim().slice(0, 100) || "Quick Script",
+    title: String(parsed.title || "Quick").replace(/\s+/g, " ").trim().slice(0, 100) || "Quick",
     code,
     language: "luau",
     scriptType,
@@ -147,12 +147,12 @@ export function quickScriptResultToAgentPrompt(prompt, result) {
   const limitations = Array.isArray(normalized.limitations) ? normalized.limitations : [];
 
   return [
-    "Expand this Quick Script into an Agent Build. Preserve the user's original intent and use the existing generated script as context.",
+    "Expand this Quick result into an Agent Build. Preserve the user's original intent and use the existing generated script as context.",
     "",
     `Original prompt:\n${String(prompt || "").trim()}`,
     "",
-    "Quick Script result:",
-    `Title: ${normalized.title || "Quick Script"}`,
+    "Quick result:",
+    `Title: ${normalized.title || "Quick"}`,
     `Script type: ${normalized.scriptType || "Script"}`,
     `Studio placement: ${normalized.studioLocation || "ServerScriptService"}`,
     requiredObjects.length ? `Required objects:\n${requiredObjects.map((item) => `- ${item}`).join("\n")}` : "",

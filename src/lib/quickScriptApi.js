@@ -24,7 +24,7 @@ async function parseJsonResponse(res) {
   }));
   if (res.ok) return payload;
 
-  const err = new Error(payload?.message || payload?.error || `Quick Script request failed (${res.status})`);
+  const err = new Error(payload?.message || payload?.error || `Quick request failed (${res.status})`);
   err.status = res.status;
   err.code = payload?.code || payload?.error || "QUICK_SCRIPT_FAILED";
   err.payload = payload;
