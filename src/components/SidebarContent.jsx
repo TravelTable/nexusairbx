@@ -69,7 +69,7 @@ export default function SidebarContent({
   generatingChatIds = [],
   user = null,
 }) {
-  const { isPremium, isFreeUsagePlan, limits, plan } = useBilling();
+  const { isPremium, isFreeUsagePlan, limits, plan, entitlements } = useBilling();
 
   const retentionDays = limits?.chatRetentionDays ?? (isFreeUsagePlan ? 7 : (String(plan || "").toUpperCase() === "STARTER" ? 30 : null));
 
