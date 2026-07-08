@@ -644,7 +644,6 @@ export function useAiChat(user, settings, refreshBilling, notify) {
         };
         let idlePulse = null;
         let wallTimer = null;
-        let currentStageLabel = "";
 
         const clearWallTimer = () => {
           if (wallTimer) {
@@ -695,7 +694,6 @@ export function useAiChat(user, settings, refreshBilling, notify) {
 
         const publishStage = (label, { id, status, streamStatus = null } = {}) => {
           if (!label) return;
-          currentStageLabel = label;
           setStage(label);
           recordStreamActivity({
             id: id || `stage-${stageSlug(label)}`,
@@ -1149,7 +1147,7 @@ export function useAiChat(user, settings, refreshBilling, notify) {
               publishStage(message, { id: "idle-pulse", status: "Working" });
             },
             getActivitySeq: () => streamStatesRef.current[activeChatId]?.activitySeq || 0,
-            getContext: () => ({ stage: currentStageLabel }),
+            getContext: () => ({ studioConnected: Boolean(studioSessionId) }),
           });
           idlePulse.start();
         };

@@ -1,37 +1,22 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { CheckCircle2, ChevronDown, Circle, FileCode2, Loader2, RotateCcw, TerminalSquare, Wrench } from "lib/icons";
+import { CheckCircle2, Circle, FileCode2, Loader2, RotateCcw, TerminalSquare, Wrench } from "lib/icons";
 import { kindMeta } from "../workspace/workspaceMeta";
-import { useMotionPresence } from "../../../hooks/useMotionPresence";
+
+function prefersReducedMotion() {
+  return (
+    typeof window !== "undefined" &&
+    typeof window.matchMedia === "function" &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches
+  );
+}
 
 function cleanText(value = "") {
   return String(value || "").replace(/<\/?(thinking|progress)>/gi, "").trim();
 }
 
-function codeTail(value = "", maxLines = 10) {
+function codeTail(value = "", maxLines = 18) {
   const lines = String(value || "").split(/\r?\n/);
   return lines.slice(Math.max(0, lines.length - maxLines)).join("\n");
-}
-
-function humanizeStatus(status = "", activity = []) {
-  const text = String(status || "").toLowerCase();
-  const latest = activity[activity.length - 1] || {};
-  const latestType = String(latest.type || "").toLowerCase();
-  const latestText = `${latestType} ${latest.text || ""} ${latest.path || ""}`.toLowerCase();
-
-  if (/reconnect|recover|catching up/.test(text)) return "Reconnecting to the live run...";
-  if (/apply|studio|manifest|place|script/.test(text) || /studio|manifest|tool_step/.test(latestText)) {
-    return "Reading Studio context...";
-  }
-  if (/code|file|write|generate|patch|lua|script/.test(text) || /file_|code|writing|lua|script/.test(latestText)) {
-    return "Writing Roblox files...";
-  }
-  if (/check|valid|audit|test|review|qa/.test(text) || /valid|audit|review/.test(latestText)) {
-    return "Checking the result...";
-  }
-  if (/ready|complete|done|succeeded|finished/.test(text) || /ready|done|succeeded|validated/.test(latestText)) {
-    return "Ready to open";
-  }
-  return "Thinking through the build...";
 }
 
 function synthesizeActivity(streamState = {}, pendingMessage = {}) {
@@ -96,14 +81,6 @@ function isInProgressActivity(item) {
   return false;
 }
 
-function prefersReducedMotion() {
-  return (
-    typeof window !== "undefined" &&
-    typeof window.matchMedia === "function" &&
-    window.matchMedia("(prefers-reduced-motion: reduce)").matches
-  );
-}
-
 function ActivityIcon({ item }) {
   if (isInProgressActivity(item)) {
     return <Loader2 className="w-3.5 h-3.5 text-[#00f5d4] motion-safe:animate-spin" />;
@@ -115,11 +92,9 @@ function ActivityIcon({ item }) {
   return <Icon className="w-3.5 h-3.5" style={{ color: meta.accent }} />;
 }
 
-function ActivityRow({ item, onApproveStep, approvingStepId, pendingMessage, revealCode, codeRevealing }) {
+function ActivityRow({ item, onApproveStep, approvingStepId, pendingMessage }) {
   const isThinking = item.type === "thinking";
   const isCode = item.type === "file_chunk" || item.type === "file_ready";
-  const showCode = isCode && item.code && (revealCode || isInProgressActivity(item));
-  const codeOpen = codeRevealing || isInProgressActivity(item);
   const step = item.type === "tool_step"
     ? (pendingMessage?.steps || []).find((s) => `tool-${s.id}` === item.id || s.id === item.id?.replace(/^tool-/, ""))
     : null;
@@ -153,12 +128,8 @@ function ActivityRow({ item, onApproveStep, approvingStepId, pendingMessage, rev
             Approve step
           </button>
         ) : null}
-        {showCode ? (
-          <pre
-            className={`mt-2 overflow-auto rounded-lg border border-white/10 bg-black/40 p-3 text-[11px] leading-relaxed text-gray-300 whitespace-pre transition-[max-height,opacity,transform] duration-[180ms] ease-out motion-reduce:transition-none ${
-              codeOpen ? "max-h-52 translate-y-0 opacity-100" : "max-h-0 -translate-y-1 opacity-0"
-            }`}
-          >
+        {isCode && item.code ? (
+          <pre className="mt-2 max-h-52 overflow-auto rounded-lg border border-white/10 bg-black/40 p-3 text-[11px] leading-relaxed text-gray-300 whitespace-pre">
             {codeTail(item.code)}
           </pre>
         ) : null}
@@ -188,12 +159,6 @@ export default function LiveWorkStream({
           ? "Catching up with generation..."
           : "Stream interrupted — reconnecting...")
     : backendStage || "Working...";
-  const displayStatus = humanizeStatus(status, activity);
-  const [detailsOpen, setDetailsOpen] = useState(false);
-  const detailsPresence = useMotionPresence(detailsOpen, 180);
-  const visibleActivity = activity.slice(-5);
-  const renderedActivity = detailsPresence.present ? activity : visibleActivity;
-  const hiddenCount = Math.max(0, activity.length - visibleActivity.length);
   const scrollerRef = useRef(null);
   const previousActivityCountRef = useRef(activity.length);
   const [stickToBottom, setStickToBottom] = useState(true);
@@ -225,45 +190,31 @@ export default function LiveWorkStream({
       className={
         embedded
           ? "overflow-hidden"
-          : "overflow-hidden rounded-[22px] border border-white/[0.075] bg-white/[0.035] shadow-[0_18px_48px_-34px_rgba(0,0,0,0.95)] backdrop-blur-xl"
+          : "rounded-2xl border border-white/10 bg-[#0b0b0b]/90 shadow-2xl overflow-hidden"
       }
     >
-      <div className="flex items-center gap-3 border-b border-white/[0.06] px-4 py-3">
+      <div className="flex items-center gap-3 border-b border-white/10 px-4 py-3">
         <div className="shrink-0">{statusIcon(status, reconnecting)}</div>
         <div className="min-w-0 flex-1">
           <div className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">Working</div>
-          <div className="mt-0.5 truncate text-sm font-semibold text-white">{displayStatus}</div>
-          {status && status !== displayStatus ? (
-            <div className="mt-0.5 truncate text-[11px] text-gray-500">{status}</div>
-          ) : null}
+          <div className="mt-0.5 text-sm font-semibold text-white truncate">{status}</div>
         </div>
-        <span
-          className={`shrink-0 rounded-md border px-2 py-1 text-[10px] font-black uppercase tracking-widest transition-[border-color,background-color,color] duration-150 ease-out ${
-            reconnecting
-              ? "border-amber-400/25 bg-amber-400/10 text-amber-200"
-              : "border-[#00f5d4]/20 bg-[#00f5d4]/10 text-[#00f5d4]"
-          }`}
-        >
-          {reconnecting ? "Syncing" : "Live"}
-        </span>
       </div>
 
       <div
         ref={scrollerRef}
         onScroll={handleScroll}
-        className="max-h-[24rem] overflow-y-auto px-4 py-4"
+        className="max-h-[34rem] overflow-y-auto px-4 py-4"
       >
-        <div key={detailsPresence.present ? "detail" : "summary"} className="space-y-3.5 motion-safe:animate-row-in">
+        <div className="space-y-4 motion-safe:animate-row-in">
           {activity.length ? (
-            renderedActivity.map((item) => (
+            activity.map((item) => (
               <ActivityRow
                 key={item.id}
                 item={item}
                 onApproveStep={onApproveStep}
                 approvingStepId={approvingStepId}
                 pendingMessage={pendingMessage}
-                revealCode={detailsPresence.present}
-                codeRevealing={detailsPresence.entering}
               />
             ))
           ) : (
@@ -273,17 +224,6 @@ export default function LiveWorkStream({
             </div>
           )}
         </div>
-        {(hiddenCount > 0 || activity.some((item) => item.code)) && (
-          <button
-            type="button"
-            onClick={() => setDetailsOpen((open) => !open)}
-            className="mt-4 inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.04] px-2.5 py-1.5 text-[10px] font-black uppercase tracking-widest text-gray-400 transition-[background-color,border-color,color,transform] duration-150 ease-out hover:bg-white/[0.08] hover:text-white active:scale-[0.98] focus-ring"
-            aria-expanded={detailsOpen}
-          >
-            <ChevronDown className={`h-3.5 w-3.5 transition-transform duration-150 ease-out ${detailsOpen ? "rotate-180" : ""}`} />
-            {detailsOpen ? "Hide detail" : hiddenCount > 0 ? `Show ${hiddenCount} older` : "Show code detail"}
-          </button>
-        )}
       </div>
     </div>
   );

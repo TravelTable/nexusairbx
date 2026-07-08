@@ -29,7 +29,7 @@ export default function ChatView({
   const showEmpty = messages.length === 0 && !pendingMessage;
 
   return (
-    <div className="w-full max-w-6xl mx-auto h-full flex flex-col min-h-0">
+    <div className="w-full max-w-5xl mx-auto h-full flex flex-col min-h-0">
       {showEmpty ? (
         <ChatEmptyState onQuickStart={onQuickStart} onOpenTemplates={onOpenTemplates} user={user} />
       ) : (

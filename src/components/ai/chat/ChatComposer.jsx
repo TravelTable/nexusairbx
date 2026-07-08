@@ -218,30 +218,6 @@ function RobloxAssetContextChip({ asset, onRemove }) {
   );
 }
 
-function StatusPill({ label, tone = "muted", loading = false, title }) {
-  const toneClass = {
-    active: "border-[#00f5d4]/20 bg-[#00f5d4]/10 text-[#cffff8]",
-    working: "border-amber-400/25 bg-amber-400/10 text-amber-100",
-    muted: "border-white/[0.08] bg-white/[0.035] text-gray-400",
-    purple: "border-[#9b5de5]/25 bg-[#9b5de5]/10 text-[#d9c8ff]",
-  }[tone] || "border-white/[0.08] bg-white/[0.035] text-gray-400";
-
-  return (
-    <span
-      className={`inline-flex h-8 max-w-[210px] items-center gap-1.5 truncate rounded-lg border px-2.5 text-[10px] font-black uppercase tracking-widest transition-[border-color,background-color,color,opacity] duration-150 ease-out ${toneClass}`}
-      title={title || label}
-      aria-label={label}
-    >
-      {loading ? (
-        <Loader className="h-3 w-3 shrink-0 animate-spin" />
-      ) : (
-        <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-current opacity-80" aria-hidden="true" />
-      )}
-      <span className="truncate">{label}</span>
-    </span>
-  );
-}
-
 /**
  * Slim composer for the linear flow: status strip, token bar, mode selector,
  * attachments, prompt, send. The mode selector picks the Cursor-style operating
@@ -341,57 +317,160 @@ export default function ChatComposer({
     }
   };
 
-  const creatorName =
-    robloxSelectedCreator?.name ||
-    robloxSelectedCreator?.displayName ||
-    robloxSelectedCreator?.label ||
-    robloxSelectedCreator?.username ||
-    "";
-  const studioLabel = studioLoading ? "Studio syncing" : studioConnected ? "Studio live" : "Studio off";
-  const robloxLabel = robloxLoading
-    ? "Roblox syncing"
-    : robloxConnected
-      ? creatorName
-        ? `Cloud ${creatorName}`
-        : "Roblox cloud"
-      : "Roblox off";
-
   return (
-    <div className="relative z-20 bg-gradient-to-t from-[#060711] via-[#060711]/95 to-transparent px-4 pb-4 pt-5">
-      <div className="mx-auto max-w-6xl space-y-3">
+    <div className="bg-gradient-to-t from-black via-black/80 to-transparent p-3">
+      <div className="mx-auto max-w-5xl space-y-2.5">
         <UnifiedStatusBar isGenerating={isGenerating} stage={generationStage} />
 
-        <div className="relative group">
+        {refineTarget && (
+          <div className="px-1">
+            <div className="inline-flex max-w-full items-center gap-2 rounded-lg border border-[#00f5d4]/20 bg-[#00f5d4]/10 px-2.5 py-1 text-[11px] font-bold text-[#00f5d4] transition-[border-color,background-color,opacity,transform] duration-150 ease-out motion-safe:animate-fade-in-scale motion-reduce:transition-none">
+              <RefreshCw className="h-3.5 w-3.5 shrink-0" />
+              <span className="truncate">Refining: {refineTarget.title || "current artifact"}</span>
+              <button
+                type="button"
+                onClick={onCancelRefine}
+                className="ml-0.5 rounded-md p-0.5 text-[#00f5d4]/70 transition-[background-color,color,transform] duration-150 ease-out hover:bg-white/10 hover:text-white active:scale-95 focus-ring"
+                aria-label="Cancel refine"
+                title="Cancel refine"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {mode === "ask" && studioConnected && (
+          <div className="px-1 text-[10px] font-medium text-[#00f5d4]/75">
+            Studio read access enabled for Ask mode.
+          </div>
+        )}
+
+        <div className="relative group z-20">
           <div
-            className="absolute -inset-px rounded-[26px] opacity-20 blur transition duration-200 group-focus-within:opacity-40"
+            className="absolute -inset-0.5 rounded-2xl blur opacity-15 transition duration-500 group-focus-within:opacity-35"
             style={{
-              background: `linear-gradient(100deg, ${themePrimary || "#9b5de5"}, ${themeSecondary || "#00f5d4"})`,
+              background: `linear-gradient(to right, ${themePrimary || "#9b5de5"}, ${themeSecondary || "#00f5d4"})`,
             }}
             aria-hidden="true"
           />
-          <div className="relative overflow-hidden rounded-[24px] border border-white/[0.085] bg-[#0a0d18]/92 shadow-[0_24px_70px_-42px_rgba(0,0,0,0.95)] backdrop-blur-2xl">
-            <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent" aria-hidden="true" />
+          <div className="relative flex flex-col gap-2 rounded-2xl border border-white/10 bg-ink-800/95 p-2 shadow-panel backdrop-blur-xl">
+            <div className="flex flex-wrap items-center gap-2">
+              <ModeSelector mode={mode} onModeChange={onModeChange} disabled={disabled} />
+              <div
+                className={`inline-flex h-8 items-center rounded-lg border px-2.5 text-[10px] font-black uppercase tracking-widest transition-all ${
+                  isGenerating ? "bg-[#00f5d4] text-black animate-pulse" : "bg-white/5 text-gray-500"
+                } ${isGenerating ? "border-[#00f5d4]" : "border-white/10"}`}
+                aria-live="polite"
+              >
+                {isGenerating ? generationStage || "Working" : "Ready"}
+              </div>
+              <div className="hidden h-px min-w-[1rem] flex-1 bg-white/5 sm:block" />
+              {onImprovePrompt && (
+                <button
+                  type="button"
+                  onClick={() => onImprovePrompt()}
+                  disabled={disabled || isImproving || !prompt?.trim()}
+                  data-tour="improve-btn"
+                  className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-[#9b5de5]/25 bg-[#9b5de5]/10 px-2.5 text-[10px] font-bold uppercase tracking-wider text-[#c9b3f7] transition-[border-color,background-color,color,transform] duration-150 ease-out hover:bg-[#9b5de5]/20 hover:text-white active:scale-[0.98] focus-ring disabled:cursor-not-allowed disabled:opacity-40 disabled:active:scale-100"
+                  title="Expand your prompt into a detailed brief"
+                  aria-label="Improve my prompt"
+                >
+                  {isImproving ? (
+                    <Loader className="h-3 w-3" />
+                  ) : (
+                    <Wand2 className="h-3 w-3" />
+                  )}
+                  {isImproving ? "Improving" : "Improve"}
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => setControlsOpen((open) => !open)}
+                className={`inline-flex h-8 items-center gap-1.5 rounded-lg border px-2.5 text-[10px] font-bold uppercase tracking-wider transition-[border-color,background-color,color,transform] duration-150 ease-out active:scale-[0.98] focus-ring ${
+                  controlsOpen
+                    ? "border-[#00f5d4]/30 bg-[#00f5d4]/10 text-[#00f5d4]"
+                    : "border-white/10 bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white"
+                }`}
+                aria-expanded={controlsOpen}
+                aria-controls={controlsId}
+                title={controlsOpen ? "Hide Studio and Roblox controls" : "Show Studio and Roblox controls"}
+              >
+                <SlidersHorizontal className="h-3.5 w-3.5" />
+                Controls
+                <ChevronDown className={`h-3 w-3 transition-transform duration-150 ease-out ${controlsOpen ? "rotate-180" : ""}`} />
+              </button>
+              {onViewChange && (
+                <Segmented
+                  size="sm"
+                  options={[
+                    { id: "chat", label: "Chat", icon: MessageSquare },
+                    { id: "details", label: "Details", icon: ClipboardList },
+                  ]}
+                  value={view}
+                  onChange={onViewChange}
+                  className="h-8 rounded-lg"
+                />
+              )}
+            </div>
 
-            {(refineTarget || mode === "ask" || contextItemCount > 0) && (
-              <div className="flex items-center gap-2 overflow-x-auto border-b border-white/[0.055] px-3 py-2 motion-safe:animate-fade-in-up [scrollbar-width:thin]">
-                {refineTarget && (
-                  <div className="inline-flex max-w-[360px] shrink-0 items-center gap-2 rounded-lg border border-[#00f5d4]/20 bg-[#00f5d4]/10 px-2.5 py-1.5 text-[11px] font-bold text-[#d8fff9] transition-[border-color,background-color,opacity,transform] duration-150 ease-out motion-safe:animate-fade-in-scale motion-reduce:transition-none">
-                    <RefreshCw className="h-3.5 w-3.5 shrink-0" />
-                    <span className="truncate">Refining {refineTarget.title || "current artifact"}</span>
-                    <button
-                      type="button"
-                      onClick={onCancelRefine}
-                      className="ml-0.5 rounded-md p-0.5 text-[#00f5d4]/70 transition-[background-color,color,transform] duration-150 ease-out hover:bg-white/10 hover:text-white active:scale-95 focus-ring"
-                      aria-label="Cancel refine"
-                      title="Cancel refine"
+            {controlsPresence.present && (
+              <div
+                id={controlsId}
+                className={`rounded-xl border border-white/10 bg-black/25 px-2.5 py-2 transition-[opacity,transform] duration-180 ease-out motion-reduce:transition-none ${
+                  controlsPresence.entering
+                    ? "translate-y-0 opacity-100 motion-safe:animate-fade-in-scale"
+                    : "pointer-events-none -translate-y-1 opacity-0"
+                }`}
+                aria-hidden={!controlsOpen}
+              >
+                <div className="flex flex-wrap items-center gap-2">
+                  <StudioControls
+                    connected={studioConnected}
+                    loading={studioLoading}
+                    studioEnabled={studioEnabled}
+                    onStudioEnabledChange={onStudioEnabledChange}
+                    applyMode={studioApplyMode}
+                    onApplyModeChange={onStudioApplyModeChange}
+                    autoPushEnabled={studioAutoPushEnabled}
+                    onAutoPushEnabledChange={onStudioAutoPushEnabledChange}
+                    autoPushPolicy={studioAutoPushPolicy}
+                    onAutoPushPolicyChange={onStudioAutoPushPolicyChange}
+                    autoPushAuthorized={studioAutoPushAuthorized}
+                  />
+                  {studioConnected && Array.isArray(studioCollaborators) && studioCollaborators.length > 0 && (
+                    <span
+                      className="inline-flex items-center gap-1 rounded-full border border-amber-400/30 bg-amber-400/10 px-2 py-0.5 text-[11px] text-amber-200"
+                      title={studioCollaborators
+                        .map((c) => `${c.label || "collaborator"}${Array.isArray(c.activePaths) && c.activePaths.length ? ` — ${c.activePaths.slice(0, 3).join(", ")}` : ""}`)
+                        .join("\n")}
                     >
-                      <X className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
-                )}
-                {mode === "ask" && studioConnected && (
-                  <StatusPill label="Studio read access" tone="active" />
-                )}
+                      {studioCollaborators.length} collaborator{studioCollaborators.length === 1 ? "" : "s"} on this place
+                    </span>
+                  )}
+                  <RobloxCloudControls
+                    connected={robloxConnected}
+                    loading={robloxLoading}
+                    selectedCreator={robloxSelectedCreator}
+                    uploadAvailable={robloxUploadAvailable}
+                    uploadState={robloxUploadState}
+                    uploadDisabledReason={robloxUploadDisabledReason}
+                    assetUploadsEnabled={robloxAssetUploadsEnabled}
+                    onAssetUploadsEnabledChange={onRobloxAssetUploadsEnabledChange}
+                    selectedAssetCount={robloxProjectAssets.length}
+                    onOpenAssetLibrary={onOpenAssetLibrary}
+                    assetLibraryAvailable={robloxAssetLibraryAvailable}
+                    assetLibraryDisabledReason={robloxAssetLibraryDisabledReason}
+                  />
+                </div>
+              </div>
+            )}
+
+            {contextItemCount > 0 && (
+              <div
+                className="flex gap-2 overflow-x-auto px-0.5 pb-1 motion-safe:animate-fade-in-up [scrollbar-width:thin]"
+                aria-label="Prompt context items"
+              >
                 {robloxImageUploads.map((upload) => (
                   <ImageUploadChip key={upload.id} upload={upload} />
                 ))}
@@ -404,189 +483,77 @@ export default function ChatComposer({
               </div>
             )}
 
-            <div className="p-2.5">
-              <div className="flex items-end gap-2 rounded-[18px] border border-white/[0.075] bg-black/25 p-2 transition-[border-color,background-color,box-shadow] duration-200 ease-out focus-within:border-[#00f5d4]/35 focus-within:bg-black/30 focus-within:shadow-[0_0_26px_rgba(0,245,212,0.10)] motion-reduce:transition-none">
-                <div className="relative shrink-0">
-                  <input
-                    type="file"
-                    id="chat-composer-file-upload"
-                    className="hidden"
-                    multiple
-                    onChange={onFileUpload}
-                    accept={`${ROBLOX_DECAL_ACCEPT},.lua,.txt,.json`}
-                    disabled={disabled || robloxImageUploading}
-                  />
-                  <label
-                    htmlFor="chat-composer-file-upload"
-                    className={`flex h-11 w-11 cursor-pointer items-center justify-center rounded-xl border border-white/[0.075] bg-white/[0.04] text-gray-400 transition-[border-color,background-color,color,transform,box-shadow] duration-150 ease-out hover:border-white/15 hover:bg-white/[0.075] hover:text-white active:scale-95 focus-ring ${
-                      disabled || robloxImageUploading ? "pointer-events-none opacity-50" : ""
-                    }`}
-                    title="Upload image to Roblox or attach a code/text file"
-                    aria-label="Upload image to Roblox or attach a code/text file"
-                  >
-                    {robloxImageUploading ? <Loader className="h-5 w-5 animate-spin" /> : <Plus className="h-5 w-5" />}
-                  </label>
-                </div>
+            <TokenBar
+              tokensLeft={tokensLeft}
+              tokensLimit={tokensLimit}
+              resetsAt={resetsAt}
+              plan={planKey}
+              unlimitedTokens={unlimitedTokens}
+              devOverride={devOverride}
+              dailyUsage={dailyUsage}
+              includedUsage={includedUsage}
+              isFreeUsagePlan={isFreeUsagePlan}
+            />
 
-                <textarea
-                  ref={textareaRef}
-                  id="tour-prompt-box"
-                  data-tour="prompt-input"
-                  className="min-h-[48px] flex-1 resize-none rounded-xl border-none bg-transparent px-2.5 py-3 text-[15px] leading-7 text-gray-100 placeholder-gray-500 outline-none transition-[height,color,opacity] duration-150 ease-out focus:ring-0 disabled:opacity-50 motion-reduce:transition-none"
-                  rows={1}
-                  placeholder={placeholder}
-                  value={prompt}
-                  onChange={(e) => setPrompt(e.target.value)}
-                  disabled={disabled}
-                  aria-label="Prompt input"
-                  onCompositionStart={() => setIsComposing(true)}
-                  onCompositionEnd={() => setIsComposing(false)}
-                  onKeyDown={handlePromptKeyDown}
+            <div className="flex items-end gap-2 rounded-xl border border-white/10 bg-black/30 p-1.5 transition-[border-color,box-shadow] duration-200 ease-out focus-within:border-[#00f5d4]/35 focus-within:shadow-[0_0_24px_rgba(0,245,212,0.10)] motion-reduce:transition-none">
+              <div className="relative">
+                <input
+                  type="file"
+                  id="chat-composer-file-upload"
+                  className="hidden"
+                  multiple
+                  onChange={onFileUpload}
+                  accept={`${ROBLOX_DECAL_ACCEPT},.lua,.txt,.json`}
+                  disabled={disabled || robloxImageUploading}
                 />
-
-                {onImprovePrompt && (
-                  <button
-                    type="button"
-                    onClick={() => onImprovePrompt()}
-                    disabled={disabled || isImproving || !prompt?.trim()}
-                    data-tour="improve-btn"
-                    className="inline-flex h-11 shrink-0 items-center gap-1.5 rounded-xl border border-[#9b5de5]/25 bg-[#9b5de5]/10 px-3 text-[10px] font-black uppercase tracking-widest text-[#d9c8ff] transition-[border-color,background-color,color,transform,box-shadow] duration-150 ease-out hover:bg-[#9b5de5]/18 hover:text-white active:scale-[0.98] focus-ring disabled:cursor-not-allowed disabled:opacity-40 disabled:active:scale-100"
-                    title="Expand your prompt into a detailed brief"
-                    aria-label="Improve my prompt"
-                  >
-                    {isImproving ? <Loader className="h-3.5 w-3.5 animate-spin" /> : <Wand2 className="h-3.5 w-3.5" />}
-                    {isImproving ? "Improving" : "Improve"}
-                  </button>
-                )}
-
-                <button
-                  type="button"
-                  id="tour-generate-button"
-                  data-tour="generate-btn"
-                  onClick={() => onSubmit?.()}
-                  disabled={disabled || !canSendWithContext}
-                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#00f5d4] text-black transition-[transform,box-shadow,opacity,background-color] duration-150 ease-out hover:shadow-[0_0_24px_rgba(0,245,212,0.35)] active:scale-95 focus-ring disabled:opacity-45 disabled:active:scale-100"
-                  aria-label={isGenerating ? "Generation in progress" : "Send prompt"}
-                  title={isGenerating ? "Generation in progress" : "Send prompt"}
+                <label
+                  htmlFor="chat-composer-file-upload"
+                  className={`flex h-10 w-10 cursor-pointer items-center justify-center rounded-lg bg-white/5 text-gray-500 transition-[background-color,color,transform] duration-150 ease-out hover:bg-white/10 hover:text-white active:scale-95 focus-ring ${
+                    disabled || robloxImageUploading ? "pointer-events-none opacity-50" : ""
+                  }`}
+                  title="Upload image to Roblox or attach a code/text file"
+                  aria-label="Upload image to Roblox or attach a code/text file"
                 >
-                  {isGenerating ? <Loader className="h-5 w-5 animate-spin" /> : <SendPrompt className="h-5 w-5" />}
-                </button>
+                  {robloxImageUploading ? <Loader className="h-5 w-5 animate-spin" /> : <Plus className="h-5 w-5" />}
+                </label>
               </div>
 
-              <div className="mt-2 flex items-center gap-2">
-                <ModeSelector mode={mode} onModeChange={onModeChange} disabled={disabled} />
-                <StatusPill
-                  label={isGenerating ? generationStage || "Working" : "Ready"}
-                  tone={isGenerating ? "working" : "muted"}
-                  loading={isGenerating}
-                  title={isGenerating ? generationStage || "Generation in progress" : "Ready"}
-                />
-                <StatusPill
-                  label={studioLabel}
-                  tone={studioConnected ? "active" : studioLoading ? "working" : "muted"}
-                  loading={studioLoading}
-                />
-                <StatusPill
-                  label={robloxLabel}
-                  tone={robloxConnected ? "purple" : robloxLoading ? "working" : "muted"}
-                  loading={robloxLoading}
-                />
+              <textarea
+                ref={textareaRef}
+                id="tour-prompt-box"
+                data-tour="prompt-input"
+                className="min-h-[42px] flex-1 resize-none rounded-lg border-none bg-transparent px-2 py-2.5 text-[14px] leading-relaxed text-gray-100 placeholder-gray-500 outline-none transition-[height,color,opacity] duration-150 ease-out focus:ring-0 disabled:opacity-50 motion-reduce:transition-none md:text-[15px]"
+                rows={1}
+                placeholder={placeholder}
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+                disabled={disabled}
+                aria-label="Prompt input"
+                onCompositionStart={() => setIsComposing(true)}
+                onCompositionEnd={() => setIsComposing(false)}
+                onKeyDown={handlePromptKeyDown}
+              />
 
-                <div className="min-w-[220px] flex-1 rounded-xl border border-white/[0.06] bg-white/[0.025] px-3 py-2">
-                  <TokenBar
-                    tokensLeft={tokensLeft}
-                    tokensLimit={tokensLimit}
-                    resetsAt={resetsAt}
-                    plan={planKey}
-                    unlimitedTokens={unlimitedTokens}
-                    devOverride={devOverride}
-                    dailyUsage={dailyUsage}
-                    includedUsage={includedUsage}
-                    isFreeUsagePlan={isFreeUsagePlan}
-                  />
-                </div>
+              <button
+                type="button"
+                id="tour-generate-button"
+                data-tour="generate-btn"
+                onClick={() => onSubmit?.()}
+                disabled={disabled || !canSendWithContext}
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-nexus-cyan text-black transition-[transform,box-shadow,opacity,background-color] duration-150 ease-out hover:shadow-[0_0_24px_rgba(0,245,212,0.45)] active:scale-95 focus-ring disabled:opacity-50 disabled:active:scale-100"
+                aria-label={isGenerating ? "Generation in progress" : "Send prompt"}
+                title={isGenerating ? "Generation in progress" : "Send prompt"}
+              >
+                {isGenerating ? <Loader className="h-5 w-5" /> : <SendPrompt className="h-5 w-5" />}
+              </button>
+            </div>
 
-                <button
-                  type="button"
-                  onClick={() => setControlsOpen((open) => !open)}
-                  className={`inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg border px-2.5 text-[10px] font-black uppercase tracking-widest transition-[border-color,background-color,color,transform] duration-150 ease-out active:scale-[0.98] focus-ring ${
-                    controlsOpen
-                      ? "border-[#00f5d4]/30 bg-[#00f5d4]/10 text-[#00f5d4]"
-                      : "border-white/[0.08] bg-white/[0.035] text-gray-400 hover:bg-white/[0.07] hover:text-white"
-                  }`}
-                  aria-expanded={controlsOpen}
-                  aria-controls={controlsId}
-                  title={controlsOpen ? "Hide Studio and Roblox controls" : "Show Studio and Roblox controls"}
-                >
-                  <SlidersHorizontal className="h-3.5 w-3.5" />
-                  Controls
-                  <ChevronDown className={`h-3 w-3 transition-transform duration-150 ease-out ${controlsOpen ? "rotate-180" : ""}`} />
-                </button>
-
-                {onViewChange && (
-                  <Segmented
-                    size="sm"
-                    options={[
-                      { id: "chat", label: "Chat", icon: MessageSquare },
-                      { id: "details", label: "Details", icon: ClipboardList },
-                    ]}
-                    value={view}
-                    onChange={onViewChange}
-                    className="h-8 shrink-0 rounded-lg"
-                  />
-                )}
-              </div>
-
-              {controlsPresence.present && (
-                <div
-                  id={controlsId}
-                  className={`mt-2 overflow-hidden rounded-2xl border border-white/[0.075] bg-black/25 px-3 transition-[max-height,opacity,transform,padding] duration-200 ease-out motion-reduce:transition-none ${
-                    controlsPresence.entering
-                      ? "max-h-80 translate-y-0 py-2.5 opacity-100"
-                      : "pointer-events-none max-h-0 -translate-y-1 py-0 opacity-0"
-                  }`}
-                  aria-hidden={!controlsOpen}
-                >
-                  <div className="flex flex-wrap items-center gap-2 motion-safe:animate-fade-in-up">
-                    <StudioControls
-                      connected={studioConnected}
-                      loading={studioLoading}
-                      studioEnabled={studioEnabled}
-                      onStudioEnabledChange={onStudioEnabledChange}
-                      applyMode={studioApplyMode}
-                      onApplyModeChange={onStudioApplyModeChange}
-                      autoPushEnabled={studioAutoPushEnabled}
-                      onAutoPushEnabledChange={onStudioAutoPushEnabledChange}
-                      autoPushPolicy={studioAutoPushPolicy}
-                      onAutoPushPolicyChange={onStudioAutoPushPolicyChange}
-                      autoPushAuthorized={studioAutoPushAuthorized}
-                    />
-                    {studioConnected && Array.isArray(studioCollaborators) && studioCollaborators.length > 0 && (
-                      <span
-                        className="inline-flex items-center gap-1 rounded-lg border border-amber-400/30 bg-amber-400/10 px-2 py-1 text-[11px] text-amber-200"
-                        title={studioCollaborators
-                          .map((c) => `${c.label || "collaborator"}${Array.isArray(c.activePaths) && c.activePaths.length ? ` — ${c.activePaths.slice(0, 3).join(", ")}` : ""}`)
-                          .join("\n")}
-                      >
-                        {studioCollaborators.length} collaborator{studioCollaborators.length === 1 ? "" : "s"} on this place
-                      </span>
-                    )}
-                    <RobloxCloudControls
-                      connected={robloxConnected}
-                      loading={robloxLoading}
-                      selectedCreator={robloxSelectedCreator}
-                      uploadAvailable={robloxUploadAvailable}
-                      uploadState={robloxUploadState}
-                      uploadDisabledReason={robloxUploadDisabledReason}
-                      assetUploadsEnabled={robloxAssetUploadsEnabled}
-                      onAssetUploadsEnabledChange={onRobloxAssetUploadsEnabledChange}
-                      selectedAssetCount={robloxProjectAssets.length}
-                      onOpenAssetLibrary={onOpenAssetLibrary}
-                      assetLibraryAvailable={robloxAssetLibraryAvailable}
-                      assetLibraryDisabledReason={robloxAssetLibraryDisabledReason}
-                    />
-                  </div>
-                </div>
+            <div className="flex flex-wrap items-center justify-between gap-2 px-1 text-[10px] font-semibold text-gray-500">
+              <span>Enter to send · Shift + Enter for a new line</span>
+              {contextItemCount > 0 && (
+                <span className="text-gray-400">
+                  {contextItemCount} context {contextItemCount === 1 ? "item" : "items"}
+                </span>
               )}
             </div>
           </div>

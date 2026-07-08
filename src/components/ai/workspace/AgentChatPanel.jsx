@@ -132,18 +132,10 @@ export default function AgentChatPanel({
   }, [creatorStoreOpen]);
 
   return (
-    <div className="relative h-full flex flex-col min-h-0 overflow-hidden bg-[#060711]">
-      <div
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_108%,rgba(0,245,212,0.16),transparent_34%),radial-gradient(circle_at_78%_82%,rgba(155,93,229,0.12),transparent_30%),linear-gradient(180deg,#080914_0%,#060711_52%,#05050b_100%)]"
-        aria-hidden="true"
-      />
-      <div
-        className="pointer-events-none absolute inset-0 opacity-[0.055] [background-image:linear-gradient(rgba(255,255,255,0.7)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.7)_1px,transparent_1px)] [background-size:28px_28px]"
-        aria-hidden="true"
-      />
+    <div className="h-full flex flex-col min-h-0 bg-ink-900">
       <div className="flex-1 min-h-0 flex flex-col">
         {view === "details" ? (
-          <div className="relative flex-1 min-h-0 motion-safe:animate-panel-in">
+          <div className="flex-1 min-h-0 motion-safe:animate-panel-in">
             <BuildDetailsPanel
               artifact={artifact}
               agentRun={agentRun}
@@ -156,51 +148,45 @@ export default function AgentChatPanel({
           </div>
         ) : (
           <>
-            <div className="relative flex-1 min-h-0 motion-safe:animate-panel-in">
-              <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-14 bg-gradient-to-b from-[#060711] to-transparent" />
-              <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-20 bg-gradient-to-t from-[#060711] to-transparent" />
-              <div ref={chatScrollRef} className="relative z-0 h-full overflow-y-auto px-4 py-8 scrollbar-hide">
-                <ChatView
-                  messages={messages}
-                  pendingMessage={pendingMessage}
-                  generationStage={generationStage}
-                  user={user}
-                  profile={profile}
-                  activeMode={activeMode}
-                  isBusy={isBusy}
-                  onApprovePlan={onApprovePlan}
-                  onClarifySubmit={onClarifySubmit}
-                  onEditPlan={onEditPlan}
-                  onViewUi={onOpenArtifact}
-                  onRefine={onRefine}
-                  onQuickStart={onQuickStart}
-                  notify={notify}
-                  chatEndRef={chatEndRef}
-                  onApproveStep={onApproveStep}
-                  approvingStepId={approvingStepId}
-                />
-              </div>
+            <div ref={chatScrollRef} className="flex-1 min-h-0 overflow-y-auto px-3 py-4 scrollbar-hide motion-safe:animate-panel-in">
+              <ChatView
+                messages={messages}
+                pendingMessage={pendingMessage}
+                generationStage={generationStage}
+                user={user}
+                profile={profile}
+                activeMode={activeMode}
+                isBusy={isBusy}
+                onApprovePlan={onApprovePlan}
+                onClarifySubmit={onClarifySubmit}
+                onEditPlan={onEditPlan}
+                onViewUi={onOpenArtifact}
+                onRefine={onRefine}
+                onQuickStart={onQuickStart}
+                notify={notify}
+                chatEndRef={chatEndRef}
+                onApproveStep={onApproveStep}
+                approvingStepId={approvingStepId}
+              />
             </div>
           </>
         )}
       </div>
 
-      <div className="relative z-20">
-        <RobloxAssetTray
-          projectId={robloxAssetProjectId}
-          robloxConnected={robloxConnected}
-          uploadAvailable={robloxUploadAvailable}
-          assetUploadsEnabled={robloxAssetUploadsEnabled}
-          selectedCreator={robloxSelectedCreator}
-          notify={notify}
-        />
-      </div>
+      <RobloxAssetTray
+        projectId={robloxAssetProjectId}
+        robloxConnected={robloxConnected}
+        uploadAvailable={robloxUploadAvailable}
+        assetUploadsEnabled={robloxAssetUploadsEnabled}
+        selectedCreator={robloxSelectedCreator}
+        notify={notify}
+      />
 
-      <div className="relative z-20 border-t border-white/[0.06] bg-[#070913]/80 px-4 py-2 backdrop-blur-xl">
+      <div className="border-t border-white/10 bg-[#080a12] px-3 py-2">
         <button
           type="button"
           onClick={() => setCreatorStoreOpen(true)}
-          className="inline-flex w-full items-center justify-between gap-3 rounded-xl border border-white/[0.08] bg-white/[0.035] px-3 py-2 text-left text-[#b9ecff] transition-all hover:border-[#00bbf9]/25 hover:bg-white/[0.055] hover:text-white focus-ring"
+          className="inline-flex w-full items-center justify-between gap-3 rounded-lg border border-[#00bbf9]/20 bg-[#00bbf9]/10 px-3 py-2 text-left text-[#b9ecff] transition-all hover:border-[#00bbf9]/35 hover:bg-[#00bbf9]/15 hover:text-white focus-ring"
           aria-haspopup="dialog"
           aria-expanded={creatorStoreOpen}
           aria-controls="creator-store-drawer"
@@ -262,14 +248,12 @@ export default function AgentChatPanel({
         </div>
       )}
 
-      <div className="relative z-20">
-        <ModelFilePipelinePanel
-          robloxConnected={robloxConnected}
-          studioConnected={studioConnected}
-          selectedCreator={robloxSelectedCreator}
-          notify={notify}
-        />
-      </div>
+      <ModelFilePipelinePanel
+        robloxConnected={robloxConnected}
+        studioConnected={studioConnected}
+        selectedCreator={robloxSelectedCreator}
+        notify={notify}
+      />
 
       <ChatComposer
         prompt={prompt}
