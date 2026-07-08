@@ -592,25 +592,23 @@ export function useAiChat(user, settings, refreshBilling, notify) {
       const assistantMsgRef = doc(db, "users", user.uid, "chats", activeChatId, "messages", `${requestId}-assistant`);
 
       publishGenerationStage(activeChatId, "Generating...", { extraPending: { steps: [], runId: agentRunId } });
-      if (agentRunId) {
-        await setDoc(assistantMsgRef, {
-          role: "assistant",
-          content: "",
-          stage: "Generating...",
-          pending: true,
-          requestId,
-          jobId,
-          runId: agentRunId,
-          isAutoExecuting: currentMode === "act",
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp(),
-          metadata: {
-            mode: currentMode,
-            type: null,
-          },
-          steps: [],
-        }, { merge: true });
-      }
+      await setDoc(assistantMsgRef, {
+        role: "assistant",
+        content: "",
+        stage: "Generating...",
+        pending: true,
+        requestId,
+        jobId,
+        ...(agentRunId ? { runId: agentRunId } : {}),
+        isAutoExecuting: currentMode === "act",
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+        metadata: {
+          mode: currentMode,
+          type: null,
+        },
+        steps: [],
+      }, { merge: true });
 
       publishGenerationStage(activeChatId, "Connecting...");
       const initialStreamSession = await ensureStreamSession(token, { retries: 1 }).catch(() => ({ token: null }));
@@ -742,15 +740,13 @@ export function useAiChat(user, settings, refreshBilling, notify) {
             message: err?.message || "Generation failed",
             retries: retryCount,
           });
-          if (agentRunId) {
-            updateDoc(assistantMsgRef, {
-              pending: false,
-              stage: "failed",
-              errorCode: err?.code || null,
-              error: err?.message || "Generation failed",
-              updatedAt: serverTimestamp(),
-            }).catch(() => {});
-          }
+          updateDoc(assistantMsgRef, {
+            pending: false,
+            stage: "failed",
+            errorCode: err?.code || null,
+            error: err?.message || "Generation failed",
+            updatedAt: serverTimestamp(),
+          }).catch(() => {});
           setBusy(false);
           if (streamFlushTimer) clearTimeout(streamFlushTimer);
           stopIdlePulse();
@@ -769,31 +765,14 @@ export function useAiChat(user, settings, refreshBilling, notify) {
             retries: retryCount,
           });
           eventSource?.close?.();
-          if (agentRunId) {
-            updateDoc(assistantMsgRef, {
-              pending: true,
-              stage: "Still working in background...",
-              jobId,
-              requestId,
-              runId: agentRunId,
-              updatedAt: serverTimestamp(),
-            }).catch(() => {});
-          } else {
-            setDoc(
-              assistantMsgRef,
-              {
-                role: "assistant",
-                content: "",
-                pending: true,
-                stage: "Still working in background...",
-                requestId,
-                jobId,
-                createdAt: serverTimestamp(),
-                updatedAt: serverTimestamp(),
-              },
-              { merge: true }
-            ).catch(() => {});
-          }
+          updateDoc(assistantMsgRef, {
+            pending: true,
+            stage: "Still working in background...",
+            jobId,
+            requestId,
+            ...(agentRunId ? { runId: agentRunId } : {}),
+            updatedAt: serverTimestamp(),
+          }).catch(() => {});
           notify?.({
             type: "info",
             message:
@@ -837,20 +816,18 @@ export function useAiChat(user, settings, refreshBilling, notify) {
             retries: retryCount,
           });
 
-          if (agentRunId) {
-            await setDoc(assistantMsgRef, {
-              role: "assistant",
-              content: "",
-              pending: false,
-              stage: "failed",
-              errorCode: "INSUFFICIENT_TOKENS",
-              error: message,
-              requestId,
-              jobId,
-              runId: agentRunId,
-              updatedAt: serverTimestamp(),
-            }, { merge: true }).catch(() => {});
-          }
+          await setDoc(assistantMsgRef, {
+            role: "assistant",
+            content: "",
+            pending: false,
+            stage: "failed",
+            errorCode: "INSUFFICIENT_TOKENS",
+            error: message,
+            requestId,
+            jobId,
+            ...(agentRunId ? { runId: agentRunId } : {}),
+            updatedAt: serverTimestamp(),
+          }, { merge: true }).catch(() => {});
 
           refreshBilling();
           notify(insufficientTokensToast(planKey));

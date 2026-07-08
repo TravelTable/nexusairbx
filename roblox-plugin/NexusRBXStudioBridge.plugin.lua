@@ -288,7 +288,7 @@ end
 -- session's lastSeenAt fresh during long-running operations.
 function pingSession(token, placeSignature)
 	if not token then
-		return false, lastLatencyMs
+		return false, lastLatencyMs, false
 	end
 	local body = {}
 	if type(placeSignature) == "string" and placeSignature ~= "" then
@@ -296,9 +296,9 @@ function pingSession(token, placeSignature)
 	end
 	local result = requestOnce("POST", "/api/studio/session/ping", body, token, { maxAttempts = 1 })
 	if result.status == 401 or result.status == 403 then
-		return false, result.latencyMs or lastLatencyMs
+		return false, result.latencyMs or lastLatencyMs, true
 	end
-	return result.ok == true, result.latencyMs or lastLatencyMs
+	return result.ok == true, result.latencyMs or lastLatencyMs, false
 end
 
 getToken = function()
@@ -6759,9 +6759,11 @@ task.spawn(function()
 		task.wait(15)
 		if getToken() then
 			local signatureOk, signature = pcall(computePlaceSignature)
-			local ok, latency = pingSession(getToken(), signatureOk and signature or nil)
+			local ok, latency, authExpired = pingSession(getToken(), signatureOk and signature or nil)
 			if ok then
 				setHealth(os.time(), latency)
+			elseif authExpired then
+				handleSessionExpired()
 			else
 				local healthOk, healthLatency = pingHealth()
 				if healthOk then

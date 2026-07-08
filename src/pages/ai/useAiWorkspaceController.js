@@ -603,6 +603,25 @@ export function useAiWorkspaceController() {
 
     if (activeTab !== "chat") setActiveTab("chat");
     if (isMobile) setMobileTab("chat");
+
+    // Auth gate: preserve draft so unauthenticated users don't lose their work
+    if (!user) {
+      createPendingAuthAction({
+        action: PENDING_AUTH_ACTIONS.RESTRICTED_GENERATION,
+        returnPath: "/ai",
+        workspace: generatorMode,
+        source: "chat_submit",
+        payload: {
+          generatorMode,
+          promptCategory: categorizePrompt(currentPrompt),
+          actionLabel: actionLabel(PENDING_AUTH_ACTIONS.RESTRICTED_GENERATION),
+        },
+      });
+      setSignInNudgeReason("Sign up to continue this workspace conversation and keep your generated work attached to your account.");
+      setShowSignInNudge(true);
+      return;
+    }
+
     setPrompt("");
     setAttachments([]);
 
@@ -632,6 +651,7 @@ export function useAiWorkspaceController() {
     unified,
     workspace.projectArtifactSnapshot,
     track,
+    generatorMode,
   ]);
 
   const recordPendingAuthGate = useCallback((actionType, source = "quick_script_gate") => {

@@ -271,9 +271,11 @@ task.spawn(function()
 		task.wait(15)
 		if getToken() then
 			local signatureOk, signature = pcall(computePlaceSignature)
-			local ok, latency = pingSession(getToken(), signatureOk and signature or nil)
+			local ok, latency, authExpired = pingSession(getToken(), signatureOk and signature or nil)
 			if ok then
 				setHealth(os.time(), latency)
+			elseif authExpired then
+				handleSessionExpired()
 			else
 				local healthOk, healthLatency = pingHealth()
 				if healthOk then
