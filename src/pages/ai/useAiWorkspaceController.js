@@ -40,7 +40,6 @@ import { useStudioConnection } from "../../hooks/useStudioConnection";
 import { applyArtifactToStudio, getStudioStatus } from "../../lib/studioBridgeApi";
 import { AI_EVENTS, emitAiEvent, onAiEvent } from "../../lib/aiEvents";
 import { useAiNotifications } from "./useAiNotifications";
-import { saveWorkspaceArtifact } from "../../lib/artifactWorkspaceApi";
 import {
   getRobloxOAuthStatus,
   beginCreatorStoreReauthorization,
@@ -50,6 +49,7 @@ import {
 } from "../../lib/robloxOAuthApi";
 import { useProjectAssets } from "../../hooks/useProjectAssets";
 import { useRobloxImageUpload, isRobloxDecalImage } from "../../hooks/useRobloxImageUpload";
+import { useWorkspaceArtifactPersistence } from "../../hooks/useWorkspaceArtifactPersistence";
 import { createImprovePromptError, formatImprovePromptErrorMessage } from "../../lib/aiPromptErrors";
 import {
   consumeGenerationIntent,
@@ -872,13 +872,11 @@ export function useAiWorkspaceController() {
     notify,
   ]);
 
-  useEffect(() => {
-    if (!user || !workspace.activeArtifactSnapshot?.artifactId) return undefined;
-    const timer = window.setTimeout(() => {
-      saveWorkspaceArtifact(workspace.activeArtifactSnapshot, "workspace").catch(() => {});
-    }, 400);
-    return () => window.clearTimeout(timer);
-  }, [user, workspace.activeArtifactSnapshot]);
+  useWorkspaceArtifactPersistence(workspace.activeArtifactSnapshot, {
+    enabled: Boolean(user && workspace.activeArtifactSnapshot?.artifactId),
+    debounceMs: 400,
+    source: "workspace",
+  });
 
   const handleStartRefine = useCallback((message) => {
     setRefineTarget(message || null);

@@ -157,6 +157,7 @@ export default function AgentWorkspaceLayout({ controller }) {
   const terminalAbortRef = useRef(null);
   const manifestRefreshInFlightRef = useRef(null);
   const autoManifestRefreshKeyRef = useRef("");
+  const manifestWaitsRef = useRef(new Map());
 
   const appendTerminal = useCallback((line, kind = "stdout") => {
     const text = String(line ?? "");
@@ -203,30 +204,47 @@ export default function AgentWorkspaceLayout({ controller }) {
   }, [studio?.lastAuthorizedSessionId]);
 
   const waitForManifestCompletion = useCallback(async (previousRevision = "") => {
-    const deadline = Date.now() + 60000;
-    while (Date.now() < deadline) {
-      let status = null;
-      try {
-        const data = await getStudioManifestStatus({
-          sessionId: studio?.lastAuthorizedSessionId || null,
-        });
-        status = data.status || null;
-      } catch (_) {
-        // Transient failure (e.g. no paired session yet); keep polling until ready or timeout.
-        status = null;
-      }
-      const readyRevision = status?.lastCompleteRevision || "";
-      if (
-        readyRevision &&
-        status?.activeRevision === readyRevision &&
-        status?.complete &&
-        (!previousRevision || readyRevision !== previousRevision)
-      ) {
-        return status;
-      }
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+    const sessionId = studio?.lastAuthorizedSessionId || "default";
+    const waitKey = `${sessionId}:${previousRevision || "none"}`;
+    if (manifestWaitsRef.current.has(waitKey)) {
+      return manifestWaitsRef.current.get(waitKey);
     }
-    throw new Error("Studio manifest refresh timed out");
+
+    const waitPromise = (async () => {
+      const deadline = Date.now() + 60000;
+      while (Date.now() < deadline) {
+        let status = null;
+        try {
+          const data = await getStudioManifestStatus({
+            sessionId: studio?.lastAuthorizedSessionId || null,
+          });
+          status = data.status || null;
+        } catch (_) {
+          // Transient failure (e.g. no paired session yet); keep polling until ready or timeout.
+          status = null;
+        }
+        const readyRevision = status?.lastCompleteRevision || "";
+        if (
+          readyRevision &&
+          status?.activeRevision === readyRevision &&
+          status?.complete &&
+          (!previousRevision || readyRevision !== previousRevision)
+        ) {
+          return status;
+        }
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+      }
+      throw new Error("Studio manifest refresh timed out");
+    })();
+
+    manifestWaitsRef.current.set(waitKey, waitPromise);
+    try {
+      return await waitPromise;
+    } finally {
+      if (manifestWaitsRef.current.get(waitKey) === waitPromise) {
+        manifestWaitsRef.current.delete(waitKey);
+      }
+    }
   }, [studio?.lastAuthorizedSessionId]);
 
   const refreshStudioManifest = useCallback(async (options = {}) => {

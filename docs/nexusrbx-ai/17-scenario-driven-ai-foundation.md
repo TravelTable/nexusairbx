@@ -6,7 +6,7 @@ This page summarizes the deterministic AI foundation added across Slices 1-15. I
 
 | Scenario ID | Use |
 | --- | --- |
-| `studio_visibility` | Ask what files, scripts, manifest state, or Studio context is visible. |
+| `studio_visibility` | Ask what files, scripts, manifest state, or Studio context is visible from the read-only Studio manifest. |
 | `script_explanation` | Ask what a script, module, or file does. |
 | `bug_diagnosis` | Ask why something is broken or failing. |
 | `targeted_edit_request` | Ask to change a specific file, script, UI, or system. |
@@ -55,6 +55,8 @@ Telemetry and reporting can read the same normalized shape without changing runt
 - `minimumContextSatisfied` stays false until enough read-only context is available.
 - `contextAcquisitionBlocked` explains why inspection cannot proceed.
 - `workflow_guidance` intentionally avoids Studio reads unless the prompt already asks about project state.
+- `studio_visibility` uses `get_project_manifest` with `includeSource: false`, then answers from persisted manifest metadata: indexed instance count, script count, root placements, class counts, and a bounded list of visible script paths.
+- Visibility answers should say when the manifest is partial, stale, unavailable, or still indexing. They should not imply access to unindexed files.
 
 ## Studio blocker normalization
 
@@ -80,6 +82,7 @@ The blocker code drives recovery guidance. It does not apply changes automatical
 - `targeted_edit_request` never executes directly.
 - `feature_build_request` never executes directly.
 - Both require manual review before any mutation can be applied.
+- `studio_visibility` never reads full script source or queues Studio writes by default. Source reads belong to `script_explanation` or another explicit read/analyze request for a specific script.
 - Hash guards such as `expectedSourceHash` remain part of the safe mutation path where already supported.
 
 ## Metrics and release gates
@@ -104,4 +107,3 @@ The blocker code drives recovery guidance. It does not apply changes automatical
 3. Keep `manual_review` and Studio mutation rules intact.
 4. Add new scenario families through the deterministic classifier and tests.
 5. Add new blocker codes only when the signal is specific and stable.
-

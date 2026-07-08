@@ -9,6 +9,7 @@ import {
 } from "../lib/robloxAssetLibraryApi";
 
 const EMPTY_UPLOAD_STATUS = { status: "idle", records: [] };
+const ACTIVE_UPLOAD_STATUSES = new Set(["queued", "validating", "uploading", "processing"]);
 
 function isAccessBlockedError(err) {
   return err?.status === 401 || err?.status === 403;
@@ -63,7 +64,14 @@ export function useProjectAssets(projectId, { enabled = true, notify } = {}) {
   }, [refresh]);
 
   useEffect(() => {
-    if (!enabled || !projectId || accessBlockedError) return undefined;
+    if (
+      !enabled ||
+      !projectId ||
+      accessBlockedError ||
+      !ACTIVE_UPLOAD_STATUSES.has(String(uploadStatus?.status || "").toLowerCase())
+    ) {
+      return undefined;
+    }
     const timer = window.setInterval(() => {
       getGeneratedAssetUploadStatus(projectId)
         .then((statusData) => setUploadStatus(statusData || EMPTY_UPLOAD_STATUS))
@@ -75,7 +83,7 @@ export function useProjectAssets(projectId, { enabled = true, notify } = {}) {
         });
     }, 12000);
     return () => window.clearInterval(timer);
-  }, [enabled, projectId, accessBlockedError]);
+  }, [accessBlockedError, enabled, projectId, uploadStatus?.status]);
 
   const attachAssets = useCallback(async (nextAssets) => {
     if (!projectId) throw new Error("Open a project before selecting assets.");

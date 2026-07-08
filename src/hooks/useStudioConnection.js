@@ -1,7 +1,10 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { getStudioStatus } from "../lib/studioBridgeApi";
 
 const LIVE_IDLE_MS = 45000;
+const CONNECTED_IDLE_POLL_MS = 15000;
+const RECOVERING_POLL_MS = 5000;
+const HIDDEN_MIN_POLL_MS = 60000;
 
 function pickActiveStudioSession(sessions = []) {
   const connected = sessions.filter((session) => session?.status === "connected");
@@ -29,23 +32,33 @@ export function isStudioSessionLive(session) {
   return session.live !== false;
 }
 
+export function getStudioStatusPollDelay({ connected = false, hidden = false } = {}) {
+  const baseDelay = connected ? CONNECTED_IDLE_POLL_MS : RECOVERING_POLL_MS;
+  return hidden ? Math.max(baseDelay, HIDDEN_MIN_POLL_MS) : baseDelay;
+}
+
 /**
  * Polls Studio bridge connection status for unified agent Studio tools.
  */
-export function useStudioConnection(pollMs = 5000) {
+export function useStudioConnection() {
   const [connected, setConnected] = useState(false);
   const [sessionId, setSessionId] = useState(null);
   const [collaborators, setCollaborators] = useState([]);
   const [loading, setLoading] = useState(true);
+  const connectedRef = useRef(false);
+  const refreshRef = useRef(null);
 
   const refresh = useCallback(async () => {
     try {
       const status = await getStudioStatus();
       const active = pickActiveStudioSession(status.sessions || []);
-      setConnected(isStudioSessionLive(active));
+      const nextConnected = isStudioSessionLive(active);
+      connectedRef.current = nextConnected;
+      setConnected(nextConnected);
       setSessionId(active?.sessionId || active?.id || null);
       setCollaborators(Array.isArray(active?.collaborators) ? active.collaborators : []);
     } catch (_) {
+      connectedRef.current = false;
       setConnected(false);
       setSessionId(null);
       setCollaborators([]);
@@ -55,11 +68,55 @@ export function useStudioConnection(pollMs = 5000) {
   }, []);
 
   useEffect(() => {
-    refresh();
-    if (pollMs <= 0) return undefined;
-    const timer = window.setInterval(refresh, pollMs);
-    return () => window.clearInterval(timer);
-  }, [pollMs, refresh]);
+    refreshRef.current = refresh;
+  }, [refresh]);
+
+  useEffect(() => {
+    let timer = null;
+    let cancelled = false;
+
+    const clearTimer = () => {
+      if (timer) {
+        window.clearTimeout(timer);
+        timer = null;
+      }
+    };
+
+    const scheduleNext = () => {
+      if (cancelled) return;
+      const hidden = typeof document !== "undefined" ? document.hidden : false;
+      const delay = getStudioStatusPollDelay({
+        connected: connectedRef.current,
+        hidden,
+      });
+      timer = window.setTimeout(() => {
+        Promise.resolve(refreshRef.current?.()).finally(() => {
+          scheduleNext();
+        });
+      }, delay);
+    };
+
+    const handleVisibilityChange = () => {
+      clearTimer();
+      scheduleNext();
+    };
+
+    Promise.resolve(refreshRef.current?.()).finally(() => {
+      scheduleNext();
+    });
+
+    if (typeof document !== "undefined") {
+      document.addEventListener("visibilitychange", handleVisibilityChange);
+    }
+
+    return () => {
+      cancelled = true;
+      clearTimer();
+      if (typeof document !== "undefined") {
+        document.removeEventListener("visibilitychange", handleVisibilityChange);
+      }
+    };
+  }, []);
 
   return { connected, sessionId, collaborators, loading, refresh };
 }

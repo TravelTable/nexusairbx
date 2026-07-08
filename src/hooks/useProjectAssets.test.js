@@ -51,4 +51,48 @@ describe("useProjectAssets", () => {
 
     expect(getGeneratedAssetUploadStatus).not.toHaveBeenCalled();
   });
+
+  test("polls upload status only while uploads are active", async () => {
+    listProjectAssets.mockResolvedValue({ assets: [] });
+    getProjectAssetUploadSettings.mockResolvedValue({ enabled: true });
+    getGeneratedAssetUploadStatus
+      .mockResolvedValueOnce({ status: "uploading", records: [] })
+      .mockResolvedValueOnce({ status: "processing", records: [] });
+
+    renderHook(() => useProjectAssets("project_1", { enabled: true }));
+
+    await waitFor(() => expect(getGeneratedAssetUploadStatus).toHaveBeenCalledTimes(1));
+    getGeneratedAssetUploadStatus.mockClear();
+
+    act(() => {
+      jest.advanceTimersByTime(12000);
+    });
+
+    await waitFor(() => expect(getGeneratedAssetUploadStatus).toHaveBeenCalledTimes(1));
+  });
+
+  test("stops upload-status polling on terminal states", async () => {
+    listProjectAssets.mockResolvedValue({ assets: [] });
+    getProjectAssetUploadSettings.mockResolvedValue({ enabled: true });
+    getGeneratedAssetUploadStatus
+      .mockResolvedValueOnce({ status: "uploading", records: [] })
+      .mockResolvedValueOnce({ status: "completed", records: [] });
+
+    renderHook(() => useProjectAssets("project_1", { enabled: true }));
+
+    await waitFor(() => expect(getGeneratedAssetUploadStatus).toHaveBeenCalledTimes(1));
+
+    act(() => {
+      jest.advanceTimersByTime(12000);
+    });
+
+    await waitFor(() => expect(getGeneratedAssetUploadStatus).toHaveBeenCalledTimes(2));
+    getGeneratedAssetUploadStatus.mockClear();
+
+    act(() => {
+      jest.advanceTimersByTime(24000);
+    });
+
+    expect(getGeneratedAssetUploadStatus).not.toHaveBeenCalled();
+  });
 });
