@@ -108,7 +108,6 @@ export default function ModelFilePipelinePanel({ notify }) {
 
   const canOptimize = active?.id && VALIDATED.has(active.status);
   const canPrepareRobloxUpload = active?.id && VALIDATED.has(active.status);
-  const activeDerivative = derivatives.find((item) => ACTIVE_DERIVATIVE.has(item.status));
   const currentUpload = uploadStatus?.upload || uploadStatus;
   const progressPercent = progress?.total ? Math.round((progress.loaded / progress.total) * 100) : null;
   const sizeLimit = rules?.limits?.maxBytes || 25 * 1024 * 1024;
