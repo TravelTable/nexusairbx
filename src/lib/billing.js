@@ -90,16 +90,18 @@ export async function getEntitlements({ noCache = true } = {}) {
   const contentType = r.headers.get("content-type") || "";
   if (!r.ok) {
     const text = await r.text().catch(() => "");
-    let friendly = text;
+    let payload = null;
     try {
-      const payload = text ? JSON.parse(text) : null;
-      if (payload && typeof payload === "object") {
-        friendly = payload.message || payload.error || text;
-      }
+      payload = text ? JSON.parse(text) : null;
     } catch (_) {
       /* keep raw text */
     }
-    throw new Error(`entitlements ${r.status}: ${friendly}`);
+    const friendly = payload?.message || payload?.error || text;
+    const err = new Error(friendly || `entitlements ${r.status}`);
+    err.status = r.status;
+    err.code = payload?.code || null;
+    err.retryable = payload?.retryable === true;
+    throw err;
   }
   if (!contentType.includes("application/json")) {
     const text = await r.text().catch(() => "");

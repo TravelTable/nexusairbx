@@ -12,9 +12,12 @@ import {
   cancelSubscription,
   submitBrowserTimezone,
 } from "../lib/billing";
+import { formatUserFacingError } from "../lib/billingErrors";
 import { onAiEvent } from "../lib/aiEvents";
 
 const BillingCtx = createContext(null);
+
+const QUOTA_BACKOFF_MS = 5 * 60_000;
 
 export function BillingProvider({ children, pollMs = 60_000 }) {
   const [user, setUser] = useState(auth.currentUser);
@@ -95,19 +98,46 @@ export function BillingProvider({ children, pollMs = 60_000 }) {
         };
       });
     } catch (err) {
-      setState(s => ({ ...s, loading: false, error: err?.message || "Failed to load billing" }));
+      setState(s => ({
+        ...s,
+        loading: false,
+        error: formatUserFacingError(err) || "Failed to load billing",
+      }));
+      return err;
     }
+    return null;
   }, [user]);
 
   useEffect(() => {
-    refresh();
-    const id = setInterval(refresh, pollMs);
+    let cancelled = false;
+    let timerId = null;
+    let backoffMs = pollMs;
+
+    const schedule = (delay) => {
+      if (cancelled) return;
+      timerId = setTimeout(async () => {
+        const err = await refresh();
+        const nextDelay = err?.code === "FIRESTORE_QUOTA_EXCEEDED" || err?.status === 503
+          ? QUOTA_BACKOFF_MS
+          : pollMs;
+        backoffMs = nextDelay;
+        schedule(nextDelay);
+      }, delay);
+    };
+
+    refresh().then((err) => {
+      backoffMs = err?.code === "FIRESTORE_QUOTA_EXCEEDED" || err?.status === 503
+        ? QUOTA_BACKOFF_MS
+        : pollMs;
+      schedule(backoffMs);
+    });
     const unbindJob = onAiEvent("JOB_COMPLETE", () => refresh());
     const unbindJobFail = onAiEvent("JOB_FAILURE", () => refresh());
     const onFocus = () => refresh();
     window.addEventListener("focus", onFocus);
     return () => {
-      clearInterval(id);
+      cancelled = true;
+      if (timerId) clearTimeout(timerId);
       unbindJob();
       unbindJobFail();
       window.removeEventListener("focus", onFocus);
