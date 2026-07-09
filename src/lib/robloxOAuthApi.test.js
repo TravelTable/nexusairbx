@@ -2,6 +2,7 @@ import {
   beginCreatorStoreReauthorization,
   ensureRobloxCapabilities,
   creatorStoreAccessError,
+  getRobloxOAuthStatus,
   isCapabilityAuthorized,
   isCreatorStoreReadAuthorized,
   isRobloxReauthorizationError,
@@ -9,6 +10,7 @@ import {
   readPendingRobloxAction,
   ROBLOX_PRODUCT_DEFAULT_CAPABILITIES,
 } from "./robloxOAuthApi";
+import { clearApiRetryCooldown } from "./apiErrors";
 
 jest.mock("./billing", () => ({
   authedFetch: jest.fn(),
@@ -19,6 +21,8 @@ const { authedFetch } = require("./billing");
 describe("robloxOAuthApi capability helpers", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    clearApiRetryCooldown("roblox-oauth:ensure");
+    clearApiRetryCooldown("roblox-oauth:status");
     window.sessionStorage.clear();
     delete window.location;
     window.location = { assign: jest.fn() };
@@ -144,6 +148,29 @@ describe("robloxOAuthApi capability helpers", () => {
         returnPath: "/ai",
       }),
     }));
+  });
+
+  test("getRobloxOAuthStatus preserves retryable backend metadata", async () => {
+    authedFetch.mockResolvedValue({
+      ok: false,
+      status: 503,
+      headers: {
+        get: (name) => (name === "Retry-After" ? "30" : null),
+      },
+      text: async () => JSON.stringify({
+        error: "Database temporarily unavailable. Please retry shortly.",
+        code: "FIRESTORE_QUOTA_EXCEEDED",
+        retryable: true,
+      }),
+    });
+
+    await expect(getRobloxOAuthStatus()).rejects.toMatchObject({
+      status: 503,
+      code: "FIRESTORE_QUOTA_EXCEEDED",
+      retryable: true,
+      retryAfter: "30",
+      retryAfterMs: 30000,
+    });
   });
 
   test("capability helpers detect upgrade and authorization state", () => {

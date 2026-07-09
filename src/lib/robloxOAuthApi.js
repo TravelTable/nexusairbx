@@ -1,21 +1,14 @@
 import { authedFetch } from "./billing";
+import { readJsonResponse, withApiRetryCooldown } from "./apiErrors";
 import { formatRobloxErrorMessage } from "./robloxAuthorizationMessages";
 
-async function readJsonOrThrow(res, fallbackMessage) {
-  const text = await res.text().catch(() => "");
-  let data = null;
-  try {
-    data = text ? JSON.parse(text) : null;
-  } catch (_) {
-    data = null;
-  }
-  if (!res.ok) throw new Error(data?.error || text || fallbackMessage);
-  return data || {};
-}
+const readJsonOrThrow = readJsonResponse;
 
 export async function getRobloxOAuthStatus() {
-  const res = await authedFetch("/api/roblox/oauth/status", { method: "GET", noCache: true });
-  return readJsonOrThrow(res, "Failed to load Roblox connection");
+  return withApiRetryCooldown("roblox-oauth:status", "Failed to load Roblox connection", async () => {
+    const res = await authedFetch("/api/roblox/oauth/status", { method: "GET", noCache: true });
+    return readJsonOrThrow(res, "Failed to load Roblox connection");
+  });
 }
 
 export async function startRobloxOAuth({ bundles = ["core"], returnPath = "/settings?tab=roblox", prompt = null } = {}) {
@@ -104,16 +97,18 @@ export function clearPendingRobloxAction() {
 
 export async function ensureRobloxCapabilities({ capabilities, returnPath = "/settings?tab=roblox", pendingAction = null } = {}) {
   const requestedCapabilities = normalizeCapabilities(capabilities);
-  const res = await authedFetch("/api/roblox/oauth/ensure", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      capabilities: requestedCapabilities,
-      returnPath,
-      ...(pendingAction ? { pendingAction } : {}),
-    }),
+  const data = await withApiRetryCooldown("roblox-oauth:ensure", "Failed to verify Roblox authorization", async () => {
+    const res = await authedFetch("/api/roblox/oauth/ensure", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        capabilities: requestedCapabilities,
+        returnPath,
+        ...(pendingAction ? { pendingAction } : {}),
+      }),
+    });
+    return readJsonOrThrow(res, "Failed to verify Roblox authorization");
   });
-  const data = await readJsonOrThrow(res, "Failed to verify Roblox authorization");
   if (data.authorizationUrl) {
     persistPendingAction(pendingAction, returnPath);
     window.location.assign(data.authorizationUrl);

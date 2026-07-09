@@ -1,4 +1,5 @@
 const MAX_RETRY_AFTER_MS = 30 * 60 * 1000;
+const apiRetryCooldowns = new Map();
 
 export function parseRetryAfterMs(value, now = Date.now()) {
   if (!value) return null;
@@ -31,6 +32,74 @@ export function getRetryDelayMs(error, fallbackMs = 30000) {
     return Math.min(parsed, MAX_RETRY_AFTER_MS);
   }
   return fallbackMs;
+}
+
+function normalizeCooldownKey(key) {
+  return String(key || "").trim();
+}
+
+export function getApiRetryCooldownMs(key, now = Date.now()) {
+  const normalized = normalizeCooldownKey(key);
+  if (!normalized) return 0;
+  const retryAt = Number(apiRetryCooldowns.get(normalized) || 0);
+  const remaining = retryAt - now;
+  if (!Number.isFinite(retryAt) || remaining <= 0) {
+    apiRetryCooldowns.delete(normalized);
+    return 0;
+  }
+  return Math.min(remaining, MAX_RETRY_AFTER_MS);
+}
+
+export function clearApiRetryCooldown(key) {
+  const normalized = normalizeCooldownKey(key);
+  if (normalized) apiRetryCooldowns.delete(normalized);
+}
+
+export function createApiRetryCooldownError(key, fallbackMessage, retryAfterMs) {
+  const delayMs = Math.min(Math.max(0, Number(retryAfterMs) || 0), MAX_RETRY_AFTER_MS);
+  const error = new Error(fallbackMessage || "Request temporarily unavailable. Please retry shortly.");
+  error.status = 503;
+  error.code = "API_RETRY_COOLDOWN";
+  error.retryable = true;
+  error.retryAfter = String(Math.ceil(delayMs / 1000));
+  error.retryAfterMs = delayMs;
+  error.localCooldown = true;
+  error.cooldownKey = key;
+  return error;
+}
+
+export function throwIfApiRetryCooldownActive(key, fallbackMessage = "Request temporarily unavailable. Please retry shortly.") {
+  const remainingMs = getApiRetryCooldownMs(key);
+  if (remainingMs > 0) {
+    throw createApiRetryCooldownError(key, fallbackMessage, remainingMs);
+  }
+}
+
+export function rememberApiRetryCooldown(key, error, fallbackMs = 30000) {
+  const normalized = normalizeCooldownKey(key);
+  if (!normalized || !isRetryableApiError(error)) return 0;
+  const delayMs = getRetryDelayMs(error, fallbackMs);
+  if (delayMs > 0) {
+    apiRetryCooldowns.set(normalized, Date.now() + delayMs);
+  }
+  return delayMs;
+}
+
+export async function withApiRetryCooldown(
+  key,
+  fallbackMessage,
+  task,
+  { fallbackMs = 30000 } = {}
+) {
+  throwIfApiRetryCooldownActive(key, fallbackMessage);
+  try {
+    const result = await task();
+    clearApiRetryCooldown(key);
+    return result;
+  } catch (error) {
+    rememberApiRetryCooldown(key, error, fallbackMs);
+    throw error;
+  }
 }
 
 export async function readJsonResponse(res, fallbackMessage = "Request failed") {

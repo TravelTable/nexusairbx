@@ -1,7 +1,10 @@
 import { authedFetch } from "./billing";
-import { readJsonResponse } from "./apiErrors";
+import { readJsonResponse, withApiRetryCooldown } from "./apiErrors";
 
 const readJson = readJsonResponse;
+const MODEL_FILES_LIST_COOLDOWN_KEY = "model-files:list";
+const modelFileCooldownKey = (modelFileId) => `model-files:item:${modelFileId}`;
+const modelDerivativesCooldownKey = (modelFileId) => `model-files:derivatives:${modelFileId}`;
 
 export async function createModelUploadSession(file) {
   const res = await authedFetch("/api/model-files/upload-sessions", {
@@ -45,13 +48,17 @@ export async function completeModelUpload(modelFileId) {
 }
 
 export async function listModelFiles() {
-  const res = await authedFetch("/api/model-files", { method: "GET", noCache: true });
-  return readJson(res, "Failed to load model files");
+  return withApiRetryCooldown(MODEL_FILES_LIST_COOLDOWN_KEY, "Failed to load model files", async () => {
+    const res = await authedFetch("/api/model-files", { method: "GET", noCache: true });
+    return readJson(res, "Failed to load model files");
+  });
 }
 
 export async function getModelFile(modelFileId) {
-  const res = await authedFetch(`/api/model-files/${encodeURIComponent(modelFileId)}`, { method: "GET", noCache: true });
-  return readJson(res, "Failed to load model file");
+  return withApiRetryCooldown(modelFileCooldownKey(modelFileId), "Failed to load model file", async () => {
+    const res = await authedFetch(`/api/model-files/${encodeURIComponent(modelFileId)}`, { method: "GET", noCache: true });
+    return readJson(res, "Failed to load model file");
+  });
 }
 
 export async function getModelFileReport(modelFileId) {
@@ -98,8 +105,10 @@ export async function createDerivative(modelFileId, planId, aggressiveConfirmed 
 }
 
 export async function listDerivatives(modelFileId) {
-  const res = await authedFetch(`/api/model-files/${encodeURIComponent(modelFileId)}/derivatives`, { method: "GET", noCache: true });
-  return readJson(res, "Failed to load derivatives");
+  return withApiRetryCooldown(modelDerivativesCooldownKey(modelFileId), "Failed to load derivatives", async () => {
+    const res = await authedFetch(`/api/model-files/${encodeURIComponent(modelFileId)}/derivatives`, { method: "GET", noCache: true });
+    return readJson(res, "Failed to load derivatives");
+  });
 }
 
 export async function getDerivativeReport(modelFileId, derivativeId) {

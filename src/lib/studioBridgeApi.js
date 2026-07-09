@@ -1,5 +1,5 @@
 import { authedFetch } from "./billing";
-import { readJsonResponse } from "./apiErrors";
+import { readJsonResponse, withApiRetryCooldown } from "./apiErrors";
 
 const readJsonOrThrow = readJsonResponse;
 
@@ -9,8 +9,10 @@ export async function startStudioPairing() {
 }
 
 export async function getStudioStatus() {
-  const res = await authedFetch("/api/studio/status", { method: "GET", noCache: true });
-  return readJsonOrThrow(res, "Failed to load Studio status");
+  return withApiRetryCooldown("studio:status", "Failed to load Studio status", async () => {
+    const res = await authedFetch("/api/studio/status", { method: "GET", noCache: true });
+    return readJsonOrThrow(res, "Failed to load Studio status");
+  });
 }
 
 export async function disconnectStudio({ sessionId = null } = {}) {

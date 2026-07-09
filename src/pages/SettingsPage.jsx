@@ -37,7 +37,7 @@ import { auth } from "../firebase";
 import { useBilling } from "../context/BillingContext";
 import { useSettings } from "../context/SettingsContext";
 import { authedFetch } from "../lib/billing";
-import { isRetryableApiError, readJsonResponse } from "../lib/apiErrors";
+import { isRetryableApiError, readJsonResponse, withApiRetryCooldown } from "../lib/apiErrors";
 import {
   beginRobloxOAuth,
   beginRobloxReauthorization,
@@ -452,7 +452,9 @@ export default function SettingsPage() {
     if (!user) return;
     setTeamState((state) => ({ ...state, status: "loading", error: "" }));
     try {
-      const data = await readJson(await authedFetch("/api/user/teams", { noCache: true }), "Failed to load teams.");
+      const data = await withApiRetryCooldown("user:teams", "Failed to load teams.", async () => (
+        readJson(await authedFetch("/api/user/teams", { noCache: true }), "Failed to load teams.")
+      ));
       setTeamState({ status: "ready", teams: Array.isArray(data.teams) ? data.teams : [], error: "" });
     } catch (error) {
       setTeamState((state) => {
