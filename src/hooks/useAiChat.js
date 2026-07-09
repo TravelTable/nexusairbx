@@ -4,6 +4,7 @@ import {
   collection, 
   query, 
   orderBy, 
+  limit,
   limitToLast, 
   onSnapshot, 
   serverTimestamp, 
@@ -63,6 +64,8 @@ import {
 const STREAM_MAX_RETRIES = 3;
 const RESULT_MAX_POLLS = 45;
 const RESULT_POLL_BASE_MS = 1000;
+const CUSTOM_MODES_LIST_LIMIT = 50;
+const CLEAR_CHAT_MESSAGE_LIMIT = 200;
 // Absolute frontend backstop: if the stream never delivers a terminal event
 // (done/error) within this window, poll once for a result and otherwise hand the
 // job off to the background so the UI can never spin/pulse forever.
@@ -222,7 +225,7 @@ export function useAiChat(user, settings, refreshBilling, notify) {
     if (!u) return;
 
     customModesUnsubRef.current = onSnapshot(
-      collection(db, "users", u.uid, "custom_modes"),
+      query(collection(db, "users", u.uid, "custom_modes"), limit(CUSTOM_MODES_LIST_LIMIT)),
       (snap) => {
         const arr = snap.docs.map(d => ({ id: d.id, ...d.data(), isCustom: true }));
         setCustomModes(arr);
@@ -1206,7 +1209,11 @@ export function useAiChat(user, settings, refreshBilling, notify) {
   const handleClearChat = async () => {
     if (!user || !currentChatId) return;
     try {
-      const msgsSnap = await getDocs(collection(db, "users", user.uid, "chats", currentChatId, "messages"));
+      const msgsSnap = await getDocs(query(
+        collection(db, "users", user.uid, "chats", currentChatId, "messages"),
+        orderBy("createdAt", "asc"),
+        limitToLast(CLEAR_CHAT_MESSAGE_LIMIT)
+      ));
       const batch = writeBatch(db);
       msgsSnap.forEach((d) => batch.delete(d.ref));
       await batch.commit();

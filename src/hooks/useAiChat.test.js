@@ -19,6 +19,7 @@ jest.mock("firebase/firestore", () => ({
   deleteDoc: jest.fn(),
   doc: jest.fn((...segments) => ({ segments })),
   getDocs: jest.fn(),
+  limit: jest.fn(),
   limitToLast: jest.fn(),
   onSnapshot: jest.fn(() => jest.fn()),
   orderBy: jest.fn(),

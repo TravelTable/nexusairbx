@@ -4,6 +4,7 @@ import {
   collection, 
   query, 
   orderBy, 
+  limit,
   onSnapshot, 
   addDoc,
   updateDoc, 
@@ -11,6 +12,8 @@ import {
   serverTimestamp 
 } from "firebase/firestore";
 import { db } from "../firebase";
+
+const SCRIPT_VERSION_HISTORY_LIMIT = 50;
 
 export function useAiScripts(user, notify) {
   const [currentScriptId, setCurrentScriptId] = useState(null);
@@ -48,7 +51,7 @@ export function useAiScripts(user, notify) {
       currentScriptId,
       "versions"
     );
-    const qVersions = query(versionsRef, orderBy("versionNumber", "desc"));
+    const qVersions = query(versionsRef, orderBy("versionNumber", "desc"), limit(SCRIPT_VERSION_HISTORY_LIMIT));
 
     const unsubVersions = onSnapshot(
       qVersions,

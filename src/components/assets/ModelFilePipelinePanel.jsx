@@ -45,7 +45,19 @@ const VALIDATED = new Set(["valid", "valid_with_warnings"]);
 const FINAL = new Set(["valid", "valid_with_warnings", "invalid", "failed", "cancelled", "deleted", "expired"]);
 const ACTIVE_MODEL = new Set(["awaiting_upload", "uploaded", "queued", "validating"]);
 const ACTIVE_DERIVATIVE = new Set(["queued", "optimizing", "validating"]);
+const MODEL_POLL_MS = 4000;
+const MODEL_POLL_HIDDEN_MS = 30000;
 const RETRYABLE_DATABASE_MESSAGE = "Database is temporarily busy. Retry in a moment.";
+
+function getModelPollDelay({ retryAfterMs = 0, hidden = false } = {}) {
+  const retryDelay = Number.isFinite(Number(retryAfterMs)) ? Number(retryAfterMs) : 0;
+  const delay = Math.max(MODEL_POLL_MS, retryDelay);
+  return hidden ? Math.max(delay, MODEL_POLL_HIDDEN_MS) : delay;
+}
+
+function hasActiveDerivative(items = []) {
+  return items.some((item) => ACTIVE_DERIVATIVE.has(item.status));
+}
 
 function statusText(value) {
   return String(value || "unknown").replace(/_/g, " ");
@@ -88,6 +100,10 @@ export default function ModelFilePipelinePanel({ notify }) {
   const [progress, setProgress] = useState(null);
   const fileInputRef = useRef(null);
   const pollRef = useRef(null);
+  const pollModelFileIdRef = useRef(null);
+  const pollRetryAfterMsRef = useRef(0);
+  const pollCancelledRef = useRef(false);
+  const derivativesRef = useRef([]);
   const retryTimerRef = useRef(null);
 
   const canOptimize = active?.id && VALIDATED.has(active.status);
@@ -102,6 +118,10 @@ export default function ModelFilePipelinePanel({ notify }) {
     return `${active.originalFilename || active.safeFilename || active.id} · ${statusText(active.status)}${active.validationStage ? ` · ${statusText(active.validationStage)}` : ""}`;
   }, [active]);
 
+  useEffect(() => {
+    derivativesRef.current = derivatives;
+  }, [derivatives]);
+
   const clearRetryTimer = () => {
     if (retryTimerRef.current) {
       window.clearTimeout(retryTimerRef.current);
@@ -110,8 +130,11 @@ export default function ModelFilePipelinePanel({ notify }) {
   };
 
   const clearActivePoll = () => {
+    pollCancelledRef.current = true;
+    pollModelFileIdRef.current = null;
+    pollRetryAfterMsRef.current = 0;
     if (pollRef.current) {
-      window.clearInterval(pollRef.current);
+      window.clearTimeout(pollRef.current);
       pollRef.current = null;
     }
   };
@@ -139,7 +162,7 @@ export default function ModelFilePipelinePanel({ notify }) {
     setError(err?.message || fallbackMessage);
   };
 
-  const refresh = async () => {
+  const refresh = async ({ resumePolling = true } = {}) => {
     try {
       const data = await listModelFiles();
       const list = data.items || data.modelFiles || data.files || data.results || [];
@@ -148,11 +171,24 @@ export default function ModelFilePipelinePanel({ notify }) {
       setRetryableError(null);
       setError((current) => (current === RETRYABLE_DATABASE_MESSAGE ? "" : current));
       setActive(next || null);
+      let nextDerivatives = [];
       if (next?.id) {
         if (FINAL.has(next.status)) {
           getModelFileReport(next.id).then((payload) => setReport(payload.report)).catch(() => setReport(null));
         }
-        listDerivatives(next.id).then((payload) => setDerivatives(payload.items || payload.derivatives || payload.results || [])).catch(() => {});
+        try {
+          const payload = await listDerivatives(next.id);
+          nextDerivatives = payload.items || payload.derivatives || payload.results || [];
+          setDerivatives(nextDerivatives);
+        } catch (_) {
+          setDerivatives([]);
+        }
+        if (
+          resumePolling
+          && (ACTIVE_MODEL.has(next.status) || hasActiveDerivative(nextDerivatives))
+        ) {
+          startPolling(next.id);
+        }
       } else {
         setReport(null);
         setDerivatives([]);
@@ -186,26 +222,58 @@ export default function ModelFilePipelinePanel({ notify }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authReady, user?.uid]);
 
-  const startPolling = (modelFileId) => {
-    clearActivePoll();
-    pollRef.current = window.setInterval(async () => {
-      try {
-        const data = await getModelFile(modelFileId);
-        const modelFile = data.modelFile;
-        setActive(modelFile);
-        if (modelFile?.id) {
-          listDerivatives(modelFile.id).then((payload) => setDerivatives(payload.items || payload.derivatives || [])).catch(() => {});
-        }
-        if (FINAL.has(modelFile?.status) && !activeDerivative) {
-          clearActivePoll();
-          await refresh();
-        }
-      } catch (err) {
-        if (isRetryableApiError(err)) {
-          handleRetryableDatabaseError(err, () => startPolling(modelFileId));
+  const scheduleModelPoll = (modelFileId) => {
+    if (pollCancelledRef.current || pollModelFileIdRef.current !== modelFileId) return;
+    const hidden = typeof document !== "undefined" ? document.hidden : false;
+    const delay = getModelPollDelay({ retryAfterMs: pollRetryAfterMsRef.current, hidden });
+    pollRef.current = window.setTimeout(() => {
+      void runModelPollTick(modelFileId);
+    }, delay);
+  };
+
+  const runModelPollTick = async (modelFileId) => {
+    if (pollCancelledRef.current || pollModelFileIdRef.current !== modelFileId) return;
+    try {
+      const data = await getModelFile(modelFileId);
+      pollRetryAfterMsRef.current = 0;
+      clearRetryTimer();
+      setRetryableError(null);
+      setError((current) => (current === RETRYABLE_DATABASE_MESSAGE ? "" : current));
+
+      const modelFile = data.modelFile;
+      setActive(modelFile);
+      if (modelFile?.id) {
+        try {
+          const payload = await listDerivatives(modelFile.id);
+          const items = payload.items || payload.derivatives || payload.results || [];
+          setDerivatives(items);
+          derivativesRef.current = items;
+        } catch (_) {
+          // Keep polling even if derivative list is temporarily unavailable.
         }
       }
-    }, 2500);
+      if (FINAL.has(modelFile?.status) && !hasActiveDerivative(derivativesRef.current)) {
+        clearActivePoll();
+        await refresh({ resumePolling: false });
+        return;
+      }
+    } catch (err) {
+      if (isRetryableApiError(err)) {
+        pollRetryAfterMsRef.current = getRetryDelayMs(err, 30000);
+        handleRetryableDatabaseError(err, () => startPolling(modelFileId));
+        return;
+      }
+      setError(err?.message || "Could not refresh model status");
+    }
+    scheduleModelPoll(modelFileId);
+  };
+
+  const startPolling = (modelFileId) => {
+    clearActivePoll();
+    pollCancelledRef.current = false;
+    pollModelFileIdRef.current = modelFileId;
+    pollRetryAfterMsRef.current = 0;
+    scheduleModelPoll(modelFileId);
   };
 
   const retryModelPipeline = () => {
