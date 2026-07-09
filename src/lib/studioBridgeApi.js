@@ -1,18 +1,7 @@
 import { authedFetch } from "./billing";
+import { readJsonResponse } from "./apiErrors";
 
-async function readJsonOrThrow(res, fallbackMessage) {
-  const text = await res.text().catch(() => "");
-  let data = null;
-  try {
-    data = text ? JSON.parse(text) : null;
-  } catch (_) {
-    data = null;
-  }
-  if (!res.ok) {
-    throw new Error(data?.error || text || fallbackMessage);
-  }
-  return data || {};
-}
+const readJsonOrThrow = readJsonResponse;
 
 export async function startStudioPairing() {
   const res = await authedFetch("/api/studio/pair/start", { method: "POST" });

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { getRetryDelayMs, isRetryableApiError } from "../lib/apiErrors";
 import { getStudioStatus } from "../lib/studioBridgeApi";
 
 const LIVE_IDLE_MS = 45000;
@@ -32,9 +33,11 @@ export function isStudioSessionLive(session) {
   return session.live !== false;
 }
 
-export function getStudioStatusPollDelay({ connected = false, hidden = false } = {}) {
+export function getStudioStatusPollDelay({ connected = false, hidden = false, retryAfterMs = 0 } = {}) {
   const baseDelay = connected ? CONNECTED_IDLE_POLL_MS : RECOVERING_POLL_MS;
-  return hidden ? Math.max(baseDelay, HIDDEN_MIN_POLL_MS) : baseDelay;
+  const retryDelay = Number.isFinite(Number(retryAfterMs)) ? Number(retryAfterMs) : 0;
+  const delay = Math.max(baseDelay, retryDelay);
+  return hidden ? Math.max(delay, HIDDEN_MIN_POLL_MS) : delay;
 }
 
 /**
@@ -46,6 +49,7 @@ export function useStudioConnection() {
   const [collaborators, setCollaborators] = useState([]);
   const [loading, setLoading] = useState(true);
   const connectedRef = useRef(false);
+  const retryAfterMsRef = useRef(0);
   const refreshRef = useRef(null);
 
   const refresh = useCallback(async () => {
@@ -53,11 +57,17 @@ export function useStudioConnection() {
       const status = await getStudioStatus();
       const active = pickActiveStudioSession(status.sessions || []);
       const nextConnected = isStudioSessionLive(active);
+      retryAfterMsRef.current = 0;
       connectedRef.current = nextConnected;
       setConnected(nextConnected);
       setSessionId(active?.sessionId || active?.id || null);
       setCollaborators(Array.isArray(active?.collaborators) ? active.collaborators : []);
-    } catch (_) {
+    } catch (err) {
+      if (isRetryableApiError(err)) {
+        retryAfterMsRef.current = getRetryDelayMs(err, 30000);
+        return;
+      }
+      retryAfterMsRef.current = 0;
       connectedRef.current = false;
       setConnected(false);
       setSessionId(null);
@@ -88,6 +98,7 @@ export function useStudioConnection() {
       const delay = getStudioStatusPollDelay({
         connected: connectedRef.current,
         hidden,
+        retryAfterMs: retryAfterMsRef.current,
       });
       timer = window.setTimeout(() => {
         Promise.resolve(refreshRef.current?.()).finally(() => {

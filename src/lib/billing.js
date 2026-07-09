@@ -1,9 +1,12 @@
 // src/lib/billing.js
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { BACKEND_URL } from "../config";
+import { getRetryDelayMs, isRetryableApiError, readJsonResponse } from "./apiErrors";
 import { getProductAnalyticsHeaders } from "./productAnalytics";
 
 const API_ORIGIN = BACKEND_URL;
+const TIMEZONE_SUCCESS_THROTTLE_MS = 12 * 60 * 60 * 1000;
+const TIMEZONE_RETRY_THROTTLE_MS = 5 * 60 * 1000;
 
 let authInitPromise = null;
 
@@ -27,6 +30,38 @@ async function getIdToken({ force = false } = {}) {
   const user = getAuth().currentUser || (await waitForAuthInit());
   if (!user) throw new Error("Not signed in");
   return user.getIdToken(force);
+}
+
+function readStoredNumber(key) {
+  try {
+    const value = window.localStorage.getItem(key);
+    const number = Number(value);
+    return Number.isFinite(number) ? number : null;
+  } catch (_) {
+    return null;
+  }
+}
+
+function writeStoredNumber(key, value) {
+  try {
+    window.localStorage.setItem(key, String(value));
+  } catch (_) {
+    /* best effort */
+  }
+}
+
+function removeStoredValue(key) {
+  try {
+    window.localStorage.removeItem(key);
+  } catch (_) {
+    /* best effort */
+  }
+}
+
+function timezoneStorageKey(uid, timezone, suffix) {
+  const safeUid = encodeURIComponent(uid || "anonymous");
+  const safeTimezone = encodeURIComponent(timezone || "unknown");
+  return `nexus:timezone:${safeUid}:${safeTimezone}:${suffix}`;
 }
 
 // Core authed fetch. Adds Bearer token, disables caches, retries once on 401.
@@ -89,19 +124,7 @@ export async function getEntitlements({ noCache = true } = {}) {
 
   const contentType = r.headers.get("content-type") || "";
   if (!r.ok) {
-    const text = await r.text().catch(() => "");
-    let payload = null;
-    try {
-      payload = text ? JSON.parse(text) : null;
-    } catch (_) {
-      /* keep raw text */
-    }
-    const friendly = payload?.message || payload?.error || text;
-    const err = new Error(friendly || `entitlements ${r.status}`);
-    err.status = r.status;
-    err.code = payload?.code || null;
-    err.retryable = payload?.retryable === true;
-    throw err;
+    await readJsonResponse(r, `entitlements ${r.status}`);
   }
   if (!contentType.includes("application/json")) {
     const text = await r.text().catch(() => "");
@@ -216,13 +239,34 @@ export function summarizeEntitlements(e) {
 
 export async function submitBrowserTimezone(timezone) {
   if (!timezone) return null;
-  const r = await authedFetch("/api/billing/timezone", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ timezone }),
-  });
-  if (!r.ok) return null;
-  return r.json().catch(() => null);
+  const user = getAuth().currentUser || (await waitForAuthInit());
+  if (!user) return null;
+
+  const now = Date.now();
+  const successKey = timezoneStorageKey(user.uid, timezone, "sentAt");
+  const retryKey = timezoneStorageKey(user.uid, timezone, "retryAfter");
+  const retryAfter = readStoredNumber(retryKey);
+  if (retryAfter && retryAfter > now) return null;
+
+  const lastSuccess = readStoredNumber(successKey);
+  if (lastSuccess && now - lastSuccess < TIMEZONE_SUCCESS_THROTTLE_MS) return null;
+
+  try {
+    const r = await authedFetch("/api/billing/timezone", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ timezone }),
+    });
+    const data = await readJsonResponse(r, "Failed to submit browser timezone");
+    writeStoredNumber(successKey, now);
+    removeStoredValue(retryKey);
+    return data;
+  } catch (err) {
+    if (isRetryableApiError(err)) {
+      writeStoredNumber(retryKey, now + getRetryDelayMs(err, TIMEZONE_RETRY_THROTTLE_MS));
+    }
+    return null;
+  }
 }
 
 async function postCheckout(body) {

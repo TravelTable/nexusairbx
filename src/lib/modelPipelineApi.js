@@ -1,21 +1,7 @@
 import { authedFetch } from "./billing";
+import { readJsonResponse } from "./apiErrors";
 
-async function readJson(res, fallbackMessage) {
-  const text = await res.text().catch(() => "");
-  let data = null;
-  try {
-    data = text ? JSON.parse(text) : null;
-  } catch (_) {
-    data = null;
-  }
-  if (!res.ok) {
-    const error = new Error(data?.error || text || fallbackMessage);
-    error.code = data?.code || null;
-    error.status = res.status;
-    throw error;
-  }
-  return data || {};
-}
+const readJson = readJsonResponse;
 
 export async function createModelUploadSession(file) {
   const res = await authedFetch("/api/model-files/upload-sessions", {

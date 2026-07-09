@@ -27,6 +27,8 @@ import { useGameProfile } from "../../hooks/useGameProfile";
 import { useAiScripts } from "../../hooks/useAiScripts";
 import { CHAT_MODES } from "../../components/ai/chatConstants";
 import { BACKEND_URL } from "../../config";
+import { authedFetch } from "../../lib/billing";
+import { readJsonResponse } from "../../lib/apiErrors";
 import { FEATURE_FLAGS } from "../../lib/featureFlags";
 import { approveAgentStep, getAgentRun, restoreAgentRun } from "../../lib/workflowApi";
 import {
@@ -558,12 +560,8 @@ export function useAiWorkspaceController() {
 
     const fetchTeams = async () => {
       try {
-        const token = await user.getIdToken();
-        const res = await fetch(`${BACKEND_URL}/api/user/teams`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (!res.ok) return;
-        const data = await res.json();
+        const res = await authedFetch("/api/user/teams", { noCache: true });
+        const data = await readJsonResponse(res, "Failed to load teams.");
         setTeams(data.teams || []);
       } catch (e) {
         // best-effort

@@ -108,5 +108,44 @@ describe("useStudioConnection", () => {
     expect(getStudioStatusPollDelay({ connected: true, hidden: false })).toBe(15000);
     expect(getStudioStatusPollDelay({ connected: false, hidden: false })).toBe(5000);
     expect(getStudioStatusPollDelay({ connected: false, hidden: true })).toBe(60000);
+    expect(getStudioStatusPollDelay({ connected: true, hidden: false, retryAfterMs: 30000 })).toBe(30000);
+  });
+
+  test("retryable status errors preserve the last connection and back off", async () => {
+    getStudioStatus
+      .mockResolvedValueOnce({
+        sessions: [{ sessionId: "studio_1", status: "connected", live: true }],
+      })
+      .mockRejectedValueOnce(Object.assign(new Error("Database busy"), {
+        status: 503,
+        retryable: true,
+        retryAfterMs: 30000,
+      }))
+      .mockResolvedValue({
+        sessions: [{ sessionId: "studio_1", status: "connected", live: true }],
+      });
+
+    const hook = renderHook(() => useStudioConnection());
+
+    await waitFor(() => expect(hook.result.current.loading).toBe(false));
+    expect(hook.result.current.connected).toBe(true);
+
+    await act(async () => {
+      jest.advanceTimersByTime(15000);
+      await Promise.resolve();
+    });
+    await waitFor(() => expect(getStudioStatus).toHaveBeenCalledTimes(2));
+    expect(hook.result.current.connected).toBe(true);
+
+    act(() => {
+      jest.advanceTimersByTime(29999);
+    });
+    expect(getStudioStatus).toHaveBeenCalledTimes(2);
+
+    await act(async () => {
+      jest.advanceTimersByTime(1);
+      await Promise.resolve();
+    });
+    await waitFor(() => expect(getStudioStatus).toHaveBeenCalledTimes(3));
   });
 });

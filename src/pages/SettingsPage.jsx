@@ -37,6 +37,7 @@ import { auth } from "../firebase";
 import { useBilling } from "../context/BillingContext";
 import { useSettings } from "../context/SettingsContext";
 import { authedFetch } from "../lib/billing";
+import { isRetryableApiError, readJsonResponse } from "../lib/apiErrors";
 import {
   beginRobloxOAuth,
   beginRobloxReauthorization,
@@ -121,17 +122,7 @@ const STUDIO_POLICY_OPTIONS = [
   { value: "off", label: "Never push automatically" },
 ];
 
-async function readJson(res, fallbackMessage) {
-  const text = await res.text().catch(() => "");
-  let data = null;
-  try {
-    data = text ? JSON.parse(text) : null;
-  } catch (_) {
-    data = null;
-  }
-  if (!res.ok) throw new Error(data?.error || text || fallbackMessage);
-  return data || {};
-}
+const readJson = readJsonResponse;
 
 function formatNumber(value) {
   const number = Number(value);
@@ -464,7 +455,17 @@ export default function SettingsPage() {
       const data = await readJson(await authedFetch("/api/user/teams", { noCache: true }), "Failed to load teams.");
       setTeamState({ status: "ready", teams: Array.isArray(data.teams) ? data.teams : [], error: "" });
     } catch (error) {
-      setTeamState((state) => ({ ...state, status: "error", error: error.message || "Failed to load teams." }));
+      setTeamState((state) => {
+        const message = isRetryableApiError(error)
+          ? "Teams are temporarily unavailable while the database is busy. Existing team data is preserved."
+          : error.message || "Failed to load teams.";
+        return {
+          ...state,
+          status: isRetryableApiError(error) && state.teams.length > 0 ? "ready" : "error",
+          error: message,
+          retryable: isRetryableApiError(error),
+        };
+      });
     }
   }, [user]);
 

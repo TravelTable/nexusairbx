@@ -60,6 +60,23 @@ test("shows actual upload progress and completion state", async () => {
   await waitFor(() => expect(api.completeModelUpload).toHaveBeenCalledWith("mf_1"));
 });
 
+test("shows retryable database busy state with manual retry", async () => {
+  api.listModelFiles
+    .mockRejectedValueOnce(Object.assign(new Error("Database temporarily unavailable"), {
+      status: 503,
+      retryable: true,
+      retryAfterMs: 60000,
+    }))
+    .mockResolvedValueOnce({ items: [] });
+
+  render(<ModelFilePipelinePanel />);
+
+  expect(await screen.findByText("Database is temporarily busy. Retry in a moment.")).toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: /retry/i }));
+
+  await waitFor(() => expect(api.listModelFiles).toHaveBeenCalledTimes(2));
+});
+
 test("requires explicit confirmation for aggressive derivative plans", async () => {
   api.listModelFiles.mockResolvedValue({ items: [{ id: "mf_1", status: "valid", originalFilename: "tree.glb" }] });
   api.getModelFileReport.mockResolvedValue({ report: { status: "valid", rulesVersion: "glb-validation-1", summary: {}, metrics: {}, issues: [] } });

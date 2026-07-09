@@ -39,11 +39,13 @@ import {
   uploadModelFileToSignedUrl,
 } from "../../lib/modelPipelineApi";
 import { useBilling } from "../../context/BillingContext";
+import { getRetryDelayMs, isRetryableApiError } from "../../lib/apiErrors";
 
 const VALIDATED = new Set(["valid", "valid_with_warnings"]);
 const FINAL = new Set(["valid", "valid_with_warnings", "invalid", "failed", "cancelled", "deleted", "expired"]);
 const ACTIVE_MODEL = new Set(["awaiting_upload", "uploaded", "queued", "validating"]);
 const ACTIVE_DERIVATIVE = new Set(["queued", "optimizing", "validating"]);
+const RETRYABLE_DATABASE_MESSAGE = "Database is temporarily busy. Retry in a moment.";
 
 function statusText(value) {
   return String(value || "unknown").replace(/_/g, " ");
@@ -82,9 +84,11 @@ export default function ModelFilePipelinePanel({ notify }) {
   const [link, setLink] = useState("");
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
+  const [retryableError, setRetryableError] = useState(null);
   const [progress, setProgress] = useState(null);
   const fileInputRef = useRef(null);
   const pollRef = useRef(null);
+  const retryTimerRef = useRef(null);
 
   const canOptimize = active?.id && VALIDATED.has(active.status);
   const canPrepareRobloxUpload = active?.id && VALIDATED.has(active.status);
@@ -98,11 +102,51 @@ export default function ModelFilePipelinePanel({ notify }) {
     return `${active.originalFilename || active.safeFilename || active.id} · ${statusText(active.status)}${active.validationStage ? ` · ${statusText(active.validationStage)}` : ""}`;
   }, [active]);
 
+  const clearRetryTimer = () => {
+    if (retryTimerRef.current) {
+      window.clearTimeout(retryTimerRef.current);
+      retryTimerRef.current = null;
+    }
+  };
+
+  const clearActivePoll = () => {
+    if (pollRef.current) {
+      window.clearInterval(pollRef.current);
+      pollRef.current = null;
+    }
+  };
+
+  const handleRetryableDatabaseError = (err, retryFn) => {
+    const delayMs = getRetryDelayMs(err, 30000);
+    clearActivePoll();
+    clearRetryTimer();
+    setRetryableError({ retryAfterMs: delayMs });
+    setError(RETRYABLE_DATABASE_MESSAGE);
+    retryTimerRef.current = window.setTimeout(() => {
+      retryTimerRef.current = null;
+      setRetryableError(null);
+      setError((current) => (current === RETRYABLE_DATABASE_MESSAGE ? "" : current));
+      retryFn?.();
+    }, delayMs);
+  };
+
+  const setPipelineError = (err, fallbackMessage, retryFn) => {
+    if (isRetryableApiError(err)) {
+      handleRetryableDatabaseError(err, retryFn);
+      return;
+    }
+    setRetryableError(null);
+    setError(err?.message || fallbackMessage);
+  };
+
   const refresh = async () => {
     try {
       const data = await listModelFiles();
       const list = data.items || data.modelFiles || data.files || data.results || [];
       const next = active?.id ? list.find((file) => file.id === active.id) : firstModel(list);
+      clearRetryTimer();
+      setRetryableError(null);
+      setError((current) => (current === RETRYABLE_DATABASE_MESSAGE ? "" : current));
       setActive(next || null);
       if (next?.id) {
         if (FINAL.has(next.status)) {
@@ -118,7 +162,7 @@ export default function ModelFilePipelinePanel({ notify }) {
       if (err?.status === 404) {
         setError("Model pipeline API is not available on this backend yet.");
       } else {
-        setError(err?.message || "Could not load model files");
+        setPipelineError(err, "Could not load model files", () => refresh().catch(() => {}));
       }
     }
   };
@@ -128,20 +172,22 @@ export default function ModelFilePipelinePanel({ notify }) {
     if (!user) {
       setError("Not signed in");
       return () => {
-        if (pollRef.current) window.clearInterval(pollRef.current);
+        clearActivePoll();
+        clearRetryTimer();
       };
     }
     setError("");
     getModelFileRules().then((payload) => setRules(payload)).catch(() => {});
     refresh().catch(() => {});
     return () => {
-      if (pollRef.current) window.clearInterval(pollRef.current);
+      clearActivePoll();
+      clearRetryTimer();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authReady, user?.uid]);
 
   const startPolling = (modelFileId) => {
-    if (pollRef.current) window.clearInterval(pollRef.current);
+    clearActivePoll();
     pollRef.current = window.setInterval(async () => {
       try {
         const data = await getModelFile(modelFileId);
@@ -151,12 +197,25 @@ export default function ModelFilePipelinePanel({ notify }) {
           listDerivatives(modelFile.id).then((payload) => setDerivatives(payload.items || payload.derivatives || [])).catch(() => {});
         }
         if (FINAL.has(modelFile?.status) && !activeDerivative) {
-          window.clearInterval(pollRef.current);
-          pollRef.current = null;
+          clearActivePoll();
           await refresh();
         }
-      } catch (_) {}
+      } catch (err) {
+        if (isRetryableApiError(err)) {
+          handleRetryableDatabaseError(err, () => startPolling(modelFileId));
+        }
+      }
     }, 2500);
+  };
+
+  const retryModelPipeline = () => {
+    clearRetryTimer();
+    setRetryableError(null);
+    setError((current) => (current === RETRYABLE_DATABASE_MESSAGE ? "" : current));
+    refresh().catch(() => {});
+    if (active?.id && !FINAL.has(active.status)) {
+      startPolling(active.id);
+    }
   };
 
   const handleFile = async (event) => {
@@ -187,7 +246,7 @@ export default function ModelFilePipelinePanel({ notify }) {
       startPolling(session.modelFileId);
       await refresh();
     } catch (err) {
-      setError(err?.message || "GLB upload failed");
+      setPipelineError(err, "GLB upload failed", () => refresh().catch(() => {}));
     } finally {
       setBusy("");
       setProgress(null);
@@ -203,7 +262,7 @@ export default function ModelFilePipelinePanel({ notify }) {
       setPlan(next);
       setAggressiveConfirmed(false);
     } catch (err) {
-      setError(err?.message || "Could not create optimization plan");
+      setPipelineError(err, "Could not create optimization plan", createPlan);
     } finally {
       setBusy("");
     }
@@ -220,7 +279,7 @@ export default function ModelFilePipelinePanel({ notify }) {
       startPolling(active.id);
       await refresh();
     } catch (err) {
-      setError(err?.message || "Could not queue derivative");
+      setPipelineError(err, "Could not queue derivative", queueDerivative);
     } finally {
       setBusy("");
     }
@@ -438,7 +497,23 @@ export default function ModelFilePipelinePanel({ notify }) {
           <div className="mt-1 text-white/45">{busy === "complete" ? "Verifying upload" : `${formatBytes(progress.loaded)} / ${formatBytes(progress.total)}`}</div>
         </div>
       )}
-      {error && <div className="mt-2 rounded-md border border-rose-300/25 bg-rose-300/10 p-2 text-rose-100">{error}</div>}
+      {error && (
+        <div className="mt-2 rounded-md border border-rose-300/25 bg-rose-300/10 p-2 text-rose-100">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <span>{error}</span>
+            {retryableError && (
+              <button
+                type="button"
+                onClick={retryModelPipeline}
+                className="inline-flex items-center justify-center gap-1 rounded-md border border-rose-100/25 px-2 py-1 text-xs font-bold text-rose-50 hover:bg-rose-100/10"
+              >
+                <RefreshCw className="h-3.5 w-3.5" />
+                Retry
+              </button>
+            )}
+          </div>
+        </div>
+      )}
 
       {active && (
         <div className="mt-3 flex flex-wrap gap-2">
