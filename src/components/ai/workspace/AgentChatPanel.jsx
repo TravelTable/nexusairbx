@@ -85,6 +85,8 @@ export default function AgentChatPanel({
   includedUsage,
   premiumBalance,
   isFreeUsagePlan,
+  billingLoading,
+  billingError,
   themePrimary,
   themeSecondary,
   onModeChange,
@@ -249,6 +251,8 @@ export default function AgentChatPanel({
         includedUsage={includedUsage}
         premiumBalance={premiumBalance}
         isFreeUsagePlan={isFreeUsagePlan}
+        billingLoading={billingLoading}
+        billingError={billingError}
         themePrimary={themePrimary}
         themeSecondary={themeSecondary}
         onFileUpload={onFileUpload}

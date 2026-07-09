@@ -144,6 +144,8 @@ export function useAiWorkspaceController() {
     subLimit,
     resetsAt,
     refresh: refreshBilling,
+    loading: billingLoading,
+    error: billingError,
     entitlements,
     isPremium,
     isStarterOrAbove,
@@ -1584,6 +1586,8 @@ export function useAiWorkspaceController() {
       includedUsage,
       premiumBalance,
       isFreeUsagePlan,
+      billingLoading,
+      billingError,
     },
     starterPromo,
     navigation: {

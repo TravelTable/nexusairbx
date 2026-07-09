@@ -23,6 +23,7 @@ const EMPTY_AGENT_RUN = {
   steps: [],
   runId: null,
   snapshotCount: 0,
+  unresolvedAssets: [],
   logs: [],
   errors: [],
 };
@@ -35,6 +36,7 @@ function normalizeRunState(value) {
       "generating",
       "validating",
       "ready_to_apply",
+      "assets_pending",
       "applying",
       "applied",
       "waiting_for_tool",
@@ -226,6 +228,9 @@ export function useArtifactWorkspace(messages, { isGenerating, generationStage, 
     if (!isGenerating) {
       const steps = latestWithSteps?.steps || [];
       const persistedRunState = normalizeRunState(latestAssistant?.metadata?.runState);
+      const unresolvedAssets = Array.isArray(latestAssistant?.metadata?.unresolvedAssets)
+        ? latestAssistant.metadata.unresolvedAssets
+        : [];
       return {
         ...EMPTY_AGENT_RUN,
         status: persistedRunState || (projectArtifact || artifacts.length ? "push_skipped" : "idle"),
@@ -233,6 +238,7 @@ export function useArtifactWorkspace(messages, { isGenerating, generationStage, 
         steps,
         runId: latestAssistant?.runId || latestWithSteps?.runId || null,
         snapshotCount: countStepSnapshots(steps),
+        unresolvedAssets,
       };
     }
     const stage = generationStage || pendingMessage?.stage || "Working...";

@@ -41,6 +41,7 @@ export default function BuildDetailsPanel({
       "generating",
       "validating",
       "ready_to_apply",
+      "assets_pending",
       "applying",
       "applied",
       "succeeded",

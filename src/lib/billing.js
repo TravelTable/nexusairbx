@@ -90,7 +90,16 @@ export async function getEntitlements({ noCache = true } = {}) {
   const contentType = r.headers.get("content-type") || "";
   if (!r.ok) {
     const text = await r.text().catch(() => "");
-    throw new Error(`entitlements ${r.status}: ${text}`);
+    let friendly = text;
+    try {
+      const payload = text ? JSON.parse(text) : null;
+      if (payload && typeof payload === "object") {
+        friendly = payload.message || payload.error || text;
+      }
+    } catch (_) {
+      /* keep raw text */
+    }
+    throw new Error(`entitlements ${r.status}: ${friendly}`);
   }
   if (!contentType.includes("application/json")) {
     const text = await r.text().catch(() => "");
@@ -117,7 +126,9 @@ export function resolveUsagePercent({
   includedUsage = null,
   tokensLeft = null,
   tokensLimit = null,
+  usageLoading = false,
 } = {}) {
+  if (usageLoading) return null;
   if (isFreeUsagePlan && dailyUsage?.percentUsed != null) {
     return clampPercent(dailyUsage.percentUsed);
   }
@@ -127,6 +138,7 @@ export function resolveUsagePercent({
   if (typeof tokensLeft === "number" && typeof tokensLimit === "number" && tokensLimit > 0) {
     return clampPercent(((tokensLimit - tokensLeft) / tokensLimit) * 100);
   }
+  if (isFreeUsagePlan && !dailyUsage) return null;
   return 0;
 }
 

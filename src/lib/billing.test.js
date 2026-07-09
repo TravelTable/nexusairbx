@@ -72,6 +72,11 @@ describe("resolveUsagePercent", () => {
       tokensLimit: 1000,
     })).toBe(75);
   });
+
+  test("returns null while usage is loading or unavailable for free plans", () => {
+    expect(resolveUsagePercent({ isFreeUsagePlan: true, usageLoading: true })).toBeNull();
+    expect(resolveUsagePercent({ isFreeUsagePlan: true, dailyUsage: null })).toBeNull();
+  });
 });
 
 describe("dollarsFromMicros", () => {

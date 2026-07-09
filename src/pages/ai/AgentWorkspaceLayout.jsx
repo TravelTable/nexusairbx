@@ -48,7 +48,7 @@ async function pollStudioCommand(commandId, { timeoutMs = 30000 } = {}) {
 
 export default function AgentWorkspaceLayout({ controller }) {
   const { billing, uiState, modules, handlers, studio, roblox, starterPromo } = controller;
-  const { planKey, totalRemaining, subLimit, resetsAt, isPremium, isStarterOrAbove, unlimitedTokens, devOverride, dailyUsage, includedUsage, premiumBalance, isFreeUsagePlan } = billing;
+  const { planKey, totalRemaining, subLimit, resetsAt, isPremium, isStarterOrAbove, unlimitedTokens, devOverride, dailyUsage, includedUsage, premiumBalance, isFreeUsagePlan, billingLoading, billingError } = billing;
   const {
     user,
     isMobile,
@@ -735,6 +735,8 @@ export default function AgentWorkspaceLayout({ controller }) {
           includedUsage={includedUsage}
           premiumBalance={premiumBalance}
           isFreeUsagePlan={isFreeUsagePlan}
+          billingLoading={billingLoading}
+          billingError={billingError}
           themePrimary={currentTheme.primary}
           themeSecondary={currentTheme.secondary}
           onModeChange={(m) => chat.updateChatMode(chat.currentChatId, m)}

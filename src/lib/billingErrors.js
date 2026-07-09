@@ -40,6 +40,45 @@ const FREE_USAGE_MESSAGES = {
 export const DEFAULT_INSUFFICIENT_TOKENS_MESSAGE =
   "Usage limit reached. Upgrade, add Premium Balance, or wait for your reset.";
 
+const INFRASTRUCTURE_ERROR_CODES = new Set([
+  "FIRESTORE_QUOTA_EXCEEDED",
+  "SERVICE_CAPACITY_EXCEEDED",
+]);
+
+const INFRASTRUCTURE_ERROR_MESSAGES = {
+  FIRESTORE_QUOTA_EXCEEDED:
+    "Our database is temporarily busy. Please wait a moment and try again.",
+  SERVICE_CAPACITY_EXCEEDED:
+    "The AI service is temporarily at capacity. Please try again shortly.",
+};
+
+function looksLikeInfrastructureQuotaError(input) {
+  const code = input?.code;
+  if (INFRASTRUCTURE_ERROR_CODES.has(code)) return true;
+  const message = String(input?.message || input?.error || input || "").toLowerCase();
+  return message.includes("resource_exhausted") || message.includes("quota exceeded");
+}
+
+export function formatUserFacingError(input) {
+  if (!input) return "Something went wrong. Please try again.";
+  if (typeof input === "string") {
+    if (looksLikeInfrastructureQuotaError({ message: input })) {
+      return INFRASTRUCTURE_ERROR_MESSAGES.FIRESTORE_QUOTA_EXCEEDED;
+    }
+    return input;
+  }
+  const code = input?.code || input?.errorCode || null;
+  if (INFRASTRUCTURE_ERROR_CODES.has(code)) {
+    return INFRASTRUCTURE_ERROR_MESSAGES[code] || INFRASTRUCTURE_ERROR_MESSAGES.FIRESTORE_QUOTA_EXCEEDED;
+  }
+  if (looksLikeInfrastructureQuotaError(input)) {
+    return INFRASTRUCTURE_ERROR_MESSAGES.FIRESTORE_QUOTA_EXCEEDED;
+  }
+  const parsed = parseApiErrorPayload(input);
+  if (parsed?.message) return parsed.message;
+  return String(input?.message || input?.error || DEFAULT_INSUFFICIENT_TOKENS_MESSAGE);
+}
+
 export function isInsufficientTokensError(input) {
   if (!input) return false;
   const code = input.code || input.error || input.errorCode;
@@ -79,6 +118,20 @@ export function insufficientTokensToast(planKey = "free", { navigate } = {}) {
 
 export function parseApiErrorPayload(payload) {
   if (!payload || typeof payload !== "object") return null;
+  if (INFRASTRUCTURE_ERROR_CODES.has(payload.code)) {
+    return {
+      code: payload.code,
+      message: INFRASTRUCTURE_ERROR_MESSAGES[payload.code] || payload.message || formatUserFacingError(payload),
+      retryable: payload.retryable !== false,
+    };
+  }
+  if (looksLikeInfrastructureQuotaError(payload)) {
+    return {
+      code: "FIRESTORE_QUOTA_EXCEEDED",
+      message: INFRASTRUCTURE_ERROR_MESSAGES.FIRESTORE_QUOTA_EXCEEDED,
+      retryable: true,
+    };
+  }
   if (isInsufficientTokensError(payload)) {
     const code = payload.code || payload.error || INSUFFICIENT_TOKENS_CODE;
     return {

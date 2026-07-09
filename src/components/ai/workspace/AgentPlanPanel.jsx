@@ -19,6 +19,7 @@ export default function AgentPlanPanel({
     "generating",
     "validating",
     "ready_to_apply",
+    "assets_pending",
     "applying",
     "applied",
     "succeeded",
@@ -28,7 +29,7 @@ export default function AgentPlanPanel({
   const showSteps = FEATURE_FLAGS.unifiedAgent && steps.length > 0;
   const canRestore = Boolean(agentRun?.runId && agentRun?.snapshotCount > 0);
 
-  if (!active && !plan && !showSteps && !["conflict", "failed", "cancelled", "blocked", "iteration_limit", "timed_out", "push_skipped"].includes(agentRun?.status)) return null;
+  if (!active && !plan && !showSteps && !["conflict", "failed", "cancelled", "blocked", "iteration_limit", "timed_out", "push_skipped", "assets_pending"].includes(agentRun?.status)) return null;
 
   return (
     <div className="rounded-2xl border border-white/5 bg-white/[0.02] p-4 space-y-3">
@@ -82,6 +83,15 @@ export default function AgentPlanPanel({
       {agentRun?.status === "timed_out" && (
         <div className="rounded-xl border border-red-400/20 bg-red-400/10 px-3 py-2 text-xs text-red-100">
           The Studio agent stopped after reaching the runtime limit.
+        </div>
+      )}
+
+      {agentRun?.status === "assets_pending" && (
+        <div className="rounded-xl border border-amber-400/20 bg-amber-400/10 px-3 py-2 text-xs text-amber-100">
+          {Array.isArray(agentRun?.unresolvedAssets) && agentRun.unresolvedAssets.length > 0
+            ? `${agentRun.unresolvedAssets.length} Roblox icon${agentRun.unresolvedAssets.length === 1 ? "" : "s"} still uploading or unresolved. `
+            : "Roblox icons are still uploading or unresolved. "}
+          Use Project Assets to retry upload, or enable auto-upload before generating.
         </div>
       )}
 

@@ -52,6 +52,8 @@ export function TokenBar({
   includedUsage = null,
   isFreeUsagePlan = false,
   premiumBalance = null,
+  usageLoading = false,
+  usageUnavailable = false,
 }) {
   const planInfo = PLAN_INFO[plan] || PLAN_INFO.free;
   const usageLabel = isFreeUsagePlan ? "Daily usage" : "Included usage";
@@ -91,15 +93,22 @@ export function TokenBar({
     includedUsage,
     tokensLeft,
     tokensLimit,
+    usageLoading,
   });
-  const isLow = percentUsed >= 85;
+  const isLow = typeof percentUsed === "number" && percentUsed >= 85;
+  const usageLabelText = usageLoading
+    ? "checking..."
+    : usageUnavailable || percentUsed == null
+      ? "unavailable"
+      : `${percentUsed}%`;
 
   return (
     <div id="cloud-token-bar" className="relative z-10 flex w-full flex-col gap-1.5 px-0.5">
       <div className="flex items-center justify-between gap-2">
         <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] font-semibold text-gray-300">
           <span>
-            {usageLabel}: <span className="font-bold text-white">{percentUsed}%</span> used
+            {usageLabel}: <span className="font-bold text-white">{usageLabelText}</span>
+            {!usageLoading && !usageUnavailable && percentUsed != null ? " used" : ""}
           </span>
           {premiumDollars && (
             <span>
@@ -127,7 +136,7 @@ export function TokenBar({
         aria-label={usageLabel}
         aria-valuemin={0}
         aria-valuemax={100}
-        aria-valuenow={percentUsed}
+        aria-valuenow={percentUsed ?? 0}
       >
         <div
           className={`h-full rounded-full transition-all duration-500 ${
@@ -137,7 +146,7 @@ export function TokenBar({
                 ? "bg-gradient-to-r from-[#9b5de5] to-[#00f5d4]"
                 : "bg-[#00f5d4]"
           } ${isLow ? "animate-pulse shadow-[0_0_10px_rgba(255,0,0,0.5)]" : ""}`}
-          style={{ width: `${percentUsed}%` }}
+          style={{ width: `${usageLoading || usageUnavailable || percentUsed == null ? 0 : percentUsed}%` }}
         />
       </div>
     </div>

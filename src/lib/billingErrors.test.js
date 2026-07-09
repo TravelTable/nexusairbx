@@ -4,6 +4,7 @@ import {
   insufficientTokensMessage,
   insufficientTokensToast,
   parseApiErrorPayload,
+  formatUserFacingError,
 } from "./billingErrors";
 
 describe("billingErrors", () => {
@@ -27,5 +28,12 @@ describe("billingErrors", () => {
     const parsed = parseApiErrorPayload({ code: "FREE_CONCURRENT_JOB_LIMIT" });
     expect(parsed.message).toMatch(/one AI job/i);
     expect(parsed.message).not.toMatch(/FREE_CONCURRENT_JOB_LIMIT/);
+  });
+
+  it("maps infrastructure quota errors to friendly copy", () => {
+    expect(formatUserFacingError("8 RESOURCE_EXHAUSTED: Quota exceeded.")).toMatch(/temporarily busy/i);
+    const parsed = parseApiErrorPayload({ code: "FIRESTORE_QUOTA_EXCEEDED", retryable: true });
+    expect(parsed.message).toMatch(/temporarily busy/i);
+    expect(parsed.retryable).toBe(true);
   });
 });

@@ -13,6 +13,7 @@ import ReasoningPanel from "./ReasoningPanel";
 import { AI_EVENTS, emitAiEvent } from "../../../lib/aiEvents";
 import AgentStepList from "../workspace/AgentStepList";
 import { FEATURE_FLAGS } from "../../../lib/featureFlags";
+import { formatUserFacingError } from "../../../lib/billingErrors";
 import { Badge } from "../../shadcn/badge";
 import { Button } from "../../shadcn/button";
 import {
@@ -38,6 +39,7 @@ function fileTypeChips(files) {
 const RUN_STATE_META = {
   applied: { label: "Applied to Studio", className: "border-[#00f5d4]/30 bg-[#00f5d4]/10 text-[#00f5d4]" },
   ready_to_apply: { label: "Ready to push", className: "border-[#00f5d4]/25 bg-[#00f5d4]/5 text-[#00f5d4]" },
+  assets_pending: { label: "Icons uploading", className: "border-amber-400/30 bg-amber-400/10 text-amber-200" },
   applying: { label: "Applying to Studio…", className: "border-amber-400/30 bg-amber-400/10 text-amber-200" },
   push_skipped: { label: "Saved to workspace", className: "border-white/10 bg-white/5 text-gray-400" },
   conflict: { label: "Studio conflict", className: "border-amber-400/30 bg-amber-400/10 text-amber-200" },
@@ -123,7 +125,7 @@ export default function AssistantBubble({
 
       {m.error && (
         <div className="text-sm text-red-300">
-          {m.error}
+          {formatUserFacingError(m.error)}
         </div>
       )}
 
@@ -218,6 +220,9 @@ export default function AssistantBubble({
                     ) : null}
                     <ArtifactDescription className="mt-1">
                       {fileCount > 0 ? `${fileCount} file${fileCount === 1 ? "" : "s"}` : "1 script"} ready in the workspace
+                      {Array.isArray(m.metadata?.unresolvedAssets) && m.metadata.unresolvedAssets.length > 0
+                        ? ` · ${m.metadata.unresolvedAssets.length} icon(s) pending Roblox upload`
+                        : ""}
                     </ArtifactDescription>
                   </div>
                 </div>

@@ -244,6 +244,8 @@ export default function ChatComposer({
   includedUsage,
   premiumBalance,
   isFreeUsagePlan,
+  billingLoading = false,
+  billingError = null,
   themePrimary,
   themeSecondary,
   refineTarget,
@@ -495,6 +497,8 @@ export default function ChatComposer({
               includedUsage={includedUsage}
               premiumBalance={premiumBalance}
               isFreeUsagePlan={isFreeUsagePlan}
+              usageLoading={billingLoading}
+              usageUnavailable={!unlimitedTokens && (Boolean(billingError) || (isFreeUsagePlan && !billingLoading && !dailyUsage))}
             />
 
             <div className="flex items-end gap-2 rounded-xl border border-white/10 bg-black/30 p-1.5 transition-[border-color,box-shadow] duration-200 ease-out focus-within:border-[#00f5d4]/35 focus-within:shadow-[0_0_24px_rgba(0,245,212,0.10)] motion-reduce:transition-none">

@@ -17,6 +17,7 @@ export const DEFAULT_SETTINGS = Object.freeze({
   studioAutoPushPolicy: "after_validation",
   lastAuthorizedStudioSessionId: null,
   robloxAssetUploadsEnabled: false,
+  allowPlaceholderAssets: false,
   useExamples: false,
   selectedExampleIds: Object.freeze([]),
   robloxWritePolicy: Object.freeze({
@@ -81,7 +82,7 @@ function sanitizeValue(key, value, { strict = false } = {}) {
     return value;
   }
 
-  if (["enableGameWizard", "showThinking", "studioAutoPushEnabled", "robloxAssetUploadsEnabled", "useExamples"].includes(key)) {
+  if (["enableGameWizard", "showThinking", "studioAutoPushEnabled", "robloxAssetUploadsEnabled", "allowPlaceholderAssets", "useExamples"].includes(key)) {
     if (typeof value !== "boolean") {
       if (strict) throw new Error(`${key} must be a boolean`);
       return DEFAULT_SETTINGS[key];

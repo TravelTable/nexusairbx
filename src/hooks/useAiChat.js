@@ -52,6 +52,7 @@ import {
   isInsufficientTokensError,
   insufficientTokensToast,
   parseApiErrorPayload,
+  formatUserFacingError,
 } from "../lib/billingErrors";
 import {
   describeChatAttachments,
@@ -578,7 +579,7 @@ export function useAiChat(user, settings, refreshBilling, notify) {
               if (activeChatId) delete streamStatesRef.current[activeChatId];
               return;
             }
-            errorMsg = errData.message || errData.error || errorMsg;
+            errorMsg = formatUserFacingError(errData.message || errData.error || errorMsg);
             errorCode = errData.code || null;
           } else {
             const text = await jobRes.text();
@@ -743,17 +744,18 @@ export function useAiChat(user, settings, refreshBilling, notify) {
         };
 
         const failAndReject = (err, tag = "network") => {
+          const friendlyMessage = formatUserFacingError(err);
           emitStreamMetric("error", {
             jobId,
             tag,
-            message: err?.message || "Generation failed",
+            message: friendlyMessage,
             retries: retryCount,
           });
           updateDoc(assistantMsgRef, {
             pending: false,
             stage: "failed",
             errorCode: err?.code || null,
-            error: err?.message || "Generation failed",
+            error: friendlyMessage,
             updatedAt: serverTimestamp(),
           }).catch(() => {});
           setBusy(false);
@@ -1165,7 +1167,7 @@ export function useAiChat(user, settings, refreshBilling, notify) {
       if (isInsufficientTokensError(e)) {
         notify(insufficientTokensToast(planKey));
       } else {
-        notify({ message: e.message || "Generation failed", type: "error" });
+        notify({ message: formatUserFacingError(e), type: "error" });
       }
       setBusy(false);
       setPending(null);

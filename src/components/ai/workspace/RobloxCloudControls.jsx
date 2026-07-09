@@ -68,7 +68,7 @@ export default function RobloxCloudControls({
 
       <label
         className="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg border border-white/10 bg-white/5 text-[10px] font-bold uppercase tracking-widest text-gray-400 cursor-pointer"
-        title={uploadAvailable ? `Generated asset upload state: ${uploadState}` : uploadDisabledReason || "Requires Roblox connection with asset write scope"}
+        title={uploadAvailable ? `Auto-upload generated icons to Roblox (${uploadState})` : uploadDisabledReason || "Requires Roblox connection with asset write scope"}
         onClick={handleDisabledUploadClick}
       >
         <input
@@ -78,7 +78,7 @@ export default function RobloxCloudControls({
           className="accent-[#00bbf9]"
           disabled={!uploadAvailable}
         />
-        Auto Upload Generated Assets
+        Auto-upload icons to Roblox
       </label>
     </div>
   );
