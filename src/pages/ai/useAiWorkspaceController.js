@@ -688,6 +688,8 @@ export function useAiWorkspaceController() {
     generatorMode,
     settings?.chatMode,
     settings?.modelVersion,
+    isStarterOrAbove,
+    starterPromo,
   ]);
 
   const recordPendingAuthGate = useCallback((actionType, source = "quick_script_gate") => {
