@@ -32,7 +32,7 @@ const FREE_USAGE_MESSAGES = {
   PREMIUM_BALANCE_INSUFFICIENT: "Your Premium Balance is too low for this request. Add funds, choose an included model, or reduce the request size.",
   MODEL_REQUIRES_PREMIUM_BALANCE: "This model uses Premium Balance. Add funds or choose an included model.",
   MODEL_PRICING_NOT_CONFIGURED: "This model is temporarily unavailable because usage pricing is not configured.",
-  PLAN_REQUIRED: "This feature requires a paid NexusRBX plan.",
+  PLAN_REQUIRED: "AI access requires Starter ($2/mo) or higher.",
   TEAM_SEAT_LIMIT_REACHED: "Team seat count must stay within the allowed seat limits.",
   TEAM_BILLING_PERMISSION_REQUIRED: "Only team owners or billing administrators can manage team billing.",
 };

@@ -3,10 +3,10 @@ import { dismissStarterPromo, isStarterPromoSnoozed } from "../lib/starterPromo"
 import { trackProductEvent } from "../lib/productAnalytics";
 import { resolveUsagePercent } from "../lib/billing";
 
-const FIRST_VISIT_DELAY_MS = 4000;
 const LIMIT_ERROR_DELAY_MS = 1000;
 
 export function useStarterPromo({
+  blocking = false,
   isFreeUsagePlan = false,
   isSubscriber = false,
   dailyUsage = null,
@@ -15,10 +15,9 @@ export function useStarterPromo({
   isGenerating = false,
 } = {}) {
   const [isOpen, setIsOpen] = useState(false);
-  const [trigger, setTrigger] = useState("workspace_visit");
+  const [trigger, setTrigger] = useState(blocking ? "subscription_required" : "workspace_visit");
   const [checkoutBusy, setCheckoutBusy] = useState(false);
   const shownThisSession = useRef(false);
-  const visitTimer = useRef(null);
 
   const dailyUsagePercent = resolveUsagePercent({
     isFreeUsagePlan,
@@ -26,10 +25,29 @@ export function useStarterPromo({
     includedUsage,
   });
 
-  const canShow = Boolean(user) && isFreeUsagePlan && !isSubscriber && !isStarterPromoSnoozed();
+  const needsSubscription = Boolean(user) && !isSubscriber;
+  const canShowSoftPromo = needsSubscription && isFreeUsagePlan && !isStarterPromoSnoozed();
+  const shouldBlock = blocking && needsSubscription;
+
+  useEffect(() => {
+    if (shouldBlock) {
+      setIsOpen(true);
+      setTrigger("subscription_required");
+      return;
+    }
+    if (!needsSubscription) {
+      setIsOpen(false);
+    }
+  }, [shouldBlock, needsSubscription]);
 
   const openPromo = useCallback((nextTrigger) => {
-    if (!canShow || shownThisSession.current || isGenerating) return false;
+    if (blocking) {
+      if (!needsSubscription) return false;
+      setTrigger(nextTrigger || "subscription_required");
+      setIsOpen(true);
+      return true;
+    }
+    if (!canShowSoftPromo || shownThisSession.current || isGenerating) return false;
     shownThisSession.current = true;
     setTrigger(nextTrigger);
     setIsOpen(true);
@@ -38,28 +56,18 @@ export function useStarterPromo({
       daily_usage_percent: dailyUsagePercent,
     }, { dedupeKey: `starter_promo:${nextTrigger}` });
     return true;
-  }, [canShow, dailyUsagePercent, isGenerating]);
+  }, [blocking, canShowSoftPromo, dailyUsagePercent, isGenerating, needsSubscription]);
 
   useEffect(() => {
-    if (!canShow || shownThisSession.current) return undefined;
-    visitTimer.current = window.setTimeout(() => {
-      openPromo("workspace_visit");
-    }, FIRST_VISIT_DELAY_MS);
-    return () => {
-      if (visitTimer.current) window.clearTimeout(visitTimer.current);
-    };
-  }, [canShow, openPromo]);
-
-  useEffect(() => {
-    if (!canShow || dailyUsagePercent < 70) return;
+    if (blocking || !canShowSoftPromo || dailyUsagePercent < 70) return;
     openPromo("daily_usage_high");
-  }, [canShow, dailyUsagePercent, openPromo]);
+  }, [blocking, canShowSoftPromo, dailyUsagePercent, openPromo]);
 
   const notifyLimitHit = useCallback((code) => {
-    if (!canShow) return;
+    if (!needsSubscription) return;
     const mapped = code === "FREE_CONCURRENT_JOB_LIMIT" ? "concurrent_limit" : "daily_limit";
     window.setTimeout(() => openPromo(mapped), LIMIT_ERROR_DELAY_MS);
-  }, [canShow, openPromo]);
+  }, [needsSubscription, openPromo]);
 
   const notifyProjectBlocked = useCallback(() => {
     openPromo("project_limit");
@@ -77,25 +85,28 @@ export function useStarterPromo({
   }, [openPromo]);
 
   const handleClose = useCallback(() => {
+    if (blocking) return;
     dismissStarterPromo("short");
     void trackProductEvent("starter_promo_dismissed", {
       promo_trigger: trigger,
       dismiss_type: "short",
     });
     setIsOpen(false);
-  }, [trigger]);
+  }, [blocking, trigger]);
 
   const handleDismissLong = useCallback(() => {
+    if (blocking) return;
     dismissStarterPromo("long");
     void trackProductEvent("starter_promo_dismissed", {
       promo_trigger: trigger,
       dismiss_type: "long",
     });
     setIsOpen(false);
-  }, [trigger]);
+  }, [blocking, trigger]);
 
   return {
-    isOpen,
+    isOpen: shouldBlock ? true : isOpen,
+    blocking: shouldBlock,
     trigger,
     checkoutBusy,
     setCheckoutBusy,

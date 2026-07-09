@@ -2,33 +2,17 @@ import { PLAN } from "./prices";
 
 export const SUBSCRIPTION_PLANS = [
   {
-    id: PLAN.FREE,
-    name: "Free",
-    audience: "For developers exploring NexusRBX",
-    monthly: 0,
-    yearly: 0,
-    cta: "Get Started",
-    features: [
-      "Nexus Free Auto",
-      "Daily AI usage",
-      "Script generation, debugging and small revisions",
-      "Basic Roblox-native UI generation",
-      "One active project",
-      "Seven-day history",
-      "One AI job at a time",
-    ],
-  },
-  {
     id: PLAN.STARTER,
     name: "Starter",
-    audience: "Build more without the $20 commitment",
+    audience: "Entry access to NexusRBX AI",
     monthly: 2,
     yearly: 0,
     cta: "Get Starter",
-    starterBadge: "Best first upgrade",
+    starterBadge: "From $2/mo",
     features: [
-      "Model selection (Included models)",
-      "3x daily AI capacity vs Free",
+      "Nexus Auto + model selection",
+      "Included AI usage each month",
+      "Script generation, debugging and revisions",
       "30-day chat & project history",
       "3 active projects",
       "2 concurrent AI jobs",

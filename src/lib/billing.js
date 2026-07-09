@@ -234,6 +234,7 @@ export function summarizeEntitlements(e) {
     isSubscriber: isSubscriberPlan(plan, e?.entitlements),
     isStarterOrAbove: isStarterOrAbove(plan, e?.entitlements),
     isPremium: isPremiumPlan(plan, e?.entitlements),
+    canUseAi: Boolean(e?.canUseAi) || isStarterOrAbove(plan, e?.entitlements),
   };
 }
 

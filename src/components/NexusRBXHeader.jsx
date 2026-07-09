@@ -16,7 +16,6 @@ import {
   ShieldCheck
 } from "lib/icons";
 import TokensCounterContainer from "./TokensCounterContainer";
-import FreeUsageMeter from "./FreeUsageMeter";
 import { useLocation } from "react-router-dom";
 import { auth } from "../firebase";
 import { signOut } from "firebase/auth";
@@ -62,6 +61,7 @@ function NexusRBXHeader({
     dailyUsage,
     fairUse,
     isFreeUsagePlan,
+    isStarterOrAbove,
     isPremium,
   } = useBilling();
 
@@ -251,9 +251,7 @@ function NexusRBXHeader({
         <div className="flex items-center gap-4">
           {user && (
             <div className="hidden lg:block">
-              {isFreeUsagePlan || plan === "FREE" || plan === "ANON" ? (
-                <FreeUsageMeter dailyUsage={dailyUsage} fairUse={fairUse} compact />
-              ) : (
+              {isStarterOrAbove ? (
                 <TokensCounterContainer
                   tokens={{
                     sub: {
@@ -269,6 +267,14 @@ function NexusRBXHeader({
                   showRefreshButton={false}
                   variant="header"
                 />
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => navigate("/subscribe?highlight=starter")}
+                  className="rounded-lg border border-[#00f5d4]/30 bg-[#00f5d4]/10 px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-[#00f5d4] hover:bg-[#00f5d4]/20"
+                >
+                  Starter $2/mo
+                </button>
               )}
             </div>
           )}

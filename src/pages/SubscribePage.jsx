@@ -98,10 +98,6 @@ export default function SubscribePage() {
   }, [interval, seatCount]);
 
   async function beginCheckout(planId) {
-    if (planId === PLAN.FREE) {
-      navigate("/ai");
-      return;
-    }
     if (!user) {
       navigate("/signin", { state: { from: { pathname: "/subscribe" } } });
       return;

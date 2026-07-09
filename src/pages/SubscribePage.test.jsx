@@ -44,10 +44,11 @@ function renderPage() {
 test("renders current monthly prices without token quantities", () => {
   renderPage();
 
+  expect(screen.getByText("$2")).toBeInTheDocument();
   expect(screen.getByText("$19.99")).toBeInTheDocument();
   expect(screen.getByText("$39.99")).toBeInTheDocument();
   expect(screen.getByText("$29")).toBeInTheDocument();
-  expect(screen.getByText("Daily AI usage")).toBeInTheDocument();
+  expect(screen.getByText("Included AI usage each month")).toBeInTheDocument();
   expect(screen.queryByText(/500k|1\.5M|tokens/i)).not.toBeInTheDocument();
 });
 

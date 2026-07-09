@@ -1,40 +1,40 @@
 const PLAN_INFO = {
   free: {
-    label: "Free",
+    label: "No plan",
     badge: "outline",
     color: "gray",
-    cap: 20000,
-    capText: "Daily usage",
+    cap: 0,
+    capText: "Subscription required",
     promptCap: 400,
-    promptPlaceholder: "Describe your idea (short prompts only).",
-    upgradeLine: "Free uses Nexus Free Auto. Pro unlocks full model selection and higher included usage.",
-    upgradeCta: "Upgrade to Pro",
-    upgradeDesc: "Upgrade to Pro for full model selection, Studio Agent workflows, and higher included usage.",
+    promptPlaceholder: "Subscribe to Starter to use the AI workspace.",
+    upgradeLine: "AI access requires Starter ($2/mo) or higher.",
+    upgradeCta: "Get Starter",
+    upgradeDesc: "Subscribe to Starter for model selection, saved scripts, and included AI usage.",
     badgeClass: "border border-gray-400 text-gray-300 bg-transparent",
     badgeFilled: false,
-    planNudge: "Generated with Free Plan",
+    planNudge: "Subscribe to use NexusRBX AI",
     sidebarStrip: (
       <span>
-        Free —{" "}
+        No active plan —{" "}
         <a
-          href="/subscribe"
+          href="/subscribe?highlight=starter"
           className="text-[#9b5de5] underline hover:text-[#00f5d4] transition-colors"
         >
-          Upgrade
+          Get Starter
         </a>
       </span>
     ),
-    welcome: "Try Nexus Free Auto for scripts, debugging, and small revisions.",
+    welcome: "Subscribe to Starter ($2/mo) to use the NexusRBX AI workspace.",
     welcomeCta: "See Plans",
-    welcomeTokens: "Daily Free usage is available.",
-    toastNudge: "Enjoying this? Upgrade for full model selection and higher included usage.",
-    toastZero: "You’re out of Free usage. Upgrade or wait for the daily reset.",
-    sidebarCta: "Upgrade",
-    sidebarCtaLink: "/subscribe",
-    sidebarCtaDesc: "Upgrade to Pro for Studio Agent and full model selection.",
+    welcomeTokens: "Starter includes included AI usage each billing period.",
+    toastNudge: "Subscribe to Starter for $2/mo to unlock the AI workspace.",
+    toastZero: "AI access requires Starter ($2/mo) or higher.",
+    sidebarCta: "Subscribe",
+    sidebarCtaLink: "/subscribe?highlight=starter",
+    sidebarCtaDesc: "Starter unlocks the AI workspace from $2/mo.",
     sidebarCtaColor: "bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-white",
-    sidebarCtaText: "Upgrade to Pro",
-    sidebarCtaSub: "Studio Agent, Included Usage, Premium Direct support.",
+    sidebarCtaText: "Get Starter for $2",
+    sidebarCtaSub: "Model selection, saved scripts, included usage.",
   },
   starter: {
     label: "Starter",

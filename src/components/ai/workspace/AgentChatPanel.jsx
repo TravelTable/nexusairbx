@@ -87,6 +87,7 @@ export default function AgentChatPanel({
   isFreeUsagePlan,
   billingLoading,
   billingError,
+  composerLocked = false,
   themePrimary,
   themeSecondary,
   onModeChange,
@@ -258,7 +259,7 @@ export default function AgentChatPanel({
         onFileUpload={onFileUpload}
         onImprovePrompt={onImprovePrompt}
         isImproving={isImproving}
-        disabled={isBusy}
+        disabled={isBusy || composerLocked}
         mode={activeMode}
         onModeChange={onModeChange}
         view={view}

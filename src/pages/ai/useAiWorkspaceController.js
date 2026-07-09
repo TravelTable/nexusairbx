@@ -279,6 +279,7 @@ export function useAiWorkspaceController() {
   });
 
   const starterPromo = useStarterPromo({
+    blocking: Boolean(user) && !isStarterOrAbove,
     isFreeUsagePlan,
     isSubscriber: isStarterOrAbove,
     dailyUsage,
@@ -631,7 +632,7 @@ export function useAiWorkspaceController() {
     if (!user) {
       createPendingAuthAction({
         action: PENDING_AUTH_ACTIONS.CHAT_SUBMIT,
-        returnPath: "/ai",
+        returnPath: "/subscribe?highlight=starter",
         workspace: generatorMode,
         source: "chat_submit",
         payload: {
@@ -644,8 +645,13 @@ export function useAiWorkspaceController() {
           actionLabel: actionLabel(PENDING_AUTH_ACTIONS.CHAT_SUBMIT),
         },
       });
-      setSignInNudgeReason("Sign up to continue this workspace conversation and keep your generated work attached to your account.");
+      setSignInNudgeReason("Sign in to subscribe and access the NexusRBX AI workspace.");
       setShowSignInNudge(true);
+      return;
+    }
+
+    if (!isStarterOrAbove) {
+      starterPromo?.notifyStarterGate?.("AI workspace");
       return;
     }
 

@@ -49,6 +49,7 @@ export function BillingProvider({ children, pollMs = 60_000 }) {
     isSubscriber: false,
     isStarterOrAbove: false,
     isPremium: false,
+    canUseAi: false,
   });
 
   useEffect(() => {
@@ -81,6 +82,7 @@ export function BillingProvider({ children, pollMs = 60_000 }) {
         isSubscriber: false,
         isStarterOrAbove: false,
         isPremium: false,
+        canUseAi: false,
       }));
       return;
     }

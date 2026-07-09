@@ -15,6 +15,7 @@ export default function StarterPromoModal({
   dailyUsagePercent = null,
   checkoutBusy = false,
   setCheckoutBusy,
+  blocking = false,
 }) {
   const navigate = useNavigate();
 
@@ -41,6 +42,13 @@ export default function StarterPromoModal({
     }
   };
 
+  const title = blocking
+    ? "Subscribe to use NexusRBX AI"
+    : "Unlock what Free users hit first";
+  const description = blocking
+    ? "AI access starts at $2/month on Starter. Get model selection, saved scripts, more daily AI, and 30-day chat history."
+    : "For the price of a Robux pack — more AI, model choice, saved scripts, and a month of history.";
+
   return (
     <AnimatePresence>
       <div className="fixed inset-0 z-[115] flex items-center justify-center p-4">
@@ -48,7 +56,7 @@ export default function StarterPromoModal({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          onClick={onClose}
+          onClick={blocking ? undefined : onClose}
           className="absolute inset-0 bg-black/80 backdrop-blur-md"
         />
 
@@ -62,50 +70,54 @@ export default function StarterPromoModal({
         >
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-1.5 bg-gradient-to-r from-transparent via-[#00f5d4] to-transparent" />
 
-          <button
-            onClick={onClose}
-            aria-label="Close Starter offer"
-            className="nexus-icon-button absolute top-5 right-5 rounded-full z-10"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          {!blocking ? (
+            <button
+              onClick={onClose}
+              aria-label="Close Starter offer"
+              className="nexus-icon-button absolute top-5 right-5 rounded-full z-10"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          ) : null}
 
           <div className="p-8 pt-10">
             <div className="flex items-center justify-center gap-3 mb-5">
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#00f5d4]/15 border border-[#00f5d4]/40 text-[10px] font-black uppercase tracking-widest text-[#00f5d4] animate-pulse">
-                Limited — $2/mo
+                {blocking ? "Starter — $2/mo" : "Limited — $2/mo"}
               </span>
             </div>
 
             <div className="text-center mb-6">
               <div className="flex items-end justify-center gap-2 mb-2">
                 <span className="text-5xl font-black text-white leading-none">$2</span>
-                <span className="text-sm text-gray-500 line-through mb-1">$19.99 Pro</span>
+                <span className="text-sm text-gray-500 mb-1">/month</span>
               </div>
               <h2 id="starter-promo-title" className="text-2xl font-black text-white tracking-tight mb-2">
-                Unlock what Free users hit first
+                {title}
               </h2>
               <p className="text-gray-400 text-sm leading-relaxed max-w-md mx-auto">
-                For the price of a Robux pack — more AI, model choice, saved scripts, and a month of history.
-                {dailyUsagePercent != null && dailyUsagePercent >= 70 ? (
+                {description}
+                {!blocking && dailyUsagePercent != null && dailyUsagePercent >= 70 ? (
                   <span className="block mt-2 text-[#00f5d4] font-semibold">
-                    You&apos;ve used {dailyUsagePercent}% of today&apos;s Free allowance.
+                    You&apos;ve used {dailyUsagePercent}% of today&apos;s allowance.
                   </span>
                 ) : null}
               </p>
             </div>
 
-            <div className="grid grid-cols-3 gap-2 mb-6 text-center text-[10px] font-bold uppercase tracking-wider">
-              <div className="rounded-xl border border-white/5 bg-white/[0.02] p-2 text-gray-500">Free</div>
-              <div className="rounded-xl border border-[#00f5d4]/40 bg-[#00f5d4]/10 p-2 text-[#00f5d4]">Starter</div>
-              <div className="rounded-xl border border-white/5 bg-white/[0.02] p-2 text-[#9b5de5]">Pro</div>
-            </div>
+            {!blocking ? (
+              <div className="grid grid-cols-3 gap-2 mb-6 text-center text-[10px] font-bold uppercase tracking-wider">
+                <div className="rounded-xl border border-white/5 bg-white/[0.02] p-2 text-gray-500">Free</div>
+                <div className="rounded-xl border border-[#00f5d4]/40 bg-[#00f5d4]/10 p-2 text-[#00f5d4]">Starter</div>
+                <div className="rounded-xl border border-white/5 bg-white/[0.02] p-2 text-[#9b5de5]">Pro</div>
+              </div>
+            ) : null}
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
-              <BenefitCard icon={Zap} title="Up to 3x daily AI" note="vs Free daily cap" />
-              <BenefitCard icon={Cpu} title="Pick your AI model" note="Included models only" />
-              <BenefitCard icon={MessageSquare} title="30 days of chats" note="Free keeps 7 days" />
-              <BenefitCard icon={FolderOpen} title="3 projects, 2 jobs" note="Free is 1 and 1" />
+              <BenefitCard icon={Zap} title="Included AI usage" note="Nexus Auto + model choice" />
+              <BenefitCard icon={Cpu} title="Pick your AI model" note="Included models" />
+              <BenefitCard icon={MessageSquare} title="30 days of chats" note="Saved workspace history" />
+              <BenefitCard icon={FolderOpen} title="3 projects, 2 jobs" note="Build more in parallel" />
             </div>
 
             <p className="text-[10px] text-gray-500 text-center mb-5 leading-relaxed">
@@ -128,20 +140,24 @@ export default function StarterPromoModal({
               >
                 Compare all plans
               </button>
-              <button
-                type="button"
-                onClick={onDismiss}
-                className="focus-ring w-full py-2 rounded-xl text-gray-500 hover:text-white text-sm font-bold transition-colors"
-              >
-                Maybe later
-              </button>
-              <button
-                type="button"
-                onClick={onDismissLong}
-                className="text-[10px] text-gray-600 hover:text-gray-400 underline underline-offset-2"
-              >
-                Don&apos;t show again for 2 weeks
-              </button>
+              {!blocking ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={onDismiss}
+                    className="focus-ring w-full py-2 rounded-xl text-gray-500 hover:text-white text-sm font-bold transition-colors"
+                  >
+                    Maybe later
+                  </button>
+                  <button
+                    type="button"
+                    onClick={onDismissLong}
+                    className="text-[10px] text-gray-600 hover:text-gray-400 underline underline-offset-2"
+                  >
+                    Don&apos;t show again for 2 weeks
+                  </button>
+                </>
+              ) : null}
             </div>
           </div>
 

@@ -387,7 +387,7 @@ function NexusRBXContactPage({
               <div className="nexus-page-card p-6">
                 <h3 className="font-bold mb-3">Is there a free trial available?</h3>
                 <p className="text-gray-400 text-sm">
-                  Yes, we offer a free tier with limited features so you can try NexusRBX before subscribing to a paid plan. Check our pricing page for more details on what's included in each plan.
+                  Yes, NexusRBX AI access starts with Starter at $2/month. You can create an account anytime, but an active Starter subscription or higher is required to use the AI workspace. See our pricing page for plan details.
                 </p>
               </div>
               

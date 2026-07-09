@@ -18,10 +18,15 @@ describe("billingErrors", () => {
   });
 
   it("builds plan-aware toast copy", () => {
-    expect(insufficientTokensMessage("free")).toMatch(/Free usage/i);
+    expect(insufficientTokensMessage("free")).toMatch(/Starter/i);
     expect(insufficientTokensToast("free").cta?.label).toBe("View plans");
     expect(insufficientTokensToast("pro").cta?.label).toBe("Add balance");
     expect(insufficientTokensToast("team").cta).toBeUndefined();
+  });
+
+  it("maps PLAN_REQUIRED to Starter messaging", () => {
+    const parsed = parseApiErrorPayload({ code: "PLAN_REQUIRED" });
+    expect(parsed.message).toMatch(/Starter/i);
   });
 
   it("maps Free usage backend codes to friendly messages", () => {

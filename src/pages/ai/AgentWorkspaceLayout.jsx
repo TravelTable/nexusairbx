@@ -737,6 +737,7 @@ export default function AgentWorkspaceLayout({ controller }) {
           isFreeUsagePlan={isFreeUsagePlan}
           billingLoading={billingLoading}
           billingError={billingError}
+          composerLocked={!isStarterOrAbove}
           themePrimary={currentTheme.primary}
           themeSecondary={currentTheme.secondary}
           onModeChange={(m) => chat.updateChatMode(chat.currentChatId, m)}
@@ -1259,6 +1260,7 @@ export default function AgentWorkspaceLayout({ controller }) {
       <ProNudgeModal isOpen={showProNudge} onClose={() => setShowProNudge(false)} reason={proNudgeReason} />
       <StarterPromoModal
         isOpen={starterPromo?.isOpen}
+        blocking={starterPromo?.blocking}
         trigger={starterPromo?.trigger}
         dailyUsagePercent={starterPromo?.dailyUsagePercent}
         checkoutBusy={starterPromo?.checkoutBusy}

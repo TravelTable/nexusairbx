@@ -104,12 +104,12 @@ jest.mock("../context/BillingContext", () => ({
 }));
 
 jest.mock("../lib/billingErrors", () => ({
+  ...jest.requireActual("../lib/billingErrors"),
   insufficientTokensToast: jest.fn(() => ({
     message: "Out of tokens",
     type: "error",
   })),
   isInsufficientTokensError: jest.fn(() => false),
-  parseApiErrorPayload: jest.fn(() => null),
 }));
 
 describe("useAiChat", () => {

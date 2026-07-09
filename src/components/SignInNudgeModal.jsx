@@ -50,14 +50,14 @@ export default function SignInNudgeModal({ isOpen, onClose, reason = "" }) {
             </div>
 
             <h2 id="signin-nudge-title" className="text-xl font-bold text-white mb-3 sm:text-2xl">
-              Sign up to access <br />
+              Sign in to subscribe and <br />
               <span className="bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-transparent bg-clip-text">
-                the AI
+                use the AI
               </span>
             </h2>
 
             <p className="text-gray-400 text-[15px] leading-relaxed mb-5 sm:mb-8">
-              {reason || "Create a free account to keep this workspace, save generated scripts, export projects, and use Studio actions without repeating your prompt."}
+              {reason || "NexusRBX AI starts at $2/month on Starter. Sign in to subscribe and access the workspace."}
             </p>
 
             <div className="space-y-3 mb-5 sm:space-y-4 sm:mb-8">
@@ -66,8 +66,8 @@ export default function SignInNudgeModal({ isOpen, onClose, reason = "" }) {
                   <Zap className="w-4 h-4 text-[#9b5de5]" />
                 </div>
                 <div>
-                  <div className="text-sm font-bold text-white">Use the AI</div>
-                  <div className="text-xs text-gray-500">Generate scripts and chat with the agent.</div>
+                  <div className="text-sm font-bold text-white">Starter from $2/mo</div>
+                  <div className="text-xs text-gray-500">Model selection, saved scripts, and included AI usage.</div>
                 </div>
               </div>
 
@@ -84,7 +84,7 @@ export default function SignInNudgeModal({ isOpen, onClose, reason = "" }) {
 
             <div className="flex flex-col gap-3">
               <button
-                onClick={() => navigate("/signup", { state: { from: aiFrom } })}
+                onClick={() => navigate("/signup", { state: { from: { pathname: "/subscribe", search: "?highlight=starter" } } })}
                 className="focus-ring w-full min-h-11 py-3 sm:py-4 rounded-xl border border-[#00f5d4]/30 bg-[#00f5d4] text-black font-bold text-base sm:text-lg shadow-panel transition hover:bg-[#5fffee] active:bg-[#00d9bf]"
               >
                 Sign Up
