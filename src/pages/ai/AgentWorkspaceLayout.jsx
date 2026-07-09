@@ -689,17 +689,6 @@ export default function AgentWorkspaceLayout({ controller }) {
     return true;
   };
 
-  const requirePremium = (reason, next) => {
-    if (!requireUser()) return false;
-    if (!isPremium) {
-      setProNudgeReason(reason || "This feature");
-      setShowProNudge(true);
-      return false;
-    }
-    if (typeof next === "function") next();
-    return true;
-  };
-
   const onRefine = (m) => {
     if (!requireStarterOrAbove("Refinement & Iteration")) return;
     handleStartRefine(m);
