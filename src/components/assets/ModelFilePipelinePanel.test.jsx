@@ -77,6 +77,23 @@ test("shows retryable database busy state with manual retry", async () => {
   await waitFor(() => expect(api.listModelFiles).toHaveBeenCalledTimes(2));
 });
 
+test("backs off when derivative listing hits a retryable database error", async () => {
+  api.listModelFiles.mockResolvedValue({
+    items: [{ id: "mf_1", status: "queued", originalFilename: "tree.glb" }],
+  });
+  api.listDerivatives.mockRejectedValueOnce(Object.assign(new Error("Database temporarily unavailable"), {
+    status: 503,
+    retryable: true,
+    retryAfterMs: 60000,
+  }));
+
+  render(<ModelFilePipelinePanel />);
+
+  expect(await screen.findByText("Database is temporarily busy. Retry in a moment.")).toBeInTheDocument();
+  expect(api.listDerivatives).toHaveBeenCalledTimes(1);
+  expect(api.getModelFile).not.toHaveBeenCalled();
+});
+
 test("requires explicit confirmation for aggressive derivative plans", async () => {
   api.listModelFiles.mockResolvedValue({ items: [{ id: "mf_1", status: "valid", originalFilename: "tree.glb" }] });
   api.getModelFileReport.mockResolvedValue({ report: { status: "valid", rulesVersion: "glb-validation-1", summary: {}, metrics: {}, issues: [] } });

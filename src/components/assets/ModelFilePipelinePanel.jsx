@@ -103,6 +103,8 @@ export default function ModelFilePipelinePanel({ notify }) {
   const pollModelFileIdRef = useRef(null);
   const pollRetryAfterMsRef = useRef(0);
   const pollCancelledRef = useRef(false);
+  const pollInFlightRef = useRef(false);
+  const refreshInFlightRef = useRef(null);
   const derivativesRef = useRef([]);
   const retryTimerRef = useRef(null);
 
@@ -162,42 +164,59 @@ export default function ModelFilePipelinePanel({ notify }) {
   };
 
   const refresh = async ({ resumePolling = true } = {}) => {
-    try {
-      const data = await listModelFiles();
-      const list = data.items || data.modelFiles || data.files || data.results || [];
-      const next = active?.id ? list.find((file) => file.id === active.id) : firstModel(list);
-      clearRetryTimer();
-      setRetryableError(null);
-      setError((current) => (current === RETRYABLE_DATABASE_MESSAGE ? "" : current));
-      setActive(next || null);
-      let nextDerivatives = [];
-      if (next?.id) {
-        if (FINAL.has(next.status)) {
-          getModelFileReport(next.id).then((payload) => setReport(payload.report)).catch(() => setReport(null));
-        }
-        try {
-          const payload = await listDerivatives(next.id);
-          nextDerivatives = payload.items || payload.derivatives || payload.results || [];
-          setDerivatives(nextDerivatives);
-        } catch (_) {
+    if (refreshInFlightRef.current) return refreshInFlightRef.current;
+
+    const refreshTask = (async () => {
+      try {
+        const data = await listModelFiles();
+        const list = data.items || data.modelFiles || data.files || data.results || [];
+        const next = active?.id ? list.find((file) => file.id === active.id) : firstModel(list);
+        clearRetryTimer();
+        setRetryableError(null);
+        setError((current) => (current === RETRYABLE_DATABASE_MESSAGE ? "" : current));
+        setActive(next || null);
+        let nextDerivatives = [];
+        if (next?.id) {
+          if (FINAL.has(next.status)) {
+            getModelFileReport(next.id).then((payload) => setReport(payload.report)).catch(() => setReport(null));
+          }
+          try {
+            const payload = await listDerivatives(next.id);
+            nextDerivatives = payload.items || payload.derivatives || payload.results || [];
+            setDerivatives(nextDerivatives);
+          } catch (err) {
+            if (isRetryableApiError(err)) {
+              handleRetryableDatabaseError(err, () => refresh().catch(() => {}));
+              return;
+            }
+            setDerivatives([]);
+          }
+          if (
+            resumePolling
+            && (ACTIVE_MODEL.has(next.status) || hasActiveDerivative(nextDerivatives))
+          ) {
+            startPolling(next.id);
+          }
+        } else {
+          setReport(null);
           setDerivatives([]);
         }
-        if (
-          resumePolling
-          && (ACTIVE_MODEL.has(next.status) || hasActiveDerivative(nextDerivatives))
-        ) {
-          startPolling(next.id);
+      } catch (err) {
+        if (err?.message === "Not signed in") return;
+        if (err?.status === 404) {
+          setError("Model pipeline API is not available on this backend yet.");
+        } else {
+          setPipelineError(err, "Could not load model files", () => refresh().catch(() => {}));
         }
-      } else {
-        setReport(null);
-        setDerivatives([]);
       }
-    } catch (err) {
-      if (err?.message === "Not signed in") return;
-      if (err?.status === 404) {
-        setError("Model pipeline API is not available on this backend yet.");
-      } else {
-        setPipelineError(err, "Could not load model files", () => refresh().catch(() => {}));
+    })();
+
+    refreshInFlightRef.current = refreshTask;
+    try {
+      return await refreshTask;
+    } finally {
+      if (refreshInFlightRef.current === refreshTask) {
+        refreshInFlightRef.current = null;
       }
     }
   };
@@ -223,6 +242,10 @@ export default function ModelFilePipelinePanel({ notify }) {
 
   const scheduleModelPoll = (modelFileId) => {
     if (pollCancelledRef.current || pollModelFileIdRef.current !== modelFileId) return;
+    if (pollRef.current) {
+      window.clearTimeout(pollRef.current);
+      pollRef.current = null;
+    }
     const hidden = typeof document !== "undefined" ? document.hidden : false;
     const delay = getModelPollDelay({ retryAfterMs: pollRetryAfterMsRef.current, hidden });
     pollRef.current = window.setTimeout(() => {
@@ -232,6 +255,8 @@ export default function ModelFilePipelinePanel({ notify }) {
 
   const runModelPollTick = async (modelFileId) => {
     if (pollCancelledRef.current || pollModelFileIdRef.current !== modelFileId) return;
+    if (pollInFlightRef.current) return;
+    pollInFlightRef.current = true;
     try {
       const data = await getModelFile(modelFileId);
       pollRetryAfterMsRef.current = 0;
@@ -247,8 +272,12 @@ export default function ModelFilePipelinePanel({ notify }) {
           const items = payload.items || payload.derivatives || payload.results || [];
           setDerivatives(items);
           derivativesRef.current = items;
-        } catch (_) {
-          // Keep polling even if derivative list is temporarily unavailable.
+        } catch (err) {
+          if (isRetryableApiError(err)) {
+            pollRetryAfterMsRef.current = getRetryDelayMs(err, 30000);
+            handleRetryableDatabaseError(err, () => startPolling(modelFileId));
+            return;
+          }
         }
       }
       if (FINAL.has(modelFile?.status) && !hasActiveDerivative(derivativesRef.current)) {
@@ -263,6 +292,8 @@ export default function ModelFilePipelinePanel({ notify }) {
         return;
       }
       setError(err?.message || "Could not refresh model status");
+    } finally {
+      pollInFlightRef.current = false;
     }
     scheduleModelPoll(modelFileId);
   };
@@ -311,7 +342,7 @@ export default function ModelFilePipelinePanel({ notify }) {
       setPlan(null);
       setComparison(null);
       startPolling(session.modelFileId);
-      await refresh();
+      await refresh({ resumePolling: false });
     } catch (err) {
       setPipelineError(err, "GLB upload failed", () => refresh().catch(() => {}));
     } finally {
@@ -344,7 +375,7 @@ export default function ModelFilePipelinePanel({ notify }) {
       notify?.({ type: "success", message: "Derivative queued." });
       setDerivatives((current) => [derivative, ...current]);
       startPolling(active.id);
-      await refresh();
+      await refresh({ resumePolling: false });
     } catch (err) {
       setPipelineError(err, "Could not queue derivative", queueDerivative);
     } finally {

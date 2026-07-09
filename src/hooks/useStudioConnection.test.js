@@ -137,6 +137,11 @@ describe("useStudioConnection", () => {
     await waitFor(() => expect(getStudioStatus).toHaveBeenCalledTimes(2));
     expect(hook.result.current.connected).toBe(true);
 
+    await act(async () => {
+      await hook.result.current.refresh({ force: false });
+    });
+    expect(getStudioStatus).toHaveBeenCalledTimes(2);
+
     act(() => {
       jest.advanceTimersByTime(29999);
     });

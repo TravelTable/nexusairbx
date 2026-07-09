@@ -65,17 +65,15 @@ export default function StudioPairControl({ connected = false, loading = false, 
     };
   }, [open, updateMenuPosition]);
 
-  // Tick + poll status while a code is pending so the UI flips to "connected" automatically.
+  // Tick the expiry countdown while the connection hook owns status polling/backoff.
   useEffect(() => {
     if (!open || !pairCode || connected) return undefined;
     setNow(Date.now());
     const tick = window.setInterval(() => setNow(Date.now()), 1000);
-    const poll = window.setInterval(() => refresh?.(), 3000);
     return () => {
       window.clearInterval(tick);
-      window.clearInterval(poll);
     };
-  }, [open, pairCode, connected, refresh]);
+  }, [open, pairCode, connected]);
 
   // Once connected, drop the (now-consumed) code and let the user know.
   useEffect(() => {

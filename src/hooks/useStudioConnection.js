@@ -50,30 +50,55 @@ export function useStudioConnection() {
   const [loading, setLoading] = useState(true);
   const connectedRef = useRef(false);
   const retryAfterMsRef = useRef(0);
+  const retryUntilRef = useRef(0);
+  const inFlightRef = useRef(null);
   const refreshRef = useRef(null);
 
-  const refresh = useCallback(async () => {
-    try {
-      const status = await getStudioStatus();
-      const active = pickActiveStudioSession(status.sessions || []);
-      const nextConnected = isStudioSessionLive(active);
-      retryAfterMsRef.current = 0;
-      connectedRef.current = nextConnected;
-      setConnected(nextConnected);
-      setSessionId(active?.sessionId || active?.id || null);
-      setCollaborators(Array.isArray(active?.collaborators) ? active.collaborators : []);
-    } catch (err) {
-      if (isRetryableApiError(err)) {
-        retryAfterMsRef.current = getRetryDelayMs(err, 30000);
-        return;
+  const refresh = useCallback(async ({ force = true } = {}) => {
+    const retryRemainingMs = retryUntilRef.current - Date.now();
+    if (!force && retryRemainingMs > 0) {
+      retryAfterMsRef.current = retryRemainingMs;
+      return null;
+    }
+    if (inFlightRef.current) return inFlightRef.current;
+
+    const refreshTask = (async () => {
+      try {
+        const status = await getStudioStatus();
+        const active = pickActiveStudioSession(status.sessions || []);
+        const nextConnected = isStudioSessionLive(active);
+        retryAfterMsRef.current = 0;
+        retryUntilRef.current = 0;
+        connectedRef.current = nextConnected;
+        setConnected(nextConnected);
+        setSessionId(active?.sessionId || active?.id || null);
+        setCollaborators(Array.isArray(active?.collaborators) ? active.collaborators : []);
+      } catch (err) {
+        if (isRetryableApiError(err)) {
+          const retryAfterMs = getRetryDelayMs(err, 30000);
+          retryAfterMsRef.current = retryAfterMs;
+          retryUntilRef.current = Date.now() + retryAfterMs;
+          return null;
+        }
+        retryAfterMsRef.current = 0;
+        retryUntilRef.current = 0;
+        connectedRef.current = false;
+        setConnected(false);
+        setSessionId(null);
+        setCollaborators([]);
+      } finally {
+        setLoading(false);
       }
-      retryAfterMsRef.current = 0;
-      connectedRef.current = false;
-      setConnected(false);
-      setSessionId(null);
-      setCollaborators([]);
+      return null;
+    })();
+
+    inFlightRef.current = refreshTask;
+    try {
+      return await refreshTask;
     } finally {
-      setLoading(false);
+      if (inFlightRef.current === refreshTask) {
+        inFlightRef.current = null;
+      }
     }
   }, []);
 
@@ -101,7 +126,7 @@ export function useStudioConnection() {
         retryAfterMs: retryAfterMsRef.current,
       });
       timer = window.setTimeout(() => {
-        Promise.resolve(refreshRef.current?.()).finally(() => {
+        Promise.resolve(refreshRef.current?.({ force: false })).finally(() => {
           scheduleNext();
         });
       }, delay);
@@ -112,7 +137,7 @@ export function useStudioConnection() {
       scheduleNext();
     };
 
-    Promise.resolve(refreshRef.current?.()).finally(() => {
+    Promise.resolve(refreshRef.current?.({ force: false })).finally(() => {
       scheduleNext();
     });
 
