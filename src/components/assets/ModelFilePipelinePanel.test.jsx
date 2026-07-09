@@ -60,21 +60,24 @@ test("shows actual upload progress and completion state", async () => {
   await waitFor(() => expect(api.completeModelUpload).toHaveBeenCalledWith("mf_1"));
 });
 
-test("shows retryable database busy state with manual retry", async () => {
+test("shows retryable database busy state without retrying before cooldown", async () => {
   api.listModelFiles
     .mockRejectedValueOnce(Object.assign(new Error("Database temporarily unavailable"), {
       status: 503,
       retryable: true,
       retryAfterMs: 60000,
     }))
-    .mockResolvedValueOnce({ items: [] });
+    .mockResolvedValue({ items: [] });
 
   render(<ModelFilePipelinePanel />);
 
   expect(await screen.findByText("Database is temporarily busy. Retry in a moment.")).toBeInTheDocument();
-  fireEvent.click(screen.getByRole("button", { name: /retry/i }));
+  const retryButton = screen.getByRole("button", { name: /retry in 60s/i });
+  expect(retryButton).toBeDisabled();
+  expect(screen.getByRole("button", { name: "Refresh model files" })).toBeDisabled();
+  fireEvent.click(retryButton);
 
-  await waitFor(() => expect(api.listModelFiles).toHaveBeenCalledTimes(2));
+  expect(api.listModelFiles).toHaveBeenCalledTimes(1);
 });
 
 test("backs off when derivative listing hits a retryable database error", async () => {

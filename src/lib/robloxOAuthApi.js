@@ -12,21 +12,25 @@ export async function getRobloxOAuthStatus() {
 }
 
 export async function startRobloxOAuth({ bundles = ["core"], returnPath = "/settings?tab=roblox", prompt = null } = {}) {
-  const res = await authedFetch("/api/roblox/oauth/start", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ bundles, returnPath, ...(prompt ? { prompt } : {}) }),
+  return withApiRetryCooldown("roblox-oauth:start", "Failed to start Roblox authorization", async () => {
+    const res = await authedFetch("/api/roblox/oauth/start", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ bundles, returnPath, ...(prompt ? { prompt } : {}) }),
+    });
+    return readJsonOrThrow(res, "Failed to start Roblox authorization");
   });
-  return readJsonOrThrow(res, "Failed to start Roblox authorization");
 }
 
 export async function reauthorizeRoblox({ bundles = ["core"], returnPath = "/settings?tab=roblox" } = {}) {
-  const res = await authedFetch("/api/roblox/oauth/reauthorize", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ bundles, returnPath }),
+  return withApiRetryCooldown("roblox-oauth:reauthorize", "Failed to start Roblox reauthorization", async () => {
+    const res = await authedFetch("/api/roblox/oauth/reauthorize", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ bundles, returnPath }),
+    });
+    return readJsonOrThrow(res, "Failed to start Roblox reauthorization");
   });
-  return readJsonOrThrow(res, "Failed to start Roblox reauthorization");
 }
 
 const ROBLOX_PENDING_ACTION_STORAGE_KEY = "nexusrbx.roblox.pendingAction";
@@ -117,17 +121,21 @@ export async function ensureRobloxCapabilities({ capabilities, returnPath = "/se
 }
 
 export async function disconnectRobloxOAuth() {
-  const res = await authedFetch("/api/roblox/oauth/disconnect", { method: "POST" });
-  return readJsonOrThrow(res, "Failed to disconnect Roblox");
+  return withApiRetryCooldown("roblox-oauth:disconnect", "Failed to disconnect Roblox", async () => {
+    const res = await authedFetch("/api/roblox/oauth/disconnect", { method: "POST" });
+    return readJsonOrThrow(res, "Failed to disconnect Roblox");
+  });
 }
 
 export async function setRobloxTargetCreator(creator) {
-  const res = await authedFetch("/api/roblox/oauth/target-creator", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ creator }),
+  return withApiRetryCooldown("roblox-oauth:target-creator", "Failed to update Roblox creator target", async () => {
+    const res = await authedFetch("/api/roblox/oauth/target-creator", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ creator }),
+    });
+    return readJsonOrThrow(res, "Failed to update Roblox creator target");
   });
-  return readJsonOrThrow(res, "Failed to update Roblox creator target");
 }
 
 export async function getRobloxCapabilities() {

@@ -106,6 +106,8 @@ const NAV_ITEMS = [
 ];
 
 const ADMIN_ITEM = { id: "admin", label: "Admin", icon: Shield };
+const RETRYABLE_ROBLOX_MESSAGE =
+  "Roblox connection is temporarily unavailable while the database is busy. Existing connection data is preserved.";
 const CODE_STYLE_OPTIONS = [
   { value: "optimized", label: "Optimized" },
   { value: "safe", label: "Safer edits" },
@@ -406,6 +408,15 @@ export default function SettingsPage() {
     longForm.codingStandards !== (settings.codingStandards || "") ||
     longForm.gameSpec !== (settings.gameSpec || "");
 
+  const setRobloxActionError = useCallback((error, fallbackMessage) => {
+    const retryable = isRetryableApiError(error);
+    setRobloxState((state) => ({
+      ...state,
+      error: retryable ? RETRYABLE_ROBLOX_MESSAGE : error?.message || fallbackMessage,
+      retryable,
+    }));
+  }, []);
+
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const requestedTab = params.get("tab");
@@ -486,7 +497,15 @@ export default function SettingsPage() {
         error: "",
       });
     } catch (error) {
-      setRobloxState((state) => ({ ...state, status: "error", error: error.message || "Failed to load Roblox status." }));
+      setRobloxState((state) => {
+        const retryable = isRetryableApiError(error);
+        return {
+          ...state,
+          status: retryable && state.statusData ? "ready" : "error",
+          error: retryable ? RETRYABLE_ROBLOX_MESSAGE : error.message || "Failed to load Roblox status.",
+          retryable,
+        };
+      });
     }
   }, [user]);
 
@@ -869,10 +888,14 @@ export default function SettingsPage() {
             upgradeRequired
             capabilityIds={ROBLOX_PRODUCT_DEFAULT_CAPABILITIES}
             onAuthorize={async () => {
-              await ensureRobloxCapabilities({
-                capabilities: ROBLOX_PRODUCT_DEFAULT_CAPABILITIES,
-                returnPath: "/settings?tab=roblox",
-              });
+              try {
+                await ensureRobloxCapabilities({
+                  capabilities: ROBLOX_PRODUCT_DEFAULT_CAPABILITIES,
+                  returnPath: "/settings?tab=roblox",
+                });
+              } catch (error) {
+                setRobloxActionError(error, "Failed to start Roblox authorization.");
+              }
             }}
             className="border-amber-500/25 bg-amber-500/10 text-amber-50"
           />
@@ -896,6 +919,8 @@ export default function SettingsPage() {
                     setRobloxAction("connect");
                     try {
                       await beginRobloxOAuth({ returnPath: "/settings?tab=roblox" });
+                    } catch (error) {
+                      setRobloxActionError(error, "Could not start Roblox connection.");
                     } finally {
                       setRobloxAction("");
                     }
@@ -914,6 +939,8 @@ export default function SettingsPage() {
                         setRobloxAction("reauthorize");
                         try {
                           await beginRobloxReauthorization({ returnPath: "/settings?tab=roblox" });
+                        } catch (error) {
+                          setRobloxActionError(error, "Could not start Roblox reauthorization.");
                         } finally {
                           setRobloxAction("");
                         }
@@ -930,6 +957,8 @@ export default function SettingsPage() {
                         try {
                           await disconnectRobloxOAuth();
                           await loadRoblox();
+                        } catch (error) {
+                          setRobloxActionError(error, "Could not disconnect Roblox.");
                         } finally {
                           setRobloxAction("");
                         }
@@ -952,8 +981,12 @@ export default function SettingsPage() {
                     onValueChange={async (value) => {
                       if (value === "none") return;
                       const [type, id] = value.split(":");
-                      await setRobloxTargetCreator({ type, id });
-                      await loadRoblox();
+                      try {
+                        await setRobloxTargetCreator({ type, id });
+                        await loadRoblox();
+                      } catch (error) {
+                        setRobloxActionError(error, "Failed to update Roblox creator target.");
+                      }
                     }}
                   >
                     <SelectTrigger><SelectValue placeholder="Select creator" /></SelectTrigger>

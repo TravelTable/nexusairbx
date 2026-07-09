@@ -28,7 +28,7 @@ import { useAiScripts } from "../../hooks/useAiScripts";
 import { CHAT_MODES } from "../../components/ai/chatConstants";
 import { BACKEND_URL } from "../../config";
 import { authedFetch } from "../../lib/billing";
-import { readJsonResponse, withApiRetryCooldown } from "../../lib/apiErrors";
+import { isRetryableApiError, readJsonResponse, withApiRetryCooldown } from "../../lib/apiErrors";
 import { FEATURE_FLAGS } from "../../lib/featureFlags";
 import { approveAgentStep, getAgentRun, restoreAgentRun } from "../../lib/workflowApi";
 import {
@@ -227,8 +227,10 @@ export function useAiWorkspaceController() {
     try {
       const status = await getRobloxOAuthStatus();
       setRobloxStatus(status);
-    } catch (_) {
-      setRobloxStatus({ connected: false });
+    } catch (err) {
+      if (!isRetryableApiError(err)) {
+        setRobloxStatus({ connected: false });
+      }
     } finally {
       setRobloxLoading(false);
     }

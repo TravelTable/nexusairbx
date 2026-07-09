@@ -4,6 +4,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 
 import { auth } from "../../firebase";
 import { useBilling } from "../../context/BillingContext";
+import { isRetryableApiError } from "../../lib/apiErrors";
 import { beginRobloxOAuth, beginRobloxReauthorization, getRobloxOAuthStatus } from "../../lib/robloxOAuthApi";
 import {
   formatHeaderPlan,
@@ -40,8 +41,12 @@ export default function useHeaderIdentity({
       setRobloxStatus(status);
       return status;
     } catch (err) {
-      setRobloxError(err?.message || "Could not check Roblox connection.");
-      setRobloxStatus(null);
+      if (isRetryableApiError(err)) {
+        setRobloxError("Roblox connection is temporarily unavailable while the database is busy.");
+      } else {
+        setRobloxError(err?.message || "Could not check Roblox connection.");
+        setRobloxStatus(null);
+      }
       return null;
     } finally {
       setRobloxLoading(false);
@@ -81,7 +86,11 @@ export default function useHeaderIdentity({
     try {
       await beginRobloxOAuth({ returnPath });
     } catch (err) {
-      setRobloxError(err?.message || "Could not start Roblox connection.");
+      setRobloxError(
+        isRetryableApiError(err)
+          ? "Roblox authorization is temporarily unavailable while the database is busy. Try again shortly."
+          : err?.message || "Could not start Roblox connection."
+      );
     } finally {
       setRobloxAction("");
     }
@@ -97,7 +106,11 @@ export default function useHeaderIdentity({
     try {
       await beginRobloxReauthorization({ returnPath });
     } catch (err) {
-      setRobloxError(err?.message || "Could not start Roblox reauthorization.");
+      setRobloxError(
+        isRetryableApiError(err)
+          ? "Roblox reauthorization is temporarily unavailable while the database is busy. Try again shortly."
+          : err?.message || "Could not start Roblox reauthorization."
+      );
     } finally {
       setRobloxAction("");
     }

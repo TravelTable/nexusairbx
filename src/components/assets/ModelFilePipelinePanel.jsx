@@ -97,6 +97,7 @@ export default function ModelFilePipelinePanel({ notify }) {
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
   const [retryableError, setRetryableError] = useState(null);
+  const [retryClock, setRetryClock] = useState(0);
   const [progress, setProgress] = useState(null);
   const fileInputRef = useRef(null);
   const pollRef = useRef(null);
@@ -113,6 +114,9 @@ export default function ModelFilePipelinePanel({ notify }) {
   const currentUpload = uploadStatus?.upload || uploadStatus;
   const progressPercent = progress?.total ? Math.round((progress.loaded / progress.total) * 100) : null;
   const sizeLimit = rules?.limits?.maxBytes || 25 * 1024 * 1024;
+  const retryRemainingMs = retryableError?.retryAt ? Math.max(0, retryableError.retryAt - Date.now()) : 0;
+  const retryDisabled = retryRemainingMs > 0;
+  const retryButtonLabel = retryDisabled ? `Retry in ${Math.max(1, Math.ceil(retryRemainingMs / 1000))}s` : "Retry";
 
   const activeLabel = useMemo(() => {
     if (!active) return "Private GLB upload, validation, optimization";
@@ -122,6 +126,17 @@ export default function ModelFilePipelinePanel({ notify }) {
   useEffect(() => {
     derivativesRef.current = derivatives;
   }, [derivatives]);
+
+  useEffect(() => {
+    if (!retryableError?.retryAt) return undefined;
+    const remainingMs = retryableError.retryAt - Date.now();
+    if (remainingMs <= 0) return undefined;
+    const timer = window.setTimeout(
+      () => setRetryClock((value) => value + 1),
+      Math.min(1000, Math.max(250, remainingMs))
+    );
+    return () => window.clearTimeout(timer);
+  }, [retryableError?.retryAt, retryClock]);
 
   const clearRetryTimer = () => {
     if (retryTimerRef.current) {
@@ -140,18 +155,26 @@ export default function ModelFilePipelinePanel({ notify }) {
     }
   };
 
-  const handleRetryableDatabaseError = (err, retryFn) => {
+  const rememberRetryableDatabaseError = (err) => {
     const delayMs = getRetryDelayMs(err, 30000);
-    clearActivePoll();
-    clearRetryTimer();
-    setRetryableError({ retryAfterMs: delayMs });
+    setRetryableError({ retryAfterMs: delayMs, retryAt: Date.now() + delayMs });
     setError(RETRYABLE_DATABASE_MESSAGE);
-    retryTimerRef.current = window.setTimeout(() => {
-      retryTimerRef.current = null;
-      setRetryableError(null);
-      setError((current) => (current === RETRYABLE_DATABASE_MESSAGE ? "" : current));
-      retryFn?.();
-    }, delayMs);
+    return delayMs;
+  };
+
+  const handleRetryableDatabaseError = (err, retryFn, { stopPolling = true, autoRetry = true } = {}) => {
+    if (stopPolling) clearActivePoll();
+    clearRetryTimer();
+    const delayMs = rememberRetryableDatabaseError(err);
+    if (autoRetry && typeof retryFn === "function") {
+      retryTimerRef.current = window.setTimeout(() => {
+        retryTimerRef.current = null;
+        setRetryableError(null);
+        setError((current) => (current === RETRYABLE_DATABASE_MESSAGE ? "" : current));
+        retryFn();
+      }, delayMs);
+    }
+    return delayMs;
   };
 
   const setPipelineError = (err, fallbackMessage, retryFn) => {
@@ -257,6 +280,7 @@ export default function ModelFilePipelinePanel({ notify }) {
     if (pollCancelledRef.current || pollModelFileIdRef.current !== modelFileId) return;
     if (pollInFlightRef.current) return;
     pollInFlightRef.current = true;
+    let shouldScheduleNext = true;
     try {
       const data = await getModelFile(modelFileId);
       pollRetryAfterMsRef.current = 0;
@@ -274,28 +298,33 @@ export default function ModelFilePipelinePanel({ notify }) {
           derivativesRef.current = items;
         } catch (err) {
           if (isRetryableApiError(err)) {
-            pollRetryAfterMsRef.current = getRetryDelayMs(err, 30000);
-            handleRetryableDatabaseError(err, () => startPolling(modelFileId));
-            return;
+            pollRetryAfterMsRef.current = handleRetryableDatabaseError(err, null, {
+              stopPolling: false,
+              autoRetry: false,
+            });
+          } else {
+            setError(err?.message || "Could not refresh derivatives");
           }
         }
       }
       if (FINAL.has(modelFile?.status) && !hasActiveDerivative(derivativesRef.current)) {
+        shouldScheduleNext = false;
         clearActivePoll();
         await refresh({ resumePolling: false });
-        return;
       }
     } catch (err) {
       if (isRetryableApiError(err)) {
-        pollRetryAfterMsRef.current = getRetryDelayMs(err, 30000);
-        handleRetryableDatabaseError(err, () => startPolling(modelFileId));
-        return;
+        pollRetryAfterMsRef.current = handleRetryableDatabaseError(err, null, {
+          stopPolling: false,
+          autoRetry: false,
+        });
+      } else {
+        setError(err?.message || "Could not refresh model status");
       }
-      setError(err?.message || "Could not refresh model status");
     } finally {
       pollInFlightRef.current = false;
     }
-    scheduleModelPoll(modelFileId);
+    if (shouldScheduleNext) scheduleModelPoll(modelFileId);
   };
 
   const startPolling = (modelFileId) => {
@@ -307,6 +336,7 @@ export default function ModelFilePipelinePanel({ notify }) {
   };
 
   const retryModelPipeline = () => {
+    if (retryableError?.retryAt && retryableError.retryAt > Date.now()) return;
     clearRetryTimer();
     setRetryableError(null);
     setError((current) => (current === RETRYABLE_DATABASE_MESSAGE ? "" : current));
@@ -580,7 +610,13 @@ export default function ModelFilePipelinePanel({ notify }) {
             {busy === "upload" || busy === "complete" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <UploadCloud className="h-3.5 w-3.5" />}
             Upload GLB
           </button>
-          <button type="button" onClick={() => refresh().catch(() => {})} className="rounded-md border border-white/10 p-1.5 text-white/60 hover:bg-white/5" aria-label="Refresh model files">
+          <button
+            type="button"
+            onClick={() => refresh().catch(() => {})}
+            disabled={retryDisabled}
+            className="rounded-md border border-white/10 p-1.5 text-white/60 hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
+            aria-label="Refresh model files"
+          >
             <RefreshCw className="h-3.5 w-3.5" />
           </button>
         </div>
@@ -603,10 +639,11 @@ export default function ModelFilePipelinePanel({ notify }) {
               <button
                 type="button"
                 onClick={retryModelPipeline}
-                className="inline-flex items-center justify-center gap-1 rounded-md border border-rose-100/25 px-2 py-1 text-xs font-bold text-rose-50 hover:bg-rose-100/10"
+                disabled={retryDisabled}
+                className="inline-flex items-center justify-center gap-1 rounded-md border border-rose-100/25 px-2 py-1 text-xs font-bold text-rose-50 hover:bg-rose-100/10 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <RefreshCw className="h-3.5 w-3.5" />
-                Retry
+                {retryButtonLabel}
               </button>
             )}
           </div>

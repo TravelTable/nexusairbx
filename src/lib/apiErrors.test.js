@@ -1,5 +1,6 @@
 import {
   clearApiRetryCooldown,
+  getApiRetryCooldownMs,
   getRetryDelayMs,
   isRetryableApiError,
   parseRetryAfterMs,
@@ -67,6 +68,14 @@ test("withApiRetryCooldown skips duplicate network work during retry window", as
     localCooldown: true,
   });
   expect(task).toHaveBeenCalledTimes(1);
+  expect(getApiRetryCooldownMs(key, 1000)).toBe(30000);
+  expect(
+    JSON.parse(window.sessionStorage.getItem("nexusrbx:apiRetryCooldown:api-errors-test%3Acooldown"))
+  ).toMatchObject({ retryAt: 31000 });
+
+  nowSpy.mockReturnValue(31001);
+  expect(getApiRetryCooldownMs(key, 31001)).toBe(0);
+  expect(window.sessionStorage.getItem("nexusrbx:apiRetryCooldown:api-errors-test%3Acooldown")).toBeNull();
 
   clearApiRetryCooldown(key);
   nowSpy.mockRestore();

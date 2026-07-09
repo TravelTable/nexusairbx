@@ -1,7 +1,7 @@
 // src/lib/billing.js
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { BACKEND_URL } from "../config";
-import { getRetryDelayMs, isRetryableApiError, readJsonResponse } from "./apiErrors";
+import { getRetryDelayMs, isRetryableApiError, readJsonResponse, withApiRetryCooldown } from "./apiErrors";
 import { getProductAnalyticsHeaders } from "./productAnalytics";
 
 const API_ORIGIN = BACKEND_URL;
@@ -111,26 +111,28 @@ export async function authedFetch(path, init = {}) {
 
 // ALWAYS default to noCache; force-refresh the token if caller asked noCache
 export async function getEntitlements({ noCache = true } = {}) {
-  // If caller wants a fresh read (e.g., right after checkout), refresh the token once.
-  if (noCache) await getIdToken({ force: true });
+  return withApiRetryCooldown("billing:entitlements", "Billing is temporarily unavailable.", async () => {
+    // If caller wants a fresh read (e.g., right after checkout), refresh the token once.
+    if (noCache) await getIdToken({ force: true });
 
-  const r = await authedFetch("/api/billing/entitlements", {
-    method: "GET",
-    noCache,
-    headers: { Accept: "application/json" },
+    const r = await authedFetch("/api/billing/entitlements", {
+      method: "GET",
+      noCache,
+      headers: { Accept: "application/json" },
+    });
+
+    if (r.status === 304) return {}; // caller can ignore if unchanged
+
+    const contentType = r.headers.get("content-type") || "";
+    if (!r.ok) {
+      await readJsonResponse(r, `entitlements ${r.status}`);
+    }
+    if (!contentType.includes("application/json")) {
+      const text = await r.text().catch(() => "");
+      throw new Error(`entitlements: Expected JSON but got: ${text}`);
+    }
+    return r.json();
   });
-
-  if (r.status === 304) return {}; // caller can ignore if unchanged
-
-  const contentType = r.headers.get("content-type") || "";
-  if (!r.ok) {
-    await readJsonResponse(r, `entitlements ${r.status}`);
-  }
-  if (!contentType.includes("application/json")) {
-    const text = await r.text().catch(() => "");
-    throw new Error(`entitlements: Expected JSON but got: ${text}`);
-  }
-  return r.json();
 }
 
 function clampPercent(value) {
