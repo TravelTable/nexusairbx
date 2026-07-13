@@ -7,12 +7,12 @@ const PLAN_INFO = {
     capText: "Daily Free usage",
     promptCap: 400,
     promptPlaceholder: "Describe a Roblox script (up to 400 chars).",
-    upgradeLine: "Free includes Quick Script. Starter unlocks Agent Build, attachments, and saved scripts.",
+    upgradeLine: "Free includes Quick Script plus a daily Agent Build allowance. Starter adds more usage, model choice, and saved scripts.",
     upgradeCta: "Get Starter",
-    upgradeDesc: "Subscribe to Starter for Agent Build, model selection, saved scripts, and included AI usage.",
+    upgradeDesc: "Subscribe to Starter for more Agent usage, model selection, saved scripts, and longer history.",
     badgeClass: "border border-gray-400 text-gray-300 bg-transparent",
     badgeFilled: false,
-    planNudge: "Generated with Free Quick Script",
+    planNudge: "Generated with Nexus Free",
     sidebarStrip: (
       <span>
         Free —{" "}
@@ -24,17 +24,17 @@ const PLAN_INFO = {
         </a>
       </span>
     ),
-    welcome: "Free Quick Script is ready.",
+    welcome: "Quick Script and Agent Build are ready.",
     welcomeCta: "See Starter features",
-    welcomeTokens: "Quick Script uses a daily Free quota. Upgrade when you need Agent Build or saved workspace features.",
-    toastNudge: "Need Agent Build, attachments, or saved scripts? Upgrade to Starter.",
+    welcomeTokens: "Free includes three anonymous Quick Scripts per day and a fair-use Agent allowance after signup.",
+    toastNudge: "Need more Agent usage, model choice, or saved scripts? Upgrade to Starter.",
     toastZero: "Daily Free usage reached. Try again tomorrow, or upgrade to continue now.",
     sidebarCta: "Subscribe",
     sidebarCtaLink: "/subscribe?highlight=starter",
-    sidebarCtaDesc: "Starter unlocks Agent Build, attachments, and saved scripts.",
+    sidebarCtaDesc: "Starter adds more Agent usage, model choice, and saved scripts.",
     sidebarCtaColor: "bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-white",
     sidebarCtaText: "Unlock Starter",
-    sidebarCtaSub: "Agent Build, model choice, saved scripts.",
+    sidebarCtaSub: "More usage, model choice, saved scripts.",
   },
   starter: {
     label: "Starter",

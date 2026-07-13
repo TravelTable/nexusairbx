@@ -46,7 +46,7 @@ export default function StarterPromoModal({
     ? "Starter unlocks more NexusRBX AI"
     : "Unlock what Free users hit first";
   const description = blocking
-    ? "Free Quick Script is available with a quota. Starter adds model selection, saved scripts, more daily AI, and 30-day chat history."
+    ? "Free includes Quick Script and a fair-use Agent allowance. Starter adds model selection, saved scripts, more daily AI, and 30-day chat history."
     : "For the price of a Robux pack — more AI, model choice, saved scripts, and a month of history.";
 
   return (

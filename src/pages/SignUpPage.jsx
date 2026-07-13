@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { Github, Gift, Mail, Shield, Sparkles, User, Zap } from "lib/icons";
+import { Github, Mail, Sparkles, User } from "lib/icons";
 import { auth } from "../firebase";
 import {
   createUserWithEmailAndPassword,
@@ -17,8 +17,6 @@ import {
   writeAuthPersistencePreference,
 } from "../lib/firebaseAuth";
 import { trackProductEvent } from "../lib/productAnalytics";
-import { formatMonthlyPrice, SUBSCRIPTION_PLANS } from "../lib/planCatalog";
-import { PLAN } from "../lib/prices";
 import { getPendingAuthReturnPath, readPendingAuthAction } from "../lib/pendingAuthAction";
 import { cn } from "../lib/utils";
 import {
@@ -34,23 +32,14 @@ import {
   NexusAuthShell,
 } from "../components/auth/NexusAuthShell";
 
-const SIGNUP_PLAN_ICONS = {
-  [PLAN.STARTER]: Gift,
-  [PLAN.PRO]: Zap,
-  [PLAN.PRO_PLUS]: Sparkles,
-  [PLAN.TEAM]: Shield,
-};
-
 // Container Component
 export default function NexusRBXSignUpPageContainer() {
   const navigate = useNavigate();
   const location = useLocation();
-  const from = location.state?.from?.pathname || "/";
+  const from = location.state?.from?.pathname || "/ai";
   const pendingAction = useMemo(() => readPendingAuthAction({ includeExpired: true }), []);
-  const authReturnPath = pendingAction ? getPendingAuthReturnPath("/subscribe?highlight=starter") : from;
-  const signInLinkState = authReturnPath.includes("/subscribe")
-    ? { from: { pathname: authReturnPath } }
-    : undefined;
+  const authReturnPath = pendingAction ? getPendingAuthReturnPath("/ai") : from;
+  const signInLinkState = { from: { pathname: authReturnPath || "/ai" } };
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -65,7 +54,6 @@ export default function NexusRBXSignUpPageContainer() {
   });
   const [agreeToTerms, setAgreeToTerms] = useState(false);
   const [rememberMe, setRememberMe] = useState(() => readAuthPersistencePreference());
-  const [selectedPlan, setSelectedPlan] = useState(PLAN.STARTER);
   const [passwordStrength, setPasswordStrength] = useState({
     score: 0, // 0-4 where 4 is strongest
     feedback: ""
@@ -75,11 +63,11 @@ export default function NexusRBXSignUpPageContainer() {
     if (!user?.emailVerified) {
       navigate("/verify-email", {
         replace: true,
-        state: { returnPath: authReturnPath || "/subscribe?highlight=starter" },
+        state: { returnPath: authReturnPath || "/ai" },
       });
       return;
     }
-    navigate(authReturnPath || "/subscribe?highlight=starter", { replace: true });
+    navigate(authReturnPath || "/ai", { replace: true });
   };
 
   useEffect(() => {
@@ -88,11 +76,11 @@ export default function NexusRBXSignUpPageContainer() {
       if (!currentUser.emailVerified) {
         navigate("/verify-email", {
           replace: true,
-          state: { returnPath: authReturnPath || "/subscribe?highlight=starter" },
+          state: { returnPath: authReturnPath || "/ai" },
         });
         return;
       }
-      if (pendingAction) navigate(authReturnPath || "/subscribe?highlight=starter", { replace: true });
+      if (pendingAction) navigate(authReturnPath || "/ai", { replace: true });
     });
     return () => unsubscribe();
   }, [authReturnPath, formStatus.status, navigate, pendingAction]);
@@ -154,10 +142,6 @@ export default function NexusRBXSignUpPageContainer() {
     });
   };
 
-  const handlePlanSelect = (plan) => {
-    setSelectedPlan(plan);
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -193,7 +177,7 @@ export default function NexusRBXSignUpPageContainer() {
     void trackProductEvent("signup_started", {
       landing_page: from,
       method: "password",
-      subscription_plan: selectedPlan,
+      entry_offer: "free_workspace",
     }, { dedupeKey: `signup_started:password:${from}` });
 
     try {
@@ -209,7 +193,7 @@ export default function NexusRBXSignUpPageContainer() {
       void trackProductEvent("signup_completed", {
         landing_page: from,
         method: "password",
-        subscription_plan: selectedPlan,
+        entry_offer: "free_workspace",
       }, { dedupeKey: `signup_completed:${credential.user.uid}` });
       setTimeout(() => {
         void redirectAfterSignup(credential.user);
@@ -230,14 +214,14 @@ export default function NexusRBXSignUpPageContainer() {
     void trackProductEvent("signup_started", {
       landing_page: from,
       method: "google",
-      subscription_plan: selectedPlan,
+      entry_offer: "free_workspace",
     }, { dedupeKey: `signup_started:google:${from}` });
 
     try {
       writeAuthPersistencePreference(rememberMe);
       const credential = await signInWithOAuthProvider(auth, GoogleAuthProvider, {
         rememberMe,
-        returnPath: authReturnPath || "/subscribe?highlight=starter",
+        returnPath: authReturnPath || "/ai",
         method: "google",
       });
       if (!credential) return;
@@ -246,13 +230,13 @@ export default function NexusRBXSignUpPageContainer() {
       setFormStatus({
         status: "success",
         message: credential.user.emailVerified
-          ? "Google sign up successful! Redirecting to Starter checkout..."
+          ? "Google sign up successful! Opening your workspace..."
           : "Account created. Check your inbox to verify your email before continuing."
       });
       void trackProductEvent("signup_completed", {
         landing_page: from,
         method: "google",
-        subscription_plan: selectedPlan,
+        entry_offer: "free_workspace",
       }, { dedupeKey: `signup_completed:${credential.user.uid}` });
       setTimeout(() => {
         void redirectAfterSignup(credential.user);
@@ -273,14 +257,14 @@ export default function NexusRBXSignUpPageContainer() {
     void trackProductEvent("signup_started", {
       landing_page: from,
       method: "github",
-      subscription_plan: selectedPlan,
+      entry_offer: "free_workspace",
     }, { dedupeKey: `signup_started:github:${from}` });
 
     try {
       writeAuthPersistencePreference(rememberMe);
       const credential = await signInWithOAuthProvider(auth, GithubAuthProvider, {
         rememberMe,
-        returnPath: authReturnPath || "/subscribe?highlight=starter",
+        returnPath: authReturnPath || "/ai",
         method: "github",
       });
       if (!credential) return;
@@ -289,13 +273,13 @@ export default function NexusRBXSignUpPageContainer() {
       setFormStatus({
         status: "success",
         message: credential.user.emailVerified
-          ? "GitHub sign up successful! Redirecting to Starter checkout..."
+          ? "GitHub sign up successful! Opening your workspace..."
           : "Account created. Check your inbox to verify your email before continuing."
       });
       void trackProductEvent("signup_completed", {
         landing_page: from,
         method: "github",
-        subscription_plan: selectedPlan,
+        entry_offer: "free_workspace",
       }, { dedupeKey: `signup_completed:${credential.user.uid}` });
       setTimeout(() => {
         void redirectAfterSignup(credential.user);
@@ -316,7 +300,6 @@ export default function NexusRBXSignUpPageContainer() {
       formStatus={formStatus}
       agreeToTerms={agreeToTerms}
       rememberMe={rememberMe}
-      selectedPlan={selectedPlan}
       passwordStrength={passwordStrength}
       signInLinkState={signInLinkState}
       handleInputChange={handleInputChange}
@@ -324,7 +307,6 @@ export default function NexusRBXSignUpPageContainer() {
       toggleConfirmPasswordVisibility={toggleConfirmPasswordVisibility}
       handleAgreeToTermsChange={handleAgreeToTermsChange}
       handleSharedDeviceChange={handleSharedDeviceChange}
-      handlePlanSelect={handlePlanSelect}
       handleSubmit={handleSubmit}
       handleGoogleSignUp={handleGoogleSignUp}
       handleGithubSignUp={handleGithubSignUp}
@@ -341,7 +323,6 @@ function NexusRBXSignUpPage({
   formStatus,
   agreeToTerms,
   rememberMe,
-  selectedPlan,
   passwordStrength,
   signInLinkState,
   handleInputChange,
@@ -349,7 +330,6 @@ function NexusRBXSignUpPage({
   toggleConfirmPasswordVisibility,
   handleAgreeToTermsChange,
   handleSharedDeviceChange,
-  handlePlanSelect,
   handleSubmit,
   handleGoogleSignUp,
   handleGithubSignUp,
@@ -362,22 +342,22 @@ function NexusRBXSignUpPage({
   return (
     <NexusAuthShell
       title="Create your NexusRBX account"
-      description="Start generating Roblox scripts, UI, and Studio-ready assets with the plan that fits your workflow."
+      description="Create a free account to use Agent Build and keep your Roblox projects moving."
       icon={Sparkles}
       sideTitle="Set up your AI Roblox workspace."
-      sideDescription="Create an account once, then continue into the AI workspace with your selected plan and pending Studio or homepage action preserved."
+      sideDescription="Create an account once, then continue straight into the AI workspace with your homepage prompt and progress preserved."
       sideItems={[
         {
           title: "Provider or password signup",
           description: "Use Google, GitHub, or email while keeping the same NexusRBX auth return flow.",
         },
         {
-          title: "Choose a starting plan",
-          description: "Pick Starter, Pro, Pro+, or Team during signup with the same prices shown on the pricing page.",
+          title: "Start free with Agent Build",
+          description: "Plan, debug, ask questions, and generate projects before deciding whether you need more capacity.",
         },
         {
           title: "Continue after auth",
-          description: "The current return-state handoff still sends authenticated users back into the right workspace path.",
+          description: "Your pending prompt returns with you so signup does not break the creative flow.",
         },
       ]}
     >
@@ -482,24 +462,6 @@ function NexusRBXSignUpPage({
             )}
           </div>
 
-          <fieldset className="grid gap-3">
-            <legend className="nexus-field-label">Choose your plan</legend>
-            <div className="grid grid-cols-2 gap-3">
-              {SUBSCRIPTION_PLANS.map((plan) => (
-                <PlanOption
-                  key={plan.id}
-                  title={plan.name}
-                  price={formatMonthlyPrice(plan)}
-                  description={plan.audience}
-                  icon={SIGNUP_PLAN_ICONS[plan.id]}
-                  selected={selectedPlan === plan.id}
-                  popular={plan.recommended}
-                  onClick={() => handlePlanSelect(plan.id)}
-                />
-              ))}
-            </div>
-          </fieldset>
-
           <AuthCheckbox
             id="signup-shared-device"
             checked={!rememberMe}
@@ -546,41 +508,6 @@ function NexusRBXSignUpPage({
         </p>
       </div>
     </NexusAuthShell>
-  );
-}
-
-function PlanOption({ title, price, description, icon: Icon, popular, selected, onClick }) {
-  return (
-    <button
-      type="button"
-      className={cn(
-        "focus-ring relative min-h-[140px] rounded-lg border p-3 text-left transition",
-        selected
-          ? "border-[#00f5d4]/45 bg-[#00f5d4]/10 text-foreground"
-          : "border-border bg-background/55 text-muted-foreground hover:border-border/80 hover:bg-muted/35"
-      )}
-      onClick={onClick}
-      aria-pressed={selected}
-    >
-      {popular && (
-        <span className="absolute right-2 top-2 rounded-md border border-[#9b5de5]/30 bg-[#9b5de5]/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#e7d7ff]">
-          Recommended
-        </span>
-      )}
-      <span
-        className={cn(
-          "mb-3 flex h-8 w-8 items-center justify-center rounded-md border",
-          selected ? "border-[#00f5d4]/30 bg-[#00f5d4]/10 text-[#00f5d4]" : "border-border bg-muted/35"
-        )}
-      >
-        <Icon className="h-4 w-4" />
-      </span>
-      <span className="block text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-        {title}
-      </span>
-      <span className="mt-1 block text-xl font-black text-foreground">{price}</span>
-      <span className="mt-2 block text-xs leading-5">{description}</span>
-    </button>
   );
 }
 

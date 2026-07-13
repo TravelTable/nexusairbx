@@ -86,7 +86,8 @@ source/configuration change.
   retries retain the same browser-generated key for 30 minutes, while the API binds
   it to the Firebase UID and operation before passing it to Stripe. Client payloads
   are allowlisted and prices are selected by the server.
-- Checkout and portal require a verified Firebase token and their own durable limit.
+- Checkout, portal, and subscription cancellation require a verified Firebase token;
+  checkout and portal/cancellation each have their own durable limit.
 - Webhooks still use raw-body Stripe signature verification. Event IDs are claimed
   transactionally in `_stripe_webhook_events` before side effects, are marked
   completed only after processing, and carry a 90-day `expiresAt` for Firestore TTL.

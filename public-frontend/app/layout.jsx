@@ -15,7 +15,9 @@ export default function RootLayout({ children }) {
         {children}
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationStructuredData()) }}
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(organizationStructuredData()).replace(/</g, "\\u003c"),
+          }}
         />
         <Analytics />
       </body>

@@ -66,7 +66,7 @@ export function submitHomepagePrompt({
       prompt_category: categorizePrompt(prompt),
     });
 
-    navigate?.("/subscribe?highlight=starter", {
+    navigate?.("/ai", {
       state: {
         generationIntentId: intent.id,
       },

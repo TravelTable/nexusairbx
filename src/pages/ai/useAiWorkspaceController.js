@@ -634,7 +634,7 @@ export function useAiWorkspaceController() {
     if (isMobile) setMobileTab("chat");
 
     const canUseQuickScript = !refineTarget && currentAttachments.length === 0 && !hasProjectAssets;
-    if (canUseQuickScript && (!user || !isStarterOrAbove)) {
+    if (canUseQuickScript && generatorMode === "quick_script") {
       setGeneratorMode("quick_script", user ? "free_workspace_submit" : "anonymous_workspace_submit");
       setPrompt("");
       return runQuickScriptRef.current?.(promptToSend, {
@@ -642,7 +642,7 @@ export function useAiWorkspaceController() {
       });
     }
 
-    // Agent Build, attachments, and project assets need an authenticated paid workspace.
+    // Agent Build, attachments, and saved workspace features need an account.
     if (!user) {
       createPendingAuthAction({
         action: PENDING_AUTH_ACTIONS.CHAT_SUBMIT,
@@ -659,13 +659,8 @@ export function useAiWorkspaceController() {
           actionLabel: actionLabel(PENDING_AUTH_ACTIONS.CHAT_SUBMIT),
         },
       });
-      setSignInNudgeReason("Sign in to use attachments, Agent Build, and saved workspace features. Basic Quick Script is available without an account.");
+      setSignInNudgeReason("Create a free account to use Agent Build, attachments, and saved workspace features. Quick Script stays available without an account.");
       setShowSignInNudge(true);
-      return;
-    }
-
-    if (!isStarterOrAbove) {
-      starterPromo?.notifyStarterGate?.("Agent Build, attachments, and project assets");
       return;
     }
 
@@ -702,8 +697,6 @@ export function useAiWorkspaceController() {
     generatorMode,
     settings?.chatMode,
     settings?.modelVersion,
-    isStarterOrAbove,
-    starterPromo,
     setGeneratorMode,
   ]);
 

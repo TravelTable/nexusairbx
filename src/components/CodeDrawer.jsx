@@ -11,6 +11,7 @@ import { X, Copy, Download, Search, Minus, Plus, ArrowRight, Bookmark } from "li
 import { Light as SyntaxHighlighter } from "react-syntax-highlighter";
 import lua from "react-syntax-highlighter/dist/esm/languages/hljs/lua";
 import { atomOneDark } from "react-syntax-highlighter/dist/esm/styles/hljs";
+import { findLiteralMatches } from "../lib/codeSearch";
 
 // Register lua highlighting
 let __luaRegistered = false;
@@ -346,14 +347,7 @@ export default function CodeDrawerContainer({
       setSearchIndex(0);
       return;
     }
-    const regex = new RegExp(searchTerm, "gi");
-    const matches = [];
-    let match;
-    while ((match = regex.exec(displayCode))) {
-      matches.push({ start: match.index, end: regex.lastIndex });
-      if (match.index === regex.lastIndex) regex.lastIndex++;
-    }
-    setSearchMatches(matches);
+    setSearchMatches(findLiteralMatches(displayCode, searchTerm));
     setSearchIndex(0);
   }, [searchTerm, displayCode]);
 
@@ -505,18 +499,23 @@ function CodeDrawerUI({
   const highlightedCode = useMemo(() => {
     if (!searchTerm || searchMatches.length === 0) return displayCode;
     let lastIndex = 0;
-    let result = [];
+    const result = [];
     searchMatches.forEach((m, i) => {
       result.push(displayCode.slice(lastIndex, m.start));
       result.push(
-        `<mark class="code-drawer-search-highlight${
-          i === searchIndex ? " code-drawer-search-highlight-active" : ""
-        }">${displayCode.slice(m.start, m.end)}</mark>`
+        <mark
+          className={`code-drawer-search-highlight${
+            i === searchIndex ? " code-drawer-search-highlight-active" : ""
+          }`}
+          key={`code-search-match-${m.start}-${i}`}
+        >
+          {displayCode.slice(m.start, m.end)}
+        </mark>
       );
       lastIndex = m.end;
     });
     result.push(displayCode.slice(lastIndex));
-    return result.join("");
+    return result;
   }, [displayCode, searchTerm, searchMatches, searchIndex]);
 
   // Line highlighting for go-to-line
@@ -898,8 +897,23 @@ function CodeDrawerUI({
                   zIndex: 2,
                   background: "transparent",
                 }}
-                dangerouslySetInnerHTML={{ __html: `<pre style="background:transparent;border:none;box-shadow:none;margin:0;padding:1.5rem 1.25rem;font-size:${fontSize}px;line-height:1.5;white-space:pre-wrap;word-break:break-word;">${highlightedCode}</pre>` }}
-              />
+              >
+                <pre
+                  style={{
+                    background: "transparent",
+                    border: "none",
+                    boxShadow: "none",
+                    margin: 0,
+                    padding: "1.5rem 1.25rem",
+                    fontSize: `${fontSize}px`,
+                    lineHeight: 1.5,
+                    whiteSpace: "pre-wrap",
+                    wordBreak: "break-word",
+                  }}
+                >
+                  {highlightedCode}
+                </pre>
+              </div>
             )}
           </div>
         </div>

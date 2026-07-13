@@ -108,7 +108,7 @@ describe("homepageActivation", () => {
       mode: "quick_script",
       source: "homepage",
     });
-    expect(harness.navigate).toHaveBeenCalledWith("/subscribe?highlight=starter", {
+    expect(harness.navigate).toHaveBeenCalledWith("/ai", {
       state: { generationIntentId: "intent-123" },
     });
     expect(JSON.stringify(harness.navigate.mock.calls[0][1].state)).not.toContain("Create a tycoon UI");
@@ -125,7 +125,7 @@ describe("homepageActivation", () => {
     });
 
     expect(harness.createIntent).toHaveBeenCalledTimes(1);
-    expect(harness.navigate).toHaveBeenCalledWith("/subscribe?highlight=starter", {
+    expect(harness.navigate).toHaveBeenCalledWith("/ai", {
       state: { generationIntentId: "intent-123" },
     });
   });
@@ -174,7 +174,7 @@ describe("homepageActivation", () => {
       source: "public_next_homepage",
     });
 
-    expect(assign).toHaveBeenCalledWith("/subscribe?highlight=starter");
+    expect(assign).toHaveBeenCalledWith("/ai");
   });
 
   test("complex homepage prompts are routed to Agent Build regardless of experiment defaults", () => {

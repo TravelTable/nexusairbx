@@ -57,7 +57,7 @@ export default function SignInNudgeModal({ isOpen, onClose, reason = "" }) {
             </h2>
 
             <p className="text-gray-400 text-[15px] leading-relaxed mb-5 sm:mb-8">
-              {reason || "Create a free account to save your work and continue with quota-limited Quick Script access."}
+              {reason || "Create a free account to save your work and continue with Agent Build."}
             </p>
 
             <div className="space-y-3 mb-5 sm:space-y-4 sm:mb-8">
@@ -66,8 +66,8 @@ export default function SignInNudgeModal({ isOpen, onClose, reason = "" }) {
                   <Zap className="w-4 h-4 text-[#9b5de5]" />
                 </div>
                 <div>
-                  <div className="text-sm font-bold text-white">Free Quick Script access</div>
-                  <div className="text-xs text-gray-500">Use the free quota, then upgrade only when you need more tools and usage.</div>
+                  <div className="text-sm font-bold text-white">Free Agent Build access</div>
+                  <div className="text-xs text-gray-500">Plan, build, debug, and ask with a fair-use allowance; upgrade only when you need more.</div>
                 </div>
               </div>
 
