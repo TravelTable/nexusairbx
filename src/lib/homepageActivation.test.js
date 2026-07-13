@@ -23,6 +23,7 @@ function createHarness(overrides = {}) {
 
 describe("homepageActivation", () => {
   beforeEach(() => {
+    Object.defineProperty(window, "innerWidth", { configurable: true, value: 1280 });
     localStorage.clear();
     sessionStorage.clear();
     resetExperimentsForTests();
@@ -105,7 +106,7 @@ describe("homepageActivation", () => {
     expect(harness.createIntent).toHaveBeenCalledTimes(1);
     expect(harness.createIntent).toHaveBeenCalledWith({
       prompt: "Create a tycoon UI",
-      mode: "quick_script",
+      mode: "agent_build",
       source: "homepage",
     });
     expect(harness.navigate).toHaveBeenCalledWith("/ai", {
@@ -130,6 +131,40 @@ describe("homepageActivation", () => {
     });
   });
 
+  test("mobile homepage submissions create a QuickScript intent", () => {
+    Object.defineProperty(window, "innerWidth", { configurable: true, value: 390 });
+    const harness = createHarness();
+
+    submitHomepagePrompt({
+      ...harness,
+      inputValue: "Create a round system",
+      method: "button",
+    });
+
+    expect(harness.createIntent).toHaveBeenCalledWith({
+      prompt: "Create a round system",
+      mode: "quick_script",
+      source: "homepage",
+    });
+  });
+
+  test("desktop homepage submissions create an Agent Build intent", () => {
+    Object.defineProperty(window, "innerWidth", { configurable: true, value: 1440 });
+    const harness = createHarness();
+
+    submitHomepagePrompt({
+      ...harness,
+      inputValue: "Make a sprint script",
+      method: "button",
+    });
+
+    expect(harness.createIntent).toHaveBeenCalledWith({
+      prompt: "Make a sprint script",
+      mode: "agent_build",
+      source: "homepage",
+    });
+  });
+
   test("creates intents with custom public homepage source and surface", () => {
     const harness = createHarness();
 
@@ -143,7 +178,7 @@ describe("homepageActivation", () => {
 
     expect(harness.createIntent).toHaveBeenCalledWith({
       prompt: "Create a round system",
-      mode: "quick_script",
+      mode: "agent_build",
       source: "public_next_homepage",
     });
     expect(harness.trackEvent).toHaveBeenCalledWith(
@@ -204,7 +239,7 @@ describe("homepageActivation", () => {
     );
   });
 
-  test("suitable homepage prompts can use the Agent Build default variant", () => {
+  test("desktop homepage submissions stay in Agent Build even when the old experiment is forced", () => {
     localStorage.setItem(
       `nexusrbx:experiments:force:${EXPERIMENT_IDS.GENERATOR_DEFAULT}`,
       "agent_build_default"

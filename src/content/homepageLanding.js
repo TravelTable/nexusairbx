@@ -11,8 +11,8 @@ export const homepageHero = {
   description:
     "Boost productivity, generate scripts, and debug faster with powerful AI integrated directly into your workflow.",
   primaryCta: {
-    label: "Start for $2",
-    href: "/subscribe?highlight=starter",
+    label: "Start Building",
+    href: "/ai",
   },
   secondaryCta: {
     label: "Watch Demo",

@@ -198,9 +198,11 @@ export function resolveInitialGeneratorMode({
 export function chooseHomepageGeneratorMode(prompt = "", requestedMode = null) {
   if (requestedMode === "quick_script" || requestedMode === "agent_build") return requestedMode;
   if (isClearlyComplexPrompt(prompt)) return "agent_build";
-  return getExperimentVariant(EXPERIMENT_IDS.GENERATOR_DEFAULT) === "agent_build_default"
-    ? "agent_build"
-    : "quick_script";
+  // Homepage activation is intentionally device-specific: desktop users are
+  // entering the Studio agent, while mobile users need the lighter QuickScript
+  // workspace. Persisting this mode in the generation intent keeps the handoff
+  // stable if authentication or navigation interrupts the transition.
+  return isMobileViewport() ? "quick_script" : "agent_build";
 }
 
 export function shouldGateFirstValueBeforeSignup() {
