@@ -1,4 +1,5 @@
 import { initializeApp, getApps, setLogLevel } from "firebase/app";
+import { initializeAppCheck, ReCaptchaV3Provider } from "firebase/app-check";
 import { getAuth } from "firebase/auth";
 import { initializeFirestore } from "firebase/firestore";
 
@@ -19,6 +20,54 @@ const firebaseConfig = {
 
 // Prevent double-init during HMR
 const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
+
+const APP_CHECK_INSTANCE_KEY = "__nexusrbxFirebaseAppCheck";
+
+export function initializeFirebaseAppCheck(
+  firebaseApp,
+  {
+    windowObject = typeof window !== "undefined" ? window : undefined,
+    documentObject = typeof document !== "undefined" ? document : undefined,
+    environment = process.env.NODE_ENV,
+    siteKey = process.env.REACT_APP_RECAPTCHA_SITE_KEY,
+    debugToken = process.env.REACT_APP_APP_CHECK_DEBUG_TOKEN,
+  } = {}
+) {
+  if (
+    environment === "test" ||
+    !windowObject ||
+    !documentObject
+  ) {
+    return null;
+  }
+
+  if (!siteKey) {
+    if (environment === "development") {
+      console.warn(
+        "Firebase App Check is disabled: set REACT_APP_RECAPTCHA_SITE_KEY to enable reCAPTCHA v3."
+      );
+    }
+    return null;
+  }
+
+  if (windowObject[APP_CHECK_INSTANCE_KEY]) {
+    return windowObject[APP_CHECK_INSTANCE_KEY];
+  }
+
+  if (environment === "development" && debugToken) {
+    windowObject.FIREBASE_APPCHECK_DEBUG_TOKEN = debugToken;
+  }
+
+  const appCheck = initializeAppCheck(firebaseApp, {
+    provider: new ReCaptchaV3Provider(siteKey),
+    isTokenAutoRefreshEnabled: true,
+  });
+
+  windowObject[APP_CHECK_INSTANCE_KEY] = appCheck;
+  return appCheck;
+}
+
+export const appCheck = initializeFirebaseAppCheck(app);
 
 // Core SDKs
 export const auth = getAuth(app);

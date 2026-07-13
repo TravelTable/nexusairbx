@@ -1,11 +1,9 @@
-import React, { Suspense, lazy, useEffect } from 'react';
+import React, { Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import { useBilling } from "./context/BillingContext";
 import AuthRedirectHandler from "./components/AuthRedirectHandler";
 import SiteShell from "./components/site/SiteShell";
 
-// Suppress ResizeObserver loop error (Monaco Editor/Chrome bug) AND expose auth for console tests
-import { getAuth } from "firebase/auth";
+// Suppress a known Monaco/Chrome ResizeObserver loop error.
 
 if (typeof window !== "undefined") {
   const observerErr = "ResizeObserver loop completed with undelivered notifications.";
@@ -14,15 +12,6 @@ if (typeof window !== "undefined") {
       e.stopImmediatePropagation();
     }
   });
-
-  // Expose Firebase Auth to the console for quick manual tests
-  try {
-    // Attach once; won’t throw if run before Firebase init, it’ll attach later on first call
-    Object.defineProperty(window, "firebaseAuth", {
-      get() { return getAuth(); },
-      configurable: true,
-    });
-  } catch {}
 }
 
 const NexusRBXBillingPageContainer = lazy(() => import("./pages/BillingPage"));
@@ -33,6 +22,7 @@ const NexusRBXPrivacyPageContainer = lazy(() => import("./pages/PrivacyPage"));
 const NexusRBXSubscribePageContainer = lazy(() => import("./pages/SubscribePage"));
 const NexusRBXSignInPageContainer = lazy(() => import("./pages/SignInPage"));
 const NexusRBXSignUpPageContainer = lazy(() => import("./pages/SignUpPage"));
+const NexusRBXVerifyEmailPage = lazy(() => import("./pages/VerifyEmailPage"));
 const NexusRBXTermsPageContainer = lazy(() => import("./pages/TermsPage"));
 const NexusRBXSettingsPageContainer = lazy(() => import("./pages/SettingsPage"));
 const NexusRBXIconGeneratorPage = lazy(() => import("./pages/IconGeneratorPage"));
@@ -48,12 +38,6 @@ function withSiteShell(element, variant) {
 }
 
 function App() {
-  const { portal } = useBilling();
-
-  useEffect(() => {
-    window.portal = portal;
-  }, [portal]);
-
   return (
     <Router>
       <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-white bg-black">Loading...</div>}>
@@ -68,6 +52,7 @@ function App() {
           <Route path="/subscribe" element={withSiteShell(<NexusRBXSubscribePageContainer />, "account")} />
           <Route path="/signin" element={withSiteShell(<NexusRBXSignInPageContainer />, "auth")} />
           <Route path="/signup" element={withSiteShell(<NexusRBXSignUpPageContainer />, "auth")} />
+          <Route path="/verify-email" element={withSiteShell(<NexusRBXVerifyEmailPage />, "auth")} />
           <Route path="/terms" element={withSiteShell(<NexusRBXTermsPageContainer />, "legal")} />
           <Route path="/tools/icon-generator" element={withSiteShell(<NexusRBXIconGeneratorPage />, "tools")} />
           <Route path="/icons-market" element={withSiteShell(<NexusRBXIconsMarketPage />, "tools")} />

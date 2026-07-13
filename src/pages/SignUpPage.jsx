@@ -2,7 +2,13 @@ import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Github, Gift, Mail, Shield, Sparkles, User, Zap } from "lib/icons";
 import { auth } from "../firebase";
-import { createUserWithEmailAndPassword, GoogleAuthProvider, GithubAuthProvider, onAuthStateChanged } from "firebase/auth";
+import {
+  createUserWithEmailAndPassword,
+  GoogleAuthProvider,
+  GithubAuthProvider,
+  onAuthStateChanged,
+  sendEmailVerification,
+} from "firebase/auth";
 import {
   applyAuthPersistence,
   getFriendlyAuthErrorMessage,
@@ -65,13 +71,27 @@ export default function NexusRBXSignUpPageContainer() {
     feedback: ""
   });
 
-  const redirectAfterSignup = async () => {
+  const redirectAfterSignup = async (user = auth.currentUser) => {
+    if (!user?.emailVerified) {
+      navigate("/verify-email", {
+        replace: true,
+        state: { returnPath: authReturnPath || "/subscribe?highlight=starter" },
+      });
+      return;
+    }
     navigate(authReturnPath || "/subscribe?highlight=starter", { replace: true });
   };
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       if (!currentUser || formStatus.status === "submitting") return;
+      if (!currentUser.emailVerified) {
+        navigate("/verify-email", {
+          replace: true,
+          state: { returnPath: authReturnPath || "/subscribe?highlight=starter" },
+        });
+        return;
+      }
       if (pendingAction) navigate(authReturnPath || "/subscribe?highlight=starter", { replace: true });
     });
     return () => unsubscribe();
@@ -181,9 +201,10 @@ export default function NexusRBXSignUpPageContainer() {
       writeAuthPersistencePreference(rememberMe);
       const credential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
       await credential.user.getIdToken();
+      await sendEmailVerification(credential.user);
       setFormStatus({
         status: "success",
-        message: "Account created successfully! Redirecting to Starter checkout..."
+        message: "Account created. Check your inbox to verify your email before continuing."
       });
       void trackProductEvent("signup_completed", {
         landing_page: from,
@@ -191,7 +212,7 @@ export default function NexusRBXSignUpPageContainer() {
         subscription_plan: selectedPlan,
       }, { dedupeKey: `signup_completed:${credential.user.uid}` });
       setTimeout(() => {
-        void redirectAfterSignup();
+        void redirectAfterSignup(credential.user);
       }, 800);
     } catch (error) {
       setFormStatus({
@@ -221,9 +242,12 @@ export default function NexusRBXSignUpPageContainer() {
       });
       if (!credential) return;
       await credential.user.getIdToken();
+      if (!credential.user.emailVerified) await sendEmailVerification(credential.user);
       setFormStatus({
         status: "success",
-        message: "Google sign up successful! Redirecting to Starter checkout..."
+        message: credential.user.emailVerified
+          ? "Google sign up successful! Redirecting to Starter checkout..."
+          : "Account created. Check your inbox to verify your email before continuing."
       });
       void trackProductEvent("signup_completed", {
         landing_page: from,
@@ -231,7 +255,7 @@ export default function NexusRBXSignUpPageContainer() {
         subscription_plan: selectedPlan,
       }, { dedupeKey: `signup_completed:${credential.user.uid}` });
       setTimeout(() => {
-        void redirectAfterSignup();
+        void redirectAfterSignup(credential.user);
       }, 800);
     } catch (error) {
       setFormStatus({
@@ -261,9 +285,12 @@ export default function NexusRBXSignUpPageContainer() {
       });
       if (!credential) return;
       await credential.user.getIdToken();
+      if (!credential.user.emailVerified) await sendEmailVerification(credential.user);
       setFormStatus({
         status: "success",
-        message: "GitHub sign up successful! Redirecting to Starter checkout..."
+        message: credential.user.emailVerified
+          ? "GitHub sign up successful! Redirecting to Starter checkout..."
+          : "Account created. Check your inbox to verify your email before continuing."
       });
       void trackProductEvent("signup_completed", {
         landing_page: from,
@@ -271,7 +298,7 @@ export default function NexusRBXSignUpPageContainer() {
         subscription_plan: selectedPlan,
       }, { dedupeKey: `signup_completed:${credential.user.uid}` });
       setTimeout(() => {
-        void redirectAfterSignup();
+        void redirectAfterSignup(credential.user);
       }, 800);
     } catch (error) {
       setFormStatus({

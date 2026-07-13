@@ -9,58 +9,227 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == uid;
     }
 
+    // Firebase ID tokens carry this claim after the user reloads their token following
+    // email verification. Reads remain available so a user can complete verification,
+    // but write-heavy workspace activity is withheld until then.
+    function isVerifiedUser(uid) {
+      return isOwner(uid) && request.auth.token.email_verified == true;
+    }
+
     function isBoundedList(max) {
       return request.query.limit != null
         && request.query.limit <= max
         && request.query.offset == null;
     }
 
-    function teamMemberPath(teamId, uid) {
-      return /databases/$(database)/documents/teams/$(teamId)/members/$(uid);
+    function onlyChanges(allowed) {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(allowed);
     }
 
-    function isTeamMember(teamId) {
-      return isSignedIn() && exists(teamMemberPath(teamId, request.auth.uid));
+    function isShortString(value, max) {
+      return value is string && value.size() <= max;
     }
 
-    function isTeamAdmin(teamId) {
-      return isSignedIn() && get(teamMemberPath(teamId, request.auth.uid)).data.role in ['owner', 'admin'];
+    function isTimestamp(value) {
+      return value is timestamp;
     }
 
+    function hasOnlyUserDocumentFields() {
+      return request.resource.data.keys().hasOnly([
+        'title', 'activeMode', 'createdAt', 'updatedAt', 'lastMessage'
+      ]);
+    }
+
+    function validChatCreate() {
+      return hasOnlyUserDocumentFields()
+        && request.resource.data.keys().hasAll(['title', 'createdAt', 'updatedAt'])
+        && isShortString(request.resource.data.title, 160)
+        && isTimestamp(request.resource.data.createdAt)
+        && isTimestamp(request.resource.data.updatedAt)
+        && (!request.resource.data.keys().hasAny(['activeMode'])
+          || isShortString(request.resource.data.activeMode, 80))
+        && (!request.resource.data.keys().hasAny(['lastMessage'])
+          || isShortString(request.resource.data.lastMessage, 500));
+    }
+
+    function validChatUpdate() {
+      return onlyChanges(['title', 'activeMode', 'updatedAt', 'lastMessage'])
+        && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['title'])
+          || isShortString(request.resource.data.title, 160))
+        && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['activeMode'])
+          || isShortString(request.resource.data.activeMode, 80))
+        && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['lastMessage'])
+          || isShortString(request.resource.data.lastMessage, 500))
+        && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['updatedAt'])
+          || isTimestamp(request.resource.data.updatedAt));
+    }
+
+    function hasOnlyMessageFields() {
+      return request.resource.data.keys().hasOnly([
+        'role', 'content', 'attachments', 'createdAt', 'updatedAt', 'requestId',
+        'stage', 'pending', 'jobId', 'runId', 'isAutoExecuting', 'metadata', 'steps',
+        'errorCode', 'error', 'code', 'patchApplied', 'intent', 'explanation',
+        'questions', 'originPrompt', 'planId', 'classification', 'aiSummary',
+        'aiSteps', 'aiAssumptions', 'planMarkdown', 'planSteps', 'answers',
+        'summary', 'thought', 'title', 'projectId', 'versionNumber', 'artifactId',
+        'options', 'plan', 'files', 'revision', 'setupSteps', 'testingSteps',
+        'securityNotes', 'warnings'
+      ]);
+    }
+
+    function validMessagePayload() {
+      return hasOnlyMessageFields()
+        && request.resource.data.keys().hasAll(['role', 'createdAt'])
+        && request.resource.data.role in ['user', 'assistant']
+        && isTimestamp(request.resource.data.createdAt)
+        && (!request.resource.data.keys().hasAny(['updatedAt'])
+          || isTimestamp(request.resource.data.updatedAt))
+        && (!request.resource.data.keys().hasAny(['content'])
+          || isShortString(request.resource.data.content, 60000))
+        && (!request.resource.data.keys().hasAny(['code'])
+          || isShortString(request.resource.data.code, 200000))
+        && (!request.resource.data.keys().hasAny(['explanation'])
+          || isShortString(request.resource.data.explanation, 30000))
+        && (!request.resource.data.keys().hasAny(['originPrompt'])
+          || isShortString(request.resource.data.originPrompt, 30000))
+        && (!request.resource.data.keys().hasAny(['planMarkdown'])
+          || isShortString(request.resource.data.planMarkdown, 60000))
+        && (!request.resource.data.keys().hasAny(['attachments'])
+          || (request.resource.data.attachments is list
+            && request.resource.data.attachments.size() <= 5));
+    }
+
+    function validMessageUpdate() {
+      return onlyChanges([
+        'content', 'attachments', 'updatedAt', 'stage', 'pending', 'jobId', 'runId',
+        'isAutoExecuting', 'metadata', 'steps', 'errorCode', 'error', 'code',
+        'patchApplied', 'intent', 'explanation', 'questions', 'originPrompt', 'planId',
+        'classification', 'aiSummary', 'aiSteps', 'aiAssumptions', 'planMarkdown',
+        'planSteps', 'answers', 'summary', 'thought', 'title', 'projectId',
+        'versionNumber', 'artifactId', 'options', 'plan', 'files', 'revision',
+        'setupSteps', 'testingSteps', 'securityNotes', 'warnings'
+      ]) && validMessagePayload();
+    }
+
+    function hasOnlyScriptFields() {
+      return request.resource.data.keys().hasOnly([
+        'title', 'chatId', 'createdAt', 'updatedAt', 'type'
+      ]);
+    }
+
+    function validScriptCreate() {
+      return hasOnlyScriptFields()
+        && request.resource.data.keys().hasAll(['title', 'createdAt', 'updatedAt'])
+        && isShortString(request.resource.data.title, 160)
+        && isTimestamp(request.resource.data.createdAt)
+        && isTimestamp(request.resource.data.updatedAt)
+        && (!request.resource.data.keys().hasAny(['chatId'])
+          || isShortString(request.resource.data.chatId, 200))
+        && (!request.resource.data.keys().hasAny(['type'])
+          || isShortString(request.resource.data.type, 80));
+    }
+
+    function validScriptUpdate() {
+      return onlyChanges(['title', 'chatId', 'updatedAt', 'type'])
+        && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['title'])
+          || isShortString(request.resource.data.title, 160))
+        && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['chatId'])
+          || isShortString(request.resource.data.chatId, 200))
+        && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['type'])
+          || isShortString(request.resource.data.type, 80))
+        && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['updatedAt'])
+          || isTimestamp(request.resource.data.updatedAt));
+    }
+
+    function validScriptVersion() {
+      return request.resource.data.keys().hasOnly([
+        'versionNumber', 'code', 'explanation', 'createdAt'
+      ])
+        && request.resource.data.keys().hasAll(['code', 'createdAt'])
+        && request.resource.data.code is string
+        && request.resource.data.code.size() <= 200000
+        && isTimestamp(request.resource.data.createdAt)
+        && (!request.resource.data.keys().hasAny(['versionNumber'])
+          || (request.resource.data.versionNumber is int
+            && request.resource.data.versionNumber >= 1
+            && request.resource.data.versionNumber <= 100000))
+        && (!request.resource.data.keys().hasAny(['explanation'])
+          || isShortString(request.resource.data.explanation, 30000));
+    }
+
+    // User root documents are backend-owned. This explicitly protects role, billing,
+    // Stripe, usage, entitlement, and admin fields from browser-side mass assignment.
     match /users/{uid} {
-      allow get, create, update, delete: if isOwner(uid);
-      allow list: if false;
+      allow get: if isOwner(uid);
+      allow list, create, update, delete: if false;
+
+      match /chats/{chatId} {
+        allow get: if isOwner(uid);
+        allow list: if isOwner(uid) && isBoundedList(100);
+        allow create: if isVerifiedUser(uid) && validChatCreate();
+        allow update: if isVerifiedUser(uid) && validChatUpdate();
+        allow delete: if isVerifiedUser(uid);
+
+        match /messages/{messageId} {
+          allow get: if isOwner(uid);
+          allow list: if isOwner(uid) && isBoundedList(300);
+          allow create: if isVerifiedUser(uid) && validMessagePayload();
+          allow update: if isVerifiedUser(uid) && validMessageUpdate();
+          allow delete: if isVerifiedUser(uid);
+        }
+
+        // Project snapshots are server-managed but loaded by the chat owner.
+        match /project/{documentId} {
+          allow get: if isOwner(uid);
+          allow list, create, update, delete: if false;
+        }
+      }
+
+      match /scripts/{scriptId} {
+        allow get: if isOwner(uid);
+        allow list: if isOwner(uid) && isBoundedList(100);
+        allow create: if isVerifiedUser(uid) && validScriptCreate();
+        allow update: if isVerifiedUser(uid) && validScriptUpdate();
+        allow delete: if isVerifiedUser(uid);
+
+        match /versions/{versionId} {
+          allow get: if isOwner(uid);
+          allow list: if isOwner(uid) && isBoundedList(100);
+          allow create: if isVerifiedUser(uid) && validScriptVersion();
+          allow update, delete: if false;
+        }
+      }
+
+      // These are rendered by the client but populated by trusted backend code.
+      match /billing/{documentId} {
+        allow get: if isOwner(uid);
+        allow list, create, update, delete: if false;
+      }
+
+      match /project/{documentId} {
+        allow get: if isOwner(uid);
+        allow list, create, update, delete: if false;
+      }
+
+      match /custom_modes/{documentId} {
+        allow get: if isOwner(uid);
+        allow list: if isOwner(uid) && isBoundedList(50);
+        allow create, update, delete: if false;
+      }
+    }
+
+    // Team membership and shared project changes are server-mediated. This prevents a
+    // client from granting itself an administrative role or writing someone else's work.
+    match /teams/{teamId} {
+      allow get, list, create, update, delete: if false;
 
       match /{document=**} {
-        allow get, create, update, delete: if isOwner(uid);
-        allow list: if isOwner(uid) && isBoundedList(200);
+        allow get, list, create, update, delete: if false;
       }
     }
 
-    match /teams/{teamId} {
-      allow get: if isTeamMember(teamId);
-      allow list, create: if false;
-      allow update, delete: if isTeamAdmin(teamId);
-
-      match /members/{memberId} {
-        allow get: if isTeamMember(teamId);
-        allow list: if isTeamMember(teamId) && isBoundedList(100);
-        allow create, update, delete: if isTeamAdmin(teamId);
-      }
-
-      match /shared_artifacts/{artifactId} {
-        allow get: if isTeamMember(teamId);
-        allow list: if isTeamMember(teamId) && isBoundedList(100);
-        allow create: if isTeamMember(teamId);
-        allow update, delete: if isTeamAdmin(teamId);
-      }
-
-      match /projects/{projectId} {
-        allow get, create, update, delete: if isTeamMember(teamId);
-        allow list: if isTeamMember(teamId) && isBoundedList(100);
-      }
-    }
-
+    // Firebase Stripe Payments extension and the backend use Admin credentials; browsers
+    // may observe their own records but cannot trigger privileged payment documents.
     match /customers/{uid} {
       allow get: if isOwner(uid);
       allow list, create, update, delete: if false;
@@ -77,8 +246,7 @@ service cloud.firestore {
 
       match /subscriptions/{subscriptionId} {
         allow get: if isOwner(uid);
-        allow list: if isOwner(uid) && isBoundedList(20);
-        allow create, update, delete: if false;
+        allow list, create, update, delete: if false;
       }
     }
 
@@ -91,8 +259,7 @@ service cloud.firestore {
     }
 
     match /_jobs/{jobId} {
-      allow read: if false;
-      allow write: if false;
+      allow read, write: if false;
     }
 
     match /_stream_sessions/{sessionId} {

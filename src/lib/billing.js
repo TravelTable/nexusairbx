@@ -3,6 +3,7 @@ import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { BACKEND_URL } from "../config";
 import { getRetryDelayMs, isRetryableApiError, readJsonResponse, withApiRetryCooldown } from "./apiErrors";
 import { getProductAnalyticsHeaders } from "./productAnalytics";
+import { getFirebaseAppCheckHeaders } from "./appCheck";
 
 const API_ORIGIN = BACKEND_URL;
 const TIMEZONE_SUCCESS_THROTTLE_MS = 12 * 60 * 60 * 1000;
@@ -71,6 +72,7 @@ export async function authedFetch(path, init = {}) {
   if (noCache) url.searchParams.set("t", String(Date.now()));
 
   let token = await getIdToken({ force: false });
+  let appCheckHeaders = await getFirebaseAppCheckHeaders();
 
   let res = await fetch(url.toString(), {
     ...init,
@@ -81,6 +83,7 @@ export async function authedFetch(path, init = {}) {
       Accept: "application/json",
       ...getProductAnalyticsHeaders(),
       ...(init.headers || {}),
+      ...appCheckHeaders,
       Authorization: `Bearer ${token}`,
       "Cache-Control": "no-cache, no-store, max-age=0",
       Pragma: "no-cache",
@@ -90,6 +93,7 @@ export async function authedFetch(path, init = {}) {
   // Retry once if token expired
   if (res.status === 401) {
     token = await getIdToken({ force: true });
+    appCheckHeaders = await getFirebaseAppCheckHeaders();
     res = await fetch(url.toString(), {
       ...init,
       method: init.method || "GET",
@@ -99,6 +103,7 @@ export async function authedFetch(path, init = {}) {
         Accept: "application/json",
         ...getProductAnalyticsHeaders(),
         ...(init.headers || {}),
+        ...appCheckHeaders,
         Authorization: `Bearer ${token}`,
         "Cache-Control": "no-cache, no-store, max-age=0",
         Pragma: "no-cache",

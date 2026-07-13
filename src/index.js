@@ -7,10 +7,12 @@ import { SettingsProvider } from "./context/SettingsContext";
 import { BillingProvider } from "./context/BillingContext";
 import { auth } from "./firebase";
 import { applyAuthPersistence, readAuthPersistencePreference } from "./lib/firebaseAuth";
+import { installAppCheckFetchInterceptor } from "./lib/appCheck";
 import { initProductAnalytics } from "./lib/productAnalytics";
 
 if (typeof window !== "undefined") {
   void applyAuthPersistence(auth, readAuthPersistencePreference());
+  installAppCheckFetchInterceptor();
 }
 
 // Suppress ResizeObserver loop error (Monaco Editor/Chrome bug)
