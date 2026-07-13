@@ -49,7 +49,10 @@ the verification metrics below are healthy.
   token. The Stripe webhook is deliberately exempt because Stripe signature
   verification is its authentication mechanism. Paired Studio-plugin protocol
   endpoints are exempt because they use their own pairing-session credential rather
-  than a browser Firebase App Check token.
+  than a browser Firebase App Check token. The two SSE endpoints are also exempt
+  because browser `EventSource` cannot send a custom header; each requires a
+  short-lived server-minted stream session that is issued only after App Check and
+  Firebase ID-token verification.
 - A debug token can only be set by the browser client when `NODE_ENV=development` and
   `REACT_APP_APP_CHECK_DEBUG_TOKEN` is explicitly supplied. It is not enabled in
   production.
@@ -79,9 +82,10 @@ source/configuration change.
   checkout or opens the portal. Registration itself does not write a customer record.
 - The creation request uses Stripe's customer idempotency key
   `nexusrbx-customer-<uid>` and preserves an existing `customers/{uid}` document.
-  Checkout/portal session requests also use a server-generated or validated
-  idempotency key. Client payloads are allowlisted and prices are selected by the
-  server.
+  Checkout/portal session requests require a validated idempotency key. Checkout
+  retries retain the same browser-generated key for 30 minutes, while the API binds
+  it to the Firebase UID and operation before passing it to Stripe. Client payloads
+  are allowlisted and prices are selected by the server.
 - Checkout and portal require a verified Firebase token and their own durable limit.
 - Webhooks still use raw-body Stripe signature verification. Event IDs are claimed
   transactionally in `_stripe_webhook_events` before side effects, are marked
@@ -93,10 +97,12 @@ source/configuration change.
 
 ### Durable limits, temporary blocks, and uploads
 
-Rate-limit counters live in Firestore transactions under `_security_rate_limits`, not
-in process memory. Keys are HMAC-hashed with `SECURITY_RATE_LIMIT_HMAC_KEY`; production
-fails closed if that private key is absent or too short. Limit events return `429` with
-`Retry-After`, generic text, and a structured event containing a subject hash only.
+Rate-limit counters and temporary-block lookups use a shared Redis store, not Firestore
+or process memory. Keys are HMAC-hashed with `SECURITY_RATE_LIMIT_HMAC_KEY`; production
+fails closed if that private key or `REDIS_URL` is absent, or if Redis is unavailable.
+Limit events return `429` with `Retry-After`, generic text, and a structured event
+containing a subject hash only. Firestore retains temporary-block audit records only;
+it is not read on public request paths.
 
 | Action | Default | Key |
 | --- | --- | --- |
@@ -158,12 +164,12 @@ Storage upload rule in this repository.
    enforcement separately for Firebase Authentication, Firestore, and Storage where
    supported; no console enforcement is changed by this code.
 3. **Deploy the API in monitor mode.** Set a unique production
-   `SECURITY_RATE_LIMIT_HMAC_KEY` (32+ random characters) and leave
+   `SECURITY_RATE_LIMIT_HMAC_KEY` (32+ random characters), set `REDIS_URL` to the
+   managed shared Redis endpoint, and leave
    `APP_CHECK_MODE=monitor`. Confirm the exact public proxy chain before setting
    `TRUSTED_PROXY_HOPS`; leave it blank otherwise.
 4. **Create Firestore TTL policies.** Configure TTL for
-   `_security_rate_limits.expiresAt`, `_security_blocks.expiresAt`, and
-   `_stripe_webhook_events.expiresAt`. Review Firestore indexes required for the
+   `_security_blocks.expiresAt` and `_stripe_webhook_events.expiresAt`. Review Firestore indexes required for the
    admin block list (`expiresAt` ascending) before using it in production.
 5. **Deploy rules deliberately.** Test Firestore/Storage rules in an emulator against
    real client flows, then deploy the root rules configuration. Check the Firebase

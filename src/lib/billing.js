@@ -10,6 +10,9 @@ const TIMEZONE_SUCCESS_THROTTLE_MS = 12 * 60 * 60 * 1000;
 const TIMEZONE_RETRY_THROTTLE_MS = 5 * 60 * 1000;
 
 let authInitPromise = null;
+const billingRequestKeys = new Map();
+const BILLING_REQUEST_KEY_TTL_MS = 30 * 60 * 1000;
+const BILLING_REQUEST_STORAGE_PREFIX = "nexus:billing-request:";
 
 function waitForAuthInit() {
   const auth = getAuth();
@@ -57,6 +60,50 @@ function removeStoredValue(key) {
   } catch (_) {
     /* best effort */
   }
+}
+
+function randomRequestId() {
+  if (typeof globalThis.crypto?.randomUUID === "function") {
+    return globalThis.crypto.randomUUID();
+  }
+  if (typeof globalThis.crypto?.getRandomValues === "function") {
+    const bytes = new Uint8Array(16);
+    globalThis.crypto.getRandomValues(bytes);
+    return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
+  }
+  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 14)}`;
+}
+
+function billingRequestKey(scope, body) {
+  const fingerprint = `${scope}:${JSON.stringify(body || {})}`;
+  const now = Date.now();
+  const existing = billingRequestKeys.get(fingerprint);
+  if (existing && existing.expiresAt > now) return existing.key;
+
+  const storageKey = `${BILLING_REQUEST_STORAGE_PREFIX}${encodeURIComponent(fingerprint)}`;
+  try {
+    const persisted = JSON.parse(window.sessionStorage.getItem(storageKey) || "null");
+    if (persisted?.key && persisted.expiresAt > now) {
+      billingRequestKeys.set(fingerprint, persisted);
+      return persisted.key;
+    }
+    window.sessionStorage.removeItem(storageKey);
+  } catch (_) {
+    // Session storage is only a retry aid; checkout remains safe without it.
+  }
+
+  const key = `${scope}-${randomRequestId()}`;
+  const entry = { key, expiresAt: now + BILLING_REQUEST_KEY_TTL_MS };
+  billingRequestKeys.set(fingerprint, entry);
+  try {
+    window.sessionStorage.setItem(storageKey, JSON.stringify(entry));
+  } catch (_) {
+    // Private browsing or storage restrictions must not block an authorized checkout.
+  }
+  for (const [storedFingerprint, value] of billingRequestKeys) {
+    if (value.expiresAt <= now) billingRequestKeys.delete(storedFingerprint);
+  }
+  return key;
 }
 
 function timezoneStorageKey(uid, timezone, suffix) {
@@ -278,9 +325,10 @@ export async function submitBrowserTimezone(timezone) {
 }
 
 async function postCheckout(body) {
+  const idempotencyKey = billingRequestKey("checkout", body);
   const r = await authedFetch("/api/checkout", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", "Idempotency-Key": idempotencyKey },
     body: JSON.stringify(body),
   });
   if (!r.ok) {
@@ -316,7 +364,10 @@ export async function startCheckout(firstArg, mode = "subscription", thirdArg) {
 }
 
 export async function openPortal() {
-  const r = await authedFetch("/api/portal", { method: "POST" });
+  const r = await authedFetch("/api/portal", {
+    method: "POST",
+    headers: { "Idempotency-Key": billingRequestKey("portal", {}) },
+  });
   if (!r.ok) {
     const text = await r.text();
     throw new Error(`portal ${r.status}: ${text}`);

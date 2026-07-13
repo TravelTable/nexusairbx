@@ -1,0 +1,136 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e3]:
+      - generic [ref=e4]:
+        - link "NexusRBX home" [ref=e5] [cursor=pointer]:
+          - /url: /
+          - generic [ref=e6]: "N"
+          - generic [ref=e7]: NexusRBX
+        - navigation "Primary" [ref=e8]:
+          - link "Script Generator" [ref=e9] [cursor=pointer]:
+            - /url: /roblox-script-generator
+          - link "GUI Maker" [ref=e10] [cursor=pointer]:
+            - /url: /roblox-gui-maker
+          - link "Docs" [ref=e11] [cursor=pointer]:
+            - /url: /docs
+          - link "Icon Generator" [ref=e12] [cursor=pointer]:
+            - /url: /tools/icon-generator
+          - link "Pricing" [ref=e13] [cursor=pointer]:
+            - /url: /subscribe
+        - generic [ref=e14]:
+          - link "Sign in" [ref=e15] [cursor=pointer]:
+            - /url: /signin
+          - link "Open AI" [ref=e16] [cursor=pointer]:
+            - /url: /ai
+    - main [ref=e17]:
+      - generic [ref=e19]:
+        - generic [ref=e20]: Quick Script
+        - heading "Roblox script generator for focused Luau code." [level=1] [ref=e21]
+        - paragraph [ref=e22]: Use this page when you know the Roblox behavior you want and need a clear first script. NexusRBX starts with immediate code, then explains where it belongs and what to test in Studio.
+        - generic [ref=e23]:
+          - generic [ref=e24]: Describe your Roblox request
+          - textbox "Describe your Roblox request" [ref=e25]:
+            - /placeholder: Create a round timer with intermission, round start, and winner rewards...
+          - button "Generate a Roblox script" [disabled] [ref=e26]
+          - paragraph [ref=e27]: "Default mode: Quick Script"
+      - generic [ref=e30]:
+        - generic [ref=e31]:
+          - heading "Example prompts and outputs" [level=2] [ref=e32]
+          - generic [ref=e33]:
+            - article [ref=e34]:
+              - heading "Round Timer" [level=3] [ref=e35]
+              - paragraph [ref=e36]: Create a server round timer with a 20 second intermission, 90 second round, and a RemoteEvent that updates a timer label.
+              - paragraph [ref=e37]:
+                - strong [ref=e38]: "Likely output:"
+                - text: A ServerScriptService Script that owns round state plus a ReplicatedStorage RemoteEvent for UI updates.
+              - button "Use this prompt" [ref=e39] [cursor=pointer]
+            - article [ref=e40]:
+              - heading "Checkpoint Reward" [level=3] [ref=e41]
+              - paragraph [ref=e42]: Make a checkpoint script that saves the last touched checkpoint and respawns the player there after death.
+              - paragraph [ref=e43]:
+                - strong [ref=e44]: "Likely output:"
+                - text: A Script for ServerScriptService with checkpoint tags, player state, and safe character repositioning.
+              - button "Use this prompt" [ref=e45] [cursor=pointer]
+            - article [ref=e46]:
+              - heading "Proximity Door" [level=3] [ref=e47]
+              - paragraph [ref=e48]: Generate a proximity prompt door script that opens for players who have a Keycard bool value.
+              - paragraph [ref=e49]:
+                - strong [ref=e50]: "Likely output:"
+                - text: A focused door controller with permission checks and tweened movement notes.
+              - button "Use this prompt" [ref=e51] [cursor=pointer]
+        - generic [ref=e52]:
+          - heading "Supported request types" [level=2] [ref=e53]
+          - list [ref=e54]:
+            - listitem [ref=e55]: Round timers
+            - listitem [ref=e56]: Touch triggers
+            - listitem [ref=e57]: NPC interactions
+            - listitem [ref=e58]: Shop logic
+            - listitem [ref=e59]: RemoteEvent handlers
+            - listitem [ref=e60]: Basic DataStore patterns
+        - generic [ref=e61]:
+          - heading "Roblox Studio installation guidance" [level=2] [ref=e62]
+          - list [ref=e63]:
+            - listitem [ref=e64]: Put server-authoritative gameplay code in ServerScriptService unless the script must live inside a specific Part or model.
+            - listitem [ref=e65]: Create RemoteEvents in ReplicatedStorage when a LocalScript needs UI updates from server state.
+            - listitem [ref=e66]: Test with Start Server and multiple clients when a script changes shared game state.
+        - generic [ref=e67]:
+          - heading "Common mistakes" [level=2] [ref=e68]
+          - list [ref=e69]:
+            - listitem [ref=e70]: Trusting a LocalScript for currency, inventory, or rewards.
+            - listitem [ref=e71]: Forgetting to create the RemoteEvent or folder path referenced by the script.
+            - listitem [ref=e72]: Pasting code into the wrong script type and then debugging the wrong problem.
+        - generic [ref=e73]:
+          - heading "Debugging guidance" [level=2] [ref=e74]
+          - list [ref=e75]:
+            - listitem [ref=e76]: Read the Output window first and fix the earliest error before changing logic.
+            - listitem [ref=e77]: Add temporary print statements around player, character, and object lookups.
+            - listitem [ref=e78]: Check that services and objects exist before assuming the generated path is correct.
+        - generic [ref=e79]:
+          - heading "Limitations" [level=2] [ref=e80]
+          - list [ref=e81]:
+            - listitem [ref=e82]: Generated code needs Studio testing because every place has different object names and gameplay rules.
+            - listitem [ref=e83]: NexusRBX can provide a focused first version, but complex economies or anti-cheat systems need careful review.
+        - generic [ref=e84]:
+          - heading "Safety and responsible use" [level=2] [ref=e85]
+          - list [ref=e86]:
+            - listitem [ref=e87]: Keep rewards, purchases, and permissions on the server.
+            - listitem [ref=e88]: Avoid scripts that harass players, bypass platform rules, or automate abuse.
+        - generic [ref=e89]:
+          - heading "FAQs" [level=2] [ref=e90]
+          - generic [ref=e91]:
+            - article [ref=e92]:
+              - heading "Does this guarantee a working Roblox script?" [level=3] [ref=e93]
+              - paragraph [ref=e94]: No. It gives you a focused Luau starting point with setup and test notes. You still need to verify object names, placement, and gameplay behavior in Studio.
+            - article [ref=e95]:
+              - heading "When should I use Agent Build instead?" [level=3] [ref=e96]
+              - paragraph [ref=e97]: Use Agent Build when the script touches several systems, needs Studio inspection, or should create multiple files with a plan.
+        - generic [ref=e98]:
+          - heading "Relevant documentation" [level=2] [ref=e99]
+          - generic [ref=e100]:
+            - link "Generation modes >" [ref=e101] [cursor=pointer]:
+              - /url: /docs#generation-modes
+            - link "Safe workflow >" [ref=e102] [cursor=pointer]:
+              - /url: /docs#safe-workflow
+        - generic [ref=e103]:
+          - heading "Adjacent NexusRBX tools" [level=2] [ref=e104]
+          - generic [ref=e105]:
+            - link "Luau generator >" [ref=e106] [cursor=pointer]:
+              - /url: /roblox-lua-script-generator
+            - link "Studio script generator >" [ref=e107] [cursor=pointer]:
+              - /url: /roblox-studio-script-generator
+            - link "Open AI workspace >" [ref=e108] [cursor=pointer]:
+              - /url: /ai
+        - generic [ref=e109]:
+          - heading "Related scripting and UI pages" [level=2] [ref=e110]
+          - generic [ref=e111]:
+            - link "Roblox AI scripter for iterative building and debugging. >" [ref=e112] [cursor=pointer]:
+              - /url: /roblox-ai-scripter
+            - link "Roblox Lua script generator that speaks Luau. >" [ref=e113] [cursor=pointer]:
+              - /url: /roblox-lua-script-generator
+            - link "Roblox Studio script generator for correct placement and workflow. >" [ref=e114] [cursor=pointer]:
+              - /url: /roblox-studio-script-generator
+            - link "Roblox GUI maker for interactive UI behavior. >" [ref=e115] [cursor=pointer]:
+              - /url: /roblox-gui-maker
+  - button "Open Next.js Dev Tools" [ref=e121] [cursor=pointer]:
+    - img [ref=e122]
+  - alert [ref=e125]
