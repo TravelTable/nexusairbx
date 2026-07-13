@@ -63,12 +63,12 @@ function removeStoredValue(key) {
 }
 
 function randomRequestId() {
-  if (typeof globalThis.crypto?.randomUUID === "function") {
-    return globalThis.crypto.randomUUID();
+  if (typeof window.crypto?.randomUUID === "function") {
+    return window.crypto.randomUUID();
   }
-  if (typeof globalThis.crypto?.getRandomValues === "function") {
+  if (typeof window.crypto?.getRandomValues === "function") {
     const bytes = new Uint8Array(16);
-    globalThis.crypto.getRandomValues(bytes);
+    window.crypto.getRandomValues(bytes);
     return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
   }
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 14)}`;
