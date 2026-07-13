@@ -387,7 +387,7 @@ function NexusRBXContactPage({
               <div className="nexus-page-card p-6">
                 <h3 className="font-bold mb-3">Is there a free trial available?</h3>
                 <p className="text-gray-400 text-sm">
-                  Yes, NexusRBX AI access starts with Starter at $2/month. You can create an account anytime, but an active Starter subscription or higher is required to use the AI workspace. See our pricing page for plan details.
+                  Yes. You can try one Quick Script anonymously and use quota-limited Quick Script access with a free account. Starter at $2/month adds Agent Build, model selection, saved scripts, and more usage.
                 </p>
               </div>
               

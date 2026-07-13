@@ -1,21 +1,21 @@
 const PLAN_INFO = {
   free: {
-    label: "No plan",
+    label: "Free",
     badge: "outline",
     color: "gray",
     cap: 0,
-    capText: "Subscription required",
+    capText: "Daily Free usage",
     promptCap: 400,
-    promptPlaceholder: "Subscribe to Starter to use the AI workspace.",
-    upgradeLine: "AI access requires Starter ($2/mo) or higher.",
+    promptPlaceholder: "Describe a Roblox script (up to 400 chars).",
+    upgradeLine: "Free includes Quick Script. Starter unlocks Agent Build, attachments, and saved scripts.",
     upgradeCta: "Get Starter",
-    upgradeDesc: "Subscribe to Starter for model selection, saved scripts, and included AI usage.",
+    upgradeDesc: "Subscribe to Starter for Agent Build, model selection, saved scripts, and included AI usage.",
     badgeClass: "border border-gray-400 text-gray-300 bg-transparent",
     badgeFilled: false,
-    planNudge: "Subscribe to use NexusRBX AI",
+    planNudge: "Generated with Free Quick Script",
     sidebarStrip: (
       <span>
-        No active plan —{" "}
+        Free —{" "}
         <a
           href="/subscribe?highlight=starter"
           className="text-[#9b5de5] underline hover:text-[#00f5d4] transition-colors"
@@ -24,17 +24,17 @@ const PLAN_INFO = {
         </a>
       </span>
     ),
-    welcome: "Subscribe to Starter ($2/mo) to use the NexusRBX AI workspace.",
-    welcomeCta: "See Plans",
-    welcomeTokens: "Starter includes included AI usage each billing period.",
-    toastNudge: "Subscribe to Starter for $2/mo to unlock the AI workspace.",
-    toastZero: "AI access requires Starter ($2/mo) or higher.",
+    welcome: "Free Quick Script is ready.",
+    welcomeCta: "See Starter features",
+    welcomeTokens: "Quick Script uses a daily Free quota. Upgrade when you need Agent Build or saved workspace features.",
+    toastNudge: "Need Agent Build, attachments, or saved scripts? Upgrade to Starter.",
+    toastZero: "Daily Free usage reached. Try again tomorrow, or upgrade to continue now.",
     sidebarCta: "Subscribe",
     sidebarCtaLink: "/subscribe?highlight=starter",
-    sidebarCtaDesc: "Starter unlocks the AI workspace from $2/mo.",
+    sidebarCtaDesc: "Starter unlocks Agent Build, attachments, and saved scripts.",
     sidebarCtaColor: "bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-white",
-    sidebarCtaText: "Get Starter for $2",
-    sidebarCtaSub: "Model selection, saved scripts, included usage.",
+    sidebarCtaText: "Unlock Starter",
+    sidebarCtaSub: "Agent Build, model choice, saved scripts.",
   },
   starter: {
     label: "Starter",

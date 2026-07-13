@@ -58,7 +58,7 @@ import {
   consumeGenerationIntent,
   restoreGenerationIntent,
 } from "../../lib/generationIntent";
-import { resolveInitialGeneratorMode, shouldGateFirstValueBeforeSignup } from "../../lib/experiments";
+import { resolveInitialGeneratorMode } from "../../lib/experiments";
 import { categorizePrompt, trackProductEvent } from "../../lib/productAnalytics";
 import {
   createQuickScriptIdempotencyKey,
@@ -242,6 +242,7 @@ export function useAiWorkspaceController() {
   const autoIntentInFlightRef = useRef(null);
   const pendingAuthResumeRef = useRef(null);
   const pendingRobloxResumeRef = useRef(false);
+  const runQuickScriptRef = useRef(null);
 
   const {
     notify: queueNotify,
@@ -281,7 +282,7 @@ export function useAiWorkspaceController() {
   });
 
   const starterPromo = useStarterPromo({
-    blocking: Boolean(user) && !isStarterOrAbove,
+    blocking: false,
     isFreeUsagePlan,
     isSubscriber: isStarterOrAbove,
     dailyUsage,
@@ -632,11 +633,20 @@ export function useAiWorkspaceController() {
     if (activeTab !== "chat") setActiveTab("chat");
     if (isMobile) setMobileTab("chat");
 
-    // Auth gate: preserve draft so unauthenticated users don't lose their work
+    const canUseQuickScript = !refineTarget && currentAttachments.length === 0 && !hasProjectAssets;
+    if (canUseQuickScript && (!user || !isStarterOrAbove)) {
+      setGeneratorMode("quick_script", user ? "free_workspace_submit" : "anonymous_workspace_submit");
+      setPrompt("");
+      return runQuickScriptRef.current?.(promptToSend, {
+        source: user ? "free_workspace_submit" : "anonymous_workspace_submit",
+      });
+    }
+
+    // Agent Build, attachments, and project assets need an authenticated paid workspace.
     if (!user) {
       createPendingAuthAction({
         action: PENDING_AUTH_ACTIONS.CHAT_SUBMIT,
-        returnPath: "/subscribe?highlight=starter",
+        returnPath: "/ai",
         workspace: generatorMode,
         source: "chat_submit",
         payload: {
@@ -649,13 +659,13 @@ export function useAiWorkspaceController() {
           actionLabel: actionLabel(PENDING_AUTH_ACTIONS.CHAT_SUBMIT),
         },
       });
-      setSignInNudgeReason("Sign in to subscribe and access the NexusRBX AI workspace.");
+      setSignInNudgeReason("Sign in to use attachments, Agent Build, and saved workspace features. Basic Quick Script is available without an account.");
       setShowSignInNudge(true);
       return;
     }
 
     if (!isStarterOrAbove) {
-      starterPromo?.notifyStarterGate?.("AI workspace");
+      starterPromo?.notifyStarterGate?.("Agent Build, attachments, and project assets");
       return;
     }
 
@@ -694,6 +704,7 @@ export function useAiWorkspaceController() {
     settings?.modelVersion,
     isStarterOrAbove,
     starterPromo,
+    setGeneratorMode,
   ]);
 
   const recordPendingAuthGate = useCallback((actionType, source = "quick_script_gate") => {
@@ -737,11 +748,6 @@ export function useAiWorkspaceController() {
       return null;
     }
     if (quickScript.status === "generating") return null;
-    if (!user && !quickScript.result?.code && shouldGateFirstValueBeforeSignup()) {
-      recordPendingAuthGate(PENDING_AUTH_ACTIONS.RESTRICTED_GENERATION, "experiment_signup_before_first_value");
-      setShowSignInNudge(true);
-      return null;
-    }
     if (!user && quickScript.result?.code && !options.retry) {
       recordPendingAuthGate(PENDING_AUTH_ACTIONS.RESTRICTED_GENERATION, "quick_script_additional_generation");
       setShowSignInNudge(true);
@@ -860,15 +866,17 @@ export function useAiWorkspaceController() {
   ]);
 
   useEffect(() => {
+    runQuickScriptRef.current = runQuickScript;
+    return () => {
+      runQuickScriptRef.current = null;
+    };
+  }, [runQuickScript]);
+
+  useEffect(() => {
     if (!pendingGenerationIntent) return;
 
     if (pendingGenerationIntent.mode === "quick_script") {
       if (quickScript.status === "generating" || autoIntentInFlightRef.current === pendingGenerationIntent.id) return;
-      if (!user && !quickScript.result?.code && shouldGateFirstValueBeforeSignup()) {
-        recordPendingAuthGate(PENDING_AUTH_ACTIONS.RESTRICTED_GENERATION, "experiment_signup_before_first_value");
-        setShowSignInNudge(true);
-        return;
-      }
       const intent = pendingGenerationIntent;
       autoIntentInFlightRef.current = intent.id;
       setPendingGenerationIntent(null);
@@ -929,7 +937,6 @@ export function useAiWorkspaceController() {
     pendingGenerationIntent,
     quickScript.status,
     quickScript.result?.code,
-    recordPendingAuthGate,
     runQuickScript,
     user,
     unifiedIsGenerating,

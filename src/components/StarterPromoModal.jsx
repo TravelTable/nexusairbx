@@ -43,10 +43,10 @@ export default function StarterPromoModal({
   };
 
   const title = blocking
-    ? "Subscribe to use NexusRBX AI"
+    ? "Starter unlocks more NexusRBX AI"
     : "Unlock what Free users hit first";
   const description = blocking
-    ? "AI access starts at $2/month on Starter. Get model selection, saved scripts, more daily AI, and 30-day chat history."
+    ? "Free Quick Script is available with a quota. Starter adds model selection, saved scripts, more daily AI, and 30-day chat history."
     : "For the price of a Robux pack — more AI, model choice, saved scripts, and a month of history.";
 
   return (

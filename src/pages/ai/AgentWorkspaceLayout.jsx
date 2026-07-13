@@ -737,7 +737,7 @@ export default function AgentWorkspaceLayout({ controller }) {
           isFreeUsagePlan={isFreeUsagePlan}
           billingLoading={billingLoading}
           billingError={billingError}
-          composerLocked={!isStarterOrAbove}
+          composerLocked={false}
           themePrimary={currentTheme.primary}
           themeSecondary={currentTheme.secondary}
           onModeChange={(m) => chat.updateChatMode(chat.currentChatId, m)}
