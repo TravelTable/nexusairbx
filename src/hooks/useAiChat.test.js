@@ -274,19 +274,17 @@ describe("useAiChat", () => {
 
     const consoleError = jest.spyOn(console, "error").mockImplementation(() => {});
     try {
-      await act(async () => {
-        try {
-          await result.current.handleSubmit(
-            "Inspect my project",
-            "chat_1",
-            "req_studio_context",
-            "agent",
-            true
-          );
-        } catch (_) {
-          // The mocked failure stops the flow after the request body is captured.
-        }
+      let submission;
+      act(() => {
+        submission = result.current.handleSubmit(
+          "Inspect my project",
+          "chat_1",
+          "req_studio_context",
+          "agent",
+          true
+        );
       });
+      await submission;
     } finally {
       consoleError.mockRestore();
     }

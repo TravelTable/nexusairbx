@@ -36,7 +36,7 @@ describe("experiments", () => {
     expect(getExperimentVariant(EXPERIMENT_IDS.SIGNUP_GATE)).toBe("post_value_signup");
     expect(getExperimentVariant(EXPERIMENT_IDS.GENERATOR_DEFAULT)).toBe("quick_script_default");
     expect(getExperimentVariant(EXPERIMENT_IDS.HOMEPAGE_CTA)).toBe("generate_with_ai");
-    expect(chooseHomepageGeneratorMode("Make a sprint script")).toBe("quick_script");
+    expect(chooseHomepageGeneratorMode("Make a sprint script")).toBe("agent_build");
     expect(getHomepageCtaCopy()).toBe("Generate with AI");
   });
 
