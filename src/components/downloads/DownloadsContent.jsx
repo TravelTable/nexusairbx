@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 
 import {
+  AlertTriangle,
   CheckCircle,
   Download,
   ExternalLink,
@@ -27,14 +28,16 @@ const PLATFORM_COPY = {
   windows: {
     name: "Windows",
     detail: "Windows 10/11 — 64-bit",
-    signing: "Authenticode signed Windows installer",
-    steps: ["Run the downloaded installer", "Approve the verified NexusRBX publisher", "Open the connector and pair in your browser"],
+    signing: "Unsigned installer — Windows may show “Unknown publisher”",
+    steps: ["Run the downloaded installer", "If SmartScreen appears, select More info", "Choose Run anyway, then open and pair in your browser"],
   },
 };
 
 function DownloadCard({ platform, release, recommended, loading, onDownload }) {
   const copy = PLATFORM_COPY[platform];
   const enabled = Boolean(release);
+  const isUnsigned = release?.verification === "unsigned";
+  const VerificationIcon = isUnsigned ? AlertTriangle : ShieldCheck;
   return (
     <article className={`flex h-full flex-col rounded-xl border p-5 ${recommended ? "border-violet-400/40 bg-violet-500/[0.07]" : "border-white/10 bg-white/[0.025]"}`}>
       <div className="flex items-start justify-between gap-3">
@@ -53,7 +56,7 @@ function DownloadCard({ platform, release, recommended, loading, onDownload }) {
       </dl>
 
       <p className="mt-4 flex items-start gap-2 text-xs leading-5 text-zinc-400">
-        <ShieldCheck size={15} className={enabled ? "mt-0.5 shrink-0 text-emerald-400" : "mt-0.5 shrink-0 text-zinc-600"} aria-hidden="true" />
+        <VerificationIcon size={15} className={enabled ? `mt-0.5 shrink-0 ${isUnsigned ? "text-amber-400" : "text-emerald-400"}` : "mt-0.5 shrink-0 text-zinc-600"} aria-hidden="true" />
         {enabled ? copy.signing : "Release verification required"}
       </p>
 
@@ -139,7 +142,7 @@ export default function DownloadsContent() {
         {status === "unavailable" ? (
           <div role="alert" className="mx-auto mt-8 max-w-2xl rounded-xl border border-amber-400/25 bg-amber-400/[0.06] p-4 text-center">
             <p className="font-semibold text-amber-200">Downloads temporarily unavailable</p>
-            <p className="mt-1 text-sm text-zinc-400">We only enable installers after both macOS and Windows releases pass signing and startup checks.</p>
+            <p className="mt-1 text-sm text-zinc-400">We only enable installers after both releases pass checksum and startup checks, plus Apple signing and notarization for macOS.</p>
           </div>
         ) : null}
 
@@ -167,7 +170,7 @@ export default function DownloadsContent() {
           <section className="rounded-xl border border-white/10 bg-white/[0.025] p-5">
             <RefreshCw size={19} className="text-violet-300" aria-hidden="true" />
             <h2 className="mt-3 font-semibold text-white">Automatic updates</h2>
-            <p className="mt-3 text-sm leading-6 text-zinc-400">The connector checks the signed NexusRBX release feed in the background and tells you when an update is ready.</p>
+            <p className="mt-3 text-sm leading-6 text-zinc-400">The connector checks the verified NexusRBX release feed in the background and tells you when an update is ready.</p>
           </section>
           <section className="rounded-xl border border-white/10 bg-white/[0.025] p-5">
             <ExternalLink size={19} className="text-violet-300" aria-hidden="true" />

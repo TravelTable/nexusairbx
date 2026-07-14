@@ -14,6 +14,7 @@ jobs:
         with:
           node-version: 22
           cache: npm
-      - run: npm ci
+      # This repository intentionally does not track the root npm lockfile.
+      - run: npm install --no-package-lock --no-audit --no-fund
       - run: CI=true npm test -- --watchAll=false
       - run: npm run build

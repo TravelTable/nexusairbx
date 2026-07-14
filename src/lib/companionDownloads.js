@@ -8,6 +8,7 @@ export const COMPANION_DOWNLOADS = Object.freeze({
     label: "Download for macOS",
     detail: "Universal — Intel and Apple Silicon",
     extension: ".dmg",
+    verification: "developer_id_notarized",
     architectures: Object.freeze(["x64", "arm64"]),
   }),
   windows: Object.freeze({
@@ -16,6 +17,7 @@ export const COMPANION_DOWNLOADS = Object.freeze({
     label: "Download for Windows",
     detail: "Windows 10/11 — 64-bit",
     extension: ".exe",
+    verification: "unsigned",
     architectures: Object.freeze(["x64"]),
   }),
 });
@@ -59,6 +61,7 @@ function normalizePlatform(value, definition) {
     throw new Error("invalid_architectures");
   }
   if (!Number.isSafeInteger(value.size) || value.size <= 0) throw new Error("invalid_size");
+  if (value.verification !== definition.verification) throw new Error("invalid_verification");
   if (typeof value.sha256 !== "string" || !/^[a-f\d]{64}$/i.test(value.sha256)) {
     throw new Error("invalid_checksum");
   }

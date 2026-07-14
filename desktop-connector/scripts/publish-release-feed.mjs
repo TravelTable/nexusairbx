@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { readdir, readFile } from "node:fs/promises";
 import { extname, join } from "node:path";
+import { put as putBlob } from "@vercel/blob";
 
 const [dir] = process.argv.slice(2);
 const uploadBase = process.env.NEXUSRBX_RELEASE_FEED_URL?.replace(/\/$/, "");
@@ -13,6 +14,10 @@ if (!dir || !uploadBase || !token) {
 if (!uploadBase.startsWith("https://") || !publicBase.startsWith("https://")) {
   throw new Error("Release upload and public feed URLs must use HTTPS.");
 }
+
+const uploadUrl = new URL(uploadBase);
+const isVercelBlob = uploadUrl.hostname.endsWith(".blob.vercel-storage.com");
+const blobPrefix = uploadUrl.pathname.replace(/^\/+|\/+$/g, "");
 
 const packageJson = JSON.parse(await readFile(new URL("../package.json", import.meta.url), "utf8"));
 const version = packageJson.version;
@@ -27,21 +32,40 @@ const contentTypes = {
   ".yml": "text/yaml; charset=utf-8",
   ".zip": "application/zip",
 };
-const IMMUTABLE_CACHE = "public, max-age=31536000, immutable";
-const STABLE_CACHE = "public, max-age=300, must-revalidate";
+const IMMUTABLE_CACHE_SECONDS = 31_536_000;
+const STABLE_CACHE_SECONDS = 300;
 
 function checksum(body) {
   return createHash("sha256").update(body).digest("hex");
 }
 
-async function publish(name, body, cacheControl) {
+async function publish(name, body, cacheControlMaxAge) {
+  const contentType = contentTypes[extname(name).toLowerCase()] || "application/octet-stream";
+  if (isVercelBlob) {
+    const pathname = blobPrefix ? `${blobPrefix}/${name}` : name;
+    const result = await putBlob(pathname, body, {
+      access: "public",
+      addRandomSuffix: false,
+      allowOverwrite: true,
+      cacheControlMaxAge,
+      contentType,
+      multipart: body.length >= 5 * 1024 * 1024,
+      token,
+    });
+    if (result.pathname !== pathname) throw new Error(`Blob published to an unexpected path: ${result.pathname}`);
+    return;
+  }
+
+  const cacheControl = cacheControlMaxAge === IMMUTABLE_CACHE_SECONDS
+    ? `public, max-age=${cacheControlMaxAge}, immutable`
+    : `public, max-age=${cacheControlMaxAge}, must-revalidate`;
   const response = await fetch(`${uploadBase}/${encodeURIComponent(name)}`, {
     method: "PUT",
     headers: {
       authorization: `Bearer ${token}`,
       "access-control-allow-origin": "*",
       "cache-control": cacheControl,
-      "content-type": contentTypes[extname(name).toLowerCase()] || "application/octet-stream",
+      "content-type": contentType,
       "x-checksum-sha256": checksum(body),
     },
     body,
@@ -75,14 +99,14 @@ const versioned = {
 // rollback point until every new stable object has been uploaded successfully.
 for (const [name, body] of bodies) {
   if (/^latest(?:-mac)?\.yml$/i.test(name) || name === "checksums.txt") continue;
-  await publish(name, body, IMMUTABLE_CACHE);
+  await publish(name, body, IMMUTABLE_CACHE_SECONDS);
 }
-await publish(versioned.macos, macBody, IMMUTABLE_CACHE);
-await publish(versioned.windows, windowsBody, IMMUTABLE_CACHE);
+await publish(versioned.macos, macBody, IMMUTABLE_CACHE_SECONDS);
+await publish(versioned.windows, windowsBody, IMMUTABLE_CACHE_SECONDS);
 
 // Auto-updater metadata and human-friendly aliases are intentionally short-lived.
 for (const [name, body] of bodies) {
-  if (/^latest(?:-mac)?\.yml$/i.test(name) || name === "checksums.txt") await publish(name, body, STABLE_CACHE);
+  if (/^latest(?:-mac)?\.yml$/i.test(name) || name === "checksums.txt") await publish(name, body, STABLE_CACHE_SECONDS);
 }
 const stableAliases = [
   ["NexusRBX-Connector-macOS.dmg", macBody],
@@ -91,7 +115,7 @@ const stableAliases = [
   ["NexusRBX-Companion-macOS.dmg", macBody],
   ["NexusRBX-Companion-Windows.exe", windowsBody],
 ];
-for (const [name, body] of stableAliases) await publish(name, body, STABLE_CACHE);
+for (const [name, body] of stableAliases) await publish(name, body, STABLE_CACHE_SECONDS);
 
 // The public manifest is the final write and therefore the release commit point.
 const latest = Buffer.from(`${JSON.stringify({
@@ -101,17 +125,19 @@ const latest = Buffer.from(`${JSON.stringify({
     macos: {
       url: `${publicBase}/${versioned.macos}`,
       architectures: ["x64", "arm64"],
+      verification: "developer_id_notarized",
       size: macBody.length,
       sha256: checksum(macBody),
     },
     windows: {
       url: `${publicBase}/${versioned.windows}`,
       architectures: ["x64"],
+      verification: "unsigned",
       size: windowsBody.length,
       sha256: checksum(windowsBody),
     },
   },
 }, null, 2)}\n`);
-await publish("latest.json", latest, STABLE_CACHE);
+await publish("latest.json", latest, STABLE_CACHE_SECONDS);
 
 console.log(`Published NexusRBX Connector ${version} for macOS and Windows.`);
