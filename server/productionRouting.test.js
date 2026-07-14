@@ -181,6 +181,7 @@ test("vercel rewrites enumerate route owners without a broad fallback", () => {
   const sources = renderRewrites.map((entry) => entry.source);
   const expectedSources = [
     "/",
+    "/downloads",
     ...docsRouteSources,
     ...legalRouteSources,
     "/roblox-script-generator",
