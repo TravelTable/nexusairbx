@@ -6,6 +6,7 @@ import {
   orderBy, 
   limit,
   onSnapshot, 
+  getDocs,
   addDoc,
   updateDoc, 
   deleteDoc, 
@@ -20,6 +21,7 @@ export function useAiScripts(user, notify) {
   const [currentScript, setCurrentScript] = useState(null);
   const [versionHistory, setVersionHistory] = useState([]);
   const [selectedVersionId, setSelectedVersionId] = useState(null);
+  const [libraryRevision, setLibraryRevision] = useState(0);
 
   useEffect(() => {
     if (!user || !currentScriptId) {
@@ -53,22 +55,23 @@ export function useAiScripts(user, notify) {
     );
     const qVersions = query(versionsRef, orderBy("versionNumber", "desc"), limit(SCRIPT_VERSION_HISTORY_LIMIT));
 
-    const unsubVersions = onSnapshot(
-      qVersions,
-      (snap) => {
+    let cancelled = false;
+    getDocs(qVersions)
+      .then((snap) => {
+        if (cancelled) return;
         const arr = [];
         snap.forEach((d) => arr.push({ id: d.id, ...d.data() }));
         setVersionHistory(arr);
-      },
-      (err) => {
-        console.error("Firestore versions subscription error:", err);
-        notify?.({ message: "Failed to sync version history", type: "error" });
-      }
-    );
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        console.error("Firestore versions load error:", err);
+        notify?.({ message: "Failed to load version history", type: "error" });
+      });
 
     return () => {
+      cancelled = true;
       unsubScript();
-      unsubVersions();
     };
   }, [user, currentScriptId, notify]);
 
@@ -79,6 +82,7 @@ export function useAiScripts(user, notify) {
         title,
         updatedAt: serverTimestamp(),
       });
+      setLibraryRevision((revision) => revision + 1);
       notify({ message: "Script renamed", type: "success" });
     } catch (err) {
       notify({ message: "Failed to rename script", type: "error" });
@@ -106,6 +110,7 @@ export function useAiScripts(user, notify) {
       }
 
       setCurrentScriptId(docRef.id);
+      setLibraryRevision((revision) => revision + 1);
       notify({ message: "Script created", type: "success" });
       return docRef.id;
     } catch (err) {
@@ -121,6 +126,7 @@ export function useAiScripts(user, notify) {
       if (currentScriptId === id) {
         setCurrentScriptId(null);
       }
+      setLibraryRevision((revision) => revision + 1);
       notify({ message: "Script deleted", type: "success" });
     } catch (err) {
       notify({ message: "Failed to delete script", type: "error" });
@@ -134,6 +140,7 @@ export function useAiScripts(user, notify) {
     versionHistory,
     selectedVersionId,
     setSelectedVersionId,
+    libraryRevision,
     handleCreateScript,
     handleRenameScript,
     handleDeleteScript

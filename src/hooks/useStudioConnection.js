@@ -1,37 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { getRetryDelayMs, isRetryableApiError } from "../lib/apiErrors";
-import { getStudioStatus } from "../lib/studioBridgeApi";
+import { getStudioMcpStatus, getStudioStatus } from "../lib/studioBridgeApi";
+import { normalizeStudioConnectionSnapshot } from "../lib/studioConnection";
 
-const LIVE_IDLE_MS = 45000;
 const CONNECTED_IDLE_POLL_MS = 15000;
 const RECOVERING_POLL_MS = 5000;
 const HIDDEN_MIN_POLL_MS = 60000;
 
-function pickActiveStudioSession(sessions = []) {
-  const connected = sessions.filter((session) => session?.status === "connected");
-  if (!connected.length) return null;
-
-  const live = connected.find((session) => session.live === true);
-  if (live) return live;
-
-  const recentlySeen = connected.find((session) => {
-    const lastSeenAt = Number(session?.lastSeenAt || 0);
-    return lastSeenAt > 0 && Date.now() - lastSeenAt <= LIVE_IDLE_MS;
-  });
-  if (recentlySeen) return recentlySeen;
-
-  const notStale = connected.find((session) => session.live !== false);
-  return notStale || connected[0] || null;
-}
-
-export function isStudioSessionLive(session) {
-  if (!session || session.status !== "connected") return false;
-  if (session.live === true) return true;
-  if (session.live === false) return false;
-  const lastSeenAt = Number(session.lastSeenAt || 0);
-  if (lastSeenAt > 0 && Date.now() - lastSeenAt <= LIVE_IDLE_MS) return true;
-  return session.live !== false;
-}
+export { isStudioSessionLive } from "../lib/studioConnection";
 
 export function getStudioStatusPollDelay({ connected = false, hidden = false, retryAfterMs = 0 } = {}) {
   const baseDelay = connected ? CONNECTED_IDLE_POLL_MS : RECOVERING_POLL_MS;
@@ -41,18 +17,21 @@ export function getStudioStatusPollDelay({ connected = false, hidden = false, re
 }
 
 /**
- * Polls Studio bridge connection status for unified agent Studio tools.
+ * Polls the independent plugin bridge and local MCP transports and presents one
+ * backward-compatible connection snapshot. The legacy sessionId always prefers
+ * a live plugin session so existing plugin-only workflows stay safe.
  */
 export function useStudioConnection() {
-  const [connected, setConnected] = useState(false);
-  const [sessionId, setSessionId] = useState(null);
-  const [collaborators, setCollaborators] = useState([]);
+  const [snapshot, setSnapshot] = useState(() => normalizeStudioConnectionSnapshot());
   const [loading, setLoading] = useState(true);
+  const pluginStatusRef = useRef(null);
+  const mcpStatusRef = useRef(null);
   const connectedRef = useRef(false);
   const retryAfterMsRef = useRef(0);
   const retryUntilRef = useRef(0);
   const inFlightRef = useRef(null);
   const refreshRef = useRef(null);
+  const mountedRef = useRef(true);
 
   const refresh = useCallback(async ({ force = true } = {}) => {
     const retryRemainingMs = retryUntilRef.current - Date.now();
@@ -63,43 +42,51 @@ export function useStudioConnection() {
     if (inFlightRef.current) return inFlightRef.current;
 
     const refreshTask = (async () => {
-      try {
-        const status = await getStudioStatus();
-        const active = pickActiveStudioSession(status.sessions || []);
-        const nextConnected = isStudioSessionLive(active);
-        retryAfterMsRef.current = 0;
-        retryUntilRef.current = 0;
-        connectedRef.current = nextConnected;
-        setConnected(nextConnected);
-        setSessionId(active?.sessionId || active?.id || null);
-        setCollaborators(Array.isArray(active?.collaborators) ? active.collaborators : []);
-      } catch (err) {
-        if (isRetryableApiError(err)) {
-          const retryAfterMs = getRetryDelayMs(err, 30000);
-          retryAfterMsRef.current = retryAfterMs;
-          retryUntilRef.current = Date.now() + retryAfterMs;
-          return null;
+      const results = await Promise.allSettled([getStudioStatus(), getStudioMcpStatus()]);
+      let retryAfterMs = 0;
+
+      const applyResult = (result, statusRef) => {
+        if (result.status === "fulfilled") {
+          statusRef.current = result.value;
+          return;
         }
-        retryAfterMsRef.current = 0;
-        retryUntilRef.current = 0;
-        connectedRef.current = false;
-        setConnected(false);
-        setSessionId(null);
-        setCollaborators([]);
-      } finally {
+        if (isRetryableApiError(result.reason)) {
+          retryAfterMs = Math.max(retryAfterMs, getRetryDelayMs(result.reason, 30000));
+          return;
+        }
+        statusRef.current = null;
+      };
+
+      applyResult(results[0], pluginStatusRef);
+      applyResult(results[1], mcpStatusRef);
+
+      retryAfterMsRef.current = retryAfterMs;
+      retryUntilRef.current = retryAfterMs > 0 ? Date.now() + retryAfterMs : 0;
+      const nextSnapshot = normalizeStudioConnectionSnapshot({
+        pluginStatus: pluginStatusRef.current,
+        mcpStatus: mcpStatusRef.current,
+      });
+      connectedRef.current = nextSnapshot.connected;
+      if (mountedRef.current) {
+        setSnapshot(nextSnapshot);
         setLoading(false);
       }
-      return null;
+      return nextSnapshot;
     })();
 
     inFlightRef.current = refreshTask;
     try {
       return await refreshTask;
     } finally {
-      if (inFlightRef.current === refreshTask) {
-        inFlightRef.current = null;
-      }
+      if (inFlightRef.current === refreshTask) inFlightRef.current = null;
     }
+  }, []);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
   }, []);
 
   useEffect(() => {
@@ -126,9 +113,7 @@ export function useStudioConnection() {
         retryAfterMs: retryAfterMsRef.current,
       });
       timer = window.setTimeout(() => {
-        Promise.resolve(refreshRef.current?.({ force: false })).finally(() => {
-          scheduleNext();
-        });
+        Promise.resolve(refreshRef.current?.({ force: false })).finally(scheduleNext);
       }, delay);
     };
 
@@ -137,9 +122,7 @@ export function useStudioConnection() {
       scheduleNext();
     };
 
-    Promise.resolve(refreshRef.current?.({ force: false })).finally(() => {
-      scheduleNext();
-    });
+    Promise.resolve(refreshRef.current?.({ force: false })).finally(scheduleNext);
 
     if (typeof document !== "undefined") {
       document.addEventListener("visibilitychange", handleVisibilityChange);
@@ -154,7 +137,7 @@ export function useStudioConnection() {
     };
   }, []);
 
-  return { connected, sessionId, collaborators, loading, refresh };
+  return { ...snapshot, loading, refresh };
 }
 
 export default useStudioConnection;

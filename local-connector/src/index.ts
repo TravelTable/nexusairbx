@@ -1,0 +1,10 @@
+export { NexusBackendClient } from "./backend-client.js";
+export { CommandExecutor, nexusStableHash, sha256, unsupportedResult } from "./command-executor.js";
+export { loadConfig, HELP_TEXT, type ConnectorConfig } from "./config.js";
+export { NexusLocalConnector, delay, type LocalConnectorOptions } from "./connector.js";
+export { ConnectorError, asConnectorError } from "./errors.js";
+export { ConsoleLogger, redact, type Logger } from "./logger.js";
+export { RobloxStudioMcpClient, type RobloxStudioMcpOptions } from "./mcp-client.js";
+export { ToolCatalog } from "./tool-catalog.js";
+export * from "./types.js";
+export { CONNECTOR_VERSION } from "./version.js";

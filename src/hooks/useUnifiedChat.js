@@ -25,7 +25,11 @@ import { categorizePrompt, trackProductEvent } from "../lib/productAnalytics";
 import { FEATURE_FLAGS } from "../lib/featureFlags";
 import { getStudioEnabledPreference } from "../lib/agentSteps";
 import { getStudioStatus } from "../lib/studioBridgeApi";
-import { isStudioSessionLive } from "./useStudioConnection";
+import {
+  getStudioConnectionType,
+  getStudioSessionId,
+  selectStudioSession,
+} from "../lib/studioConnection";
 import {
   describeChatAttachments,
   messageToConversationEntry,
@@ -338,15 +342,16 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
 
       const studioEnabled = FEATURE_FLAGS.unifiedAgent && getStudioEnabledPreference();
       let studioSessionId = null;
+      let studioConnectionType = null;
       if (studioEnabled) {
         try {
           const studioStatus = await getStudioStatus();
           const sessions = studioStatus.sessions || [];
-          const activeSession =
-            sessions.find((session) => isStudioSessionLive(session)) ||
-            sessions.find((session) => session?.status === "connected") ||
-            null;
-          studioSessionId = activeSession?.sessionId || activeSession?.id || null;
+          const activeSession = selectStudioSession(sessions);
+          studioSessionId = getStudioSessionId(activeSession);
+          studioConnectionType = activeSession
+            ? getStudioConnectionType(activeSession)
+            : null;
           if (studioSessionId) {
             chat.setPendingForChat(activeChatId, (prev) =>
               prev ? { ...prev, stage: "Reading Studio project..." } : prev
@@ -370,6 +375,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
             conversation: chat.messages.slice(-10).map(messageToConversationEntry).filter(Boolean),
             studioEnabled: studioEnabled && Boolean(studioSessionId),
             studioSessionId,
+            studioConnectionType,
           }),
         });
         if (!res.ok || !res.body) {

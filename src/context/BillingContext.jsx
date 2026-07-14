@@ -18,8 +18,9 @@ import { onAiEvent } from "../lib/aiEvents";
 const BillingCtx = createContext(null);
 
 const QUOTA_BACKOFF_MS = 5 * 60_000;
+const FOCUS_REFRESH_THROTTLE_MS = 2 * 60_000;
 
-export function BillingProvider({ children, pollMs = 60_000 }) {
+export function BillingProvider({ children, pollMs = 5 * 60_000 }) {
   const [user, setUser] = useState(auth.currentUser);
   const [authReady, setAuthReady] = useState(false);
   const [state, setState] = useState({
@@ -60,7 +61,7 @@ export function BillingProvider({ children, pollMs = 60_000 }) {
     return () => unsub();
   }, []);
 
-  const refresh = useCallback(async () => {
+  const refresh = useCallback(async ({ noCache = true } = {}) => {
     if (!user) {
       setState(s => ({
         ...s,
@@ -88,7 +89,7 @@ export function BillingProvider({ children, pollMs = 60_000 }) {
     }
     setState(s => ({ ...s, loading: true, error: null }));
     try {
-      const ent = await getEntitlements();
+      const ent = await getEntitlements({ noCache });
       const summary = summarizeEntitlements(ent);
       
       setState(prev => {
@@ -114,11 +115,12 @@ export function BillingProvider({ children, pollMs = 60_000 }) {
     let cancelled = false;
     let timerId = null;
     let backoffMs = pollMs;
+    let lastFocusRefreshAt = 0;
 
     const schedule = (delay) => {
       if (cancelled) return;
       timerId = setTimeout(async () => {
-        const err = await refresh();
+        const err = await refresh({ noCache: false });
         const nextDelay = err?.code === "FIRESTORE_QUOTA_EXCEEDED" || err?.status === 503
           ? QUOTA_BACKOFF_MS
           : pollMs;
@@ -127,7 +129,7 @@ export function BillingProvider({ children, pollMs = 60_000 }) {
       }, delay);
     };
 
-    refresh().then((err) => {
+    refresh({ noCache: false }).then((err) => {
       backoffMs = err?.code === "FIRESTORE_QUOTA_EXCEEDED" || err?.status === 503
         ? QUOTA_BACKOFF_MS
         : pollMs;
@@ -135,7 +137,12 @@ export function BillingProvider({ children, pollMs = 60_000 }) {
     });
     const unbindJob = onAiEvent("JOB_COMPLETE", () => refresh());
     const unbindJobFail = onAiEvent("JOB_FAILURE", () => refresh());
-    const onFocus = () => refresh();
+    const onFocus = () => {
+      const now = Date.now();
+      if (now - lastFocusRefreshAt < FOCUS_REFRESH_THROTTLE_MS) return;
+      lastFocusRefreshAt = now;
+      refresh({ noCache: false });
+    };
     window.addEventListener("focus", onFocus);
     return () => {
       cancelled = true;

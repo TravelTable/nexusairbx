@@ -1,7 +1,11 @@
 import { initializeApp, getApps, setLogLevel } from "firebase/app";
 import { initializeAppCheck, ReCaptchaV3Provider } from "firebase/app-check";
 import { getAuth } from "firebase/auth";
-import { initializeFirestore } from "firebase/firestore";
+import {
+  initializeFirestore,
+  persistentLocalCache,
+  persistentMultipleTabManager,
+} from "firebase/firestore";
 
 // Keep Firebase SDK transport retries off the browser console; failures are
 // reported server-side via deferredClientLog when they persist.
@@ -71,9 +75,24 @@ export const appCheck = initializeFirebaseAppCheck(app);
 
 // Core SDKs
 export const auth = getAuth(app);
-export const db = initializeFirestore(app, {
+const firestoreOptions = {
   experimentalAutoDetectLongPolling: true,
-});
+};
+
+// Keep previously-read documents in IndexedDB and coordinate that cache across
+// tabs. Firestore can then resume listeners without re-reading their full query
+// result after ordinary refreshes and reconnects.
+if (
+  process.env.NODE_ENV !== "test" &&
+  typeof window !== "undefined" &&
+  typeof window.indexedDB !== "undefined"
+) {
+  firestoreOptions.localCache = persistentLocalCache({
+    tabManager: persistentMultipleTabManager(),
+  });
+}
+
+export const db = initializeFirestore(app, firestoreOptions);
 
 // Safe, optional Analytics loader
 export async function initAnalytics() {

@@ -75,7 +75,7 @@ describe("NativeModelReviewPanel", () => {
   });
 
   test("queues once when Studio is connected", async () => {
-    getStudioStatus.mockResolvedValue({ sessions: [{ status: "connected" }] });
+    getStudioStatus.mockResolvedValue({ sessions: [{ id: "plugin_1", status: "connected" }] });
     buildNativeModelInStudio.mockResolvedValue({ commandId: "cmd_1" });
     render(<NativeModelReviewPanel artifact={artifact()} />);
 
@@ -85,7 +85,28 @@ describe("NativeModelReviewPanel", () => {
     fireEvent.click(button);
 
     await waitFor(() => expect(buildNativeModelInStudio).toHaveBeenCalledTimes(1));
-    expect(buildNativeModelInStudio.mock.calls[0][0].applyMode).toBe("manual_review");
+    expect(buildNativeModelInStudio.mock.calls[0][0]).toMatchObject({
+      applyMode: "manual_review",
+      sessionId: "plugin_1",
+    });
+  });
+
+  test("does not offer a plugin-only build for an MCP session", async () => {
+    getStudioStatus.mockResolvedValue({
+      sessions: [{
+        id: "mcp_1",
+        connectionType: "mcp_local",
+        status: "connected",
+        live: true,
+        connectorLive: true,
+        mcpServerAvailable: true,
+      }],
+    });
+    render(<NativeModelReviewPanel artifact={artifact()} />);
+
+    await waitFor(() => expect(screen.getByText("Pair Studio to build.")).toBeTruthy());
+    expect(screen.getByText("Build in Studio").closest("button").disabled).toBe(true);
+    expect(buildNativeModelInStudio).not.toHaveBeenCalled();
   });
 
   test("renders validation failure state", async () => {

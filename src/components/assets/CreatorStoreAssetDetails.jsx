@@ -7,6 +7,7 @@ import {
   importCreatorStoreAssetToStudio,
   startStudioPairing,
 } from "../../lib/studioBridgeApi";
+import { getStudioSessionId, selectPluginStudioSession } from "../../lib/studioConnection";
 
 function creatorText(creator) {
   if (!creator) return "Unknown creator";
@@ -59,7 +60,8 @@ export default function CreatorStoreAssetDetails({ asset, loading = false, onClo
       ? `${BACKEND_URL}/api/roblox/thumbnail?assetId=${encodeURIComponent(previewAssetId)}&size=420x420`
       : null);
   const canImportAsset = IMPORTABLE_TYPES.has(asset?.assetType);
-  const studioConnected = Boolean(studioSession?.id);
+  const studioSessionId = getStudioSessionId(studioSession);
+  const studioConnected = Boolean(studioSessionId);
 
   useEffect(() => {
     let cancelled = false;
@@ -68,8 +70,7 @@ export default function CreatorStoreAssetDetails({ asset, loading = false, onClo
     getStudioStatus()
       .then((status) => {
         if (cancelled) return;
-        const session = (status.sessions || []).find((entry) => entry.status === "connected") || null;
-        setStudioSession(session);
+        setStudioSession(selectPluginStudioSession(status.sessions));
       })
       .catch(() => {
         if (!cancelled) setStudioSession(null);
@@ -138,7 +139,7 @@ export default function CreatorStoreAssetDetails({ asset, loading = false, onClo
     try {
       const queued = await importCreatorStoreAssetToStudio({
         assetId,
-        sessionId: studioSession?.id || null,
+        sessionId: studioSessionId,
         targetParentPath: TARGET_PARENT_PATH,
         requestedName: name,
         placement: { mode: "camera_focus" },

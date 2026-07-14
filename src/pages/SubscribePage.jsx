@@ -45,6 +45,31 @@ function currentPlanMatches(entitlements, planId) {
   return String(entitlements?.plan || "FREE") === planId;
 }
 
+function subscribeUntilTerminal(unsubscribersRef, documentRef, onValue) {
+  let unsubscribe = null;
+  let stopRequested = false;
+  const stop = () => {
+    if (!unsubscribe) {
+      stopRequested = true;
+      return;
+    }
+    unsubscribe();
+    unsubscribe = null;
+    unsubscribersRef.current = unsubscribersRef.current.filter((entry) => entry !== stop);
+  };
+
+  unsubscribe = onSnapshot(
+    documentRef,
+    (snap) => {
+      if (onValue(snap.data()) === true) stop();
+    },
+    stop
+  );
+  if (stopRequested) stop();
+  else unsubscribersRef.current.push(stop);
+  return stop;
+}
+
 export default function SubscribePage() {
   const [interval, setIntervalValue] = useState(BILLING_INTERVAL.MONTH);
   const [seatCount, setSeatCount] = useState(2);
@@ -116,12 +141,17 @@ export default function SubscribePage() {
         return;
       }
       if (result?.sessionDocPath) {
-        const unsubscribe = onSnapshot(doc(getFirestore(), result.sessionDocPath), (snap) => {
-          const data = snap.data();
-          if (data?.url) window.location.href = data.url;
-          if (data?.error) setError(data.error.message || "Could not start checkout.");
+        subscribeUntilTerminal(sessionUnsubs, doc(getFirestore(), result.sessionDocPath), (data) => {
+          if (data?.url) {
+            window.location.href = data.url;
+            return true;
+          }
+          if (data?.error) {
+            setError(data.error.message || "Could not start checkout.");
+            return true;
+          }
+          return false;
         });
-        sessionUnsubs.current.push(unsubscribe);
       }
     } catch (err) {
       setError(

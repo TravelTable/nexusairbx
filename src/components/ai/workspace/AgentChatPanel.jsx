@@ -31,6 +31,9 @@ export default function AgentChatPanel({
   restoringRun,
   // studio
   studioConnected,
+  studioConnectionType,
+  studioConnectionState,
+  studioCapabilities,
   studioLoading,
   studioEnabled,
   onStudioEnabledChange,
@@ -265,6 +268,9 @@ export default function AgentChatPanel({
         view={view}
         onViewChange={setView}
         studioConnected={studioConnected}
+        studioConnectionType={studioConnectionType}
+        studioConnectionState={studioConnectionState}
+        studioCapabilities={studioCapabilities}
         studioLoading={studioLoading}
         studioEnabled={studioEnabled}
         onStudioEnabledChange={onStudioEnabledChange}

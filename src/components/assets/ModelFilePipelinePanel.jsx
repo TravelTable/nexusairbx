@@ -40,6 +40,8 @@ import {
 } from "../../lib/modelPipelineApi";
 import { useBilling } from "../../context/BillingContext";
 import { getRetryDelayMs, isRetryableApiError } from "../../lib/apiErrors";
+import { getStudioStatus } from "../../lib/studioBridgeApi";
+import { getStudioSessionId, selectPluginStudioSession } from "../../lib/studioConnection";
 
 const VALIDATED = new Set(["valid", "valid_with_warnings"]);
 const FINAL = new Set(["valid", "valid_with_warnings", "invalid", "failed", "cancelled", "deleted", "expired"]);
@@ -562,8 +564,14 @@ export default function ModelFilePipelinePanel({ notify }) {
     setBusy("insertion_prepare");
     setError("");
     try {
+      const studioStatus = await getStudioStatus();
+      const studioSessionId = getStudioSessionId(selectPluginStudioSession(studioStatus.sessions));
+      if (!studioSessionId) {
+        throw new Error("Connect the NexusRBX Studio plugin before preparing insertion.");
+      }
       await recheckUploadedModelAccess(uploadId).catch(() => null);
       const review = await prepareUploadedModelInsertion(uploadId, {
+        sessionId: studioSessionId,
         requestedName: currentUpload?.displayName || uploadPrep?.uploadName || uploadName,
         targetParentPath: "Workspace/NexusImports",
         placement: { mode: "camera_focus", position: null },

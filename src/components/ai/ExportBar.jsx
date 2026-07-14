@@ -5,6 +5,7 @@ import { verifyRobloxReadiness } from "../../lib/workflowApi";
 import { buildRojoZip, buildStudioLoader } from "../../lib/rojoExport";
 import { buildStudioPayload } from "../../lib/studioPayload";
 import { getStudioCommand, getStudioStatus, pushToStudio, startStudioPairing } from "../../lib/studioBridgeApi";
+import { getStudioSessionId, selectPluginStudioSession } from "../../lib/studioConnection";
 
 /**
  * Unified export surface for a finalized artifact (the Review stage).
@@ -31,7 +32,7 @@ export default function ExportBar({
   const [loaderCopied, setLoaderCopied] = useState(false);
   const [studioBusy, setStudioBusy] = useState(false);
   const [pairCode, setPairCode] = useState("");
-  const [studioConnected, setStudioConnected] = useState(false);
+  const [studioSession, setStudioSession] = useState(null);
   const [lastCommandId, setLastCommandId] = useState("");
   const [applyMode, setApplyMode] = useState(() => {
     if (typeof window === "undefined") return "manual_review";
@@ -43,6 +44,8 @@ export default function ExportBar({
   const safeName = (title || "generated").replace(/[^a-z0-9]+/gi, "_").replace(/^_+|_+$/g, "").toLowerCase() || "generated";
   const ext = kind === "script" ? "server.lua" : "lua";
   const hasBundle = kind === "project" || !!systemsLua || (funcScripts && funcScripts.length > 0);
+  const studioSessionId = getStudioSessionId(studioSession);
+  const studioConnected = Boolean(studioSessionId);
 
   React.useEffect(() => {
     if (typeof window !== "undefined") {
@@ -55,7 +58,7 @@ export default function ExportBar({
     getStudioStatus()
       .then((status) => {
         if (cancelled) return;
-        setStudioConnected((status.sessions || []).some((s) => s.status === "connected"));
+        setStudioSession(selectPluginStudioSession(status.sessions));
       })
       .catch(() => {});
     return () => {
@@ -189,7 +192,7 @@ export default function ExportBar({
   };
 
   const handlePushStudio = async () => {
-    if (disabled || studioBusy) return;
+    if (disabled || studioBusy || !studioSessionId) return;
     setStudioBusy(true);
     try {
       const payload = buildStudioPayload({
@@ -202,9 +205,8 @@ export default function ExportBar({
         boardState,
         artifactId,
       });
-      const result = await pushToStudio({ payload, applyMode });
+      const result = await pushToStudio({ payload, applyMode, sessionId: studioSessionId });
       setLastCommandId(result.commandId || "");
-      setStudioConnected(true);
       const warningText = result.warnings?.length ? ` (${result.warnings.length} warning${result.warnings.length === 1 ? "" : "s"})` : "";
       notify?.({ message: `Queued Studio push${warningText}`, type: result.warnings?.length ? "info" : "success" });
       if (result.commandId) pollCommand(result.commandId).catch(() => {});
@@ -295,8 +297,8 @@ export default function ExportBar({
       <button
         type="button"
         onClick={handlePushStudio}
-        disabled={disabled || studioBusy}
-        title="Queue this artifact for the paired Roblox Studio plugin"
+        disabled={disabled || studioBusy || !studioConnected}
+        title={studioConnected ? "Queue this artifact for the paired Roblox Studio plugin" : "Pair the NexusRBX Studio plugin to enable push"}
         className={`${btn} bg-[#00f5d4]/10 text-[#00f5d4] hover:bg-[#00f5d4]/20`}
       >
         {studioBusy ? <Loader className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}

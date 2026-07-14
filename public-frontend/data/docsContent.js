@@ -673,7 +673,7 @@ export const DOC_PAGES = [
     "navTitle": "Studio Plugin",
     "title": "Connect NexusRBX AI to Roblox Studio",
     "metaTitle": "Connect NexusRBX AI to Roblox Studio | NexusRBX AI Docs",
-    "description": "Pair the web workspace with the Roblox Studio plugin so NexusRBX AI can use targeted Studio context and reviewed plugin actions.",
+    "description": "Connect NexusRBX AI to Roblox Studio with the recommended plugin or the advanced local MCP connector.",
     "category": "studio",
     "updated": DOC_UPDATED,
     "readingTime": "4 min read",
@@ -693,7 +693,84 @@ export const DOC_PAGES = [
         "blocks": [
           {
             "type": "paragraph",
-            "text": "This page explains how the plugin and Roblox Studio connection should work at a user level."
+            "text": "Choose the NexusRBX Studio plugin for the recommended setup. Advanced users can optionally run the local Roblox Studio MCP connector; neither connection depends on the other."
+          }
+        ]
+      },
+      {
+        "id": "connection-options",
+        "title": "Choose a connection",
+        "blocks": [
+          {
+            "type": "table",
+            "columns": [
+              "Option",
+              "Best for",
+              "Important behavior"
+            ],
+            "rows": [
+              [
+                "NexusRBX Studio plugin — recommended",
+                "Beginners and complete NexusRBX workflows",
+                "Supports pairing, reviewed actions, snapshots, artifacts, native models, trusted insertions, and validation."
+              ],
+              [
+                "Roblox Studio MCP — advanced",
+                "Developers who want a local external connector",
+                "Supports only commands that the installed Studio MCP server exposes with a known safe schema."
+              ]
+            ]
+          },
+          {
+            "type": "callout",
+            "tone": "info",
+            "title": "Both can be connected",
+            "text": "The plugin and MCP connector can run together. NexusRBX keeps them as separate sessions and prefers the plugin when no connection is explicitly selected."
+          }
+        ]
+      },
+      {
+        "id": "roblox-studio-mcp",
+        "title": "Advanced: Roblox Studio MCP",
+        "blocks": [
+          {
+            "type": "paragraph",
+            "text": "The local connector runs on the same computer as Roblox Studio. It connects outward to NexusRBX and launches Studio's local MCP server; your browser never connects directly to that local process."
+          },
+          {
+            "type": "steps",
+            "items": [
+              {
+                "title": "Enable Studio MCP",
+                "body": "In Roblox Studio, open Assistant, choose the menu, then Manage MCP Servers and enable Studio MCP. Update Studio if the option is missing."
+              },
+              {
+                "title": "Create a pairing code",
+                "body": "In NexusRBX AI, open Connect Roblox Studio, choose Advanced, then Roblox Studio MCP, and create a short-lived code."
+              },
+              {
+                "title": "Run the local connector",
+                "body": "Start the NexusRBX Local Connector on the same computer, enter the code when prompted, and keep the terminal open. Never paste the connector token into chat or logs."
+              },
+              {
+                "title": "Check both status lines",
+                "body": "Wait for NexusRBX to show the connector and Studio MCP as connected. Connector connected but Studio MCP not detected is not a ready Studio connection."
+              },
+              {
+                "title": "Review advertised capabilities",
+                "body": "Only commands verified against the discovered tool names and schemas appear as supported. Use the plugin for capabilities shown as plugin-only."
+              }
+            ]
+          },
+          {
+            "type": "callout",
+            "tone": "warning",
+            "title": "Close unrelated Studio windows",
+            "text": "The current connector does not advertise multi-window target selection. Keep only the intended Studio window open before allowing a write."
+          },
+          {
+            "type": "paragraph",
+            "text": "To disconnect, choose Disconnect MCP in NexusRBX and stop the local connector with Ctrl+C. Revoking the website session immediately invalidates its connector token and does not disconnect the plugin."
           }
         ]
       },

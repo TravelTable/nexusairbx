@@ -16,6 +16,11 @@ import { ProjectContextStatus } from "../../components/ai/AiComponents";
 import SiteHeader from "../../components/site/SiteHeader";
 import { AI_EVENTS } from "../../lib/aiEvents";
 import { Segmented } from "../../components/ui";
+import {
+  getActiveStudioCapabilities,
+  isCurrentPluginAutoPushAuthorized,
+  selectedStudioSupportsCommand,
+} from "../../components/ai/workspace/studioControlAccess";
 
 import CodeFileTree from "../../components/ai/workspace/CodeFileTree";
 import CodeWorkspace from "../../components/ai/workspace/CodeWorkspace";
@@ -76,6 +81,10 @@ export default function AgentWorkspaceLayout({ controller }) {
   } = uiState;
 
   const { chat, game, scriptManager, unified, workspace, settings } = modules;
+  const studioCommandSessionId = studio?.sessionId || null;
+  const studioCapabilities = getActiveStudioCapabilities(studio);
+  const studioManifestSupported = selectedStudioSupportsCommand(studio, "get_project_manifest");
+  const studioAutoPushAuthorized = isCurrentPluginAutoPushAuthorized(studio);
 
   const {
     setSidebarOpen,
@@ -190,7 +199,7 @@ export default function AgentWorkspaceLayout({ controller }) {
     let nextCursor = "";
     do {
       const data = await getStudioManifest({
-        sessionId: studio?.lastAuthorizedSessionId || null,
+        sessionId: studioCommandSessionId,
         revision,
         limit: 1000,
         cursor,
@@ -200,10 +209,10 @@ export default function AgentWorkspaceLayout({ controller }) {
       cursor = nextCursor;
     } while (nextCursor);
     return items;
-  }, [studio?.lastAuthorizedSessionId]);
+  }, [studioCommandSessionId]);
 
   const waitForManifestCompletion = useCallback(async (previousRevision = "") => {
-    const sessionId = studio?.lastAuthorizedSessionId || "default";
+    const sessionId = studioCommandSessionId || "default";
     const waitKey = `${sessionId}:${previousRevision || "none"}`;
     if (manifestWaitsRef.current.has(waitKey)) {
       return manifestWaitsRef.current.get(waitKey);
@@ -215,7 +224,7 @@ export default function AgentWorkspaceLayout({ controller }) {
         let status = null;
         try {
           const data = await getStudioManifestStatus({
-            sessionId: studio?.lastAuthorizedSessionId || null,
+            sessionId: studioCommandSessionId,
           });
           status = data.status || null;
         } catch (_) {
@@ -244,7 +253,7 @@ export default function AgentWorkspaceLayout({ controller }) {
         manifestWaitsRef.current.delete(waitKey);
       }
     }
-  }, [studio?.lastAuthorizedSessionId]);
+  }, [studioCommandSessionId]);
 
   const refreshStudioManifest = useCallback(async (options = {}) => {
     const force = options?.force === true;
@@ -262,7 +271,7 @@ export default function AgentWorkspaceLayout({ controller }) {
         let previousStatus = null;
         try {
           const previous = await getStudioManifestStatus({
-            sessionId: studio?.lastAuthorizedSessionId || null,
+            sessionId: studioCommandSessionId,
           });
           previousStatus = previous.status || null;
           previousRevision = previous.status?.lastCompleteRevision || previous.status?.activeRevision || "";
@@ -290,11 +299,11 @@ export default function AgentWorkspaceLayout({ controller }) {
           return;
         }
 
-        if (studio?.connected) {
+        if (studio?.connected && studioManifestSupported) {
           const queued = await queueStudioTool({
             type: "get_project_manifest",
             payload: { maxDepth: 24, maxInstances: 10000, pageSize: 500, includeSource: false },
-            sessionId: studio?.lastAuthorizedSessionId || null,
+            sessionId: studioCommandSessionId,
             label: force ? "Rescan Studio project" : "Refresh Studio manifest",
             applyMode: "unrestricted_dev",
           });
@@ -303,7 +312,7 @@ export default function AgentWorkspaceLayout({ controller }) {
           const items = await fetchManifestPage(status.lastCompleteRevision || status.activeRevision || "");
           setStudioManifest(items);
         } else {
-          const data = await getStudioManifest({ sessionId: studio?.lastAuthorizedSessionId || null, limit: 1000 });
+          const data = await getStudioManifest({ sessionId: studioCommandSessionId, limit: 1000 });
           if (data.disconnected) {
             setStudioManifest([]);
             return;
@@ -325,11 +334,11 @@ export default function AgentWorkspaceLayout({ controller }) {
         manifestRefreshInFlightRef.current = null;
       }
     }
-  }, [appendTerminal, fetchManifestPage, notify, studio?.connected, studio?.lastAuthorizedSessionId, waitForManifestCompletion]);
+  }, [appendTerminal, fetchManifestPage, notify, studio?.connected, studioCommandSessionId, studioManifestSupported, waitForManifestCompletion]);
 
   useEffect(() => {
-    const sessionId = studio?.lastAuthorizedSessionId;
-    if (!sessionId || !studio?.connected) return;
+    const sessionId = studioCommandSessionId;
+    if (!sessionId || !studio?.connected || !studioManifestSupported) return;
 
     const autoRefreshKey = `${sessionId}:${studio?.connected ? "live" : "cached"}`;
     if (autoManifestRefreshKeyRef.current === autoRefreshKey) return;
@@ -338,7 +347,7 @@ export default function AgentWorkspaceLayout({ controller }) {
     refreshStudioManifest().catch(() => {
       autoManifestRefreshKeyRef.current = "";
     });
-  }, [refreshStudioManifest, studio?.connected, studio?.lastAuthorizedSessionId]);
+  }, [refreshStudioManifest, studio?.connected, studioCommandSessionId, studioManifestSupported]);
 
   const studioResults = useMemo(() => {
     const query = studioSearch.trim().toLowerCase();
@@ -362,7 +371,7 @@ export default function AgentWorkspaceLayout({ controller }) {
       const queued = await queueStudioTool({
         type: "read_script",
         payload: { paths: [path], maxChars: 200000 },
-        sessionId: studio?.lastAuthorizedSessionId || null,
+        sessionId: studioCommandSessionId,
         label: `Read ${path}`,
         applyMode: "unrestricted_dev",
       });
@@ -380,7 +389,7 @@ export default function AgentWorkspaceLayout({ controller }) {
     } finally {
       setStudioBusy(false);
     }
-  }, [appendTerminal, notify, studio?.lastAuthorizedSessionId, studioFiles, toStudioFile]);
+  }, [appendTerminal, notify, studioCommandSessionId, studioFiles, toStudioFile]);
 
   const studioArtifact = useMemo(() => {
     if (!studioFiles.length) return workspace.activeArtifact;
@@ -418,7 +427,7 @@ export default function AgentWorkspaceLayout({ controller }) {
       const queued = await queueStudioTool({
         type: "read_script",
         payload: { paths: [file.path], maxChars: 200000 },
-        sessionId: studio?.lastAuthorizedSessionId || null,
+        sessionId: studioCommandSessionId,
         label: `Refresh ${file.path}`,
         applyMode: "unrestricted_dev",
       });
@@ -435,7 +444,7 @@ export default function AgentWorkspaceLayout({ controller }) {
     } finally {
       setStudioBusy(false);
     }
-  }, [appendTerminal, notify, studio?.lastAuthorizedSessionId, toStudioFile]);
+  }, [appendTerminal, notify, studioCommandSessionId, toStudioFile]);
 
   const saveStudioFile = useCallback(async (file, options = {}) => {
     if (!file?.path) return;
@@ -451,7 +460,7 @@ export default function AgentWorkspaceLayout({ controller }) {
           createParents: false,
           snapshot: true,
         },
-        sessionId: studio?.lastAuthorizedSessionId || null,
+        sessionId: studioCommandSessionId,
         label: `Save ${file.path}`,
         applyMode: "unrestricted_dev",
       });
@@ -462,7 +471,7 @@ export default function AgentWorkspaceLayout({ controller }) {
           const read = await queueStudioTool({
             type: "read_script",
             payload: { paths: [file.path], maxChars: 200000 },
-            sessionId: studio?.lastAuthorizedSessionId || null,
+            sessionId: studioCommandSessionId,
             label: `Read conflict ${file.path}`,
             applyMode: "unrestricted_dev",
           });
@@ -528,7 +537,7 @@ export default function AgentWorkspaceLayout({ controller }) {
     } finally {
       setStudioBusy(false);
     }
-  }, [appendTerminal, notify, studio?.lastAuthorizedSessionId]);
+  }, [appendTerminal, notify, studioCommandSessionId]);
 
   const saveAllStudioFiles = useCallback(async (files) => {
     for (const file of files.filter((entry) => entry.dirty)) {
@@ -748,6 +757,9 @@ export default function AgentWorkspaceLayout({ controller }) {
           approvingStepId={studio?.approvingStepId}
           restoringRun={studio?.restoringRun}
           studioConnected={studio?.connected}
+          studioConnectionType={studio?.connectionType}
+          studioConnectionState={studio?.connectionState}
+          studioCapabilities={studioCapabilities}
           studioCollaborators={studio?.collaborators}
           studioLoading={studio?.loading}
           studioEnabled={studio?.enabled}
@@ -758,7 +770,7 @@ export default function AgentWorkspaceLayout({ controller }) {
           onStudioAutoPushEnabledChange={handleStudioAutoPushEnabledChange}
           studioAutoPushPolicy={studio?.autoPushPolicy}
           onStudioAutoPushPolicyChange={handleStudioAutoPushPolicyChange}
-          studioAutoPushAuthorized={Boolean(studio?.lastAuthorizedSessionId)}
+          studioAutoPushAuthorized={studioAutoPushAuthorized}
           robloxConnected={roblox?.connected}
           robloxLoading={roblox?.loading}
           robloxSelectedCreator={roblox?.selectedCreator}
@@ -828,9 +840,11 @@ export default function AgentWorkspaceLayout({ controller }) {
           <button
             type="button"
             onClick={() => refreshStudioManifest({ force: true })}
-            disabled={studioBusy}
+            disabled={studioBusy || !studioManifestSupported}
             className="p-1.5 rounded-lg border border-white/10 bg-white/5 text-gray-400 hover:text-white disabled:opacity-40"
-            title="Rescan Studio project (re-index the live place)"
+            title={studioManifestSupported
+              ? "Rescan Studio project (re-index the live place)"
+              : "Manifest rescan is unavailable for the selected MCP session"}
           >
             <RefreshCw className={`w-3.5 h-3.5 ${studioBusy ? "animate-spin" : ""}`} />
           </button>
@@ -1078,6 +1092,7 @@ export default function AgentWorkspaceLayout({ controller }) {
                 )}
                 <div data-tour="studio-pair">
                   <StudioPairControl
+                    connection={studio}
                     connected={studio?.connected}
                     loading={studio?.loading}
                     refresh={studio?.refresh}

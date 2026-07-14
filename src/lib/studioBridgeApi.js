@@ -15,6 +15,36 @@ export async function getStudioStatus() {
   });
 }
 
+export async function startStudioMcpPairing() {
+  const res = await authedFetch("/api/studio/mcp/pair/start", { method: "POST" });
+  return readJsonOrThrow(res, "Failed to start Studio MCP pairing");
+}
+
+export async function getStudioMcpStatus() {
+  return withApiRetryCooldown("studio:mcp:status", "Failed to load Studio MCP status", async () => {
+    const res = await authedFetch("/api/studio/mcp/status", { method: "GET", noCache: true });
+    return readJsonOrThrow(res, "Failed to load Studio MCP status");
+  });
+}
+
+export async function disconnectStudioMcp({ sessionId = null } = {}) {
+  const res = await authedFetch("/api/studio/mcp/disconnect", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ sessionId }),
+  });
+  return readJsonOrThrow(res, "Failed to disconnect Studio MCP");
+}
+
+export async function testStudioMcp({ sessionId = null } = {}) {
+  const res = await authedFetch("/api/studio/mcp/test", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ sessionId }),
+  });
+  return readJsonOrThrow(res, "Failed to test Studio MCP");
+}
+
 export async function disconnectStudio({ sessionId = null } = {}) {
   const res = await authedFetch("/api/studio/disconnect", {
     method: "POST",

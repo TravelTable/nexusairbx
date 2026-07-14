@@ -36,6 +36,13 @@ import {
 } from "../lib/agentSteps";
 import { resolveGameSpecForPrompt } from "../lib/gameProfile";
 import { getStudioStatus } from "../lib/studioBridgeApi";
+import {
+  getStudioConnectionType,
+  getStudioSessionId,
+  selectMcpStudioSession,
+  selectPluginStudioSession,
+  STUDIO_CONNECTION_TYPES,
+} from "../lib/studioConnection";
 import { getAgentRun } from "../lib/workflowApi";
 import {
   applyStreamActivity,
@@ -65,7 +72,10 @@ const STREAM_MAX_RETRIES = 3;
 const RESULT_MAX_POLLS = 45;
 const RESULT_POLL_BASE_MS = 1000;
 const CUSTOM_MODES_LIST_LIMIT = 50;
+const CHAT_INITIAL_HISTORY_LIMIT = 50;
+const CHAT_LIVE_TAIL_LIMIT = 20;
 const CLEAR_CHAT_MESSAGE_LIMIT = 200;
+const PENDING_RUN_POLL_MS = 30_000;
 // Absolute frontend backstop: if the stream never delivers a terminal event
 // (done/error) within this window, poll once for a result and otherwise hand the
 // job off to the background so the UI can never spin/pulse forever.
@@ -74,6 +84,27 @@ const GENERATION_WALL_TIMEOUT_MS = Number(
 );
 
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+function messageCreatedAtMillis(message) {
+  const value = message?.createdAt;
+  if (typeof value?.toMillis === "function") return value.toMillis();
+  if (Number.isFinite(value?.seconds)) {
+    return (value.seconds * 1000) + Math.floor(Number(value.nanoseconds || 0) / 1_000_000);
+  }
+  if (value instanceof Date) return value.getTime();
+  if (typeof value === "number") return value;
+  return Number.MAX_SAFE_INTEGER;
+}
+
+function mergeChatMessages(...messageSets) {
+  const byId = new Map();
+  messageSets.flat().forEach((message) => {
+    if (message?.id) byId.set(message.id, message);
+  });
+  return Array.from(byId.values()).sort((a, b) => (
+    messageCreatedAtMillis(a) - messageCreatedAtMillis(b)
+  ));
+}
 
 function resolveResultUrl(jobId, resultUrl) {
   if (resultUrl && /^https?:\/\//i.test(resultUrl)) return resultUrl;
@@ -215,24 +246,33 @@ export function useAiChat(user, settings, refreshBilling, notify) {
 
   const messagesUnsubRef = useRef(null);
   const chatUnsubRef = useRef(null);
-  const customModesUnsubRef = useRef(null);
   // Streaming buffers keyed by originating chat id.
   const streamStatesRef = useRef({}); // chatId -> pendingStreamState
 
   // Load custom modes
   useEffect(() => {
     const u = user || auth.currentUser;
-    if (!u) return;
+    if (!u) {
+      setCustomModes([]);
+      return undefined;
+    }
 
-    customModesUnsubRef.current = onSnapshot(
-      query(collection(db, "users", u.uid, "custom_modes"), limit(CUSTOM_MODES_LIST_LIMIT)),
-      (snap) => {
-        const arr = snap.docs.map(d => ({ id: d.id, ...d.data(), isCustom: true }));
-        setCustomModes(arr);
-      }
-    );
-    return () => customModesUnsubRef.current?.();
-  }, [user]);
+    let cancelled = false;
+    getDocs(query(
+      collection(db, "users", u.uid, "custom_modes"),
+      limit(CUSTOM_MODES_LIST_LIMIT)
+    )).then((snap) => {
+      if (cancelled) return;
+      setCustomModes(snap.docs.map((d) => ({ id: d.id, ...d.data(), isCustom: true })));
+    }).catch((err) => {
+      console.error("Firestore custom modes load error:", err);
+      notify?.({ message: "Failed to load custom modes", type: "error" });
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user, notify]);
 
   const openChatById = useCallback((chatId) => {
     const u = user || auth.currentUser;
@@ -242,6 +282,7 @@ export function useAiChat(user, settings, refreshBilling, notify) {
     chatUnsubRef.current?.();
 
     setCurrentChatId(chatId);
+    setMessages([]);
 
     chatUnsubRef.current = onSnapshot(
       doc(db, "users", u.uid, "chats", chatId),
@@ -258,22 +299,39 @@ export function useAiChat(user, settings, refreshBilling, notify) {
       }
     );
 
-    messagesUnsubRef.current = onSnapshot(
-      query(
-        collection(db, "users", u.uid, "chats", chatId, "messages"),
-        orderBy("createdAt", "asc"),
-        limitToLast(200)
-      ),
+    const messagesRef = collection(db, "users", u.uid, "chats", chatId, "messages");
+    let cancelled = false;
+    const liveUnsub = onSnapshot(
+      query(messagesRef, orderBy("createdAt", "asc"), limitToLast(CHAT_LIVE_TAIL_LIMIT)),
       (snap) => {
-        const arr = [];
-        snap.forEach((d) => arr.push({ id: d.id, ...d.data() }));
-        setMessages(arr);
+        if (cancelled) return;
+        const liveMessages = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+        setMessages((current) => mergeChatMessages(current, liveMessages));
       },
       (err) => {
         console.error("Firestore messages subscription error:", err);
         notify?.({ message: "Failed to sync messages", type: "error" });
       }
     );
+
+    getDocs(query(
+      messagesRef,
+      orderBy("createdAt", "desc"),
+      limit(CHAT_INITIAL_HISTORY_LIMIT)
+    )).then((snap) => {
+      if (cancelled) return;
+      const history = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+      setMessages((current) => mergeChatMessages(history, current));
+    }).catch((err) => {
+      if (cancelled) return;
+      console.error("Firestore message history load error:", err);
+      notify?.({ message: "Failed to load message history", type: "error" });
+    });
+
+    messagesUnsubRef.current = () => {
+      cancelled = true;
+      liveUnsub();
+    };
   }, [user, notify]);
 
   const pendingRecoveryMessage = useMemo(
@@ -323,11 +381,10 @@ export function useAiChat(user, settings, refreshBilling, notify) {
               ? runResult.run.steps.map(normalizeToolStep)
               : [];
             const lastStep = steps[steps.length - 1];
-            await updateDoc(pendingRef, {
-              steps,
-              stage: lastStep?.label || lastStep?.type || runResult?.run?.status || currentPending.stage || "Working...",
-              updatedAt: serverTimestamp(),
-            }).catch(() => {});
+            const stage = lastStep?.label || lastStep?.type || runResult?.run?.status || currentPending.stage || "Working...";
+            setMessages((current) => current.map((message) => (
+              message.id === currentPending.id ? { ...message, steps, stage } : message
+            )));
           }
           return;
         }
@@ -392,7 +449,7 @@ export function useAiChat(user, settings, refreshBilling, notify) {
     };
 
     pollPendingRun();
-    const intervalId = setInterval(pollPendingRun, 10000);
+    const intervalId = setInterval(pollPendingRun, PENDING_RUN_POLL_MS);
     return () => {
       cancelled = true;
       clearInterval(intervalId);
@@ -528,11 +585,17 @@ export function useAiChat(user, settings, refreshBilling, notify) {
       const autoPushToStudio = Boolean(settings?.studioAutoPushEnabled);
       const autoPushPolicy = settings?.studioAutoPushPolicy || "after_validation";
       let studioSessionId = null;
+      let studioConnectionType = null;
       if (studioEnabled) {
         try {
           const studioStatus = await getStudioStatus();
-          const activeSession = (studioStatus.sessions || []).find((s) => s.status === "connected");
-          studioSessionId = activeSession?.sessionId || activeSession?.id || null;
+          const studioSession =
+            selectPluginStudioSession(studioStatus.sessions) ||
+            selectMcpStudioSession(studioStatus.sessions);
+          studioSessionId = getStudioSessionId(studioSession);
+          studioConnectionType = studioSession
+            ? getStudioConnectionType(studioSession)
+            : null;
         } catch (_) {
           /* non-fatal: codegen still works without Studio */
         }
@@ -560,7 +623,10 @@ export function useAiChat(user, settings, refreshBilling, notify) {
           studioEnabled: studioEnabled && Boolean(studioSessionId),
           applyMode: getStudioApplyMode(),
           studioSessionId,
-          autoPushToStudio,
+          autoPushToStudio:
+            autoPushToStudio &&
+            Boolean(studioSessionId) &&
+            studioConnectionType === STUDIO_CONNECTION_TYPES.PLUGIN_BRIDGE,
           autoPushPolicy,
           baseArtifact,
         }),

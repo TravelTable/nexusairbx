@@ -3,9 +3,10 @@ import {
   getStudioStatusPollDelay,
   useStudioConnection,
 } from "./useStudioConnection";
-import { getStudioStatus } from "../lib/studioBridgeApi";
+import { getStudioMcpStatus, getStudioStatus } from "../lib/studioBridgeApi";
 
 jest.mock("../lib/studioBridgeApi", () => ({
+  getStudioMcpStatus: jest.fn(),
   getStudioStatus: jest.fn(),
 }));
 
@@ -15,6 +16,7 @@ describe("useStudioConnection", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     jest.useFakeTimers();
+    getStudioMcpStatus.mockResolvedValue({ sessions: [] });
     hidden = false;
     Object.defineProperty(document, "hidden", {
       configurable: true,
@@ -152,5 +154,51 @@ describe("useStudioConnection", () => {
       await Promise.resolve();
     });
     await waitFor(() => expect(getStudioStatus).toHaveBeenCalledTimes(3));
+  });
+
+  test("reports a connector-only MCP session as degraded, not connected", async () => {
+    getStudioStatus.mockResolvedValue({ sessions: [] });
+    getStudioMcpStatus.mockResolvedValue({
+      sessions: [{
+        id: "mcp_1",
+        connectionType: "mcp_local",
+        status: "degraded",
+        live: false,
+        connectorLive: true,
+        mcpServerAvailable: false,
+      }],
+    });
+
+    const hook = renderHook(() => useStudioConnection());
+
+    await waitFor(() => expect(hook.result.current.loading).toBe(false));
+    expect(hook.result.current.connected).toBe(false);
+    expect(hook.result.current.mcpConnected).toBe(false);
+    expect(hook.result.current.connectorDetected).toBe(true);
+    expect(hook.result.current.connectionState).toBe("degraded");
+  });
+
+  test("preserves exact plugin and MCP sessions while legacy selection prefers plugin", async () => {
+    getStudioStatus.mockResolvedValue({
+      sessions: [{ id: "plugin_1", status: "connected", live: true }],
+    });
+    getStudioMcpStatus.mockResolvedValue({
+      sessions: [{
+        id: "mcp_1",
+        connectionType: "mcp_local",
+        status: "connected",
+        live: true,
+        connectorLive: true,
+        mcpServerAvailable: true,
+      }],
+    });
+
+    const hook = renderHook(() => useStudioConnection());
+
+    await waitFor(() => expect(hook.result.current.loading).toBe(false));
+    expect(hook.result.current.connectionState).toBe("both");
+    expect(hook.result.current.sessionId).toBe("plugin_1");
+    expect(hook.result.current.pluginSession.id).toBe("plugin_1");
+    expect(hook.result.current.mcpSession.id).toBe("mcp_1");
   });
 });

@@ -4,7 +4,10 @@ import { useBilling } from "../context/BillingContext";
 import { ensureStreamSession } from "../lib/streamSession";
 import { parseCompletedGenerateResult } from "../lib/streamRecovery";
 import { onAiEvent } from "../lib/aiEvents";
-import { doc, serverTimestamp, setDoc, updateDoc } from "firebase/firestore";
+import { FEATURE_FLAGS } from "../lib/featureFlags";
+import { getStudioEnabledPreference } from "../lib/agentSteps";
+import { getStudioStatus } from "../lib/studioBridgeApi";
+import { doc, getDocs, serverTimestamp, setDoc, updateDoc } from "firebase/firestore";
 
 jest.mock("../firebase", () => ({
   auth: {
@@ -18,7 +21,9 @@ jest.mock("firebase/firestore", () => ({
   collection: jest.fn((...segments) => ({ segments })),
   deleteDoc: jest.fn(),
   doc: jest.fn((...segments) => ({ segments })),
-  getDocs: jest.fn(),
+  getDocs: jest.fn(() => Promise.resolve({
+    docs: [],
+  })),
   limit: jest.fn(),
   limitToLast: jest.fn(),
   onSnapshot: jest.fn(() => jest.fn()),
@@ -122,12 +127,16 @@ describe("useAiChat", () => {
       unlimitedTokens: false,
     });
     doc.mockImplementation((...segments) => ({ segments }));
+    getDocs.mockResolvedValue({ docs: [] });
     serverTimestamp.mockImplementation(() => "timestamp");
     setDoc.mockImplementation(() => Promise.resolve());
     updateDoc.mockImplementation(() => Promise.resolve());
     onAiEvent.mockImplementation(() => jest.fn());
     ensureStreamSession.mockResolvedValue({ token: null });
     parseCompletedGenerateResult.mockReturnValue(null);
+    FEATURE_FLAGS.unifiedAgent = false;
+    getStudioEnabledPreference.mockReturnValue(false);
+    getStudioStatus.mockReset();
   });
 
   test("persists an assistant failure when result recovery fails without a run id", async () => {
@@ -200,5 +209,92 @@ describe("useAiChat", () => {
         stage: "failed",
       })
     );
+  });
+
+  test.each([
+    [
+      "uses an MCP-only session without enabling plugin auto-push",
+      [{
+        id: "mcp_1",
+        connectionType: "mcp_local",
+        status: "connected",
+        live: true,
+        connectorLive: true,
+        mcpServerAvailable: true,
+        lastSeenAt: 200,
+      }],
+      { studioSessionId: "mcp_1", autoPushToStudio: false },
+    ],
+    [
+      "prefers a live plugin session over a newer live MCP session",
+      [
+        {
+          id: "mcp_1",
+          connectionType: "mcp_local",
+          status: "connected",
+          live: true,
+          connectorLive: true,
+          mcpServerAvailable: true,
+          lastSeenAt: 200,
+        },
+        {
+          id: "plugin_1",
+          connectionType: "plugin_bridge",
+          status: "connected",
+          live: true,
+          lastSeenAt: 100,
+        },
+      ],
+      { studioSessionId: "plugin_1", autoPushToStudio: true },
+    ],
+  ])("%s", async (_, sessions, expectedStudioContext) => {
+    FEATURE_FLAGS.unifiedAgent = true;
+    getStudioEnabledPreference.mockReturnValue(true);
+    getStudioStatus.mockResolvedValue({ sessions });
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: false,
+      status: 500,
+      headers: { get: () => "application/json" },
+      json: async () => ({
+        code: "GENERATION_FAILED",
+        message: "Stop after request capture",
+      }),
+    });
+
+    const user = {
+      uid: "user_1",
+      getIdToken: jest.fn().mockResolvedValue("token_1"),
+    };
+    const { result } = renderHook(() => useAiChat(
+      user,
+      { chatMode: "agent", studioAutoPushEnabled: true },
+      jest.fn(),
+      jest.fn()
+    ));
+
+    const consoleError = jest.spyOn(console, "error").mockImplementation(() => {});
+    try {
+      await act(async () => {
+        try {
+          await result.current.handleSubmit(
+            "Inspect my project",
+            "chat_1",
+            "req_studio_context",
+            "agent",
+            true
+          );
+        } catch (_) {
+          // The mocked failure stops the flow after the request body is captured.
+        }
+      });
+    } finally {
+      consoleError.mockRestore();
+    }
+
+    const [, request] = global.fetch.mock.calls[0];
+    expect(JSON.parse(request.body)).toEqual(expect.objectContaining({
+      studioEnabled: true,
+      ...expectedStudioContext,
+    }));
   });
 });

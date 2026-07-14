@@ -16,6 +16,7 @@ import {
 import { UnifiedStatusBar, TokenBar } from "../AiComponents";
 import { CHAT_MODES } from "../chatConstants";
 import StudioControls from "../workspace/StudioControls";
+import { resolveStudioControlAccess } from "../workspace/studioControlAccess";
 import RobloxCloudControls from "../workspace/RobloxCloudControls";
 import AssetLibraryModal from "../workspace/AssetLibraryModal";
 import { Segmented } from "../../ui";
@@ -259,6 +260,9 @@ export default function ChatComposer({
   view,
   onViewChange,
   studioConnected,
+  studioConnectionType,
+  studioConnectionState,
+  studioCapabilities,
   studioCollaborators,
   studioLoading,
   studioEnabled,
@@ -298,6 +302,12 @@ export default function ChatComposer({
   const contextItemCount = attachments.length + robloxProjectAssets.length + robloxImageUploads.length;
   const canSendWithContext =
     Boolean(prompt?.trim()) || attachments.length > 0 || robloxProjectAssets.length > 0;
+  const studioAccess = resolveStudioControlAccess({
+    connected: studioConnected,
+    connectionType: studioConnectionType,
+    connectionState: studioConnectionState,
+    capabilities: studioCapabilities,
+  });
 
   useLayoutEffect(() => {
     const textarea = textareaRef.current;
@@ -343,9 +353,15 @@ export default function ChatComposer({
           </div>
         )}
 
-        {mode === "ask" && studioConnected && (
+        {mode === "ask" && studioConnected && studioAccess.canRead && (
           <div className="px-1 text-[10px] font-medium text-[#00f5d4]/75">
-            Studio read access enabled for Ask mode.
+            {studioAccess.connectionType === "mcp_local" ? "MCP" : "Plugin"} Studio read access enabled for Ask mode.
+          </div>
+        )}
+
+        {mode === "ask" && studioConnected && !studioAccess.canRead && (
+          <div className="px-1 text-[10px] font-medium text-amber-300/80">
+            The selected MCP session does not advertise Studio read tools.
           </div>
         )}
 
@@ -430,6 +446,9 @@ export default function ChatComposer({
                 <div className="flex flex-wrap items-center gap-2">
                   <StudioControls
                     connected={studioConnected}
+                    connectionType={studioConnectionType}
+                    connectionState={studioConnectionState}
+                    capabilities={studioCapabilities}
                     loading={studioLoading}
                     studioEnabled={studioEnabled}
                     onStudioEnabledChange={onStudioEnabledChange}

@@ -1,7 +1,12 @@
 import { act, renderHook } from "@testing-library/react";
+import { TextDecoder as NodeTextDecoder } from "util";
+import { setDoc } from "firebase/firestore";
 import { useUnifiedChat } from "./useUnifiedChat";
 import { useAiChat } from "./useAiChat";
 import { trackProductEvent } from "../lib/productAnalytics";
+import { FEATURE_FLAGS } from "../lib/featureFlags";
+import { getStudioEnabledPreference } from "../lib/agentSteps";
+import { getStudioStatus } from "../lib/studioBridgeApi";
 
 jest.mock("../firebase", () => ({
   db: {},
@@ -10,7 +15,7 @@ jest.mock("../firebase", () => ({
 jest.mock("firebase/firestore", () => ({
   addDoc: jest.fn(),
   collection: jest.fn(),
-  doc: jest.fn(),
+  doc: jest.fn(() => ({})),
   serverTimestamp: jest.fn(() => "timestamp"),
   setDoc: jest.fn(),
   updateDoc: jest.fn(),
@@ -73,9 +78,14 @@ jest.mock("./useStudioConnection", () => ({
 
 describe("useUnifiedChat", () => {
   const chatHandleSubmit = jest.fn();
+  const originalFetch = global.fetch;
+  const originalTextDecoder = global.TextDecoder;
 
   beforeEach(() => {
     jest.clearAllMocks();
+    FEATURE_FLAGS.unifiedAgent = false;
+    getStudioEnabledPreference.mockReturnValue(false);
+    global.TextDecoder = NodeTextDecoder;
     useAiChat.mockReturnValue({
       activeMode: "agent",
       currentChatId: null,
@@ -88,6 +98,11 @@ describe("useUnifiedChat", () => {
       pendingMessage: null,
       setPendingForChat: jest.fn(),
     });
+  });
+
+  afterEach(() => {
+    global.fetch = originalFetch;
+    global.TextDecoder = originalTextDecoder;
   });
 
   test("nudges sign-in instead of submitting when a signed-out user enters a prompt", async () => {
@@ -113,5 +128,65 @@ describe("useUnifiedChat", () => {
         dedupeKey: expect.stringContaining("signin_nudge:"),
       })
     );
+  });
+
+  test("sends the exact selected MCP session and transport type for Ask mode", async () => {
+    FEATURE_FLAGS.unifiedAgent = true;
+    getStudioEnabledPreference.mockReturnValue(true);
+    getStudioStatus.mockResolvedValue({
+      sessions: [{
+        id: "mcp_exact",
+        connectionType: "mcp_local",
+        status: "connected",
+        live: true,
+        connectorLive: true,
+        mcpServerAvailable: true,
+      }],
+    });
+    const setPendingForChat = jest.fn();
+    useAiChat.mockReturnValue({
+      activeMode: "ask",
+      currentChatId: "chat-1",
+      generatingChatIds: [],
+      generationStage: "",
+      handleSubmit: chatHandleSubmit,
+      isGenerating: false,
+      messages: [],
+      openChatById: jest.fn(),
+      pendingMessage: null,
+      setPendingForChat,
+    });
+    const reader = {
+      read: jest.fn()
+        .mockResolvedValueOnce({
+          done: false,
+          value: Uint8Array.from(Array.from("Studio answer").map((character) => character.charCodeAt(0))),
+        })
+        .mockResolvedValueOnce({ done: true, value: undefined }),
+    };
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      body: { getReader: () => reader },
+    });
+    const user = { uid: "user-1", getIdToken: jest.fn().mockResolvedValue("token") };
+
+    const { result } = renderHook(() =>
+      useUnifiedChat(user, {}, jest.fn(), jest.fn())
+    );
+
+    await act(async () => {
+      await result.current.handleSubmit("What does Main do?", [], null, { mode: "ask" });
+    });
+
+    const request = JSON.parse(global.fetch.mock.calls[0][1].body);
+    expect(request).toEqual(expect.objectContaining({
+      studioEnabled: true,
+      studioSessionId: "mcp_exact",
+      studioConnectionType: "mcp_local",
+    }));
+    expect(setPendingForChat).toHaveBeenCalled();
+    expect(setDoc.mock.calls.some(([, payload]) => (
+      payload?.role === "assistant" && payload?.content === "Studio answer"
+    ))).toBe(true);
   });
 });

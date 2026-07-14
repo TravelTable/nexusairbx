@@ -34,6 +34,31 @@ function planLabel(plan) {
   return "Free";
 }
 
+function subscribeUntilTerminal(unsubscribersRef, documentRef, onValue) {
+  let unsubscribe = null;
+  let stopRequested = false;
+  const stop = () => {
+    if (!unsubscribe) {
+      stopRequested = true;
+      return;
+    }
+    unsubscribe();
+    unsubscribe = null;
+    unsubscribersRef.current = unsubscribersRef.current.filter((entry) => entry !== stop);
+  };
+
+  unsubscribe = onSnapshot(
+    documentRef,
+    (snap) => {
+      if (onValue(snap.data()) === true) stop();
+    },
+    stop
+  );
+  if (stopRequested) stop();
+  else unsubscribersRef.current.push(stop);
+  return stop;
+}
+
 export default function BillingPage() {
   const testUser =
     process.env.NODE_ENV === "test" && typeof window !== "undefined"
@@ -108,12 +133,17 @@ export default function BillingPage() {
         return;
       }
       if (result?.portalDocPath) {
-        const unsub = onSnapshot(doc(getFirestore(), result.portalDocPath), (snap) => {
-          const data = snap.data();
-          if (data?.url) window.location.href = data.url;
-          if (data?.error) setError(data.error.message || "Could not open billing portal.");
+        subscribeUntilTerminal(unsubRef, doc(getFirestore(), result.portalDocPath), (data) => {
+          if (data?.url) {
+            window.location.href = data.url;
+            return true;
+          }
+          if (data?.error) {
+            setError(data.error.message || "Could not open billing portal.");
+            return true;
+          }
+          return false;
         });
-        unsubRef.current.push(unsub);
       }
     } catch (err) {
       setError(err?.message || "Could not open billing portal.");
@@ -137,12 +167,17 @@ export default function BillingPage() {
       }
       if (result?.sessionDocPath) {
         setNote("Preparing your checkout session...");
-        const unsub = onSnapshot(doc(getFirestore(), result.sessionDocPath), (snap) => {
-          const data = snap.data();
-          if (data?.url) window.location.href = data.url;
-          if (data?.error) setError(data.error.message || "Could not start checkout.");
+        subscribeUntilTerminal(unsubRef, doc(getFirestore(), result.sessionDocPath), (data) => {
+          if (data?.url) {
+            window.location.href = data.url;
+            return true;
+          }
+          if (data?.error) {
+            setError(data.error.message || "Could not start checkout.");
+            return true;
+          }
+          return false;
         });
-        unsubRef.current.push(unsub);
       }
     } catch (err) {
       setError(
@@ -169,12 +204,17 @@ export default function BillingPage() {
       }
       if (result?.sessionDocPath) {
         setNote("Preparing your Premium Balance checkout session...");
-        const unsub = onSnapshot(doc(getFirestore(), result.sessionDocPath), (snap) => {
-          const data = snap.data();
-          if (data?.url) window.location.href = data.url;
-          if (data?.error) setError(data.error.message || "Could not start checkout.");
+        subscribeUntilTerminal(unsubRef, doc(getFirestore(), result.sessionDocPath), (data) => {
+          if (data?.url) {
+            window.location.href = data.url;
+            return true;
+          }
+          if (data?.error) {
+            setError(data.error.message || "Could not start checkout.");
+            return true;
+          }
+          return false;
         });
-        unsubRef.current.push(unsub);
       }
     } catch (err) {
       setError(err?.message || "Could not start Premium Balance checkout.");

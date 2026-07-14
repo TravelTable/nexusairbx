@@ -5,6 +5,7 @@ import { getStudioStatus, getStudioCommand, applyArtifactToStudio } from "../../
 import { buildBaseArtifactSnapshot } from "../../../lib/artifactState";
 import { verifyRobloxReadiness } from "../../../lib/workflowApi";
 import { trackProductEvent } from "../../../lib/productAnalytics";
+import { getStudioSessionId, selectPluginStudioSession } from "../../../lib/studioConnection";
 
 function downloadBlob(blob, filename) {
   const url = URL.createObjectURL(blob);
@@ -37,14 +38,16 @@ export default function ExportActions({ artifact, activeFile, notify }) {
   const [loaderCopied, setLoaderCopied] = useState(false);
   const [studioBusy, setStudioBusy] = useState(false);
   const [verifying, setVerifying] = useState(false);
-  const [studioConnected, setStudioConnected] = useState(false);
+  const [studioSession, setStudioSession] = useState(null);
+  const studioSessionId = getStudioSessionId(studioSession);
+  const studioConnected = Boolean(studioSessionId);
 
   useEffect(() => {
     let cancelled = false;
     getStudioStatus()
       .then((status) => {
         if (cancelled) return;
-        setStudioConnected((status.sessions || []).some((s) => s.status === "connected"));
+        setStudioSession(selectPluginStudioSession(status.sessions));
       })
       .catch(() => {});
     return () => {
@@ -155,13 +158,13 @@ export default function ExportActions({ artifact, activeFile, notify }) {
   };
 
   const handlePushStudio = async () => {
-    if (studioBusy) return;
+    if (studioBusy || !studioSessionId) return;
     setStudioBusy(true);
     try {
       const result = await applyArtifactToStudio({
         artifact: buildBaseArtifactSnapshot(artifact),
+        sessionId: studioSessionId,
       });
-      setStudioConnected(true);
       notify?.({ message: "Queued Studio push", type: "success" });
       if (result.commandId) pollCommand(result.commandId).catch(() => {});
     } catch (err) {

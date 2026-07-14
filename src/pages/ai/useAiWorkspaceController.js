@@ -12,6 +12,7 @@ import {
   query,
   orderBy,
   limit,
+  getDocs,
   onSnapshot,
   doc,
   updateDoc,
@@ -40,6 +41,12 @@ import {
 } from "../../lib/agentSteps";
 import { useStudioConnection } from "../../hooks/useStudioConnection";
 import { applyArtifactToStudio, getStudioStatus } from "../../lib/studioBridgeApi";
+import {
+  getStudioConnectionType,
+  getStudioSessionId,
+  isStudioSessionLive,
+  STUDIO_CONNECTION_TYPES,
+} from "../../lib/studioConnection";
 import { AI_EVENTS, emitAiEvent, onAiEvent } from "../../lib/aiEvents";
 import { useAiNotifications } from "./useAiNotifications";
 import { useStarterPromo } from "../../hooks/useStarterPromo";
@@ -414,9 +421,10 @@ export function useAiWorkspaceController() {
       limit(scriptsLimit)
     );
 
-    const unsub = onSnapshot(
-      q,
-      (snap) => {
+    let cancelled = false;
+    getDocs(q)
+      .then((snap) => {
+        if (cancelled) return;
         const list = snap.docs.map((d) => ({
           id: d.id,
           ...d.data(),
@@ -424,14 +432,15 @@ export function useAiWorkspaceController() {
           createdAt: d.data().createdAt?.toMillis?.() || Date.now(),
         }));
         setScripts(list);
-      },
-      (err) => {
-        notify({ message: "Failed to sync scripts library", type: "error" });
-      }
-    );
+      })
+      .catch(() => {
+        if (!cancelled) notify({ message: "Failed to load scripts library", type: "error" });
+      });
 
-    return () => unsub();
-  }, [user, scriptsLimit, notify]);
+    return () => {
+      cancelled = true;
+    };
+  }, [user, scriptsLimit, notify, scriptManager.libraryRevision]);
 
   useEffect(() => {
     if (!user || !chat.currentChatId) {
@@ -579,17 +588,18 @@ export function useAiWorkspaceController() {
   }, [user]);
 
   useEffect(() => {
-    if (!user || !studioConnection.connected || !studioConnection.sessionId) return;
-    if (settings?.lastAuthorizedStudioSessionId === studioConnection.sessionId) return;
+    const pluginSessionId = getStudioSessionId(studioConnection.pluginSession);
+    if (!user || !studioConnection.pluginConnected || !pluginSessionId) return;
+    if (settings?.lastAuthorizedStudioSessionId === pluginSessionId) return;
     updateSettings({
       studioAutoPushEnabled: true,
       studioAutoPushPolicy: settings?.studioAutoPushPolicy || "after_validation",
-      lastAuthorizedStudioSessionId: studioConnection.sessionId,
+      lastAuthorizedStudioSessionId: pluginSessionId,
     }).catch(() => {});
   }, [
     user,
-    studioConnection.connected,
-    studioConnection.sessionId,
+    studioConnection.pluginConnected,
+    studioConnection.pluginSession,
     settings?.lastAuthorizedStudioSessionId,
     settings?.studioAutoPushPolicy,
     updateSettings,
@@ -599,11 +609,18 @@ export function useAiWorkspaceController() {
     if (!user || studioConnection.loading) return;
     const savedSessionId = settings?.lastAuthorizedStudioSessionId;
     if (!savedSessionId) return;
-    if (studioConnection.connected && studioConnection.sessionId === savedSessionId) return;
+    if (
+      studioConnection.pluginConnected &&
+      getStudioSessionId(studioConnection.pluginSession) === savedSessionId
+    ) return;
 
     getStudioStatus()
       .then(({ sessions }) => {
-        const stillExists = (sessions || []).some((session) => session.id === savedSessionId);
+        const stillExists = (sessions || []).some((session) => (
+          getStudioSessionId(session) === savedSessionId &&
+          getStudioConnectionType(session) === STUDIO_CONNECTION_TYPES.PLUGIN_BRIDGE &&
+          isStudioSessionLive(session)
+        ));
         if (!stillExists) {
           updateSettings({ lastAuthorizedStudioSessionId: null }).catch(() => {});
         }
@@ -612,8 +629,8 @@ export function useAiWorkspaceController() {
   }, [
     user,
     studioConnection.loading,
-    studioConnection.connected,
-    studioConnection.sessionId,
+    studioConnection.pluginConnected,
+    studioConnection.pluginSession,
     settings?.lastAuthorizedStudioSessionId,
     updateSettings,
   ]);
@@ -710,7 +727,7 @@ export function useAiWorkspaceController() {
       payload: {
         quickScriptResultId: quickScript.claim?.anonymousResultId || "",
         quickScriptClaimAvailable: Boolean(quickScript.claim?.anonymousResultId && quickScript.claim?.claimToken),
-        studioConnected: Boolean(studioConnection.connected),
+        studioConnected: Boolean(studioConnection.pluginConnected),
         generatorMode,
         promptCategory: categorizePrompt(currentPrompt),
         actionLabel: actionLabel(actionType),
@@ -730,7 +747,7 @@ export function useAiWorkspaceController() {
     quickScript.claim?.anonymousResultId,
     quickScript.claim?.claimToken,
     quickScript.prompt,
-    studioConnection.connected,
+    studioConnection.pluginConnected,
     track,
   ]);
 
@@ -1264,8 +1281,9 @@ export function useAiWorkspaceController() {
   const handleQuickScriptStudioPush = useCallback(async () => {
     const result = quickScript.result;
     if (!result?.code || !gateQuickScriptAction(PENDING_AUTH_ACTIONS.PUSH_TO_STUDIO)) return;
-    if (!studioConnection.connected) {
-      notify({ message: "Pair Roblox Studio before pushing this script", type: "info" });
+    const pluginSessionId = getStudioSessionId(studioConnection.pluginSession);
+    if (!studioConnection.pluginConnected || !pluginSessionId) {
+      notify({ message: "Connect the NexusRBX Studio Plugin before pushing this script", type: "info" });
       return;
     }
     const artifact = quickScriptArtifact(result);
@@ -1273,7 +1291,7 @@ export function useAiWorkspaceController() {
     try {
       const queued = await applyArtifactToStudio({
         artifact: buildBaseArtifactSnapshot(artifact),
-        sessionId: studioConnection.sessionId || settings?.lastAuthorizedStudioSessionId || null,
+        sessionId: pluginSessionId,
       });
       track("quick_script_studio_push_queued", {
         generator_mode: "quick_script",
@@ -1288,9 +1306,8 @@ export function useAiWorkspaceController() {
     notify,
     quickScript.idempotencyKey,
     quickScript.result,
-    settings?.lastAuthorizedStudioSessionId,
-    studioConnection.connected,
-    studioConnection.sessionId,
+    studioConnection.pluginConnected,
+    studioConnection.pluginSession,
     track,
   ]);
 
@@ -1468,7 +1485,7 @@ export function useAiWorkspaceController() {
             handleQuickScriptExport();
             break;
           case PENDING_AUTH_ACTIONS.PUSH_TO_STUDIO:
-            if (studioConnection.connected) {
+            if (studioConnection.pluginConnected) {
               await handleQuickScriptStudioPush();
             } else {
               outcome = "needs_studio_pairing";
@@ -1568,7 +1585,7 @@ export function useAiWorkspaceController() {
     runQuickScript,
     settings?.chatMode,
     settings?.modelVersion,
-    studioConnection.connected,
+    studioConnection.pluginConnected,
     track,
     unified,
     updateSettings,
@@ -1695,11 +1712,7 @@ export function useAiWorkspaceController() {
       handleRemoveProjectAsset: projectAssets.removeAsset,
     },
     studio: {
-      connected: studioConnection.connected,
-      loading: studioConnection.loading,
-      sessionId: studioConnection.sessionId,
-      collaborators: studioConnection.collaborators || [],
-      refresh: studioConnection.refresh,
+      ...studioConnection,
       enabled: studioEnabled,
       applyMode: studioApplyMode,
       autoPushEnabled: Boolean(settings?.studioAutoPushEnabled),

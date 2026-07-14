@@ -7,6 +7,7 @@ import {
   validateNativeModelSpec,
 } from "../../../lib/studioBridgeApi";
 import StudioValidationPanel from "./StudioValidationPanel";
+import { getStudioSessionId, selectPluginStudioSession } from "../../../lib/studioConnection";
 
 function extractSpec(artifact) {
   return artifact?.nativeModelSpec || artifact?.nativeModel?.spec || artifact?.nativeBuild?.spec || null;
@@ -40,7 +41,7 @@ export default function NativeModelReviewPanel({ artifact, notify }) {
   const [status, setStatus] = useState("validating");
   const [commandId, setCommandId] = useState("");
   const [receipt, setReceipt] = useState(null);
-  const [studioConnected, setStudioConnected] = useState(false);
+  const [studioSession, setStudioSession] = useState(null);
   const [showTree, setShowTree] = useState(true);
   const [showRaw, setShowRaw] = useState(false);
   const [showValidation, setShowValidation] = useState(false);
@@ -49,6 +50,8 @@ export default function NativeModelReviewPanel({ artifact, notify }) {
   const hierarchy = useMemo(() => flattenChildren(validation?.normalizedSpec?.root || spec?.root), [validation, spec]);
   const summary = validation?.summary;
   const normalizedSpec = validation?.normalizedSpec || spec;
+  const studioSessionId = getStudioSessionId(studioSession);
+  const studioConnected = Boolean(studioSessionId);
 
   useEffect(() => {
     let cancelled = false;
@@ -67,7 +70,7 @@ export default function NativeModelReviewPanel({ artifact, notify }) {
       .then(([validated, studio]) => {
         if (cancelled) return;
         setValidation(validated);
-        setStudioConnected((studio.sessions || []).some((session) => session.status === "connected"));
+        setStudioSession(selectPluginStudioSession(studio.sessions));
         setStatus("ready");
       })
       .catch((err) => {
@@ -123,7 +126,11 @@ export default function NativeModelReviewPanel({ artifact, notify }) {
     setStatus("queueing");
     setError("");
     try {
-      const queued = await buildNativeModelInStudio({ spec: normalizedSpec, applyMode: "manual_review" });
+      const queued = await buildNativeModelInStudio({
+        spec: normalizedSpec,
+        applyMode: "manual_review",
+        sessionId: studioSessionId,
+      });
       setCommandId(queued.commandId);
       setStatus("waiting_for_studio");
       notify?.("Native model build queued for Studio.", "success");
@@ -251,6 +258,7 @@ export default function NativeModelReviewPanel({ artifact, notify }) {
           targetType="managed_native_model"
           targetReferenceId={commandId || receipt?.commandId}
           modelId={normalizedSpec?.modelId}
+          sessionId={studioSessionId}
           onClose={() => setShowValidation(false)}
         />
       )}
