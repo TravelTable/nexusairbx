@@ -44,6 +44,34 @@ jobs:
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+      - name: Notarize and staple the macOS disk image
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          DMG="$(find desktop-connector/release -maxdepth 1 -type f -name '*.dmg' -print -quit)"
+          test -n "$DMG"
+
+          notarized=false
+          for attempt in 1 2 3; do
+            if xcrun notarytool submit "$DMG" \
+              --apple-id "$APPLE_ID" \
+              --password "$APPLE_APP_SPECIFIC_PASSWORD" \
+              --team-id "$APPLE_TEAM_ID" \
+              --wait; then
+              notarized=true
+              break
+            fi
+
+            if [ "$attempt" -lt 3 ]; then
+              echo "DMG notarization attempt $attempt failed; retrying shortly." >&2
+              sleep $((attempt * 30))
+            fi
+          done
+
+          [ "$notarized" = true ] || { echo "DMG notarization failed after 3 attempts." >&2; exit 1; }
+          xcrun stapler staple "$DMG"
       - name: Verify signing, notarization, Intel, and Apple Silicon
         run: |
           npm run verify:mac-universal --prefix desktop-connector
