@@ -21,6 +21,27 @@ export interface LocalConnectorOptions {
   backend: BackendClientLike;
   mcp: McpClientLike;
   logger: Logger;
+  /** The desktop companion retains its encrypted token so it can reconnect after restart. */
+  clearTokenOnShutdown?: boolean;
+  /** Allows the desktop preference to pause MCP reconnect attempts without stopping cloud health reporting. */
+  shouldAutoReconnect?: () => boolean;
+  onLifecycleState?: (state: ConnectorLifecycleState) => void;
+  onTelemetry?: (telemetry: ConnectorTelemetry) => void;
+}
+
+export type ConnectorLifecycleState = "connecting" | "studio_mcp_unavailable" | "degraded" | "ready" | "stopped";
+export interface ConnectorTelemetry {
+  stage?: "runtime" | "studio_detection" | "mcp" | "tool_discovery" | "ready";
+  cloudConnected?: boolean;
+  mcpConnected?: boolean;
+  supportedTools?: string[];
+  supportedToolCount?: number;
+  mcpServerVersion?: string;
+  experienceName?: string;
+  lastHeartbeatAt?: number;
+  lastActivityAt?: number;
+  lastCommand?: { name: string; status: "succeeded" | "failed"; at: number };
+  degradedReason?: "studio_closed" | "mcp_initialization_failed" | "zero_supported_tools" | "cloud_loss";
 }
 
 /** Coordinates one in-memory pairing session. A process restart requires a new code. */
@@ -30,6 +51,10 @@ export class NexusLocalConnector {
   readonly #mcp: McpClientLike;
   readonly #logger: Logger;
   readonly #connectorVersion: string;
+  readonly #clearTokenOnShutdown: boolean;
+  readonly #shouldAutoReconnect: () => boolean;
+  readonly #onLifecycleState: ((state: ConnectorLifecycleState) => void) | undefined;
+  readonly #onTelemetry: ((telemetry: ConnectorTelemetry) => void) | undefined;
   #catalog: ToolCatalog | null = null;
   #executor: CommandExecutor | null = null;
   #mcpConnected = false;
@@ -43,6 +68,10 @@ export class NexusLocalConnector {
     this.#mcp = options.mcp;
     this.#logger = options.logger;
     this.#connectorVersion = options.connectorVersion;
+    this.#clearTokenOnShutdown = options.clearTokenOnShutdown ?? true;
+    this.#shouldAutoReconnect = options.shouldAutoReconnect ?? (() => true);
+    this.#onLifecycleState = options.onLifecycleState;
+    this.#onTelemetry = options.onTelemetry;
     this.#mcp.onToolsChanged(() => {
       this.#toolsDirty = true;
     });
@@ -54,6 +83,8 @@ export class NexusLocalConnector {
       this.#mcpInfo = {};
       this.#announcedUnavailable = false;
       this.#logger.warn(error?.message ?? "Roblox Studio MCP disconnected; reconnecting.");
+      this.emitLifecycleState("studio_mcp_unavailable");
+      this.emitTelemetry({ mcpConnected: false, degradedReason: "studio_closed" });
     });
   }
 
@@ -62,6 +93,14 @@ export class NexusLocalConnector {
     this.#logger.info("Connecting to NexusRBX…");
     const claim = await this.#backend.claimPairing(pairCode, externalSignal);
     this.#logger.info("NexusRBX connected.");
+    return this.runClaimed(claim, externalSignal);
+  }
+
+  /** Runs a previously claimed session. Used by the desktop companion after securely restoring its token. */
+  async runClaimed(claim: PairClaimResponse, externalSignal?: AbortSignal): Promise<void> {
+    if (externalSignal?.aborted) throw abortReason(externalSignal);
+    this.emitLifecycleState("connecting");
+    this.emitTelemetry({ stage: "runtime", cloudConnected: true, mcpConnected: false });
 
     const lifetime = new AbortController();
     const signal = externalSignal ? AbortSignal.any([externalSignal, lifetime.signal]) : lifetime.signal;
@@ -99,6 +138,10 @@ export class NexusLocalConnector {
             retryInMs: reconnectDelay,
           });
           await this.announceUnavailable();
+          if (!this.#shouldAutoReconnect()) {
+            await waitForAbort(signal);
+            break;
+          }
           await delay(reconnectDelay, signal);
           reconnectDelay = Math.min(reconnectDelay * 2, this.#config.reconnectMaxMs);
           continue;
@@ -137,14 +180,24 @@ export class NexusLocalConnector {
 
   private async connectAndDiscover(signal: AbortSignal): Promise<void> {
     this.#logger.info("Detecting Roblox Studio MCP…");
+    this.emitTelemetry({ stage: "studio_detection" });
     try {
+      this.emitTelemetry({ stage: "mcp" });
       this.#mcpInfo = await this.#mcp.connect(signal);
       this.#mcpConnected = true;
       this.#announcedUnavailable = false;
+      this.emitTelemetry({ stage: "tool_discovery", mcpConnected: true, ...(this.#mcpInfo.serverVersion ? { mcpServerVersion: this.#mcpInfo.serverVersion } : {}) });
       await this.refreshCatalog(signal);
       this.#logger.info("Roblox Studio MCP connected.");
       this.#logCapabilities();
       this.#logger.info("NexusRBX is connected to Roblox Studio. Press Ctrl+C to disconnect.");
+      if ((this.#catalog?.supportedCommands.length ?? 0) === 0) {
+        this.emitTelemetry({ stage: "ready", degradedReason: "zero_supported_tools" });
+        this.emitLifecycleState("degraded");
+      } else {
+        this.emitTelemetry({ stage: "ready" });
+        this.emitLifecycleState("ready");
+      }
     } catch (error) {
       await this.dropMcpConnection();
       throw error;
@@ -158,6 +211,11 @@ export class NexusLocalConnector {
     if (this.#executor === null) this.#executor = new CommandExecutor(this.#mcp, catalog);
     else this.#executor.updateCatalog(catalog);
     this.#catalog = catalog;
+    this.emitTelemetry({
+      supportedTools: tools.map((tool) => tool.name).sort(),
+      supportedToolCount: catalog.supportedCommands.length,
+      mcpConnected: true,
+    });
     await this.#backend.registerCapabilities(
       catalog.capabilities,
       catalog.supportedCommands,
@@ -168,6 +226,20 @@ export class NexusLocalConnector {
       signal,
     );
     await this.#backend.ping(this.pingPayload(true), signal);
+    await this.refreshExperienceSummary(tools, signal);
+  }
+
+  private async refreshExperienceSummary(tools: Array<{ name: string }>, signal: AbortSignal): Promise<void> {
+    if (!tools.some((tool) => tool.name === "get_studio_state")) return;
+    try {
+      const result = await this.#mcp.callTool("get_studio_state", {}, signal);
+      const experienceName = extractExperienceName(result);
+      if (experienceName) this.emitTelemetry({ experienceName });
+    } catch (error) {
+      this.#logger.debug("Could not read the active Studio experience summary.", {
+        code: asConnectorError(error).code,
+      });
+    }
   }
 
   private async executeAndAcknowledge(command: StudioCommand, signal: AbortSignal): Promise<void> {
@@ -178,6 +250,8 @@ export class NexusLocalConnector {
     result.duration = Date.now() - startedAt;
     const success = result.success === true && (!MUTATING_COMMANDS.has(command.type) || result.verified === true);
     await this.#backend.acknowledge(command.id, success ? "succeeded" : "failed", result, signal);
+    const completedAt = Date.now();
+    this.emitTelemetry({ lastActivityAt: completedAt, lastCommand: { name: command.type, status: success ? "succeeded" : "failed", at: completedAt } });
     this.#logger.info(success ? "Studio command completed." : "Studio command failed safely.", {
       commandId: command.id,
       operation: command.type,
@@ -190,11 +264,13 @@ export class NexusLocalConnector {
       await delay(this.#config.heartbeatMs, signal);
       try {
         await this.#backend.ping(this.pingPayload(this.#mcpConnected), signal);
+        this.emitTelemetry({ cloudConnected: true, lastHeartbeatAt: Date.now() });
       } catch (error) {
         if (signal.aborted) return;
         const connectorError = asConnectorError(error);
         if (connectorError.code === "CONNECTOR_AUTH_FAILED") throw connectorError;
         this.#logger.warn("NexusRBX heartbeat failed temporarily.", { code: connectorError.code });
+        this.emitTelemetry({ cloudConnected: false, degradedReason: "cloud_loss" });
       }
     }
   }
@@ -212,6 +288,8 @@ export class NexusLocalConnector {
   private async announceUnavailable(): Promise<void> {
     if (this.#announcedUnavailable) return;
     this.#announcedUnavailable = true;
+    this.emitLifecycleState("studio_mcp_unavailable");
+    this.emitTelemetry({ mcpConnected: false, degradedReason: "mcp_initialization_failed" });
     try {
       await this.#backend.registerCapabilities({ ...EMPTY_CAPABILITIES }, [], []);
       await this.#backend.ping(this.pingPayload(false));
@@ -247,9 +325,15 @@ export class NexusLocalConnector {
       // The process may be offline or the session may already be revoked.
     }
     await this.dropMcpConnection();
-    this.#backend.clearToken();
+    if (this.#clearTokenOnShutdown) this.#backend.clearToken();
     this.#logger.info("NexusRBX Local Connector stopped.");
+    this.emitLifecycleState("stopped");
   }
+
+  private emitLifecycleState(state: ConnectorLifecycleState): void {
+    this.#onLifecycleState?.(state);
+  }
+  private emitTelemetry(telemetry: ConnectorTelemetry): void { this.#onTelemetry?.(telemetry); }
 }
 
 function errorCode(result: JsonObject): string {
@@ -258,6 +342,43 @@ function errorCode(result: JsonObject): string {
     return error.code;
   }
   return "COMMAND_FAILED";
+}
+
+export function extractExperienceName(result: unknown): string | null {
+  const direct = findExperienceName(result, 0);
+  if (direct) return direct;
+  if (!isRecord(result) || !Array.isArray(result.content)) return null;
+  for (const item of result.content) {
+    if (!isRecord(item) || typeof item.text !== "string" || item.text.length > 100_000) continue;
+    try {
+      const parsed = JSON.parse(item.text) as unknown;
+      const candidate = findExperienceName(parsed, 0);
+      if (candidate) return candidate;
+    } catch {
+      // MCP text content is allowed to be plain text; only structured JSON is considered here.
+    }
+  }
+  return null;
+}
+
+function findExperienceName(value: unknown, depth: number): string | null {
+  if (!isRecord(value) || depth > 4) return null;
+  for (const key of ["experienceName", "placeName", "gameName"] as const) {
+    const candidate = value[key];
+    if (typeof candidate === "string") {
+      const normalized = candidate.trim().replace(/\s+/g, " ").slice(0, 160);
+      if (normalized) return normalized;
+    }
+  }
+  for (const key of ["structuredContent", "studio", "experience", "place", "state", "data"] as const) {
+    const candidate = findExperienceName(value[key], depth + 1);
+    if (candidate) return candidate;
+  }
+  return null;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
 function abortReason(signal: AbortSignal): unknown {
@@ -283,5 +404,15 @@ export function delay(milliseconds: number, signal?: AbortSignal): Promise<void>
       },
       { once: true },
     );
+  });
+}
+
+function waitForAbort(signal: AbortSignal): Promise<void> {
+  return new Promise((resolve) => {
+    if (signal.aborted) {
+      resolve();
+      return;
+    }
+    signal.addEventListener("abort", () => resolve(), { once: true });
   });
 }

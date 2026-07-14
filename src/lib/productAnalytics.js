@@ -59,6 +59,9 @@ export const PRODUCT_EVENTS = Object.freeze({
   STARTER_PROMO_DISMISSED: "starter_promo_dismissed",
   CHECKOUT_STARTED: "checkout_started",
   PURCHASE_COMPLETED: "purchase_completed",
+  DOWNLOADS_PAGE_VIEWED: "downloads_page_viewed",
+  CONNECTOR_PLATFORM_DETECTED: "connector_platform_detected",
+  CONNECTOR_DOWNLOAD_SELECTED: "connector_download_selected",
 });
 
 const ALLOWED_EVENTS = new Set(Object.values(PRODUCT_EVENTS));
@@ -205,6 +208,7 @@ function landingPageCategory(path = landingPage()) {
   if (path.startsWith("/subscribe") || path.startsWith("/billing")) return "billing";
   if (path.startsWith("/icons")) return "icons";
   if (path.startsWith("/docs")) return "docs";
+  if (path.startsWith("/downloads")) return "downloads";
   return "other";
 }
 

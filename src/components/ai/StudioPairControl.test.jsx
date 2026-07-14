@@ -1,6 +1,6 @@
 import React from "react";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import StudioPairControl, { resolvePairingExpiry } from "./StudioPairControl";
+import StudioPairControl, { getDesktopConnectorPairingLink, resolvePairingExpiry } from "./StudioPairControl";
 import {
   disconnectStudioMcp,
   startStudioPairing,
@@ -29,6 +29,12 @@ describe("StudioPairControl", () => {
     expect(resolvePairingExpiry({ expiresInMs: 2_500 }, now)).toBe(now + 2_500);
     expect(resolvePairingExpiry({ expiresAt: 1_800_000_000 }, now)).toBe(1_800_000_000_000);
     expect(resolvePairingExpiry({}, now)).toBe(0);
+  });
+
+  test("creates a desktop companion link only for the desktop handoff", () => {
+    expect(getDesktopConnectorPairingLink("abc-123", "?connector=desktop")).toBe("nexusrbx://connector/pair?code=abc-123");
+    expect(getDesktopConnectorPairingLink("abc-123", "?connector=web")).toBeNull();
+    expect(getDesktopConnectorPairingLink("", "?connector=desktop")).toBeNull();
   });
 
   test("generates and displays a one-time plugin pairing code", async () => {

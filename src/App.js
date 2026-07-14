@@ -17,6 +17,7 @@ if (typeof window !== "undefined") {
 const NexusRBXBillingPageContainer = lazy(() => import("./pages/BillingPage"));
 const NexusRBXAIPageContainer = lazy(() => import("./pages/AiPage"));
 const NexusRBXHomepageV2 = lazy(() => import("./pages/HomepageV2"));
+const NexusRBXDownloadsPage = lazy(() => import("./pages/DownloadsPage"));
 const NexusRBXContactPageContainer = lazy(() => import("./pages/ContactPage"));
 const NexusRBXPrivacyPageContainer = lazy(() => import("./pages/PrivacyPage"));
 const NexusRBXSubscribePageContainer = lazy(() => import("./pages/SubscribePage"));
@@ -44,6 +45,7 @@ function App() {
         <AuthRedirectHandler />
         <Routes>
           <Route path="/" element={withSiteShell(<NexusRBXHomepageV2 />, "marketing")} />
+          <Route path="/downloads" element={withSiteShell(<NexusRBXDownloadsPage />, "marketing")} />
           <Route path="/ai" element={<NexusRBXAIPageContainer />} />
           <Route path="/settings" element={withSiteShell(<NexusRBXSettingsPageContainer />, "account")} />
           <Route path="/billing" element={withSiteShell(<NexusRBXBillingPageContainer />, "account")} />

@@ -9,6 +9,7 @@ const {
 const CORE_ROUTES = [
   { path: "/", lastmod: null },
   { path: "/contact", lastmod: null },
+  { path: "/downloads", lastmod: null },
   { path: "/privacy", lastmod: null },
   { path: "/subscribe", lastmod: null },
   { path: "/terms", lastmod: null },

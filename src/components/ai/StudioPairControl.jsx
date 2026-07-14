@@ -64,6 +64,12 @@ export function resolvePairingExpiry(result, now = Date.now()) {
   return 0;
 }
 
+export function getDesktopConnectorPairingLink(code, search = "") {
+  const params = new URLSearchParams(search);
+  if (!code || params.get("connector") !== "desktop") return null;
+  return `nexusrbx://connector/pair?code=${encodeURIComponent(code)}`;
+}
+
 function PairingCode({ code, expiresAt, now, copied, onCopy, onRegenerate, busy }) {
   const remainingMs = expiresAt ? expiresAt - now : 0;
   const expiryKnown = expiresAt > 0;
@@ -239,6 +245,11 @@ export default function StudioPairControl({
           expiresAt: resolvePairingExpiry(result),
         },
       }));
+      const desktopPairingLink = getDesktopConnectorPairingLink(
+        result.code,
+        typeof window === "undefined" ? "" : window.location.search
+      );
+      if (desktopPairingLink) window.location.assign(desktopPairingLink);
       setNow(Date.now());
     } catch (error) {
       notify?.({ message: error?.message || "Failed to start Studio pairing", type: "error" });

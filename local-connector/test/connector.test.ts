@@ -182,6 +182,28 @@ test("connector publishes an empty catalog while MCP is unavailable, then reconn
   assert.equal(backend.acknowledgements[0]?.status, "succeeded");
 });
 
+test("connector leaves MCP reconnect paused when automatic reconnect is disabled", async () => {
+  const controller = new AbortController();
+  const backend = new FakeBackend(controller);
+  const mcp = new FakeMcp();
+  mcp.failConnects = 100;
+  const run = new NexusLocalConnector({
+    config,
+    connectorVersion: "0.1.0-test",
+    backend,
+    mcp,
+    logger,
+    shouldAutoReconnect: () => false,
+  }).run("PAIR-CODE", controller.signal);
+
+  await new Promise((resolve) => setTimeout(resolve, 12));
+  controller.abort(new DOMException("test complete", "AbortError"));
+  await run;
+
+  assert.equal(mcp.connectAttempts, 1);
+  assert.deepEqual(backend.registrations[0]?.commands, []);
+});
+
 test("tools/list_changed causes full rediscovery and capability re-registration", async () => {
   const controller = new AbortController();
   const backend = new FakeBackend(controller);

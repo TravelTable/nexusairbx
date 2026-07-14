@@ -66,6 +66,15 @@ export class NexusBackendClient implements BackendClientLike {
     return response;
   }
 
+  /** Restores a token only after the desktop shell has decrypted it with the OS credential store. */
+  restoreToken(token: string): void {
+    if (!/^nsmcp_[A-Za-z0-9_-]+_[A-Za-z0-9._~-]+$/.test(token)) {
+      throw new ConnectorError("CONNECTOR_TOKEN_INVALID", "The saved connector token is invalid.");
+    }
+    this.#token = token;
+    this.options.logger.addSecret(token);
+  }
+
   ping(body: JsonObject, signal?: AbortSignal): Promise<JsonObject> {
     return this.request("POST", "/api/studio/mcp/session/ping", body, {
       authenticated: true,
@@ -135,6 +144,14 @@ export class NexusBackendClient implements BackendClientLike {
       status === "succeeded" ? { status, result } : { status, error: result.error ?? result, result },
       { authenticated: true, retry: true, ...(signal === undefined ? {} : { signal }) },
     );
+  }
+
+  revokeCurrentSession(signal?: AbortSignal): Promise<JsonObject> {
+    return this.request("POST", "/api/studio/mcp/session/revoke", {}, {
+      authenticated: true,
+      retry: false,
+      ...(signal === undefined ? {} : { signal }),
+    });
   }
 
   clearToken(): void {
@@ -231,11 +248,12 @@ export class NexusBackendClient implements BackendClientLike {
       throw new ConnectorError("CONNECTOR_AUTH_FAILED", "The connector session is invalid, expired, or revoked.");
     }
     const serverMessage = typeof parsed.message === "string" ? parsed.message : undefined;
+    const serverCode = typeof parsed.code === "string" && /^[A-Z0-9_]{2,64}$/.test(parsed.code) ? parsed.code : undefined;
     const retryable = response.status === 408 || response.status === 429 || response.status >= 500;
     throw new ConnectorError(
       retryable ? "BACKEND_TEMPORARY_ERROR" : "BACKEND_REQUEST_REJECTED",
       serverMessage?.slice(0, 512) ?? `NexusRBX rejected the request (${response.status}).`,
-      { retryable, details: { status: response.status } },
+      { retryable, details: { status: response.status, ...(serverCode ? { serverCode } : {}) } },
     );
   }
 }

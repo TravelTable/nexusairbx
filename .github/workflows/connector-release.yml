@@ -1,0 +1,167 @@
+name: Release NexusRBX Connector
+
+on:
+  push:
+    tags: ["connector-v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: connector-release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            local-connector/package-lock.json
+            desktop-connector/package-lock.json
+      - name: Require Apple release credentials
+        env:
+          CSC_LINK: ${{ secrets.CONNECTOR_MACOS_SIGNING_CERTIFICATE }}
+          CSC_KEY_PASSWORD: ${{ secrets.CONNECTOR_MACOS_SIGNING_CERTIFICATE_PASSWORD }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          for value in CSC_LINK CSC_KEY_PASSWORD APPLE_ID APPLE_APP_SPECIFIC_PASSWORD APPLE_TEAM_ID; do
+            test -n "${!value}" || { echo "Missing required secret: $value" >&2; exit 1; }
+          done
+      - run: npm ci --prefix local-connector && npm ci --prefix desktop-connector
+      - name: Build, sign, and notarize universal macOS app
+        run: npm run package:mac --prefix desktop-connector
+        env:
+          CSC_LINK: ${{ secrets.CONNECTOR_MACOS_SIGNING_CERTIFICATE }}
+          CSC_KEY_PASSWORD: ${{ secrets.CONNECTOR_MACOS_SIGNING_CERTIFICATE_PASSWORD }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+      - name: Verify signing, notarization, Intel, and Apple Silicon
+        run: |
+          npm run verify:mac-universal --prefix desktop-connector
+          APP="desktop-connector/release/mac-universal/NexusRBX Connector.app"
+          DMG="$(find desktop-connector/release -maxdepth 1 -type f -name '*.dmg' -print -quit)"
+          test -n "$DMG"
+          codesign --verify --deep --strict --verbose=2 "$APP"
+          spctl --assess --type execute --verbose=4 "$APP"
+          xcrun stapler validate "$APP"
+          xcrun stapler validate "$DMG"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: connector-macos
+          if-no-files-found: error
+          path: |
+            desktop-connector/release/*.dmg
+            desktop-connector/release/*.zip
+            desktop-connector/release/*.yml
+            desktop-connector/release/*.blockmap
+
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            local-connector/package-lock.json
+            desktop-connector/package-lock.json
+      - name: Require Windows release credentials
+        shell: pwsh
+        env:
+          CSC_LINK: ${{ secrets.CONNECTOR_WINDOWS_SIGNING_CERTIFICATE }}
+          CSC_KEY_PASSWORD: ${{ secrets.CONNECTOR_WINDOWS_SIGNING_CERTIFICATE_PASSWORD }}
+          EXPECTED_PUBLISHER: ${{ secrets.CONNECTOR_WINDOWS_EXPECTED_PUBLISHER }}
+        run: |
+          @('CSC_LINK', 'CSC_KEY_PASSWORD', 'EXPECTED_PUBLISHER') | ForEach-Object {
+            if ([string]::IsNullOrWhiteSpace([Environment]::GetEnvironmentVariable($_))) {
+              throw "Missing required secret: $_"
+            }
+          }
+      - run: npm ci --prefix local-connector && npm ci --prefix desktop-connector
+      - name: Build and sign Windows 10/11 x64 installer
+        run: npm run package:win --prefix desktop-connector
+        env:
+          CSC_LINK: ${{ secrets.CONNECTOR_WINDOWS_SIGNING_CERTIFICATE }}
+          CSC_KEY_PASSWORD: ${{ secrets.CONNECTOR_WINDOWS_SIGNING_CERTIFICATE_PASSWORD }}
+      - name: Verify Authenticode publisher
+        shell: pwsh
+        env:
+          EXPECTED_PUBLISHER: ${{ secrets.CONNECTOR_WINDOWS_EXPECTED_PUBLISHER }}
+        run: |
+          $installers = @(Get-ChildItem desktop-connector/release -File -Filter '*.exe')
+          if ($installers.Count -ne 1) { throw "Expected one Windows installer, found $($installers.Count)." }
+          $signature = Get-AuthenticodeSignature $installers[0].FullName
+          if ($signature.Status -ne 'Valid') { throw "Installer signature is $($signature.Status)." }
+          if ($signature.SignerCertificate.Subject -notlike "*$env:EXPECTED_PUBLISHER*") {
+            throw "Unexpected Windows signer: $($signature.SignerCertificate.Subject)"
+          }
+      - name: Silent install, secure startup smoke, and uninstall
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $installer = @(Get-ChildItem desktop-connector/release -File -Filter '*.exe')[0]
+          $installDir = Join-Path $env:RUNNER_TEMP 'NexusRBXConnector'
+          $reportPath = Join-Path $env:RUNNER_TEMP 'nexusrbx-connector-smoke.json'
+          $install = Start-Process $installer.FullName -ArgumentList @('/S', "/D=$installDir") -Wait -PassThru
+          if ($install.ExitCode -ne 0) { throw "Silent installation failed with exit code $($install.ExitCode)." }
+          try {
+            $appExe = Get-ChildItem $installDir -Recurse -File -Filter 'NexusRBX Connector.exe' |
+              Select-Object -First 1
+            if (-not $appExe) { throw 'Installed Connector executable was not found.' }
+            $env:NEXUS_CONNECTOR_CI_SMOKE = '1'
+            $env:NEXUS_CONNECTOR_SMOKE_REPORT = $reportPath
+            $smoke = Start-Process $appExe.FullName -ArgumentList '--smoke-test' -Wait -PassThru
+            if ($smoke.ExitCode -ne 0) { throw "Installed app smoke failed with exit code $($smoke.ExitCode)." }
+            if (-not (Test-Path $reportPath)) { throw 'Installed app did not write its smoke report.' }
+            $report = Get-Content $reportPath -Raw | ConvertFrom-Json
+            if (-not $report.ok) { throw "Installed app smoke report was not successful: $(Get-Content $reportPath -Raw)" }
+            if (@($report.checks.PSObject.Properties.Value) -contains $false) { throw 'One or more installed app smoke checks failed.' }
+          }
+          finally {
+            $uninstaller = Get-ChildItem $installDir -Recurse -File -Filter 'Uninstall*.exe' | Select-Object -First 1
+            if ($uninstaller) {
+              $uninstall = Start-Process $uninstaller.FullName -ArgumentList '/S' -Wait -PassThru
+              if ($uninstall.ExitCode -ne 0) { throw "Silent uninstall failed with exit code $($uninstall.ExitCode)." }
+            }
+          }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: connector-windows
+          if-no-files-found: error
+          path: |
+            desktop-connector/release/*.exe
+            desktop-connector/release/*.yml
+            desktop-connector/release/*.blockmap
+
+  publish:
+    needs: [macos, windows]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/download-artifact@v4
+        with:
+          path: desktop-connector/release
+          merge-multiple: true
+      - name: Generate and verify SHA-256 checksums
+        run: |
+          npm run checksums --prefix desktop-connector
+          npm run checksums:verify --prefix desktop-connector
+      - name: Publish both platforms and commit latest.json last
+        run: npm run release:publish --prefix desktop-connector
+        env:
+          NEXUSRBX_RELEASE_FEED_URL: ${{ secrets.NEXUSRBX_RELEASE_FEED_URL }}
+          NEXUSRBX_RELEASE_FEED_TOKEN: ${{ secrets.NEXUSRBX_RELEASE_FEED_TOKEN }}
+          NEXUSRBX_PUBLIC_RELEASE_BASE_URL: https://downloads.nexusrbx.com/connector

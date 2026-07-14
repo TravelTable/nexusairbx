@@ -147,6 +147,29 @@ test("claim is not retried while temporary authenticated requests use bounded re
   assert.equal(logger.warnings.length, 1);
 });
 
+test("backend client revokes only the authenticated current session", async () => {
+  const token = "nsmcp_session123_secret.value";
+  const calls: CapturedRequest[] = [];
+  const client = new NexusBackendClient({
+    apiUrl: "https://api.example.test",
+    connectorVersion: "0.1.0",
+    requestTimeoutMs: 1_000,
+    logger: new TestLogger(),
+    fetch: makeFetch([
+      response({ token, sessionId: "session123", userId: "user1", pollIntervalMs: 25, expiresInMs: 60_000 }),
+      response({ ok: true }),
+    ], calls),
+  });
+
+  await client.claimPairing("ABCD12");
+  await client.revokeCurrentSession();
+
+  assert.equal(calls[1]?.url, "https://api.example.test/api/studio/mcp/session/revoke");
+  assert.equal(calls[1]?.init.method, "POST");
+  assert.equal((calls[1]?.init.headers as Record<string, string>).Authorization, `Bearer ${token}`);
+  assert.deepEqual(JSON.parse(String(calls[1]?.init.body)), {});
+});
+
 test("backend client rejects malformed JSON, malformed commands, and authentication failure", async () => {
   const malformed = new NexusBackendClient({
     apiUrl: "https://api.example.test",

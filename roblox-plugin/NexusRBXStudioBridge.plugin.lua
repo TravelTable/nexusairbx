@@ -65,7 +65,7 @@ localSnapshots = {}
 -- END src/ui/components.lua
 
 -- BEGIN src/net/httpClient.lua
-local request, getToken, setToken, jsonEncode, getLastLatencyMs, pingHealth
+local request, getToken, setToken, jsonEncode, getLastLatencyMs, pingHealth, getMcpCompanionStatus
 do
 local lastLatencyMs = 0
 local etagCache = {}
@@ -299,6 +299,19 @@ function pingSession(token, placeSignature)
 		return false, result.latencyMs or lastLatencyMs, true
 	end
 	return result.ok == true, result.latencyMs or lastLatencyMs, false
+end
+
+-- Read-only companion summary for the Studio panel. It intentionally uses the
+-- existing plugin bearer token and never changes pairing or command polling.
+getMcpCompanionStatus = function(token)
+	if not token then
+		return false, nil
+	end
+	local result = requestOnce("GET", "/api/studio/mcp/plugin-status", nil, token, { maxAttempts = 1 })
+	if result.ok and type(result.data) == "table" then
+		return true, result.data
+	end
+	return false, nil
 end
 
 getToken = function()
@@ -1029,7 +1042,7 @@ end
 -- END src/studio/snapshot.lua
 
 -- BEGIN src/ui/BridgePanel.lua
-local setStatus, setLast, setBusy, setActive, setRun, setProgress, pushActivity, showToast, setHealth, setPollingPulse, showApprovalGate, hideApprovalGate, waitForApproval, getApprovalModeEnabledExport, handleSessionExpired, applying, pairButton, codeBox, pullButton, restoreButton, disconnectButton, confirmRestoreButton, cancelRestoreButton, approvalToggleButton, approvalConfirmButton, approvalDeclineButton, refreshControls, runSetupCheck, showOnboarding, hideOnboarding, checkSetupButton, onboardingDismissButton, showRestoreConfirmation, hideRestoreConfirmation, updateSnapshotLabel, widget, toggleButton, healthLabel, progressLabel, feedEmptyLabel, approvalCopy, playtestLogsButton, playtestStrip, setButtonEnabled, collaboratorsLabel, updateCollaborators
+local setStatus, setLast, setBusy, setActive, setRun, setProgress, pushActivity, showToast, setHealth, setPollingPulse, showApprovalGate, hideApprovalGate, waitForApproval, getApprovalModeEnabledExport, handleSessionExpired, applying, pairButton, codeBox, pullButton, restoreButton, disconnectButton, confirmRestoreButton, cancelRestoreButton, approvalToggleButton, approvalConfirmButton, approvalDeclineButton, refreshControls, runSetupCheck, showOnboarding, hideOnboarding, checkSetupButton, onboardingDismissButton, showRestoreConfirmation, hideRestoreConfirmation, updateSnapshotLabel, widget, toggleButton, healthLabel, progressLabel, feedEmptyLabel, approvalCopy, playtestLogsButton, playtestStrip, setButtonEnabled, collaboratorsLabel, updateCollaborators, setMcpCompanionStatus
 do
 -- NexusRBX Studio Bridge UI
 -- Dock panel: pairing, activity feed, recovery, approval gate, health.
@@ -1593,6 +1606,31 @@ undoBatchButton = makeButton(safetySection, "UndoBatchButton", "Undo Last Batch"
 local settingsSection = makeSection("Settings")
 makeText(settingsSection, "SettingsTitle", "Settings", 18, 13, true)
 approvalToggleButton = makeButton(settingsSection, "ApprovalToggle", "Review before apply: OFF", themeColor(Enum.StudioStyleGuideColor.Button))
+-- Informational only: this does not pair, start, stop, or otherwise control
+-- the desktop MCP companion.
+do
+	local companionSection = Instance.new("Frame")
+	companionSection.Name = "McpCompanion"
+	companionSection.BackgroundColor3 = themeColor(Enum.StudioStyleGuideColor.MainBackground)
+	companionSection.BackgroundTransparency = 0.25
+	companionSection.Size = UDim2.new(1, 0, 0, 0)
+	companionSection.AutomaticSize = Enum.AutomaticSize.Y
+	companionSection.Parent = settingsSection
+	applyCorner(companionSection, 6)
+	applyStroke(companionSection, COLORS.accent, 0.55)
+	local companionPadding = Instance.new("UIPadding")
+	companionPadding.PaddingTop = UDim.new(0, 8)
+	companionPadding.PaddingBottom = UDim.new(0, 8)
+	companionPadding.PaddingLeft = UDim.new(0, 8)
+	companionPadding.PaddingRight = UDim.new(0, 8)
+	companionPadding.Parent = companionSection
+	local companionList = Instance.new("UIListLayout")
+	companionList.Padding = UDim.new(0, 3)
+	companionList.SortOrder = Enum.SortOrder.LayoutOrder
+	companionList.Parent = companionSection
+	makeText(companionSection, "McpCompanionTitle", "MCP Companion", 17, 12, true)
+	mcpCompanionLabel = makeText(companionSection, "McpCompanionStatus", "Not configured", 17, 11, false, themeColor(Enum.StudioStyleGuideColor.DimmedText))
+end
 -- Team Create awareness: who else is editing this place (masked identity).
 -- Populated by the heartbeat loop via GET /api/studio/collaborators.
 collaboratorsLabel = makeText(settingsSection, "Collaborators", "Collaborators: checking...", nil, 11, false, themeColor(Enum.StudioStyleGuideColor.DimmedText), true)
@@ -1995,6 +2033,26 @@ setHealth = function(syncedAt, latencyMs)
 	else
 		healthLabel.Text = ("Synced %ds ago%s"):format(ago, latencyText)
 	end
+end
+
+setMcpCompanionStatus = function(summary)
+	if not mcpCompanionLabel or type(summary) ~= "table" then return end
+	local state = tostring(summary.state or "not_configured")
+	local labels = {
+		not_configured = "Not configured",
+		connector_offline = "Connector offline",
+		studio_mcp_unavailable = "Studio MCP unavailable",
+		ready = "Ready",
+	}
+	local colors = {
+		not_configured = COLORS.muted,
+		connector_offline = COLORS.warning,
+		studio_mcp_unavailable = COLORS.warning,
+		ready = COLORS.success,
+	}
+	local commandCount = tonumber(summary.supportedCommandCount) or 0
+	mcpCompanionLabel.Text = (labels[state] or "Unavailable") .. " · " .. tostring(commandCount) .. " commands"
+	mcpCompanionLabel.TextColor3 = colors[state] or COLORS.muted
 end
 
 local function errorHelpFor(value)
@@ -6774,6 +6832,12 @@ task.spawn(function()
 			local collabOk, collabData = request("GET", "/api/studio/collaborators", nil, getToken())
 			if collabOk and type(collabData) == "table" then
 				updateCollaborators(collabData.collaborators)
+			end
+			-- The companion card is intentionally best-effort. A summary failure
+			-- must never affect the existing session heartbeat or command flow.
+			local mcpStatusOk, mcpSummary = getMcpCompanionStatus(getToken())
+			if mcpStatusOk then
+				setMcpCompanionStatus(mcpSummary)
 			end
 		end
 	end

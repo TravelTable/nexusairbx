@@ -26,6 +26,9 @@ export default function PublicHeader() {
             <a className="rounded-md px-3 py-2 text-sm font-medium text-gray-400 transition-colors hover:bg-white/[0.05] hover:text-white" href="/icons-market">
               Icon Market
             </a>
+            <a className="rounded-md px-3 py-2 text-sm font-medium text-gray-400 transition-colors hover:bg-white/[0.05] hover:text-white" href="/downloads">
+              Downloads
+            </a>
             <a className="rounded-md px-3 py-2 text-sm font-medium text-gray-400 transition-colors hover:bg-white/[0.05] hover:text-white" href="/subscribe">
               Pricing
             </a>
@@ -52,6 +55,7 @@ export default function PublicHeader() {
               <a className="rounded-md px-3 py-2 text-sm text-gray-200 hover:bg-white/[0.06]" href="/ai">AI Workspace</a>
               <a className="rounded-md px-3 py-2 text-sm text-gray-200 hover:bg-white/[0.06]" href="/tools/icon-generator">Icon Generator</a>
               <a className="rounded-md px-3 py-2 text-sm text-gray-200 hover:bg-white/[0.06]" href="/icons-market">Icon Market</a>
+              <a className="rounded-md px-3 py-2 text-sm text-gray-200 hover:bg-white/[0.06]" href="/downloads">Downloads</a>
               <a className="rounded-md px-3 py-2 text-sm text-gray-200 hover:bg-white/[0.06]" href="/subscribe">Pricing</a>
               <a className="rounded-md px-3 py-2 text-sm text-gray-200 hover:bg-white/[0.06]" href="/contact">Contact</a>
               <div className="mt-1 border-t border-white/10 pt-2">

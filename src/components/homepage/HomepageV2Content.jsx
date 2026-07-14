@@ -9,6 +9,7 @@ import HomepageWorkflow from "./HomepageWorkflow";
 import HomepageTestimonial from "./HomepageTestimonial";
 import HomepageFooter from "./HomepageFooter";
 import RobloxTrustStrip from "./RobloxTrustStrip";
+import CompanionDownloadSection from "./CompanionDownloadSection";
 
 export default function HomepageV2Content({
   surface = "homepage",
@@ -114,8 +115,17 @@ export default function HomepageV2Content({
         </div>
 
         <RobloxTrustStrip />
+
+        <a
+          href="/downloads"
+          className="mt-7 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.035] px-4 py-2 text-xs font-black text-zinc-300 transition hover:border-cyan-300/30 hover:bg-cyan-300/[0.06] hover:text-cyan-100"
+        >
+          Get the Studio companion
+          <span aria-hidden="true">→</span>
+        </a>
       </section>
 
+      <CompanionDownloadSection />
       <HomepageFeatures />
       <HomepageWorkflow />
       <HomepageTestimonial />

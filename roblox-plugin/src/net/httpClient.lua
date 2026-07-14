@@ -232,6 +232,19 @@ function pingSession(token, placeSignature)
 	return result.ok == true, result.latencyMs or lastLatencyMs, false
 end
 
+-- Read-only companion summary for the Studio panel. It intentionally uses the
+-- existing plugin bearer token and never changes pairing or command polling.
+function getMcpCompanionStatus(token)
+	if not token then
+		return false, nil
+	end
+	local result = requestOnce("GET", "/api/studio/mcp/plugin-status", nil, token, { maxAttempts = 1 })
+	if result.ok and type(result.data) == "table" then
+		return true, result.data
+	end
+	return false, nil
+end
+
 function getToken()
 	return plugin:GetSetting("nexusrbxStudioToken")
 end

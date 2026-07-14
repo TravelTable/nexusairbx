@@ -170,10 +170,27 @@ test("homepage raw HTML is meaningful before client JavaScript", () => {
   assert.match(html, /property="og:title"/);
   assert.match(html, /name="twitter:card"/);
   assert.match(html, /application\/ld\+json/);
+  assert.match(html, /Connect NexusRBX to Roblox Studio/);
+  assert.match(html, /href="\/downloads"/);
   assert.equal(countCanonical(html), 1);
   assert.match(html, /href="https:\/\/www\.nexusrbx\.com\/"/);
   assert.doesNotMatch(html, /\/ai-preview\.png/);
   assert.doesNotMatch(html, /Monaco|AgentWorkspaceLayout|CodeEditorTabs/);
+});
+
+test("downloads raw HTML is meaningful and fails closed before release verification", () => {
+  const html = readHtml("/downloads");
+  assert.equal(extractTitle(html), "Download NexusRBX Connector for macOS and Windows");
+  assert.equal(extractH1(html), "Connect NexusRBX to Roblox Studio");
+  assert.equal(extractCanonical(html), "https://www.nexusrbx.com/downloads");
+  assert.equal(countCanonical(html), 1);
+  assert.match(html, /Universal — Intel and Apple Silicon/);
+  assert.match(html, /Windows 10\/11 — 64-bit/);
+  assert.match(html, /Checking release…/);
+  assert.match(html, /href="\/downloads"/);
+  assert.match(html, /href="\/docs\/troubleshooting"/);
+  assert.doesNotMatch(html, /href="[^"]+\.(?:dmg|exe)"/i);
+  assert.doesNotMatch(html, /pairing code|connector token|access token/i);
 });
 
 test("docs raw HTML has route-specific metadata and content", () => {
@@ -252,6 +269,7 @@ test("search landing page internal links resolve to known public or app routes",
     "/",
     "/ai",
     "/contact",
+    "/downloads",
     "/icons-market",
     "/legal/privacy",
     "/legal/terms",
@@ -297,6 +315,11 @@ test("docs and legal pages are present in public sitemaps", () => {
   legalRoutes.forEach((route) => {
     assert.match(legalSitemap, new RegExp(`<loc>https://www\\.nexusrbx\\.com${route}</loc>`));
   });
+});
+
+test("downloads page is present in the core sitemap", () => {
+  const coreSitemap = fs.readFileSync(path.join(__dirname, "..", "public", "sitemaps", "core.xml"), "utf8");
+  assert.match(coreSitemap, /<loc>https:\/\/www\.nexusrbx\.com\/downloads<\/loc>/);
 });
 
 test("public frontend CSS includes mobile landing layout rules", () => {

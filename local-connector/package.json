@@ -4,6 +4,9 @@
   "description": "Local NexusRBX connector for the official Roblox Studio MCP server",
   "type": "module",
   "private": true,
+  "exports": {
+    ".": "./dist/index.js"
+  },
   "bin": {
     "nexusrbx-local-connector": "dist/cli.js"
   },

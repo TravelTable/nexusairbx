@@ -560,6 +560,31 @@ undoBatchButton = makeButton(safetySection, "UndoBatchButton", "Undo Last Batch"
 local settingsSection = makeSection("Settings")
 makeText(settingsSection, "SettingsTitle", "Settings", 18, 13, true)
 approvalToggleButton = makeButton(settingsSection, "ApprovalToggle", "Review before apply: OFF", themeColor(Enum.StudioStyleGuideColor.Button))
+-- Informational only: this does not pair, start, stop, or otherwise control
+-- the desktop MCP companion.
+do
+	local companionSection = Instance.new("Frame")
+	companionSection.Name = "McpCompanion"
+	companionSection.BackgroundColor3 = themeColor(Enum.StudioStyleGuideColor.MainBackground)
+	companionSection.BackgroundTransparency = 0.25
+	companionSection.Size = UDim2.new(1, 0, 0, 0)
+	companionSection.AutomaticSize = Enum.AutomaticSize.Y
+	companionSection.Parent = settingsSection
+	applyCorner(companionSection, 6)
+	applyStroke(companionSection, COLORS.accent, 0.55)
+	local companionPadding = Instance.new("UIPadding")
+	companionPadding.PaddingTop = UDim.new(0, 8)
+	companionPadding.PaddingBottom = UDim.new(0, 8)
+	companionPadding.PaddingLeft = UDim.new(0, 8)
+	companionPadding.PaddingRight = UDim.new(0, 8)
+	companionPadding.Parent = companionSection
+	local companionList = Instance.new("UIListLayout")
+	companionList.Padding = UDim.new(0, 3)
+	companionList.SortOrder = Enum.SortOrder.LayoutOrder
+	companionList.Parent = companionSection
+	makeText(companionSection, "McpCompanionTitle", "MCP Companion", 17, 12, true)
+	mcpCompanionLabel = makeText(companionSection, "McpCompanionStatus", "Not configured", 17, 11, false, themeColor(Enum.StudioStyleGuideColor.DimmedText))
+end
 -- Team Create awareness: who else is editing this place (masked identity).
 -- Populated by the heartbeat loop via GET /api/studio/collaborators.
 collaboratorsLabel = makeText(settingsSection, "Collaborators", "Collaborators: checking...", nil, 11, false, themeColor(Enum.StudioStyleGuideColor.DimmedText), true)
@@ -962,6 +987,26 @@ function setHealth(syncedAt, latencyMs)
 	else
 		healthLabel.Text = ("Synced %ds ago%s"):format(ago, latencyText)
 	end
+end
+
+function setMcpCompanionStatus(summary)
+	if not mcpCompanionLabel or type(summary) ~= "table" then return end
+	local state = tostring(summary.state or "not_configured")
+	local labels = {
+		not_configured = "Not configured",
+		connector_offline = "Connector offline",
+		studio_mcp_unavailable = "Studio MCP unavailable",
+		ready = "Ready",
+	}
+	local colors = {
+		not_configured = COLORS.muted,
+		connector_offline = COLORS.warning,
+		studio_mcp_unavailable = COLORS.warning,
+		ready = COLORS.success,
+	}
+	local commandCount = tonumber(summary.supportedCommandCount) or 0
+	mcpCompanionLabel.Text = (labels[state] or "Unavailable") .. " · " .. tostring(commandCount) .. " commands"
+	mcpCompanionLabel.TextColor3 = colors[state] or COLORS.muted
 end
 
 local function errorHelpFor(value)

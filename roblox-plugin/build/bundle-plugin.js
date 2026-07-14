@@ -102,6 +102,7 @@ const MODULE_EXPORTS = {
     "setButtonEnabled",
     "collaboratorsLabel",
     "updateCollaborators",
+    "setMcpCompanionStatus",
   ],
   "src/studio/serialization.lua": [
     "SCRIPT_CLASSES",
@@ -121,7 +122,7 @@ const MODULE_EXPORTS = {
     "escapePattern",
     "escapeReplacement",
   ],
-  "src/net/httpClient.lua": ["request", "getToken", "setToken", "jsonEncode", "getLastLatencyMs", "pingHealth"],
+  "src/net/httpClient.lua": ["request", "getToken", "setToken", "jsonEncode", "getLastLatencyMs", "pingHealth", "getMcpCompanionStatus"],
   "src/studio/path.lua": [
     "fullPath",
     "resolvePath",

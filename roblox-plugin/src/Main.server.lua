@@ -287,6 +287,12 @@ task.spawn(function()
 			if collabOk and type(collabData) == "table" then
 				updateCollaborators(collabData.collaborators)
 			end
+			-- The companion card is intentionally best-effort. A summary failure
+			-- must never affect the existing session heartbeat or command flow.
+			local mcpStatusOk, mcpSummary = getMcpCompanionStatus(getToken())
+			if mcpStatusOk then
+				setMcpCompanionStatus(mcpSummary)
+			end
 		end
 	end
 end)

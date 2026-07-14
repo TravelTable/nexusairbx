@@ -94,6 +94,7 @@ export const homepageTestimonial = {
 
 export const homepageFooterLinks = [
   { label: "Features", href: "#features" },
+  { label: "Downloads", href: "/downloads" },
   { label: "Pricing", href: "/subscribe" },
   { label: "Documentation", href: "/docs" },
   { label: "Support", href: "/contact" },
