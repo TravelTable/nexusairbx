@@ -1,0 +1,23 @@
+.git
+.github
+.vercel
+.env*
+.DS_Store
+
+node_modules
+backend
+desktop-connector
+local-connector
+roblox-plugin
+Roblox examples for Ai
+
+build
+coverage
+public-frontend/.next
+public-frontend/out
+
+*.dmg
+*.exe
+*.p12
+*.pfx
+*.zip

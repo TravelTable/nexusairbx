@@ -75,35 +75,19 @@ jobs:
           cache-dependency-path: |
             local-connector/package-lock.json
             desktop-connector/package-lock.json
-      - name: Require Windows release credentials
-        shell: pwsh
-        env:
-          CSC_LINK: ${{ secrets.CONNECTOR_WINDOWS_SIGNING_CERTIFICATE }}
-          CSC_KEY_PASSWORD: ${{ secrets.CONNECTOR_WINDOWS_SIGNING_CERTIFICATE_PASSWORD }}
-          EXPECTED_PUBLISHER: ${{ secrets.CONNECTOR_WINDOWS_EXPECTED_PUBLISHER }}
-        run: |
-          @('CSC_LINK', 'CSC_KEY_PASSWORD', 'EXPECTED_PUBLISHER') | ForEach-Object {
-            if ([string]::IsNullOrWhiteSpace([Environment]::GetEnvironmentVariable($_))) {
-              throw "Missing required secret: $_"
-            }
-          }
       - run: npm ci --prefix local-connector && npm ci --prefix desktop-connector
-      - name: Build and sign Windows 10/11 x64 installer
+      - name: Build unsigned Windows 10/11 x64 installer
         run: npm run package:win --prefix desktop-connector
         env:
-          CSC_LINK: ${{ secrets.CONNECTOR_WINDOWS_SIGNING_CERTIFICATE }}
-          CSC_KEY_PASSWORD: ${{ secrets.CONNECTOR_WINDOWS_SIGNING_CERTIFICATE_PASSWORD }}
-      - name: Verify Authenticode publisher
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
+      - name: Verify expected unsigned installer
         shell: pwsh
-        env:
-          EXPECTED_PUBLISHER: ${{ secrets.CONNECTOR_WINDOWS_EXPECTED_PUBLISHER }}
         run: |
           $installers = @(Get-ChildItem desktop-connector/release -File -Filter '*.exe')
           if ($installers.Count -ne 1) { throw "Expected one Windows installer, found $($installers.Count)." }
           $signature = Get-AuthenticodeSignature $installers[0].FullName
-          if ($signature.Status -ne 'Valid') { throw "Installer signature is $($signature.Status)." }
-          if ($signature.SignerCertificate.Subject -notlike "*$env:EXPECTED_PUBLISHER*") {
-            throw "Unexpected Windows signer: $($signature.SignerCertificate.Subject)"
+          if ($signature.Status -ne 'NotSigned') {
+            throw "Expected an unsigned Windows installer, got signature status $($signature.Status)."
           }
       - name: Silent install, secure startup smoke, and uninstall
         shell: pwsh
@@ -151,6 +135,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+          cache: npm
+          cache-dependency-path: desktop-connector/package-lock.json
+      - name: Install release publisher dependencies
+        run: npm ci --prefix desktop-connector --ignore-scripts
       - uses: actions/download-artifact@v4
         with:
           path: desktop-connector/release

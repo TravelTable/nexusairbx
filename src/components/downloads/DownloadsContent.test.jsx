@@ -14,12 +14,14 @@ const releaseManifest = {
     macos: {
       url: "https://downloads.nexusrbx.com/connector/NexusRBX-Connector-0.1.0-macOS.dmg",
       architectures: ["x64", "arm64"],
+      verification: "developer_id_notarized",
       size: 104857600,
       sha256: "a".repeat(64),
     },
     windows: {
       url: "https://downloads.nexusrbx.com/connector/NexusRBX-Connector-0.1.0-Windows.exe",
       architectures: ["x64"],
+      verification: "unsigned",
       size: 94371840,
       sha256: "b".repeat(64),
     },
@@ -49,6 +51,8 @@ describe("DownloadsContent", () => {
     expect(macDownload.getAttribute("href")).toBe(releaseManifest.platforms.macos.url);
     expect(windowsDownload.getAttribute("href")).toBe(releaseManifest.platforms.windows.url);
     expect(screen.getByText("Recommended").closest("article")?.textContent).toContain("macOS");
+    expect(screen.getByText("Developer ID signed and Apple notarized")).toBeTruthy();
+    expect(screen.getByText(/Unknown publisher/)).toBeTruthy();
     expect(global.fetch).toHaveBeenCalledWith(
       "https://downloads.nexusrbx.com/connector/latest.json",
       expect.objectContaining({ credentials: "omit", cache: "no-store" })

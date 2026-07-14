@@ -13,12 +13,14 @@ const manifest = {
     macos: {
       url: "https://downloads.nexusrbx.com/connector/NexusRBX-Connector-0.1.0-macOS.dmg",
       architectures: ["x64", "arm64"],
+      verification: "developer_id_notarized",
       size: 104857600,
       sha256: "a".repeat(64),
     },
     windows: {
       url: "https://downloads.nexusrbx.com/connector/NexusRBX-Connector-0.1.0-Windows.exe",
       architectures: ["x64"],
+      verification: "unsigned",
       size: 94371840,
       sha256: "b".repeat(64),
     },
@@ -40,6 +42,8 @@ describe("companion downloads", () => {
     const normalized = normalizeCompanionManifest(manifest);
     expect(normalized.platforms.mac.url).toMatch(/\.dmg$/);
     expect(normalized.platforms.windows.url).toMatch(/\.exe$/);
+    expect(normalized.platforms.mac.verification).toBe("developer_id_notarized");
+    expect(normalized.platforms.windows.verification).toBe("unsigned");
     expect(formatCompanionFileSize(normalized.platforms.mac.size)).toBe("100 MB");
   });
 
@@ -48,6 +52,7 @@ describe("companion downloads", () => {
     ["an off-domain URL", { ...manifest, platforms: { ...manifest.platforms, windows: { ...manifest.platforms.windows, url: "https://example.com/installer.exe" } } }],
     ["a wrong extension", { ...manifest, platforms: { ...manifest.platforms, windows: { ...manifest.platforms.windows, url: "https://downloads.nexusrbx.com/connector/installer.zip" } } }],
     ["an invalid checksum", { ...manifest, platforms: { ...manifest.platforms, macos: { ...manifest.platforms.macos, sha256: "bad" } } }],
+    ["an invalid verification claim", { ...manifest, platforms: { ...manifest.platforms, windows: { ...manifest.platforms.windows, verification: "authenticode_signed" } } }],
   ])("rejects %s", (_, candidate) => {
     expect(() => normalizeCompanionManifest(candidate)).toThrow();
   });
