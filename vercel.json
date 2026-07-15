@@ -3,6 +3,13 @@
   "outputDirectory": "build",
   "headers": [
     {
+      "source": "/connector/(.*)",
+      "headers": [
+        { "key": "Access-Control-Allow-Origin", "value": "*" },
+        { "key": "Access-Control-Allow-Methods", "value": "GET, HEAD, OPTIONS" }
+      ]
+    },
+    {
       "source": "/(.*)",
       "headers": [
         { "key": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=()" },
@@ -25,17 +32,6 @@
       "permanent": false
     },
     {
-      "source": "/connector/:path*",
-      "has": [
-        {
-          "type": "host",
-          "value": "downloads.nexusrbx.com"
-        }
-      ],
-      "destination": "https://onzdkc69myiiqxmi.public.blob.vercel-storage.com/connector/:path*",
-      "permanent": false
-    },
-    {
       "source": "/:path*",
       "has": [
         {
@@ -48,6 +44,16 @@
     }
   ],
   "rewrites": [
+    {
+      "source": "/connector/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "downloads.nexusrbx.com"
+        }
+      ],
+      "destination": "https://onzdkc69myiiqxmi.public.blob.vercel-storage.com/connector/:path*"
+    },
     {
       "source": "/",
       "destination": "/api/render?path=/"
