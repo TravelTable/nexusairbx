@@ -1,6 +1,8 @@
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
+
     function isSignedIn() {
       return request.auth != null;
     }
@@ -9,11 +11,11 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == uid;
     }
 
-    // Firebase ID tokens carry this claim after the user reloads their token following
-    // email verification. Reads remain available so a user can complete verification,
-    // but write-heavy workspace activity is withheld until then.
+    // Firebase ID tokens carry this claim after the user reloads their token
+    // following email verification.
     function isVerifiedUser(uid) {
-      return isOwner(uid) && request.auth.token.email_verified == true;
+      return isOwner(uid)
+        && request.auth.token.email_verified == true;
     }
 
     function isBoundedList(max) {
@@ -23,7 +25,10 @@ service cloud.firestore {
     }
 
     function onlyChanges(allowed) {
-      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(allowed);
+      return request.resource.data
+        .diff(resource.data)
+        .affectedKeys()
+        .hasOnly(allowed);
     }
 
     function isShortString(value, max) {
@@ -36,190 +41,430 @@ service cloud.firestore {
 
     function hasOnlyUserDocumentFields() {
       return request.resource.data.keys().hasOnly([
-        'title', 'activeMode', 'createdAt', 'updatedAt', 'lastMessage'
+        'title',
+        'activeMode',
+        'createdAt',
+        'updatedAt',
+        'lastMessage'
       ]);
     }
 
     function validChatCreate() {
       return hasOnlyUserDocumentFields()
-        && request.resource.data.keys().hasAll(['title', 'createdAt', 'updatedAt'])
+        && request.resource.data.keys().hasAll([
+          'title',
+          'createdAt',
+          'updatedAt'
+        ])
         && isShortString(request.resource.data.title, 160)
         && isTimestamp(request.resource.data.createdAt)
         && isTimestamp(request.resource.data.updatedAt)
-        && (!request.resource.data.keys().hasAny(['activeMode'])
-          || isShortString(request.resource.data.activeMode, 80))
-        && (!request.resource.data.keys().hasAny(['lastMessage'])
-          || isShortString(request.resource.data.lastMessage, 500));
+        && (
+          !request.resource.data.keys().hasAny(['activeMode'])
+          || isShortString(request.resource.data.activeMode, 80)
+        )
+        && (
+          !request.resource.data.keys().hasAny(['lastMessage'])
+          || isShortString(request.resource.data.lastMessage, 500)
+        );
     }
 
     function validChatUpdate() {
-      return onlyChanges(['title', 'activeMode', 'updatedAt', 'lastMessage'])
-        && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['title'])
-          || isShortString(request.resource.data.title, 160))
-        && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['activeMode'])
-          || isShortString(request.resource.data.activeMode, 80))
-        && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['lastMessage'])
-          || isShortString(request.resource.data.lastMessage, 500))
-        && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['updatedAt'])
-          || isTimestamp(request.resource.data.updatedAt));
+      return onlyChanges([
+        'title',
+        'activeMode',
+        'updatedAt',
+        'lastMessage'
+      ])
+        && (
+          !request.resource.data
+            .diff(resource.data)
+            .affectedKeys()
+            .hasAny(['title'])
+          || isShortString(request.resource.data.title, 160)
+        )
+        && (
+          !request.resource.data
+            .diff(resource.data)
+            .affectedKeys()
+            .hasAny(['activeMode'])
+          || isShortString(request.resource.data.activeMode, 80)
+        )
+        && (
+          !request.resource.data
+            .diff(resource.data)
+            .affectedKeys()
+            .hasAny(['lastMessage'])
+          || isShortString(request.resource.data.lastMessage, 500)
+        )
+        && (
+          !request.resource.data
+            .diff(resource.data)
+            .affectedKeys()
+            .hasAny(['updatedAt'])
+          || isTimestamp(request.resource.data.updatedAt)
+        );
     }
 
     function hasOnlyMessageFields() {
       return request.resource.data.keys().hasOnly([
-        'role', 'content', 'attachments', 'createdAt', 'updatedAt', 'requestId',
-        'stage', 'pending', 'jobId', 'runId', 'isAutoExecuting', 'metadata', 'steps',
-        'errorCode', 'error', 'code', 'patchApplied', 'intent', 'explanation',
-        'questions', 'originPrompt', 'planId', 'classification', 'aiSummary',
-        'aiSteps', 'aiAssumptions', 'planMarkdown', 'planSteps', 'answers',
-        'summary', 'thought', 'title', 'projectId', 'versionNumber', 'artifactId',
-        'options', 'plan', 'files', 'revision', 'setupSteps', 'testingSteps',
-        'securityNotes', 'warnings'
+        'role',
+        'content',
+        'attachments',
+        'createdAt',
+        'updatedAt',
+        'requestId',
+        'stage',
+        'pending',
+        'jobId',
+        'runId',
+        'isAutoExecuting',
+        'metadata',
+        'steps',
+        'errorCode',
+        'error',
+        'code',
+        'patchApplied',
+        'intent',
+        'explanation',
+        'questions',
+        'originPrompt',
+        'planId',
+        'classification',
+        'aiSummary',
+        'aiSteps',
+        'aiAssumptions',
+        'planMarkdown',
+        'planSteps',
+        'answers',
+        'summary',
+        'thought',
+        'title',
+        'projectId',
+        'versionNumber',
+        'artifactId',
+        'options',
+        'plan',
+        'files',
+        'revision',
+        'setupSteps',
+        'testingSteps',
+        'securityNotes',
+        'warnings'
       ]);
     }
 
     function validMessagePayload() {
       return hasOnlyMessageFields()
-        && request.resource.data.keys().hasAll(['role', 'createdAt'])
-        && request.resource.data.role in ['user', 'assistant']
+        && request.resource.data.keys().hasAll([
+          'role',
+          'createdAt'
+        ])
+        && request.resource.data.role in [
+          'user',
+          'assistant'
+        ]
         && isTimestamp(request.resource.data.createdAt)
-        && (!request.resource.data.keys().hasAny(['updatedAt'])
-          || isTimestamp(request.resource.data.updatedAt))
-        && (!request.resource.data.keys().hasAny(['content'])
-          || isShortString(request.resource.data.content, 60000))
-        && (!request.resource.data.keys().hasAny(['code'])
-          || isShortString(request.resource.data.code, 200000))
-        && (!request.resource.data.keys().hasAny(['explanation'])
-          || isShortString(request.resource.data.explanation, 30000))
-        && (!request.resource.data.keys().hasAny(['originPrompt'])
-          || isShortString(request.resource.data.originPrompt, 30000))
-        && (!request.resource.data.keys().hasAny(['planMarkdown'])
-          || isShortString(request.resource.data.planMarkdown, 60000))
-        && (!request.resource.data.keys().hasAny(['attachments'])
-          || (request.resource.data.attachments is list
-            && request.resource.data.attachments.size() <= 5));
+        && (
+          !request.resource.data.keys().hasAny(['updatedAt'])
+          || isTimestamp(request.resource.data.updatedAt)
+        )
+        && (
+          !request.resource.data.keys().hasAny(['content'])
+          || isShortString(request.resource.data.content, 60000)
+        )
+        && (
+          !request.resource.data.keys().hasAny(['code'])
+          || isShortString(request.resource.data.code, 200000)
+        )
+        && (
+          !request.resource.data.keys().hasAny(['explanation'])
+          || isShortString(request.resource.data.explanation, 30000)
+        )
+        && (
+          !request.resource.data.keys().hasAny(['originPrompt'])
+          || isShortString(request.resource.data.originPrompt, 30000)
+        )
+        && (
+          !request.resource.data.keys().hasAny(['planMarkdown'])
+          || isShortString(request.resource.data.planMarkdown, 60000)
+        )
+        && (
+          !request.resource.data.keys().hasAny(['attachments'])
+          || (
+            request.resource.data.attachments is list
+            && request.resource.data.attachments.size() <= 5
+          )
+        );
     }
 
     function validMessageUpdate() {
       return onlyChanges([
-        'content', 'attachments', 'updatedAt', 'stage', 'pending', 'jobId', 'runId',
-        'isAutoExecuting', 'metadata', 'steps', 'errorCode', 'error', 'code',
-        'patchApplied', 'intent', 'explanation', 'questions', 'originPrompt', 'planId',
-        'classification', 'aiSummary', 'aiSteps', 'aiAssumptions', 'planMarkdown',
-        'planSteps', 'answers', 'summary', 'thought', 'title', 'projectId',
-        'versionNumber', 'artifactId', 'options', 'plan', 'files', 'revision',
-        'setupSteps', 'testingSteps', 'securityNotes', 'warnings'
-      ]) && validMessagePayload();
+        'content',
+        'attachments',
+        'updatedAt',
+        'stage',
+        'pending',
+        'jobId',
+        'runId',
+        'isAutoExecuting',
+        'metadata',
+        'steps',
+        'errorCode',
+        'error',
+        'code',
+        'patchApplied',
+        'intent',
+        'explanation',
+        'questions',
+        'originPrompt',
+        'planId',
+        'classification',
+        'aiSummary',
+        'aiSteps',
+        'aiAssumptions',
+        'planMarkdown',
+        'planSteps',
+        'answers',
+        'summary',
+        'thought',
+        'title',
+        'projectId',
+        'versionNumber',
+        'artifactId',
+        'options',
+        'plan',
+        'files',
+        'revision',
+        'setupSteps',
+        'testingSteps',
+        'securityNotes',
+        'warnings'
+      ])
+        && validMessagePayload();
     }
 
     function hasOnlyScriptFields() {
       return request.resource.data.keys().hasOnly([
-        'title', 'chatId', 'createdAt', 'updatedAt', 'type'
+        'title',
+        'chatId',
+        'createdAt',
+        'updatedAt',
+        'type'
       ]);
     }
 
     function validScriptCreate() {
       return hasOnlyScriptFields()
-        && request.resource.data.keys().hasAll(['title', 'createdAt', 'updatedAt'])
+        && request.resource.data.keys().hasAll([
+          'title',
+          'createdAt',
+          'updatedAt'
+        ])
         && isShortString(request.resource.data.title, 160)
         && isTimestamp(request.resource.data.createdAt)
         && isTimestamp(request.resource.data.updatedAt)
-        && (!request.resource.data.keys().hasAny(['chatId'])
-          || isShortString(request.resource.data.chatId, 200))
-        && (!request.resource.data.keys().hasAny(['type'])
-          || isShortString(request.resource.data.type, 80));
+        && (
+          !request.resource.data.keys().hasAny(['chatId'])
+          || isShortString(request.resource.data.chatId, 200)
+        )
+        && (
+          !request.resource.data.keys().hasAny(['type'])
+          || isShortString(request.resource.data.type, 80)
+        );
     }
 
     function validScriptUpdate() {
-      return onlyChanges(['title', 'chatId', 'updatedAt', 'type'])
-        && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['title'])
-          || isShortString(request.resource.data.title, 160))
-        && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['chatId'])
-          || isShortString(request.resource.data.chatId, 200))
-        && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['type'])
-          || isShortString(request.resource.data.type, 80))
-        && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['updatedAt'])
-          || isTimestamp(request.resource.data.updatedAt));
+      return onlyChanges([
+        'title',
+        'chatId',
+        'updatedAt',
+        'type'
+      ])
+        && (
+          !request.resource.data
+            .diff(resource.data)
+            .affectedKeys()
+            .hasAny(['title'])
+          || isShortString(request.resource.data.title, 160)
+        )
+        && (
+          !request.resource.data
+            .diff(resource.data)
+            .affectedKeys()
+            .hasAny(['chatId'])
+          || isShortString(request.resource.data.chatId, 200)
+        )
+        && (
+          !request.resource.data
+            .diff(resource.data)
+            .affectedKeys()
+            .hasAny(['type'])
+          || isShortString(request.resource.data.type, 80)
+        )
+        && (
+          !request.resource.data
+            .diff(resource.data)
+            .affectedKeys()
+            .hasAny(['updatedAt'])
+          || isTimestamp(request.resource.data.updatedAt)
+        );
     }
 
     function validScriptVersion() {
       return request.resource.data.keys().hasOnly([
-        'versionNumber', 'code', 'explanation', 'createdAt'
+        'versionNumber',
+        'code',
+        'explanation',
+        'createdAt'
       ])
-        && request.resource.data.keys().hasAll(['code', 'createdAt'])
+        && request.resource.data.keys().hasAll([
+          'code',
+          'createdAt'
+        ])
         && request.resource.data.code is string
         && request.resource.data.code.size() <= 200000
         && isTimestamp(request.resource.data.createdAt)
-        && (!request.resource.data.keys().hasAny(['versionNumber'])
-          || (request.resource.data.versionNumber is int
+        && (
+          !request.resource.data.keys().hasAny(['versionNumber'])
+          || (
+            request.resource.data.versionNumber is int
             && request.resource.data.versionNumber >= 1
-            && request.resource.data.versionNumber <= 100000))
-        && (!request.resource.data.keys().hasAny(['explanation'])
-          || isShortString(request.resource.data.explanation, 30000));
+            && request.resource.data.versionNumber <= 100000
+          )
+        )
+        && (
+          !request.resource.data.keys().hasAny(['explanation'])
+          || isShortString(request.resource.data.explanation, 30000)
+        );
     }
 
-    // User root documents are backend-owned. This explicitly protects role, billing,
-    // Stripe, usage, entitlement, and admin fields from browser-side mass assignment.
+    // Root user documents are controlled by the backend.
+    // Users cannot change their own admin, plan, billing, Stripe,
+    // entitlement, credit or usage fields.
     match /users/{uid} {
       allow get: if isOwner(uid);
+
       allow list, create, update, delete: if false;
 
       match /chats/{chatId} {
         allow get: if isOwner(uid);
-        allow list: if isOwner(uid) && isBoundedList(100);
-        allow create: if isVerifiedUser(uid) && validChatCreate();
-        allow update: if isVerifiedUser(uid) && validChatUpdate();
+
+        allow list: if isOwner(uid)
+          && isBoundedList(100);
+
+        allow create: if isVerifiedUser(uid)
+          && validChatCreate();
+
+        allow update: if isVerifiedUser(uid)
+          && validChatUpdate();
+
         allow delete: if isVerifiedUser(uid);
 
         match /messages/{messageId} {
           allow get: if isOwner(uid);
-          allow list: if isOwner(uid) && isBoundedList(300);
-          allow create: if isVerifiedUser(uid) && validMessagePayload();
-          allow update: if isVerifiedUser(uid) && validMessageUpdate();
+
+          allow list: if isOwner(uid)
+            && isBoundedList(300);
+
+          allow create: if isVerifiedUser(uid)
+            && validMessagePayload();
+
+          allow update: if isVerifiedUser(uid)
+            && validMessageUpdate();
+
           allow delete: if isVerifiedUser(uid);
         }
 
-        // Project snapshots are server-managed but loaded by the chat owner.
+        // Project snapshots are created by trusted backend code.
         match /project/{documentId} {
           allow get: if isOwner(uid);
+
           allow list, create, update, delete: if false;
         }
       }
 
       match /scripts/{scriptId} {
         allow get: if isOwner(uid);
-        allow list: if isOwner(uid) && isBoundedList(100);
-        allow create: if isVerifiedUser(uid) && validScriptCreate();
-        allow update: if isVerifiedUser(uid) && validScriptUpdate();
+
+        allow list: if isOwner(uid)
+          && isBoundedList(100);
+
+        allow create: if isVerifiedUser(uid)
+          && validScriptCreate();
+
+        allow update: if isVerifiedUser(uid)
+          && validScriptUpdate();
+
         allow delete: if isVerifiedUser(uid);
 
         match /versions/{versionId} {
           allow get: if isOwner(uid);
-          allow list: if isOwner(uid) && isBoundedList(100);
-          allow create: if isVerifiedUser(uid) && validScriptVersion();
+
+          allow list: if isOwner(uid)
+            && isBoundedList(100);
+
+          allow create: if isVerifiedUser(uid)
+            && validScriptVersion();
+
           allow update, delete: if false;
         }
       }
 
-      // These are rendered by the client but populated by trusted backend code.
+      // Billing information is displayed to the owner but written by
+      // trusted backend code.
       match /billing/{documentId} {
         allow get: if isOwner(uid);
+
         allow list, create, update, delete: if false;
       }
 
+      // Server-managed project information.
       match /project/{documentId} {
         allow get: if isOwner(uid);
+
         allow list, create, update, delete: if false;
       }
 
       match /custom_modes/{documentId} {
         allow get: if isOwner(uid);
-        allow list: if isOwner(uid) && isBoundedList(50);
-        allow create, update, delete: if false;
+
+        allow list: if isOwner(uid)
+          && isBoundedList(50);
+
+        allow create, update, delete: if isVerifiedUser(uid);
       }
     }
 
-    // Team membership and shared project changes are server-mediated. This prevents a
-    // client from granting itself an administrative role or writing someone else's work.
+    // Token balances are controlled by the backend.
+    match /userTokens/{uid} {
+      allow get: if isOwner(uid);
+
+      allow list, create, update, delete: if false;
+    }
+
+    // Community modes.
+    match /community_modes/{modeId} {
+      allow get: if isSignedIn();
+
+      allow list: if isSignedIn()
+        && isBoundedList(100);
+
+      allow create: if isSignedIn()
+        && request.auth.token.email_verified == true
+        && request.resource.data.authorId == request.auth.uid;
+
+      allow update: if isSignedIn()
+        && request.auth.token.email_verified == true
+        && resource.data.authorId == request.auth.uid
+        && request.resource.data.authorId == resource.data.authorId;
+
+      allow delete: if isSignedIn()
+        && request.auth.token.email_verified == true
+        && resource.data.authorId == request.auth.uid;
+    }
+
+    // Team membership and shared projects are controlled by the backend.
     match /teams/{teamId} {
       allow get, list, create, update, delete: if false;
 
@@ -228,28 +473,58 @@ service cloud.firestore {
       }
     }
 
-    // Firebase Stripe Payments extension and the backend use Admin credentials; browsers
-    // may observe their own records but cannot trigger privileged payment documents.
+    // Stripe extension and backend records.
+    // Browsers may read their own records but cannot create or modify them.
     match /customers/{uid} {
       allow get: if isOwner(uid);
+
       allow list, create, update, delete: if false;
 
       match /checkout_sessions/{sessionId} {
         allow get: if isOwner(uid);
+
         allow list, create, update, delete: if false;
       }
 
       match /portal_sessions/{sessionId} {
         allow get: if isOwner(uid);
+
         allow list, create, update, delete: if false;
       }
 
       match /subscriptions/{subscriptionId} {
         allow get: if isOwner(uid);
+
+        allow list, create, update, delete: if false;
+      }
+
+      match /payments/{paymentId} {
+        allow get: if isOwner(uid);
+
         allow list, create, update, delete: if false;
       }
     }
 
+    // Stripe product catalogue.
+    match /products/{productId} {
+      allow get, list: if true;
+
+      allow create, update, delete: if false;
+
+      match /prices/{priceId} {
+        allow get, list: if true;
+
+        allow create, update, delete: if false;
+      }
+
+      match /tax_rates/{taxRateId} {
+        allow get, list: if true;
+
+        allow create, update, delete: if false;
+      }
+    }
+
+    // Internal backend-only collections.
     match /_productAnalyticsEvents/{eventId} {
       allow read, write: if false;
     }
@@ -263,6 +538,11 @@ service cloud.firestore {
     }
 
     match /_stream_sessions/{sessionId} {
+      allow read, write: if false;
+    }
+
+    // Deny every collection that was not explicitly declared above.
+    match /{document=**} {
       allow read, write: if false;
     }
   }
