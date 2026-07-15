@@ -67,30 +67,6 @@
       "destination": "/api/render?path=/docs"
     },
     {
-      "source": "/docs/getting-started",
-      "destination": "/api/render?path=/docs/getting-started"
-    },
-    {
-      "source": "/docs/studio-plugin",
-      "destination": "/api/render?path=/docs/studio-plugin"
-    },
-    {
-      "source": "/docs/script-generation",
-      "destination": "/api/render?path=/docs/script-generation"
-    },
-    {
-      "source": "/docs/ui-generation",
-      "destination": "/api/render?path=/docs/ui-generation"
-    },
-    {
-      "source": "/docs/assets",
-      "destination": "/api/render?path=/docs/assets"
-    },
-    {
-      "source": "/docs/projects",
-      "destination": "/api/render?path=/docs/projects"
-    },
-    {
       "source": "/docs/account",
       "destination": "/api/render?path=/docs/account"
     },
@@ -99,12 +75,80 @@
       "destination": "/api/render?path=/docs/api"
     },
     {
-      "source": "/docs/troubleshooting",
-      "destination": "/api/render?path=/docs/troubleshooting"
+      "source": "/docs/assets",
+      "destination": "/api/render?path=/docs/assets"
+    },
+    {
+      "source": "/docs/basic-workflow",
+      "destination": "/api/render?path=/docs/basic-workflow"
+    },
+    {
+      "source": "/docs/changelog",
+      "destination": "/api/render?path=/docs/changelog"
+    },
+    {
+      "source": "/docs/common-use-cases",
+      "destination": "/api/render?path=/docs/common-use-cases"
+    },
+    {
+      "source": "/docs/debugging-guide",
+      "destination": "/api/render?path=/docs/debugging-guide"
     },
     {
       "source": "/docs/faq",
       "destination": "/api/render?path=/docs/faq"
+    },
+    {
+      "source": "/docs/generating-your-first-script",
+      "destination": "/api/render?path=/docs/generating-your-first-script"
+    },
+    {
+      "source": "/docs/getting-started",
+      "destination": "/api/render?path=/docs/getting-started"
+    },
+    {
+      "source": "/docs/installation",
+      "destination": "/api/render?path=/docs/installation"
+    },
+    {
+      "source": "/docs/projects",
+      "destination": "/api/render?path=/docs/projects"
+    },
+    {
+      "source": "/docs/prompting-guide",
+      "destination": "/api/render?path=/docs/prompting-guide"
+    },
+    {
+      "source": "/docs/reviewing-and-inserting-generated-code",
+      "destination": "/api/render?path=/docs/reviewing-and-inserting-generated-code"
+    },
+    {
+      "source": "/docs/safety-permissions-privacy",
+      "destination": "/api/render?path=/docs/safety-permissions-privacy"
+    },
+    {
+      "source": "/docs/script-generation",
+      "destination": "/api/render?path=/docs/script-generation"
+    },
+    {
+      "source": "/docs/studio-plugin",
+      "destination": "/api/render?path=/docs/studio-plugin"
+    },
+    {
+      "source": "/docs/support-and-bug-reports",
+      "destination": "/api/render?path=/docs/support-and-bug-reports"
+    },
+    {
+      "source": "/docs/troubleshooting",
+      "destination": "/api/render?path=/docs/troubleshooting"
+    },
+    {
+      "source": "/docs/ui-generation",
+      "destination": "/api/render?path=/docs/ui-generation"
+    },
+    {
+      "source": "/docs/understanding-script-types",
+      "destination": "/api/render?path=/docs/understanding-script-types"
     },
     {
       "source": "/legal",

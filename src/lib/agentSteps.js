@@ -96,6 +96,10 @@ export const DESTRUCTIVE_TOOL_TYPES = new Set([
  * @property {number} [snapshotCount]
  * @property {boolean} [requiresApproval]
  * @property {string} [runId]
+ * @property {string} [executionProvider]
+ * @property {string} [executionSessionId]
+ * @property {string} [operationId]
+ * @property {string} [fallbackReason]
  */
 
 /**
@@ -122,6 +126,10 @@ export function normalizeToolStep(raw) {
     step.snapshotCount = raw.snapshots.length;
   }
   if (raw.runId) step.runId = String(raw.runId);
+  if (raw.executionProvider) step.executionProvider = String(raw.executionProvider);
+  if (raw.executionSessionId) step.executionSessionId = String(raw.executionSessionId);
+  if (raw.operationId) step.operationId = String(raw.operationId);
+  if (raw.fallbackReason) step.fallbackReason = String(raw.fallbackReason);
   return step;
 }
 

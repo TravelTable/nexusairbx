@@ -38,7 +38,9 @@ import { resolveGameSpecForPrompt } from "../lib/gameProfile";
 import { getStudioStatus } from "../lib/studioBridgeApi";
 import {
   getStudioConnectionType,
+  getStudioPlaceId,
   getStudioSessionId,
+  isStudioSessionLive,
   selectMcpStudioSession,
   selectPluginStudioSession,
   STUDIO_CONNECTION_TYPES,
@@ -586,15 +588,23 @@ export function useAiChat(user, settings, refreshBilling, notify) {
       const autoPushPolicy = settings?.studioAutoPushPolicy || "after_validation";
       let studioSessionId = null;
       let studioConnectionType = null;
+      let studioTargetPlaceId = null;
       if (studioEnabled) {
         try {
           const studioStatus = await getStudioStatus();
           const studioSession =
-            selectPluginStudioSession(studioStatus.sessions) ||
-            selectMcpStudioSession(studioStatus.sessions);
+            selectMcpStudioSession(studioStatus.sessions) ||
+            selectPluginStudioSession(studioStatus.sessions);
           studioSessionId = getStudioSessionId(studioSession);
           studioConnectionType = studioSession
             ? getStudioConnectionType(studioSession)
+            : null;
+          const liveStudioSessions = (Array.isArray(studioStatus.sessions) ? studioStatus.sessions : [])
+            .filter((session) => isStudioSessionLive(session));
+          const livePlaceIds = new Set(liveStudioSessions.map(getStudioPlaceId).filter(Boolean));
+          const hasUnknownLivePlace = liveStudioSessions.some((session) => !getStudioPlaceId(session));
+          studioTargetPlaceId = livePlaceIds.size === 1 && !hasUnknownLivePlace
+            ? Array.from(livePlaceIds)[0]
             : null;
         } catch (_) {
           /* non-fatal: codegen still works without Studio */
@@ -623,6 +633,9 @@ export function useAiChat(user, settings, refreshBilling, notify) {
           studioEnabled: studioEnabled && Boolean(studioSessionId),
           applyMode: getStudioApplyMode(),
           studioSessionId,
+          studioConnectionType,
+          routingMode: "hybrid",
+          targetPlaceId: studioTargetPlaceId,
           autoPushToStudio:
             autoPushToStudio &&
             Boolean(studioSessionId) &&

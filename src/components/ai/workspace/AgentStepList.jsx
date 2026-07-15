@@ -16,9 +16,30 @@ function describeStepWait(step) {
   if (!step) return "";
   if (step.status === "awaiting_approval") return "Waiting for your approval";
   if (step.status === "queued") return "Queued for Studio";
-  if (step.status === "delivered") return "Delivered to Studio plugin";
+  if (step.status === "delivered") return `Delivered to ${providerLabel(step.executionProvider)}`;
   if (step.status === "running") return "Running in Studio";
   return "";
+}
+
+function providerLabel(provider) {
+  if (provider === "mcp_local") return "Local MCP";
+  if (provider === "plugin_bridge") return "Studio plugin";
+  return "Studio";
+}
+
+function statusLabel(status) {
+  if (status === "succeeded") return "Success";
+  if (status === "failed") return "Error";
+  if (status === "delivered" || status === "running") return "Running";
+  if (status === "awaiting_approval") return "Approval";
+  return "Pending";
+}
+
+function fallbackLabel(reason) {
+  if (reason === "mcp_tool_unsupported") return "Local MCP does not support this action";
+  if (reason === "mcp_place_mismatch") return "Local MCP is connected to a different place";
+  if (reason === "mcp_unavailable") return "Local MCP is unavailable";
+  return String(reason || "").replace(/_/g, " ");
 }
 
 /**
@@ -57,6 +78,18 @@ export default function AgentStepList({
                 <span className="text-[9px] font-black uppercase tracking-widest text-gray-600 shrink-0">
                   {step.type}
                 </span>
+                {step.executionProvider && (
+                  <span className={`rounded-full border px-1.5 py-0.5 text-[9px] font-bold shrink-0 ${
+                    step.executionProvider === "mcp_local"
+                      ? "border-cyan-400/20 bg-cyan-400/10 text-cyan-200"
+                      : "border-violet-400/20 bg-violet-400/10 text-violet-200"
+                  }`}>
+                    {providerLabel(step.executionProvider)}
+                  </span>
+                )}
+                <span className="ml-auto text-[9px] font-bold text-gray-500 shrink-0">
+                  {statusLabel(step.status)}
+                </span>
               </div>
               <div className={`text-[11px] truncate ${step.error ? "text-red-300" : "text-gray-500"}`}>
                 {summarizeStepResult(step)}
@@ -65,6 +98,20 @@ export default function AgentStepList({
                 <div className={`mt-1 text-[10px] ${awaiting ? "text-amber-200" : "text-gray-600"}`}>
                   {waitLabel}
                 </div>
+              )}
+              {step.fallbackReason && (
+                <div className="mt-1 text-[10px] text-violet-200/80">
+                  Studio plugin fallback: {fallbackLabel(step.fallbackReason)}
+                </div>
+              )}
+              {(step.executionSessionId || step.operationId) && (
+                <details className="mt-1 text-[10px] text-gray-600">
+                  <summary className="cursor-pointer select-none hover:text-gray-400">Execution details</summary>
+                  <div className="mt-1 space-y-0.5 break-all">
+                    {step.executionSessionId && <div>Session: {step.executionSessionId}</div>}
+                    {step.operationId && <div>Operation: {step.operationId}</div>}
+                  </div>
+                </details>
               )}
               {awaiting && onApproveStep && (
                 <button

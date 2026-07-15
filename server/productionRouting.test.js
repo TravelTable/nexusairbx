@@ -17,16 +17,27 @@ const html = '<!doctype html><html><head><title>NexusRBX</title></head><body><di
 const validIconId = "omFibOqM24B7fVibHfan";
 const docsRouteSources = [
   "/docs",
-  "/docs/getting-started",
-  "/docs/studio-plugin",
-  "/docs/script-generation",
-  "/docs/ui-generation",
-  "/docs/assets",
-  "/docs/projects",
   "/docs/account",
   "/docs/api",
+  "/docs/assets",
+  "/docs/basic-workflow",
+  "/docs/changelog",
+  "/docs/common-use-cases",
+  "/docs/debugging-guide",
   "/docs/troubleshooting",
   "/docs/faq",
+  "/docs/generating-your-first-script",
+  "/docs/getting-started",
+  "/docs/installation",
+  "/docs/projects",
+  "/docs/prompting-guide",
+  "/docs/reviewing-and-inserting-generated-code",
+  "/docs/safety-permissions-privacy",
+  "/docs/script-generation",
+  "/docs/studio-plugin",
+  "/docs/support-and-bug-reports",
+  "/docs/ui-generation",
+  "/docs/understanding-script-types",
 ];
 const legalRouteSources = [
   "/legal",
@@ -104,6 +115,16 @@ test("route classifier assigns explicit Next public and SPA owners", async () =>
   assert.equal(unknown.indexable, false);
 });
 
+test("every documented page is an owned, indexable Next public route", async () => {
+  for (const pathname of docsRouteSources) {
+    const route = await classifyRoute(pathname, { iconExists, iconStatus });
+    assert.equal(route.status, 200, pathname);
+    assert.equal(route.frontend, "next", pathname);
+    assert.equal(route.indexable, true, pathname);
+    assert.equal(route.canonicalPath, pathname, pathname);
+  }
+});
+
 test("valid public route returns 200 with route-specific canonical ownership", async () => {
   const route = await classifyRoute("/docs/studio-plugin", { iconExists, iconStatus });
   assert.equal(route.status, 200);
@@ -123,11 +144,13 @@ test("valid authenticated route returns 200 noindex without canonical", async ()
   assert.doesNotMatch(rendered.body, /rel="canonical"/);
 });
 
-test("unknown route returns 404 noindex without canonical", async () => {
-  const rendered = await renderAppRoute({ html, pathname: "/definitely-missing-route-codex", iconExists });
-  assert.equal(rendered.status, 404);
-  assert.match(rendered.body, /name="robots" content="noindex, nofollow"/);
-  assert.doesNotMatch(rendered.body, /rel="canonical"/);
+test("unknown routes, including unknown documentation paths, return 404 noindex", async () => {
+  for (const pathname of ["/definitely-missing-route-codex", "/docs/not-a-real-docs-page-codex"]) {
+    const rendered = await renderAppRoute({ html, pathname, iconExists });
+    assert.equal(rendered.status, 404, pathname);
+    assert.match(rendered.body, /name="robots" content="noindex, nofollow"/, pathname);
+    assert.doesNotMatch(rendered.body, /rel="canonical"/, pathname);
+  }
 });
 
 test("valid icon route returns 200 with icon canonical", async () => {

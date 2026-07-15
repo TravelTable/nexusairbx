@@ -22,6 +22,11 @@ export function getStudioSessionId(session) {
   return session?.sessionId || session?.id || null;
 }
 
+export function getStudioPlaceId(session) {
+  const placeId = session?.placeId || session?.studioPlaceId || session?.studio?.placeId;
+  return placeId == null ? null : String(placeId).trim() || null;
+}
+
 export function getStudioConnectionType(session) {
   const raw =
     session?.connectionType ||

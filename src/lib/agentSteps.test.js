@@ -14,10 +14,18 @@ describe("agentSteps", () => {
       status: "succeeded",
       result: { path: "ServerScriptService/Foo" },
       snapshotCount: 1,
+      executionProvider: "mcp_local",
+      executionSessionId: "mcp_1",
+      operationId: "op_1",
+      fallbackReason: "mcp_tool_unsupported",
     });
     expect(step.id).toBe("s1");
     expect(step.type).toBe("write_script");
     expect(step.snapshotCount).toBe(1);
+    expect(step.executionProvider).toBe("mcp_local");
+    expect(step.executionSessionId).toBe("mcp_1");
+    expect(step.operationId).toBe("op_1");
+    expect(step.fallbackReason).toBe("mcp_tool_unsupported");
   });
 
   test("normalizeToolStep omits undefined optional fields for Firestore arrays", () => {

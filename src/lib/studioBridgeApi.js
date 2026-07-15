@@ -343,11 +343,17 @@ export async function queueStudioTool({ type, payload = {}, sessionId = null, la
 }
 
 /** @deprecated Legacy Studio Agent panel — use unified agent run + restoreAgentRun instead. */
-export async function startStudioAgent({ goal, chatId = null, sessionId = null }) {
+export async function startStudioAgent({
+  goal,
+  chatId = null,
+  sessionId = null,
+  routingMode = "hybrid",
+  targetPlaceId = null,
+}) {
   const res = await authedFetch("/api/studio/agent/start", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ goal, chatId, sessionId }),
+    body: JSON.stringify({ goal, chatId, sessionId, routingMode, targetPlaceId }),
   });
   return readJsonOrThrow(res, "Failed to start Studio agent");
 }

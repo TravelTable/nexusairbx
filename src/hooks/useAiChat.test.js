@@ -221,12 +221,19 @@ describe("useAiChat", () => {
         live: true,
         connectorLive: true,
         mcpServerAvailable: true,
+        placeId: "place_1",
         lastSeenAt: 200,
       }],
-      { studioSessionId: "mcp_1", autoPushToStudio: false },
+      {
+        studioSessionId: "mcp_1",
+        studioConnectionType: "mcp_local",
+        routingMode: "hybrid",
+        targetPlaceId: "place_1",
+        autoPushToStudio: false,
+      },
     ],
     [
-      "prefers a live plugin session over a newer live MCP session",
+      "prefers Local MCP for hybrid runs when both providers serve the same place",
       [
         {
           id: "mcp_1",
@@ -235,6 +242,7 @@ describe("useAiChat", () => {
           live: true,
           connectorLive: true,
           mcpServerAvailable: true,
+          placeId: "place_1",
           lastSeenAt: 200,
         },
         {
@@ -242,10 +250,45 @@ describe("useAiChat", () => {
           connectionType: "plugin_bridge",
           status: "connected",
           live: true,
+          studio: { placeId: "place_1" },
           lastSeenAt: 100,
         },
       ],
-      { studioSessionId: "plugin_1", autoPushToStudio: true },
+      {
+        studioSessionId: "mcp_1",
+        studioConnectionType: "mcp_local",
+        routingMode: "hybrid",
+        targetPlaceId: "place_1",
+        autoPushToStudio: false,
+      },
+    ],
+    [
+      "does not infer a target when live providers report different places",
+      [
+        {
+          id: "mcp_1",
+          connectionType: "mcp_local",
+          status: "connected",
+          live: true,
+          connectorLive: true,
+          mcpServerAvailable: true,
+          placeId: "place_1",
+        },
+        {
+          id: "plugin_2",
+          connectionType: "plugin_bridge",
+          status: "connected",
+          live: true,
+          studio: { placeId: "place_2" },
+        },
+      ],
+      {
+        studioSessionId: "mcp_1",
+        studioConnectionType: "mcp_local",
+        routingMode: "hybrid",
+        targetPlaceId: null,
+        autoPushToStudio: false,
+      },
     ],
   ])("%s", async (_, sessions, expectedStudioContext) => {
     FEATURE_FLAGS.unifiedAgent = true;
