@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import {
   getFirestore,
   collection,
@@ -7,12 +7,14 @@ import {
   limit,
   onSnapshot,
 } from "firebase/firestore";
+import { auth, firebaseConfig } from "../firebase";
 import { cancelDeferredClientLog, scheduleDeferredClientLog } from "../lib/deferredClientLog";
 import { filterChatsByRetention, countHiddenChats } from "../lib/starterPromo";
 
-export function useAiLibrary(user, { retentionDays = null } = {}) {
+export function useAiLibrary(user, { retentionDays = null, authReady = true } = {}) {
   const [chats, setChats] = useState([]);
   const [loading, setLoading] = useState(true);
+  const reportedFailuresRef = useRef(new Set());
 
   const visibleChats = useMemo(
     () => filterChatsByRetention(chats, retentionDays),
@@ -25,7 +27,8 @@ export function useAiLibrary(user, { retentionDays = null } = {}) {
   );
 
   useEffect(() => {
-    if (!user) {
+    const uid = user?.uid;
+    if (!authReady || !uid || auth.currentUser?.uid !== uid) {
       setChats([]);
       setLoading(false);
       return;
@@ -34,7 +37,7 @@ export function useAiLibrary(user, { retentionDays = null } = {}) {
     const db = getFirestore();
     
     // Subscribe to chats
-    const chatsRef = collection(db, "users", user.uid, "chats");
+    const chatsRef = collection(db, "users", uid, "chats");
     const qChats = query(chatsRef, orderBy("updatedAt", "desc"), limit(100));
     const unsubChats = onSnapshot(
       qChats,
@@ -51,6 +54,18 @@ export function useAiLibrary(user, { retentionDays = null } = {}) {
       },
       (error) => {
         setLoading(false);
+        const failureKey = [error?.code || "unknown", uid].join(":");
+        if (reportedFailuresRef.current.has(failureKey)) return;
+        reportedFailuresRef.current.add(failureKey);
+        console.error("Firestore request failed", {
+          code: error?.code,
+          message: error?.message,
+          uid,
+          chatId: null,
+          projectId: firebaseConfig.projectId,
+          authReady,
+          emailVerified: auth.currentUser?.emailVerified,
+        });
         scheduleDeferredClientLog({
           key: "firestore:chat-library",
           source: "firestore",
@@ -63,7 +78,7 @@ export function useAiLibrary(user, { retentionDays = null } = {}) {
     return () => {
       unsubChats();
     };
-  }, [user]);
+  }, [authReady, user?.uid]);
 
   return { chats: visibleChats, allChats: chats, hiddenChatCount, loading };
 }

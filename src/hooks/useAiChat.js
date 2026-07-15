@@ -16,7 +16,7 @@ import {
   getDocs
 } from "firebase/firestore";
 import { v4 as uuidv4 } from "uuid";
-import { auth, db } from "../firebase";
+import { auth, db, firebaseConfig } from "../firebase";
 import { BACKEND_URL } from "../config";
 import { ensureStreamSession } from "../lib/streamSession";
 import {
@@ -154,7 +154,7 @@ function buildAssistantMessagePayload(data, { requestId, jobId, currentMode, isA
   return payload;
 }
 
-export function useAiChat(user, settings, refreshBilling, notify) {
+export function useAiChat(user, settings, refreshBilling, notify, { authReady = true } = {}) {
   const { totalRemaining, unlimitedTokens, plan } = useBilling();
   const planKey = String(plan || "FREE").toLowerCase();
   const [messages, setMessages] = useState([]);
@@ -162,6 +162,7 @@ export function useAiChat(user, settings, refreshBilling, notify) {
   const [currentChatMeta, setCurrentChatMeta] = useState(null);
   const [activeMode, setActiveMode] = useState(settings?.chatMode || "agent");
   const [customModes, setCustomModes] = useState([]);
+  const [firestoreAccessError, setFirestoreAccessError] = useState(null);
   // Generation state is keyed by the *originating* chat id so that a generation
   // started in one chat keeps running (and rendering) in that chat even after
   // the user navigates to a different chat. The UI consumes only the slice that
@@ -222,15 +223,52 @@ export function useAiChat(user, settings, refreshBilling, notify) {
     [setPendingForChat, currentChatId]
   );
 
+  const reportedFirestoreFailuresRef = useRef(new Set());
+  const reportFirestoreFailure = useCallback((err, { uid, chatId = null, operation }) => {
+    const failureKey = [operation, err?.code || "unknown", uid || "none", chatId || "none"].join(":");
+    if (reportedFirestoreFailuresRef.current.has(failureKey)) return;
+    reportedFirestoreFailuresRef.current.add(failureKey);
+
+    console.error("Firestore request failed", {
+      code: err?.code,
+      message: err?.message,
+      uid,
+      chatId,
+      projectId: firebaseConfig.projectId,
+      authReady,
+      emailVerified: auth.currentUser?.emailVerified,
+    });
+
+    if (err?.code === "permission-denied") {
+      setFirestoreAccessError({ operation, uid, chatId, code: err.code });
+      notify?.({
+        message: "Your workspace data could not be loaded. Please refresh or sign in again.",
+        type: "error",
+      });
+    } else {
+      notify?.({ message: "Failed to load workspace data", type: "error" });
+    }
+  }, [authReady, notify]);
+
+  useEffect(() => {
+    if (process.env.NODE_ENV !== "development") return;
+    console.debug("Firebase auth diagnostics", {
+      "auth.currentUser?.uid": auth.currentUser?.uid || null,
+      "user?.uid": user?.uid || null,
+      "auth.currentUser?.emailVerified": auth.currentUser?.emailVerified ?? null,
+      "firebaseConfig.projectId": firebaseConfig.projectId,
+    });
+  }, [authReady, user?.uid]);
+
   // Listen for code patches (Security/Performance fixes)
   useEffect(() => {
     const handleApplyPatch = async (e) => {
       const { code, messageId } = e.detail;
-      const u = user || auth.currentUser;
-      if (!u || !currentChatId || !messageId) return;
+      const uid = user?.uid;
+      if (!authReady || !uid || auth.currentUser?.uid !== uid || !currentChatId || !messageId) return;
 
       try {
-        const msgRef = doc(db, "users", u.uid, "chats", currentChatId, "messages", messageId);
+        const msgRef = doc(db, "users", uid, "chats", currentChatId, "messages", messageId);
         await updateDoc(msgRef, {
           code: code,
           updatedAt: serverTimestamp(),
@@ -244,51 +282,73 @@ export function useAiChat(user, settings, refreshBilling, notify) {
     };
     const unbind = onAiEvent(AI_EVENTS.APPLY_CODE_PATCH, handleApplyPatch);
     return () => unbind();
-  }, [user, currentChatId, notify]);
+  }, [authReady, user?.uid, currentChatId, notify]);
 
   const messagesUnsubRef = useRef(null);
   const chatUnsubRef = useRef(null);
+  const activeChatRequestRef = useRef(0);
+  const closeChatSubscriptions = useCallback(() => {
+    activeChatRequestRef.current += 1;
+    messagesUnsubRef.current?.();
+    chatUnsubRef.current?.();
+    messagesUnsubRef.current = null;
+    chatUnsubRef.current = null;
+  }, []);
   // Streaming buffers keyed by originating chat id.
   const streamStatesRef = useRef({}); // chatId -> pendingStreamState
 
-  // Load custom modes
+  // Auth and App Check must both be ready before these owner-scoped reads run.
   useEffect(() => {
-    const u = user || auth.currentUser;
-    if (!u) {
+    const uid = user?.uid;
+    if (!authReady || !uid || auth.currentUser?.uid !== uid) {
       setCustomModes([]);
       return undefined;
     }
 
     let cancelled = false;
     getDocs(query(
-      collection(db, "users", u.uid, "custom_modes"),
+      collection(db, "users", uid, "custom_modes"),
       limit(CUSTOM_MODES_LIST_LIMIT)
     )).then((snap) => {
       if (cancelled) return;
       setCustomModes(snap.docs.map((d) => ({ id: d.id, ...d.data(), isCustom: true })));
     }).catch((err) => {
-      console.error("Firestore custom modes load error:", err);
-      notify?.({ message: "Failed to load custom modes", type: "error" });
+      if (cancelled) return;
+      setCustomModes([]);
+      reportFirestoreFailure(err, { uid, operation: "custom-modes-list" });
     });
 
     return () => {
       cancelled = true;
     };
-  }, [user, notify]);
+  }, [authReady, reportFirestoreFailure, user?.uid]);
+
+  useEffect(() => () => closeChatSubscriptions(), [closeChatSubscriptions]);
+
+  useEffect(() => {
+    closeChatSubscriptions();
+    setCurrentChatId(null);
+    setCurrentChatMeta(null);
+    setMessages([]);
+    setFirestoreAccessError(null);
+  }, [authReady, closeChatSubscriptions, user?.uid]);
 
   const openChatById = useCallback((chatId) => {
-    const u = user || auth.currentUser;
-    if (!u || !chatId) return;
+    const uid = user?.uid;
+    if (!authReady || !uid || auth.currentUser?.uid !== uid || !chatId) return;
 
-    messagesUnsubRef.current?.();
-    chatUnsubRef.current?.();
+    closeChatSubscriptions();
+    const requestId = activeChatRequestRef.current;
+    const isActive = () => activeChatRequestRef.current === requestId;
 
     setCurrentChatId(chatId);
+    setCurrentChatMeta(null);
     setMessages([]);
 
     chatUnsubRef.current = onSnapshot(
-      doc(db, "users", u.uid, "chats", chatId),
+      doc(db, "users", uid, "chats", chatId),
       (snap) => {
+        if (!isActive()) return;
         const data = snap.exists() ? { id: snap.id, ...snap.data() } : null;
         setCurrentChatMeta(data || null);
         if (data?.activeMode) {
@@ -296,23 +356,29 @@ export function useAiChat(user, settings, refreshBilling, notify) {
         }
       },
       (err) => {
-        console.error("Firestore chat meta subscription error:", err);
-        notify?.({ message: "Failed to sync chat details", type: "error" });
+        if (!isActive()) return;
+        setCurrentChatMeta(null);
+        reportFirestoreFailure(err, { uid, chatId, operation: "chat-meta-subscription" });
       }
     );
 
-    const messagesRef = collection(db, "users", u.uid, "chats", chatId, "messages");
+    const messagesRef = collection(db, "users", uid, "chats", chatId, "messages");
     let cancelled = false;
-    const liveUnsub = onSnapshot(
+    let liveUnsub = () => {};
+    liveUnsub = onSnapshot(
       query(messagesRef, orderBy("createdAt", "asc"), limitToLast(CHAT_LIVE_TAIL_LIMIT)),
       (snap) => {
-        if (cancelled) return;
+        if (cancelled || !isActive()) return;
         const liveMessages = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
         setMessages((current) => mergeChatMessages(current, liveMessages));
       },
       (err) => {
-        console.error("Firestore messages subscription error:", err);
-        notify?.({ message: "Failed to sync messages", type: "error" });
+        if (cancelled || !isActive()) return;
+        cancelled = true;
+        liveUnsub();
+        messagesUnsubRef.current = null;
+        setMessages([]);
+        reportFirestoreFailure(err, { uid, chatId, operation: "messages-live-subscription" });
       }
     );
 
@@ -321,20 +387,19 @@ export function useAiChat(user, settings, refreshBilling, notify) {
       orderBy("createdAt", "desc"),
       limit(CHAT_INITIAL_HISTORY_LIMIT)
     )).then((snap) => {
-      if (cancelled) return;
+      if (cancelled || !isActive()) return;
       const history = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
       setMessages((current) => mergeChatMessages(history, current));
     }).catch((err) => {
-      if (cancelled) return;
-      console.error("Firestore message history load error:", err);
-      notify?.({ message: "Failed to load message history", type: "error" });
+      if (cancelled || !isActive()) return;
+      reportFirestoreFailure(err, { uid, chatId, operation: "messages-history-list" });
     });
 
     messagesUnsubRef.current = () => {
       cancelled = true;
       liveUnsub();
     };
-  }, [user, notify]);
+  }, [authReady, closeChatSubscriptions, reportFirestoreFailure, user?.uid]);
 
   const pendingRecoveryMessage = useMemo(
     () =>
@@ -349,20 +414,22 @@ export function useAiChat(user, settings, refreshBilling, notify) {
   }, [pendingRecoveryMessage]);
 
   useEffect(() => {
-    const u = user || auth.currentUser;
-    if (!u || !currentChatId || isGenerating) return;
+    const uid = user?.uid;
+    if (!authReady || !uid || auth.currentUser?.uid !== uid || !currentChatId || isGenerating) return;
     const pending = pendingRecoveryRef.current;
     if (!pending) return;
 
     let cancelled = false;
-    const pendingRef = doc(db, "users", u.uid, "chats", currentChatId, "messages", pending.id);
-    const chatRef = doc(db, "users", u.uid, "chats", currentChatId);
+    const pendingRef = doc(db, "users", uid, "chats", currentChatId, "messages", pending.id);
+    const chatRef = doc(db, "users", uid, "chats", currentChatId);
 
     const pollPendingRun = async () => {
       try {
         const currentPending = pendingRecoveryRef.current || pending;
         if (!currentPending) return;
-        const token = await u.getIdToken();
+        const activeUser = auth.currentUser;
+        if (!activeUser || activeUser.uid !== user?.uid) return;
+        const token = await activeUser.getIdToken();
         const res = await fetch(resolveResultUrl(currentPending.jobId, currentPending.resultUrl), {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -457,7 +524,8 @@ export function useAiChat(user, settings, refreshBilling, notify) {
       clearInterval(intervalId);
     };
   }, [
-    user,
+    authReady,
+    user?.uid,
     currentChatId,
     pendingRecoveryMessage?.id,
     pendingRecoveryMessage?.jobId,
@@ -481,7 +549,7 @@ export function useAiChat(user, settings, refreshBilling, notify) {
     const displayContent = content || describeChatAttachments(normalizedAttachments) || "Attached file(s)";
     const requestPrompt = content || "Please use the attached file(s) for this request.";
     if (!content && normalizedAttachments.length === 0) return;
-    if (!user) return;
+    if (!authReady || !user?.uid || auth.currentUser?.uid !== user.uid) return;
 
     if (!unlimitedTokens && totalRemaining <= 0) {
       notify(insufficientTokensToast(planKey));
@@ -1259,7 +1327,7 @@ export function useAiChat(user, settings, refreshBilling, notify) {
   };
 
   const handleDeleteChat = async (chatId) => {
-    if (!user || !chatId) return;
+    if (!authReady || !user?.uid || auth.currentUser?.uid !== user.uid || !chatId) return;
     try {
       await deleteDoc(doc(db, "users", user.uid, "chats", chatId));
       // Drop any in-flight generation state tied to the deleted chat.
@@ -1286,7 +1354,7 @@ export function useAiChat(user, settings, refreshBilling, notify) {
   };
 
   const handleClearChat = async () => {
-    if (!user || !currentChatId) return;
+    if (!authReady || !user?.uid || auth.currentUser?.uid !== user.uid || !currentChatId) return;
     try {
       const msgsSnap = await getDocs(query(
         collection(db, "users", user.uid, "chats", currentChatId, "messages"),
@@ -1304,20 +1372,21 @@ export function useAiChat(user, settings, refreshBilling, notify) {
   };
 
   const startNewChat = useCallback(() => {
+    closeChatSubscriptions();
     setCurrentChatId(null);
     setCurrentChatMeta(null);
     setMessages([]);
     setActiveMode("agent");
     setTasks([]);
     setCurrentTaskId(null);
-  }, []);
+  }, [closeChatSubscriptions]);
 
   const updateChatMode = useCallback(async (chatId, mode) => {
-    const u = user || auth.currentUser;
+    const uid = user?.uid;
     
     // Pro restriction for specialized modes is enforced in the UI.
 
-    if (!u) {
+    if (!authReady || !uid || auth.currentUser?.uid !== uid) {
       setActiveMode(mode);
       return;
     }
@@ -1327,7 +1396,7 @@ export function useAiChat(user, settings, refreshBilling, notify) {
 
     if (chatId) {
       try {
-        await updateDoc(doc(db, "users", u.uid, "chats", chatId), {
+        await updateDoc(doc(db, "users", uid, "chats", chatId), {
           activeMode: mode,
           updatedAt: serverTimestamp(),
         });
@@ -1336,7 +1405,7 @@ export function useAiChat(user, settings, refreshBilling, notify) {
         notify?.({ message: "Failed to persist chat mode", type: "error" });
       }
     }
-  }, [user, notify]);
+  }, [authReady, user?.uid, notify]);
 
   return {
     messages,
@@ -1360,6 +1429,7 @@ export function useAiChat(user, settings, refreshBilling, notify) {
     setActiveMode,
     updateChatMode,
     customModes,
+    firestoreAccessError,
     tasks,
     setTasks,
     currentTaskId,

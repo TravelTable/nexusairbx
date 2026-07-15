@@ -62,13 +62,13 @@ function buildOrchestrationPending(state, stage) {
  * project, and ui all produce a normalized multi-file Roblox artifact).
  */
 export function useUnifiedChat(user, settings, refreshBilling, notify, options = {}) {
-  const { onSignInNudge } = options;
+  const { onSignInNudge, authReady = true } = options;
   const effectiveGameSpec = useMemo(
     () => resolveGameSpecForPrompt(settings?.gameSpec),
     [settings?.gameSpec]
   );
 
-  const chat = useAiChat(user, settings, refreshBilling, notify);
+  const chat = useAiChat(user, settings, refreshBilling, notify, { authReady });
 
   // The pre-generation "flow" phase (orchestration / Ask streaming) is tracked
   // per originating chat, mirroring how useAiChat scopes the generation phase.

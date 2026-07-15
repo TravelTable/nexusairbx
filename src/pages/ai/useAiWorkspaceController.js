@@ -18,7 +18,7 @@ import {
   updateDoc,
 } from "firebase/firestore";
 
-import { auth, db } from "../../firebase";
+import { appCheckReady as firebaseAppCheckReady, auth, db } from "../../firebase";
 import { useBilling } from "../../context/BillingContext";
 import { useSettings } from "../../context/SettingsContext";
 import { useUnifiedChat } from "../../hooks/useUnifiedChat";
@@ -172,6 +172,9 @@ export function useAiWorkspaceController() {
   const location = useLocation();
 
   const [user, setUser] = useState(null);
+  const [authReady, setAuthReady] = useState(false);
+  const [isAppCheckReady, setIsAppCheckReady] = useState(false);
+  const [appCheckError, setAppCheckError] = useState(null);
   const [scripts, setScripts] = useState([]);
   const [scriptsLimit] = useState(50);
   const [activeTab, setActiveTab] = useState("chat");
@@ -265,6 +268,7 @@ export function useAiWorkspaceController() {
   const planKey = plan?.toLowerCase() || "free";
 
   const unified = useUnifiedChat(user, settings, refreshBilling, notify, {
+    authReady: authReady && isAppCheckReady,
     onSignInNudge: () => {
       createPendingAuthAction({
         action: PENDING_AUTH_ACTIONS.CHAT_SUBMIT,
@@ -399,8 +403,27 @@ export function useAiWorkspaceController() {
   }, []);
 
   useEffect(() => {
+    let cancelled = false;
+    firebaseAppCheckReady.then(({ ready, error }) => {
+      if (cancelled) return;
+      setIsAppCheckReady(Boolean(ready));
+      setAppCheckError(ready ? null : (error || new Error("Firebase App Check is unavailable.")));
+      if (!ready) {
+        notify({
+          message: "Workspace security verification failed. Refresh the page or sign in again.",
+          type: "error",
+        });
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [notify]);
+
+  useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
       setUser(firebaseUser || null);
+      setAuthReady(true);
     });
     return () => unsubscribe();
   }, []);
@@ -410,7 +433,7 @@ export function useAiWorkspaceController() {
   }, [refreshRobloxStatus]);
 
   useEffect(() => {
-    if (!user) {
+    if (!authReady || !isAppCheckReady || !user) {
       setScripts([]);
       return;
     }
@@ -440,10 +463,10 @@ export function useAiWorkspaceController() {
     return () => {
       cancelled = true;
     };
-  }, [user, scriptsLimit, notify, scriptManager.libraryRevision]);
+  }, [authReady, isAppCheckReady, user, scriptsLimit, notify, scriptManager.libraryRevision]);
 
   useEffect(() => {
-    if (!user || !chat.currentChatId) {
+    if (!authReady || !isAppCheckReady || !user || !chat.currentChatId) {
       setChatProjectSnapshot(null);
       return undefined;
     }
@@ -458,7 +481,7 @@ export function useAiWorkspaceController() {
         setChatProjectSnapshot(null);
       }
     );
-  }, [user, chat.currentChatId]);
+  }, [authReady, isAppCheckReady, user, chat.currentChatId]);
 
   useEffect(() => {
     if (!location?.state || typeof location.state !== "object") return;
@@ -1623,6 +1646,8 @@ export function useAiWorkspaceController() {
     },
     uiState: {
       user,
+      authReady: authReady && isAppCheckReady,
+      appCheckError: appCheckError?.message || null,
       isMobile,
       sidebarOpen,
       activeTab,

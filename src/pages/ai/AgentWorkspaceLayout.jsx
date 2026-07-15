@@ -78,6 +78,7 @@ export default function AgentWorkspaceLayout({ controller }) {
     codeDrawerData,
     currentTheme,
     currentToast,
+    authReady,
   } = uiState;
 
   const { chat, game, scriptManager, unified, workspace, settings } = modules;
@@ -1025,6 +1026,7 @@ export default function AgentWorkspaceLayout({ controller }) {
                 handleClearChat={chat.handleClearChat}
                 gameProfile={game.profile}
                 user={user}
+                authReady={authReady}
                 onVersionView={(ver) => {
                   if (!ver.code) return;
                   controller.handlers.emitAiEvent(AI_EVENTS.OPEN_CODE_DRAWER, {

@@ -5,6 +5,7 @@ jest.mock("firebase/app", () => ({
 }));
 
 jest.mock("firebase/app-check", () => ({
+  getToken: jest.fn(),
   initializeAppCheck: jest.fn(() => ({ token: "app-check" })),
   ReCaptchaV3Provider: jest.fn(function ReCaptchaV3Provider(siteKey) {
     this.siteKey = siteKey;
@@ -20,7 +21,7 @@ jest.mock("firebase/firestore", () => ({
 }));
 
 import { initializeAppCheck, ReCaptchaV3Provider } from "firebase/app-check";
-import { initializeFirebaseAppCheck } from "./firebase";
+import { initializeFirebaseAppCheck, waitForFirebaseAppCheck } from "./firebase";
 
 describe("initializeFirebaseAppCheck", () => {
   beforeEach(() => {
@@ -135,5 +136,26 @@ describe("initializeFirebaseAppCheck", () => {
       "development-debug-token"
     );
     expect(productionWindow.FIREBASE_APPCHECK_DEBUG_TOKEN).toBeUndefined();
+  });
+});
+
+describe("waitForFirebaseAppCheck", () => {
+  it("does not mark Firestore ready when App Check was not initialized", async () => {
+    const log = jest.spyOn(console, "error").mockImplementation(() => {});
+    const result = await waitForFirebaseAppCheck(null, { environment: "production" });
+
+    expect(result.ready).toBe(false);
+    expect(result.error).toBeInstanceOf(Error);
+    log.mockRestore();
+  });
+
+  it("waits for a non-empty App Check token", async () => {
+    const appCheck = {};
+    const result = await waitForFirebaseAppCheck(appCheck, {
+      environment: "production",
+      getTokenFn: jest.fn().mockResolvedValue({ token: "test-app-check-token" }),
+    });
+
+    expect(result).toEqual({ ready: true });
   });
 });

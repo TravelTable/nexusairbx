@@ -1,5 +1,5 @@
 import { initializeApp, getApps, setLogLevel } from "firebase/app";
-import { initializeAppCheck, ReCaptchaV3Provider } from "firebase/app-check";
+import { getToken, initializeAppCheck, ReCaptchaV3Provider } from "firebase/app-check";
 import { getAuth } from "firebase/auth";
 import {
   initializeFirestore,
@@ -12,7 +12,7 @@ import {
 setLogLevel("silent");
 
 // Your web app's Firebase configuration
-const firebaseConfig = {
+export const firebaseConfig = {
   apiKey: "AIzaSyCT6UZdUWmWdaJgKYhCSAzmr0pM-UU6-Tg",
   authDomain: "nexusrbx.firebaseapp.com",
   projectId: "nexusrbx",
@@ -72,6 +72,56 @@ export function initializeFirebaseAppCheck(
 }
 
 export const appCheck = initializeFirebaseAppCheck(app);
+
+/**
+ * Resolve an initial App Check token before starting Firestore reads.  Automatic
+ * refresh remains enabled above; this only closes the startup race when App
+ * Check enforcement is enabled in Firebase.
+ */
+export function waitForFirebaseAppCheck(
+  appCheckInstance,
+  {
+    environment = process.env.NODE_ENV,
+    getTokenFn = getToken,
+  } = {}
+) {
+  if (environment === "test") {
+    return Promise.resolve({ ready: true, skipped: true });
+  }
+
+  if (!appCheckInstance) {
+    const error = new Error("Firebase App Check is not initialized.");
+    if (environment === "production") {
+      console.error("Firebase App Check is unavailable", {
+        projectId: firebaseConfig.projectId,
+        message: error.message,
+      });
+    }
+    return Promise.resolve({ ready: false, error });
+  }
+
+  return getTokenFn(appCheckInstance)
+    .then((tokenResult) => {
+      if (!tokenResult?.token) {
+        throw new Error("Firebase App Check returned an empty token.");
+      }
+      if (environment === "development") {
+        console.debug("Firebase App Check initial token acquired", {
+          projectId: firebaseConfig.projectId,
+        });
+      }
+      return { ready: true };
+    })
+    .catch((error) => {
+      console.error("Firebase App Check token unavailable", {
+        projectId: firebaseConfig.projectId,
+        message: error?.message || "Unknown App Check error",
+      });
+      return { ready: false, error };
+    });
+}
+
+export const appCheckReady = waitForFirebaseAppCheck(appCheck);
 
 // Core SDKs
 export const auth = getAuth(app);

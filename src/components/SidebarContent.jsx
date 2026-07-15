@@ -68,13 +68,14 @@ export default function SidebarContent({
   gameProfile = null,
   generatingChatIds = [],
   user = null,
+  authReady = true,
 }) {
   const { isPremium, isFreeUsagePlan, limits, plan, entitlements } = useBilling();
 
   const retentionDays = limits?.chatRetentionDays ?? (isFreeUsagePlan ? 7 : (String(plan || "").toUpperCase() === "STARTER" ? 30 : null));
 
   // --- Library Data ---
-  const { chats, hiddenChatCount } = useAiLibrary(user, { retentionDays });
+  const { chats, hiddenChatCount } = useAiLibrary(user, { retentionDays, authReady });
 
   // --- State ---
   const [notification, setNotification] = useState(null);
