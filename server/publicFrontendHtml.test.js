@@ -196,11 +196,13 @@ test("downloads raw HTML is meaningful and fails closed before release verificat
 test("docs raw HTML has route-specific metadata and content", () => {
   const html = readHtml("/docs");
   assert.match(html, /<title>NexusRBX AI Documentation \| NexusRBX AI Docs<\/title>/);
-  assert.match(html, /<h1[^>]*>NexusRBX AI Documentation<\/h1>/);
-  assert.match(html, /Creator Store summary/);
-  assert.match(html, /AI-assisted Luau scripting help/);
-  assert.match(html, /Connect Studio when needed/);
-  assert.match(html, /Open NexusRBX AI/);
+  assert.match(html, /<h1[^>]*>Build your first Roblox workflow<\/h1>/);
+  assert.match(html, /Install the Studio plugin/);
+  assert.match(html, /Connect Studio/);
+  assert.match(html, /Generate your first script/);
+  assert.match(html, /Review and apply/);
+  assert.match(html, /Test in Studio/);
+  assert.match(html, /Troubleshoot errors/);
   assert.equal(countCanonical(html), 1);
   assert.match(html, /href="https:\/\/www\.nexusrbx\.com\/docs"/);
   assert.doesNotMatch(html, /Monaco|AgentWorkspaceLayout|CodeEditorTabs/);
@@ -273,9 +275,11 @@ test("search landing page internal links resolve to known public or app routes",
     "/icons-market",
     "/legal/privacy",
     "/legal/terms",
+    "/pricing",
     "/settings",
     "/signin",
     "/subscribe",
+    "/support",
     "/tools/icon-generator",
     ...docsRoutes,
     ...legalRoutes,

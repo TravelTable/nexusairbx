@@ -8,6 +8,7 @@ import {
   LEGAL_PAGES,
   getAdjacentPage,
   getDocPage,
+  getPagesInCategoryOrder,
 } from "../../../data/docsContent";
 import { buildPublicMetadata, docsStructuredData } from "../../../../src/lib/seo";
 
@@ -35,7 +36,8 @@ export default async function DocsSlugPage({ params }) {
   const { slug } = await params;
   const page = slug === DEFAULT_DOC_SLUG ? null : getDocPage(slug);
   if (!page) notFound();
-  const { previousPage, nextPage } = getAdjacentPage(DOC_PAGES, page.slug);
+  const orderedPages = getPagesInCategoryOrder(DOC_PAGES, DOC_CATEGORIES);
+  const { previousPage, nextPage } = getAdjacentPage(orderedPages, page.slug);
 
   return (
     <>

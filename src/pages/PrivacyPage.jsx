@@ -97,13 +97,13 @@ function NexusRBXPrivacyPage({
                     Privacy Support
                   </h3>
                   <p className="text-xs text-gray-400 mb-3">
-                    Questions about your data? Contact our privacy team.
+                    Questions about your data? Open a private support request.
                   </p>
                   <a
-                    href="mailto:support@nexusrbx.com"
+                    href="/contact?subject=security_privacy&message=I%20want%20to%20make%20a%20privacy%20request."
                     className="focus-ring text-xs px-4 py-2 rounded-lg bg-nexus-cyan/10 border border-nexus-cyan/25 text-nexus-cyan hover:bg-nexus-cyan/15 hover:text-white transition-colors duration-200 inline-block w-full text-center font-semibold"
                   >
-                    support@nexusrbx.com
+                    Start privacy request
                   </a>
                 </div>
               </div>
@@ -402,12 +402,12 @@ function ExerciseContent() {
   return (
     <div className="prose prose-invert max-w-none">
       <h1 className="text-3xl font-bold mb-6">How to Exercise Your Rights</h1>
-      <p className="text-gray-300 mb-6">If you wish to access, correct, or delete your personal information, or exercise any other privacy rights available to you, please contact us at <a href="mailto:support@nexusrbx.com" className="text-[#9b5de5]">support@nexusrbx.com</a>. For requests that specifically relate to GDPR or CCPA, you may mention that in your request (e.g. subject line "GDPR Data Request" or "CCPA Request").</p>
+      <p className="text-gray-300 mb-6">If you wish to access, correct, or delete your personal information, or exercise another privacy right, <a href="/contact?subject=security_privacy&message=I%20want%20to%20make%20a%20privacy%20request." className="text-[#9b5de5]">open a security or privacy request</a>. Sign in with the account concerned so the request is tied to your verified identity.</p>
       
       <div className="space-y-6">
         <section>
           <h3 className="text-xl font-bold text-white mb-2">Verification</h3>
-          <p className="text-gray-400">To protect your privacy, we will take steps to verify your identity before fulfilling your request. For example, we may ask you to send the request from the email address associated with your NexusRBX account or provide other identifying information.</p>
+          <p className="text-gray-400">To protect your privacy, requests are submitted from a signed-in NexusRBX account. We may ask for additional information when it is necessary to verify the request.</p>
         </section>
 
         <section>
@@ -416,8 +416,8 @@ function ExerciseContent() {
         </section>
 
         <section className="p-4 bg-[#9b5de5]/10 border border-[#9b5de5]/30 rounded-lg">
-          <h3 className="text-lg font-bold text-white mb-2">Data Protection Officer (DPO)</h3>
-          <p className="text-sm text-gray-300">For GDPR or EU-specific concerns, you may contact our Data Protection Officer at <a href="mailto:support@nexusrbx.com" className="text-[#9b5de5]">support@nexusrbx.com</a> (please include “Attn: Data Protection Officer” in the subject).</p>
+          <h3 className="text-lg font-bold text-white mb-2">GDPR and regional requests</h3>
+          <p className="text-sm text-gray-300">Choose <strong>Security / privacy</strong> in the support form and state the right you want to exercise. The full conversation and its status remain available in your support history.</p>
         </section>
       </div>
     </div>
@@ -431,7 +431,7 @@ function ChildrenContent() {
       <p className="text-gray-300 mb-6">NexusRBX is not intended for children under 13 years of age. We do not knowingly collect personal information from children under 13. If you are under 13, please do not use the Service or provide any information about yourself to us. In the event we learn that we have inadvertently collected personal data from a child under 13, we will take prompt action to delete such data from our records.</p>
       
       <div className="p-6 nexus-page-card">
-        <p className="text-gray-400">If you are a parent or guardian and you believe that your child under 13 has provided us with personal information without your consent, please contact us immediately at <a href="mailto:support@nexusrbx.com" className="text-[#9b5de5]">support@nexusrbx.com</a>. We will then work with you to investigate and, if verified, delete the child’s information.</p>
+        <p className="text-gray-400">If you are a parent or guardian and you believe that your child under 13 has provided us with personal information without your consent, please use the <a href="/contact?category=security_privacy" className="text-[#9b5de5]">contact form</a> immediately. We will then work with you to investigate and, if verified, delete the child’s information.</p>
       </div>
     </div>
   );
@@ -453,19 +453,12 @@ function ContactContent() {
       <h1 className="text-3xl font-bold mb-6">Contact Us</h1>
       <p className="text-gray-300 mb-8">If you have any questions, concerns, or comments about this Privacy Policy or our data practices, please contact us:</p>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <div className="max-w-xl">
         <div className="nexus-page-card p-6 flex flex-col items-center text-center">
           <Mail className="h-10 w-10 text-[#9b5de5] mb-4" />
-          <h3 className="text-xl font-bold mb-2">Email Support</h3>
-          <p className="text-sm text-gray-400 mb-4">For the fastest response, please email our privacy team.</p>
-          <a href="mailto:support@nexusrbx.com" className="text-[#9b5de5] font-bold hover:underline">support@nexusrbx.com</a>
-        </div>
-
-        <div className="nexus-page-card p-6 flex flex-col items-center text-center">
-          <Globe className="h-10 w-10 text-[#00f5d4] mb-4" />
-          <h3 className="text-xl font-bold mb-2">Mailing Address</h3>
-          <p className="text-sm text-gray-400 mb-4">NexusRBX Privacy Team<br />PO Box 123, Sydney<br />NSW 2000, Australia</p>
-          <p className="text-[10px] text-gray-500 uppercase tracking-widest">Official Correspondence Only</p>
+          <h3 className="text-xl font-bold mb-2">Private support request</h3>
+          <p className="text-sm text-gray-400 mb-4">Use the in-site support desk for privacy questions and requests. Do not include passwords, card numbers, or credentials.</p>
+          <a href="/contact?subject=security_privacy&message=I%20have%20a%20question%20about%20the%20Privacy%20Policy." className="text-[#9b5de5] font-bold hover:underline">Open privacy support</a>
         </div>
       </div>
     </div>

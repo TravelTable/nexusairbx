@@ -1,434 +1,313 @@
-import React from 'react';
-import { useState } from "react";
-import { 
-  Mail, 
-  MessageSquare, 
-  Send, 
-  Github, 
-  Twitter, 
-  FileText, 
-  Shield, 
-  HelpCircle, 
-  AlertTriangle, 
-  CheckCircle, 
-  Loader, 
-  MapPin, 
-  Phone, 
-  Clock, 
-  Users
+import { useEffect, useMemo, useState } from "react";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import {
+  AlertTriangle,
+  BookOpen,
+  CheckCircle,
+  CreditCard,
+  HelpCircle,
+  Loader2,
+  MessageSquare,
+  Shield,
+  Wrench,
 } from "lib/icons";
-import { Button } from "../components/ui";
 
-// Container Component
-export default function NexusRBXContactPageContainer() {
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    subject: "general",
-    message: ""
-  });
-  const [formStatus, setFormStatus] = useState({
-    status: "idle", // idle, submitting, success, error
-    message: ""
-  });
-  
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
-  
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    
-    // Validate form
-    if (!formData.name || !formData.email || !formData.message) {
-      setFormStatus({
-        status: "error",
-        message: "Please fill out all required fields."
-      });
-      return;
-    }
-    
-    // Simulate form submission
-    setFormStatus({
-      status: "submitting",
-      message: "Sending your message..."
-    });
-    
-    // Simulate API call with timeout
-    setTimeout(() => {
-      setFormStatus({
-        status: "success",
-        message: "Your message has been sent successfully! We'll get back to you soon."
-      });
-      
-      // Reset form after successful submission
-      setFormData({
-        name: "",
-        email: "",
-        subject: "general",
-        message: ""
-      });
-    }, 1500);
-  };
-  
-  // Define all data used by sub-components
-  const contactOptions = [
-    {
-      id: "general",
-      title: "General Inquiries",
-      email: "support@nexusrbx.com",
-      icon: MessageSquare,
-      description: "For general questions about NexusRBX and our services."
-    },
-    {
-      id: "support",
-      title: "Technical Support",
-      email: "support@nexusrbx.com",
-      icon: HelpCircle,
-      description: "For help with technical issues or questions about using our platform."
-    },
-    {
-      id: "billing",
-      title: "Billing & Accounts",
-      email: "billing@nexusrbx.com",
-      icon: FileText,
-      description: "For questions about subscriptions, payments, or account management."
-    },
-    {
-      id: "security",
-      title: "Security & Privacy",
-      email: "security@nexusrbx.com",
-      icon: Shield,
-      description: "For reporting security vulnerabilities or privacy concerns."
-    },
-    {
-      id: "business",
-      title: "Business Development",
-      email: "partnerships@nexusrbx.com",
-      icon: Users,
-      description: "For partnership opportunities and business inquiries."
-    }
-  ];
-  
-  const companyInfo = {
-    address: "Sydney, New South Wales, Australia",
-    phone: "Contact via Email",
-    hours: "Monday - Friday: 9AM - 5PM AEST",
-    socialLinks: [
-      { name: "Twitter", url: "https://twitter.com/nexusrbx", icon: Twitter },
-      { name: "GitHub", url: "https://github.com/TravelTable/nexusairbx", icon: Github }
-    ]
-  };
-  
+import { useBilling } from "../context/BillingContext";
+import { createSupportTicket } from "../lib/supportApi";
+import {
+  clearSupportDraft,
+  readSupportDraft,
+  saveSupportDraft,
+  SUPPORT_CATEGORIES,
+  supportDraftFromSearchParams,
+} from "../lib/supportDraft";
+import { trackProductEvent } from "../lib/productAnalytics";
+
+const EMPTY_FORM = {
+  category: "technical",
+  subject: "",
+  message: "",
+  errorMessage: "",
+  reproductionSteps: "",
+  studioVersion: "",
+  pluginVersion: "",
+  invoiceReference: "",
+  privacyRequestType: "",
+  articleUrl: "",
+};
+
+const FIELD_CLASS =
+  "mt-2 w-full rounded-md border border-white/15 bg-[#0a0d13] px-3 py-2.5 text-sm text-white outline-none transition placeholder:text-gray-600 focus:border-[#00f5d4] focus:ring-2 focus:ring-[#00f5d4]/20";
+
+function buildTicketMessage(form) {
+  const details = [];
+  if (form.articleUrl) details.push(`Docs article: ${form.articleUrl}`);
+  if (form.errorMessage) details.push(`Error shown:\n${form.errorMessage}`);
+  if (form.reproductionSteps) details.push(`Steps to reproduce:\n${form.reproductionSteps}`);
+  if (form.studioVersion) details.push(`Roblox Studio version: ${form.studioVersion}`);
+  if (form.pluginVersion) details.push(`NexusRBX plugin version: ${form.pluginVersion}`);
+  if (form.invoiceReference) details.push(`Invoice reference: ${form.invoiceReference}`);
+  if (form.privacyRequestType) details.push(`Request type: ${form.privacyRequestType}`);
+  return [form.message.trim(), ...details].filter(Boolean).join("\n\n").slice(0, 10_000);
+}
+
+function Field({ label, hint, children }) {
   return (
-    <NexusRBXContactPage
-      formData={formData}
-      formStatus={formStatus}
-      contactOptions={contactOptions}
-      companyInfo={companyInfo}
-      handleInputChange={handleInputChange}
-      handleSubmit={handleSubmit}
-    />
+    <label className="block text-sm font-medium text-gray-200">
+      {label}
+      {hint && <span className="ml-2 font-normal text-gray-500">{hint}</span>}
+      {children}
+    </label>
   );
 }
 
-// UI Component
-function NexusRBXContactPage({
-  formData,
-  formStatus,
-  contactOptions,
-  companyInfo,
-  handleInputChange,
-  handleSubmit
-}) {
+function SelfServiceLink({ href, icon: Icon, title, body, internal = false }) {
+  const content = (
+    <>
+      <Icon className="mt-0.5 h-5 w-5 shrink-0 text-[#00f5d4]" />
+      <span>
+        <span className="block font-semibold text-white">{title}</span>
+        <span className="mt-1 block text-sm leading-6 text-gray-400">{body}</span>
+      </span>
+    </>
+  );
+  const className =
+    "flex gap-3 border-b border-white/10 py-4 text-left transition first:pt-0 last:border-0 last:pb-0 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00f5d4]";
+  return internal ? (
+    <Link to={href} className={className}>{content}</Link>
+  ) : (
+    <a href={href} className={className}>{content}</a>
+  );
+}
+
+export default function ContactPage() {
+  const { user, authReady } = useBilling();
+  const [searchParams] = useSearchParams();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [form, setForm] = useState(EMPTY_FORM);
+  const [status, setStatus] = useState({ state: "idle", message: "" });
+
+  useEffect(() => {
+    const queryDraft = supportDraftFromSearchParams(searchParams);
+    const storedDraft = readSupportDraft();
+    const restored = queryDraft || storedDraft;
+    if (restored) {
+      setForm((current) => ({ ...current, ...restored }));
+      if (queryDraft?.articleUrl) {
+        void trackProductEvent("support_handoff_started", {
+          landing_page: "/docs",
+          support_category: "technical",
+        });
+      }
+    }
+  }, [searchParams]);
+
+  const categoryLabel = useMemo(
+    () => SUPPORT_CATEGORIES.find((item) => item.id === form.category)?.label || "Support",
+    [form.category]
+  );
+
+  function update(name, value) {
+    setForm((current) => ({ ...current, [name]: value }));
+    if (status.state !== "idle") setStatus({ state: "idle", message: "" });
+  }
+
+  async function submit(event) {
+    event.preventDefault();
+    if (form.subject.trim().length < 5 || form.message.trim().length < 1) {
+      setStatus({ state: "error", message: "Add a subject of at least 5 characters and describe what happened." });
+      return;
+    }
+    const draft = saveSupportDraft(form);
+    if (!draft) {
+      setStatus({ state: "error", message: "Please check the form and try again." });
+      return;
+    }
+    if (!user) {
+      navigate("/signin", {
+        state: { from: { pathname: location.pathname, search: location.search } },
+      });
+      return;
+    }
+    setStatus({ state: "submitting", message: "Creating your request…" });
+    try {
+      const payload = await createSupportTicket({
+        category: draft.category,
+        subject: draft.subject,
+        message: buildTicketMessage(draft),
+      });
+      const ticket = payload?.ticket;
+      if (!ticket?.id) throw new Error("The request was saved but could not be opened.");
+      clearSupportDraft();
+      void trackProductEvent("support_ticket_created", {
+        support_category: draft.category,
+        support_status: ticket.status || "open",
+      });
+      navigate(`/support/${encodeURIComponent(ticket.id)}`, { replace: true });
+    } catch (error) {
+      setStatus({ state: "error", message: error?.message || "Could not create your request." });
+    }
+  }
+
+  const technical = form.category === "technical";
+  const billing = form.category === "billing";
+  const security = form.category === "security_privacy";
+
   return (
-    <div className="min-h-screen bg-[#0D0D0D] text-white font-sans flex flex-col">
-      <main className="flex-grow">
-        <div className="max-w-6xl mx-auto px-4 py-12">
-          {/* Page Title */}
-          <div className="text-center mb-12">
-            <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-[#9b5de5] via-[#f15bb5] to-[#00f5d4] text-transparent bg-clip-text">
-              Get in Touch
-            </h1>
-            <p className="text-xl text-gray-400 max-w-2xl mx-auto">
-              Have questions about NexusRBX? We're here to help. Reach out to our team and we'll get back to you as soon as possible.
-            </p>
-          </div>
-          
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Contact Information */}
-            <div className="lg:col-span-1">
-              <div className="nexus-page-card p-6 h-full">
-                <h2 className="text-xl font-bold mb-6">Contact Information</h2>
-                
-                <div className="space-y-6">
-                  <div className="flex items-start">
-                    <MapPin className="h-5 w-5 text-[#9b5de5] mt-1 mr-3" />
-                    <div>
-                      <h3 className="font-medium mb-1">Address</h3>
-                      <p className="text-gray-400 text-sm">{companyInfo.address}</p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-start">
-                    <Mail className="h-5 w-5 text-[#00f5d4] mt-1 mr-3" />
-                    <div>
-                      <h3 className="font-medium mb-1">Email</h3>
-                      <p className="text-gray-400 text-sm">support@nexusrbx.com</p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-start">
-                    <Phone className="h-5 w-5 text-[#f15bb5] mt-1 mr-3" />
-                    <div>
-                      <h3 className="font-medium mb-1">Phone</h3>
-                      <p className="text-gray-400 text-sm">{companyInfo.phone}</p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-start">
-                    <Clock className="h-5 w-5 text-[#9b5de5] mt-1 mr-3" />
-                    <div>
-                      <h3 className="font-medium mb-1">Business Hours</h3>
-                      <p className="text-gray-400 text-sm">{companyInfo.hours}</p>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="mt-8 pt-6 border-t border-white/10">
-                  <h3 className="font-medium mb-4">Connect With Us</h3>
-                  <div className="flex space-x-4">
-                    {companyInfo.socialLinks.map(link => (
-                      <a 
-                        key={link.name}
-                        href={link.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="nexus-icon-button"
-                        aria-label={link.name}
-                      >
-                        <link.icon className="h-5 w-5" />
-                      </a>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            {/* Contact Form */}
-            <div className="lg:col-span-2">
-              <div className="nexus-page-card p-6">
-                <h2 className="text-xl font-bold mb-6">Send Us a Message</h2>
-                
-                <form onSubmit={handleSubmit}>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                    <div>
-                      <label htmlFor="name" className="nexus-field-label mb-2">
-                        Name <span className="text-[#f15bb5]">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        id="name"
-                        name="name"
-                        value={formData.name}
-                        onChange={handleInputChange}
-                        className="nexus-input px-4 py-3"
-                        placeholder="Your name"
-                        required
-                      />
-                    </div>
-                    
-                    <div>
-                      <label htmlFor="email" className="nexus-field-label mb-2">
-                        Email <span className="text-[#f15bb5]">*</span>
-                      </label>
-                      <input
-                        type="email"
-                        id="email"
-                        name="email"
-                        value={formData.email}
-                        onChange={handleInputChange}
-                        className="nexus-input px-4 py-3"
-                        placeholder="your.email@example.com"
-                        required
-                      />
-                    </div>
-                  </div>
-                  
-                  <div className="mb-6">
-                    <label htmlFor="subject" className="nexus-field-label mb-2">
-                      Subject
-                    </label>
-                    <select
-                      id="subject"
-                      name="subject"
-                      value={formData.subject}
-                      onChange={handleInputChange}
-                      className="nexus-input px-4 py-3"
-                    >
-                      {contactOptions.map(option => (
-                        <option key={option.id} value={option.id}>
-                          {option.title}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  
-                  <div className="mb-6">
-                    <label htmlFor="message" className="nexus-field-label mb-2">
-                      Message <span className="text-[#f15bb5]">*</span>
-                    </label>
-                    <textarea
-                      id="message"
-                      name="message"
-                      value={formData.message}
-                      onChange={handleInputChange}
-                      rows="6"
-                      className="nexus-textarea px-4 py-3"
-                      placeholder="How can we help you?"
-                      required
-                    ></textarea>
-                  </div>
+    <main className="min-h-[calc(100vh-4rem)] bg-[#07090d] text-white">
+      <section className="border-b border-white/10">
+        <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6 lg:px-8 lg:py-20">
+          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[#00f5d4]">Contact NexusRBX</p>
+          <h1 className="mt-4 max-w-3xl text-4xl font-semibold tracking-tight sm:text-5xl">
+            Tell us what happened. Keep the details in one place.
+          </h1>
+          <p className="mt-5 max-w-2xl text-base leading-7 text-gray-400 sm:text-lg">
+            You can read the form and prepare a request without an account. Sign in only when you are ready to send it and receive replies.
+          </p>
+        </div>
+      </section>
 
-                  {formStatus.status !== "idle" && (
-                    <div className={`mb-6 p-4 rounded-lg ${
-                      formStatus.status === "error"
-                        ? "bg-red-500/10 border border-red-500/25"
-                        : formStatus.status === "success"
-                          ? "bg-emerald-500/10 border border-emerald-500/25"
-                          : "bg-white/[0.04] border border-white/10"
-                    }`}>
-                      <div className="flex items-center">
-                        {formStatus.status === "error" && (
-                          <AlertTriangle className="h-5 w-5 text-red-400 mr-2" />
-                        )}
-                        {formStatus.status === "success" && (
-                          <CheckCircle className="h-5 w-5 text-green-400 mr-2" />
-                        )}
-                        {formStatus.status === "submitting" && (
-                          <Loader className="h-5 w-5 text-gray-400 mr-2 animate-spin" />
-                        )}
-                        <p className={`text-sm ${
-                          formStatus.status === "error" 
-                            ? "text-red-400" 
-                            : formStatus.status === "success"
-                              ? "text-green-400"
-                              : "text-gray-400"
-                        }`}>
-                          {formStatus.message}
-                        </p>
-                      </div>
-                    </div>
-                  )}
-                  
-                  <Button
-                    type="submit"
-                    disabled={formStatus.status === "submitting"}
-                    icon={formStatus.status === "submitting" ? Loader : Send}
-                    className={formStatus.status === "submitting" ? "[&>svg]:animate-spin" : ""}
-                  >
-                    {formStatus.status === "submitting" ? "Sending..." : "Send Message"}
-                  </Button>
-                </form>
-              </div>
+      <section className="mx-auto grid max-w-6xl gap-12 px-4 py-12 sm:px-6 lg:grid-cols-[minmax(0,1fr)_340px] lg:px-8 lg:py-16">
+        <form onSubmit={submit} className="min-w-0" noValidate>
+          <div className="flex items-start justify-between gap-4 border-b border-white/10 pb-6">
+            <div>
+              <h2 className="text-2xl font-semibold">New support request</h2>
+              <p className="mt-2 text-sm leading-6 text-gray-400">
+                Requests are private to the signed-in account that creates them.
+              </p>
             </div>
+            {user && (
+              <span className="max-w-[220px] truncate text-xs text-gray-500" title={user.email || ""}>
+                {user.email}
+              </span>
+            )}
           </div>
-          
-          {/* Contact Options */}
-          <div className="mt-16">
-            <h2 className="text-2xl font-bold mb-8 text-center">Specialized Support</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {contactOptions.map(option => (
-                <div 
-                  key={option.id}
-                  className="nexus-page-card p-6 transition-all duration-200 hover:border-white/20"
-                >
-                  <div className="flex items-center mb-4">
-                    <div className="w-10 h-10 rounded-xl bg-nexus-cyan/10 border border-nexus-cyan/20 flex items-center justify-center mr-3">
-                      <option.icon className="h-5 w-5 text-nexus-cyan" />
-                    </div>
-                    <h3 className="font-bold">{option.title}</h3>
-                  </div>
-                  <p className="text-gray-400 text-sm mb-4">{option.description}</p>
-                  <a 
-                    href={`mailto:${option.email}`}
-                    className="focus-ring rounded-lg text-nexus-cyan hover:text-white transition-colors duration-200 inline-flex items-center text-sm font-semibold"
-                  >
-                    <Mail className="h-4 w-4 mr-2" />
-                    {option.email}
-                  </a>
-                </div>
-              ))}
-            </div>
-          </div>
-          
-          {/* FAQ Section */}
-          <div className="mt-16">
-            <h2 className="text-2xl font-bold mb-8 text-center">Frequently Asked Questions</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="nexus-page-card p-6">
-                <h3 className="font-bold mb-3">What is NexusRBX?</h3>
-                <p className="text-gray-400 text-sm">
-                  NexusRBX is an AI-driven platform for generating, simulating, and testing Roblox scripts and mods without the need for complex development environments or risking your Roblox account.
-                </p>
-              </div>
-              
-              <div className="nexus-page-card p-6">
-                <h3 className="font-bold mb-3">Do I need coding experience to use NexusRBX?</h3>
-                <p className="text-gray-400 text-sm">
-                  No, you don't need prior coding experience. Our AI can generate scripts based on natural language prompts. However, basic understanding of Roblox concepts will help you get better results.
-                </p>
-              </div>
-              
-              <div className="nexus-page-card p-6">
-                <h3 className="font-bold mb-3">Is there a free trial available?</h3>
-                <p className="text-gray-400 text-sm">
-                  Yes. You can try one Quick Script anonymously and use quota-limited Quick Script access with a free account. Starter at $2/month adds Agent Build, model selection, saved scripts, and more usage.
-                </p>
-              </div>
-              
-              <div className="nexus-page-card p-6">
-                <h3 className="font-bold mb-3">How secure is NexusRBX?</h3>
-                <p className="text-gray-400 text-sm">
-                  Security is our priority. All scripts are executed in a secure, sandboxed environment. We implement strong encryption, access controls, and regular security assessments to protect your data.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </main>
 
-      {/* Footer */}
-      <footer className="border-t border-white/10 py-6 px-4 bg-black/40">
-        <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center">
-          <div className="flex items-center mb-4 md:mb-0">
-            <div className="text-xl font-bold bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-transparent bg-clip-text mr-2">
-              NexusRBX
+          <div className="mt-7 grid gap-6">
+            <Field label="Category">
+              <select
+                className={FIELD_CLASS}
+                value={form.category}
+                onChange={(event) => update("category", event.target.value)}
+              >
+                {SUPPORT_CATEGORIES.map((category) => (
+                  <option key={category.id} value={category.id}>{category.label}</option>
+                ))}
+              </select>
+            </Field>
+
+            <Field label="Subject" hint="Required">
+              <input
+                className={FIELD_CLASS}
+                value={form.subject}
+                minLength={5}
+                maxLength={120}
+                required
+                onChange={(event) => update("subject", event.target.value)}
+                placeholder={`Short summary for ${categoryLabel.toLowerCase()}`}
+              />
+            </Field>
+
+            <Field label="What do you need help with?" hint="Required">
+              <textarea
+                className={FIELD_CLASS}
+                rows={6}
+                maxLength={10000}
+                required
+                value={form.message}
+                onChange={(event) => update("message", event.target.value)}
+                placeholder="Describe the result you expected and what happened instead."
+              />
+            </Field>
+
+            {technical && (
+              <fieldset className="grid gap-5 border-l-2 border-white/10 pl-5">
+                <legend className="mb-4 text-sm font-semibold text-white">Technical details</legend>
+                <Field label="Error shown" hint="Optional">
+                  <textarea className={FIELD_CLASS} rows={3} value={form.errorMessage} onChange={(event) => update("errorMessage", event.target.value)} />
+                </Field>
+                <Field label="Steps to reproduce" hint="Optional">
+                  <textarea className={FIELD_CLASS} rows={4} value={form.reproductionSteps} onChange={(event) => update("reproductionSteps", event.target.value)} />
+                </Field>
+                <div className="grid gap-5 sm:grid-cols-2">
+                  <Field label="Roblox Studio version" hint="Optional">
+                    <input className={FIELD_CLASS} value={form.studioVersion} onChange={(event) => update("studioVersion", event.target.value)} />
+                  </Field>
+                  <Field label="NexusRBX plugin version" hint="Optional">
+                    <input className={FIELD_CLASS} value={form.pluginVersion} onChange={(event) => update("pluginVersion", event.target.value)} />
+                  </Field>
+                </div>
+              </fieldset>
+            )}
+
+            {billing && (
+              <Field label="Invoice reference" hint="Optional — never include a card number">
+                <input className={FIELD_CLASS} value={form.invoiceReference} maxLength={160} onChange={(event) => update("invoiceReference", event.target.value)} />
+              </Field>
+            )}
+
+            {security && (
+              <Field label="Security or privacy request type">
+                <select className={FIELD_CLASS} value={form.privacyRequestType} onChange={(event) => update("privacyRequestType", event.target.value)}>
+                  <option value="">Select a request type</option>
+                  <option value="Security report">Security report</option>
+                  <option value="Access my data">Access my data</option>
+                  <option value="Delete my account data">Delete my account data</option>
+                  <option value="Correct my data">Correct my data</option>
+                  <option value="Other privacy request">Other privacy request</option>
+                </select>
+              </Field>
+            )}
+
+            <div className="flex gap-3 border border-amber-400/25 bg-amber-400/[0.06] p-4 text-sm leading-6 text-amber-100">
+              <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" />
+              <p>Do not include passwords, API keys, login codes, card numbers, or Roblox credentials. NexusRBX staff will not ask for them in a ticket.</p>
             </div>
-            <div className="text-sm text-gray-400">Contact Us</div>
+
+            {status.state === "error" && (
+              <div role="alert" className="border border-red-400/30 bg-red-400/[0.07] px-4 py-3 text-sm text-red-100">
+                {status.message}
+              </div>
+            )}
+
+            <div className="flex flex-col gap-3 border-t border-white/10 pt-6 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-sm text-gray-500">
+                {user ? `Replies will go to the verified account ${user.email}.` : "Your draft is kept in this tab while you sign in."}
+              </p>
+              <button
+                type="submit"
+                disabled={status.state === "submitting" || !authReady || form.subject.trim().length < 5 || !form.message.trim()}
+                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-[#00f5d4] px-5 text-sm font-semibold text-black transition hover:bg-[#20e5cc] disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {status.state === "submitting" ? <Loader2 className="h-4 w-4 animate-spin" /> : <MessageSquare className="h-4 w-4" />}
+                {user ? "Create request" : "Sign in to send"}
+              </button>
+            </div>
           </div>
-          
-          <div className="flex flex-wrap justify-center gap-6">
-            <a href="/terms" className="focus-ring rounded-lg px-2 py-1 text-gray-400 hover:text-white transition-colors duration-200">Terms</a>
-            <a href="/privacy" className="focus-ring rounded-lg px-2 py-1 text-gray-400 hover:text-white transition-colors duration-200">Privacy</a>
-            <a href="/contact" className="focus-ring rounded-lg px-2 py-1 text-white transition-colors duration-200">Contact</a>
-            <a 
-              href="https://github.com/TravelTable/nexusairbx" 
-              className="focus-ring rounded-lg px-2 py-1 text-gray-400 hover:text-white transition-colors duration-200 flex items-center gap-2"
-            >
-              <Github className="h-4 w-4" />
-              GitHub
-            </a>
-          </div>
-        </div>
-        <div className="max-w-6xl mx-auto mt-4 text-center text-gray-500 text-sm">
-          © 2026 NexusRBX. All rights reserved.
-        </div>
-      </footer>
-    </div>
+        </form>
+
+        <aside className="space-y-10">
+          <section>
+            <h2 className="text-base font-semibold">Try these first</h2>
+            <div className="mt-5">
+              <SelfServiceLink href="/docs" icon={BookOpen} title="Documentation" body="Install the plugin, connect Studio, and resolve common errors." />
+              <SelfServiceLink href="/support" icon={HelpCircle} title="Your requests" body="Read replies and continue an existing request." internal />
+              <SelfServiceLink href="/billing" icon={CreditCard} title="Billing settings" body="View your current plan and manage an active subscription." internal />
+              <SelfServiceLink href="/ai" icon={Wrench} title="Open the workspace" body="Return to your projects, prompts, and Studio connection." internal />
+            </div>
+          </section>
+
+          <section className="border-t border-white/10 pt-8">
+            <h2 className="text-base font-semibold">What happens next</h2>
+            <ol className="mt-5 space-y-5 text-sm leading-6 text-gray-400">
+              <li className="flex gap-3"><CheckCircle className="mt-0.5 h-5 w-5 shrink-0 text-[#00f5d4]" /><span>Your request appears immediately in <strong className="font-medium text-gray-200">Your requests</strong>.</span></li>
+              <li className="flex gap-3"><Shield className="mt-0.5 h-5 w-5 shrink-0 text-[#00f5d4]" /><span>Only you and authorized NexusRBX support staff can read the conversation.</span></li>
+              <li className="flex gap-3"><MessageSquare className="mt-0.5 h-5 w-5 shrink-0 text-[#00f5d4]" /><span>Return to the ticket to read and reply. You can close it when the issue is finished.</span></li>
+            </ol>
+          </section>
+        </aside>
+      </section>
+    </main>
   );
 }

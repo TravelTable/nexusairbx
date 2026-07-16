@@ -1,27 +1,70 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { reload, sendEmailVerification } from "firebase/auth";
 import { auth } from "../firebase";
 import { authedFetch } from "../lib/billing";
 import { NexusAuthShell } from "../components/auth/NexusAuthShell";
 
-function safeReturnPath(value) {
+const VERIFY_EMAIL_RETURN_PATH_KEY = "nexusrbx:verify-email-return-path";
+
+function safeReturnPath(value, fallback = "/ai") {
   return typeof value === "string" && value.startsWith("/") && !value.startsWith("//")
     ? value
-    : "/ai";
+    : fallback;
+}
+
+function readStoredReturnPath() {
+  try {
+    return safeReturnPath(window.sessionStorage.getItem(VERIFY_EMAIL_RETURN_PATH_KEY), "");
+  } catch (_) {
+    return "";
+  }
+}
+
+function storeReturnPath(value) {
+  try {
+    window.sessionStorage.setItem(VERIFY_EMAIL_RETURN_PATH_KEY, value);
+  } catch (_) {
+    // Verification still works if session storage is unavailable.
+  }
+}
+
+function clearStoredReturnPath() {
+  try {
+    window.sessionStorage.removeItem(VERIFY_EMAIL_RETURN_PATH_KEY);
+  } catch (_) {
+    // Best effort after a completed verification.
+  }
+}
+
+function returnPathState(value) {
+  const parsed = new URL(safeReturnPath(value), "https://nexusrbx.local");
+  return {
+    from: {
+      pathname: parsed.pathname,
+      search: parsed.search,
+      hash: parsed.hash,
+    },
+  };
 }
 
 export default function VerifyEmailPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const returnPath = useMemo(() => safeReturnPath(location.state?.returnPath), [location.state]);
+  const [returnPath] = useState(() => {
+    const nextPath = safeReturnPath(location.state?.returnPath, "") || readStoredReturnPath() || "/ai";
+    storeReturnPath(nextPath);
+    return nextPath;
+  });
   const [message, setMessage] = useState("Check your inbox and verify your email address to continue.");
   const [cooldown, setCooldown] = useState(0);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    if (!auth.currentUser) navigate("/signin", { replace: true });
-  }, [navigate]);
+    if (!auth.currentUser) {
+      navigate("/signin", { replace: true, state: returnPathState(returnPath) });
+    }
+  }, [navigate, returnPath]);
 
   useEffect(() => {
     if (cooldown <= 0) return undefined;
@@ -31,12 +74,13 @@ export default function VerifyEmailPage() {
 
   const checkVerification = async () => {
     const user = auth.currentUser;
-    if (!user) return navigate("/signin", { replace: true });
+    if (!user) return navigate("/signin", { replace: true, state: returnPathState(returnPath) });
     setBusy(true);
     try {
       await reload(user);
       if (auth.currentUser?.emailVerified) {
         await auth.currentUser.getIdToken(true);
+        clearStoredReturnPath();
         navigate(returnPath, { replace: true });
         return;
       }

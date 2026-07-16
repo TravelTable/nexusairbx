@@ -63,6 +63,10 @@
       "destination": "/api/render?path=/downloads"
     },
     {
+      "source": "/pricing",
+      "destination": "/api/render?path=/pricing"
+    },
+    {
       "source": "/docs",
       "destination": "/api/render?path=/docs"
     },

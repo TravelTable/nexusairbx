@@ -6,6 +6,7 @@ import { auth } from "../../firebase";
 import { useBilling } from "../../context/BillingContext";
 import { isRetryableApiError } from "../../lib/apiErrors";
 import { beginRobloxOAuth, beginRobloxReauthorization, getRobloxOAuthStatus } from "../../lib/robloxOAuthApi";
+import { getSupportUnreadCount } from "../../lib/supportApi";
 import {
   formatHeaderPlan,
   getRobloxProfileFromStatus,
@@ -26,6 +27,8 @@ export default function useHeaderIdentity({
   const [robloxLoading, setRobloxLoading] = useState(false);
   const [robloxError, setRobloxError] = useState("");
   const [robloxAction, setRobloxAction] = useState("");
+  const [supportUnreadCount, setSupportUnreadCount] = useState(0);
+  const [isSupportStaff, setIsSupportStaff] = useState(false);
 
   const hasRobloxStatusOverride = typeof robloxStatusOverride !== "undefined";
   const effectiveRobloxStatus = hasRobloxStatusOverride ? robloxStatusOverride : robloxStatus;
@@ -62,6 +65,48 @@ export default function useHeaderIdentity({
     if (hasRobloxStatusOverride) return;
     void refreshRobloxStatus();
   }, [hasRobloxStatusOverride, refreshRobloxStatus, user]);
+
+  const refreshSupportUnreadCount = useCallback(async () => {
+    if (!user) {
+      setSupportUnreadCount(0);
+      return 0;
+    }
+    try {
+      const count = await getSupportUnreadCount();
+      setSupportUnreadCount(count);
+      return count;
+    } catch (_) {
+      return 0;
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) {
+      setSupportUnreadCount(0);
+      return undefined;
+    }
+    void refreshSupportUnreadCount();
+    const timer = window.setInterval(refreshSupportUnreadCount, 60_000);
+    window.addEventListener("nexusrbx:support-unread-changed", refreshSupportUnreadCount);
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener("nexusrbx:support-unread-changed", refreshSupportUnreadCount);
+    };
+  }, [location.pathname, refreshSupportUnreadCount, user]);
+
+  useEffect(() => {
+    let active = true;
+    if (!user) {
+      setIsSupportStaff(false);
+      return undefined;
+    }
+    void user.getIdTokenResult().then((token) => {
+      if (active) setIsSupportStaff(token.claims?.admin === true || token.claims?.supportAgent === true);
+    }).catch(() => {
+      if (active) setIsSupportStaff(false);
+    });
+    return () => { active = false; };
+  }, [user]);
 
   const robloxProfile = useMemo(
     () => getRobloxProfileFromStatus(effectiveRobloxStatus),
@@ -141,6 +186,8 @@ export default function useHeaderIdentity({
     email,
     planLabel,
     tokensLabel,
+    supportUnreadCount,
+    isSupportStaff,
     robloxStatus: effectiveRobloxStatus,
     robloxProfile,
     robloxUsername,
@@ -149,6 +196,7 @@ export default function useHeaderIdentity({
     robloxError,
     robloxAction,
     refreshRobloxStatus,
+    refreshSupportUnreadCount,
     connectRoblox,
     reconnectRoblox,
     signOutUser,

@@ -9,6 +9,17 @@ import {
 import { scheduleDeferredClientLog } from "../lib/deferredClientLog";
 import { getPendingAuthReturnPath, readPendingAuthAction } from "../lib/pendingAuthAction";
 
+function safeReturnPath(value, fallback = "") {
+  if (typeof value === "string") {
+    return value.startsWith("/") && !value.startsWith("//") ? value : fallback;
+  }
+  const pathname = typeof value?.pathname === "string" ? value.pathname : fallback;
+  if (!pathname.startsWith("/") || pathname.startsWith("//")) return fallback;
+  const search = typeof value?.search === "string" && value.search.startsWith("?") ? value.search : "";
+  const hash = typeof value?.hash === "string" && value.hash.startsWith("#") ? value.hash : "";
+  return `${pathname}${search}${hash}`;
+}
+
 export default function AuthRedirectHandler() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -32,11 +43,12 @@ export default function AuthRedirectHandler() {
       const stored = readRedirectContext();
       clearRedirectContext();
 
-      const fromState = location.state?.from?.pathname;
+      const fromState = safeReturnPath(location.state?.from);
+      const storedReturnPath = stored.method ? safeReturnPath(stored.returnPath) : "";
       const pending = readPendingAuthAction({ includeExpired: true });
       const destination = pending?.returnPath
         ? getPendingAuthReturnPath("/ai")
-        : fromState || stored.returnPath || "/";
+        : storedReturnPath || fromState || "/";
       navigate(destination, { replace: true });
     })().catch((error) => {
       if (cancelled) return;

@@ -7,6 +7,7 @@ import {
   LEGAL_PAGES,
   getAdjacentPage,
   getDocPage,
+  getPagesInCategoryOrder,
 } from "../../data/docsContent";
 import { buildPublicMetadata, docsStructuredData } from "../../../src/lib/seo";
 
@@ -19,7 +20,8 @@ export const metadata = buildPublicMetadata({
 });
 
 export default function DocsPage() {
-  const { previousPage, nextPage } = getAdjacentPage(DOC_PAGES, page.slug);
+  const orderedPages = getPagesInCategoryOrder(DOC_PAGES, DOC_CATEGORIES);
+  const { previousPage, nextPage } = getAdjacentPage(orderedPages, page.slug);
 
   return (
     <>

@@ -33,6 +33,10 @@ const NexusRBXNotFoundPage = lazy(() => import("./pages/NotFoundPage"));
 const NexusRBXScriptPage = lazy(() => import("./pages/ScriptPage"));
 const DebugEntitlementsPage = lazy(() => import("./pages/DebugEntitlementsPage"));
 const AdminRoute = lazy(() => import("./components/AdminRoute"));
+const NexusRBXSupportPage = lazy(() => import("./pages/SupportPage"));
+const NexusRBXSupportTicketPage = lazy(() => import("./pages/SupportTicketPage"));
+const NexusRBXAdminSupportPage = lazy(() => import("./pages/AdminSupportPage"));
+const SupportStaffRoute = lazy(() => import("./components/SupportStaffRoute"));
 
 function withSiteShell(element, variant) {
   return <SiteShell variant={variant}>{element}</SiteShell>;
@@ -49,9 +53,20 @@ function App() {
           <Route path="/ai" element={<NexusRBXAIPageContainer />} />
           <Route path="/settings" element={withSiteShell(<NexusRBXSettingsPageContainer />, "account")} />
           <Route path="/billing" element={withSiteShell(<NexusRBXBillingPageContainer />, "account")} />
-          <Route path="/contact" element={withSiteShell(<NexusRBXContactPageContainer />, "legal")} />
+          <Route path="/contact" element={withSiteShell(<NexusRBXContactPageContainer />, "marketing")} />
+          <Route path="/support" element={withSiteShell(<NexusRBXSupportPage />, "account")} />
+          <Route path="/support/:ticketId" element={withSiteShell(<NexusRBXSupportTicketPage />, "account")} />
+          <Route
+            path="/admin/support"
+            element={withSiteShell(
+              <SupportStaffRoute>
+                {({ isAdmin }) => <NexusRBXAdminSupportPage isAdmin={isAdmin} />}
+              </SupportStaffRoute>,
+              "account"
+            )}
+          />
           <Route path="/privacy" element={withSiteShell(<NexusRBXPrivacyPageContainer />, "legal")} />
-          <Route path="/subscribe" element={withSiteShell(<NexusRBXSubscribePageContainer />, "account")} />
+          <Route path="/subscribe" element={withSiteShell(<NexusRBXSubscribePageContainer />, "checkout")} />
           <Route path="/signin" element={withSiteShell(<NexusRBXSignInPageContainer />, "auth")} />
           <Route path="/signup" element={withSiteShell(<NexusRBXSignUpPageContainer />, "auth")} />
           <Route path="/verify-email" element={withSiteShell(<NexusRBXVerifyEmailPage />, "auth")} />

@@ -1,79 +1,18 @@
-import { PLAN } from "./prices";
+import publicPlanCatalog from "../data/publicPlanCatalog.json";
 
-export const SUBSCRIPTION_PLANS = [
-  {
-    id: PLAN.STARTER,
-    name: "Starter",
-    audience: "Entry access to NexusRBX AI",
-    monthly: 2,
-    yearly: 0,
-    cta: "Get Starter",
-    starterBadge: "From $2/mo",
-    features: [
-      "Nexus Auto + model selection",
-      "Included AI usage each month",
-      "Script generation, debugging and revisions",
-      "30-day chat & project history",
-      "3 active projects",
-      "2 concurrent AI jobs",
-      "Saved scripts + refine iterations",
-      "Upgrade to Pro for Premium Direct & Icon Generator",
-    ],
-  },
-  {
-    id: PLAN.PRO,
-    name: "Pro",
-    audience: "For individual Roblox developers",
-    monthly: 19.99,
-    yearly: 199,
-    cta: "Upgrade to Pro",
-    features: [
-      "Nexus Auto",
-      "Higher included AI usage",
-      "Full model selection",
-      "Larger projects and context",
-      "Multi-file script generation",
-      "Unlimited generation history",
-      "Premium Direct model support",
-    ],
-  },
-  {
-    id: PLAN.PRO_PLUS,
-    name: "Pro+",
-    audience: "For serious builders and larger projects",
-    monthly: 39.99,
-    yearly: 399,
-    cta: "Upgrade to Pro+",
-    recommended: true,
-    features: [
-      "Everything in Pro",
-      "Significantly higher included usage",
-      "Larger context windows",
-      "Longer autonomous workflows",
-      "Larger multi-file changes",
-      "Priority processing",
-      "Premium Direct model support",
-    ],
-  },
-  {
-    id: PLAN.TEAM,
-    name: "Team",
-    audience: "For studios and development teams",
-    monthly: 29,
-    yearly: 290,
-    cta: "Start Team",
-    perSeat: true,
-    features: [
-      "Everything in Pro+",
-      "Shared team workspaces",
-      "Pooled included AI usage",
-      "Member and administrator roles",
-      "Centralized billing",
-      "Team collaboration",
-      "Priority support",
-    ],
-  },
-];
+export const PUBLIC_PLAN_CATALOG = Object.freeze(
+  publicPlanCatalog.map((plan) => Object.freeze({
+    ...plan,
+    features: Object.freeze([...(plan.features || [])]),
+    recommended: plan.featured === true,
+  }))
+);
+
+export const SUBSCRIPTION_PLANS = PUBLIC_PLAN_CATALOG.filter((plan) => plan.id !== "FREE");
+
+export function getPublicPlan(planId) {
+  return PUBLIC_PLAN_CATALOG.find((plan) => plan.id === String(planId || "").toUpperCase()) || null;
+}
 
 export function formatMoney(value) {
   if (value === 0) return "$0";
@@ -84,4 +23,9 @@ export function formatMonthlyPrice(plan) {
   if (plan.monthly === 0) return "$0";
   const base = formatMoney(plan.monthly);
   return plan.perSeat ? `${base}/user/mo` : `${base}/mo`;
+}
+
+export function formatAnnualMonthlyEquivalent(plan) {
+  if (!Number.isFinite(plan?.yearly)) return null;
+  return formatMoney(Math.round((plan.yearly / 12) * 100) / 100);
 }

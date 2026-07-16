@@ -205,6 +205,7 @@ test("vercel rewrites enumerate route owners without a broad fallback", () => {
   const expectedSources = [
     "/",
     "/downloads",
+    "/pricing",
     ...docsRouteSources,
     ...legalRouteSources,
     "/roblox-script-generator",

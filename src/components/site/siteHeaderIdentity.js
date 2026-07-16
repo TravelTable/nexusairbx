@@ -63,16 +63,19 @@ export function selectHeaderAvatar({ user, robloxProfile } = {}) {
 
 export function getHeaderVariantForPath(pathname = "/") {
   if (pathname === "/ai" || pathname.startsWith("/ai/")) return "workspace";
+  if (pathname === "/subscribe") return "checkout";
   if (pathname === "/signin" || pathname === "/signup") return "auth";
   if (
     pathname === "/settings" ||
     pathname === "/billing" ||
-    pathname === "/subscribe" ||
+    pathname === "/support" ||
+    pathname.startsWith("/support/") ||
+    pathname.startsWith("/admin/support") ||
     pathname.startsWith("/debug/entitlements")
   ) {
     return "account";
   }
-  if (pathname === "/contact" || pathname === "/privacy" || pathname === "/terms") return "legal";
+  if (pathname === "/privacy" || pathname === "/terms") return "legal";
   if (
     pathname.startsWith("/tools/") ||
     pathname === "/icons-market" ||

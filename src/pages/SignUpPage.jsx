@@ -32,14 +32,37 @@ import {
   NexusAuthShell,
 } from "../components/auth/NexusAuthShell";
 
+function safeReturnPath(value, fallback = "/ai") {
+  if (typeof value === "string") {
+    return value.startsWith("/") && !value.startsWith("//") ? value : fallback;
+  }
+  const pathname = typeof value?.pathname === "string" ? value.pathname : fallback;
+  if (!pathname.startsWith("/") || pathname.startsWith("//")) return fallback;
+  const search = typeof value?.search === "string" && value.search.startsWith("?") ? value.search : "";
+  const hash = typeof value?.hash === "string" && value.hash.startsWith("#") ? value.hash : "";
+  return `${pathname}${search}${hash}`;
+}
+
+function returnPathState(value, fallback = "/ai") {
+  const path = safeReturnPath(value, fallback);
+  const parsed = new URL(path, "https://nexusrbx.local");
+  return {
+    from: {
+      pathname: parsed.pathname,
+      search: parsed.search,
+      hash: parsed.hash,
+    },
+  };
+}
+
 // Container Component
 export default function NexusRBXSignUpPageContainer() {
   const navigate = useNavigate();
   const location = useLocation();
-  const from = location.state?.from?.pathname || "/ai";
+  const from = safeReturnPath(location.state?.from, "/ai");
   const pendingAction = useMemo(() => readPendingAuthAction({ includeExpired: true }), []);
   const authReturnPath = pendingAction ? getPendingAuthReturnPath("/ai") : from;
-  const signInLinkState = { from: { pathname: authReturnPath || "/ai" } };
+  const signInLinkState = returnPathState(authReturnPath || "/ai", "/ai");
   const [formData, setFormData] = useState({
     name: "",
     email: "",

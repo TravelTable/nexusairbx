@@ -147,10 +147,10 @@ function TermsPage({
                     Questions about our terms? Contact our legal team.
                   </p>
                   <a
-                    href="mailto:support@nexusrbx.com"
+                    href="/contact?category=security_privacy"
                     className="focus-ring text-xs px-4 py-2 rounded-lg bg-nexus-cyan/10 border border-nexus-cyan/25 text-nexus-cyan hover:bg-nexus-cyan/15 hover:text-white transition-colors duration-200 inline-block w-full text-center font-semibold"
                   >
-                    support@nexusrbx.com
+                    Open contact form
                   </a>
                 </div>
 
@@ -242,7 +242,7 @@ function AccountsContent() {
         </section>
         <section>
           <h3 className="text-xl font-bold text-[#9b5de5] mb-2">Account Security</h3>
-          <p className="text-gray-400">You are responsible for maintaining the confidentiality of your account login credentials. Do not share your password or API keys with anyone. You agree to notify us immediately at support@nexusrbx.com if you suspect any unauthorized access to or use of your account. We are not liable for any loss or damage arising from your failure to protect your credentials.</p>
+          <p className="text-gray-400">You are responsible for maintaining the confidentiality of your account login credentials. Do not share your password or API keys with anyone. Use the contact form immediately if you suspect any unauthorized access to or use of your account. We are not liable for any loss or damage arising from your failure to protect your credentials.</p>
         </section>
         <section>
           <h3 className="text-xl font-bold text-[#9b5de5] mb-2">Account Termination</h3>
@@ -442,18 +442,12 @@ function ContactContent() {
       <h1 className="text-3xl font-bold mb-6">11. Contact Us</h1>
       <p className="text-gray-300 mb-8">If you have any questions about these Terms, please reach out to our legal team:</p>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 gap-8">
         <div className="nexus-page-card p-6 flex flex-col items-center text-center">
           <Mail className="h-10 w-10 text-[#9b5de5] mb-4" />
-          <h3 className="text-xl font-bold mb-2">Email Support</h3>
-          <p className="text-sm text-gray-400 mb-4">For legal inquiries and support.</p>
-          <a href="mailto:support@nexusrbx.com" className="text-[#9b5de5] font-bold hover:underline">support@nexusrbx.com</a>
-        </div>
-
-        <div className="nexus-page-card p-6 flex flex-col items-center text-center">
-          <Scale className="h-10 w-10 text-[#00f5d4] mb-4" />
-          <h3 className="text-xl font-bold mb-2">Mailing Address</h3>
-          <p className="text-sm text-gray-400 mb-4">NexusRBX Legal<br />PO Box 123, Sydney<br />NSW 2000, Australia</p>
+          <h3 className="text-xl font-bold mb-2">Contact form</h3>
+          <p className="text-sm text-gray-400 mb-4">Choose Security / privacy for legal and privacy questions.</p>
+          <a href="/contact?category=security_privacy" className="text-[#9b5de5] font-bold hover:underline">Open contact form</a>
         </div>
       </div>
       

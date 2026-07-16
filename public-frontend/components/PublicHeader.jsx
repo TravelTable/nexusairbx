@@ -1,73 +1,105 @@
 import PublicAccountState from "./PublicAccountState";
+import PublicNavBehavior from "./PublicNavBehavior";
+
+const navLinkClass =
+  "rounded-md px-3 py-2 text-sm font-medium text-zinc-300 transition-colors hover:bg-white/[0.06] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00f5d4]";
+
+const dropdownLinkClass =
+  "block rounded-md px-3 py-2.5 text-sm text-zinc-200 transition-colors hover:bg-white/[0.06] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00f5d4]";
+
+function DesktopGroup({ label, children }) {
+  return (
+    <details className="group relative">
+      <summary
+        className={`${navLinkClass} flex cursor-pointer list-none items-center gap-1.5 [&::-webkit-details-marker]:hidden`}
+      >
+        {label}
+        <span aria-hidden="true" className="text-[10px] text-zinc-500 transition-transform group-open:rotate-180">
+          ▾
+        </span>
+      </summary>
+      <div className="absolute left-0 top-11 z-50 w-56 rounded-lg border border-white/10 bg-[#10131b] p-2 shadow-xl shadow-black/30">
+        {children}
+      </div>
+    </details>
+  );
+}
 
 export default function PublicHeader() {
   return (
-    <header className="sticky top-0 z-50 border-b border-white/10 bg-[#05070d]/95 text-white shadow-[0_1px_0_rgba(255,255,255,0.04)] backdrop-blur-xl">
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
+    <header
+      className="sticky top-0 z-50 border-b border-white/10 bg-[#080a10]/95 text-white backdrop-blur-xl"
+      data-public-header
+    >
+      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
         <a
           href="/"
-          className="group inline-flex min-w-0 items-center gap-3 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00f5d4]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+          className="inline-flex min-w-0 items-center gap-2.5 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00f5d4]"
           aria-label="NexusRBX home"
         >
           <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-md border border-white/10 bg-white/[0.04]">
-            <img src="/logo.png" alt="" className="h-7 w-7 object-contain" />
+            <img src="/logo.png" alt="" className="h-7 w-7 object-contain" width="28" height="28" />
           </span>
-          <span className="truncate text-sm font-semibold text-white">NexusRBX</span>
+          <span className="truncate text-sm font-semibold tracking-tight text-white">NexusRBX</span>
         </a>
 
-        <div className="flex shrink-0 items-center gap-2">
-          <nav className="hidden items-center gap-1 lg:flex" aria-label="Primary">
-            <a className="rounded-md px-3 py-2 text-sm font-medium text-gray-400 transition-colors hover:bg-white/[0.05] hover:text-white" href="/ai">
-              AI Workspace
-            </a>
-            <a className="rounded-md px-3 py-2 text-sm font-medium text-gray-400 transition-colors hover:bg-white/[0.05] hover:text-white" href="/tools/icon-generator">
-              Icon Generator
-            </a>
-            <a className="rounded-md px-3 py-2 text-sm font-medium text-gray-400 transition-colors hover:bg-white/[0.05] hover:text-white" href="/icons-market">
-              Icon Market
-            </a>
-            <a className="rounded-md px-3 py-2 text-sm font-medium text-gray-400 transition-colors hover:bg-white/[0.05] hover:text-white" href="/downloads">
-              Downloads
-            </a>
-            <a className="rounded-md px-3 py-2 text-sm font-medium text-gray-400 transition-colors hover:bg-white/[0.05] hover:text-white" href="/subscribe">
-              Pricing
-            </a>
-            <a className="rounded-md px-3 py-2 text-sm font-medium text-gray-400 transition-colors hover:bg-white/[0.05] hover:text-white" href="/contact">
-              Contact
-            </a>
+        <div className="hidden min-w-0 flex-1 items-center justify-end gap-5 lg:flex">
+          <nav className="flex items-center gap-0.5" aria-label="Primary navigation" data-public-nav>
+            <DesktopGroup label="Product">
+              <a className={dropdownLinkClass} href="/ai">AI Workspace</a>
+              <a className={dropdownLinkClass} href="/tools/icon-generator">Icon Generator</a>
+              <a className={dropdownLinkClass} href="/icons-market">Creator Store</a>
+            </DesktopGroup>
+            <a className={navLinkClass} href="/docs">Docs</a>
+            <a className={navLinkClass} href="/pricing">Pricing</a>
+            <a className={navLinkClass} href="/downloads">Downloads</a>
+            <DesktopGroup label="Resources">
+              <a className={dropdownLinkClass} href="/contact">Contact</a>
+              <a className={dropdownLinkClass} href="/support">Support</a>
+              <a className={dropdownLinkClass} href="/legal">Legal</a>
+            </DesktopGroup>
           </nav>
 
-          <div className="hidden items-center gap-2 sm:flex">
+          <div className="border-l border-white/10 pl-5">
             <PublicAccountState />
-            <a
-              href="/ai"
-              className="inline-flex h-9 items-center justify-center rounded-md border border-[#00f5d4]/50 bg-[#00f5d4] px-3 text-sm font-semibold text-black transition-colors hover:bg-[#00ddbf]"
-            >
-              Start Building
-            </a>
           </div>
-
-          <details className="relative sm:hidden">
-            <summary className="flex h-9 cursor-pointer list-none items-center rounded-md border border-white/10 bg-white/[0.04] px-3 text-sm font-medium text-gray-200">
-              Menu
-            </summary>
-            <div className="absolute right-0 top-12 z-50 grid min-w-52 gap-1 rounded-lg border border-white/10 bg-[#0b0e16] p-2 shadow-2xl">
-              <a className="rounded-md px-3 py-2 text-sm text-gray-200 hover:bg-white/[0.06]" href="/ai">AI Workspace</a>
-              <a className="rounded-md px-3 py-2 text-sm text-gray-200 hover:bg-white/[0.06]" href="/tools/icon-generator">Icon Generator</a>
-              <a className="rounded-md px-3 py-2 text-sm text-gray-200 hover:bg-white/[0.06]" href="/icons-market">Icon Market</a>
-              <a className="rounded-md px-3 py-2 text-sm text-gray-200 hover:bg-white/[0.06]" href="/downloads">Downloads</a>
-              <a className="rounded-md px-3 py-2 text-sm text-gray-200 hover:bg-white/[0.06]" href="/subscribe">Pricing</a>
-              <a className="rounded-md px-3 py-2 text-sm text-gray-200 hover:bg-white/[0.06]" href="/contact">Contact</a>
-              <div className="mt-1 border-t border-white/10 pt-2">
-                <PublicAccountState />
-              </div>
-              <a className="mt-1 rounded-md bg-[#00f5d4] px-3 py-2 text-center text-sm font-semibold text-black hover:bg-[#00ddbf]" href="/ai">
-                Start Building
-              </a>
-            </div>
-          </details>
         </div>
+
+        <details className="group relative lg:hidden">
+          <summary className="flex h-10 cursor-pointer list-none items-center rounded-md border border-white/15 bg-white/[0.04] px-3 text-sm font-medium text-zinc-100 transition-colors hover:bg-white/[0.08] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00f5d4] [&::-webkit-details-marker]:hidden">
+            <span className="group-open:hidden">Menu</span>
+            <span className="hidden group-open:inline">Close</span>
+          </summary>
+          <div className="absolute right-0 top-12 z-50 max-h-[calc(100vh-5rem)] w-[min(25rem,calc(100vw-2rem))] overflow-y-auto rounded-lg border border-white/10 bg-[#10131b] p-3 shadow-xl shadow-black/40">
+            <nav className="grid gap-4" aria-label="Mobile navigation" data-public-nav>
+              <div>
+                <p className="px-3 pb-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-zinc-500">Product</p>
+                <a className={dropdownLinkClass} href="/ai">AI Workspace</a>
+                <a className={dropdownLinkClass} href="/tools/icon-generator">Icon Generator</a>
+                <a className={dropdownLinkClass} href="/icons-market">Creator Store</a>
+              </div>
+
+              <div className="grid gap-0.5 border-y border-white/10 py-3">
+                <a className={dropdownLinkClass} href="/docs">Docs</a>
+                <a className={dropdownLinkClass} href="/pricing">Pricing</a>
+                <a className={dropdownLinkClass} href="/downloads">Downloads</a>
+              </div>
+
+              <div>
+                <p className="px-3 pb-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-zinc-500">Resources</p>
+                <a className={dropdownLinkClass} href="/contact">Contact</a>
+                <a className={dropdownLinkClass} href="/support">Support</a>
+                <a className={dropdownLinkClass} href="/legal">Legal</a>
+              </div>
+            </nav>
+
+            <div className="mt-3 border-t border-white/10 pt-3">
+              <PublicAccountState mobile />
+            </div>
+          </div>
+        </details>
       </div>
+      <PublicNavBehavior />
     </header>
   );
 }

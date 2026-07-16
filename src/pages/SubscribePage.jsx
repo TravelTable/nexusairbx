@@ -1,51 +1,25 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Check, ChevronDown, CreditCard, Loader2, Settings } from "lib/icons";
-import NexusRBXFooter from "../components/NexusRBXFooter";
-import { getEntitlements, openPortal, startSubscriptionCheckout } from "../lib/billing";
-import { formatMoney, SUBSCRIPTION_PLANS } from "../lib/planCatalog";
-import { BILLING_INTERVAL, PLAN } from "../lib/prices";
+import { Check, CreditCard, Loader2, Settings } from "lib/icons";
+import { Helmet } from "react-helmet-async";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
-import { useNavigate, useSearchParams } from "react-router-dom";
-import { getFirestore, doc, onSnapshot } from "firebase/firestore";
+import { doc, getFirestore, onSnapshot } from "firebase/firestore";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import {
+  getEntitlements,
+  isSubscriberPlan,
+  openPortal,
+  startSubscriptionCheckout,
+} from "../lib/billing";
+import {
+  checkoutIntentFromSearchParams,
+  readCheckoutIntent,
+  saveCheckoutIntent,
+} from "../lib/checkoutIntent";
+import { formatMoney, getPublicPlan } from "../lib/planCatalog";
+import { BILLING_INTERVAL, PLAN } from "../lib/prices";
 import { trackProductEvent } from "../lib/productAnalytics";
 
-const PLANS = SUBSCRIPTION_PLANS;
-
-const FAQS = [
-  {
-    q: "What is Starter?",
-    a: "Starter is a $2/month plan for builders who want model selection, saved scripts, more daily AI, and 30-day chat history without committing to Pro. Icon Generator, Premium Direct, and Studio Agent remain on Pro.",
-  },
-  {
-    a: "Included Usage is the AI capacity bundled with each paid subscription. Nexus Auto and supported included models draw from this allowance. It resets at the end of each billing period.",
-  },
-  {
-    q: "What is Premium Balance?",
-    a: "Premium Balance is prepaid usage credit for supported Premium Direct models. It does not expire automatically and is separate from your subscription’s Included Usage.",
-  },
-  {
-    q: "Can paid users choose their model?",
-    a: "Yes. Pro, Pro+ and Team members can choose supported models. Included models use the subscription allowance, while higher-cost Premium Direct models use Premium Balance.",
-  },
-  {
-    q: "What happens when Included Usage runs out?",
-    a: "Wait for the next billing-period reset, choose to continue with Premium Balance where supported, or move to a plan with a higher included allowance.",
-  },
-  {
-    q: "Do Team plans share usage?",
-    a: "Yes. Team Included Usage and Premium Balance are pooled across the team. The included allowance grows with the number of paid seats.",
-  },
-  {
-    q: "What happens to existing subscribers?",
-    a: "Existing subscribers remain on their current Stripe price unless they cancel, change plans or are migrated separately.",
-  },
-];
-
-function currentPlanMatches(entitlements, planId) {
-  return String(entitlements?.plan || "FREE") === planId;
-}
-
-function subscribeUntilTerminal(unsubscribersRef, documentRef, onValue) {
+function subscribeUntilTerminal(unsubscribersRef, documentRef, onValue, onError) {
   let unsubscribe = null;
   let stopRequested = false;
   const stop = () => {
@@ -60,332 +34,395 @@ function subscribeUntilTerminal(unsubscribersRef, documentRef, onValue) {
 
   unsubscribe = onSnapshot(
     documentRef,
-    (snap) => {
-      if (onValue(snap.data()) === true) stop();
+    (snapshot) => {
+      if (onValue(snapshot.data()) === true) stop();
     },
-    stop
+    (error) => {
+      onError?.(error);
+      stop();
+    }
   );
   if (stopRequested) stop();
   else unsubscribersRef.current.push(stop);
   return stop;
 }
 
+function returnLocation(location) {
+  return {
+    pathname: location.pathname,
+    search: location.search || "",
+    hash: location.hash || "",
+  };
+}
+
+function checkoutErrorMessage(error) {
+  if (error?.code === "ACTIVE_SUBSCRIPTION_EXISTS") {
+    return "You already have an active subscription. Use Manage plan to make changes.";
+  }
+  return error?.message || "We could not start checkout. Please try again.";
+}
+
 export default function SubscribePage() {
-  const [interval, setIntervalValue] = useState(BILLING_INTERVAL.MONTH);
-  const [seatCount, setSeatCount] = useState(2);
-  const [user, setUser] = useState(null);
-  const [authReady, setAuthReady] = useState(false);
-  const [entitlements, setEntitlements] = useState(null);
-  const [openFaq, setOpenFaq] = useState(null);
-  const [busyPlan, setBusyPlan] = useState(null);
-  const [portalLoading, setPortalLoading] = useState(false);
-  const [error, setError] = useState("");
-  const sessionUnsubs = useRef([]);
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
-  const highlightPlan = searchParams.get("highlight");
+  const sessionUnsubscribers = useRef([]);
+  const [checkoutState] = useState(() => {
+    const queryIntent = checkoutIntentFromSearchParams(searchParams);
+    if (queryIntent) {
+      return { intent: saveCheckoutIntent(queryIntent), restored: false };
+    }
+    const savedIntent = readCheckoutIntent();
+    return { intent: savedIntent, restored: Boolean(savedIntent) };
+  });
+  const { intent } = checkoutState;
+  const plan = useMemo(() => getPublicPlan(intent?.plan), [intent?.plan]);
+  const [user, setUser] = useState(() => getAuth().currentUser || null);
+  const [authReady, setAuthReady] = useState(() => Boolean(getAuth().currentUser));
+  const [entitlements, setEntitlements] = useState(null);
+  const [entitlementsLoading, setEntitlementsLoading] = useState(() => Boolean(getAuth().currentUser));
+  const [entitlementsError, setEntitlementsError] = useState("");
+  const [busyAction, setBusyAction] = useState("");
+  const [status, setStatus] = useState("");
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    if (highlightPlan !== "starter") return;
-    const el = document.getElementById("plan-starter");
-    if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
-  }, [highlightPlan, entitlements?.plan]);
+    const unsubscribe = onAuthStateChanged(getAuth(), (currentUser) => {
+      setUser(currentUser);
+      setAuthReady(true);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    if (!authReady || !intent || user) return;
+    saveCheckoutIntent(intent);
+    navigate("/signin", {
+      replace: true,
+      state: { from: returnLocation(location) },
+    });
+  }, [authReady, intent, location, navigate, user]);
+
+  useEffect(() => {
+    if (!authReady || !user) return undefined;
+    let active = true;
+    setEntitlementsLoading(true);
+    setEntitlementsError("");
+    getEntitlements({ noCache: true })
+      .then((value) => {
+        if (active) setEntitlements(value);
+      })
+      .catch(() => {
+        if (active) setEntitlementsError("We could not verify your billing status. Please refresh and try again.");
+      })
+      .finally(() => {
+        if (active) setEntitlementsLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [authReady, user]);
 
   useEffect(() => {
     void trackProductEvent("subscription_viewed", {
       landing_page: "/subscribe",
-      subscription_plan: entitlements?.plan || "unknown",
-    }, { dedupeKey: "subscribe" });
-  }, [entitlements?.plan]);
+      subscription_plan: intent?.plan || "none",
+      billing_interval: intent?.interval || "none",
+    }, { dedupeKey: `subscribe:${intent?.plan || "none"}:${intent?.interval || "none"}` });
+  }, [intent?.interval, intent?.plan]);
 
   useEffect(() => {
-    const unsub = onAuthStateChanged(getAuth(), (currentUser) => {
-      setUser(currentUser);
-      setAuthReady(true);
-    });
-    return () => unsub();
-  }, []);
-
-  useEffect(() => {
-    if (!authReady || !user) return;
-    getEntitlements({ noCache: true }).then(setEntitlements).catch(() => {});
-  }, [authReady, user]);
+    if (!checkoutState.restored || !intent) return;
+    void trackProductEvent("checkout_intent_restored", {
+      subscription_plan: intent.plan,
+      billing_interval: intent.interval,
+    }, { dedupeKey: `checkout_intent_restored:${intent.createdAt}` });
+  }, [checkoutState.restored, intent]);
 
   useEffect(() => () => {
-    sessionUnsubs.current.forEach((unsub) => unsub?.());
-    sessionUnsubs.current = [];
+    sessionUnsubscribers.current.forEach((unsubscribe) => unsubscribe?.());
+    sessionUnsubscribers.current = [];
   }, []);
 
-  const total = useMemo(() => {
-    const teamPlan = PLANS.find((p) => p.id === PLAN.TEAM);
-    const unit = interval === BILLING_INTERVAL.YEAR ? teamPlan.yearly : teamPlan.monthly;
-    return unit * seatCount;
-  }, [interval, seatCount]);
+  const isSubscriber = isSubscriberPlan(entitlements?.plan, entitlements?.entitlements);
+  const seatCount = intent?.plan === PLAN.TEAM ? intent.seatCount : 1;
+  const unitPrice = intent?.interval === BILLING_INTERVAL.YEAR ? plan?.yearly : plan?.monthly;
+  const billedTotal = Number.isFinite(unitPrice) ? unitPrice * seatCount : null;
+  const monthlyEquivalent = intent?.interval === BILLING_INTERVAL.YEAR && Number.isFinite(billedTotal)
+    ? billedTotal / 12
+    : null;
 
-  async function beginCheckout(planId) {
-    if (!user) {
-      navigate("/signin", { state: { from: { pathname: "/subscribe" } } });
-      return;
-    }
-    setBusyPlan(planId);
+  function watchCheckoutDocument(documentPath) {
+    setStatus("Preparing your secure checkout session…");
+    subscribeUntilTerminal(
+      sessionUnsubscribers,
+      doc(getFirestore(), documentPath),
+      (data) => {
+        if (data?.url) {
+          setStatus("Opening Stripe checkout…");
+          window.location.assign(data.url);
+          return true;
+        }
+        if (data?.error) {
+          setError(data.error.message || "We could not start checkout. Please try again.");
+          setStatus("");
+          setBusyAction("");
+          return true;
+        }
+        return false;
+      },
+      () => {
+        setError("Checkout preparation was interrupted. Please try again.");
+        setStatus("");
+        setBusyAction("");
+      }
+    );
+  }
+
+  async function beginCheckout() {
+    if (!intent || !plan || !user || isSubscriber) return;
+    setBusyAction("checkout");
     setError("");
+    setStatus("Starting checkout…");
+    void trackProductEvent("checkout_started", {
+      subscription_plan: intent.plan,
+      billing_interval: intent.interval,
+      ...(intent.plan === PLAN.TEAM ? { team_seats: intent.seatCount } : {}),
+    });
     try {
-      const checkoutInterval = planId === PLAN.STARTER ? BILLING_INTERVAL.MONTH : interval;
       const result = await startSubscriptionCheckout({
-        plan: planId,
-        interval: checkoutInterval,
-        ...(planId === PLAN.TEAM ? { seatCount } : {}),
+        plan: intent.plan,
+        interval: intent.interval,
+        ...(intent.plan === PLAN.TEAM ? { seatCount: intent.seatCount } : {}),
       });
       if (result?.url) {
-        window.location.href = result.url;
+        setStatus("Opening Stripe checkout…");
+        window.location.assign(result.url);
         return;
       }
       if (result?.sessionDocPath) {
-        subscribeUntilTerminal(sessionUnsubs, doc(getFirestore(), result.sessionDocPath), (data) => {
-          if (data?.url) {
-            window.location.href = data.url;
-            return true;
-          }
-          if (data?.error) {
-            setError(data.error.message || "Could not start checkout.");
-            return true;
-          }
-          return false;
-        });
+        watchCheckoutDocument(result.sessionDocPath);
+        return;
       }
-    } catch (err) {
-      setError(
-        err?.code === "ACTIVE_SUBSCRIPTION_EXISTS"
-          ? "You already have an active NexusRBX subscription. Manage or change it through billing settings."
-          : err?.message || "Could not start checkout."
-      );
-    } finally {
-      setBusyPlan(null);
+      throw new Error("Checkout did not return a session.");
+    } catch (checkoutError) {
+      setError(checkoutErrorMessage(checkoutError));
+      setStatus("");
+      setBusyAction("");
     }
   }
 
-  async function manageBilling() {
-    setPortalLoading(true);
+  function watchPortalDocument(documentPath) {
+    setStatus("Preparing your billing portal…");
+    subscribeUntilTerminal(
+      sessionUnsubscribers,
+      doc(getFirestore(), documentPath),
+      (data) => {
+        if (data?.url) {
+          setStatus("Opening billing settings…");
+          window.location.assign(data.url);
+          return true;
+        }
+        if (data?.error) {
+          setError(data.error.message || "We could not open billing settings.");
+          setStatus("");
+          setBusyAction("");
+          return true;
+        }
+        return false;
+      },
+      () => {
+        setError("Billing settings could not be prepared. Please try again.");
+        setStatus("");
+        setBusyAction("");
+      }
+    );
+  }
+
+  async function managePlan() {
+    setBusyAction("portal");
+    setError("");
+    setStatus("Opening billing settings…");
     try {
       const result = await openPortal();
-      if (result?.url) window.location.href = result.url;
-    } finally {
-      setPortalLoading(false);
+      if (result?.url) {
+        window.location.assign(result.url);
+        return;
+      }
+      if (result?.portalDocPath) {
+        watchPortalDocument(result.portalDocPath);
+        return;
+      }
+      throw new Error("Billing settings did not return a portal session.");
+    } catch (portalError) {
+      setError(portalError?.message || "We could not open billing settings.");
+      setStatus("");
+      setBusyAction("");
     }
   }
 
+  const pageHead = (
+    <Helmet>
+      <title>Review your plan | NexusRBX</title>
+      <meta name="robots" content="noindex, nofollow" />
+    </Helmet>
+  );
+
+  if (!intent || !plan) {
+    return (
+      <div className="min-h-[calc(100vh-72px)] bg-[#090b10] px-5 py-16 text-white">
+        {pageHead}
+        <main className="mx-auto max-w-xl rounded-xl border border-white/10 bg-[#12151c] p-7 sm:p-9">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-300">Checkout</p>
+          <h1 className="mt-3 text-3xl font-semibold tracking-tight">Choose a plan first</h1>
+          <p className="mt-3 text-sm leading-6 text-slate-400">
+            Your plan selection is missing or has expired. Return to pricing to create a new checkout review.
+          </p>
+          <a
+            href="/pricing"
+            className="mt-7 inline-flex min-h-11 items-center justify-center rounded-md bg-white px-5 text-sm font-semibold text-slate-950 hover:bg-slate-200"
+          >
+            View pricing
+          </a>
+        </main>
+      </div>
+    );
+  }
+
+  if (!authReady || !user) {
+    return (
+      <div className="flex min-h-[calc(100vh-72px)] items-center justify-center bg-[#090b10] px-5 text-white">
+        {pageHead}
+        <div className="text-center" role="status">
+          <Loader2 className="mx-auto h-6 w-6 animate-spin text-cyan-300" />
+          <p className="mt-3 text-sm text-slate-400">Taking you to sign in…</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-[#08090d] text-white flex flex-col">
-      <main className="flex-1">
-        <section className="px-4 pt-10 pb-6">
-          <div className="max-w-7xl mx-auto">
-            <div className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
+    <div className="min-h-[calc(100vh-72px)] bg-[#090b10] px-5 py-10 text-white sm:py-14">
+      {pageHead}
+      <main className="mx-auto grid max-w-5xl gap-8 lg:grid-cols-[minmax(0,1fr)_340px]">
+        <section aria-labelledby="checkout-title">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-300">Final review</p>
+          <h1 id="checkout-title" className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">
+            Review your {plan.name} plan
+          </h1>
+          <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-400">
+            Confirm the plan and billing schedule below. Stripe will securely collect and process your payment details.
+          </p>
+
+          <div className="mt-8 border-y border-white/10 py-6">
+            <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
               <div>
-                <h1 className="font-display text-4xl md:text-5xl font-bold tracking-tight">NexusRBX Pricing</h1>
-                <p className="mt-3 max-w-2xl text-gray-400">
-                  Choose the plan that matches your Roblox development workflow. Paid plans include model selection,
-                  Included Usage, and optional Premium Direct access through Premium Balance.
-                </p>
-              </div>
-              <div className="inline-flex rounded-lg border border-white/10 bg-white/5 p-1 w-fit">
-                <button
-                  type="button"
-                  onClick={() => setIntervalValue(BILLING_INTERVAL.MONTH)}
-                  className={`px-4 py-2 rounded-md text-sm font-bold ${interval === BILLING_INTERVAL.MONTH ? "bg-white text-black" : "text-gray-300"}`}
-                >
-                  Monthly
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setIntervalValue(BILLING_INTERVAL.YEAR)}
-                  className={`px-4 py-2 rounded-md text-sm font-bold ${interval === BILLING_INTERVAL.YEAR ? "bg-white text-black" : "text-gray-300"}`}
-                >
-                  Yearly <span className="ml-1 text-xs text-[#00f5d4]">Save 17%</span>
-                </button>
-              </div>
-            </div>
-
-            {error && (
-              <div className="mt-6 rounded-md border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-100">
-                {error}
-              </div>
-            )}
-
-            <div className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
-              {PLANS.map((plan) => {
-                const unitPrice = plan.id === PLAN.STARTER
-                  ? plan.monthly
-                  : (interval === BILLING_INTERVAL.YEAR ? plan.yearly : plan.monthly);
-                const isCurrent = currentPlanMatches(entitlements, plan.id);
-                const isHighlighted = highlightPlan === "starter" && plan.id === PLAN.STARTER;
-                return (
-                  <section
-                    key={plan.id}
-                    id={plan.id === PLAN.STARTER ? "plan-starter" : undefined}
-                    className={`relative rounded-lg border p-5 bg-[#11131a] flex flex-col min-h-[520px] ${
-                      plan.recommended || isHighlighted ? "border-[#00f5d4]/70 ring-1 ring-[#00f5d4]/30" : "border-white/10"
-                    }`}
-                  >
-                    {plan.recommended && (
-                      <div className="absolute right-4 top-4 rounded-md bg-[#00f5d4] px-2 py-1 text-[10px] font-black uppercase tracking-wide text-black">
-                        Recommended
-                      </div>
-                    )}
-                    {plan.starterBadge && !plan.recommended && (
-                      <div className="absolute right-4 top-4 rounded-md bg-[#9b5de5] px-2 py-1 text-[10px] font-black uppercase tracking-wide text-white">
-                        {plan.starterBadge}
-                      </div>
-                    )}
-                    <h2 className="text-2xl font-bold">{plan.name}</h2>
-                    <p className="mt-1 min-h-[42px] text-sm text-gray-400">{plan.audience}</p>
-                    <div className="mt-5">
-                      <div className="text-4xl font-black">
-                        {formatMoney(unitPrice)}
-                        {plan.perSeat && unitPrice > 0 && <span className="text-base font-semibold text-gray-400">/user</span>}
-                      </div>
-                      {unitPrice > 0 && (
-                        <div className="mt-1 text-sm text-gray-500">
-                          per {interval === BILLING_INTERVAL.YEAR ? "year" : "month"}
-                        </div>
-                      )}
-                      {plan.id === PLAN.TEAM && (
-                        <div className="mt-4 rounded-md border border-white/10 bg-white/[0.03] p-3">
-                          <label className="text-xs font-bold uppercase tracking-wide text-gray-400" htmlFor="team-seats">
-                            Seats: 2 - 50
-                          </label>
-                          <input
-                            id="team-seats"
-                            type="number"
-                            min="2"
-                            max="50"
-                            value={seatCount}
-                            onChange={(event) => setSeatCount(Math.min(50, Math.max(2, Number(event.target.value) || 2)))}
-                            className="mt-2 w-full rounded-md border border-white/10 bg-black/30 px-3 py-2 text-white"
-                          />
-                          <div className="mt-2 text-sm font-bold text-white">
-                            {seatCount} seats
-                            <span className="ml-2 text-[#00f5d4]">
-                              {formatMoney(total)}/{interval === BILLING_INTERVAL.YEAR ? "year" : "month"}
-                            </span>
-                          </div>
-                          <div className="mt-1 text-xs text-gray-500">Minimum 2 users</div>
-                        </div>
-                      )}
-                    </div>
-                    <ul className="mt-6 space-y-3 text-sm text-gray-300 flex-1">
-                      {plan.features.map((feature) => (
-                        <li key={feature} className="flex gap-2">
-                          <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#00f5d4]" />
-                          <span>{feature}</span>
-                        </li>
-                      ))}
-                    </ul>
-                    <button
-                      type="button"
-                      disabled={isCurrent || busyPlan === plan.id}
-                      onClick={() => beginCheckout(plan.id)}
-                      className={`mt-6 h-11 rounded-md px-4 text-sm font-bold transition ${
-                        isCurrent
-                          ? "bg-white/5 text-gray-500"
-                          : plan.recommended
-                            ? "bg-[#00f5d4] text-black hover:bg-[#23ffe0]"
-                            : "bg-white text-black hover:bg-gray-200"
-                      }`}
-                    >
-                      {busyPlan === plan.id ? <Loader2 className="mx-auto h-4 w-4 animate-spin" /> : isCurrent ? "Current Plan" : plan.cta}
-                    </button>
-                  </section>
-                );
-              })}
-            </div>
-          </div>
-        </section>
-
-        <section className="px-4 py-10 border-y border-white/10 bg-[#0d1017]">
-          <div className="max-w-7xl mx-auto grid gap-4 md:grid-cols-3">
-            <InfoBlock
-              title="Included Usage"
-              body="Included Usage powers Nexus Auto and supported economical models. It resets at the end of each subscription billing period."
-            />
-            <InfoBlock
-              title="Premium Direct"
-              body="Premium Direct lets paid members choose higher-cost models such as flagship GPT, Claude, Gemini and Grok models. Premium Direct usage is deducted from a prepaid Premium Balance."
-            />
-            <InfoBlock
-              title="Premium Balance"
-              body="Premium Balance is prepaid usage credit. Add funds only when you need higher-cost models, and keep full control over spending."
-            />
-          </div>
-        </section>
-
-        {user && entitlements && (
-          <section className="px-4 py-10">
-            <div className="max-w-4xl mx-auto rounded-lg border border-white/10 bg-[#11131a] p-5 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-              <div>
-                <div className="text-xs font-bold uppercase tracking-wide text-gray-500">Current Subscription</div>
-                <div className="mt-1 text-2xl font-bold">{entitlements.plan || "FREE"}</div>
-                {entitlements.includedUsage && (
-                  <div className="mt-1 text-sm text-gray-400">
-                    Included Usage: {entitlements.includedUsage.percentUsed || 0}% used
-                  </div>
+                <div className="flex items-center gap-3">
+                  <h2 className="text-xl font-semibold">{plan.name}</h2>
+                  {intent.plan === PLAN.PRO && (
+                    <span className="rounded border border-cyan-300/30 px-2 py-0.5 text-xs font-medium text-cyan-200">
+                      Featured
+                    </span>
+                  )}
+                </div>
+                <p className="mt-1 text-sm text-slate-400">{plan.audience}</p>
+                {intent.plan === PLAN.TEAM && (
+                  <p className="mt-3 text-sm text-slate-300">{seatCount} paid seats</p>
                 )}
               </div>
+              <div className="sm:text-right">
+                {intent.interval === BILLING_INTERVAL.YEAR ? (
+                  <>
+                    <p className="text-2xl font-semibold">{formatMoney(monthlyEquivalent)}/month</p>
+                    <p className="mt-1 text-sm text-slate-400">{formatMoney(billedTotal)} billed yearly</p>
+                    {plan.perSeat && (
+                      <p className="mt-1 text-xs text-slate-500">{formatMoney(plan.yearly)} per user, per year</p>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <p className="text-2xl font-semibold">{formatMoney(billedTotal)}/month</p>
+                    <p className="mt-1 text-sm text-slate-400">Billed monthly</p>
+                    {plan.perSeat && (
+                      <p className="mt-1 text-xs text-slate-500">{formatMoney(plan.monthly)} per user, per month</p>
+                    )}
+                  </>
+                )}
+              </div>
+            </div>
+
+            <ul className="mt-6 grid gap-3 sm:grid-cols-2" aria-label={`${plan.name} plan features`}>
+              {plan.features.map((feature) => (
+                <li key={feature} className="flex gap-2 text-sm leading-5 text-slate-300">
+                  <Check className="mt-0.5 h-4 w-4 shrink-0 text-cyan-300" />
+                  <span>{feature}</span>
+                </li>
+              ))}
+            </ul>
+
+            <a href="/pricing" className="mt-6 inline-flex text-sm font-medium text-cyan-300 hover:text-cyan-200">
+              Change plan or billing schedule
+            </a>
+          </div>
+
+          <div className="mt-6">
+            <h2 className="text-sm font-semibold text-slate-200">Account</h2>
+            <p className="mt-1 text-sm text-slate-400">{user.email || "Signed-in NexusRBX account"}</p>
+          </div>
+
+          {(error || entitlementsError) && (
+            <div className="mt-6 rounded-md border border-red-400/30 bg-red-400/10 px-4 py-3 text-sm text-red-100" role="alert">
+              {error || entitlementsError}
+            </div>
+          )}
+          {status && !error && (
+            <p className="mt-5 text-sm text-slate-300" role="status">{status}</p>
+          )}
+        </section>
+
+        <aside className="h-fit rounded-xl border border-white/10 bg-[#12151c] p-6" aria-label="Checkout summary">
+          {entitlementsLoading ? (
+            <div className="flex min-h-40 items-center justify-center" role="status" aria-label="Checking billing status">
+              <Loader2 className="h-6 w-6 animate-spin text-cyan-300" />
+            </div>
+          ) : isSubscriber ? (
+            <>
+              <Settings className="h-5 w-5 text-cyan-300" />
+              <h2 className="mt-4 text-lg font-semibold">You already have an active plan</h2>
+              <p className="mt-2 text-sm leading-6 text-slate-400">
+                Open billing settings to change, update, or cancel your current subscription.
+              </p>
               <button
                 type="button"
-                onClick={manageBilling}
-                disabled={portalLoading}
-                className="inline-flex items-center justify-center gap-2 rounded-md bg-white px-4 py-2 text-sm font-bold text-black"
+                onClick={managePlan}
+                disabled={Boolean(busyAction)}
+                className="mt-6 inline-flex min-h-11 w-full items-center justify-center rounded-md bg-white px-4 text-sm font-semibold text-slate-950 hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {portalLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Settings className="h-4 w-4" />}
-                Manage Billing
+                {busyAction === "portal" ? <Loader2 className="h-4 w-4 animate-spin" /> : "Manage plan"}
               </button>
-            </div>
-          </section>
-        )}
-
-        <section className="px-4 py-12">
-          <div className="max-w-3xl mx-auto">
-            <h2 className="text-3xl font-bold">Pricing FAQs</h2>
-            <div className="mt-6 space-y-3">
-              {FAQS.map((faq, index) => (
-                <div key={faq.q} className="rounded-lg border border-white/10 bg-[#11131a]">
-                  <button
-                    type="button"
-                    onClick={() => setOpenFaq(openFaq === index ? null : index)}
-                    className="flex w-full items-center justify-between gap-4 p-4 text-left font-bold"
-                  >
-                    {faq.q}
-                    <ChevronDown className={`h-4 w-4 text-gray-500 transition ${openFaq === index ? "rotate-180" : ""}`} />
-                  </button>
-                  {openFaq === index && <div className="px-4 pb-4 text-sm leading-6 text-gray-400">{faq.a}</div>}
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
+            </>
+          ) : (
+            <>
+              <CreditCard className="h-5 w-5 text-cyan-300" />
+              <h2 className="mt-4 text-lg font-semibold">Payment comes next</h2>
+              <p className="mt-2 text-sm leading-6 text-slate-400">
+                You will review payment details and the renewal schedule on Stripe before confirming.
+              </p>
+              <button
+                type="button"
+                onClick={beginCheckout}
+                disabled={Boolean(busyAction) || Boolean(entitlementsError)}
+                className="mt-6 inline-flex min-h-11 w-full items-center justify-center rounded-md bg-cyan-300 px-4 text-sm font-semibold text-slate-950 hover:bg-cyan-200 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {busyAction === "checkout" ? <Loader2 className="h-4 w-4 animate-spin" /> : "Continue to secure checkout"}
+              </button>
+              <p className="mt-4 text-xs leading-5 text-slate-500">
+                By continuing, you agree to the Terms of Service. Your subscription renews automatically until cancelled.
+              </p>
+            </>
+          )}
+        </aside>
       </main>
-
-      <NexusRBXFooter
-        footerLinks={[
-          { id: 1, text: "Terms of Service", href: "/terms" },
-          { id: 2, text: "Privacy Policy", href: "/privacy" },
-          { id: 3, text: "Contact", href: "/contact" },
-          { id: 4, text: "Docs", href: "/docs" },
-        ]}
-        navigate={navigate}
-      />
-    </div>
-  );
-}
-
-function InfoBlock({ title, body }) {
-  return (
-    <div className="rounded-lg border border-white/10 bg-[#141821] p-5">
-      <div className="flex items-center gap-2 text-lg font-bold">
-        <CreditCard className="h-4 w-4 text-[#00f5d4]" />
-        {title}
-      </div>
-      <p className="mt-3 text-sm leading-6 text-gray-400">{body}</p>
     </div>
   );
 }

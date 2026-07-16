@@ -1,76 +1,105 @@
 import React from "react";
 import "@testing-library/jest-dom";
-import { render, screen, fireEvent } from "@testing-library/react";
-import { MemoryRouter } from "react-router-dom";
+import { render, screen, waitFor } from "@testing-library/react";
+import { HelmetProvider } from "react-helmet-async";
+import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
 import SubscribePage from "./SubscribePage";
 
+let mockCurrentUser = { uid: "user-1", email: "builder@example.com" };
+const mockGetEntitlements = jest.fn();
+const mockOpenPortal = jest.fn();
+const mockStartSubscriptionCheckout = jest.fn();
+
 jest.mock("firebase/auth", () => ({
-  getAuth: () => ({ currentUser: null }),
-  onAuthStateChanged: (auth, cb) => {
-    cb(null);
+  getAuth: () => ({ currentUser: mockCurrentUser }),
+  onAuthStateChanged: (auth, callback) => {
+    callback(mockCurrentUser);
     return jest.fn();
   },
 }));
 
 jest.mock("firebase/firestore", () => ({
-  initializeFirestore: jest.fn(() => ({})),
-  getFirestore: jest.fn(),
-  doc: jest.fn(),
+  getFirestore: jest.fn(() => ({})),
+  doc: jest.fn((database, path) => ({ database, path })),
   onSnapshot: jest.fn(),
 }));
 
 jest.mock("../lib/billing", () => ({
-  getEntitlements: jest.fn(),
-  openPortal: jest.fn(),
-  startSubscriptionCheckout: jest.fn(),
+  getEntitlements: (...args) => mockGetEntitlements(...args),
+  isSubscriberPlan: (plan, entitlements = []) => (
+    ["STARTER", "PRO", "PRO_PLUS", "TEAM"].includes(String(plan || "").toUpperCase())
+    || entitlements.some((value) => ["starter", "pro", "pro_plus", "team"].includes(value))
+  ),
+  openPortal: (...args) => mockOpenPortal(...args),
+  startSubscriptionCheckout: (...args) => mockStartSubscriptionCheckout(...args),
 }));
 
-jest.mock("../components/NexusRBXHeader", () => function Header() {
-  return <div data-testid="header" />;
-});
+jest.mock("../lib/productAnalytics", () => ({
+  trackProductEvent: jest.fn(() => Promise.resolve()),
+}));
 
-jest.mock("../components/NexusRBXFooter", () => function Footer() {
-  return <div data-testid="footer" />;
-});
+function SignInLocation() {
+  const location = useLocation();
+  return <pre data-testid="signin-location">{JSON.stringify(location.state)}</pre>;
+}
 
-function renderPage() {
+function renderPage(initialEntry = "/subscribe?plan=PRO&interval=year") {
   return render(
-    <MemoryRouter>
-      <SubscribePage />
-    </MemoryRouter>
+    <HelmetProvider>
+      <MemoryRouter initialEntries={[initialEntry]}>
+        <Routes>
+          <Route path="/subscribe" element={<SubscribePage />} />
+          <Route path="/signin" element={<SignInLocation />} />
+        </Routes>
+      </MemoryRouter>
+    </HelmetProvider>
   );
 }
 
-test("renders current monthly prices without token quantities", () => {
-  renderPage();
-
-  expect(screen.getByText("$2")).toBeInTheDocument();
-  expect(screen.getByText("$19.99")).toBeInTheDocument();
-  expect(screen.getByText("$39.99")).toBeInTheDocument();
-  expect(screen.getByText("$29")).toBeInTheDocument();
-  expect(screen.getByText("Included AI usage each month")).toBeInTheDocument();
-  expect(screen.queryByText(/500k|1\.5M|tokens/i)).not.toBeInTheDocument();
+beforeEach(() => {
+  window.sessionStorage.clear();
+  mockCurrentUser = { uid: "user-1", email: "builder@example.com" };
+  mockGetEntitlements.mockReset();
+  mockGetEntitlements.mockResolvedValue({ plan: "FREE", entitlements: [] });
+  mockOpenPortal.mockReset();
+  mockStartSubscriptionCheckout.mockReset();
 });
 
-test("renders yearly prices and accurate savings label", () => {
+test("renders a final review with the annual equivalent and billed total", async () => {
   renderPage();
-  fireEvent.click(screen.getByRole("button", { name: /yearly/i }));
 
-  expect(screen.getByText("$199")).toBeInTheDocument();
-  expect(screen.getByText("$399")).toBeInTheDocument();
-  expect(screen.getByText("$290")).toBeInTheDocument();
-  expect(screen.getByText(/Save 17%/i)).toBeInTheDocument();
+  expect(await screen.findByRole("heading", { name: "Review your Pro plan" })).toBeInTheDocument();
+  expect(screen.getByText("$16.58/month")).toBeInTheDocument();
+  expect(screen.getByText("$199 billed yearly")).toBeInTheDocument();
+  expect(screen.getByText("builder@example.com")).toBeInTheDocument();
+  expect(await screen.findByRole("button", { name: "Continue to secure checkout" })).toBeEnabled();
+  expect(screen.queryByText("Pro+")).not.toBeInTheDocument();
 });
 
-test("shows Pro+ as recommended and Team starts at two seats", () => {
-  renderPage();
+test("validates Team seats and shows the complete annual charge", async () => {
+  renderPage("/subscribe?plan=TEAM&interval=year&seats=51");
 
-  expect(screen.getByText("Pro+")).toBeInTheDocument();
-  expect(screen.getByText("Recommended")).toBeInTheDocument();
-  const seatInput = screen.getByLabelText(/Seats: 2 - 50/i);
-  expect(seatInput).toHaveValue(2);
-  expect(screen.getByText("$58/month")).toBeInTheDocument();
+  expect(await screen.findByRole("heading", { name: "Review your Team plan" })).toBeInTheDocument();
+  expect(screen.getByText("50 paid seats")).toBeInTheDocument();
+  expect(screen.getByText("$1208.33/month")).toBeInTheDocument();
+  expect(screen.getByText("$14500 billed yearly")).toBeInTheDocument();
+  expect(screen.getByText("$290 per user, per year")).toBeInTheDocument();
+});
 
-  fireEvent.change(seatInput, { target: { value: "5" } });
-  expect(screen.getByText("$145/month")).toBeInTheDocument();
+test("shows Manage plan instead of another purchase action for subscribers", async () => {
+  mockGetEntitlements.mockResolvedValue({ plan: "PRO", entitlements: ["pro"] });
+  renderPage("/subscribe?plan=PRO_PLUS&interval=month");
+
+  expect(await screen.findByRole("button", { name: "Manage plan" })).toBeEnabled();
+  expect(screen.queryByRole("button", { name: "Continue to secure checkout" })).not.toBeInTheDocument();
+});
+
+test("preserves the complete checkout return path when sign-in is required", async () => {
+  mockCurrentUser = null;
+  renderPage("/subscribe?plan=PRO_PLUS&interval=year");
+
+  await waitFor(() => expect(screen.getByTestId("signin-location")).toBeInTheDocument());
+  expect(screen.getByTestId("signin-location")).toHaveTextContent(
+    '"pathname":"/subscribe","search":"?plan=PRO_PLUS&interval=year"'
+  );
 });

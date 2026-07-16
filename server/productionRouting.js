@@ -5,6 +5,7 @@ const NON_WWW_PRODUCTION_HOST = "nexusrbx.com";
 const NEXT_PUBLIC_ROUTES = new Set([
   "/",
   "/downloads",
+  "/pricing",
   "/docs",
   "/docs/account",
   "/docs/api",

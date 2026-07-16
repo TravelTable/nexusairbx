@@ -52,10 +52,14 @@ describe("siteHeaderIdentity", () => {
     expect(getHeaderVariantForPath("/ai/session/123")).toBe("workspace");
     expect(getHeaderVariantForPath("/settings")).toBe("account");
     expect(getHeaderVariantForPath("/billing")).toBe("account");
-    expect(getHeaderVariantForPath("/subscribe")).toBe("account");
+    expect(getHeaderVariantForPath("/subscribe")).toBe("checkout");
     expect(getHeaderVariantForPath("/signin")).toBe("auth");
     expect(getHeaderVariantForPath("/signup")).toBe("auth");
-    expect(getHeaderVariantForPath("/contact")).toBe("legal");
+    expect(getHeaderVariantForPath("/contact")).toBe("marketing");
+    expect(getHeaderVariantForPath("/pricing")).toBe("marketing");
+    expect(getHeaderVariantForPath("/support")).toBe("account");
+    expect(getHeaderVariantForPath("/support/ticket-1")).toBe("account");
+    expect(getHeaderVariantForPath("/admin/support")).toBe("account");
     expect(getHeaderVariantForPath("/privacy")).toBe("legal");
     expect(getHeaderVariantForPath("/terms")).toBe("legal");
     expect(getHeaderVariantForPath("/tools/icon-generator")).toBe("tools");

@@ -421,11 +421,43 @@ export function useAiWorkspaceController() {
   }, [notify]);
 
   useEffect(() => {
+    let disposed = false;
+    let authChangeId = 0;
+
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      setUser(firebaseUser || null);
-      setAuthReady(true);
+      const changeId = ++authChangeId;
+      setAuthReady(false);
+
+      if (!firebaseUser) {
+        setUser(null);
+        setAuthReady(true);
+        return;
+      }
+
+      // A user object alone is not sufficient proof that Firestore has a
+      // usable credential. Refresh the ID token before exposing this user to
+      // any Firestore hook, without logging the token itself.
+      void firebaseUser.getIdToken(true)
+        .then(() => {
+          if (disposed || changeId !== authChangeId) return;
+          setUser(firebaseUser);
+          setAuthReady(true);
+        })
+        .catch((error) => {
+          if (disposed || changeId !== authChangeId) return;
+          console.error("Firebase Auth token unavailable", {
+            code: error?.code,
+            message: error?.message,
+          });
+          setUser(null);
+          setAuthReady(true);
+        });
     });
-    return () => unsubscribe();
+
+    return () => {
+      disposed = true;
+      unsubscribe();
+    };
   }, []);
 
   useEffect(() => {
