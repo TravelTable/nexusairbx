@@ -46,13 +46,19 @@ describe("DownloadsContent", () => {
     global.fetch = jest.fn().mockResolvedValue({ ok: true, json: async () => releaseManifest });
     render(<DownloadsContent />);
 
-    const macDownload = await screen.findByRole("link", { name: "Download for macOS" });
-    const windowsDownload = screen.getByRole("link", { name: "Download for Windows" });
+    const macDownload = await screen.findByRole("link", { name: "Download macOS (Universal)" });
+    const windowsDownload = screen.getByRole("link", { name: "Download Windows (64-bit)" });
     expect(macDownload.getAttribute("href")).toBe(releaseManifest.platforms.macos.url);
     expect(windowsDownload.getAttribute("href")).toBe(releaseManifest.platforms.windows.url);
     expect(screen.getByText("Recommended").closest("article")?.textContent).toContain("macOS");
+    expect(screen.getByText("Current version: v0.1.0")).toBeTruthy();
+    expect(screen.getByText("Apple Silicon (M1 or newer)")).toBeTruthy();
+    expect(screen.getByText("Intel Mac")).toBeTruthy();
+    expect(screen.getByText("Intel or AMD x64 PC")).toBeTruthy();
+    expect(screen.getByText(/Only the current release is shown/)).toBeTruthy();
     expect(screen.getByText("Developer ID signed and Apple notarized")).toBeTruthy();
     expect(screen.getByText(/Unknown publisher/)).toBeTruthy();
+    expect(screen.getByText(/downloads updates in the background/)).toBeTruthy();
     expect(global.fetch).toHaveBeenCalledWith(
       "https://downloads.nexusrbx.com/connector/latest.json",
       expect.objectContaining({ credentials: "omit", cache: "no-store" })
@@ -65,8 +71,8 @@ describe("DownloadsContent", () => {
 
     expect((await screen.findByRole("alert")).textContent).toContain("Downloads temporarily unavailable");
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: "macOS unavailable" }).disabled).toBe(true);
-      expect(screen.getByRole("button", { name: "Windows unavailable" }).disabled).toBe(true);
+      expect(screen.getByRole("button", { name: "macOS (Universal) unavailable" }).disabled).toBe(true);
+      expect(screen.getByRole("button", { name: "Windows (64-bit) unavailable" }).disabled).toBe(true);
     });
     expect(screen.queryByRole("link", { name: /Download for/i })).toBeNull();
   });

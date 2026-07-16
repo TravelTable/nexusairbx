@@ -1164,13 +1164,9 @@ export function useAiWorkspaceController() {
     }
   }, [notify, projectAssets, selectedAssetProjectId, updateSettings]);
 
-  const handleOpenAssetLibrary = useCallback(() => {
+  const handleOpenAssetLibrary = useCallback(async () => {
     if (!user) {
       setShowSignInNudge(true);
-      return;
-    }
-    if (!selectedAssetProjectId) {
-      notify({ message: "Open or create a chat before selecting assets", type: "info" });
       return;
     }
     if (robloxStatus?.connected !== true) {
@@ -1184,8 +1180,20 @@ export function useAiWorkspaceController() {
       });
       return;
     }
+
+    // Asset selection is also a valid first action. Create the draft chat now
+    // so selected assets have a durable project to attach to before the first
+    // prompt is submitted.
+    if (!selectedAssetProjectId) {
+      try {
+        await unified.ensureChat("New chat");
+      } catch (err) {
+        notify({ message: err?.message || "Could not create a chat for these assets", type: "error" });
+        return;
+      }
+    }
     setAssetLibraryOpen(true);
-  }, [notify, robloxStatus, selectedAssetProjectId, user]);
+  }, [notify, robloxStatus, selectedAssetProjectId, unified, user]);
 
   const handleConfirmProjectAssets = useCallback(async (assets) => {
     await projectAssets.attachAssets(assets);
@@ -1810,13 +1818,11 @@ export function useAiWorkspaceController() {
       projectAssetLoading: projectAssets.loading,
       assetLibraryOpen,
       assetLibraryAvailable: Boolean(
-        user && selectedAssetProjectId && robloxStatus?.connected === true && isCreatorStoreReadAuthorized(robloxStatus)
+        user && robloxStatus?.connected === true && isCreatorStoreReadAuthorized(robloxStatus)
       ),
       assetLibraryDisabledReason: !user
         ? "Sign in before selecting Roblox assets."
-        : !selectedAssetProjectId
-          ? "Open or create a chat before selecting assets."
-          : robloxStatus?.connected !== true
+        : robloxStatus?.connected !== true
             ? "Connect Roblox before selecting assets."
             : !isCreatorStoreReadAuthorized(robloxStatus)
               ? "Reauthorize Roblox to browse your assets."

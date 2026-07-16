@@ -317,4 +317,36 @@ describe("MessageList pending activity", () => {
 
     expect(screen.getAllByText("generate a fly gui fast")).toHaveLength(1);
   });
+
+  test("hides stale thinking UI once the matching assistant response is persisted", () => {
+    render(
+      <MessageList
+        {...baseProps}
+        messages={[
+          {
+            id: "req-1-assistant",
+            role: "assistant",
+            content: "Hey there! Welcome!",
+            requestId: "req-1",
+          },
+        ]}
+        generationStage="Preparing response..."
+        pendingMessage={{
+          role: "assistant",
+          content: "",
+          requestId: "req-1",
+          stage: "Preparing response...",
+          streamState: {
+            activity: [
+              { id: "stage-1", type: "stage", text: "Thinking...", status: "Thinking..." },
+            ],
+          },
+        }}
+      />
+    );
+
+    expect(screen.getByText("Hey there! Welcome!")).toBeTruthy();
+    expect(screen.queryByText("Preparing response...")).toBeNull();
+    expect(screen.queryByText("Thinking...")).toBeNull();
+  });
 });

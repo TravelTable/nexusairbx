@@ -62,7 +62,7 @@ function LiveActivityHeader({ pendingMessage, generationStage, parsed, embedded 
 
 export default function MessageList({
   messages,
-  pendingMessage,
+  pendingMessage: pendingMessageProp,
   user,
   profile,
   activeMode,
@@ -78,6 +78,19 @@ export default function MessageList({
   onApproveStep,
   approvingStepId,
 }) {
+  // Firestore can publish the completed assistant message one render before the
+  // orchestration cleanup runs. Once that response exists, the matching live
+  // placeholder is stale and should no longer be shown.
+  const pendingMessage = useMemo(() => {
+    if (!pendingMessageProp?.requestId) return pendingMessageProp;
+    const hasCompletedResponse = messages.some(
+      (message) =>
+        message.role === "assistant" &&
+        !message.pending &&
+        message.requestId === pendingMessageProp.requestId
+    );
+    return hasCompletedResponse ? null : pendingMessageProp;
+  }, [messages, pendingMessageProp]);
   const pendingParsed = parsePendingStreamContent(pendingMessage?.content || "");
   const showLiveWorkStream = Boolean(
     pendingMessage?.streamState ||

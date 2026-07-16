@@ -44,12 +44,13 @@ function seedOrchestrationStream(stage = "Understanding your task...") {
   });
 }
 
-function buildOrchestrationPending(state, stage) {
+function buildOrchestrationPending(state, stage, metadata = {}) {
   return {
     role: "assistant",
     content: "",
     stage,
     streamState: getPendingStreamSnapshot(state),
+    ...metadata,
   };
 }
 
@@ -98,21 +99,28 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
         status: label,
       }
     );
-    const pending = {
-      role: "assistant",
-      content: "",
-      stage: label,
-      streamState: getPendingStreamSnapshot(orchestrationStreamRef.current[chatId]),
-    };
-    setOrchestrationPendingByChat((prev) => ({ ...prev, [chatId]: pending }));
+    setOrchestrationPendingByChat((prev) => ({
+      ...prev,
+      [chatId]: buildOrchestrationPending(
+        orchestrationStreamRef.current[chatId],
+        label,
+        {
+          requestId: prev[chatId]?.requestId,
+          prompt: prev[chatId]?.prompt,
+        }
+      ),
+    }));
   }, []);
 
-  const beginOrchestrationPending = useCallback((chatId) => {
+  const beginOrchestrationPending = useCallback((chatId, requestId, prompt = "") => {
     const state = seedOrchestrationStream();
     orchestrationStreamRef.current[chatId] = state;
     setOrchestrationPendingByChat((prev) => ({
       ...prev,
-      [chatId]: buildOrchestrationPending(state, "Understanding your task..."),
+      [chatId]: buildOrchestrationPending(state, "Understanding your task...", {
+        requestId,
+        prompt,
+      }),
     }));
   }, []);
 
@@ -310,10 +318,17 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
         output_type: message.classification || "script",
         prompt_category: categorizePrompt(message.originPrompt || ""),
       }, { dedupeKey: `plan_approved:${message.planId}` });
-      await updateDoc(
-        doc(db, "users", user.uid, "chats", activeChatId, "messages", message.id),
-        { stage: "plan_approved", updatedAt: serverTimestamp() }
-      );
+      // The server approval is authoritative. Persisting this UI marker is
+      // useful, but must not prevent generation when an older deployed ruleset
+      // rejects an otherwise valid transcript update.
+      try {
+        await updateDoc(
+          doc(db, "users", user.uid, "chats", activeChatId, "messages", message.id),
+          { stage: "plan_approved", updatedAt: serverTimestamp() }
+        );
+      } catch (error) {
+        console.warn("Could not persist approved-plan marker; continuing with generation.", error);
+      }
       await runGeneration(
         activeChatId,
         message.classification || "script",
@@ -486,7 +501,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
             try {
               activeChatId = await ensureChat(titleSeed);
               setFlowBusyForChat(activeChatId, true);
-              beginOrchestrationPending(activeChatId);
+              beginOrchestrationPending(activeChatId, requestId, prompt);
               await writeUserMessage(activeChatId, requestId, prompt, currentAttachments);
 
               publishOrchestrationStage(activeChatId, "Thinking...");
@@ -540,7 +555,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
         try {
           activeChatId = await ensureChat(titleSeed);
           setFlowBusyForChat(activeChatId, true);
-          beginOrchestrationPending(activeChatId);
+          beginOrchestrationPending(activeChatId, requestId, prompt);
           await writeUserMessage(activeChatId, requestId, prompt, currentAttachments);
 
           if (mode === "ask") {
@@ -608,13 +623,13 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
       const activeChatId = chat.currentChatId;
       if (!activeChatId) return;
       setFlowBusyForChat(activeChatId, true);
-      beginOrchestrationPending(activeChatId);
       try {
 
         const answerText = Object.entries(answers || {})
           .filter(([, v]) => v != null && String(v).trim() !== "")
           .map(([k, v]) => `${k}: ${v}`)
           .join("\n");
+        beginOrchestrationPending(activeChatId, requestId, answerText);
         if (answerText) await writeUserMessage(activeChatId, requestId, answerText);
 
         await updateDoc(
@@ -709,6 +724,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
     pendingMessage,
     generationStage,
     generatingChatIds,
+    ensureChat,
     handleSubmit,
     submitClarifyAnswers,
     approvePlan,

@@ -20,14 +20,16 @@ import { trackProductEvent } from "../../lib/productAnalytics";
 
 const PLATFORM_COPY = {
   mac: {
-    name: "macOS",
-    detail: "Universal — Intel and Apple Silicon",
+    name: "macOS (Universal)",
+    detail: "One installer for Apple Silicon and Intel Macs",
+    machines: ["Apple Silicon (M1 or newer)", "Intel Mac"],
     signing: "Developer ID signed and Apple notarized",
     steps: ["Open the DMG", "Drag NexusRBX Connector to Applications", "Open it and pair in your browser"],
   },
   windows: {
-    name: "Windows",
-    detail: "Windows 10/11 — 64-bit",
+    name: "Windows (64-bit)",
+    detail: "For Windows 10 and 11 on Intel or AMD PCs",
+    machines: ["Intel or AMD x64 PC"],
     signing: "Unsigned installer — Windows may show “Unknown publisher”",
     steps: ["Run the downloaded installer", "If SmartScreen appears, select More info", "Choose Run anyway, then open and pair in your browser"],
   },
@@ -50,6 +52,14 @@ function DownloadCard({ platform, release, recommended, loading, onDownload }) {
       <h2 className="mt-4 text-xl font-bold text-white">{copy.name}</h2>
       <p className="mt-1 text-sm text-zinc-400">{copy.detail}</p>
 
+      <div className="mt-4 flex flex-wrap gap-2" aria-label={`Supported ${copy.name} machines`}>
+        {copy.machines.map((machine) => (
+          <span key={machine} className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-xs font-medium text-zinc-300">
+            {machine}
+          </span>
+        ))}
+      </div>
+
       <dl className="mt-5 grid gap-2 border-y border-white/10 py-4 text-sm">
         <div className="flex justify-between gap-4"><dt className="text-zinc-500">Version</dt><dd className="font-medium text-zinc-200">{release ? `v${release.version}` : "—"}</dd></div>
         <div className="flex justify-between gap-4"><dt className="text-zinc-500">File size</dt><dd className="font-medium text-zinc-200">{release ? formatCompanionFileSize(release.size) : "—"}</dd></div>
@@ -67,7 +77,7 @@ function DownloadCard({ platform, release, recommended, loading, onDownload }) {
           className="mt-5 inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-violet-600 px-4 text-sm font-semibold text-white hover:bg-violet-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-300 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0b0e16]"
         >
           <Download size={17} aria-hidden="true" />
-          Download for {copy.name}
+          Download {copy.name}
         </a>
       ) : (
         <button
@@ -137,6 +147,17 @@ export default function DownloadsContent() {
           <p className="mt-4 text-base leading-7 text-zinc-400">
             Install the secure desktop companion, pair once in your browser, then use Studio MCP from NexusRBX.
           </p>
+          <div className="mt-5 flex min-h-8 items-center justify-center">
+            {manifest ? (
+              <p className="rounded-full border border-violet-400/25 bg-violet-500/10 px-3 py-1.5 text-xs font-semibold text-violet-200">
+                Current version: v{manifest.version}
+              </p>
+            ) : (
+              <p className="text-xs font-medium text-zinc-500" aria-live="polite">
+                {status === "loading" ? "Checking current version…" : "Current version unavailable"}
+              </p>
+            )}
+          </div>
         </div>
 
         {status === "unavailable" ? (
@@ -146,7 +167,12 @@ export default function DownloadsContent() {
           </div>
         ) : null}
 
-        <div className="mt-9 grid gap-4 md:grid-cols-2">
+        <div className="mt-8 text-center">
+          <h2 className="text-lg font-semibold text-white">Choose the installer for your machine</h2>
+          <p className="mt-1 text-sm text-zinc-500">Only the current release is shown. Older connector versions are not offered.</p>
+        </div>
+
+        <div className="mt-5 grid gap-4 md:grid-cols-2">
           {orderedPlatforms.map((platform) => (
             <DownloadCard
               key={platform}
@@ -170,7 +196,7 @@ export default function DownloadsContent() {
           <section className="rounded-xl border border-white/10 bg-white/[0.025] p-5">
             <RefreshCw size={19} className="text-violet-300" aria-hidden="true" />
             <h2 className="mt-3 font-semibold text-white">Automatic updates</h2>
-            <p className="mt-3 text-sm leading-6 text-zinc-400">The connector checks the verified NexusRBX release feed in the background and tells you when an update is ready.</p>
+            <p className="mt-3 text-sm leading-6 text-zinc-400">Automatic updates are on by default. The connector checks the verified release feed, downloads updates in the background, and installs them when you restart or quit the app.</p>
           </section>
           <section className="rounded-xl border border-white/10 bg-white/[0.025] p-5">
             <ExternalLink size={19} className="text-violet-300" aria-hidden="true" />
