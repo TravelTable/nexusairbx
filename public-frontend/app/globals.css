@@ -2523,6 +2523,18 @@ a.docs-mini-card:focus-visible {
   max-height: calc(100vh - 162px);
 }
 
+.docs-sidebar {
+  height: calc(100vh - 162px);
+}
+
+.docs-main-grid-sidebar-collapsed {
+  grid-template-columns: 54px minmax(0, 780px) 190px;
+}
+
+.docs-main-grid-no-toc.docs-main-grid-sidebar-collapsed {
+  grid-template-columns: 54px minmax(0, 1fr);
+}
+
 .docs-sidebar-panel,
 .docs-toc {
   border: 0;
@@ -2531,14 +2543,46 @@ a.docs-mini-card:focus-visible {
 }
 
 .docs-sidebar-panel {
+  box-sizing: border-box;
+  height: 100%;
+  max-height: inherit;
+  overflow-x: hidden;
+  overflow-y: auto;
   border-right: 1px solid rgba(255, 255, 255, 0.08);
   padding: 2px 22px 2px 0;
+  scrollbar-gutter: stable;
 }
 
 .docs-sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   margin-bottom: 18px;
   color: #dce2eb;
   font-size: 13px;
+}
+
+.docs-sidebar-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.docs-sidebar-collapse {
+  display: inline-grid;
+}
+
+.docs-sidebar-collapsed .docs-sidebar-panel {
+  padding-right: 6px;
+}
+
+.docs-sidebar-collapsed .docs-sidebar-header {
+  justify-content: center;
+}
+
+.docs-sidebar-collapsed .docs-sidebar-label,
+.docs-sidebar-collapsed .docs-nav {
+  display: none;
 }
 
 .docs-nav {
@@ -2795,6 +2839,11 @@ a.docs-mini-card:focus-visible strong {
     grid-template-columns: minmax(210px, 230px) minmax(0, 1fr);
   }
 
+  .docs-main-grid-sidebar-collapsed,
+  .docs-main-grid-no-toc.docs-main-grid-sidebar-collapsed {
+    grid-template-columns: 54px minmax(0, 1fr);
+  }
+
   .docs-toc {
     display: none;
   }
@@ -2856,8 +2905,14 @@ a.docs-mini-card:focus-visible strong {
     padding-top: 30px;
   }
 
+  .docs-main-grid-sidebar-collapsed,
+  .docs-main-grid-no-toc.docs-main-grid-sidebar-collapsed {
+    grid-template-columns: 1fr;
+  }
+
   .docs-sidebar {
     position: fixed;
+    height: auto;
     top: 0;
     bottom: 0;
     left: 0;
@@ -2880,6 +2935,7 @@ a.docs-mini-card:focus-visible strong {
 
   .docs-sidebar-panel {
     height: 100%;
+    max-height: none;
     border-right: 0;
     border-radius: 0;
     background: #101319;
@@ -2888,6 +2944,23 @@ a.docs-mini-card:focus-visible strong {
 
   .docs-sidebar-close {
     display: inline-grid;
+  }
+
+  .docs-sidebar-collapse {
+    display: none;
+  }
+
+  .docs-sidebar-collapsed .docs-sidebar-label,
+  .docs-sidebar-collapsed .docs-nav {
+    display: inline-flex;
+  }
+
+  .docs-sidebar-collapsed .docs-nav {
+    display: grid;
+  }
+
+  .docs-sidebar-collapsed .docs-sidebar-header {
+    justify-content: space-between;
   }
 
   .docs-article-header {

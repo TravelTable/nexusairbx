@@ -59,6 +59,19 @@ test("DocsExplorer uses the shared public header", () => {
   assert.match(docsExplorerSource, /<PublicHeader(?:\s|\/>|>)/);
 });
 
+test("DocsExplorer exposes a collapsible, independently scrollable sidebar", () => {
+  assert.match(docsExplorerSource, /docs-sidebar-collapsed/);
+  assert.match(docsExplorerSource, /aria-label=\{isCollapsed \? ["']Expand navigation/);
+  assert.match(docsExplorerSource, /aria-controls=["']docs-sidebar-navigation["']/);
+  assert.match(docsExplorerSource, /id=["']docs-sidebar-navigation["']/);
+  assert.match(docsExplorerSource, /docs-main-grid-sidebar-collapsed/);
+
+  assert.match(
+    readFileSync(new URL("./app/globals.css", import.meta.url), "utf8"),
+    /\.docs-sidebar-panel\s*\{[^}]*height:\s*100%;[^}]*overflow-y:\s*auto/s,
+  );
+});
+
 test("Docs search exposes an accessible combobox and curated common tasks", () => {
   assert.match(docsExplorerSource, /role\s*=\s*(?:["']combobox["']|\{\s*["']combobox["']\s*\})/);
   assert.match(docsExplorerSource, /role\s*=\s*(?:["']listbox["']|\{\s*["']listbox["']\s*\})/);

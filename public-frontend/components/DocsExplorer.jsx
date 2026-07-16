@@ -7,6 +7,7 @@ import {
   BookOpen,
   Check,
   ChevronDown,
+  ChevronLeft,
   ChevronRight,
   Clipboard,
   Copy,
@@ -207,7 +208,7 @@ function searchOptionId(result) {
   return `docs-search-option-${result.path.replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "")}`;
 }
 
-function Sidebar({ categories, page, pages, mode, isOpen, onClose, openCategories, onToggleCategory }) {
+function Sidebar({ categories, page, pages, mode, isOpen, isCollapsed, onClose, onToggleCollapsed, openCategories, onToggleCategory }) {
   const pageMap = useMemo(() => new Map(pages.map((item) => [item.slug, item])), [pages]);
   const closeButtonRef = useRef(null);
 
@@ -216,15 +217,28 @@ function Sidebar({ categories, page, pages, mode, isOpen, onClose, openCategorie
   }, [isOpen]);
 
   return (
-    <aside className={cx("docs-sidebar", isOpen && "docs-sidebar-open")} aria-label={mode === "legal" ? "Legal navigation" : "Documentation navigation"}>
+    <aside className={cx("docs-sidebar", isOpen && "docs-sidebar-open", isCollapsed && "docs-sidebar-collapsed")} aria-label={mode === "legal" ? "Legal navigation" : "Documentation navigation"}>
       <div className="docs-sidebar-panel">
         <div className="docs-sidebar-header">
-          <span><PageIcon mode={mode} /> {mode === "legal" ? "Legal" : "Docs"}</span>
-          <button ref={closeButtonRef} className="docs-icon-button docs-sidebar-close" type="button" onClick={onClose} aria-label="Close navigation">
-            <X aria-hidden="true" size={18} />
-          </button>
+          <span className="docs-sidebar-label"><PageIcon mode={mode} /> {mode === "legal" ? "Legal" : "Docs"}</span>
+          <div className="docs-sidebar-header-actions">
+            <button
+              className="docs-icon-button docs-sidebar-collapse"
+              type="button"
+              onClick={onToggleCollapsed}
+              aria-controls="docs-sidebar-navigation"
+              aria-expanded={!isCollapsed}
+              aria-label={isCollapsed ? "Expand navigation" : "Collapse navigation"}
+              title={isCollapsed ? "Expand navigation" : "Collapse navigation"}
+            >
+              {isCollapsed ? <ChevronRight aria-hidden="true" size={18} /> : <ChevronLeft aria-hidden="true" size={18} />}
+            </button>
+            <button ref={closeButtonRef} className="docs-icon-button docs-sidebar-close" type="button" onClick={onClose} aria-label="Close navigation">
+              <X aria-hidden="true" size={18} />
+            </button>
+          </div>
         </div>
-        <nav className="docs-nav" aria-label={mode === "legal" ? "Legal pages" : "Documentation pages"}>
+        <nav className="docs-nav" id="docs-sidebar-navigation" aria-label={mode === "legal" ? "Legal pages" : "Documentation pages"}>
           {categories.map((category) => (
             <div className="docs-category" key={category.id}>
               <button
@@ -660,6 +674,7 @@ export default function DocsExplorer({
   nextPage,
 }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [recentSearches, setRecentSearches] = useState([]);
@@ -820,12 +835,14 @@ export default function DocsExplorer({
 
       {isSidebarOpen ? <div aria-hidden="true" className="docs-mobile-backdrop" onClick={closeSidebar} /> : null}
 
-      <div className={cx("docs-main-grid", !showToc && "docs-main-grid-no-toc")}>
+      <div className={cx("docs-main-grid", !showToc && "docs-main-grid-no-toc", isSidebarCollapsed && "docs-main-grid-sidebar-collapsed")}>
         <Sidebar
           categories={categories}
+          isCollapsed={isSidebarCollapsed}
           isOpen={isSidebarOpen}
           mode={mode}
           onClose={closeSidebar}
+          onToggleCollapsed={() => setIsSidebarCollapsed((current) => !current)}
           onToggleCategory={(categoryId) => setOpenCategories((current) => ({ ...current, [categoryId]: !current[categoryId] }))}
           openCategories={openCategories}
           page={page}
