@@ -2,6 +2,7 @@ import { ConnectorError, isAbortError } from "./errors.js";
 import type { Logger } from "./logger.js";
 import type {
   BackendClientLike,
+  CapabilityDetails,
   JsonObject,
   PairClaimResponse,
   StudioCapabilities,
@@ -87,6 +88,7 @@ export class NexusBackendClient implements BackendClientLike {
     capabilities: StudioCapabilities,
     supportedCommands: string[],
     discoveredTools: Array<{ name: string; description?: string }>,
+    capabilityDetails: CapabilityDetails,
     signal?: AbortSignal,
   ): Promise<JsonObject> {
     const tools = discoveredTools.map((tool) => ({
@@ -96,7 +98,7 @@ export class NexusBackendClient implements BackendClientLike {
     return this.request(
       "POST",
       "/api/studio/mcp/capabilities",
-      { capabilities: { ...capabilities }, supportedCommands, discoveredTools: tools },
+      { capabilities: { ...capabilities }, capabilityDetails, supportedCommands, discoveredTools: tools },
       { authenticated: true, retry: true, ...(signal === undefined ? {} : { signal }) },
     );
   }

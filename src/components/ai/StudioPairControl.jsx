@@ -19,6 +19,7 @@ import {
   disconnectStudioMcp,
   startStudioMcpPairing,
   startStudioPairing,
+  selectStudioMcpTarget,
   testStudioMcp,
 } from "../../lib/studioBridgeApi";
 import {
@@ -156,6 +157,7 @@ export default function StudioPairControl({
   const [busyMethod, setBusyMethod] = useState("");
   const [disconnectingMethod, setDisconnectingMethod] = useState("");
   const [testing, setTesting] = useState(false);
+  const [selectingTarget, setSelectingTarget] = useState(false);
   const [copiedMethod, setCopiedMethod] = useState("");
 
   const rootRef = useRef(null);
@@ -312,6 +314,22 @@ export default function StudioPairControl({
     }
   };
 
+  const selectMcpTarget = async (studioId) => {
+    setSelectingTarget(true);
+    try {
+      await selectStudioMcpTarget({
+        sessionId: getStudioSessionId(latestMcpSession),
+        studioId,
+      });
+      notify?.({ message: "Roblox Studio window selected", type: "success" });
+      await refresh?.();
+    } catch (error) {
+      notify?.({ message: error?.message || "Failed to select the Roblox Studio window", type: "error" });
+    } finally {
+      setSelectingTarget(false);
+    }
+  };
+
   const statusCopy = {
     both: "Plugin and MCP connected",
     plugin: "Connected via NexusRBX Studio Plugin",
@@ -323,6 +341,10 @@ export default function StudioPairControl({
   const mcpPlace = latestMcpSession?.studio?.placeName || latestMcpSession?.studio?.placeId || "Not reported";
   const connectorVersion = latestMcpSession?.connector?.connectorVersion || latestMcpSession?.studio?.connectorVersion || "Not reported";
   const mcpServerVersion = latestMcpSession?.studio?.mcpServerVersion || "Not reported";
+  const studioTargets = Array.isArray(latestMcpSession?.studio?.targets) ? latestMcpSession.studio.targets : [];
+  const activeStudioId = latestMcpSession?.studio?.activeStudioId || "";
+  const requestedStudioId = latestMcpSession?.desiredStudioId || activeStudioId;
+  const capabilityDetails = latestMcpSession?.capabilityDetails || {};
   const supportedCapabilities = capabilities.supported || [];
   const unavailableCapabilities = capabilities.unavailable || [];
 
@@ -465,6 +487,25 @@ export default function StudioPairControl({
                 <div className="space-y-1.5 rounded-xl border border-white/10 bg-black/30 p-2.5">
                   <HealthRow label="Local connector" healthy={connectorDetected} />
                   <HealthRow label="Roblox Studio MCP server" healthy={mcpConnected} />
+                  {studioTargets.length > 1 && (
+                    <label className="block rounded-lg bg-white/[0.03] px-2.5 py-2 text-[11px] text-gray-400">
+                      <span className="mb-1 block">Studio window</span>
+                      <select
+                        value={requestedStudioId}
+                        onChange={(event) => selectMcpTarget(event.target.value)}
+                        disabled={selectingTarget}
+                        className="w-full rounded-lg border border-white/10 bg-black/50 px-2 py-1.5 text-white outline-none focus:border-violet-400/60 disabled:opacity-50"
+                        aria-label="Roblox Studio window"
+                      >
+                        <option value="" disabled>Choose a Studio window</option>
+                        {studioTargets.map((target) => (
+                          <option key={target.studioId} value={target.studioId}>
+                            {target.placeName || target.label || target.placeId || target.studioId}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  )}
                   {connectorDetected && !mcpConnected && (
                     <div className="flex gap-2 rounded-lg border border-amber-400/20 bg-amber-400/5 p-2.5 text-[11px] leading-relaxed text-amber-200">
                       <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
@@ -488,8 +529,13 @@ export default function StudioPairControl({
                   <div className="space-y-1">
                     {[...supportedCapabilities, ...unavailableCapabilities].map((capability) => {
                       const available = supportedCapabilities.includes(capability);
+                      const detail = capabilityDetails[capability] || {};
                       return (
-                        <div key={capability} className="flex items-center justify-between gap-3 text-[10px]">
+                        <div
+                          key={capability}
+                          className="flex items-center justify-between gap-3 text-[10px]"
+                          title={available ? "Verified in this connector session" : detail.reasonCode || "Required MCP tools unavailable"}
+                        >
                           <span className="text-gray-400">{MCP_CAPABILITY_LABELS[capability] || capability}</span>
                           <span className={available ? "font-bold text-[#00f5d4]" : "font-bold text-gray-600"}>
                             {available ? "Supported" : "Unavailable"}

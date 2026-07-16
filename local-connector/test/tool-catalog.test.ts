@@ -9,13 +9,13 @@ function tool(name: string, properties: JsonObject, required: string[]): Discove
 
 const read = tool(
   "script_read",
-  { path: { type: "string" }, datamodel_type: { type: "string", enum: ["Edit"] } },
-  ["path", "datamodel_type"],
+  { target_file: { type: "string" }, datamodel_type: { type: "string", enum: ["Edit"] } },
+  ["target_file", "datamodel_type"],
 );
 const search = tool(
   "script_search",
-  { query: { type: "string" }, datamodel_type: { type: "string", enum: ["Edit"] } },
-  ["query"],
+  { keywords: { type: "string" }, datamodel_type: { type: "string", enum: ["Edit"] } },
+  ["keywords"],
 );
 const grep = tool("script_grep", { pattern: { type: "string" } }, ["pattern"]);
 const state = tool("get_studio_state", {}, []);
@@ -28,18 +28,21 @@ const inspect = tool(
 const sourceMutation = tool(
   "multi_edit",
   {
-    path: { type: "string" },
+    file_path: { type: "string" },
     datamodel_type: { type: "string", enum: ["Edit"] },
-    source: { type: "string" },
+    edits: { type: "array", items: { type: "object", properties: { old_string: { type: "string" }, new_string: { type: "string" }, replace_all: { type: "boolean" } }, required: ["old_string", "new_string"] } },
   },
-  ["path", "datamodel_type", "source"],
+  ["file_path", "datamodel_type", "edits"],
 );
+const listStudios = tool("list_roblox_studios", {}, []);
+const setStudio = tool("set_active_studio", { studio_id: { type: "string" } }, ["studio_id"]);
+const targetTools = [listStudios, setStudio, state];
+const targeted = (items: DiscoveredTool[]) => [...targetTools, ...items.filter((item) => item.name !== "get_studio_state")];
 
 test("catalog enables only exact, schema-validated Nexus commands", () => {
-  const catalog = new ToolCatalog([read, inspect, search, grep, state, output, sourceMutation]);
+  const catalog = new ToolCatalog(targeted([read, inspect, search, grep, state, output, sourceMutation]));
   assert.deepEqual(catalog.supportedCommands, [
     "collect_output",
-    "create_script",
     "get_output_logs",
     "get_studio_context",
     "inspect_instances",
@@ -55,7 +58,7 @@ test("catalog enables only exact, schema-validated Nexus commands", () => {
   assert.deepEqual(catalog.capabilities, {
     readProject: true,
     readScript: true,
-    writeScript: true,
+    writeScript: false,
     patchScript: true,
     inspectSelection: false,
     outputLogs: true,
@@ -66,7 +69,7 @@ test("catalog enables only exact, schema-validated Nexus commands", () => {
   });
   assert.deepEqual(catalog.makeReadArgs("game.ServerScriptService.Main"), {
     toolName: "script_read",
-    args: { path: "game.ServerScriptService.Main", datamodel_type: "Edit" },
+    args: { target_file: "game.ServerScriptService.Main", datamodel_type: "Edit" },
   });
   assert.deepEqual(catalog.makeInspectArgs("game.Workspace.Part"), {
     toolName: "inspect_instance",
@@ -78,7 +81,21 @@ test("catalog enables only exact, schema-validated Nexus commands", () => {
   });
   assert.deepEqual(catalog.makeMutationArgs("game.ServerScriptService.Main", "old", "new"), {
     toolName: "multi_edit",
-    args: { path: "game.ServerScriptService.Main", datamodel_type: "Edit", source: "new" },
+    args: { file_path: "game.ServerScriptService.Main", datamodel_type: "Edit", edits: [{ old_string: "old", new_string: "new", replace_all: false }] },
+  });
+});
+
+test("insert_asset maps current optional fields without inventing schema keys", () => {
+  const insert = tool("insert_asset", {
+    assetId: { type: "string" },
+    assetName: { type: "string" },
+    type: { type: "string" },
+    parentPath: { type: "string" },
+  }, ["assetId"]);
+  const catalog = new ToolCatalog(targeted([insert]));
+  assert.deepEqual(catalog.makeInsertAssetArgs({ assetId: "123", assetName: "Tree", assetType: "Model", parentPath: "Workspace/Nexus" }), {
+    toolName: "insert_asset",
+    args: { assetId: "123", assetName: "Tree", type: "Model", parentPath: "Workspace/Nexus" },
   });
 });
 
@@ -92,8 +109,8 @@ test("inspect_instance fails closed on an unknown required argument", () => {
     },
     ["path", "datamodel_type", "execute"],
   );
-  const catalog = new ToolCatalog([incompatible]);
-  assert.deepEqual(catalog.supportedCommands, []);
+  const catalog = new ToolCatalog(targeted([incompatible]));
+  assert.equal(catalog.hasCommand("read_instance"), false);
   assert.equal(catalog.makeInspectArgs("game.Workspace.Part"), null);
 });
 
@@ -106,17 +123,17 @@ test("inspect_instance fails closed when a declared datamodel excludes Edit mode
     },
     ["path"],
   );
-  const catalog = new ToolCatalog([incompatible]);
-  assert.deepEqual(catalog.supportedCommands, []);
+  const catalog = new ToolCatalog(targeted([incompatible]));
+  assert.equal(catalog.hasCommand("read_instance"), false);
   assert.equal(catalog.makeInspectArgs("game.Workspace.Part"), null);
 });
 
 test("wrong names, duplicate definitions, unknown required fields, and incompatible schemas fail closed", () => {
-  const wrongCase = new ToolCatalog([{ ...read, name: "Script_Read" }, sourceMutation]);
-  assert.deepEqual(wrongCase.supportedCommands, []);
+  const wrongCase = new ToolCatalog(targeted([{ ...read, name: "Script_Read" }, sourceMutation]));
+  assert.equal(wrongCase.hasCommand("read_script"), false);
 
-  const duplicate = new ToolCatalog([read, read, sourceMutation]);
-  assert.deepEqual(duplicate.supportedCommands, []);
+  const duplicate = new ToolCatalog(targeted([read, read, sourceMutation]));
+  assert.equal(duplicate.hasCommand("read_script"), false);
 
   const extraRequired = tool(
     "script_read",
@@ -127,25 +144,27 @@ test("wrong names, duplicate definitions, unknown required fields, and incompati
     },
     ["path", "datamodel_type", "unsafe"],
   );
-  assert.deepEqual(new ToolCatalog([extraRequired, sourceMutation]).supportedCommands, []);
+  assert.equal(new ToolCatalog(targeted([extraRequired, sourceMutation])).hasCommand("read_script"), false);
 
   const wrongDatamodel = tool(
     "multi_edit",
     {
-      path: { type: "string" },
+      file_path: { type: "string" },
       datamodel_type: { type: "string", enum: ["Play"] },
-      source: { type: "string" },
+      edits: { type: "array", items: { type: "object", properties: { old_string: { type: "string" }, new_string: { type: "string" } }, required: ["old_string", "new_string"] } },
     },
-    ["path", "datamodel_type", "source"],
+    ["file_path", "datamodel_type", "edits"],
   );
-  assert.deepEqual(new ToolCatalog([read, wrongDatamodel]).supportedCommands, ["read_script", "read_scripts"]);
+  const wrongDatamodelCatalog = new ToolCatalog(targeted([read, wrongDatamodel]));
+  assert.equal(wrongDatamodelCatalog.hasCommand("read_script"), true);
+  assert.equal(wrongDatamodelCatalog.hasCommand("write_script"), false);
 });
 
 test("validated full-file line edits support guarded writes but not creation", () => {
   const lineMutation = tool(
     "multi_edit",
     {
-      path: { type: "string" },
+      file_path: { type: "string" },
       datamodel_type: { type: "string", enum: ["Edit"] },
       edits: {
         type: "array",
@@ -160,16 +179,16 @@ test("validated full-file line edits support guarded writes but not creation", (
         },
       },
     },
-    ["path", "datamodel_type", "edits"],
+    ["file_path", "datamodel_type", "edits"],
   );
-  const catalog = new ToolCatalog([read, lineMutation]);
+  const catalog = new ToolCatalog(targeted([read, lineMutation]));
   assert.equal(catalog.hasCommand("write_script"), true);
   assert.equal(catalog.hasCommand("patch_script"), true);
   assert.equal(catalog.hasCommand("create_script"), false);
   assert.deepEqual(catalog.makeMutationArgs("game.Script", "one\ntwo", "new"), {
     toolName: "multi_edit",
     args: {
-      path: "game.Script",
+      file_path: "game.Script",
       datamodel_type: "Edit",
       edits: [{ start_line: 1, end_line: 2, new_text: "new" }],
     },

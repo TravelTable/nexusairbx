@@ -69,6 +69,12 @@ import {
   messageToConversationEntry,
   normalizeChatAttachments,
 } from "../lib/chatAttachments";
+import { createChatProgressPersistence } from "../lib/chatProgressPersistence";
+import {
+  associateChatMessageWrites,
+  finishChatWriteMetrics,
+  recordChatMessageWrite,
+} from "../lib/clientFirestoreWriteMetrics";
 
 const STREAM_MAX_RETRIES = 3;
 const RESULT_MAX_POLLS = 45;
@@ -274,6 +280,7 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
           updatedAt: serverTimestamp(),
           patchApplied: true
         });
+        recordChatMessageWrite({ reason: "assistant_code_patch" });
         notify?.({ message: "Optimization applied successfully!", type: "success" });
       } catch (err) {
         console.error("Failed to apply patch:", err);
@@ -460,13 +467,17 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
 
         const billingFailure = parseApiErrorPayload(body);
         if (billingFailure || res.status === 402) {
-          await updateDoc(pendingRef, {
+          const persisted = await updateDoc(pendingRef, {
             pending: false,
             stage: "failed",
             errorCode: "INSUFFICIENT_TOKENS",
             error: billingFailure?.message || body?.message || "You're out of tokens.",
             updatedAt: serverTimestamp(),
-          }).catch(() => {});
+          }).then(() => true).catch(() => false);
+          if (persisted) {
+            recordChatMessageWrite({ jobId: currentPending.jobId, reason: "assistant_recovery_failure" });
+            finishChatWriteMetrics(currentPending.jobId, "error");
+          }
           return;
         }
 
@@ -474,24 +485,32 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
         try {
           data = parseCompletedGenerateResult(body);
         } catch (err) {
-          await updateDoc(pendingRef, {
+          const persisted = await updateDoc(pendingRef, {
             pending: false,
             stage: "failed",
             errorCode: err?.code || null,
             error: err?.message || `Generation failed (${res.status})`,
             updatedAt: serverTimestamp(),
-          }).catch(() => {});
+          }).then(() => true).catch(() => false);
+          if (persisted) {
+            recordChatMessageWrite({ jobId: currentPending.jobId, reason: "assistant_recovery_failure" });
+            finishChatWriteMetrics(currentPending.jobId, "error");
+          }
           return;
         }
         if (!data) {
           if (!res.ok) {
-            await updateDoc(pendingRef, {
+            const persisted = await updateDoc(pendingRef, {
               pending: false,
               stage: "failed",
               errorCode: body?.code || null,
               error: body?.message || body?.error || `Generation failed (${res.status})`,
               updatedAt: serverTimestamp(),
-            }).catch(() => {});
+            }).then(() => true).catch(() => false);
+            if (persisted) {
+              recordChatMessageWrite({ jobId: currentPending.jobId, reason: "assistant_recovery_failure" });
+              finishChatWriteMetrics(currentPending.jobId, "error");
+            }
             return;
           }
           data = body?.result || body;
@@ -506,6 +525,8 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
         });
         if (data?.runId || currentPending.runId) msgPayload.runId = data?.runId || currentPending.runId;
         await updateDoc(pendingRef, msgPayload);
+        recordChatMessageWrite({ jobId: currentPending.jobId, reason: "assistant_recovery_success" });
+        finishChatWriteMetrics(currentPending.jobId, "done");
         await updateDoc(chatRef, {
           updatedAt: serverTimestamp(),
           lastMessage: (currentPending.prompt || data?.title || "Studio agent run").slice(0, 50),
@@ -643,6 +664,7 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
           createdAt: serverTimestamp(),
           requestId,
         });
+        recordChatMessageWrite({ reason: "user_message" });
       }
 
       publishGenerationStage(activeChatId, "Preparing Job...");
@@ -747,6 +769,9 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
       const jobData = await jobRes.json();
       const jobId = jobData.jobId;
       if (!jobId) throw new Error("Failed to create generation job");
+      if (!existingRequestId) {
+        associateChatMessageWrites({ jobId, reason: "user_message", count: 1 });
+      }
       const agentRunId = jobData.runId || null;
       const resultUrl = resolveResultUrl(jobId, jobData.resultUrl);
       const assistantMsgRef = doc(db, "users", user.uid, "chats", activeChatId, "messages", `${requestId}-assistant`);
@@ -769,6 +794,7 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
         },
         steps: [],
       }, { merge: true });
+      recordChatMessageWrite({ jobId, reason: "assistant_initial" });
 
       publishGenerationStage(activeChatId, "Connecting...");
       const initialStreamSession = await ensureStreamSession(token, { retries: 1 }).catch(() => ({ token: null }));
@@ -781,6 +807,7 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
         let recoverInFlight = false;
         let dualStreamAttempted = false;
         let lastSeq = 0;
+        let lastStreamCursor = "0-0";
         let streamSessionToken = initialStreamSession?.token || null;
         let sseSessionUnavailable = !streamSessionToken;
         const isAutoExecuting = currentMode === "act";
@@ -795,6 +822,24 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
         };
         let idlePulse = null;
         let wallTimer = null;
+        const progressPersistence = createChatProgressPersistence({
+          key: `${user.uid}/${activeChatId}/${requestId}-assistant`,
+          persist: async (progress) => {
+            await updateDoc(assistantMsgRef, {
+              ...progress,
+              updatedAt: serverTimestamp(),
+            });
+            recordChatMessageWrite({ jobId, reason: "assistant_progress_checkpoint" });
+          },
+          onError: (error) => console.warn("Failed to persist assistant progress checkpoint", error),
+        });
+
+        const updateStreamPosition = (data) => {
+          lastSeq = updateSeqFromPayload(lastSeq, data);
+          if (/^\d+-\d+$/.test(String(data?.streamCursor || ""))) {
+            lastStreamCursor = data.streamCursor;
+          }
+        };
 
         const clearWallTimer = () => {
           if (wallTimer) {
@@ -901,13 +946,17 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
             message: friendlyMessage,
             retries: retryCount,
           });
+          progressPersistence.cancel();
           updateDoc(assistantMsgRef, {
             pending: false,
             stage: "failed",
             errorCode: err?.code || null,
             error: friendlyMessage,
             updatedAt: serverTimestamp(),
-          }).catch(() => {});
+          })
+            .then(() => recordChatMessageWrite({ jobId, reason: "assistant_terminal_failure" }))
+            .catch(() => {})
+            .finally(() => finishChatWriteMetrics(jobId, "error"));
           setBusy(false);
           if (streamFlushTimer) clearTimeout(streamFlushTimer);
           stopIdlePulse();
@@ -926,6 +975,7 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
             retries: retryCount,
           });
           eventSource?.close?.();
+          progressPersistence.cancel();
           updateDoc(assistantMsgRef, {
             pending: true,
             stage: "Still working in background...",
@@ -933,7 +983,9 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
             requestId,
             ...(agentRunId ? { runId: agentRunId } : {}),
             updatedAt: serverTimestamp(),
-          }).catch(() => {});
+          })
+            .then(() => recordChatMessageWrite({ jobId, reason: "assistant_background_handoff" }))
+            .catch(() => {});
           notify?.({
             type: "info",
             message:
@@ -968,6 +1020,7 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
           finalized = true;
           receivedDone = true;
           eventSource?.close?.();
+          progressPersistence.cancel();
 
           const message = payload.message || insufficientTokensToast(planKey).message;
           emitStreamMetric("error", {
@@ -977,7 +1030,7 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
             retries: retryCount,
           });
 
-          await setDoc(assistantMsgRef, {
+          const failurePersisted = await setDoc(assistantMsgRef, {
             role: "assistant",
             content: "",
             pending: false,
@@ -988,7 +1041,11 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
             jobId,
             ...(agentRunId ? { runId: agentRunId } : {}),
             updatedAt: serverTimestamp(),
-          }, { merge: true }).catch(() => {});
+          }, { merge: true }).then(() => true).catch(() => false);
+          if (failurePersisted) {
+            recordChatMessageWrite({ jobId, reason: "assistant_terminal_failure" });
+          }
+          finishChatWriteMetrics(jobId, "error");
 
           refreshBilling();
           notify(insufficientTokensToast(planKey));
@@ -1005,6 +1062,7 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
         const finalizeWithData = async (data, source = "done") => {
           if (finalized) return;
           finalized = true;
+          progressPersistence.cancel();
           stopIdlePulse();
           clearWallTimer();
 
@@ -1020,6 +1078,7 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
           if (data?.runId || agentRunId) msgPayload.runId = data?.runId || agentRunId;
 
           await setDoc(assistantMsgRef, msgPayload);
+          recordChatMessageWrite({ jobId, reason: "assistant_terminal_success" });
 
           await updateDoc(doc(db, "users", user.uid, "chats", activeChatId), {
             updatedAt: serverTimestamp(),
@@ -1038,6 +1097,7 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
 
           refreshBilling();
           emitAiEvent("JOB_COMPLETE", { jobId });
+          finishChatWriteMetrics(jobId, "done");
           setBusy(false);
           if (streamFlushTimer) clearTimeout(streamFlushTimer);
           setPending(null);
@@ -1136,7 +1196,7 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
           es.addEventListener("heartbeat", (e) => {
             try {
               const data = JSON.parse(e.data);
-              lastSeq = updateSeqFromPayload(lastSeq, data);
+              updateStreamPosition(data);
             } catch (_) {
               /* keepalive only */
             }
@@ -1145,14 +1205,11 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
           es.addEventListener("stage", (e) => {
             try {
               const data = JSON.parse(e.data);
-              lastSeq = updateSeqFromPayload(lastSeq, data);
+              updateStreamPosition(data);
               if (data?.message) {
                 publishStage(data.message, { id: `stage-${stageSlug(data.message)}` });
                 if (agentRunId) {
-                  updateDoc(assistantMsgRef, {
-                    stage: data.message,
-                    updatedAt: serverTimestamp(),
-                  }).catch(() => {});
+                  progressPersistence.queue({ stage: data.message });
                 }
               }
             } catch (err) {
@@ -1164,7 +1221,7 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
             if (!FEATURE_FLAGS.rawReasoning) return;
             try {
               const data = JSON.parse(e.data);
-              lastSeq = updateSeqFromPayload(lastSeq, data);
+              updateStreamPosition(data);
               streamStatesRef.current[activeChatId] = applyReasoningDelta(
                 streamStatesRef.current[activeChatId],
                 data
@@ -1181,7 +1238,7 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
             if (!FEATURE_FLAGS.streamV2) return;
             try {
               const data = JSON.parse(e.data);
-              lastSeq = updateSeqFromPayload(lastSeq, data);
+              updateStreamPosition(data);
               streamStatesRef.current[activeChatId] = applyStreamDelta(
                 streamStatesRef.current[activeChatId],
                 data
@@ -1203,7 +1260,7 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
             if (!FEATURE_FLAGS.unifiedAgent) return;
             try {
               const data = JSON.parse(e.data);
-              lastSeq = updateSeqFromPayload(lastSeq, data);
+              updateStreamPosition(data);
               const step = normalizeToolStep(data.step || data);
               recordStreamActivity({
                 type: "tool_step",
@@ -1217,12 +1274,11 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
                 if (!prev) return prev;
                 const steps = upsertAgentStep(prev.steps || [], step);
                 if (agentRunId) {
-                  updateDoc(assistantMsgRef, {
+                  progressPersistence.queue({
                     steps,
                     runId: data.runId || prev.runId || agentRunId,
                     stage: step.label || step.type || prev.stage,
-                    updatedAt: serverTimestamp(),
-                  }).catch(() => {});
+                  });
                 }
                 return {
                   ...prev,
@@ -1244,7 +1300,7 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
             receivedDone = true;
             try {
               const data = JSON.parse(e.data);
-              lastSeq = updateSeqFromPayload(lastSeq, data);
+              updateStreamPosition(data);
               es.close();
               await finalizeWithData(data, "done");
               resolve();
@@ -1288,10 +1344,16 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
             jobId,
             mode: currentMode,
             afterSeq: lastSeq,
+            afterCursor: lastStreamCursor,
             streamToken: streamSessionToken,
           });
           eventSource = new EventSource(url, { withCredentials: true });
-          emitStreamMetric("connect", { jobId, retryCount, afterSeq: lastSeq });
+          emitStreamMetric("connect", {
+            jobId,
+            retryCount,
+            afterSeq: lastSeq,
+            afterCursor: lastStreamCursor,
+          });
           setupListeners(eventSource);
           stopIdlePulse();
           idlePulse = createIdlePulseController({

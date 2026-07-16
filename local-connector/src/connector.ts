@@ -1,6 +1,7 @@
 import { asConnectorError, ConnectorError, isAbortError } from "./errors.js";
 import { CommandExecutor } from "./command-executor.js";
 import { ToolCatalog } from "./tool-catalog.js";
+import { StudioTargetManager } from "./studio-targeting.js";
 import type { ConnectorConfig } from "./config.js";
 import type { Logger } from "./logger.js";
 import type {
@@ -12,8 +13,9 @@ import type {
   StudioCommand,
 } from "./types.js";
 import { EMPTY_CAPABILITIES } from "./types.js";
+import { CONNECTOR_PROTOCOL_VERSION } from "./version.js";
 
-const MUTATING_COMMANDS = new Set(["create_script", "write_script", "patch_script"]);
+const MUTATING_COMMANDS = new Set(["create_script", "write_script", "patch_script", "create_instance", "update_properties", "update_attributes", "update_tags", "rename_instance", "move_instance", "duplicate_instance", "delete_instance", "batch_operations", "restore_snapshot", "undo_last_batch", "insert_creator_store_asset", "run_test_service", "run_play_test", "stop_play_test"]);
 
 export interface LocalConnectorOptions {
   config: ConnectorConfig;
@@ -61,6 +63,7 @@ export class NexusLocalConnector {
   #toolsDirty = false;
   #mcpInfo: McpConnectionInfo = {};
   #announcedUnavailable = false;
+  #targeting: StudioTargetManager | null = null;
 
   constructor(options: LocalConnectorOptions) {
     this.#config = options.config;
@@ -80,6 +83,7 @@ export class NexusLocalConnector {
       this.#mcpConnected = false;
       this.#catalog = null;
       this.#executor = null;
+      this.#targeting = null;
       this.#mcpInfo = {};
       this.#announcedUnavailable = false;
       this.#logger.warn(error?.message ?? "Roblox Studio MCP disconnected; reconnecting.");
@@ -211,21 +215,30 @@ export class NexusLocalConnector {
     if (this.#executor === null) this.#executor = new CommandExecutor(this.#mcp, catalog);
     else this.#executor.updateCatalog(catalog);
     this.#catalog = catalog;
+    if (catalog.listStudios && catalog.setActiveStudio && catalog.studioState) {
+      this.#targeting ??= new StudioTargetManager(this.#mcp);
+      await this.#targeting.refresh(signal);
+    } else this.#targeting = null;
+    if (this.#targeting) {
+      const changed = this.#targeting.acceptBackendResponse(await this.#backend.ping(this.pingPayload(true), signal));
+      if (changed) await this.#targeting.refresh(signal);
+    }
+    const runtime = runtimeCapabilities(catalog, this.#targeting);
     this.emitTelemetry({
       supportedTools: tools.map((tool) => tool.name).sort(),
-      supportedToolCount: catalog.supportedCommands.length,
+      supportedToolCount: runtime.supportedCommands.length,
       mcpConnected: true,
     });
     await this.#backend.registerCapabilities(
-      catalog.capabilities,
-      catalog.supportedCommands,
+      runtime.capabilities,
+      runtime.supportedCommands,
       tools.map((tool) => ({
         name: tool.name,
         ...(tool.description === undefined ? {} : { description: tool.description }),
       })),
+      runtime.capabilityDetails,
       signal,
     );
-    await this.#backend.ping(this.pingPayload(true), signal);
     await this.refreshExperienceSummary(tools, signal);
   }
 
@@ -245,6 +258,7 @@ export class NexusLocalConnector {
   private async executeAndAcknowledge(command: StudioCommand, signal: AbortSignal): Promise<void> {
     const executor = this.#executor;
     if (!executor) throw new ConnectorError("MCP_NOT_CONNECTED", "Roblox Studio MCP is not connected.", { retryable: true });
+    if (MUTATING_COMMANDS.has(command.type)) await this.#targeting?.ensureMutationTarget(signal);
     const startedAt = Date.now();
     const result = await executor.execute(command, signal);
     result.duration = Date.now() - startedAt;
@@ -263,7 +277,8 @@ export class NexusLocalConnector {
     while (!signal.aborted) {
       await delay(this.#config.heartbeatMs, signal);
       try {
-        await this.#backend.ping(this.pingPayload(this.#mcpConnected), signal);
+        const response = await this.#backend.ping(this.pingPayload(this.#mcpConnected), signal);
+        if (this.#targeting?.acceptBackendResponse(response)) this.#toolsDirty = true;
         this.emitTelemetry({ cloudConnected: true, lastHeartbeatAt: Date.now() });
       } catch (error) {
         if (signal.aborted) return;
@@ -279,9 +294,11 @@ export class NexusLocalConnector {
     return {
       mcpServerAvailable: available,
       connectorVersion: this.#connectorVersion,
+      connectorProtocolVersion: CONNECTOR_PROTOCOL_VERSION,
       ...(available && this.#mcpInfo.serverVersion !== undefined
         ? { mcpServerVersion: this.#mcpInfo.serverVersion }
         : {}),
+      ...(available && this.#targeting ? this.#targeting.metadata() : {}),
     };
   }
 
@@ -291,7 +308,7 @@ export class NexusLocalConnector {
     this.emitLifecycleState("studio_mcp_unavailable");
     this.emitTelemetry({ mcpConnected: false, degradedReason: "mcp_initialization_failed" });
     try {
-      await this.#backend.registerCapabilities({ ...EMPTY_CAPABILITIES }, [], []);
+      await this.#backend.registerCapabilities({ ...EMPTY_CAPABILITIES }, [], [], new ToolCatalog([]).capabilityDetails);
       await this.#backend.ping(this.pingPayload(false));
     } catch (error) {
       this.#logger.debug("Could not publish degraded connector state.", { code: asConnectorError(error).code });
@@ -302,6 +319,7 @@ export class NexusLocalConnector {
     this.#mcpConnected = false;
     this.#catalog = null;
     this.#executor = null;
+    this.#targeting = null;
     this.#mcpInfo = {};
     await this.#mcp.disconnect();
   }
@@ -379,6 +397,22 @@ function findExperienceName(value: unknown, depth: number): string | null {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function runtimeCapabilities(catalog: ToolCatalog, targeting: StudioTargetManager | null) {
+  if (targeting?.activeStudioId) {
+    return { capabilities: catalog.capabilities, capabilityDetails: catalog.capabilityDetails, supportedCommands: catalog.supportedCommands };
+  }
+  const reasonCode = targeting && targeting.targets.length > 1
+    ? "STUDIO_TARGET_SELECTION_REQUIRED"
+    : "STUDIO_TARGET_UNAVAILABLE";
+  const capabilityDetails = Object.fromEntries(Object.entries(catalog.capabilityDetails).map(([key, detail]) => [key, {
+    ...detail,
+    status: "unavailable",
+    reasonCode,
+    verifiedAt: null,
+  }])) as typeof catalog.capabilityDetails;
+  return { capabilities: { ...EMPTY_CAPABILITIES }, capabilityDetails, supportedCommands: [] };
 }
 
 function abortReason(signal: AbortSignal): unknown {

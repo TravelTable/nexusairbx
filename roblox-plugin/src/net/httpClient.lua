@@ -182,7 +182,7 @@ local function requestWithRetry(method, path, body, token, opts)
 	local lastResult
 
 	while attempt < maxAttempts do
-		attempt += 1
+		attempt = attempt + 1
 		lastResult = requestOnce(method, path, body, token, opts)
 		if lastResult.ok or not lastResult.retryable or attempt >= maxAttempts then
 			return lastResult
@@ -214,9 +214,8 @@ function pingHealth()
 	return result.ok == true, result.latencyMs or lastLatencyMs
 end
 
--- Authenticated, side-effect-free liveness ping. Unlike GET /commands/next it
--- never claims a command, so it is safe to call on a timer to keep the backend
--- session's lastSeenAt fresh during long-running operations.
+-- Authenticated heartbeat. It never claims a command and the backend throttles
+-- its single session write while returning collaborator and MCP summaries.
 function pingSession(token, placeSignature)
 	if not token then
 		return false, lastLatencyMs, false
@@ -227,22 +226,9 @@ function pingSession(token, placeSignature)
 	end
 	local result = requestOnce("POST", "/api/studio/session/ping", body, token, { maxAttempts = 1 })
 	if result.status == 401 or result.status == 403 then
-		return false, result.latencyMs or lastLatencyMs, true
+		return false, result.latencyMs or lastLatencyMs, true, nil
 	end
-	return result.ok == true, result.latencyMs or lastLatencyMs, false
-end
-
--- Read-only companion summary for the Studio panel. It intentionally uses the
--- existing plugin bearer token and never changes pairing or command polling.
-function getMcpCompanionStatus(token)
-	if not token then
-		return false, nil
-	end
-	local result = requestOnce("GET", "/api/studio/mcp/plugin-status", nil, token, { maxAttempts = 1 })
-	if result.ok and type(result.data) == "table" then
-		return true, result.data
-	end
-	return false, nil
+	return result.ok == true, result.latencyMs or lastLatencyMs, false, result.data
 end
 
 function getToken()

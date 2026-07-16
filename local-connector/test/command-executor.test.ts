@@ -14,6 +14,9 @@ import type {
 const READ_PATH = "game.ServerScriptService.Main";
 
 const tools: DiscoveredTool[] = [
+  { name: "list_roblox_studios", inputSchema: { type: "object", properties: {}, required: [] } },
+  { name: "set_active_studio", inputSchema: { type: "object", properties: { studio_id: { type: "string" } }, required: ["studio_id"] } },
+  { name: "get_studio_state", inputSchema: { type: "object", properties: {}, required: [] } },
   {
     name: "script_read",
     inputSchema: {
@@ -52,11 +55,22 @@ const tools: DiscoveredTool[] = [
     name: "execute_luau",
     inputSchema: {
       type: "object",
-      properties: { code: { type: "string" } },
-      required: ["code"],
+      properties: {
+        code: { type: "string" },
+        datamodel_type: { type: "string", enum: ["Edit"] },
+      },
+      required: ["code", "datamodel_type"],
     },
   },
   { name: "get_console_output", inputSchema: { type: "object", properties: {}, required: [] } },
+  {
+    name: "start_stop_play",
+    inputSchema: {
+      type: "object",
+      properties: { is_start: { type: "boolean" } },
+      required: ["is_start"],
+    },
+  },
 ];
 
 class FakeMcp implements McpClientLike {
@@ -66,6 +80,8 @@ class FakeMcp implements McpClientLike {
   applyMutation = true;
   malformedRead = false;
   consoleText = "log";
+  studioPlaying = false;
+  applyPlayTransition = true;
   readonly inspections = new Map<string, JsonObject>();
 
   async connect(): Promise<McpConnectionInfo> { return {}; }
@@ -89,6 +105,13 @@ class FakeMcp implements McpClientLike {
       return { content: [{ type: "text", text: "edited" }] };
     }
     if (name === "get_console_output") return { content: [{ type: "text", text: this.consoleText }] };
+    if (name === "start_stop_play") {
+      if (this.applyPlayTransition) this.studioPlaying = args.is_start === true;
+      return { content: [{ type: "text", text: "transition requested" }] };
+    }
+    if (name === "get_studio_state") {
+      return { structuredContent: { mode: this.studioPlaying ? "Playing" : "Edit" } };
+    }
     if (name === "inspect_instance") {
       const inspection = this.inspections.get(String(args.path));
       if (!inspection) return { isError: true, content: [{ type: "text", text: "instance not found" }] };
@@ -287,6 +310,49 @@ test("tool output is bounded before it is acknowledged", async () => {
   assert.equal(typeof result.output, "string");
   assert.equal((result.output as string).endsWith("…[truncated]"), true);
   assert.equal((result.output as string).length < 300_000, true);
+});
+
+test("playtest start and stop transitions are verified and a started test always returns to Edit mode", async () => {
+  const mcp = new FakeMcp();
+  const executor = new CommandExecutor(mcp, new ToolCatalog(tools));
+
+  const started = await executor.execute(command("run_play_test", {
+    confirmed: true,
+    maxDurationSeconds: 1,
+  }));
+  assert.equal(started.success, true);
+  assert.equal(started.enteredPlayMode, true);
+  assert.equal(started.cleanupVerified, true);
+  assert.equal(mcp.studioPlaying, false);
+  assert.deepEqual(
+    mcp.calls.filter((call) => call.name === "start_stop_play").map((call) => call.args.is_start),
+    [true, false],
+  );
+
+  mcp.studioPlaying = true;
+  const stopped = await executor.execute(command("stop_play_test", {
+    confirmed: true,
+    maxDurationSeconds: 1,
+  }));
+  assert.equal(stopped.success, true);
+  assert.equal(stopped.enteredPlayMode, false);
+  assert.equal(stopped.cleanupVerified, true);
+});
+
+test("stop playtest fails closed when Edit mode is not observed before the deadline", async () => {
+  const mcp = new FakeMcp();
+  mcp.studioPlaying = true;
+  mcp.applyPlayTransition = false;
+  const executor = new CommandExecutor(mcp, new ToolCatalog(tools));
+
+  const result = await executor.execute(command("stop_play_test", {
+    confirmed: true,
+    maxDurationSeconds: 1,
+  }));
+
+  assert.equal(result.success, false);
+  assert.equal(errorCode(result), "PLAYTEST_TIMEOUT");
+  assert.equal(mcp.calls.filter((call) => call.name === "start_stop_play").length, 1);
 });
 
 test("multi-script results fail locally when the acknowledgement would exceed the backend limit", async () => {

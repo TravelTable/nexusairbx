@@ -1,4 +1,4 @@
-import type { DiscoveredTool, JsonObject, StudioCapabilities } from "./types.js";
+import type { CapabilityDetails, DiscoveredTool, JsonObject, StudioCapabilities } from "./types.js";
 import { EMPTY_CAPABILITIES } from "./types.js";
 
 export interface BasicToolAdapter {
@@ -21,7 +21,7 @@ export interface InstanceToolProfile {
 export type MutationEncoding =
   | { kind: "source"; sourceKey: string }
   | { kind: "line_edit"; editsKey: string; startKey: string; endKey: string; textKey: string }
-  | { kind: "text_edit"; editsKey: string; oldKey: string; newKey: string };
+  | { kind: "text_edit"; editsKey: string; oldKey: string; newKey: string; replaceAllKey?: string };
 
 export interface MutationToolProfile {
   toolName: "multi_edit";
@@ -30,12 +30,27 @@ export interface MutationToolProfile {
   encoding: MutationEncoding;
 }
 
+export interface AssetToolProfile {
+  toolName: "insert_asset";
+  assetIdKey: string;
+  assetNameKey?: string;
+  assetTypeKey?: string;
+  parentPathKey?: string;
+}
+
 export class ToolCatalog {
   readonly #byName: Map<string, DiscoveredTool>;
   readonly readScript: PathToolProfile | null;
   readonly inspectInstance: InstanceToolProfile | null;
   readonly mutation: MutationToolProfile | null;
+  readonly executeLuau: BasicToolAdapter | null;
+  readonly insertAsset: AssetToolProfile | null;
+  readonly startStopPlay: BasicToolAdapter | null;
+  readonly listStudios: BasicToolAdapter | null;
+  readonly setActiveStudio: BasicToolAdapter | null;
+  readonly studioState: BasicToolAdapter | null;
   readonly capabilities: StudioCapabilities;
+  readonly capabilityDetails: CapabilityDetails;
   readonly supportedCommands: string[];
 
   constructor(readonly tools: DiscoveredTool[]) {
@@ -50,39 +65,71 @@ export class ToolCatalog {
     this.readScript = compileReadScript(this.#byName.get("script_read"));
     this.inspectInstance = compileInspectInstance(this.#byName.get("inspect_instance"));
     this.mutation = compileMutation(this.#byName.get("multi_edit"));
+    this.executeLuau = compileExactTool(this.#byName.get("execute_luau"), ["code", "datamodel_type"]);
+    this.insertAsset = compileInsertAsset(this.#byName.get("insert_asset"));
+    this.startStopPlay = compileExactTool(this.#byName.get("start_stop_play"), ["is_start"]);
+    this.listStudios = compileExactTool(this.#byName.get("list_roblox_studios"), []);
+    this.setActiveStudio = compileExactTool(this.#byName.get("set_active_studio"), ["studio_id"]);
+    this.studioState = compileExactTool(this.#byName.get("get_studio_state"), []);
+    const targetToolsReady = Boolean(this.listStudios && this.setActiveStudio && this.studioState);
 
     const commands = new Set<string>();
-    if (this.readScript) {
+    if (targetToolsReady && this.readScript) {
       commands.add("read_script");
       commands.add("read_scripts");
     }
-    if (this.inspectInstance) {
+    if (targetToolsReady && this.inspectInstance) {
       commands.add("inspect_instances");
       commands.add("read_instance");
       commands.add("read_properties");
     }
-    if (compileSearch(this.#byName.get("script_search"), ["query", "name"])) commands.add("search_project");
-    if (compileSearch(this.#byName.get("script_grep"), ["pattern", "query"])) commands.add("search_source");
-    if (compileNoInput(this.#byName.get("get_studio_state"))) commands.add("get_studio_context");
-    if (compileNoInput(this.#byName.get("get_console_output"))) {
+    if (targetToolsReady && compileSearch(this.#byName.get("script_search"), ["keywords", "query", "name"])) commands.add("search_project");
+    if (targetToolsReady && compileSearch(this.#byName.get("script_grep"), ["pattern", "query"])) commands.add("search_source");
+    if (targetToolsReady) commands.add("get_studio_context");
+    if (targetToolsReady && compileNoInput(this.#byName.get("get_console_output"))) {
       commands.add("get_output_logs");
       commands.add("collect_output");
     }
-    if (this.readScript && this.mutation) {
+    if (targetToolsReady && this.readScript && this.mutation) {
       commands.add("write_script");
       commands.add("patch_script");
-      if (this.mutation.encoding.kind === "source") commands.add("create_script");
+    }
+    if (targetToolsReady && this.executeLuau) {
+      commands.add("create_script");
+      commands.add("get_selection");
+      for (const command of INSTANCE_COMMANDS) commands.add(command);
+      for (const command of SNAPSHOT_COMMANDS) commands.add(command);
+    }
+    if (targetToolsReady && this.executeLuau && this.insertAsset) commands.add("insert_creator_store_asset");
+    if (targetToolsReady && this.executeLuau && this.startStopPlay && compileNoInput(this.#byName.get("get_console_output"))) {
+      for (const command of PLAYTEST_COMMANDS) commands.add(command);
     }
     this.supportedCommands = [...commands].sort();
     this.capabilities = {
       ...EMPTY_CAPABILITIES,
-      readProject:
-        commands.has("search_project") || commands.has("search_source") || commands.has("inspect_instances"),
-      readScript: this.readScript !== null,
-      writeScript: commands.has("write_script"),
+      readProject: commands.has("search_project"),
+      readScript: commands.has("read_script") && commands.has("read_scripts"),
+      writeScript: commands.has("create_script") && commands.has("write_script"),
       patchScript: commands.has("patch_script"),
-      outputLogs: commands.has("get_output_logs"),
+      outputLogs: commands.has("get_output_logs") && commands.has("collect_output"),
+      inspectSelection: commands.has("get_selection"),
+      playtest: PLAYTEST_COMMANDS.every((command) => commands.has(command)),
+      creatorStoreInsert: commands.has("insert_creator_store_asset"),
+      instanceMutation: INSTANCE_COMMANDS.every((command) => commands.has(command)),
+      snapshots: SNAPSHOT_COMMANDS.every((command) => commands.has(command)),
     };
+    this.capabilityDetails = makeCapabilityDetails(this.capabilities, {
+      readProject: { commands: ["search_project"], tools: ["script_search", ...TARGET_TOOLS] },
+      readScript: { commands: ["read_script", "read_scripts"], tools: ["script_read", ...TARGET_TOOLS] },
+      writeScript: { commands: ["create_script", "write_script"], tools: ["execute_luau", "script_read", "multi_edit", ...TARGET_TOOLS] },
+      patchScript: { commands: ["patch_script"], tools: ["script_read", "multi_edit", ...TARGET_TOOLS] },
+      inspectSelection: { commands: ["get_selection"], tools: ["execute_luau", ...TARGET_TOOLS] },
+      outputLogs: { commands: ["get_output_logs", "collect_output"], tools: ["get_console_output", ...TARGET_TOOLS] },
+      playtest: { commands: [...PLAYTEST_COMMANDS], tools: ["execute_luau", "start_stop_play", "get_studio_state", "get_console_output", ...TARGET_TOOLS] },
+      creatorStoreInsert: { commands: ["insert_creator_store_asset"], tools: ["execute_luau", "insert_asset", ...TARGET_TOOLS] },
+      instanceMutation: { commands: [...INSTANCE_COMMANDS], tools: ["execute_luau", ...TARGET_TOOLS] },
+      snapshots: { commands: [...SNAPSHOT_COMMANDS], tools: ["execute_luau", ...TARGET_TOOLS] },
+    }, this.#byName);
   }
 
   hasCommand(command: string): boolean {
@@ -115,7 +162,7 @@ export class ToolCatalog {
 
   makeSearchArgs(command: "search_project" | "search_source", query: string): BasicToolAdapter | null {
     const tool = command === "search_project" ? this.#byName.get("script_search") : this.#byName.get("script_grep");
-    const profile = compileSearch(tool, command === "search_project" ? ["query", "name"] : ["pattern", "query"]);
+    const profile = compileSearch(tool, command === "search_project" ? ["keywords", "query", "name"] : ["pattern", "query"]);
     if (!profile) return null;
     return {
       toolName: profile.toolName,
@@ -129,6 +176,20 @@ export class ToolCatalog {
   makeNoInputArgs(command: "get_studio_context" | "get_output_logs" | "collect_output"): BasicToolAdapter | null {
     const name = command === "get_studio_context" ? "get_studio_state" : "get_console_output";
     return compileNoInput(this.#byName.get(name)) ? { toolName: name, args: {} } : null;
+  }
+
+  makeInsertAssetArgs(input: { assetId: string; assetName?: string; assetType?: string; parentPath?: string }): BasicToolAdapter | null {
+    const profile = this.insertAsset;
+    if (!profile) return null;
+    return {
+      toolName: profile.toolName,
+      args: {
+        [profile.assetIdKey]: input.assetId,
+        ...(profile.assetNameKey && input.assetName ? { [profile.assetNameKey]: input.assetName } : {}),
+        ...(profile.assetTypeKey && input.assetType ? { [profile.assetTypeKey]: input.assetType } : {}),
+        ...(profile.parentPathKey && input.parentPath ? { [profile.parentPathKey]: input.parentPath } : {}),
+      },
+    };
   }
 
   makeMutationArgs(path: string, currentSource: string | null, targetSource: string): BasicToolAdapter | null {
@@ -151,7 +212,11 @@ export class ToolCatalog {
       return { toolName: profile.toolName, args: base };
     }
     base[profile.encoding.editsKey] = [
-      { [profile.encoding.oldKey]: currentSource, [profile.encoding.newKey]: targetSource },
+      {
+        [profile.encoding.oldKey]: currentSource,
+        [profile.encoding.newKey]: targetSource,
+        ...(profile.encoding.replaceAllKey ? { [profile.encoding.replaceAllKey]: false } : {}),
+      },
     ];
     return { toolName: profile.toolName, args: base };
   }
@@ -167,7 +232,7 @@ function compileReadScript(tool: DiscoveredTool | undefined): PathToolProfile | 
   if (!tool || tool.name !== "script_read") return null;
   const schema = objectSchema(tool.inputSchema);
   if (!schema) return null;
-  const pathKey = findRequiredString(schema, ["path", "script_path", "scriptPath"]);
+  const pathKey = findRequiredString(schema, ["target_file", "path", "script_path", "scriptPath"]);
   if (!pathKey) return null;
   const datamodelKey = findDatamodelKey(schema);
   const allowedRequired = new Set([pathKey, ...(datamodelKey ? [datamodelKey] : [])]);
@@ -207,11 +272,33 @@ function compileNoInput(tool: DiscoveredTool | undefined): boolean {
   return schema !== null && schema.required.length === 0;
 }
 
+function compileInsertAsset(tool: DiscoveredTool | undefined): AssetToolProfile | null {
+  if (!tool || tool.name !== "insert_asset") return null;
+  const schema = objectSchema(tool.inputSchema);
+  if (!schema) return null;
+  const assetIdKey = findRequiredString(schema, ["assetId", "asset_id"]);
+  if (!assetIdKey || schema.required.some((key) => key !== assetIdKey)) return null;
+  const optionalString = (candidates: string[]) => candidates.find((key) => {
+    const property = asRecord(schema.properties[key]);
+    return property?.type === "string";
+  });
+  const assetNameKey = optionalString(["assetName", "asset_name"]);
+  const assetTypeKey = optionalString(["type", "assetType", "asset_type"]);
+  const parentPathKey = optionalString(["parentPath", "parent_path"]);
+  return {
+    toolName: "insert_asset",
+    assetIdKey,
+    ...(assetNameKey ? { assetNameKey } : {}),
+    ...(assetTypeKey ? { assetTypeKey } : {}),
+    ...(parentPathKey ? { parentPathKey } : {}),
+  };
+}
+
 function compileMutation(tool: DiscoveredTool | undefined): MutationToolProfile | null {
   if (!tool || tool.name !== "multi_edit") return null;
   const schema = objectSchema(tool.inputSchema);
   if (!schema) return null;
-  const pathKey = findRequiredString(schema, ["path", "script_path", "scriptPath"]);
+  const pathKey = findRequiredString(schema, ["file_path", "path", "script_path", "scriptPath"]);
   const datamodelKey = findDatamodelKey(schema, true);
   if (!pathKey || !datamodelKey) return null;
 
@@ -239,14 +326,15 @@ function compileMutation(tool: DiscoveredTool | undefined): MutationToolProfile 
     };
   }
 
-  const oldKey = findRequiredString(itemSchema, ["old_text", "oldText"]);
-  const newKey = findRequiredString(itemSchema, ["new_text", "newText"]);
+  const oldKey = findRequiredString(itemSchema, ["old_string", "old_text", "oldText"]);
+  const newKey = findRequiredString(itemSchema, ["new_string", "new_text", "newText"]);
+  const replaceAllKey = findOptionalBoolean(itemSchema, ["replace_all", "replaceAll"]);
   if (oldKey && newKey && requiredExactly(itemSchema.required, [oldKey, newKey])) {
     return {
       toolName: "multi_edit",
       pathKey,
       datamodelKey,
-      encoding: { kind: "text_edit", editsKey, oldKey, newKey },
+      encoding: { kind: "text_edit", editsKey, oldKey, newKey, ...(replaceAllKey ? { replaceAllKey } : {}) },
     };
   }
   return null;
@@ -276,6 +364,55 @@ function findRequiredInteger(schema: ParsedObjectSchema, candidates: string[]): 
 
 function findRequiredArray(schema: ParsedObjectSchema, candidates: string[]): string | null {
   return findRequiredType(schema, candidates, ["array"]);
+}
+
+function findOptionalBoolean(schema: ParsedObjectSchema, candidates: string[]): string | null {
+  for (const key of candidates) {
+    const property = asRecord(schema.properties[key]);
+    if (property?.type === "boolean") return key;
+  }
+  return null;
+}
+
+function compileExactTool(tool: DiscoveredTool | undefined, required: string[]): BasicToolAdapter | null {
+  if (!tool) return null;
+  const schema = objectSchema(tool.inputSchema);
+  if (!schema || !requiredExactly(schema.required, required)) return null;
+  for (const key of required) {
+    const property = asRecord(schema.properties[key]);
+    if (!property) return null;
+    if (key === "is_start" && property.type !== "boolean") return null;
+    if (key !== "is_start" && property.type !== "string") return null;
+    if (key === "datamodel_type" && Array.isArray(property.enum) && !property.enum.includes("Edit")) return null;
+  }
+  return { toolName: tool.name, args: {} };
+}
+
+const INSTANCE_COMMANDS = [
+  "create_instance", "update_properties", "update_attributes", "update_tags", "rename_instance",
+  "move_instance", "duplicate_instance", "delete_instance", "batch_operations",
+] as const;
+const SNAPSHOT_COMMANDS = ["create_snapshot", "restore_snapshot", "undo_last_batch"] as const;
+const PLAYTEST_COMMANDS = ["run_test_service", "run_play_test", "stop_play_test"] as const;
+const TARGET_TOOLS = ["list_roblox_studios", "set_active_studio", "get_studio_state"] as const;
+
+function makeCapabilityDetails(
+  capabilities: StudioCapabilities,
+  requirements: Record<keyof StudioCapabilities, { commands: string[]; tools: string[] }>,
+  tools: Map<string, DiscoveredTool>,
+): CapabilityDetails {
+  const verifiedAt = Date.now();
+  return Object.fromEntries(Object.entries(requirements).map(([key, requirement]) => {
+    const supported = capabilities[key as keyof StudioCapabilities];
+    const missing = requirement.tools.filter((tool) => !tools.has(tool));
+    return [key, {
+      status: supported ? "supported" : "unavailable",
+      reasonCode: supported ? "SELF_CHECK_PASSED" : missing.length ? "REQUIRED_TOOL_MISSING" : "SCHEMA_INCOMPATIBLE",
+      requiredCommands: requirement.commands,
+      requiredTools: requirement.tools,
+      verifiedAt: supported ? verifiedAt : null,
+    }];
+  })) as CapabilityDetails;
 }
 
 function findRequiredType(schema: ParsedObjectSchema, candidates: string[], types: string[]): string | null {

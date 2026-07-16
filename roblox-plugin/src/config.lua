@@ -4,7 +4,7 @@
 local BACKEND_URL = "https://api.nexusrbx.com"
 local BACKEND_HOST = "api.nexusrbx.com"
 local PLUGIN_VERSION = "0.10.0-verified-decoupled"
-local STUDIO_PROTOCOL_VERSION = "2026-06-20-creator-store"
+local STUDIO_PROTOCOL_VERSION = "2026-07-17-mcp-parity"
 
 local Services = {
 	HttpService = game:GetService("HttpService"),

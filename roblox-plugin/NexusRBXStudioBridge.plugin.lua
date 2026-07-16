@@ -8,7 +8,7 @@
 local BACKEND_URL = "https://api.nexusrbx.com"
 local BACKEND_HOST = "api.nexusrbx.com"
 local PLUGIN_VERSION = "0.10.0-verified-decoupled"
-local STUDIO_PROTOCOL_VERSION = "2026-06-20-creator-store"
+local STUDIO_PROTOCOL_VERSION = "2026-07-17-mcp-parity"
 
 local Services = {
 	HttpService = game:GetService("HttpService"),
@@ -65,7 +65,7 @@ localSnapshots = {}
 -- END src/ui/components.lua
 
 -- BEGIN src/net/httpClient.lua
-local request, getToken, setToken, jsonEncode, getLastLatencyMs, pingHealth, getMcpCompanionStatus
+local request, getToken, setToken, jsonEncode, getLastLatencyMs, pingHealth
 do
 local lastLatencyMs = 0
 local etagCache = {}
@@ -251,7 +251,7 @@ local function requestWithRetry(method, path, body, token, opts)
 	local lastResult
 
 	while attempt < maxAttempts do
-		attempt += 1
+		attempt = attempt + 1
 		lastResult = requestOnce(method, path, body, token, opts)
 		if lastResult.ok or not lastResult.retryable or attempt >= maxAttempts then
 			return lastResult
@@ -283,9 +283,8 @@ pingHealth = function()
 	return result.ok == true, result.latencyMs or lastLatencyMs
 end
 
--- Authenticated, side-effect-free liveness ping. Unlike GET /commands/next it
--- never claims a command, so it is safe to call on a timer to keep the backend
--- session's lastSeenAt fresh during long-running operations.
+-- Authenticated heartbeat. It never claims a command and the backend throttles
+-- its single session write while returning collaborator and MCP summaries.
 function pingSession(token, placeSignature)
 	if not token then
 		return false, lastLatencyMs, false
@@ -296,22 +295,9 @@ function pingSession(token, placeSignature)
 	end
 	local result = requestOnce("POST", "/api/studio/session/ping", body, token, { maxAttempts = 1 })
 	if result.status == 401 or result.status == 403 then
-		return false, result.latencyMs or lastLatencyMs, true
+		return false, result.latencyMs or lastLatencyMs, true, nil
 	end
-	return result.ok == true, result.latencyMs or lastLatencyMs, false
-end
-
--- Read-only companion summary for the Studio panel. It intentionally uses the
--- existing plugin bearer token and never changes pairing or command polling.
-getMcpCompanionStatus = function(token)
-	if not token then
-		return false, nil
-	end
-	local result = requestOnce("GET", "/api/studio/mcp/plugin-status", nil, token, { maxAttempts = 1 })
-	if result.ok and type(result.data) == "table" then
-		return true, result.data
-	end
-	return false, nil
+	return result.ok == true, result.latencyMs or lastLatencyMs, false, result.data
 end
 
 getToken = function()
@@ -1050,7 +1036,7 @@ do
 local TweenService = game:GetService("TweenService")
 
 local displayPluginVersion = PLUGIN_VERSION or "0.9.3-creator-store-create-instance"
-local displayProtocolVersion = STUDIO_PROTOCOL_VERSION or "2026-06-20-creator-store"
+local displayProtocolVersion = STUDIO_PROTOCOL_VERSION or "2026-07-17-mcp-parity"
 local MAX_ACTIVITY_ENTRIES = 25
 
 local toolbar = plugin:CreateToolbar("NexusRBX")
@@ -1632,7 +1618,7 @@ do
 	mcpCompanionLabel = makeText(companionSection, "McpCompanionStatus", "Not configured", 17, 11, false, themeColor(Enum.StudioStyleGuideColor.DimmedText))
 end
 -- Team Create awareness: who else is editing this place (masked identity).
--- Populated by the heartbeat loop via GET /api/studio/collaborators.
+-- Populated from the consolidated /api/studio/session/ping heartbeat response.
 collaboratorsLabel = makeText(settingsSection, "Collaborators", "Collaborators: checking...", nil, 11, false, themeColor(Enum.StudioStyleGuideColor.DimmedText), true)
 collaboratorsLabel.TextWrapped = true
 
@@ -3485,9 +3471,9 @@ collectOutput = function(payload)
 	local errorCount, warningCount = 0, 0
 	for _, entry in ipairs(filtered) do
 		if entry.level == "error" then
-			errorCount += 1
+			errorCount = errorCount + 1
 		elseif entry.level == "warning" then
-			warningCount += 1
+			warningCount = warningCount + 1
 		end
 	end
 
@@ -6217,7 +6203,7 @@ executeCommand = function(command)
 			PLUGIN_VERSION
 		))
 	end
-	executedCommandCount += 1
+	executedCommandCount = executedCommandCount + 1
 	setProgress({
 		runId = command.runId,
 		stepId = command.stepId,
@@ -6692,7 +6678,7 @@ playtestLogsButton.MouseButton1Click:Connect(function()
 		if entry and (entry.level == "error" or entry.level == "warning") then
 			local prefix = entry.level == "error" and '<font color="#D64550">ERR</font> ' or '<font color="#D39127">WARN</font> '
 			table.insert(lines, prefix .. tostring(entry.message):sub(1, 160))
-			shown += 1
+			shown = shown + 1
 			if shown >= 5 then
 				break
 			end
@@ -6741,10 +6727,8 @@ local function shouldAutoPull()
 	return setting ~= false
 end
 
--- Poll loop: continuously long-polls for commands and enqueues them. Because it
--- never blocks on execution or approval, every poll doubles as a session
--- heartbeat (the backend refreshes lastSeenAt on each authenticated request),
--- so the session no longer goes stale while a command is running.
+-- Poll loop: continuously long-polls for commands and enqueues them. Polling is
+-- read-only for session credentials; the heartbeat loop owns liveness touches.
 task.spawn(function()
 	local idleWaitMs = 2000
 	local failureBackoff = 0
@@ -6810,16 +6794,22 @@ task.spawn(function()
 	end
 end)
 
--- Heartbeat loop: an authenticated, side-effect-free ping keeps the session
--- alive even if the poll loop is briefly backing off, and refreshes latency.
+-- Heartbeat loop: one request keeps the session live and returns collaborator
+-- plus companion health summaries. The backend throttles persistence.
 task.spawn(function()
 	while true do
 		task.wait(15)
 		if getToken() then
 			local signatureOk, signature = pcall(computePlaceSignature)
-			local ok, latency, authExpired = pingSession(getToken(), signatureOk and signature or nil)
+			local ok, latency, authExpired, heartbeat = pingSession(getToken(), signatureOk and signature or nil)
 			if ok then
 				setHealth(os.time(), latency)
+				if type(heartbeat) == "table" then
+					updateCollaborators(heartbeat.collaborators)
+					if type(heartbeat.mcp) == "table" then
+						setMcpCompanionStatus(heartbeat.mcp)
+					end
+				end
 			elseif authExpired then
 				handleSessionExpired()
 			else
@@ -6827,17 +6817,6 @@ task.spawn(function()
 				if healthOk then
 					setHealth(os.time(), healthLatency)
 				end
-			end
-			-- Team Create awareness: refresh who else is editing this place.
-			local collabOk, collabData = request("GET", "/api/studio/collaborators", nil, getToken())
-			if collabOk and type(collabData) == "table" then
-				updateCollaborators(collabData.collaborators)
-			end
-			-- The companion card is intentionally best-effort. A summary failure
-			-- must never affect the existing session heartbeat or command flow.
-			local mcpStatusOk, mcpSummary = getMcpCompanionStatus(getToken())
-			if mcpStatusOk then
-				setMcpCompanionStatus(mcpSummary)
 			end
 		end
 	end

@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { ConnectorError, asConnectorError } from "./errors.js";
 import { ToolCatalog } from "./tool-catalog.js";
+import { FixedRoutineRunner } from "./fixed-routines.js";
 import type { JsonObject, JsonValue, McpClientLike, StudioCommand, ToolCallResult } from "./types.js";
 
 const MAX_PATH_CHARS = 2_048;
@@ -13,12 +14,14 @@ const MAX_COMMAND_RESULT_BYTES = 1_500_000;
 
 export class CommandExecutor {
   #catalog: ToolCatalog;
+  readonly #routines: FixedRoutineRunner;
 
   constructor(
     private readonly mcp: McpClientLike,
     catalog: ToolCatalog,
   ) {
     this.#catalog = catalog;
+    this.#routines = new FixedRoutineRunner(mcp);
   }
 
   updateCatalog(catalog: ToolCatalog): void {
@@ -53,13 +56,186 @@ export class CommandExecutor {
       case "get_output_logs":
       case "collect_output":
         return await this.noInput(command, signal);
-      case "create_script":
       case "write_script":
       case "patch_script":
         return await this.mutateScript(command, signal);
+      case "get_selection":
+      case "create_instance":
+      case "update_properties":
+      case "update_attributes":
+      case "update_tags":
+      case "rename_instance":
+      case "move_instance":
+      case "duplicate_instance":
+      case "delete_instance":
+      case "create_snapshot":
+      case "restore_snapshot":
+      case "undo_last_batch":
+      case "run_test_service":
+        return await this.runFixedRoutine(command, signal);
+      case "create_script":
+        return await this.createScript(command, signal);
+      case "batch_operations":
+        return await this.runBatch(command, signal);
+      case "insert_creator_store_asset":
+        return await this.insertCreatorStoreAsset(command, signal);
+      case "run_play_test":
+      case "stop_play_test":
+        return await this.runPlaytest(command, signal);
       default:
         return unsupportedResult(command);
     }
+  }
+
+  private async runFixedRoutine(command: StudioCommand, signal?: AbortSignal): Promise<JsonObject> {
+    if (command.type === "run_test_service" && command.payload.confirmed !== true && command.payload.explicitConfirmation !== true) {
+      throw new ConnectorError("PLAYTEST_CONFIRMATION_REQUIRED", "TestService execution requires explicit confirmation.");
+    }
+    const data = await this.#routines.run(command.type, command.payload, signal);
+    const mutation = command.type !== "get_selection" && command.type !== "create_snapshot";
+    return successBase(command, mutation, {
+      operation: command.type,
+      ...data,
+      ...(mutation ? { verificationChecks: [{ type: "routine_envelope_and_state", passed: true }] } : {}),
+    });
+  }
+
+  private async createScript(command: StudioCommand, signal?: AbortSignal): Promise<JsonObject> {
+    const path = requirePath(command.payload, "path");
+    const source = requireBoundedString(command.payload, "source", 0, MAX_SOURCE_CHARS);
+    if ((await this.tryReadSource(path, signal)).source !== null) {
+      throw new ConnectorError("SCRIPT_ALREADY_EXISTS", `The target script already exists: ${path}`);
+    }
+    const data = await this.#routines.run("create_script", command.payload, signal);
+    let actualSource: string;
+    try { actualSource = await this.readSource(path, signal); }
+    catch (error) {
+      throw new ConnectorError("APPLY_UNVERIFIED", "The script was created but its post-write read failed.", { cause: error });
+    }
+    if (actualSource !== source) throw new ConnectorError("APPLY_UNVERIFIED", "The created script source did not match after rereading it.");
+    return successBase(command, true, {
+      operation: command.type, ...data, affectedPaths: [path], resultingHashes: { [path]: sha256(actualSource) },
+      hashAlgorithm: "sha256", verificationChecks: [{ type: "source_exact_match", path, passed: true }],
+    });
+  }
+
+  private async runBatch(command: StudioCommand, signal?: AbortSignal): Promise<JsonObject> {
+    const operations = command.payload.operations;
+    if (!Array.isArray(operations) || operations.length < 1 || operations.length > 50) {
+      throw new ConnectorError("COMMAND_PAYLOAD_INVALID", "batch_operations requires 1-50 operations.");
+    }
+    const results: JsonValue[] = [];
+    const snapshots: JsonValue[] = [];
+    try {
+      for (const raw of operations) {
+        if (!isRecord(raw) || typeof raw.type !== "string" || !isRecord(raw.payload) || raw.type === "batch_operations") {
+          throw new ConnectorError("COMMAND_PAYLOAD_INVALID", "A batch operation is malformed.");
+        }
+        const nested = { id: `${command.id}:${results.length}`, type: raw.type, payload: raw.payload as JsonObject };
+        if (!this.#catalog.hasCommand(nested.type)) throw new ConnectorError("MCP_TOOL_UNAVAILABLE", `Batch command unavailable: ${nested.type}`);
+        const result = await this.executeSupported(nested, signal);
+        if (result.success !== true || result.verified !== true) throw new ConnectorError("BATCH_OPERATION_FAILED", `Batch operation failed: ${nested.type}`);
+        if (Array.isArray(result.snapshots)) snapshots.push(...result.snapshots);
+        results.push(result);
+      }
+    } catch (error) {
+      if (command.payload.atomic !== false && snapshots.length > 0) {
+        await this.#routines.run("restore_snapshot", { snapshots: snapshots.reverse() }, signal).catch(() => undefined);
+      }
+      throw error;
+    }
+    return successBase(command, true, { operation: command.type, results, snapshots, verificationChecks: [{ type: "batch_complete", passed: true }] });
+  }
+
+  private async insertCreatorStoreAsset(command: StudioCommand, signal?: AbortSignal): Promise<JsonObject> {
+    const assetId = requireBoundedString(command.payload, "assetId", 1, 40);
+    if (!/^\d{1,40}$/.test(assetId)) throw new ConnectorError("ASSET_ID_INVALID", "Creator Store assetId must be numeric.");
+    const assetType = typeof command.payload.assetType === "string" ? command.payload.assetType : "Model";
+    if (!new Set(["Model", "Mesh"]).has(assetType)) throw new ConnectorError("ASSET_TYPE_NOT_ALLOWED", "Only reviewed Model and Mesh assets may be inserted.");
+    const targetParentPath = requirePath(command.payload, "targetParentPath");
+    if (!/^(?:game\/)?(?:Workspace|ReplicatedStorage|ServerStorage)(?:\/|$)/.test(targetParentPath)) {
+      throw new ConnectorError("DESTINATION_NOT_ALLOWED", "Creator Store assets may only be placed in an approved service.");
+    }
+    const nonce = sha256(`${command.id}:${assetId}`).slice(0, 24);
+    const prepared = await this.#routines.run("prepare_asset_quarantine", { nonce }, signal);
+    if (isRecord(prepared.existingReceipt)) {
+      return successBase(command, true, { operation: command.type, receipt: prepared.existingReceipt, idempotentReplay: true, verificationChecks: [{ type: "idempotent_receipt", passed: true }] });
+    }
+    const quarantinePath = requireBoundedString(prepared, "path", 1, 500);
+    try {
+      const insertion = this.#catalog.makeInsertAssetArgs({
+        assetId,
+        assetName: typeof command.payload.assetName === "string" ? command.payload.assetName.slice(0, 100) : "",
+        assetType,
+        parentPath: quarantinePath,
+      });
+      if (!insertion) throw new ConnectorError("MCP_TOOL_UNAVAILABLE", "The discovered insert_asset schema is incompatible.");
+      const inserted = await this.mcp.callTool(insertion.toolName, insertion.args, signal);
+      assertToolSucceeded(inserted);
+      const data = await this.#routines.run("finalize_asset_quarantine", {
+        quarantinePath, targetParentPath, assetId, nonce,
+        requestedName: typeof command.payload.requestedName === "string" ? command.payload.requestedName.slice(0, 100) : "",
+        anchoredPolicy: typeof command.payload.anchoredPolicy === "string" ? command.payload.anchoredPolicy : "anchor_all",
+        collisionPolicy: typeof command.payload.collisionPolicy === "string" ? command.payload.collisionPolicy : "no_collide",
+      }, signal);
+      return successBase(command, true, { operation: command.type, ...data, verificationChecks: [{ type: "quarantine_scan_and_destination", passed: true }] });
+    } catch (error) {
+      await this.#routines.run("discard_asset_quarantine", { quarantinePath }, signal).catch(() => undefined);
+      throw error;
+    }
+  }
+
+  private async runPlaytest(command: StudioCommand, signal?: AbortSignal): Promise<JsonObject> {
+    if (command.payload.confirmed !== true && command.payload.explicitConfirmation !== true) {
+      throw new ConnectorError("PLAYTEST_CONFIRMATION_REQUIRED", "Playtesting requires explicit confirmation.");
+    }
+    const starting = command.type === "run_play_test";
+    const maxDuration = Math.min(120, Math.max(1, Number(command.payload.maxDurationSeconds || 30)));
+    const deadline = Date.now() + maxDuration * 1_000;
+    let enteredPlay = false;
+    let targetModeObserved = false;
+    let consoleOutput: JsonValue = null;
+    let cleanupVerified = false;
+    try {
+      await this.mcp.callTool("start_stop_play", { is_start: starting }, signal).then(assertToolSucceeded);
+      while (Date.now() < deadline) {
+        const playing = await this.isPlaying(signal);
+        if (starting ? playing : !playing) {
+          targetModeObserved = true;
+          enteredPlay = playing;
+          break;
+        }
+        await new Promise((resolve) => setTimeout(resolve, 250));
+      }
+      if (!targetModeObserved) {
+        throw new ConnectorError(
+          "PLAYTEST_TIMEOUT",
+          starting
+            ? "Studio did not enter play mode before the timeout."
+            : "Studio did not return to Edit mode before the timeout.",
+        );
+      }
+      if (!starting) cleanupVerified = true;
+      consoleOutput = normalizeToolOutput(await this.mcp.callTool("get_console_output", {}, signal));
+    } finally {
+      if (starting) {
+        const cleanupSignal = AbortSignal.timeout(5_000);
+        await this.mcp.callTool("start_stop_play", { is_start: false }, cleanupSignal).then(assertToolSucceeded).catch(() => undefined);
+        const cleanupDeadline = Date.now() + 5_000;
+        while (Date.now() < cleanupDeadline) {
+          if (!await this.isPlaying(cleanupSignal).catch(() => true)) { cleanupVerified = true; break; }
+          await new Promise((resolve) => setTimeout(resolve, 200));
+        }
+      }
+    }
+    if (!cleanupVerified) throw new ConnectorError("PLAYTEST_CLEANUP_FAILED", "Studio could not be confirmed back in Edit mode.");
+    return successBase(command, true, { operation: command.type, enteredPlayMode: enteredPlay, cleanupVerified, consoleOutput, verificationChecks: [{ type: "studio_mode_transition", passed: true }, { type: "edit_mode_cleanup", passed: cleanupVerified }] });
+  }
+
+  private async isPlaying(signal?: AbortSignal): Promise<boolean> {
+    const output = normalizeToolOutput(await this.mcp.callTool("get_studio_state", {}, signal));
+    const state = (typeof output === "string" ? output : JSON.stringify(output)).toLowerCase();
+    return /\b(play|playing|running|client|server)\b/.test(state) && !/\bedit\b/.test(state);
   }
 
   private async readOne(command: StudioCommand, path: string, signal?: AbortSignal): Promise<JsonObject> {

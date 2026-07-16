@@ -110,13 +110,17 @@ Studio MCP tool and its schema pass discovery:
 | `inspect_instances`, `read_instance`, `read_properties` | `inspect_instance` | Edit datamodel, no children/tags, at most 20 paths |
 | `create_script` | `script_read` + `multi_edit` | Direct source only, conflict check, post-read verification |
 | `write_script`, `patch_script` | `script_read` + `multi_edit` | Required source hash, conflict check, post-read verification |
+| `get_selection` | audited `execute_luau` routine | Bounded descriptors; no source or arbitrary code |
+| instance create/edit/delete/batch commands | audited `execute_luau` routines | Input allowlists, pre-snapshot, nonce, state verification |
+| `create_snapshot`, `restore_snapshot`, `undo_last_batch` | audited `execute_luau` routines | Pre/post hashes and intervening-edit conflict checks |
+| `insert_creator_store_asset` | `insert_asset` + audited quarantine routines | Server-owned asset identity, sanitization, placement policy, receipt |
+| `run_play_test`, `stop_play_test` | `start_stop_play` + `get_studio_state` | Explicit confirmation, bounded polling, cleanup |
+| `run_test_service` | named audited profile + `start_stop_play` | No request accepts executable source |
 
-Commands such as `get_project_manifest`, `list_children`, `inspect_place`,
-`get_selection`, `get_change_history`, `parse_luau`, `run_smoke_check`,
-`run_project_validation`, and `collect_diagnostics` remain unavailable because
-the documented Studio MCP tools do not preserve their full Nexus contracts.
-The connector does not substitute arbitrary `execute_luau`, guess a target with
-multi-window tools, or present `start_stop_play` as a bounded test-plan runner.
+Commands outside the compiled mapping remain unavailable. Generic
+`execute_luau` is never advertised: dynamic behavior uses connector-owned,
+versioned constant templates with bounded serialized input and validated
+nonce-bearing output. The connector never guesses a Studio target.
 
 For script edits, the connector reads the current source first and checks
 `expectedSourceHash`. A mismatch returns:
@@ -138,10 +142,10 @@ Mutation retries are conservative. A network timeout after a mutation means the
 outcome may be unknown, so the connector does not blindly execute the mutation
 again. Read-only network operations use bounded retry and backoff.
 
-Specialized Nexus workflows remain plugin-only when Studio MCP does not expose
-the snapshot, trusted receipt, sanitization, revision, transaction, or recovery
-guarantees they require. The website shows those capabilities as unavailable for
-the MCP session instead of weakening them.
+Capabilities are command-group truthful. The website turns a badge green only
+after every command in its group has a compiled dependency and the session
+self-check has passed. A failed or drifted schema disables only the affected
+group and is reported through `capabilityDetails` with a reason code.
 
 ## Connection states
 
@@ -173,9 +177,10 @@ retry a bounded number of times and continue heartbeating a degraded state.
 
 ### Wrong Studio window is active
 
-Close unrelated Studio windows before allowing mutations. The first connector
-release does not advertise multi-window selection, even if Studio MCP discovers
-the broader target-selection tools.
+Choose the intended target in the connection panel. With exactly one Studio the
+connector selects it automatically; with multiple Studios, mutation and
+playtest commands remain blocked until an enumerated target is explicitly
+selected and confirmed. If the window closes, select again after rediscovery.
 
 ### A command reports `MCP_TOOL_UNAVAILABLE`
 

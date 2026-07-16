@@ -122,7 +122,7 @@ const MODULE_EXPORTS = {
     "escapePattern",
     "escapeReplacement",
   ],
-  "src/net/httpClient.lua": ["request", "getToken", "setToken", "jsonEncode", "getLastLatencyMs", "pingHealth", "getMcpCompanionStatus"],
+  "src/net/httpClient.lua": ["request", "getToken", "setToken", "jsonEncode", "getLastLatencyMs", "pingHealth"],
   "src/studio/path.lua": [
     "fullPath",
     "resolvePath",

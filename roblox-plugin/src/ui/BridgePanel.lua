@@ -4,7 +4,7 @@
 local TweenService = game:GetService("TweenService")
 
 local displayPluginVersion = PLUGIN_VERSION or "0.9.3-creator-store-create-instance"
-local displayProtocolVersion = STUDIO_PROTOCOL_VERSION or "2026-06-20-creator-store"
+local displayProtocolVersion = STUDIO_PROTOCOL_VERSION or "2026-07-17-mcp-parity"
 local MAX_ACTIVITY_ENTRIES = 25
 
 local toolbar = plugin:CreateToolbar("NexusRBX")
@@ -586,7 +586,7 @@ do
 	mcpCompanionLabel = makeText(companionSection, "McpCompanionStatus", "Not configured", 17, 11, false, themeColor(Enum.StudioStyleGuideColor.DimmedText))
 end
 -- Team Create awareness: who else is editing this place (masked identity).
--- Populated by the heartbeat loop via GET /api/studio/collaborators.
+-- Populated from the consolidated /api/studio/session/ping heartbeat response.
 collaboratorsLabel = makeText(settingsSection, "Collaborators", "Collaborators: checking...", nil, 11, false, themeColor(Enum.StudioStyleGuideColor.DimmedText), true)
 collaboratorsLabel.TextWrapped = true
 

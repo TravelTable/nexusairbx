@@ -67,7 +67,8 @@ Writes should include `expectedSourceHash` when the caller previously read a scr
 
 - `parse_luau`, `run_smoke_check`, `run_project_validation`, `collect_diagnostics`.
 - `create_snapshot`, `restore_snapshot`, `undo_last_batch`.
-- `run_test_service`, `run_play_test`, and `stop_play_test` return structured unsupported errors in the current plugin runtime.
+- The plugin transport currently returns structured unsupported errors for `run_test_service`, `run_play_test`, and `stop_play_test`.
+- The MCP connector maps play-mode transitions to `start_stop_play`, polls `get_studio_state` with bounded timeouts, and always attempts cleanup. `run_test_service` accepts only named audited profiles with bounded check IDs and explicit confirmation; no command accepts Luau source.
 
 ## Studio Validation Quality Gate
 
@@ -80,11 +81,11 @@ Supported targets are:
 - `uploaded_roblox_model`: resolved from a stored Roblox operation/insertion receipt when that receipt has a trusted inserted Studio path.
 - `entire_project`: requires an explicit user choice and uses stricter object-count limits.
 
-Profiles:
+Validation profiles:
 
 - `quick`: managed identity, hierarchy, script/networking object checks, references, transforms, bounds, duplicate managed IDs, and no playtest.
 - `standard`: all quick checks plus physics, anchoring, collision, constraints, asset references, unsupported descendants, and performance counts. This is the default.
-- `playtest`: standard checks plus explicit playtest intent. The current bridge returns `PLAYTEST_AUTOMATION_UNAVAILABLE` because bounded automatic stopping would require server-side test code to call `StudioTestService:EndTest`, and Phase 9 does not inject arbitrary Luau or modify the validated place.
+- `playtest`: standard checks plus explicit playtest intent. It is available only on a mutation-ready MCP session with compatible playtest tools and a named audited test profile; plugin sessions continue to return `PLAYTEST_AUTOMATION_UNAVAILABLE`.
 
 `StudioValidationPlan` is JSON-compatible, schema-versioned, and contains only trusted target identity, target receipt identity, expected target revision, enabled checks, bounded limits, playtest settings, and rules version. It contains no executable source, arbitrary property mutation, browser-controlled path, or Luau. Initial limits are controlled by:
 
@@ -98,7 +99,10 @@ Cancellation stores a `cancelled` report, marks outstanding validation commands 
 
 Normalized error codes include `VALIDATION_TARGET_NOT_FOUND`, `VALIDATION_TARGET_NOT_OWNED`, `VALIDATION_TARGET_MISMATCH`, `VALIDATION_TARGET_CHANGED`, `VALIDATION_TARGET_TOO_LARGE`, `VALIDATION_SESSION_NOT_FOUND`, `VALIDATION_SESSION_NOT_OWNED`, `STUDIO_SESSION_MISSING`, `STUDIO_SESSION_DISCONNECTED`, `PLUGIN_PROTOCOL_OUTDATED`, `STATIC_VALIDATION_FAILED`, `DIAGNOSTIC_COLLECTION_FAILED`, `PLAYTEST_CONFIRMATION_REQUIRED`, `PLAYTEST_AUTOMATION_UNAVAILABLE`, `PLAYTEST_START_FAILED`, `PLAYTEST_STOP_FAILED`, `PLAYTEST_TIMEOUT`, `VALIDATION_TIMEOUT`, `VALIDATION_CANCELLED`, `VALIDATION_REPORT_FAILED`, `COMMAND_ALREADY_RUNNING`, and `VALIDATION_ALREADY_COMPLETED`.
 
-Official Studio testing API verification: on 2026-06-18, Roblox Creator Hub documented `StudioTestService` as a plugin-accessible service for automated Test and Run mode testing, including `ExecutePlayModeAsync` and `EndTest`. The same documentation states `EndTest` must be called from the server DataModel of a running test. Because the NexusRBX bridge must not inject arbitrary test scripts or mutate content during validation, automated bounded playtest is intentionally unavailable in this phase; manual playtest recommendations are reported instead.
+The MCP connector does not inject browser-supplied tests. Connector-owned test
+profiles are versioned constant routines with strictly serialized inputs,
+bounded duration, explicit confirmation, and guaranteed stop attempts. Unknown
+profiles or check IDs fail closed.
 
 ## Manual Verification Checklist
 
@@ -113,6 +117,8 @@ Official Studio testing API verification: on 2026-06-18, Roblox Creator Hub docu
 9. Queue `insert_creator_store_asset` for a public Model and confirm Studio inserts it under `Workspace/NexusImports` after removing scripts, remotes, and bindables.
 10. Confirm an uploaded-model insertion from a trusted upload receipt and confirm Studio receives `insert_uploaded_roblox_model` with only the backend-supplied asset ID under `Workspace/NexusImports`.
 11. Run `/api/studio/validations/prepare`, `/api/studio/validations`, and the report endpoint against a native model receipt and confirm stale browser paths are ignored.
+12. With two Studio windows open, confirm mutations are blocked until one enumerated target is selected, then confirm no command reaches the other place.
+13. On an MCP session, run one successful and one timed-out named playtest and confirm both return to Edit mode.
 
 ## Firestore Notes
 

@@ -51,7 +51,13 @@ export function isStudioWaitPayload(payload = {}) {
   return payload.waitingFor === "studio" || payload.jobStatus === "waiting_for_tool";
 }
 
-export function buildStreamUrl({ jobId, mode, afterSeq = 0, streamToken = null }) {
+export function buildStreamUrl({
+  jobId,
+  mode,
+  afterSeq = 0,
+  afterCursor = null,
+  streamToken = null,
+}) {
   const params = new URLSearchParams({
     jobId: String(jobId),
     mode: String(mode || "plan"),
@@ -59,6 +65,9 @@ export function buildStreamUrl({ jobId, mode, afterSeq = 0, streamToken = null }
   });
   if (streamToken) {
     params.set("streamToken", String(streamToken));
+  }
+  if (/^\d+-\d+$/.test(String(afterCursor || ""))) {
+    params.set("afterCursor", String(afterCursor));
   }
   return `${BACKEND_URL}/api/generate/stream?${params.toString()}`;
 }

@@ -146,18 +146,20 @@ If the final state cannot be proved, the acknowledgment fails with
 outcome; the connector must inspect before any retry and must not blindly repeat
 the write. Read-only transient failures may use bounded exponential backoff.
 
-Snapshot, restore, atomic batch, trusted insertion, revision, or sanitization
-claims are not synthesized when Studio MCP does not guarantee them. Commands
-that require those guarantees remain plugin-only.
+Snapshot, restore, atomic batch, trusted insertion, and sanitization claims are
+provided only by audited connector-owned routines. Those routines use constant
+source templates, bounded serialized data, nonces, versioned envelopes, output
+validation, pre/post hashes, and no automatic mutation retry. Arbitrary Luau is
+not part of any browser or backend request interface.
 
 ## Multiple Studio targets
 
-The first connector release does not advertise multiple-target selection. Users
-must close unrelated Studio windows before allowing a mutation. Discovering
-Roblox's broader target tools does not grant a Nexus capability; any future
-mapping must explicitly select and recheck the target immediately before a
-mutation. Studio target IDs are ephemeral and must not be trusted across
-restarts without rediscovery.
+The connector enumerates live targets and reports only sanitized target
+metadata. Exactly one target may be auto-selected. Multiple targets require an
+authenticated website selection of an enumerated live `studioId`, followed by a
+connector-confirmed switch. The target is rechecked immediately before every
+mutation and playtest. Studio target IDs are ephemeral and are rediscovered
+after restarts; a closed or mismatched target blocks execution.
 
 Team Create reporting excludes the same user's other connection for the same
 place, but ownership checks remain per session. One session never gains access
@@ -190,6 +192,12 @@ Automated coverage must include:
 - exact user/session ownership for every connector route;
 - exact routing and no mutation fallback;
 - capability normalization and schema-mismatch rejection;
+- single-target auto-selection, multi-target explicit selection, closed-target
+  recovery, and wrong-target refusal;
+- malicious routine strings, oversized input, malformed envelopes, and nonce
+  mismatches;
+- snapshot restore conflicts, batch failure, quarantine cleanup, and playtest
+  timeout cleanup;
 - source conflict and apply-unverified results;
 - terminal acknowledgment idempotency;
 - App Check exemptions limited to connector-authenticated protocol routes;

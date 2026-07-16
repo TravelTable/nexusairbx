@@ -38,6 +38,25 @@ export interface StudioCapabilities {
   snapshots: boolean;
 }
 
+export type CapabilityStatus = "supported" | "unavailable";
+
+export interface CapabilityDetail extends JsonObject {
+  status: CapabilityStatus;
+  reasonCode: string;
+  requiredCommands: string[];
+  requiredTools: string[];
+  verifiedAt: number | null;
+}
+
+export type CapabilityDetails = Record<keyof StudioCapabilities, CapabilityDetail>;
+
+export interface StudioTarget extends JsonObject {
+  studioId: string;
+  label: string;
+  placeId: string;
+  placeName: string;
+}
+
 export interface DiscoveredTool {
   name: string;
   description?: string;
@@ -98,6 +117,7 @@ export interface BackendClientLike {
     capabilities: StudioCapabilities,
     supportedCommands: string[],
     discoveredTools: Array<{ name: string; description?: string }>,
+    capabilityDetails: CapabilityDetails,
     signal?: AbortSignal,
   ): Promise<JsonObject>;
   pollNext(waitMs: number, signal?: AbortSignal): Promise<StudioCommand | null>;
@@ -122,4 +142,3 @@ export const EMPTY_CAPABILITIES: StudioCapabilities = Object.freeze({
   instanceMutation: false,
   snapshots: false,
 });
-

@@ -468,9 +468,9 @@ local function collectOutput(payload)
 	local errorCount, warningCount = 0, 0
 	for _, entry in ipairs(filtered) do
 		if entry.level == "error" then
-			errorCount += 1
+			errorCount = errorCount + 1
 		elseif entry.level == "warning" then
-			warningCount += 1
+			warningCount = warningCount + 1
 		end
 	end
 
@@ -497,4 +497,3 @@ local function getServiceRoot(serviceName)
 		return ReplicatedStorage
 	end
 end
-

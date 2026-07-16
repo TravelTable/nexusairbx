@@ -33,6 +33,12 @@ const outputTool: DiscoveredTool = {
   inputSchema: { type: "object", properties: {}, required: [] },
 };
 
+const targetTools: DiscoveredTool[] = [
+  { name: "list_roblox_studios", inputSchema: { type: "object", properties: {}, required: [] } },
+  { name: "set_active_studio", inputSchema: { type: "object", properties: { studio_id: { type: "string" } }, required: ["studio_id"] } },
+  { name: "get_studio_state", inputSchema: { type: "object", properties: {}, required: [] } },
+];
+
 const logger: Logger = {
   info() {},
   warn() {},
@@ -59,7 +65,7 @@ class FakeMcp implements McpClientLike {
   listCalls = 0;
   callTools: Array<{ name: string; args: JsonObject }> = [];
   failConnects = 0;
-  toolPages: DiscoveredTool[][] = [[readTool]];
+  toolPages: DiscoveredTool[][] = [[readTool, ...targetTools]];
   readonly #toolHandlers = new Set<() => void>();
   readonly #disconnectHandlers = new Set<(error?: Error) => void>();
 
@@ -80,6 +86,9 @@ class FakeMcp implements McpClientLike {
   async callTool(name: string, args: JsonObject): Promise<ToolCallResult> {
     this.callTools.push({ name, args });
     if (name === "script_read") return { structuredContent: { source: "print('ok')" } };
+    if (name === "list_roblox_studios") return { structuredContent: { studios: [{ studio_id: "studio-1", place_id: "42", place_name: "Fixture Place" }] } };
+    if (name === "get_studio_state") return { structuredContent: { studio_id: "studio-1", place_id: "42", place_name: "Fixture Place" } };
+    if (name === "set_active_studio") return { structuredContent: { studio_id: String(args.studio_id || "") } };
     return { content: [{ type: "text", text: "ok" }] };
   }
   onToolsChanged(handler: () => void): void { this.#toolHandlers.add(handler); }
@@ -153,12 +162,18 @@ test("connector claims, discovers, registers, polls, executes, acknowledges, and
   assert.deepEqual(backend.claims, ["PAIR-CODE"]);
   assert.equal(mcp.connectAttempts, 1);
   assert.equal(mcp.listCalls, 1);
-  assert.deepEqual(backend.registrations[0]?.commands, ["read_script", "read_scripts"]);
+  assert.deepEqual(backend.registrations[0]?.commands, ["get_studio_context", "read_script", "read_scripts"]);
   assert.deepEqual(backend.acknowledgements.map(({ id, status }) => ({ id, status })), [
     { id: "command-1", status: "succeeded" },
   ]);
   assert.equal(backend.acknowledgements[0]?.result.verified, false);
-  assert.deepEqual(mcp.callTools.map((call) => call.name), ["script_read"]);
+  assert.deepEqual(mcp.callTools.map((call) => call.name), [
+    "list_roblox_studios",
+    "set_active_studio",
+    "get_studio_state",
+    "get_studio_state",
+    "script_read",
+  ]);
   assert.equal(backend.pings.some((ping) => ping.mcpServerAvailable === true), true);
   assert.equal(backend.pings.at(-1)?.mcpServerAvailable, false);
   assert.equal(mcp.disconnects >= 1, true);
@@ -177,7 +192,7 @@ test("connector publishes an empty catalog while MCP is unavailable, then reconn
 
   assert.equal(mcp.connectAttempts, 2);
   assert.deepEqual(backend.registrations[0]?.commands, []);
-  assert.deepEqual(backend.registrations[1]?.commands, ["read_script", "read_scripts"]);
+  assert.deepEqual(backend.registrations[1]?.commands, ["get_studio_context", "read_script", "read_scripts"]);
   assert.equal(backend.pings.some((ping) => ping.mcpServerAvailable === false), true);
   assert.equal(backend.acknowledgements[0]?.status, "succeeded");
 });
@@ -208,7 +223,7 @@ test("tools/list_changed causes full rediscovery and capability re-registration"
   const controller = new AbortController();
   const backend = new FakeBackend(controller);
   const mcp = new FakeMcp();
-  mcp.toolPages = [[readTool], [readTool, outputTool]];
+  mcp.toolPages = [[readTool, ...targetTools], [readTool, outputTool, ...targetTools]];
   backend.pollHandler = async (poll) => {
     if (poll === 1) {
       mcp.triggerToolsChanged();
@@ -221,10 +236,11 @@ test("tools/list_changed causes full rediscovery and capability re-registration"
     .run("PAIR-CODE", controller.signal);
 
   assert.equal(mcp.listCalls, 2);
-  assert.deepEqual(backend.registrations[0]?.commands, ["read_script", "read_scripts"]);
+  assert.deepEqual(backend.registrations[0]?.commands, ["get_studio_context", "read_script", "read_scripts"]);
   assert.deepEqual(backend.registrations[1]?.commands, [
     "collect_output",
     "get_output_logs",
+    "get_studio_context",
     "read_script",
     "read_scripts",
   ]);

@@ -294,7 +294,7 @@ local function executeCommand(command)
 			PLUGIN_VERSION
 		))
 	end
-	executedCommandCount += 1
+	executedCommandCount = executedCommandCount + 1
 	setProgress({
 		runId = command.runId,
 		stepId = command.stepId,

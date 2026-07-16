@@ -87,26 +87,25 @@ documented Roblox tools include `script_read`, `multi_edit`, `script_search`,
 `set_active_studio`, among other broader tools. Names are case-sensitive and the
 connector validates the discovered JSON Schema before registering a mapping.
 
-`execute_luau` is not treated as blanket support for arbitrary Nexus commands.
-It is too broad to prove the existing Nexus approval, snapshot, validation, and
-receipt guarantees by its presence alone.
+`execute_luau` is never exposed as a generic command and browser requests never
+contain executable source. It is used only by versioned connector-owned
+routines whose Luau is constant, whose inputs are strictly serialized and
+bounded, and whose nonce-bearing result envelope is validated before success.
 
-The plugin remains the authoritative implementation for workflows that depend
-on Nexus-specific semantics not guaranteed by Studio MCP, including:
+The plugin remains the authoritative implementation for workflows that are not
+part of direct MCP parity, including:
 
 - `apply_artifact`
 - `build_native_model`
 - `inspect_native_model`
 - `apply_native_model_patch`
 - `insert_uploaded_roblox_model`
-- `create_snapshot`
-- `restore_snapshot`
-- `undo_last_batch`
-
-Creator Store insertion and playtest commands are exposed through MCP only when
-the discovered official tool schema and the connector's safety implementation
-can preserve the command's full contract. Mere presence of `insert_asset` or
-`start_stop_play` is not sufficient.
+Direct official tools back script I/O, asset loading, play-mode transitions,
+Studio enumeration, Studio activation, and Studio state reads. Fixed audited
+connector routines back selection, instance edits, snapshots, restore/undo,
+quarantine inspection, and named TestService profiles. A capability is exposed
+only when every required direct tool or fixed-routine dependency compiles and a
+session self-check succeeds. Mere tool presence is not sufficient.
 
 ## Team Create and multiple Studio windows
 
@@ -114,12 +113,12 @@ Session identity remains transport-specific. The backend deduplicates same-user,
 same-place activity when reporting collaborators so a user's plugin and MCP
 connector do not appear as another collaborator.
 
-The first connector release does not advertise a multi-window selection
-capability. If more than one Studio window is open, the user must close unrelated
-windows before allowing mutations. The runtime catalog may discover Roblox's
-`list_roblox_studios` and `set_active_studio` tools, but discovery alone does not
-make them a supported Nexus mapping. A future mapping must explicitly select and
-reverify the intended target before it can be advertised.
+The connector enumerates sanitized live Studio targets. Exactly one target is
+selected automatically. With multiple targets, the website requires the user to
+choose an enumerated `studioId`; the connector confirms the switch before the
+session becomes mutation-ready. The active target is rechecked before every
+mutation and playtest. Closed, missing, or mismatched targets fail closed and are
+never replaced by a guess.
 
 ## Public API summary
 
@@ -131,6 +130,7 @@ Website-authenticated routes:
 | `GET` | `/api/studio/mcp/status` | Read the user's MCP connection state |
 | `POST` | `/api/studio/mcp/disconnect` | Revoke an MCP session |
 | `POST` | `/api/studio/mcp/test` | Test connector and Studio MCP availability |
+| `POST` | `/api/studio/mcp/session/target` | Select one enumerated live Studio target |
 | `GET` | `/api/studio/status` | Read the unified plugin and MCP session list |
 
 Connector-authenticated routes:
@@ -144,6 +144,13 @@ Connector-authenticated routes:
 | `POST` | `/api/studio/mcp/commands/:id/ack` | Acknowledge execution through the shared pipeline |
 
 Legacy plugin routes and response shapes remain available.
+
+Capability responses retain the ten compatibility booleans, but those values
+are derived from complete `supportedCommands` groups. `capabilityDetails`
+provides each group's status, reason code, required commands/tools, and last
+verification time. Session metadata includes sanitized targets,
+`activeStudioId`, place identity, and connector/protocol versions. Older
+connectors and protocol versions fail closed.
 
 ## Operational events
 

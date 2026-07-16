@@ -45,6 +45,15 @@ export async function testStudioMcp({ sessionId = null } = {}) {
   return readJsonOrThrow(res, "Failed to test Studio MCP");
 }
 
+export async function selectStudioMcpTarget({ sessionId, studioId }) {
+  const res = await authedFetch("/api/studio/mcp/session/target", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ sessionId, studioId }),
+  });
+  return readJsonOrThrow(res, "Failed to select the Roblox Studio window");
+}
+
 export async function disconnectStudio({ sessionId = null } = {}) {
   const res = await authedFetch("/api/studio/disconnect", {
     method: "POST",

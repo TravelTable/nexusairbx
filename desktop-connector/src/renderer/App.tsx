@@ -25,10 +25,10 @@ const previewPreferences: CompanionPreferences = { autoStart: true, minimizeToTr
 const previewSnapshot: CompanionSnapshot = {
   state: "awaiting_pairing", message: "Enter the six-character code shown on NexusRBX.", updatedAt: Date.now(), autoStart: true, updateState: "idle", preferences: previewPreferences,
   cloudHealth: "disconnected", runtimeHealth: "disconnected", mcpHealth: "disconnected", connectionStage: null, degradedReason: null, pairingError: null,
-  experienceName: null, supportedToolCount: 0, supportedTools: [], lastActivityAt: null, lastHeartbeatAt: null, connectorVersion: "0.1.0", mcpServerVersion: null, lastCommand: null,
+  experienceName: null, supportedToolCount: 0, supportedTools: [], lastActivityAt: null, lastHeartbeatAt: null, connectorVersion: "0.2.0", mcpServerVersion: null, lastCommand: null,
 };
 
-const previewDiagnostics: CompanionDiagnostics = { studioInstalled: false, mcpCommandAvailable: false, mcpCommand: "Not detected", backendUrl: "https://api.nexusrbx.com", platform: navigator.platform || "Desktop", architecture: "—", connectorVersion: "0.1.0", mcpServerVersion: null, mcpHealth: "disconnected", backendHealth: "disconnected", lastHeartbeatAt: null, lastActivityAt: null, lastCommand: null, logLocation: "Available in the installed app" };
+const previewDiagnostics: CompanionDiagnostics = { studioInstalled: false, mcpCommandAvailable: false, mcpCommand: "Not detected", backendUrl: "https://api.nexusrbx.com", platform: navigator.platform || "Desktop", architecture: "—", connectorVersion: "0.2.0", mcpServerVersion: null, mcpHealth: "disconnected", backendHealth: "disconnected", lastHeartbeatAt: null, lastActivityAt: null, lastCommand: null, logLocation: "Available in the installed app" };
 
 export function App() {
   const [snapshot, setSnapshot] = useState(previewSnapshot);

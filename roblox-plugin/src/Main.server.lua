@@ -146,7 +146,7 @@ playtestLogsButton.MouseButton1Click:Connect(function()
 		if entry and (entry.level == "error" or entry.level == "warning") then
 			local prefix = entry.level == "error" and '<font color="#D64550">ERR</font> ' or '<font color="#D39127">WARN</font> '
 			table.insert(lines, prefix .. tostring(entry.message):sub(1, 160))
-			shown += 1
+			shown = shown + 1
 			if shown >= 5 then
 				break
 			end
@@ -195,10 +195,8 @@ local function shouldAutoPull()
 	return setting ~= false
 end
 
--- Poll loop: continuously long-polls for commands and enqueues them. Because it
--- never blocks on execution or approval, every poll doubles as a session
--- heartbeat (the backend refreshes lastSeenAt on each authenticated request),
--- so the session no longer goes stale while a command is running.
+-- Poll loop: continuously long-polls for commands and enqueues them. Polling is
+-- read-only for session credentials; the heartbeat loop owns liveness touches.
 task.spawn(function()
 	local idleWaitMs = 2000
 	local failureBackoff = 0
@@ -264,16 +262,22 @@ task.spawn(function()
 	end
 end)
 
--- Heartbeat loop: an authenticated, side-effect-free ping keeps the session
--- alive even if the poll loop is briefly backing off, and refreshes latency.
+-- Heartbeat loop: one request keeps the session live and returns collaborator
+-- plus companion health summaries. The backend throttles persistence.
 task.spawn(function()
 	while true do
 		task.wait(15)
 		if getToken() then
 			local signatureOk, signature = pcall(computePlaceSignature)
-			local ok, latency, authExpired = pingSession(getToken(), signatureOk and signature or nil)
+			local ok, latency, authExpired, heartbeat = pingSession(getToken(), signatureOk and signature or nil)
 			if ok then
 				setHealth(os.time(), latency)
+				if type(heartbeat) == "table" then
+					updateCollaborators(heartbeat.collaborators)
+					if type(heartbeat.mcp) == "table" then
+						setMcpCompanionStatus(heartbeat.mcp)
+					end
+				end
 			elseif authExpired then
 				handleSessionExpired()
 			else
@@ -281,17 +285,6 @@ task.spawn(function()
 				if healthOk then
 					setHealth(os.time(), healthLatency)
 				end
-			end
-			-- Team Create awareness: refresh who else is editing this place.
-			local collabOk, collabData = request("GET", "/api/studio/collaborators", nil, getToken())
-			if collabOk and type(collabData) == "table" then
-				updateCollaborators(collabData.collaborators)
-			end
-			-- The companion card is intentionally best-effort. A summary failure
-			-- must never affect the existing session heartbeat or command flow.
-			local mcpStatusOk, mcpSummary = getMcpCompanionStatus(getToken())
-			if mcpStatusOk then
-				setMcpCompanionStatus(mcpSummary)
 			end
 		end
 	end

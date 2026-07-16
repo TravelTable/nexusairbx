@@ -7,4 +7,4 @@ export { ConsoleLogger, redact, type Logger } from "./logger.js";
 export { RobloxStudioMcpClient, type RobloxStudioMcpOptions } from "./mcp-client.js";
 export { ToolCatalog } from "./tool-catalog.js";
 export * from "./types.js";
-export { CONNECTOR_VERSION } from "./version.js";
+export { CONNECTOR_PROTOCOL_VERSION, CONNECTOR_VERSION } from "./version.js";

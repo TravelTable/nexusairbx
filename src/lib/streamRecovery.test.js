@@ -15,11 +15,13 @@ describe("streamRecovery", () => {
       jobId: "job_1",
       mode: "act",
       afterSeq: 42,
+      afterCursor: "1730000000000-7",
       streamToken: "abc123",
     });
     expect(url).toContain("jobId=job_1");
     expect(url).toContain("mode=act");
     expect(url).toContain("afterSeq=42");
+    expect(url).toContain("afterCursor=1730000000000-7");
     expect(url).toContain("streamToken=abc123");
   });
 
