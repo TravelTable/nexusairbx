@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { Github, Mail, ShieldCheck } from "lib/icons";
+import { Github, Mail } from "lib/icons";
 import { auth } from "../firebase";
 import { signInWithEmailAndPassword, GoogleAuthProvider, GithubAuthProvider, onAuthStateChanged } from "firebase/auth";
 import {
@@ -247,25 +247,8 @@ function NexusRBXSignInPage({
 
   return (
     <NexusAuthShell
-      title="Sign in to NexusRBX"
-      description="Access your Roblox AI workspace, saved prompts, Studio handoff, and generated asset history."
-      icon={ShieldCheck}
-      sideTitle="Pick up where your Roblox workflow left off."
-      sideDescription="Sign in to keep Studio-connected generation, homepage prompts, and AI workspace sessions moving without losing your return path."
-      sideItems={[
-        {
-          title: "Continue into /ai",
-          description: "Auth return paths stay intact when a Studio or homepage action asks you to sign in.",
-        },
-        {
-          title: "Choose your provider",
-          description: "Use Google, GitHub, or email while preserving the same NexusRBX session flow.",
-        },
-        {
-          title: "Keep this browser ready",
-          description: "Stay signed in on this device, or choose shared-device mode when you sign in.",
-        },
-      ]}
+      title="Welcome back"
+      description="Sign in to your NexusRBX account."
     >
       <div className="grid gap-6">
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -349,7 +332,7 @@ function NexusRBXSignInPage({
 
           <AuthSubmitButton
             status={formStatus.status}
-            idleLabel="Sign in to workspace"
+            idleLabel="Sign in"
             loadingLabel="Signing in..."
             successLabel="Welcome back"
           />

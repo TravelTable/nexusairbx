@@ -95,6 +95,9 @@ export async function signInWithOAuthProvider(
 ) {
   await applyAuthPersistence(auth, rememberMe);
   const provider = new ProviderClass();
+  if (method === "google" && typeof provider.setCustomParameters === "function") {
+    provider.setCustomParameters({ prompt: "select_account" });
+  }
 
   try {
     return await signInWithPopup(auth, provider);

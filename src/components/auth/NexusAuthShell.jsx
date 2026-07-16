@@ -1,6 +1,5 @@
-import { ArrowLeft, ArrowRight, Check, CheckCircle, Eye, EyeOff, Loader, AlertCircle } from "lib/icons";
-import { motion } from "framer-motion";
-import NexusRBXFooter from "../NexusRBXFooter";
+import { ArrowRight, Check, CheckCircle, Eye, EyeOff, Loader, AlertCircle } from "lib/icons";
+import { Link } from "react-router-dom";
 import { Button } from "../shadcn/button";
 import {
   Card,
@@ -17,104 +16,37 @@ import { cn } from "../../lib/utils";
 export function NexusAuthShell({
   title,
   description,
-  eyebrow = "NexusRBX",
-  icon: Icon,
   children,
-  sideTitle,
-  sideDescription,
-  sideItems = [],
 }) {
   return (
-    <div className="flex min-h-screen flex-col bg-background text-foreground">
-      <main className="flex flex-1 items-center justify-center px-4 py-8 sm:px-6 lg:px-8">
-        <div className="grid w-full max-w-6xl gap-8 lg:grid-cols-[minmax(0,0.92fr)_minmax(420px,0.72fr)] lg:items-center">
-          <section className="hidden min-w-0 flex-col gap-8 lg:flex">
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="w-fit gap-2 text-muted-foreground hover:text-foreground"
-              onClick={() => window.location.assign("/")}
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Return home
-            </Button>
+    <div className="relative min-h-screen overflow-hidden bg-[#07090f] text-white">
+      <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_10%_0%,rgba(0,245,212,0.10),transparent_30%),radial-gradient(circle_at_90%_100%,rgba(155,93,229,0.10),transparent_32%)]" />
+      <div className="pointer-events-none fixed inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:56px_56px] opacity-50 [mask-image:linear-gradient(to_bottom,black,transparent_90%)]" />
 
-            <div className="max-w-xl">
-              <div className="mb-5 inline-flex items-center gap-2 rounded-md border border-border bg-muted/30 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                {Icon && <Icon className="h-4 w-4 text-[#00f5d4]" />}
-                {eyebrow}
-              </div>
-              <h1 className="text-4xl font-black leading-tight tracking-tight text-foreground">
-                {sideTitle || title}
-              </h1>
-              <p className="mt-4 max-w-lg text-base leading-7 text-muted-foreground">
-                {sideDescription || description}
-              </p>
-            </div>
+      <main className="relative flex min-h-screen items-center justify-center px-4 py-8 sm:px-6 sm:py-12">
+        <section className="w-full max-w-lg">
+          <Link
+            to="/"
+            aria-label="NexusRBX home"
+            className="focus-ring mx-auto mb-5 flex w-fit items-center gap-2.5 rounded-lg px-2 py-1.5"
+          >
+            <span className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-lg border border-white/10 bg-[#11151d]">
+              <img src="/logo.png" alt="" className="h-7 w-7 object-contain" />
+            </span>
+            <span className="text-[15px] font-semibold tracking-[-0.01em] text-white">NexusRBX</span>
+          </Link>
 
-            {sideItems.length > 0 && (
-              <div className="grid max-w-2xl gap-3">
-                {sideItems.map((item) => (
-                  <div
-                    key={item.title}
-                    className="flex gap-3 rounded-lg border border-border bg-card/45 p-4"
-                  >
-                    <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-border bg-muted/50 text-[#00f5d4]">
-                      <Check className="h-4 w-4" />
-                    </div>
-                    <div>
-                      <h2 className="text-sm font-semibold text-foreground">{item.title}</h2>
-                      <p className="mt-1 text-sm leading-6 text-muted-foreground">{item.description}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </section>
-
-          <section className="mx-auto flex w-full max-w-md flex-col gap-5 sm:max-w-lg">
-            <div className="flex items-center justify-between gap-4 lg:hidden">
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="gap-2 text-muted-foreground hover:text-foreground"
-                onClick={() => window.location.assign("/")}
-              >
-                <ArrowLeft className="h-4 w-4" />
-                Home
-              </Button>
-              <div className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                {Icon && <Icon className="h-4 w-4 text-[#00f5d4]" />}
-                {eyebrow}
-              </div>
-            </div>
-
-            <motion.div
-              initial={{ opacity: 0, y: 14 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.22, ease: "easeOut" }}
-            >
-              <Card className="overflow-hidden border-white/10 bg-card/95 shadow-[0_22px_80px_rgba(0,0,0,0.34)]">
-                <CardHeader className="space-y-3 border-b border-border/80 px-5 py-6 text-center sm:px-7">
-                  {Icon && (
-                    <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-lg border border-[#00f5d4]/25 bg-[#00f5d4]/10 text-[#00f5d4]">
-                      <Icon className="h-5 w-5" />
-                    </div>
-                  )}
-                  <div className="space-y-2">
-                    <CardTitle className="text-2xl font-black tracking-tight">{title}</CardTitle>
-                    <CardDescription className="text-sm leading-6">{description}</CardDescription>
-                  </div>
-                </CardHeader>
-                <CardContent className="px-5 py-6 sm:px-7">{children}</CardContent>
-              </Card>
-            </motion.div>
-          </section>
-        </div>
+          <Card className="overflow-hidden border-white/10 bg-[#0b0e14]/95 shadow-[0_24px_80px_rgba(0,0,0,0.42)] backdrop-blur-xl">
+            <CardHeader className="space-y-2 border-b border-white/10 px-5 py-6 text-center sm:px-8">
+              <CardTitle className="text-2xl font-bold tracking-tight text-white">{title}</CardTitle>
+              {description ? (
+                <CardDescription className="text-sm leading-6 text-zinc-400">{description}</CardDescription>
+              ) : null}
+            </CardHeader>
+            <CardContent className="px-5 py-6 sm:px-8 sm:py-7">{children}</CardContent>
+          </Card>
+        </section>
       </main>
-      <NexusRBXFooter />
     </div>
   );
 }
@@ -124,7 +56,7 @@ export function AuthProviderButton({ icon: Icon, children, onClick, disabled }) 
     <Button
       type="button"
       variant="outline"
-      className="h-11 w-full border-white/10 bg-background/60 text-foreground hover:bg-muted/70"
+      className="h-11 w-full border-white/10 bg-white/[0.035] text-white hover:bg-white/[0.075]"
       onClick={onClick}
       disabled={disabled}
     >

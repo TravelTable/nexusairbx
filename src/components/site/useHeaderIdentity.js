@@ -169,14 +169,6 @@ export default function useHeaderIdentity({
   const displayName = robloxUsername || user?.displayName || user?.email?.split("@")[0] || "Creator";
   const email = user?.email || "";
   const planLabel = formatHeaderPlan(billing.plan);
-  const tokensLabel = billing.loading
-    ? "Loading usage"
-    : billing.unlimitedTokens || billing.devOverride
-      ? "Unlimited usage"
-      : user
-        ? `${Number(billing.totalRemaining || 0).toLocaleString()} prompts left`
-        : "Sign in to track usage";
-
   return {
     user,
     authReady,
@@ -185,7 +177,6 @@ export default function useHeaderIdentity({
     displayName,
     email,
     planLabel,
-    tokensLabel,
     supportUnreadCount,
     isSupportStaff,
     robloxStatus: effectiveRobloxStatus,

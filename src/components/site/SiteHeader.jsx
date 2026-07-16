@@ -242,9 +242,8 @@ function AccountMenu({ identity, compact = false }) {
           <div className="px-3 pb-3 pt-2">
             <div className="truncate text-sm font-semibold text-white">{identity.displayName}</div>
             <div className="mt-0.5 truncate text-xs text-slate-500">{identity.email}</div>
-            <div className="mt-3 flex items-center justify-between gap-3 text-xs text-slate-400">
+            <div className="mt-3 text-xs text-slate-400">
               <span>{identity.planLabel} plan</span>
-              <span className="truncate">{identity.tokensLabel}</span>
             </div>
           </div>
           <Separator className="mb-1 bg-white/10" />

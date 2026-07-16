@@ -460,6 +460,15 @@ export function useAiWorkspaceController() {
     };
   }, []);
 
+  // A restored Firebase session can take a moment to be verified on a fresh
+  // /ai load. Clear a nudge that may have been opened while that session was
+  // still resolving, rather than leaving a signed-in user behind a stale gate.
+  useEffect(() => {
+    if (!authReady || !user) return;
+    setShowSignInNudge(false);
+    setSignInNudgeReason("");
+  }, [authReady, user]);
+
   useEffect(() => {
     refreshRobloxStatus();
   }, [refreshRobloxStatus]);
@@ -940,6 +949,11 @@ export function useAiWorkspaceController() {
   useEffect(() => {
     if (!pendingGenerationIntent) return;
 
+    // Do not treat the initial `user === null` as an anonymous session. Firebase
+    // restores persisted credentials asynchronously, and a restored prompt must
+    // wait for that result before deciding whether to run or show the sign-in gate.
+    if (!authReady) return;
+
     if (pendingGenerationIntent.mode === "quick_script") {
       if (quickScript.status === "generating" || autoIntentInFlightRef.current === pendingGenerationIntent.id) return;
       const intent = pendingGenerationIntent;
@@ -1000,6 +1014,7 @@ export function useAiWorkspaceController() {
     };
   }, [
     pendingGenerationIntent,
+    authReady,
     quickScript.status,
     quickScript.result?.code,
     runQuickScript,

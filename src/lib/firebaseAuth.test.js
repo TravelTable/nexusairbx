@@ -1,14 +1,27 @@
+jest.mock("firebase/auth", () => ({
+  browserLocalPersistence: { type: "LOCAL" },
+  browserSessionPersistence: { type: "SESSION" },
+  getRedirectResult: jest.fn(),
+  setPersistence: jest.fn(() => Promise.resolve()),
+  signInWithPopup: jest.fn(),
+  signInWithRedirect: jest.fn(() => Promise.resolve()),
+}));
+
+import { signInWithPopup, signInWithRedirect } from "firebase/auth";
 import {
   AUTH_PERSISTENCE_PREFERENCE_KEY,
   getFriendlyAuthErrorMessage,
   isMissingRedirectStateError,
   readAuthPersistencePreference,
+  signInWithOAuthProvider,
   writeAuthPersistencePreference,
 } from "./firebaseAuth";
 
 describe("firebaseAuth", () => {
   beforeEach(() => {
     localStorage.clear();
+    sessionStorage.clear();
+    jest.clearAllMocks();
   });
 
   test("detects missing redirect state errors", () => {
@@ -47,5 +60,52 @@ describe("firebaseAuth", () => {
     writeAuthPersistencePreference(true);
     expect(localStorage.getItem(AUTH_PERSISTENCE_PREFERENCE_KEY)).toBe("local");
     expect(readAuthPersistencePreference()).toBe(true);
+  });
+
+  test("forces the account chooser for Google sign-in", async () => {
+    const setCustomParameters = jest.fn();
+    class GoogleProvider {
+      setCustomParameters = setCustomParameters;
+    }
+    const credential = { user: { uid: "google-user" } };
+    signInWithPopup.mockResolvedValue(credential);
+
+    await expect(
+      signInWithOAuthProvider({}, GoogleProvider, { method: "google", rememberMe: true })
+    ).resolves.toBe(credential);
+
+    expect(setCustomParameters).toHaveBeenCalledWith({ prompt: "select_account" });
+    expect(signInWithPopup).toHaveBeenCalledWith({}, expect.any(GoogleProvider));
+  });
+
+  test("reuses the configured Google provider for redirect fallback", async () => {
+    const setCustomParameters = jest.fn();
+    class GoogleProvider {
+      setCustomParameters = setCustomParameters;
+    }
+    signInWithPopup.mockRejectedValue({ code: "auth/popup-blocked" });
+
+    await expect(
+      signInWithOAuthProvider({}, GoogleProvider, {
+        method: "google",
+        returnPath: "/ai",
+      })
+    ).resolves.toBeNull();
+
+    const popupProvider = signInWithPopup.mock.calls[0][1];
+    expect(setCustomParameters).toHaveBeenCalledWith({ prompt: "select_account" });
+    expect(signInWithRedirect).toHaveBeenCalledWith({}, popupProvider);
+  });
+
+  test("does not apply Google account parameters to other providers", async () => {
+    const setCustomParameters = jest.fn();
+    class GithubProvider {
+      setCustomParameters = setCustomParameters;
+    }
+    signInWithPopup.mockResolvedValue({ user: { uid: "github-user" } });
+
+    await signInWithOAuthProvider({}, GithubProvider, { method: "github" });
+
+    expect(setCustomParameters).not.toHaveBeenCalled();
   });
 });

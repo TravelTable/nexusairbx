@@ -10,7 +10,6 @@ import NotificationToast from "../../components/NotificationToast";
 import GameProfileWizard from "../../components/ai/GameProfileWizard";
 import ModelSwitcher from "../../components/ai/ModelSwitcher";
 import StudioPairControl from "../../components/ai/StudioPairControl";
-import DailyPromptBadge from "../../components/ai/DailyPromptBadge";
 import ProjectArchitecturePanel from "../../components/ai/ProjectArchitecturePanel";
 import { ProjectContextStatus } from "../../components/ai/AiComponents";
 import SiteHeader from "../../components/site/SiteHeader";
@@ -1108,14 +1107,6 @@ export default function AgentWorkspaceLayout({ controller }) {
               <>
                 {generatorMode === "agent_build" ? (
                   <>
-                    <DailyPromptBadge
-                      totalRemaining={totalRemaining}
-                      subLimit={subLimit}
-                      resetsAt={resetsAt}
-                      planKey={planKey}
-                      unlimitedTokens={unlimitedTokens}
-                      devOverride={devOverride}
-                    />
                     <RobloxDecalUploadDropdown
                       user={user}
                       planKey={planKey}

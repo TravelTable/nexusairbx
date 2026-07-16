@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { Github, Mail, Sparkles, User } from "lib/icons";
+import { Github, Mail, User } from "lib/icons";
 import { auth } from "../firebase";
 import {
   createUserWithEmailAndPassword,
@@ -364,25 +364,8 @@ function NexusRBXSignUpPage({
 
   return (
     <NexusAuthShell
-      title="Create your NexusRBX account"
-      description="Create a free account to use Agent Build and keep your Roblox projects moving."
-      icon={Sparkles}
-      sideTitle="Set up your AI Roblox workspace."
-      sideDescription="Create an account once, then continue straight into the AI workspace with your homepage prompt and progress preserved."
-      sideItems={[
-        {
-          title: "Provider or password signup",
-          description: "Use Google, GitHub, or email while keeping the same NexusRBX auth return flow.",
-        },
-        {
-          title: "Start free with Agent Build",
-          description: "Plan, debug, ask questions, and generate projects before deciding whether you need more capacity.",
-        },
-        {
-          title: "Continue after auth",
-          description: "Your pending prompt returns with you so signup does not break the creative flow.",
-        },
-      ]}
+      title="Create your account"
+      description="Get started with NexusRBX."
     >
       <div className="grid gap-6">
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
