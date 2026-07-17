@@ -66,6 +66,9 @@ class FakeMcp implements McpClientLike {
   callTools: Array<{ name: string; args: JsonObject }> = [];
   failConnects = 0;
   toolPages: DiscoveredTool[][] = [[readTool, ...targetTools]];
+  studios: Array<{ studio_id: string; place_id: string; place_name: string }> = [
+    { studio_id: "studio-1", place_id: "42", place_name: "Fixture Place" },
+  ];
   readonly #toolHandlers = new Set<() => void>();
   readonly #disconnectHandlers = new Set<(error?: Error) => void>();
 
@@ -86,8 +89,8 @@ class FakeMcp implements McpClientLike {
   async callTool(name: string, args: JsonObject): Promise<ToolCallResult> {
     this.callTools.push({ name, args });
     if (name === "script_read") return { structuredContent: { source: "print('ok')" } };
-    if (name === "list_roblox_studios") return { structuredContent: { studios: [{ studio_id: "studio-1", place_id: "42", place_name: "Fixture Place" }] } };
-    if (name === "get_studio_state") return { structuredContent: { studio_id: "studio-1", place_id: "42", place_name: "Fixture Place" } };
+    if (name === "list_roblox_studios") return { structuredContent: { studios: this.studios } };
+    if (name === "get_studio_state") return { structuredContent: this.studios.find((studio) => studio.studio_id === args.studio_id) ?? this.studios[0] ?? {} };
     if (name === "set_active_studio") return { structuredContent: { studio_id: String(args.studio_id || "") } };
     return { content: [{ type: "text", text: "ok" }] };
   }
@@ -195,6 +198,68 @@ test("connector publishes an empty catalog while MCP is unavailable, then reconn
   assert.deepEqual(backend.registrations[1]?.commands, ["get_studio_context", "read_script", "read_scripts"]);
   assert.equal(backend.pings.some((ping) => ping.mcpServerAvailable === false), true);
   assert.equal(backend.acknowledgements[0]?.status, "succeeded");
+});
+
+test("connector reports multiple Studio windows as a recoverable degraded state", async () => {
+  const controller = new AbortController();
+  const backend = new FakeBackend(controller);
+  const mcp = new FakeMcp();
+  const lifecycle: string[] = [];
+  const telemetry: Array<{ stage?: string; supportedToolCount?: number; degradedReason?: string }> = [];
+  mcp.studios = [
+    { studio_id: "studio-1", place_id: "42", place_name: "First Place" },
+    { studio_id: "studio-2", place_id: "84", place_name: "Second Place" },
+  ];
+  backend.pollHandler = async () => {
+    controller.abort(new DOMException("degraded state observed", "AbortError"));
+    return null;
+  };
+
+  await new NexusLocalConnector({
+    config,
+    connectorVersion: "0.1.0-test",
+    backend,
+    mcp,
+    logger,
+    onLifecycleState: (state) => lifecycle.push(state),
+    onTelemetry: (event) => telemetry.push(event),
+  }).run("PAIR-CODE", controller.signal);
+
+  assert.equal(lifecycle.includes("degraded"), true);
+  assert.equal(lifecycle.includes("ready"), false);
+  assert.deepEqual(backend.registrations[0]?.commands, []);
+  assert.equal(telemetry.some((event) => event.stage === "ready" && event.supportedToolCount === undefined && event.degradedReason === "multiple_studio_windows"), true);
+  assert.equal(telemetry.some((event) => event.supportedToolCount === 0 && event.degradedReason === "multiple_studio_windows"), true);
+});
+
+test("connector refreshes capabilities when a Studio window opens after discovery", async () => {
+  const controller = new AbortController();
+  const backend = new FakeBackend(controller);
+  const mcp = new FakeMcp();
+  const telemetry: Array<{ supportedToolCount?: number; degradedReason?: string }> = [];
+  mcp.studios = [];
+  backend.pollHandler = async (poll) => {
+    await new Promise((resolve) => setTimeout(resolve, 1));
+    if (poll === 1) mcp.studios = [{ studio_id: "studio-1", place_id: "42", place_name: "Fixture Place" }];
+    if (backend.registrations.some((registration) => registration.commands.length > 0)) {
+      controller.abort(new DOMException("capabilities recovered", "AbortError"));
+    }
+    return null;
+  };
+
+  await new NexusLocalConnector({
+    config,
+    connectorVersion: "0.1.0-test",
+    backend,
+    mcp,
+    logger,
+    onTelemetry: (event) => telemetry.push(event),
+  }).run("PAIR-CODE", controller.signal);
+
+  assert.deepEqual(backend.registrations[0]?.commands, []);
+  assert.equal(backend.registrations.some((registration) => registration.commands.includes("read_script")), true);
+  assert.equal(telemetry.some((event) => event.supportedToolCount === 0 && event.degradedReason === "target_place_unavailable"), true);
+  assert.equal(telemetry.some((event) => (event.supportedToolCount ?? 0) > 0), true);
 });
 
 test("connector leaves MCP reconnect paused when automatic reconnect is disabled", async () => {

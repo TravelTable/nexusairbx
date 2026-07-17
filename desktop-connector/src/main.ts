@@ -14,6 +14,7 @@ import { DEFAULT_PREFERENCES, getAutoStart, PreferenceStore, setAutoStart, valid
 import { EncryptedTokenStore, type EncryptedStorage, type StoredConnectorSession } from "./token-store.js";
 import { ConnectorUpdater } from "./updater.js";
 import { ConnectionAttemptCoordinator } from "./connection-attempt.js";
+import { completedConnectionPatch } from "./connection-state.js";
 
 // electron-updater is published as CommonJS. Reading autoUpdater from its default
 // namespace keeps the packaged ESM main process compatible with Node's CJS bridge.
@@ -71,6 +72,7 @@ class DesktopController {
   #studioInstalled = true;
   #lastNotifiedState: CompanionState | null = null;
   #hasExplainedCloseToTray = false;
+  #discoveryComplete = false;
 
   constructor() {
     const userData = app.getPath("userData");
@@ -197,9 +199,10 @@ class DesktopController {
     const backend = existingBackend ?? new NexusBackendClient({ apiUrl: config.apiUrl, connectorVersion: CONNECTOR_VERSION, requestTimeoutMs: config.requestTimeoutMs, logger });
     if (!existingBackend) backend.restoreToken(session.token);
     this.#backend = backend;
+    this.#discoveryComplete = false;
     const diagnostics = await this.diagnostics();
     this.#studioInstalled = diagnostics.studioInstalled;
-    this.patchSnapshot({ state: this.#studioInstalled ? "connecting" : "studio_not_installed", message: this.#studioInstalled ? "Starting the local connector…" : "Roblox Studio MCP was not found.", cloudHealth: "connected", runtimeHealth: "connecting", mcpHealth: "disconnected", connectionStage: "runtime", pairingError: null });
+    this.patchSnapshot({ state: this.#studioInstalled ? "connecting" : "studio_not_installed", message: this.#studioInstalled ? "Starting the local connector…" : "Roblox Studio MCP was not found.", cloudHealth: "connected", runtimeHealth: "connecting", mcpHealth: "disconnected", connectionStage: "runtime", degradedReason: null, pairingError: null, experienceName: null, supportedToolCount: 0, supportedTools: [] });
     const mcp = new RobloxStudioMcpClient({ command: config.mcpCommand, args: config.mcpArgs, connectorVersion: CONNECTOR_VERSION, requestTimeoutMs: config.requestTimeoutMs, logger });
     const attempt = this.#attempts.start(async ({ id, signal }) => {
       const connector = new NexusLocalConnector({
@@ -227,9 +230,10 @@ class DesktopController {
 
   private onConnectorState(attemptId: number, state: ConnectorLifecycleState): void {
     if (!this.#attempts.isCurrent(attemptId)) return;
-    if (state === "ready" && this.#snapshot.cloudHealth === "connected" && this.#snapshot.mcpHealth === "connected" && this.#snapshot.supportedToolCount > 0) this.patchSnapshot({ state: "ready", message: "NexusRBX Cloud and Studio MCP are connected.", degradedReason: null, connectionStage: null });
-    else if (state === "degraded") this.patchSnapshot({ state: "degraded", message: "Studio MCP connected, but no supported tools were found.", degradedReason: "zero_supported_tools", connectionStage: null });
-    else if (state === "studio_mcp_unavailable") this.patchSnapshot({ state: this.#studioInstalled ? "studio_mcp_unavailable" : "studio_not_installed", message: "Connector is online, but Studio MCP cannot be reached.", runtimeHealth: "connected", mcpHealth: "warning", connectionStage: null });
+    if (state === "ready" || state === "degraded") {
+      this.#discoveryComplete = true;
+      this.reconcileCompletedConnection();
+    } else if (state === "studio_mcp_unavailable") this.patchSnapshot({ state: this.#studioInstalled ? "studio_mcp_unavailable" : "studio_not_installed", message: "Connector is online, but Studio MCP cannot be reached.", runtimeHealth: "connected", mcpHealth: "warning", connectionStage: null });
     else if (state === "connecting") this.patchSnapshot({ state: "connecting", message: "Starting the local connector…", runtimeHealth: "connecting", connectionStage: "runtime" });
   }
 
@@ -250,6 +254,13 @@ class DesktopController {
     if (telemetry.lastCommand) patch.lastCommand = telemetry.lastCommand;
     if (telemetry.degradedReason) patch.degradedReason = telemetry.degradedReason;
     this.patchSnapshot(patch);
+    if (telemetry.stage === "ready") this.#discoveryComplete = true;
+    if (this.#discoveryComplete) this.reconcileCompletedConnection();
+  }
+
+  private reconcileCompletedConnection(): void {
+    const patch = completedConnectionPatch(this.#snapshot);
+    if (patch) this.patchSnapshot(patch);
   }
 
   private armStartupWatchdog(attemptId: number): void {

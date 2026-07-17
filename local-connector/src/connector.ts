@@ -43,7 +43,7 @@ export interface ConnectorTelemetry {
   lastHeartbeatAt?: number;
   lastActivityAt?: number;
   lastCommand?: { name: string; status: "succeeded" | "failed"; at: number };
-  degradedReason?: "studio_closed" | "mcp_initialization_failed" | "zero_supported_tools" | "cloud_loss";
+  degradedReason?: "studio_closed" | "mcp_initialization_failed" | "zero_supported_tools" | "multiple_studio_windows" | "target_place_unavailable" | "cloud_loss";
 }
 
 /** Coordinates one in-memory pairing session. A process restart requires a new code. */
@@ -191,12 +191,12 @@ export class NexusLocalConnector {
       this.#mcpConnected = true;
       this.#announcedUnavailable = false;
       this.emitTelemetry({ stage: "tool_discovery", mcpConnected: true, ...(this.#mcpInfo.serverVersion ? { mcpServerVersion: this.#mcpInfo.serverVersion } : {}) });
-      await this.refreshCatalog(signal);
+      const runtime = await this.refreshCatalog(signal);
       this.#logger.info("Roblox Studio MCP connected.");
       this.#logCapabilities();
       this.#logger.info("NexusRBX is connected to Roblox Studio. Press Ctrl+C to disconnect.");
-      if ((this.#catalog?.supportedCommands.length ?? 0) === 0) {
-        this.emitTelemetry({ stage: "ready", degradedReason: "zero_supported_tools" });
+      if (runtime.supportedCommands.length === 0) {
+        this.emitTelemetry({ stage: "ready", degradedReason: runtime.degradedReason ?? "zero_supported_tools" });
         this.emitLifecycleState("degraded");
       } else {
         this.emitTelemetry({ stage: "ready" });
@@ -208,7 +208,7 @@ export class NexusLocalConnector {
     }
   }
 
-  private async refreshCatalog(signal: AbortSignal): Promise<void> {
+  private async refreshCatalog(signal: AbortSignal): Promise<RuntimeCapabilities> {
     this.#toolsDirty = false;
     const tools = await this.#mcp.listTools(signal);
     const catalog = new ToolCatalog(tools);
@@ -228,6 +228,9 @@ export class NexusLocalConnector {
       supportedTools: tools.map((tool) => tool.name).sort(),
       supportedToolCount: runtime.supportedCommands.length,
       mcpConnected: true,
+      ...(runtime.supportedCommands.length === 0
+        ? { degradedReason: runtime.degradedReason ?? "zero_supported_tools" }
+        : {}),
     });
     await this.#backend.registerCapabilities(
       runtime.capabilities,
@@ -240,6 +243,7 @@ export class NexusLocalConnector {
       signal,
     );
     await this.refreshExperienceSummary(tools, signal);
+    return runtime;
   }
 
   private async refreshExperienceSummary(tools: Array<{ name: string }>, signal: AbortSignal): Promise<void> {
@@ -277,7 +281,9 @@ export class NexusLocalConnector {
     while (!signal.aborted) {
       await delay(this.#config.heartbeatMs, signal);
       try {
+        const activeStudioId = this.#targeting?.activeStudioId;
         if (this.#mcpConnected) await this.#targeting?.refresh(signal);
+        if (this.#targeting?.activeStudioId !== activeStudioId) this.#toolsDirty = true;
         const response = await this.#backend.ping(this.pingPayload(this.#mcpConnected), signal);
         if (this.#targeting?.acceptBackendResponse(response)) this.#toolsDirty = true;
         this.emitTelemetry({ cloudConnected: true, lastHeartbeatAt: Date.now() });
@@ -400,7 +406,14 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-function runtimeCapabilities(catalog: ToolCatalog, targeting: StudioTargetManager | null) {
+type RuntimeCapabilities = {
+  capabilities: ToolCatalog["capabilities"];
+  capabilityDetails: ToolCatalog["capabilityDetails"];
+  supportedCommands: string[];
+  degradedReason?: "multiple_studio_windows" | "target_place_unavailable";
+};
+
+function runtimeCapabilities(catalog: ToolCatalog, targeting: StudioTargetManager | null): RuntimeCapabilities {
   if (targeting?.activeStudioId) {
     return { capabilities: catalog.capabilities, capabilityDetails: catalog.capabilityDetails, supportedCommands: catalog.supportedCommands };
   }
@@ -413,7 +426,14 @@ function runtimeCapabilities(catalog: ToolCatalog, targeting: StudioTargetManage
     reasonCode,
     verifiedAt: null,
   }])) as typeof catalog.capabilityDetails;
-  return { capabilities: { ...EMPTY_CAPABILITIES }, capabilityDetails, supportedCommands: [] };
+  return {
+    capabilities: { ...EMPTY_CAPABILITIES },
+    capabilityDetails,
+    supportedCommands: [],
+    ...(targeting
+      ? { degradedReason: targeting.targets.length > 1 ? ("multiple_studio_windows" as const) : ("target_place_unavailable" as const) }
+      : {}),
+  };
 }
 
 function abortReason(signal: AbortSignal): unknown {
