@@ -16,8 +16,8 @@ export const MCP_CAPABILITY_LABELS = Object.freeze({
   snapshots: "Create snapshots",
 });
 
-export const EXPECTED_STUDIO_PLUGIN_VERSION = "0.10.1-mcp-parity";
-export const EXPECTED_STUDIO_PROTOCOL_VERSION = "2026-07-17-mcp-parity";
+export const EXPECTED_STUDIO_PLUGIN_VERSION = "0.10.2-target-integrity";
+export const EXPECTED_STUDIO_PROTOCOL_VERSION = "2026-07-17-target-integrity";
 
 const LIVE_IDLE_MS = 45000;
 

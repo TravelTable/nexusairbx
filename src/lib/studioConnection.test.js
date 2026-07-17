@@ -150,8 +150,8 @@ describe("studio connection selection", () => {
           status: "connected",
           live: true,
           studio: {
-            pluginVersion: "0.10.1-mcp-parity",
-            protocolVersion: "2026-07-17-mcp-parity",
+            pluginVersion: "0.10.2-target-integrity",
+            protocolVersion: "2026-07-17-target-integrity",
           },
         }],
       },
@@ -196,8 +196,8 @@ describe("studio connection selection", () => {
       status: "update_required",
       installedPluginVersion: "0.10.0-verified-decoupled",
       installedProtocolVersion: "2026-06-20-creator-store",
-      expectedPluginVersion: "0.10.1-mcp-parity",
-      expectedProtocolVersion: "2026-07-17-mcp-parity",
+      expectedPluginVersion: "0.10.2-target-integrity",
+      expectedProtocolVersion: "2026-07-17-target-integrity",
     });
   });
 });
