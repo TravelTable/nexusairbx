@@ -52,6 +52,18 @@ const INFRASTRUCTURE_ERROR_MESSAGES = {
     "The AI service is temporarily at capacity. Please try again shortly.",
 };
 
+const STUDIO_CONNECTION_MESSAGE =
+  "Studio is unavailable right now. Reconnect Studio and try again.";
+
+function looksLikeStudioConnectionError(input) {
+  const code = String(input?.code || input?.errorCode || "").toUpperCase();
+  const message = String(input?.message || input?.error || input || "").toLowerCase();
+  return (
+    /(?:MCP|STUDIO).*(?:UNAVAILABLE|DISCONNECT|NOT_CONNECTED|SESSION)/.test(code) ||
+    /(?:disconnected|not connected|no place is open|previously active studio|mcp tooling reports)/.test(message)
+  );
+}
+
 function looksLikeInfrastructureQuotaError(input) {
   const code = input?.code;
   if (INFRASTRUCTURE_ERROR_CODES.has(code)) return true;
@@ -61,6 +73,7 @@ function looksLikeInfrastructureQuotaError(input) {
 
 export function formatUserFacingError(input) {
   if (!input) return "Something went wrong. Please try again.";
+  if (looksLikeStudioConnectionError(input)) return STUDIO_CONNECTION_MESSAGE;
   if (typeof input === "string") {
     if (looksLikeInfrastructureQuotaError({ message: input })) {
       return INFRASTRUCTURE_ERROR_MESSAGES.FIRESTORE_QUOTA_EXCEEDED;

@@ -446,15 +446,9 @@ export default function StudioPairControl({
                   {pluginUpdateRequired ? (
                     <div className="rounded-xl border border-amber-400/25 bg-amber-400/10 p-3 text-xs leading-relaxed text-amber-100">
                       <div className="mb-1 flex items-center gap-2 font-bold text-amber-300">
-                        <AlertTriangle className="h-4 w-4" /> Plugin update required
+                        <AlertTriangle className="h-4 w-4" /> Update available
                       </div>
-                      Reinstall <strong>NexusRBXStudioBridge.plugin.lua</strong>, restart Studio, then reconnect. Manifest collection is disabled until the versions match.
-                      <dl className="mt-3 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-[10px]">
-                        <dt className="text-amber-200/60">Installed plugin</dt><dd className="truncate text-right">{compatibility.installedPluginVersion || "Unknown"}</dd>
-                        <dt className="text-amber-200/60">Installed protocol</dt><dd className="truncate text-right">{compatibility.installedProtocolVersion || "Unknown"}</dd>
-                        <dt className="text-amber-200/60">Expected plugin</dt><dd className="truncate text-right">{compatibility.expectedPluginVersion || "Unknown"}</dd>
-                        <dt className="text-amber-200/60">Expected protocol</dt><dd className="truncate text-right">{compatibility.expectedProtocolVersion || "Unknown"}</dd>
-                      </dl>
+                      A new Studio plugin update is available. Update the plugin and reconnect to continue.
                     </div>
                   ) : (
                     <div className="rounded-xl border border-[#00f5d4]/20 bg-[#00f5d4]/5 p-3 text-xs text-gray-300">

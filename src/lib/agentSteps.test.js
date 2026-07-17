@@ -1,6 +1,7 @@
 import {
   countStepSnapshots,
   normalizeToolStep,
+  normalizeToolStepError,
   summarizeStepResult,
   upsertAgentStep,
 } from "./agentSteps";
@@ -39,6 +40,21 @@ describe("agentSteps", () => {
     expect(Object.prototype.hasOwnProperty.call(step, "result")).toBe(false);
     expect(Object.prototype.hasOwnProperty.call(step, "snapshotCount")).toBe(false);
     expect(Object.prototype.hasOwnProperty.call(step, "runId")).toBe(false);
+  });
+
+  test("normalizes structured and disconnected Studio errors for customers", () => {
+    expect(normalizeToolStepError({ message: "A useful validation error" })).toBe(
+      "A useful validation error"
+    );
+    expect(normalizeToolStep({
+      id: "s2",
+      type: "search_project",
+      status: "failed",
+      error: { code: "MCP_SESSION_DISCONNECTED", message: "Previously active Studio is disconnected" },
+    }).error).toBe("Studio is unavailable right now. Reconnect Studio and try again.");
+    expect(normalizeToolStepError({ details: { internal: true } })).toBe(
+      "This Studio action could not be completed."
+    );
   });
 
   test("upsertAgentStep merges by id", () => {

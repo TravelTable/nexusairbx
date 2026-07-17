@@ -41,4 +41,13 @@ describe("billingErrors", () => {
     expect(parsed.message).toMatch(/temporarily busy/i);
     expect(parsed.retryable).toBe(true);
   });
+
+  it("does not expose internal Studio connection diagnostics", () => {
+    const message = formatUserFacingError({
+      code: "MCP_SESSION_DISCONNECTED",
+      message: "MCP tooling reports the previously active Studio is disconnected or no place is open.",
+    });
+    expect(message).toBe("Studio is unavailable right now. Reconnect Studio and try again.");
+    expect(message).not.toMatch(/MCP|place is open/i);
+  });
 });

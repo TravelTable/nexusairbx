@@ -22,8 +22,7 @@ function describeStepWait(step) {
 }
 
 function providerLabel(provider) {
-  if (provider === "mcp_local") return "Local MCP";
-  if (provider === "plugin_bridge") return "Studio plugin";
+  if (provider === "mcp_local" || provider === "plugin_bridge") return "Studio";
   return "Studio";
 }
 
@@ -104,7 +103,7 @@ export default function AgentStepList({
                   Studio plugin fallback: {fallbackLabel(step.fallbackReason)}
                 </div>
               )}
-              {(step.executionSessionId || step.operationId) && (
+              {process.env.NODE_ENV === "development" && (step.executionSessionId || step.operationId) && (
                 <details className="mt-1 text-[10px] text-gray-600">
                   <summary className="cursor-pointer select-none hover:text-gray-400">Execution details</summary>
                   <div className="mt-1 space-y-0.5 break-all">

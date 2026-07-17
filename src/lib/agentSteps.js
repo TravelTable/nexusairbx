@@ -85,6 +85,31 @@ export const DESTRUCTIVE_TOOL_TYPES = new Set([
   "apply_artifact",
 ]);
 
+export const STUDIO_CONNECTION_UNAVAILABLE_MESSAGE =
+  "Studio is unavailable right now. Reconnect Studio and try again.";
+
+function isStudioConnectionError(code, message) {
+  const normalizedCode = String(code || "").toUpperCase();
+  const normalizedMessage = String(message || "").toLowerCase();
+  return (
+    /(?:MCP|STUDIO).*(?:UNAVAILABLE|DISCONNECT|NOT_CONNECTED|SESSION)/.test(normalizedCode) ||
+    /(?:disconnected|not connected|no place is open|previously active studio|mcp tooling reports)/.test(normalizedMessage)
+  );
+}
+
+export function normalizeToolStepError(error) {
+  if (!error) return "";
+  const code = typeof error === "object" ? error.code || error.errorCode : "";
+  const message = typeof error === "object"
+    ? error.publicMessage || error.userMessage || error.message || error.error || ""
+    : error;
+  if (isStudioConnectionError(code, message)) {
+    return STUDIO_CONNECTION_UNAVAILABLE_MESSAGE;
+  }
+  if (typeof message === "string" && message.trim()) return message.trim();
+  return "This Studio action could not be completed.";
+}
+
 /**
  * @typedef {Object} AgentToolStep
  * @property {string} id
@@ -118,7 +143,7 @@ export function normalizeToolStep(raw) {
     requiresApproval: Boolean(raw.requiresApproval || raw.status === "awaiting_approval"),
   };
   if (raw.label) step.label = String(raw.label);
-  if (raw.error) step.error = String(raw.error);
+  if (raw.error) step.error = normalizeToolStepError(raw.error);
   if (raw.result && typeof raw.result === "object") step.result = raw.result;
   if (typeof raw.snapshotCount === "number") {
     step.snapshotCount = raw.snapshotCount;

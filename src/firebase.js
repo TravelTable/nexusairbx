@@ -6,6 +6,7 @@ import {
   persistentLocalCache,
   persistentMultipleTabManager,
 } from "firebase/firestore";
+import { getFirestoreTransportOptions } from "./lib/firestoreTransport";
 
 // Keep Firebase SDK transport retries off the browser console; failures are
 // reported server-side via deferredClientLog when they persist.
@@ -125,9 +126,7 @@ export const appCheckReady = waitForFirebaseAppCheck(appCheck);
 
 // Core SDKs
 export const auth = getAuth(app);
-const firestoreOptions = {
-  experimentalAutoDetectLongPolling: true,
-};
+const firestoreOptions = getFirestoreTransportOptions();
 
 // Keep previously-read documents in IndexedDB and coordinate that cache across
 // tabs. Firestore can then resume listeners without re-reading their full query

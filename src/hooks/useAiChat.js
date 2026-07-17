@@ -685,8 +685,8 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
         try {
           const studioStatus = await getStudioStatus();
           const studioSession =
-            selectMcpStudioSession(studioStatus.sessions) ||
-            selectPluginStudioSession(studioStatus.sessions);
+            selectMcpStudioSession(studioStatus.sessions, { capability: "readProject" }) ||
+            selectPluginStudioSession(studioStatus.sessions, { compatibleOnly: true });
           studioSessionId = getStudioSessionId(studioSession);
           studioConnectionType = studioSession
             ? getStudioConnectionType(studioSession)
@@ -966,7 +966,9 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
           setPending(null);
           setStage("");
           delete streamStatesRef.current[activeChatId];
-          reject(err instanceof Error ? err : new Error(String(err || "Generation failed")));
+          const publicError = new Error(friendlyMessage);
+          publicError.code = err?.code || "GENERATION_FAILED";
+          reject(publicError);
         };
 
         const handoffRecoveryTimeout = () => {

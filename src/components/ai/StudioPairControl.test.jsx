@@ -137,10 +137,11 @@ describe("StudioPairControl", () => {
     render(<StudioPairControl connection={connection} refresh={jest.fn()} />);
     fireEvent.click(screen.getByRole("button", { name: /Studio · Update/i }));
 
-    expect(screen.getByText("Plugin update required")).toBeTruthy();
-    expect(screen.getByText("NexusRBXStudioBridge.plugin.lua")).toBeTruthy();
-    expect(screen.getByText("0.10.1-mcp-parity")).toBeTruthy();
-    expect(screen.getByText("2026-07-17-mcp-parity")).toBeTruthy();
+    expect(screen.getByText("Update available")).toBeTruthy();
+    expect(screen.getByText("A new Studio plugin update is available. Update the plugin and reconnect to continue.")).toBeTruthy();
+    expect(screen.queryByText("NexusRBXStudioBridge.plugin.lua")).toBeNull();
+    expect(screen.queryByText("0.10.1-mcp-parity")).toBeNull();
+    expect(screen.queryByText("2026-07-17-mcp-parity")).toBeNull();
     expect(screen.getByText("Full manifest").parentElement.textContent).toContain("Unavailable");
   });
 });
