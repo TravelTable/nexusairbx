@@ -1,5 +1,6 @@
 import { act, renderHook } from "@testing-library/react";
 import { useAiChat } from "./useAiChat";
+import { auth } from "../firebase";
 import { useBilling } from "../context/BillingContext";
 import { ensureStreamSession } from "../lib/streamSession";
 import { parseCompletedGenerateResult } from "../lib/streamRecovery";
@@ -137,6 +138,7 @@ describe("useAiChat", () => {
     FEATURE_FLAGS.unifiedAgent = false;
     getStudioEnabledPreference.mockReturnValue(false);
     getStudioStatus.mockReset();
+    auth.currentUser = null;
   });
 
   test("persists an assistant failure when result recovery fails without a run id", async () => {
@@ -144,6 +146,7 @@ describe("useAiChat", () => {
       uid: "user_1",
       getIdToken: jest.fn().mockResolvedValue("token_1"),
     };
+    auth.currentUser = user;
     const notify = jest.fn();
 
     global.fetch = jest
@@ -308,6 +311,7 @@ describe("useAiChat", () => {
       uid: "user_1",
       getIdToken: jest.fn().mockResolvedValue("token_1"),
     };
+    auth.currentUser = user;
     const { result } = renderHook(() => useAiChat(
       user,
       { chatMode: "agent", studioAutoPushEnabled: true },

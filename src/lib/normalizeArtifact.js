@@ -209,7 +209,7 @@ export function messageHasArtifact(m) {
     (Array.isArray(m.files) && m.files.length) ||
     m.code ||
     m.uiModuleLua ||
-    m.content
+    m.systemsLua
   );
 }
 

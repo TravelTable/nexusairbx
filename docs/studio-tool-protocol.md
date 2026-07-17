@@ -43,7 +43,7 @@ The backend validates every Studio command in `backend/src/lib/studioToolProtoco
 
 ## Discovery And Reads
 
-- `get_project_manifest`: paginated manifest with canonical paths, classes, managed IDs, source hashes, property hashes, revision, and `nextCursor`.
+- `get_project_manifest`: paginated manifest with canonical paths, classes, managed IDs, source hashes, property hashes, revision, and `nextCursor`. The plugin snapshots and deterministically sorts the first scan, then serves every continuation from that revision; missing or expired continuation revisions return structured retryable errors instead of rebuilding a different tree.
 - `list_children`: children of one canonical path.
 - `inspect_instances`: detailed metadata for selected paths.
 - `search_project`: path/name/class search.
@@ -108,7 +108,7 @@ profiles or check IDs fail closed.
 
 1. Pair Studio from the web UI and confirm `/api/studio/status` shows the session.
 2. Queue `get_project_manifest` and verify `_studioProjectManifestItems` is populated.
-3. For paginated manifests, acknowledge the same page twice with different command IDs and confirm the item/page counts do not increase.
+3. For paginated manifests, confirm all pages keep the first page's revision, contain no overlapping canonical paths, and that acknowledging the same page twice with different command IDs does not increase item/page counts.
 4. Queue `search_source` for a known token and verify only matching scripts are returned.
 5. Queue `read_script`, then `write_script` with the returned hash and confirm source updates.
 6. Edit the same script in Studio, retry the old `write_script`, and confirm `source_conflict`.

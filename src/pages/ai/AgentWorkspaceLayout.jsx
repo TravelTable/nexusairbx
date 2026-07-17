@@ -232,6 +232,18 @@ export default function AgentWorkspaceLayout({ controller }) {
           status = null;
         }
         const readyRevision = status?.lastCompleteRevision || "";
+        const manifestFailed =
+          status?.conflicted === true ||
+          ["failed", "conflicted"].includes(String(status?.continuationStatus || "").toLowerCase());
+        if (manifestFailed) {
+          const error = new Error(
+            status?.error ||
+              status?.terminalError ||
+              "Studio manifest refresh failed because the project index conflicted. Rescan the project and try again."
+          );
+          error.code = status?.code || "STUDIO_MANIFEST_CONFLICTED";
+          throw error;
+        }
         if (
           readyRevision &&
           status?.activeRevision === readyRevision &&

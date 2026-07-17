@@ -7,6 +7,8 @@ import { trackProductEvent } from "../lib/productAnalytics";
 import { FEATURE_FLAGS } from "../lib/featureFlags";
 import { getStudioEnabledPreference } from "../lib/agentSteps";
 import { getStudioStatus } from "../lib/studioBridgeApi";
+import { orchestrate } from "../lib/workflowApi";
+import { classifyUserIntent, isImplementationIntent } from "../lib/intentClassifier";
 
 jest.mock("../firebase", () => ({
   db: {},
@@ -188,5 +190,66 @@ describe("useUnifiedChat", () => {
     expect(setDoc.mock.calls.some(([, payload]) => (
       payload?.role === "assistant" && payload?.content === "Studio answer"
     ))).toBe(true);
+  });
+
+  test("routes conversational Agent prompts through grounded Studio chat instead of generic orchestration", async () => {
+    FEATURE_FLAGS.unifiedAgent = true;
+    getStudioEnabledPreference.mockReturnValue(true);
+    classifyUserIntent.mockReturnValue("GENERAL_QUESTION");
+    isImplementationIntent.mockReturnValue(false);
+    getStudioStatus.mockResolvedValue({
+      sessions: [{
+        id: "mcp_agent_exact",
+        connectionType: "mcp_local",
+        status: "connected",
+        live: true,
+        connectorLive: true,
+        mcpServerAvailable: true,
+      }],
+    });
+    const setPendingForChat = jest.fn();
+    useAiChat.mockReturnValue({
+      activeMode: "agent",
+      currentChatId: "chat-1",
+      generatingChatIds: [],
+      generationStage: "",
+      handleSubmit: chatHandleSubmit,
+      isGenerating: false,
+      messages: [],
+      openChatById: jest.fn(),
+      pendingMessage: null,
+      setPendingForChat,
+    });
+    const reader = {
+      read: jest.fn()
+        .mockResolvedValueOnce({
+          done: false,
+          value: Uint8Array.from(Array.from("Grounded Studio answer").map((character) => character.charCodeAt(0))),
+        })
+        .mockResolvedValueOnce({ done: true, value: undefined }),
+    };
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      body: { getReader: () => reader },
+    });
+    const user = { uid: "user-1", getIdToken: jest.fn().mockResolvedValue("token") };
+
+    const { result } = renderHook(() =>
+      useUnifiedChat(user, {}, jest.fn(), jest.fn())
+    );
+
+    await act(async () => {
+      await result.current.handleSubmit("What files can you see in Studio?", []);
+    });
+
+    const request = JSON.parse(global.fetch.mock.calls[0][1].body);
+    expect(global.fetch.mock.calls[0][0]).toContain("/api/ai/chat");
+    expect(request).toEqual(expect.objectContaining({
+      studioEnabled: true,
+      studioSessionId: "mcp_agent_exact",
+      studioConnectionType: "mcp_local",
+    }));
+    expect(orchestrate).not.toHaveBeenCalled();
+    expect(chatHandleSubmit).not.toHaveBeenCalled();
   });
 });

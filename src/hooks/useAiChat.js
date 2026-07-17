@@ -308,7 +308,9 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
   useEffect(() => {
     const uid = user?.uid;
     if (!authReady || !uid || auth.currentUser?.uid !== uid) {
-      setCustomModes([]);
+      setCustomModes((currentModes) => (
+        currentModes.length > 0 ? [] : currentModes
+      ));
       return undefined;
     }
 
@@ -1126,7 +1128,7 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
                 streamStatus: "reconnecting",
               });
               setTimeout(() => {
-                connect();
+                connect({ refreshSession: true });
               }, 1000 * retryCount);
               return;
             }
@@ -1142,7 +1144,7 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
 
             if (!dualStreamAttempted && !sseSessionUnavailable) {
               dualStreamAttempted = true;
-              connect();
+              connect({ refreshSession: true });
             }
 
             const recovered = await pollJobResult({
@@ -1332,9 +1334,11 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
           }
         };
 
-        const connect = async () => {
+        const connect = async ({ refreshSession = false } = {}) => {
           eventSource?.close?.();
-          const sessionOk = await mintStreamSession();
+          const sessionOk = streamSessionToken && !refreshSession
+            ? true
+            : await mintStreamSession();
           if (!sessionOk) {
             emitStreamMetric("error", { jobId, tag: "network", message: "stream_session_unavailable" });
             await recoverFromStreamFailure();

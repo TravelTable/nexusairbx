@@ -28,23 +28,38 @@ local function serializeInstance(inst, path, depth, maxDepth, state, includeSour
 	elseif inst:IsA("ScreenGui") then
 		item.isScreenGui = true
 	end
-	table.insert(state.items, {
-		name = item.name,
-		className = item.className,
-		path = item.path,
-		parentPath = item.parentPath,
-		managedId = item.managedId,
-		sourceHash = item.sourceHash,
-		propertyHash = item.propertyHash,
-		updatedAt = os.time(),
-	})
+	if not state.seenPaths[path] then
+		state.seenPaths[path] = true
+		table.insert(state.items, {
+			name = item.name,
+			className = item.className,
+			path = item.path,
+			parentPath = item.parentPath,
+			managedId = item.managedId,
+			sourceHash = item.sourceHash,
+			propertyHash = item.propertyHash,
+			updatedAt = os.time(),
+		})
+	else
+		state.duplicateCanonicalPaths = state.duplicateCanonicalPaths + 1
+	end
 
 	if depth >= maxDepth or state.count >= state.maxInstances then
 		item.truncated = #inst:GetChildren() > 0
 		return item
 	end
 
-	for _, child in ipairs(inst:GetChildren()) do
+	local children = inst:GetChildren()
+	table.sort(children, function(a, b)
+		if a.Name ~= b.Name then
+			return a.Name < b.Name
+		end
+		if a.ClassName ~= b.ClassName then
+			return a.ClassName < b.ClassName
+		end
+		return tostring(a) < tostring(b)
+	end)
+	for _, child in ipairs(children) do
 		if state.count >= state.maxInstances then
 			item.truncated = true
 			break
@@ -80,7 +95,10 @@ local function getInspectionRoots()
 		end
 	end
 	table.sort(roots, function(a, b)
-		return tostring(a.Name) < tostring(b.Name)
+		if a.Name ~= b.Name then
+			return tostring(a.Name) < tostring(b.Name)
+		end
+		return tostring(a.ClassName) < tostring(b.ClassName)
 	end)
 	return roots
 end
@@ -106,27 +124,75 @@ local function inspectPlace(payload)
 	local sourceMaxChars = math.clamp(tonumber(payload.sourceMaxChars) or 0, 0, 8000)
 	local pageSize = math.clamp(tonumber(payload.pageSize) or maxInstances, 20, 1000)
 	local cursor = math.max(0, tonumber(payload.cursor) or 0)
-	local state = { count = 0, maxInstances = maxInstances, items = {} }
-	local roots = {}
-	for _, inst in ipairs(getInspectionRoots()) do
-		table.insert(roots, serializeInstance(inst, inst.Name, 1, maxDepth, state, includeSource, sourceMaxChars, ""))
+	local requestedRevision = tostring(payload.manifestRevision or "")
+	NEXUS_RBX_MANIFEST_SNAPSHOTS = NEXUS_RBX_MANIFEST_SNAPSHOTS or {}
+	for revision, snapshot in pairs(NEXUS_RBX_MANIFEST_SNAPSHOTS) do
+		if os.time() - (snapshot.createdAt or 0) > 120 then
+			NEXUS_RBX_MANIFEST_SNAPSHOTS[revision] = nil
+		end
+	end
+	if cursor > 0 and requestedRevision == "" then
+		return {
+			ok = false,
+			code = "manifest_revision_required",
+			error = "Manifest continuation requires the revision from the first page",
+			retryable = true,
+		}
+	end
+	local snapshot = requestedRevision ~= "" and NEXUS_RBX_MANIFEST_SNAPSHOTS[requestedRevision] or nil
+	if cursor > 0 and not snapshot then
+		return {
+			ok = false,
+			code = "manifest_revision_expired",
+			error = "The manifest snapshot expired; start a new scan from the first page",
+			retryable = true,
+		}
+	end
+	if not snapshot then
+		local state = {
+			count = 0,
+			maxInstances = maxInstances,
+			items = {},
+			seenPaths = {},
+			duplicateCanonicalPaths = 0,
+		}
+		local roots = {}
+		for _, inst in ipairs(getInspectionRoots()) do
+			if state.count >= state.maxInstances then
+				break
+			end
+			table.insert(roots, serializeInstance(inst, inst.Name, 1, maxDepth, state, includeSource, sourceMaxChars, ""))
+		end
+		requestedRevision = requestedRevision ~= "" and requestedRevision or HttpService:GenerateGUID(false)
+		snapshot = {
+			createdAt = os.time(),
+			items = state.items,
+			roots = roots,
+			scannedInstances = state.count,
+			truncated = state.count >= maxInstances,
+			duplicateCanonicalPaths = state.duplicateCanonicalPaths,
+			placeSignature = computePlaceSignature(),
+		}
+		NEXUS_RBX_MANIFEST_SNAPSHOTS[requestedRevision] = snapshot
 	end
 	local page = {}
-	for i = cursor + 1, math.min(#state.items, cursor + pageSize) do
-		table.insert(page, state.items[i])
+	for i = cursor + 1, math.min(#snapshot.items, cursor + pageSize) do
+		table.insert(page, snapshot.items[i])
 	end
 	return {
 		protocolVersion = STUDIO_PROTOCOL_VERSION,
-		revision = tostring(payload.manifestRevision or "") ~= "" and tostring(payload.manifestRevision) or stableHash(tostring(game.PlaceId) .. ":" .. tostring(os.time())),
+		revision = requestedRevision,
 		placeName = game.Name,
 		placeId = tostring(game.PlaceId),
-		count = state.count,
-		totalInstances = state.count,
-		truncated = state.count >= maxInstances,
+		count = #snapshot.items,
+		totalInstances = #snapshot.items,
+		scannedInstances = snapshot.scannedInstances,
+		truncated = snapshot.truncated,
+		duplicateCanonicalPaths = snapshot.duplicateCanonicalPaths,
 		items = page,
-		nextCursor = (cursor + pageSize < #state.items) and tostring(cursor + pageSize) or nil,
-		roots = roots,
-		placeSignature = computePlaceSignature(),
+		nextCursor = (cursor + pageSize < #snapshot.items) and tostring(cursor + pageSize) or nil,
+		roots = cursor == 0 and snapshot.roots or nil,
+		placeSignature = snapshot.placeSignature,
 	}
 end
 

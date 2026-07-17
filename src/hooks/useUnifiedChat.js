@@ -486,10 +486,9 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
         // model's raw thinking and streams files into the workspace live.
         if (mode === "agent" || mode === "debug") {
           // Conversational gate: don't build files on greetings, questions, or
-          // vague chit-chat. Classify locally (zero latency) and only divert
-          // non-build messages through the orchestrate flow, which returns a
-          // conversation reply or an "Implement it / Discuss first" clarify card.
-          // Clear build requests fall through to the fast direct-build path.
+          // vague chit-chat. Use the same read-only Ask path here so Studio-aware
+          // questions retain the exact selected session and transport context.
+          // Clear build requests fall through to the direct-build path.
           const intent = classifyUserIntent(prompt);
           const conversationalOnly =
             mode === "debug"
@@ -501,32 +500,13 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
             try {
               activeChatId = await ensureChat(titleSeed);
               setFlowBusyForChat(activeChatId, true);
-              beginOrchestrationPending(activeChatId, requestId, prompt);
               await writeUserMessage(activeChatId, requestId, prompt, currentAttachments);
-
-              publishOrchestrationStage(activeChatId, "Thinking...");
-              const decision = await orchestrate({
-                prompt,
-                history: chat.messages,
-                attachments: currentAttachments,
-                mode,
-                gameSpec: effectiveGameSpec,
-              });
-
-              publishOrchestrationStage(activeChatId, "Preparing response...");
-              await writeOrchestrationResult(
-                activeChatId,
-                requestId,
-                decision,
-                prompt,
-                currentAttachments
-              );
+              await handleAskSubmit(prompt, currentAttachments, activeChatId, requestId);
             } catch (err) {
               console.error("Conversation error:", err);
               notify?.({ message: err?.message || "Could not respond. You can try again.", type: "error" });
             } finally {
               setFlowBusyForChat(activeChatId, false);
-              clearOrchestrationPending(activeChatId);
             }
             return;
           }
