@@ -16,6 +16,9 @@ export const MCP_CAPABILITY_LABELS = Object.freeze({
   snapshots: "Create snapshots",
 });
 
+export const EXPECTED_STUDIO_PLUGIN_VERSION = "0.10.1-mcp-parity";
+export const EXPECTED_STUDIO_PROTOCOL_VERSION = "2026-07-17-mcp-parity";
+
 const LIVE_IDLE_MS = 45000;
 
 export function getStudioSessionId(session) {
@@ -66,13 +69,40 @@ function compareSessions(left, right) {
 
 export function selectStudioSession(
   sessions = [],
-  { connectionType = null, capability = null, liveOnly = true } = {}
+  { connectionType = null, capability = null, liveOnly = true, compatibleOnly = false } = {}
 ) {
   return [...(Array.isArray(sessions) ? sessions : [])]
     .filter((session) => !connectionType || getStudioConnectionType(session) === connectionType)
     .filter((session) => capabilitySupported(session, capability))
+    .filter((session) => !compatibleOnly || session?.compatibility?.status === "compatible")
     .filter((session) => !liveOnly || isStudioSessionLive(session))
     .sort(compareSessions)[0] || null;
+}
+
+export function normalizeStudioPluginCompatibility(value = null) {
+  const raw = value?.compatibility || value || {};
+  const installedPluginVersion =
+    raw.installedPluginVersion || value?.pluginVersion || value?.studio?.pluginVersion || null;
+  const installedProtocolVersion =
+    raw.installedProtocolVersion || value?.protocolVersion || value?.studio?.protocolVersion || null;
+  const expectedPluginVersion = raw.expectedPluginVersion || EXPECTED_STUDIO_PLUGIN_VERSION;
+  const expectedProtocolVersion = raw.expectedProtocolVersion || EXPECTED_STUDIO_PROTOCOL_VERSION;
+  let status = raw.status;
+  if (!['compatible', 'update_required', 'unknown'].includes(status)) {
+    if (!installedPluginVersion && !installedProtocolVersion) status = 'unknown';
+    else if (
+      installedPluginVersion === expectedPluginVersion &&
+      installedProtocolVersion === expectedProtocolVersion
+    ) status = 'compatible';
+    else status = 'update_required';
+  }
+  return {
+    status,
+    installedPluginVersion,
+    installedProtocolVersion,
+    expectedPluginVersion,
+    expectedProtocolVersion,
+  };
 }
 
 export function selectPluginStudioSession(sessions = [], options = {}) {
@@ -193,6 +223,14 @@ export function normalizeStudioConnectionSnapshot({ pluginStatus = null, mcpStat
   const sessions = dedupeSessions([...mcpSessions, ...studioStatusSessions]);
   const pluginSession = selectPluginStudioSession(sessions);
   const mcpSession = selectMcpStudioSession(sessions);
+  const compatibility = normalizeStudioPluginCompatibility(
+    pluginStatus?.compatibility || pluginSession
+  );
+  const compatiblePluginSession = pluginSession && compatibility.status === "compatible"
+    ? { ...pluginSession, compatibility }
+    : selectPluginStudioSession(sessions, { compatibleOnly: true });
+  const chatSession = selectMcpStudioSession(sessions, { capability: "readProject" }) || compatiblePluginSession;
+  const manifestSession = compatiblePluginSession;
   const latestMcpSession = mcpSession || selectMcpStudioSession(sessions, { liveOnly: false });
   const pluginConnected = Boolean(pluginSession);
   const mcpConnected = Boolean(mcpSession);
@@ -218,7 +256,7 @@ export function normalizeStudioConnectionSnapshot({ pluginStatus = null, mcpStat
     mcpStatus?.mcpServer?.available
   ) === true;
   const degraded = !mcpConnected && connectorDetected;
-  const activeSession = pluginSession || mcpSession;
+  const activeSession = chatSession || pluginSession || mcpSession;
   const capabilities = capabilitySummary(
     latestMcpSession?.capabilities ? latestMcpSession : { capabilities: mcpStatus?.capabilities }
   );
@@ -245,6 +283,7 @@ export function normalizeStudioConnectionSnapshot({ pluginStatus = null, mcpStat
       (session) => getStudioConnectionType(session) === STUDIO_CONNECTION_TYPES.MCP_LOCAL
     ),
     pluginSession,
+    compatiblePluginSession,
     mcpSession,
     latestMcpSession,
     pluginConnected,
@@ -257,5 +296,22 @@ export function normalizeStudioConnectionSnapshot({ pluginStatus = null, mcpStat
     connectionState,
     collaborators: Array.isArray(activeSession?.collaborators) ? activeSession.collaborators : [],
     capabilities,
+    compatibility,
+    chatSession,
+    manifestSession,
+    transportSelection: pluginStatus?.transportSelection || {
+      chatInspection: chatSession
+        ? {
+            sessionId: getStudioSessionId(chatSession),
+            connectionType: getStudioConnectionType(chatSession),
+          }
+        : null,
+      manifestCollection: manifestSession
+        ? {
+            sessionId: getStudioSessionId(manifestSession),
+            connectionType: STUDIO_CONNECTION_TYPES.PLUGIN_BRIDGE,
+          }
+        : null,
+    },
   };
 }

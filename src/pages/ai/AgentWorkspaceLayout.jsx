@@ -30,6 +30,7 @@ import QuickScriptWorkspace from "./QuickScriptWorkspace";
 import { getStudioCommand, getStudioManifest, getStudioManifestStatus, queueStudioTool } from "../../lib/studioBridgeApi";
 import { cancelWorkspaceCommand, createWorkspaceCommand, getWorkspaceCommand, streamWorkspaceCommandEvents } from "../../lib/workspaceApi";
 import { PENDING_AUTH_ACTIONS } from "../../lib/pendingAuthAction";
+import { getStudioSessionId } from "../../lib/studioConnection";
 import TutorialOverlay from "../../components/onboarding/TutorialOverlay";
 import { useTutorial } from "../../components/onboarding/useTutorial";
 
@@ -81,7 +82,10 @@ export default function AgentWorkspaceLayout({ controller }) {
   } = uiState;
 
   const { chat, game, scriptManager, unified, workspace, settings } = modules;
-  const studioCommandSessionId = studio?.sessionId || null;
+  const studioCommandSessionId =
+    getStudioSessionId(studio?.manifestSession) ||
+    getStudioSessionId(studio?.compatiblePluginSession) ||
+    null;
   const studioCapabilities = getActiveStudioCapabilities(studio);
   const studioManifestSupported = selectedStudioSupportsCommand(studio, "get_project_manifest");
   const studioAutoPushAuthorized = isCurrentPluginAutoPushAuthorized(studio);

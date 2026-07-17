@@ -28,7 +28,8 @@ import { getStudioStatus } from "../lib/studioBridgeApi";
 import {
   getStudioConnectionType,
   getStudioSessionId,
-  selectStudioSession,
+  selectMcpStudioSession,
+  selectPluginStudioSession,
 } from "../lib/studioConnection";
 import {
   describeChatAttachments,
@@ -362,7 +363,9 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
         try {
           const studioStatus = await getStudioStatus();
           const sessions = studioStatus.sessions || [];
-          const activeSession = selectStudioSession(sessions);
+          const activeSession =
+            selectMcpStudioSession(sessions, { capability: "readProject" }) ||
+            selectPluginStudioSession(sessions, { compatibleOnly: true });
           studioSessionId = getStudioSessionId(activeSession);
           studioConnectionType = activeSession
             ? getStudioConnectionType(activeSession)

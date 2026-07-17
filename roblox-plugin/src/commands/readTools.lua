@@ -180,6 +180,7 @@ local function inspectPlace(payload)
 		table.insert(page, snapshot.items[i])
 	end
 	return {
+		pluginVersion = PLUGIN_VERSION,
 		protocolVersion = STUDIO_PROTOCOL_VERSION,
 		revision = requestedRevision,
 		placeName = game.Name,

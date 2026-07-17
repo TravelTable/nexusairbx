@@ -140,4 +140,64 @@ describe("studio connection selection", () => {
     expect(snapshot.capabilities.supported).toEqual(["inspectSelection"]);
     expect(snapshot.capabilities.unavailable).toEqual(["playtest"]);
   });
+
+  test("uses MCP for chat and a compatible plugin for full manifests", () => {
+    const snapshot = normalizeStudioConnectionSnapshot({
+      pluginStatus: {
+        sessions: [{
+          id: "plugin_manifest",
+          connectionType: "plugin_bridge",
+          status: "connected",
+          live: true,
+          studio: {
+            pluginVersion: "0.10.1-mcp-parity",
+            protocolVersion: "2026-07-17-mcp-parity",
+          },
+        }],
+      },
+      mcpStatus: {
+        sessions: [{
+          id: "mcp_chat",
+          connectionType: "mcp_local",
+          status: "connected",
+          live: true,
+          connectorLive: true,
+          mcpServerAvailable: true,
+          capabilities: { readProject: true },
+        }],
+      },
+    });
+
+    expect(snapshot.chatSession.id).toBe("mcp_chat");
+    expect(snapshot.manifestSession.id).toBe("plugin_manifest");
+    expect(snapshot.transportSelection.chatInspection.connectionType).toBe("mcp_local");
+    expect(snapshot.transportSelection.manifestCollection.connectionType).toBe("plugin_bridge");
+    expect(snapshot.compatibility.status).toBe("compatible");
+  });
+
+  test("rejects a stale plugin from manifest selection", () => {
+    const snapshot = normalizeStudioConnectionSnapshot({
+      pluginStatus: {
+        sessions: [{
+          id: "plugin_stale",
+          connectionType: "plugin_bridge",
+          status: "connected",
+          live: true,
+          studio: {
+            pluginVersion: "0.10.0-verified-decoupled",
+            protocolVersion: "2026-06-20-creator-store",
+          },
+        }],
+      },
+    });
+
+    expect(snapshot.manifestSession).toBeNull();
+    expect(snapshot.compatibility).toEqual({
+      status: "update_required",
+      installedPluginVersion: "0.10.0-verified-decoupled",
+      installedProtocolVersion: "2026-06-20-creator-store",
+      expectedPluginVersion: "0.10.1-mcp-parity",
+      expectedProtocolVersion: "2026-07-17-mcp-parity",
+    });
+  });
 });

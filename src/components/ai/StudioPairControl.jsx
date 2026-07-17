@@ -148,6 +148,9 @@ export default function StudioPairControl({
   const mcpSession = connection?.mcpSession || null;
   const latestMcpSession = connection?.latestMcpSession || mcpSession;
   const capabilities = connection?.capabilities || { supported: [], unavailable: [] };
+  const compatibility = connection?.compatibility || pluginSession?.compatibility || {};
+  const pluginUpdateRequired = pluginConnected && compatibility.status === "update_required";
+  const transportSelection = connection?.transportSelection || {};
 
   const [open, setOpen] = useState(false);
   const [activeMethod, setActiveMethod] = useState("plugin");
@@ -330,13 +333,18 @@ export default function StudioPairControl({
     }
   };
 
-  const statusCopy = {
+  const statusCopy = pluginUpdateRequired ? "Studio plugin update required" : ({
     both: "Plugin and MCP connected",
     plugin: "Connected via NexusRBX Studio Plugin",
     mcp: "Connected via Roblox Studio MCP",
     degraded: "Connector connected, Roblox Studio MCP not detected",
     disconnected: "Roblox Studio disconnected",
-  }[connectionState] || "Connection degraded";
+  }[connectionState] || "Connection degraded");
+
+  const transportLabel = (selection) => {
+    if (!selection) return "Unavailable";
+    return selection.connectionType === "mcp_local" ? "MCP" : "Plugin";
+  };
 
   const mcpPlace = latestMcpSession?.studio?.placeName || latestMcpSession?.studio?.placeId || "Not reported";
   const connectorVersion = latestMcpSession?.connector?.connectorVersion || latestMcpSession?.studio?.connectorVersion || "Not reported";
@@ -417,6 +425,11 @@ export default function StudioPairControl({
             </button>
           </div>
 
+          <div className="mb-4 grid grid-cols-2 gap-2 rounded-xl border border-white/10 bg-black/30 p-2.5 text-[10px]">
+            <div><span className="text-gray-500">Chat inspection</span><strong className="ml-1.5 text-gray-200">{transportLabel(transportSelection.chatInspection)}</strong></div>
+            <div><span className="text-gray-500">Full manifest</span><strong className="ml-1.5 text-gray-200">{transportLabel(transportSelection.manifestCollection)}</strong></div>
+          </div>
+
           {activeMethod === "plugin" ? (
             <div className="space-y-3">
               <div className="rounded-xl border border-[#00f5d4]/15 bg-[#00f5d4]/5 p-3">
@@ -430,10 +443,25 @@ export default function StudioPairControl({
               </div>
               {pluginConnected ? (
                 <>
-                  <div className="rounded-xl border border-[#00f5d4]/20 bg-[#00f5d4]/5 p-3 text-xs text-gray-300">
-                    <span className="font-semibold text-[#00f5d4]">Plugin connected.</span> Push a generation to Studio,
-                    or enable Live Studio in the composer.
-                  </div>
+                  {pluginUpdateRequired ? (
+                    <div className="rounded-xl border border-amber-400/25 bg-amber-400/10 p-3 text-xs leading-relaxed text-amber-100">
+                      <div className="mb-1 flex items-center gap-2 font-bold text-amber-300">
+                        <AlertTriangle className="h-4 w-4" /> Plugin update required
+                      </div>
+                      Reinstall <strong>NexusRBXStudioBridge.plugin.lua</strong>, restart Studio, then reconnect. Manifest collection is disabled until the versions match.
+                      <dl className="mt-3 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-[10px]">
+                        <dt className="text-amber-200/60">Installed plugin</dt><dd className="truncate text-right">{compatibility.installedPluginVersion || "Unknown"}</dd>
+                        <dt className="text-amber-200/60">Installed protocol</dt><dd className="truncate text-right">{compatibility.installedProtocolVersion || "Unknown"}</dd>
+                        <dt className="text-amber-200/60">Expected plugin</dt><dd className="truncate text-right">{compatibility.expectedPluginVersion || "Unknown"}</dd>
+                        <dt className="text-amber-200/60">Expected protocol</dt><dd className="truncate text-right">{compatibility.expectedProtocolVersion || "Unknown"}</dd>
+                      </dl>
+                    </div>
+                  ) : (
+                    <div className="rounded-xl border border-[#00f5d4]/20 bg-[#00f5d4]/5 p-3 text-xs text-gray-300">
+                      <span className="font-semibold text-[#00f5d4]">Plugin connected.</span> Push a generation to Studio,
+                      or enable Live Studio in the composer.
+                    </div>
+                  )}
                   <button
                     type="button"
                     onClick={() => disconnect("plugin")}
@@ -615,7 +643,9 @@ export default function StudioPairControl({
       )
     : null;
 
-  const buttonLabel = connectionState === "both"
+  const buttonLabel = pluginUpdateRequired
+    ? "Studio · Update"
+    : connectionState === "both"
     ? "Studio · Both"
     : connectionState === "mcp"
       ? "Studio · MCP"
@@ -635,7 +665,9 @@ export default function StudioPairControl({
           setOpen((current) => !current);
         }}
         className={`inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-bold transition-all ${
-          overallConnected
+          pluginUpdateRequired
+            ? "border-amber-400/30 bg-amber-400/10 text-amber-300 hover:bg-amber-400/20"
+            : overallConnected
             ? "border-[#00f5d4]/30 bg-[#00f5d4]/10 text-[#00f5d4] hover:bg-[#00f5d4]/20"
             : degraded
               ? "border-amber-400/30 bg-amber-400/10 text-amber-300 hover:bg-amber-400/20"
@@ -648,7 +680,7 @@ export default function StudioPairControl({
       >
         {loading ? (
           <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin" />
-        ) : degraded && !overallConnected ? (
+        ) : pluginUpdateRequired || (degraded && !overallConnected) ? (
           <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
         ) : (
           <Radio className={`h-3.5 w-3.5 shrink-0 ${overallConnected ? "" : "text-gray-400"}`} />

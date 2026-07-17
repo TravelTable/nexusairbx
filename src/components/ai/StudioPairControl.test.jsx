@@ -104,7 +104,7 @@ describe("StudioPairControl", () => {
     expect(screen.getByText("Read project")).toBeTruthy();
     expect(screen.getByText("Supported")).toBeTruthy();
     expect(screen.getByText("Write scripts")).toBeTruthy();
-    expect(screen.getByText("Unavailable")).toBeTruthy();
+    expect(screen.getAllByText("Unavailable").length).toBeGreaterThan(0);
     expect(screen.getByText("Obstacle Course")).toBeTruthy();
 
     fireEvent.click(screen.getByRole("button", { name: /Test connection/i }));
@@ -116,5 +116,31 @@ describe("StudioPairControl", () => {
     await waitFor(() => {
       expect(disconnectStudioMcp).toHaveBeenCalledWith({ sessionId: "mcp_degraded_1" });
     });
+  });
+
+  test("shows an update action and disables manifest routing for a stale plugin", () => {
+    const connection = normalizeStudioConnectionSnapshot({
+      pluginStatus: {
+        sessions: [{
+          id: "plugin_stale",
+          connectionType: "plugin_bridge",
+          status: "connected",
+          live: true,
+          studio: {
+            pluginVersion: "0.10.0-verified-decoupled",
+            protocolVersion: "2026-06-20-creator-store",
+          },
+        }],
+      },
+    });
+
+    render(<StudioPairControl connection={connection} refresh={jest.fn()} />);
+    fireEvent.click(screen.getByRole("button", { name: /Studio · Update/i }));
+
+    expect(screen.getByText("Plugin update required")).toBeTruthy();
+    expect(screen.getByText("NexusRBXStudioBridge.plugin.lua")).toBeTruthy();
+    expect(screen.getByText("0.10.1-mcp-parity")).toBeTruthy();
+    expect(screen.getByText("2026-07-17-mcp-parity")).toBeTruthy();
+    expect(screen.getByText("Full manifest").parentElement.textContent).toContain("Unavailable");
   });
 });

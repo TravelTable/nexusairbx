@@ -143,6 +143,7 @@ describe("useUnifiedChat", () => {
         live: true,
         connectorLive: true,
         mcpServerAvailable: true,
+        capabilities: { readProject: true },
       }],
     });
     const setPendingForChat = jest.fn();
@@ -205,6 +206,7 @@ describe("useUnifiedChat", () => {
         live: true,
         connectorLive: true,
         mcpServerAvailable: true,
+        capabilities: { readProject: true },
       }],
     });
     const setPendingForChat = jest.fn();

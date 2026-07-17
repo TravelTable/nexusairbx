@@ -7,7 +7,7 @@
 
 local BACKEND_URL = "https://api.nexusrbx.com"
 local BACKEND_HOST = "api.nexusrbx.com"
-local PLUGIN_VERSION = "0.10.0-verified-decoupled"
+local PLUGIN_VERSION = "0.10.1-mcp-parity"
 local STUDIO_PROTOCOL_VERSION = "2026-07-17-mcp-parity"
 
 local Services = {
@@ -2717,6 +2717,7 @@ inspectPlace = function(payload)
 		table.insert(page, snapshot.items[i])
 	end
 	return {
+		pluginVersion = PLUGIN_VERSION,
 		protocolVersion = STUDIO_PROTOCOL_VERSION,
 		revision = requestedRevision,
 		placeName = game.Name,

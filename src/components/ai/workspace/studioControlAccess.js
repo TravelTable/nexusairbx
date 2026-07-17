@@ -2,6 +2,7 @@ import {
   getStudioConnectionType,
   getStudioSessionId,
   isStudioSessionLive,
+  selectPluginStudioSession,
   STUDIO_CONNECTION_TYPES,
 } from "../../../lib/studioConnection";
 
@@ -128,12 +129,27 @@ export function getActiveStudioCapabilities(studio) {
 
 export function selectedStudioSupportsCommand(studio, commandType) {
   if (!studio?.connected || !commandType) return false;
+  if (commandType === "get_project_manifest") {
+    const pluginSession =
+      studio.manifestSession ||
+      studio.compatiblePluginSession ||
+      selectPluginStudioSession(studio.sessions, { compatibleOnly: true });
+    return Boolean(
+      pluginSession &&
+      isStudioSessionLive(pluginSession) &&
+      (pluginSession.compatibility?.status === "compatible" ||
+        studio.compatibility?.status === "compatible")
+    );
+  }
   const selectedSession = getSelectedStudioSession(studio);
   const selectedType = studio.connectionType || getStudioConnectionType(selectedSession || studio);
 
   // The plugin implements the versioned Studio protocol. MCP commands are
   // opt-in and must be discovered by exact command name.
-  if (selectedType === STUDIO_CONNECTION_TYPES.PLUGIN_BRIDGE) return true;
+  if (selectedType === STUDIO_CONNECTION_TYPES.PLUGIN_BRIDGE) {
+    return studio.compatibility?.status === "compatible" ||
+      selectedSession?.compatibility?.status === "compatible";
+  }
   if (selectedType !== STUDIO_CONNECTION_TYPES.MCP_LOCAL || !selectedSession) return false;
 
   return Array.isArray(selectedSession.supportedCommands) &&
