@@ -36,6 +36,8 @@ jobs:
             test -n "${!value}" || { echo "Missing required secret: $value" >&2; exit 1; }
           done
       - run: npm ci --prefix local-connector && npm ci --prefix desktop-connector
+      - name: Verify connector release version
+        run: npm run version:check --prefix desktop-connector
       - name: Build, sign, and notarize universal macOS app
         run: npm run package:mac --prefix desktop-connector
         env:
@@ -104,6 +106,8 @@ jobs:
             local-connector/package-lock.json
             desktop-connector/package-lock.json
       - run: npm ci --prefix local-connector && npm ci --prefix desktop-connector
+      - name: Verify connector release version
+        run: npm run version:check --prefix desktop-connector
       - name: Build unsigned Windows 10/11 x64 installer
         run: npm run package:win --prefix desktop-connector
         env:
