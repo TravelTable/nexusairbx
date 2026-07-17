@@ -5,6 +5,40 @@ do
 	end
 end
 
+-- A Studio reinstall retains plugin settings, including the existing session
+-- token. Refresh the server-side build proof automatically so a new bundle is
+-- accepted without asking the creator to disconnect and pair again.
+local attestationRefreshed = false
+local nextAttestationRefreshAt = 0
+
+local function studioAttestationPayload()
+	local attestation = getPluginAttestation()
+	return {
+		placeName = game.Name,
+		placeId = tostring(game.PlaceId),
+		pluginVersion = attestation.pluginVersion,
+		protocolVersion = attestation.protocolVersion,
+		buildId = attestation.buildId,
+		supportedCommands = attestation.supportedCommands,
+		capabilities = attestation.capabilities,
+	}
+end
+
+local function refreshSessionAttestation()
+	if attestationRefreshed or not getToken() or os.clock() < nextAttestationRefreshAt then
+		return false, false
+	end
+	local ok, _data, statusCode = request("POST", "/api/studio/session/attestation", {
+		studio = studioAttestationPayload(),
+	}, getToken(), { maxAttempts = 1 })
+	if ok then
+		attestationRefreshed = true
+		return true, false
+	end
+	nextAttestationRefreshAt = os.clock() + 60
+	return false, statusCode == 401 or statusCode == 403
+end
+
 local function pairStudio()
 	if pairButton:GetAttribute("NexusEnabled") ~= true then
 		return
@@ -18,18 +52,9 @@ local function pairStudio()
 
 	setBusy(true)
 	setStatus("pairing...")
-	local attestation = getPluginAttestation()
 	local ok, dataOrError = request("POST", "/api/studio/pair/claim", {
 		code = code,
-		studio = {
-			placeName = game.Name,
-			placeId = tostring(game.PlaceId),
-			pluginVersion = attestation.pluginVersion,
-			protocolVersion = attestation.protocolVersion,
-			buildId = attestation.buildId,
-			supportedCommands = attestation.supportedCommands,
-			capabilities = attestation.capabilities,
-		},
+		studio = studioAttestationPayload(),
 	}, nil)
 
 	setBusy(false)
@@ -49,6 +74,7 @@ local function pairStudio()
 
 	setToken(dataOrError.token)
 	plugin:SetSetting("nexusrbxStudioSessionId", dataOrError.sessionId)
+	attestationRefreshed = true
 	codeBox.Text = ""
 	setStatus("connected")
 	setLast("paired session " .. tostring(dataOrError.sessionId))
@@ -181,6 +207,7 @@ disconnectButton.MouseButton1Click:Connect(function()
 	end)
 	plugin:SetSetting("nexusrbxStudioToken", nil)
 	plugin:SetSetting("nexusrbxStudioSessionId", nil)
+	attestationRefreshed = false
 	codeBox.Text = ""
 	setProgress({})
 	setActive("none")
@@ -269,9 +296,19 @@ end)
 -- Heartbeat loop: one request keeps the session live and returns collaborator
 -- plus companion health summaries. The backend throttles persistence.
 task.spawn(function()
+	local _refreshed, authExpired = refreshSessionAttestation()
+	if authExpired then
+		handleSessionExpired()
+	end
+
 	while true do
 		task.wait(15)
 		if getToken() then
+			local _attested, attestationAuthExpired = refreshSessionAttestation()
+			if attestationAuthExpired then
+				handleSessionExpired()
+				continue
+			end
 			local signatureOk, signature = pcall(computePlaceSignature)
 			local ok, latency, authExpired, heartbeat = pingSession(getToken(), signatureOk and signature or nil)
 			if ok then

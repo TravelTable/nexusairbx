@@ -55,13 +55,15 @@ If the website queues tools like `get_project_manifest` and the plugin reports *
 
 1. In Studio, open **Plugins > Manage Plugins** and remove any old **Plugin** or **NexusRBX** local plugin.
 2. Run `npm run plugin:install` (or `npm run plugin:build` plus manual paste if you prefer).
-3. Restart Studio and reopen the NexusRBX dock.
-4. **Pair Studio** again (pairing codes are session-specific).
+3. Restart Studio and reopen the NexusRBX dock. The updated plugin refreshes its
+   existing secure session automatically.
+4. **Pair Studio** again only if the prior session has expired or was disconnected.
 5. Confirm the dock shows the expected plugin version under the title.
 
 Pairing attests the exact plugin build, protocol version, capabilities, and live
 command registry. A target mismatch means the installed artifact is stale: run
-`npm run plugin:install`, restart Studio, and pair again. Editing files under
+`npm run plugin:install` and restart Studio. The current bundle repairs a retained
+session automatically; re-pair only after an expired or disconnected session. Editing files under
 `roblox-plugin/src/` does not update the installed plugin on its own.
 
 ## Publishing to Roblox (cloud plugin)

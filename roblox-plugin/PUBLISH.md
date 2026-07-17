@@ -51,7 +51,9 @@ This writes:
 5. In the plugin place, **delete** any `Plugin` folder that contains `src/`, `Build/`, or multiple scripts.
 6. Create **one** new `Script` and paste the full contents of `roblox-plugin/NexusRBXStudioBridge.plugin.lua`.
 7. Publish the update to the **same plugin asset** (Update / Publish to Roblox).
-8. Restart Studio, reinstall/enable the plugin, and **Pair Studio** again from `/ai`.
+8. Restart Studio and reinstall/enable the plugin. It refreshes the existing secure
+   session automatically; **Pair Studio** again from `/ai` only if that session expired
+   or was disconnected.
 
 ## Do not publish
 
