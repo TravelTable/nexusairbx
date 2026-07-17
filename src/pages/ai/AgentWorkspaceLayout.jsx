@@ -125,6 +125,7 @@ export default function AgentWorkspaceLayout({ controller }) {
     track,
     notify,
     handleApproveStep,
+    handleSelectStudioTarget,
     handleRestoreRun,
     handleStudioEnabledChange,
     handleStudioApplyModeChange,
@@ -769,8 +770,10 @@ export default function AgentWorkspaceLayout({ controller }) {
           artifact={workspace.activeArtifact}
           agentRun={workspace.agentRun}
           onApproveStep={handleApproveStep}
+          onSelectStudioTarget={handleSelectStudioTarget}
           onRestoreRun={handleRestoreRun}
           approvingStepId={studio?.approvingStepId}
+          selectingStudioTargetId={studio?.selectingStudioTargetId}
           restoringRun={studio?.restoringRun}
           studioConnected={studio?.connected}
           studioConnectionType={studio?.connectionType}
@@ -1201,8 +1204,10 @@ export default function AgentWorkspaceLayout({ controller }) {
                   artifact={workspace.activeArtifact}
                   agentRun={workspace.agentRun}
                   onApproveStep={handleApproveStep}
+                  onSelectStudioTarget={handleSelectStudioTarget}
                   onRestoreRun={handleRestoreRun}
                   approvingStepId={studio?.approvingStepId}
+                  selectingStudioTargetId={studio?.selectingStudioTargetId}
                   restoringRun={studio?.restoringRun}
                   notify={notify}
                 />

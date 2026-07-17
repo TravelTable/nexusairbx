@@ -77,6 +77,8 @@ export default function MessageList({
   isBusy,
   onApproveStep,
   approvingStepId,
+  onSelectStudioTarget,
+  selectingStudioTargetId,
 }) {
   // Firestore can publish the completed assistant message one render before the
   // orchestration cleanup runs. Once that response exists, the matching live
@@ -93,6 +95,7 @@ export default function MessageList({
   }, [messages, pendingMessageProp]);
   const pendingParsed = parsePendingStreamContent(pendingMessage?.content || "");
   const showLiveWorkStream = Boolean(
+    pendingMessage?.targetSelection ||
     pendingMessage?.streamState ||
     (Array.isArray(pendingMessage?.files) && pendingMessage.files.length) ||
     (Array.isArray(pendingMessage?.steps) && pendingMessage.steps.length)
@@ -192,6 +195,8 @@ export default function MessageList({
                     generationStage={generationStage}
                     onApproveStep={onApproveStep}
                     approvingStepId={approvingStepId}
+                    onSelectStudioTarget={onSelectStudioTarget}
+                    selectingStudioTargetId={selectingStudioTargetId}
                     embedded
                     hideThinkingRows={hasRawReasoning}
                   />

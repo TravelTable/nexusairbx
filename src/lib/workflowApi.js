@@ -62,6 +62,19 @@ export async function approveAgentStep(runId, stepId) {
   return res.json();
 }
 
+/** Bind a paused unified agent run to a friendly Studio target choice. */
+export async function selectAgentStudioTarget(runId, targetId) {
+  const res = await authedFetch(`/api/ai/agent/${encodeURIComponent(runId)}/studio-target`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ targetId }),
+  });
+  const payload = await res.json().catch(() => ({}));
+  if (res.status === 409) return payload;
+  if (!res.ok) throw new Error(payload?.message || "Could not continue in that Studio project");
+  return payload;
+}
+
 /** Queue snapshot restore for all snapshots captured during a unified agent run. */
 export async function restoreAgentRun(runId) {
   const res = await authedFetch(`/api/ai/agent/${encodeURIComponent(runId)}/restore`, {

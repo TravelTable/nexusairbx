@@ -31,7 +31,12 @@ import { BACKEND_URL } from "../../config";
 import { authedFetch } from "../../lib/billing";
 import { isRetryableApiError, readJsonResponse, withApiRetryCooldown } from "../../lib/apiErrors";
 import { FEATURE_FLAGS } from "../../lib/featureFlags";
-import { approveAgentStep, getAgentRun, restoreAgentRun } from "../../lib/workflowApi";
+import {
+  approveAgentStep,
+  getAgentRun,
+  restoreAgentRun,
+  selectAgentStudioTarget,
+} from "../../lib/workflowApi";
 import {
   getStudioApplyMode,
   getStudioEnabledPreference,
@@ -224,6 +229,7 @@ export function useAiWorkspaceController() {
   const [robloxLoading, setRobloxLoading] = useState(false);
   const [assetLibraryOpen, setAssetLibraryOpen] = useState(false);
   const [approvingStepId, setApprovingStepId] = useState(null);
+  const [selectingStudioTargetId, setSelectingStudioTargetId] = useState(null);
   const [restoringRun, setRestoringRun] = useState(false);
   const [chatProjectSnapshot, setChatProjectSnapshot] = useState(null);
   const studioConnection = useStudioConnection();
@@ -1200,22 +1206,33 @@ export function useAiWorkspaceController() {
   }, [projectAssets]);
 
   const syncAgentRunSteps = useCallback(
-    async (runId, fallbackStep = null) => {
+    async (runId, fallbackStep = null, fallbackRun = null) => {
       if (!runId || !user) return;
       let steps = fallbackStep ? [fallbackStep] : [];
+      let run = fallbackRun;
       try {
         const result = await getAgentRun(runId);
-        steps = Array.isArray(result?.run?.steps) ? result.run.steps : steps;
+        run = result?.run || run;
+        steps = Array.isArray(run?.steps) ? run.steps : steps;
       } catch (_) {
         // The approving/restoring call already succeeded; stale UI is non-fatal.
       }
 
-      if (!steps.length) return;
+      if (!run && !steps.length) return;
+
+      const runPatch = run ? {
+        runStatus: run.status,
+        targetSelection: run.targetSelection || null,
+        studioPlaceName: run.placeName || null,
+        stage: run.status === "awaiting_studio_target"
+          ? "Waiting for your Studio project choice"
+          : run.summary || (run.placeName ? `Continuing in ${run.placeName}...` : undefined),
+      } : {};
 
       if (unified.setPendingMessage) {
         unified.setPendingMessage((prev) => {
           if (!prev?.runId || prev.runId !== runId) return prev;
-          return { ...prev, steps, runId };
+          return { ...prev, ...runPatch, steps, runId };
         });
       }
 
@@ -1226,10 +1243,41 @@ export function useAiWorkspaceController() {
         await updateDoc(doc(db, "users", user.uid, "chats", chat.currentChatId, "messages", targetMessage.id), {
           steps,
           runId,
+          ...(run ? {
+            runStatus: run.status,
+            targetSelection: run.targetSelection || null,
+            studioPlaceName: run.placeName || null,
+          } : {}),
         }).catch(() => {});
       }
     },
     [chat.currentChatId, chat.messages, unified, user]
+  );
+
+  const handleSelectStudioTarget = useCallback(
+    async (option) => {
+      const runId = unified.pendingMessage?.runId || workspace.agentRun?.runId;
+      const targetId = typeof option === "string" ? option : option?.id;
+      if (!runId || !targetId || !user || selectingStudioTargetId) return;
+      setSelectingStudioTargetId(targetId);
+      try {
+        const result = await selectAgentStudioTarget(runId, targetId);
+        await syncAgentRunSteps(runId, null, result?.run || null);
+        if (!result?.conflict) {
+          notify({
+            message: result?.run?.placeName
+              ? `Continuing in ${result.run.placeName}`
+              : "Continuing in Studio",
+            type: "success",
+          });
+        }
+      } catch (err) {
+        notify({ message: err?.message || "Could not continue in that Studio project", type: "error" });
+      } finally {
+        setSelectingStudioTargetId(null);
+      }
+    },
+    [notify, selectingStudioTargetId, syncAgentRunSteps, unified.pendingMessage?.runId, user, workspace.agentRun?.runId]
   );
 
   const handleApproveStep = useCallback(
@@ -1780,6 +1828,7 @@ export function useAiWorkspaceController() {
       emitAiEvent,
 
       handleApproveStep,
+      handleSelectStudioTarget,
       handleRestoreRun,
       handleStudioEnabledChange,
       handleStudioApplyModeChange,
@@ -1799,6 +1848,7 @@ export function useAiWorkspaceController() {
       autoPushPolicy: settings?.studioAutoPushPolicy || "after_validation",
       lastAuthorizedSessionId: settings?.lastAuthorizedStudioSessionId || null,
       approvingStepId,
+      selectingStudioTargetId,
       restoringRun,
       unifiedAgent: FEATURE_FLAGS.unifiedAgent,
     },

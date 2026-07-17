@@ -26,6 +26,8 @@ const EMPTY_AGENT_RUN = {
   unresolvedAssets: [],
   logs: [],
   errors: [],
+  targetSelection: null,
+  placeName: "",
 };
 
 function normalizeRunState(value) {
@@ -41,6 +43,7 @@ function normalizeRunState(value) {
       "applied",
       "waiting_for_tool",
       "waiting_for_approval",
+      "awaiting_studio_target",
       "succeeded",
       "conflict",
       "failed",
@@ -245,12 +248,14 @@ export function useArtifactWorkspace(messages, { isGenerating, generationStage, 
     const steps = pendingMessage?.steps || [];
     return {
       ...EMPTY_AGENT_RUN,
-      status: derivePendingRunState(stage, steps),
+      status: normalizeRunState(pendingMessage?.runStatus) || derivePendingRunState(stage, steps),
       stage,
       plan: pendingMessage?.plan || "",
       steps,
       runId: pendingMessage?.runId || null,
       snapshotCount: countStepSnapshots(steps),
+      targetSelection: pendingMessage?.targetSelection || null,
+      placeName: pendingMessage?.studioPlaceName || "",
     };
   }, [isGenerating, generationStage, pendingMessage, artifacts.length, projectArtifact, messages]);
 

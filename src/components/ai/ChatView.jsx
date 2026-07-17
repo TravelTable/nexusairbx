@@ -29,6 +29,8 @@ export default function ChatView({
   isBusy,
   onApproveStep,
   approvingStepId,
+  onSelectStudioTarget,
+  selectingStudioTargetId,
 }) {
   const showEmpty = messages.length === 0 && !pendingMessage;
 
@@ -55,6 +57,8 @@ export default function ChatView({
             isBusy={isBusy}
             onApproveStep={onApproveStep}
             approvingStepId={approvingStepId}
+            onSelectStudioTarget={onSelectStudioTarget}
+            selectingStudioTargetId={selectingStudioTargetId}
           />
         )}
       </ConversationContent>

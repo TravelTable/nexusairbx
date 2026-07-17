@@ -277,6 +277,7 @@ export class NexusLocalConnector {
     while (!signal.aborted) {
       await delay(this.#config.heartbeatMs, signal);
       try {
+        if (this.#mcpConnected) await this.#targeting?.refresh(signal);
         const response = await this.#backend.ping(this.pingPayload(this.#mcpConnected), signal);
         if (this.#targeting?.acceptBackendResponse(response)) this.#toolsDirty = true;
         this.emitTelemetry({ cloudConnected: true, lastHeartbeatAt: Date.now() });

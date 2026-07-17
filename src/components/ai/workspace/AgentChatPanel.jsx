@@ -28,6 +28,8 @@ export default function AgentChatPanel({
   onApproveStep,
   onRestoreRun,
   approvingStepId,
+  onSelectStudioTarget,
+  selectingStudioTargetId,
   restoringRun,
   // studio
   studioConnected,
@@ -122,6 +124,8 @@ export default function AgentChatPanel({
               onApproveStep={onApproveStep}
               onRestoreRun={onRestoreRun}
               approvingStepId={approvingStepId}
+              onSelectStudioTarget={onSelectStudioTarget}
+              selectingStudioTargetId={selectingStudioTargetId}
               restoringRun={restoringRun}
               notify={notify}
             />
@@ -145,6 +149,8 @@ export default function AgentChatPanel({
               notify={notify}
               onApproveStep={onApproveStep}
               approvingStepId={approvingStepId}
+              onSelectStudioTarget={onSelectStudioTarget}
+              selectingStudioTargetId={selectingStudioTargetId}
             />
           </div>
         )}

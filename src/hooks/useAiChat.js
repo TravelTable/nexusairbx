@@ -1277,18 +1277,26 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
               setPending((prev) => {
                 if (!prev) return prev;
                 const steps = upsertAgentStep(prev.steps || [], step);
+                const waitingForTarget = data.runStatus === "awaiting_studio_target";
+                const nextStage = waitingForTarget
+                  ? "Waiting for your Studio project choice"
+                  : step.label || step.type || prev.stage;
                 if (agentRunId) {
                   progressPersistence.queue({
                     steps,
                     runId: data.runId || prev.runId || agentRunId,
-                    stage: step.label || step.type || prev.stage,
+                    stage: nextStage,
                   });
                 }
                 return {
                   ...prev,
                   steps,
                   runId: data.runId || prev.runId || agentRunId,
-                  stage: step.label || step.type || prev.stage,
+                  stage: nextStage,
+                  runStatus: data.runStatus || prev.runStatus,
+                  targetSelection: Object.prototype.hasOwnProperty.call(data, "targetSelection")
+                    ? data.targetSelection
+                    : prev.targetSelection,
                 };
               });
               if (step.label || step.type) {

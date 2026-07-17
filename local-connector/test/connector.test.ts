@@ -268,6 +268,10 @@ test("heartbeat continues during long polling and shutdown clears the in-memory 
 
   const availablePings = backend.pings.filter((ping) => ping.mcpServerAvailable === true);
   assert.equal(availablePings.length >= 2, true);
+  assert.equal(mcp.callTools.filter((call) => call.name === "list_roblox_studios").length >= 2, true);
+  assert.equal(availablePings.every((ping) => ping.activeStudioId === "studio-1"), true);
+  assert.equal(availablePings.every((ping) => ping.placeId === "42"), true);
+  assert.equal(availablePings.every((ping) => ping.placeName === "Fixture Place"), true);
   assert.equal(backend.pings.at(-1)?.mcpServerAvailable, false);
   assert.equal(backend.clearCalls, 1);
 });

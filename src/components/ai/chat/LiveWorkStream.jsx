@@ -8,6 +8,7 @@ import {
   ChainOfThoughtHeader,
   ChainOfThoughtStep,
 } from "../../ai-elements/chain-of-thought";
+import StudioTargetPicker from "../workspace/StudioTargetPicker";
 
 function cleanText(value = "") {
   return String(value || "").replace(/<\/?(thinking|progress)>/gi, "").trim();
@@ -93,6 +94,8 @@ export default function LiveWorkStream({
   generationStage,
   onApproveStep,
   approvingStepId,
+  onSelectStudioTarget,
+  selectingStudioTargetId,
   embedded = false,
   hideThinkingRows = false,
 }) {
@@ -129,11 +132,16 @@ export default function LiveWorkStream({
               <RotateCcw className="size-3.5 motion-safe:animate-spin" />
               {headerLabel}
             </span>
-          ) : (
+          ) : pendingMessage?.targetSelection ? null : (
             headerLabel
           )}
         </ChainOfThoughtHeader>
         <ChainOfThoughtContent>
+          <StudioTargetPicker
+            selection={pendingMessage?.targetSelection}
+            onSelect={onSelectStudioTarget}
+            selectingTargetId={selectingStudioTargetId}
+          />
           {activity.length ? (
             activity.map((item) => {
               const step =
