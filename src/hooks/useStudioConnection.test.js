@@ -116,6 +116,11 @@ describe("useStudioConnection", () => {
 
   test("checks an outdated plugin session every five seconds until it refreshes", async () => {
     getStudioStatus.mockResolvedValue({
+      compatibility: {
+        status: "update_required",
+        reasonCode: "release_not_supported",
+        installedPluginVersion: "0.10.0-verified-decoupled",
+      },
       sessions: [{
         id: "studio_stale",
         connectionType: "plugin_bridge",

@@ -61,6 +61,10 @@ export function isStudioSessionLive(session, now = Date.now()) {
 function capabilitySupported(session, capability) {
   if (!capability) return true;
   const capabilities = session?.capabilities;
+  // Older MCP status responses did not advertise a capability set. Treat an
+  // absent set as unknown/legacy-compatible; once a provider advertises the
+  // set, an omitted or false capability is authoritative and must be blocked.
+  if (capabilities == null) return true;
   if (Array.isArray(capabilities)) return capabilities.includes(capability);
   return capabilities?.[capability] === true;
 }
@@ -269,7 +273,11 @@ export function normalizeStudioConnectionSnapshot({ pluginStatus = null, mcpStat
     mcpStatus?.mcpServer?.available
   ) === true;
   const degraded = !mcpConnected && connectorDetected;
-  const activeSession = chatSession || pluginSession || mcpSession;
+  // Preserve the legacy aggregate selection contract for callers that only
+  // understand one session. Capability-aware consumers use chatSession and
+  // manifestSession below, so they can still route around an unsupported
+  // plugin without changing the long-standing plugin-first sessionId.
+  const activeSession = pluginSession || chatSession || mcpSession;
   const capabilities = capabilitySummary(
     latestMcpSession?.capabilities ? latestMcpSession : { capabilities: mcpStatus?.capabilities }
   );
