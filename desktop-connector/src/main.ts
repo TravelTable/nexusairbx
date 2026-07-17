@@ -12,6 +12,7 @@ import { collectDiagnostics } from "./diagnostics.js";
 import { parsePairingDeepLink } from "./pairing.js";
 import { DEFAULT_PREFERENCES, getAutoStart, PreferenceStore, setAutoStart, validatePreferenceUpdate } from "./preferences.js";
 import { EncryptedTokenStore, type EncryptedStorage, type StoredConnectorSession } from "./token-store.js";
+import { ConnectorUpdater } from "./updater.js";
 
 // electron-updater is published as CommonJS. Reading autoUpdater from its default
 // namespace keeps the packaged ESM main process compatible with Node's CJS bridge.
@@ -20,7 +21,6 @@ const { autoUpdater } = electronUpdater;
 const PAIRING_PAGE = "https://nexusrbx.com/ai?studio=mcp&connector=desktop";
 const HELP_PAGE = "https://nexusrbx.com/docs/studio-mcp";
 const API_URL = process.env.NEXUSRBX_API_URL || "https://api.nexusrbx.com";
-const UPDATE_URL = process.env.NEXUSRBX_UPDATE_URL || "https://downloads.nexusrbx.com/connector";
 const COMPACT_SIZE = { width: 460, height: 640 };
 const SETTINGS_SIZE = { width: 760, height: 620 };
 const SECURE_WEB_PREFERENCES = {
@@ -144,7 +144,7 @@ class DesktopController {
     const normalizedValue = update.key === "autoStart" ? setAutoStart(app, update.value as boolean) : update.value;
     this.#preferences = { ...this.#preferences, [update.key]: normalizedValue };
     await this.#preferenceStore.save(this.#preferences);
-    autoUpdater.autoDownload = this.#preferences.automaticUpdates;
+    connectorUpdater?.setAutomaticUpdates(this.#preferences.automaticUpdates);
     this.patchSnapshot({ autoStart: this.#preferences.autoStart, preferences: { ...this.#preferences } });
     if (update.key === "reconnectDelayMs" || (update.key === "autoReconnect" && normalizedValue === true)) void this.retry();
     return this.state;
@@ -163,11 +163,9 @@ class DesktopController {
     }
   }
 
-  noteUpdateAvailable(): void { this.setUpdateState("available"); this.notify("Update available", "A new Connector update is ready to download."); }
-  noteUpdateReady(): void { this.setUpdateState("downloaded"); this.notify("Update ready", "The update will install when you choose Restart to update."); }
-  noteUpdateIdle(): void { this.setUpdateState("idle"); }
-  noteUpdateError(): void { this.setUpdateState("error"); }
-  async checkForUpdates(): Promise<CompanionSnapshot> { this.setUpdateState("checking"); try { await autoUpdater.checkForUpdates(); } catch { this.noteUpdateError(); } return this.state; }
+  setUpdateState(updateState: CompanionUpdateState): void { this.patchSnapshot({ updateState }); }
+  sendNotification(title: string, body: string): void { this.notify(title, body); }
+  async checkForUpdates(): Promise<CompanionSnapshot> { await connectorUpdater?.checkNow(); return this.state; }
 
   configureTray(): void {
     let icon = nativeImage.createFromPath(join(import.meta.dirname, "renderer", "logo.png")).resize({ width: 18, height: 18 });
@@ -246,7 +244,6 @@ class DesktopController {
   }
   private setPairingState(pairingError: PairingError = null): void { this.patchSnapshot({ state: "awaiting_pairing", message: pairingError ? "The pairing code could not be used." : "Enter the six-character code shown on NexusRBX.", cloudHealth: "disconnected", runtimeHealth: "disconnected", mcpHealth: "disconnected", connectionStage: null, degradedReason: null, pairingError, experienceName: null, supportedToolCount: 0, supportedTools: [], lastActivityAt: null, lastHeartbeatAt: null, mcpServerVersion: null, lastCommand: null }); }
   private patchSnapshot(patch: Partial<CompanionSnapshot>): void { const previous = this.#snapshot.state; this.#snapshot = { ...this.#snapshot, ...patch, updatedAt: Date.now() }; this.publish(); if (previous !== this.#snapshot.state) this.notifyTransition(previous, this.#snapshot.state); }
-  private setUpdateState(updateState: CompanionUpdateState): void { this.patchSnapshot({ updateState }); }
   private publish(): void { this.#window?.webContents.send("connector:state", this.state); this.rebuildTray(); }
   private rebuildTray(): void {
     if (!this.#tray) return;
@@ -279,6 +276,7 @@ function fileEncryptedStorage(filePath: string): EncryptedStorage {
 }
 
 let controller: DesktopController;
+let connectorUpdater: ConnectorUpdater | null = null;
 let isQuitting = false;
 let mainWindow: BrowserWindow | null = null;
 let smokeTimeout: ReturnType<typeof setTimeout> | null = null;
@@ -371,7 +369,7 @@ function registerIpc(): void {
   handle("connector:minimize-window", () => mainWindow?.minimize());
   handle("connector:close-window", () => controller.closeWindow());
   handle("connector:check-updates", () => controller.checkForUpdates());
-  handle("connector:install-update", () => autoUpdater.quitAndInstall());
+  handle("connector:install-update", () => connectorUpdater?.install());
   ipcMain.on("connector:renderer-ready", (event) => {
     if (!INSTALLED_SMOKE_MODE || !mainWindow || event.sender.id !== mainWindow.webContents.id) return;
     void finishInstalledSmoke(buildInstalledSmokeReport()).catch((error: unknown) => {
@@ -388,7 +386,7 @@ if (!singleInstance) app.quit();
 else {
   app.on("second-instance", (_event, argv) => { const url = argv.find((value) => value.startsWith("nexusrbx://")); if (url) receiveDeepLink(url); if (controller) controller.show(); });
   app.on("open-url", (event, url) => { event.preventDefault(); receiveDeepLink(url); });
-  app.on("before-quit", () => { isQuitting = true; });
+  app.on("before-quit", () => { isQuitting = true; connectorUpdater?.stop(); });
   app.on("activate", () => controller?.show());
   app.whenReady().then(async () => {
     if (!INSTALLED_SMOKE_MODE) app.setAsDefaultProtocolClient("nexusrbx");
@@ -405,9 +403,14 @@ else {
       return;
     }
     const launchLink = process.argv.find((value) => value.startsWith("nexusrbx://")); if (launchLink) receiveDeepLink(launchLink); else void controller.start();
-    autoUpdater.autoDownload = controller.preferences.automaticUpdates; autoUpdater.autoInstallOnAppQuit = true;
-    if (UPDATE_URL.startsWith("https://")) autoUpdater.setFeedURL({ provider: "generic", url: UPDATE_URL });
-    autoUpdater.on("update-available", () => controller.noteUpdateAvailable()); autoUpdater.on("update-downloaded", () => controller.noteUpdateReady()); autoUpdater.on("update-not-available", () => controller.noteUpdateIdle()); autoUpdater.on("error", () => controller.noteUpdateError());
-    if (controller.preferences.automaticUpdates) void autoUpdater.checkForUpdates().catch(() => undefined);
+    connectorUpdater = new ConnectorUpdater({
+      client: autoUpdater,
+      isPackaged: app.isPackaged,
+      automaticUpdates: controller.preferences.automaticUpdates,
+      requestedFeedUrl: process.env.NEXUSRBX_UPDATE_URL,
+      setState: (state) => controller.setUpdateState(state),
+      notify: (title, body) => controller.sendNotification(title, body),
+    });
+    connectorUpdater.start();
   });
 }

@@ -78,8 +78,13 @@ const names = (await readdir(dir))
   .sort();
 const macInstallers = names.filter((name) => name.toLowerCase().endsWith(".dmg"));
 const windowsInstallers = names.filter((name) => name.toLowerCase().endsWith(".exe"));
+const macUpdaterArchives = names.filter((name) => name.toLowerCase().endsWith(".zip"));
+const updaterMetadata = new Set(names.filter((name) => /^latest(?:-mac)?\.yml$/i.test(name)).map((name) => name.toLowerCase()));
 if (macInstallers.length !== 1 || windowsInstallers.length !== 1) {
   throw new Error("A release must contain exactly one macOS .dmg and one Windows .exe installer.");
+}
+if (macUpdaterArchives.length !== 1 || !updaterMetadata.has("latest-mac.yml") || !updaterMetadata.has("latest.yml")) {
+  throw new Error("A release must include the macOS update archive and updater metadata for macOS and Windows.");
 }
 
 // Read and validate the complete release before the first remote write.

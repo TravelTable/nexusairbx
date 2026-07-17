@@ -3,7 +3,7 @@ export type ServiceHealth = "disconnected" | "connecting" | "connected" | "warni
 export type ConnectionStage = "cloud" | "runtime" | "studio_detection" | "mcp" | "tool_discovery" | null;
 export type DegradedReason = "studio_closed" | "mcp_initialization_failed" | "zero_supported_tools" | "heartbeat_stale" | "multiple_studio_windows" | "target_place_unavailable" | "runtime_failure" | "cloud_loss" | null;
 export type PairingError = "invalid" | "already_used" | "expired" | null;
-export type CompanionUpdateState = "idle" | "checking" | "available" | "downloaded" | "error";
+export type CompanionUpdateState = "idle" | "checking" | "available" | "downloading" | "downloaded" | "error";
 export type ThemePreference = "dark" | "light" | "system";
 
 export interface CompanionPreferences {
