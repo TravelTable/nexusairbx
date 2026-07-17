@@ -12,6 +12,8 @@ backend/node_modules/
 
 # production
 /build
+/desktop-connector/release/
+/desktop-connector/release-*/
 /public-frontend/.next
 /public-frontend/out
 
