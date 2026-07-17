@@ -9,7 +9,7 @@ export function getFirestoreTransportOptions(
 ) {
   if (isSafariWebKit(navigatorObject?.userAgent)) {
     return {
-      experimentalForceLongPolling: true,
+      experimentalAutoDetectLongPolling: true,
       useFetchStreams: false,
     };
   }

@@ -1,10 +1,12 @@
 import React from "react";
 import { CheckCircle2, Circle, Loader2, ShieldAlert, XCircle } from "lib/icons";
 import { summarizeStepResult, TERMINAL_STEP_STATUSES } from "../../../lib/agentSteps";
+import StudioRunBlockNotice from "./StudioRunBlockNotice";
 
 export function StepStatusIcon({ status }) {
   if (status === "succeeded") return <CheckCircle2 className="w-3.5 h-3.5 text-[#00f5d4]" />;
   if (status === "failed") return <XCircle className="w-3.5 h-3.5 text-red-400" />;
+  if (status === "blocked") return <ShieldAlert className="w-3.5 h-3.5 text-amber-300" />;
   if (status === "awaiting_approval") return <ShieldAlert className="w-3.5 h-3.5 text-amber-300" />;
   if (status === "queued" || status === "delivered" || status === "running") {
     return <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-300" />;
@@ -29,16 +31,10 @@ function providerLabel(provider) {
 function statusLabel(status) {
   if (status === "succeeded") return "Success";
   if (status === "failed") return "Error";
+  if (status === "blocked") return "Blocked";
   if (status === "delivered" || status === "running") return "Running";
   if (status === "awaiting_approval") return "Approval";
   return "Pending";
-}
-
-function fallbackLabel(reason) {
-  if (reason === "mcp_tool_unsupported") return "Local MCP does not support this action";
-  if (reason === "mcp_place_mismatch") return "Local MCP is connected to a different place";
-  if (reason === "mcp_unavailable") return "Local MCP is unavailable";
-  return String(reason || "").replace(/_/g, " ");
 }
 
 /**
@@ -98,11 +94,7 @@ export default function AgentStepList({
                   {waitLabel}
                 </div>
               )}
-              {step.fallbackReason && (
-                <div className="mt-1 text-[10px] text-violet-200/80">
-                  Studio plugin fallback: {fallbackLabel(step.fallbackReason)}
-                </div>
-              )}
+              <StudioRunBlockNotice value={step} className="mt-2" />
               {process.env.NODE_ENV === "development" && (step.executionSessionId || step.operationId) && (
                 <details className="mt-1 text-[10px] text-gray-600">
                   <summary className="cursor-pointer select-none hover:text-gray-400">Execution details</summary>

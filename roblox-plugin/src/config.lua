@@ -3,8 +3,29 @@
 
 local BACKEND_URL = "https://api.nexusrbx.com"
 local BACKEND_HOST = "api.nexusrbx.com"
-local PLUGIN_VERSION = "0.10.1-mcp-parity"
-local STUDIO_PROTOCOL_VERSION = "2026-07-17-mcp-parity"
+local PLUGIN_VERSION = "0.10.2-target-integrity"
+local STUDIO_PROTOCOL_VERSION = "2026-07-17-target-integrity"
+
+-- This identifies the exact release artifact, independently of the user-facing
+-- version. Keep it in lockstep with the generated bundle and backend allowlist.
+-- A plugin session must attest its build and actual command handlers at pairing
+-- time; version strings alone are not evidence that a command exists.
+local PLUGIN_BUILD_ID = "nexusrbx-studio-0.10.2-target-integrity.1"
+
+-- These are deliberately capability-level (rather than UI-level) claims. The
+-- pairing payload also includes the exact sorted command list derived from the
+-- live registry, which lets the backend reject a stale bundle before dispatch.
+local PLUGIN_CAPABILITIES = {
+	readProject = true,
+	readScript = true,
+	searchProject = true,
+	writeScript = true,
+	instanceMutation = true,
+	snapshotRestore = true,
+	diagnostics = true,
+	nativeModel = true,
+	assetInsert = true,
+}
 
 local Services = {
 	HttpService = game:GetService("HttpService"),

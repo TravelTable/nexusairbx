@@ -16,6 +16,7 @@ From the repo root:
 
 ```sh
 npm run plugin:install
+npm run plugin:verify
 ```
 
 This writes:

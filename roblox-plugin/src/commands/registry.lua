@@ -95,6 +95,32 @@ local TOOL_HANDLERS = {
 	run_smoke_check = runSmokeCheck,
 }
 
+-- Pairing must describe the handlers this *loaded bundle* can actually run.
+-- Deriving this from TOOL_HANDLERS prevents an old generated artifact from
+-- advertising a command just because it copied a version/protocol string.
+local function getPluginAttestation()
+	local supportedCommands = {}
+	for commandType, handler in pairs(TOOL_HANDLERS) do
+		if type(handler) == "function" then
+			table.insert(supportedCommands, commandType)
+		end
+	end
+	table.sort(supportedCommands)
+
+	local capabilities = {}
+	for capability, enabled in pairs(PLUGIN_CAPABILITIES or {}) do
+		capabilities[capability] = enabled == true
+	end
+
+	return {
+		pluginVersion = PLUGIN_VERSION,
+		protocolVersion = STUDIO_PROTOCOL_VERSION,
+		buildId = PLUGIN_BUILD_ID,
+		supportedCommands = supportedCommands,
+		capabilities = capabilities,
+	}
+end
+
 local function isMutatingCommand(commandType)
 	return MUTATING_COMMANDS[tostring(commandType or "")] == true
 end

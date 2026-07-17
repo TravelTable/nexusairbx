@@ -19,6 +19,10 @@ Rebuild the installable plugin after editing source:
 npm run plugin:build
 ```
 
+This build also verifies that the bundled artifact contains its build attestation
+and every registered Studio command. To check an already-generated artifact,
+run `npm run plugin:verify`.
+
 Install directly into Roblox Studio's local plugins folder:
 
 ```sh
@@ -54,6 +58,11 @@ If the website queues tools like `get_project_manifest` and the plugin reports *
 3. Restart Studio and reopen the NexusRBX dock.
 4. **Pair Studio** again (pairing codes are session-specific).
 5. Confirm the dock shows the expected plugin version under the title.
+
+Pairing attests the exact plugin build, protocol version, capabilities, and live
+command registry. A target mismatch means the installed artifact is stale: run
+`npm run plugin:install`, restart Studio, and pair again. Editing files under
+`roblox-plugin/src/` does not update the installed plugin on its own.
 
 ## Publishing to Roblox (cloud plugin)
 

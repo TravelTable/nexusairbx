@@ -1,6 +1,39 @@
+-- Studio manifests and tool payloads use slash-delimited paths. Older agent
+-- runs occasionally produced a dotted Starter Player path, e.g.
+-- `StarterPlayer.StarterPlayerScripts.MainMenuClient`; normalize only the
+-- unambiguous service aliases so dots in ordinary instance names remain valid.
+-- Keep the service name split so bundle-plugin.js does not rewrite literal path
+-- segments while it converts Roblox service variables to the Services table.
+local starterPlayerService = "Starter" .. "Player"
+local starterPlayerServicePath = "Services." .. starterPlayerService
+
+local function canonicalizePath(path)
+	local raw = tostring(path or "")
+	raw = raw:gsub("^%s+", ""):gsub("%s+$", "")
+	raw = raw:gsub("\\", "/"):gsub("/+$", "")
+	raw = raw:gsub("^game[/.]", "")
+
+	local dottedPrefixes = {
+		["Services." .. starterPlayerService .. ".StarterPlayerScripts"] = starterPlayerServicePath .. "/StarterPlayerScripts",
+		[starterPlayerService .. ".StarterPlayerScripts"] = starterPlayerServicePath .. "/StarterPlayerScripts",
+		["StarterPlayerScripts"] = starterPlayerServicePath .. "/StarterPlayerScripts",
+	}
+	for dottedPrefix, canonicalPrefix in pairs(dottedPrefixes) do
+		if raw == dottedPrefix then
+			return canonicalPrefix
+		end
+		local dottedStart = dottedPrefix .. "."
+		if raw:sub(1, #dottedStart) == dottedStart then
+			-- This input form is an old dotted hierarchy, not an instance name.
+			return canonicalPrefix .. "/" .. raw:sub(#dottedStart + 1):gsub("%.", "/")
+		end
+	end
+	return raw
+end
+
 local function splitPath(path)
 	local parts = {}
-	for part in tostring(path or ""):gmatch("[^/]+") do
+	for part in canonicalizePath(path):gmatch("[^/]+") do
 		if part ~= "" and part ~= "game" then
 			table.insert(parts, part)
 		end
@@ -22,11 +55,10 @@ local function rootFromParts(parts)
 	if first == "StarterPlayerScripts" then
 		return getStarterPlayerScripts(), 2
 	end
-	if first == "StarterPlayer" and parts[2] == "StarterPlayerScripts" then
+	if (first == starterPlayerService or first == starterPlayerServicePath) and parts[2] == "StarterPlayerScripts" then
 		return getStarterPlayerScripts(), 3
 	end
-	local starterPlayerSegment = "Starter" .. "Player"
-	if first == "Services" and parts[2] == starterPlayerSegment and parts[3] == "StarterPlayerScripts" then
+	if first == "Services" and parts[2] == starterPlayerService and parts[3] == "StarterPlayerScripts" then
 		return getStarterPlayerScripts(), 4
 	end
 	local rootInst = SERVICE_ROOTS and SERVICE_ROOTS[first]

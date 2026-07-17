@@ -1297,6 +1297,9 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
                   targetSelection: Object.prototype.hasOwnProperty.call(data, "targetSelection")
                     ? data.targetSelection
                     : prev.targetSelection,
+                  errorCode: step.errorCode || data.errorCode || prev.errorCode,
+                  errorDetails: step.errorDetails || data.errorDetails || prev.errorDetails,
+                  recovery: step.recovery || data.recovery || prev.recovery,
                 };
               });
               if (step.label || step.type) {

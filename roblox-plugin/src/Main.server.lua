@@ -18,13 +18,17 @@ local function pairStudio()
 
 	setBusy(true)
 	setStatus("pairing...")
+	local attestation = getPluginAttestation()
 	local ok, dataOrError = request("POST", "/api/studio/pair/claim", {
 		code = code,
 		studio = {
 			placeName = game.Name,
 			placeId = tostring(game.PlaceId),
-			pluginVersion = PLUGIN_VERSION,
-			protocolVersion = STUDIO_PROTOCOL_VERSION,
+			pluginVersion = attestation.pluginVersion,
+			protocolVersion = attestation.protocolVersion,
+			buildId = attestation.buildId,
+			supportedCommands = attestation.supportedCommands,
+			capabilities = attestation.capabilities,
 		},
 	}, nil)
 

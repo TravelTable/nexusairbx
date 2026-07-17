@@ -28,6 +28,9 @@ const EMPTY_AGENT_RUN = {
   errors: [],
   targetSelection: null,
   placeName: "",
+  errorCode: "",
+  errorDetails: null,
+  recovery: "",
 };
 
 function normalizeRunState(value) {
@@ -44,6 +47,9 @@ function normalizeRunState(value) {
       "waiting_for_tool",
       "waiting_for_approval",
       "awaiting_studio_target",
+      "awaiting_plugin_update",
+      "awaiting_studio_reconnect",
+      "invalid_studio_path",
       "succeeded",
       "conflict",
       "failed",
@@ -242,6 +248,10 @@ export function useArtifactWorkspace(messages, { isGenerating, generationStage, 
         runId: latestAssistant?.runId || latestWithSteps?.runId || null,
         snapshotCount: countStepSnapshots(steps),
         unresolvedAssets,
+        targetSelection: latestAssistant?.targetSelection || latestAssistant?.metadata?.targetSelection || null,
+        errorCode: latestAssistant?.errorCode || latestAssistant?.metadata?.errorCode || "",
+        errorDetails: latestAssistant?.errorDetails || latestAssistant?.metadata?.errorDetails || null,
+        recovery: latestAssistant?.recovery || latestAssistant?.metadata?.recovery || "",
       };
     }
     const stage = generationStage || pendingMessage?.stage || "Working...";
@@ -256,6 +266,9 @@ export function useArtifactWorkspace(messages, { isGenerating, generationStage, 
       snapshotCount: countStepSnapshots(steps),
       targetSelection: pendingMessage?.targetSelection || null,
       placeName: pendingMessage?.studioPlaceName || "",
+      errorCode: pendingMessage?.errorCode || "",
+      errorDetails: pendingMessage?.errorDetails || null,
+      recovery: pendingMessage?.recovery || "",
     };
   }, [isGenerating, generationStage, pendingMessage, artifacts.length, projectArtifact, messages]);
 

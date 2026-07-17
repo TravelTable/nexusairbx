@@ -9,11 +9,30 @@ export const STEP_STATUSES = Object.freeze([
   "delivered",
   "running",
   "awaiting_approval",
+  "blocked",
   "succeeded",
   "failed",
 ]);
 
-export const TERMINAL_STEP_STATUSES = new Set(["succeeded", "failed"]);
+export const TERMINAL_STEP_STATUSES = new Set(["succeeded", "failed", "blocked"]);
+
+export const STUDIO_RECOVERABLE_ERROR_CODES = new Set([
+  "STUDIO_TARGET_SELECTION_REQUIRED",
+  "STUDIO_TARGET_SELECTION_CONFLICT",
+  "STUDIO_TARGET_MISMATCH",
+  "STUDIO_TARGET_CHANGED",
+  "STUDIO_TARGET_STALE",
+  "STUDIO_TARGET_PLACE_UNAVAILABLE",
+  "MCP_PLACE_MISMATCH",
+  "PLUGIN_BUILD_UNVERIFIED",
+  "PLUGIN_COMMAND_UNSUPPORTED",
+  "PLUGIN_PROTOCOL_OUTDATED",
+  "PLUGIN_UPDATE_REQUIRED",
+  "STUDIO_PLUGIN_UPDATE_REQUIRED",
+  "INVALID_STUDIO_PATH",
+  "STUDIO_PATH_INVALID",
+  "STUDIO_INVALID_PATH",
+]);
 
 export const STUDIO_TOOL_TYPES = new Set([
   "get_project_manifest",
@@ -110,6 +129,19 @@ export function normalizeToolStepError(error) {
   return "This Studio action could not be completed.";
 }
 
+function errorCodeFrom(raw) {
+  if (!raw || typeof raw !== "object") return "";
+  const nested = raw.error && typeof raw.error === "object" ? raw.error : {};
+  return String(raw.errorCode || raw.code || nested.errorCode || nested.code || "").trim();
+}
+
+function detailsFrom(raw) {
+  if (!raw || typeof raw !== "object") return null;
+  const nested = raw.error && typeof raw.error === "object" ? raw.error : {};
+  const details = raw.errorDetails || raw.details || nested.details || nested.errorDetails;
+  return details && typeof details === "object" && !Array.isArray(details) ? details : null;
+}
+
 /**
  * @typedef {Object} AgentToolStep
  * @property {string} id
@@ -143,7 +175,17 @@ export function normalizeToolStep(raw) {
     requiresApproval: Boolean(raw.requiresApproval || raw.status === "awaiting_approval"),
   };
   if (raw.label) step.label = String(raw.label);
+  const errorCode = errorCodeFrom(raw);
+  const details = detailsFrom(raw);
   if (raw.error) step.error = normalizeToolStepError(raw.error);
+  if (errorCode) step.errorCode = errorCode;
+  if (details) step.errorDetails = details;
+  const recovery = raw.recovery || raw.remediation || raw.error?.recovery || raw.error?.remediation;
+  if (typeof recovery === "string" && recovery.trim()) step.recovery = recovery.trim();
+  const targetSelection = raw.targetSelection || raw.error?.targetSelection || details?.targetSelection;
+  if (targetSelection && typeof targetSelection === "object" && !Array.isArray(targetSelection)) {
+    step.targetSelection = targetSelection;
+  }
   if (raw.result && typeof raw.result === "object") step.result = raw.result;
   if (typeof raw.snapshotCount === "number") {
     step.snapshotCount = raw.snapshotCount;

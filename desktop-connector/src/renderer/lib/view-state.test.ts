@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { CompanionSnapshot } from "../../contracts";
-import { getMainView, relativeTime } from "./view-state";
+import { getMainView, newestSnapshot, relativeTime } from "./view-state";
 
 const base: CompanionSnapshot = {
   state: "connecting",
@@ -44,5 +44,20 @@ describe("relative activity", () => {
     expect(relativeTime(null, 10_000)).toBe("No recent activity");
     expect(relativeTime(8_000, 10_000)).toBe("Just now");
     expect(relativeTime(60_000, 130_000)).toBe("1 min ago");
+  });
+});
+
+describe("snapshot ordering", () => {
+  it("rejects a delayed initial snapshot", () => {
+    const current = { ...base, updatedAt: 20, connectionStage: "tool_discovery" as const };
+    const delayed = { ...base, updatedAt: 10, connectionStage: "runtime" as const };
+    expect(newestSnapshot(current, delayed)).toBe(current);
+    expect(newestSnapshot(delayed, current)).toBe(current);
+  });
+
+  it("keeps the current snapshot when an equal revision arrives", () => {
+    const current = { ...base, updatedAt: 20, connectionStage: "tool_discovery" as const };
+    const duplicate = { ...base, updatedAt: 20, connectionStage: "runtime" as const };
+    expect(newestSnapshot(current, duplicate)).toBe(current);
   });
 });

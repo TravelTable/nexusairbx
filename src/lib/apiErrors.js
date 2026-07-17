@@ -19,11 +19,16 @@ export function parseRetryAfterMs(value, now = Date.now()) {
 }
 
 export function isRetryableApiError(error) {
+  const message = String(error?.message || "");
+  const isNetworkTransportFailure =
+    error?.name === "TypeError" &&
+    /failed to fetch|load failed|networkerror|network request failed|cannot load/i.test(message);
   return Boolean(
     error?.retryable === true ||
       error?.status === 429 ||
       error?.status === 503 ||
-      error?.code === "FIRESTORE_QUOTA_EXCEEDED"
+      error?.code === "FIRESTORE_QUOTA_EXCEEDED" ||
+      isNetworkTransportFailure
   );
 }
 

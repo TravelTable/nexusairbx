@@ -57,6 +57,28 @@ describe("agentSteps", () => {
     );
   });
 
+  test("preserves recoverable Studio error metadata and target choices", () => {
+    const step = normalizeToolStep({
+      id: "target",
+      type: "create_script",
+      status: "blocked",
+      error: {
+        code: "STUDIO_TARGET_MISMATCH",
+        message: "The selected Studio connection does not match this project.",
+        details: {
+          targetSelection: { options: [{ id: "place_1", label: "My Obby" }] },
+        },
+        recovery: "Choose a Studio project and retry.",
+      },
+    });
+
+    expect(step.status).toBe("blocked");
+    expect(step.errorCode).toBe("STUDIO_TARGET_MISMATCH");
+    expect(step.errorDetails.targetSelection.options[0].id).toBe("place_1");
+    expect(step.targetSelection.options[0].label).toBe("My Obby");
+    expect(step.recovery).toBe("Choose a Studio project and retry.");
+  });
+
   test("upsertAgentStep merges by id", () => {
     const first = upsertAgentStep([], { id: "a", type: "inspect_place", status: "running" });
     const second = upsertAgentStep(first, { id: "a", status: "succeeded", result: { count: 3 } });

@@ -9,6 +9,7 @@ import {
   ChainOfThoughtStep,
 } from "../../ai-elements/chain-of-thought";
 import StudioTargetPicker from "../workspace/StudioTargetPicker";
+import StudioRunBlockNotice from "../workspace/StudioRunBlockNotice";
 
 function cleanText(value = "") {
   return String(value || "").replace(/<\/?(thinking|progress)>/gi, "").trim();
@@ -137,6 +138,7 @@ export default function LiveWorkStream({
           )}
         </ChainOfThoughtHeader>
         <ChainOfThoughtContent>
+          <StudioRunBlockNotice value={pendingMessage} className="mb-2" />
           <StudioTargetPicker
             selection={pendingMessage?.targetSelection}
             onSelect={onSelectStudioTarget}

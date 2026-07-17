@@ -1224,6 +1224,9 @@ export function useAiWorkspaceController() {
         runStatus: run.status,
         targetSelection: run.targetSelection || null,
         studioPlaceName: run.placeName || null,
+        errorCode: run.errorCode || run.blocker?.code || run.error?.code || null,
+        errorDetails: run.errorDetails || run.blocker?.details || run.error?.details || null,
+        recovery: run.recovery || run.blocker?.recovery || run.error?.recovery || null,
         stage: run.status === "awaiting_studio_target"
           ? "Waiting for your Studio project choice"
           : run.summary || (run.placeName ? `Continuing in ${run.placeName}...` : undefined),
@@ -1247,6 +1250,9 @@ export function useAiWorkspaceController() {
             runStatus: run.status,
             targetSelection: run.targetSelection || null,
             studioPlaceName: run.placeName || null,
+            errorCode: run.errorCode || run.blocker?.code || run.error?.code || null,
+            errorDetails: run.errorDetails || run.blocker?.details || run.error?.details || null,
+            recovery: run.recovery || run.blocker?.recovery || run.error?.recovery || null,
           } : {}),
         }).catch(() => {});
       }
@@ -1257,13 +1263,20 @@ export function useAiWorkspaceController() {
   const handleSelectStudioTarget = useCallback(
     async (option) => {
       const runId = unified.pendingMessage?.runId || workspace.agentRun?.runId;
-      const targetId = typeof option === "string" ? option : option?.id;
+      const targetId = typeof option === "string"
+        ? option
+        : option?.id || option?.targetId || option?.studioTargetId;
       if (!runId || !targetId || !user || selectingStudioTargetId) return;
       setSelectingStudioTargetId(targetId);
       try {
-        const result = await selectAgentStudioTarget(runId, targetId);
+        const result = await selectAgentStudioTarget(runId, option);
         await syncAgentRunSteps(runId, null, result?.run || null);
-        if (!result?.conflict) {
+        if (result?.conflict) {
+          notify({
+            message: result?.message || "That Studio project is no longer available. Choose another project to continue.",
+            type: "error",
+          });
+        } else {
           notify({
             message: result?.run?.placeName
               ? `Continuing in ${result.run.placeName}`

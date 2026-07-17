@@ -3,6 +3,7 @@ import { Loader2, ListChecks, RotateCcw } from "lib/icons";
 import AgentStepList from "./AgentStepList";
 import { FEATURE_FLAGS } from "../../../lib/featureFlags";
 import StudioTargetPicker from "./StudioTargetPicker";
+import StudioRunBlockNotice, { getStudioRunBlock } from "./StudioRunBlockNotice";
 
 // Build progress + plan + unified tool steps for the current agent run.
 export default function AgentPlanPanel({
@@ -20,6 +21,9 @@ export default function AgentPlanPanel({
     "waiting_for_tool",
     "waiting_for_approval",
     "awaiting_studio_target",
+    "awaiting_plugin_update",
+    "awaiting_studio_reconnect",
+    "invalid_studio_path",
     "generating",
     "validating",
     "ready_to_apply",
@@ -32,6 +36,7 @@ export default function AgentPlanPanel({
   const steps = agentRun?.steps || [];
   const showSteps = FEATURE_FLAGS.unifiedAgent && steps.length > 0;
   const canRestore = Boolean(agentRun?.runId && agentRun?.snapshotCount > 0);
+  const studioBlock = getStudioRunBlock(agentRun);
 
   if (!active && !plan && !showSteps && !["conflict", "failed", "cancelled", "blocked", "iteration_limit", "timed_out", "push_skipped", "assets_pending"].includes(agentRun?.status)) return null;
 
@@ -60,6 +65,8 @@ export default function AgentPlanPanel({
         </div>
       )}
 
+      <StudioRunBlockNotice value={agentRun} />
+
       <StudioTargetPicker
         selection={agentRun?.targetSelection}
         onSelect={onSelectStudioTarget}
@@ -72,7 +79,7 @@ export default function AgentPlanPanel({
         </div>
       )}
 
-      {agentRun?.status === "blocked" && (
+      {agentRun?.status === "blocked" && !studioBlock && (
         <div className="rounded-xl border border-amber-400/20 bg-amber-400/10 px-3 py-2 text-xs text-amber-100">
           The Studio agent hit a real blocker and stopped.
         </div>

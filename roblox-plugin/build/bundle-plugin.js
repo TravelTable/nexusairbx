@@ -190,7 +190,7 @@ const MODULE_EXPORTS = {
     "applyNativeModelPatch",
   ],
   "src/commands/importedAsset.lua": ["ImportedAsset"],
-  "src/commands/registry.lua": ["pullOnce", "executeCommand", "ack", "TOOL_HANDLERS"],
+  "src/commands/registry.lua": ["pullOnce", "executeCommand", "ack", "TOOL_HANDLERS", "getPluginAttestation"],
   "src/Main.server.lua": [],
 };
 

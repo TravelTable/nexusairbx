@@ -62,15 +62,22 @@ export async function approveAgentStep(runId, stepId) {
   return res.json();
 }
 
-/** Bind a paused unified agent run to a friendly Studio target choice. */
-export async function selectAgentStudioTarget(runId, targetId) {
+/** Bind a paused unified agent run to an explicitly confirmed Studio target choice. */
+export async function selectAgentStudioTarget(runId, target) {
+  const selected = typeof target === "string" ? { id: target } : (target || {});
+  const targetId = String(selected.id || selected.targetId || selected.studioTargetId || "").trim();
   const res = await authedFetch(`/api/ai/agent/${encodeURIComponent(runId)}/studio-target`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ targetId }),
+    body: JSON.stringify({
+      targetId,
+      studioTargetId: targetId,
+      targetPlaceId: selected.placeId || selected.targetPlaceId || null,
+      studioTargetConfirmed: true,
+    }),
   });
   const payload = await res.json().catch(() => ({}));
-  if (res.status === 409) return payload;
+  if (res.status === 409) return { ...payload, conflict: true };
   if (!res.ok) throw new Error(payload?.message || "Could not continue in that Studio project");
   return payload;
 }

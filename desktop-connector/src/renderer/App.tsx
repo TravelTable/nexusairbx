@@ -19,16 +19,18 @@ import { Switch } from "./components/ui/switch";
 import { Tooltip, TooltipProvider } from "./components/ui/tooltip";
 import { PairingCodeInput } from "./components/PairingCodeInput";
 import { cn } from "./lib/utils";
-import { getMainView, relativeTime } from "./lib/view-state";
+import { getMainView, newestSnapshot, relativeTime } from "./lib/view-state";
 
 const previewPreferences: CompanionPreferences = { autoStart: true, minimizeToTray: true, startMinimized: false, theme: "dark", autoReconnect: true, reconnectDelayMs: 2_000, automaticUpdates: true };
 const previewSnapshot: CompanionSnapshot = {
-  state: "awaiting_pairing", message: "Enter the six-character code shown on NexusRBX.", updatedAt: Date.now(), autoStart: true, updateState: "idle", preferences: previewPreferences,
+  // The preview is older than every real main-process snapshot. This lets the
+  // first installed-app state hydrate even when the connector was already open.
+  state: "awaiting_pairing", message: "Enter the six-character code shown on NexusRBX.", updatedAt: 0, autoStart: true, updateState: "idle", preferences: previewPreferences,
   cloudHealth: "disconnected", runtimeHealth: "disconnected", mcpHealth: "disconnected", connectionStage: null, degradedReason: null, pairingError: null,
-  experienceName: null, supportedToolCount: 0, supportedTools: [], lastActivityAt: null, lastHeartbeatAt: null, connectorVersion: "0.2.1", mcpServerVersion: null, lastCommand: null,
+  experienceName: null, supportedToolCount: 0, supportedTools: [], lastActivityAt: null, lastHeartbeatAt: null, connectorVersion: "0.2.2", mcpServerVersion: null, lastCommand: null,
 };
 
-const previewDiagnostics: CompanionDiagnostics = { studioInstalled: false, mcpCommandAvailable: false, mcpCommand: "Not detected", backendUrl: "https://api.nexusrbx.com", platform: navigator.platform || "Desktop", architecture: "—", connectorVersion: "0.2.1", mcpServerVersion: null, mcpHealth: "disconnected", backendHealth: "disconnected", lastHeartbeatAt: null, lastActivityAt: null, lastCommand: null, logLocation: "Available in the installed app" };
+const previewDiagnostics: CompanionDiagnostics = { studioInstalled: false, mcpCommandAvailable: false, mcpCommand: "Not detected", backendUrl: "https://api.nexusrbx.com", platform: navigator.platform || "Desktop", architecture: "—", connectorVersion: "0.2.2", mcpServerVersion: null, mcpHealth: "disconnected", backendHealth: "disconnected", lastHeartbeatAt: null, lastActivityAt: null, lastCommand: null, logLocation: "Available in the installed app" };
 
 export function App() {
   const [snapshot, setSnapshot] = useState(previewSnapshot);
@@ -51,8 +53,11 @@ export function App() {
   useEffect(() => {
     const api = window.nexusConnector;
     if (!api) return;
-    void api.getState().then(setSnapshot).catch(() => setActionError("The connector state could not be loaded. Try again in a moment."));
-    const removeState = api.onState(setSnapshot);
+    const applySnapshot = (next: CompanionSnapshot) => setSnapshot((current) => newestSnapshot(current, next));
+    // Subscribe before loading. The timestamp guard prevents a slower initial
+    // response from overwriting a newer pushed connection stage.
+    const removeState = api.onState(applySnapshot);
+    void api.getState().then(applySnapshot).catch(() => setActionError("The connector state could not be loaded. Try again in a moment."));
     const removeNavigation = api.onNavigate((next) => {
       setDestination(next === "home" ? "home" : "settings");
       if (next !== "home") setSettingsSection(next === "diagnostics" ? "diagnostics" : "general");

@@ -51,6 +51,7 @@ function buildRbxmx(source) {
 }
 
 require("./bundle-plugin.js");
+require("./verify-plugin-artifact.js");
 
 if (!fs.existsSync(bundledPath)) {
   throw new Error(`Missing bundled plugin: ${bundledPath}`);

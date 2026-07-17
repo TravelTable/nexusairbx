@@ -47,6 +47,9 @@ test("retry helpers parse seconds, HTTP dates, and retryable status codes", () =
   expect(parseRetryAfterMs("3")).toBe(3000);
   expect(parseRetryAfterMs("Thu, 09 Jul 2026 00:01:00 GMT", Date.parse("Thu, 09 Jul 2026 00:00:00 GMT"))).toBe(60000);
   expect(isRetryableApiError({ status: 503 })).toBe(true);
+  expect(isRetryableApiError(new TypeError("Load failed"))).toBe(true);
+  expect(isRetryableApiError(new TypeError("Failed to fetch"))).toBe(true);
+  expect(isRetryableApiError(new TypeError("Invalid URL"))).toBe(false);
   expect(getRetryDelayMs({ retryAfterMs: 12000 })).toBe(12000);
 });
 
