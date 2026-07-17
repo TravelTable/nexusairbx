@@ -5,12 +5,22 @@ import { normalizeStudioConnectionSnapshot } from "../lib/studioConnection";
 
 const CONNECTED_IDLE_POLL_MS = 15000;
 const RECOVERING_POLL_MS = 5000;
+const UPDATE_RECOVERY_POLL_MS = 5000;
 const HIDDEN_MIN_POLL_MS = 60000;
 
 export { isStudioSessionLive } from "../lib/studioConnection";
 
-export function getStudioStatusPollDelay({ connected = false, hidden = false, retryAfterMs = 0 } = {}) {
-  const baseDelay = connected ? CONNECTED_IDLE_POLL_MS : RECOVERING_POLL_MS;
+export function getStudioStatusPollDelay({
+  connected = false,
+  updateRequired = false,
+  hidden = false,
+  retryAfterMs = 0,
+} = {}) {
+  const baseDelay = updateRequired
+    ? UPDATE_RECOVERY_POLL_MS
+    : connected
+      ? CONNECTED_IDLE_POLL_MS
+      : RECOVERING_POLL_MS;
   const retryDelay = Number.isFinite(Number(retryAfterMs)) ? Number(retryAfterMs) : 0;
   const delay = Math.max(baseDelay, retryDelay);
   return hidden ? Math.max(delay, HIDDEN_MIN_POLL_MS) : delay;
@@ -27,6 +37,7 @@ export function useStudioConnection() {
   const pluginStatusRef = useRef(null);
   const mcpStatusRef = useRef(null);
   const connectedRef = useRef(false);
+  const updateRequiredRef = useRef(false);
   const retryAfterMsRef = useRef(0);
   const retryUntilRef = useRef(0);
   const inFlightRef = useRef(null);
@@ -67,6 +78,7 @@ export function useStudioConnection() {
         mcpStatus: mcpStatusRef.current,
       });
       connectedRef.current = nextSnapshot.connected;
+      updateRequiredRef.current = nextSnapshot.compatibility?.status === "update_required";
       if (mountedRef.current) {
         setSnapshot(nextSnapshot);
         setLoading(false);
@@ -109,6 +121,7 @@ export function useStudioConnection() {
       const hidden = typeof document !== "undefined" ? document.hidden : false;
       const delay = getStudioStatusPollDelay({
         connected: connectedRef.current,
+        updateRequired: updateRequiredRef.current,
         hidden,
         retryAfterMs: retryAfterMsRef.current,
       });

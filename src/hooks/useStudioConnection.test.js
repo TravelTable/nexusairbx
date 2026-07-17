@@ -109,8 +109,40 @@ describe("useStudioConnection", () => {
   test("poll delay helper enforces a hidden minimum", () => {
     expect(getStudioStatusPollDelay({ connected: true, hidden: false })).toBe(15000);
     expect(getStudioStatusPollDelay({ connected: false, hidden: false })).toBe(5000);
+    expect(getStudioStatusPollDelay({ connected: true, updateRequired: true, hidden: false })).toBe(5000);
     expect(getStudioStatusPollDelay({ connected: false, hidden: true })).toBe(60000);
     expect(getStudioStatusPollDelay({ connected: true, hidden: false, retryAfterMs: 30000 })).toBe(30000);
+  });
+
+  test("checks an outdated plugin session every five seconds until it refreshes", async () => {
+    getStudioStatus.mockResolvedValue({
+      sessions: [{
+        id: "studio_stale",
+        connectionType: "plugin_bridge",
+        status: "connected",
+        live: true,
+        studio: { pluginVersion: "0.10.0-verified-decoupled" },
+      }],
+    });
+
+    const hook = renderHook(() => useStudioConnection());
+
+    await waitFor(() => {
+      expect(hook.result.current.loading).toBe(false);
+      expect(hook.result.current.compatibility.status).toBe("update_required");
+    });
+    getStudioStatus.mockClear();
+
+    act(() => {
+      jest.advanceTimersByTime(4999);
+    });
+    expect(getStudioStatus).not.toHaveBeenCalled();
+
+    await act(async () => {
+      jest.advanceTimersByTime(1);
+      await Promise.resolve();
+    });
+    await waitFor(() => expect(getStudioStatus).toHaveBeenCalledTimes(1));
   });
 
   test("retryable status errors preserve the last connection and back off", async () => {

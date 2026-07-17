@@ -150,7 +150,7 @@ describe("studio connection selection", () => {
           status: "connected",
           live: true,
           studio: {
-            pluginVersion: "0.10.2-target-integrity",
+            pluginVersion: "0.10.3-session-attestation",
             protocolVersion: "2026-07-17-target-integrity",
           },
         }],
@@ -196,7 +196,7 @@ describe("studio connection selection", () => {
       status: "update_required",
       installedPluginVersion: "0.10.0-verified-decoupled",
       installedProtocolVersion: "2026-06-20-creator-store",
-      expectedPluginVersion: "0.10.2-target-integrity",
+      expectedPluginVersion: "0.10.3-session-attestation",
       expectedProtocolVersion: "2026-07-17-target-integrity",
     });
   });

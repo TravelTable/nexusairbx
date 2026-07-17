@@ -118,7 +118,7 @@ describe("StudioPairControl", () => {
     });
   });
 
-  test("shows an update action and disables manifest routing for a stale plugin", () => {
+  test("explains that an installed update needs one Studio restart and disables manifest routing", () => {
     const connection = normalizeStudioConnectionSnapshot({
       pluginStatus: {
         sessions: [{
@@ -137,8 +137,9 @@ describe("StudioPairControl", () => {
     render(<StudioPairControl connection={connection} refresh={jest.fn()} />);
     fireEvent.click(screen.getByRole("button", { name: /Studio · Update/i }));
 
-    expect(screen.getByText("Update available")).toBeTruthy();
-    expect(screen.getByText("A new Studio plugin update is available. Update the plugin and reconnect to continue.")).toBeTruthy();
+    expect(screen.getByText("Restart Studio to finish updating")).toBeTruthy();
+    expect(screen.getByText(/This browser is still seeing the previous plugin session/i)).toBeTruthy();
+    expect(screen.getByText(/The updated plugin refreshes this connection automatically/i)).toBeTruthy();
     expect(screen.queryByText("NexusRBXStudioBridge.plugin.lua")).toBeNull();
     expect(screen.queryByText("0.10.1-mcp-parity")).toBeNull();
     expect(screen.queryByText("2026-07-17-mcp-parity")).toBeNull();

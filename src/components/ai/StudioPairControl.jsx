@@ -333,7 +333,7 @@ export default function StudioPairControl({
     }
   };
 
-  const statusCopy = pluginUpdateRequired ? "Studio plugin update required" : ({
+  const statusCopy = pluginUpdateRequired ? "Studio plugin update pending" : ({
     both: "Plugin and MCP connected",
     plugin: "Connected via NexusRBX Studio Plugin",
     mcp: "Connected via Roblox Studio MCP",
@@ -446,9 +446,11 @@ export default function StudioPairControl({
                   {pluginUpdateRequired ? (
                     <div className="rounded-xl border border-amber-400/25 bg-amber-400/10 p-3 text-xs leading-relaxed text-amber-100">
                       <div className="mb-1 flex items-center gap-2 font-bold text-amber-300">
-                        <AlertTriangle className="h-4 w-4" /> Update available
+                        <AlertTriangle className="h-4 w-4" /> Restart Studio to finish updating
                       </div>
-                      A new Studio plugin update is available. Update the plugin and reconnect to continue.
+                      This browser is still seeing the previous plugin session. If you just installed the update,
+                      close and reopen Roblox Studio once. The updated plugin refreshes this connection automatically,
+                      and this message will clear within a few seconds. You can also use the refresh button above.
                     </div>
                   ) : (
                     <div className="rounded-xl border border-[#00f5d4]/20 bg-[#00f5d4]/5 p-3 text-xs text-gray-300">
