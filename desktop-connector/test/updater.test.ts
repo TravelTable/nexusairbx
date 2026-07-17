@@ -19,16 +19,17 @@ class FakeUpdater implements ConnectorUpdaterClient {
   installCalls: Array<[boolean | undefined, boolean | undefined]> = [];
   listeners = new Map<string, Listener[]>();
   checkPromise: Promise<unknown> = Promise.resolve();
+  downloadPromise: Promise<unknown> = Promise.resolve();
 
   setFeedURL(options: { provider: "generic"; url: string }): void { this.feedUrl = options.url; }
   checkForUpdates(): Promise<unknown> { this.checkCalls += 1; return this.checkPromise; }
-  downloadUpdate(): Promise<unknown> { this.downloadCalls += 1; return Promise.resolve(); }
+  downloadUpdate(): Promise<unknown> { this.downloadCalls += 1; return this.downloadPromise; }
   quitAndInstall(isSilent?: boolean, isForceRunAfter?: boolean): void { this.installCalls.push([isSilent, isForceRunAfter]); }
   on(event: string, listener: Listener): this {
     this.listeners.set(event, [...(this.listeners.get(event) ?? []), listener]);
     return this;
   }
-  emit(event: string): void { for (const listener of this.listeners.get(event) ?? []) listener(); }
+  emit(event: string, ...args: unknown[]): void { for (const listener of this.listeners.get(event) ?? []) listener(...args); }
 }
 
 function makeUpdater(client: FakeUpdater, overrides: Partial<ConstructorParameters<typeof ConnectorUpdater>[0]> = {}) {
@@ -116,4 +117,35 @@ test("enabling automatic updates starts checking without an app restart", () => 
   assert.equal(scheduled.length, 1);
   updater.setAutomaticUpdates(false);
   updater.stop();
+});
+
+test("does not start a second check while an update download is active", async () => {
+  const client = new FakeUpdater();
+  let resolveDownload: (() => void) | undefined;
+  client.downloadPromise = new Promise<void>((resolve) => { resolveDownload = resolve; });
+  const { updater, states } = makeUpdater(client);
+  updater.start();
+
+  await updater.checkNow();
+  client.emit("update-available");
+  await Promise.resolve();
+  await updater.checkNow();
+
+  assert.equal(client.checkCalls, 1);
+  assert.equal(states.at(-1), "downloading");
+  resolveDownload?.();
+});
+
+test("preserves the restart action when a late updater error follows a verified download", () => {
+  const client = new FakeUpdater();
+  const reported: string[] = [];
+  const { updater, states } = makeUpdater(client, { reportError: (message) => reported.push(message) });
+  updater.start();
+
+  client.emit("update-downloaded");
+  client.emit("error", new Error("cleanup failed after download"));
+
+  assert.equal(states.at(-1), "downloaded");
+  assert.equal(updater.install(), true);
+  assert.match(reported.at(-1) ?? "", /cleanup failed/);
 });

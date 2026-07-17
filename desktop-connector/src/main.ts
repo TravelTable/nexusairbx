@@ -1,6 +1,6 @@
 import { app, BrowserWindow, clipboard, ipcMain, Menu, nativeImage, Notification, safeStorage, shell, Tray } from "electron";
 import electronUpdater from "electron-updater";
-import { chmod, mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { appendFile, chmod, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, isAbsolute, join } from "node:path";
 import {
@@ -33,6 +33,12 @@ const SECURE_WEB_PREFERENCES = {
 } as const;
 const INSTALLED_SMOKE_MODE = process.argv.includes("--smoke-test") && process.env.NEXUS_CONNECTOR_CI_SMOKE === "1";
 const SMOKE_REPORT_PATH = process.env.NEXUS_CONNECTOR_SMOKE_REPORT;
+
+async function recordUpdaterError(message: string): Promise<void> {
+  const logDirectory = app.getPath("logs");
+  await mkdir(logDirectory, { recursive: true });
+  await appendFile(join(logDirectory, "updater.log"), `${new Date().toISOString()} ${message}\n`, { encoding: "utf8", mode: 0o600 });
+}
 if (INSTALLED_SMOKE_MODE) {
   // Keep verification isolated from a customer's running connector and stored
   // session. A unique user-data directory also gives the smoke process its own
@@ -449,6 +455,7 @@ else {
       requestedFeedUrl: process.env.NEXUSRBX_UPDATE_URL,
       setState: (state) => controller.setUpdateState(state),
       notify: (title, body) => controller.sendNotification(title, body),
+      reportError: (message) => { void recordUpdaterError(message); },
     });
     connectorUpdater.start();
   });
