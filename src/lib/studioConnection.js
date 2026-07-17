@@ -20,6 +20,11 @@ export const EXPECTED_STUDIO_PLUGIN_VERSION = "0.10.3-session-attestation";
 export const EXPECTED_STUDIO_PROTOCOL_VERSION = "2026-07-17-target-integrity";
 
 const LIVE_IDLE_MS = 45000;
+const RUNNABLE_PLUGIN_COMPATIBILITY_STATES = new Set(["compatible", "degraded"]);
+
+export function isRunnableStudioPluginCompatibility(status) {
+  return RUNNABLE_PLUGIN_COMPATIBILITY_STATES.has(status);
+}
 
 export function getStudioSessionId(session) {
   return session?.sessionId || session?.id || null;
@@ -74,7 +79,9 @@ export function selectStudioSession(
   return [...(Array.isArray(sessions) ? sessions : [])]
     .filter((session) => !connectionType || getStudioConnectionType(session) === connectionType)
     .filter((session) => capabilitySupported(session, capability))
-    .filter((session) => !compatibleOnly || session?.compatibility?.status === "compatible")
+    .filter((session) => !compatibleOnly || isRunnableStudioPluginCompatibility(
+      session?.compatibility?.status
+    ))
     .filter((session) => !liveOnly || isStudioSessionLive(session))
     .sort(compareSessions)[0] || null;
 }
@@ -87,21 +94,27 @@ export function normalizeStudioPluginCompatibility(value = null) {
     raw.installedProtocolVersion || value?.protocolVersion || value?.studio?.protocolVersion || null;
   const expectedPluginVersion = raw.expectedPluginVersion || EXPECTED_STUDIO_PLUGIN_VERSION;
   const expectedProtocolVersion = raw.expectedProtocolVersion || EXPECTED_STUDIO_PROTOCOL_VERSION;
-  let status = raw.status;
-  if (!['compatible', 'update_required', 'unknown'].includes(status)) {
-    if (!installedPluginVersion && !installedProtocolVersion) status = 'unknown';
-    else if (
-      installedPluginVersion === expectedPluginVersion &&
-      installedProtocolVersion === expectedProtocolVersion
-    ) status = 'compatible';
-    else status = 'update_required';
-  }
+  const allowedStatuses = ["compatible", "repairing", "degraded", "update_required", "unknown"];
+  // Compatibility is server-owned. A missing or older backend response is
+  // unknown, never evidence that the installed plugin needs reinstalling.
+  const status = allowedStatuses.includes(raw.status) ? raw.status : "unknown";
   return {
     status,
     installedPluginVersion,
     installedProtocolVersion,
     expectedPluginVersion,
     expectedProtocolVersion,
+    installedBuildIdentity: raw.installedBuildId || raw.installedBuildIdentity || value?.buildId || value?.buildIdentity || value?.studio?.buildId || value?.studio?.buildIdentity || null,
+    expectedBuildIdentity: raw.expectedBuildId || raw.expectedBuildIdentity || null,
+    reasonCode: raw.reasonCode || null,
+    reasonCodes: Array.isArray(raw.reasonCodes)
+      ? raw.reasonCodes
+      : raw.reasonCode
+        ? [raw.reasonCode]
+        : [],
+    reasons: Array.isArray(raw.reasons) ? raw.reasons : [],
+    missingCommands: Array.isArray(raw.missingCommands) ? raw.missingCommands : [],
+    missingCapabilities: Array.isArray(raw.missingCapabilities) ? raw.missingCapabilities : [],
   };
 }
 
@@ -226,7 +239,7 @@ export function normalizeStudioConnectionSnapshot({ pluginStatus = null, mcpStat
   const compatibility = normalizeStudioPluginCompatibility(
     pluginStatus?.compatibility || pluginSession
   );
-  const compatiblePluginSession = pluginSession && compatibility.status === "compatible"
+  const compatiblePluginSession = pluginSession && isRunnableStudioPluginCompatibility(compatibility.status)
     ? { ...pluginSession, compatibility }
     : selectPluginStudioSession(sessions, { compatibleOnly: true });
   const chatSession = selectMcpStudioSession(sessions, { capability: "readProject" }) || compatiblePluginSession;

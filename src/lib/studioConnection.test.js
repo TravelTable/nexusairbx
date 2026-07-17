@@ -59,6 +59,11 @@ describe("studio connection selection", () => {
   test("top-level MCP health overrides a stale green session", () => {
     const snapshot = normalizeStudioConnectionSnapshot({
       pluginStatus: {
+        compatibility: {
+          status: "compatible",
+          installedPluginVersion: "0.10.3-session-attestation",
+          installedProtocolVersion: "2026-07-17-target-integrity",
+        },
         sessions: [{
           id: "stale_green",
           connectionType: "mcp_local",
@@ -144,6 +149,11 @@ describe("studio connection selection", () => {
   test("uses MCP for chat and a compatible plugin for full manifests", () => {
     const snapshot = normalizeStudioConnectionSnapshot({
       pluginStatus: {
+        compatibility: {
+          status: "compatible",
+          installedPluginVersion: "0.10.3-session-attestation",
+          installedProtocolVersion: "2026-07-17-target-integrity",
+        },
         sessions: [{
           id: "plugin_manifest",
           connectionType: "plugin_bridge",
@@ -175,7 +185,7 @@ describe("studio connection selection", () => {
     expect(snapshot.compatibility.status).toBe("compatible");
   });
 
-  test("rejects a stale plugin from manifest selection", () => {
+  test("does not independently label an unverified version as outdated", () => {
     const snapshot = normalizeStudioConnectionSnapshot({
       pluginStatus: {
         sessions: [{
@@ -192,12 +202,36 @@ describe("studio connection selection", () => {
     });
 
     expect(snapshot.manifestSession).toBeNull();
-    expect(snapshot.compatibility).toEqual({
-      status: "update_required",
+    expect(snapshot.compatibility).toEqual(expect.objectContaining({
+      status: "unknown",
       installedPluginVersion: "0.10.0-verified-decoupled",
       installedProtocolVersion: "2026-06-20-creator-store",
       expectedPluginVersion: "0.10.3-session-attestation",
       expectedProtocolVersion: "2026-07-17-target-integrity",
+    }));
+  });
+
+  test("keeps a degraded plugin available and preserves exact server reasons", () => {
+    const snapshot = normalizeStudioConnectionSnapshot({
+      pluginStatus: {
+        compatibility: {
+          status: "degraded",
+          reasonCodes: ["command_unavailable"],
+          reasons: [{ code: "command_unavailable", command: "run_play_test" }],
+          missingCommands: ["run_play_test"],
+        },
+        sessions: [{
+          id: "plugin_degraded",
+          connectionType: "plugin_bridge",
+          status: "connected",
+          live: true,
+        }],
+      },
     });
+
+    expect(snapshot.manifestSession.id).toBe("plugin_degraded");
+    expect(snapshot.compatibility.status).toBe("degraded");
+    expect(snapshot.compatibility.reasonCodes).toEqual(["command_unavailable"]);
+    expect(snapshot.compatibility.missingCommands).toEqual(["run_play_test"]);
   });
 });

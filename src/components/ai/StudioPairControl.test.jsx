@@ -118,9 +118,16 @@ describe("StudioPairControl", () => {
     });
   });
 
-  test("explains that an installed update needs one Studio restart and disables manifest routing", () => {
+  test("shows reinstall instructions only when the backend rejects the release", () => {
     const connection = normalizeStudioConnectionSnapshot({
       pluginStatus: {
+        compatibility: {
+          status: "update_required",
+          reasonCode: "release_not_supported",
+          reasonCodes: ["release_not_supported"],
+          installedPluginVersion: "0.10.0-verified-decoupled",
+          installedProtocolVersion: "2026-06-20-creator-store",
+        },
         sessions: [{
           id: "plugin_stale",
           connectionType: "plugin_bridge",
@@ -137,12 +144,9 @@ describe("StudioPairControl", () => {
     render(<StudioPairControl connection={connection} refresh={jest.fn()} />);
     fireEvent.click(screen.getByRole("button", { name: /Studio · Update/i }));
 
-    expect(screen.getByText("Restart Studio to finish updating")).toBeTruthy();
-    expect(screen.getByText(/This browser is still seeing the previous plugin session/i)).toBeTruthy();
-    expect(screen.getByText(/The updated plugin refreshes this connection automatically/i)).toBeTruthy();
-    expect(screen.queryByText("NexusRBXStudioBridge.plugin.lua")).toBeNull();
-    expect(screen.queryByText("0.10.1-mcp-parity")).toBeNull();
-    expect(screen.queryByText("2026-07-17-mcp-parity")).toBeNull();
+    expect(screen.getAllByText("Studio plugin update required").length).toBeGreaterThan(0);
+    expect(screen.getByText(/This plugin release is no longer supported/i)).toBeTruthy();
+    expect(screen.getByText(/NexusRBXStudioBridge\.plugin\.lua/i)).toBeTruthy();
     expect(screen.getByText("Full manifest").parentElement.textContent).toContain("Unavailable");
   });
 });

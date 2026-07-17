@@ -150,6 +150,9 @@ export default function StudioPairControl({
   const capabilities = connection?.capabilities || { supported: [], unavailable: [] };
   const compatibility = connection?.compatibility || pluginSession?.compatibility || {};
   const pluginUpdateRequired = pluginConnected && compatibility.status === "update_required";
+  const pluginRepairing = pluginConnected && compatibility.status === "repairing";
+  const pluginDegraded = pluginConnected && compatibility.status === "degraded";
+  const degradedFeature = compatibility.missingCapabilities?.[0] || compatibility.missingCommands?.[0] || "a Studio feature";
   const transportSelection = connection?.transportSelection || {};
 
   const [open, setOpen] = useState(false);
@@ -333,7 +336,13 @@ export default function StudioPairControl({
     }
   };
 
-  const statusCopy = pluginUpdateRequired ? "Studio plugin update pending" : ({
+  const statusCopy = pluginUpdateRequired
+    ? "Studio plugin update required"
+    : pluginRepairing
+      ? "Restoring Studio connection"
+      : pluginDegraded
+        ? `Studio feature unavailable: ${degradedFeature}`
+        : ({
     both: "Plugin and MCP connected",
     plugin: "Connected via NexusRBX Studio Plugin",
     mcp: "Connected via Roblox Studio MCP",
@@ -446,11 +455,25 @@ export default function StudioPairControl({
                   {pluginUpdateRequired ? (
                     <div className="rounded-xl border border-amber-400/25 bg-amber-400/10 p-3 text-xs leading-relaxed text-amber-100">
                       <div className="mb-1 flex items-center gap-2 font-bold text-amber-300">
-                        <AlertTriangle className="h-4 w-4" /> Restart Studio to finish updating
+                        <AlertTriangle className="h-4 w-4" /> Studio plugin update required
                       </div>
-                      This browser is still seeing the previous plugin session. If you just installed the update,
-                      close and reopen Roblox Studio once. The updated plugin refreshes this connection automatically,
-                      and this message will clear within a few seconds. You can also use the refresh button above.
+                      This plugin release is no longer supported. Reinstall the current generated
+                      NexusRBXStudioBridge.plugin.lua artifact, then reconnect.
+                    </div>
+                  ) : pluginRepairing ? (
+                    <div className="rounded-xl border border-sky-400/25 bg-sky-400/10 p-3 text-xs leading-relaxed text-sky-100">
+                      <div className="mb-1 flex items-center gap-2 font-bold text-sky-300">
+                        <Loader2 className="h-4 w-4 animate-spin" /> Restoring Studio connection
+                      </div>
+                      The plugin is repairing its saved session automatically. Keep Studio open; no reinstall,
+                      restart, disconnect, or re-pair is needed.
+                    </div>
+                  ) : pluginDegraded ? (
+                    <div className="rounded-xl border border-amber-400/25 bg-amber-400/10 p-3 text-xs leading-relaxed text-amber-100">
+                      <div className="mb-1 flex items-center gap-2 font-bold text-amber-300">
+                        <AlertTriangle className="h-4 w-4" /> Feature unavailable
+                      </div>
+                      The connected plugin does not advertise {degradedFeature}. Other supported Studio features remain available.
                     </div>
                   ) : (
                     <div className="rounded-xl border border-[#00f5d4]/20 bg-[#00f5d4]/5 p-3 text-xs text-gray-300">
@@ -641,6 +664,10 @@ export default function StudioPairControl({
 
   const buttonLabel = pluginUpdateRequired
     ? "Studio · Update"
+    : pluginRepairing
+      ? "Studio · Restoring"
+      : pluginDegraded
+        ? "Studio · Limited"
     : connectionState === "both"
     ? "Studio · Both"
     : connectionState === "mcp"
@@ -663,6 +690,10 @@ export default function StudioPairControl({
         className={`inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-bold transition-all ${
           pluginUpdateRequired
             ? "border-amber-400/30 bg-amber-400/10 text-amber-300 hover:bg-amber-400/20"
+            : pluginRepairing
+              ? "border-sky-400/30 bg-sky-400/10 text-sky-300 hover:bg-sky-400/20"
+              : pluginDegraded
+                ? "border-amber-400/30 bg-amber-400/10 text-amber-300 hover:bg-amber-400/20"
             : overallConnected
             ? "border-[#00f5d4]/30 bg-[#00f5d4]/10 text-[#00f5d4] hover:bg-[#00f5d4]/20"
             : degraded
@@ -674,9 +705,9 @@ export default function StudioPairControl({
         aria-expanded={open}
         aria-controls="studio-connection-dialog"
       >
-        {loading ? (
+        {loading || pluginRepairing ? (
           <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin" />
-        ) : pluginUpdateRequired || (degraded && !overallConnected) ? (
+        ) : pluginUpdateRequired || pluginDegraded || (degraded && !overallConnected) ? (
           <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
         ) : (
           <Radio className={`h-3.5 w-3.5 shrink-0 ${overallConnected ? "" : "text-gray-400"}`} />

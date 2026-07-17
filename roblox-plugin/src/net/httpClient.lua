@@ -130,12 +130,19 @@ local function requestOnce(method, path, body, token, opts)
 
 	local kind, retryable = classifyStatus(response.StatusCode, false)
 	if not response.Success then
+		local errorData = response.Body ~= "" and response.Body or ("HTTP " .. tostring(response.StatusCode))
+		if response.Body and response.Body ~= "" then
+			local decodedErrorOk, decodedError = pcall(jsonDecode, response.Body)
+			if decodedErrorOk then
+				errorData = decodedError
+			end
+		end
 		return {
 			ok = false,
 			kind = kind,
 			retryable = retryable,
 			status = response.StatusCode,
-			data = response.Body ~= "" and response.Body or ("HTTP " .. tostring(response.StatusCode)),
+			data = errorData,
 			retryAfter = parseRetryAfter(response.Headers),
 			latencyMs = lastLatencyMs,
 		}
@@ -216,13 +223,16 @@ end
 
 -- Authenticated heartbeat. It never claims a command and the backend throttles
 -- its single session write while returning collaborator and MCP summaries.
-function pingSession(token, placeSignature)
+function pingSession(token, placeSignature, studio)
 	if not token then
 		return false, lastLatencyMs, false
 	end
 	local body = {}
 	if type(placeSignature) == "string" and placeSignature ~= "" then
 		body.placeSignature = placeSignature
+	end
+	if type(studio) == "table" then
+		body.studio = studio
 	end
 	local result = requestOnce("POST", "/api/studio/session/ping", body, token, { maxAttempts = 1 })
 	if result.status == 401 or result.status == 403 then

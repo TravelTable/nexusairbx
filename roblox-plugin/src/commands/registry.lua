@@ -570,7 +570,12 @@ function pullOnce(waitMs)
 
 	if statusCode == 204 or not data or not data.command then
 		if not executorBusy and #commandQueue == 0 then
-			setBridgeState("live")
+			local compatibility, detail = getStudioCompatibilityStatus()
+			if compatibility == "degraded" then
+				setBridgeState("degraded", detail and ("Unavailable: " .. tostring(detail)) or "Some Studio features are unavailable")
+			else
+				setBridgeState("live")
+			end
 			setActive("none")
 			setAgentPhase("idle")
 		end
@@ -639,7 +644,12 @@ function processNextCommand()
 	setActive("none")
 	setBusy(false)
 	if #commandQueue == 0 then
-		setBridgeState("live")
+		local compatibility, detail = getStudioCompatibilityStatus()
+		if compatibility == "degraded" then
+			setBridgeState("degraded", detail and ("Unavailable: " .. tostring(detail)) or "Some Studio features are unavailable")
+		else
+			setBridgeState("live")
+		end
 	end
 	return finished ~= false
 end

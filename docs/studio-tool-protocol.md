@@ -1,6 +1,6 @@
 # Studio Tool Protocol
 
-Active protocol version: `2026-06-20-creator-store`
+Active protocol version: `2026-07-17-target-integrity`
 
 This protocol integrates Creator Store import, native model construction/refinement, trusted Roblox Open Cloud Model upload, uploaded-model Studio insertion, and the Phase 9 Studio validation quality gate. Uploaded models and validation targets must come from backend-held receipts; the browser never submits a Roblox asset ID, Studio root path, inserted root path, model revision, insertion identity, or validation status for trusted commands.
 
@@ -24,13 +24,38 @@ The backend validates every Studio command in `backend/src/lib/studioToolProtoco
 
 ## Session Liveness
 
+The backend owns plugin compatibility. Every first heartbeat includes the
+release version, protocol version, build identity, exact command handlers,
+capabilities, and an attestation fingerprint. The backend validates that data,
+atomically repairs stale stored attestation, and acknowledges one of five
+states: `compatible`, `repairing`, `degraded`, `update_required`, or `unknown`.
+Only `compatible` and `degraded` sessions may poll commands.
+
+- `repairing` means the authenticated handshake has not completed. Clients show
+  “Restoring Studio connection” and retry with bounded backoff and jitter.
+- `degraded` keeps every advertised command available. An unavailable requested
+  command fails with `studio_tool_unavailable` and includes the command and its
+  required capability.
+- `update_required` is reserved for a release, protocol, or build identity that
+  the server release catalog does not accept. Only this state shows reinstall
+  instructions.
+- Network errors and missing compatibility data are never interpreted as an
+  outdated plugin. Repeated identical attestations do not write to Firestore.
+
+`GET /api/studio/plugin/release` exposes the server-owned current release and
+temporarily accepted releases. The legacy `POST /api/studio/session/attestation`
+endpoint remains available and uses the same validation and repair service as
+the heartbeat endpoint.
+
 - The plugin decouples polling from command execution: a poll/dispatch loop keeps
   `lastSeenAt` fresh (every authenticated request refreshes it) while a separate
   executor drains one command at a time, so long applies and approval prompts can
   never stall the connection.
 - `POST /api/studio/session/ping` (plugin token) is a side-effect-free liveness
   ping. It refreshes `lastSeenAt` without claiming a command and accepts an
-  optional `{ placeSignature }` body used for manifest freshness.
+  optional `{ placeSignature, studio }` body used for manifest freshness and
+  the compatibility handshake. Command polling starts only after the server
+  acknowledges the attestation.
 
 ## Manifest Freshness
 
@@ -118,7 +143,10 @@ profiles or check IDs fail closed.
 10. Confirm an uploaded-model insertion from a trusted upload receipt and confirm Studio receives `insert_uploaded_roblox_model` with only the backend-supplied asset ID under `Workspace/NexusImports`.
 11. Run `/api/studio/validations/prepare`, `/api/studio/validations`, and the report endpoint against a native model receipt and confirm stale browser paths are ignored.
 12. With two Studio windows open, confirm mutations are blocked until one enumerated target is selected, then confirm no command reaches the other place.
-13. On an MCP session, run one successful and one timed-out named playtest and confirm both return to Edit mode.
+13. Replace the stored session attestation with stale metadata, keep the current generated plugin installed, and confirm one successful heartbeat clears the warning without reinstalling, restarting, disconnecting, or re-pairing.
+14. Repeat an identical heartbeat and confirm no attestation write occurs; remove one advertised command and confirm the session becomes `degraded` while another supported write still succeeds.
+15. Queue the missing command and confirm claim-time validation returns `studio_tool_unavailable`; attest an unaccepted build identity and confirm no queued command reaches Studio.
+16. On an MCP session, run one successful and one timed-out named playtest and confirm both return to Edit mode.
 
 ## Firestore Notes
 

@@ -1,6 +1,7 @@
 import {
   getStudioConnectionType,
   getStudioSessionId,
+  isRunnableStudioPluginCompatibility,
   isStudioSessionLive,
   selectPluginStudioSession,
   STUDIO_CONNECTION_TYPES,
@@ -134,12 +135,11 @@ export function selectedStudioSupportsCommand(studio, commandType) {
       studio.manifestSession ||
       studio.compatiblePluginSession ||
       selectPluginStudioSession(studio.sessions, { compatibleOnly: true });
-    return Boolean(
-      pluginSession &&
-      isStudioSessionLive(pluginSession) &&
-      (pluginSession.compatibility?.status === "compatible" ||
-        studio.compatibility?.status === "compatible")
-    );
+    const status = pluginSession?.compatibility?.status || studio.compatibility?.status;
+    return Boolean(pluginSession && isStudioSessionLive(pluginSession) &&
+      isRunnableStudioPluginCompatibility(status) &&
+      (!Array.isArray(pluginSession.supportedCommands) ||
+        pluginSession.supportedCommands.includes(commandType)));
   }
   const selectedSession = getSelectedStudioSession(studio);
   const selectedType = studio.connectionType || getStudioConnectionType(selectedSession || studio);
@@ -147,8 +147,10 @@ export function selectedStudioSupportsCommand(studio, commandType) {
   // The plugin implements the versioned Studio protocol. MCP commands are
   // opt-in and must be discovered by exact command name.
   if (selectedType === STUDIO_CONNECTION_TYPES.PLUGIN_BRIDGE) {
-    return studio.compatibility?.status === "compatible" ||
-      selectedSession?.compatibility?.status === "compatible";
+    const status = selectedSession?.compatibility?.status || studio.compatibility?.status;
+    const advertisedCommands = selectedSession?.supportedCommands || studio.pluginSession?.supportedCommands;
+    return isRunnableStudioPluginCompatibility(status) &&
+      (!Array.isArray(advertisedCommands) || advertisedCommands.includes(commandType));
   }
   if (selectedType !== STUDIO_CONNECTION_TYPES.MCP_LOCAL || !selectedSession) return false;
 
