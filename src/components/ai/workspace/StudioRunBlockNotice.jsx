@@ -18,12 +18,13 @@ const PLUGIN_CODES = new Set([
   "STUDIO_PLUGIN_UPDATE_REQUIRED",
 ]);
 const PATH_CODES = new Set(["INVALID_STUDIO_PATH", "STUDIO_PATH_INVALID", "STUDIO_INVALID_PATH"]);
+const MANIFEST_CODES = new Set(["MANIFEST_CONFLICTED", "MANIFEST_REPEATED_CURSOR"]);
 
 function readError(value = {}) {
   const error = value?.error && typeof value.error === "object" ? value.error : {};
   const details = value?.errorDetails || value?.details || error?.details || error?.errorDetails || {};
   return {
-    code: String(value?.errorCode || value?.code || error?.errorCode || error?.code || "").trim().toUpperCase(),
+    code: String(value?.errorCode || value?.code || error?.errorCode || error?.code || value?.failureCode || "").trim().toUpperCase(),
     details: details && typeof details === "object" && !Array.isArray(details) ? details : {},
     recovery: value?.recovery || value?.remediation || error?.recovery || error?.remediation || "",
   };
@@ -35,6 +36,9 @@ export function getStudioRunBlock(value = {}) {
   const targetSelection = value?.targetSelection || details?.targetSelection || null;
   const pluginFallback = fallback === "MCP_PLACE_MISMATCH"
     && String(value?.executionProvider || "").toLowerCase() === "plugin_bridge";
+  const errorText = typeof value?.error === "string"
+    ? value.error
+    : String(value?.error?.message || value?.summary || "");
 
   if (pluginFallback) {
     return {
@@ -79,6 +83,19 @@ export function getStudioRunBlock(value = {}) {
       message: "That Studio path is not valid for the selected project. No Studio command was sent.",
     };
   }
+  if (
+    MANIFEST_CODES.has(code) ||
+    value?.manifestConflict ||
+    /overlapping[_ ]canonical[_ ]paths|manifest revision .+ conflicted|project index/i.test(errorText)
+  ) {
+    return {
+      kind: "manifest",
+      code,
+      recovery,
+      title: "Refreshing Studio project index",
+      message: "Studio's project scan got out of sync. NexusRBX starts a fresh scan automatically so you can keep working.",
+    };
+  }
   return null;
 }
 
@@ -112,6 +129,9 @@ export default function StudioRunBlockNotice({ value, className = "" }) {
           )}
           {block.kind === "path" && (
             <p className="mt-1 leading-relaxed text-current/80">Refresh the project manifest, choose a valid instance path, then retry.</p>
+          )}
+          {block.kind === "manifest" && (
+            <p className="mt-1 leading-relaxed text-current/80">You usually do not need to reconnect — wait for the fresh scan, or reconnect Studio only if results still look incomplete.</p>
           )}
           {block.path && <code className="mt-1 block break-all text-[10px] text-current/70">{block.path}</code>}
           {block.recovery && <p className="mt-1 leading-relaxed text-current/80">{block.recovery}</p>}

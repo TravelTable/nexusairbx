@@ -122,6 +122,9 @@ const MCP_TOOL_UNAVAILABLE_MESSAGE =
 const STUDIO_PLUGIN_REQUIRED_MESSAGE =
   "Local MCP can inspect this place, but this action needs the NexusRBX Studio Plugin connected and LIVE.";
 
+const MANIFEST_CONFLICT_MESSAGE =
+  "Studio's project index got out of sync while scanning. A fresh scan was started automatically.";
+
 function extractErrorText(value) {
   if (typeof value === "string") return value.trim();
   if (!value || typeof value !== "object") return "";
@@ -134,26 +137,62 @@ function extractErrorText(value) {
   return "";
 }
 
-export function normalizeToolStepError(error) {
+export function normalizeToolStepError(error, meta = {}) {
+  const metaCode = String(meta.code || meta.errorCode || meta.failureCode || "").trim();
+  if (metaCode === "STUDIO_PLUGIN_REQUIRED_FOR_TOOL") return STUDIO_PLUGIN_REQUIRED_MESSAGE;
+
   if (!error) return "";
   if (typeof error === "string") {
     const trimmed = error.trim();
-    if (!trimmed || trimmed === "[object Object]") return "This Studio action could not be completed.";
+    if (!trimmed || trimmed === "[object Object]") {
+      return metaCode === "STUDIO_PLUGIN_REQUIRED_FOR_TOOL"
+        ? STUDIO_PLUGIN_REQUIRED_MESSAGE
+        : "This Studio action could not be completed.";
+    }
     if (/pinned mcp tool is unavailable/i.test(trimmed)) return MCP_TOOL_UNAVAILABLE_MESSAGE;
     if (/no compatible studio provider is available/i.test(trimmed)) return STUDIO_PLUGIN_REQUIRED_MESSAGE;
-    if (/needs the nexusrbx studio plugin/i.test(trimmed)) return STUDIO_PLUGIN_REQUIRED_MESSAGE;
+    if (/needs the nexusrbx studio plugin|reading or editing scripts needs/i.test(trimmed)) {
+      return STUDIO_PLUGIN_REQUIRED_MESSAGE;
+    }
+    if (/overlapping[_ ]canonical[_ ]paths|manifest revision .+ conflicted/i.test(trimmed)) {
+      return MANIFEST_CONFLICT_MESSAGE;
+    }
+    if (
+      trimmed === "This Studio action could not be completed." &&
+      metaCode === "STUDIO_PLUGIN_REQUIRED_FOR_TOOL"
+    ) {
+      return STUDIO_PLUGIN_REQUIRED_MESSAGE;
+    }
     if (isStudioConnectionError("", trimmed)) return STUDIO_CONNECTION_UNAVAILABLE_MESSAGE;
     return trimmed;
   }
   if (typeof error !== "object") return "This Studio action could not be completed.";
-  const code = String(error.code || error.errorCode || "");
+  const code = String(error.code || error.errorCode || metaCode || "").trim();
   if (code === "MCP_TOOL_UNAVAILABLE") return MCP_TOOL_UNAVAILABLE_MESSAGE;
   if (code === "STUDIO_PLUGIN_REQUIRED_FOR_TOOL") return STUDIO_PLUGIN_REQUIRED_MESSAGE;
+  if (code === "MANIFEST_CONFLICTED") return MANIFEST_CONFLICT_MESSAGE;
+  const publicText = typeof error.publicMessage === "string" ? error.publicMessage.trim() : "";
+  if (/needs the nexusrbx studio plugin|reading or editing scripts needs/i.test(publicText)) {
+    return STUDIO_PLUGIN_REQUIRED_MESSAGE;
+  }
   const text = extractErrorText(error);
   if (/pinned mcp tool is unavailable/i.test(text)) return MCP_TOOL_UNAVAILABLE_MESSAGE;
   if (/no compatible studio provider is available/i.test(text)) return STUDIO_PLUGIN_REQUIRED_MESSAGE;
+  if (/needs the nexusrbx studio plugin|reading or editing scripts needs/i.test(text)) {
+    return STUDIO_PLUGIN_REQUIRED_MESSAGE;
+  }
+  if (/overlapping[_ ]canonical[_ ]paths|manifest revision .+ conflicted/i.test(text)) {
+    return MANIFEST_CONFLICT_MESSAGE;
+  }
   if (isStudioConnectionError(code, text)) {
     return STUDIO_CONNECTION_UNAVAILABLE_MESSAGE;
+  }
+  if (
+    text === "This Studio action could not be completed." &&
+    publicText &&
+    /plugin/i.test(publicText)
+  ) {
+    return publicText;
   }
   if (text && text !== "[object Object]") return text;
   if (code) return code;
@@ -163,7 +202,9 @@ export function normalizeToolStepError(error) {
 function errorCodeFrom(raw) {
   if (!raw || typeof raw !== "object") return "";
   const nested = raw.error && typeof raw.error === "object" ? raw.error : {};
-  return String(raw.errorCode || raw.code || nested.errorCode || nested.code || "").trim();
+  return String(
+    raw.errorCode || raw.failureCode || raw.code || nested.errorCode || nested.code || ""
+  ).trim();
 }
 
 function detailsFrom(raw) {
@@ -208,7 +249,14 @@ export function normalizeToolStep(raw) {
   if (raw.label) step.label = String(raw.label);
   const errorCode = errorCodeFrom(raw);
   const details = detailsFrom(raw);
-  if (raw.error) step.error = normalizeToolStepError(raw.error);
+  if (raw.error) {
+    step.error = normalizeToolStepError(raw.error, {
+      code: errorCode,
+      failureCode: raw.failureCode,
+    });
+  } else if (errorCode === "STUDIO_PLUGIN_REQUIRED_FOR_TOOL") {
+    step.error = STUDIO_PLUGIN_REQUIRED_MESSAGE;
+  }
   if (errorCode) step.errorCode = errorCode;
   if (details) step.errorDetails = details;
   const recovery = raw.recovery || raw.remediation || raw.error?.recovery || raw.error?.remediation;
@@ -256,7 +304,10 @@ export function upsertAgentStep(steps, update) {
 export function summarizeStepResult(step) {
   if (!step) return "pending";
   if (step.error) {
-    return typeof step.error === "string" ? step.error : normalizeToolStepError(step.error);
+    return normalizeToolStepError(step.error, {
+      code: step.errorCode,
+      failureCode: step.failureCode,
+    });
   }
   const result = step.result || {};
   const type = step.type;

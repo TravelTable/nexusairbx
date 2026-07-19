@@ -218,27 +218,25 @@ export default function MessageList({
 
               {pendingMessage.content && !showLiveWorkStream ? (
                 <div className="space-y-4">
-                  <div className="p-4 md:p-5 rounded-2xl2 rounded-tl-md card-surface shadow-panel">
-                    {pendingParsed.hasStructured ? (
-                      <div className="space-y-4">
-                        {pendingParsed.code && (
-                          <div className="rounded-2xl border border-white/10 bg-black/40 overflow-hidden">
-                            <div className="px-3 py-2 border-b border-white/5 text-[10px] font-black uppercase tracking-widest text-gray-500">
-                              Streaming Code
-                            </div>
-                            <pre className="p-4 text-[12px] leading-relaxed text-gray-300 whitespace-pre overflow-x-auto">
-                              {pendingParsed.code}
-                            </pre>
+                  {pendingParsed.hasStructured ? (
+                    <div className="space-y-4">
+                      {pendingParsed.code && (
+                        <div className="rounded-2xl border border-white/10 bg-black/40 overflow-hidden">
+                          <div className="px-3 py-2 border-b border-white/5 text-[10px] font-black uppercase tracking-widest text-gray-500">
+                            Streaming Code
                           </div>
-                        )}
-                        {pendingParsed.plain && (
-                          <MarkdownMessage text={pendingParsed.plain} className="text-gray-300" />
-                        )}
-                      </div>
-                    ) : (
-                      <MarkdownMessage text={stripTags(pendingMessage.content)} />
-                    )}
-                  </div>
+                          <pre className="p-4 text-[12px] leading-relaxed text-gray-300 whitespace-pre overflow-x-auto">
+                            {pendingParsed.code}
+                          </pre>
+                        </div>
+                      )}
+                      {pendingParsed.plain && (
+                        <MarkdownMessage text={pendingParsed.plain} className="text-gray-300" />
+                      )}
+                    </div>
+                  ) : (
+                    <MarkdownMessage text={stripTags(pendingMessage.content)} />
+                  )}
                   {pendingMessage.type === "ui" && <SkeletonArtifact type="ui" />}
                   {pendingMessage.type === "chat" &&
                     (pendingMessage.content?.includes("```") || pendingParsed.code) && (

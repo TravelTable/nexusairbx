@@ -70,8 +70,33 @@ describe("agentSteps", () => {
     })).toBe(
       "Local MCP can inspect this place, but this action needs the NexusRBX Studio Plugin connected and LIVE."
     );
+    expect(normalizeToolStepError("This Studio action could not be completed.", {
+      failureCode: "STUDIO_PLUGIN_REQUIRED_FOR_TOOL",
+    })).toBe(
+      "Local MCP can inspect this place, but this action needs the NexusRBX Studio Plugin connected and LIVE."
+    );
+    expect(normalizeToolStepError({
+      message: "This Studio action could not be completed.",
+      publicMessage: "Local MCP can inspect this place, but this action needs the NexusRBX Studio Plugin connected and LIVE.",
+    })).toBe(
+      "Local MCP can inspect this place, but this action needs the NexusRBX Studio Plugin connected and LIVE."
+    );
+    expect(normalizeToolStep({
+      id: "s3",
+      type: "read_script",
+      status: "failed",
+      error: "This Studio action could not be completed.",
+      failureCode: "STUDIO_PLUGIN_REQUIRED_FOR_TOOL",
+    }).error).toBe(
+      "Local MCP can inspect this place, but this action needs the NexusRBX Studio Plugin connected and LIVE."
+    );
     expect(normalizeToolStepError("No compatible Studio provider is available")).toBe(
       "Local MCP can inspect this place, but this action needs the NexusRBX Studio Plugin connected and LIVE."
+    );
+    expect(normalizeToolStepError(
+      "Manifest revision d123ba8f-bbc8-4aeb-b5f2-9609e0c25a51 conflicted: overlapping canonical paths. Reconnect Studio and retry to build a new manifest revision."
+    )).toBe(
+      "Studio's project index got out of sync while scanning. A fresh scan was started automatically."
     );
     expect(summarizeStepResult({
       type: "create_instance",

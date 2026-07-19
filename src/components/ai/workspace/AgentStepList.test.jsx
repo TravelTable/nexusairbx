@@ -12,14 +12,17 @@ describe("AgentStepList", () => {
             type: "get_project_manifest",
             label: "Build Studio project manifest",
             status: "failed",
+            failureCode: "MANIFEST_CONFLICTED",
             error: "Manifest revision revision_1 conflicted: overlapping canonical paths.",
+            manifestConflict: { reason: "overlapping_canonical_paths" },
           },
         ]}
       />
     );
 
     expect(screen.getByText("Error")).toBeTruthy();
-    expect(screen.getByText(/Manifest revision revision_1 conflicted/i)).toBeTruthy();
+    expect(screen.getByText(/project index got out of sync/i)).toBeTruthy();
+    expect(screen.getByText(/Refreshing Studio project index/i)).toBeTruthy();
   });
 
   test("explains how to recover Local MCP after a compatible plugin fallback", () => {

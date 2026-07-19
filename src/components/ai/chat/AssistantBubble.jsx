@@ -50,10 +50,8 @@ function BubbleShell({ activeMode, children }) {
   return (
     <div className="flex justify-start gap-3.5 group motion-safe:animate-message-in">
       <NexusRBXAvatar mode={activeMode} />
-      <div className="max-w-[90%] order-2">
-        <div className="p-4 md:p-5 rounded-2xl2 rounded-tl-md card-surface shadow-panel">
-          {children}
-        </div>
+      <div className="max-w-[90%] order-2 min-w-0">
+        {children}
       </div>
     </div>
   );
