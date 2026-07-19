@@ -119,6 +119,9 @@ function isStudioConnectionError(code, message) {
 const MCP_TOOL_UNAVAILABLE_MESSAGE =
   "This Studio action is not available through the connected MCP server. Connect the Studio Plugin and retry.";
 
+const STUDIO_PLUGIN_REQUIRED_MESSAGE =
+  "Local MCP can inspect this place, but this action needs the NexusRBX Studio Plugin connected and LIVE.";
+
 function extractErrorText(value) {
   if (typeof value === "string") return value.trim();
   if (!value || typeof value !== "object") return "";
@@ -137,14 +140,18 @@ export function normalizeToolStepError(error) {
     const trimmed = error.trim();
     if (!trimmed || trimmed === "[object Object]") return "This Studio action could not be completed.";
     if (/pinned mcp tool is unavailable/i.test(trimmed)) return MCP_TOOL_UNAVAILABLE_MESSAGE;
+    if (/no compatible studio provider is available/i.test(trimmed)) return STUDIO_PLUGIN_REQUIRED_MESSAGE;
+    if (/needs the nexusrbx studio plugin/i.test(trimmed)) return STUDIO_PLUGIN_REQUIRED_MESSAGE;
     if (isStudioConnectionError("", trimmed)) return STUDIO_CONNECTION_UNAVAILABLE_MESSAGE;
     return trimmed;
   }
   if (typeof error !== "object") return "This Studio action could not be completed.";
   const code = String(error.code || error.errorCode || "");
   if (code === "MCP_TOOL_UNAVAILABLE") return MCP_TOOL_UNAVAILABLE_MESSAGE;
+  if (code === "STUDIO_PLUGIN_REQUIRED_FOR_TOOL") return STUDIO_PLUGIN_REQUIRED_MESSAGE;
   const text = extractErrorText(error);
   if (/pinned mcp tool is unavailable/i.test(text)) return MCP_TOOL_UNAVAILABLE_MESSAGE;
+  if (/no compatible studio provider is available/i.test(text)) return STUDIO_PLUGIN_REQUIRED_MESSAGE;
   if (isStudioConnectionError(code, text)) {
     return STUDIO_CONNECTION_UNAVAILABLE_MESSAGE;
   }
@@ -248,7 +255,9 @@ export function upsertAgentStep(steps, update) {
  */
 export function summarizeStepResult(step) {
   if (!step) return "pending";
-  if (step.error) return step.error;
+  if (step.error) {
+    return typeof step.error === "string" ? step.error : normalizeToolStepError(step.error);
+  }
   const result = step.result || {};
   const type = step.type;
 

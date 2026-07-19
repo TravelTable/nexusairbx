@@ -64,6 +64,22 @@ describe("agentSteps", () => {
     })).toBe(
       "This Studio action is not available through the connected MCP server. Connect the Studio Plugin and retry."
     );
+    expect(normalizeToolStepError({
+      code: "STUDIO_PLUGIN_REQUIRED_FOR_TOOL",
+      message: "Studio plugin required for tool: create_instance",
+    })).toBe(
+      "Local MCP can inspect this place, but this action needs the NexusRBX Studio Plugin connected and LIVE."
+    );
+    expect(normalizeToolStepError("No compatible Studio provider is available")).toBe(
+      "Local MCP can inspect this place, but this action needs the NexusRBX Studio Plugin connected and LIVE."
+    );
+    expect(summarizeStepResult({
+      type: "create_instance",
+      status: "failed",
+      error: { code: "STUDIO_PLUGIN_REQUIRED_FOR_TOOL", message: "ignored" },
+    })).toBe(
+      "Local MCP can inspect this place, but this action needs the NexusRBX Studio Plugin connected and LIVE."
+    );
   });
 
   test("preserves recoverable Studio error metadata and target choices", () => {
