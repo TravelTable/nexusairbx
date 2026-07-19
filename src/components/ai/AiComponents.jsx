@@ -331,7 +331,16 @@ export const TaskOrchestrator = ({ tasks, currentTaskId, onExecuteTask, plan }) 
   );
 };
 
-export const ProjectContextStatus = ({ context, onSync, onViewStructure, plan }) => {
+export const ProjectContextStatus = ({
+  context,
+  onSync,
+  onViewStructure,
+  plan,
+  studioConnected = false,
+  studioConnectionType = null,
+  studioManifestCount = 0,
+  studioManifestSupported = false,
+}) => {
   const [isSyncing, setIsSyncing] = useState(false);
 
   const handleSync = async () => {
@@ -341,6 +350,32 @@ export const ProjectContextStatus = ({ context, onSync, onViewStructure, plan })
   };
 
   const isPro = plan === "pro" || plan === "team" || plan === "TEAM" || plan === "PRO";
+  const remoteCount = context?.remoteEvents?.length || 0;
+  const moduleCount = context?.modules?.length || 0;
+  const hasArchitecture = Boolean(context);
+  const architectureEmpty = hasArchitecture && remoteCount === 0 && moduleCount === 0;
+  const isMcp = studioConnectionType === "mcp_local";
+  const studioIndexed = studioConnected && studioManifestSupported && studioManifestCount > 0;
+  const studioReadyDot = studioConnected && (isMcp || studioIndexed);
+
+  let studioReadinessLabel = "Studio offline";
+  let studioReadinessTitle =
+    "Live Studio place readiness for Ask/Agent. Separate from the Architecture schema badge.";
+  if (studioConnected && isMcp) {
+    studioReadinessLabel = "Studio MCP · live search";
+    studioReadinessTitle =
+      "Connected via Studio MCP. Ask uses live script search — there is no full persisted place manifest on MCP-only sessions.";
+  } else if (studioConnected && studioManifestSupported && studioManifestCount > 0) {
+    studioReadinessLabel = `Studio indexed · ${studioManifestCount}`;
+    studioReadinessTitle = `Plugin place index ready with ${studioManifestCount} script${studioManifestCount === 1 ? "" : "s"}.`;
+  } else if (studioConnected && studioManifestSupported) {
+    studioReadinessLabel = "Studio · no index yet";
+    studioReadinessTitle =
+      "Plugin is connected but the Studio manifest is empty. Rescan from Studio Manifest, or wait for indexing to finish.";
+  } else if (studioConnected) {
+    studioReadinessLabel = "Studio connected";
+    studioReadinessTitle = "Studio is connected, but a full place index is not available for this session.";
+  }
 
   return (
     <div className={`flex items-center gap-3 px-3 py-2 rounded-xl bg-white/5 border border-white/10 backdrop-blur-md relative ${!isPro ? 'opacity-50' : ''}`}>
@@ -353,32 +388,47 @@ export const ProjectContextStatus = ({ context, onSync, onViewStructure, plan })
         type="button"
         onClick={onViewStructure}
         className="flex items-center gap-2 text-left hover:opacity-90 transition-opacity"
-        title="View project structure"
+        title="Saved remotes/modules architecture schema for generation — not your live Studio place index"
       >
-        <div className={`w-2 h-2 rounded-full ${context ? 'bg-[#00f5d4] shadow-[0_0_10px_rgba(0,245,212,0.5)]' : 'bg-gray-600'}`} />
+        <div className={`w-2 h-2 rounded-full ${hasArchitecture ? 'bg-[#00f5d4] shadow-[0_0_10px_rgba(0,245,212,0.5)]' : 'bg-gray-600'}`} />
         <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">
-          {context ? 'Context Linked' : 'No Context'}
+          {hasArchitecture ? (architectureEmpty ? "Arch empty" : "Architecture") : "No Architecture"}
         </span>
       </button>
 
-      {context && (
+      {hasArchitecture && (
         <div className="h-4 w-px bg-white/10" />
       )}
 
-      {context && (
+      {hasArchitecture && (
         <div className="flex items-center gap-2">
-          <span className="text-[9px] font-bold text-gray-500 uppercase tracking-tighter">
-            {context.remoteEvents?.length || 0} Remotes • {context.modules?.length || 0} Modules
+          <span
+            className="text-[9px] font-bold text-gray-500 uppercase tracking-tighter"
+            title="Counts from the saved architecture schema, not live Studio scripts"
+          >
+            {remoteCount} Remotes • {moduleCount} Modules
           </span>
         </div>
       )}
+
+      <div className="h-4 w-px bg-white/10" />
+
+      <div
+        className="flex items-center gap-2"
+        title={studioReadinessTitle}
+      >
+        <div className={`w-2 h-2 rounded-full ${studioReadyDot ? "bg-[#00bbf9] shadow-[0_0_10px_rgba(0,187,249,0.45)]" : "bg-gray-600"}`} />
+        <span className="text-[9px] font-bold uppercase tracking-tighter text-gray-500">
+          {studioReadinessLabel}
+        </span>
+      </div>
 
       {onViewStructure && (
         <button
           type="button"
           onClick={onViewStructure}
           className="px-2 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider text-[#00f5d4] hover:bg-[#00f5d4]/10 transition-colors"
-          title="View project structure"
+          title="View architecture schema"
         >
           View
         </button>
@@ -389,7 +439,7 @@ export const ProjectContextStatus = ({ context, onSync, onViewStructure, plan })
         onClick={handleSync}
         disabled={isSyncing}
         className={`p-1.5 rounded-lg hover:bg-white/10 transition-all ${isSyncing ? 'animate-spin text-[#00f5d4]' : 'text-gray-500 hover:text-white'}`}
-        title="Add or update project context"
+        title="Edit architecture schema (not a Studio place rescan)"
       >
         <RefreshCw className="w-3.5 h-3.5" />
       </button>

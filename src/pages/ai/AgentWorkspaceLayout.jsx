@@ -381,6 +381,14 @@ export default function AgentWorkspaceLayout({ controller }) {
       .slice(0, 200);
   }, [studioManifest, studioSearch]);
 
+  const studioScriptCount = useMemo(
+    () =>
+      (studioManifest || []).filter((item) =>
+        ["Script", "LocalScript", "ModuleScript"].includes(String(item?.className || ""))
+      ).length,
+    [studioManifest]
+  );
+
   const openStudioScript = useCallback(async (item) => {
     const path = item?.canonicalPath || item?.path;
     if (!path) return;
@@ -960,7 +968,11 @@ export default function AgentWorkspaceLayout({ controller }) {
             );
           })}
           {!studioResults.length && (
-            <div className="px-2 py-4 text-center text-xs text-gray-600">No persisted Studio manifest yet.</div>
+            <div className="px-2 py-4 text-center text-xs text-gray-600">
+              {studioManifestSupported
+                ? "No persisted Studio manifest yet."
+                : "No place index on MCP sessions — Ask uses live script search instead."}
+            </div>
           )}
         </div>
         <div className="rounded-lg border border-white/10 bg-black/30 p-2">
@@ -1197,6 +1209,10 @@ export default function AgentWorkspaceLayout({ controller }) {
                     <ProjectContextStatus
                       context={projectContext}
                       plan={planKey}
+                      studioConnected={Boolean(studio?.connected)}
+                      studioConnectionType={studio?.connectionType || null}
+                      studioManifestCount={studioScriptCount}
+                      studioManifestSupported={studioManifestSupported}
                       onViewStructure={() => setArchitecturePanelOpen(true)}
                       onSync={async () => {
                         if (!requireUser()) return;
