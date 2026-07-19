@@ -1,0 +1,29 @@
+name: Task Runtime Packaging CI
+
+# Root-repo packaging: Firestore rules text, plugin integrity/checksum, and the
+# Prompt 3 eval corpus. Backend Stage 0/flag gates live in the backend repo CI.
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  packaging:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Firestore rules declare Prompt 3 namespaces
+        run: |
+          for collection in _tasks _operations _taskOutbox _taskReservations _taskJobProjectionInbox _capabilitySnapshots _agentContextSnapshots _studioCommands _migrationControl; do
+            grep -q "match /${collection}/" firestore.rules || { echo "missing match for ${collection}"; exit 1; }
+          done
+      - name: Plugin verify + checksum
+        run: |
+          node roblox-plugin/build/verify-plugin-artifact.js
+          node roblox-plugin/build/write-plugin-checksum.js
+      - name: Eval corpus contract
+        run: node --test docs/task-runtime-2026-07-19/eval-scenarios.test.js

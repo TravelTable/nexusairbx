@@ -565,7 +565,8 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
     modeOverride = null,
     actNow = false,
     attachments = [],
-    baseArtifact = null
+    baseArtifact = null,
+    submissionOptions = {}
   ) => {
     const normalizedAttachments = normalizeChatAttachments(attachments);
     const content = String(prompt || "").trim();
@@ -673,6 +674,19 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
       const token = await user.getIdToken();
       
       const idemKey = `chat-${requestId}`;
+      const taskProjectId = FEATURE_FLAGS.newTaskRuntime
+        && typeof submissionOptions?.projectId === "string"
+        ? submissionOptions.projectId.trim()
+        : "";
+      const activeTaskId = FEATURE_FLAGS.newTaskRuntime
+        && typeof submissionOptions?.activeTaskId === "string"
+        ? submissionOptions.activeTaskId.trim()
+        : "";
+      const showPlan = FEATURE_FLAGS.newTaskRuntime && submissionOptions?.showPlan === true;
+      const onTaskAccepted = FEATURE_FLAGS.newTaskRuntime
+        && typeof submissionOptions?.onTaskAccepted === "function"
+        ? submissionOptions.onTaskAccepted
+        : null;
       
       // 1. Create Artifact Job
       const studioEnabled = FEATURE_FLAGS.unifiedAgent && getStudioEnabledPreference();
@@ -734,6 +748,11 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
             studioConnectionType === STUDIO_CONNECTION_TYPES.PLUGIN_BRIDGE,
           autoPushPolicy,
           baseArtifact,
+          ...(FEATURE_FLAGS.newTaskRuntime ? {
+            ...(taskProjectId ? { projectId: taskProjectId } : {}),
+            ...(activeTaskId ? { activeTaskId } : {}),
+            showPlan,
+          } : {}),
         }),
       });
       
@@ -769,8 +788,66 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
       }
       
       const jobData = await jobRes.json();
-      const jobId = jobData.jobId;
-      if (!jobId) throw new Error("Failed to create generation job");
+      const jobId = typeof jobData.jobId === "string" ? jobData.jobId.trim() : "";
+      const acceptedTaskId = typeof jobData.taskId === "string" ? jobData.taskId.trim() : "";
+      const runtimeTaskAccepted = FEATURE_FLAGS.newTaskRuntime
+        && Boolean(acceptedTaskId)
+        && (
+          jobData.accepted === false
+          || jobData.waitingUser === true
+          || jobData.kind === "conversation"
+          || jobData.kind === "continuation"
+          || jobData.kind === "amendment"
+          || (!jobId && jobData.ok !== false)
+        );
+
+      if (acceptedTaskId && onTaskAccepted) {
+        try {
+          onTaskAccepted(acceptedTaskId);
+        } catch (error) {
+          console.warn("Could not bind accepted task to the workspace runtime.", error);
+        }
+      }
+
+      if (!jobId) {
+        if (runtimeTaskAccepted) {
+          const assistantMsgRef = doc(
+            db,
+            "users",
+            user.uid,
+            "chats",
+            activeChatId,
+            "messages",
+            `${requestId}-assistant`,
+          );
+          const waitingCopy = jobData.waitingUser
+            ? "I need a confirmation before continuing. Use the task panel to approve, amend, or set a price."
+            : jobData.kind === "conversation"
+              ? (typeof jobData.classification?.reply === "string" && jobData.classification.reply.trim())
+                || "I can help with that in chat without starting a durable task."
+              : jobData.requiresAction === "amend"
+                ? "I treated that as a change to the active task. Amend or continue from the task panel."
+                : jobData.requiresAction === "approve"
+                  ? "The active task is ready to continue. Approve it from the task panel when you want execution to resume."
+                  : "The durable task runtime accepted this request and is waiting for the next authorized action.";
+          await setDoc(assistantMsgRef, {
+            role: "assistant",
+            content: waitingCopy,
+            stage: jobData.waitingUser ? "Awaiting confirmation" : "Task update",
+            pending: false,
+            requestId,
+            ...(acceptedTaskId ? { taskId: acceptedTaskId } : {}),
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+          }, { merge: true });
+          setBusy(false);
+          setPending(null);
+          setStage("");
+          if (activeChatId) delete streamStatesRef.current[activeChatId];
+          return;
+        }
+        throw new Error("Failed to create generation job");
+      }
       if (!existingRequestId) {
         associateChatMessageWrites({ jobId, reason: "user_message", count: 1 });
       }
@@ -786,6 +863,7 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
         pending: true,
         requestId,
         jobId,
+        ...(acceptedTaskId ? { taskId: acceptedTaskId } : {}),
         ...(agentRunId ? { runId: agentRunId } : {}),
         isAutoExecuting: currentMode === "act",
         createdAt: serverTimestamp(),

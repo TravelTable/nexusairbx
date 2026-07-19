@@ -1,510 +1,447 @@
-import React, { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { 
-  Sparkles, 
-  Download, 
-  ExternalLink, 
-  Copy, 
-  Check, 
-  Loader2, 
-  Box, 
-  Zap,
-  Info,
-  History,
-  Image as ImageIcon,
-  AlertCircle,
-  ShieldCheck,
-  Upload,
-  Wand2,
-  Layers,
-  X
-} from "lib/icons";
-import { useNavigate } from "react-router-dom";
-import { auth } from "../firebase";
-import { onAuthStateChanged } from "firebase/auth";
-import NexusRBXFooter from "../components/NexusRBXFooter";
-import ProNudgeModal from "../components/ProNudgeModal";
-import { Button, Toggle, cx } from "../components/ui";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { Clock, Library, RefreshCw, Settings, Sparkles } from "../lib/icons";
+import { Button } from "../components/ui";
+import AssetContextBar from "../components/assets/AssetContextBar";
+import AssetGenerationForm, { DEFAULT_ASSET_GENERATION_FORM } from "../components/assets/AssetGenerationForm";
+import AssetPackGrid from "../components/assets/AssetPackGrid";
+import AssetStyleSummary from "../components/assets/AssetStyleSummary";
+import { AssetErrorState, AssetGridSkeleton } from "../components/assets/AssetCollectionState";
+import {
+  ASSET_PLATFORM_WRITES_ENABLED,
+  createAssetOperationKey,
+  extendAssetPack,
+  formatAssetPlatformError,
+  generateAssets,
+  generateSimilarAsset,
+  getAssetOperation,
+  getAssetPlatformContext,
+  listAssetPacks,
+  listAssets,
+  listStyleProfiles,
+  normalizeAsset,
+  normalizePack,
+  pollAssetStatus,
+  replaceAsset,
+  retryAssetUpload,
+} from "../lib/assetPlatformApi";
+import { getRobloxOAuthStatus } from "../lib/robloxOAuthApi";
 import { useBilling } from "../context/BillingContext";
-import { BACKEND_URL } from "../config";
+import { useSettings } from "../context/SettingsContext";
+import "../components/assets/assetPlatform.css";
 
-const API_BASE = BACKEND_URL.replace(/\/+$/, "");
+const ACTIVE_OPERATION_STATES = new Set(["accepted", "queued", "pending", "running", "in_progress", "processing", "generating", "validating", "uploading", "submitted", "moderation_pending"]);
+const TERMINAL_OPERATION_STATES = new Set(["completed", "complete", "succeeded", "ready", "partially_ready", "partial_success", "failed", "cancelled"]);
+const GENERATION_MODES = new Set(["single", "pack", "extend", "similar", "replacement"]);
+
+function asArray(value) {
+  return Array.isArray(value) ? value : [];
+}
+
+function projectId(project) {
+  return String(project?.projectId || project?.id || "");
+}
+
+function universeId(universe) {
+  return String(universe?.universeId || universe?.id || "");
+}
+
+function contextBody(response) {
+  return response?.context || response || {};
+}
+
+function getProjects(context) {
+  const projects = asArray(context?.projects || context?.availableProjects);
+  if (projects.length) return projects;
+  return context?.project ? [context.project] : [];
+}
+
+function getUniverses(context, selectedProjectId) {
+  const project = getProjects(context).find((entry) => projectId(entry) === selectedProjectId);
+  const projectUniverses = asArray(project?.universes || project?.experiences);
+  return projectUniverses.length ? projectUniverses : asArray(context?.universes);
+}
+
+function operationState(response) {
+  return String(response?.operation?.lifecycle || response?.operation?.status || response?.lifecycle || response?.status || "queued").toLowerCase();
+}
+
+function responseAssets(response) {
+  return asArray(response?.assets || response?.operation?.assets || response?.items).map(normalizeAsset);
+}
+
+function responsePack(response) {
+  const pack = response?.pack || response?.operation?.pack;
+  return pack ? normalizePack(pack) : null;
+}
+
+function mergeAssets(current, incoming) {
+  if (!incoming.length) return current;
+  const byId = new Map();
+  current.forEach((asset) => byId.set(asset.assetId || `${asset.name}-${asset.createdAt}`, asset));
+  incoming.forEach((asset) => byId.set(asset.assetId || `${asset.name}-${asset.createdAt}`, asset));
+  return Array.from(byId.values());
+}
+
+function formatCostEstimate(context, form) {
+  const estimate = context?.costEstimate || context?.pricing?.estimate;
+  if (typeof estimate === "string") return estimate;
+  if (estimate?.formatted) return estimate.formatted;
+  const perAsset = Number(estimate?.creditsPerAsset || context?.pricing?.creditsPerAsset || 0);
+  if (!perAsset) return "Confirmed before generation";
+  const count = form.mode === "pack" || form.mode === "extend" ? Number(form.requestedCount || 1) : 1;
+  return `${perAsset * count} credits estimated`;
+}
+
+function unsupportedModesFromContext(context) {
+  const explicit = asArray(context?.unsupportedModes || context?.capabilities?.unsupportedModes);
+  const declared = context?.capabilities?.generationModes || context?.generationModes;
+  if (!declared || Array.isArray(declared)) return explicit;
+  return Array.from(new Set([
+    ...explicit,
+    ...Object.entries(declared).filter(([, available]) => available === false).map(([mode]) => mode),
+  ]));
+}
 
 export default function IconGeneratorPage() {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [generatedImage, setGeneratedImage] = useState(null);
-  const [history, setHistory] = useState([]);
-  const [copied, setCopied] = useState(false);
-  const { isPremium, refresh: refreshBilling } = useBilling();
-  const [showProNudge, setShowProNudge] = useState(false);
-  const [enhancing, setEnhancing] = useState(false);
-  const [referenceImage, setReferenceImage] = useState(null);
-  const [noBackground, setNoBackground] = useState(false);
-  
-  const [filters, setFilters] = useState({
-    style: "3D Rendered",
-    subject: "",
-    colorMood: "Vibrant",
-    extraDetails: "",
-    customStyle: "",
-    customMood: ""
-  });
-
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const { user, authReady, totalRemaining, refresh: refreshBilling } = useBilling();
+  const { settings, updateSettings, loading: settingsLoading } = useSettings();
+  const [context, setContext] = useState({});
+  const [connection, setConnection] = useState({ connected: false });
+  const [assets, setAssets] = useState([]);
+  const [packs, setPacks] = useState([]);
+  const [styleProfiles, setStyleProfiles] = useState([]);
+  const [selectedProjectId, setSelectedProjectId] = useState("");
+  const [selectedUniverseId, setSelectedUniverseId] = useState("");
+  const [form, setForm] = useState(DEFAULT_ASSET_GENERATION_FORM);
+  const [currentPack, setCurrentPack] = useState(null);
+  const [resultAssets, setResultAssets] = useState([]);
+  const [operation, setOperation] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
+  const [busyByAsset, setBusyByAsset] = useState({});
+  const [autoUploadBusy, setAutoUploadBusy] = useState(false);
+  const formPanelRef = useRef(null);
+  const handoffAppliedRef = useRef(false);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (u) => {
-      setUser(u);
-      if (!u) navigate("/signin");
-    });
-    return () => unsubscribe();
-  }, [navigate]);
+    if (authReady && !user) navigate("/signin", { replace: true, state: { from: "/tools/icon-generator" } });
+  }, [authReady, user, navigate]);
 
-  useEffect(() => {
-    const fetchHistory = async () => {
-      try {
-        const token = await user.getIdToken();
-        const res = await fetch(`${API_BASE}/api/tools/icon-history`, {
-          headers: { "Authorization": `Bearer ${token}` }
-        });
-        const data = await res.json();
-        if (data.history) setHistory(data.history);
-      } catch (e) {
-        console.error("Failed to fetch history", e);
-      }
-    };
-
+  const loadWorkspace = useCallback(async (requestedProjectId = "") => {
     if (!user) return;
-    fetchHistory();
-  }, [user]);
-
-  const fetchHistory = async () => {
-    try {
-      const token = await user.getIdToken();
-      const res = await fetch(`${API_BASE}/api/tools/icon-history`, {
-        headers: { "Authorization": `Bearer ${token}` }
-      });
-      const data = await res.json();
-      if (data.history) setHistory(data.history);
-    } catch (e) {
-      console.error("Failed to fetch history", e);
-    }
-  };
-
-  const handleGenerate = async (variationImg = null) => {
-    if (!filters.subject && !referenceImage && !variationImg) {
-      setError("Please describe what you want the icon to be or upload a reference image.");
-      return;
-    }
-    
     setLoading(true);
     setError("");
-    
-    try {
-      const token = await user.getIdToken();
-      const res = await fetch(`${API_BASE}/api/tools/generate-icon`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          ...filters,
-          style: filters.style === "Custom" ? filters.customStyle : filters.style,
-          colorMood: filters.colorMood === "Custom" ? filters.customMood : filters.colorMood,
-          noBackground,
-          referenceImage: variationImg || referenceImage,
-          isVariation: !!variationImg
-        })
+    const query = requestedProjectId ? { projectId: requestedProjectId } : {};
+    const results = await Promise.allSettled([
+      getAssetPlatformContext(query),
+      listAssets({ ...query, limit: 40, sort: "updated_desc" }),
+      listAssetPacks({ ...query, limit: 30, sort: "updated_desc" }),
+      listStyleProfiles(query),
+      getRobloxOAuthStatus(),
+    ]);
+
+    const [contextResult, assetsResult, packsResult, stylesResult, connectionResult] = results;
+    if (contextResult.status === "fulfilled") {
+      const nextContext = contextBody(contextResult.value);
+      const projects = getProjects(nextContext);
+      const nextProjectId = requestedProjectId
+        || String(nextContext.selectedProjectId || projectId(nextContext.project) || projectId(projects[0]) || "");
+      setContext(nextContext);
+      setSelectedProjectId(nextProjectId);
+      const nextUniverses = getUniverses(nextContext, nextProjectId);
+      setSelectedUniverseId((current) => {
+        if (current && nextUniverses.some((entry) => universeId(entry) === current)) return current;
+        return String(nextContext.selectedUniverseId || universeId(nextUniverses[0]) || "");
       });
-
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Generation failed");
-
-      setGeneratedImage(data.imageUrl);
-      refreshBilling?.();
-      fetchHistory();
-    } catch (e) {
-      setError(e.message);
-    } finally {
-      setLoading(false);
+    } else {
+      setError(formatAssetPlatformError(contextResult.reason, "Project context could not be loaded."));
     }
-  };
 
-  const handleEnhancePrompt = async () => {
-    if (!filters.subject) return;
-    setEnhancing(true);
-    try {
-      const token = await user.getIdToken();
-      const res = await fetch(`${API_BASE}/api/tools/enhance-prompt`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
-        },
-        body: JSON.stringify({ subject: filters.subject, style: filters.style })
-      });
-      const data = await res.json();
-      if (data.enhancedPrompt) {
-        setFilters(prev => ({ ...prev, subject: data.enhancedPrompt }));
+    if (assetsResult.status === "fulfilled") setAssets(assetsResult.value.assets);
+    if (packsResult.status === "fulfilled") setPacks(packsResult.value.packs);
+    if (stylesResult.status === "fulfilled") setStyleProfiles(stylesResult.value.styleProfiles);
+    if (connectionResult.status === "fulfilled") setConnection(connectionResult.value);
+
+    if (contextResult.status === "fulfilled" && assetsResult.status === "rejected" && packsResult.status === "rejected") {
+      setError(formatAssetPlatformError(assetsResult.reason, "Existing assets could not be loaded."));
+    }
+    setLoading(false);
+  }, [user]);
+
+  useEffect(() => {
+    if (user) loadWorkspace();
+  }, [user, loadWorkspace]);
+
+  useEffect(() => {
+    if (handoffAppliedRef.current) return;
+    handoffAppliedRef.current = true;
+    const mode = searchParams.get("mode");
+    if (!GENERATION_MODES.has(mode)) return;
+    const sourceAssetId = searchParams.get("assetId") || "";
+    const packId = searchParams.get("packId") || "";
+    setForm((current) => ({
+      ...current,
+      mode,
+      sourceAssetId: mode === "similar" || mode === "replacement" ? sourceAssetId || current.sourceAssetId : current.sourceAssetId,
+      packId: mode === "extend" ? packId || current.packId : current.packId,
+    }));
+  }, [searchParams]);
+
+  useEffect(() => {
+    if (!ASSET_PLATFORM_WRITES_ENABLED) return undefined;
+    const operationId = operation?.operationId;
+    const state = operation?.state || "";
+    if (!operationId || TERMINAL_OPERATION_STATES.has(state) || !ACTIVE_OPERATION_STATES.has(state)) return undefined;
+    const timer = window.setTimeout(async () => {
+      try {
+        const next = await getAssetOperation(operationId);
+        const nextAssets = responseAssets(next);
+        const nextPack = responsePack(next);
+        setResultAssets((current) => mergeAssets(current, nextAssets));
+        setAssets((current) => mergeAssets(current, nextAssets));
+        if (nextPack) setCurrentPack(nextPack);
+        const nextState = operationState(next);
+        setOperation({ operationId, state: nextState });
+        if (TERMINAL_OPERATION_STATES.has(nextState)) refreshBilling?.();
+      } catch (pollError) {
+        setError(formatAssetPlatformError(pollError, "Generation progress could not be refreshed."));
+        setOperation((current) => current ? { ...current, state: "paused" } : current);
       }
-    } catch (e) {
-      console.error("Enhancement failed", e);
-    } finally {
-      setEnhancing(false);
-    }
+    }, 2500);
+    return () => window.clearTimeout(timer);
+  }, [operation, refreshBilling]);
+
+  const projects = useMemo(() => getProjects(context), [context]);
+  const universes = useMemo(() => getUniverses(context, selectedProjectId), [context, selectedProjectId]);
+  const unsupportedModes = useMemo(() => unsupportedModesFromContext(context), [context]);
+  const selectedStyleProfile = styleProfiles.find((profile) => profile.styleProfileId === form.styleProfileId)
+    || styleProfiles.find((profile) => profile.styleProfileId === currentPack?.styleProfileId)
+    || null;
+  const costEstimate = formatCostEstimate(context, form);
+
+  const changeProject = async (nextProjectId) => {
+    setSelectedProjectId(nextProjectId);
+    setSelectedUniverseId("");
+    setCurrentPack(null);
+    setResultAssets([]);
+    setOperation(null);
+    await loadWorkspace(nextProjectId);
   };
 
-  const handleImageUpload = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setReferenceImage(reader.result);
+  const changeAutoUpload = async (checked) => {
+    if (!ASSET_PLATFORM_WRITES_ENABLED) return;
+    setAutoUploadBusy(true);
+    setError("");
+    const result = await updateSettings({ robloxAssetUploadsEnabled: checked });
+    if (!result?.ok) setError(result?.error || "The auto-upload preference could not be saved.");
+    setAutoUploadBusy(false);
+  };
+
+  const applyOperationResponse = (response, submittedMode) => {
+    const nextAssets = responseAssets(response);
+    const nextPack = responsePack(response);
+    const operationId = String(response?.operationId || response?.operation?.operationId || response?.operation?.id || "");
+    const state = operationState(response);
+    setResultAssets(nextAssets);
+    setAssets((current) => mergeAssets(current, nextAssets));
+    if (nextPack) {
+      setCurrentPack(nextPack);
+      setPacks((current) => {
+        const others = current.filter((pack) => pack.packId !== nextPack.packId);
+        return [nextPack, ...others];
+      });
+    } else if (response?.packId) {
+      setCurrentPack(packs.find((pack) => pack.packId === response.packId) || null);
+    } else if (submittedMode === "single" || submittedMode === "similar" || submittedMode === "replacement") {
+      setCurrentPack(null);
+    }
+    setOperation(operationId ? { operationId, state } : null);
+    setNotice(operationId
+      ? "Generation accepted. Asset cards update independently as work completes."
+      : "The asset request was accepted. Refresh the library if the result is not returned inline.");
+  };
+
+  const submitGeneration = async (submittedForm) => {
+    if (!ASSET_PLATFORM_WRITES_ENABLED) {
+      setError("Asset generation and Roblox writes are not enabled for this environment.");
+      return;
+    }
+    setSubmitting(true);
+    setError("");
+    setNotice("");
+    const conceptNames = submittedForm.conceptNames
+      .split(/\r?\n|,/)
+      .map((name) => name.trim())
+      .filter(Boolean);
+    const payload = {
+      idempotencyKey: createAssetOperationKey(),
+      mode: submittedForm.mode,
+      projectId: selectedProjectId,
+      universeId: selectedUniverseId || null,
+      prompt: submittedForm.prompt.trim(),
+      requestedCount: submittedForm.mode === "pack" || submittedForm.mode === "extend" ? Number(submittedForm.requestedCount || 1) : 1,
+      conceptNames,
+      autoExtractConcepts: Boolean(submittedForm.autoExtractConcepts),
+      styleProfileId: submittedForm.styleProfileId || null,
+      artworkMode: submittedForm.artworkMode,
+      backgroundMode: submittedForm.backgroundMode,
+      transparencyRequired: Boolean(submittedForm.transparencyRequired),
+      referenceImage: submittedForm.referenceImage || null,
+      autoUpload: Boolean(settings.robloxAssetUploadsEnabled),
     };
-    reader.readAsDataURL(file);
-  };
 
-  const handleDownload = async () => {
-    if (!generatedImage) return;
     try {
-      const response = await fetch(generatedImage);
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `nexus-icon-${Date.now()}.png`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    } catch (e) {
-      console.error("Download failed", e);
+      let response;
+      if (submittedForm.mode === "extend") {
+        response = await extendAssetPack(submittedForm.packId, payload);
+      } else if (submittedForm.mode === "similar") {
+        response = await generateSimilarAsset(submittedForm.sourceAssetId, payload);
+      } else if (submittedForm.mode === "replacement") {
+        response = await replaceAsset(submittedForm.sourceAssetId, payload);
+      } else {
+        response = await generateAssets(payload);
+      }
+      applyOperationResponse(response, submittedForm.mode);
+      refreshBilling?.();
+    } catch (generationError) {
+      setError(formatAssetPlatformError(generationError, "Asset generation could not be started."));
+    } finally {
+      setSubmitting(false);
     }
   };
 
-  const styles = ["3D Rendered", "Flat Vector", "Cartoonish", "Cyberpunk", "Hand-Drawn", "Minimalist", "Anime", "Oil Painting", "Custom"];
-  const moods = ["Vibrant", "Dark & Moody", "Pastel", "Neon", "Monochrome", "Golden Hour", "Glassmorphism", "Custom"];
+  const updateOneAsset = async (asset, action, request) => {
+    if (!asset?.assetId) return;
+    if (action === "retry" && !settings.robloxAssetUploadsEnabled) {
+      setError("Auto Upload Assets is off. Enable it before retrying a Roblox write; the Nexus asset remains saved.");
+      return;
+    }
+    setBusyByAsset((current) => ({ ...current, [asset.assetId]: action }));
+    setError("");
+    try {
+      const response = await request(asset.assetId);
+      const nextAsset = normalizeAsset(response?.asset || response);
+      if (nextAsset.assetId) {
+        setResultAssets((current) => current.map((entry) => entry.assetId === nextAsset.assetId ? nextAsset : entry));
+        setAssets((current) => current.map((entry) => entry.assetId === nextAsset.assetId ? nextAsset : entry));
+      }
+      setNotice(action === "retry" ? "Roblox upload retry queued. The Nexus asset remains available while it runs." : "Asset status refreshed.");
+    } catch (actionError) {
+      setError(formatAssetPlatformError(actionError, action === "retry" ? "Roblox upload could not be retried." : "Asset status could not be refreshed."));
+    } finally {
+      setBusyByAsset((current) => ({ ...current, [asset.assetId]: "" }));
+    }
+  };
 
-  return (
-    <div className="min-h-screen bg-[#0D0D0D] text-white font-sans flex flex-col relative overflow-hidden">
-      {/* Background Blobs */}
-      <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-[#9b5de5]/5 blur-[120px]" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-[#00f5d4]/5 blur-[120px]" />
-      </div>
+  const prepareMode = (mode, assetOrPack) => {
+    setForm((current) => ({
+      ...current,
+      mode,
+      packId: mode === "extend" ? assetOrPack.packId : current.packId,
+      sourceAssetId: mode === "similar" || mode === "replacement" ? assetOrPack.assetId : current.sourceAssetId,
+      prompt: mode === "replacement" && !current.prompt ? `Create an improved replacement for ${assetOrPack.name}.` : current.prompt,
+    }));
+    formPanelRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
 
-      <main className="flex-grow container mx-auto px-4 py-12 relative z-10">
-        <div className="max-w-6xl mx-auto">
-          <header className="mb-12">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="p-2 rounded-lg bg-[#9b5de5]/20">
-                <Sparkles className="h-6 w-6 text-[#9b5de5]" />
-              </div>
-              <h1 className="text-3xl font-black tracking-tight">Roblox Icon Generator</h1>
-              {!isPremium && (
-                <span className="px-2 py-0.5 rounded bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-white text-[10px] font-black uppercase">Pro Feature</span>
-              )}
-            </div>
-            <p className="text-gray-400 max-w-2xl">
-              Create high-end, professional game icons for your UI in seconds. Optimized for Roblox Studio with centered compositions and vibrant lighting.
-            </p>
-          </header>
-
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-            {/* Left Sidebar: Controls */}
-            <div className="lg:col-span-4 space-y-6">
-              <section className="nexus-page-card p-6">
-                <h2 className="text-sm font-black text-gray-500 uppercase tracking-widest mb-6 flex items-center gap-2">
-                  <Box className="h-4 w-4" /> Configuration
-                </h2>
-
-                <div className="space-y-6">
-                  {/* Subject */}
-                  <div>
-                    <div className="flex justify-between items-center mb-2">
-                      <label className="nexus-field-label block">Icon Subject</label>
-                      <button 
-                        onClick={handleEnhancePrompt}
-                        disabled={enhancing || !filters.subject}
-                        className="focus-ring flex items-center gap-1 rounded-lg px-2 py-1 text-[10px] font-black text-[#00f5d4] transition hover:bg-[#00f5d4]/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
-                      >
-                        {enhancing ? <Loader2 className="h-3 w-3 animate-spin" /> : <Wand2 className="h-3 w-3" />}
-                        Magic Enhance
-                      </button>
-                    </div>
-                    <textarea 
-                      value={filters.subject}
-                      onChange={(e) => setFilters({...filters, subject: e.target.value})}
-                      placeholder="e.g. A legendary flaming dragon sword with blue aura"
-                      className="nexus-textarea h-24 p-3"
-                    />
-                  </div>
-
-                  {/* Reference Image */}
-                  <div>
-                    <label className="nexus-field-label mb-2 block">Reference Image (Optional)</label>
-                    {referenceImage ? (
-                      <div className="relative w-full h-32 rounded-xl overflow-hidden border border-white/10">
-                        <img src={referenceImage} alt="Reference" className="w-full h-full object-cover" />
-                        <button 
-                          onClick={() => setReferenceImage(null)}
-                          className="nexus-icon-button absolute top-2 right-2 h-8 w-8 border-white/15 bg-black/70 hover:border-red-500/40 hover:bg-red-500/15 hover:text-red-100"
-                          aria-label="Remove reference image"
-                        >
-                          <X className="h-4 w-4" />
-                        </button>
-                      </div>
-                    ) : (
-                      <label className="focus-within:ring-2 focus-within:ring-[#00f5d4]/45 flex h-32 w-full cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-white/10 bg-black/40 transition hover:border-[#00f5d4]/35 hover:bg-[#00f5d4]/5">
-                        <Upload className="h-6 w-6 text-gray-500 mb-2" />
-                        <span className="text-[10px] font-bold text-gray-500">Upload Reference</span>
-                        <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} />
-                      </label>
-                    )}
-                  </div>
-
-                  {/* Style Grid */}
-                  <div>
-                    <label className="nexus-field-label mb-2 block">Visual Style</label>
-                    <div className="grid grid-cols-3 gap-2">
-                      {styles.map(s => (
-                        <button
-                          key={s}
-                          onClick={() => setFilters({...filters, style: s})}
-                          className={cx("nexus-select-pill", filters.style === s && "nexus-select-pill-active")}
-                        >
-                          {s}
-                        </button>
-                      ))}
-                    </div>
-                    {filters.style === "Custom" && (
-                      <input 
-                        type="text"
-                        value={filters.customStyle}
-                        onChange={(e) => setFilters({...filters, customStyle: e.target.value})}
-                        placeholder="Enter custom style..."
-                        className="nexus-input mt-2 p-2 text-xs"
-                      />
-                    )}
-                  </div>
-
-                  {/* Mood */}
-                  <div>
-                    <label className="nexus-field-label mb-2 block">Color Mood</label>
-                    <div className="grid grid-cols-3 gap-2">
-                      {moods.map(m => (
-                        <button
-                          key={m}
-                          onClick={() => setFilters({...filters, colorMood: m})}
-                          className={cx("nexus-select-pill", filters.colorMood === m && "nexus-select-pill-active")}
-                        >
-                          {m}
-                        </button>
-                      ))}
-                    </div>
-                    {filters.colorMood === "Custom" && (
-                      <input 
-                        type="text"
-                        value={filters.customMood}
-                        onChange={(e) => setFilters({...filters, customMood: e.target.value})}
-                        placeholder="Enter custom mood..."
-                        className="nexus-input mt-2 p-2 text-xs"
-                      />
-                    )}
-                  </div>
-
-                  {/* Extra Details */}
-                  <div>
-                    <label className="nexus-field-label mb-2 block">Extra Details (Optional)</label>
-                    <input 
-                      type="text"
-                      value={filters.extraDetails}
-                      onChange={(e) => setFilters({...filters, extraDetails: e.target.value})}
-                      placeholder="e.g. glowing particles, cinematic fog"
-                      className="nexus-input p-3"
-                    />
-                  </div>
-
-                  {/* No Background Toggle */}
-                  <div className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/10">
-                    <div className="flex items-center gap-2">
-                      <Layers className="h-4 w-4 text-[#00f5d4]" />
-                      <span className="text-xs font-bold text-gray-300">Remove Background</span>
-                    </div>
-                        <Toggle
-                          checked={noBackground}
-                          onChange={setNoBackground}
-                          aria-label="Remove background"
-                        />
-                  </div>
-
-                  <Button
-                    onClick={() => {
-                      if (!isPremium) {
-                        setShowProNudge(true);
-                        return;
-                      }
-                      handleGenerate();
-                    }}
-                    disabled={loading}
-                    className="w-full py-4 text-sm font-black"
-                  >
-                    {!isPremium && <ShieldCheck className="h-5 w-5" />}
-                    {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : (isPremium ? <Zap className="h-5 w-5 fill-white" /> : null)}
-                    {loading ? "Generating..." : (isPremium ? "Generate Icon" : "Upgrade to Unlock")}
-                  </Button>
-
-                  <div className="flex items-center justify-center gap-2 text-[10px] text-gray-500 font-bold">
-                    <Zap className="h-3 w-3" /> Cost: 1,000 Tokens
-                  </div>
-                </div>
-              </section>
-
-              {error && (
-                <motion.div 
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 flex items-start gap-3"
-                >
-                  <AlertCircle className="h-5 w-5 text-red-500 shrink-0" />
-                  <p className="text-xs text-red-400 leading-relaxed">{error}</p>
-                </motion.div>
-              )}
-            </div>
-
-            {/* Main Area: Preview */}
-            <div className="lg:col-span-8 space-y-8">
-              <div className="nexus-page-card relative flex min-h-[500px] flex-col items-center justify-center overflow-hidden p-8">
-                <AnimatePresence mode="wait">
-                  {loading ? (
-                    <motion.div 
-                      key="loading"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      className="flex flex-col items-center gap-6"
-                    >
-                      <div className="relative">
-                        <div className="w-64 h-64 rounded-2xl bg-white/5 animate-pulse border border-white/10" />
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <Loader2 className="h-12 w-12 text-[#9b5de5] animate-spin" />
-                        </div>
-                      </div>
-                      <div className="text-center">
-                        <p className="text-lg font-bold text-white mb-1">Neural Processing...</p>
-                        <p className="text-sm text-gray-500">DALL-E 3 is crafting your Roblox asset</p>
-                      </div>
-                    </motion.div>
-                  ) : generatedImage ? (
-                    <motion.div 
-                      key="result"
-                      initial={{ opacity: 0, scale: 0.9 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      className="flex flex-col items-center gap-8 w-full"
-                    >
-                      <div className="relative group">
-                        <div className="absolute -inset-4 bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] rounded-[40px] blur-2xl opacity-20 group-hover:opacity-40 transition-opacity" />
-                        <img 
-                          src={generatedImage} 
-                          alt="Generated Roblox Icon" 
-                          className="w-80 h-80 rounded-2xl border border-white/10 shadow-2xl relative z-10"
-                        />
-                      </div>
-
-                      <div className="flex flex-wrap justify-center gap-3 relative z-10">
-                        <button 
-                          onClick={handleDownload}
-                          className="focus-ring flex items-center gap-2 rounded-xl border border-[#00f5d4]/30 bg-[#00f5d4] px-6 py-3 text-sm font-bold text-black shadow-panel transition hover:bg-[#5fffee] active:bg-[#00d9bf]"
-                        >
-                          <Download className="h-4 w-4" /> Download PNG
-                        </button>
-                        <a 
-                          href="https://create.roblox.com/dashboard/creations?activeTab=Decal" 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="focus-ring flex items-center gap-2 rounded-xl border border-[#00f5d4]/20 bg-[#00f5d4]/10 px-6 py-3 text-sm font-bold text-[#00f5d4] transition hover:border-[#00f5d4]/35 hover:bg-[#00f5d4]/15 hover:text-white"
-                        >
-                          <ExternalLink className="h-4 w-4" /> Publish to Roblox
-                        </a>
-                        <button 
-                          onClick={() => {
-                            navigator.clipboard.writeText(generatedImage);
-                            setCopied(true);
-                            setTimeout(() => setCopied(false), 2000);
-                          }}
-                          className="focus-ring flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-6 py-3 text-sm font-bold text-white transition hover:border-white/20 hover:bg-white/[0.07]"
-                        >
-                          {copied ? <Check className="h-4 w-4 text-green-400" /> : <Copy className="h-4 w-4" />}
-                          {copied ? "Copied URL" : "Copy URL"}
-                        </button>
-                        <button 
-                          onClick={() => handleGenerate(generatedImage)}
-                          disabled={loading}
-                          className="focus-ring flex items-center gap-2 rounded-xl border border-[#9b5de5]/20 bg-[#9b5de5]/10 px-6 py-3 text-sm font-bold text-[#c9b3f7] transition hover:border-[#9b5de5]/35 hover:bg-[#9b5de5]/15 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
-                        >
-                          <Sparkles className="h-4 w-4" /> Create Variation
-                        </button>
-                      </div>
-
-                      <div className="p-4 rounded-2xl bg-blue-500/5 border border-blue-500/10 flex items-start gap-3 max-w-md">
-                        <Info className="h-5 w-5 text-blue-400 shrink-0 mt-0.5" />
-                        <p className="text-[11px] text-blue-300/70 leading-relaxed">
-                          <b>Pro Tip:</b> Use the "Publish to Roblox" link to open the Creator Dashboard. Drag your downloaded PNG there to get your Asset ID for Studio.
-                        </p>
-                      </div>
-                    </motion.div>
-                  ) : (
-                    <motion.div 
-                      key="empty"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      className="flex flex-col items-center text-center gap-4"
-                    >
-                      <div className="w-24 h-24 rounded-2xl bg-white/5 flex items-center justify-center mb-2">
-                        <ImageIcon className="h-10 w-10 text-gray-600" />
-                      </div>
-                      <div>
-                        <p className="text-xl font-bold text-gray-400">Ready to Generate</p>
-                        <p className="text-sm text-gray-600 max-w-xs">Select your style and subject on the left to begin.</p>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-
-              {/* History */}
-              {history.length > 0 && (
-                <section>
-                  <h3 className="text-xs font-black text-gray-500 uppercase tracking-widest mb-4 flex items-center gap-2">
-                    <History className="h-4 w-4" /> Recent Generations
-                  </h3>
-                  <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
-                    {history.map((item, i) => (
-                      <button 
-                        key={item.id || i} 
-                        onClick={() => setGeneratedImage(item.imageUrl)}
-                        className={`focus-ring h-24 w-24 shrink-0 overflow-hidden rounded-xl border-2 transition ${generatedImage === item.imageUrl ? 'border-[#00f5d4]' : 'border-transparent opacity-60 hover:opacity-100'}`}
-                      >
-                        <img src={item.imageUrl} alt="History" className="w-full h-full object-cover" />
-                      </button>
-                    ))}
-                  </div>
-                </section>
-              )}
-            </div>
-          </div>
+  if (!authReady || !user || (loading && !projects.length && !assets.length)) {
+    return (
+      <main className="asset-platform-page">
+        <div className="asset-platform-shell">
+          <header className="asset-platform-header"><div><p className="asset-eyebrow"><Sparkles /> Nexus asset platform</p><h1>Asset workspace</h1><p>Loading your project, Roblox connection, and canonical asset records.</p></div></header>
+          <AssetGridSkeleton count={6} label="Loading asset workspace" />
         </div>
       </main>
+    );
+  }
 
-      <NexusRBXFooter />
+  return (
+    <main className="asset-platform-page">
+      <div className="asset-platform-shell">
+        <header className="asset-platform-header">
+          <div>
+            <p className="asset-eyebrow"><Sparkles aria-hidden="true" /> Nexus asset platform</p>
+            <h1>Icon Studio</h1>
+            <p>Create a single asset or a coherent pack, preserve its generation lineage, and track every Roblox upload and moderation outcome without leaving Nexus.</p>
+          </div>
+          <div className="asset-platform-header__actions">
+            <Button variant="ghost" icon={Library} onClick={() => navigate("/assets")}>Asset library</Button>
+            <Button variant="ghost" icon={Settings} onClick={() => navigate("/settings?tab=roblox")}>Roblox settings</Button>
+          </div>
+        </header>
 
-      <ProNudgeModal 
-        isOpen={showProNudge}
-        onClose={() => setShowProNudge(false)}
-        reason="the AI Icon Generator"
-      />
-    </div>
+        <AssetContextBar
+          projects={projects}
+          universes={universes}
+          selectedProjectId={selectedProjectId}
+          selectedUniverseId={selectedUniverseId}
+          onProjectChange={changeProject}
+          onUniverseChange={setSelectedUniverseId}
+          connection={connection}
+          credits={totalRemaining}
+          autoUpload={Boolean(settings.robloxAssetUploadsEnabled)}
+          autoUploadBusy={settingsLoading || autoUploadBusy}
+          onAutoUploadChange={ASSET_PLATFORM_WRITES_ENABLED ? changeAutoUpload : undefined}
+          costEstimate={costEstimate}
+          controlsDisabled={!ASSET_PLATFORM_WRITES_ENABLED}
+        />
+
+        {!ASSET_PLATFORM_WRITES_ENABLED ? <div className="asset-inline-notice" role="status">Read-only preview: generation, upload, replacement, visibility, and settings writes remain disabled until the Prompt 3 operation ledger is in place.</div> : null}
+        {error ? <div className="asset-inline-notice asset-inline-notice--error" role="alert">{error}</div> : null}
+        {notice ? <div className="asset-inline-notice asset-inline-notice--success" role="status">{notice}</div> : null}
+
+        <div className="asset-generator-layout" style={{ marginTop: error || notice ? 14 : 0 }}>
+          <section className="asset-generator-panel" ref={formPanelRef}>
+            <div className="asset-panel-heading">
+              <div><h2>Generation brief</h2><p>Every request creates durable records before optional Roblox upload.</p></div>
+            </div>
+            <AssetGenerationForm
+              value={form}
+              onChange={setForm}
+              onSubmit={submitGeneration}
+              submitting={submitting}
+              disabled={!ASSET_PLATFORM_WRITES_ENABLED}
+              packs={packs}
+              assets={assets}
+              styleProfiles={styleProfiles}
+              unsupportedModes={unsupportedModes}
+              costEstimate={costEstimate}
+            />
+            <div style={{ marginTop: 14 }}><AssetStyleSummary profile={selectedStyleProfile} compact /></div>
+          </section>
+
+          <section className="asset-results-panel" aria-live="polite">
+            {operation?.operationId ? (
+              <div className="asset-operation-banner">
+                <Clock aria-hidden="true" />
+                <span><strong>Operation {operation.state}</strong> · {operation.operationId}</span>
+                {operation.state === "paused" ? <Button size="sm" variant="ghost" icon={RefreshCw} onClick={() => setOperation((current) => current ? { ...current, state: "running" } : current)}>Resume updates</Button> : null}
+              </div>
+            ) : null}
+            {error && !resultAssets.length && !currentPack && !loading ? (
+              <AssetErrorState message={error} onRetry={() => loadWorkspace(selectedProjectId)} />
+            ) : (
+              <AssetPackGrid
+                pack={currentPack}
+                assets={resultAssets}
+                loading={submitting && !resultAssets.length}
+                busyByAsset={busyByAsset}
+                onExtend={ASSET_PLATFORM_WRITES_ENABLED ? (pack) => prepareMode("extend", pack) : undefined}
+                onOpenAsset={(asset) => navigate(`/assets/${encodeURIComponent(asset.assetId)}`)}
+                onRetryUpload={ASSET_PLATFORM_WRITES_ENABLED ? (asset) => updateOneAsset(asset, "retry", retryAssetUpload) : undefined}
+                onPoll={ASSET_PLATFORM_WRITES_ENABLED ? (asset) => updateOneAsset(asset, "poll", pollAssetStatus) : undefined}
+                onSimilar={ASSET_PLATFORM_WRITES_ENABLED ? (asset) => prepareMode("similar", asset) : undefined}
+                onReplace={ASSET_PLATFORM_WRITES_ENABLED ? (asset) => prepareMode("replacement", asset) : undefined}
+              />
+            )}
+          </section>
+        </div>
+      </div>
+    </main>
   );
 }

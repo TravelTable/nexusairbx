@@ -1,0 +1,38 @@
+---
+description: Prompt 3 task-runtime finish constraints — careful, fail-closed, no rewrite
+alwaysApply: true
+---
+
+# Prompt 3 / task-runtime agent constraints
+
+When continuing NexusRBX Prompt 3 (task runtime, Studio transport, agent orchestration):
+
+## Authority
+
+- Prompt 1 docs in `docs/architecture-audit-2026-07-18/` are canonical contracts.
+- Prompt 2 asset platform remains adapter-owned; do not redesign schemas or the icon generator.
+- Prompt 3 docs in `docs/task-runtime-2026-07-19/` govern runtime, flags, and gates.
+- Preserve all existing dirty worktree changes. Do not restart or rewrite the programme.
+
+## Non-negotiables
+
+- The model is not the task runtime. Durable state, idempotency, retries, and verification live in application code.
+- Queue / ACK / delivery is never completion. `succeeded` requires trusted verification evidence.
+- Exactly one runtime owns side effects. Dual mode means mirrored records, never dual execution.
+- Every external write needs a durable operation ID and idempotency key; ambiguous outcomes stay `outcome_unknown` until reconciled.
+- New routes, Studio envelope v2, Prompt 2 writes, and Roblox mutations stay default-off until staged gates pass.
+- Master Roblox upload consent cannot be overridden by request or project toggles.
+
+## Working style
+
+- Search and read before editing. Prefer extending existing owners (`artifactRunLauncher`, Studio bridge, asset services, job worker) over parallel systems.
+- Keep changes surgical. No unrelated refactors, docs spam, or flag enablement “to finish.”
+- Do not claim production-ready or verified completion without evidence from the verification docs and live gates.
+- Prefer typed errors and fail-closed behavior over optimistic success paths.
+
+## Primary references
+
+- `docs/task-runtime-2026-07-19/README.md`
+- `docs/task-runtime-2026-07-19/verification-and-evaluations.md`
+- `docs/asset-platform-2026-07-18/prompt-2-handoff.md`
+- `AGENTS.md`

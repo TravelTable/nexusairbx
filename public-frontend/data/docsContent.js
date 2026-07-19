@@ -817,10 +817,42 @@ export const DOC_PAGES = [
                 "Update or reinstall from the Creator Store."
               ],
               [
+                "Feature unavailable",
+                "The connected plugin did not advertise a Studio command, such as Create Instance.",
+                "Reinstall the current plugin, restart Studio or reopen the plugin, then refresh the Studio connection. Other advertised features can still be used."
+              ],
+              [
                 "Error",
                 "Something failed during connection.",
                 "Copy the error and send it with a bug report."
               ]
+            ]
+          }
+        ]
+      },
+      {
+        "id": "restore-a-missing-studio-feature",
+        "title": "Restore a Missing Studio Feature",
+        "blocks": [
+          {
+            "type": "paragraph",
+            "text": "A Feature unavailable message means the connected plugin cannot currently verify that it supports a requested command. It does not disconnect the plugin or disable its other advertised Studio features."
+          },
+          {
+            "type": "steps",
+            "items": [
+              {
+                "title": "Install the current plugin artifact",
+                "body": "Install the current roblox-plugin/NexusRBXStudioBridge.plugin.lua artifact. Do not install files from roblox-plugin/src; they are source modules, not the Studio install target."
+              },
+              {
+                "title": "Restart or reopen Studio",
+                "body": "Restart Roblox Studio, or reopen the NexusRBX plugin after the install so it sends its current command list."
+              },
+              {
+                "title": "Refresh the Studio connection",
+                "body": "In Connect Roblox Studio, choose Refresh connection. Re-pair only if the session has expired or Studio is disconnected."
+              }
             ]
           }
         ]

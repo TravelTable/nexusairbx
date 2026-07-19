@@ -153,6 +153,10 @@ export default function StudioPairControl({
   const pluginRepairing = pluginConnected && compatibility.status === "repairing";
   const pluginDegraded = pluginConnected && compatibility.status === "degraded";
   const degradedFeature = compatibility.missingCapabilities?.[0] || compatibility.missingCommands?.[0] || "a Studio feature";
+  const pluginMissingCreateInstance = pluginDegraded && (
+    compatibility.missingCommands?.includes("create_instance")
+    || compatibility.missingCapabilities?.includes("instanceMutation")
+  );
   const transportSelection = connection?.transportSelection || {};
 
   const [open, setOpen] = useState(false);
@@ -467,6 +471,32 @@ export default function StudioPairControl({
                       </div>
                       The plugin is repairing its saved session automatically. Keep Studio open; no reinstall,
                       restart, disconnect, or re-pair is needed.
+                    </div>
+                  ) : pluginMissingCreateInstance ? (
+                    <div className="rounded-xl border border-amber-400/25 bg-amber-400/10 p-3 text-xs leading-relaxed text-amber-100">
+                      <div className="mb-1 flex items-center gap-2 font-bold text-amber-300">
+                        <AlertTriangle className="h-4 w-4" /> Update Studio plugin to use Create Instance
+                      </div>
+                      This connected Studio plugin is missing Create Instance. Install the current
+                      NexusRBXStudioBridge.plugin.lua artifact, then restart Studio or reopen the plugin and refresh
+                      this connection. Your other supported Studio features remain available.
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        <a
+                          href="/docs/installation"
+                          className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-amber-300/30 px-2.5 py-1.5 text-[10px] font-black uppercase tracking-wider text-amber-100 transition-colors hover:bg-amber-300/10"
+                        >
+                          View install steps <ExternalLink className="h-3 w-3" />
+                        </a>
+                        <button
+                          type="button"
+                          onClick={() => refresh?.()}
+                          disabled={loading}
+                          className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-amber-300/15 px-2.5 py-1.5 text-[10px] font-black uppercase tracking-wider text-amber-100 transition-colors hover:bg-amber-300/25 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          {loading ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
+                          Refresh connection
+                        </button>
+                      </div>
                     </div>
                   ) : pluginDegraded ? (
                     <div className="rounded-xl border border-amber-400/25 bg-amber-400/10 p-3 text-xs leading-relaxed text-amber-100">

@@ -537,6 +537,63 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    // Prompt 3 durable task runtime namespaces are backend-only.
+    match /_tasks/{taskId} {
+      allow read, write: if false;
+
+      match /{subcollection}/{docId} {
+        allow read, write: if false;
+
+        match /{nested}/{nestedId} {
+          allow read, write: if false;
+        }
+      }
+    }
+
+    match /_operations/{operationId} {
+      allow read, write: if false;
+
+      match /{subcollection}/{docId} {
+        allow read, write: if false;
+      }
+    }
+
+    match /_taskOutbox/{messageId} {
+      allow read, write: if false;
+    }
+
+    match /_taskReservations/{reservationId} {
+      allow read, write: if false;
+    }
+
+    match /_taskJobProjectionInbox/{receiptId} {
+      allow read, write: if false;
+    }
+
+    match /_capabilitySnapshots/{snapshotId} {
+      allow read, write: if false;
+    }
+
+    match /_agentContextSnapshots/{snapshotId} {
+      allow read, write: if false;
+    }
+
+    match /_studioCommands/{commandId} {
+      allow read, write: if false;
+    }
+
+    match /_migrationControl/{migrationId} {
+      allow read, write: if false;
+
+      match /{subcollection}/{docId} {
+        allow read, write: if false;
+
+        match /{nested}/{nestedId} {
+          allow read, write: if false;
+        }
+      }
+    }
+
     match /_stream_sessions/{sessionId} {
       allow read, write: if false;
     }

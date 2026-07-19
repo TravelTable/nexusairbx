@@ -2,6 +2,7 @@ import React, { Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import AuthRedirectHandler from "./components/AuthRedirectHandler";
 import SiteShell from "./components/site/SiteShell";
+import { ASSET_PLATFORM_READS_ENABLED } from "./lib/assetPlatformApi";
 
 // Suppress a known Monaco/Chrome ResizeObserver loop error.
 
@@ -27,6 +28,8 @@ const NexusRBXVerifyEmailPage = lazy(() => import("./pages/VerifyEmailPage"));
 const NexusRBXTermsPageContainer = lazy(() => import("./pages/TermsPage"));
 const NexusRBXSettingsPageContainer = lazy(() => import("./pages/SettingsPage"));
 const NexusRBXIconGeneratorPage = lazy(() => import("./pages/IconGeneratorPage"));
+const NexusRBXAssetLibraryPage = lazy(() => import("./pages/AssetLibraryPage"));
+const NexusRBXAssetDetailPage = lazy(() => import("./pages/AssetDetailPage"));
 const NexusRBXIconsMarketPage = lazy(() => import("./pages/IconsMarketPage"));
 const NexusRBXIconDetailPage = lazy(() => import("./pages/IconDetailPage"));
 const NexusRBXNotFoundPage = lazy(() => import("./pages/NotFoundPage"));
@@ -71,7 +74,13 @@ function App() {
           <Route path="/signup" element={withSiteShell(<NexusRBXSignUpPageContainer />, "auth")} />
           <Route path="/verify-email" element={withSiteShell(<NexusRBXVerifyEmailPage />, "auth")} />
           <Route path="/terms" element={withSiteShell(<NexusRBXTermsPageContainer />, "legal")} />
-          <Route path="/tools/icon-generator" element={withSiteShell(<NexusRBXIconGeneratorPage />, "tools")} />
+          {ASSET_PLATFORM_READS_ENABLED ? (
+            <>
+              <Route path="/tools/icon-generator" element={withSiteShell(<NexusRBXIconGeneratorPage />, "tools")} />
+              <Route path="/assets" element={withSiteShell(<NexusRBXAssetLibraryPage />, "tools")} />
+              <Route path="/assets/:assetId" element={withSiteShell(<NexusRBXAssetDetailPage />, "tools")} />
+            </>
+          ) : null}
           <Route path="/icons-market" element={withSiteShell(<NexusRBXIconsMarketPage />, "tools")} />
           <Route path="/icons/:id" element={withSiteShell(<NexusRBXIconDetailPage />, "tools")} />
           <Route path="/script/:id" element={withSiteShell(<NexusRBXScriptPage />, "tools")} />

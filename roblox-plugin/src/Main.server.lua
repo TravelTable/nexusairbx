@@ -17,6 +17,7 @@ local function studioAttestationPayload()
 	local payload = {
 		placeName = game.Name,
 		placeId = tostring(game.PlaceId),
+		universeId = tostring(game.GameId),
 		pluginVersion = attestation.pluginVersion,
 		protocolVersion = attestation.protocolVersion,
 		buildId = attestation.buildId,

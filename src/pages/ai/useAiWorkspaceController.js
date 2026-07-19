@@ -705,7 +705,7 @@ export function useAiWorkspaceController() {
     updateSettings,
   ]);
 
-  const handlePromptSubmit = useCallback(async (e, overridePrompt = null) => {
+  const handlePromptSubmit = useCallback(async (e, overridePrompt = null, submissionOptions = {}) => {
     if (e && typeof e.preventDefault === "function") e.preventDefault();
 
     const currentPrompt = (overridePrompt ?? prompt).trim();
@@ -757,7 +757,12 @@ export function useAiWorkspaceController() {
     if (refineTarget) {
       const target = refineTarget;
       setRefineTarget(null);
-      await unified.refineArtifact(target, currentPrompt, workspace.projectArtifactSnapshot);
+      await unified.refineArtifact(
+        target,
+        currentPrompt,
+        workspace.projectArtifactSnapshot,
+        submissionOptions
+      );
       return;
     }
 
@@ -769,7 +774,12 @@ export function useAiWorkspaceController() {
       });
     }
 
-    await unified.handleSubmit(promptToSend, currentAttachments, workspace.projectArtifactSnapshot);
+    await unified.handleSubmit(
+      promptToSend,
+      currentAttachments,
+      workspace.projectArtifactSnapshot,
+      submissionOptions
+    );
   }, [
     user,
     prompt,
@@ -1826,7 +1836,9 @@ export function useAiWorkspaceController() {
       handleQuickScriptContinueEditing,
       handleQuickScriptOpenAgentBuild,
       handleAuthRequired,
-      onApprovePlan: (message) => unified.approvePlan(message, workspace.projectArtifactSnapshot),
+      onApprovePlan: (message, submissionOptions = {}) => (
+        unified.approvePlan(message, workspace.projectArtifactSnapshot, submissionOptions)
+      ),
       onClarifySubmit: unified.submitClarifyAnswers,
       onRefineArtifact: unified.refineArtifact,
       handleStartRefine,

@@ -22,6 +22,7 @@ const { autoUpdater } = electronUpdater;
 
 const PAIRING_PAGE = "https://nexusrbx.com/ai?studio=mcp&connector=desktop";
 const HELP_PAGE = "https://nexusrbx.com/docs/studio-mcp";
+const DOWNLOADS_PAGE = "https://www.nexusrbx.com/downloads";
 const API_URL = process.env.NEXUSRBX_API_URL || "https://api.nexusrbx.com";
 const COMPACT_SIZE = { width: 460, height: 640 };
 const SETTINGS_SIZE = { width: 760, height: 620 };
@@ -149,6 +150,7 @@ class DesktopController {
 
   async openPairing(): Promise<void> { await shell.openExternal(PAIRING_PAGE); }
   async openHelp(): Promise<void> { await shell.openExternal(HELP_PAGE); }
+  async openDownloads(): Promise<void> { await shell.openExternal(DOWNLOADS_PAGE); }
 
   async setPreference(key: unknown, value: unknown): Promise<CompanionSnapshot> {
     const update = validatePreferenceUpdate(key, value);
@@ -417,6 +419,7 @@ function registerIpc(): void {
   handle("connector:revoke-session", () => controller.revokeSession());
   handle("connector:open-pairing", () => controller.openPairing());
   handle("connector:open-help", () => controller.openHelp());
+  handle("connector:open-downloads", () => controller.openDownloads());
   handle("connector:set-preference", (key, value) => controller.setPreference(key, value));
   handle("connector:get-tools", () => [...controller.state.supportedTools]);
   handle("connector:copy-diagnostics", () => controller.copyDiagnostics());

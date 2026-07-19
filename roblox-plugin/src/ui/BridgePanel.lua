@@ -421,7 +421,23 @@ manifestFreshnessLabel = makeText(manifestSection, "ManifestFreshness", "Rescan 
 do
 	promptSection = makeSection("StudioPrompt")
 	makeText(promptSection, "PromptTitle", "Ask in Studio", 18, 13, true)
-	makeText(promptSection, "PromptHint", "Describe a change. It runs the full agent and mirrors to the website.", 28, 11, false, themeColor(Enum.StudioStyleGuideColor.DimmedText))
+	makeText(promptSection, "PromptHint", "Enter the Nexus project ID, then describe a change.", 28, 11, false, themeColor(Enum.StudioStyleGuideColor.DimmedText))
+	local projectBox = Instance.new("TextBox")
+	projectBox.Name = "ProjectIdInput"
+	projectBox.Size = UDim2.new(1, 0, 0, 30)
+	projectBox.BackgroundColor3 = themeColor(Enum.StudioStyleGuideColor.MainBackground)
+	projectBox.TextColor3 = themeColor(Enum.StudioStyleGuideColor.MainText)
+	projectBox.PlaceholderText = "Nexus project ID"
+	projectBox.ClearTextOnFocus = false
+	projectBox.Text = tostring(plugin:GetSetting("nexusrbxProjectId") or "")
+	projectBox.Font = Enum.Font.Gotham
+	projectBox.TextSize = 12
+	projectBox.Parent = promptSection
+	applyCorner(projectBox, 6)
+	applyStroke(projectBox, COLORS.border, 0.55)
+	projectBox.FocusLost:Connect(function()
+		plugin:SetSetting("nexusrbxProjectId", (projectBox.Text or ""):gsub("^%s+", ""):gsub("%s+$", ""))
+	end)
 	local promptBox = Instance.new("TextBox")
 	promptBox.Name = "PromptInput"
 	promptBox.Size = UDim2.new(1, 0, 0, 60)
@@ -457,16 +473,29 @@ do
 			return
 		end
 		local text = (promptBox.Text or ""):gsub("^%s+", ""):gsub("%s+$", "")
+		local projectId = (projectBox.Text or ""):gsub("^%s+", ""):gsub("%s+$", "")
+		if projectId == "" then
+			showToast("Enter the Nexus project ID", "info")
+			projectBox:CaptureFocus()
+			return
+		end
 		if text == "" then
 			showToast("Enter a prompt", "info")
 			promptBox:CaptureFocus()
 			return
 		end
 		setButtonEnabled(sendButton, false, "Sending...")
+		local operationId = HttpService:GenerateGUID(false)
+		plugin:SetSetting("nexusrbxProjectId", projectId)
 		local ok, dataOrError = request("POST", "/api/studio/agent/prompt", {
 			prompt = text,
+			projectId = projectId,
 			chatMode = "agent",
-		}, token)
+			requestId = operationId,
+		}, token, {
+			idempotent = true,
+			idempotencyKey = operationId,
+		})
 		setButtonEnabled(sendButton, true, "Send to Agent")
 		if ok then
 			promptBox.Text = ""

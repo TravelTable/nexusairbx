@@ -184,8 +184,10 @@ test("downloads raw HTML is meaningful and fails closed before release verificat
   assert.equal(extractH1(html), "Connect NexusRBX to Roblox Studio");
   assert.equal(extractCanonical(html), "https://www.nexusrbx.com/downloads");
   assert.equal(countCanonical(html), 1);
-  assert.match(html, /Universal — Intel and Apple Silicon/);
-  assert.match(html, /Windows 10\/11 — 64-bit/);
+  assert.match(html, /macOS \(Universal\)/);
+  assert.match(html, /One installer for Apple Silicon and Intel Macs/);
+  assert.match(html, /Windows \(64-bit\)/);
+  assert.match(html, /For Windows 10 and 11 on Intel or AMD PCs/);
   assert.match(html, /Checking release…/);
   assert.match(html, /href="\/downloads"/);
   assert.match(html, /href="\/docs\/troubleshooting"/);

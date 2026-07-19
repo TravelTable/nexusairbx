@@ -24,8 +24,10 @@ import {
 import CodeFileTree from "../../components/ai/workspace/CodeFileTree";
 import CodeWorkspace from "../../components/ai/workspace/CodeWorkspace";
 import AgentChatPanel from "../../components/ai/workspace/AgentChatPanel";
+import TaskProgressPanel from "../../components/ai/workspace/TaskProgressPanel";
 import BuildDetailsPanel from "../../components/ai/workspace/BuildDetailsPanel";
 import RobloxDecalUploadDropdown from "../../components/ai/workspace/RobloxDecalUploadDropdown";
+import useTaskRuntime from "../../hooks/useTaskRuntime";
 import QuickScriptWorkspace from "./QuickScriptWorkspace";
 import { getStudioCommand, getStudioManifest, getStudioManifestStatus, queueStudioTool } from "../../lib/studioBridgeApi";
 import { cancelWorkspaceCommand, createWorkspaceCommand, getWorkspaceCommand, streamWorkspaceCommandEvents } from "../../lib/workspaceApi";
@@ -171,6 +173,12 @@ export default function AgentWorkspaceLayout({ controller }) {
   const manifestRefreshInFlightRef = useRef(null);
   const autoManifestRefreshKeyRef = useRef("");
   const manifestWaitsRef = useRef(new Map());
+  const taskRuntime = useTaskRuntime({
+    user,
+    projectId: roblox?.selectedAssetProjectId || "",
+    chatId: chat.currentChatId || "",
+    enabled: generatorMode === "agent_build" && Boolean(user),
+  });
 
   const appendTerminal = useCallback((line, kind = "stdout") => {
     const text = String(line ?? "");
@@ -720,8 +728,57 @@ export default function AgentWorkspaceLayout({ controller }) {
     handleStartRefine(m);
   };
 
+  const invokeTaskAction = (operation) => {
+    Promise.resolve()
+      .then(operation)
+      .catch((err) => {
+        notify?.({
+          message: err?.message || "The durable task could not be updated.",
+          type: "error",
+        });
+      });
+  };
+
+  const taskSubmissionOptions = useMemo(() => ({
+    projectId: roblox?.selectedAssetProjectId || "",
+    activeTaskId: taskRuntime.taskId || "",
+    showPlan: chat.activeMode === "plan",
+    onTaskAccepted: taskRuntime.selectTask,
+  }), [
+    chat.activeMode,
+    roblox?.selectedAssetProjectId,
+    taskRuntime.selectTask,
+    taskRuntime.taskId,
+  ]);
+
+  const handleAgentPromptSubmit = useCallback((event) => {
+    if (!taskRuntime.enabled) return handlePromptSubmit(event);
+    return handlePromptSubmit(event, null, taskSubmissionOptions);
+  }, [handlePromptSubmit, taskRuntime.enabled, taskSubmissionOptions]);
+
+  const handleAgentApprovePlan = useCallback((message) => {
+    if (!taskRuntime.enabled) return onApprovePlan(message);
+    return onApprovePlan(message, taskSubmissionOptions);
+  }, [onApprovePlan, taskRuntime.enabled, taskSubmissionOptions]);
+
   const agentChat = (
     <div className="flex min-h-0 flex-1 flex-col">
+      {taskRuntime.task && (
+        <div className="shrink-0 border-b border-white/5 p-3">
+          <TaskProgressPanel
+            task={taskRuntime.task}
+            events={taskRuntime.events}
+            connectionState={taskRuntime.connectionState}
+            error={taskRuntime.error}
+            busyAction={taskRuntime.busyAction}
+            onRetry={() => invokeTaskAction(taskRuntime.retry)}
+            onCancel={() => invokeTaskAction(taskRuntime.cancel)}
+            onApprove={(payload) => invokeTaskAction(() => taskRuntime.approve(payload || {}))}
+            onAmend={(instructionOrPayload) => invokeTaskAction(() => taskRuntime.amend(instructionOrPayload))}
+            className="max-h-[42vh] overflow-y-auto"
+          />
+        </div>
+      )}
       <div className="min-h-0 flex-1">
         <AgentChatPanel
           currentChatId={chat.currentChatId}
@@ -732,7 +789,7 @@ export default function AgentWorkspaceLayout({ controller }) {
           profile={roblox?.connected ? roblox?.status?.connection?.profile || null : null}
           activeMode={chat.activeMode}
           isBusy={unified.isGenerating}
-          onApprovePlan={onApprovePlan}
+          onApprovePlan={handleAgentApprovePlan}
           onClarifySubmit={onClarifySubmit}
           onEditPlan={handleEditPlan}
           onRefine={onRefine}
@@ -745,7 +802,7 @@ export default function AgentWorkspaceLayout({ controller }) {
           setAttachments={setAttachments}
           robloxImageUploading={robloxImageUploading}
           robloxImageUploads={robloxImageUploads}
-          onSubmit={(e) => handlePromptSubmit(e)}
+          onSubmit={handleAgentPromptSubmit}
           refineTarget={refineTarget}
           onCancelRefine={cancelRefine}
           onFileUpload={handleFileUpload}

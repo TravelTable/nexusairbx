@@ -174,16 +174,31 @@ end
 
 TOOL_HANDLERS.batch_operations = batchOperations
 
-local function ack(commandId, status, result, errorMessage)
+local function ack(commandOrId, status, result, errorMessage)
 	local token = getToken()
 	if not token then
-		return
+		return false
 	end
-	request("POST", "/api/studio/commands/" .. HttpService:UrlEncode(commandId) .. "/ack", {
+	local command = type(commandOrId) == "table" and commandOrId or nil
+	local commandId = command and (command.id or command.commandId) or commandOrId
+	if not commandId or tostring(commandId) == "" then
+		return false
+	end
+	local receiptResult = result
+	if command and tonumber(command.lifecycleVersion) == 2 then
+		if type(receiptResult) ~= "table" then
+			receiptResult = {}
+		end
+		local lease = type(command.lease) == "table" and command.lease or {}
+		receiptResult.leaseFence = receiptResult.leaseFence or lease.fence or command.leaseFence
+		receiptResult.lifecycleVersion = 2
+	end
+	local ok = request("POST", "/api/studio/commands/" .. HttpService:UrlEncode(tostring(commandId)) .. "/ack", {
 		status = status,
-		result = result,
+		result = receiptResult,
 		error = errorMessage,
 	}, token, { idempotent = true })
+	return ok == true
 end
 
 local function commandStartedMs()
@@ -205,15 +220,6 @@ local SCRIPT_WRITE_COMMANDS = {
 	patch_script = true,
 }
 
--- Commands that manage their own state (snapshots/batches) where a naive
--- path re-check would produce false negatives. These are trusted as-is.
-local VERIFY_SKIP_COMMANDS = {
-	restore_snapshot = true,
-	undo_last_batch = true,
-	create_snapshot = true,
-	batch_operations = true,
-}
-
 local function currentScriptHashAt(path)
 	if type(path) ~= "string" or path == "" then
 		return nil, nil
@@ -228,76 +234,409 @@ local function currentScriptHashAt(path)
 	return inst, nil
 end
 
--- Re-inspect the place after a mutating command to confirm the change is
--- actually present. Returns verified(boolean), checks(table). This is what
--- stops the plugin from reporting "succeeded" when nothing really changed.
+-- Re-inspect the place after a mutating command and return semantic evidence
+-- for the exact requested post-state. A path existing is never sufficient for
+-- property, attribute, tag, source, artifact, or native-model writes.
 local function verifyCommandOutcome(command, payload, result)
 	local commandType = command.type or ""
-	if not isMutatingCommand(commandType) or VERIFY_SKIP_COMMANDS[commandType] then
-		return true, nil
+	if not isMutatingCommand(commandType) then
+		return true, nil, { commandType = commandType, acknowledged = true }
 	end
 
 	local checks = {}
-	local function pass(path)
-		table.insert(checks, { path = path, ok = true })
+	local evidence = { commandType = commandType, checks = checks }
+	local function addCheck(kind, path, ok, details)
+		local check = details or {}
+		check.kind = kind
+		check.path = path or ""
+		check.ok = ok == true
+		table.insert(checks, check)
+		return check.ok
 	end
-	local function fail(path, reason)
-		table.insert(checks, { path = path, ok = false, reason = reason })
+	local function valuesMatch(expected, actual)
+		if type(expected) == "number" and type(actual) == "number" then
+			return math.abs(expected - actual) <= 0.00001
+		end
+		if type(expected) ~= type(actual) then
+			return false
+		end
+		if type(expected) ~= "table" then
+			return expected == actual
+		end
+		for key, expectedValue in pairs(expected) do
+			local actualValue = actual[key]
+			if key == "type" and actualValue == nil then
+				actualValue = actual["$type"]
+			elseif key == "$type" and actualValue == nil then
+				actualValue = actual.type
+			end
+			if not valuesMatch(expectedValue, actualValue) then
+				return false
+			end
+		end
+		return true
+	end
+	local function instanceProperty(inst, key, useNativeEncoding)
+		if not inst then
+			return nil
+		end
+		if useNativeEncoding then
+			local ok, value = pcall(function()
+				return inst[key]
+			end)
+			return ok and nativeTypedValue(value) or nil
+		end
+		return safePropertyValue(inst, key)
+	end
+	local function checkProperties(inst, path, properties, kind, useNativeEncoding, operationIndex)
+		local count = 0
+		for key, expected in pairs(properties or {}) do
+			count = count + 1
+			local actual = instanceProperty(inst, key, useNativeEncoding)
+			addCheck(kind, path, valuesMatch(expected, actual), {
+				key = tostring(key),
+				expected = expected,
+				actual = actual,
+				operationIndex = operationIndex,
+				reason = actual == nil and "unreadable" or nil,
+			})
+		end
+		return count
+	end
+	local function checkAttributes(inst, path, attributes, kind, operationIndex)
+		local count = 0
+		for key, expected in pairs(attributes or {}) do
+			count = count + 1
+			local actual = inst and inst:GetAttribute(tostring(key)) or nil
+			addCheck(kind, path, valuesMatch(expected, actual), {
+				key = tostring(key),
+				expected = expected,
+				actual = actual,
+				operationIndex = operationIndex,
+			})
+		end
+		return count
+	end
+	local function tagSetMatches(inst, requested)
+		if not inst then
+			return false, {}
+		end
+		local actual = CollectionService:GetTags(inst)
+		local expectedSet = {}
+		local actualSet = {}
+		for _, tag in ipairs(requested or {}) do
+			expectedSet[tostring(tag)] = true
+		end
+		for _, tag in ipairs(actual) do
+			actualSet[tostring(tag)] = true
+		end
+		for tag in pairs(expectedSet) do
+			if not actualSet[tag] then
+				return false, actual
+			end
+		end
+		for tag in pairs(actualSet) do
+			if not expectedSet[tag] then
+				return false, actual
+			end
+		end
+		return true, actual
+	end
+	local function verifyNativeModelIdentity(root, path, modelId, expectedRevision)
+		local actualModelId = root and tostring(root:GetAttribute("NexusModelId") or "") or ""
+		local revision = root and nativeRevision(root) or nil
+		local managed = root and (root:GetAttribute("NexusManaged") == true or root:GetAttribute("NexusGenerated") == true)
+		local ok = root ~= nil
+			and root:IsA("Model")
+			and managed == true
+			and actualModelId == tostring(modelId or "")
+			and revision ~= nil
+			and (expectedRevision == nil or expectedRevision == "" or revision == expectedRevision)
+		addCheck("native_model", path, ok, {
+			modelId = tostring(modelId or ""),
+			actualModelId = actualModelId,
+			revision = revision,
+			expectedRevision = expectedRevision,
+		})
+		return ok, revision
 	end
 
 	if DELETE_COMMANDS[commandType] then
 		local target = result.path or payload.path
-		if type(target) == "string" and target ~= "" and resolvePath(target) then
-			fail(target, "still_present")
-		else
-			pass(target or "")
-		end
+		addCheck("instance_absence", target, type(target) == "string" and target ~= "" and resolvePath(target) == nil, {
+			reason = resolvePath(target) and "still_present" or nil,
+		})
 	elseif SCRIPT_WRITE_COMMANDS[commandType] then
 		local target = result.path or payload.path
 		local inst, currentHash = currentScriptHashAt(target)
-		if not inst then
-			fail(target, "missing")
-		elseif result.sourceHash and currentHash and currentHash ~= result.sourceHash then
-			fail(target, "hash_mismatch")
+		local expectedHash = result.sourceHash or (type(payload.source) == "string" and stableHash(payload.source) or nil)
+		addCheck("script_source", target, inst ~= nil and currentHash ~= nil and expectedHash ~= nil and currentHash == expectedHash, {
+			expectedHash = expectedHash,
+			actualHash = currentHash,
+			reason = not inst and "missing" or (currentHash ~= expectedHash and "hash_mismatch" or nil),
+		})
+		evidence.readbackHash = currentHash
+		evidence.currentSourceHash = currentHash
+		evidence.baselineSourceHash = result.previousHash or payload.expectedSourceHash
+		evidence.previousSourceHash = result.previousHash or payload.expectedSourceHash
+	elseif commandType == "update_properties" then
+		local target = result.path or payload.path
+		local inst = resolvePath(target)
+		if checkProperties(inst, target, payload.properties, "property", false, nil) == 0 then
+			addCheck("property", target, false, { reason = "no_requested_properties" })
+		end
+	elseif commandType == "update_attributes" then
+		local target = result.path or payload.path
+		local inst = resolvePath(target)
+		if checkAttributes(inst, target, payload.attributes or payload.values, "attribute", nil) == 0 then
+			addCheck("attribute", target, false, { reason = "no_requested_attributes" })
+		end
+	elseif commandType == "update_tags" then
+		local target = result.path or payload.path
+		local inst = resolvePath(target)
+		if payload.set ~= nil then
+			local ok, actual = tagSetMatches(inst, payload.set)
+			addCheck("tag_set", target, ok, { expected = payload.set or {}, actual = actual })
 		else
-			pass(target)
+			local count = 0
+			for _, tag in ipairs(payload.add or {}) do
+				count = count + 1
+				addCheck("tag", target, inst ~= nil and CollectionService:HasTag(inst, tostring(tag)), {
+					tag = tostring(tag),
+					expectedPresent = true,
+				})
+			end
+			for _, tag in ipairs(payload.remove or {}) do
+				count = count + 1
+				addCheck("tag", target, inst ~= nil and not CollectionService:HasTag(inst, tostring(tag)), {
+					tag = tostring(tag),
+					expectedPresent = false,
+				})
+			end
+			if count == 0 then
+				addCheck("tag", target, false, { reason = "no_requested_tags" })
+			end
+		end
+	elseif commandType == "create_instance" then
+		local target = result.path or payload.path
+		local inst = resolvePath(target)
+		addCheck("instance_identity", target, inst ~= nil and inst.ClassName == tostring(payload.className or "Folder"), {
+			expectedClassName = tostring(payload.className or "Folder"),
+			actualClassName = inst and inst.ClassName or nil,
+		})
+		checkProperties(inst, target, payload.properties, "property", false, nil)
+		checkAttributes(inst, target, payload.attributes, "attribute", nil)
+		for _, tag in ipairs(payload.tags or {}) do
+			addCheck("tag", target, inst ~= nil and CollectionService:HasTag(inst, tostring(tag)), {
+				tag = tostring(tag),
+				expectedPresent = true,
+			})
 		end
 	elseif commandType == "apply_artifact" then
-		local files = result.managedFiles or result.files or {}
+		local files = result.managedFiles or {}
 		for _, file in ipairs(files) do
 			if type(file) == "table" then
-				local p = file.canonicalPath or file.path
+				local p = file.lastResolvedStudioPath or file.canonicalPath or file.path
 				if type(p) == "string" and p ~= "" then
 					local inst = resolvePath(p)
-					if not inst then
-						fail(p, "missing")
-					else
-						local expected = file.resultingHash or file.sourceHash
-						if expected and SCRIPT_CLASSES and SCRIPT_CLASSES[inst.ClassName] then
-							local currentHash = scriptHash(inst)
-							if currentHash and currentHash ~= expected then
-								fail(p, "hash_mismatch")
-							else
-								pass(p)
-							end
-						else
-							pass(p)
-						end
-					end
+					local expected = file.lastAppliedSourceHash or file.resultingHash or file.sourceHash
+					local currentHash = inst and SCRIPT_CLASSES[inst.ClassName] and scriptHash(inst) or nil
+					addCheck("artifact_file", p, inst ~= nil and expected ~= nil and currentHash == expected, {
+						fileId = file.fileId,
+						expectedHash = expected,
+						actualHash = currentHash,
+					})
 				end
 			end
 		end
-	else
-		-- Instance/property/native/import mutations: the resulting path must exist.
-		-- previousPath (from rename/move) is intentionally not checked.
-		local target = result.path
-		if type(target) == "string" and target ~= "" then
-			if resolvePath(target) then
-				pass(target)
-			else
-				fail(target, "missing")
+		for _, op in ipairs(payload.operations or {}) do
+			if op.type == "delete" then
+				local path = tostring(op.path or "")
+				addCheck("artifact_delete", path, path ~= "" and resolvePath(path) == nil, { fileId = op.id })
+			elseif op.type == "rename" then
+				local fromPath = tostring(op.fromPath or "")
+				local toPath = tostring(op.toPath or "")
+				addCheck("path_transition", toPath, toPath ~= "" and resolvePath(toPath) ~= nil and (fromPath == toPath or resolvePath(fromPath) == nil), {
+					previousPath = fromPath,
+				})
 			end
 		end
+		-- Legacy artifacts return one row per changed script rather than the
+		-- managed-file manifest used by schema v2.
+		if #checks == 0 then
+			for _, file in ipairs(result.files or {}) do
+				local path = file.path
+				local inst, currentHash = currentScriptHashAt(path)
+				local expected = file.sourceHash or file.resultingHash
+				addCheck("artifact_file", path, inst ~= nil and expected ~= nil and currentHash == expected, {
+					expectedHash = expected,
+					actualHash = currentHash,
+				})
+			end
+		end
+		if #checks == 0 then
+			addCheck("artifact_file", "", false, { reason = "no_artifact_readback_targets" })
+		end
+	elseif commandType == "replace_in_files" then
+		for _, file in ipairs(result.files or {}) do
+			local inst, currentHash = currentScriptHashAt(file.path)
+			addCheck("replace_file", file.path, inst ~= nil and file.sourceHash ~= nil and currentHash == file.sourceHash, {
+				expectedHash = file.sourceHash,
+				actualHash = currentHash,
+			})
+		end
+		if #checks == 0 then
+			addCheck("replace_file", "", false, { reason = "no_changed_files_to_verify" })
+		end
+	elseif commandType == "rename_script" or commandType == "move_script"
+		or commandType == "rename_instance" or commandType == "move_instance" then
+		local target = result.path
+		local previous = result.previousPath or payload.path
+		addCheck("path_transition", target, type(target) == "string" and target ~= "" and resolvePath(target) ~= nil
+			and (previous == target or resolvePath(previous) == nil), { previousPath = previous })
+	elseif commandType == "duplicate_script" or commandType == "duplicate_instance" then
+		local target = result.path or payload.newPath
+		local sourcePath = result.sourcePath or payload.path
+		local targetInst = resolvePath(target)
+		local sourceInst = resolvePath(sourcePath)
+		addCheck("instance_identity", target, targetInst ~= nil and sourceInst ~= nil and targetInst ~= sourceInst
+			and targetInst.ClassName == sourceInst.ClassName, {
+			sourcePath = sourcePath,
+			expectedClassName = sourceInst and sourceInst.ClassName or nil,
+			actualClassName = targetInst and targetInst.ClassName or nil,
+		})
+	elseif commandType == "insert_creator_store_asset" or commandType == "insert_uploaded_roblox_model" then
+		local target = result.insertedRootPath or result.insertedPath
+		local inst = resolvePath(target)
+		addCheck("imported_asset", target, inst ~= nil and tostring(inst.ClassName) == tostring(result.insertedRootClass or ""), {
+			assetId = tostring(result.assetId or payload.assetId or ""),
+			expectedClassName = result.insertedRootClass,
+			actualClassName = inst and inst.ClassName or nil,
+		})
+	elseif commandType == "build_native_model" then
+		local target = result.insertedRootPath
+		local modelId = payload.spec and payload.spec.modelId or result.modelId
+		local _, revision = verifyNativeModelIdentity(resolvePath(target), target, modelId, nil)
+		evidence.readbackRevision = revision
+	elseif commandType == "apply_native_model_patch" then
+		local target = result.rootPath or payload.modelPath
+		local root = resolvePath(target)
+		local identityOk, revision = verifyNativeModelIdentity(root, target, payload.modelId or result.modelId, result.newRevision)
+		evidence.readbackRevision = revision
+		local idMap = identityOk and nativeTargetMap(root) or {}
+		for index, op in ipairs((payload.patch or {}).operations or {}) do
+			local kind = tostring(op.op or op.type or "")
+			local inst = idMap[tostring(op.targetId or "")]
+			local operationOk = identityOk
+			local details = {
+				operationIndex = index,
+				operationType = kind,
+				targetId = op.targetId,
+				modelId = tostring(payload.modelId or result.modelId or ""),
+			}
+			if kind == "set_properties" then
+				local before = #checks
+				checkProperties(inst, target, op.properties, "native_operation", true, index)
+				operationOk = inst ~= nil and #checks > before
+			elseif kind == "set_attributes" then
+				local before = #checks
+				checkAttributes(inst, target, op.attributes, "native_operation", index)
+				operationOk = inst ~= nil and #checks > before
+			elseif kind == "rename" then
+				operationOk = inst ~= nil and inst.Name == tostring(op.name or "")
+				details.expectedName = op.name
+				details.actualName = inst and inst.Name or nil
+			elseif kind == "resize" then
+				local actual = inst and nativeTypedValue(inst.Size) or nil
+				local expected = op.size
+				if type(expected) == "table" and expected["$type"] == nil and expected.type == nil then
+					expected = { ["$type"] = "Vector3", x = expected.x, y = expected.y, z = expected.z }
+				end
+				operationOk = inst ~= nil and valuesMatch(expected, actual)
+				details.expected = expected
+				details.actual = actual
+			elseif kind == "add_instance" then
+				local spec = op.instance or {}
+				inst = idMap[tostring(spec.id or "")]
+				operationOk = inst ~= nil and inst.ClassName == tostring(spec.className or "") and inst.Name == tostring(spec.name or inst.Name)
+				details.targetId = spec.id
+				details.expectedClassName = spec.className
+				details.actualClassName = inst and inst.ClassName or nil
+			elseif kind == "move_instance" then
+				local parentInst = idMap[tostring(op.newParentId or "")]
+				operationOk = inst ~= nil and parentInst ~= nil and inst.Parent == parentInst
+				details.newParentId = op.newParentId
+			elseif kind == "duplicate_instance" then
+				inst = idMap[tostring(op.newIdPrefix or "")]
+				operationOk = inst ~= nil
+				details.targetId = op.newIdPrefix
+			elseif kind == "remove_instance" then
+				operationOk = idMap[tostring(op.targetId or "")] == nil
+			elseif kind == "set_tags" then
+				operationOk = inst ~= nil
+				for _, tag in ipairs(op.add or {}) do
+					operationOk = operationOk and CollectionService:HasTag(inst, tostring(tag))
+				end
+				for _, tag in ipairs(op.remove or {}) do
+					operationOk = operationOk and not CollectionService:HasTag(inst, tostring(tag))
+				end
+			elseif kind == "transform" then
+				operationOk = inst ~= nil and revision == result.newRevision
+			elseif kind == "transform_model" then
+				operationOk = root ~= nil and revision == result.newRevision
+			else
+				operationOk = false
+				details.reason = "unsupported_verification_operation"
+			end
+			-- Property/attribute operations already emitted one exact semantic check
+			-- per requested key. Emit a failure if they had no keys; other operation
+			-- kinds receive one command-bound check here.
+			if kind == "set_properties" or kind == "set_attributes" then
+				if not operationOk then
+					addCheck("native_operation", target, false, details)
+				end
+			else
+				addCheck("native_operation", target, operationOk, details)
+			end
+		end
+	elseif commandType == "restore_snapshot" or commandType == "undo_last_batch" then
+		local snapshots = commandType == "undo_last_batch" and lastBatchSnapshots or (payload.snapshots or localSnapshots)
+		for _, snap in ipairs(snapshots or {}) do
+			local inst = resolvePath(snap.path)
+			local actualHash = snapshotStateHash(inst)
+			local ok = snap.existed == false and inst == nil
+				or snap.existed ~= false and inst ~= nil and (not snap.preHash or actualHash == snap.preHash)
+			addCheck("snapshot_restore", snap.path, ok, {
+				expectedHash = snap.preHash,
+				actualHash = actualHash,
+				expectedPresent = snap.existed ~= false,
+			})
+		end
+		if #checks == 0 then
+			addCheck("snapshot_restore", "", false, { reason = "no_snapshots_to_verify" })
+		end
+	elseif commandType == "batch_operations" then
+		for index, op in ipairs(payload.operations or {}) do
+			local row = (result.results or {})[index]
+			local childResult = row and row.result or nil
+			local childVerified, childChecks = false, nil
+			if row and row.ok == true and type(childResult) == "table" then
+				childVerified, childChecks = verifyCommandOutcome({ type = op.type }, op.payload or {}, childResult)
+			end
+			addCheck("batch_operation", "", childVerified == true, {
+				operationIndex = index,
+				operationType = op.type,
+				checks = childChecks,
+			})
+		end
+		if #checks == 0 then
+			addCheck("batch_operation", "", false, { reason = "empty_batch" })
+		end
+	else
+		addCheck("instance_identity", result.path or payload.path or "", false, {
+			reason = "missing_command_specific_verifier",
+			commandType = commandType,
+		})
 	end
 
 	local verified = true
@@ -307,7 +646,7 @@ local function verifyCommandOutcome(command, payload, result)
 			break
 		end
 	end
-	return verified, checks
+	return verified, checks, evidence
 end
 
 local function executeCommand(command)
@@ -400,11 +739,23 @@ local function executeCommand(command)
 	end
 
 	if result.ok ~= false then
-		local okVerify, verified, checks = pcall(verifyCommandOutcome, command, payload, result)
+		local okVerify, verified, checks, verificationEvidence = pcall(verifyCommandOutcome, command, payload, result)
 		if okVerify then
 			result.verified = verified
 			if checks then
 				result.verificationChecks = checks
+			end
+			if isMutatingCommand(commandType) then
+				verificationEvidence = type(verificationEvidence) == "table" and verificationEvidence or {}
+				verificationEvidence.commandType = commandType
+				verificationEvidence.checks = checks or {}
+				verificationEvidence.affectedPaths = result.affectedPaths
+				verificationEvidence.snapshotIds = result.snapshotIds
+				result.verification = {
+					verified = verified == true,
+					source = "studio_readback",
+					evidence = verificationEvidence,
+				}
 			end
 			if verified == false then
 				local failedPath
@@ -418,6 +769,10 @@ local function executeCommand(command)
 				result.success = false
 				result.retryable = true
 				result.code = "apply_unverified"
+				if type(result.verification) == "table" then
+					result.verification.code = "STUDIO_READBACK_CHECK_FAILED"
+					result.verification.message = "At least one Studio post-state check failed."
+				end
 				result.error = {
 					code = "apply_unverified",
 					message = "Command reported success but the change could not be verified in Studio"
@@ -426,9 +781,39 @@ local function executeCommand(command)
 				}
 			end
 		else
-			-- Verification itself errored; don't mask a real success, just flag it.
-			result.verified = nil
-			result.verificationError = tostring(verified)
+			-- A verifier exception makes the mutation outcome ambiguous. Fail closed
+			-- so the backend cannot persist an apparent success without read-back.
+			local verificationMessage = tostring(verified)
+			local failedCheck = {
+				kind = "instance_identity",
+				path = result.path or payload.path or "",
+				ok = false,
+				reason = "verification_error",
+			}
+			result.verified = false
+			result.verificationChecks = { failedCheck }
+			result.verificationError = verificationMessage
+			result.verification = {
+				verified = false,
+				source = "studio_readback",
+				evidence = {
+					commandType = commandType,
+					checks = { failedCheck },
+					affectedPaths = result.affectedPaths,
+					snapshotIds = result.snapshotIds,
+				},
+				code = "STUDIO_READBACK_VERIFIER_FAILED",
+				message = verificationMessage,
+			}
+			result.ok = false
+			result.success = false
+			result.retryable = true
+			result.code = "apply_unverified"
+			result.error = {
+				code = "apply_unverified",
+				message = "Command applied but Studio post-state verification failed: " .. verificationMessage,
+				retryable = true,
+			}
 		end
 	end
 
@@ -471,7 +856,7 @@ local function finalizeCommandOutcome(command, applyOk, resultOrError)
 		else
 			message = tostring(rawError or "Studio command failed")
 		end
-		ack(command.id, "failed", resultOrError, message)
+		ack(command, "failed", resultOrError, message)
 		setLast(commandType .. " failed: " .. message)
 		pushActivity({
 			commandType = commandType,
@@ -485,7 +870,7 @@ local function finalizeCommandOutcome(command, applyOk, resultOrError)
 	end
 
 	if applyOk then
-		ack(command.id, "succeeded", resultOrError, nil)
+		ack(command, "succeeded", resultOrError, nil)
 		local extra = ""
 		if type(resultOrError) == "table" and resultOrError.validation then
 			local v = resultOrError.validation
@@ -512,7 +897,7 @@ local function finalizeCommandOutcome(command, applyOk, resultOrError)
 	end
 
 	local message = tostring(resultOrError)
-	ack(command.id, "failed", nil, message)
+	ack(command, "failed", nil, message)
 	setLast(commandType .. " failed: " .. message)
 	pushActivity({
 		commandType = commandType,
@@ -527,7 +912,8 @@ end
 -- Queue of commands claimed by the poll loop but not yet executed. Polling
 -- (which keeps the backend session alive) is decoupled from execution so a long
 -- apply or an approval prompt can never stall the connection.
-local commandQueue, executorBusy, executorStartedAt, EXECUTOR_WATCHDOG_MS = {}, false, 0, 30 * 60 * 1000
+local commandQueue, queuedCommandIds, activeCommandId = {}, {}, nil
+local executorBusy, executorStartedAt, EXECUTOR_WATCHDOG_MS = false, 0, 30 * 60 * 1000
 
 function pendingCommandCount()
 	return #commandQueue
@@ -582,8 +968,35 @@ function pullOnce(waitMs)
 		return { authFailed = false, idle = true, hadCommand = false, error = false }
 	end
 
-	table.insert(commandQueue, data.command)
-	setBridgeState("working", "queued " .. tostring(data.command.type or "command"))
+	local command = data.command
+	command.id = command.id or command.commandId
+	if not command.id then
+		setBridgeState("degraded", "invalid command envelope")
+		setLast("Studio command envelope did not include a command ID")
+		return { authFailed = false, idle = false, hadCommand = false, error = true }
+	end
+	if tonumber(command.lifecycleVersion) == 2 then
+		local fence = type(command.lease) == "table" and tonumber(command.lease.fence) or tonumber(command.leaseFence)
+		if not fence or fence < 1 then
+			setBridgeState("degraded", "invalid command lease")
+			setLast("Reliable Studio command did not include a valid lease fence")
+			return { authFailed = false, idle = false, hadCommand = false, error = true }
+		end
+		if queuedCommandIds[command.id] or activeCommandId == command.id then
+			ack(command, "received", { duplicate = true }, nil)
+			return { authFailed = false, idle = false, hadCommand = true, error = false }
+		end
+		-- A durable received receipt is the acceptance boundary. Never execute a
+		-- reliable command when that receipt could not be persisted server-side.
+		if not ack(command, "received", { stage = "received" }, nil) then
+			setBridgeState("degraded", "receipt failed")
+			setLast("Command receipt could not be saved; execution was deferred safely")
+			return { authFailed = false, idle = false, hadCommand = false, error = true }
+		end
+	end
+	queuedCommandIds[command.id] = true
+	table.insert(commandQueue, command)
+	setBridgeState("working", "queued " .. tostring(command.type or "command"))
 	return { authFailed = false, idle = false, hadCommand = true, error = false }
 end
 
@@ -605,6 +1018,8 @@ function processNextCommand()
 	end
 
 	local command = table.remove(commandQueue, 1)
+	queuedCommandIds[command.id] = nil
+	activeCommandId = command.id
 	executorBusy = true
 	executorStartedAt = commandStartedMs()
 	setBusy(true)
@@ -615,7 +1030,7 @@ function processNextCommand()
 			setBridgeState("working", "awaiting approval")
 			local approved = waitForApproval(command)
 			if not approved then
-				ack(command.id, "failed", nil, "declined in Studio")
+				ack(command, "failed", nil, "declined in Studio")
 				setLast((command.type or "command") .. " declined in Studio")
 				pushActivity({
 					commandType = command.type or "command",
@@ -623,6 +1038,13 @@ function processNextCommand()
 					detail = "declined in Studio",
 				})
 				showToast("Command declined", "error")
+				return
+			end
+		end
+		if tonumber(command.lifecycleVersion) == 2 then
+			if not ack(command, "started", { stage = "started" }, nil) then
+				setLast("Command start receipt could not be saved; execution was deferred safely")
+				setBridgeState("degraded", "start receipt failed")
 				return
 			end
 		end
@@ -641,6 +1063,7 @@ function processNextCommand()
 
 	executorBusy = false
 	executorStartedAt = 0
+	activeCommandId = nil
 	setActive("none")
 	setBusy(false)
 	if #commandQueue == 0 then

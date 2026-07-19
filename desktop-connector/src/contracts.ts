@@ -73,6 +73,7 @@ export interface ConnectorDesktopApi {
   revokeSession(): Promise<CompanionSnapshot>;
   openPairing(): Promise<void>;
   openHelp(): Promise<void>;
+  openDownloads(): Promise<void>;
   setPreference(key: PreferenceKey, value: unknown): Promise<CompanionSnapshot>;
   getAvailableTools(): Promise<string[]>;
   copyDiagnostics(): Promise<boolean>;

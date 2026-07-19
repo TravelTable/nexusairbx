@@ -298,15 +298,31 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
   // Dispatch generation for an approved plan. All classifications now run the
   // artifact job worker in "act" mode to produce a multi-file Roblox artifact.
   const runGeneration = useCallback(
-    async (activeChatId, classification, prompt, attachments, baseArtifact = null) => {
+    async (
+      activeChatId,
+      classification,
+      prompt,
+      attachments,
+      baseArtifact = null,
+      submissionOptions = {}
+    ) => {
       const requestId = uuidv4();
-      await chat.handleSubmit(prompt, activeChatId, requestId, null, true, attachments, baseArtifact);
+      await chat.handleSubmit(
+        prompt,
+        activeChatId,
+        requestId,
+        null,
+        true,
+        attachments,
+        baseArtifact,
+        submissionOptions
+      );
     },
     [chat]
   );
 
   const approvePlanInternal = useCallback(
-    async (message, baseArtifact = null) => {
+    async (message, baseArtifact = null, submissionOptions = {}) => {
       if (!user || !message?.planId) return;
       if (isGenerating) return;
 
@@ -335,7 +351,8 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
         message.classification || "script",
         message.originPrompt || "",
         message.attachments || [],
-        baseArtifact
+        baseArtifact,
+        submissionOptions
       );
     },
     [user, isGenerating, chat.currentChatId, chat.activeMode, runGeneration]
@@ -473,7 +490,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
           .find((m) => m?.stage === "plan" && m.planId);
         if (pendingPlan && isExplicitPlanApproval(prompt)) {
           try {
-            await approvePlanInternal(pendingPlan, baseArtifact);
+            await approvePlanInternal(pendingPlan, baseArtifact, options);
           } catch (err) {
             console.error("Approve/generate error:", err);
             notify?.({ message: err?.message || "Build failed. You can try again.", type: "error" });
@@ -525,7 +542,8 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
               mode,
               true,
               currentAttachments,
-              baseArtifact
+              baseArtifact,
+              options
             );
           } catch (err) {
             console.error("Generation error:", err);
@@ -644,9 +662,9 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
 
   // Stage 3 (plan): user approves the plan -> generate.
   const approvePlan = useCallback(
-    async (message, baseArtifact = null) => {
+    async (message, baseArtifact = null, submissionOptions = {}) => {
       try {
-        await approvePlanInternal(message, baseArtifact);
+        await approvePlanInternal(message, baseArtifact, submissionOptions);
       } catch (err) {
         console.error("Approve/generate error:", err);
         notify?.({ message: err?.message || "Build failed. You can try again.", type: "error" });
@@ -659,7 +677,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
   // the existing generated files as context so the agent EDITS rather than
   // regenerates everything from scratch.
   const refineArtifact = useCallback(
-    async (message, refinePrompt, workspaceArtifact = null) => {
+    async (message, refinePrompt, workspaceArtifact = null, submissionOptions = {}) => {
       if (!user || !refinePrompt) return;
       if (isGenerating) return;
 
@@ -691,7 +709,8 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
           message?.classification || "project",
           augmentedPrompt,
           fileAttachments,
-          workspaceArtifact
+          workspaceArtifact,
+          submissionOptions
         );
       } catch (err) {
         console.error("Refine error:", err);

@@ -11,12 +11,17 @@ The backend validates every Studio command in `backend/src/lib/studioToolProtoco
 - `previousHashes`, `resultingHashes`
 - `warnings`, `diagnostics`, `output`
 - `duration`, `snapshotIds`, `retryable`
-- `verified` (additive, plugin >= 0.10.0): after a mutating command the plugin
-  re-reads the affected script/instance and sets `verified = true` only when the
-  change is actually present. If the change cannot be confirmed the command is
-  acked as `failed` with `error.code = "apply_unverified"` (retryable) instead of
-  a false success. Also `verificationChecks: [{ path, ok, reason }]`. Older
-  backends can ignore these fields.
+- `verification: { verified, source, evidence }` (additive, plugin >= 0.10.0):
+  after a mutating command the plugin re-reads Studio and returns
+  `source = "studio_readback"` with command-bound evidence. Evidence includes
+  `commandType`, semantic `checks: [{ kind, path, ok, ... }]`, and applicable
+  source hashes, revisions, affected paths, and snapshot IDs. Property,
+  attribute, tag, instance-creation, and native-model commands must prove every
+  requested value or operation; path existence and `affectedPaths` alone are
+  not verification. A failed check or verifier error fails closed as
+  `apply_unverified` (retryable). Top-level `verified` and
+  `verificationChecks` remain compatibility fields for older backends, but the
+  backend completion gate consumes the nested receipt.
 - `placeSignature` (additive, on `get_project_manifest` results): a cheap
   top-level fingerprint of the place used by the backend to detect an unchanged
   project and skip a full re-index.
@@ -86,7 +91,7 @@ the heartbeat endpoint.
 - Uploaded Roblox model import: `insert_uploaded_roblox_model` imports a backend-verified uploaded Roblox `Model` asset. The command can only be queued by the backend insertion review flow. The payload is generated from the trusted upload receipt and contains `uploadId`, `insertionId`, `assetId`, `assetName`, `assetType`, `targetParentPath`, `requestedName`, `placement`, `anchoredPolicy`, `collisionPolicy`, `sanitizationMode`, `trustedSource`, and `idempotencyKey`.
 - Coordination: `batch_operations` runs deterministic sub-operations and rolls back snapshots when `atomic` is true.
 
-Writes should include `expectedSourceHash` when the caller previously read a script. The plugin rejects stale writes with `code: "source_conflict"`.
+Writes should include `expectedSourceHash` when the caller previously read a script. The plugin rejects stale writes with `code: "source_conflict"`. Source verification accepts both the bridge's deployed 8-hex source hash and SHA-256 manifest hashes. For direct source writes, the backend derives the expected post-state hash from the command source; a plugin-claimed resulting hash cannot replace that comparison.
 
 ## Validation And Recovery
 
@@ -135,7 +140,7 @@ profiles or check IDs fail closed.
 2. Queue `get_project_manifest` and verify `_studioProjectManifestItems` is populated.
 3. For paginated manifests, confirm all pages keep the first page's revision, contain no overlapping canonical paths, and that acknowledging the same page twice with different command IDs does not increase item/page counts.
 4. Queue `search_source` for a known token and verify only matching scripts are returned.
-5. Queue `read_script`, then `write_script` with the returned hash and confirm source updates.
+5. Queue `read_script`, then `write_script` with the returned hash and confirm source updates. Inspect the acknowledgement and confirm its nested `verification` receipt names `write_script`, includes the baseline and read-back hashes, and has a successful `script_source` check before backend completion.
 6. Edit the same script in Studio, retry the old `write_script`, and confirm `source_conflict`.
 7. Queue `batch_operations` with create/update/delete operations and verify snapshots.
 8. Queue `undo_last_batch` or `restore_snapshot` and confirm the hierarchy is restored.

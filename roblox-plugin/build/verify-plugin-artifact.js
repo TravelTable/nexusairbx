@@ -69,7 +69,11 @@ try {
   if (process.exitCode) {
     process.exit(process.exitCode);
   }
+
+  const crypto = require("crypto");
+  const sha256 = crypto.createHash("sha256").update(Buffer.from(artifact, "utf8")).digest("hex");
   console.log(`Plugin artifact verified (${handlers.length} handlers, ${buildId[1]}).`);
+  console.log(`sha256=${sha256}`);
 } catch (error) {
   fail(error instanceof Error ? error.message : String(error));
 }

@@ -87,6 +87,8 @@ describe("useUnifiedChat", () => {
     jest.clearAllMocks();
     FEATURE_FLAGS.unifiedAgent = false;
     getStudioEnabledPreference.mockReturnValue(false);
+    classifyUserIntent.mockReturnValue("IMPLEMENTATION");
+    isImplementationIntent.mockReturnValue(true);
     global.TextDecoder = NodeTextDecoder;
     useAiChat.mockReturnValue({
       activeMode: "agent",
@@ -241,7 +243,11 @@ describe("useUnifiedChat", () => {
     );
 
     await act(async () => {
-      await result.current.handleSubmit("What files can you see in Studio?", []);
+      await result.current.handleSubmit("What files can you see in Studio?", [], null, {
+        projectId: "project_1",
+        activeTaskId: "task_1",
+        showPlan: false,
+      });
     });
 
     const request = JSON.parse(global.fetch.mock.calls[0][1].body);
@@ -253,5 +259,48 @@ describe("useUnifiedChat", () => {
     }));
     expect(orchestrate).not.toHaveBeenCalled();
     expect(chatHandleSubmit).not.toHaveBeenCalled();
+  });
+
+  test("passes task intake candidates only to direct implementation generation", async () => {
+    const taskOptions = {
+      projectId: "project_1",
+      activeTaskId: "task_1",
+      showPlan: false,
+      onTaskAccepted: jest.fn(),
+    };
+    useAiChat.mockReturnValue({
+      activeMode: "agent",
+      currentChatId: "chat-1",
+      generatingChatIds: [],
+      generationStage: "",
+      handleSubmit: chatHandleSubmit,
+      isGenerating: false,
+      messages: [],
+      openChatById: jest.fn(),
+      pendingMessage: null,
+      setPendingForChat: jest.fn(),
+    });
+    const user = { uid: "user-1", getIdToken: jest.fn().mockResolvedValue("token") };
+
+    const { result } = renderHook(() =>
+      useUnifiedChat(user, {}, jest.fn(), jest.fn())
+    );
+
+    await act(async () => {
+      await result.current.handleSubmit("Build a lobby system", [], null, taskOptions);
+    });
+
+    expect(chatHandleSubmit).toHaveBeenCalledTimes(1);
+    expect(chatHandleSubmit).toHaveBeenCalledWith(
+      "Build a lobby system",
+      "chat-1",
+      null,
+      "agent",
+      true,
+      [],
+      null,
+      taskOptions,
+    );
+    expect(orchestrate).not.toHaveBeenCalled();
   });
 });

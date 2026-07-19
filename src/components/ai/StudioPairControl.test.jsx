@@ -149,4 +149,34 @@ describe("StudioPairControl", () => {
     expect(screen.getByText(/NexusRBXStudioBridge\.plugin\.lua/i)).toBeTruthy();
     expect(screen.getByText("Full manifest").parentElement.textContent).toContain("Unavailable");
   });
+
+  test("makes a missing Create Instance command recoverable without disconnecting", () => {
+    const refresh = jest.fn();
+    const connection = normalizeStudioConnectionSnapshot({
+      pluginStatus: {
+        compatibility: {
+          status: "degraded",
+          missingCommands: ["create_instance"],
+          missingCapabilities: ["instanceMutation"],
+        },
+        sessions: [{
+          id: "plugin_missing_create_instance",
+          connectionType: "plugin_bridge",
+          status: "connected",
+          live: true,
+        }],
+      },
+    });
+
+    render(<StudioPairControl connection={connection} refresh={refresh} />);
+    fireEvent.click(screen.getByRole("button", { name: /Studio · Limited/i }));
+
+    expect(screen.getByText("Update Studio plugin to use Create Instance")).toBeTruthy();
+    expect(screen.getByText(/current NexusRBXStudioBridge\.plugin\.lua artifact/i)).toBeTruthy();
+    expect(screen.getByText(/other supported Studio features remain available/i)).toBeTruthy();
+    expect(screen.getByRole("link", { name: /View install steps/i }).getAttribute("href")).toBe("/docs/installation");
+
+    fireEvent.click(screen.getByRole("button", { name: /Refresh connection/i }));
+    expect(refresh).toHaveBeenCalledTimes(1);
+  });
 });

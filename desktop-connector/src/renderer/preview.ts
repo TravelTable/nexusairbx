@@ -29,7 +29,7 @@ export function previewApi(): ConnectorDesktopApi {
     pair: async () => { snapshot = previewSnapshot(); snapshot = { ...snapshot, state: "connecting", cloudHealth: "connected", runtimeHealth: "connected", mcpHealth: "connecting", connectionStage: "mcp", message: "Connecting to Roblox Studio MCP…" }; publish(); return snapshot; },
     retry: async () => snapshot, start: async () => snapshot, stop: async () => snapshot,
     revokeSession: async () => { snapshot = { ...defaults }; publish(); return snapshot; },
-    openPairing: async () => undefined, openHelp: async () => undefined,
+    openPairing: async () => undefined, openHelp: async () => undefined, openDownloads: async () => undefined,
     setPreference: async (key: PreferenceKey, value: unknown) => { snapshot = { ...snapshot, preferences: { ...snapshot.preferences, [key]: value } }; publish(); return snapshot; },
     getAvailableTools: async () => snapshot.supportedTools, copyDiagnostics: async () => true, openLogs: async () => undefined,
     resizeWindow: async (_mode: WindowMode) => undefined, minimizeWindow: async () => undefined, closeWindow: async () => undefined,

@@ -54,6 +54,7 @@ jest.mock("../lib/featureFlags", () => ({
     rawReasoning: false,
     streamV2: false,
     unifiedAgent: false,
+    newTaskRuntime: false,
   },
 }));
 
@@ -82,7 +83,7 @@ jest.mock("../lib/streaming", () => ({
   applyStreamDelta: jest.fn((state) => state),
   createPendingStreamState: jest.fn(() => ({ activitySeq: 0 })),
   formatPendingStreamContent: jest.fn(() => ""),
-  getPendingStreamSnapshot: jest.fn((state) => state),
+  getPendingStreamSnapshot: jest.fn((state) => state || {}),
 }));
 
 jest.mock("../lib/streamMetrics", () => ({
@@ -136,6 +137,7 @@ describe("useAiChat", () => {
     ensureStreamSession.mockResolvedValue({ token: null });
     parseCompletedGenerateResult.mockReturnValue(null);
     FEATURE_FLAGS.unifiedAgent = false;
+    FEATURE_FLAGS.newTaskRuntime = false;
     getStudioEnabledPreference.mockReturnValue(false);
     getStudioStatus.mockReset();
     auth.currentUser = null;
@@ -341,5 +343,125 @@ describe("useAiChat", () => {
       studioEnabled: true,
       ...expectedStudioContext,
     }));
+  });
+
+  test("uses the artifact request as the only task intake and binds its top-level task id", async () => {
+    FEATURE_FLAGS.newTaskRuntime = true;
+    const user = {
+      uid: "user_1",
+      getIdToken: jest.fn().mockResolvedValue("token_1"),
+    };
+    auth.currentUser = user;
+    const onTaskAccepted = jest.fn();
+    // Stop immediately after intake; this test owns only the artifact request
+    // contract and task binding, not assistant persistence or stream recovery.
+    setDoc.mockRejectedValueOnce(new Error("Stop after task acceptance"));
+    global.fetch = jest.fn().mockResolvedValueOnce({
+      ok: true,
+      headers: { get: () => "application/json" },
+      json: async () => ({
+        jobId: "job_task",
+        taskId: "task_accepted",
+        resultUrl: "/api/generate/result?jobId=job_task",
+        runId: null,
+      }),
+    });
+
+    const { result } = renderHook(() => useAiChat(
+      user,
+      { chatMode: "agent" },
+      jest.fn(),
+      jest.fn(),
+    ));
+
+    const consoleError = jest.spyOn(console, "error").mockImplementation(() => {});
+    try {
+      await result.current.handleSubmit(
+        "Build a round system",
+        "chat_1",
+        "req_task",
+        "agent",
+        true,
+        [],
+        null,
+        {
+          projectId: " project_1 ",
+          activeTaskId: " task_active ",
+          showPlan: true,
+          onTaskAccepted,
+        },
+      );
+    } finally {
+      consoleError.mockRestore();
+    }
+
+    const artifactCalls = global.fetch.mock.calls.filter(([url, request]) => (
+      String(url).includes("/api/generate/artifact") && request?.method === "POST"
+    ));
+    expect(artifactCalls).toHaveLength(1);
+    expect(global.fetch.mock.calls.some(([url]) => String(url).includes("/api/tasks"))).toBe(false);
+    const [, artifactRequest] = artifactCalls[0];
+    expect(artifactRequest.headers["Idempotency-Key"]).toBe("chat-req_task");
+    expect(JSON.parse(artifactRequest.body)).toEqual(expect.objectContaining({
+      requestId: "req_task",
+      chatId: "chat_1",
+      projectId: "project_1",
+      activeTaskId: "task_active",
+      showPlan: true,
+    }));
+    expect(onTaskAccepted).toHaveBeenCalledTimes(1);
+    expect(onTaskAccepted).toHaveBeenCalledWith("task_accepted");
+  });
+
+  test("omits task intake fields and callbacks when the feature flag is disabled", async () => {
+    const user = {
+      uid: "user_1",
+      getIdToken: jest.fn().mockResolvedValue("token_1"),
+    };
+    auth.currentUser = user;
+    const onTaskAccepted = jest.fn();
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: false,
+      status: 500,
+      headers: { get: () => "application/json" },
+      json: async () => ({
+        code: "GENERATION_FAILED",
+        message: "Stop after request capture",
+      }),
+    });
+
+    const { result } = renderHook(() => useAiChat(
+      user,
+      { chatMode: "agent" },
+      jest.fn(),
+      jest.fn(),
+    ));
+
+    const consoleError = jest.spyOn(console, "error").mockImplementation(() => {});
+    try {
+      await result.current.handleSubmit(
+        "Build a round system",
+        "chat_1",
+        "req_legacy",
+        "agent",
+        true,
+        [],
+        null,
+        {
+          projectId: "project_1",
+          activeTaskId: "task_active",
+          showPlan: true,
+          onTaskAccepted,
+        },
+      );
+    } finally {
+      consoleError.mockRestore();
+    }
+
+    const requestBody = JSON.parse(global.fetch.mock.calls[0][1].body);
+    expect(requestBody).not.toHaveProperty("projectId");
+    expect(requestBody).not.toHaveProperty("activeTaskId");
+    expect(requestBody).not.toHaveProperty("showPlan");
+    expect(onTaskAccepted).not.toHaveBeenCalled();
   });
 });

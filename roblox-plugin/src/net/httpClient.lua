@@ -66,7 +66,9 @@ local function requestOnce(method, path, body, token, opts)
 	if token then
 		headers["Authorization"] = "Bearer " .. token
 	end
-	if opts.idempotent then
+	if type(opts.idempotencyKey) == "string" and opts.idempotencyKey ~= "" then
+		headers["Idempotency-Key"] = opts.idempotencyKey
+	elseif opts.idempotent then
 		headers["Idempotency-Key"] = HttpService:GenerateGUID(false)
 	end
 	if opts.useEtag and etagCache[path] then
@@ -183,6 +185,12 @@ end
 
 local function requestWithRetry(method, path, body, token, opts)
 	opts = opts or {}
+	-- A retry is another delivery attempt for the same operation, not a new
+	-- operation. Resolve the key once before the loop so the backend can replay
+	-- the original receipt if the first response was lost.
+	if opts.idempotent and (type(opts.idempotencyKey) ~= "string" or opts.idempotencyKey == "") then
+		opts.idempotencyKey = HttpService:GenerateGUID(false)
+	end
 	local maxAttempts = math.clamp(tonumber(opts.maxAttempts) or 3, 1, 5)
 	local baseDelay = tonumber(opts.baseDelay) or 0.5
 	local attempt = 0

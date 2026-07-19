@@ -12,6 +12,7 @@ const api: ConnectorDesktopApi = {
   revokeSession: () => ipcRenderer.invoke("connector:revoke-session"),
   openPairing: () => ipcRenderer.invoke("connector:open-pairing"),
   openHelp: () => ipcRenderer.invoke("connector:open-help"),
+  openDownloads: () => ipcRenderer.invoke("connector:open-downloads"),
   setPreference: (key, value) => ipcRenderer.invoke("connector:set-preference", key, value),
   getAvailableTools: () => ipcRenderer.invoke("connector:get-tools"),
   copyDiagnostics: () => ipcRenderer.invoke("connector:copy-diagnostics"),
