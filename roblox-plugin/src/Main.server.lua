@@ -81,12 +81,20 @@ local function applyCompatibility(heartbeat)
 	compatibilityStatus = tostring(compatibility.status or "unknown")
 	local missingCommand = type(compatibility.missingCommands) == "table" and compatibility.missingCommands[1] or nil
 	local missingCapability = type(compatibility.missingCapabilities) == "table" and compatibility.missingCapabilities[1] or nil
-	compatibilityDetail = missingCommand or missingCapability
+	local reasonCode = type(compatibility.reasonCodes) == "table" and compatibility.reasonCodes[1] or nil
+	compatibilityDetail = missingCommand or missingCapability or reasonCode
 
 	if compatibilityStatus == "compatible" or compatibilityStatus == "degraded" then
 		compatibilityHandshakeReady = true
 		if compatibilityStatus == "degraded" then
 			setBridgeState("degraded", compatibilityDetail and ("Unavailable: " .. tostring(compatibilityDetail)) or "Some Studio features are unavailable")
+			setLast(compatibilityDetail and ("Connected with limited features: " .. tostring(compatibilityDetail)) or "Connected with limited Studio features")
+		else
+			-- Compatible must leave CONNECTING. Previously only degraded/live
+			-- poll paths updated the pill, so a healthy handshake could stick on
+			-- "CONNECTING" / "Restoring Studio connection" forever.
+			setBridgeState("live")
+			setLast("Studio connection ready")
 		end
 		return true
 	end
@@ -97,7 +105,8 @@ local function applyCompatibility(heartbeat)
 		setLast("This Studio plugin release is no longer supported. Reinstall NexusRBXStudioBridge.plugin.lua.")
 	else
 		setBridgeState("connecting")
-		setLast("Restoring Studio connection")
+		local reason = compatibilityDetail and tostring(compatibilityDetail) or compatibilityStatus
+		setLast("Restoring Studio connection (" .. reason .. ")")
 	end
 	return true
 end
@@ -138,9 +147,17 @@ local function pairStudio()
 	setToken(dataOrError.token)
 	plugin:SetSetting("nexusrbxStudioSessionId", dataOrError.sessionId)
 	resetCompatibilityHandshake()
+	-- Pairing already returns the authoritative compatibility contract. Apply it
+	-- immediately so reconnect does not wait on a later ping that can leave the
+	-- UI stuck in CONNECTING while the session is actually usable.
+	if not applyCompatibility(dataOrError) then
+		setBridgeState("connecting")
+		setLast("paired session " .. tostring(dataOrError.sessionId) .. " · finishing handshake")
+	else
+		setLast("paired session " .. tostring(dataOrError.sessionId))
+	end
 	codeBox.Text = ""
 	setStatus("connected")
-	setLast("paired session " .. tostring(dataOrError.sessionId))
 	pushActivity({
 		commandType = "pair",
 		status = "succeeded",
