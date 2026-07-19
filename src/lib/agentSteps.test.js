@@ -55,6 +55,15 @@ describe("agentSteps", () => {
     expect(normalizeToolStepError({ details: { internal: true } })).toBe(
       "This Studio action could not be completed."
     );
+    expect(normalizeToolStepError("[object Object]")).toBe(
+      "This Studio action could not be completed."
+    );
+    expect(normalizeToolStepError({
+      code: "MCP_TOOL_UNAVAILABLE",
+      message: { code: "MCP_TOOL_UNAVAILABLE", message: "Pinned MCP tool is unavailable" },
+    })).toBe(
+      "This Studio action is not available through the connected MCP server. Connect the Studio Plugin and retry."
+    );
   });
 
   test("preserves recoverable Studio error metadata and target choices", () => {

@@ -116,16 +116,40 @@ function isStudioConnectionError(code, message) {
   );
 }
 
+const MCP_TOOL_UNAVAILABLE_MESSAGE =
+  "This Studio action is not available through the connected MCP server. Connect the Studio Plugin and retry.";
+
+function extractErrorText(value) {
+  if (typeof value === "string") return value.trim();
+  if (!value || typeof value !== "object") return "";
+  const nested = value.publicMessage || value.userMessage || value.message || value.error || "";
+  if (typeof nested === "string") return nested.trim();
+  if (nested && typeof nested === "object") {
+    const deeper = nested.publicMessage || nested.message || nested.error || "";
+    return typeof deeper === "string" ? deeper.trim() : "";
+  }
+  return "";
+}
+
 export function normalizeToolStepError(error) {
   if (!error) return "";
-  const code = typeof error === "object" ? error.code || error.errorCode : "";
-  const message = typeof error === "object"
-    ? error.publicMessage || error.userMessage || error.message || error.error || ""
-    : error;
-  if (isStudioConnectionError(code, message)) {
+  if (typeof error === "string") {
+    const trimmed = error.trim();
+    if (!trimmed || trimmed === "[object Object]") return "This Studio action could not be completed.";
+    if (/pinned mcp tool is unavailable/i.test(trimmed)) return MCP_TOOL_UNAVAILABLE_MESSAGE;
+    if (isStudioConnectionError("", trimmed)) return STUDIO_CONNECTION_UNAVAILABLE_MESSAGE;
+    return trimmed;
+  }
+  if (typeof error !== "object") return "This Studio action could not be completed.";
+  const code = String(error.code || error.errorCode || "");
+  if (code === "MCP_TOOL_UNAVAILABLE") return MCP_TOOL_UNAVAILABLE_MESSAGE;
+  const text = extractErrorText(error);
+  if (/pinned mcp tool is unavailable/i.test(text)) return MCP_TOOL_UNAVAILABLE_MESSAGE;
+  if (isStudioConnectionError(code, text)) {
     return STUDIO_CONNECTION_UNAVAILABLE_MESSAGE;
   }
-  if (typeof message === "string" && message.trim()) return message.trim();
+  if (text && text !== "[object Object]") return text;
+  if (code) return code;
   return "This Studio action could not be completed.";
 }
 
