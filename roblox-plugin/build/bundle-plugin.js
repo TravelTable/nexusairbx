@@ -155,6 +155,11 @@ const MODULE_EXPORTS = {
     "readProperties",
     "getSelectionTool",
     "serializeFlat",
+    // Defined in readTools but required by registry.lua TOOL_HANDLERS.
+    // Exporting them from writeTools left the handlers nil and dropped
+    // create_instance / delete_instance from plugin attestation.
+    "createInstanceTool",
+    "deleteInstanceTool",
   ],
   "src/commands/validation.lua": [
     "runProjectValidation",
@@ -178,8 +183,6 @@ const MODULE_EXPORTS = {
     "createSnapshotTool",
     "parseLuau",
     "runSmokeCheck",
-    "createInstanceTool",
-    "deleteInstanceTool",
     "ensureCleanFolder",
     "validateLuauSource",
     "classNameForKind",

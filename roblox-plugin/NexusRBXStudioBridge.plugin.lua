@@ -2633,7 +2633,7 @@ end
 -- END src/ui/BridgePanel.lua
 
 -- BEGIN src/commands/readTools.lua
-local getInspectionRoots, inspectPlace, listChildren, inspectInstances, searchProject, searchSource, readScript, writeScript, readInstance, readProperties, getSelectionTool, serializeFlat
+local getInspectionRoots, inspectPlace, listChildren, inspectInstances, searchProject, searchSource, readScript, writeScript, readInstance, readProperties, getSelectionTool, serializeFlat, createInstanceTool, deleteInstanceTool
 do
 local function serializeInstance(inst, path, depth, maxDepth, state, includeSource, sourceMaxChars, parentPath)
 	state.count = state.count + 1
@@ -2952,7 +2952,7 @@ writeScript = function(payload)
 	}
 end
 
-local function createInstanceTool(payload)
+createInstanceTool = function(payload)
 	local path = payload.path
 	local className = payload.className or "Folder"
 	local snapshots = {}
@@ -2982,7 +2982,7 @@ local function createInstanceTool(payload)
 	}
 end
 
-local function deleteInstanceTool(payload)
+deleteInstanceTool = function(payload)
 	local path = payload.path
 	local inst = resolvePath(path)
 	local snapshots = {}
@@ -3671,7 +3671,7 @@ end
 -- END src/commands/validation.lua
 
 -- BEGIN src/commands/writeTools.lua
-local applyArtifact, getStudioContext, patchScript, renameInstanceTool, moveInstanceTool, duplicateInstanceTool, createScript, deleteScript, updateProperties, updateAttributes, updateTags, replaceInFiles, createSnapshotTool, parseLuau, runSmokeCheck, createInstanceTool, deleteInstanceTool, ensureCleanFolder, validateLuauSource, classNameForKind
+local applyArtifact, getStudioContext, patchScript, renameInstanceTool, moveInstanceTool, duplicateInstanceTool, createScript, deleteScript, updateProperties, updateAttributes, updateTags, replaceInFiles, createSnapshotTool, parseLuau, runSmokeCheck, ensureCleanFolder, validateLuauSource, classNameForKind
 do
 getStudioContext = function()
 	local roots = {}

@@ -66,6 +66,31 @@ try {
     }
   }
 
+  // create_instance / delete_instance live in readTools. If the bundler
+  // mistakenly exports them from writeTools without assigning them, TOOL_HANDLERS
+  // captures nil and attestation omits those commands.
+  const readToolsStart = artifact.indexOf("-- BEGIN src/commands/readTools.lua");
+  const readToolsEnd = artifact.indexOf("-- END src/commands/readTools.lua");
+  const writeToolsStart = artifact.indexOf("-- BEGIN src/commands/writeTools.lua");
+  const writeToolsEnd = artifact.indexOf("-- END src/commands/writeTools.lua");
+  if (readToolsStart < 0 || readToolsEnd < 0 || writeToolsStart < 0 || writeToolsEnd < 0) {
+    fail("bundle is missing readTools/writeTools section markers");
+  } else {
+    const readTools = artifact.slice(readToolsStart, readToolsEnd);
+    const writeTools = artifact.slice(writeToolsStart, writeToolsEnd);
+    for (const exportName of ["createInstanceTool", "deleteInstanceTool"]) {
+      if (!new RegExp(`^local [^\\n]*\\b${escapeRegExp(exportName)}\\b`, "m").test(readTools)) {
+        fail(`readTools must export ${exportName} for registry TOOL_HANDLERS`);
+      }
+      if (!new RegExp(`^${escapeRegExp(exportName)} = function\\(`, "m").test(readTools)) {
+        fail(`readTools must assign ${exportName} = function(...)`);
+      }
+      if (new RegExp(`^local [^\\n]*\\b${escapeRegExp(exportName)}\\b`, "m").test(writeTools)) {
+        fail(`writeTools must not redeclare nil export ${exportName}`);
+      }
+    }
+  }
+
   if (process.exitCode) {
     process.exit(process.exitCode);
   }
