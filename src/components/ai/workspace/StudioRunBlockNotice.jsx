@@ -49,19 +49,30 @@ export function getStudioRunBlock(value = {}) {
       message: "Local MCP is connected to a different place, so this task is using the compatible Studio plugin instead.",
     };
   }
-  if (
+  const status = String(value?.status || value?.runStatus || "").trim();
+  const needsTargetChoice =
     TARGET_CODES.has(code) ||
     fallback === "MCP_PLACE_MISMATCH" ||
-    value?.status === "awaiting_studio_target" ||
-    (value?.status === "blocked" && Array.isArray(targetSelection?.options))
-  ) {
+    status === "awaiting_studio_target" ||
+    (status === "blocked" && Array.isArray(targetSelection?.options));
+  if (needsTargetChoice) {
+    const isMismatch = code === "STUDIO_TARGET_MISMATCH" || code === "MCP_PLACE_MISMATCH" || fallback === "MCP_PLACE_MISMATCH";
+    const isStale = code === "STUDIO_TARGET_STALE" || code === "STUDIO_TARGET_CHANGED" || code === "STUDIO_TARGET_SELECTION_CONFLICT";
     return {
       kind: "target",
       code,
       targetSelection,
       recovery,
-      title: "Studio target needs your confirmation",
-      message: "The selected Studio connection does not match this project. No Studio command was sent.",
+      title: isMismatch
+        ? "Studio target needs your confirmation"
+        : isStale
+          ? "Studio project changed"
+          : "Choose a Studio project to continue",
+      message: isMismatch
+        ? "The selected Studio connection does not match this project. No Studio command was sent."
+        : isStale
+          ? "That Studio project changed or disconnected. Choose a live project to continue."
+          : "NexusRBX paused before sending the next Studio command so you can confirm which open place to use.",
     };
   }
   if (PLUGIN_CODES.has(code) || value?.status === "awaiting_plugin_update" || value?.status === "awaiting_studio_reconnect") {
@@ -119,7 +130,11 @@ export default function StudioRunBlockNotice({ value, className = "" }) {
           <div className="font-semibold">{block.title}</div>
           <p className="mt-0.5 leading-relaxed text-current/80">{block.message}</p>
           {block.kind === "target" && (
-            <p className="mt-1 leading-relaxed text-current/80">Choose the intended Studio project in the task controls, then retry the task.</p>
+            <p className="mt-1 leading-relaxed text-current/80">
+              {Array.isArray(block.targetSelection?.options) && block.targetSelection.options.length
+                ? "Pick the Studio project below, then the agent will continue."
+                : "Choose the intended Studio project in the task controls, then retry the task."}
+            </p>
           )}
           {block.kind === "mcp-fallback" && (
             <p className="mt-1 leading-relaxed text-current/80">To use Local MCP, open the selected place in Local MCP, connect it, then retry.</p>

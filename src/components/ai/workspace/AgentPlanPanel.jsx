@@ -66,7 +66,6 @@ export default function AgentPlanPanel({
       )}
 
       <StudioRunBlockNotice value={agentRun} />
-
       <StudioTargetPicker
         selection={agentRun?.targetSelection}
         onSelect={onSelectStudioTarget}

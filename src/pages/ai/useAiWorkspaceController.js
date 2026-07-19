@@ -1300,7 +1300,7 @@ export function useAiWorkspaceController() {
         setSelectingStudioTargetId(null);
       }
     },
-    [notify, selectingStudioTargetId, syncAgentRunSteps, unified.pendingMessage, user, workspace.agentRun?.runId]
+    [notify, selectingStudioTargetId, syncAgentRunSteps, unified.pendingMessage, user, workspace.agentRun]
   );
 
   const handleApproveStep = useCallback(
