@@ -138,12 +138,6 @@ export default function LiveWorkStream({
           )}
         </ChainOfThoughtHeader>
         <ChainOfThoughtContent>
-          <StudioRunBlockNotice value={pendingMessage} className="mb-2" />
-          <StudioTargetPicker
-            selection={pendingMessage?.targetSelection}
-            onSelect={onSelectStudioTarget}
-            selectingTargetId={selectingStudioTargetId}
-          />
           {activity.length ? (
             activity.map((item) => {
               const step =
@@ -194,6 +188,12 @@ export default function LiveWorkStream({
               status="active"
             />
           )}
+          <StudioRunBlockNotice value={pendingMessage} className="mt-2" />
+          <StudioTargetPicker
+            selection={pendingMessage?.targetSelection}
+            onSelect={onSelectStudioTarget}
+            selectingTargetId={selectingStudioTargetId}
+          />
         </ChainOfThoughtContent>
       </ChainOfThought>
     </div>
