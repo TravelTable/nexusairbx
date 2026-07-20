@@ -1119,6 +1119,7 @@ export default function AgentWorkspaceLayout({ controller }) {
                 gameProfile={game.profile}
                 user={user}
                 authReady={authReady}
+                notify={notify}
                 onVersionView={(ver) => {
                   if (!ver.code) return;
                   controller.handlers.emitAiEvent(AI_EVENTS.OPEN_CODE_DRAWER, {

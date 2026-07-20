@@ -25,39 +25,39 @@ export default function StudioPlaceChip({
 
   const label = preference?.label || null;
   const hasOptions = Array.isArray(options) && options.length > 0;
+  const canOpen = connected && hasOptions;
+  const displayLabel = !connected
+    ? "Connect Studio to choose a place"
+    : label
+      ? label
+      : hasOptions
+        ? "Choose a Studio place"
+        : "No live Studio place";
 
   return (
     <div className={`space-y-2 ${className}`}>
-      <div className="flex flex-wrap items-center gap-2">
-        <span
-          className={`inline-flex max-w-full items-center gap-1.5 rounded-lg border px-2.5 py-1 text-[11px] font-semibold ${
-            connected && label
-              ? "border-[#00bbf9]/25 bg-[#00bbf9]/[0.08] text-[#9ae6ff]"
-              : "border-amber-400/25 bg-amber-400/10 text-amber-100"
-          }`}
-        >
-          <MapPin className="h-3.5 w-3.5 shrink-0" />
-          <span className="truncate">
-            {!connected
-              ? "Connect Studio to choose a place"
-              : label
-                ? `Editing: ${label}`
-                : hasOptions
-                  ? "Choose a Studio place"
-                  : "No live Studio place"}
-          </span>
-        </span>
-        {connected && hasOptions && (
-          <button
-            type="button"
-            onClick={() => setOpen(!open)}
-            className="inline-flex h-7 items-center gap-1 rounded-lg border border-white/10 bg-white/5 px-2 text-[10px] font-bold uppercase tracking-wider text-gray-300 transition-colors hover:bg-white/10 hover:text-white focus-ring"
-          >
-            {label ? "Change" : "Choose"}
-            <ChevronDown className={`h-3 w-3 transition-transform ${open ? "rotate-180" : ""}`} />
-          </button>
+      <button
+        type="button"
+        onClick={() => {
+          if (!canOpen) return;
+          setOpen(!open);
+        }}
+        disabled={!canOpen}
+        className={`inline-flex max-w-full items-center gap-1.5 rounded-lg border px-2.5 py-1 text-[11px] font-semibold transition-colors focus-ring ${
+          connected && label
+            ? "border-[#00bbf9]/25 bg-[#00bbf9]/[0.08] text-[#9ae6ff] hover:bg-[#00bbf9]/15"
+            : "border-amber-400/25 bg-amber-400/10 text-amber-100"
+        } ${canOpen ? "cursor-pointer" : "cursor-default opacity-90"}`}
+        aria-expanded={canOpen ? open : undefined}
+        aria-haspopup={canOpen ? "listbox" : undefined}
+        title={displayLabel}
+      >
+        <MapPin className="h-3.5 w-3.5 shrink-0" />
+        <span className="truncate">{displayLabel}</span>
+        {canOpen && (
+          <ChevronDown className={`h-3 w-3 shrink-0 transition-transform ${open ? "rotate-180" : ""}`} />
         )}
-      </div>
+      </button>
 
       {open && hasOptions && (
         <StudioTargetPicker

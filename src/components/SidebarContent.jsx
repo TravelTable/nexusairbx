@@ -22,7 +22,6 @@ import Modal from "./Modal";
 import ScriptRow from "./sidebar/ScriptRow";
 import ChatRow from "./sidebar/ChatRow";
 import ChatHistoryModal from "./sidebar/ChatHistoryModal";
-import NotificationToast from "./sidebar/NotificationToast";
 import {
   getVersionStr,
   fromNow,
@@ -72,6 +71,7 @@ export default function SidebarContent({
   generatingChatIds = [],
   user = null,
   authReady = true,
+  notify = () => {},
 }) {
   const { isPremium, isFreeUsagePlan, limits, plan, entitlements } = useBilling();
 
@@ -89,7 +89,6 @@ export default function SidebarContent({
   } = useProjectBindings(user, { authReady });
 
   // --- State ---
-  const [notification, setNotification] = useState(null);
   const [creatingProject, setCreatingProject] = useState(false);
   const [newProjectTitle, setNewProjectTitle] = useState("");
   const [showNewProjectForm, setShowNewProjectForm] = useState(false);
@@ -173,7 +172,7 @@ export default function SidebarContent({
 
   const handleCreateChatLocal = useCallback(() => {
     if (!selectedProjectId) {
-      setNotification({
+      notify({
         message: "Select or create a project before starting a new chat.",
         type: "error",
       });
@@ -183,7 +182,7 @@ export default function SidebarContent({
     }
     emitAiEvent(AI_EVENTS.START_DRAFT, { projectId: selectedProjectId });
     if (isMobile && typeof onSelect === "function") onSelect();
-  }, [isMobile, onSelect, selectedProjectId, setActiveTab]);
+  }, [isMobile, notify, onSelect, selectedProjectId, setActiveTab]);
 
   const handleCreateProject = useCallback(async () => {
     if (!user || creatingProject) return;
@@ -207,21 +206,21 @@ export default function SidebarContent({
       const project = await createProject({ title, ...placePayload });
       setNewProjectTitle("");
       setShowNewProjectForm(false);
-      setNotification({
+      notify({
         message: project?.studioTargetLabel
           ? `Created ${project.title} · ${project.studioTargetLabel}`
           : `Created ${project?.title || "project"}`,
         type: "success",
       });
     } catch (err) {
-      setNotification({
+      notify({
         message: err?.message || "Could not create project",
         type: "error",
       });
     } finally {
       setCreatingProject(false);
     }
-  }, [createProject, creatingProject, newProjectTitle, user]);
+  }, [createProject, creatingProject, newProjectTitle, notify, user]);
 
   const handleRenameChatCommit = useCallback(
     async (id, title) => {
@@ -744,15 +743,6 @@ export default function SidebarContent({
           </div>
         )}
       </div>
-
-      {/* NotificationToast for upgrade nudges */}
-      <NotificationToast
-        open={!!notification}
-        message={notification?.message}
-        cta={notification?.cta}
-        onCta={notification?.onCta}
-        onClose={() => setNotification(null)}
-      />
     </div>
   );
 }
