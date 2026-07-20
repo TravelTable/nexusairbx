@@ -16,6 +16,7 @@ import {
 import { UnifiedStatusBar, TokenBar } from "../AiComponents";
 import { CHAT_MODES } from "../chatConstants";
 import StudioControls from "../workspace/StudioControls";
+import StudioPlaceChip from "../workspace/StudioPlaceChip";
 import { resolveStudioControlAccess } from "../workspace/studioControlAccess";
 import RobloxCloudControls from "../workspace/RobloxCloudControls";
 import AssetLibraryModal from "../workspace/AssetLibraryModal";
@@ -274,6 +275,12 @@ export default function ChatComposer({
   studioAutoPushPolicy,
   onStudioAutoPushPolicyChange,
   studioAutoPushAuthorized,
+  studioPlacePreference = null,
+  studioPlaceOptions = [],
+  studioPlacePickerOpen = null,
+  onStudioPlacePickerOpenChange = null,
+  onSelectStudioPlace = null,
+  selectingStudioTargetId = null,
   robloxConnected,
   robloxLoading,
   robloxSelectedCreator,
@@ -432,6 +439,19 @@ export default function ChatComposer({
                 />
               )}
             </div>
+
+            {studioEnabled && (
+              <StudioPlaceChip
+                preference={studioPlacePreference}
+                options={studioPlaceOptions}
+                connected={studioConnected}
+                studioEnabled={studioEnabled}
+                selectingTargetId={selectingStudioTargetId}
+                pickerOpen={studioPlacePickerOpen}
+                onPickerOpenChange={onStudioPlacePickerOpenChange}
+                onSelectPlace={onSelectStudioPlace}
+              />
+            )}
 
             {controlsPresence.present && (
               <div

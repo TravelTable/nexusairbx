@@ -16,6 +16,7 @@ import {
   onSnapshot,
   doc,
   updateDoc,
+  serverTimestamp,
 } from "firebase/firestore";
 
 import { appCheckReady as firebaseAppCheckReady, auth, db } from "../../firebase";
@@ -52,6 +53,12 @@ import {
   isStudioSessionLive,
   STUDIO_CONNECTION_TYPES,
 } from "../../lib/studioConnection";
+import {
+  buildStudioTargetPreference,
+  evaluateStudioPlaceGate,
+  readChatStudioPreference,
+  targetingOptionsFromStatus,
+} from "../../lib/studioPlaceBinding";
 import { AI_EVENTS, emitAiEvent, onAiEvent } from "../../lib/aiEvents";
 import { useAiNotifications } from "./useAiNotifications";
 import { useStarterPromo } from "../../hooks/useStarterPromo";
@@ -230,6 +237,7 @@ export function useAiWorkspaceController() {
   const [assetLibraryOpen, setAssetLibraryOpen] = useState(false);
   const [approvingStepId, setApprovingStepId] = useState(null);
   const [selectingStudioTargetId, setSelectingStudioTargetId] = useState(null);
+  const [studioPlacePickerOpen, setStudioPlacePickerOpen] = useState(false);
   const [restoringRun, setRestoringRun] = useState(false);
   const [chatProjectSnapshot, setChatProjectSnapshot] = useState(null);
   const studioConnection = useStudioConnection();
@@ -601,7 +609,15 @@ export function useAiWorkspaceController() {
   }, [pendingGenerationIntent, setGeneratorMode]);
 
   useEffect(() => {
-    const unbindStartDraft = onAiEvent(AI_EVENTS.START_DRAFT, () => {
+    const unbindStartDraft = onAiEvent(AI_EVENTS.START_DRAFT, (event) => {
+      const projectId = String(event?.detail?.projectId || "").trim();
+      if (projectId) {
+        try {
+          localStorage.setItem("nexusrbx.selectedWorkspaceProjectId", projectId);
+        } catch (_) {
+          /* ignore */
+        }
+      }
       chat.startNewChat();
       setActiveTab("chat");
     });
@@ -705,6 +721,30 @@ export function useAiWorkspaceController() {
     updateSettings,
   ]);
 
+  const studioPlaceOptions = useMemo(
+    () => targetingOptionsFromStatus(studioConnection),
+    [studioConnection]
+  );
+  const chatStudioPreference = useMemo(
+    () => readChatStudioPreference(chat.currentChatMeta),
+    [chat.currentChatMeta]
+  );
+
+  const bindChatStudioPlace = useCallback(async (option) => {
+    const preference = buildStudioTargetPreference(option);
+    if (!preference || !user) return null;
+    if (chat.currentChatId) {
+      await updateDoc(doc(db, "users", user.uid, "chats", chat.currentChatId), {
+        studioTargetPreference: {
+          ...preference,
+          updatedAt: serverTimestamp(),
+        },
+        updatedAt: serverTimestamp(),
+      });
+    }
+    return preference;
+  }, [chat.currentChatId, user]);
+
   const handlePromptSubmit = useCallback(async (e, overridePrompt = null, submissionOptions = {}) => {
     if (e && typeof e.preventDefault === "function") e.preventDefault();
 
@@ -751,8 +791,54 @@ export function useAiWorkspaceController() {
       return;
     }
 
+    let studioTargetPreference = submissionOptions?.studioTargetPreference || chatStudioPreference;
+    if (studioEnabled && ["agent", "debug"].includes(String(settings?.chatMode || chat.activeMode || "agent").toLowerCase())) {
+      let options = studioPlaceOptions;
+      if (!options.length) {
+        try {
+          const status = await getStudioStatus();
+          options = targetingOptionsFromStatus(status);
+        } catch (_) {
+          options = [];
+        }
+      }
+      const gate = evaluateStudioPlaceGate({
+        studioEnabled: true,
+        connected: Boolean(studioConnection.connected),
+        preference: studioTargetPreference,
+        options,
+      });
+      if (gate.status === "needs_connect") {
+        notify({
+          message: "Connect the NexusRBX Studio plugin or Local MCP, then choose a place before starting the agent.",
+          type: "error",
+        });
+        setStudioPlacePickerOpen(true);
+        return;
+      }
+      if (gate.status === "needs_selection") {
+        notify({
+          message: "Choose which Studio place this chat should edit before sending.",
+          type: "error",
+        });
+        setStudioPlacePickerOpen(true);
+        return;
+      }
+      if (gate.status === "auto_bind" || gate.status === "ready") {
+        studioTargetPreference = buildStudioTargetPreference(gate.target) || studioTargetPreference;
+        if (gate.status === "auto_bind" && studioTargetPreference) {
+          try {
+            await bindChatStudioPlace(gate.target);
+          } catch (_) {
+            /* submit still carries the preference */
+          }
+        }
+      }
+    }
+
     setPrompt("");
     setAttachments([]);
+    setStudioPlacePickerOpen(false);
 
     if (refineTarget) {
       const target = refineTarget;
@@ -778,7 +864,18 @@ export function useAiWorkspaceController() {
       promptToSend,
       currentAttachments,
       workspace.projectArtifactSnapshot,
-      submissionOptions
+      {
+        ...submissionOptions,
+        ...(studioTargetPreference ? { studioTargetPreference } : {}),
+        ...( (() => {
+          try {
+            const projectId = String(localStorage.getItem("nexusrbx.selectedWorkspaceProjectId") || "").trim();
+            return projectId ? { projectId } : {};
+          } catch (_) {
+            return {};
+          }
+        })()),
+      }
     );
   }, [
     user,
@@ -795,6 +892,13 @@ export function useAiWorkspaceController() {
     settings?.chatMode,
     settings?.modelVersion,
     setGeneratorMode,
+    studioEnabled,
+    studioConnection.connected,
+    studioPlaceOptions,
+    chatStudioPreference,
+    chat.activeMode,
+    bindChatStudioPlace,
+    notify,
   ]);
 
   const recordPendingAuthGate = useCallback((actionType, source = "quick_script_gate") => {
@@ -1276,9 +1380,20 @@ export function useAiWorkspaceController() {
       const targetId = typeof option === "string"
         ? option
         : option?.id || option?.targetId || option?.studioTargetId;
-      if (!runId || !targetId || !user || selectingStudioTargetId) return;
+      if (!targetId || !user || selectingStudioTargetId) return;
       setSelectingStudioTargetId(targetId);
       try {
+        const preference = await bindChatStudioPlace(option);
+        if (!runId) {
+          setStudioPlacePickerOpen(false);
+          notify({
+            message: preference?.label
+              ? `This chat will edit ${preference.label}`
+              : "Studio place selected for this chat",
+            type: "success",
+          });
+          return;
+        }
         const result = await selectAgentStudioTarget(runId, option);
         await syncAgentRunSteps(runId, null, result?.run || null);
         if (result?.conflict) {
@@ -1287,6 +1402,7 @@ export function useAiWorkspaceController() {
             type: "error",
           });
         } else {
+          setStudioPlacePickerOpen(false);
           notify({
             message: result?.run?.placeName
               ? `Continuing in ${result.run.placeName}`
@@ -1300,7 +1416,15 @@ export function useAiWorkspaceController() {
         setSelectingStudioTargetId(null);
       }
     },
-    [notify, selectingStudioTargetId, syncAgentRunSteps, unified.pendingMessage, user, workspace.agentRun]
+    [
+      bindChatStudioPlace,
+      notify,
+      selectingStudioTargetId,
+      syncAgentRunSteps,
+      unified.pendingMessage,
+      user,
+      workspace.agentRun,
+    ]
   );
 
   const handleApproveStep = useCallback(
@@ -1876,6 +2000,11 @@ export function useAiWorkspaceController() {
       selectingStudioTargetId,
       restoringRun,
       unifiedAgent: FEATURE_FLAGS.unifiedAgent,
+      placeOptions: studioPlaceOptions,
+      placePreference: chatStudioPreference,
+      placePickerOpen: studioPlacePickerOpen,
+      setPlacePickerOpen: setStudioPlacePickerOpen,
+      bindPlace: bindChatStudioPlace,
     },
     roblox: {
       connected: robloxStatus?.connected === true,

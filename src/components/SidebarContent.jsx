@@ -36,7 +36,10 @@ import {
   serverTimestamp,
 } from "firebase/firestore";
 import { useAiLibrary } from "../hooks/useAiLibrary";
+import { useProjectBindings } from "../hooks/useProjectBindings";
 import { useBilling } from "../context/BillingContext";
+import { targetingOptionsFromStatus } from "../lib/studioPlaceBinding";
+import { getStudioStatus } from "../lib/studioBridgeApi";
 
 // --- SidebarContent component ---
 export default function SidebarContent({
@@ -76,9 +79,20 @@ export default function SidebarContent({
 
   // --- Library Data ---
   const { chats, hiddenChatCount } = useAiLibrary(user, { retentionDays, authReady });
+  const {
+    projects,
+    loading: projectsLoading,
+    selectedProjectId,
+    selectedProject,
+    setSelectedProjectId,
+    createProject,
+  } = useProjectBindings(user, { authReady });
 
   // --- State ---
   const [notification, setNotification] = useState(null);
+  const [creatingProject, setCreatingProject] = useState(false);
+  const [newProjectTitle, setNewProjectTitle] = useState("");
+  const [showNewProjectForm, setShowNewProjectForm] = useState(false);
   const [renamingScriptId, setRenamingScriptId] = useState(null);
   const [renameScriptTitle, setRenameScriptTitle] = useState("");
 
@@ -135,14 +149,17 @@ export default function SidebarContent({
             (c.lastMessage || "").toLowerCase().includes(q)
         )
       : list;
-    return filtered
+    const scoped = selectedProjectId
+      ? filtered.filter((c) => String(c.projectId || "") === selectedProjectId)
+      : filtered;
+    return scoped
       .slice()
       .sort((a, b) => {
         const au = Number(a.updatedAt || a.createdAt || 0) || 0;
         const bu = Number(b.updatedAt || b.createdAt || 0) || 0;
         return bu - au;
       });
-  }, [chats, deferredChatSearch]);
+  }, [chats, deferredChatSearch, selectedProjectId]);
 
   // --- Handlers ---
   const handleScriptSelect = useCallback(
@@ -155,9 +172,56 @@ export default function SidebarContent({
   );
 
   const handleCreateChatLocal = useCallback(() => {
-    emitAiEvent(AI_EVENTS.START_DRAFT);
+    if (!selectedProjectId) {
+      setNotification({
+        message: "Select or create a project before starting a new chat.",
+        type: "error",
+      });
+      setShowNewProjectForm(true);
+      setActiveTab("chats");
+      return;
+    }
+    emitAiEvent(AI_EVENTS.START_DRAFT, { projectId: selectedProjectId });
     if (isMobile && typeof onSelect === "function") onSelect();
-  }, [isMobile, onSelect]);
+  }, [isMobile, onSelect, selectedProjectId, setActiveTab]);
+
+  const handleCreateProject = useCallback(async () => {
+    if (!user || creatingProject) return;
+    const title = String(newProjectTitle || "").trim() || "Untitled project";
+    setCreatingProject(true);
+    try {
+      let placePayload = {};
+      try {
+        const status = await getStudioStatus();
+        const options = targetingOptionsFromStatus(status);
+        if (options.length === 1) {
+          placePayload = {
+            defaultPlaceId: options[0].placeId,
+            studioTargetId: options[0].id,
+            studioTargetLabel: options[0].label,
+          };
+        }
+      } catch (_) {
+        /* projects can be created without a live Studio place */
+      }
+      const project = await createProject({ title, ...placePayload });
+      setNewProjectTitle("");
+      setShowNewProjectForm(false);
+      setNotification({
+        message: project?.studioTargetLabel
+          ? `Created ${project.title} · ${project.studioTargetLabel}`
+          : `Created ${project?.title || "project"}`,
+        type: "success",
+      });
+    } catch (err) {
+      setNotification({
+        message: err?.message || "Could not create project",
+        type: "error",
+      });
+    } finally {
+      setCreatingProject(false);
+    }
+  }, [createProject, creatingProject, newProjectTitle, user]);
 
   const handleRenameChatCommit = useCallback(
     async (id, title) => {
@@ -433,10 +497,72 @@ export default function SidebarContent({
             </div>
 
             <div className="space-y-6">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between gap-2 px-1">
+                  <span className="text-[10px] font-bold text-gray-600 uppercase tracking-widest">Projects</span>
+                  <button
+                    type="button"
+                    onClick={() => setShowNewProjectForm((open) => !open)}
+                    className="text-[10px] font-bold uppercase tracking-wider text-[#00f5d4] hover:text-white"
+                  >
+                    {showNewProjectForm ? "Cancel" : "New project"}
+                  </button>
+                </div>
+                {showNewProjectForm && (
+                  <div className="rounded-xl border border-white/10 bg-black/30 p-2.5 space-y-2">
+                    <input
+                      className="w-full rounded-lg bg-white/[0.04] border border-white/10 px-2.5 py-2 text-xs text-white outline-none focus:border-[#00f5d4]/40"
+                      placeholder="Project name"
+                      value={newProjectTitle}
+                      onChange={(e) => setNewProjectTitle(e.target.value)}
+                    />
+                    <button
+                      type="button"
+                      disabled={creatingProject}
+                      onClick={handleCreateProject}
+                      className="w-full rounded-lg bg-[#00f5d4]/15 border border-[#00f5d4]/30 px-2.5 py-2 text-[11px] font-bold text-[#00f5d4] disabled:opacity-50"
+                    >
+                      {creatingProject ? "Creating…" : "Create project"}
+                    </button>
+                  </div>
+                )}
+                <div className="space-y-1">
+                  {projectsLoading && projects.length === 0 ? (
+                    <div className="px-2 py-2 text-[11px] text-gray-500">Loading projects…</div>
+                  ) : projects.length === 0 ? (
+                    <div className="rounded-xl border border-dashed border-white/10 px-3 py-3 text-[11px] text-gray-500">
+                      Create a project to organize chats and bind a Studio place.
+                    </div>
+                  ) : (
+                    projects.map((project) => (
+                      <button
+                        key={project.projectId}
+                        type="button"
+                        onClick={() => setSelectedProjectId(project.projectId)}
+                        className={`w-full rounded-xl border px-3 py-2 text-left transition-colors ${
+                          selectedProjectId === project.projectId
+                            ? "border-[#00f5d4]/35 bg-[#00f5d4]/10 text-white"
+                            : "border-white/5 bg-white/[0.02] text-gray-400 hover:bg-white/[0.05] hover:text-white"
+                        }`}
+                      >
+                        <div className="text-xs font-bold truncate">{project.title}</div>
+                        {project.studioTargetLabel && (
+                          <div className="mt-0.5 text-[10px] text-gray-500 truncate">
+                            {project.studioTargetLabel}
+                          </div>
+                        )}
+                      </button>
+                    ))
+                  )}
+                </div>
+              </div>
+
               {/* New conversation: explicit when no chat selected */}
               <div className="space-y-2">
                 <div className="flex items-center gap-2 px-1">
-                  <span className="text-[10px] font-bold text-gray-600 uppercase tracking-widest">Current</span>
+                  <span className="text-[10px] font-bold text-gray-600 uppercase tracking-widest">
+                    {selectedProject ? selectedProject.title : "Current"}
+                  </span>
                   <div className="h-px flex-1 bg-white/5" />
                 </div>
                 <button
@@ -452,7 +578,9 @@ export default function SidebarContent({
                   }`}
                 >
                   <Plus className="w-4 h-4 shrink-0 text-[#00f5d4]" />
-                  <span className="text-xs font-bold truncate">New conversation</span>
+                  <span className="text-xs font-bold truncate">
+                    {selectedProjectId ? "New conversation" : "Select a project to chat"}
+                  </span>
                 </button>
               </div>
 

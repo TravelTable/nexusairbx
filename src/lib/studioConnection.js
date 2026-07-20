@@ -295,6 +295,7 @@ export function normalizeStudioConnectionSnapshot({ pluginStatus = null, mcpStat
     connected: pluginConnected || mcpConnected,
     sessionId: getStudioSessionId(activeSession),
     connectionType: activeSession ? getStudioConnectionType(activeSession) : null,
+    targeting: pluginStatus?.targeting || mcpStatus?.targeting || null,
     activeSession,
     sessions,
     pluginSessions: sessions.filter(

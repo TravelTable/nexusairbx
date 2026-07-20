@@ -166,17 +166,28 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
 
   // Ensure a chat exists, returning its id (creating + opening if needed).
   const ensureChat = useCallback(
-    async (titleSeed) => {
+    async (titleSeed, { projectId = null, studioTargetPreference = null } = {}) => {
       let activeChatId = chat.currentChatId;
       if (!activeChatId) {
         if (!newChatPromiseRef.current) {
           newChatPromiseRef.current = (async () => {
             const seed = String(titleSeed || "New chat");
-            const newChatRef = await addDoc(collection(db, "users", user.uid, "chats"), {
+            let selectedProjectId = String(projectId || "").trim();
+            if (!selectedProjectId) {
+              try {
+                selectedProjectId = String(localStorage.getItem("nexusrbx.selectedWorkspaceProjectId") || "").trim();
+              } catch (_) {
+                selectedProjectId = "";
+              }
+            }
+            const payload = {
               title: seed.slice(0, 30) + (seed.length > 30 ? "..." : ""),
               createdAt: serverTimestamp(),
               updatedAt: serverTimestamp(),
-            });
+            };
+            if (selectedProjectId) payload.projectId = selectedProjectId;
+            if (studioTargetPreference) payload.studioTargetPreference = studioTargetPreference;
+            const newChatRef = await addDoc(collection(db, "users", user.uid, "chats"), payload);
             chat.openChatById(newChatRef.id);
             return newChatRef.id;
           })().finally(() => {

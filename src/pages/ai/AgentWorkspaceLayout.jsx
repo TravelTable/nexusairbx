@@ -855,6 +855,11 @@ export default function AgentWorkspaceLayout({ controller }) {
           studioAutoPushPolicy={studio?.autoPushPolicy}
           onStudioAutoPushPolicyChange={handleStudioAutoPushPolicyChange}
           studioAutoPushAuthorized={studioAutoPushAuthorized}
+          studioPlacePreference={studio?.placePreference || null}
+          studioPlaceOptions={studio?.placeOptions || []}
+          studioPlacePickerOpen={studio?.placePickerOpen}
+          onStudioPlacePickerOpenChange={studio?.setPlacePickerOpen}
+          onSelectStudioPlace={handleSelectStudioTarget}
           robloxConnected={roblox?.connected}
           robloxLoading={roblox?.loading}
           robloxSelectedCreator={roblox?.selectedCreator}

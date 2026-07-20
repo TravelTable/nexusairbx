@@ -45,8 +45,30 @@ service cloud.firestore {
         'activeMode',
         'createdAt',
         'updatedAt',
-        'lastMessage'
+        'lastMessage',
+        'projectId',
+        'studioTargetPreference'
       ]);
+    }
+
+    function validStudioTargetPreference(value) {
+      return value is map
+        && value.keys().hasOnly(['targetId', 'placeId', 'label', 'updatedAt'])
+        && (
+          !value.keys().hasAny(['targetId'])
+          || value.targetId == null
+          || isShortString(value.targetId, 200)
+        )
+        && (
+          !value.keys().hasAny(['placeId'])
+          || value.placeId == null
+          || isShortString(value.placeId, 80)
+        )
+        && (
+          !value.keys().hasAny(['label'])
+          || value.label == null
+          || isShortString(value.label, 160)
+        );
     }
 
     function validChatCreate() {
@@ -66,6 +88,14 @@ service cloud.firestore {
         && (
           !request.resource.data.keys().hasAny(['lastMessage'])
           || isShortString(request.resource.data.lastMessage, 500)
+        )
+        && (
+          !request.resource.data.keys().hasAny(['projectId'])
+          || isShortString(request.resource.data.projectId, 120)
+        )
+        && (
+          !request.resource.data.keys().hasAny(['studioTargetPreference'])
+          || validStudioTargetPreference(request.resource.data.studioTargetPreference)
         );
     }
 
@@ -74,7 +104,9 @@ service cloud.firestore {
         'title',
         'activeMode',
         'updatedAt',
-        'lastMessage'
+        'lastMessage',
+        'projectId',
+        'studioTargetPreference'
       ])
         && (
           !request.resource.data
@@ -96,6 +128,20 @@ service cloud.firestore {
             .affectedKeys()
             .hasAny(['lastMessage'])
           || isShortString(request.resource.data.lastMessage, 500)
+        )
+        && (
+          !request.resource.data
+            .diff(resource.data)
+            .affectedKeys()
+            .hasAny(['projectId'])
+          || isShortString(request.resource.data.projectId, 120)
+        )
+        && (
+          !request.resource.data
+            .diff(resource.data)
+            .affectedKeys()
+            .hasAny(['studioTargetPreference'])
+          || validStudioTargetPreference(request.resource.data.studioTargetPreference)
         )
         && (
           !request.resource.data

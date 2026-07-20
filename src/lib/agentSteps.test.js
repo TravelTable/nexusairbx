@@ -147,6 +147,19 @@ describe("agentSteps", () => {
     expect(
       summarizeStepResult({ type: "run_smoke_check", status: "succeeded", result: { checkedScripts: 7, issues: [] } })
     ).toBe("0 issue(s), 7 script(s) checked");
+    expect(
+      summarizeStepResult({
+        type: "get_project_manifest",
+        status: "succeeded",
+        payload: { cursor: "500", pageSize: 500 },
+        result: {
+          totalInstances: 2152,
+          items: new Array(500).fill({ path: "x" }),
+          pageSize: 500,
+          nextCursor: "1000",
+        },
+      })
+    ).toBe("page 2 · 500–999 of 2152 (more queued)");
   });
 
   test("countStepSnapshots sums snapshotCount", () => {

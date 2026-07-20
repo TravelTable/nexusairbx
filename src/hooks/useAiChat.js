@@ -647,12 +647,40 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
 
     try {
       if (!activeChatId) {
-        const newChatRef = await addDoc(collection(db, "users", user.uid, "chats"), {
+        let selectedProjectId = String(submissionOptions?.projectId || "").trim();
+        if (!selectedProjectId) {
+          try {
+            selectedProjectId = String(localStorage.getItem("nexusrbx.selectedWorkspaceProjectId") || "").trim();
+          } catch (_) {
+            selectedProjectId = "";
+          }
+        }
+        const newChatPayload = {
           title: displayContent.slice(0, 30) + (displayContent.length > 30 ? "..." : ""),
           activeMode: expertMode,
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
-        });
+        };
+        if (selectedProjectId) newChatPayload.projectId = selectedProjectId;
+        if (submissionOptions?.studioTargetPreference) {
+          newChatPayload.studioTargetPreference = submissionOptions.studioTargetPreference;
+        } else if (selectedProjectId) {
+          try {
+            const { getProjectBinding } = await import("../lib/projectBindingsApi");
+            const result = await getProjectBinding(selectedProjectId);
+            const project = result?.project;
+            if (project?.studioTargetId || project?.defaultPlaceId || project?.placeId) {
+              newChatPayload.studioTargetPreference = {
+                targetId: project.studioTargetId || null,
+                placeId: project.defaultPlaceId || project.placeId || null,
+                label: project.studioTargetLabel || project.title || "Untitled Studio project",
+              };
+            }
+          } catch (_) {
+            /* non-fatal */
+          }
+        }
+        const newChatRef = await addDoc(collection(db, "users", user.uid, "chats"), newChatPayload);
         activeChatId = newChatRef.id;
         openChatById(activeChatId);
         beginGenerationState(activeChatId);
@@ -717,6 +745,39 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
         }
       }
 
+      const preferredTarget =
+        (submissionOptions?.studioTargetPreference && typeof submissionOptions.studioTargetPreference === "object"
+          ? submissionOptions.studioTargetPreference
+          : null)
+        || currentChatMeta?.studioTargetPreference
+        || null;
+      const preferredTargetId = String(preferredTarget?.targetId || "").trim() || null;
+      const preferredPlaceId = String(preferredTarget?.placeId || "").trim() || null;
+      const preferredLabel = String(preferredTarget?.label || "").trim() || null;
+      if (preferredTargetId || preferredPlaceId) {
+        try {
+          await updateDoc(doc(db, "users", user.uid, "chats", activeChatId), {
+            studioTargetPreference: {
+              targetId: preferredTargetId,
+              placeId: preferredPlaceId,
+              label: preferredLabel || "Untitled Studio project",
+              updatedAt: serverTimestamp(),
+            },
+            updatedAt: serverTimestamp(),
+          });
+          setCurrentChatMeta((prev) => ({
+            ...(prev || {}),
+            studioTargetPreference: {
+              targetId: preferredTargetId,
+              placeId: preferredPlaceId,
+              label: preferredLabel || "Untitled Studio project",
+            },
+          }));
+        } catch (_) {
+          /* preference persistence is best-effort; createRun still receives explicit fields */
+        }
+      }
+
       const jobRes = await fetch(`${BACKEND_URL}/api/generate/artifact`, {
         method: "POST",
         headers: { 
@@ -741,7 +802,9 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
           studioSessionId,
           studioConnectionType,
           routingMode: "hybrid",
-          targetPlaceId: studioTargetPlaceId,
+          targetPlaceId: preferredPlaceId || studioTargetPlaceId,
+          studioTargetId: preferredTargetId,
+          studioTargetConfirmed: Boolean(preferredTargetId),
           autoPushToStudio:
             autoPushToStudio &&
             Boolean(studioSessionId) &&

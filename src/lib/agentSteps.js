@@ -319,8 +319,20 @@ export function summarizeStepResult(step) {
     return result.title ? `Generated ${result.title}` : "Artifact generated";
   }
   if (type === "get_project_manifest") {
-    const count = result.totalInstances ?? result.count ?? result.items?.length ?? 0;
-    return `${count} manifest item(s) indexed${result.truncated ? " (truncated)" : ""}`;
+    const payload = step.payload || {};
+    const total = Number(result.totalInstances ?? result.count ?? 0);
+    const items = Array.isArray(result.items) ? result.items.length : 0;
+    const pageSize = Number(result.pageSize || payload.pageSize || 0) || items;
+    const cursor = Math.max(0, Number(result.cursor ?? payload.cursor ?? 0) || 0);
+    const pageItems = items || (result.nextCursor || total > 0 ? pageSize : 0);
+    if (total > 0 || pageItems > 0 || result.nextCursor) {
+      const start = pageItems > 0 ? cursor : 0;
+      const end = pageItems > 0 ? cursor + Math.max(pageItems, 1) - 1 : cursor;
+      const pageNum = pageSize > 0 ? Math.floor(cursor / pageSize) + 1 : 1;
+      const more = result.nextCursor ? " (more queued)" : (result.truncated ? " (truncated)" : "");
+      return `page ${pageNum} · ${start}–${end} of ${total || `${pageItems}+`}${more}`;
+    }
+    return "0 manifest item(s) indexed";
   }
   if (type === "inspect_place") {
     const count = result.count ?? result.totalInstances ?? 0;

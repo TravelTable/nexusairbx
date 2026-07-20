@@ -46,6 +46,12 @@ export default function AgentChatPanel({
   studioAutoPushPolicy,
   onStudioAutoPushPolicyChange,
   studioAutoPushAuthorized,
+  studioPlacePreference = null,
+  studioPlaceOptions = [],
+  studioPlacePickerOpen = null,
+  onStudioPlacePickerOpenChange = null,
+  onSelectStudioPlace = null,
+  studioCollaborators,
   // roblox cloud
   robloxConnected,
   robloxLoading,
@@ -287,6 +293,13 @@ export default function AgentChatPanel({
         studioAutoPushPolicy={studioAutoPushPolicy}
         onStudioAutoPushPolicyChange={onStudioAutoPushPolicyChange}
         studioAutoPushAuthorized={studioAutoPushAuthorized}
+        studioCollaborators={studioCollaborators}
+        studioPlacePreference={studioPlacePreference}
+        studioPlaceOptions={studioPlaceOptions}
+        studioPlacePickerOpen={studioPlacePickerOpen}
+        onStudioPlacePickerOpenChange={onStudioPlacePickerOpenChange}
+        onSelectStudioPlace={onSelectStudioPlace || onSelectStudioTarget}
+        selectingStudioTargetId={selectingStudioTargetId}
         robloxConnected={robloxConnected}
         robloxLoading={robloxLoading}
         robloxSelectedCreator={robloxSelectedCreator}
