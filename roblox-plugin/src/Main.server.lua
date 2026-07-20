@@ -150,6 +150,8 @@ local function pairStudio()
 	-- Pairing already returns the authoritative compatibility contract. Apply it
 	-- immediately so reconnect does not wait on a later ping that can leave the
 	-- UI stuck in CONNECTING while the session is actually usable.
+	-- Compatibility owns the pill. Never force "connected"/LIVE here — that
+	-- overwrote CONNECTING after an incomplete handshake and lied to the user.
 	if not applyCompatibility(dataOrError) then
 		setBridgeState("connecting")
 		setLast("paired session " .. tostring(dataOrError.sessionId) .. " · finishing handshake")
@@ -157,7 +159,6 @@ local function pairStudio()
 		setLast("paired session " .. tostring(dataOrError.sessionId))
 	end
 	codeBox.Text = ""
-	setStatus("connected")
 	pushActivity({
 		commandType = "pair",
 		status = "succeeded",
@@ -384,10 +385,20 @@ end)
 
 -- Heartbeat loop: one request keeps the session live and returns collaborator
 -- plus companion health summaries. The backend throttles persistence.
+-- The pill must track session-ping truth, never a bare /health probe — that
+-- left Studio saying LIVE while the website correctly marked the plugin offline.
 task.spawn(function()
 	local failureCount = 0
+	local lastAttestedPlaceId = tostring(game.PlaceId)
 	while true do
 		if getToken() then
+			local currentPlaceId = tostring(game.PlaceId)
+			if currentPlaceId ~= lastAttestedPlaceId then
+				lastAttestedPlaceId = currentPlaceId
+				failureCount = 0
+				setBridgeState("connecting")
+				setLast("Place changed · refreshing Studio session")
+			end
 			local signatureOk, signature = pcall(computePlaceSignature)
 			local ok, latency, authExpired, heartbeat = pingSession(
 				getToken(),
@@ -397,7 +408,12 @@ task.spawn(function()
 			local hadCompatibility = applyCompatibility(heartbeat)
 			if ok then
 				failureCount = 0
+				lastAttestedPlaceId = tostring(game.PlaceId)
+				-- Only a successful session ping proves sync with NexusRBX.
 				setHealth(os.time(), latency)
+				if not hadCompatibility and compatibilityHandshakeReady and compatibilityStatus == "compatible" then
+					setBridgeState("live")
+				end
 				if type(heartbeat) == "table" then
 					updateCollaborators(heartbeat.collaborators)
 					if type(heartbeat.mcp) == "table" then
@@ -414,17 +430,21 @@ task.spawn(function()
 					compatibilityStatus = "repairing"
 					setBridgeState("connecting")
 					setLast("Restoring Studio connection")
+				else
+					-- Token still present but the authenticated heartbeat failed.
+					-- Show RECONNECTING so Studio matches website liveness.
+					setBridgeState("degraded", "Reconnecting to NexusRBX")
+					setLast("Session heartbeat failed · retrying")
 				end
-				local healthOk, healthLatency = pingHealth()
-				if healthOk then
-					setHealth(os.time(), healthLatency)
-				end
+				-- Probe /health for reachability only — never call setHealth here.
+				pingHealth()
 			end
 			if failureCount > 0 then
-				local delay = math.min(0.75 * (2 ^ (failureCount - 1)), 30) + (math.random() * 0.35)
+				-- Recover quickly after place opens / brief HttpService blips.
+				local delay = math.min(0.35 * (2 ^ (failureCount - 1)), 12) + (math.random() * 0.2)
 				task.wait(delay)
 			else
-				task.wait(compatibilityHandshakeReady and 15 or 1)
+				task.wait(compatibilityHandshakeReady and 10 or 1)
 			end
 		else
 			failureCount = 0

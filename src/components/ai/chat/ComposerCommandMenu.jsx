@@ -14,7 +14,7 @@ export default function ComposerCommandMenu({
 
   return (
     <div
-      className="absolute bottom-full left-0 right-0 z-30 mb-1.5 overflow-hidden rounded-xl border border-white/10 bg-[#0D0D0D]/98 shadow-2xl backdrop-blur-xl"
+      className="absolute bottom-full left-0 right-0 z-30 mb-1.5 overflow-hidden rounded-xl border border-white/10 bg-[#0D0D0D] shadow-2xl"
       role="listbox"
       aria-label="Composer commands"
     >

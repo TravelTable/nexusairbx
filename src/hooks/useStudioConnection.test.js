@@ -133,11 +133,46 @@ describe("useStudioConnection", () => {
   });
 
   test("poll delay helper enforces a hidden minimum", () => {
-    expect(getStudioStatusPollDelay({ connected: true, hidden: false })).toBe(15000);
+    expect(getStudioStatusPollDelay({ connected: true, pluginConnected: true, hidden: false })).toBe(15000);
     expect(getStudioStatusPollDelay({ connected: false, hidden: false })).toBe(5000);
-    expect(getStudioStatusPollDelay({ connected: true, updateRequired: true, hidden: false })).toBe(5000);
+    expect(getStudioStatusPollDelay({ connected: true, pluginConnected: true, updateRequired: true, hidden: false })).toBe(5000);
+    expect(getStudioStatusPollDelay({ connected: true, pluginConnected: false, hidden: false })).toBe(5000);
     expect(getStudioStatusPollDelay({ connected: false, hidden: true })).toBe(60000);
-    expect(getStudioStatusPollDelay({ connected: true, hidden: false, retryAfterMs: 30000 })).toBe(30000);
+    expect(getStudioStatusPollDelay({ connected: true, pluginConnected: true, hidden: false, retryAfterMs: 30000 })).toBe(30000);
+  });
+
+  test("MCP-only connected keeps recovering poll cadence until plugin is live", async () => {
+    getStudioStatus.mockResolvedValue({ sessions: [] });
+    getStudioMcpStatus.mockResolvedValue({
+      sessions: [{
+        id: "mcp_1",
+        connectionType: "mcp_local",
+        status: "connected",
+        live: true,
+        connectorLive: true,
+        mcpServerAvailable: true,
+      }],
+    });
+
+    const hook = renderHook(() => useStudioConnection());
+
+    await waitFor(() => {
+      expect(hook.result.current.loading).toBe(false);
+      expect(hook.result.current.connected).toBe(true);
+      expect(hook.result.current.pluginConnected).toBe(false);
+    });
+    getStudioStatus.mockClear();
+
+    act(() => {
+      jest.advanceTimersByTime(4999);
+    });
+    expect(getStudioStatus).not.toHaveBeenCalled();
+
+    await act(async () => {
+      jest.advanceTimersByTime(1);
+      await Promise.resolve();
+    });
+    await waitFor(() => expect(getStudioStatus).toHaveBeenCalledTimes(1));
   });
 
   test("checks an outdated plugin session every five seconds until it refreshes", async () => {

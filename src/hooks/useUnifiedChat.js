@@ -168,6 +168,9 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
   const ensureChat = useCallback(
     async (titleSeed, { projectId = null, studioTargetPreference = null } = {}) => {
       let activeChatId = chat.currentChatId;
+      // #region agent log
+      fetch('http://127.0.0.1:7578/ingest/57d6d18f-d552-454d-9136-c39042e05f2e',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'8a6e57'},body:JSON.stringify({sessionId:'8a6e57',runId:'pre-fix',hypothesisId:'B',location:'useUnifiedChat.js:ensureChat',message:'ensureChat called',data:{existingChatId:activeChatId,hasStudioPref:Boolean(studioTargetPreference),studioPrefLabel:studioTargetPreference?.label||null,studioPrefTargetId:studioTargetPreference?.targetId||null,projectId:projectId||null},timestamp:Date.now()})}).catch(()=>{});
+      // #endregion
       if (!activeChatId) {
         if (!newChatPromiseRef.current) {
           newChatPromiseRef.current = (async () => {
@@ -187,6 +190,9 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
             };
             if (selectedProjectId) payload.projectId = selectedProjectId;
             if (studioTargetPreference) payload.studioTargetPreference = studioTargetPreference;
+            // #region agent log
+            fetch('http://127.0.0.1:7578/ingest/57d6d18f-d552-454d-9136-c39042e05f2e',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'8a6e57'},body:JSON.stringify({sessionId:'8a6e57',runId:'pre-fix',hypothesisId:'B',location:'useUnifiedChat.js:ensureChat:create',message:'Creating chat document',data:{selectedProjectId:selectedProjectId||null,payloadHasStudioPref:Boolean(payload.studioTargetPreference),payloadStudioLabel:payload.studioTargetPreference?.label||null},timestamp:Date.now()})}).catch(()=>{});
+            // #endregion
             const newChatRef = await addDoc(collection(db, "users", user.uid, "chats"), payload);
             chat.openChatById(newChatRef.id);
             return newChatRef.id;
@@ -543,6 +549,9 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
           }
 
           try {
+            // #region agent log
+            fetch('http://127.0.0.1:7578/ingest/57d6d18f-d552-454d-9136-c39042e05f2e',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'8a6e57'},body:JSON.stringify({sessionId:'8a6e57',runId:'pre-fix',hypothesisId:'B',location:'useUnifiedChat.js:agentSubmit',message:'Agent submit about to ensureChat',data:{currentChatId:chat.currentChatId,optionsHasStudioPref:Boolean(options?.studioTargetPreference),optionsStudioLabel:options?.studioTargetPreference?.label||null,optionsStudioTargetId:options?.studioTargetPreference?.targetId||null,mode},timestamp:Date.now()})}).catch(()=>{});
+            // #endregion
             activeChatId = await ensureChat(titleSeed);
             // existingRequestId=null lets the generation hook write the user
             // message itself, so there is exactly one user bubble.

@@ -758,10 +758,13 @@ export function useAiWorkspaceController() {
         chatStudioPreference.targetId === optimisticStudioPlacePreference.targetId) ||
       (optimisticStudioPlacePreference.placeId &&
         chatStudioPreference.placeId === optimisticStudioPlacePreference.placeId);
-    if (sameTarget) setOptimisticStudioPlacePreference(null);
+    if (sameTarget) {
+      setOptimisticStudioPlacePreference(null);
+    }
   }, [chatStudioPreference, optimisticStudioPlacePreference]);
 
   const effectiveStudioPlacePreference = optimisticStudioPlacePreference || chatStudioPreference;
+
 
   const bindChatStudioPlace = useCallback(async (option) => {
     const preference = buildStudioTargetPreference(option);

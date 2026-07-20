@@ -14,7 +14,7 @@ local STUDIO_PROTOCOL_VERSION = "2026-07-17-target-integrity"
 -- version. Keep it in lockstep with the generated bundle and backend allowlist.
 -- A plugin session must attest its build and actual command handlers at pairing
 -- time; version strings alone are not evidence that a command exists.
-local PLUGIN_BUILD_ID = "nexusrbx-studio-0.10.3-session-attestation.1"
+local PLUGIN_BUILD_ID = "nexusrbx-studio-0.10.3-session-attestation.2"
 
 -- These are deliberately capability-level (rather than UI-level) claims. The
 -- pairing payload also includes the exact sorted command list derived from the
@@ -2762,9 +2762,19 @@ inspectPlace = function(payload)
 	local pageSize = math.clamp(tonumber(payload.pageSize) or maxInstances, 20, 1000)
 	local cursor = math.max(0, tonumber(payload.cursor) or 0)
 	local requestedRevision = tostring(payload.manifestRevision or "")
+	-- Elapsed-time TTL (10 minutes). Prefer tick() so wall-clock jumps do not keep
+	-- expired snapshots alive; fall back to os.time() when tick is unavailable.
+	local MANIFEST_SNAPSHOT_TTL_SEC = 600
+	local function snapshotNow()
+		if typeof(tick) == "function" then
+			return tick()
+		end
+		return os.time()
+	end
 	NEXUS_RBX_MANIFEST_SNAPSHOTS = NEXUS_RBX_MANIFEST_SNAPSHOTS or {}
 	for revision, snapshot in pairs(NEXUS_RBX_MANIFEST_SNAPSHOTS) do
-		if os.time() - (snapshot.createdAt or 0) > 120 then
+		local createdAt = snapshot.createdAtElapsed or snapshot.createdAt or 0
+		if snapshotNow() - createdAt > MANIFEST_SNAPSHOT_TTL_SEC then
 			NEXUS_RBX_MANIFEST_SNAPSHOTS[revision] = nil
 		end
 	end
@@ -2785,6 +2795,7 @@ inspectPlace = function(payload)
 			retryable = true,
 		}
 	end
+	local supersedesRevision = nil
 	if not snapshot then
 		local state = {
 			count = 0,
@@ -2800,9 +2811,15 @@ inspectPlace = function(payload)
 			end
 			table.insert(roots, serializeInstance(inst, inst.Name, 1, maxDepth, state, includeSource, sourceMaxChars, ""))
 		end
-		requestedRevision = requestedRevision ~= "" and requestedRevision or Services.HttpService:GenerateGUID(false)
+		-- Revision immutability: never rebuild under a previously requested revision
+		-- when the snapshot is gone. Always mint a new GUID.
+		if requestedRevision ~= "" then
+			supersedesRevision = requestedRevision
+		end
+		requestedRevision = Services.HttpService:GenerateGUID(false)
 		snapshot = {
 			createdAt = os.time(),
+			createdAtElapsed = snapshotNow(),
 			items = state.items,
 			roots = roots,
 			scannedInstances = state.count,
@@ -2820,6 +2837,7 @@ inspectPlace = function(payload)
 		pluginVersion = PLUGIN_VERSION,
 		protocolVersion = STUDIO_PROTOCOL_VERSION,
 		revision = requestedRevision,
+		supersedesRevision = supersedesRevision,
 		placeName = game.Name,
 		placeId = tostring(game.PlaceId),
 		count = #snapshot.items,
@@ -7308,6 +7326,8 @@ local function pairStudio()
 	-- Pairing already returns the authoritative compatibility contract. Apply it
 	-- immediately so reconnect does not wait on a later ping that can leave the
 	-- UI stuck in CONNECTING while the session is actually usable.
+	-- Compatibility owns the pill. Never force "connected"/LIVE here — that
+	-- overwrote CONNECTING after an incomplete handshake and lied to the user.
 	if not applyCompatibility(dataOrError) then
 		setBridgeState("connecting")
 		setLast("paired session " .. tostring(dataOrError.sessionId) .. " · finishing handshake")
@@ -7315,7 +7335,6 @@ local function pairStudio()
 		setLast("paired session " .. tostring(dataOrError.sessionId))
 	end
 	codeBox.Text = ""
-	setStatus("connected")
 	pushActivity({
 		commandType = "pair",
 		status = "succeeded",
@@ -7542,10 +7561,20 @@ end)
 
 -- Heartbeat loop: one request keeps the session live and returns collaborator
 -- plus companion health summaries. The backend throttles persistence.
+-- The pill must track session-ping truth, never a bare /health probe — that
+-- left Studio saying LIVE while the website correctly marked the plugin offline.
 task.spawn(function()
 	local failureCount = 0
+	local lastAttestedPlaceId = tostring(game.PlaceId)
 	while true do
 		if getToken() then
+			local currentPlaceId = tostring(game.PlaceId)
+			if currentPlaceId ~= lastAttestedPlaceId then
+				lastAttestedPlaceId = currentPlaceId
+				failureCount = 0
+				setBridgeState("connecting")
+				setLast("Place changed · refreshing Studio session")
+			end
 			local signatureOk, signature = pcall(computePlaceSignature)
 			local ok, latency, authExpired, heartbeat = pingSession(
 				getToken(),
@@ -7555,7 +7584,12 @@ task.spawn(function()
 			local hadCompatibility = applyCompatibility(heartbeat)
 			if ok then
 				failureCount = 0
+				lastAttestedPlaceId = tostring(game.PlaceId)
+				-- Only a successful session ping proves sync with NexusRBX.
 				setHealth(os.time(), latency)
+				if not hadCompatibility and compatibilityHandshakeReady and compatibilityStatus == "compatible" then
+					setBridgeState("live")
+				end
 				if type(heartbeat) == "table" then
 					updateCollaborators(heartbeat.collaborators)
 					if type(heartbeat.mcp) == "table" then
@@ -7572,17 +7606,21 @@ task.spawn(function()
 					compatibilityStatus = "repairing"
 					setBridgeState("connecting")
 					setLast("Restoring Studio connection")
+				else
+					-- Token still present but the authenticated heartbeat failed.
+					-- Show RECONNECTING so Studio matches website liveness.
+					setBridgeState("degraded", "Reconnecting to NexusRBX")
+					setLast("Session heartbeat failed · retrying")
 				end
-				local healthOk, healthLatency = pingHealth()
-				if healthOk then
-					setHealth(os.time(), healthLatency)
-				end
+				-- Probe /health for reachability only — never call setHealth here.
+				pingHealth()
 			end
 			if failureCount > 0 then
-				local delay = math.min(0.75 * (2 ^ (failureCount - 1)), 30) + (math.random() * 0.35)
+				-- Recover quickly after place opens / brief Services.HttpService blips.
+				local delay = math.min(0.35 * (2 ^ (failureCount - 1)), 12) + (math.random() * 0.2)
 				task.wait(delay)
 			else
-				task.wait(compatibilityHandshakeReady and 15 or 1)
+				task.wait(compatibilityHandshakeReady and 10 or 1)
 			end
 		else
 			failureCount = 0

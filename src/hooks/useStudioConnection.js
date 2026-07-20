@@ -5,22 +5,21 @@ import { normalizeStudioConnectionSnapshot } from "../lib/studioConnection";
 
 const CONNECTED_IDLE_POLL_MS = 15000;
 const RECOVERING_POLL_MS = 5000;
-const UPDATE_RECOVERY_POLL_MS = 5000;
 const HIDDEN_MIN_POLL_MS = 60000;
 
 export { isStudioSessionLive } from "../lib/studioConnection";
 
 export function getStudioStatusPollDelay({
   connected = false,
+  pluginConnected = connected,
   updateRequired = false,
   hidden = false,
   retryAfterMs = 0,
 } = {}) {
-  const baseDelay = updateRequired
-    ? UPDATE_RECOVERY_POLL_MS
-    : connected
-      ? CONNECTED_IDLE_POLL_MS
-      : RECOVERING_POLL_MS;
+  // MCP-only "connected" must not idle at 15s — agents need the plugin bridge,
+  // so keep recovering polls until pluginConnected is true again.
+  const idleHealthy = connected && pluginConnected && !updateRequired;
+  const baseDelay = idleHealthy ? CONNECTED_IDLE_POLL_MS : RECOVERING_POLL_MS;
   const retryDelay = Number.isFinite(Number(retryAfterMs)) ? Number(retryAfterMs) : 0;
   const delay = Math.max(baseDelay, retryDelay);
   return hidden ? Math.max(delay, HIDDEN_MIN_POLL_MS) : delay;
@@ -37,6 +36,7 @@ export function useStudioConnection() {
   const pluginStatusRef = useRef(null);
   const mcpStatusRef = useRef(null);
   const connectedRef = useRef(false);
+  const pluginConnectedRef = useRef(false);
   const updateRequiredRef = useRef(false);
   const retryAfterMsRef = useRef(0);
   const retryUntilRef = useRef(0);
@@ -78,6 +78,7 @@ export function useStudioConnection() {
         mcpStatus: mcpStatusRef.current,
       });
       connectedRef.current = nextSnapshot.connected;
+      pluginConnectedRef.current = nextSnapshot.pluginConnected;
       updateRequiredRef.current = nextSnapshot.compatibility?.status === "update_required";
       if (mountedRef.current) {
         setSnapshot(nextSnapshot);
@@ -121,6 +122,7 @@ export function useStudioConnection() {
       const hidden = typeof document !== "undefined" ? document.hidden : false;
       const delay = getStudioStatusPollDelay({
         connected: connectedRef.current,
+        pluginConnected: pluginConnectedRef.current,
         updateRequired: updateRequiredRef.current,
         hidden,
         retryAfterMs: retryAfterMsRef.current,

@@ -353,12 +353,18 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
     setCurrentChatId(chatId);
     setCurrentChatMeta(null);
     setMessages([]);
+    // #region agent log
+    fetch('http://127.0.0.1:7578/ingest/57d6d18f-d552-454d-9136-c39042e05f2e',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'8a6e57'},body:JSON.stringify({sessionId:'8a6e57',runId:'pre-fix',hypothesisId:'A,C',location:'useAiChat.js:openChatById',message:'openChatById cleared meta',data:{chatId},timestamp:Date.now()})}).catch(()=>{});
+    // #endregion
 
     chatUnsubRef.current = onSnapshot(
       doc(db, "users", uid, "chats", chatId),
       (snap) => {
         if (!isActive()) return;
         const data = snap.exists() ? { id: snap.id, ...snap.data() } : null;
+        // #region agent log
+        fetch('http://127.0.0.1:7578/ingest/57d6d18f-d552-454d-9136-c39042e05f2e',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'8a6e57'},body:JSON.stringify({sessionId:'8a6e57',runId:'pre-fix',hypothesisId:'A,C',location:'useAiChat.js:chatMetaSnapshot',message:'Chat meta snapshot',data:{chatId,exists:snap.exists(),studioPref:data?.studioTargetPreference||null},timestamp:Date.now()})}).catch(()=>{});
+        // #endregion
         setCurrentChatMeta(data || null);
         if (data?.activeMode) {
           setActiveMode(data.activeMode);
@@ -754,6 +760,9 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
       const preferredTargetId = String(preferredTarget?.targetId || "").trim() || null;
       const preferredPlaceId = String(preferredTarget?.placeId || "").trim() || null;
       const preferredLabel = String(preferredTarget?.label || "").trim() || null;
+      // #region agent log
+      fetch('http://127.0.0.1:7578/ingest/57d6d18f-d552-454d-9136-c39042e05f2e',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'8a6e57'},body:JSON.stringify({sessionId:'8a6e57',runId:'pre-fix',hypothesisId:'B,E',location:'useAiChat.js:persistPreference',message:'Persisting studio preference before job',data:{activeChatId,fromOptions:Boolean(submissionOptions?.studioTargetPreference),fromMeta:Boolean(currentChatMeta?.studioTargetPreference),preferredTargetId,preferredPlaceId,preferredLabel,willWrite:Boolean(preferredTargetId||preferredPlaceId),studioSessionId,studioConnectionType,studioTargetPlaceId},timestamp:Date.now()})}).catch(()=>{});
+      // #endregion
       if (preferredTargetId || preferredPlaceId) {
         try {
           await updateDoc(doc(db, "users", user.uid, "chats", activeChatId), {
