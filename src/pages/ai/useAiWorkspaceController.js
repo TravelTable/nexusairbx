@@ -805,12 +805,22 @@ export function useAiWorkspaceController() {
       const gate = evaluateStudioPlaceGate({
         studioEnabled: true,
         connected: Boolean(studioConnection.connected),
+        pluginConnected: Boolean(studioConnection.pluginConnected),
+        requirePlugin: true,
         preference: studioTargetPreference,
         options,
       });
+      if (gate.status === "needs_plugin") {
+        notify({
+          message: "Connect the NexusRBX Studio Plugin (LIVE) before the agent can create or edit in Studio.",
+          type: "error",
+        });
+        setStudioPlacePickerOpen(true);
+        return;
+      }
       if (gate.status === "needs_connect") {
         notify({
-          message: "Connect the NexusRBX Studio plugin or Local MCP, then choose a place before starting the agent.",
+          message: "Connect the NexusRBX Studio Plugin, then choose a place before starting the agent.",
           type: "error",
         });
         setStudioPlacePickerOpen(true);

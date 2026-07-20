@@ -125,9 +125,19 @@ local function inspectPlace(payload)
 	local pageSize = math.clamp(tonumber(payload.pageSize) or maxInstances, 20, 1000)
 	local cursor = math.max(0, tonumber(payload.cursor) or 0)
 	local requestedRevision = tostring(payload.manifestRevision or "")
+	-- Elapsed-time TTL (10 minutes). Prefer tick() so wall-clock jumps do not keep
+	-- expired snapshots alive; fall back to os.time() when tick is unavailable.
+	local MANIFEST_SNAPSHOT_TTL_SEC = 600
+	local function snapshotNow()
+		if typeof(tick) == "function" then
+			return tick()
+		end
+		return os.time()
+	end
 	NEXUS_RBX_MANIFEST_SNAPSHOTS = NEXUS_RBX_MANIFEST_SNAPSHOTS or {}
 	for revision, snapshot in pairs(NEXUS_RBX_MANIFEST_SNAPSHOTS) do
-		if os.time() - (snapshot.createdAt or 0) > 120 then
+		local createdAt = snapshot.createdAtElapsed or snapshot.createdAt or 0
+		if snapshotNow() - createdAt > MANIFEST_SNAPSHOT_TTL_SEC then
 			NEXUS_RBX_MANIFEST_SNAPSHOTS[revision] = nil
 		end
 	end
@@ -148,6 +158,7 @@ local function inspectPlace(payload)
 			retryable = true,
 		}
 	end
+	local supersedesRevision = nil
 	if not snapshot then
 		local state = {
 			count = 0,
@@ -163,9 +174,15 @@ local function inspectPlace(payload)
 			end
 			table.insert(roots, serializeInstance(inst, inst.Name, 1, maxDepth, state, includeSource, sourceMaxChars, ""))
 		end
-		requestedRevision = requestedRevision ~= "" and requestedRevision or HttpService:GenerateGUID(false)
+		-- Revision immutability: never rebuild under a previously requested revision
+		-- when the snapshot is gone. Always mint a new GUID.
+		if requestedRevision ~= "" then
+			supersedesRevision = requestedRevision
+		end
+		requestedRevision = HttpService:GenerateGUID(false)
 		snapshot = {
 			createdAt = os.time(),
+			createdAtElapsed = snapshotNow(),
 			items = state.items,
 			roots = roots,
 			scannedInstances = state.count,
@@ -183,6 +200,7 @@ local function inspectPlace(payload)
 		pluginVersion = PLUGIN_VERSION,
 		protocolVersion = STUDIO_PROTOCOL_VERSION,
 		revision = requestedRevision,
+		supersedesRevision = supersedesRevision,
 		placeName = game.Name,
 		placeId = tostring(game.PlaceId),
 		count = #snapshot.items,

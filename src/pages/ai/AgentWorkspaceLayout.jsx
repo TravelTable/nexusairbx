@@ -173,6 +173,8 @@ export default function AgentWorkspaceLayout({ controller }) {
   const manifestRefreshInFlightRef = useRef(null);
   const autoManifestRefreshKeyRef = useRef("");
   const manifestWaitsRef = useRef(new Map());
+  /** One automatic conflict recovery per session+revision failure (survives re-renders). */
+  const manifestRecoveryAttemptedRef = useRef(new Set());
   const taskRuntime = useTaskRuntime({
     user,
     projectId: roblox?.selectedAssetProjectId || "",
@@ -282,17 +284,20 @@ export default function AgentWorkspaceLayout({ controller }) {
 
   const refreshStudioManifest = useCallback(async (options = {}) => {
     const force = options?.force === true;
+    const isRecovery = options?.recovery === true;
     if (manifestRefreshInFlightRef.current) {
       return manifestRefreshInFlightRef.current;
     }
 
     const MANIFEST_FRESH_TTL_MS = 5 * 60 * 1000;
+    const pluginLive = Boolean(studio?.pluginConnected);
+    const canQueuePluginManifest = pluginLive && studioManifestSupported && Boolean(studioCommandSessionId);
 
     const refreshPromise = (async () => {
       setStudioBusy(true);
       setStudioConflict(null);
+      let previousRevision = "";
       try {
-        let previousRevision = "";
         let previousStatus = null;
         try {
           const previous = await getStudioManifestStatus({
@@ -324,28 +329,57 @@ export default function AgentWorkspaceLayout({ controller }) {
           return;
         }
 
-        if (studio?.connected && studioManifestSupported) {
-          const queued = await queueStudioTool({
-            type: "get_project_manifest",
-            payload: { maxDepth: 24, maxInstances: 10000, pageSize: 500, includeSource: false },
-            sessionId: studioCommandSessionId,
-            label: force ? "Rescan Studio project" : "Refresh Studio manifest",
-            applyMode: "unrestricted_dev",
-          });
-          appendTerminal(`queued manifest refresh ${queued.commandId}`, "state");
-          const status = await waitForManifestCompletion(previousRevision);
-          const items = await fetchManifestPage(status.lastCompleteRevision || status.activeRevision || "");
-          setStudioManifest(items);
-        } else {
+        // MCP-only sessions must never queue plugin-owned get_project_manifest.
+        if (!canQueuePluginManifest) {
+          if (!pluginLive) {
+            appendTerminal("skipping manifest refresh — Studio Plugin not LIVE", "state");
+            return;
+          }
           const data = await getStudioManifest({ sessionId: studioCommandSessionId, limit: 1000 });
           if (data.disconnected) {
             setStudioManifest([]);
             return;
           }
           setStudioManifest(data.manifest?.items || []);
+          return;
         }
+
+        const queued = await queueStudioTool({
+          type: "get_project_manifest",
+          payload: { maxDepth: 24, maxInstances: 10000, pageSize: 500, includeSource: false },
+          sessionId: studioCommandSessionId,
+          label: force ? "Rescan Studio project" : "Refresh Studio manifest",
+          applyMode: "unrestricted_dev",
+        });
+        appendTerminal(`queued manifest refresh ${queued.commandId}`, "state");
+        const status = await waitForManifestCompletion(previousRevision);
+        const items = await fetchManifestPage(status.lastCompleteRevision || status.activeRevision || "");
+        setStudioManifest(items);
       } catch (err) {
-        notify?.({ message: err?.message || "Could not refresh Studio manifest", type: "error" });
+        const conflictCode = String(err?.code || "");
+        const isConflict =
+          conflictCode === "STUDIO_MANIFEST_CONFLICTED" ||
+          /project index conflicted|manifest revision .+ conflicted|overlapping[_ ]canonical/i.test(
+            String(err?.message || "")
+          );
+        const recoveryKey = `${studioCommandSessionId || "none"}:${previousRevision || "none"}`;
+        if (
+          isConflict &&
+          !isRecovery &&
+          !manifestRecoveryAttemptedRef.current.has(recoveryKey)
+        ) {
+          manifestRecoveryAttemptedRef.current.add(recoveryKey);
+          appendTerminal("manifest conflict — retrying one automatic rescan", "state");
+          setStudioBusy(false);
+          manifestRefreshInFlightRef.current = null;
+          return refreshStudioManifest({ force: true, recovery: true });
+        }
+        notify?.({
+          message: isConflict
+            ? "Studio's project index got out of sync while scanning. Rescan the project and try again."
+            : (err?.message || "Could not refresh Studio manifest"),
+          type: "error",
+        });
       } finally {
         setStudioBusy(false);
       }
@@ -359,20 +393,29 @@ export default function AgentWorkspaceLayout({ controller }) {
         manifestRefreshInFlightRef.current = null;
       }
     }
-  }, [appendTerminal, fetchManifestPage, notify, studio?.connected, studioCommandSessionId, studioManifestSupported, waitForManifestCompletion]);
+  }, [
+    appendTerminal,
+    fetchManifestPage,
+    notify,
+    studio?.pluginConnected,
+    studioCommandSessionId,
+    studioManifestSupported,
+    waitForManifestCompletion,
+  ]);
 
   useEffect(() => {
     const sessionId = studioCommandSessionId;
-    if (!sessionId || !studio?.connected || !studioManifestSupported) return;
+    // Plugin-owned manifest only — never auto-queue against MCP-only sessions.
+    if (!sessionId || !studio?.pluginConnected || !studioManifestSupported) return;
 
-    const autoRefreshKey = `${sessionId}:${studio?.connected ? "live" : "cached"}`;
+    const autoRefreshKey = `${sessionId}:plugin-live`;
     if (autoManifestRefreshKeyRef.current === autoRefreshKey) return;
     autoManifestRefreshKeyRef.current = autoRefreshKey;
 
     refreshStudioManifest().catch(() => {
       autoManifestRefreshKeyRef.current = "";
     });
-  }, [refreshStudioManifest, studio?.connected, studioCommandSessionId, studioManifestSupported]);
+  }, [refreshStudioManifest, studio?.pluginConnected, studioCommandSessionId, studioManifestSupported]);
 
   const studioResults = useMemo(() => {
     const query = studioSearch.trim().toLowerCase();
