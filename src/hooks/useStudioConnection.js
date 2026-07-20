@@ -132,6 +132,10 @@ export function useStudioConnection() {
 
     const handleVisibilityChange = () => {
       clearTimer();
+      if (typeof document !== "undefined" && !document.hidden) {
+        Promise.resolve(refreshRef.current?.({ force: true })).finally(scheduleNext);
+        return;
+      }
       scheduleNext();
     };
 

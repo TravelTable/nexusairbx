@@ -237,13 +237,16 @@ export default function StudioPairControl({
     if (!pluginConnected || !pairing.plugin) return;
     setPairing((current) => ({ ...current, plugin: null }));
     notify?.({ message: "Connected via NexusRBX Studio Plugin", type: "success" });
-  }, [pluginConnected, pairing.plugin, notify]);
+    // Mirror disconnect: force a fresh status snapshot once pairing completes.
+    Promise.resolve(refresh?.({ force: true })).catch(() => {});
+  }, [pluginConnected, pairing.plugin, notify, refresh]);
 
   useEffect(() => {
     if (!mcpConnected || !pairing.mcp) return;
     setPairing((current) => ({ ...current, mcp: null }));
     notify?.({ message: "Connected via Roblox Studio MCP", type: "success" });
-  }, [mcpConnected, pairing.mcp, notify]);
+    Promise.resolve(refresh?.({ force: true })).catch(() => {});
+  }, [mcpConnected, pairing.mcp, notify, refresh]);
 
   const generateCode = async (method) => {
     if (requireUser && !requireUser()) return;

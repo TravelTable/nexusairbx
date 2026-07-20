@@ -79,6 +79,32 @@ describe("useStudioConnection", () => {
     await waitFor(() => expect(getStudioStatus).toHaveBeenCalledTimes(1));
   });
 
+  test("becoming visible force-refreshes Studio status immediately", async () => {
+    getStudioStatus.mockResolvedValue({
+      sessions: [{ sessionId: "studio_1", status: "connected", live: true }],
+    });
+
+    const hook = renderHook(() => useStudioConnection());
+
+    await waitFor(() => expect(hook.result.current.loading).toBe(false));
+    expect(getStudioStatus).toHaveBeenCalledTimes(1);
+
+    hidden = true;
+    await act(async () => {
+      document.dispatchEvent(new Event("visibilitychange"));
+      await Promise.resolve();
+    });
+    getStudioStatus.mockClear();
+
+    hidden = false;
+    await act(async () => {
+      document.dispatchEvent(new Event("visibilitychange"));
+      await Promise.resolve();
+    });
+
+    await waitFor(() => expect(getStudioStatus).toHaveBeenCalledTimes(1));
+  });
+
   test("reconnecting Studio polling stays at 5 seconds and refresh is immediate", async () => {
     getStudioStatus.mockResolvedValue({ sessions: [] });
 
