@@ -52,7 +52,6 @@ jest.mock("../../components/SignInNudgeModal", () => () => null);
 jest.mock("../../components/ProNudgeModal", () => () => null);
 jest.mock("../../components/StarterPromoModal", () => () => null);
 jest.mock("../../components/NotificationToast", () => () => null);
-jest.mock("../../components/ai/GameProfileWizard", () => () => null);
 jest.mock("../../components/ai/ModelSwitcher", () => () => null);
 jest.mock("../../components/ai/StudioPairControl", () => () => null);
 jest.mock("../../components/ai/ProjectArchitecturePanel", () => () => null);
@@ -156,7 +155,6 @@ function makeController({ activeMode = "build", handlers = {} } = {}) {
         activeMode,
         updateChatMode: noop,
       },
-      game: { showWizard: false, profile: null, setShowWizard: noop },
       scriptManager: { versionHistory: [] },
       unified: { isGenerating: false },
       workspace: {
@@ -166,7 +164,7 @@ function makeController({ activeMode = "build", handlers = {} } = {}) {
         openFile: noop,
         revertArtifactEdits: noop,
       },
-      settings: { modelVersion: "default", enableGameWizard: false },
+      settings: { modelVersion: "default" },
     },
     handlers: new Proxy(
       { notify: noop, dismissToast: noop, ...handlers },

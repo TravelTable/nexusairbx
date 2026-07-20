@@ -182,4 +182,125 @@ export function Segmented({ options = [], value, onChange, className = "", size 
   );
 }
 
+// --- PillTabs (alias of Segmented for design-system naming) ------------------
+
+export function PillTabs(props) {
+  return <Segmented {...props} />;
+}
+
+// --- Input ------------------------------------------------------------------
+
+export function Input({
+  className = "",
+  size = "md",
+  icon: Icon,
+  ...rest
+}) {
+  const pad = size === "sm" ? "px-2.5 py-2 text-xs" : "px-3 py-2.5 text-sm";
+  return (
+    <div className="relative group">
+      {Icon ? (
+        <Icon className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[var(--ds-text-muted)] group-focus-within:text-[var(--ds-accent)] transition-colors" />
+      ) : null}
+      <input
+        className={cx(
+          "w-full rounded-xl border border-[var(--ds-border)] bg-[var(--ds-surface-muted)] text-[var(--ds-text)] outline-none transition-all focus:border-[var(--ds-accent)]/40 focus:bg-white/[0.05] focus-ring placeholder:text-gray-600",
+          Icon ? "pl-9" : "",
+          pad,
+          className
+        )}
+        {...rest}
+      />
+    </div>
+  );
+}
+
+// --- Badge ------------------------------------------------------------------
+
+const BADGE_TONES = {
+  accent: "bg-[var(--ds-accent)]/15 text-[var(--ds-accent)] border-[var(--ds-accent)]/25",
+  purple: "bg-[var(--ds-accent-2)]/15 text-[#c9b3f7] border-[var(--ds-accent-2)]/25",
+  muted: "bg-white/5 text-gray-400 border-white/10",
+  info: "bg-[var(--ds-info)]/15 text-[#8bdcf8] border-[var(--ds-info)]/25",
+  danger: "bg-[var(--ds-danger)]/15 text-red-300 border-[var(--ds-danger)]/25",
+};
+
+export function Badge({ tone = "muted", className = "", children, ...rest }) {
+  return (
+    <span
+      className={cx(
+        "inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-widest",
+        BADGE_TONES[tone] || BADGE_TONES.muted,
+        className
+      )}
+      {...rest}
+    >
+      {children}
+    </span>
+  );
+}
+
+// --- EmptyState -------------------------------------------------------------
+
+export function EmptyState({
+  icon: Icon,
+  title,
+  description,
+  action,
+  className = "",
+}) {
+  return (
+    <div
+      className={cx(
+        "rounded-xl border border-dashed border-[var(--ds-border)] bg-[var(--ds-surface-muted)] px-3 py-4 text-center",
+        className
+      )}
+    >
+      {Icon ? <Icon className="mx-auto mb-2 h-7 w-7 text-gray-700" /> : null}
+      {title ? <p className="text-xs font-bold text-gray-300">{title}</p> : null}
+      {description ? <p className="mt-1 text-[11px] leading-relaxed text-gray-500">{description}</p> : null}
+      {action ? <div className="mt-3">{action}</div> : null}
+    </div>
+  );
+}
+
+// --- ListItem ---------------------------------------------------------------
+
+export function ListItem({
+  as: Tag = "button",
+  selected = false,
+  title,
+  subtitle,
+  right,
+  className = "",
+  children,
+  ...rest
+}) {
+  return (
+    <Tag
+      type={Tag === "button" ? "button" : undefined}
+      className={cx(
+        "w-full rounded-xl border px-3 py-2 text-left transition-colors focus-ring",
+        selected
+          ? "border-[var(--ds-accent)]/35 bg-[var(--ds-accent)]/10 text-white"
+          : "border-[var(--ds-border)] bg-[var(--ds-surface-muted)] text-gray-400 hover:bg-white/[0.05] hover:text-white",
+        className
+      )}
+      {...rest}
+    >
+      {children || (
+        <div className="flex items-center justify-between gap-2">
+          <div className="min-w-0 flex-1">
+            <div className="truncate text-xs font-bold">{title}</div>
+            {subtitle ? (
+              <div className="mt-0.5 truncate text-[10px] text-gray-500">{subtitle}</div>
+            ) : null}
+          </div>
+          {right ? <div className="shrink-0">{right}</div> : null}
+        </div>
+      )}
+    </Tag>
+  );
+}
+
 export { cx };

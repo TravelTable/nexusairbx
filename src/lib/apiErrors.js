@@ -18,11 +18,13 @@ export function parseRetryAfterMs(value, now = Date.now()) {
   return null;
 }
 
+const NETWORK_TRANSPORT_FAILURE_RE =
+  /failed to fetch|load failed|networkerror|network request failed|cannot load|network connection was lost|access control checks|internet connection appears to be offline|the network connection was lost/i;
+
 export function isRetryableApiError(error) {
   const message = String(error?.message || "");
-  const isNetworkTransportFailure =
-    error?.name === "TypeError" &&
-    /failed to fetch|load failed|networkerror|network request failed|cannot load/i.test(message);
+  // Safari/WebKit often reports transport loss without a TypeError name.
+  const isNetworkTransportFailure = NETWORK_TRANSPORT_FAILURE_RE.test(message);
   return Boolean(
     error?.retryable === true ||
       error?.status === 429 ||

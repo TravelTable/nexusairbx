@@ -50,6 +50,8 @@ test("retry helpers parse seconds, HTTP dates, and retryable status codes", () =
   expect(isRetryableApiError(new TypeError("Load failed"))).toBe(true);
   expect(isRetryableApiError(new TypeError("Failed to fetch"))).toBe(true);
   expect(isRetryableApiError(new TypeError("Invalid URL"))).toBe(false);
+  expect(isRetryableApiError(new Error("The network connection was lost."))).toBe(true);
+  expect(isRetryableApiError(new Error("Fetch API cannot load https://api.example.com due to access control checks."))).toBe(true);
   expect(getRetryDelayMs({ retryAfterMs: 12000 })).toBe(12000);
 });
 

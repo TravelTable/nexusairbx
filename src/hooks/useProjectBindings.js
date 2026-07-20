@@ -1,5 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { createProjectBinding, listProjectBindings } from "../lib/projectBindingsApi";
+import {
+  createProjectBinding,
+  findOrCreateProjectBinding,
+  listProjectBindings,
+} from "../lib/projectBindingsApi";
+import {
+  buildProjectBindingPayloadFromIdentity,
+  findProjectByPlaceId,
+} from "../lib/studioPlaceBinding";
 
 const STORAGE_KEY = "nexusrbx.selectedWorkspaceProjectId";
 
@@ -69,15 +77,41 @@ export function useProjectBindings(user, { authReady = true } = {}) {
     }
   }, [loading, projects, selectedProjectId, setSelectedProjectId]);
 
-  const createProject = useCallback(async (payload = {}) => {
-    const result = await createProjectBinding(payload);
-    const project = result?.project || null;
-    if (project?.projectId) {
-      setProjects((prev) => [project, ...prev.filter((entry) => entry.projectId !== project.projectId)]);
-      setSelectedProjectId(project.projectId);
-    }
+  const adoptProject = useCallback((project) => {
+    if (!project?.projectId) return null;
+    setProjects((prev) => [project, ...prev.filter((entry) => entry.projectId !== project.projectId)]);
+    setSelectedProjectId(project.projectId);
     return project;
   }, [setSelectedProjectId]);
+
+  const createProject = useCallback(async (payload = {}) => {
+    const result = await createProjectBinding(payload);
+    return adoptProject(result?.project || null);
+  }, [adoptProject]);
+
+  /**
+   * Open or create a workspace project from a resolved game identity.
+   * Dedupes locally first, then asks the server to upsert by placeId.
+   */
+  const openGameProject = useCallback(async (identity = {}) => {
+    const payload = buildProjectBindingPayloadFromIdentity(identity);
+    const placeId = payload.placeId || payload.defaultPlaceId || null;
+    if (placeId) {
+      const existing = findProjectByPlaceId(projects, placeId);
+      if (existing?.projectId) {
+        setSelectedProjectId(existing.projectId);
+        // Still upsert so Studio labels / title sync when not manually renamed.
+        try {
+          const result = await findOrCreateProjectBinding(payload);
+          return adoptProject(result?.project || existing);
+        } catch (_) {
+          return existing;
+        }
+      }
+    }
+    const result = await findOrCreateProjectBinding(payload);
+    return adoptProject(result?.project || null);
+  }, [adoptProject, projects, setSelectedProjectId]);
 
   return {
     projects,
@@ -87,6 +121,7 @@ export function useProjectBindings(user, { authReady = true } = {}) {
     selectedProject,
     setSelectedProjectId,
     createProject,
+    openGameProject,
     refresh,
   };
 }

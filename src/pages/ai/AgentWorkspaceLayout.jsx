@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Menu, FolderTree, History, FileCode2, MessageSquare, ClipboardList, Search, RefreshCw, TerminalSquare, Bot } from "lib/icons";
+import { Menu, FolderTree, History, FileCode2, MessageSquare, ClipboardList, Search, RefreshCw, Bot } from "lib/icons";
 
 import SidebarContent from "../../components/SidebarContent";
 import CodeDrawer from "../../components/CodeDrawer";
@@ -7,7 +7,6 @@ import SignInNudgeModal from "../../components/SignInNudgeModal";
 import ProNudgeModal from "../../components/ProNudgeModal";
 import StarterPromoModal from "../../components/StarterPromoModal";
 import NotificationToast from "../../components/NotificationToast";
-import GameProfileWizard from "../../components/ai/GameProfileWizard";
 import ModelSwitcher from "../../components/ai/ModelSwitcher";
 import StudioPairControl from "../../components/ai/StudioPairControl";
 import ProjectArchitecturePanel from "../../components/ai/ProjectArchitecturePanel";
@@ -30,7 +29,6 @@ import RobloxDecalUploadDropdown from "../../components/ai/workspace/RobloxDecal
 import useTaskRuntime from "../../hooks/useTaskRuntime";
 import QuickScriptWorkspace from "./QuickScriptWorkspace";
 import { getStudioCommand, getStudioManifest, getStudioManifestStatus, queueStudioTool } from "../../lib/studioBridgeApi";
-import { cancelWorkspaceCommand, createWorkspaceCommand, getWorkspaceCommand, streamWorkspaceCommandEvents } from "../../lib/workspaceApi";
 import { PENDING_AUTH_ACTIONS } from "../../lib/pendingAuthAction";
 import { getStudioSessionId } from "../../lib/studioConnection";
 import TutorialOverlay from "../../components/onboarding/TutorialOverlay";
@@ -83,7 +81,7 @@ export default function AgentWorkspaceLayout({ controller }) {
     authReady,
   } = uiState;
 
-  const { chat, game, scriptManager, unified, workspace, settings } = modules;
+  const { chat, scriptManager, unified, workspace, settings } = modules;
   const studioCommandSessionId =
     getStudioSessionId(studio?.manifestSession) ||
     getStudioSessionId(studio?.compatiblePluginSession) ||
@@ -156,20 +154,6 @@ export default function AgentWorkspaceLayout({ controller }) {
   const [activeStudioFileId, setActiveStudioFileId] = useState(null);
   const [studioConflict, setStudioConflict] = useState(null);
   const [studioBusy, setStudioBusy] = useState(false);
-  const [terminalLines, setTerminalLines] = useState([]);
-  const [terminalInput, setTerminalInput] = useState("");
-  const [terminalCwd, setTerminalCwd] = useState("");
-  const [terminalCommand, setTerminalCommand] = useState(null);
-  const [terminalHistory, setTerminalHistory] = useState(() => {
-    try {
-      const raw = window.localStorage.getItem("nexusWorkspaceCommandHistory");
-      return raw ? JSON.parse(raw) : [];
-    } catch (_) {
-      return [];
-    }
-  });
-  const [terminalHistoryIndex, setTerminalHistoryIndex] = useState(-1);
-  const terminalAbortRef = useRef(null);
   const manifestRefreshInFlightRef = useRef(null);
   const autoManifestRefreshKeyRef = useRef("");
   const manifestWaitsRef = useRef(new Map());
@@ -181,17 +165,6 @@ export default function AgentWorkspaceLayout({ controller }) {
     chatId: chat.currentChatId || "",
     enabled: generatorMode === "agent_build" && Boolean(user),
   });
-
-  const appendTerminal = useCallback((line, kind = "stdout") => {
-    const text = String(line ?? "");
-    const normalizedText = kind === "stdout" || kind === "stderr" || text.endsWith("\n")
-      ? text
-      : `${text}\n`;
-    setTerminalLines((prev) => [
-      ...prev.slice(-400),
-      { id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, kind, text: normalizedText },
-    ]);
-  }, []);
 
   const toStudioFile = useCallback((script) => ({
     id: `studio:${script.path}`,
@@ -325,14 +298,12 @@ export default function AgentWorkspaceLayout({ controller }) {
             previousStatus.lastCompleteRevision || previousStatus.activeRevision || ""
           );
           setStudioManifest(items);
-          appendTerminal("using cached Studio manifest", "state");
           return;
         }
 
         // MCP-only sessions must never queue plugin-owned get_project_manifest.
         if (!canQueuePluginManifest) {
           if (!pluginLive) {
-            appendTerminal("skipping manifest refresh — Studio Plugin not LIVE", "state");
             return;
           }
           const data = await getStudioManifest({ sessionId: studioCommandSessionId, limit: 1000 });
@@ -344,14 +315,13 @@ export default function AgentWorkspaceLayout({ controller }) {
           return;
         }
 
-        const queued = await queueStudioTool({
+        await queueStudioTool({
           type: "get_project_manifest",
           payload: { maxDepth: 24, maxInstances: 10000, pageSize: 500, includeSource: false },
           sessionId: studioCommandSessionId,
           label: force ? "Rescan Studio project" : "Refresh Studio manifest",
           applyMode: "unrestricted_dev",
         });
-        appendTerminal(`queued manifest refresh ${queued.commandId}`, "state");
         const status = await waitForManifestCompletion(previousRevision);
         const items = await fetchManifestPage(status.lastCompleteRevision || status.activeRevision || "");
         setStudioManifest(items);
@@ -369,7 +339,6 @@ export default function AgentWorkspaceLayout({ controller }) {
           !manifestRecoveryAttemptedRef.current.has(recoveryKey)
         ) {
           manifestRecoveryAttemptedRef.current.add(recoveryKey);
-          appendTerminal("manifest conflict — retrying one automatic rescan", "state");
           setStudioBusy(false);
           manifestRefreshInFlightRef.current = null;
           return refreshStudioManifest({ force: true, recovery: true });
@@ -394,7 +363,6 @@ export default function AgentWorkspaceLayout({ controller }) {
       }
     }
   }, [
-    appendTerminal,
     fetchManifestPage,
     notify,
     studio?.pluginConnected,
@@ -451,7 +419,6 @@ export default function AgentWorkspaceLayout({ controller }) {
         label: `Read ${path}`,
         applyMode: "unrestricted_dev",
       });
-      appendTerminal(`queued read ${path}`, "state");
       const command = await pollStudioCommand(queued.commandId);
       if (command.status === "failed") throw new Error(command.error || "Studio read failed");
       const script = command.result?.scripts?.[0];
@@ -459,13 +426,12 @@ export default function AgentWorkspaceLayout({ controller }) {
       const nextFile = toStudioFile(script);
       setStudioFiles((prev) => [...prev, nextFile]);
       setActiveStudioFileId(nextFile.id);
-      appendTerminal(`opened ${script.path}`, "state");
     } catch (err) {
       notify?.({ message: err?.message || "Could not open Studio script", type: "error" });
     } finally {
       setStudioBusy(false);
     }
-  }, [appendTerminal, notify, studioCommandSessionId, studioFiles, toStudioFile]);
+  }, [notify, studioCommandSessionId, studioFiles, toStudioFile]);
 
   const studioArtifact = useMemo(() => {
     if (!studioFiles.length) return workspace.activeArtifact;
@@ -514,13 +480,12 @@ export default function AgentWorkspaceLayout({ controller }) {
       const refreshed = toStudioFile(script);
       setStudioFiles((prev) => prev.map((entry) => (entry.id === file.id ? refreshed : entry)));
       setStudioConflict((prev) => (prev?.fileId === file.id ? null : prev));
-      appendTerminal(`refreshed ${file.path}`, "state");
     } catch (err) {
       notify?.({ message: err?.message || "Could not refresh Studio file", type: "error" });
     } finally {
       setStudioBusy(false);
     }
-  }, [appendTerminal, notify, studioCommandSessionId, toStudioFile]);
+  }, [notify, studioCommandSessionId, toStudioFile]);
 
   const saveStudioFile = useCallback(async (file, options = {}) => {
     if (!file?.path) return;
@@ -540,7 +505,6 @@ export default function AgentWorkspaceLayout({ controller }) {
         label: `Save ${file.path}`,
         applyMode: "unrestricted_dev",
       });
-      appendTerminal(`queued save ${file.path}`, "state");
       const command = await pollStudioCommand(queued.commandId);
       if (command.status === "failed") {
         if (command.result?.code === "source_conflict" || command.result?.error?.code === "source_conflict") {
@@ -606,14 +570,13 @@ export default function AgentWorkspaceLayout({ controller }) {
           : entry
       )));
       setStudioConflict((prev) => (prev?.fileId === file.id ? null : prev));
-      appendTerminal(`saved ${file.path}`, "state");
       notify?.({ message: "Saved to Studio", type: "success" });
     } catch (err) {
       notify?.({ message: err?.message || "Could not save to Studio", type: "error" });
     } finally {
       setStudioBusy(false);
     }
-  }, [appendTerminal, notify, studioCommandSessionId]);
+  }, [notify, studioCommandSessionId]);
 
   const saveAllStudioFiles = useCallback(async (files) => {
     for (const file of files.filter((entry) => entry.dirty)) {
@@ -653,107 +616,6 @@ export default function AgentWorkspaceLayout({ controller }) {
     })));
     setStudioConflict(null);
   }, []);
-
-  const studioWorkspaceRunId = workspace.agentRun?.runId || chat.currentChatId || "studio-workspace";
-  const terminalStorageKey = useMemo(
-    () => `nexusWorkspaceActiveCommand:${studioWorkspaceRunId}`,
-    [studioWorkspaceRunId]
-  );
-
-  const connectTerminalCommand = useCallback(async (commandId) => {
-    if (!commandId) return;
-    terminalAbortRef.current?.abort?.();
-    const abortController = new AbortController();
-    terminalAbortRef.current = abortController;
-    setTerminalLines([]);
-    try {
-      const info = await getWorkspaceCommand(commandId);
-      setTerminalCommand(info.command || null);
-      await streamWorkspaceCommandEvents(commandId, {
-        signal: abortController.signal,
-        onEvent: (evt) => {
-          if (evt.event === "stdout" || evt.event === "stderr") {
-            appendTerminal(evt.data?.text || "", evt.event);
-          }
-          if (evt.event === "state") {
-            setTerminalCommand((prev) => ({
-              ...(prev || {}),
-              id: commandId,
-              ...(evt.data || {}),
-              status: evt.data?.status || prev?.status,
-            }));
-            if (["succeeded", "failed", "cancelled", "timed_out", "disabled"].includes(evt.data?.status)) {
-              window.localStorage.removeItem(terminalStorageKey);
-            }
-          }
-        },
-      });
-      const finalInfo = await getWorkspaceCommand(commandId).catch(() => null);
-      if (finalInfo?.command) {
-        setTerminalCommand(finalInfo.command);
-        if (["succeeded", "failed", "cancelled", "timed_out", "disabled"].includes(finalInfo.command.status)) {
-          window.localStorage.removeItem(terminalStorageKey);
-        }
-      }
-    } catch (err) {
-      if (err?.name !== "AbortError") {
-        notify?.({ message: err?.message || "Workspace terminal disconnected", type: "error" });
-      }
-    }
-  }, [appendTerminal, notify, terminalStorageKey]);
-
-  useEffect(() => {
-    const commandId = window.localStorage.getItem(terminalStorageKey);
-    if (!commandId) return undefined;
-    connectTerminalCommand(commandId).catch(() => {});
-    return () => terminalAbortRef.current?.abort?.();
-  }, [connectTerminalCommand, terminalStorageKey]);
-
-  useEffect(() => {
-    try {
-      window.localStorage.setItem("nexusWorkspaceCommandHistory", JSON.stringify(terminalHistory.slice(0, 40)));
-    } catch (_) {
-      // ignore localStorage failures
-    }
-  }, [terminalHistory]);
-
-  const runWorkspaceCommand = useCallback(async () => {
-    const command = terminalInput.trim();
-    if (!command) return;
-    try {
-      const result = await createWorkspaceCommand({
-        runId: studioWorkspaceRunId,
-        command,
-        cwd: terminalCwd.trim(),
-      });
-      setTerminalCommand({ id: result.commandId, status: result.status, cwd: terminalCwd.trim() || "." });
-      setTerminalLines([]);
-      setTerminalHistory((prev) => [command, ...prev.filter((item) => item !== command)].slice(0, 40));
-      setTerminalHistoryIndex(-1);
-      window.localStorage.setItem(terminalStorageKey, result.commandId);
-      await connectTerminalCommand(result.commandId);
-    } catch (err) {
-      notify?.({ message: err?.message || "Could not start workspace command", type: "error" });
-    }
-  }, [connectTerminalCommand, notify, studioWorkspaceRunId, terminalCwd, terminalInput, terminalStorageKey]);
-
-  const cancelTerminalCommandRun = useCallback(async () => {
-    if (!terminalCommand?.id) return;
-    try {
-      await cancelWorkspaceCommand(terminalCommand.id);
-    } catch (err) {
-      notify?.({ message: err?.message || "Could not cancel workspace command", type: "error" });
-    }
-  }, [notify, terminalCommand?.id]);
-
-  const copyTerminalOutput = useCallback(async () => {
-    try {
-      await navigator.clipboard.writeText(terminalLines.map((line) => line.text).join(""));
-      notify?.({ message: "Terminal output copied", type: "success" });
-    } catch (_) {
-      notify?.({ message: "Could not copy terminal output", type: "error" });
-    }
-  }, [notify, terminalLines]);
 
   const requireUser = (fallback, actionType = PENDING_AUTH_ACTIONS.RESTRICTED_GENERATION, source = "workspace_gate") => {
     if (!user) {
@@ -1023,77 +885,6 @@ export default function AgentWorkspaceLayout({ controller }) {
             </div>
           )}
         </div>
-        <div className="rounded-lg border border-white/10 bg-black/30 p-2">
-          <div className="flex items-center justify-between gap-2 text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-2">
-            <div className="flex items-center gap-1.5">
-              <TerminalSquare className="w-3.5 h-3.5" />
-              Terminal
-            </div>
-            {terminalCommand?.status && (
-              <span className="text-[9px] text-gray-400">{terminalCommand.status}</span>
-            )}
-          </div>
-          <div className="space-y-2">
-            <label className="flex items-center gap-2 rounded-lg border border-white/10 bg-black/40 px-2 py-1.5">
-              <span className="text-[10px] text-gray-500">cwd</span>
-              <input
-                value={terminalCwd}
-                onChange={(e) => setTerminalCwd(e.target.value)}
-                placeholder="relative path, e.g. src"
-                className="min-w-0 flex-1 bg-transparent text-[11px] text-gray-200 placeholder:text-gray-600 outline-none"
-              />
-            </label>
-            <div className="flex items-center gap-2">
-              <input
-                value={terminalInput}
-                onChange={(e) => setTerminalInput(e.target.value)}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter") {
-                    event.preventDefault();
-                    runWorkspaceCommand().catch(() => {});
-                  } else if (event.key === "ArrowUp") {
-                    event.preventDefault();
-                    const nextIndex = Math.min(terminalHistoryIndex + 1, terminalHistory.length - 1);
-                    setTerminalHistoryIndex(nextIndex);
-                    if (nextIndex >= 0) setTerminalInput(terminalHistory[nextIndex] || "");
-                  } else if (event.key === "ArrowDown") {
-                    event.preventDefault();
-                    const nextIndex = Math.max(terminalHistoryIndex - 1, -1);
-                    setTerminalHistoryIndex(nextIndex);
-                    setTerminalInput(nextIndex >= 0 ? terminalHistory[nextIndex] || "" : "");
-                  }
-                }}
-                placeholder="npm test"
-                className="min-w-0 flex-1 rounded-lg border border-white/10 bg-black/40 px-2 py-1.5 text-[11px] text-gray-200 placeholder:text-gray-600 outline-none"
-              />
-              <button
-                type="button"
-                onClick={() => runWorkspaceCommand().catch(() => {})}
-                className="px-2 py-1.5 rounded-lg border border-[#00f5d4]/40 bg-[#00f5d4]/10 text-[10px] font-bold uppercase tracking-widest text-[#00f5d4]"
-              >
-                Run
-              </button>
-              <button
-                type="button"
-                onClick={() => cancelTerminalCommandRun().catch(() => {})}
-                disabled={!terminalCommand?.id || !["queued", "running", "cancelling"].includes(terminalCommand.status)}
-                className="px-2 py-1.5 rounded-lg border border-red-400/20 bg-red-400/10 text-[10px] font-bold uppercase tracking-widest text-red-200 disabled:opacity-40"
-              >
-                Cancel
-              </button>
-            </div>
-            <div className="flex items-center justify-between gap-2 text-[10px] text-gray-500">
-              <span>{terminalCommand?.cwd || terminalCwd || "."}</span>
-              <div className="flex items-center gap-2">
-                <button type="button" onClick={() => setTerminalLines([])} className="text-gray-400 hover:text-white">Clear</button>
-                <button type="button" onClick={() => copyTerminalOutput().catch(() => {})} className="text-gray-400 hover:text-white">Copy</button>
-              </div>
-            </div>
-          </div>
-          <pre className="mt-2 max-h-40 overflow-auto whitespace-pre-wrap text-[10px] leading-relaxed">
-            {terminalLines.length ? terminalLines.map((line) => line.text).join("") : "Run workspace commands here. Output streams live and reconnects to the active command after refresh."}
-          </pre>
-        </div>
       </div>
     </div>
   );
@@ -1153,13 +944,8 @@ export default function AgentWorkspaceLayout({ controller }) {
                   setActiveTab("chat");
                   if (window.innerWidth < 1024) setSidebarOpen(false);
                 }}
-                onOpenGameContext={() => {
-                  if (!requireUser()) return;
-                  game.setShowWizard(true);
-                }}
                 onDeleteChat={chat.handleDeleteChat}
                 handleClearChat={chat.handleClearChat}
-                gameProfile={game.profile}
                 user={user}
                 authReady={authReady}
                 notify={notify}
@@ -1263,10 +1049,6 @@ export default function AgentWorkspaceLayout({ controller }) {
                       studioManifestCount={studioScriptCount}
                       studioManifestSupported={studioManifestSupported}
                       onViewStructure={() => setArchitecturePanelOpen(true)}
-                      onSync={async () => {
-                        if (!requireUser()) return;
-                        game.setShowWizard(true);
-                      }}
                     />
                   </>
                 ) : (
@@ -1349,11 +1131,6 @@ export default function AgentWorkspaceLayout({ controller }) {
             <ProjectArchitecturePanel
               context={projectContext}
               onClose={() => setArchitecturePanelOpen(false)}
-              onSync={async () => {
-                if (!requireUser()) return;
-                setArchitecturePanelOpen(false);
-                game.setShowWizard(true);
-              }}
             />
           </div>
         )}
@@ -1393,15 +1170,6 @@ export default function AgentWorkspaceLayout({ controller }) {
           track("project_saved", { output_type: "script" });
         }}
       />
-
-      {settings.enableGameWizard !== false && (
-        <GameProfileWizard
-          isOpen={game.showWizard}
-          onClose={() => game.setShowWizard(false)}
-          profile={game.profile}
-          onUpdate={game.updateProfile}
-        />
-      )}
 
       <SignInNudgeModal
         isOpen={showSignInNudge}

@@ -25,7 +25,6 @@ import { useSettings } from "../../context/SettingsContext";
 import { useUnifiedChat } from "../../hooks/useUnifiedChat";
 import { useArtifactWorkspace } from "../../hooks/useArtifactWorkspace";
 import { resolveGameSpecForPrompt } from "../../lib/gameProfile";
-import { useGameProfile } from "../../hooks/useGameProfile";
 import { useAiScripts } from "../../hooks/useAiScripts";
 import { CHAT_MODES } from "../../components/ai/chatConstants";
 import { BACKEND_URL } from "../../config";
@@ -61,6 +60,7 @@ import {
 } from "../../lib/studioPlaceBinding";
 import {
   isFirestorePermissionDenied,
+  resolveAwaitingStudioTargetRunId,
   resumeStudioTargetSelection,
 } from "../../lib/studioTargetSelection";
 import { AI_EVENTS, emitAiEvent, onAiEvent } from "../../lib/aiEvents";
@@ -242,6 +242,8 @@ export function useAiWorkspaceController() {
   const [approvingStepId, setApprovingStepId] = useState(null);
   const [selectingStudioTargetId, setSelectingStudioTargetId] = useState(null);
   const [studioPlacePickerOpen, setStudioPlacePickerOpen] = useState(false);
+  // Optimistic place label for empty/new chats (no Firestore chat doc yet).
+  const [optimisticStudioPlacePreference, setOptimisticStudioPlacePreference] = useState(null);
   const [restoringRun, setRestoringRun] = useState(false);
   const [chatProjectSnapshot, setChatProjectSnapshot] = useState(null);
   const studioConnection = useStudioConnection();
@@ -322,7 +324,6 @@ export function useAiWorkspaceController() {
   });
 
   const chat = unified;
-  const game = useGameProfile(settings, updateSettings);
   const scriptManager = useAiScripts(user, notify);
   const selectedAssetProjectId = chat.currentChatId || null;
   const projectAssets = useProjectAssets(selectedAssetProjectId, {
@@ -735,9 +736,37 @@ export function useAiWorkspaceController() {
     [chat.currentChatMeta]
   );
 
+  // Keep optimistic preference across empty-chat → first-chat creation; only drop it
+  // when switching between existing chats or once Firestore meta matches.
+  const previousChatIdRef = useRef(chat.currentChatId);
+  useEffect(() => {
+    const previousChatId = previousChatIdRef.current;
+    previousChatIdRef.current = chat.currentChatId;
+    if (
+      previousChatId != null &&
+      chat.currentChatId != null &&
+      previousChatId !== chat.currentChatId
+    ) {
+      setOptimisticStudioPlacePreference(null);
+    }
+  }, [chat.currentChatId]);
+
+  useEffect(() => {
+    if (!optimisticStudioPlacePreference || !chatStudioPreference) return;
+    const sameTarget =
+      (optimisticStudioPlacePreference.targetId &&
+        chatStudioPreference.targetId === optimisticStudioPlacePreference.targetId) ||
+      (optimisticStudioPlacePreference.placeId &&
+        chatStudioPreference.placeId === optimisticStudioPlacePreference.placeId);
+    if (sameTarget) setOptimisticStudioPlacePreference(null);
+  }, [chatStudioPreference, optimisticStudioPlacePreference]);
+
+  const effectiveStudioPlacePreference = optimisticStudioPlacePreference || chatStudioPreference;
+
   const bindChatStudioPlace = useCallback(async (option) => {
     const preference = buildStudioTargetPreference(option);
     if (!preference || !user) return null;
+    setOptimisticStudioPlacePreference(preference);
     if (chat.currentChatId) {
       await updateDoc(doc(db, "users", user.uid, "chats", chat.currentChatId), {
         studioTargetPreference: {
@@ -796,7 +825,7 @@ export function useAiWorkspaceController() {
       return;
     }
 
-    let studioTargetPreference = submissionOptions?.studioTargetPreference || chatStudioPreference;
+    let studioTargetPreference = submissionOptions?.studioTargetPreference || effectiveStudioPlacePreference;
     if (studioEnabled && ["agent", "debug"].includes(String(settings?.chatMode || chat.activeMode || "agent").toLowerCase())) {
       let options = studioPlaceOptions;
       if (!options.length) {
@@ -911,7 +940,7 @@ export function useAiWorkspaceController() {
     studioConnection.connected,
     studioConnection.pluginConnected,
     studioPlaceOptions,
-    chatStudioPreference,
+    effectiveStudioPlacePreference,
     chat.activeMode,
     bindChatStudioPlace,
     notify,
@@ -1392,12 +1421,20 @@ export function useAiWorkspaceController() {
 
   const handleSelectStudioTarget = useCallback(
     async (option) => {
-      const runId = unified.pendingMessage?.runId || workspace.agentRun?.runId;
+      const runId = resolveAwaitingStudioTargetRunId({
+        pendingMessage: unified.pendingMessage,
+        agentRun: workspace.agentRun,
+      });
       const targetId = typeof option === "string"
         ? option
         : option?.id || option?.targetId || option?.studioTargetId;
       if (!targetId || !user || selectingStudioTargetId) return;
       setSelectingStudioTargetId(targetId);
+      // Paint the chip immediately so empty chats (no Firestore doc yet) still show the place.
+      const immediatePreference = buildStudioTargetPreference(
+        typeof option === "string" ? { id: option } : option
+      );
+      if (immediatePreference) setOptimisticStudioPlacePreference(immediatePreference);
       try {
         const { preference, bindError, result, resumed } = await resumeStudioTargetSelection({
           option,
@@ -1414,7 +1451,7 @@ export function useAiWorkspaceController() {
               type: "info",
             });
           } else {
-            const label = preference?.label || buildStudioTargetPreference(option)?.label;
+            const label = preference?.label || immediatePreference?.label;
             notify({
               message: label ? `This chat will edit ${label}` : "Studio place selected for this chat",
               type: "success",
@@ -1995,7 +2032,6 @@ export function useAiWorkspaceController() {
     },
     modules: {
       chat,
-      game,
       scriptManager,
       unified,
       workspace,
@@ -2066,7 +2102,7 @@ export function useAiWorkspaceController() {
       restoringRun,
       unifiedAgent: FEATURE_FLAGS.unifiedAgent,
       placeOptions: studioPlaceOptions,
-      placePreference: chatStudioPreference,
+      placePreference: effectiveStudioPlacePreference,
       placePickerOpen: studioPlacePickerOpen,
       setPlacePickerOpen: setStudioPlacePickerOpen,
       bindPlace: bindChatStudioPlace,

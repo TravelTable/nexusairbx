@@ -1,4 +1,14 @@
 /**
+ * Only resume a parked agent run when it is explicitly awaiting a Studio target.
+ * Leftover run IDs from completed/failed runs must not hijack place-chip selection.
+ */
+export function resolveAwaitingStudioTargetRunId({ pendingMessage = null, agentRun = null } = {}) {
+  const runStatus = pendingMessage?.runStatus || agentRun?.status || agentRun?.runStatus || null;
+  if (String(runStatus || "").trim() !== "awaiting_studio_target") return null;
+  return pendingMessage?.runId || agentRun?.runId || agentRun?.id || null;
+}
+
+/**
  * Resume a parked Studio target selection.
  * Chat preference bind is best-effort — never block the resume API on Firestore deny.
  */

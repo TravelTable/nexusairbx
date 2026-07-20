@@ -16,12 +16,16 @@ import {
   Users,
   ChevronRight,
   FileCode,
+  Link2,
+  Loader2,
+  MapPin,
 } from "lib/icons";
 import SidebarTab from "./SidebarTab";
 import Modal from "./Modal";
 import ScriptRow from "./sidebar/ScriptRow";
 import ChatRow from "./sidebar/ChatRow";
 import ChatHistoryModal from "./sidebar/ChatHistoryModal";
+import { Badge, Button, EmptyState, ListItem } from "./ui";
 import {
   getVersionStr,
   fromNow,
@@ -37,7 +41,10 @@ import {
 import { useAiLibrary } from "../hooks/useAiLibrary";
 import { useProjectBindings } from "../hooks/useProjectBindings";
 import { useBilling } from "../context/BillingContext";
-import { targetingOptionsFromStatus } from "../lib/studioPlaceBinding";
+import {
+  resolveGameIdentityFromStudioStatus,
+  resolveGameTitleFromTarget,
+} from "../lib/studioPlaceBinding";
 import { getStudioStatus } from "../lib/studioBridgeApi";
 
 // --- SidebarContent component ---
@@ -85,13 +92,14 @@ export default function SidebarContent({
     selectedProjectId,
     selectedProject,
     setSelectedProjectId,
-    createProject,
+    openGameProject,
   } = useProjectBindings(user, { authReady });
 
   // --- State ---
   const [creatingProject, setCreatingProject] = useState(false);
-  const [newProjectTitle, setNewProjectTitle] = useState("");
-  const [showNewProjectForm, setShowNewProjectForm] = useState(false);
+  const [showGamePicker, setShowGamePicker] = useState(false);
+  const [studioGameOptions, setStudioGameOptions] = useState([]);
+  const [studioConnectHint, setStudioConnectHint] = useState(false);
   const [renamingScriptId, setRenamingScriptId] = useState(null);
   const [renameScriptTitle, setRenameScriptTitle] = useState("");
 
@@ -173,10 +181,10 @@ export default function SidebarContent({
   const handleCreateChatLocal = useCallback(() => {
     if (!selectedProjectId) {
       notify({
-        message: "Select or create a project before starting a new chat.",
+        message: "Select or open a game before starting a new chat.",
         type: "error",
       });
-      setShowNewProjectForm(true);
+      setShowGamePicker(true);
       setActiveTab("chats");
       return;
     }
@@ -184,43 +192,81 @@ export default function SidebarContent({
     if (isMobile && typeof onSelect === "function") onSelect();
   }, [isMobile, notify, onSelect, selectedProjectId, setActiveTab]);
 
-  const handleCreateProject = useCallback(async () => {
+  const adoptIdentity = useCallback(async (identity) => {
+    const project = await openGameProject(identity);
+    setShowGamePicker(false);
+    setStudioGameOptions([]);
+    setStudioConnectHint(false);
+    notify({
+      message: project?.studioTargetLabel && project.studioTargetLabel !== project.title
+        ? `Working on ${project.title} · ${project.studioTargetLabel}`
+        : `Working on ${project?.title || "game"}`,
+      type: "success",
+    });
+    return project;
+  }, [notify, openGameProject]);
+
+  const handleOpenFromStudio = useCallback(async () => {
     if (!user || creatingProject) return;
-    const title = String(newProjectTitle || "").trim() || "Untitled project";
     setCreatingProject(true);
+    setStudioConnectHint(false);
     try {
-      let placePayload = {};
+      let status = null;
       try {
-        const status = await getStudioStatus();
-        const options = targetingOptionsFromStatus(status);
-        if (options.length === 1) {
-          placePayload = {
-            defaultPlaceId: options[0].placeId,
-            studioTargetId: options[0].id,
-            studioTargetLabel: options[0].label,
-          };
-        }
+        status = await getStudioStatus();
       } catch (_) {
-        /* projects can be created without a live Studio place */
+        status = null;
       }
-      const project = await createProject({ title, ...placePayload });
-      setNewProjectTitle("");
-      setShowNewProjectForm(false);
-      notify({
-        message: project?.studioTargetLabel
-          ? `Created ${project.title} · ${project.studioTargetLabel}`
-          : `Created ${project?.title || "project"}`,
-        type: "success",
-      });
+      const identity = resolveGameIdentityFromStudioStatus(status || {});
+      if (identity.status === "needs_connect") {
+        setStudioConnectHint(true);
+        setShowGamePicker(true);
+        setStudioGameOptions([]);
+        notify({
+          message: "Connect Roblox Studio (MCP or plugin) to open the game you’re working on.",
+          type: "error",
+        });
+        return;
+      }
+      if (identity.status === "needs_selection") {
+        setShowGamePicker(true);
+        setStudioGameOptions(identity.options || []);
+        return;
+      }
+      await adoptIdentity(identity);
     } catch (err) {
       notify({
-        message: err?.message || "Could not create project",
+        message: err?.message || "Could not open game from Studio",
         type: "error",
       });
     } finally {
       setCreatingProject(false);
     }
-  }, [createProject, creatingProject, newProjectTitle, notify, user]);
+  }, [adoptIdentity, creatingProject, notify, user]);
+
+  const handleSelectStudioGame = useCallback(async (option) => {
+    if (!user || creatingProject || !option) return;
+    setCreatingProject(true);
+    try {
+      const title = resolveGameTitleFromTarget(option);
+      await adoptIdentity({
+        title,
+        placeId: option.placeId && option.placeId !== "0" ? option.placeId : null,
+        universeId: option.universeId || null,
+        studioTargetId: option.studioTargetId || option.id,
+        studioTargetLabel: option.label || title,
+        source: "studio",
+        target: option,
+      });
+    } catch (err) {
+      notify({
+        message: err?.message || "Could not open that game",
+        type: "error",
+      });
+    } finally {
+      setCreatingProject(false);
+    }
+  }, [adoptIdentity, creatingProject, notify, user]);
 
   const handleRenameChatCommit = useCallback(
     async (id, title) => {
@@ -498,59 +544,106 @@ export default function SidebarContent({
             <div className="space-y-6">
               <div className="space-y-2">
                 <div className="flex items-center justify-between gap-2 px-1">
-                  <span className="text-[10px] font-bold text-gray-600 uppercase tracking-widest">Projects</span>
+                  <span className="text-[10px] font-bold text-gray-600 uppercase tracking-widest">Games</span>
                   <button
                     type="button"
-                    onClick={() => setShowNewProjectForm((open) => !open)}
-                    className="text-[10px] font-bold uppercase tracking-wider text-[#00f5d4] hover:text-white"
+                    onClick={() => {
+                      if (showGamePicker) {
+                        setShowGamePicker(false);
+                        setStudioGameOptions([]);
+                        setStudioConnectHint(false);
+                        return;
+                      }
+                      handleOpenFromStudio();
+                    }}
+                    className="text-[10px] font-bold uppercase tracking-wider text-[var(--ds-accent)] hover:text-white"
+                    disabled={creatingProject}
                   >
-                    {showNewProjectForm ? "Cancel" : "New project"}
+                    {showGamePicker ? "Cancel" : "Open from Studio"}
                   </button>
                 </div>
-                {showNewProjectForm && (
+
+                {showGamePicker && (
                   <div className="rounded-xl border border-white/10 bg-black/30 p-2.5 space-y-2">
-                    <input
-                      className="w-full rounded-lg bg-white/[0.04] border border-white/10 px-2.5 py-2 text-xs text-white outline-none focus:border-[#00f5d4]/40"
-                      placeholder="Project name"
-                      value={newProjectTitle}
-                      onChange={(e) => setNewProjectTitle(e.target.value)}
-                    />
-                    <button
-                      type="button"
-                      disabled={creatingProject}
-                      onClick={handleCreateProject}
-                      className="w-full rounded-lg bg-[#00f5d4]/15 border border-[#00f5d4]/30 px-2.5 py-2 text-[11px] font-bold text-[#00f5d4] disabled:opacity-50"
-                    >
-                      {creatingProject ? "Creating…" : "Create project"}
-                    </button>
+                    {studioConnectHint ? (
+                      <EmptyState
+                        icon={Link2}
+                        title="Connect Studio"
+                        description="Pair MCP or the Nexus plugin, then open the place you’re editing. The game name becomes your project."
+                        action={(
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            disabled={creatingProject}
+                            onClick={handleOpenFromStudio}
+                            icon={creatingProject ? Loader2 : MapPin}
+                          >
+                            {creatingProject ? "Checking…" : "Retry Studio"}
+                          </Button>
+                        )}
+                      />
+                    ) : studioGameOptions.length > 0 ? (
+                      <>
+                        <p className="px-1 text-[10px] text-gray-500">
+                          Choose the Studio place to work on:
+                        </p>
+                        <div className="space-y-1">
+                          {studioGameOptions.map((option) => (
+                            <ListItem
+                              key={option.id || option.studioTargetId}
+                              selected={false}
+                              title={resolveGameTitleFromTarget(option)}
+                              subtitle={option.placeId && option.placeId !== "0" ? `Place ${option.placeId}` : "Untitled place"}
+                              disabled={creatingProject}
+                              onClick={() => handleSelectStudioGame(option)}
+                              right={creatingProject ? <Loader2 className="h-3.5 w-3.5 motion-safe:animate-spin text-[var(--ds-info)]" /> : <MapPin className="h-3.5 w-3.5 text-gray-600" />}
+                            />
+                          ))}
+                        </div>
+                      </>
+                    ) : (
+                      <div className="flex items-center gap-2 px-2 py-2 text-[11px] text-gray-500">
+                        <Loader2 className="h-3.5 w-3.5 motion-safe:animate-spin" />
+                        Looking for Studio games…
+                      </div>
+                    )}
                   </div>
                 )}
+
+                <Button
+                  size="sm"
+                  variant="primary"
+                  className="w-full"
+                  disabled={creatingProject || !user}
+                  onClick={handleOpenFromStudio}
+                  icon={creatingProject ? Loader2 : Gamepad2}
+                >
+                  {creatingProject ? "Opening…" : "Work on this game"}
+                </Button>
+
                 <div className="space-y-1">
                   {projectsLoading && projects.length === 0 ? (
-                    <div className="px-2 py-2 text-[11px] text-gray-500">Loading projects…</div>
+                    <div className="px-2 py-2 text-[11px] text-gray-500">Loading games…</div>
                   ) : projects.length === 0 ? (
-                    <div className="rounded-xl border border-dashed border-white/10 px-3 py-3 text-[11px] text-gray-500">
-                      Create a project to organize chats and bind a Studio place.
-                    </div>
+                    <EmptyState
+                      icon={Gamepad2}
+                      title="No games yet"
+                      description="Open from Studio to create a project named after the experience you’re building."
+                    />
                   ) : (
                     projects.map((project) => (
-                      <button
+                      <ListItem
                         key={project.projectId}
-                        type="button"
+                        selected={selectedProjectId === project.projectId}
+                        title={project.title}
+                        subtitle={
+                          project.studioTargetLabel && project.studioTargetLabel !== project.title
+                            ? project.studioTargetLabel
+                            : (project.placeId ? `Place ${project.placeId}` : null)
+                        }
                         onClick={() => setSelectedProjectId(project.projectId)}
-                        className={`w-full rounded-xl border px-3 py-2 text-left transition-colors ${
-                          selectedProjectId === project.projectId
-                            ? "border-[#00f5d4]/35 bg-[#00f5d4]/10 text-white"
-                            : "border-white/5 bg-white/[0.02] text-gray-400 hover:bg-white/[0.05] hover:text-white"
-                        }`}
-                      >
-                        <div className="text-xs font-bold truncate">{project.title}</div>
-                        {project.studioTargetLabel && (
-                          <div className="mt-0.5 text-[10px] text-gray-500 truncate">
-                            {project.studioTargetLabel}
-                          </div>
-                        )}
-                      </button>
+                        right={project.status === "verified" ? <Badge tone="accent">Live</Badge> : null}
+                      />
                     ))
                   )}
                 </div>
@@ -578,7 +671,7 @@ export default function SidebarContent({
                 >
                   <Plus className="w-4 h-4 shrink-0 text-[#00f5d4]" />
                   <span className="text-xs font-bold truncate">
-                    {selectedProjectId ? "New conversation" : "Select a project to chat"}
+                    {selectedProjectId ? "New conversation" : "Select a game to chat"}
                   </span>
                 </button>
               </div>

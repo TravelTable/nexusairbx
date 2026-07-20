@@ -1,6 +1,22 @@
-import { isFirestorePermissionDenied, resumeStudioTargetSelection } from "./studioTargetSelection";
+import { isFirestorePermissionDenied, resolveAwaitingStudioTargetRunId, resumeStudioTargetSelection } from "./studioTargetSelection";
 
 describe("studioTargetSelection", () => {
+  test("resolveAwaitingStudioTargetRunId only returns ids while awaiting a target", () => {
+    expect(resolveAwaitingStudioTargetRunId({
+      pendingMessage: { runId: "run_old", runStatus: "succeeded" },
+      agentRun: { runId: "run_old", status: "succeeded" },
+    })).toBeNull();
+
+    expect(resolveAwaitingStudioTargetRunId({
+      pendingMessage: { runId: "run_wait", runStatus: "awaiting_studio_target" },
+      agentRun: { runId: "run_other", status: "running" },
+    })).toBe("run_wait");
+
+    expect(resolveAwaitingStudioTargetRunId({
+      agentRun: { id: "run_agent", status: "awaiting_studio_target" },
+    })).toBe("run_agent");
+  });
+
   test("bind failure still invokes selectAgentStudioTarget when runId exists", async () => {
     const option = { id: "studio_target_untitled", label: "Untitled Experience" };
     const bindPreference = jest.fn(async () => {

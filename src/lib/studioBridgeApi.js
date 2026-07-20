@@ -10,8 +10,12 @@ export async function startStudioPairing() {
 
 export async function getStudioStatus() {
   return withApiRetryCooldown("studio:status", "Failed to load Studio status", async () => {
-    const res = await authedFetch("/api/studio/status", { method: "GET", noCache: true });
-    return readJsonOrThrow(res, "Failed to load Studio status");
+    try {
+      const res = await authedFetch("/api/studio/status", { method: "GET", noCache: true });
+      return readJsonOrThrow(res, "Failed to load Studio status");
+    } catch (err) {
+      throw err;
+    }
   });
 }
 
@@ -22,8 +26,12 @@ export async function startStudioMcpPairing() {
 
 export async function getStudioMcpStatus() {
   return withApiRetryCooldown("studio:mcp:status", "Failed to load Studio MCP status", async () => {
-    const res = await authedFetch("/api/studio/mcp/status", { method: "GET", noCache: true });
-    return readJsonOrThrow(res, "Failed to load Studio MCP status");
+    try {
+      const res = await authedFetch("/api/studio/mcp/status", { method: "GET", noCache: true });
+      return readJsonOrThrow(res, "Failed to load Studio MCP status");
+    } catch (err) {
+      throw err;
+    }
   });
 }
 

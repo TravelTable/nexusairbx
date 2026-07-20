@@ -43,7 +43,7 @@ export default function StudioPlaceChip({
           setOpen(!open);
         }}
         disabled={!canOpen}
-        className={`inline-flex max-w-full items-center gap-1.5 rounded-lg border px-2.5 py-1 text-[11px] font-semibold transition-colors focus-ring ${
+        className={`inline-flex max-w-full items-center gap-1.5 rounded-md border px-2 py-0.5 text-[11px] font-semibold transition-colors focus-ring ${
           connected && label
             ? "border-[#00bbf9]/25 bg-[#00bbf9]/[0.08] text-[#9ae6ff] hover:bg-[#00bbf9]/15"
             : "border-amber-400/25 bg-amber-400/10 text-amber-100"

@@ -22,7 +22,16 @@ async function readJson(res, fallbackMessage) {
   return data || {};
 }
 
-export async function listRobloxAssets({ source = "my", search = "", assetTypes = [], sort = "recently_updated", cursor = "", pageSize = 24 } = {}) {
+export async function listRobloxAssets({
+  source = "my",
+  search = "",
+  assetTypes = [],
+  sort = "recently_updated",
+  cursor = "",
+  pageSize = 24,
+  creatorId = "",
+  creatorType = "",
+} = {}) {
   const params = new URLSearchParams();
   params.set("source", source);
   if (search) params.set("search", search);
@@ -30,8 +39,29 @@ export async function listRobloxAssets({ source = "my", search = "", assetTypes 
   if (sort) params.set("sort", sort);
   if (cursor) params.set("cursor", cursor);
   if (pageSize) params.set("pageSize", String(pageSize));
-  const res = await authedFetch(`/api/roblox/assets?${params.toString()}`, { method: "GET", noCache: true });
-  return readJson(res, "Failed to load Roblox assets");
+  if (creatorId) params.set("creatorId", String(creatorId));
+  if (creatorType) params.set("creatorType", String(creatorType));
+  const query = params.toString();
+  const res = await authedFetch(`/api/roblox/assets?${query}`, { method: "GET", noCache: true });
+  const text = await res.text().catch(() => "");
+  let data = null;
+  try {
+    data = text ? JSON.parse(text) : null;
+  } catch (_) {
+    data = null;
+  }
+  if (!res.ok) {
+    const error = new Error(data?.error || data?.summary || text || "Failed to load Roblox assets");
+    error.status = res.status;
+    error.code = data?.code || null;
+    error.recovery = data?.recovery || null;
+    error.details = data?.details || null;
+    error.requestId = data?.requestId || null;
+    error.missingScopes = Array.isArray(data?.missingScopes) ? data.missingScopes : [];
+    error.retryable = typeof data?.retryable === "boolean" ? data.retryable : null;
+    throw error;
+  }
+  return data || {};
 }
 
 export async function getRobloxAsset(assetId) {

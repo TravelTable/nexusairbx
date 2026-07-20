@@ -1,8 +1,12 @@
 import {
+  buildProjectBindingPayloadFromIdentity,
   buildStudioTargetPreference,
   evaluateStudioPlaceGate,
+  findProjectByPlaceId,
   normalizeStudioTargetOption,
   readChatStudioPreference,
+  resolveGameIdentityFromStudioStatus,
+  resolveGameTitleFromTarget,
   targetingOptionsFromStatus,
 } from "./studioPlaceBinding";
 
@@ -14,6 +18,9 @@ describe("studioPlaceBinding", () => {
       studioTargetId: "t1",
       placeId: "p1",
       label: "Obby",
+      experienceName: null,
+      placeName: null,
+      universeId: null,
       isUntitled: false,
       pluginSessionId: null,
       source: null,
@@ -36,6 +43,9 @@ describe("studioPlaceBinding", () => {
         studioTargetId: "studio_target_a",
         placeId: "111",
         label: "Place A",
+        experienceName: null,
+        placeName: null,
+        universeId: null,
         isUntitled: false,
         pluginSessionId: null,
         source: null,
@@ -46,6 +56,9 @@ describe("studioPlaceBinding", () => {
         studioTargetId: "studio_target_b",
         placeId: "222",
         label: "Place B",
+        experienceName: null,
+        placeName: null,
+        universeId: null,
         isUntitled: false,
         pluginSessionId: null,
         source: null,
@@ -135,6 +148,9 @@ describe("studioPlaceBinding", () => {
       studioTargetId: "studio_target_untitled",
       placeId: "0",
       label: "Untitled Experience",
+      experienceName: null,
+      placeName: null,
+      universeId: null,
       isUntitled: true,
       pluginSessionId: null,
       source: null,
@@ -168,5 +184,102 @@ describe("studioPlaceBinding", () => {
       requirePlugin: true,
       options: [{ id: "t1", placeId: "1", label: "A" }],
     }).status).toBe("needs_plugin");
+  });
+
+  test("resolveGameTitleFromTarget prefers experienceName then placeName", () => {
+    expect(resolveGameTitleFromTarget({
+      experienceName: "Neon Obby",
+      placeName: "Lobby",
+      label: "studio_target_x",
+    })).toBe("Neon Obby");
+    expect(resolveGameTitleFromTarget({
+      placeName: "Arena",
+      label: "fallback",
+    })).toBe("Arena");
+    expect(resolveGameTitleFromTarget({}, { universeName: "OAuth World" })).toBe("OAuth World");
+    expect(resolveGameTitleFromTarget({})).toBe("Untitled game");
+  });
+
+  test("resolveGameIdentityFromStudioStatus auto-binds a single Studio game", () => {
+    const identity = resolveGameIdentityFromStudioStatus({
+      targeting: {
+        targets: [{
+          id: "studio_target_1",
+          placeId: "4242",
+          label: "My Obby",
+          experienceName: "My Obby",
+        }],
+      },
+    });
+    expect(identity.status).toBe("auto_bind");
+    expect(identity.source).toBe("studio");
+    expect(identity.title).toBe("My Obby");
+    expect(identity.placeId).toBe("4242");
+    expect(identity.studioTargetId).toBe("studio_target_1");
+  });
+
+  test("resolveGameIdentityFromStudioStatus requires selection for multiple games", () => {
+    const identity = resolveGameIdentityFromStudioStatus({
+      targeting: {
+        targets: [
+          { id: "a", placeId: "1", label: "Alpha" },
+          { id: "b", placeId: "2", label: "Beta" },
+        ],
+      },
+    });
+    expect(identity.status).toBe("needs_selection");
+    expect(identity.options).toHaveLength(2);
+  });
+
+  test("resolveGameIdentityFromStudioStatus falls back to OAuth then draft", () => {
+    expect(resolveGameIdentityFromStudioStatus({}, {
+      oauthFallback: { universeId: "99", universeName: "Cloud Game" },
+    })).toMatchObject({
+      status: "oauth",
+      title: "Cloud Game",
+      universeId: "99",
+      source: "oauth",
+    });
+    expect(resolveGameIdentityFromStudioStatus({})).toMatchObject({
+      status: "needs_connect",
+      title: "Untitled game",
+      source: "draft",
+    });
+  });
+
+  test("findProjectByPlaceId dedupes by placeId", () => {
+    const projects = [
+      { projectId: "p1", placeId: "111", title: "A" },
+      { projectId: "p2", defaultPlaceId: "222", title: "B" },
+    ];
+    expect(findProjectByPlaceId(projects, "222")?.projectId).toBe("p2");
+    expect(findProjectByPlaceId(projects, "0")).toBeNull();
+    expect(findProjectByPlaceId(projects, "")).toBeNull();
+  });
+
+  test("buildProjectBindingPayloadFromIdentity omits untitled placeId 0", () => {
+    expect(buildProjectBindingPayloadFromIdentity({
+      title: "Draft",
+      placeId: "0",
+      studioTargetId: "t1",
+      studioTargetLabel: "Draft",
+    })).toEqual({
+      title: "Draft",
+      studioTargetId: "t1",
+      studioTargetLabel: "Draft",
+    });
+    expect(buildProjectBindingPayloadFromIdentity({
+      title: "Live Game",
+      placeId: "555",
+      universeId: "9",
+      studioTargetId: "t2",
+    })).toEqual({
+      title: "Live Game",
+      defaultPlaceId: "555",
+      placeId: "555",
+      universeId: "9",
+      studioTargetId: "t2",
+      studioTargetLabel: "Live Game",
+    });
   });
 });

@@ -219,6 +219,28 @@ describe("useStudioConnection", () => {
     await waitFor(() => expect(getStudioStatus).toHaveBeenCalledTimes(3));
   });
 
+  test("non-retryable poll failures keep the last live Studio snapshot", async () => {
+    getStudioStatus
+      .mockResolvedValueOnce({
+        sessions: [{ sessionId: "studio_1", status: "connected", live: true }],
+      })
+      .mockRejectedValueOnce(Object.assign(new Error("Unexpected status"), {
+        status: 400,
+      }));
+
+    const hook = renderHook(() => useStudioConnection());
+
+    await waitFor(() => expect(hook.result.current.loading).toBe(false));
+    expect(hook.result.current.connected).toBe(true);
+
+    await act(async () => {
+      jest.advanceTimersByTime(15000);
+      await Promise.resolve();
+    });
+    await waitFor(() => expect(getStudioStatus).toHaveBeenCalledTimes(2));
+    expect(hook.result.current.connected).toBe(true);
+  });
+
   test("reports a connector-only MCP session as degraded, not connected", async () => {
     getStudioStatus.mockResolvedValue({ sessions: [] });
     getStudioMcpStatus.mockResolvedValue({

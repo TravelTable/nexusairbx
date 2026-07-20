@@ -286,6 +286,22 @@ export default function AssetLibraryModal({
     setLoading(true);
     setError(null);
     try {
+      const pickCreatorId = (...candidates) => {
+        for (const value of candidates) {
+          const text = String(value || "").trim();
+          if (/^[1-9]\d*$/.test(text)) return text;
+        }
+        return "";
+      };
+      const resolvedCreatorId = pickCreatorId(
+        destination?.id,
+        robloxIdentity?.selectedCreator?.id,
+        robloxIdentity?.robloxUserId,
+        robloxIdentity?.profile?.sub,
+      );
+      const resolvedCreatorType = destination?.type
+        || robloxIdentity?.selectedCreator?.type
+        || "User";
       const data = await listRobloxAssets({
         source,
         search: debouncedSearch,
@@ -293,6 +309,8 @@ export default function AssetLibraryModal({
         sort,
         cursor,
         pageSize: 24,
+        creatorId: resolvedCreatorId,
+        creatorType: resolvedCreatorType,
       });
       const nextAssets = Array.isArray(data.assets) ? data.assets : [];
       setAssets((current) => {
@@ -310,7 +328,7 @@ export default function AssetLibraryModal({
     } finally {
       setLoading(false);
     }
-  }, [assetTypes, creatorStoreAuthorized, debouncedSearch, open, sort, source]);
+  }, [assetTypes, creatorStoreAuthorized, debouncedSearch, destination, open, projectId, robloxIdentity, sort, source]);
 
   useEffect(() => {
     setAssets([]);

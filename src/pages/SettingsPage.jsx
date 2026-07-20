@@ -794,12 +794,6 @@ export default function SettingsPage() {
             checked={settings.showThinking}
             onCheckedChange={(showThinking) => updateSetting({ showThinking })}
           />
-          <ToggleRow
-            label="Game wizard prompts"
-            description="Use guided prompts for new Roblox game concepts."
-            checked={settings.enableGameWizard}
-            onCheckedChange={(enableGameWizard) => updateSetting({ enableGameWizard })}
-          />
         </div>
       </Panel>
 

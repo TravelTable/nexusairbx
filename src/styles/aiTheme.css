@@ -44,3 +44,21 @@
 .ai-accent-2 {
   color: var(--ai-accent-2);
 }
+
+/* Semantic design-system aliases (map to AI / nexus tokens). */
+:root {
+  --ds-bg: var(--ai-bg);
+  --ds-surface: var(--ai-surface);
+  --ds-surface-muted: var(--ai-surface-muted);
+  --ds-border: var(--ai-border);
+  --ds-text: var(--ai-text);
+  --ds-text-muted: var(--ai-text-muted);
+  --ds-accent: var(--ai-accent);
+  --ds-accent-2: var(--ai-accent-2);
+  --ds-info: var(--ai-info);
+  --ds-danger: var(--ai-danger);
+  --ds-radius-sm: var(--nexus-radius-sm);
+  --ds-radius-md: var(--nexus-radius-md);
+  --ds-radius-lg: var(--nexus-radius-lg);
+  --ds-shadow-panel: var(--nexus-shadow-panel);
+}

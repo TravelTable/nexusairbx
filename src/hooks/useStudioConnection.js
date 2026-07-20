@@ -61,11 +61,11 @@ export function useStudioConnection() {
           statusRef.current = result.value;
           return;
         }
+        // Never wipe the last known Studio snapshot on a poll failure. A transient
+        // CORS/network blip must not flash the UI as disconnected mid-selection.
         if (isRetryableApiError(result.reason)) {
           retryAfterMs = Math.max(retryAfterMs, getRetryDelayMs(result.reason, 30000));
-          return;
         }
-        statusRef.current = null;
       };
 
       applyResult(results[0], pluginStatusRef);
