@@ -59,6 +59,10 @@ import {
   readChatStudioPreference,
   targetingOptionsFromStatus,
 } from "../../lib/studioPlaceBinding";
+import {
+  isFirestorePermissionDenied,
+  resumeStudioTargetSelection,
+} from "../../lib/studioTargetSelection";
 import { AI_EVENTS, emitAiEvent, onAiEvent } from "../../lib/aiEvents";
 import { useAiNotifications } from "./useAiNotifications";
 import { useStarterPromo } from "../../hooks/useStarterPromo";
@@ -267,6 +271,7 @@ export function useAiWorkspaceController() {
   const pendingAuthResumeRef = useRef(null);
   const pendingRobloxResumeRef = useRef(false);
   const runQuickScriptRef = useRef(null);
+  const autoSelectedStudioTargetKeyRef = useRef(null);
 
   const {
     notify: queueNotify,
@@ -1394,18 +1399,29 @@ export function useAiWorkspaceController() {
       if (!targetId || !user || selectingStudioTargetId) return;
       setSelectingStudioTargetId(targetId);
       try {
-        const preference = await bindChatStudioPlace(option);
-        if (!runId) {
+        const { preference, bindError, result, resumed } = await resumeStudioTargetSelection({
+          option,
+          runId,
+          bindPreference: bindChatStudioPlace,
+          selectTarget: selectAgentStudioTarget,
+        });
+        const bindDenied = isFirestorePermissionDenied(bindError);
+        if (!resumed) {
           setStudioPlacePickerOpen(false);
-          notify({
-            message: preference?.label
-              ? `This chat will edit ${preference.label}`
-              : "Studio place selected for this chat",
-            type: "success",
-          });
+          if (bindDenied) {
+            notify({
+              message: "Could not save this place to the chat, but you can still send with it selected.",
+              type: "info",
+            });
+          } else {
+            const label = preference?.label || buildStudioTargetPreference(option)?.label;
+            notify({
+              message: label ? `This chat will edit ${label}` : "Studio place selected for this chat",
+              type: "success",
+            });
+          }
           return;
         }
-        const result = await selectAgentStudioTarget(runId, option);
         await syncAgentRunSteps(runId, null, result?.run || null);
         if (result?.conflict) {
           notify({
@@ -1420,6 +1436,12 @@ export function useAiWorkspaceController() {
               : "Continuing in Studio",
             type: "success",
           });
+          if (bindDenied) {
+            notify({
+              message: "Could not save this place preference to the chat (permissions).",
+              type: "info",
+            });
+          }
         }
       } catch (err) {
         notify({ message: err?.message || "Could not continue in that Studio project", type: "error" });
@@ -1437,6 +1459,38 @@ export function useAiWorkspaceController() {
       workspace.agentRun,
     ]
   );
+
+  // Belt: sole parked option — auto-select once so a stuck picker cannot block the run.
+  useEffect(() => {
+    const pending = unified.pendingMessage;
+    const agentRun = workspace.agentRun;
+    const runStatus = pending?.runStatus || agentRun?.status || agentRun?.runStatus;
+    const runId = pending?.runId || agentRun?.runId || agentRun?.id;
+    const options =
+      pending?.targetSelection?.options ||
+      agentRun?.targetSelection?.options ||
+      [];
+    if (runStatus !== "awaiting_studio_target" || !runId || options.length !== 1) {
+      if (runStatus !== "awaiting_studio_target") {
+        autoSelectedStudioTargetKeyRef.current = null;
+      }
+      return;
+    }
+    const sole = options[0];
+    const soleId = sole?.id || sole?.targetId || sole?.studioTargetId;
+    if (!soleId || selectingStudioTargetId) return;
+    const key = `${runId}:${soleId}`;
+    if (autoSelectedStudioTargetKeyRef.current === key) return;
+    autoSelectedStudioTargetKeyRef.current = key;
+    handleSelectStudioTarget(sole).catch(() => {
+      autoSelectedStudioTargetKeyRef.current = null;
+    });
+  }, [
+    handleSelectStudioTarget,
+    selectingStudioTargetId,
+    unified.pendingMessage,
+    workspace.agentRun,
+  ]);
 
   const handleApproveStep = useCallback(
     async (step) => {
