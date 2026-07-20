@@ -628,6 +628,7 @@ export default function ChatComposer({
                     disabled={disabled}
                     aria-label="Prompt input"
                     aria-autocomplete="list"
+                    role="combobox"
                     aria-expanded={mentionOpen}
                     onCompositionStart={() => setIsComposing(true)}
                     onCompositionEnd={() => setIsComposing(false)}

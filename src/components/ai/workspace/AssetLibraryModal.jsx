@@ -328,7 +328,7 @@ export default function AssetLibraryModal({
     } finally {
       setLoading(false);
     }
-  }, [assetTypes, creatorStoreAuthorized, debouncedSearch, destination, open, projectId, robloxIdentity, sort, source]);
+  }, [assetTypes, creatorStoreAuthorized, debouncedSearch, destination, open, robloxIdentity, sort, source]);
 
   useEffect(() => {
     setAssets([]);
