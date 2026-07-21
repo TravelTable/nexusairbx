@@ -121,7 +121,7 @@ export default function AgentChatPanel({
   }, [creatorStoreOpen]);
 
   return (
-    <div className="h-full flex flex-col min-h-0 bg-ink-900">
+    <div className="h-full flex flex-col min-h-0 overflow-hidden bg-ink-900">
       <div className="flex-1 min-h-0 flex flex-col">
         {view === "details" ? (
           <div className="flex-1 min-h-0 motion-safe:animate-panel-in">
@@ -164,16 +164,18 @@ export default function AgentChatPanel({
         )}
       </div>
 
-      <RobloxAssetTray
-        projectId={robloxAssetProjectId}
-        robloxConnected={robloxConnected}
-        uploadAvailable={robloxUploadAvailable}
-        assetUploadsEnabled={robloxAssetUploadsEnabled}
-        selectedCreator={robloxSelectedCreator}
-        notify={notify}
-      />
+      <div className="shrink-0">
+        <RobloxAssetTray
+          projectId={robloxAssetProjectId}
+          robloxConnected={robloxConnected}
+          uploadAvailable={robloxUploadAvailable}
+          assetUploadsEnabled={robloxAssetUploadsEnabled}
+          selectedCreator={robloxSelectedCreator}
+          notify={notify}
+        />
+      </div>
 
-      <div className="border-t border-white/10 bg-[#080a12] px-3 py-2">
+      <div className="shrink-0 border-t border-white/10 bg-[#080a12] px-3 py-2">
         <button
           type="button"
           onClick={() => setCreatorStoreOpen(true)}
@@ -239,13 +241,16 @@ export default function AgentChatPanel({
         </div>
       )}
 
-      <ModelFilePipelinePanel
-        robloxConnected={robloxConnected}
-        studioConnected={studioConnected}
-        selectedCreator={robloxSelectedCreator}
-        notify={notify}
-      />
+      <div className="shrink-0">
+        <ModelFilePipelinePanel
+          robloxConnected={robloxConnected}
+          studioConnected={studioConnected}
+          selectedCreator={robloxSelectedCreator}
+          notify={notify}
+        />
+      </div>
 
+      <div className="shrink-0">
       <ChatComposer
         prompt={prompt}
         setPrompt={setPrompt}
@@ -322,6 +327,7 @@ export default function AgentChatPanel({
         assetProjectId={selectedAssetProjectId}
         robloxStatus={robloxStatus}
       />
+      </div>
     </div>
   );
 }
