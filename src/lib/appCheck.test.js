@@ -40,5 +40,16 @@ describe("installAppCheckFetchInterceptor", () => {
     await windowObject.fetch("https://example.test/asset");
     expect(originalFetch).toHaveBeenCalledTimes(2);
     expect(getToken).toHaveBeenCalledTimes(1);
+
+    const firestoreInit = { headers: { "X-Goog-Api-Client": "fire/11.0.2" } };
+    await windowObject.fetch(
+      "https://firestore.googleapis.com/google.firestore.v1.Firestore/Listen/channel",
+      firestoreInit
+    );
+    expect(originalFetch).toHaveBeenLastCalledWith(
+      "https://firestore.googleapis.com/google.firestore.v1.Firestore/Listen/channel",
+      firestoreInit
+    );
+    expect(getToken).toHaveBeenCalledTimes(1);
   });
 });

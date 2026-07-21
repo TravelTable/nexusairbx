@@ -130,6 +130,14 @@ function authenticatedHeaders(initHeaders, token, appCheckHeaders, requestId) {
   };
 }
 
+export function isNexusApiUrl(url, apiOrigin = API_ORIGIN) {
+  try {
+    return new URL(url, apiOrigin).origin === new URL(apiOrigin).origin;
+  } catch (_) {
+    return false;
+  }
+}
+
 function billingRequestKey(scope, body) {
   const fingerprint = `${scope}:${JSON.stringify(body || {})}`;
   const now = Date.now();
@@ -173,6 +181,17 @@ export async function authedFetch(path, init = {}) {
   const noCache = init.noCache === true;
   const url = new URL(path, API_ORIGIN);
   if (noCache) url.searchParams.set("t", String(Date.now()));
+
+  // Absolute and protocol-relative URLs can escape the configured API origin.
+  // Forward them without Nexus auth, App Check, deployment, or analytics
+  // headers so a future caller cannot leak Nexus credentials to a third party.
+  if (!isNexusApiUrl(url)) {
+    return fetch(url.toString(), {
+      ...init,
+      method: init.method || "GET",
+      headers: init.headers,
+    });
+  }
 
   let token = await getIdToken({ force: false });
   let appCheckHeaders = await getFirebaseAppCheckHeaders();

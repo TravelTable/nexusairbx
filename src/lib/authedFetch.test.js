@@ -16,7 +16,7 @@ jest.mock("./appCheck", () => ({
 }));
 
 const { getAuth } = require("firebase/auth");
-const { authedFetch } = require("./billing");
+const { authedFetch, isNexusApiUrl } = require("./billing");
 
 function response(status) {
   return {
@@ -91,5 +91,29 @@ describe("authedFetch authentication recovery", () => {
 
     await expect(authedFetch("/api/v2/runs")).resolves.toMatchObject({ status: 401 });
     expect(global.fetch).toHaveBeenCalledTimes(2);
+  });
+
+  test("never attaches Nexus headers or auth to third-party URLs", async () => {
+    getAuth.mockReturnValue({ currentUser: null });
+    global.fetch = jest.fn().mockResolvedValue(response(200));
+
+    await authedFetch("https://firestore.googleapis.com/google.firestore.v1.Firestore/Listen/channel", {
+      headers: { Accept: "application/json" },
+    });
+
+    expect(getAuth).not.toHaveBeenCalled();
+    const [url, init] = global.fetch.mock.calls[0];
+    expect(url).toMatch(/^https:\/\/firestore\.googleapis\.com\//);
+    expect(init.headers).toEqual({ Accept: "application/json" });
+    expect(init.headers.Authorization).toBeUndefined();
+    expect(init.headers["X-Firebase-AppCheck"]).toBeUndefined();
+    expect(init.headers["X-Nexus-Client-Deployment"]).toBeUndefined();
+  });
+
+  test("matches the configured Nexus API origin exactly", () => {
+    expect(isNexusApiUrl("/api/v2/events")).toBe(true);
+    expect(isNexusApiUrl("https://api.test/api/v2/events")).toBe(true);
+    expect(isNexusApiUrl("https://api.test.evil.example/api/v2/events")).toBe(false);
+    expect(isNexusApiUrl("//firestore.googleapis.com/listen")).toBe(false);
   });
 });
