@@ -1,5 +1,7 @@
 import {
+  AgentRuntimeUnavailableError,
   cancelAgentRunV2,
+  createAgentV2,
   extractAgentEvents,
   extractAgentList,
   mergeAgentEvents,
@@ -96,7 +98,7 @@ describe("agentRuntimeV2Api projections", () => {
     await cancelAgentRunV2("run-1");
 
     expect(authedFetch).toHaveBeenCalledWith(
-      "/api/v2/agents/runs/run-1/cancel",
+      "/api/v2/runs/run-1/cancel",
       expect.objectContaining({
         method: "POST",
         headers: expect.objectContaining({
@@ -106,5 +108,51 @@ describe("agentRuntimeV2Api projections", () => {
       })
     );
     expect("cancel-run-1").toHaveLength(12);
+  });
+
+  test("uses the canonical v2 create-agent endpoint", async () => {
+    authedFetch.mockResolvedValue({
+      ok: true,
+      status: 201,
+      text: jest.fn().mockResolvedValue(JSON.stringify({ agent: { agentId: "agent-1" } })),
+    });
+
+    await createAgentV2({ chatId: "chat-1", projectId: "project-1", idempotencyKey: "agent-chat-1" });
+
+    expect(authedFetch).toHaveBeenCalledWith(
+      "/api/v2/agents",
+      expect.objectContaining({
+        method: "POST",
+        body: JSON.stringify({ chatId: "chat-1", projectId: "project-1" }),
+      })
+    );
+  });
+
+  test("preserves a typed 404 instead of treating it as a missing v2 runtime", async () => {
+    authedFetch.mockResolvedValue({
+      ok: false,
+      status: 404,
+      text: jest.fn().mockResolvedValue(JSON.stringify({
+        error: "The requested resource is not available.",
+        code: "OWNERSHIP_MISMATCH",
+      })),
+    });
+
+    await expect(createAgentV2({ chatId: "chat-1", projectId: "stale-project" }))
+      .rejects.toMatchObject({
+        status: 404,
+        payload: expect.objectContaining({ code: "OWNERSHIP_MISMATCH" }),
+      });
+  });
+
+  test("still identifies an unstructured 404 as a missing v2 runtime", async () => {
+    authedFetch.mockResolvedValue({
+      ok: false,
+      status: 404,
+      text: jest.fn().mockResolvedValue("Not found"),
+    });
+
+    await expect(createAgentV2({ chatId: "chat-1" }))
+      .rejects.toBeInstanceOf(AgentRuntimeUnavailableError);
   });
 });

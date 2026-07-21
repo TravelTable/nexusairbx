@@ -48,7 +48,11 @@ async function request(path, init = {}) {
     },
   });
   const payload = await readJson(res);
-  if (res.status === 404 || res.status === 501) {
+  // A 404 can describe a missing/foreign agent, run, or project. Those are
+  // valid v2 responses and must not make the client disable the whole runtime.
+  // Only an unstructured 404 is treated as evidence that the v2 endpoint itself
+  // is unavailable (for compatibility with older backend deployments).
+  if (res.status === 501 || (res.status === 404 && !payload?.code)) {
     throw new AgentRuntimeUnavailableError(payload?.message);
   }
   if (!res.ok) {
@@ -61,16 +65,16 @@ async function request(path, init = {}) {
 }
 
 export function createAgentV2({ chatId, projectId = null, idempotencyKey }) {
-  return request(`/api/v2/chats/${encodeURIComponent(chatId)}/agents`, {
+  return request("/api/v2/agents", {
     method: "POST",
     headers: { "Idempotency-Key": idempotencyKey || `agent-${chatId}` },
-    body: JSON.stringify({ projectId: projectId || null }),
+    body: JSON.stringify({ chatId, projectId: projectId || null }),
   });
 }
 
 export function createAgentRunV2({ chatId, agentId, idempotencyKey, ...body }) {
   return request(
-    `/api/v2/chats/${encodeURIComponent(chatId)}/agents/${encodeURIComponent(agentId)}/runs`,
+    `/api/v2/agents/${encodeURIComponent(agentId)}/runs`,
     {
       method: "POST",
       headers: { "Idempotency-Key": idempotencyKey },
@@ -80,11 +84,11 @@ export function createAgentRunV2({ chatId, agentId, idempotencyKey, ...body }) {
 }
 
 export function getActiveAgentsV2() {
-  return request("/api/v2/agents/active", { method: "GET", noCache: true });
+  return request("/api/v2/agents", { method: "GET", noCache: true });
 }
 
 export function getAgentEventsV2(afterSequence = 0) {
-  return request(`/api/v2/agents/events?afterSequence=${encodeURIComponent(afterSequence)}`, {
+  return request(`/api/v2/events?afterSequence=${encodeURIComponent(afterSequence)}`, {
     method: "GET",
     noCache: true,
   });
@@ -99,7 +103,7 @@ export function getAgentV2(agentId) {
 
 export function cancelAgentRunV2(runId, { reason = "user_cancelled", idempotencyKey } = {}) {
   const cancelKey = idempotencyKey || `cancel-${runId}`;
-  return request(`/api/v2/agents/runs/${encodeURIComponent(runId)}/cancel`, {
+  return request(`/api/v2/runs/${encodeURIComponent(runId)}/cancel`, {
     method: "POST",
     headers: { "Idempotency-Key": cancelKey },
     body: JSON.stringify({ reason }),
