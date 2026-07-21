@@ -24,7 +24,7 @@ const EXAMPLES = [
 
 export default function ChatEmptyState({ onQuickStart, onOpenTemplates }) {
   return (
-    <div className="min-h-[40vh] flex flex-col items-center justify-center text-center space-y-10 py-12 motion-safe:animate-fade-in-up">
+    <div className="flex min-h-0 flex-col items-center justify-center space-y-8 py-8 text-center motion-safe:animate-fade-in-up sm:space-y-10 sm:py-10">
       <div className="space-y-4 max-w-xl">
         <div className="mx-auto w-14 h-14 rounded-2xl bg-nexus-cyan/10 border border-nexus-cyan/20 flex items-center justify-center shadow-[0_0_40px_-8px_rgba(0,245,212,0.4)]">
           <img src="/logo.png" alt="" className="w-9 h-9 object-contain" />

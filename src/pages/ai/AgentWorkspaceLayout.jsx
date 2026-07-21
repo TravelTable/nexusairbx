@@ -725,7 +725,7 @@ export default function AgentWorkspaceLayout({ controller }) {
           />
         </div>
       )}
-      <div className="min-h-0 flex-1">
+      <div className="flex min-h-0 flex-1 flex-col">
         <AgentChatPanel
           currentChatId={chat.currentChatId}
           messages={chat.messages}
@@ -1132,7 +1132,7 @@ export default function AgentWorkspaceLayout({ controller }) {
             </div>
           ) : (
           <div className="flex-1 min-h-0 flex">
-            <div className={`flex-1 min-w-0 ${isMobile ? (mobileTab === "chat" ? "flex pb-16" : "hidden") : "flex"} flex-col`}>
+            <div className={`flex-1 min-h-0 min-w-0 ${isMobile ? (mobileTab === "chat" ? "flex pb-16" : "hidden") : "flex"} flex-col`}>
               {agentChat}
             </div>
 

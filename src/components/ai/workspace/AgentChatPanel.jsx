@@ -121,10 +121,10 @@ export default function AgentChatPanel({
   }, [creatorStoreOpen]);
 
   return (
-    <div className="h-full flex flex-col min-h-0 overflow-hidden bg-ink-900">
-      <div className="flex-1 min-h-0 flex flex-col">
+    <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-ink-900">
+      <div className="flex min-h-0 flex-1 flex-col">
         {view === "details" ? (
-          <div className="flex-1 min-h-0 motion-safe:animate-panel-in">
+          <div className="min-h-0 flex-1 motion-safe:animate-panel-in">
             <BuildDetailsPanel
               artifact={artifact}
               agentRun={agentRun}
@@ -138,7 +138,7 @@ export default function AgentChatPanel({
             />
           </div>
         ) : (
-          <div className="relative flex-1 min-h-0 flex flex-col">
+          <div className="relative flex min-h-0 flex-1 flex-col">
             <ChatView
               messages={messages}
               pendingMessage={pendingMessage}
@@ -164,7 +164,7 @@ export default function AgentChatPanel({
         )}
       </div>
 
-      <div className="min-h-0 shrink overflow-y-auto overscroll-contain scrollbar-subtle">
+      <div className="min-h-0 max-h-[28vh] shrink overflow-y-auto overscroll-contain scrollbar-subtle">
         <RobloxAssetTray
           projectId={robloxAssetProjectId}
           robloxConnected={robloxConnected}
