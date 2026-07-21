@@ -9,7 +9,12 @@ import { FEATURE_FLAGS } from "../lib/featureFlags";
 import { getStudioEnabledPreference } from "../lib/agentSteps";
 import { getStudioStatus } from "../lib/studioBridgeApi";
 import { doc, getDocs, onSnapshot, serverTimestamp, setDoc, updateDoc } from "firebase/firestore";
-import { createAgentV2, extractAgentEvents } from "../lib/agentRuntimeV2Api";
+import {
+  extractAgentEvents,
+  getRuntimeCapabilitiesV2,
+  resolveChatAgentProjectionV2,
+  selectAgentRuntimeRoute,
+} from "../lib/agentRuntimeV2Api";
 
 jest.mock("../firebase", () => ({
   auth: {
@@ -79,11 +84,14 @@ jest.mock("../lib/workflowApi", () => ({
 }));
 
 jest.mock("../lib/agentRuntimeV2Api", () => ({
-  createAgentV2: jest.fn(),
+  AgentRuntimeUnavailableError: class AgentRuntimeUnavailableError extends Error {},
   extractAgentEvents: jest.fn((value) => value?.events || value?.data?.events || []),
   getAgentEventsV2: jest.fn(),
   getAgentV2: jest.fn(),
+  getRuntimeCapabilitiesV2: jest.fn(() => Promise.resolve(null)),
   normalizeAgentProjection: jest.fn((value) => value?.agent || value),
+  resolveChatAgentProjectionV2: jest.fn(),
+  selectAgentRuntimeRoute: jest.fn(() => "unknown"),
 }));
 
 jest.mock("../lib/streaming", () => ({
@@ -150,16 +158,29 @@ describe("useAiChat", () => {
     FEATURE_FLAGS.newTaskRuntime = false;
     getStudioEnabledPreference.mockReturnValue(false);
     getStudioStatus.mockReset();
-    createAgentV2.mockResolvedValue({ agent: { agentId: "agent-1" } });
+    getRuntimeCapabilitiesV2.mockResolvedValue({
+      executionOwner: "canonical_task_runtime",
+      canonicalAgentRuns: { enabled: true, requiresProject: true },
+      legacyGeneration: { enabled: true },
+    });
+    selectAgentRuntimeRoute.mockImplementation((capabilities, { projectId } = {}) => {
+      if (!capabilities) return "unknown";
+      if (capabilities.executionOwner !== "canonical_task_runtime"
+        || capabilities.canonicalAgentRuns?.enabled !== true) return "legacy";
+      if (capabilities.canonicalAgentRuns?.requiresProject === true && !projectId) return "legacy";
+      return "canonical";
+    });
+    resolveChatAgentProjectionV2.mockImplementation(({ chatId, projectId }) => ({
+      agent: { agentId: "agent-1", chatId, projectId },
+      resolution: "resolved",
+    }));
     extractAgentEvents.mockImplementation((value) => value?.events || value?.data?.events || []);
     auth.currentUser = null;
   });
 
-  test("keeps a local New Chat without fabricating an agent id when projection is unavailable", async () => {
+  test("keeps a projectless New Chat on legacy execution without fabricating an agent id", async () => {
     const user = { uid: "user_1", getIdToken: jest.fn().mockResolvedValue("token_1") };
     auth.currentUser = user;
-    createAgentV2.mockRejectedValueOnce(new Error("runtime disconnected"));
-    const warn = jest.spyOn(console, "warn").mockImplementation(() => {});
     const settings = {};
     const refreshBilling = jest.fn();
     const notify = jest.fn();
@@ -169,17 +190,17 @@ describe("useAiChat", () => {
     await act(async () => {
       chatId = await result.current.startNewChat();
     });
-    warn.mockRestore();
-
     expect(chatId).toEqual(expect.any(String));
     const creationCall = setDoc.mock.calls.find(([, payload]) => payload?.chatId === chatId);
     expect(creationCall).toBeTruthy();
     expect(creationCall[1]).toEqual(expect.objectContaining({
       chatId,
-      agentRuntimeStatus: "unavailable",
-      agentRuntimeError: "runtime disconnected",
+      agentRuntimeStatus: "legacy",
+      agentRuntimeError: null,
+      projectId: null,
     }));
     expect(creationCall[1]).not.toHaveProperty("agentId");
+    expect(resolveChatAgentProjectionV2).not.toHaveBeenCalled();
   });
 
   test("persists an assistant failure when result recovery fails without a run id", async () => {

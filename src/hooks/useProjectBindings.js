@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  createProjectBinding,
+  deleteProjectBinding,
   findOrCreateProjectBinding,
   listProjectBindings,
 } from "../lib/projectBindingsApi";
@@ -9,29 +9,10 @@ import {
   findProjectByPlaceId,
 } from "../lib/studioPlaceBinding";
 
-const STORAGE_KEY = "nexusrbx.selectedWorkspaceProjectId";
-
-function readStoredProjectId() {
-  try {
-    return String(localStorage.getItem(STORAGE_KEY) || "").trim() || null;
-  } catch (_) {
-    return null;
-  }
-}
-
-function writeStoredProjectId(projectId) {
-  try {
-    if (projectId) localStorage.setItem(STORAGE_KEY, projectId);
-    else localStorage.removeItem(STORAGE_KEY);
-  } catch (_) {
-    /* ignore */
-  }
-}
-
 export function useProjectBindings(user, { authReady = true } = {}) {
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [selectedProjectId, setSelectedProjectIdState] = useState(() => readStoredProjectId());
+  const [selectedProjectId, setSelectedProjectIdState] = useState(null);
   const [error, setError] = useState(null);
 
   const refresh = useCallback(async () => {
@@ -62,7 +43,6 @@ export function useProjectBindings(user, { authReady = true } = {}) {
   const setSelectedProjectId = useCallback((projectId) => {
     const next = String(projectId || "").trim() || null;
     setSelectedProjectIdState(next);
-    writeStoredProjectId(next);
   }, []);
 
   const selectedProject = useMemo(
@@ -84,10 +64,12 @@ export function useProjectBindings(user, { authReady = true } = {}) {
     return project;
   }, [setSelectedProjectId]);
 
-  const createProject = useCallback(async (payload = {}) => {
-    const result = await createProjectBinding(payload);
-    return adoptProject(result?.project || null);
-  }, [adoptProject]);
+  const deleteProject = useCallback(async (projectId) => {
+    const result = await deleteProjectBinding(projectId);
+    setProjects((prev) => prev.filter((project) => project.projectId !== projectId));
+    setSelectedProjectIdState((current) => current === projectId ? null : current);
+    return result;
+  }, []);
 
   /**
    * Open or create a workspace project from a resolved game identity.
@@ -96,17 +78,18 @@ export function useProjectBindings(user, { authReady = true } = {}) {
   const openGameProject = useCallback(async (identity = {}) => {
     const payload = buildProjectBindingPayloadFromIdentity(identity);
     const placeId = payload.placeId || payload.defaultPlaceId || null;
+    const universeId = payload.universeId || null;
+    if (!/^\d+$/.test(String(placeId || "")) || String(placeId) === "0"
+      || !/^\d+$/.test(String(universeId || "")) || String(universeId) === "0") {
+      throw new Error("A published Studio place and universe are required to create a game project.");
+    }
     if (placeId) {
       const existing = findProjectByPlaceId(projects, placeId);
       if (existing?.projectId) {
         setSelectedProjectId(existing.projectId);
         // Still upsert so Studio labels / title sync when not manually renamed.
-        try {
-          const result = await findOrCreateProjectBinding(payload);
-          return adoptProject(result?.project || existing);
-        } catch (_) {
-          return existing;
-        }
+        const result = await findOrCreateProjectBinding(payload);
+        return adoptProject(result?.project || existing);
       }
     }
     const result = await findOrCreateProjectBinding(payload);
@@ -120,7 +103,7 @@ export function useProjectBindings(user, { authReady = true } = {}) {
     selectedProjectId,
     selectedProject,
     setSelectedProjectId,
-    createProject,
+    deleteProject,
     openGameProject,
     refresh,
   };

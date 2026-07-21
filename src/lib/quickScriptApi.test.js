@@ -45,7 +45,7 @@ describe("quickScriptApi", () => {
     await generateQuickScript({
       prompt: "add altitude controls",
       priorResult: {
-        title: "Fly GUI",
+        title: "Checkpoint HUD",
         scriptType: "LocalScript",
         studioLocation: "StarterPlayer/StarterPlayerScripts",
         code: 'local flying = false',
@@ -57,7 +57,7 @@ describe("quickScriptApi", () => {
       prompt: "add altitude controls",
       generatorMode: "quick_script",
       priorResult: {
-        title: "Fly GUI",
+        title: "Checkpoint HUD",
         scriptType: "LocalScript",
         studioLocation: "StarterPlayer/StarterPlayerScripts",
         code: 'local flying = false',

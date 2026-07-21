@@ -57,7 +57,7 @@ export default function ProNudgeModal({ isOpen, onClose, reason = "this icon" })
             <div className="space-y-3 mb-8">
               <BenefitItem 
                 icon={Bookmark} 
-                title="Saved Scripts Library" 
+                title="Saved Creations"
                 desc="Save and organize your AI-generated code snippets."
                 color="text-[#9b5de5]"
               />

@@ -61,7 +61,6 @@ import {
   targetingOptionsFromStatus,
 } from "../../lib/studioPlaceBinding";
 import {
-  createProjectBinding,
   findOrCreateProjectBinding,
   getProjectBinding,
 } from "../../lib/projectBindingsApi";
@@ -636,13 +635,13 @@ export function useAiWorkspaceController() {
 
     const unbindSaveScript = onAiEvent(AI_EVENTS.SAVE_SCRIPT, async (e) => {
       if (!isStarterOrAbove) {
-        starterPromo.notifyStarterGate("Saved Scripts Library");
+        starterPromo.notifyStarterGate("Saved Creations");
         return;
       }
 
       const { name, code } = e.detail || {};
-      await scriptManager.handleCreateScript(name, code, "logic");
-      notify({ message: `Saved ${name} to library`, type: "success" });
+      await scriptManager.handleCreateScript(name, code, "logic", chat.currentChatId, chat.currentChatMeta?.projectId || null);
+      notify({ message: `Saved ${name} to creations`, type: "success" });
       track("project_saved", { output_type: "script" });
     });
 
@@ -782,18 +781,6 @@ export function useAiWorkspaceController() {
     return { project, projectId };
   }, []);
 
-  const ensureExportProjectBinding = useCallback(async (title) => {
-    const result = await createProjectBinding({
-      title: String(title || "Untitled game").trim().slice(0, 120) || "Untitled game",
-    });
-    const project = result?.project || null;
-    const projectId = String(project?.projectId || result?.projectId || "").trim();
-    if (!projectId) {
-      throw new Error("An export project could not be created. Please try again.");
-    }
-    return { project, projectId };
-  }, []);
-
   const bindChatStudioPlace = useCallback(async (option) => {
     const preference = buildStudioTargetPreference(option);
     if (!preference || !user) return null;
@@ -920,30 +907,20 @@ export function useAiWorkspaceController() {
           return;
         }
 
-        // Chats are durable, while empty retention projects can be removed.
-        // Treat an unavailable saved binding as stale and provision a fresh
-        // export project below instead of sending a guaranteed runtime 404.
+        // Chats are durable, while game bindings can be removed. Treat an
+        // unavailable binding as General instead of recreating a prompt project.
         runtimeProjectId = null;
       }
     }
-    if (!runtimeProjectId && agentMode) {
-      try {
-        const binding = await ensureExportProjectBinding(promptToSend);
-        runtimeProjectId = binding.projectId;
-        if (chat.currentChatId) {
-          await updateDoc(doc(db, "users", user.uid, "chats", chat.currentChatId), {
-            projectId: runtimeProjectId,
-            updatedAt: serverTimestamp(),
-          });
-        }
-      } catch (error) {
-        notify({
-          message: error?.message || "Could not prepare this project for export.",
-          type: "error",
-        });
-        return;
-      }
-    }
+
+    // Build this once after all project/Studio repair has completed. Refine and
+    // first-generation must submit the same effective identity inputs so a
+    // retry cannot bind one idempotency key to two different agent payloads.
+    const effectiveSubmissionOptions = {
+      ...submissionOptions,
+      ...(studioTargetPreference ? { studioTargetPreference } : {}),
+      projectId: runtimeProjectId,
+    };
 
     setPrompt("");
     setAttachments([]);
@@ -956,7 +933,7 @@ export function useAiWorkspaceController() {
         target,
         currentPrompt,
         workspace.projectArtifactSnapshot,
-        submissionOptions
+        effectiveSubmissionOptions
       );
       return;
     }
@@ -973,11 +950,7 @@ export function useAiWorkspaceController() {
       promptToSend,
       currentAttachments,
       workspace.projectArtifactSnapshot,
-      {
-        ...submissionOptions,
-        ...(studioTargetPreference ? { studioTargetPreference } : {}),
-        ...(runtimeProjectId ? { projectId: runtimeProjectId } : {}),
-      }
+      effectiveSubmissionOptions
     );
   }, [
     user,
@@ -999,9 +972,7 @@ export function useAiWorkspaceController() {
     studioPlaceOptions,
     effectiveStudioPlacePreference,
     bindChatStudioPlace,
-    ensureExportProjectBinding,
     chat.activeMode,
-    chat.currentChatId,
     chat.currentChatMeta?.projectId,
     notify,
   ]);

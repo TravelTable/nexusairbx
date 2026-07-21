@@ -163,7 +163,7 @@ const BrutalAuditor = () => {
           </div>
           <div 
             ref={terminalRef}
-            className="flex-1 p-4 font-mono text-xs overflow-y-auto space-y-1 scrollbar-thin scrollbar-thumb-gray-800"
+            className="flex-1 p-4 font-mono text-xs overflow-y-auto space-y-1 scrollbar-subtle"
           >
             {terminalLogs.length === 0 && (
               <div className="text-gray-700 italic">Waiting for audit initialization...</div>
@@ -345,7 +345,7 @@ const BrutalAuditor = () => {
                       <span className="text-xs font-mono text-gray-400">{p.file}</span>
                       <button className="text-[10px] font-bold text-purple-400 hover:text-purple-300 uppercase tracking-widest">Copy Patch</button>
                     </div>
-                    <pre className="p-4 rounded-xl bg-black border border-gray-800 text-[10px] font-mono text-cyan-400 overflow-x-auto">
+                    <pre className="p-4 rounded-xl bg-black border border-gray-800 text-[10px] font-mono text-cyan-400 overflow-x-auto scrollbar-subtle">
                       {p.patch}
                     </pre>
                   </div>

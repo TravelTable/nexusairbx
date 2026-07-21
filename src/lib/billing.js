@@ -8,8 +8,11 @@ import { getFirebaseAppCheckHeaders } from "./appCheck";
 const API_ORIGIN = BACKEND_URL;
 const TIMEZONE_SUCCESS_THROTTLE_MS = 12 * 60 * 60 * 1000;
 const TIMEZONE_RETRY_THROTTLE_MS = 5 * 60 * 1000;
+const TOKEN_REFRESH_SKEW_MS = 2 * 60 * 1000;
 
 let authInitPromise = null;
+let forcedTokenRefreshPromise = null;
+let forcedTokenRefreshUid = null;
 const billingRequestKeys = new Map();
 const BILLING_REQUEST_KEY_TTL_MS = 30 * 60 * 1000;
 const BILLING_REQUEST_STORAGE_PREFIX = "nexus:billing-request:";
@@ -30,10 +33,33 @@ function waitForAuthInit() {
   return authInitPromise;
 }
 
+function tokenNeedsRefresh(user) {
+  const expirationTime = Number(user?.stsTokenManager?.expirationTime || 0);
+  return expirationTime > 0 && expirationTime <= Date.now() + TOKEN_REFRESH_SKEW_MS;
+}
+
+function forceRefreshIdToken(user) {
+  const uid = String(user?.uid || "");
+  if (forcedTokenRefreshPromise && forcedTokenRefreshUid === uid) {
+    return forcedTokenRefreshPromise;
+  }
+  const refresh = Promise.resolve().then(() => user.getIdToken(true));
+  forcedTokenRefreshUid = uid;
+  const wrappedRefresh = refresh.finally(() => {
+    if (forcedTokenRefreshPromise === wrappedRefresh) {
+      forcedTokenRefreshPromise = null;
+      forcedTokenRefreshUid = null;
+    }
+  });
+  forcedTokenRefreshPromise = wrappedRefresh;
+  return forcedTokenRefreshPromise;
+}
+
 async function getIdToken({ force = false } = {}) {
   const user = getAuth().currentUser || (await waitForAuthInit());
   if (!user) throw new Error("Not signed in");
-  return user.getIdToken(force);
+  if (force || tokenNeedsRefresh(user)) return forceRefreshIdToken(user);
+  return user.getIdToken(false);
 }
 
 function readStoredNumber(key) {
@@ -63,15 +89,45 @@ function removeStoredValue(key) {
 }
 
 function randomRequestId() {
-  if (typeof window.crypto?.randomUUID === "function") {
+  if (typeof window !== "undefined" && typeof window.crypto?.randomUUID === "function") {
     return window.crypto.randomUUID();
   }
-  if (typeof window.crypto?.getRandomValues === "function") {
+  if (typeof window !== "undefined" && typeof window.crypto?.getRandomValues === "function") {
     const bytes = new Uint8Array(16);
     window.crypto.getRandomValues(bytes);
     return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
   }
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 14)}`;
+}
+
+function clientDeploymentVersion() {
+  const value = process.env.REACT_APP_DEPLOYMENT_VERSION
+    || process.env.REACT_APP_VERCEL_GIT_COMMIT_SHA
+    || process.env.REACT_APP_GIT_SHA
+    || "unknown";
+  const text = String(value).trim();
+  return /^[a-zA-Z0-9._:-]{1,96}$/.test(text) ? text : "unknown";
+}
+
+function headerValue(headers, name) {
+  if (typeof headers?.get === "function") return headers.get(name);
+  const target = String(name).toLowerCase();
+  const entry = Object.entries(headers || {}).find(([key]) => key.toLowerCase() === target);
+  return entry?.[1] || null;
+}
+
+function authenticatedHeaders(initHeaders, token, appCheckHeaders, requestId) {
+  return {
+    Accept: "application/json",
+    ...getProductAnalyticsHeaders(),
+    ...(initHeaders || {}),
+    ...appCheckHeaders,
+    Authorization: `Bearer ${token}`,
+    "Cache-Control": "no-cache, no-store, max-age=0",
+    Pragma: "no-cache",
+    "X-Request-ID": requestId,
+    "X-Nexus-Client-Deployment": clientDeploymentVersion(),
+  };
 }
 
 function billingRequestKey(scope, body) {
@@ -120,21 +176,14 @@ export async function authedFetch(path, init = {}) {
 
   let token = await getIdToken({ force: false });
   let appCheckHeaders = await getFirebaseAppCheckHeaders();
+  const requestId = headerValue(init.headers, "X-Request-ID") || randomRequestId();
 
   let res = await fetch(url.toString(), {
     ...init,
     method: init.method || "GET",
     mode: "cors",
     cache: "no-store",
-    headers: {
-      Accept: "application/json",
-      ...getProductAnalyticsHeaders(),
-      ...(init.headers || {}),
-      ...appCheckHeaders,
-      Authorization: `Bearer ${token}`,
-      "Cache-Control": "no-cache, no-store, max-age=0",
-      Pragma: "no-cache",
-    },
+    headers: authenticatedHeaders(init.headers, token, appCheckHeaders, requestId),
   });
 
   // Retry once if token expired
@@ -146,15 +195,7 @@ export async function authedFetch(path, init = {}) {
       method: init.method || "GET",
       mode: "cors",
       cache: "no-store",
-      headers: {
-        Accept: "application/json",
-        ...getProductAnalyticsHeaders(),
-        ...(init.headers || {}),
-        ...appCheckHeaders,
-        Authorization: `Bearer ${token}`,
-        "Cache-Control": "no-cache, no-store, max-age=0",
-        Pragma: "no-cache",
-      },
+      headers: authenticatedHeaders(init.headers, token, appCheckHeaders, requestId),
     });
   }
 

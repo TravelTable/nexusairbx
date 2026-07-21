@@ -8,6 +8,7 @@ import ReasoningPanel from "./ReasoningPanel";
 import { parsePendingStreamContent } from "../../../lib/streaming";
 import { Separator } from "../../shadcn/separator";
 import { Clock3, Loader2, RotateCcw } from "lib/icons";
+import { getAssistantTurnIdentity, reconcileAssistantTurns } from "../../../lib/assistantTurnIdentity";
 
 function resolveActivityStage(pendingMessage, generationStage, parsed) {
   const stage = pendingMessage?.stage || generationStage || "";
@@ -82,15 +83,16 @@ function SingleMessageList({
   hideMessages = false,
 }) {
   // Firestore can publish the completed assistant message one render before the
-  // orchestration cleanup runs. Once that response exists, the matching live
-  // placeholder is stale and should no longer be shown.
+  // orchestration cleanup runs. This remains a local guard for call sites that
+  // render a single pending row outside the normalized list below.
   const pendingMessage = useMemo(() => {
-    if (!pendingMessageProp?.requestId) return pendingMessageProp;
+    const pendingKey = getAssistantTurnIdentity(pendingMessageProp);
+    if (!pendingKey) return pendingMessageProp;
     const hasCompletedResponse = messages.some(
       (message) =>
         message.role === "assistant" &&
         !message.pending &&
-        message.requestId === pendingMessageProp.requestId
+        getAssistantTurnIdentity(message) === pendingKey
     );
     return hasCompletedResponse ? null : pendingMessageProp;
   }, [messages, pendingMessageProp]);
@@ -117,10 +119,13 @@ function SingleMessageList({
     () => hideMessages
       ? []
       :
-      pendingMessage?.requestId
-        ? messages.filter((m) => !(m.pending && m.requestId === pendingMessage.requestId))
+      getAssistantTurnIdentity(pendingMessage)
+        ? messages.filter((m) => !(
+          m.pending &&
+          getAssistantTurnIdentity(m) === getAssistantTurnIdentity(pendingMessage)
+        ))
         : messages,
-    [hideMessages, messages, pendingMessage?.requestId]
+    [hideMessages, messages, pendingMessage]
   );
 
   // Generation pending carries `prompt` for instant feedback before Firestore syncs.
@@ -228,7 +233,7 @@ function SingleMessageList({
                           <div className="px-3 py-2 border-b border-white/5 text-[10px] font-black uppercase tracking-widest text-gray-500">
                             Streaming Code
                           </div>
-                          <pre className="p-4 text-[12px] leading-relaxed text-gray-300 whitespace-pre overflow-x-auto">
+                          <pre className="p-4 text-[12px] leading-relaxed text-gray-300 whitespace-pre overflow-x-auto scrollbar-subtle">
                             {pendingParsed.code}
                           </pre>
                         </div>
@@ -256,20 +261,56 @@ function SingleMessageList({
   );
 }
 
-export default function MessageList({ pendingMessages, ...props }) {
-  if (!Array.isArray(pendingMessages)) {
-    return <SingleMessageList {...props} />;
-  }
+export default function MessageList({ pendingMessage, pendingMessages, messages = [], ...props }) {
+  const keylessRenderKeys = React.useRef(new WeakMap());
+  const keylessRenderSequence = React.useRef(0);
+  const normalizedPendingMessages = useMemo(() => reconcileAssistantTurns([
+    ...(Array.isArray(pendingMessages) ? pendingMessages : []),
+    ...(pendingMessage ? [pendingMessage] : []),
+  ]), [pendingMessage, pendingMessages]);
+  const completedAssistantTurnKeys = useMemo(() => new Set(
+    messages
+      .filter((message) => message.role === "assistant" && !message.pending)
+      .map(getAssistantTurnIdentity)
+      .filter(Boolean)
+  ), [messages]);
+  const activePendingAssistantTurnKeys = useMemo(() => new Set(
+    normalizedPendingMessages.map(getAssistantTurnIdentity).filter(Boolean)
+  ), [normalizedPendingMessages]);
+  const visibleMessages = useMemo(() => messages.filter((message) => {
+    const key = getAssistantTurnIdentity(message);
+    return !(
+      message.role === "assistant" &&
+      message.pending &&
+      key &&
+      activePendingAssistantTurnKeys.has(key)
+    );
+  }), [activePendingAssistantTurnKeys, messages]);
+  const visiblePendingMessages = useMemo(() => normalizedPendingMessages.filter((message) => {
+    const key = getAssistantTurnIdentity(message);
+    return !key || !completedAssistantTurnKeys.has(key);
+  }), [completedAssistantTurnKeys, normalizedPendingMessages]);
+
+  const pendingRenderKey = (message) => {
+    const identity = getAssistantTurnIdentity(message);
+    if (identity) return identity;
+    if (!keylessRenderKeys.current.has(message)) {
+      keylessRenderSequence.current += 1;
+      keylessRenderKeys.current.set(message, `keyless-pending:${keylessRenderSequence.current}`);
+    }
+    return keylessRenderKeys.current.get(message);
+  };
 
   return (
     <div className="space-y-6">
-      <SingleMessageList {...props} pendingMessage={null} />
-      {pendingMessages.map((pendingMessage, index) => (
+      <SingleMessageList {...props} messages={visibleMessages} pendingMessage={null} />
+      {visiblePendingMessages.map((message) => (
         <SingleMessageList
           {...props}
-          key={pendingMessage?.requestId || `pending-${index}`}
+          key={pendingRenderKey(message)}
+          messages={visibleMessages}
           hideMessages
-          pendingMessage={pendingMessage}
+          pendingMessage={message}
         />
       ))}
     </div>

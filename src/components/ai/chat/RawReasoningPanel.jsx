@@ -73,7 +73,7 @@ export default function RawReasoningPanel({ text = "", live = false, embedded = 
         <div
           ref={scrollerRef}
           onScroll={handleScroll}
-          className="max-h-[24rem] overflow-y-auto px-4 pb-4 pt-2 border-t border-white/5"
+          className="max-h-[24rem] overflow-y-auto px-4 pb-4 pt-2 border-t border-white/5 scrollbar-subtle"
         >
           <div className="text-[13px] leading-relaxed text-gray-400 whitespace-pre-wrap font-mono">
             {clean}

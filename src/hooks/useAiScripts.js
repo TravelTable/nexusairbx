@@ -89,12 +89,13 @@ export function useAiScripts(user, notify) {
     }
   }, [user, notify]);
 
-  const handleCreateScript = useCallback(async (title, code = "", type = "chat", chatId = null) => {
+  const handleCreateScript = useCallback(async (title, code = "", type = "chat", chatId = null, workspaceProjectId = null) => {
     if (!user) return;
     try {
       const docRef = await addDoc(collection(db, "users", user.uid, "scripts"), {
         title: title || "New Script",
         chatId: chatId || null,
+        workspaceProjectId: workspaceProjectId || null,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
         type: type,

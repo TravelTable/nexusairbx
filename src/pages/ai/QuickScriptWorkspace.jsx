@@ -163,7 +163,7 @@ export default function QuickScriptWorkspace({
         )}
         data-testid="quick-prompt-pane"
       >
-        <div className="flex-1 min-h-0 overflow-y-auto px-4 py-5 sm:px-6 sm:py-7 scrollbar-thin">
+        <div className="flex-1 min-h-0 overflow-y-auto px-4 py-5 sm:px-6 sm:py-7 scrollbar-subtle">
           <div className="mx-auto max-w-3xl space-y-4">
             {isGenerating && (
             <div className="rounded-2xl border border-[#00f5d4]/15 bg-[#00f5d4]/[0.04] p-4 motion-safe:animate-fade-in-up" aria-live="polite">
@@ -398,7 +398,7 @@ export default function QuickScriptWorkspace({
                     </div>
                   </div>
                   <div
-                    className="flex-1 min-h-0 overflow-y-auto overscroll-contain quick-script-code-scroll bg-black/20 scrollbar-thin"
+                    className="flex-1 min-h-0 overflow-y-auto overscroll-contain quick-script-code-scroll bg-black/20 scrollbar-subtle"
                     tabIndex={0}
                     aria-label="Generated Luau code. Scroll to read."
                   >
@@ -409,7 +409,7 @@ export default function QuickScriptWorkspace({
                 </div>
               </TabsContent>
 
-              <TabsContent value="setup" className="flex-1 min-h-0 mt-0 focus-visible:ring-0 overflow-y-auto p-4 space-y-4 scrollbar-thin">
+              <TabsContent value="setup" className="flex-1 min-h-0 mt-0 focus-visible:ring-0 overflow-y-auto p-4 space-y-4 scrollbar-subtle">
                 <ListSection
                   title="Required Objects"
                   items={result.requiredObjects}
@@ -430,7 +430,7 @@ export default function QuickScriptWorkspace({
                 />
               </TabsContent>
 
-              <TabsContent value="diagnostics" className="flex-1 min-h-0 mt-0 focus-visible:ring-0 overflow-y-auto p-4 space-y-4 scrollbar-thin">
+              <TabsContent value="diagnostics" className="flex-1 min-h-0 mt-0 focus-visible:ring-0 overflow-y-auto p-4 space-y-4 scrollbar-subtle">
                 <ListSection
                   title="Warnings & Limitations"
                   items={warnings}

@@ -11,20 +11,23 @@ import {
   writeBatch, 
   setDoc, 
   updateDoc, 
-  deleteDoc, 
   addDoc,
   getDocs
 } from "firebase/firestore";
 import { v4 as uuidv4 } from "uuid";
 import {
-  createAgentV2,
+  AgentRuntimeUnavailableError,
   extractAgentEvents,
   getAgentEventsV2,
   getAgentV2,
+  getRuntimeCapabilitiesV2,
   normalizeAgentProjection,
+  resolveChatAgentProjectionV2,
+  selectAgentRuntimeRoute,
 } from "../lib/agentRuntimeV2Api";
 import { auth, db, firebaseConfig } from "../firebase";
 import { BACKEND_URL } from "../config";
+import { authedFetch } from "../lib/billing";
 import { ensureStreamSession } from "../lib/streamSession";
 import {
   buildStreamUrl,
@@ -1702,7 +1705,11 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
   const handleDeleteChat = async (chatId) => {
     if (!authReady || !user?.uid || auth.currentUser?.uid !== user.uid || !chatId) return;
     try {
-      await deleteDoc(doc(db, "users", user.uid, "chats", chatId));
+      const response = await authedFetch(`/api/user/data/chats/${encodeURIComponent(chatId)}`, { method: "DELETE" });
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({}));
+        throw new Error(payload.message || "The chat could not be deleted");
+      }
       // Drop any in-flight generation state tied to the deleted chat.
       Object.keys(generatingRef.current).forEach((key) => {
         if (key.startsWith(`${chatId}:`)) delete generatingRef.current[key];
@@ -1727,6 +1734,24 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
       notify({ message: "Chat deleted successfully", type: "success" });
     } catch (err) {
       notify({ message: "Failed to delete chat: " + err.message, type: "error" });
+      throw err;
+    }
+  };
+
+  const handleRenameChat = async (chatId, title) => {
+    const nextTitle = String(title || "").trim();
+    if (!authReady || !user?.uid || auth.currentUser?.uid !== user.uid || !chatId || !nextTitle) return;
+    try {
+      await updateDoc(doc(db, "users", user.uid, "chats", chatId), {
+        title: nextTitle,
+        updatedAt: serverTimestamp(),
+      });
+      if (currentChatId === chatId) {
+        setCurrentChatMeta((current) => current ? { ...current, title: nextTitle } : current);
+      }
+      notify({ message: "Chat renamed", type: "success" });
+    } catch (err) {
+      notify({ message: "Failed to rename chat", type: "error" });
     }
   };
 
@@ -1755,14 +1780,24 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
     const draftId = uuidv4();
     let agentId = null;
     let agentRuntimeError = null;
+    let agentRuntimeStatus = "unavailable";
     try {
-      const created = await createAgentV2({
-        chatId,
-        projectId: selectedProjectId || null,
-        idempotencyKey: `agent-${chatId}`,
-      });
-      agentId = normalizeAgentProjection(created)?.agentId || null;
-      if (!agentId) throw new Error("Agent runtime did not return an agent id");
+      let capabilities = null;
+      try {
+        capabilities = await getRuntimeCapabilitiesV2();
+      } catch (error) {
+        if (!(error instanceof AgentRuntimeUnavailableError)) throw error;
+      }
+      if (selectAgentRuntimeRoute(capabilities, { projectId: selectedProjectId }) !== "legacy") {
+        const resolved = await resolveChatAgentProjectionV2({
+          chatId,
+          projectId: selectedProjectId || null,
+          allowLegacyCreate: capabilities == null,
+        });
+        agentId = normalizeAgentProjection(resolved)?.agentId || null;
+        if (!agentId) throw new Error("Agent runtime did not return an agent id");
+        agentRuntimeStatus = "ready";
+      } else agentRuntimeStatus = "legacy";
     } catch (error) {
       // Chat creation stays available during runtime rollout/outages. The
       // idempotent agent reservation will be retried by the submission path.
@@ -1775,14 +1810,14 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
       lifecycle: "draft",
       draftId,
       chatId,
-      ...(agentId ? { agentId, agentRuntimeStatus: "ready" } : {
-        agentRuntimeStatus: "unavailable",
+      ...(agentId ? { agentId, agentRuntimeStatus } : {
+        agentRuntimeStatus,
         agentRuntimeError,
       }),
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
+      projectId: selectedProjectId || null,
     };
-    if (selectedProjectId) payload.projectId = selectedProjectId;
     if (studioTargetPreference) payload.studioTargetPreference = studioTargetPreference;
     await setDoc(doc(db, "users", user.uid, "chats", chatId), payload);
     closeChatSubscriptions();
@@ -1839,6 +1874,7 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
     openChatById,
     handleSubmit,
     handleDeleteChat,
+    handleRenameChat,
     handleClearChat,
     startNewChat,
     setPendingMessage,

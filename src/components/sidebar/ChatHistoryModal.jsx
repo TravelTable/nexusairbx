@@ -63,7 +63,7 @@ export default function ChatHistoryModal({
   }, [isOpen, hasMore]);
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Chat History">
+    <Modal isOpen={isOpen} onClose={onClose} title="Chats">
       <div className="flex flex-col gap-4 max-h-[60vh]">
         <div className="relative group">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500 group-focus-within:text-[#9b5de5] transition-colors" />
@@ -76,7 +76,7 @@ export default function ChatHistoryModal({
           />
         </div>
 
-        <div className="flex-1 overflow-y-auto pr-2 space-y-2 scrollbar-thin scrollbar-track-transparent">
+        <div className="flex-1 overflow-y-auto pr-2 space-y-2 scrollbar-subtle">
           {visibleChats.length === 0 ? (
             <div className="text-center py-12 px-4 rounded-2xl bg-white/[0.02] border border-dashed border-white/10">
               <MessageSquare className="w-10 h-10 text-gray-700 mx-auto mb-3" />

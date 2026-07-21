@@ -35,10 +35,21 @@ import {
   normalizeChatAttachments,
 } from "../lib/chatAttachments";
 import {
+  AgentRuntimeUnavailableError,
   createAgentRunV2,
-  createAgentV2,
+  getRuntimeCapabilitiesV2,
   normalizeAgentProjection,
+  resolveChatAgentProjectionV2,
+  selectAgentRuntimeRoute,
 } from "../lib/agentRuntimeV2Api";
+import { reconcileAssistantTurns } from "../lib/assistantTurnIdentity";
+
+export function reconcileUnifiedPendingMessages(generationPending = [], orchestrationPending = []) {
+  return reconcileAssistantTurns([
+    ...(generationPending || []).map((turn) => ({ turn, source: "generation" })),
+    ...(orchestrationPending || []).map((turn) => ({ turn, source: "orchestration" })),
+  ]);
+}
 
 function seedOrchestrationStream(stage = "Understanding your task...") {
   return applyStreamActivity(createPendingStreamState(), {
@@ -203,10 +214,10 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
 
   const isGenerating = chat.isGenerating || flowBusy;
 
-  const pendingMessages = useMemo(() => [
-    ...(chat.pendingMessages || []),
-    ...Object.values(orchestrationPendingByChat[chat.currentChatId] || {}).filter(Boolean),
-  ], [chat.pendingMessages, chat.currentChatId, orchestrationPendingByChat]);
+  const pendingMessages = useMemo(() => reconcileUnifiedPendingMessages(
+    chat.pendingMessages,
+    Object.values(orchestrationPendingByChat[chat.currentChatId] || {}).filter(Boolean)
+  ), [chat.pendingMessages, chat.currentChatId, orchestrationPendingByChat]);
   const pendingMessage = pendingMessages[pendingMessages.length - 1] || null;
 
   const generationStage = useMemo(() => {
@@ -286,25 +297,34 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
   ) => {
     try {
       const projectId = submitOptions.projectId || null;
-      let created;
+      let capabilities = null;
       try {
-        created = await createAgentV2({
-          chatId: activeChatId,
-          projectId,
-          idempotencyKey: `agent-${activeChatId}`,
-        });
+        capabilities = await getRuntimeCapabilitiesV2();
       } catch (error) {
-        // A chat can outlive its retention project. If the UI repairs that
-        // binding, the original idempotency key is still tied to the old
-        // project, so create a new project-scoped projection for this chat.
-        if (error?.payload?.code !== "IDEMPOTENCY_CONFLICT" || !projectId) throw error;
-        created = await createAgentV2({
-          chatId: activeChatId,
-          projectId,
-          idempotencyKey: `agent-${activeChatId}-${projectId}`,
-        });
+        if (!(error instanceof AgentRuntimeUnavailableError)) throw error;
       }
-      const agent = normalizeAgentProjection(created);
+      if (selectAgentRuntimeRoute(capabilities, { projectId }) === "legacy") {
+        await setDoc(
+          doc(db, "users", user.uid, "chats", activeChatId),
+          {
+            agentRuntimeStatus: "legacy",
+            agentRuntimeError: null,
+            updatedAt: serverTimestamp(),
+          },
+          { merge: true }
+        );
+        return null;
+      }
+      const storedAgentId = chat.currentChatId === activeChatId
+        ? chat.currentChatMeta?.agentId
+        : null;
+      const resolved = await resolveChatAgentProjectionV2({
+        chatId: activeChatId,
+        projectId,
+        storedAgentId,
+        allowLegacyCreate: capabilities == null,
+      });
+      const agent = normalizeAgentProjection(resolved);
       if (!agent?.agentId) throw new Error("Agent runtime did not return an agent id");
       await setDoc(
         doc(db, "users", user.uid, "chats", activeChatId),
@@ -312,6 +332,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
           agentId: agent.agentId,
           agentRuntimeStatus: "ready",
           agentRuntimeError: null,
+          projectId: agent.projectId || projectId || null,
           lifecycle: "active",
           updatedAt: serverTimestamp(),
         },
@@ -336,7 +357,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
       if (required) throw error;
       return null;
     }
-  }, [user]);
+  }, [chat.currentChatId, chat.currentChatMeta?.agentId, user]);
 
   const launchAuthoritativeRun = useCallback(async ({
     activeChatId,
@@ -347,11 +368,40 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
     baseArtifact = null,
     submissionOptions = {},
   }) => {
+    let capabilities = null;
+    try {
+      capabilities = await getRuntimeCapabilitiesV2();
+    } catch (error) {
+      if (!(error instanceof AgentRuntimeUnavailableError)) throw error;
+    }
+    const runtimeRoute = selectAgentRuntimeRoute(capabilities, {
+      projectId: submissionOptions.projectId,
+    });
+    const launchLegacyGeneration = () => {
+      if (capabilities && capabilities.legacyGeneration?.enabled !== true) {
+        throw new Error("No executable generation transport is currently available.");
+      }
+      const legacySubmissionOptions = { ...submissionOptions };
+      delete legacySubmissionOptions.authoritativeRun;
+      return chat.handleSubmit(
+        prompt,
+        activeChatId,
+        requestId,
+        mode === "debug" ? "debug" : "agent",
+        true,
+        attachments,
+        baseArtifact,
+        legacySubmissionOptions
+      );
+    };
+    if (runtimeRoute === "legacy") return launchLegacyGeneration();
+
     const agent = await ensureRuntimeAgentProjection(
       activeChatId,
       submissionOptions,
       { required: true }
     );
+    if (!agent) return launchLegacyGeneration();
     const studioEnabled = getStudioEnabledPreference() === true;
     const autoPushToStudio = studioEnabled && settings?.studioAutoPushEnabled === true;
     const approvedPlan = normalizeApprovedPlanReference(submissionOptions.approvedPlan);
@@ -386,18 +436,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
         throw error;
       }
 
-      const legacySubmissionOptions = { ...submissionOptions };
-      delete legacySubmissionOptions.authoritativeRun;
-      return chat.handleSubmit(
-        prompt,
-        activeChatId,
-        requestId,
-        mode === "debug" ? "debug" : "agent",
-        true,
-        attachments,
-        baseArtifact,
-        legacySubmissionOptions
-      );
+      return launchLegacyGeneration();
     }
     if (!runtimeEnvelope?.authoritativeExecution || !runtimeEnvelope?.run?.runId) {
       throw new Error("The durable agent runtime did not accept this executable request.");

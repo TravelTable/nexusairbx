@@ -105,12 +105,11 @@ const ScriptRow = React.memo(function ScriptRow({
         )}
       </div>
 
-      <div className="flex items-center gap-1 ml-2 opacity-0 group-hover:opacity-100 transition-all duration-200 translate-x-2 group-hover:translate-x-0">
+      <div className="flex items-center gap-1 ml-2 opacity-70 transition-opacity hover:opacity-100 focus-within:opacity-100 md:opacity-60 md:group-hover:opacity-100">
         {!renaming && (
           <button
             className="p-1.5 rounded-lg text-gray-500 hover:text-white hover:bg-white/5 transition-colors"
             title="Rename"
-            tabIndex={-1}
             aria-label="Rename script"
             onClick={(e) => {
               e.stopPropagation();
@@ -124,7 +123,6 @@ const ScriptRow = React.memo(function ScriptRow({
         <button
           className="p-1.5 rounded-lg text-gray-500 hover:text-red-400 hover:bg-red-400/10 transition-colors"
           title="Delete"
-          tabIndex={-1}
           aria-label="Delete script"
           onClick={(e) => {
             e.stopPropagation();

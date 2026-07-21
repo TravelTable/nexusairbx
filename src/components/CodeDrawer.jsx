@@ -923,11 +923,11 @@ function CodeDrawerUI({
             <GlowButton
               onClick={onSaveScript}
               icon={Bookmark}
-              aria-label="Save to Library"
+              aria-label="Save to Creations"
               locked={saveSuccess}
               glowColor="from-[#00f5d4] to-[#9b5de5]"
             >
-              {saveSuccess ? "Saved!" : "Save to Library"}
+              {saveSuccess ? "Saved!" : "Save to Creations"}
             </GlowButton>
           )}
           <GlowButton

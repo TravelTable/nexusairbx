@@ -58,7 +58,7 @@ describe("quickScriptSession", () => {
 
   test("unwraps malformed Quick Script results that embed the full JSON blob in code", () => {
     const payload = {
-      title: "Fly GUI",
+      title: "Checkpoint HUD",
       scriptType: "LocalScript",
       studioLocation: "StarterPlayer/StarterPlayerScripts",
       setup: ["Place in StarterPlayerScripts."],
@@ -70,7 +70,7 @@ describe("quickScriptSession", () => {
       code: JSON.stringify(payload),
     });
 
-    expect(normalized.title).toBe("Fly GUI");
+    expect(normalized.title).toBe("Checkpoint HUD");
     expect(normalized.code).toContain("Players");
     expect(normalized.code).not.toContain('"scriptType"');
   });

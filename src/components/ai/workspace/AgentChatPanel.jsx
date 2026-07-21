@@ -232,7 +232,7 @@ export default function AgentChatPanel({
                 <X className="h-4 w-4" />
               </button>
             </div>
-            <div className="min-h-0 flex-1 overflow-y-auto p-3">
+            <div className="min-h-0 flex-1 overflow-y-auto p-3 scrollbar-subtle">
               <CreatorStoreSearch notify={notify} className="m-0 border-white/10 bg-black/20" />
             </div>
           </div>

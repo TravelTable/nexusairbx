@@ -1,7 +1,7 @@
 import { act, renderHook } from "@testing-library/react";
 import { TextDecoder as NodeTextDecoder } from "util";
 import { setDoc } from "firebase/firestore";
-import { useUnifiedChat } from "./useUnifiedChat";
+import { reconcileUnifiedPendingMessages, useUnifiedChat } from "./useUnifiedChat";
 import { useAiChat } from "./useAiChat";
 import { trackProductEvent } from "../lib/productAnalytics";
 import { FEATURE_FLAGS } from "../lib/featureFlags";
@@ -12,8 +12,10 @@ import { orchestrate } from "../lib/workflowApi";
 import { classifyUserIntent, isImplementationIntent } from "../lib/intentClassifier";
 import {
   createAgentRunV2,
-  createAgentV2,
+  getRuntimeCapabilitiesV2,
   normalizeAgentProjection,
+  resolveChatAgentProjectionV2,
+  selectAgentRuntimeRoute,
 } from "../lib/agentRuntimeV2Api";
 
 jest.mock("../firebase", () => ({
@@ -83,9 +85,12 @@ jest.mock("../lib/studioBridgeApi", () => ({
 }));
 
 jest.mock("../lib/agentRuntimeV2Api", () => ({
+  AgentRuntimeUnavailableError: class AgentRuntimeUnavailableError extends Error {},
   createAgentRunV2: jest.fn(),
-  createAgentV2: jest.fn(),
+  getRuntimeCapabilitiesV2: jest.fn(() => Promise.resolve(null)),
   normalizeAgentProjection: jest.fn((value) => value?.agent || value),
+  resolveChatAgentProjectionV2: jest.fn(),
+  selectAgentRuntimeRoute: jest.fn(() => "unknown"),
 }));
 
 jest.mock("./useStudioConnection", () => ({
@@ -106,9 +111,22 @@ describe("useUnifiedChat", () => {
     resolveGameSpecForPrompt.mockImplementation((value) => value || null);
     classifyUserIntent.mockReturnValue("IMPLEMENTATION");
     isImplementationIntent.mockReturnValue(true);
-    createAgentV2.mockResolvedValue({
-      agent: { agentId: "agent-1", projectId: "project_1" },
+    getRuntimeCapabilitiesV2.mockResolvedValue({
+      executionOwner: "canonical_task_runtime",
+      canonicalAgentRuns: { enabled: true, requiresProject: true },
+      legacyGeneration: { enabled: true },
     });
+    selectAgentRuntimeRoute.mockImplementation((capabilities, { projectId } = {}) => {
+      if (!capabilities) return "unknown";
+      if (capabilities.executionOwner !== "canonical_task_runtime"
+        || capabilities.canonicalAgentRuns?.enabled !== true) return "legacy";
+      if (capabilities.canonicalAgentRuns?.requiresProject === true && !projectId) return "legacy";
+      return "canonical";
+    });
+    resolveChatAgentProjectionV2.mockImplementation(({ chatId, projectId }) => ({
+      agent: { agentId: "agent-1", chatId, projectId },
+      resolution: "resolved",
+    }));
     normalizeAgentProjection.mockImplementation((value) => value?.agent || value);
     createAgentRunV2.mockResolvedValue({
       run: {
@@ -138,6 +156,58 @@ describe("useUnifiedChat", () => {
   afterEach(() => {
     global.fetch = originalFetch;
     global.TextDecoder = originalTextDecoder;
+  });
+
+  test("reconciles orchestration and generation pending state for the same request", () => {
+    const pendingMessages = reconcileUnifiedPendingMessages(
+      [{
+        role: "assistant",
+        requestId: "req-shared",
+        runId: "run-live",
+        jobId: "job-live",
+        prompt: "Build the lobby",
+        stage: "Writing runtime files...",
+        targetSelection: { selected: ["ServerScriptService"] },
+        streamState: {
+          activitySeq: 4,
+          activity: [
+            { id: "shared-stage", type: "stage", text: "Writing runtime files..." },
+            { id: "runtime-file", type: "file_chunk", text: "Writing LobbyService" },
+          ],
+          files: [{ id: "lobby", path: "ServerScriptService/LobbyService.lua" }],
+        },
+        steps: [{ id: "write-lobby", label: "Write LobbyService", status: "running" }],
+      }],
+      [{
+        role: "assistant",
+        requestId: "req-shared",
+        prompt: "Build the lobby",
+        stage: "Understanding your task...",
+        streamState: {
+          activitySeq: 2,
+          activity: [
+            { id: "shared-stage", type: "stage", text: "Understanding your task..." },
+            { id: "orchestration-plan", type: "stage", text: "Planning lobby" },
+          ],
+        },
+      }]
+    );
+
+    expect(pendingMessages).toHaveLength(1);
+    expect(pendingMessages[0]).toEqual(expect.objectContaining({
+      requestId: "req-shared",
+      runId: "run-live",
+      jobId: "job-live",
+      stage: "Writing runtime files...",
+      targetSelection: { selected: ["ServerScriptService"] },
+      steps: [expect.objectContaining({ id: "write-lobby" })],
+    }));
+    expect(pendingMessages[0].streamState.activitySeq).toBe(4);
+    expect(pendingMessages[0].streamState.activity).toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: "shared-stage", text: "Writing runtime files..." }),
+      expect.objectContaining({ id: "orchestration-plan" }),
+      expect.objectContaining({ id: "runtime-file" }),
+    ]));
   });
 
   test("nudges sign-in instead of submitting when a signed-out user enters a prompt", async () => {
@@ -229,7 +299,7 @@ describe("useUnifiedChat", () => {
 
   test("keeps Ask available when the optional runtime projection is disconnected", async () => {
     FEATURE_FLAGS.unifiedAgent = true;
-    createAgentV2.mockRejectedValueOnce(new Error("runtime disconnected"));
+    resolveChatAgentProjectionV2.mockRejectedValueOnce(new Error("runtime disconnected"));
     const setPendingForChat = jest.fn();
     useAiChat.mockReturnValue({
       activeMode: "ask",
@@ -489,7 +559,7 @@ describe("useUnifiedChat", () => {
     expect(notify).toHaveBeenCalledWith({ message: "Runtime unavailable", type: "error" });
   });
 
-  test("creates a project-scoped agent after a repaired chat binding conflicts with the old projection", async () => {
+  test("uses the natural-identity resolver once when a chat changes project binding", async () => {
     useAiChat.mockReturnValue({
       activeMode: "agent",
       currentChatId: "chat-1",
@@ -502,11 +572,10 @@ describe("useUnifiedChat", () => {
       pendingMessage: null,
       setPendingForChat: jest.fn(),
     });
-    createAgentV2
-      .mockRejectedValueOnce(Object.assign(new Error("Idempotency conflict"), {
-        payload: { code: "IDEMPOTENCY_CONFLICT" },
-      }))
-      .mockResolvedValueOnce({ agent: { agentId: "agent-2", projectId: "project_2" } });
+    resolveChatAgentProjectionV2.mockResolvedValueOnce({
+      agent: { agentId: "agent-2", chatId: "chat-1", projectId: "project_2" },
+      resolution: "created",
+    });
     const user = { uid: "user-1", getIdToken: jest.fn().mockResolvedValue("token") };
 
     const { result } = renderHook(() =>
@@ -519,20 +588,59 @@ describe("useUnifiedChat", () => {
       });
     });
 
-    expect(createAgentV2).toHaveBeenNthCalledWith(1, {
+    expect(resolveChatAgentProjectionV2).toHaveBeenCalledTimes(1);
+    expect(resolveChatAgentProjectionV2).toHaveBeenCalledWith({
       chatId: "chat-1",
       projectId: "project_2",
-      idempotencyKey: "agent-chat-1",
-    });
-    expect(createAgentV2).toHaveBeenNthCalledWith(2, {
-      chatId: "chat-1",
-      projectId: "project_2",
-      idempotencyKey: "agent-chat-1-project_2",
+      storedAgentId: undefined,
+      allowLegacyCreate: false,
     });
     expect(createAgentRunV2).toHaveBeenCalledWith(expect.objectContaining({
       agentId: "agent-2",
       projectId: "project_2",
     }));
+  });
+
+  test("routes directly to legacy generation when capabilities name the legacy owner", async () => {
+    getRuntimeCapabilitiesV2.mockResolvedValue({
+      executionOwner: "legacy_agent_adapter",
+      canonicalAgentRuns: { enabled: false, requiresProject: true },
+      legacyGeneration: { enabled: true },
+    });
+    useAiChat.mockReturnValue({
+      activeMode: "agent",
+      currentChatId: "chat-1",
+      generatingChatIds: [],
+      generationStage: "",
+      handleSubmit: chatHandleSubmit,
+      isGenerating: false,
+      messages: [],
+      openChatById: jest.fn(),
+      pendingMessage: null,
+      setPendingForChat: jest.fn(),
+    });
+    const user = { uid: "user-1", getIdToken: jest.fn().mockResolvedValue("token") };
+    const { result } = renderHook(() => useUnifiedChat(user, {}, jest.fn(), jest.fn()));
+
+    await act(async () => {
+      await result.current.handleSubmit("Build a lobby system", [], null, {
+        clientMessageId: "request-direct-legacy",
+        projectId: "project_1",
+      });
+    });
+
+    expect(resolveChatAgentProjectionV2).not.toHaveBeenCalled();
+    expect(createAgentRunV2).not.toHaveBeenCalled();
+    expect(chatHandleSubmit).toHaveBeenCalledWith(
+      "Build a lobby system",
+      "chat-1",
+      "request-direct-legacy",
+      "agent",
+      true,
+      [],
+      null,
+      expect.objectContaining({ projectId: "project_1" })
+    );
   });
 
   test("sends the complete server-owned execution input for an authoritative Studio run", async () => {

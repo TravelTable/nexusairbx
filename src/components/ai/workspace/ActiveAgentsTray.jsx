@@ -34,7 +34,7 @@ export default function ActiveAgentsTray({ agents = [], onOpenChat, onCancelRun 
       </button>
 
       {expanded && (
-        <div className="max-h-48 space-y-1 overflow-y-auto border-t border-white/5 px-3 py-2">
+        <div className="max-h-48 space-y-1 overflow-y-auto border-t border-white/5 px-3 py-2 scrollbar-subtle">
           {rows.length === 0 ? (
             <p className="px-1 py-2 text-xs text-gray-500">No agents are working right now.</p>
           ) : rows.map((agent) => (

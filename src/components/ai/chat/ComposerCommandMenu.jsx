@@ -14,7 +14,7 @@ export default function ComposerCommandMenu({
 
   return (
     <div
-      className="absolute bottom-full left-0 right-0 z-30 mb-1.5 overflow-hidden rounded-xl border border-white/10 bg-[#0D0D0D]/98 shadow-2xl backdrop-blur-xl"
+      className="absolute bottom-full left-0 right-0 z-30 mb-1.5 overflow-hidden rounded-xl border border-white/10 bg-[#0D0D0D] shadow-2xl"
       role="listbox"
       aria-label="Composer commands"
     >
@@ -22,7 +22,7 @@ export default function ComposerCommandMenu({
         <Hash className="h-3 w-3" />
         Commands
       </div>
-      <ul className="max-h-56 overflow-y-auto py-1">
+      <ul className="max-h-56 overflow-y-auto py-1 scrollbar-subtle">
         {filtered.map((command, index) => {
           const active = index === activeIndex;
           return (

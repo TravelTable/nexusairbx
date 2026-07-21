@@ -95,7 +95,7 @@ export default function ProjectArchitecturePanel({ context, onClose, onSync }) {
         </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-3">
+      <div className="flex-1 overflow-y-auto p-4 space-y-3 scrollbar-subtle">
         {!hasAny ? (
           <div className="rounded-xl bg-white/5 border border-white/10 p-6 text-center">
             <p className="text-sm text-gray-400 mb-2">No project context yet.</p>

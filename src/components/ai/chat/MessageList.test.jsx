@@ -294,7 +294,7 @@ describe("MessageList pending activity", () => {
           {
             id: "req-1-user",
             role: "user",
-            content: "generate a fly gui fast",
+            content: "generate a checkpoint hud fast",
             requestId: "req-1",
           },
         ]}
@@ -303,7 +303,7 @@ describe("MessageList pending activity", () => {
           role: "assistant",
           content: "",
           type: "chat",
-          prompt: "generate a fly gui fast",
+          prompt: "generate a checkpoint hud fast",
           requestId: "req-1",
           stage: "Analyzing Request...",
           streamState: {
@@ -315,7 +315,7 @@ describe("MessageList pending activity", () => {
       />
     );
 
-    expect(screen.getAllByText("generate a fly gui fast")).toHaveLength(1);
+    expect(screen.getAllByText("generate a checkpoint hud fast")).toHaveLength(1);
   });
 
   test("hides stale thinking UI once the matching assistant response is persisted", () => {
@@ -350,6 +350,70 @@ describe("MessageList pending activity", () => {
     expect(screen.queryByText("Thinking...")).toBeNull();
   });
 
+  test("renders one live assistant turn when Firestore and local pending state share a request", () => {
+    render(
+      <MessageList
+        {...baseProps}
+        messages={[
+          {
+            id: "req-live-assistant",
+            role: "assistant",
+            pending: true,
+            requestId: "req-live",
+            content: "",
+            stage: "Persisted stage that must not render",
+          },
+        ]}
+        pendingMessages={[
+          {
+            role: "assistant",
+            requestId: "req-live",
+            prompt: "Build a checkpoint HUD",
+            stage: "Writing checkpoint HUD...",
+            streamState: {
+              activity: [
+                { id: "write-hud", type: "tool_step", text: "Write checkpoint HUD", status: "running" },
+              ],
+            },
+          },
+        ]}
+      />
+    );
+
+    expect(screen.getAllByTestId("nexusrbx-avatar")).toHaveLength(1);
+    expect(screen.getAllByText("Writing checkpoint HUD...")).toHaveLength(1);
+    expect(screen.getByText("Write checkpoint HUD")).toBeTruthy();
+    expect(screen.queryByText("Persisted stage that must not render")).toBeNull();
+  });
+
+  test("keeps the completed assistant response when a matching local pending row is stale", () => {
+    render(
+      <MessageList
+        {...baseProps}
+        messages={[
+          {
+            id: "req-complete-assistant",
+            role: "assistant",
+            requestId: "req-complete",
+            content: "The checkpoint HUD is ready.",
+          },
+        ]}
+        pendingMessages={[
+          {
+            role: "assistant",
+            requestId: "req-complete",
+            prompt: "Build a checkpoint HUD",
+            stage: "Stale live stage",
+          },
+        ]}
+      />
+    );
+
+    expect(screen.getByText("The checkpoint HUD is ready.")).toBeTruthy();
+    expect(screen.queryByText("Stale live stage")).toBeNull();
+    expect(screen.getAllByTestId("nexusrbx-avatar")).toHaveLength(1);
+  });
+
   test("renders simultaneous pending runs in the same chat", () => {
     render(
       <MessageList
@@ -379,5 +443,30 @@ describe("MessageList pending activity", () => {
     expect(screen.getByText("Fix the round timer")).toBeTruthy();
     expect(screen.getByText("Planning inventory...")).toBeTruthy();
     expect(screen.getByText("Inspecting timer...")).toBeTruthy();
+    expect(screen.getAllByTestId("nexusrbx-avatar")).toHaveLength(2);
+  });
+
+  test("deduplicates matching run and job identities without merging keyless work", () => {
+    render(
+      <MessageList
+        {...baseProps}
+        pendingMessages={[
+          { role: "assistant", runId: "run-1", prompt: "Run source", stage: "Run source stage" },
+          { role: "assistant", runId: "run-1", prompt: "Run duplicate", stage: "Run duplicate stage" },
+          { role: "assistant", jobId: "job-1", prompt: "Job source", stage: "Job source stage" },
+          { role: "assistant", jobId: "job-1", prompt: "Job duplicate", stage: "Job duplicate stage" },
+          { role: "assistant", prompt: "Keyless first", stage: "Keyless first stage" },
+          { role: "assistant", prompt: "Keyless second", stage: "Keyless second stage" },
+        ]}
+      />
+    );
+
+    expect(screen.getAllByTestId("nexusrbx-avatar")).toHaveLength(4);
+    expect(screen.getByText("Run source stage")).toBeTruthy();
+    expect(screen.queryByText("Run duplicate stage")).toBeNull();
+    expect(screen.getByText("Job source stage")).toBeTruthy();
+    expect(screen.queryByText("Job duplicate stage")).toBeNull();
+    expect(screen.getByText("Keyless first stage")).toBeTruthy();
+    expect(screen.getByText("Keyless second stage")).toBeTruthy();
   });
 });

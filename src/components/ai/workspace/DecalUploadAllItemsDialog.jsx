@@ -26,7 +26,7 @@ export default function DecalUploadAllItemsDialog({
             {uploading ? " · uploads update live as Roblox finishes each file" : ""}
           </DialogDescription>
         </DialogHeader>
-        <div className="h-[min(60vh,480px)] min-h-[240px] overflow-y-auto pr-1">
+        <div className="h-[min(60vh,480px)] min-h-[240px] overflow-y-auto pr-1 scrollbar-subtle">
           {items.length === 0 ? (
             <div className="rounded-md border border-white/10 bg-white/[0.03] p-3 text-xs text-white/55">
               No decal images selected.

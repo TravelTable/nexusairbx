@@ -386,7 +386,7 @@ export default function RobloxDecalUploadDropdown({
           onPointerDownOutside={(event) => event.preventDefault()}
           onEscapeKeyDown={(event) => event.preventDefault()}
         >
-          <div className="max-h-[min(78vh,640px)] overflow-y-auto p-4 pr-10">
+          <div className="max-h-[min(78vh,640px)] overflow-y-auto p-4 pr-10 scrollbar-subtle">
             <DialogHeader className="space-y-0 text-left">
               <div className="flex items-start justify-between gap-3 pr-2">
                 <div>

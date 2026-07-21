@@ -211,7 +211,7 @@ export default function NativeModelReviewPanel({ artifact, notify }) {
         {showTree ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
       </button>
       {showTree && (
-        <div className="max-h-48 overflow-y-auto rounded-md border border-white/10 bg-black/20 p-2 text-xs">
+        <div className="max-h-48 overflow-y-auto rounded-md border border-white/10 bg-black/20 p-2 text-xs scrollbar-subtle">
           {hierarchy.slice(0, 80).map((item) => (
             <div key={item.id} className="flex items-center gap-2 text-gray-300" style={{ paddingLeft: `${item.depth * 12}px` }}>
               <span className="text-gray-500">{item.className}</span>

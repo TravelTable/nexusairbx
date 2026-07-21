@@ -6,6 +6,8 @@ import {
   extractAgentList,
   mergeAgentEvents,
   normalizeAgentProjection,
+  resolveChatAgentProjectionV2,
+  selectAgentRuntimeRoute,
 } from "./agentRuntimeV2Api";
 import { authedFetch } from "./billing";
 
@@ -154,5 +156,103 @@ describe("agentRuntimeV2Api projections", () => {
 
     await expect(createAgentV2({ chatId: "chat-1" }))
       .rejects.toBeInstanceOf(AgentRuntimeUnavailableError);
+  });
+
+  test("uses a stored projection before invoking the natural-identity resolver", async () => {
+    authedFetch.mockResolvedValue({
+      ok: true,
+      status: 200,
+      headers: { get: jest.fn(() => null) },
+      text: jest.fn().mockResolvedValue(JSON.stringify({
+        agent: { agentId: "agent-1", chatId: "chat-1", projectId: "project-1" },
+      })),
+    });
+
+    await expect(resolveChatAgentProjectionV2({
+      chatId: "chat-1",
+      projectId: "project-1",
+      storedAgentId: "agent-1",
+    })).resolves.toEqual(expect.objectContaining({
+      resolution: "stored",
+      agent: expect.objectContaining({ agentId: "agent-1" }),
+    }));
+
+    expect(authedFetch).toHaveBeenCalledTimes(1);
+    expect(authedFetch).toHaveBeenCalledWith(
+      "/api/v2/agents/agent-1",
+      expect.objectContaining({ method: "GET" })
+    );
+  });
+
+  test("repairs stale stored metadata through the server resolver", async () => {
+    authedFetch
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 404,
+        headers: { get: jest.fn(() => null) },
+        text: jest.fn().mockResolvedValue(JSON.stringify({
+          code: "AGENT_NOT_FOUND",
+          message: "Agent not found",
+        })),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        headers: { get: jest.fn(() => null) },
+        text: jest.fn().mockResolvedValue(JSON.stringify({
+          agent: { agentId: "agent-2", chatId: "chat-1", projectId: "project-1" },
+          resolution: "created",
+        })),
+      });
+
+    await expect(resolveChatAgentProjectionV2({
+      chatId: "chat-1",
+      projectId: "project-1",
+      storedAgentId: "stale-agent",
+    })).resolves.toEqual(expect.objectContaining({ resolution: "created" }));
+
+    expect(authedFetch).toHaveBeenNthCalledWith(
+      2,
+      "/api/v2/chats/chat-1/agent-projection",
+      expect.objectContaining({
+        method: "PUT",
+        body: JSON.stringify({ projectId: "project-1" }),
+      })
+    );
+  });
+
+  test("does not hide an ambiguous resolver outage behind legacy creation", async () => {
+    authedFetch.mockResolvedValue({
+      ok: false,
+      status: 503,
+      headers: { get: jest.fn(() => "request-503") },
+      text: jest.fn().mockResolvedValue(JSON.stringify({
+        code: "SERVICE_UNAVAILABLE",
+        message: "Runtime unavailable",
+      })),
+    });
+
+    await expect(resolveChatAgentProjectionV2({
+      chatId: "chat-1",
+      projectId: "project-1",
+      allowLegacyCreate: true,
+    })).rejects.toMatchObject({
+      status: 503,
+      requestId: "request-503",
+    });
+    expect(authedFetch).toHaveBeenCalledTimes(1);
+  });
+
+  test("selects execution from server capabilities without inventing a project", () => {
+    const canonical = {
+      executionOwner: "canonical_task_runtime",
+      canonicalAgentRuns: { enabled: true, requiresProject: true },
+    };
+    expect(selectAgentRuntimeRoute(canonical, { projectId: "project-1" })).toBe("canonical");
+    expect(selectAgentRuntimeRoute(canonical, { projectId: null })).toBe("legacy");
+    expect(selectAgentRuntimeRoute({
+      executionOwner: "legacy_agent_adapter",
+      canonicalAgentRuns: { enabled: false, requiresProject: true },
+    }, { projectId: "project-1" })).toBe("legacy");
   });
 });

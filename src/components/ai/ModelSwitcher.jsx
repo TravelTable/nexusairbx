@@ -202,7 +202,7 @@ export default function ModelSwitcher({
       ? createPortal(
           <div
             ref={menuRef}
-            className="fixed overflow-y-auto rounded-2xl border border-white/10 bg-[#0D0D0D]/95 backdrop-blur-2xl shadow-2xl z-[9999] p-2 scrollbar-hide"
+            className="fixed overflow-y-auto rounded-2xl border border-white/10 bg-[#0D0D0D]/95 backdrop-blur-2xl shadow-2xl z-[9999] p-2 scrollbar-subtle"
             style={{
               width: MENU_WIDTH,
               top: menuPosition?.top ?? 0,

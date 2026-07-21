@@ -6,7 +6,7 @@ import { kindMeta } from "./workspaceMeta";
 export default function CodeEditorTabs({ files = [], activeFileId, onSelectFile, onCloseFile = null }) {
   if (!files.length) return null;
   return (
-    <div className="flex items-center gap-1 overflow-x-auto scrollbar-hide bg-black/40 px-1.5 py-1 border-b border-white/5">
+    <div className="flex items-center gap-1 overflow-x-auto scrollbar-none bg-black/40 px-1.5 py-1 border-b border-white/5">
       {files.map((file) => {
         const meta = kindMeta(file.kind);
         const Icon = meta.icon;

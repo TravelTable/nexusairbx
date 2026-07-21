@@ -38,3 +38,10 @@ export async function getProjectBinding(projectId) {
   });
   return readJsonResponse(res, "Failed to load project");
 }
+
+export async function deleteProjectBinding(projectId) {
+  const res = await authedFetch(`/api/project-bindings/${encodeURIComponent(projectId)}`, {
+    method: "DELETE",
+  });
+  return readJsonResponse(res, "Failed to delete game project");
+}

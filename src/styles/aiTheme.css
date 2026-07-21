@@ -6,15 +6,10 @@
   background-color: var(--ai-bg);
   color: var(--ai-text);
   zoom: 0.85;
-}
-
-@supports not (zoom: 1) {
-  .ai-page {
-    transform: scale(0.85);
-    transform-origin: top left;
-    width: 117.65%;
-    height: 117.65%;
-  }
+  width: calc(100% / 0.85);
+  height: calc(100dvh / 0.85);
+  min-height: calc(100svh / 0.85);
+  overflow: hidden;
 }
 
 .ai-glow-primary {

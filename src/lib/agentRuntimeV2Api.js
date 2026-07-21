@@ -59,9 +59,50 @@ async function request(path, init = {}) {
     const error = new Error(payload?.message || payload?.error || `Agent runtime request failed (${res.status})`);
     error.status = res.status;
     error.payload = payload;
+    error.requestId = res.headers?.get?.("x-request-id") || null;
+    error.deploymentId = res.headers?.get?.("x-nexus-deployment")
+      || res.headers?.get?.("x-deployment-id")
+      || res.headers?.get?.("x-vercel-id")
+      || null;
     throw error;
   }
   return payload;
+}
+
+let runtimeCapabilitiesCache = null;
+let runtimeCapabilitiesPromise = null;
+const RUNTIME_CAPABILITIES_TTL_MS = 30_000;
+
+export async function getRuntimeCapabilitiesV2({ force = false } = {}) {
+  const currentTime = Date.now();
+  if (!force && runtimeCapabilitiesCache?.expiresAt > currentTime) {
+    return runtimeCapabilitiesCache.value;
+  }
+  if (!force && runtimeCapabilitiesPromise) return runtimeCapabilitiesPromise;
+  runtimeCapabilitiesPromise = request("/api/v2/runtime-capabilities", {
+    method: "GET",
+    noCache: force,
+  }).then((value) => {
+    runtimeCapabilitiesCache = {
+      value,
+      expiresAt: Date.now() + RUNTIME_CAPABILITIES_TTL_MS,
+    };
+    return value;
+  }).finally(() => {
+    runtimeCapabilitiesPromise = null;
+  });
+  return runtimeCapabilitiesPromise;
+}
+
+export function selectAgentRuntimeRoute(capabilities, { projectId = null } = {}) {
+  if (!capabilities) return "unknown";
+  const canonical = capabilities.executionOwner === "canonical_task_runtime"
+    && capabilities.canonicalAgentRuns?.enabled === true;
+  if (!canonical) return "legacy";
+  if (capabilities.canonicalAgentRuns?.requiresProject === true && !String(projectId || "").trim()) {
+    return "legacy";
+  }
+  return "canonical";
 }
 
 export function createAgentV2({ chatId, projectId = null, idempotencyKey }) {
@@ -69,6 +110,13 @@ export function createAgentV2({ chatId, projectId = null, idempotencyKey }) {
     method: "POST",
     headers: { "Idempotency-Key": idempotencyKey || `agent-${chatId}` },
     body: JSON.stringify({ chatId, projectId: projectId || null }),
+  });
+}
+
+export function resolveAgentProjectionV2({ chatId, projectId = null }) {
+  return request(`/api/v2/chats/${encodeURIComponent(chatId)}/agent-projection`, {
+    method: "PUT",
+    body: JSON.stringify({ projectId: projectId || null }),
   });
 }
 
@@ -99,6 +147,42 @@ export function getAgentV2(agentId) {
     method: "GET",
     noCache: true,
   });
+}
+
+export async function resolveChatAgentProjectionV2({
+  chatId,
+  projectId = null,
+  storedAgentId = null,
+  allowLegacyCreate = false,
+}) {
+  const desiredProjectId = String(projectId || "").trim() || null;
+  const candidateAgentId = String(storedAgentId || "").trim() || null;
+  if (candidateAgentId) {
+    try {
+      const stored = normalizeAgentProjection(await getAgentV2(candidateAgentId));
+      const storedProjectId = String(stored?.projectId || "").trim() || null;
+      if (stored?.chatId === chatId && (!desiredProjectId || storedProjectId === desiredProjectId)) {
+        return { agent: stored, resolution: "stored", replayed: true };
+      }
+    } catch (error) {
+      // Missing or foreign projections are stale chat metadata. Authentication,
+      // availability, and other ambiguous failures must remain visible.
+      if (error?.status !== 404) throw error;
+    }
+  }
+
+  try {
+    return await resolveAgentProjectionV2({ chatId, projectId: desiredProjectId });
+  } catch (error) {
+    // Temporary compatibility for a frontend-first rollout. Once every backend
+    // exposes the natural-identity resolver, callers can remove this branch.
+    if (!allowLegacyCreate || !(error instanceof AgentRuntimeUnavailableError)) throw error;
+    return createAgentV2({
+      chatId,
+      projectId: desiredProjectId,
+      idempotencyKey: `agent-${chatId}`,
+    });
+  }
 }
 
 export function cancelAgentRunV2(runId, { reason = "user_cancelled", idempotencyKey } = {}) {

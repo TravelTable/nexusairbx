@@ -57,7 +57,7 @@ export default function AgentStepList({
   }
 
   return (
-    <div className={`overflow-y-auto rounded-lg border border-white/5 bg-black/20 divide-y divide-white/5 ${maxHeight}`}>
+    <div className={`overflow-y-auto rounded-lg border border-white/5 bg-black/20 divide-y divide-white/5 scrollbar-subtle ${maxHeight}`}>
       {steps.map((step) => {
         const awaiting = step.status === "awaiting_approval";
         const terminal = TERMINAL_STEP_STATUSES.has(step.status);

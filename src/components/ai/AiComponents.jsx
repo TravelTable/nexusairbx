@@ -55,6 +55,7 @@ export function TokenBar({
   premiumBalance = null,
   usageLoading = false,
   usageUnavailable = false,
+  compact = false,
 }) {
   const planInfo = PLAN_INFO[plan] || PLAN_INFO.free;
   const usageLabel = isFreeUsagePlan ? "Daily usage" : "Included usage";
@@ -64,6 +65,24 @@ export function TokenBar({
   const premiumDollars = showPremiumBalance ? dollarsFromMicros(premiumMicros) : null;
 
   if (unlimitedTokens) {
+    if (compact) {
+      return (
+        <div id="cloud-token-bar" className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-0.5 text-[10px] font-semibold text-gray-400">
+          <span>
+            {usageLabel}: <span className="font-bold text-[#00f5d4]">{devOverride ? "Dev unlimited" : "Unlimited"}</span>
+          </span>
+          {premiumDollars && (
+            <span>
+              Premium Balance: <span className="font-bold text-[#9b5de5]">{premiumDollars}</span>
+            </span>
+          )}
+          <span className="inline-flex items-center gap-1 text-[#00f5d4]" title="Unlimited usage override is active">
+            <Zap className="h-3 w-3" /> Active
+          </span>
+        </div>
+      );
+    }
+
     return (
       <div id="cloud-token-bar" className="relative z-10 flex w-full flex-col gap-1.5 px-0.5">
         <div className="flex items-center justify-between gap-2">
@@ -102,6 +121,55 @@ export function TokenBar({
     : usageUnavailable || percentUsed == null
       ? "unavailable"
       : `${percentUsed}%`;
+
+  if (compact) {
+    const resetText = typeof effectiveResetsAt === "string" || effectiveResetsAt instanceof Date
+      ? `Resets ${formatResetDate(effectiveResetsAt)}`
+      : planInfo.capText;
+
+    return (
+      <div id="cloud-token-bar" className={`min-w-0 ${isLow ? "flex w-full flex-col gap-1" : "flex flex-wrap items-center gap-x-3 gap-y-0.5"}`}>
+        <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-0.5 text-[10px] font-semibold text-gray-400">
+          <span>
+            {usageLabel}: <span className={isLow ? "font-bold text-amber-300" : "font-bold text-gray-200"}>{usageLabelText}</span>
+            {!usageLoading && !usageUnavailable && percentUsed != null ? " used" : ""}
+          </span>
+          {premiumDollars && (
+            <span>
+              Premium Balance: <span className="font-bold text-[#9b5de5]">{premiumDollars}</span>
+            </span>
+          )}
+          {!isLow && <span className="text-gray-600">{resetText}</span>}
+          {isLow && plan === "free" ? (
+            <a href="/subscribe" className="inline-flex items-center gap-1 font-black uppercase tracking-wider text-[#00f5d4] hover:brightness-125">
+              <Zap className="h-3 w-3 fill-current" /> Upgrade to Pro
+            </a>
+          ) : isLow && plan === "pro" ? (
+            <a href="/subscribe" className="inline-flex items-center gap-1 font-black uppercase tracking-wider text-[#9b5de5] hover:brightness-125">
+              <Zap className="h-3 w-3 fill-current" /> Explore Team
+            </a>
+          ) : isLow ? (
+            <span className="text-gray-600">{resetText}</span>
+          ) : null}
+        </div>
+        {isLow && (
+          <div
+            className="h-1 w-full overflow-hidden rounded-full bg-gray-800/70"
+            role="progressbar"
+            aria-label={usageLabel}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={percentUsed ?? 0}
+          >
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-amber-400 to-rose-500 transition-[width] duration-500"
+              style={{ width: `${usageLoading || usageUnavailable || percentUsed == null ? 0 : percentUsed}%` }}
+            />
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div id="cloud-token-bar" className="relative z-10 flex w-full flex-col gap-1.5 px-0.5">
@@ -174,7 +242,7 @@ export function AssistantCodeBlock({ code }) {
         <span className="text-xs text-[#00f5d4] font-semibold uppercase">Code</span>
         <button onClick={handleCopy} className="text-xs text-white px-2 py-1 rounded bg-gray-800">{copied ? "Copied" : "Copy"}</button>
       </div>
-      <pre className="p-4 text-xs font-mono overflow-x-auto">{code}</pre>
+      <pre className="p-4 text-xs font-mono overflow-x-auto scrollbar-subtle">{code}</pre>
     </div>
   );
 }
@@ -193,7 +261,8 @@ export const NexusRBXAvatar = React.memo(({ isThinking = false, mode = "general"
   const color = modeColors[mode] || modeColors.general;
 
   return (
-    <div 
+    <div
+      data-testid="nexusrbx-avatar"
       className={`w-10 h-10 md:w-12 md:h-12 rounded-2xl bg-white/[0.04] flex items-center justify-center shadow-2xl flex-shrink-0 border transition-all duration-500 ${isThinking ? 'animate-pulse scale-110' : 'hover:scale-105'}`}
       style={{ 
         borderColor: isThinking ? color : 'rgba(255,255,255,0.1)',
@@ -766,7 +835,7 @@ export const CustomModeModal = ({ isOpen, onClose, onSave, initialData = null })
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-6 space-y-6 scrollbar-hide">
+        <div className="flex-1 overflow-y-auto p-6 space-y-6 scrollbar-subtle">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest px-1">Mode Name</label>

@@ -186,7 +186,7 @@ export default function RobloxAssetTray({
         </div>
       )}
 
-      <div className="flex gap-2 overflow-x-auto px-3 py-2 scrollbar-hide">
+      <div className="flex gap-2 overflow-x-auto px-3 py-2 scrollbar-none">
         {assets.map((asset) => {
           const uri = asset.latestUpload?.contentUri || asset.robloxImageId || "";
           const uploadStatus = asset.latestUpload?.uploadStatus || asset.uploadStatus || (asset.approved ? "approved" : "local");

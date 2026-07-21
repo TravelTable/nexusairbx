@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Menu, FolderTree, History, FileCode2, MessageSquare, ClipboardList, Search, RefreshCw, Bot } from "lib/icons";
+import { Menu, FolderTree, MessageSquare, FileCode2, ClipboardList, Search, RefreshCw, Bot } from "lib/icons";
 
 import SidebarContent from "../../components/SidebarContent";
 import CodeDrawer from "../../components/CodeDrawer";
@@ -152,6 +152,20 @@ export default function AgentWorkspaceLayout({ controller }) {
 
   const [leftView, setLeftView] = useState("files");
   const tutorial = useTutorial();
+
+  useEffect(() => {
+    const { documentElement, body } = document;
+    const previousDocumentOverflow = documentElement.style.overflow;
+    const previousBodyOverflow = body.style.overflow;
+
+    documentElement.style.overflow = "hidden";
+    body.style.overflow = "hidden";
+
+    return () => {
+      documentElement.style.overflow = previousDocumentOverflow;
+      body.style.overflow = previousBodyOverflow;
+    };
+  }, []);
 
   useEffect(() => {
     const handleRestartTour = () => {
@@ -707,7 +721,7 @@ export default function AgentWorkspaceLayout({ controller }) {
             onCancel={() => invokeTaskAction(taskRuntime.cancel)}
             onApprove={(payload) => invokeTaskAction(() => taskRuntime.approve(payload || {}))}
             onAmend={(instructionOrPayload) => invokeTaskAction(() => taskRuntime.amend(instructionOrPayload))}
-            className="max-h-[42vh] overflow-y-auto"
+            className="max-h-[42vh] overflow-y-auto scrollbar-subtle"
           />
         </div>
       )}
@@ -872,7 +886,7 @@ export default function AgentWorkspaceLayout({ controller }) {
             className="min-w-0 flex-1 bg-transparent text-xs text-gray-200 placeholder:text-gray-600 outline-none"
           />
         </label>
-        <div className="max-h-72 overflow-y-auto space-y-0.5 pr-1">
+        <div className="space-y-0.5 pr-1">
           {studioResults.map((item) => {
             const isScript = ["Script", "LocalScript", "ModuleScript"].includes(item.className);
             return (
@@ -910,7 +924,9 @@ export default function AgentWorkspaceLayout({ controller }) {
   );
 
   return (
-    <div className="h-[100dvh] min-h-[100svh] ai-page font-sans flex flex-col relative overflow-hidden" role="application" aria-label="Nexus AI Workspace">
+    <div className="fixed inset-0 overflow-hidden" role="application" aria-label="Nexus AI Workspace">
+      <div className="h-full w-[85%]">
+        <div className="ai-page relative flex flex-col overflow-hidden font-sans">
       <div
         className="fixed top-[-10%] left-[-10%] w-[40%] h-[40%] blur-[120px] rounded-full pointer-events-none transition-colors duration-1000"
         style={{ backgroundColor: `${currentTheme.primary}14` }}
@@ -934,16 +950,16 @@ export default function AgentWorkspaceLayout({ controller }) {
               fullWidth
               options={[
                 { id: "files", label: "Files", icon: FolderTree },
-                { id: "history", label: "History", icon: History },
+                { id: "history", label: "Chats", icon: MessageSquare },
               ]}
               value={leftView}
               onChange={setLeftView}
             />
           </div>
 
-          <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide">
+          <div className="flex-1 min-h-0 overflow-hidden">
             {leftView === "files" ? (
-              fileTree
+              <div className="h-full overflow-y-auto scrollbar-subtle">{fileTree}</div>
             ) : (
               <SidebarContent
                 activeTab="chats"
@@ -966,6 +982,7 @@ export default function AgentWorkspaceLayout({ controller }) {
                   if (window.innerWidth < 1024) setSidebarOpen(false);
                 }}
                 onDeleteChat={chat.handleDeleteChat}
+                onRenameChat={chat.handleRenameChat}
                 handleClearChat={chat.handleClearChat}
                 user={user}
                 authReady={authReady}
@@ -1121,7 +1138,7 @@ export default function AgentWorkspaceLayout({ controller }) {
 
             {/* Mobile-only file tree + details panes */}
             {isMobile && mobileTab === "files" && (
-              <div className="flex-1 min-w-0 overflow-y-auto bg-[#0a0a0a]">{fileTree}</div>
+              <div className="flex-1 min-w-0 overflow-y-auto bg-[#0a0a0a] scrollbar-subtle">{fileTree}</div>
             )}
             {isMobile && mobileTab === "details" && (
               <div className="flex-1 min-w-0 bg-[#0a0a0a]">
@@ -1186,8 +1203,14 @@ export default function AgentWorkspaceLayout({ controller }) {
         title={codeDrawerData.title}
         explanation={codeDrawerData.explanation}
         onSaveScript={async (title, code) => {
-          await scriptManager.handleCreateScript(title, code, "logic");
-          notify({ message: "Script saved to library", type: "success" });
+          await scriptManager.handleCreateScript(
+            title,
+            code,
+            "logic",
+            chat.currentChatId,
+            chat.currentChatMeta?.projectId || null
+          );
+          notify({ message: "Script saved to creations", type: "success" });
           track("project_saved", { output_type: "script" });
         }}
       />
@@ -1232,10 +1255,8 @@ export default function AgentWorkspaceLayout({ controller }) {
         </div>
       )}
 
-      <style>{`
-        .scrollbar-hide::-webkit-scrollbar { display: none; }
-        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
-      `}</style>
+        </div>
+      </div>
     </div>
   );
 }

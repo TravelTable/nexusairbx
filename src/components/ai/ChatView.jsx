@@ -37,7 +37,10 @@ export default function ChatView({
 
   return (
     <Conversation className="h-full min-h-0 w-full motion-safe:animate-panel-in">
-      <ConversationContent className="mx-auto w-full max-w-5xl gap-6 px-3 py-4">
+      <ConversationContent
+        className="mx-auto w-full max-w-5xl gap-6 px-3 py-4"
+        scrollClassName="scrollbar-subtle"
+      >
         {showEmpty ? (
           <ChatEmptyState onQuickStart={onQuickStart} onOpenTemplates={onOpenTemplates} user={user} />
         ) : (

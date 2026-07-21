@@ -27,7 +27,7 @@ export default function RefineChips({ onRefine, isRefining = false, className = 
 
   return (
     <div
-      className={`flex items-center gap-1.5 overflow-x-auto scrollbar-hide ${className}`}
+      className={`flex items-center gap-1.5 overflow-x-auto scrollbar-none ${className}`}
       role="group"
       aria-label="Quick refine suggestions"
     >
