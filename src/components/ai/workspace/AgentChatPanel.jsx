@@ -164,7 +164,7 @@ export default function AgentChatPanel({
         )}
       </div>
 
-      <div className="shrink-0">
+      <div className="min-h-0 shrink overflow-y-auto overscroll-contain scrollbar-subtle">
         <RobloxAssetTray
           projectId={robloxAssetProjectId}
           robloxConnected={robloxConnected}
@@ -173,27 +173,34 @@ export default function AgentChatPanel({
           selectedCreator={robloxSelectedCreator}
           notify={notify}
         />
-      </div>
 
-      <div className="shrink-0 border-t border-white/10 bg-[#080a12] px-3 py-2">
-        <button
-          type="button"
-          onClick={() => setCreatorStoreOpen(true)}
-          className="inline-flex w-full items-center justify-between gap-3 rounded-lg border border-[#00bbf9]/20 bg-[#00bbf9]/10 px-3 py-2 text-left text-[#b9ecff] transition-all hover:border-[#00bbf9]/35 hover:bg-[#00bbf9]/15 hover:text-white focus-ring"
-          aria-haspopup="dialog"
-          aria-expanded={creatorStoreOpen}
-          aria-controls="creator-store-drawer"
-          title="Open Creator Store search"
-        >
-          <span className="flex min-w-0 items-center gap-2">
-            <Search className="h-4 w-4 shrink-0 text-[#00bbf9]" />
-            <span className="min-w-0">
-              <span className="block text-[11px] font-black uppercase tracking-widest">Creator Store</span>
-              <span className="block truncate text-[10px] text-[#8bdcf8]/65">Search Roblox development assets</span>
+        <div className="border-t border-white/10 bg-[#080a12] px-3 py-2">
+          <button
+            type="button"
+            onClick={() => setCreatorStoreOpen(true)}
+            className="inline-flex w-full items-center justify-between gap-3 rounded-lg border border-[#00bbf9]/20 bg-[#00bbf9]/10 px-3 py-2 text-left text-[#b9ecff] transition-all hover:border-[#00bbf9]/35 hover:bg-[#00bbf9]/15 hover:text-white focus-ring"
+            aria-haspopup="dialog"
+            aria-expanded={creatorStoreOpen}
+            aria-controls="creator-store-drawer"
+            title="Open Creator Store search"
+          >
+            <span className="flex min-w-0 items-center gap-2">
+              <Search className="h-4 w-4 shrink-0 text-[#00bbf9]" />
+              <span className="min-w-0">
+                <span className="block text-[11px] font-black uppercase tracking-widest">Creator Store</span>
+                <span className="block truncate text-[10px] text-[#8bdcf8]/65">Search Roblox development assets</span>
+              </span>
             </span>
-          </span>
-          <span className="shrink-0 text-[10px] font-black uppercase tracking-widest text-[#00bbf9]">Open</span>
-        </button>
+            <span className="shrink-0 text-[10px] font-black uppercase tracking-widest text-[#00bbf9]">Open</span>
+          </button>
+        </div>
+
+        <ModelFilePipelinePanel
+          robloxConnected={robloxConnected}
+          studioConnected={studioConnected}
+          selectedCreator={robloxSelectedCreator}
+          notify={notify}
+        />
       </div>
 
       {creatorStorePresence.present && (
@@ -242,16 +249,7 @@ export default function AgentChatPanel({
       )}
 
       <div className="shrink-0">
-        <ModelFilePipelinePanel
-          robloxConnected={robloxConnected}
-          studioConnected={studioConnected}
-          selectedCreator={robloxSelectedCreator}
-          notify={notify}
-        />
-      </div>
-
-      <div className="shrink-0">
-      <ChatComposer
+        <ChatComposer
         prompt={prompt}
         setPrompt={setPrompt}
         attachments={attachments}
@@ -326,7 +324,7 @@ export default function AgentChatPanel({
         projectAssetSaving={projectAssetSaving}
         assetProjectId={selectedAssetProjectId}
         robloxStatus={robloxStatus}
-      />
+        />
       </div>
     </div>
   );

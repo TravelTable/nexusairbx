@@ -6,6 +6,7 @@
 
 @layer base {
   :root {
+    color-scheme: dark;
     --background: 222 36% 4%;
     --foreground: 0 0% 100%;
     --card: 225 22% 8%;
@@ -50,6 +51,36 @@
     --ai-accent-2: #9b5de5;
     --ai-info: #00bbf9;
     --ai-danger: #ff3860;
+  }
+
+  html,
+  body,
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(82, 82, 91, 0.32) transparent;
+  }
+
+  *::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  *::-webkit-scrollbar-thumb {
+    background: rgba(82, 82, 91, 0.32);
+    border-radius: 9999px;
+    border: 0;
+  }
+
+  *::-webkit-scrollbar-thumb:hover {
+    background: rgba(113, 113, 122, 0.55);
+  }
+
+  *::-webkit-scrollbar-corner {
+    background: transparent;
   }
 
   body {
@@ -112,8 +143,7 @@ body > .resize-observer-error {
   display: none !important;
 }
 
-/* Opt-in workspace scrollbars. Keep default browser chrome outside deliberate
-   scroll regions so pages do not acquire unexpected nested scrollbars. */
+/* Optional stronger treatment for dense workspace scroll regions. */
 .scrollbar-subtle {
   scrollbar-width: thin;
   scrollbar-color: rgba(113, 113, 122, 0.28) transparent;
