@@ -98,6 +98,12 @@ function runtimeAutoPushPolicy(settings = {}) {
     : "manual_only";
 }
 
+function isLegacyRuntimeOwnershipError(error) {
+  return error?.status === 503
+    && error?.payload?.code === "CAPABILITY_UNSUPPORTED"
+    && error?.payload?.details?.runtimeOwner === "legacy_agent_adapter";
+}
+
 /**
  * Linear product loop for the code-first /ai workspace:
  *   Task -> Orchestrate (Clarify OR Plan) -> Approve -> Generate multi-file artifact -> Review -> Refine
@@ -349,30 +355,50 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
     const studioEnabled = getStudioEnabledPreference() === true;
     const autoPushToStudio = studioEnabled && settings?.studioAutoPushEnabled === true;
     const approvedPlan = normalizeApprovedPlanReference(submissionOptions.approvedPlan);
-    const runtimeEnvelope = await createAgentRunV2({
-      chatId: activeChatId,
-      agentId: agent.agentId,
-      idempotencyKey: `run-${requestId}`,
-      prompt,
-      mode,
-      projectId: submissionOptions.projectId || agent.projectId,
-      attachments: normalizeChatAttachments(attachments),
-      settings: buildRuntimeSettings(settings, effectiveGameSpec),
-      conversation: (chat.messages || []).slice(-10).map(messageToConversationEntry).filter(Boolean),
-      baseArtifact: baseArtifact || null,
-      generatorMode: "agent_build",
-      studioEnabled,
-      applyMode: getStudioApplyMode(),
-      routingMode: studioEnabled ? "hybrid" : "cloud",
-      autoPushToStudio,
-      autoPushPolicy: runtimeAutoPushPolicy(settings),
-      ...(approvedPlan ? { approvedPlan } : {}),
-      chatMode: mode === "debug" ? "debug" : "agent",
-      selectedExampleIds: Array.isArray(submissionOptions.selectedExampleIds)
-        ? submissionOptions.selectedExampleIds
-        : [],
-      showPlan: submissionOptions.showPlan === true,
-    });
+    let runtimeEnvelope;
+    try {
+      runtimeEnvelope = await createAgentRunV2({
+        chatId: activeChatId,
+        agentId: agent.agentId,
+        idempotencyKey: `run-${requestId}`,
+        prompt,
+        mode,
+        projectId: submissionOptions.projectId || agent.projectId,
+        attachments: normalizeChatAttachments(attachments),
+        settings: buildRuntimeSettings(settings, effectiveGameSpec),
+        conversation: (chat.messages || []).slice(-10).map(messageToConversationEntry).filter(Boolean),
+        baseArtifact: baseArtifact || null,
+        generatorMode: "agent_build",
+        studioEnabled,
+        applyMode: getStudioApplyMode(),
+        routingMode: studioEnabled ? "hybrid" : "cloud",
+        autoPushToStudio,
+        autoPushPolicy: runtimeAutoPushPolicy(settings),
+        ...(approvedPlan ? { approvedPlan } : {}),
+        chatMode: mode === "debug" ? "debug" : "agent",
+        selectedExampleIds: Array.isArray(submissionOptions.selectedExampleIds)
+          ? submissionOptions.selectedExampleIds
+          : [],
+        showPlan: submissionOptions.showPlan === true,
+      });
+    } catch (error) {
+      if (!FEATURE_FLAGS.legacyAgentFallback || !isLegacyRuntimeOwnershipError(error)) {
+        throw error;
+      }
+
+      const legacySubmissionOptions = { ...submissionOptions };
+      delete legacySubmissionOptions.authoritativeRun;
+      return chat.handleSubmit(
+        prompt,
+        activeChatId,
+        requestId,
+        mode === "debug" ? "debug" : "agent",
+        true,
+        attachments,
+        baseArtifact,
+        legacySubmissionOptions
+      );
+    }
     if (!runtimeEnvelope?.authoritativeExecution || !runtimeEnvelope?.run?.runId) {
       throw new Error("The durable agent runtime did not accept this executable request.");
     }

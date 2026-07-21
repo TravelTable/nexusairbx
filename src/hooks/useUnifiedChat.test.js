@@ -68,6 +68,7 @@ jest.mock("../lib/productAnalytics", () => ({
 
 jest.mock("../lib/featureFlags", () => ({
   FEATURE_FLAGS: {
+    legacyAgentFallback: true,
     unifiedAgent: false,
   },
 }));
@@ -98,6 +99,7 @@ describe("useUnifiedChat", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    FEATURE_FLAGS.legacyAgentFallback = true;
     FEATURE_FLAGS.unifiedAgent = false;
     getStudioEnabledPreference.mockReturnValue(false);
     getStudioApplyMode.mockReturnValue("manual_review");
@@ -394,6 +396,97 @@ describe("useUnifiedChat", () => {
       }),
     );
     expect(orchestrate).not.toHaveBeenCalled();
+  });
+
+  test("uses legacy execution when canonical intake reports the legacy runtime owner", async () => {
+    useAiChat.mockReturnValue({
+      activeMode: "agent",
+      currentChatId: "chat-1",
+      generatingChatIds: [],
+      generationStage: "",
+      handleSubmit: chatHandleSubmit,
+      isGenerating: false,
+      messages: [],
+      openChatById: jest.fn(),
+      pendingMessage: null,
+      setPendingForChat: jest.fn(),
+    });
+    createAgentRunV2.mockRejectedValueOnce(Object.assign(
+      new Error("Canonical task intake is disabled while the legacy runtime owns execution."),
+      {
+        status: 503,
+        payload: {
+          code: "CAPABILITY_UNSUPPORTED",
+          details: { runtimeOwner: "legacy_agent_adapter" },
+        },
+      }
+    ));
+    const user = { uid: "user-1", getIdToken: jest.fn().mockResolvedValue("token") };
+
+    const { result } = renderHook(() =>
+      useUnifiedChat(user, {}, jest.fn(), jest.fn())
+    );
+
+    await act(async () => {
+      await result.current.handleSubmit("Build a lobby system", [], null, {
+        clientMessageId: "request-legacy-owner",
+        projectId: "project_1",
+      });
+    });
+
+    expect(createAgentRunV2).toHaveBeenCalledTimes(1);
+    expect(chatHandleSubmit).toHaveBeenCalledTimes(1);
+    expect(chatHandleSubmit.mock.calls[0]).toEqual([
+      "Build a lobby system",
+      "chat-1",
+      "request-legacy-owner",
+      "agent",
+      true,
+      [],
+      null,
+      expect.objectContaining({ projectId: "project_1" }),
+    ]);
+    expect(chatHandleSubmit.mock.calls[0][7]).not.toHaveProperty("authoritativeRun");
+  });
+
+  test("does not hide unrelated canonical runtime failures behind legacy execution", async () => {
+    const notify = jest.fn();
+    useAiChat.mockReturnValue({
+      activeMode: "agent",
+      currentChatId: "chat-1",
+      generatingChatIds: [],
+      generationStage: "",
+      handleSubmit: chatHandleSubmit,
+      isGenerating: false,
+      messages: [],
+      openChatById: jest.fn(),
+      pendingMessage: null,
+      setPendingForChat: jest.fn(),
+    });
+    createAgentRunV2.mockRejectedValueOnce(Object.assign(new Error("Runtime unavailable"), {
+      status: 503,
+      payload: { code: "SERVICE_UNAVAILABLE", details: {} },
+    }));
+    const user = { uid: "user-1", getIdToken: jest.fn().mockResolvedValue("token") };
+    const consoleError = jest.spyOn(console, "error").mockImplementation(() => {});
+
+    try {
+      const { result } = renderHook(() =>
+        useUnifiedChat(user, {}, jest.fn(), notify)
+      );
+
+      await act(async () => {
+        await result.current.handleSubmit("Build a lobby system", [], null, {
+          clientMessageId: "request-runtime-down",
+          projectId: "project_1",
+        });
+      });
+    } finally {
+      consoleError.mockRestore();
+    }
+
+    expect(chatHandleSubmit).not.toHaveBeenCalled();
+    expect(notify).toHaveBeenCalledWith({ message: "Runtime unavailable", type: "error" });
   });
 
   test("creates a project-scoped agent after a repaired chat binding conflicts with the old projection", async () => {
