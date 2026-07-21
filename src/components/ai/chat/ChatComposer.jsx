@@ -12,7 +12,7 @@ import {
   ClipboardList,
   SlidersHorizontal,
 } from "lib/icons";
-import { UnifiedStatusBar, TokenBar } from "../AiComponents";
+import { TokenBar } from "../AiComponents";
 import { CHAT_MODES } from "../chatConstants";
 import StudioControls from "../workspace/StudioControls";
 import StudioPlaceChip from "../workspace/StudioPlaceChip";
@@ -227,7 +227,7 @@ function RobloxAssetContextChip({ asset, onRemove }) {
 }
 
 /**
- * Slim composer for the linear flow: status strip, token bar, mode selector,
+ * Slim composer for the linear flow: token bar, mode selector,
  * attachments, prompt, send. The mode selector picks the Cursor-style operating
  * mode; clarifying questions only appear in Plan and Ask modes.
  */
@@ -240,7 +240,6 @@ export default function ChatComposer({
   robloxImageUploads = [],
   onSubmit,
   isGenerating,
-  generationStage,
   placeholder = "What do you want to build?",
   tokensLeft,
   tokensLimit,
@@ -432,10 +431,8 @@ export default function ChatComposer({
   };
 
   return (
-    <div className="bg-gradient-to-t from-black via-black/80 to-transparent p-2.5">
+    <div className="bg-[#080a12] p-2.5">
       <div className="mx-auto max-w-5xl space-y-1.5">
-        <UnifiedStatusBar isGenerating={isGenerating} stage={generationStage} />
-
         {refineTarget && (
           <div className="px-1">
             <div className="inline-flex max-w-full items-center gap-2 rounded-lg border border-[#00f5d4]/20 bg-[#00f5d4]/10 px-2.5 py-1 text-[11px] font-bold text-[#00f5d4] transition-[border-color,background-color,opacity,transform] duration-150 ease-out motion-safe:animate-fade-in-scale motion-reduce:transition-none">

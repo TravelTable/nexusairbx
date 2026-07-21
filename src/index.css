@@ -112,29 +112,28 @@ body > .resize-observer-error {
   display: none !important;
 }
 
-/* Universal custom scrollbar — rounded track + thumb (stone/neutral palette).
+/* Quiet global scrollbars: preserve scrolling without adding bright UI chrome.
    More specific rules like .scrollbar-hide still win via specificity. */
 * {
   scrollbar-width: thin;
-  scrollbar-color: #737373 #404040;
+  scrollbar-color: #3f3f46 transparent;
 }
 *::-webkit-scrollbar {
-  width: 0.5rem;
-  height: 0.5rem;
+  width: 3px;
+  height: 3px;
 }
 *::-webkit-scrollbar-track {
-  background: #404040;
-  border-radius: 9999px;
+  background: transparent;
 }
 *::-webkit-scrollbar-thumb {
-  background-color: #737373;
+  background-color: #3f3f46;
   border-radius: 9999px;
 }
 *::-webkit-scrollbar-thumb:hover {
-  background-color: #a3a3a3;
+  background-color: #52525b;
 }
 *::-webkit-scrollbar-corner {
-  background: #404040;
+  background: transparent;
 }
 
 /* Custom Scrollbar */
@@ -148,19 +147,51 @@ body > .resize-observer-error {
 
 /* Alias for scroll regions that explicitly opt in (inherits global styles). */
 .scrollbar-thin::-webkit-scrollbar {
-  width: 0.5rem;
-  height: 0.5rem;
+  width: 3px;
+  height: 3px;
 }
 .scrollbar-thin::-webkit-scrollbar-thumb {
-  background: #737373;
+  background: #3f3f46;
   border-radius: 9999px;
 }
 .scrollbar-thin::-webkit-scrollbar-thumb:hover {
-  background: #a3a3a3;
+  background: #52525b;
 }
 .scrollbar-thin::-webkit-scrollbar-track {
-  background: #404040;
-  border-radius: 9999px;
+  background: transparent;
+}
+
+/* Give generated diagrams a readable canvas instead of fitting them into a code-strip. */
+.ai-message-response [data-streamdown="mermaid"] {
+  min-height: clamp(20rem, 42vw, 32rem);
+  overflow: hidden;
+  border: 1px solid #27272a;
+  border-radius: 0.875rem;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(39, 39, 42, 0.28), transparent 48%),
+    #07090d;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.025);
+}
+
+.ai-message-response [data-streamdown="mermaid"] > div {
+  min-height: clamp(20rem, 42vw, 32rem);
+  padding: 2.5rem 3rem;
+}
+
+.ai-message-response [data-streamdown="mermaid"] svg {
+  max-width: none !important;
+  height: auto;
+}
+
+@media (max-width: 640px) {
+  .ai-message-response [data-streamdown="mermaid"],
+  .ai-message-response [data-streamdown="mermaid"] > div {
+    min-height: 18rem;
+  }
+
+  .ai-message-response [data-streamdown="mermaid"] > div {
+    padding: 2rem 1.5rem;
+  }
 }
 
 /* Respect reduced-motion preferences. */

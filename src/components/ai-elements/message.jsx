@@ -13,7 +13,7 @@ import { cn } from "lib/utils";
 import { cjk } from "@streamdown/cjk";
 import { code } from "@streamdown/code";
 import { math } from "@streamdown/math";
-import { mermaid } from "@streamdown/mermaid";
+import { createMermaidPlugin } from "@streamdown/mermaid";
 import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 import {
   createContext,
@@ -256,6 +256,21 @@ export const MessageBranchPage = ({
   );
 };
 
+const mermaid = createMermaidPlugin({
+  config: {
+    flowchart: {
+      htmlLabels: true,
+      nodeSpacing: 52,
+      rankSpacing: 72,
+      useMaxWidth: false,
+    },
+    fontFamily: "Inter, ui-sans-serif, system-ui, sans-serif",
+    themeVariables: {
+      fontSize: "16px",
+    },
+  },
+});
+
 const streamdownPlugins = { cjk, code, math, mermaid };
 
 export const MessageResponse = memo(({
@@ -263,7 +278,7 @@ export const MessageResponse = memo(({
   ...props
 }) => (
   <Streamdown
-    className={cn("size-full [&>*:first-child]:mt-0 [&>*:last-child]:mb-0", className)}
+    className={cn("ai-message-response size-full [&>*:first-child]:mt-0 [&>*:last-child]:mb-0", className)}
     plugins={streamdownPlugins}
     {...props} />
 ), (prevProps, nextProps) =>

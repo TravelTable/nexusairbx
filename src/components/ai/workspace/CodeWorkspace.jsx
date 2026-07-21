@@ -319,7 +319,12 @@ export default function CodeWorkspace({
             padding: { top: 14, bottom: 14 },
             fontFamily: "'JetBrains Mono', 'Fira Code', ui-monospace, SFMono-Regular, Menlo, monospace",
             smoothScrolling: true,
-            scrollbar: { verticalScrollbarSize: 8, horizontalScrollbarSize: 8 },
+            scrollbar: {
+              verticalScrollbarSize: 3,
+              horizontalScrollbarSize: 3,
+              verticalSliderSize: 3,
+              horizontalSliderSize: 3,
+            },
           }}
         />
       </div>

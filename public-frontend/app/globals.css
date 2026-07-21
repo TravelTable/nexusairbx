@@ -42,28 +42,27 @@
   box-sizing: border-box;
 }
 
-/* Universal custom scrollbar — rounded track + thumb (stone/neutral palette). */
+/* Quiet global scrollbars: preserve scrolling without adding bright UI chrome. */
 * {
   scrollbar-width: thin;
-  scrollbar-color: #737373 #404040;
+  scrollbar-color: #3f3f46 transparent;
 }
 *::-webkit-scrollbar {
-  width: 0.5rem;
-  height: 0.5rem;
+  width: 3px;
+  height: 3px;
 }
 *::-webkit-scrollbar-track {
-  background: #404040;
-  border-radius: 9999px;
+  background: transparent;
 }
 *::-webkit-scrollbar-thumb {
-  background-color: #737373;
+  background-color: #3f3f46;
   border-radius: 9999px;
 }
 *::-webkit-scrollbar-thumb:hover {
-  background-color: #a3a3a3;
+  background-color: #52525b;
 }
 *::-webkit-scrollbar-corner {
-  background: #404040;
+  background: transparent;
 }
 
 html {

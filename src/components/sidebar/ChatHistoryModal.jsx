@@ -76,7 +76,7 @@ export default function ChatHistoryModal({
           />
         </div>
 
-        <div className="flex-1 overflow-y-auto pr-2 space-y-2 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
+        <div className="flex-1 overflow-y-auto pr-2 space-y-2 scrollbar-thin scrollbar-track-transparent">
           {visibleChats.length === 0 ? (
             <div className="text-center py-12 px-4 rounded-2xl bg-white/[0.02] border border-dashed border-white/10">
               <MessageSquare className="w-10 h-10 text-gray-700 mx-auto mb-3" />

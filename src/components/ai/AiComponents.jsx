@@ -16,7 +16,8 @@ import {
   Type,
   Globe,
   Rocket,
-  RefreshCw
+  RefreshCw,
+  Brain
 } from "lib/icons";
 import PLAN_INFO from "../../lib/planInfo";
 import { dollarsFromMicros, resolveUsagePercent } from "../../lib/billing";
@@ -193,13 +194,17 @@ export const NexusRBXAvatar = React.memo(({ isThinking = false, mode = "general"
 
   return (
     <div 
-      className={`w-10 h-10 md:w-12 md:h-12 rounded-2xl bg-white flex items-center justify-center shadow-2xl overflow-hidden flex-shrink-0 border-2 transition-all duration-500 ${isThinking ? 'animate-pulse scale-110' : 'hover:scale-105'}`}
+      className={`w-10 h-10 md:w-12 md:h-12 rounded-2xl bg-white/[0.04] flex items-center justify-center shadow-2xl flex-shrink-0 border transition-all duration-500 ${isThinking ? 'animate-pulse scale-110' : 'hover:scale-105'}`}
       style={{ 
         borderColor: isThinking ? color : 'rgba(255,255,255,0.1)',
         boxShadow: isThinking ? `0 0 20px ${color}40` : 'none'
       }}
     >
-      <img src="/logo.png" alt="NexusRBX" className={`w-7 h-7 md:w-9 md:h-9 object-contain ${isThinking ? 'animate-bounce' : ''}`} />
+      <Brain
+        aria-hidden="true"
+        className={`w-5 h-5 md:w-6 md:h-6 ${isThinking ? 'animate-pulse' : ''}`}
+        style={{ color }}
+      />
     </div>
   );
 });
