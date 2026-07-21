@@ -130,7 +130,7 @@ function HealthRow({ label, healthy, waitingLabel = "Not detected" }) {
   );
 }
 
-/** Connects either the recommended NexusRBX Studio plugin or the optional local MCP transport. */
+/** Optionally connects the NexusRBX Studio plugin or a local MCP transport. */
 export default function StudioPairControl({
   connection = null,
   connected = false,
@@ -143,7 +143,7 @@ export default function StudioPairControl({
   const mcpConnected = Boolean(connection?.mcpConnected);
   const connectorDetected = Boolean(connection?.connectorDetected);
   const degraded = Boolean(connection?.degraded);
-  const connectionState = connection?.connectionState || (connected ? "plugin" : "disconnected");
+  const connectionState = connection?.connectionState || (connected ? "plugin" : "export_only");
   const pluginSession = connection?.pluginSession || null;
   const mcpSession = connection?.mcpSession || null;
   const latestMcpSession = connection?.latestMcpSession || mcpSession;
@@ -354,7 +354,8 @@ export default function StudioPairControl({
     plugin: "Connected via NexusRBX Studio Plugin",
     mcp: "Connected via Roblox Studio MCP",
     degraded: "Connector connected, Roblox Studio MCP not detected",
-    disconnected: "Roblox Studio disconnected",
+    export_only: "Export only — Studio is optional",
+    disconnected: "Export only — Studio is optional",
   }[connectionState] || "Connection degraded");
 
   const transportLabel = (selection) => {
@@ -426,7 +427,7 @@ export default function StudioPairControl({
               onClick={() => setActiveMethod("plugin")}
               className={`rounded-lg px-3 py-2 text-left transition-all ${activeMethod === "plugin" ? "bg-white/10 text-white" : "text-gray-500 hover:text-gray-300"}`}
             >
-              <span className="block text-[10px] font-black uppercase tracking-widest text-[#00f5d4]">Recommended</span>
+              <span className="block text-[10px] font-black uppercase tracking-widest text-[#00f5d4]">Direct apply</span>
               <span className="block text-xs font-bold">Studio Plugin</span>
             </button>
             <button
@@ -436,7 +437,7 @@ export default function StudioPairControl({
               onClick={() => setActiveMethod("mcp")}
               className={`rounded-lg px-3 py-2 text-left transition-all ${activeMethod === "mcp" ? "bg-white/10 text-white" : "text-gray-500 hover:text-gray-300"}`}
             >
-              <span className="block text-[10px] font-black uppercase tracking-widest text-violet-300">Advanced</span>
+              <span className="block text-[10px] font-black uppercase tracking-widest text-violet-300">Live tools</span>
               <span className="block text-xs font-bold">Roblox Studio MCP</span>
             </button>
           </div>

@@ -78,22 +78,24 @@ export default function StudioControls({
         </span>
       )}
 
-      <label
-        className="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg border border-white/10 bg-white/5 text-[10px] font-bold uppercase tracking-widest text-gray-400 cursor-pointer"
-        title={liveStudioTitle}
-      >
-        <input
-          type="checkbox"
-          checked={effectiveEnabled}
-          onChange={(e) => {
-            setStudioEnabledPreference(e.target.checked);
-            onStudioEnabledChange?.(e.target.checked);
-          }}
-          className="accent-[#00f5d4]"
-          disabled={!connected || !access.canUseAgent}
-        />
-        Live Studio
-      </label>
+      {connected && (
+        <label
+          className="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg border border-white/10 bg-white/5 text-[10px] font-bold uppercase tracking-widest text-gray-400 cursor-pointer"
+          title={liveStudioTitle}
+        >
+          <input
+            type="checkbox"
+            checked={effectiveEnabled}
+            onChange={(e) => {
+              setStudioEnabledPreference(e.target.checked);
+              onStudioEnabledChange?.(e.target.checked);
+            }}
+            className="accent-[#00f5d4]"
+            disabled={!access.canUseAgent}
+          />
+          Live Studio
+        </label>
+      )}
 
       {effectiveEnabled && connected && (
         <>

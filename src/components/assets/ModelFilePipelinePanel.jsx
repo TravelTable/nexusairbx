@@ -567,7 +567,7 @@ export default function ModelFilePipelinePanel({ notify }) {
       const studioStatus = await getStudioStatus();
       const studioSessionId = getStudioSessionId(selectPluginStudioSession(studioStatus.sessions));
       if (!studioSessionId) {
-        throw new Error("Connect the NexusRBX Studio plugin before preparing insertion.");
+        throw new Error("Trusted uploaded-model insertion uses a Studio Plugin-only capability. Export or download the model for manual Studio import, or connect the NexusRBX Studio Plugin for direct insertion.");
       }
       await recheckUploadedModelAccess(uploadId).catch(() => null);
       const review = await prepareUploadedModelInsertion(uploadId, {

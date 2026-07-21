@@ -30,6 +30,7 @@ describe("studio connection selection", () => {
     expect(snapshot.mcpConnected).toBe(false);
     expect(snapshot.connectorDetected).toBe(true);
     expect(snapshot.connectionState).toBe("degraded");
+    expect(snapshot.workflowMode).toBe("export_only");
   });
 
   test("keeps selected-session connector health when the route aggregate defaults false", () => {
@@ -104,6 +105,7 @@ describe("studio connection selection", () => {
     });
 
     expect(snapshot.connectionState).toBe("both");
+    expect(snapshot.workflowMode).toBe("plugin_live");
     expect(snapshot.sessionId).toBe("plugin");
     expect(snapshot.pluginSession.id).toBe("plugin");
     expect(snapshot.mcpSession.id).toBe("mcp");
@@ -126,6 +128,7 @@ describe("studio connection selection", () => {
 
     expect(snapshot.connected).toBe(true);
     expect(snapshot.connectionType).toBe("mcp_local");
+    expect(snapshot.workflowMode).toBe("mcp_live");
     expect(snapshot.capabilities.supported).toEqual(["readProject"]);
     expect(snapshot.capabilities.unavailable).toEqual(["writeScript"]);
   });

@@ -105,7 +105,7 @@ export default function ExportActions({ artifact, activeFile, notify }) {
         file_count: files.length,
         download_type: "placement_zip",
       }, { dedupeKey: `download_zip:${artifact.artifactId || ""}:${files.length}` });
-      notify?.({ message: "Project exported (folders match Studio placement)", type: "success" });
+      notify?.({ message: "Project ZIP exported — see README_SETUP.md for Studio placement", type: "success" });
     } catch (err) {
       notify?.({ message: "Failed to build project zip", type: "error" });
     } finally {
@@ -203,9 +203,18 @@ export default function ExportActions({ artifact, activeFile, notify }) {
         }`}
       >
         <Radio className="w-3 h-3" />
-        {studioConnected ? "Studio" : "Offline"}
+        {studioConnected ? "Studio" : "Export only"}
       </span>
 
+      <button
+        type="button"
+        onClick={handleDownloadZip}
+        disabled={bundling}
+        title="Primary export: includes README_SETUP.md with Studio placement instructions"
+        className={`${btn} bg-[#00f5d4] text-black hover:bg-[#00f5d4]/90 shadow-lg shadow-[#00f5d4]/15`}
+      >
+        {bundling ? <Loader className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />} Project ZIP
+      </button>
       <button type="button" onClick={handleCopyFile} disabled={!activeFile} className={`${btn} bg-white/5 text-gray-300 hover:bg-white/10`}>
         {copied ? <Check className="w-3.5 h-3.5 text-[#00f5d4]" /> : <Copy className="w-3.5 h-3.5" />} File
       </button>
@@ -214,9 +223,6 @@ export default function ExportActions({ artifact, activeFile, notify }) {
       </button>
       <button type="button" onClick={handleDownloadFile} disabled={!activeFile} className={`${btn} bg-white/5 text-gray-300 hover:bg-white/10`}>
         <FileDown className="w-3.5 h-3.5" /> .lua
-      </button>
-      <button type="button" onClick={handleDownloadZip} disabled={bundling} className={`${btn} bg-white/5 text-gray-300 hover:bg-white/10`}>
-        {bundling ? <Loader className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />} Zip
       </button>
       <button type="button" onClick={handleRojoExport} disabled={rojoBuilding} className={`${btn} bg-[#9b5de5]/10 text-[#9b5de5] hover:bg-[#9b5de5]/20`}>
         {rojoBuilding ? <Loader className="w-3.5 h-3.5 animate-spin" /> : <Boxes className="w-3.5 h-3.5" />} Rojo
@@ -228,22 +234,27 @@ export default function ExportActions({ artifact, activeFile, notify }) {
         {verifying ? <Loader className="w-3.5 h-3.5 animate-spin" /> : <ShieldCheck className="w-3.5 h-3.5" />} Verify
       </button>
 
-      {/* Primary end-of-run action: send the finished project to Studio. */}
+      {/* Direct apply remains available only for the live plugin transport. */}
       <div className="ml-auto flex items-center">
-        <button
-          type="button"
-          onClick={handlePushStudio}
-          disabled={studioBusy || !studioConnected}
-          title={studioConnected ? "Apply this project in Roblox Studio" : "Pair Roblox Studio to enable push"}
-          className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-[11px] font-black uppercase tracking-widest transition-all disabled:cursor-not-allowed ${
-            studioConnected
-              ? "bg-[#00f5d4] text-black hover:bg-[#00f5d4]/90 shadow-lg shadow-[#00f5d4]/20"
-              : "bg-white/5 text-gray-500 border border-white/10"
-          }`}
-        >
-          {studioBusy ? <Loader className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
-          {studioConnected ? "Push to Studio" : "Studio offline"}
-        </button>
+        {studioConnected ? (
+          <button
+            type="button"
+            onClick={handlePushStudio}
+            disabled={studioBusy}
+            title="Apply this project in Roblox Studio"
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-[11px] font-black uppercase tracking-widest transition-all bg-[#00f5d4] text-black hover:bg-[#00f5d4]/90 shadow-lg shadow-[#00f5d4]/20 disabled:cursor-not-allowed"
+          >
+            {studioBusy ? <Loader className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+            Push to Studio
+          </button>
+        ) : (
+          <span
+            className="text-[9px] font-bold uppercase tracking-widest text-gray-500"
+            title="Download the Project ZIP, then follow README_SETUP.md to place files in Roblox Studio"
+          >
+            Project ZIP includes Studio placement steps
+          </span>
+        )}
       </div>
     </div>
   );

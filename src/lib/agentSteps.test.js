@@ -62,24 +62,24 @@ describe("agentSteps", () => {
       code: "MCP_TOOL_UNAVAILABLE",
       message: { code: "MCP_TOOL_UNAVAILABLE", message: "Pinned MCP tool is unavailable" },
     })).toBe(
-      "This Studio action is not available through the connected MCP server. Connect the Studio Plugin and retry."
+      "This Studio action is not advertised by the connected MCP server. Use a supported MCP capability or export the project for manual Studio import."
     );
     expect(normalizeToolStepError({
       code: "STUDIO_PLUGIN_REQUIRED_FOR_TOOL",
       message: "Studio plugin required for tool: create_instance",
     })).toBe(
-      "Local MCP can inspect this place, but this action needs the NexusRBX Studio Plugin connected and LIVE."
+      "This direct Studio action uses a plugin-only capability. Export the generated project for manual import, or connect the NexusRBX Studio Plugin for direct apply."
     );
     expect(normalizeToolStepError("This Studio action could not be completed.", {
       failureCode: "STUDIO_PLUGIN_REQUIRED_FOR_TOOL",
     })).toBe(
-      "Local MCP can inspect this place, but this action needs the NexusRBX Studio Plugin connected and LIVE."
+      "This direct Studio action uses a plugin-only capability. Export the generated project for manual import, or connect the NexusRBX Studio Plugin for direct apply."
     );
     expect(normalizeToolStepError({
       message: "This Studio action could not be completed.",
       publicMessage: "Local MCP can inspect this place, but this action needs the NexusRBX Studio Plugin connected and LIVE.",
     })).toBe(
-      "Local MCP can inspect this place, but this action needs the NexusRBX Studio Plugin connected and LIVE."
+      "This direct Studio action uses a plugin-only capability. Export the generated project for manual import, or connect the NexusRBX Studio Plugin for direct apply."
     );
     expect(normalizeToolStep({
       id: "s3",
@@ -88,10 +88,10 @@ describe("agentSteps", () => {
       error: "This Studio action could not be completed.",
       failureCode: "STUDIO_PLUGIN_REQUIRED_FOR_TOOL",
     }).error).toBe(
-      "Local MCP can inspect this place, but this action needs the NexusRBX Studio Plugin connected and LIVE."
+      "This direct Studio action uses a plugin-only capability. Export the generated project for manual import, or connect the NexusRBX Studio Plugin for direct apply."
     );
     expect(normalizeToolStepError("No compatible Studio provider is available")).toBe(
-      "Local MCP can inspect this place, but this action needs the NexusRBX Studio Plugin connected and LIVE."
+      "No live Studio provider is available for this action. Export the generated project for manual Studio import, or connect a Studio provider with the required capability."
     );
     expect(normalizeToolStepError(
       "Manifest revision d123ba8f-bbc8-4aeb-b5f2-9609e0c25a51 conflicted: overlapping canonical paths. Reconnect Studio and retry to build a new manifest revision."
@@ -103,7 +103,7 @@ describe("agentSteps", () => {
       status: "failed",
       error: { code: "STUDIO_PLUGIN_REQUIRED_FOR_TOOL", message: "ignored" },
     })).toBe(
-      "Local MCP can inspect this place, but this action needs the NexusRBX Studio Plugin connected and LIVE."
+      "This direct Studio action uses a plugin-only capability. Export the generated project for manual import, or connect the NexusRBX Studio Plugin for direct apply."
     );
   });
 

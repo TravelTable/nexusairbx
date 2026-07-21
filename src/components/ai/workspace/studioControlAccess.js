@@ -74,11 +74,12 @@ export function resolveStudioControlAccess({
       canRead: false,
       canMutate: false,
       canAutoPush: false,
-      statusLabel: connectorOnly ? "Connector only" : "Offline",
+      workflowMode: "export_only",
+      statusLabel: "Export only",
       statusTitle: connectorOnly
-        ? "The local connector is running, but no Roblox Studio MCP server is available"
-        : "Pair the Studio plugin or connect a local MCP server",
-      capabilityLabel: connectorOnly ? "MCP unavailable" : null,
+        ? "The local connector is running, but no Roblox Studio MCP server is available. Builds can still be exported for manual Studio import."
+        : "No live Studio connection. Builds remain exportable as a placement-aware Project ZIP.",
+      capabilityLabel: connectorOnly ? "MCP unavailable" : "Project ZIP ready",
     };
   }
 
@@ -93,6 +94,7 @@ export function resolveStudioControlAccess({
       canRead: true,
       canMutate: true,
       canAutoPush: true,
+      workflowMode: "plugin_live",
       statusLabel: "Studio · Plugin",
       statusTitle: "Roblox Studio is connected through the NexusRBX plugin",
       capabilityLabel: null,
@@ -117,6 +119,7 @@ export function resolveStudioControlAccess({
     // Managed artifact apply is a plugin protocol operation. A generic MCP
     // mutation capability must never silently stand in for it.
     canAutoPush: false,
+    workflowMode: "mcp_live",
     statusLabel: "Studio · MCP",
     statusTitle: "Roblox Studio is connected through the selected local MCP session",
     capabilityLabel,

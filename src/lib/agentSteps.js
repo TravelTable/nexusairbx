@@ -117,10 +117,13 @@ function isStudioConnectionError(code, message) {
 }
 
 const MCP_TOOL_UNAVAILABLE_MESSAGE =
-  "This Studio action is not available through the connected MCP server. Connect the Studio Plugin and retry.";
+  "This Studio action is not advertised by the connected MCP server. Use a supported MCP capability or export the project for manual Studio import.";
 
 const STUDIO_PLUGIN_REQUIRED_MESSAGE =
-  "Local MCP can inspect this place, but this action needs the NexusRBX Studio Plugin connected and LIVE.";
+  "This direct Studio action uses a plugin-only capability. Export the generated project for manual import, or connect the NexusRBX Studio Plugin for direct apply.";
+
+const STUDIO_EXPORT_ONLY_MESSAGE =
+  "No live Studio provider is available for this action. Export the generated project for manual Studio import, or connect a Studio provider with the required capability.";
 
 const MANIFEST_CONFLICT_MESSAGE =
   "Studio's project index got out of sync while scanning. A fresh scan was started automatically.";
@@ -150,7 +153,7 @@ export function normalizeToolStepError(error, meta = {}) {
         : "This Studio action could not be completed.";
     }
     if (/pinned mcp tool is unavailable/i.test(trimmed)) return MCP_TOOL_UNAVAILABLE_MESSAGE;
-    if (/no compatible studio provider is available/i.test(trimmed)) return STUDIO_PLUGIN_REQUIRED_MESSAGE;
+    if (/no compatible studio provider is available/i.test(trimmed)) return STUDIO_EXPORT_ONLY_MESSAGE;
     if (/needs the nexusrbx studio plugin|reading or editing scripts needs/i.test(trimmed)) {
       return STUDIO_PLUGIN_REQUIRED_MESSAGE;
     }
@@ -177,7 +180,7 @@ export function normalizeToolStepError(error, meta = {}) {
   }
   const text = extractErrorText(error);
   if (/pinned mcp tool is unavailable/i.test(text)) return MCP_TOOL_UNAVAILABLE_MESSAGE;
-  if (/no compatible studio provider is available/i.test(text)) return STUDIO_PLUGIN_REQUIRED_MESSAGE;
+  if (/no compatible studio provider is available/i.test(text)) return STUDIO_EXPORT_ONLY_MESSAGE;
   if (/needs the nexusrbx studio plugin|reading or editing scripts needs/i.test(text)) {
     return STUDIO_PLUGIN_REQUIRED_MESSAGE;
   }

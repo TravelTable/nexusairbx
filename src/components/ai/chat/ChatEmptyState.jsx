@@ -33,7 +33,7 @@ export default function ChatEmptyState({ onQuickStart, onOpenTemplates }) {
           <span className="gradient-text">What should the Studio agent do?</span>
         </h1>
         <p className="text-sm md:text-[15px] text-gray-400 leading-relaxed">
-          Pair Studio, keep Manual Review enabled, then ask the agent to inspect, build, wire, or fix your Roblox project. It will plan the work, generate files, and help apply approved changes through Studio.
+          Start with a prompt to generate an exportable Roblox project. Optionally connect Studio, keep Manual Review enabled, then ask the agent to inspect, build, wire, or fix a live project. Every build is available as a placement-aware Project ZIP.
         </p>
       </div>
 

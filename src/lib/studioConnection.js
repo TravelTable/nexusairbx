@@ -290,6 +290,11 @@ export function normalizeStudioConnectionSnapshot({ pluginStatus = null, mcpStat
         : degraded
           ? "degraded"
           : "disconnected";
+  const workflowMode = pluginConnected
+    ? "plugin_live"
+    : mcpConnected
+      ? "mcp_live"
+      : "export_only";
 
   return {
     connected: pluginConnected || mcpConnected,
@@ -316,6 +321,7 @@ export function normalizeStudioConnectionSnapshot({ pluginStatus = null, mcpStat
     mcpServerConnected: mcpConnected && mcpServerDetected,
     degraded,
     connectionState,
+    workflowMode,
     collaborators: Array.isArray(activeSession?.collaborators) ? activeSession.collaborators : [],
     capabilities,
     compatibility,

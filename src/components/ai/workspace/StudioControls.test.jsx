@@ -4,6 +4,14 @@ import { render, screen } from "@testing-library/react";
 import StudioControls from "./StudioControls";
 
 describe("StudioControls", () => {
+  test("shows export-only status without a plugin-required Live Studio control", () => {
+    render(<StudioControls connected={false} studioEnabled />);
+
+    expect(screen.getByText("Export only")).toBeTruthy();
+    expect(screen.getByText("Project ZIP ready")).toBeTruthy();
+    expect(screen.queryByLabelText("Live Studio")).toBeNull();
+  });
+
   test("shows a read-only MCP session without plugin mutation controls", () => {
     render(
       <StudioControls

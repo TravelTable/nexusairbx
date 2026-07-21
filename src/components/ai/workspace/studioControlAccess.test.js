@@ -13,6 +13,17 @@ const livePlugin = (id = "plugin_live") => ({
 });
 
 describe("Studio agent control access", () => {
+  test("keeps an offline workspace export-only instead of requiring a plugin", () => {
+    expect(resolveStudioControlAccess({ connected: false })).toMatchObject({
+      workflowMode: "export_only",
+      canUseAgent: false,
+      canRead: false,
+      canMutate: false,
+      statusLabel: "Export only",
+      capabilityLabel: "Project ZIP ready",
+    });
+  });
+
   test("keeps the live plugin path fully capable", () => {
     expect(resolveStudioControlAccess({
       connected: true,
@@ -22,6 +33,7 @@ describe("Studio agent control access", () => {
       canRead: true,
       canMutate: true,
       canAutoPush: true,
+      workflowMode: "plugin_live",
       statusLabel: "Studio · Plugin",
     });
   });
@@ -37,6 +49,7 @@ describe("Studio agent control access", () => {
       canRead: true,
       canMutate: false,
       canAutoPush: false,
+      workflowMode: "mcp_live",
       statusLabel: "Studio · MCP",
       capabilityLabel: "MCP · Read only",
     });

@@ -862,7 +862,11 @@ export function useAiWorkspaceController() {
 
     let runtimeProjectId = String(submissionOptions?.projectId || "").trim() || null;
     let studioTargetPreference = submissionOptions?.studioTargetPreference || effectiveStudioPlacePreference;
-    if (studioEnabled && ["agent", "debug"].includes(String(settings?.chatMode || chat.activeMode || "agent").toLowerCase())) {
+    if (
+      studioEnabled &&
+      studioConnection.connected &&
+      ["agent", "debug"].includes(String(settings?.chatMode || chat.activeMode || "agent").toLowerCase())
+    ) {
       let options = studioPlaceOptions;
       if (!options.length) {
         try {
@@ -875,27 +879,10 @@ export function useAiWorkspaceController() {
       const gate = evaluateStudioPlaceGate({
         studioEnabled: true,
         connected: Boolean(studioConnection.connected),
-        pluginConnected: Boolean(studioConnection.pluginConnected),
-        requirePlugin: true,
+        requirePlugin: false,
         preference: studioTargetPreference,
         options,
       });
-      if (gate.status === "needs_plugin") {
-        notify({
-          message: "Connect the NexusRBX Studio Plugin (LIVE) before the agent can create or edit in Studio.",
-          type: "error",
-        });
-        setStudioPlacePickerOpen(true);
-        return;
-      }
-      if (gate.status === "needs_connect") {
-        notify({
-          message: "Connect the NexusRBX Studio Plugin, then choose a place before starting the agent.",
-          type: "error",
-        });
-        setStudioPlacePickerOpen(true);
-        return;
-      }
       if (gate.status === "needs_selection") {
         notify({
           message: "Choose which Studio place this chat should edit before sending.",
