@@ -925,7 +925,7 @@ export default function AgentWorkspaceLayout({ controller }) {
 
   return (
     <div className="fixed inset-0 overflow-hidden" role="application" aria-label="Nexus AI Workspace">
-      <div className="h-full w-[85%]">
+      <div className="h-full w-full overflow-hidden">
         <div className="ai-page relative flex flex-col overflow-hidden font-sans">
       <div
         className="fixed top-[-10%] left-[-10%] w-[40%] h-[40%] blur-[120px] rounded-full pointer-events-none transition-colors duration-1000"
@@ -1003,7 +1003,7 @@ export default function AgentWorkspaceLayout({ controller }) {
         )}
 
         {/* CENTER: Studio agent chat */}
-        <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
         <SiteHeader
           variant="workspace"
           robloxStatusOverride={roblox?.status ?? null}

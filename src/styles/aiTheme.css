@@ -7,8 +7,8 @@
   color: var(--ai-text);
   zoom: 0.85;
   width: calc(100% / 0.85);
-  height: calc(100dvh / 0.85);
-  min-height: calc(100svh / 0.85);
+  height: calc(100% / 0.85);
+  min-height: 0;
   overflow: hidden;
 }
 
