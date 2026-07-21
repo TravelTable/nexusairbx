@@ -14,10 +14,17 @@ local compatibilityDetail = nil
 
 local function studioAttestationPayload()
 	local attestation = getPluginAttestation()
+	local target = currentStudioTargetAttestation(true)
 	local payload = {
-		placeName = game.Name,
-		placeId = tostring(game.PlaceId),
-		universeId = tostring(game.GameId),
+		connectorId = target.connectorId,
+		sessionId = target.sessionId,
+		targetId = target.targetId,
+		placeName = target.placeName,
+		placeId = target.placeId,
+		universeId = target.universeId,
+		placeSignature = target.placeSignature,
+		targetGeneration = target.targetGeneration,
+		attestedAt = target.attestedAt,
 		pluginVersion = attestation.pluginVersion,
 		protocolVersion = attestation.protocolVersion,
 		buildId = attestation.buildId,
@@ -93,8 +100,14 @@ local function applyCompatibility(heartbeat)
 			-- Compatible must leave CONNECTING. Previously only degraded/live
 			-- poll paths updated the pill, so a healthy handshake could stick on
 			-- "CONNECTING" / "Restoring Studio connection" forever.
-			setBridgeState("live")
-			setLast("Studio connection ready")
+			local targetReady, targetDetail = getStudioTargetReadiness()
+			if targetReady == false then
+				setBridgeState("target_changed", targetDetail)
+				setLast(targetDetail or "Select the website target that matches this open Studio place")
+			else
+				setBridgeState("live")
+				setLast("Studio connection ready")
+			end
 		end
 		return true
 	end
@@ -146,6 +159,7 @@ local function pairStudio()
 
 	setToken(dataOrError.token)
 	plugin:SetSetting("nexusrbxStudioSessionId", dataOrError.sessionId)
+	updateStudioServerTarget(dataOrError)
 	resetCompatibilityHandshake()
 	-- Pairing already returns the authoritative compatibility contract. Apply it
 	-- immediately so reconnect does not wait on a later ping that can leave the
@@ -292,6 +306,7 @@ disconnectButton.MouseButton1Click:Connect(function()
 	end)
 	plugin:SetSetting("nexusrbxStudioToken", nil)
 	plugin:SetSetting("nexusrbxStudioSessionId", nil)
+	clearStudioServerTarget()
 	resetCompatibilityHandshake()
 	codeBox.Text = ""
 	setProgress({})
@@ -388,12 +403,16 @@ task.spawn(function()
 	local failureCount = 0
 	while true do
 		if getToken() then
-			local signatureOk, signature = pcall(computePlaceSignature)
+			local studio = studioAttestationPayload()
 			local ok, latency, authExpired, heartbeat = pingSession(
 				getToken(),
-				signatureOk and signature or nil,
-				studioAttestationPayload()
+				studio.placeSignature,
+				studio
 			)
+			if type(heartbeat) == "table" then
+				updateStudioServerTarget(heartbeat)
+			end
+			recordStudioFreshness("heartbeat", ok, authExpired and "authentication expired" or (ok and nil or "heartbeat request failed"), latency)
 			local hadCompatibility = applyCompatibility(heartbeat)
 			if ok then
 				failureCount = 0
@@ -434,6 +453,7 @@ task.spawn(function()
 end)
 
 updateSnapshotLabel()
+publishStudioConnectionDiagnostics(currentStudioTargetAttestation(true))
 if getToken() then
 	setBridgeState("connecting")
 else

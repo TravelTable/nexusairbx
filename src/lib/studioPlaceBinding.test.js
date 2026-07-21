@@ -67,15 +67,15 @@ describe("studioPlaceBinding", () => {
     ]);
   });
 
-  test("evaluateStudioPlaceGate auto-binds a single live place", () => {
+  test("evaluateStudioPlaceGate requires explicit selection for a single live place", () => {
     const gate = evaluateStudioPlaceGate({
       studioEnabled: true,
       connected: true,
       preference: null,
       options: [{ id: "t1", placeId: "1", label: "Only" }],
     });
-    expect(gate.status).toBe("auto_bind");
-    expect(gate.target.id).toBe("t1");
+    expect(gate.status).toBe("needs_selection");
+    expect(gate.target).toBeUndefined();
   });
 
   test("evaluateStudioPlaceGate requires selection for multiple places", () => {
@@ -109,6 +109,18 @@ describe("studioPlaceBinding", () => {
       placeId: "2",
       label: "B",
     });
+  });
+
+  test("evaluateStudioPlaceGate does not fall back to place id after target switch", () => {
+    const gate = evaluateStudioPlaceGate({
+      studioEnabled: true,
+      connected: true,
+      preference: readChatStudioPreference({
+        studioTargetPreference: { targetId: "old-target", placeId: "2", label: "Old B" },
+      }),
+      options: [{ id: "new-target", placeId: "2", label: "New B" }],
+    });
+    expect(gate.status).toBe("needs_selection");
   });
 
   test("normalizeStudioTargetOption accepts studioTargetId and Untitled placeId 0", () => {
@@ -158,7 +170,7 @@ describe("studioPlaceBinding", () => {
     }]);
   });
 
-  test("evaluateStudioPlaceGate auto-binds a single Untitled place", () => {
+  test("evaluateStudioPlaceGate requires explicit selection for a single Untitled place", () => {
     const gate = evaluateStudioPlaceGate({
       studioEnabled: true,
       connected: true,
@@ -172,8 +184,8 @@ describe("studioPlaceBinding", () => {
         isUntitled: true,
       }],
     });
-    expect(gate.status).toBe("auto_bind");
-    expect(gate.target.id).toBe("studio_target_u");
+    expect(gate.status).toBe("needs_selection");
+    expect(gate.target).toBeUndefined();
   });
 
   test("evaluateStudioPlaceGate requires plugin when requirePlugin is set", () => {
@@ -200,7 +212,7 @@ describe("studioPlaceBinding", () => {
     expect(resolveGameTitleFromTarget({})).toBe("Untitled game");
   });
 
-  test("resolveGameIdentityFromStudioStatus auto-binds a single Studio game", () => {
+  test("resolveGameIdentityFromStudioStatus requires selection for a single Studio game", () => {
     const identity = resolveGameIdentityFromStudioStatus({
       targeting: {
         targets: [{
@@ -211,11 +223,25 @@ describe("studioPlaceBinding", () => {
         }],
       },
     });
-    expect(identity.status).toBe("auto_bind");
-    expect(identity.source).toBe("studio");
-    expect(identity.title).toBe("My Obby");
-    expect(identity.placeId).toBe("4242");
-    expect(identity.studioTargetId).toBe("studio_target_1");
+    expect(identity.status).toBe("needs_selection");
+    expect(identity.source).toBe("draft");
+    expect(identity.title).toBe("Untitled game");
+    expect(identity.placeId).toBeNull();
+    expect(identity.studioTargetId).toBeNull();
+    expect(identity.options).toHaveLength(1);
+  });
+
+  test("resolveGameIdentityFromStudioStatus rejects same-place replacement target", () => {
+    const identity = resolveGameIdentityFromStudioStatus({
+      targeting: {
+        targets: [{ id: "new-target", placeId: "4242", label: "My Obby" }],
+      },
+    }, {
+      selectedTargetId: "old-target",
+      selectedPlaceId: "4242",
+    });
+    expect(identity.status).toBe("needs_selection");
+    expect(identity.studioTargetId).toBeNull();
   });
 
   test("resolveGameIdentityFromStudioStatus requires selection for multiple games", () => {

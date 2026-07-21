@@ -13,6 +13,7 @@ export { CHAT_MODES };
 export default function ChatView({
   messages,
   pendingMessage,
+  pendingMessages,
   generationStage,
   user,
   profile,
@@ -43,6 +44,7 @@ export default function ChatView({
           <MessageList
             messages={messages}
             pendingMessage={pendingMessage}
+            pendingMessages={pendingMessages}
             user={user}
             profile={profile}
             activeMode={activeMode}

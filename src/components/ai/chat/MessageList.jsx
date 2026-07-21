@@ -60,7 +60,7 @@ function LiveActivityHeader({ pendingMessage, generationStage, parsed, embedded 
   );
 }
 
-export default function MessageList({
+function SingleMessageList({
   messages,
   pendingMessage: pendingMessageProp,
   user,
@@ -79,6 +79,7 @@ export default function MessageList({
   approvingStepId,
   onSelectStudioTarget,
   selectingStudioTargetId,
+  hideMessages = false,
 }) {
   // Firestore can publish the completed assistant message one render before the
   // orchestration cleanup runs. Once that response exists, the matching live
@@ -113,11 +114,13 @@ export default function MessageList({
   const hasRawReasoning = Boolean(String(streamState?.rawReasoning || "").trim());
   const reasoningStreaming = Boolean(pendingMessage) && !hasStreamOutput;
   const visibleMessages = useMemo(
-    () =>
+    () => hideMessages
+      ? []
+      :
       pendingMessage?.requestId
         ? messages.filter((m) => !(m.pending && m.requestId === pendingMessage.requestId))
         : messages,
-    [messages, pendingMessage?.requestId]
+    [hideMessages, messages, pendingMessage?.requestId]
   );
 
   // Generation pending carries `prompt` for instant feedback before Firestore syncs.
@@ -249,6 +252,26 @@ export default function MessageList({
           </div>
         </>
       )}
+    </div>
+  );
+}
+
+export default function MessageList({ pendingMessages, ...props }) {
+  if (!Array.isArray(pendingMessages)) {
+    return <SingleMessageList {...props} />;
+  }
+
+  return (
+    <div className="space-y-6">
+      <SingleMessageList {...props} pendingMessage={null} />
+      {pendingMessages.map((pendingMessage, index) => (
+        <SingleMessageList
+          {...props}
+          key={pendingMessage?.requestId || `pending-${index}`}
+          hideMessages
+          pendingMessage={pendingMessage}
+        />
+      ))}
     </div>
   );
 }

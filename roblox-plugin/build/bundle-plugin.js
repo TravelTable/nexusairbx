@@ -15,6 +15,7 @@ const sources = [
   "src/studio/snapshot.lua",
   "src/ui/BridgePanel.lua",
   "src/commands/readTools.lua",
+  "src/studio/targetIntegrity.lua",
   "src/commands/validation.lua",
   "src/commands/writeTools.lua",
   "src/commands/nativeModel.lua",
@@ -46,6 +47,7 @@ const WRAPPED_SOURCES = new Set([
   "src/studio/snapshot.lua",
   "src/ui/BridgePanel.lua",
   "src/commands/readTools.lua",
+  "src/studio/targetIntegrity.lua",
   "src/commands/validation.lua",
   "src/commands/writeTools.lua",
   "src/commands/nativeModel.lua",
@@ -103,6 +105,7 @@ const MODULE_EXPORTS = {
     "collaboratorsLabel",
     "updateCollaborators",
     "setMcpCompanionStatus",
+    "setConnectionDiagnostics",
   ],
   "src/studio/serialization.lua": [
     "SCRIPT_CLASSES",
@@ -154,12 +157,24 @@ const MODULE_EXPORTS = {
     "readInstance",
     "readProperties",
     "getSelectionTool",
+    "computePlaceSignature",
     "serializeFlat",
     // Defined in readTools but required by registry.lua TOOL_HANDLERS.
     // Exporting them from writeTools left the handlers nil and dropped
     // create_instance / delete_instance from plugin attestation.
     "createInstanceTool",
     "deleteInstanceTool",
+  ],
+  "src/studio/targetIntegrity.lua": [
+    "getStudioConnectorId",
+    "refreshStudioPlaceGeneration",
+    "currentStudioTargetAttestation",
+    "recordStudioFreshness",
+    "updateStudioServerTarget",
+    "clearStudioServerTarget",
+    "getStudioTargetReadiness",
+    "validateCommandStudioTarget",
+    "publishStudioConnectionDiagnostics",
   ],
   "src/commands/validation.lua": [
     "runProjectValidation",
@@ -193,7 +208,16 @@ const MODULE_EXPORTS = {
     "applyNativeModelPatch",
   ],
   "src/commands/importedAsset.lua": ["ImportedAsset"],
-  "src/commands/registry.lua": ["pullOnce", "executeCommand", "ack", "TOOL_HANDLERS", "getPluginAttestation"],
+  "src/commands/registry.lua": [
+    "pullOnce",
+    "executeCommand",
+    "ack",
+    "TOOL_HANDLERS",
+    "getPluginAttestation",
+    "getStoredCommandReceipt",
+    "storeCommandReceipt",
+    "reconcileStoredCommandReceipt",
+  ],
   "src/Main.server.lua": [],
 };
 

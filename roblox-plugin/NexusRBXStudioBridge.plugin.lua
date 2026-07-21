@@ -14,7 +14,7 @@ local STUDIO_PROTOCOL_VERSION = "2026-07-17-target-integrity"
 -- version. Keep it in lockstep with the generated bundle and backend allowlist.
 -- A plugin session must attest its build and actual command handlers at pairing
 -- time; version strings alone are not evidence that a command exists.
-local PLUGIN_BUILD_ID = "nexusrbx-studio-0.10.3-session-attestation.1"
+local PLUGIN_BUILD_ID = "nexusrbx-studio-0.10.3-session-attestation.2"
 
 -- These are deliberately capability-level (rather than UI-level) claims. The
 -- pairing payload also includes the exact sorted command list derived from the
@@ -1099,7 +1099,7 @@ end
 -- END src/studio/snapshot.lua
 
 -- BEGIN src/ui/BridgePanel.lua
-local setStatus, setLast, setBusy, setActive, setRun, setProgress, pushActivity, showToast, setHealth, setPollingPulse, showApprovalGate, hideApprovalGate, waitForApproval, getApprovalModeEnabledExport, handleSessionExpired, applying, pairButton, codeBox, pullButton, restoreButton, disconnectButton, confirmRestoreButton, cancelRestoreButton, approvalToggleButton, approvalConfirmButton, approvalDeclineButton, refreshControls, runSetupCheck, showOnboarding, hideOnboarding, checkSetupButton, onboardingDismissButton, showRestoreConfirmation, hideRestoreConfirmation, updateSnapshotLabel, widget, toggleButton, healthLabel, progressLabel, feedEmptyLabel, approvalCopy, playtestLogsButton, playtestStrip, setButtonEnabled, collaboratorsLabel, updateCollaborators, setMcpCompanionStatus
+local setStatus, setLast, setBusy, setActive, setRun, setProgress, pushActivity, showToast, setHealth, setPollingPulse, showApprovalGate, hideApprovalGate, waitForApproval, getApprovalModeEnabledExport, handleSessionExpired, applying, pairButton, codeBox, pullButton, restoreButton, disconnectButton, confirmRestoreButton, cancelRestoreButton, approvalToggleButton, approvalConfirmButton, approvalDeclineButton, refreshControls, runSetupCheck, showOnboarding, hideOnboarding, checkSetupButton, onboardingDismissButton, showRestoreConfirmation, hideRestoreConfirmation, updateSnapshotLabel, widget, toggleButton, healthLabel, progressLabel, feedEmptyLabel, approvalCopy, playtestLogsButton, playtestStrip, setButtonEnabled, collaboratorsLabel, updateCollaborators, setMcpCompanionStatus, setConnectionDiagnostics
 do
 -- NexusRBX Studio Bridge UI
 -- Dock panel: pairing, activity feed, recovery, approval gate, health.
@@ -1170,6 +1170,9 @@ local BRIDGE_STATES = {
 	live = { label = "LIVE", color = COLORS.live, pulse = false },
 	working = { label = "WORKING", color = COLORS.accent, pulse = true },
 	degraded = { label = "RECONNECTING", color = COLORS.warning, pulse = true },
+	reconciling = { label = "CONFIRMING", color = COLORS.warning, pulse = true },
+	target_changed = { label = "WRONG PLACE", color = COLORS.error, pulse = false },
+	target_stale = { label = "TARGET STALE", color = COLORS.error, pulse = false },
 	error = { label = "ACTION NEEDED", color = COLORS.error, pulse = false },
 }
 
@@ -1692,6 +1695,11 @@ undoBatchButton = makeButton(safetySection, "UndoBatchButton", "Undo Last Batch"
 local settingsSection = makeSection("Settings")
 makeText(settingsSection, "SettingsTitle", "Settings", 18, 13, true)
 approvalToggleButton = makeButton(settingsSection, "ApprovalToggle", "Review before apply: OFF", themeColor(Enum.StudioStyleGuideColor.Button))
+makeText(settingsSection, "StudioTargetTitle", "Studio target", 17, 12, true)
+studioTargetLabel = makeText(settingsSection, "StudioTargetStatus", "Checking the open place...", nil, 11, false, themeColor(Enum.StudioStyleGuideColor.DimmedText), true)
+studioTargetLabel.TextWrapped = true
+studioFreshnessLabel = makeText(settingsSection, "StudioFreshness", "Heartbeat -- · Commands -- · Place --", nil, 10, false, themeColor(Enum.StudioStyleGuideColor.DimmedText), true)
+studioFreshnessLabel.TextWrapped = true
 -- Informational only: this does not pair, start, stop, or otherwise control
 -- the desktop MCP companion.
 do
@@ -1909,7 +1917,13 @@ end
 -- call sites keep working without ever mislabeling the connection.
 local function stateFromLegacy(text)
 	local lowered = string.lower(tostring(text or ""))
-	if string.find(lowered, "expired") then
+	if string.find(lowered, "wrong place") or string.find(lowered, "target changed") then
+		return "target_changed"
+	elseif string.find(lowered, "target stale") then
+		return "target_stale"
+	elseif string.find(lowered, "confirming") or string.find(lowered, "reconcil") then
+		return "reconciling"
+	elseif string.find(lowered, "expired") then
 		return "error"
 	elseif string.find(lowered, "unsupported") or string.find(lowered, "pair failed") then
 		return "error"
@@ -2097,7 +2111,7 @@ function setBridgeState(state, detail)
 	statusPill.Text = def.label
 	resizeStatusPill(def.label)
 	TweenService:Create(statusPill, TweenInfo.new(0.16, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { BackgroundColor3 = def.color }):Play()
-	if detail ~= nil and tostring(detail) ~= "" and (key == "working" or key == "degraded") then
+	if detail ~= nil and tostring(detail) ~= "" and (key == "working" or key == "degraded" or key == "reconciling" or key == "target_changed" or key == "target_stale") then
 		activeLabel.Text = "Active tool: " .. tostring(detail)
 	end
 	refreshControls()
@@ -2118,6 +2132,46 @@ setHealth = function(syncedAt, latencyMs)
 		healthLabel.Text = "Not synced yet"
 	else
 		healthLabel.Text = ("Synced %ds ago%s"):format(ago, latencyText)
+	end
+end
+
+setConnectionDiagnostics = function(summary)
+	if type(summary) ~= "table" then return end
+	local target = type(summary.target) == "table" and summary.target or {}
+	local freshness = type(summary.freshness) == "table" and summary.freshness or {}
+	local function freshnessText(channel)
+		local entry = freshness[channel]
+		if type(entry) ~= "table" or entry.at == nil then return "--" end
+		local age = math.max(0, os.time() - (tonumber(entry.at) or os.time()))
+		local latency = entry.latencyMs and ("/" .. tostring(math.floor(entry.latencyMs)) .. "ms") or ""
+		if entry.ok ~= true then return "failed " .. tostring(age) .. "s" end
+		return tostring(age) .. "s" .. latency
+	end
+	if studioFreshnessLabel then
+		studioFreshnessLabel.Text = ("Heartbeat %s · Commands %s · Place %s"):format(
+			freshnessText("heartbeat"), freshnessText("poll"), freshnessText("attestation")
+		)
+	end
+	if studioTargetLabel then
+		local identity = ("%s · place %s · universe %s · gen %s"):format(
+			tostring(target.placeName or "Unnamed place"),
+			tostring(target.placeId or "--"),
+			tostring(target.universeId or "--"),
+			tostring(target.targetGeneration or "--")
+		)
+		if target.targetBound and target.targetReady == false then
+			studioTargetLabel.Text = "Blocked · " .. identity
+			studioTargetLabel.TextColor3 = COLORS.error
+		elseif target.targetBound then
+			studioTargetLabel.Text = "Ready · " .. identity
+			studioTargetLabel.TextColor3 = COLORS.success
+		else
+			studioTargetLabel.Text = "Open · " .. identity .. " · awaiting website target"
+			studioTargetLabel.TextColor3 = COLORS.muted
+		end
+	end
+	if target.targetBound and target.targetReady == false and currentBridgeState ~= "working" then
+		setBridgeState("target_changed", target.detail or "Website target does not match this open place")
 	end
 end
 
@@ -2633,7 +2687,7 @@ end
 -- END src/ui/BridgePanel.lua
 
 -- BEGIN src/commands/readTools.lua
-local getInspectionRoots, inspectPlace, listChildren, inspectInstances, searchProject, searchSource, readScript, writeScript, readInstance, readProperties, getSelectionTool, serializeFlat, createInstanceTool, deleteInstanceTool
+local getInspectionRoots, inspectPlace, listChildren, inspectInstances, searchProject, searchSource, readScript, writeScript, readInstance, readProperties, getSelectionTool, computePlaceSignature, serializeFlat, createInstanceTool, deleteInstanceTool
 do
 local function serializeInstance(inst, path, depth, maxDepth, state, includeSource, sourceMaxChars, parentPath)
 	state.count = state.count + 1
@@ -2743,7 +2797,7 @@ end
 -- Cheap top-level fingerprint of the place (service child counts). Used as a
 -- fast "did anything structurally change?" signal so the backend can skip a
 -- full re-index when the project is unchanged.
-function computePlaceSignature()
+computePlaceSignature = function()
 	local parts = {}
 	for _, inst in ipairs(getInspectionRoots()) do
 		local ok, count = pcall(function()
@@ -2762,9 +2816,19 @@ inspectPlace = function(payload)
 	local pageSize = math.clamp(tonumber(payload.pageSize) or maxInstances, 20, 1000)
 	local cursor = math.max(0, tonumber(payload.cursor) or 0)
 	local requestedRevision = tostring(payload.manifestRevision or "")
+	-- Elapsed-time TTL (10 minutes). Prefer tick() so wall-clock jumps do not keep
+	-- expired snapshots alive; fall back to os.time() when tick is unavailable.
+	local MANIFEST_SNAPSHOT_TTL_SEC = 600
+	local function snapshotNow()
+		if typeof(tick) == "function" then
+			return tick()
+		end
+		return os.time()
+	end
 	NEXUS_RBX_MANIFEST_SNAPSHOTS = NEXUS_RBX_MANIFEST_SNAPSHOTS or {}
 	for revision, snapshot in pairs(NEXUS_RBX_MANIFEST_SNAPSHOTS) do
-		if os.time() - (snapshot.createdAt or 0) > 120 then
+		local createdAt = snapshot.createdAtElapsed or snapshot.createdAt or 0
+		if snapshotNow() - createdAt > MANIFEST_SNAPSHOT_TTL_SEC then
 			NEXUS_RBX_MANIFEST_SNAPSHOTS[revision] = nil
 		end
 	end
@@ -2785,6 +2849,7 @@ inspectPlace = function(payload)
 			retryable = true,
 		}
 	end
+	local supersedesRevision = nil
 	if not snapshot then
 		local state = {
 			count = 0,
@@ -2800,9 +2865,15 @@ inspectPlace = function(payload)
 			end
 			table.insert(roots, serializeInstance(inst, inst.Name, 1, maxDepth, state, includeSource, sourceMaxChars, ""))
 		end
-		requestedRevision = requestedRevision ~= "" and requestedRevision or Services.HttpService:GenerateGUID(false)
+		-- Revision immutability: never rebuild under a previously requested revision
+		-- when the snapshot is gone. Always mint a new GUID.
+		if requestedRevision ~= "" then
+			supersedesRevision = requestedRevision
+		end
+		requestedRevision = Services.HttpService:GenerateGUID(false)
 		snapshot = {
 			createdAt = os.time(),
+			createdAtElapsed = snapshotNow(),
 			items = state.items,
 			roots = roots,
 			scannedInstances = state.count,
@@ -2820,6 +2891,7 @@ inspectPlace = function(payload)
 		pluginVersion = PLUGIN_VERSION,
 		protocolVersion = STUDIO_PROTOCOL_VERSION,
 		revision = requestedRevision,
+		supersedesRevision = supersedesRevision,
 		placeName = game.Name,
 		placeId = tostring(game.PlaceId),
 		count = #snapshot.items,
@@ -3164,6 +3236,248 @@ getSelectionTool = function()
 end
 end
 -- END src/commands/readTools.lua
+
+-- BEGIN src/studio/targetIntegrity.lua
+local getStudioConnectorId, refreshStudioPlaceGeneration, currentStudioTargetAttestation, recordStudioFreshness, updateStudioServerTarget, clearStudioServerTarget, getStudioTargetReadiness, validateCommandStudioTarget, publishStudioConnectionDiagnostics
+do
+-- Immutable Studio target identity and transport-freshness tracking.
+-- Connector identity is stable across sessions; target generation advances
+-- whenever this Studio process observes a different place identity.
+
+local studioFreshness, serverTarget = {
+	heartbeat = { ok = false },
+	poll = { ok = false },
+	attestation = { ok = false },
+}, {}
+local TargetPrivate = {}
+
+function TargetPrivate.stringValue(value)
+	if value == nil then return nil end
+	local result = tostring(value)
+	return result ~= "" and result or nil
+end
+
+getStudioConnectorId = function()
+	local connectorId = TargetPrivate.stringValue(plugin:GetSetting("nexusrbxStudioConnectorId"))
+	if connectorId then return connectorId end
+	connectorId = Services.HttpService:GenerateGUID(false)
+	plugin:SetSetting("nexusrbxStudioConnectorId", connectorId)
+	return connectorId
+end
+
+function TargetPrivate.currentPlaceKey()
+	local placeId, universeId = tostring(game.PlaceId), tostring(game.GameId)
+	local unpublished = placeId == "0" and universeId == "0" and (":" .. tostring(game.Name)) or ""
+	return universeId .. ":" .. placeId .. unpublished
+end
+
+refreshStudioPlaceGeneration = function()
+	local key = TargetPrivate.currentPlaceKey()
+	local previous = TargetPrivate.stringValue(plugin:GetSetting("nexusrbxStudioPlaceIdentity"))
+	local generation = math.max(0, tonumber(plugin:GetSetting("nexusrbxStudioTargetGeneration")) or 0)
+	if previous ~= key then
+		generation = generation + 1
+		plugin:SetSetting("nexusrbxStudioPlaceIdentity", key)
+		plugin:SetSetting("nexusrbxStudioTargetGeneration", generation)
+	end
+	return generation, previous ~= nil and previous ~= key
+end
+
+function TargetPrivate.targetSummary(attestation)
+	local expectedPlaceId = TargetPrivate.stringValue(serverTarget.expectedPlaceId or serverTarget.placeId)
+	local expectedUniverseId = TargetPrivate.stringValue(serverTarget.expectedUniverseId or serverTarget.universeId)
+	local mismatch = (expectedPlaceId and expectedPlaceId ~= attestation.placeId)
+		or (expectedUniverseId and expectedUniverseId ~= attestation.universeId)
+	return {
+		targetId = TargetPrivate.stringValue(serverTarget.targetId),
+		placeName = attestation.placeName,
+		placeId = attestation.placeId,
+		universeId = attestation.universeId,
+		targetGeneration = attestation.targetGeneration,
+		targetBound = expectedPlaceId ~= nil or expectedUniverseId ~= nil or serverTarget.targetId ~= nil,
+		targetReady = mismatch ~= true,
+		detail = mismatch and "Website target does not match this open place" or nil,
+	}
+end
+
+publishStudioConnectionDiagnostics = function(attestation)
+	if type(setConnectionDiagnostics) ~= "function" then return end
+	attestation = attestation or currentStudioTargetAttestation(false)
+	setConnectionDiagnostics({
+		target = TargetPrivate.targetSummary(attestation),
+		freshness = studioFreshness,
+	})
+end
+
+currentStudioTargetAttestation = function(recordFreshness)
+	local generation, changed = refreshStudioPlaceGeneration()
+	local signatureOk, signature = pcall(computePlaceSignature)
+	local attestation = {
+		connectorId = getStudioConnectorId(),
+		sessionId = TargetPrivate.stringValue(plugin:GetSetting("nexusrbxStudioSessionId")),
+		targetId = TargetPrivate.stringValue(serverTarget.targetId),
+		placeName = tostring(game.Name),
+		placeId = tostring(game.PlaceId),
+		universeId = tostring(game.GameId),
+		placeSignature = signatureOk and TargetPrivate.stringValue(signature) or nil,
+		targetGeneration = generation,
+		placeChanged = changed == true,
+		attestedAt = os.time(),
+	}
+	if recordFreshness ~= false then
+		studioFreshness.attestation = {
+			ok = signatureOk,
+			at = os.time(),
+			detail = signatureOk and nil or tostring(signature),
+		}
+		publishStudioConnectionDiagnostics(attestation)
+	end
+	return attestation
+end
+
+recordStudioFreshness = function(channel, ok, detail, latencyMs)
+	if studioFreshness[channel] == nil then return end
+	studioFreshness[channel] = {
+		ok = ok == true,
+		at = os.time(),
+		detail = detail and tostring(detail) or nil,
+		latencyMs = tonumber(latencyMs),
+	}
+	publishStudioConnectionDiagnostics()
+end
+
+updateStudioServerTarget = function(response)
+	if type(response) ~= "table" then return end
+	local target = type(response.studioTarget) == "table" and response.studioTarget
+		or (type(response.target) == "table" and response.target)
+		or (type(response.targeting) == "table" and response.targeting)
+		or ((response.targetId ~= nil or response.expectedPlaceId ~= nil
+			or response.expectedUniverseId ~= nil) and response)
+		or nil
+	if not target then return end
+	serverTarget = {
+		targetId = target.targetId,
+		expectedPlaceId = target.expectedPlaceId or target.placeId,
+		expectedUniverseId = target.expectedUniverseId or target.universeId,
+	}
+	publishStudioConnectionDiagnostics()
+end
+
+clearStudioServerTarget = function()
+	serverTarget = {}
+	publishStudioConnectionDiagnostics()
+end
+
+getStudioTargetReadiness = function()
+	local summary = TargetPrivate.targetSummary(currentStudioTargetAttestation(false))
+	return summary.targetReady, summary.detail
+end
+
+function TargetPrivate.commandTargetExpectation(command)
+	local nested = type(command.studioTarget) == "table" and command.studioTarget
+		or (type(command.target) == "table" and command.target)
+		or (type(command.routing) == "table" and command.routing)
+		or (type(command.payload) == "table" and type(command.payload.studioTarget) == "table" and command.payload.studioTarget)
+		or {}
+	local function field(name)
+		if command[name] ~= nil then return command[name] end
+		return nested[name]
+	end
+	local expectation = {
+		targetId = TargetPrivate.stringValue(field("targetId")),
+		sessionId = TargetPrivate.stringValue(field("sessionId")),
+		expectedPlaceId = TargetPrivate.stringValue(field("expectedPlaceId")),
+		expectedUniverseId = TargetPrivate.stringValue(field("expectedUniverseId")),
+		expectedPlaceSignature = TargetPrivate.stringValue(field("expectedPlaceSignature")),
+		targetGeneration = TargetPrivate.stringValue(field("targetGeneration")),
+		operationId = TargetPrivate.stringValue(field("operationId")),
+		idempotencyKey = TargetPrivate.stringValue(field("idempotencyKey")),
+	}
+	expectation.bound = expectation.targetId ~= nil or expectation.sessionId ~= nil
+		or expectation.expectedPlaceId ~= nil or expectation.expectedUniverseId ~= nil
+		or expectation.expectedPlaceSignature ~= nil or expectation.targetGeneration ~= nil
+	return expectation
+end
+
+function TargetPrivate.targetError(code, message, stage, expected, actual, command, missingFields)
+	local details = { stage = stage, expected = expected, actual = actual }
+	if missingFields then details.missingFields = missingFields end
+	return {
+		ok = false,
+		success = false,
+		verified = false,
+		code = code,
+		retryable = false,
+		commandId = command.id or command.commandId,
+		runId = command.runId,
+		stepId = command.stepId,
+		operation = command.type,
+		operationId = command.operationId,
+		idempotencyKey = command.idempotencyKey,
+		targetIntegrity = details,
+		error = { code = code, message = message, retryable = false, details = details },
+	}
+end
+
+validateCommandStudioTarget = function(command, stage, approvedAttestation)
+	local expected = command._immutableStudioTarget or TargetPrivate.commandTargetExpectation(command)
+	command._immutableStudioTarget = expected
+	local actual = currentStudioTargetAttestation(true)
+	local code, message
+	if tonumber(command.lifecycleVersion) == 2 then
+		local missing = {}
+		for _, fieldName in ipairs({
+			"targetId",
+			"sessionId",
+			"expectedPlaceId",
+			"expectedUniverseId",
+			"expectedPlaceSignature",
+			"targetGeneration",
+			"operationId",
+			"idempotencyKey",
+		}) do
+			if expected[fieldName] == nil then table.insert(missing, fieldName) end
+		end
+		if #missing > 0 then
+			message = "Reliable Studio mutation is missing immutable target fields: " .. table.concat(missing, ", ")
+			setBridgeState("target_stale", message)
+			return false, TargetPrivate.targetError(
+				"INVALID_TARGET_ENVELOPE",
+				message,
+				stage,
+				expected,
+				actual,
+				command,
+				missing
+			)
+		end
+	end
+	if expected.sessionId and expected.sessionId ~= actual.sessionId then
+		code, message = "TARGET_STALE", "The Studio session changed after this command was targeted"
+	elseif expected.targetId and expected.targetId ~= actual.targetId then
+		code, message = "TARGET_STALE", "The website target is no longer attached to this Studio connector"
+	elseif expected.targetGeneration and expected.targetGeneration ~= tostring(actual.targetGeneration) then
+		code, message = "TARGET_STALE", "The Studio place generation changed before this command could run"
+	elseif expected.expectedPlaceId and expected.expectedPlaceId ~= actual.placeId then
+		code, message = "TARGET_CHANGED", "The open Studio place does not match the command's place"
+	elseif expected.expectedUniverseId and expected.expectedUniverseId ~= actual.universeId then
+		code, message = "TARGET_CHANGED", "The open Studio universe does not match the command's universe"
+	elseif expected.expectedPlaceSignature and expected.expectedPlaceSignature ~= actual.placeSignature then
+		code, message = "TARGET_CHANGED", "The Studio place changed after the command was prepared"
+	elseif approvedAttestation and (approvedAttestation.placeId ~= actual.placeId
+		or approvedAttestation.universeId ~= actual.universeId
+		or tostring(approvedAttestation.targetGeneration) ~= tostring(actual.targetGeneration)
+		or approvedAttestation.placeSignature ~= actual.placeSignature) then
+		code, message = "TARGET_CHANGED", "The open Studio place changed after approval"
+	end
+	if code then
+		setBridgeState(code == "TARGET_STALE" and "target_stale" or "target_changed", message)
+		return false, TargetPrivate.targetError(code, message, stage, expected, actual, command)
+	end
+	return true, actual, expected.bound
+end
+end
+-- END src/studio/targetIntegrity.lua
 
 -- BEGIN src/commands/validation.lua
 local runProjectValidation, collectDiagnostics, collectOutput, getServiceRoot
@@ -6072,7 +6386,7 @@ end
 -- END src/commands/importedAsset.lua
 
 -- BEGIN src/commands/registry.lua
-local pullOnce, executeCommand, ack, TOOL_HANDLERS, getPluginAttestation
+local pullOnce, executeCommand, ack, TOOL_HANDLERS, getPluginAttestation, getStoredCommandReceipt, storeCommandReceipt, reconcileStoredCommandReceipt
 do
 local MUTATING_COMMANDS = {
 	apply_artifact = true,
@@ -6103,6 +6417,8 @@ local MUTATING_COMMANDS = {
 }
 
 local executedCommandCount = 0
+local COMMAND_RECEIPTS_SETTING, COMMAND_RECEIPT_ORDER_SETTING, COMMAND_RECEIPT_LIMIT =
+	"nexusrbxCommandReceiptsV2", "nexusrbxCommandReceiptOrderV2", 50
 
 TOOL_HANDLERS = {
 	apply_artifact = applyArtifact,
@@ -6250,6 +6566,58 @@ end
 
 TOOL_HANDLERS.batch_operations = batchOperations
 
+getStoredCommandReceipt = function(operationId)
+	if tostring(operationId or "") == "" then return nil end
+	local ok, receipts = pcall(function()
+		return plugin:GetSetting(COMMAND_RECEIPTS_SETTING)
+	end)
+	if not ok or type(receipts) ~= "table" then return nil end
+	local receipt = receipts[tostring(operationId)]
+	return type(receipt) == "table" and receipt or nil
+end
+
+-- Persist the mutation outcome before attempting its network acknowledgment.
+-- A bounded journal lets a redelivered operation reconcile its prior result
+-- without ever invoking the Studio mutation twice.
+storeCommandReceipt = function(command, status, result, errorMessage)
+	if type(command) ~= "table" or not isMutatingCommand(command.type) then return true end
+	local operationId = tostring(command.operationId or "")
+	local idempotencyKey = tostring(command.idempotencyKey or "")
+	if operationId == "" or idempotencyKey == "" then return false end
+
+	local existing = getStoredCommandReceipt(operationId)
+	if existing and tostring(existing.idempotencyKey or "") ~= idempotencyKey then
+		return false
+	end
+	local settingsOk, receipts, order = pcall(function()
+		local storedReceipts = plugin:GetSetting(COMMAND_RECEIPTS_SETTING)
+		local storedOrder = plugin:GetSetting(COMMAND_RECEIPT_ORDER_SETTING)
+		return type(storedReceipts) == "table" and storedReceipts or {},
+			type(storedOrder) == "table" and storedOrder or {}
+	end)
+	if not settingsOk then return false end
+	if receipts[operationId] == nil then table.insert(order, operationId) end
+	receipts[operationId] = {
+		journalVersion = 1,
+		operationId = operationId,
+		idempotencyKey = idempotencyKey,
+		commandId = command.id or command.commandId,
+		commandType = command.type,
+		status = status,
+		result = result,
+		error = errorMessage,
+		recordedAt = os.time(),
+	}
+	while #order > COMMAND_RECEIPT_LIMIT do
+		local expiredOperationId = table.remove(order, 1)
+		receipts[expiredOperationId] = nil
+	end
+	return pcall(function()
+		plugin:SetSetting(COMMAND_RECEIPTS_SETTING, receipts)
+		plugin:SetSetting(COMMAND_RECEIPT_ORDER_SETTING, order)
+	end)
+end
+
 ack = function(commandOrId, status, result, errorMessage)
 	local token = getToken()
 	if not token then
@@ -6268,13 +6636,69 @@ ack = function(commandOrId, status, result, errorMessage)
 		local lease = type(command.lease) == "table" and command.lease or {}
 		receiptResult.leaseFence = receiptResult.leaseFence or lease.fence or command.leaseFence
 		receiptResult.lifecycleVersion = 2
+		receiptResult.operationId = receiptResult.operationId or command.operationId
+		receiptResult.idempotencyKey = receiptResult.idempotencyKey or command.idempotencyKey
+	end
+	local requestOptions = { idempotent = true }
+	if command and command.idempotencyKey then
+		requestOptions.idempotencyKey = tostring(command.idempotencyKey) .. ":studio-ack:" .. tostring(status)
+	end
+	if command and tonumber(command.lifecycleVersion) == 2
+		and (status == "succeeded" or status == "failed") then
+		storeCommandReceipt(command, status, receiptResult, errorMessage)
 	end
 	local ok = request("POST", "/api/studio/commands/" .. Services.HttpService:UrlEncode(tostring(commandId)) .. "/ack", {
 		status = status,
 		result = receiptResult,
 		error = errorMessage,
-	}, token, { idempotent = true })
+	}, token, requestOptions)
 	return ok == true
+end
+
+reconcileStoredCommandReceipt = function(command)
+	local stored = getStoredCommandReceipt(command and command.operationId)
+	if not stored then return false, false end
+	if tostring(stored.idempotencyKey or "") ~= tostring(command.idempotencyKey or "") then
+		local conflict = {
+			ok = false,
+			success = false,
+			verified = false,
+			code = "OPERATION_ID_CONFLICT",
+			operationId = command.operationId,
+			idempotencyKey = command.idempotencyKey,
+			error = {
+				code = "OPERATION_ID_CONFLICT",
+				message = "This operationId was already used with a different idempotencyKey",
+				retryable = false,
+			},
+		}
+		return true, ack(command, "failed", conflict, conflict.error.message)
+	end
+
+	local status, result, errorMessage = stored.status, stored.result, stored.error
+	if status == "started" then
+		status = "failed"
+		result = {
+			ok = false,
+			success = false,
+			verified = false,
+			outcome = "studio_state_uncertain",
+			code = "OPERATION_OUTCOME_UNCERTAIN",
+			operationId = command.operationId,
+			idempotencyKey = command.idempotencyKey,
+			error = {
+				code = "OPERATION_OUTCOME_UNCERTAIN",
+				message = "Studio restarted or lost connection after execution began; the mutation will not be replayed",
+				retryable = false,
+			},
+		}
+		errorMessage = result.error.message
+	end
+	if status ~= "succeeded" and status ~= "failed" then return false, false end
+	local confirmed = ack(command, status, result, errorMessage)
+	setBridgeState(confirmed and "live" or "reconciling", confirmed and "prior operation reconciled" or "stored result confirmation pending")
+	setLast(confirmed and "Reconciled a previously executed Studio operation" or "Stored Studio result is waiting for website confirmation")
+	return true, confirmed
 end
 
 local function commandStartedMs()
@@ -6751,6 +7175,15 @@ executeCommand = function(command)
 	end
 	local payload = command.payload or {}
 	local started = commandStartedMs()
+	-- This is the final mutation boundary. Re-read live game identity immediately
+	-- before invoking a write handler; approval-time checks are not sufficient
+	-- because the user can switch places while the prompt is open.
+	if isMutatingCommand(commandType) then
+		local targetOk, targetResult = validateCommandStudioTarget(command, "before_mutation", command._approvedStudioAttestation)
+		if not targetOk then
+			return targetResult
+		end
+	end
 	local result = handler(payload, command)
 	if type(result) ~= "table" then
 		result = { output = result }
@@ -6791,6 +7224,8 @@ executeCommand = function(command)
 	result.runId = command.runId
 	result.stepId = command.stepId
 	result.operation = commandType
+	result.operationId = command.operationId
+	result.idempotencyKey = command.idempotencyKey
 	result.affectedPaths = result.affectedPaths or affected
 	result.previousHashes = result.previousHashes or {}
 	result.resultingHashes = result.resultingHashes or {}
@@ -6800,6 +7235,7 @@ executeCommand = function(command)
 	result.duration = math.max(0, commandStartedMs() - started)
 	result.snapshotIds = result.snapshotIds or snapshotIds
 	result.retryable = result.retryable == true
+	result.targetAttestation = currentStudioTargetAttestation(true)
 
 	if (commandType == "get_project_manifest" or commandType == "inspect_place") and result.ok ~= false then
 		setManifestInfo({
@@ -6932,7 +7368,15 @@ local function finalizeCommandOutcome(command, applyOk, resultOrError)
 		else
 			message = tostring(rawError or "Studio command failed")
 		end
-		ack(command, "failed", resultOrError, message)
+		if not ack(command, "failed", resultOrError, message) then
+			resultOrError.outcome = isMutatingCommand(commandType) and "studio_state_uncertain" or "failed_unconfirmed"
+			resultOrError.receiptPending = true
+			setBridgeState("reconciling", "result confirmation pending")
+			setLast(commandType .. " finished locally; website confirmation is pending")
+			pushActivity({ commandType = commandType, status = "uncertain", duration = duration, snapshotCount = snapshotCount, detail = message })
+			showToast("Confirming " .. commandType .. " result", "info")
+			return "uncertain"
+		end
 		setLast(commandType .. " failed: " .. message)
 		pushActivity({
 			commandType = commandType,
@@ -6946,7 +7390,17 @@ local function finalizeCommandOutcome(command, applyOk, resultOrError)
 	end
 
 	if applyOk then
-		ack(command, "succeeded", resultOrError, nil)
+		if not ack(command, "succeeded", resultOrError, nil) then
+			if type(resultOrError) == "table" then
+				resultOrError.outcome = "applied_unconfirmed"
+				resultOrError.receiptPending = true
+			end
+			setBridgeState("reconciling", "applied; result confirmation pending")
+			setLast(commandType .. " applied in Studio; website confirmation is pending")
+			pushActivity({ commandType = commandType, status = "uncertain", duration = duration, snapshotCount = snapshotCount, detail = "Applied in Studio; result confirmation pending" })
+			showToast("Confirming " .. commandType .. " result", "info")
+			return "uncertain"
+		end
 		local extra = ""
 		if type(resultOrError) == "table" and resultOrError.validation then
 			local v = resultOrError.validation
@@ -6973,7 +7427,17 @@ local function finalizeCommandOutcome(command, applyOk, resultOrError)
 	end
 
 	local message = tostring(resultOrError)
-	ack(command, "failed", nil, message)
+	if not ack(command, "failed", {
+		outcome = isMutatingCommand(commandType) and "studio_state_uncertain" or "failed",
+		operationId = command.operationId,
+		idempotencyKey = command.idempotencyKey,
+	}, message) then
+		setBridgeState("reconciling", "result confirmation pending")
+		setLast(commandType .. " stopped with an uncertain Studio result; website confirmation is pending")
+		pushActivity({ commandType = commandType, status = "uncertain", duration = duration, detail = message })
+		showToast("Confirming " .. commandType .. " result", "info")
+		return "uncertain"
+	end
 	setLast(commandType .. " failed: " .. message)
 	pushActivity({
 		commandType = commandType,
@@ -7020,15 +7484,18 @@ pullOnce = function(waitMs)
 	setPollingPulse(false)
 
 	if statusCode == 401 or statusCode == 403 then
+		recordStudioFreshness("poll", false, "authentication expired", getLastLatencyMs())
 		handleSessionExpired()
 		return { authFailed = true, idle = false, hadCommand = false, error = true }
 	end
 
 	if not ok then
+		recordStudioFreshness("poll", false, tostring(data), getLastLatencyMs())
 		setBridgeState("degraded", "poll failed")
 		setLast(tostring(data))
 		return { authFailed = false, idle = false, hadCommand = false, error = true }
 	end
+	recordStudioFreshness("poll", true, nil, getLastLatencyMs())
 
 	if statusCode == 204 or not data or not data.command then
 		if not executorBusy and #commandQueue == 0 then
@@ -7036,7 +7503,12 @@ pullOnce = function(waitMs)
 			if compatibility == "degraded" then
 				setBridgeState("degraded", detail and ("Unavailable: " .. tostring(detail)) or "Some Studio features are unavailable")
 			else
-				setBridgeState("live")
+				local targetReady, targetDetail = getStudioTargetReadiness()
+				if targetReady == false then
+					setBridgeState("target_changed", targetDetail)
+				else
+					setBridgeState("live")
+				end
 			end
 			setActive("none")
 			setAgentPhase("idle")
@@ -7061,6 +7533,12 @@ pullOnce = function(waitMs)
 		if queuedCommandIds[command.id] or activeCommandId == command.id then
 			ack(command, "received", { duplicate = true }, nil)
 			return { authFailed = false, idle = false, hadCommand = true, error = false }
+		end
+		if isMutatingCommand(command.type) then
+			local reconciled, confirmed = reconcileStoredCommandReceipt(command)
+			if reconciled then
+				return { authFailed = false, idle = false, hadCommand = true, error = confirmed ~= true }
+			end
 		end
 		-- A durable received receipt is the acceptance boundary. Never execute a
 		-- reliable command when that receipt could not be persisted server-side.
@@ -7101,27 +7579,42 @@ function processNextCommand()
 	setBusy(true)
 	setBridgeState("working", command.label or command.type)
 
-	local finished = pcall(function()
+	local finished, outcome = pcall(function()
+		if isMutatingCommand(command.type) then
+			local targetOk, approvalAttestation = validateCommandStudioTarget(command, "before_approval", nil)
+			if not targetOk then
+				return finalizeCommandOutcome(command, true, approvalAttestation)
+			end
+			command._approvedStudioAttestation = approvalAttestation
+		end
 		if getApprovalModeEnabledExport() and isMutatingCommand(command.type) then
 			setBridgeState("working", "awaiting approval")
 			local approved = waitForApproval(command)
 			if not approved then
-				ack(command, "failed", nil, "declined in Studio")
-				setLast((command.type or "command") .. " declined in Studio")
-				pushActivity({
-					commandType = command.type or "command",
-					status = "failed",
-					detail = "declined in Studio",
+				return finalizeCommandOutcome(command, true, {
+					ok = false,
+					success = false,
+					code = "STUDIO_APPROVAL_DECLINED",
+					operationId = command.operationId,
+					idempotencyKey = command.idempotencyKey,
+					error = { code = "STUDIO_APPROVAL_DECLINED", message = "declined in Studio", retryable = false },
 				})
-				showToast("Command declined", "error")
-				return
 			end
 		end
 		if tonumber(command.lifecycleVersion) == 2 then
 			if not ack(command, "started", { stage = "started" }, nil) then
 				setLast("Command start receipt could not be saved; execution was deferred safely")
 				setBridgeState("degraded", "start receipt failed")
-				return
+				return "deferred"
+			end
+			if isMutatingCommand(command.type) and not storeCommandReceipt(command, "started", {
+				outcome = "execution_started",
+				operationId = command.operationId,
+				idempotencyKey = command.idempotencyKey,
+			}) then
+				setLast("The local operation journal could not be saved; execution was deferred safely")
+				setBridgeState("degraded", "operation journal unavailable")
+				return "deferred"
 			end
 		end
 
@@ -7134,7 +7627,7 @@ function processNextCommand()
 		else
 			finishRecording(recording, false)
 		end
-		finalizeCommandOutcome(command, applyOk, resultOrError)
+		return finalizeCommandOutcome(command, applyOk, resultOrError)
 	end)
 
 	executorBusy = false
@@ -7142,12 +7635,17 @@ function processNextCommand()
 	activeCommandId = nil
 	setActive("none")
 	setBusy(false)
-	if #commandQueue == 0 then
+	if #commandQueue == 0 and outcome ~= "uncertain" and outcome ~= "deferred" then
 		local compatibility, detail = getStudioCompatibilityStatus()
 		if compatibility == "degraded" then
 			setBridgeState("degraded", detail and ("Unavailable: " .. tostring(detail)) or "Some Studio features are unavailable")
 		else
-			setBridgeState("live")
+			local targetReady, targetDetail = getStudioTargetReadiness()
+			if targetReady == false then
+				setBridgeState("target_changed", targetDetail)
+			else
+				setBridgeState("live")
+			end
 		end
 	end
 	return finished ~= false
@@ -7172,10 +7670,17 @@ local compatibilityDetail = nil
 
 local function studioAttestationPayload()
 	local attestation = getPluginAttestation()
+	local target = currentStudioTargetAttestation(true)
 	local payload = {
-		placeName = game.Name,
-		placeId = tostring(game.PlaceId),
-		universeId = tostring(game.GameId),
+		connectorId = target.connectorId,
+		sessionId = target.sessionId,
+		targetId = target.targetId,
+		placeName = target.placeName,
+		placeId = target.placeId,
+		universeId = target.universeId,
+		placeSignature = target.placeSignature,
+		targetGeneration = target.targetGeneration,
+		attestedAt = target.attestedAt,
 		pluginVersion = attestation.pluginVersion,
 		protocolVersion = attestation.protocolVersion,
 		buildId = attestation.buildId,
@@ -7251,8 +7756,14 @@ local function applyCompatibility(heartbeat)
 			-- Compatible must leave CONNECTING. Previously only degraded/live
 			-- poll paths updated the pill, so a healthy handshake could stick on
 			-- "CONNECTING" / "Restoring Studio connection" forever.
-			setBridgeState("live")
-			setLast("Studio connection ready")
+			local targetReady, targetDetail = getStudioTargetReadiness()
+			if targetReady == false then
+				setBridgeState("target_changed", targetDetail)
+				setLast(targetDetail or "Select the website target that matches this open Studio place")
+			else
+				setBridgeState("live")
+				setLast("Studio connection ready")
+			end
 		end
 		return true
 	end
@@ -7304,6 +7815,7 @@ local function pairStudio()
 
 	setToken(dataOrError.token)
 	plugin:SetSetting("nexusrbxStudioSessionId", dataOrError.sessionId)
+	updateStudioServerTarget(dataOrError)
 	resetCompatibilityHandshake()
 	-- Pairing already returns the authoritative compatibility contract. Apply it
 	-- immediately so reconnect does not wait on a later ping that can leave the
@@ -7450,6 +7962,7 @@ disconnectButton.MouseButton1Click:Connect(function()
 	end)
 	plugin:SetSetting("nexusrbxStudioToken", nil)
 	plugin:SetSetting("nexusrbxStudioSessionId", nil)
+	clearStudioServerTarget()
 	resetCompatibilityHandshake()
 	codeBox.Text = ""
 	setProgress({})
@@ -7546,12 +8059,16 @@ task.spawn(function()
 	local failureCount = 0
 	while true do
 		if getToken() then
-			local signatureOk, signature = pcall(computePlaceSignature)
+			local studio = studioAttestationPayload()
 			local ok, latency, authExpired, heartbeat = pingSession(
 				getToken(),
-				signatureOk and signature or nil,
-				studioAttestationPayload()
+				studio.placeSignature,
+				studio
 			)
+			if type(heartbeat) == "table" then
+				updateStudioServerTarget(heartbeat)
+			end
+			recordStudioFreshness("heartbeat", ok, authExpired and "authentication expired" or (ok and nil or "heartbeat request failed"), latency)
 			local hadCompatibility = applyCompatibility(heartbeat)
 			if ok then
 				failureCount = 0
@@ -7592,6 +8109,7 @@ task.spawn(function()
 end)
 
 updateSnapshotLabel()
+publishStudioConnectionDiagnostics(currentStudioTargetAttestation(true))
 if getToken() then
 	setBridgeState("connecting")
 else

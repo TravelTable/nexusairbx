@@ -349,4 +349,35 @@ describe("MessageList pending activity", () => {
     expect(screen.queryByText("Preparing response...")).toBeNull();
     expect(screen.queryByText("Thinking...")).toBeNull();
   });
+
+  test("renders simultaneous pending runs in the same chat", () => {
+    render(
+      <MessageList
+        {...baseProps}
+        pendingMessages={[
+          {
+            role: "assistant",
+            content: "",
+            type: "chat",
+            prompt: "Build the inventory",
+            requestId: "run-one",
+            stage: "Planning inventory...",
+          },
+          {
+            role: "assistant",
+            content: "",
+            type: "chat",
+            prompt: "Fix the round timer",
+            requestId: "run-two",
+            stage: "Inspecting timer...",
+          },
+        ]}
+      />
+    );
+
+    expect(screen.getByText("Build the inventory")).toBeTruthy();
+    expect(screen.getByText("Fix the round timer")).toBeTruthy();
+    expect(screen.getByText("Planning inventory...")).toBeTruthy();
+    expect(screen.getByText("Inspecting timer...")).toBeTruthy();
+  });
 });

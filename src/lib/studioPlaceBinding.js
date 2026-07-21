@@ -106,7 +106,7 @@ export function findProjectByPlaceId(projects = [], placeId) {
  * Resolve which game the user should work on from live Studio status.
  *
  * @returns {{
- *   status: 'ready'|'auto_bind'|'needs_selection'|'needs_connect'|'oauth'|'draft',
+ *   status: 'ready'|'needs_selection'|'needs_connect'|'oauth'|'draft',
  *   title: string,
  *   placeId: string|null,
  *   universeId: string|null,
@@ -163,10 +163,13 @@ export function resolveGameIdentityFromStudioStatus(statusOrSnapshot = {}, {
 
   const prefTargetId = String(selectedTargetId || "").trim();
   const prefPlaceId = String(selectedPlaceId || "").trim();
-  const matched = options.find((option) => (
-    (prefTargetId && (option.id === prefTargetId || option.studioTargetId === prefTargetId))
-    || (prefPlaceId && option.placeId && option.placeId === prefPlaceId)
-  )) || null;
+  // An opaque target id is authoritative when present. Falling back to a
+  // matching place id after that target disappeared can silently move a write
+  // to another Studio session that happens to have the same place open.
+  const matched = options.find((option) => prefTargetId
+    ? option.id === prefTargetId || option.studioTargetId === prefTargetId
+    : prefPlaceId && option.placeId && option.placeId === prefPlaceId
+  ) || null;
 
   if (matched) {
     const title = resolveGameTitleFromTarget(matched, oauthFallback);
@@ -183,23 +186,7 @@ export function resolveGameIdentityFromStudioStatus(statusOrSnapshot = {}, {
     };
   }
 
-  if (options.length === 1) {
-    const target = options[0];
-    const title = resolveGameTitleFromTarget(target, oauthFallback);
-    return {
-      status: "auto_bind",
-      title,
-      placeId: target.placeId && target.placeId !== "0" ? target.placeId : null,
-      universeId: target.universeId || oauthFallback?.universeId || null,
-      studioTargetId: target.studioTargetId || target.id,
-      studioTargetLabel: target.label || title,
-      source: "studio",
-      target,
-      options,
-    };
-  }
-
-  if (options.length > 1) {
+  if (options.length > 0) {
     return {
       status: "needs_selection",
       title: "Untitled game",
@@ -303,7 +290,10 @@ export function buildStudioTargetPreference(option = {}) {
 }
 
 /**
- * @returns {{ status: 'ready'|'needs_connect'|'needs_selection'|'auto_bind'|'needs_plugin', target?: object, options: object[] }}
+ * A live target is never inferred from the number of options. The user must
+ * explicitly bind a target before Studio writes are enabled.
+ *
+ * @returns {{ status: 'ready'|'needs_connect'|'needs_selection'|'needs_plugin', target?: object, options: object[] }}
  */
 export function evaluateStudioPlaceGate({
   studioEnabled = false,
@@ -327,15 +317,12 @@ export function evaluateStudioPlaceGate({
   const pref = preference && typeof preference === "object" ? preference : null;
   const prefTargetId = String(pref?.targetId || pref?.studioTargetId || "").trim();
   const prefPlaceId = String(pref?.placeId || "").trim();
-  const matched = liveOptions.find((option) => (
-    (prefTargetId && (option.id === prefTargetId || option.studioTargetId === prefTargetId)) ||
-    (prefPlaceId && option.placeId && option.placeId === prefPlaceId)
-  ));
+  const matched = liveOptions.find((option) => prefTargetId
+    ? option.id === prefTargetId || option.studioTargetId === prefTargetId
+    : prefPlaceId && option.placeId && option.placeId === prefPlaceId
+  );
   if (matched) {
     return { status: "ready", target: matched, options: liveOptions };
-  }
-  if (liveOptions.length === 1) {
-    return { status: "auto_bind", target: liveOptions[0], options: liveOptions };
   }
   return { status: "needs_selection", options: liveOptions };
 }

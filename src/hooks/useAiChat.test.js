@@ -1,5 +1,5 @@
 import { act, renderHook } from "@testing-library/react";
-import { useAiChat } from "./useAiChat";
+import { useAiChat, waitForAuthoritativeRunJob } from "./useAiChat";
 import { auth } from "../firebase";
 import { useBilling } from "../context/BillingContext";
 import { ensureStreamSession } from "../lib/streamSession";
@@ -8,7 +8,8 @@ import { onAiEvent } from "../lib/aiEvents";
 import { FEATURE_FLAGS } from "../lib/featureFlags";
 import { getStudioEnabledPreference } from "../lib/agentSteps";
 import { getStudioStatus } from "../lib/studioBridgeApi";
-import { doc, getDocs, serverTimestamp, setDoc, updateDoc } from "firebase/firestore";
+import { doc, getDocs, onSnapshot, serverTimestamp, setDoc, updateDoc } from "firebase/firestore";
+import { createAgentV2, extractAgentEvents } from "../lib/agentRuntimeV2Api";
 
 jest.mock("../firebase", () => ({
   auth: {
@@ -77,6 +78,14 @@ jest.mock("../lib/workflowApi", () => ({
   getAgentRun: jest.fn(),
 }));
 
+jest.mock("../lib/agentRuntimeV2Api", () => ({
+  createAgentV2: jest.fn(),
+  extractAgentEvents: jest.fn((value) => value?.events || value?.data?.events || []),
+  getAgentEventsV2: jest.fn(),
+  getAgentV2: jest.fn(),
+  normalizeAgentProjection: jest.fn((value) => value?.agent || value),
+}));
+
 jest.mock("../lib/streaming", () => ({
   applyReasoningDelta: jest.fn((state) => state),
   applyStreamActivity: jest.fn((state) => state),
@@ -130,6 +139,7 @@ describe("useAiChat", () => {
     });
     doc.mockImplementation((...segments) => ({ segments }));
     getDocs.mockResolvedValue({ docs: [] });
+    onSnapshot.mockImplementation(() => jest.fn());
     serverTimestamp.mockImplementation(() => "timestamp");
     setDoc.mockImplementation(() => Promise.resolve());
     updateDoc.mockImplementation(() => Promise.resolve());
@@ -140,7 +150,36 @@ describe("useAiChat", () => {
     FEATURE_FLAGS.newTaskRuntime = false;
     getStudioEnabledPreference.mockReturnValue(false);
     getStudioStatus.mockReset();
+    createAgentV2.mockResolvedValue({ agent: { agentId: "agent-1" } });
+    extractAgentEvents.mockImplementation((value) => value?.events || value?.data?.events || []);
     auth.currentUser = null;
+  });
+
+  test("keeps a local New Chat without fabricating an agent id when projection is unavailable", async () => {
+    const user = { uid: "user_1", getIdToken: jest.fn().mockResolvedValue("token_1") };
+    auth.currentUser = user;
+    createAgentV2.mockRejectedValueOnce(new Error("runtime disconnected"));
+    const warn = jest.spyOn(console, "warn").mockImplementation(() => {});
+    const settings = {};
+    const refreshBilling = jest.fn();
+    const notify = jest.fn();
+    const { result } = renderHook(() => useAiChat(user, settings, refreshBilling, notify));
+
+    let chatId;
+    await act(async () => {
+      chatId = await result.current.startNewChat();
+    });
+    warn.mockRestore();
+
+    expect(chatId).toEqual(expect.any(String));
+    const creationCall = setDoc.mock.calls.find(([, payload]) => payload?.chatId === chatId);
+    expect(creationCall).toBeTruthy();
+    expect(creationCall[1]).toEqual(expect.objectContaining({
+      chatId,
+      agentRuntimeStatus: "unavailable",
+      agentRuntimeError: "runtime disconnected",
+    }));
+    expect(creationCall[1]).not.toHaveProperty("agentId");
   });
 
   test("persists an assistant failure when result recovery fails without a run id", async () => {
@@ -218,7 +257,7 @@ describe("useAiChat", () => {
 
   test.each([
     [
-      "uses an MCP-only session without enabling plugin auto-push",
+      "uses an MCP-only session without inferring a Studio target",
       [{
         id: "mcp_1",
         connectionType: "mcp_local",
@@ -233,12 +272,12 @@ describe("useAiChat", () => {
         studioSessionId: "mcp_1",
         studioConnectionType: "mcp_local",
         routingMode: "hybrid",
-        targetPlaceId: "place_1",
+        targetPlaceId: null,
         autoPushToStudio: false,
       },
     ],
     [
-      "prefers Local MCP for hybrid runs when both providers serve the same place",
+      "prefers Local MCP transport without inferring a target from matching place ids",
       [
         {
           id: "mcp_1",
@@ -263,7 +302,7 @@ describe("useAiChat", () => {
         studioSessionId: "mcp_1",
         studioConnectionType: "mcp_local",
         routingMode: "hybrid",
-        targetPlaceId: "place_1",
+        targetPlaceId: null,
         autoPushToStudio: false,
       },
     ],
@@ -463,5 +502,74 @@ describe("useAiChat", () => {
     expect(requestBody).not.toHaveProperty("activeTaskId");
     expect(requestBody).not.toHaveProperty("showPlan");
     expect(onTaskAccepted).not.toHaveBeenCalled();
+  });
+
+  test("waits for queued admission and the backend-assigned job before attaching", async () => {
+    const getEvents = jest.fn().mockResolvedValue({
+      lastSequence: 12,
+      events: [{
+        sequence: 12,
+        type: "run.admitted",
+        payload: { runId: "run-queued" },
+      }],
+    });
+    const getAgent = jest.fn()
+      .mockResolvedValueOnce({
+        agent: { agentId: "agent-1" },
+        runs: [{ runId: "run-queued", status: "running", jobId: null }],
+      })
+      .mockResolvedValueOnce({
+        agent: { agentId: "agent-1" },
+        runs: [{ runId: "run-queued", status: "running", jobId: "job-queued" }],
+      });
+    const waitForPoll = jest.fn().mockResolvedValue();
+
+    const run = await waitForAuthoritativeRunJob({
+      agentId: "agent-1",
+      runId: "run-queued",
+      getEvents,
+      getAgent,
+      wait: waitForPoll,
+    });
+
+    expect(run).toEqual(expect.objectContaining({
+      runId: "run-queued",
+      jobId: "job-queued",
+    }));
+    expect(getEvents).toHaveBeenCalledTimes(1);
+    expect(getEvents).toHaveBeenCalledWith(0);
+    expect(getAgent).toHaveBeenCalledTimes(2);
+    expect(waitForPoll).toHaveBeenCalledTimes(1);
+  });
+
+  test("keeps a queued run alive across a transient events disconnect", async () => {
+    const getEvents = jest.fn()
+      .mockRejectedValueOnce(new Error("offline"))
+      .mockResolvedValueOnce({
+        data: {
+          lastSequence: 21,
+          events: [{
+            sequence: 21,
+            type: "run.admitted",
+            payload: { runId: "run-reconnect" },
+          }],
+        },
+      });
+    const getAgent = jest.fn().mockResolvedValue({
+      runs: [{ runId: "run-reconnect", status: "running", jobId: "job-reconnect" }],
+    });
+    const onStatus = jest.fn();
+
+    await expect(waitForAuthoritativeRunJob({
+      agentId: "agent-1",
+      runId: "run-reconnect",
+      onStatus,
+      getEvents,
+      getAgent,
+      wait: jest.fn().mockResolvedValue(),
+    })).resolves.toEqual(expect.objectContaining({ jobId: "job-reconnect" }));
+
+    expect(onStatus).toHaveBeenCalledWith("Queued — reconnecting...");
+    expect(getEvents).toHaveBeenNthCalledWith(2, 0);
   });
 });

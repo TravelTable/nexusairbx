@@ -24,9 +24,11 @@ import CodeFileTree from "../../components/ai/workspace/CodeFileTree";
 import CodeWorkspace from "../../components/ai/workspace/CodeWorkspace";
 import AgentChatPanel from "../../components/ai/workspace/AgentChatPanel";
 import TaskProgressPanel from "../../components/ai/workspace/TaskProgressPanel";
+import ActiveAgentsTray from "../../components/ai/workspace/ActiveAgentsTray";
 import BuildDetailsPanel from "../../components/ai/workspace/BuildDetailsPanel";
 import RobloxDecalUploadDropdown from "../../components/ai/workspace/RobloxDecalUploadDropdown";
 import useTaskRuntime from "../../hooks/useTaskRuntime";
+import useActiveAgents from "../../hooks/useActiveAgents";
 import QuickScriptWorkspace from "./QuickScriptWorkspace";
 import { getStudioCommand, getStudioManifest, getStudioManifestStatus, queueStudioTool } from "../../lib/studioBridgeApi";
 import { PENDING_AUTH_ACTIONS } from "../../lib/pendingAuthAction";
@@ -82,6 +84,16 @@ export default function AgentWorkspaceLayout({ controller }) {
   } = uiState;
 
   const { chat, scriptManager, unified, workspace, settings } = modules;
+  const activeAgentRuntime = useActiveAgents(user, {
+    fallbackChatIds: unified.generatingChatIds,
+  });
+  const activeAgentStatusByChat = useMemo(() => {
+    const statuses = {};
+    activeAgentRuntime.agents.forEach((agent) => {
+      if (agent.chatId) statuses[agent.chatId] = agent.status;
+    });
+    return statuses;
+  }, [activeAgentRuntime.agents]);
   const studioCommandSessionId =
     getStudioSessionId(studio?.manifestSession) ||
     getStudioSessionId(studio?.compatiblePluginSession) ||
@@ -676,6 +688,13 @@ export default function AgentWorkspaceLayout({ controller }) {
 
   const agentChat = (
     <div className="flex min-h-0 flex-1 flex-col">
+      <ActiveAgentsTray
+        agents={activeAgentRuntime.agents}
+        onOpenChat={chat.openChatById}
+        onCancelRun={(runId) => activeAgentRuntime.cancelRun(runId).catch((error) => {
+          notify({ message: error?.message || "Could not cancel that run", type: "error" });
+        })}
+      />
       {taskRuntime.task && (
         <div className="shrink-0 border-b border-white/5 p-3">
           <TaskProgressPanel
@@ -697,6 +716,7 @@ export default function AgentWorkspaceLayout({ controller }) {
           currentChatId={chat.currentChatId}
           messages={chat.messages}
           pendingMessage={unified.pendingMessage}
+          pendingMessages={unified.pendingMessages}
           generationStage={unified.generationStage}
           user={user}
           profile={roblox?.connected ? roblox?.status?.connection?.profile || null : null}
@@ -930,7 +950,8 @@ export default function AgentWorkspaceLayout({ controller }) {
                 setActiveTab={() => setActiveTab("chat")}
                 scripts={scripts}
                 currentChatId={chat.currentChatId}
-                generatingChatIds={chat.generatingChatIds}
+                generatingChatIds={unified.generatingChatIds}
+                activeAgentStatusByChat={activeAgentStatusByChat}
                 currentScriptId={scriptManager.currentScriptId}
                 setCurrentScriptId={scriptManager.setCurrentScriptId}
                 handleCreateScript={scriptManager.handleCreateScript}

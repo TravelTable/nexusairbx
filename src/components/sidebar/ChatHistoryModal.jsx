@@ -16,6 +16,7 @@ export default function ChatHistoryModal({
   onRenameCommit,
   onRenameCancel,
   onDeleteClick,
+  activeAgentStatusByChat = {},
 }) {
   const [searchTerm, setSearchTerm] = useState("");
   const [displayLimit, setDisplayLimit] = useState(10);
@@ -88,6 +89,7 @@ export default function ChatHistoryModal({
                   key={c.id}
                   chat={c}
                   currentChatId={currentChatId}
+                  agentStatus={activeAgentStatusByChat[c.id] || null}
                   onOpenChat={(id) => {
                     onOpenChat(id);
                     onClose();

@@ -1,7 +1,5 @@
 import { useCallback, useMemo, useRef, useState } from "react";
 import {
-  addDoc,
-  collection,
   doc,
   setDoc,
   updateDoc,
@@ -23,7 +21,7 @@ import { stageSlug } from "../lib/streamEngagement";
 import { resolveGameSpecForPrompt } from "../lib/gameProfile";
 import { categorizePrompt, trackProductEvent } from "../lib/productAnalytics";
 import { FEATURE_FLAGS } from "../lib/featureFlags";
-import { getStudioEnabledPreference } from "../lib/agentSteps";
+import { getStudioApplyMode, getStudioEnabledPreference } from "../lib/agentSteps";
 import { getStudioStatus } from "../lib/studioBridgeApi";
 import {
   getStudioConnectionType,
@@ -36,6 +34,11 @@ import {
   messageToConversationEntry,
   normalizeChatAttachments,
 } from "../lib/chatAttachments";
+import {
+  createAgentRunV2,
+  createAgentV2,
+  normalizeAgentProjection,
+} from "../lib/agentRuntimeV2Api";
 
 function seedOrchestrationStream(stage = "Understanding your task...") {
   return applyStreamActivity(createPendingStreamState(), {
@@ -53,6 +56,46 @@ function buildOrchestrationPending(state, stage, metadata = {}) {
     streamState: getPendingStreamSnapshot(state),
     ...metadata,
   };
+}
+
+function buildRuntimeSettings(settings = {}, gameSpec = null) {
+  const normalized = {
+    modelVersion: String(settings?.modelVersion || ""),
+    creativity: Number.isFinite(Number(settings?.creativity))
+      ? Number(settings.creativity)
+      : 0.7,
+    codeStyle: String(settings?.codeStyle || "optimized"),
+    verbosity: String(settings?.verbosity || "concise"),
+    codingStandards: String(settings?.codingStandards || ""),
+    gameSpec: String(gameSpec || ""),
+    enableGameWizard: settings?.enableGameWizard !== false,
+    showThinking: settings?.showThinking !== false,
+    studioAutoPushEnabled: settings?.studioAutoPushEnabled === true,
+    studioAutoPushPolicy: String(settings?.studioAutoPushPolicy || "after_validation"),
+    robloxAssetUploadsEnabled: settings?.robloxAssetUploadsEnabled === true,
+    allowPlaceholderAssets: settings?.allowPlaceholderAssets === true,
+    useExamples: settings?.useExamples === true,
+  };
+  if (Array.isArray(settings?.selectedExampleIds)) {
+    normalized.selectedExampleIds = settings.selectedExampleIds.map(String).slice(0, 12);
+  }
+  return normalized;
+}
+
+function normalizeApprovedPlanReference(value) {
+  if (!value || typeof value !== "object") return null;
+  const planId = String(value.planId || "").trim();
+  const hash = String(value.hash || value.planHash || "").trim();
+  const version = Number(value.version);
+  if (!planId || !hash || !Number.isInteger(version) || version < 1) return null;
+  return { planId, version, hash };
+}
+
+function runtimeAutoPushPolicy(settings = {}) {
+  const policy = String(settings?.studioAutoPushPolicy || "").trim();
+  return policy === "after_validation" || policy === "after_playtest"
+    ? policy
+    : "manual_only";
 }
 
 /**
@@ -74,25 +117,32 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
 
   // The pre-generation "flow" phase (orchestration / Ask streaming) is tracked
   // per originating chat, mirroring how useAiChat scopes the generation phase.
-  const [flowBusyChats, setFlowBusyChats] = useState({}); // chatId -> bool
-  const [orchestrationPendingByChat, setOrchestrationPendingByChat] = useState({});
+  const [flowBusyChats, setFlowBusyChats] = useState({}); // chatId -> requestId -> bool
+  const [orchestrationPendingByChat, setOrchestrationPendingByChat] = useState({}); // chatId -> requestId -> pending
   const orchestrationStreamRef = useRef({});
-  const newChatPromiseRef = useRef(null);
   const submitLocksRef = useRef({});
-  const setFlowBusyForChat = useCallback((chatId, value) => {
+  const setFlowBusyForChat = useCallback((chatId, requestId, value) => {
     if (!chatId) return;
     setFlowBusyChats((prev) => {
-      if (Boolean(prev[chatId]) === Boolean(value)) return prev;
-      return { ...prev, [chatId]: value };
+      const chatRuns = prev[chatId] || {};
+      if (Boolean(chatRuns[requestId]) === Boolean(value)) return prev;
+      const nextChatRuns = { ...chatRuns };
+      if (value) nextChatRuns[requestId] = true;
+      else delete nextChatRuns[requestId];
+      const result = { ...prev };
+      if (Object.keys(nextChatRuns).length) result[chatId] = nextChatRuns;
+      else delete result[chatId];
+      return result;
     });
   }, []);
 
-  const flowBusy = !!flowBusyChats[chat.currentChatId];
+  const flowBusy = Object.values(flowBusyChats[chat.currentChatId] || {}).some(Boolean);
 
-  const publishOrchestrationStage = useCallback((chatId, label) => {
+  const publishOrchestrationStage = useCallback((chatId, requestId, label) => {
     if (!chatId || !label) return;
-    orchestrationStreamRef.current[chatId] = applyStreamActivity(
-      orchestrationStreamRef.current[chatId] || createPendingStreamState(),
+    const streamKey = `${chatId}:${requestId}`;
+    orchestrationStreamRef.current[streamKey] = applyStreamActivity(
+      orchestrationStreamRef.current[streamKey] || createPendingStreamState(),
       {
         id: `stage-${stageSlug(label)}`,
         type: "stage",
@@ -102,64 +152,70 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
     );
     setOrchestrationPendingByChat((prev) => ({
       ...prev,
-      [chatId]: buildOrchestrationPending(
-        orchestrationStreamRef.current[chatId],
-        label,
-        {
-          requestId: prev[chatId]?.requestId,
-          prompt: prev[chatId]?.prompt,
-        }
-      ),
+      [chatId]: {
+        ...(prev[chatId] || {}),
+        [requestId]: buildOrchestrationPending(
+          orchestrationStreamRef.current[streamKey],
+          label,
+          {
+            requestId,
+            prompt: prev[chatId]?.[requestId]?.prompt,
+          }
+        ),
+      },
     }));
   }, []);
 
   const beginOrchestrationPending = useCallback((chatId, requestId, prompt = "") => {
     const state = seedOrchestrationStream();
-    orchestrationStreamRef.current[chatId] = state;
+    orchestrationStreamRef.current[`${chatId}:${requestId}`] = state;
     setOrchestrationPendingByChat((prev) => ({
       ...prev,
-      [chatId]: buildOrchestrationPending(state, "Understanding your task...", {
-        requestId,
-        prompt,
-      }),
+      [chatId]: {
+        ...(prev[chatId] || {}),
+        [requestId]: buildOrchestrationPending(state, "Understanding your task...", {
+          requestId,
+          prompt,
+        }),
+      },
     }));
   }, []);
 
-  const clearOrchestrationPending = useCallback((chatId) => {
+  const clearOrchestrationPending = useCallback((chatId, requestId) => {
     if (!chatId) return;
-    delete orchestrationStreamRef.current[chatId];
+    delete orchestrationStreamRef.current[`${chatId}:${requestId}`];
     setOrchestrationPendingByChat((prev) => {
-      if (!prev[chatId]) return prev;
-      const next = { ...prev };
-      delete next[chatId];
-      return next;
+      if (!prev[chatId]?.[requestId]) return prev;
+      const chatPending = { ...prev[chatId] };
+      delete chatPending[requestId];
+      const result = { ...prev };
+      if (Object.keys(chatPending).length) result[chatId] = chatPending;
+      else delete result[chatId];
+      return result;
     });
   }, []);
 
   const isGenerating = chat.isGenerating || flowBusy;
 
-  const pendingMessage = useMemo(() => {
-    if (chat.pendingMessage) return chat.pendingMessage;
-    if (flowBusy && chat.currentChatId) {
-      return orchestrationPendingByChat[chat.currentChatId]
-        || buildOrchestrationPending(seedOrchestrationStream(), "Understanding your task...");
-    }
-    return null;
-  }, [chat.pendingMessage, chat.currentChatId, flowBusy, orchestrationPendingByChat]);
+  const pendingMessages = useMemo(() => [
+    ...(chat.pendingMessages || []),
+    ...Object.values(orchestrationPendingByChat[chat.currentChatId] || {}).filter(Boolean),
+  ], [chat.pendingMessages, chat.currentChatId, orchestrationPendingByChat]);
+  const pendingMessage = pendingMessages[pendingMessages.length - 1] || null;
 
   const generationStage = useMemo(() => {
     if (chat.generationStage) return chat.generationStage;
     if (flowBusy) {
-      return orchestrationPendingByChat[chat.currentChatId]?.stage || "Understanding your task...";
+      return pendingMessage?.stage || "Understanding your task...";
     }
     return "";
-  }, [chat.generationStage, chat.currentChatId, flowBusy, orchestrationPendingByChat]);
+  }, [chat.generationStage, flowBusy, pendingMessage?.stage]);
 
   // Chats with any in-flight work (orchestration or generation) — for sidebar badges.
   const generatingChatIds = useMemo(() => {
     const set = new Set(chat.generatingChatIds || []);
     Object.keys(flowBusyChats).forEach((id) => {
-      if (flowBusyChats[id]) set.add(id);
+      if (Object.values(flowBusyChats[id] || {}).some(Boolean)) set.add(id);
     });
     return Array.from(set);
   }, [chat.generatingChatIds, flowBusyChats]);
@@ -169,32 +225,15 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
     async (titleSeed, { projectId = null, studioTargetPreference = null } = {}) => {
       let activeChatId = chat.currentChatId;
       if (!activeChatId) {
-        if (!newChatPromiseRef.current) {
-          newChatPromiseRef.current = (async () => {
-            const seed = String(titleSeed || "New chat");
-            let selectedProjectId = String(projectId || "").trim();
-            if (!selectedProjectId) {
-              try {
-                selectedProjectId = String(localStorage.getItem("nexusrbx.selectedWorkspaceProjectId") || "").trim();
-              } catch (_) {
-                selectedProjectId = "";
-              }
-            }
-            const payload = {
-              title: seed.slice(0, 30) + (seed.length > 30 ? "..." : ""),
-              createdAt: serverTimestamp(),
-              updatedAt: serverTimestamp(),
-            };
-            if (selectedProjectId) payload.projectId = selectedProjectId;
-            if (studioTargetPreference) payload.studioTargetPreference = studioTargetPreference;
-            const newChatRef = await addDoc(collection(db, "users", user.uid, "chats"), payload);
-            chat.openChatById(newChatRef.id);
-            return newChatRef.id;
-          })().finally(() => {
-            newChatPromiseRef.current = null;
+        activeChatId = await chat.startNewChat({ projectId, studioTargetPreference });
+        const seed = String(titleSeed || "New chat");
+        if (activeChatId && seed !== "New chat") {
+          await updateDoc(doc(db, "users", user.uid, "chats", activeChatId), {
+            title: seed.slice(0, 30) + (seed.length > 30 ? "..." : ""),
+            lifecycle: "active",
+            updatedAt: serverTimestamp(),
           });
         }
-        activeChatId = await newChatPromiseRef.current;
       }
       return activeChatId;
     },
@@ -233,6 +272,109 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
     },
     [user, touchChat]
   );
+
+  const ensureRuntimeAgentProjection = useCallback(async (
+    activeChatId,
+    submitOptions = {},
+    { required = false } = {}
+  ) => {
+    try {
+      const projectId = submitOptions.projectId || null;
+      const created = await createAgentV2({
+        chatId: activeChatId,
+        projectId,
+        idempotencyKey: `agent-${activeChatId}`,
+      });
+      const agent = normalizeAgentProjection(created);
+      if (!agent?.agentId) throw new Error("Agent runtime did not return an agent id");
+      await setDoc(
+        doc(db, "users", user.uid, "chats", activeChatId),
+        {
+          agentId: agent.agentId,
+          agentRuntimeStatus: "ready",
+          agentRuntimeError: null,
+          lifecycle: "active",
+          updatedAt: serverTimestamp(),
+        },
+        { merge: true }
+      );
+      return agent;
+    } catch (error) {
+      console.warn("Could not refresh the v2 agent projection.", error);
+      try {
+        await setDoc(
+          doc(db, "users", user.uid, "chats", activeChatId),
+          {
+            agentRuntimeStatus: "unavailable",
+            agentRuntimeError: String(error?.message || "Agent runtime unavailable"),
+            updatedAt: serverTimestamp(),
+          },
+          { merge: true }
+        );
+      } catch (_) {
+        // Projection metadata is diagnostic and must not break Ask/Plan flows.
+      }
+      if (required) throw error;
+      return null;
+    }
+  }, [user]);
+
+  const launchAuthoritativeRun = useCallback(async ({
+    activeChatId,
+    requestId,
+    prompt,
+    mode,
+    attachments = [],
+    baseArtifact = null,
+    submissionOptions = {},
+  }) => {
+    const agent = await ensureRuntimeAgentProjection(
+      activeChatId,
+      submissionOptions,
+      { required: true }
+    );
+    const studioEnabled = getStudioEnabledPreference() === true;
+    const autoPushToStudio = studioEnabled && settings?.studioAutoPushEnabled === true;
+    const approvedPlan = normalizeApprovedPlanReference(submissionOptions.approvedPlan);
+    const runtimeEnvelope = await createAgentRunV2({
+      chatId: activeChatId,
+      agentId: agent.agentId,
+      idempotencyKey: `run-${requestId}`,
+      prompt,
+      mode,
+      projectId: submissionOptions.projectId || agent.projectId,
+      attachments: normalizeChatAttachments(attachments),
+      settings: buildRuntimeSettings(settings, effectiveGameSpec),
+      conversation: (chat.messages || []).slice(-10).map(messageToConversationEntry).filter(Boolean),
+      baseArtifact: baseArtifact || null,
+      generatorMode: "agent_build",
+      studioEnabled,
+      applyMode: getStudioApplyMode(),
+      routingMode: studioEnabled ? "hybrid" : "cloud",
+      autoPushToStudio,
+      autoPushPolicy: runtimeAutoPushPolicy(settings),
+      ...(approvedPlan ? { approvedPlan } : {}),
+      chatMode: mode === "debug" ? "debug" : "agent",
+      selectedExampleIds: Array.isArray(submissionOptions.selectedExampleIds)
+        ? submissionOptions.selectedExampleIds
+        : [],
+      showPlan: submissionOptions.showPlan === true,
+    });
+    if (!runtimeEnvelope?.authoritativeExecution || !runtimeEnvelope?.run?.runId) {
+      throw new Error("The durable agent runtime did not accept this executable request.");
+    }
+    await chat.handleSubmit(
+      prompt,
+      activeChatId,
+      requestId,
+      mode === "debug" ? "debug" : "agent",
+      true,
+      attachments,
+      baseArtifact,
+      { ...submissionOptions, authoritativeRun: runtimeEnvelope }
+    );
+    return runtimeEnvelope;
+  }, [chat, effectiveGameSpec, ensureRuntimeAgentProjection, settings]);
 
   const writeOrchestrationResult = useCallback(
     async (activeChatId, requestId, decision, originPrompt, attachments) => {
@@ -284,6 +426,8 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
           role: "assistant",
           stage: "plan",
           planId: decision.planId,
+          planVersion: decision.planVersion || 1,
+          planHash: decision.planHash || "",
           classification: decision.classification || "script",
           aiSummary: decision.aiSummary || "",
           aiSteps: Array.isArray(decision.aiSteps) ? decision.aiSteps : [],
@@ -318,29 +462,29 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
       submissionOptions = {}
     ) => {
       const requestId = uuidv4();
-      await chat.handleSubmit(
-        prompt,
+      await launchAuthoritativeRun({
         activeChatId,
         requestId,
-        null,
-        true,
+        prompt,
+        mode: "act",
         attachments,
         baseArtifact,
-        submissionOptions
-      );
+        submissionOptions,
+      });
     },
-    [chat]
+    [launchAuthoritativeRun]
   );
 
   const approvePlanInternal = useCallback(
     async (message, baseArtifact = null, submissionOptions = {}) => {
       if (!user || !message?.planId) return;
-      if (isGenerating) return;
-
       const activeChatId = chat.currentChatId;
       if (!activeChatId) return;
 
-      await approveWorkflowPlan(message.planId);
+      const approval = await approveWorkflowPlan(message.planId, {
+        version: message.planVersion || 1,
+        hash: message.planHash || undefined,
+      });
       void trackProductEvent("plan_approved", {
         generator_mode: chat.activeMode || "agent",
         output_type: message.classification || "script",
@@ -363,10 +507,17 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
         message.originPrompt || "",
         message.attachments || [],
         baseArtifact,
-        submissionOptions
+        {
+          ...submissionOptions,
+          approvedPlan: approval.approvedPlan || {
+            planId: message.planId,
+            version: message.planVersion || 1,
+            hash: message.planHash || "",
+          },
+        }
       );
     },
-    [user, isGenerating, chat.currentChatId, chat.activeMode, runGeneration]
+    [user, chat.currentChatId, chat.activeMode, runGeneration]
   );
 
   // ASK mode: read-only conversational streaming. No orchestrate, no plan, no job.
@@ -382,7 +533,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
         type: "chat",
         prompt: requestPrompt,
         stage: "Thinking...",
-      });
+      }, requestId);
 
       const studioEnabled = FEATURE_FLAGS.unifiedAgent && getStudioEnabledPreference();
       let studioSessionId = null;
@@ -399,8 +550,10 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
             ? getStudioConnectionType(activeSession)
             : null;
           if (studioSessionId) {
-            chat.setPendingForChat(activeChatId, (prev) =>
-              prev ? { ...prev, stage: "Reading Studio project..." } : prev
+            chat.setPendingForChat(
+              activeChatId,
+              (prev) => prev ? { ...prev, stage: "Reading Studio project..." } : prev,
+              requestId
             );
           }
         } catch (_) {
@@ -439,12 +592,16 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
           }
           full += decoder.decode(value, { stream: true });
           const snapshot = full;
-          chat.setPendingForChat(activeChatId, (prev) => (prev ? { ...prev, content: snapshot, stage: "" } : prev));
+          chat.setPendingForChat(
+            activeChatId,
+            (prev) => (prev ? { ...prev, content: snapshot, stage: "" } : prev),
+            requestId
+          );
         }
       } catch (err) {
         throw err instanceof Error ? err : new Error(String(err || "Ask request failed"));
       } finally {
-        chat.setPendingForChat(activeChatId, null);
+        chat.setPendingForChat(activeChatId, null, requestId);
       }
       if (!full.trim()) {
         throw new Error("The assistant returned an empty response. Please try again.");
@@ -489,9 +646,8 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
         onSignInNudge?.();
         return;
       }
-      if (isGenerating) return;
-
-      const submitLockKey = chat.currentChatId || "__new_chat__";
+      const requestId = options?.clientMessageId || uuidv4();
+      const submitLockKey = requestId;
       if (submitLocksRef.current[submitLockKey]) return;
       submitLocksRef.current[submitLockKey] = true;
       try {
@@ -509,7 +665,6 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
           return;
         }
 
-        const requestId = uuidv4();
         let activeChatId = chat.currentChatId;
 
         // Agent & Debug: Cursor-style. No orchestration, no plan card, no canned
@@ -529,33 +684,32 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
 
           if (prompt && conversationalOnly) {
             try {
-              activeChatId = await ensureChat(titleSeed);
-              setFlowBusyForChat(activeChatId, true);
+              activeChatId = await ensureChat(titleSeed, options);
+              setFlowBusyForChat(activeChatId, requestId, true);
               await writeUserMessage(activeChatId, requestId, prompt, currentAttachments);
+              await ensureRuntimeAgentProjection(activeChatId, options);
               await handleAskSubmit(prompt, currentAttachments, activeChatId, requestId);
             } catch (err) {
               console.error("Conversation error:", err);
               notify?.({ message: err?.message || "Could not respond. You can try again.", type: "error" });
             } finally {
-              setFlowBusyForChat(activeChatId, false);
+              setFlowBusyForChat(activeChatId, requestId, false);
             }
             return;
           }
 
           try {
-            activeChatId = await ensureChat(titleSeed);
-            // existingRequestId=null lets the generation hook write the user
-            // message itself, so there is exactly one user bubble.
-            await chat.handleSubmit(
-              prompt,
+            activeChatId = await ensureChat(titleSeed, options);
+            await writeUserMessage(activeChatId, requestId, prompt, currentAttachments);
+            await launchAuthoritativeRun({
               activeChatId,
-              null,
-              mode,
-              true,
-              currentAttachments,
+              requestId,
+              prompt,
+              mode: mode === "debug" ? "debug" : "act",
+              attachments: currentAttachments,
               baseArtifact,
-              options
-            );
+              submissionOptions: options,
+            });
           } catch (err) {
             console.error("Generation error:", err);
             notify?.({ message: err?.message || "Build failed. You can try again.", type: "error" });
@@ -565,17 +719,18 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
 
         // Plan & Ask: keep the orchestrate -> (clarify/plan/conversation) flow.
         try {
-          activeChatId = await ensureChat(titleSeed);
-          setFlowBusyForChat(activeChatId, true);
+          activeChatId = await ensureChat(titleSeed, options);
+          setFlowBusyForChat(activeChatId, requestId, true);
           beginOrchestrationPending(activeChatId, requestId, prompt);
           await writeUserMessage(activeChatId, requestId, prompt, currentAttachments);
+          await ensureRuntimeAgentProjection(activeChatId, options);
 
           if (mode === "ask") {
             await handleAskSubmit(prompt, currentAttachments, activeChatId, requestId);
             return;
           }
 
-          publishOrchestrationStage(activeChatId, "Analyzing request...");
+          publishOrchestrationStage(activeChatId, requestId, "Analyzing request...");
           const decision = await orchestrate({
             prompt,
             history: chat.messages,
@@ -584,7 +739,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
             gameSpec: effectiveGameSpec,
           });
 
-          publishOrchestrationStage(activeChatId, "Preparing response...");
+          publishOrchestrationStage(activeChatId, requestId, "Preparing response...");
           await writeOrchestrationResult(
             activeChatId,
             requestId,
@@ -597,8 +752,8 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
           console.error("Orchestration error:", err);
           notify?.({ message: err?.message || "Could not start the build", type: "error" });
         } finally {
-          setFlowBusyForChat(activeChatId, false);
-          clearOrchestrationPending(activeChatId);
+          setFlowBusyForChat(activeChatId, requestId, false);
+          clearOrchestrationPending(activeChatId, requestId);
         }
       } finally {
         delete submitLocksRef.current[submitLockKey];
@@ -606,7 +761,6 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
     },
     [
       user,
-      isGenerating,
       onSignInNudge,
       ensureChat,
       setFlowBusyForChat,
@@ -616,6 +770,8 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
       chat,
       approvePlanInternal,
       writeUserMessage,
+      ensureRuntimeAgentProjection,
+      launchAuthoritativeRun,
       writeOrchestrationResult,
       handleAskSubmit,
       effectiveGameSpec,
@@ -627,14 +783,12 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
   const submitClarifyAnswers = useCallback(
     async (message, answers) => {
       if (!user || !message) return;
-      if (isGenerating) return;
-
       const prompt = message.originPrompt || "";
       const attachments = message.attachments || [];
       const requestId = uuidv4();
       const activeChatId = chat.currentChatId;
       if (!activeChatId) return;
-      setFlowBusyForChat(activeChatId, true);
+      setFlowBusyForChat(activeChatId, requestId, true);
       try {
 
         const answerText = Object.entries(answers || {})
@@ -649,7 +803,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
           { stage: "clarify_answered", answers: answers || {}, updatedAt: serverTimestamp() }
         );
 
-        publishOrchestrationStage(activeChatId, "Analyzing request...");
+        publishOrchestrationStage(activeChatId, requestId, "Analyzing request...");
         const decision = await orchestrate({
           prompt,
           answers,
@@ -658,17 +812,17 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
           gameSpec: effectiveGameSpec,
         });
 
-        publishOrchestrationStage(activeChatId, "Preparing response...");
+        publishOrchestrationStage(activeChatId, requestId, "Preparing response...");
         await writeOrchestrationResult(activeChatId, requestId, decision, prompt, attachments);
       } catch (err) {
         console.error("Clarify error:", err);
         notify?.({ message: err?.message || "Could not continue", type: "error" });
       } finally {
-        setFlowBusyForChat(activeChatId, false);
-        clearOrchestrationPending(activeChatId);
+        setFlowBusyForChat(activeChatId, requestId, false);
+        clearOrchestrationPending(activeChatId, requestId);
       }
     },
-    [user, isGenerating, chat.currentChatId, chat.messages, effectiveGameSpec, writeUserMessage, writeOrchestrationResult, setFlowBusyForChat, beginOrchestrationPending, publishOrchestrationStage, clearOrchestrationPending, notify]
+    [user, chat.currentChatId, chat.messages, effectiveGameSpec, writeUserMessage, writeOrchestrationResult, setFlowBusyForChat, beginOrchestrationPending, publishOrchestrationStage, clearOrchestrationPending, notify]
   );
 
   // Stage 3 (plan): user approves the plan -> generate.
@@ -690,8 +844,6 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
   const refineArtifact = useCallback(
     async (message, refinePrompt, workspaceArtifact = null, submissionOptions = {}) => {
       if (!user || !refinePrompt) return;
-      if (isGenerating) return;
-
       const activeChatId = chat.currentChatId;
       if (!activeChatId) return;
 
@@ -728,13 +880,14 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
         notify?.({ message: err?.message || "Refine failed. You can try again.", type: "error" });
       }
     },
-    [user, isGenerating, chat.currentChatId, runGeneration, notify]
+    [user, chat.currentChatId, runGeneration, notify]
   );
 
   return {
     ...chat,
     isGenerating,
     pendingMessage,
+    pendingMessages,
     generationStage,
     generatingChatIds,
     ensureChat,

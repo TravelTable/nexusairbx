@@ -53,11 +53,14 @@ import {
   STUDIO_CONNECTION_TYPES,
 } from "../../lib/studioConnection";
 import {
+  buildProjectBindingPayloadFromIdentity,
   buildStudioTargetPreference,
   evaluateStudioPlaceGate,
+  normalizeStudioTargetOption,
   readChatStudioPreference,
   targetingOptionsFromStatus,
 } from "../../lib/studioPlaceBinding";
+import { findOrCreateProjectBinding } from "../../lib/projectBindingsApi";
 import {
   isFirestorePermissionDenied,
   resolveAwaitingStudioTargetRunId,
@@ -273,7 +276,6 @@ export function useAiWorkspaceController() {
   const pendingAuthResumeRef = useRef(null);
   const pendingRobloxResumeRef = useRef(false);
   const runQuickScriptRef = useRef(null);
-  const autoSelectedStudioTargetKeyRef = useRef(null);
 
   const {
     notify: queueNotify,
@@ -763,21 +765,54 @@ export function useAiWorkspaceController() {
 
   const effectiveStudioPlacePreference = optimisticStudioPlacePreference || chatStudioPreference;
 
+  const ensureStudioProjectBinding = useCallback(async (option) => {
+    const target = normalizeStudioTargetOption(option) || option;
+    const placeId = String(target?.placeId || target?.targetPlaceId || "").trim();
+    const universeId = String(target?.universeId || "").trim();
+    if (!placeId || placeId === "0" || !universeId) {
+      throw new Error("Save or publish this Studio place before selecting it for agent edits.");
+    }
+    const result = await findOrCreateProjectBinding(buildProjectBindingPayloadFromIdentity({
+      title: target?.experienceName || target?.placeName || target?.label,
+      placeId,
+      universeId,
+      studioTargetId: target?.studioTargetId || target?.id,
+      studioTargetLabel: target?.label,
+    }));
+    const project = result?.project || null;
+    const projectId = String(project?.projectId || result?.projectId || "").trim();
+    if (!projectId) throw new Error("The selected Studio place could not be linked to a workspace project.");
+    try {
+      localStorage.setItem("nexusrbx.selectedWorkspaceProjectId", projectId);
+    } catch (_) {
+      // Firestore chat metadata still carries the authoritative project id.
+    }
+    return { project, projectId };
+  }, []);
+
   const bindChatStudioPlace = useCallback(async (option) => {
     const preference = buildStudioTargetPreference(option);
     if (!preference || !user) return null;
-    setOptimisticStudioPlacePreference(preference);
-    if (chat.currentChatId) {
-      await updateDoc(doc(db, "users", user.uid, "chats", chat.currentChatId), {
-        studioTargetPreference: {
-          ...preference,
+    try {
+      const binding = await ensureStudioProjectBinding(option);
+      if (chat.currentChatId) {
+        await updateDoc(doc(db, "users", user.uid, "chats", chat.currentChatId), {
+          studioTargetPreference: {
+            ...preference,
+            updatedAt: serverTimestamp(),
+          },
+          projectId: binding.projectId,
           updatedAt: serverTimestamp(),
-        },
-        updatedAt: serverTimestamp(),
-      });
+        });
+      }
+      setOptimisticStudioPlacePreference(preference);
+      return { ...preference, projectId: binding.projectId };
+    } catch (error) {
+      notify({ message: error?.message || "Could not select this Studio place.", type: "error" });
+      setStudioPlacePickerOpen(true);
+      return null;
     }
-    return preference;
-  }, [chat.currentChatId, user]);
+  }, [chat.currentChatId, ensureStudioProjectBinding, notify, user]);
 
   const handlePromptSubmit = useCallback(async (e, overridePrompt = null, submissionOptions = {}) => {
     if (e && typeof e.preventDefault === "function") e.preventDefault();
@@ -825,6 +860,7 @@ export function useAiWorkspaceController() {
       return;
     }
 
+    let runtimeProjectId = String(submissionOptions?.projectId || "").trim() || null;
     let studioTargetPreference = submissionOptions?.studioTargetPreference || effectiveStudioPlacePreference;
     if (studioEnabled && ["agent", "debug"].includes(String(settings?.chatMode || chat.activeMode || "agent").toLowerCase())) {
       let options = studioPlaceOptions;
@@ -868,15 +904,11 @@ export function useAiWorkspaceController() {
         setStudioPlacePickerOpen(true);
         return;
       }
-      if (gate.status === "auto_bind" || gate.status === "ready") {
+      if (gate.status === "ready") {
         studioTargetPreference = buildStudioTargetPreference(gate.target) || studioTargetPreference;
-        if (gate.status === "auto_bind" && studioTargetPreference) {
-          try {
-            await bindChatStudioPlace(gate.target);
-          } catch (_) {
-            /* submit still carries the preference */
-          }
-        }
+        const binding = await bindChatStudioPlace(gate.target);
+        if (!binding?.projectId) return;
+        runtimeProjectId = binding.projectId;
       }
     }
 
@@ -911,7 +943,7 @@ export function useAiWorkspaceController() {
       {
         ...submissionOptions,
         ...(studioTargetPreference ? { studioTargetPreference } : {}),
-        ...( (() => {
+        ...(runtimeProjectId ? { projectId: runtimeProjectId } : (() => {
           try {
             const projectId = String(localStorage.getItem("nexusrbx.selectedWorkspaceProjectId") || "").trim();
             return projectId ? { projectId } : {};
@@ -941,8 +973,8 @@ export function useAiWorkspaceController() {
     studioConnection.pluginConnected,
     studioPlaceOptions,
     effectiveStudioPlacePreference,
-    chat.activeMode,
     bindChatStudioPlace,
+    chat.activeMode,
     notify,
   ]);
 
@@ -1496,38 +1528,6 @@ export function useAiWorkspaceController() {
       workspace.agentRun,
     ]
   );
-
-  // Belt: sole parked option — auto-select once so a stuck picker cannot block the run.
-  useEffect(() => {
-    const pending = unified.pendingMessage;
-    const agentRun = workspace.agentRun;
-    const runStatus = pending?.runStatus || agentRun?.status || agentRun?.runStatus;
-    const runId = pending?.runId || agentRun?.runId || agentRun?.id;
-    const options =
-      pending?.targetSelection?.options ||
-      agentRun?.targetSelection?.options ||
-      [];
-    if (runStatus !== "awaiting_studio_target" || !runId || options.length !== 1) {
-      if (runStatus !== "awaiting_studio_target") {
-        autoSelectedStudioTargetKeyRef.current = null;
-      }
-      return;
-    }
-    const sole = options[0];
-    const soleId = sole?.id || sole?.targetId || sole?.studioTargetId;
-    if (!soleId || selectingStudioTargetId) return;
-    const key = `${runId}:${soleId}`;
-    if (autoSelectedStudioTargetKeyRef.current === key) return;
-    autoSelectedStudioTargetKeyRef.current = key;
-    handleSelectStudioTarget(sole).catch(() => {
-      autoSelectedStudioTargetKeyRef.current = null;
-    });
-  }, [
-    handleSelectStudioTarget,
-    selectingStudioTargetId,
-    unified.pendingMessage,
-    workspace.agentRun,
-  ]);
 
   const handleApproveStep = useCallback(
     async (step) => {

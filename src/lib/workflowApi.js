@@ -20,8 +20,12 @@ export async function orchestrate({ prompt, answers = null, history = [], attach
   return res.json();
 }
 
-export async function approveWorkflowPlan(planId) {
-  const res = await authedFetch(`/api/ai/plan/${planId}/approve`, { method: "POST" });
+export async function approveWorkflowPlan(planId, { version, hash } = {}) {
+  const res = await authedFetch(`/api/ai/plan/${planId}/approve`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ version, hash }),
+  });
   if (!res.ok) throw new Error("Failed to approve plan");
   return res.json();
 }

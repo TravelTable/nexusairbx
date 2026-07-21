@@ -26,9 +26,20 @@ export default function StudioPlaceChip({
   const label = preference?.label || null;
   const hasOptions = Array.isArray(options) && options.length > 0;
   const canOpen = connected && hasOptions;
+  const selectedTargetId = String(preference?.targetId || preference?.studioTargetId || "").trim();
+  const selectedPlaceId = String(preference?.placeId || "").trim();
+  const selectedTargetIsLive = Boolean(preference && options.some((option) => {
+    const optionTargetId = String(option?.id || option?.targetId || option?.studioTargetId || "").trim();
+    if (selectedTargetId) return optionTargetId === selectedTargetId;
+    return selectedPlaceId && String(option?.placeId || "").trim() === selectedPlaceId;
+  }));
   const displayLabel = !connected
-    ? "Connect Studio to choose a place"
-    : label
+    ? label
+      ? `${label} disconnected · reconnect to continue`
+      : "Connect Studio to choose a place"
+    : label && !selectedTargetIsLive
+      ? `${label} is not live · choose again`
+      : label
       ? label
       : hasOptions
         ? "Choose a Studio place"
@@ -44,7 +55,7 @@ export default function StudioPlaceChip({
         }}
         disabled={!canOpen}
         className={`inline-flex max-w-full items-center gap-1.5 rounded-md border px-2 py-0.5 text-[11px] font-semibold transition-colors focus-ring ${
-          connected && label
+          connected && label && selectedTargetIsLive
             ? "border-[#00bbf9]/25 bg-[#00bbf9]/[0.08] text-[#9ae6ff] hover:bg-[#00bbf9]/15"
             : "border-amber-400/25 bg-amber-400/10 text-amber-100"
         } ${canOpen ? "cursor-pointer" : "cursor-default opacity-90"}`}
@@ -70,8 +81,8 @@ export default function StudioPlaceChip({
           }}
           selectingTargetId={selectingTargetId}
           onSelect={async (option) => {
-            await (onSelectPlace || onChangePlace)?.(option);
-            setOpen(false);
+            const selected = await (onSelectPlace || onChangePlace)?.(option);
+            if (selected !== null && selected !== false) setOpen(false);
           }}
         />
       )}

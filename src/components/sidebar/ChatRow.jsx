@@ -5,6 +5,7 @@ export default function ChatRow({
   chat,
   currentChatId,
   isGenerating = false,
+  agentStatus = null,
   onOpenChat,
   renamingChatId,
   renameChatTitle,
@@ -16,6 +17,8 @@ export default function ChatRow({
 }) {
   const isSelected = currentChatId === chat.id;
   const isRenaming = renamingChatId === chat.id;
+  const visibleStatus = agentStatus || (isGenerating ? "running" : null);
+  const statusLabel = visibleStatus ? String(visibleStatus).replaceAll("_", " ") : null;
 
   return (
     <div
@@ -58,14 +61,14 @@ export default function ChatRow({
                 isSelected ? "text-white" : "text-gray-300 group-hover:text-white"
               }`}
             >
-              {isGenerating && (
+              {visibleStatus && (
                 <Loader2 className="w-3 h-3 shrink-0 text-[#00f5d4] animate-spin" />
               )}
               <span className="truncate">{chat.title || "Untitled chat"}</span>
             </span>
             <span className="text-[10px] truncate">
-              {isGenerating ? (
-                <span className="text-[#00f5d4] font-semibold">Generating…</span>
+              {visibleStatus ? (
+                <span className="text-[#00f5d4] font-semibold capitalize">{statusLabel}</span>
               ) : (
                 <span className="text-gray-500">{chat.lastMessage || "No messages yet"}</span>
               )}

@@ -5,10 +5,16 @@ import { useUnifiedChat } from "./useUnifiedChat";
 import { useAiChat } from "./useAiChat";
 import { trackProductEvent } from "../lib/productAnalytics";
 import { FEATURE_FLAGS } from "../lib/featureFlags";
-import { getStudioEnabledPreference } from "../lib/agentSteps";
+import { getStudioApplyMode, getStudioEnabledPreference } from "../lib/agentSteps";
 import { getStudioStatus } from "../lib/studioBridgeApi";
+import { resolveGameSpecForPrompt } from "../lib/gameProfile";
 import { orchestrate } from "../lib/workflowApi";
 import { classifyUserIntent, isImplementationIntent } from "../lib/intentClassifier";
+import {
+  createAgentRunV2,
+  createAgentV2,
+  normalizeAgentProjection,
+} from "../lib/agentRuntimeV2Api";
 
 jest.mock("../firebase", () => ({
   db: {},
@@ -67,11 +73,18 @@ jest.mock("../lib/featureFlags", () => ({
 }));
 
 jest.mock("../lib/agentSteps", () => ({
+  getStudioApplyMode: jest.fn(() => "manual_review"),
   getStudioEnabledPreference: jest.fn(() => false),
 }));
 
 jest.mock("../lib/studioBridgeApi", () => ({
   getStudioStatus: jest.fn(),
+}));
+
+jest.mock("../lib/agentRuntimeV2Api", () => ({
+  createAgentRunV2: jest.fn(),
+  createAgentV2: jest.fn(),
+  normalizeAgentProjection: jest.fn((value) => value?.agent || value),
 }));
 
 jest.mock("./useStudioConnection", () => ({
@@ -87,8 +100,24 @@ describe("useUnifiedChat", () => {
     jest.clearAllMocks();
     FEATURE_FLAGS.unifiedAgent = false;
     getStudioEnabledPreference.mockReturnValue(false);
+    getStudioApplyMode.mockReturnValue("manual_review");
+    resolveGameSpecForPrompt.mockImplementation((value) => value || null);
     classifyUserIntent.mockReturnValue("IMPLEMENTATION");
     isImplementationIntent.mockReturnValue(true);
+    createAgentV2.mockResolvedValue({
+      agent: { agentId: "agent-1", projectId: "project_1" },
+    });
+    normalizeAgentProjection.mockImplementation((value) => value?.agent || value);
+    createAgentRunV2.mockResolvedValue({
+      run: {
+        runId: "run-1",
+        agentId: "agent-1",
+        jobId: "job-1",
+        status: "running",
+      },
+      authoritativeExecution: true,
+      executionDisposition: "launched",
+    });
     global.TextDecoder = NodeTextDecoder;
     useAiChat.mockReturnValue({
       activeMode: "agent",
@@ -193,6 +222,54 @@ describe("useUnifiedChat", () => {
     expect(setDoc.mock.calls.some(([, payload]) => (
       payload?.role === "assistant" && payload?.content === "Studio answer"
     ))).toBe(true);
+    expect(createAgentRunV2).not.toHaveBeenCalled();
+  });
+
+  test("keeps Ask available when the optional runtime projection is disconnected", async () => {
+    FEATURE_FLAGS.unifiedAgent = true;
+    createAgentV2.mockRejectedValueOnce(new Error("runtime disconnected"));
+    const setPendingForChat = jest.fn();
+    useAiChat.mockReturnValue({
+      activeMode: "ask",
+      currentChatId: "chat-1",
+      generatingChatIds: [],
+      generationStage: "",
+      handleSubmit: chatHandleSubmit,
+      isGenerating: false,
+      messages: [],
+      openChatById: jest.fn(),
+      pendingMessage: null,
+      setPendingForChat,
+    });
+    const reader = {
+      read: jest.fn()
+        .mockResolvedValueOnce({
+          done: false,
+          value: Uint8Array.from(Array.from("Read-only answer").map((character) => character.charCodeAt(0))),
+        })
+        .mockResolvedValueOnce({ done: true, value: undefined }),
+    };
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      body: { getReader: () => reader },
+    });
+    const user = { uid: "user-1", getIdToken: jest.fn().mockResolvedValue("token") };
+    const consoleWarn = jest.spyOn(console, "warn").mockImplementation(() => {});
+
+    try {
+      const { result } = renderHook(() =>
+        useUnifiedChat(user, {}, jest.fn(), jest.fn())
+      );
+
+      await act(async () => {
+        await result.current.handleSubmit("Explain this architecture", [], null, { mode: "ask" });
+      });
+    } finally {
+      consoleWarn.mockRestore();
+    }
+
+    expect(setDoc.mock.calls.some(([, payload]) => payload?.content === "Read-only answer")).toBe(true);
+    expect(createAgentRunV2).not.toHaveBeenCalled();
   });
 
   test("routes conversational Agent prompts through grounded Studio chat instead of generic orchestration", async () => {
@@ -291,16 +368,146 @@ describe("useUnifiedChat", () => {
     });
 
     expect(chatHandleSubmit).toHaveBeenCalledTimes(1);
+    expect(createAgentRunV2).toHaveBeenCalledWith(expect.objectContaining({
+      chatId: "chat-1",
+      agentId: "agent-1",
+      idempotencyKey: expect.stringMatching(/^run-/),
+      mode: "act",
+      projectId: "project_1",
+      prompt: "Build a lobby system",
+    }));
     expect(chatHandleSubmit).toHaveBeenCalledWith(
       "Build a lobby system",
       "chat-1",
-      null,
+      expect.any(String),
       "agent",
       true,
       [],
       null,
-      taskOptions,
+      expect.objectContaining({
+        ...taskOptions,
+        authoritativeRun: expect.objectContaining({
+          authoritativeExecution: true,
+          executionDisposition: "launched",
+          run: expect.objectContaining({ runId: "run-1", jobId: "job-1" }),
+        }),
+      }),
     );
     expect(orchestrate).not.toHaveBeenCalled();
+  });
+
+  test("sends the complete server-owned execution input for an authoritative Studio run", async () => {
+    getStudioEnabledPreference.mockReturnValue(true);
+    getStudioApplyMode.mockReturnValue("manual_review");
+    const baseArtifact = { artifactId: "artifact-1", files: [{ path: "src/Main.lua" }] };
+    useAiChat.mockReturnValue({
+      activeMode: "agent",
+      currentChatId: "chat-1",
+      generatingChatIds: [],
+      generationStage: "",
+      handleSubmit: chatHandleSubmit,
+      isGenerating: false,
+      messages: [{ role: "assistant", content: "Existing context" }],
+      openChatById: jest.fn(),
+      pendingMessage: null,
+      setPendingForChat: jest.fn(),
+    });
+    const settings = {
+      modelVersion: "nexus-free-auto",
+      creativity: 0.4,
+      codeStyle: "safe",
+      verbosity: "balanced",
+      codingStandards: "Use strict types",
+      gameSpec: "Round-based game",
+      studioAutoPushEnabled: true,
+      studioAutoPushPolicy: "manual_review",
+      useExamples: true,
+      selectedExampleIds: ["example-1"],
+    };
+    const user = { uid: "user-1", getIdToken: jest.fn().mockResolvedValue("token") };
+    const { result } = renderHook(() => useUnifiedChat(user, settings, jest.fn(), jest.fn()));
+
+    await act(async () => {
+      await result.current.handleSubmit("Fix the round manager", [], baseArtifact, {
+        clientMessageId: "request-full-input",
+        projectId: "project_1",
+        selectedExampleIds: ["example-1"],
+        approvedPlan: {
+          planId: "plan-1",
+          version: 2,
+          hash: "plan-hash",
+          ignoredCallerField: "must not cross the boundary",
+        },
+        mode: "debug",
+      });
+    });
+
+    expect(createAgentRunV2).toHaveBeenCalledWith(expect.objectContaining({
+      chatId: "chat-1",
+      agentId: "agent-1",
+      prompt: "Fix the round manager",
+      mode: "debug",
+      projectId: "project_1",
+      generatorMode: "agent_build",
+      studioEnabled: true,
+      applyMode: "manual_review",
+      routingMode: "hybrid",
+      autoPushToStudio: true,
+      autoPushPolicy: "manual_only",
+      chatMode: "debug",
+      settings: expect.objectContaining({
+        modelVersion: "nexus-free-auto",
+        gameSpec: "Round-based game",
+        studioAutoPushEnabled: true,
+      }),
+      conversation: [expect.objectContaining({ role: "assistant" })],
+      baseArtifact,
+      approvedPlan: { planId: "plan-1", version: 2, hash: "plan-hash" },
+      selectedExampleIds: ["example-1"],
+    }));
+  });
+
+  test("passes a queued authoritative run through without launching a second run", async () => {
+    createAgentRunV2.mockResolvedValueOnce({
+      run: {
+        runId: "run-queued",
+        agentId: "agent-1",
+        jobId: null,
+        status: "queued",
+        queuePosition: 2,
+      },
+      authoritativeExecution: true,
+      executionDisposition: "queued",
+    });
+    useAiChat.mockReturnValue({
+      activeMode: "agent",
+      currentChatId: "chat-1",
+      generatingChatIds: [],
+      generationStage: "",
+      handleSubmit: chatHandleSubmit,
+      isGenerating: false,
+      messages: [],
+      openChatById: jest.fn(),
+      pendingMessage: null,
+      setPendingForChat: jest.fn(),
+    });
+    const user = { uid: "user-1", getIdToken: jest.fn().mockResolvedValue("token") };
+    const { result } = renderHook(() => useUnifiedChat(user, {}, jest.fn(), jest.fn()));
+
+    await act(async () => {
+      await result.current.handleSubmit("Build two systems", [], null, {
+        clientMessageId: "request-queued",
+        projectId: "project_1",
+      });
+    });
+
+    expect(createAgentRunV2).toHaveBeenCalledTimes(1);
+    expect(chatHandleSubmit).toHaveBeenCalledTimes(1);
+    expect(chatHandleSubmit.mock.calls[0][7]).toEqual(expect.objectContaining({
+      authoritativeRun: expect.objectContaining({
+        executionDisposition: "queued",
+        run: expect.objectContaining({ runId: "run-queued", jobId: null }),
+      }),
+    }));
   });
 });

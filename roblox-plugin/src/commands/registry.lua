@@ -27,6 +27,8 @@ local MUTATING_COMMANDS = {
 }
 
 local executedCommandCount = 0
+local COMMAND_RECEIPTS_SETTING, COMMAND_RECEIPT_ORDER_SETTING, COMMAND_RECEIPT_LIMIT =
+	"nexusrbxCommandReceiptsV2", "nexusrbxCommandReceiptOrderV2", 50
 
 local TOOL_HANDLERS = {
 	apply_artifact = applyArtifact,
@@ -174,6 +176,58 @@ end
 
 TOOL_HANDLERS.batch_operations = batchOperations
 
+function getStoredCommandReceipt(operationId)
+	if tostring(operationId or "") == "" then return nil end
+	local ok, receipts = pcall(function()
+		return plugin:GetSetting(COMMAND_RECEIPTS_SETTING)
+	end)
+	if not ok or type(receipts) ~= "table" then return nil end
+	local receipt = receipts[tostring(operationId)]
+	return type(receipt) == "table" and receipt or nil
+end
+
+-- Persist the mutation outcome before attempting its network acknowledgment.
+-- A bounded journal lets a redelivered operation reconcile its prior result
+-- without ever invoking the Studio mutation twice.
+function storeCommandReceipt(command, status, result, errorMessage)
+	if type(command) ~= "table" or not isMutatingCommand(command.type) then return true end
+	local operationId = tostring(command.operationId or "")
+	local idempotencyKey = tostring(command.idempotencyKey or "")
+	if operationId == "" or idempotencyKey == "" then return false end
+
+	local existing = getStoredCommandReceipt(operationId)
+	if existing and tostring(existing.idempotencyKey or "") ~= idempotencyKey then
+		return false
+	end
+	local settingsOk, receipts, order = pcall(function()
+		local storedReceipts = plugin:GetSetting(COMMAND_RECEIPTS_SETTING)
+		local storedOrder = plugin:GetSetting(COMMAND_RECEIPT_ORDER_SETTING)
+		return type(storedReceipts) == "table" and storedReceipts or {},
+			type(storedOrder) == "table" and storedOrder or {}
+	end)
+	if not settingsOk then return false end
+	if receipts[operationId] == nil then table.insert(order, operationId) end
+	receipts[operationId] = {
+		journalVersion = 1,
+		operationId = operationId,
+		idempotencyKey = idempotencyKey,
+		commandId = command.id or command.commandId,
+		commandType = command.type,
+		status = status,
+		result = result,
+		error = errorMessage,
+		recordedAt = os.time(),
+	}
+	while #order > COMMAND_RECEIPT_LIMIT do
+		local expiredOperationId = table.remove(order, 1)
+		receipts[expiredOperationId] = nil
+	end
+	return pcall(function()
+		plugin:SetSetting(COMMAND_RECEIPTS_SETTING, receipts)
+		plugin:SetSetting(COMMAND_RECEIPT_ORDER_SETTING, order)
+	end)
+end
+
 local function ack(commandOrId, status, result, errorMessage)
 	local token = getToken()
 	if not token then
@@ -192,13 +246,69 @@ local function ack(commandOrId, status, result, errorMessage)
 		local lease = type(command.lease) == "table" and command.lease or {}
 		receiptResult.leaseFence = receiptResult.leaseFence or lease.fence or command.leaseFence
 		receiptResult.lifecycleVersion = 2
+		receiptResult.operationId = receiptResult.operationId or command.operationId
+		receiptResult.idempotencyKey = receiptResult.idempotencyKey or command.idempotencyKey
+	end
+	local requestOptions = { idempotent = true }
+	if command and command.idempotencyKey then
+		requestOptions.idempotencyKey = tostring(command.idempotencyKey) .. ":studio-ack:" .. tostring(status)
+	end
+	if command and tonumber(command.lifecycleVersion) == 2
+		and (status == "succeeded" or status == "failed") then
+		storeCommandReceipt(command, status, receiptResult, errorMessage)
 	end
 	local ok = request("POST", "/api/studio/commands/" .. HttpService:UrlEncode(tostring(commandId)) .. "/ack", {
 		status = status,
 		result = receiptResult,
 		error = errorMessage,
-	}, token, { idempotent = true })
+	}, token, requestOptions)
 	return ok == true
+end
+
+function reconcileStoredCommandReceipt(command)
+	local stored = getStoredCommandReceipt(command and command.operationId)
+	if not stored then return false, false end
+	if tostring(stored.idempotencyKey or "") ~= tostring(command.idempotencyKey or "") then
+		local conflict = {
+			ok = false,
+			success = false,
+			verified = false,
+			code = "OPERATION_ID_CONFLICT",
+			operationId = command.operationId,
+			idempotencyKey = command.idempotencyKey,
+			error = {
+				code = "OPERATION_ID_CONFLICT",
+				message = "This operationId was already used with a different idempotencyKey",
+				retryable = false,
+			},
+		}
+		return true, ack(command, "failed", conflict, conflict.error.message)
+	end
+
+	local status, result, errorMessage = stored.status, stored.result, stored.error
+	if status == "started" then
+		status = "failed"
+		result = {
+			ok = false,
+			success = false,
+			verified = false,
+			outcome = "studio_state_uncertain",
+			code = "OPERATION_OUTCOME_UNCERTAIN",
+			operationId = command.operationId,
+			idempotencyKey = command.idempotencyKey,
+			error = {
+				code = "OPERATION_OUTCOME_UNCERTAIN",
+				message = "Studio restarted or lost connection after execution began; the mutation will not be replayed",
+				retryable = false,
+			},
+		}
+		errorMessage = result.error.message
+	end
+	if status ~= "succeeded" and status ~= "failed" then return false, false end
+	local confirmed = ack(command, status, result, errorMessage)
+	setBridgeState(confirmed and "live" or "reconciling", confirmed and "prior operation reconciled" or "stored result confirmation pending")
+	setLast(confirmed and "Reconciled a previously executed Studio operation" or "Stored Studio result is waiting for website confirmation")
+	return true, confirmed
 end
 
 local function commandStartedMs()
@@ -675,6 +785,15 @@ local function executeCommand(command)
 	end
 	local payload = command.payload or {}
 	local started = commandStartedMs()
+	-- This is the final mutation boundary. Re-read live game identity immediately
+	-- before invoking a write handler; approval-time checks are not sufficient
+	-- because the user can switch places while the prompt is open.
+	if isMutatingCommand(commandType) then
+		local targetOk, targetResult = validateCommandStudioTarget(command, "before_mutation", command._approvedStudioAttestation)
+		if not targetOk then
+			return targetResult
+		end
+	end
 	local result = handler(payload, command)
 	if type(result) ~= "table" then
 		result = { output = result }
@@ -715,6 +834,8 @@ local function executeCommand(command)
 	result.runId = command.runId
 	result.stepId = command.stepId
 	result.operation = commandType
+	result.operationId = command.operationId
+	result.idempotencyKey = command.idempotencyKey
 	result.affectedPaths = result.affectedPaths or affected
 	result.previousHashes = result.previousHashes or {}
 	result.resultingHashes = result.resultingHashes or {}
@@ -724,6 +845,7 @@ local function executeCommand(command)
 	result.duration = math.max(0, commandStartedMs() - started)
 	result.snapshotIds = result.snapshotIds or snapshotIds
 	result.retryable = result.retryable == true
+	result.targetAttestation = currentStudioTargetAttestation(true)
 
 	if (commandType == "get_project_manifest" or commandType == "inspect_place") and result.ok ~= false then
 		setManifestInfo({
@@ -856,7 +978,15 @@ local function finalizeCommandOutcome(command, applyOk, resultOrError)
 		else
 			message = tostring(rawError or "Studio command failed")
 		end
-		ack(command, "failed", resultOrError, message)
+		if not ack(command, "failed", resultOrError, message) then
+			resultOrError.outcome = isMutatingCommand(commandType) and "studio_state_uncertain" or "failed_unconfirmed"
+			resultOrError.receiptPending = true
+			setBridgeState("reconciling", "result confirmation pending")
+			setLast(commandType .. " finished locally; website confirmation is pending")
+			pushActivity({ commandType = commandType, status = "uncertain", duration = duration, snapshotCount = snapshotCount, detail = message })
+			showToast("Confirming " .. commandType .. " result", "info")
+			return "uncertain"
+		end
 		setLast(commandType .. " failed: " .. message)
 		pushActivity({
 			commandType = commandType,
@@ -870,7 +1000,17 @@ local function finalizeCommandOutcome(command, applyOk, resultOrError)
 	end
 
 	if applyOk then
-		ack(command, "succeeded", resultOrError, nil)
+		if not ack(command, "succeeded", resultOrError, nil) then
+			if type(resultOrError) == "table" then
+				resultOrError.outcome = "applied_unconfirmed"
+				resultOrError.receiptPending = true
+			end
+			setBridgeState("reconciling", "applied; result confirmation pending")
+			setLast(commandType .. " applied in Studio; website confirmation is pending")
+			pushActivity({ commandType = commandType, status = "uncertain", duration = duration, snapshotCount = snapshotCount, detail = "Applied in Studio; result confirmation pending" })
+			showToast("Confirming " .. commandType .. " result", "info")
+			return "uncertain"
+		end
 		local extra = ""
 		if type(resultOrError) == "table" and resultOrError.validation then
 			local v = resultOrError.validation
@@ -897,7 +1037,17 @@ local function finalizeCommandOutcome(command, applyOk, resultOrError)
 	end
 
 	local message = tostring(resultOrError)
-	ack(command, "failed", nil, message)
+	if not ack(command, "failed", {
+		outcome = isMutatingCommand(commandType) and "studio_state_uncertain" or "failed",
+		operationId = command.operationId,
+		idempotencyKey = command.idempotencyKey,
+	}, message) then
+		setBridgeState("reconciling", "result confirmation pending")
+		setLast(commandType .. " stopped with an uncertain Studio result; website confirmation is pending")
+		pushActivity({ commandType = commandType, status = "uncertain", duration = duration, detail = message })
+		showToast("Confirming " .. commandType .. " result", "info")
+		return "uncertain"
+	end
 	setLast(commandType .. " failed: " .. message)
 	pushActivity({
 		commandType = commandType,
@@ -944,15 +1094,18 @@ function pullOnce(waitMs)
 	setPollingPulse(false)
 
 	if statusCode == 401 or statusCode == 403 then
+		recordStudioFreshness("poll", false, "authentication expired", getLastLatencyMs())
 		handleSessionExpired()
 		return { authFailed = true, idle = false, hadCommand = false, error = true }
 	end
 
 	if not ok then
+		recordStudioFreshness("poll", false, tostring(data), getLastLatencyMs())
 		setBridgeState("degraded", "poll failed")
 		setLast(tostring(data))
 		return { authFailed = false, idle = false, hadCommand = false, error = true }
 	end
+	recordStudioFreshness("poll", true, nil, getLastLatencyMs())
 
 	if statusCode == 204 or not data or not data.command then
 		if not executorBusy and #commandQueue == 0 then
@@ -960,7 +1113,12 @@ function pullOnce(waitMs)
 			if compatibility == "degraded" then
 				setBridgeState("degraded", detail and ("Unavailable: " .. tostring(detail)) or "Some Studio features are unavailable")
 			else
-				setBridgeState("live")
+				local targetReady, targetDetail = getStudioTargetReadiness()
+				if targetReady == false then
+					setBridgeState("target_changed", targetDetail)
+				else
+					setBridgeState("live")
+				end
 			end
 			setActive("none")
 			setAgentPhase("idle")
@@ -985,6 +1143,12 @@ function pullOnce(waitMs)
 		if queuedCommandIds[command.id] or activeCommandId == command.id then
 			ack(command, "received", { duplicate = true }, nil)
 			return { authFailed = false, idle = false, hadCommand = true, error = false }
+		end
+		if isMutatingCommand(command.type) then
+			local reconciled, confirmed = reconcileStoredCommandReceipt(command)
+			if reconciled then
+				return { authFailed = false, idle = false, hadCommand = true, error = confirmed ~= true }
+			end
 		end
 		-- A durable received receipt is the acceptance boundary. Never execute a
 		-- reliable command when that receipt could not be persisted server-side.
@@ -1025,27 +1189,42 @@ function processNextCommand()
 	setBusy(true)
 	setBridgeState("working", command.label or command.type)
 
-	local finished = pcall(function()
+	local finished, outcome = pcall(function()
+		if isMutatingCommand(command.type) then
+			local targetOk, approvalAttestation = validateCommandStudioTarget(command, "before_approval", nil)
+			if not targetOk then
+				return finalizeCommandOutcome(command, true, approvalAttestation)
+			end
+			command._approvedStudioAttestation = approvalAttestation
+		end
 		if getApprovalModeEnabledExport() and isMutatingCommand(command.type) then
 			setBridgeState("working", "awaiting approval")
 			local approved = waitForApproval(command)
 			if not approved then
-				ack(command, "failed", nil, "declined in Studio")
-				setLast((command.type or "command") .. " declined in Studio")
-				pushActivity({
-					commandType = command.type or "command",
-					status = "failed",
-					detail = "declined in Studio",
+				return finalizeCommandOutcome(command, true, {
+					ok = false,
+					success = false,
+					code = "STUDIO_APPROVAL_DECLINED",
+					operationId = command.operationId,
+					idempotencyKey = command.idempotencyKey,
+					error = { code = "STUDIO_APPROVAL_DECLINED", message = "declined in Studio", retryable = false },
 				})
-				showToast("Command declined", "error")
-				return
 			end
 		end
 		if tonumber(command.lifecycleVersion) == 2 then
 			if not ack(command, "started", { stage = "started" }, nil) then
 				setLast("Command start receipt could not be saved; execution was deferred safely")
 				setBridgeState("degraded", "start receipt failed")
-				return
+				return "deferred"
+			end
+			if isMutatingCommand(command.type) and not storeCommandReceipt(command, "started", {
+				outcome = "execution_started",
+				operationId = command.operationId,
+				idempotencyKey = command.idempotencyKey,
+			}) then
+				setLast("The local operation journal could not be saved; execution was deferred safely")
+				setBridgeState("degraded", "operation journal unavailable")
+				return "deferred"
 			end
 		end
 
@@ -1058,7 +1237,7 @@ function processNextCommand()
 		else
 			finishRecording(recording, false)
 		end
-		finalizeCommandOutcome(command, applyOk, resultOrError)
+		return finalizeCommandOutcome(command, applyOk, resultOrError)
 	end)
 
 	executorBusy = false
@@ -1066,12 +1245,17 @@ function processNextCommand()
 	activeCommandId = nil
 	setActive("none")
 	setBusy(false)
-	if #commandQueue == 0 then
+	if #commandQueue == 0 and outcome ~= "uncertain" and outcome ~= "deferred" then
 		local compatibility, detail = getStudioCompatibilityStatus()
 		if compatibility == "degraded" then
 			setBridgeState("degraded", detail and ("Unavailable: " .. tostring(detail)) or "Some Studio features are unavailable")
 		else
-			setBridgeState("live")
+			local targetReady, targetDetail = getStudioTargetReadiness()
+			if targetReady == false then
+				setBridgeState("target_changed", targetDetail)
+			else
+				setBridgeState("live")
+			end
 		end
 	end
 	return finished ~= false

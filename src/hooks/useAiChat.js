@@ -16,6 +16,13 @@ import {
   getDocs
 } from "firebase/firestore";
 import { v4 as uuidv4 } from "uuid";
+import {
+  createAgentV2,
+  extractAgentEvents,
+  getAgentEventsV2,
+  getAgentV2,
+  normalizeAgentProjection,
+} from "../lib/agentRuntimeV2Api";
 import { auth, db, firebaseConfig } from "../firebase";
 import { BACKEND_URL } from "../config";
 import { ensureStreamSession } from "../lib/streamSession";
@@ -38,9 +45,7 @@ import { resolveGameSpecForPrompt } from "../lib/gameProfile";
 import { getStudioStatus } from "../lib/studioBridgeApi";
 import {
   getStudioConnectionType,
-  getStudioPlaceId,
   getStudioSessionId,
-  isStudioSessionLive,
   selectMcpStudioSession,
   selectPluginStudioSession,
   STUDIO_CONNECTION_TYPES,
@@ -84,6 +89,68 @@ const CHAT_INITIAL_HISTORY_LIMIT = 50;
 const CHAT_LIVE_TAIL_LIMIT = 20;
 const CLEAR_CHAT_MESSAGE_LIMIT = 200;
 const PENDING_RUN_POLL_MS = 30_000;
+const QUEUED_RUN_POLL_MS = 1500;
+
+const delay = (milliseconds) => new Promise((resolve) => window.setTimeout(resolve, milliseconds));
+
+export async function waitForAuthoritativeRunJob({
+  agentId,
+  runId,
+  onStatus,
+  getEvents = getAgentEventsV2,
+  getAgent = getAgentV2,
+  wait = delay,
+}) {
+  let afterSequence = 0;
+  let admitted = false;
+  let reconnecting = false;
+
+  while (true) {
+    try {
+      if (!admitted) {
+        const envelope = await getEvents(afterSequence);
+        const events = extractAgentEvents(envelope);
+        const explicitLastSequence = Number(envelope?.lastSequence ?? envelope?.data?.lastSequence);
+        if (Number.isFinite(explicitLastSequence)) afterSequence = Math.max(afterSequence, explicitLastSequence);
+        for (const event of events) {
+          const sequence = Number(event?.sequence ?? event?.seq);
+          if (Number.isFinite(sequence)) afterSequence = Math.max(afterSequence, sequence);
+          if (String(event?.payload?.runId || "") !== runId) continue;
+          if (event.type === "run.admitted") admitted = true;
+          if (["run.failed", "run.cancelled", "run.completed"].includes(event.type)) {
+            const error = new Error(`Queued run ${String(event.type).replace("run.", "")}.`);
+            error.code = event.type;
+            throw error;
+          }
+        }
+      }
+
+      if (admitted) {
+        const projection = await getAgent(agentId);
+        const runs = projection?.runs || projection?.agent?.runs || [];
+        const run = (Array.isArray(runs) ? runs : []).find((candidate) => (
+          String(candidate?.runId || candidate?.id || "") === runId
+        ));
+        const jobId = String(run?.jobId || "").trim();
+        if (jobId) return run;
+        if (["failed", "cancelled", "completed"].includes(String(run?.status || "").toLowerCase())) {
+          const error = new Error(`Queued run ${String(run.status).toLowerCase()}.`);
+          error.code = `run.${String(run.status).toLowerCase()}`;
+          throw error;
+        }
+      }
+
+      reconnecting = false;
+      onStatus?.(admitted ? "Starting admitted run..." : "Queued");
+    } catch (error) {
+      if (String(error?.code || "").startsWith("run.")) throw error;
+      reconnecting = true;
+      onStatus?.("Queued — reconnecting...");
+    }
+    await wait(QUEUED_RUN_POLL_MS);
+    if (reconnecting) onStatus?.("Queued");
+  }
+}
 // Absolute frontend backstop: if the stream never delivers a terminal event
 // (done/error) within this window, poll once for a result and otherwise hand the
 // job off to the background so the UI can never spin/pulse forever.
@@ -173,60 +240,97 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
   // started in one chat keeps running (and rendering) in that chat even after
   // the user navigates to a different chat. The UI consumes only the slice that
   // belongs to the currently open chat (derived below).
-  const [generatingChats, setGeneratingChats] = useState({}); // chatId -> bool
-  const [pendingMessages, setPendingMessages] = useState({}); // chatId -> pendingMessage|null
-  const [generationStages, setGenerationStages] = useState({}); // chatId -> string
+  const [generatingChats, setGeneratingChats] = useState({}); // chatId -> requestId -> bool
+  const [pendingMessages, setPendingMessages] = useState({}); // chatId -> requestId -> pendingMessage
+  const [generationStages, setGenerationStages] = useState({}); // chatId -> requestId -> string
   const [tasks, setTasks] = useState([]);
   const [currentTaskId, setCurrentTaskId] = useState(null);
   const [chatMode, setChatMode] = useState("plan"); // "plan" | "act"
 
-  // Synchronous mirror of which chats are generating, so we can guard against
-  // double-submits without waiting for a state flush.
+  // Synchronous mirror of active run identities. A chat may own more than one
+  // request at once; requestId (not chatId) is the concurrency boundary.
   const generatingRef = useRef({});
 
   // Live values for the currently open chat (what the UI renders).
-  const isGenerating = !!generatingChats[currentChatId];
-  const pendingMessage = (currentChatId && pendingMessages[currentChatId]) || null;
-  const generationStage = (currentChatId && generationStages[currentChatId]) || "";
+  const pendingMessagesForCurrentChat = useMemo(
+    () => currentChatId ? Object.values(pendingMessages[currentChatId] || {}).filter(Boolean) : [],
+    [currentChatId, pendingMessages]
+  );
+  const isGenerating = currentChatId
+    ? Object.values(generatingChats[currentChatId] || {}).some(Boolean)
+    : false;
+  const pendingMessage = pendingMessagesForCurrentChat[pendingMessagesForCurrentChat.length - 1] || null;
+  const generationStage = pendingMessage?.requestId
+    ? generationStages[currentChatId]?.[pendingMessage.requestId] || pendingMessage.stage || ""
+    : "";
 
   // Chat ids that currently have an in-flight generation (for sidebar badges).
   const generatingChatIds = useMemo(
-    () => Object.keys(generatingChats).filter((id) => generatingChats[id]),
+    () => Object.keys(generatingChats).filter((id) => (
+      Object.values(generatingChats[id] || {}).some(Boolean)
+    )),
     [generatingChats]
   );
 
-  const setPendingForChat = useCallback((chatId, updater) => {
+  const setPendingForChat = useCallback((chatId, updater, requestId = "__legacy__") => {
     if (!chatId) return;
     setPendingMessages((prev) => {
-      const cur = prev[chatId] ?? null;
+      const chatPending = prev[chatId] || {};
+      const cur = chatPending[requestId] ?? null;
       const next = typeof updater === "function" ? updater(cur) : updater;
       if (next === cur) return prev;
-      return { ...prev, [chatId]: next };
+      const nextChatPending = { ...chatPending };
+      if (next == null) delete nextChatPending[requestId];
+      else nextChatPending[requestId] = { ...next, requestId: next.requestId || requestId };
+      const result = { ...prev };
+      if (Object.keys(nextChatPending).length) result[chatId] = nextChatPending;
+      else delete result[chatId];
+      return result;
     });
   }, []);
 
-  const setStageForChat = useCallback((chatId, value) => {
+  const setStageForChat = useCallback((chatId, value, requestId = "__legacy__") => {
     if (!chatId) return;
     setGenerationStages((prev) => {
-      if (prev[chatId] === value) return prev;
-      return { ...prev, [chatId]: value };
+      const chatStages = prev[chatId] || {};
+      if (chatStages[requestId] === value) return prev;
+      const nextChatStages = { ...chatStages };
+      if (!value) delete nextChatStages[requestId];
+      else nextChatStages[requestId] = value;
+      const result = { ...prev };
+      if (Object.keys(nextChatStages).length) result[chatId] = nextChatStages;
+      else delete result[chatId];
+      return result;
     });
   }, []);
 
-  const setGeneratingForChat = useCallback((chatId, value) => {
+  const setGeneratingForChat = useCallback((chatId, value, requestId = "__legacy__") => {
     if (!chatId) return;
-    generatingRef.current[chatId] = value;
+    const runKey = `${chatId}:${requestId}`;
+    if (value) generatingRef.current[runKey] = true;
+    else delete generatingRef.current[runKey];
     setGeneratingChats((prev) => {
-      if (Boolean(prev[chatId]) === Boolean(value)) return prev;
-      return { ...prev, [chatId]: value };
+      const chatRuns = prev[chatId] || {};
+      if (Boolean(chatRuns[requestId]) === Boolean(value)) return prev;
+      const nextChatRuns = { ...chatRuns };
+      if (value) nextChatRuns[requestId] = true;
+      else delete nextChatRuns[requestId];
+      const result = { ...prev };
+      if (Object.keys(nextChatRuns).length) result[chatId] = nextChatRuns;
+      else delete result[chatId];
+      return result;
     });
   }, []);
 
   // Update the pending message for the currently open chat (used by interactive
   // UI like "approve step"). Generation internals use setPendingForChat directly.
   const setPendingMessage = useCallback(
-    (updater) => setPendingForChat(currentChatId, updater),
-    [setPendingForChat, currentChatId]
+    (updater) => setPendingForChat(
+      currentChatId,
+      updater,
+      pendingMessage?.requestId || "__legacy__"
+    ),
+    [setPendingForChat, currentChatId, pendingMessage?.requestId]
   );
 
   const reportedFirestoreFailuresRef = useRef(new Set());
@@ -580,27 +684,26 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
       return;
     }
 
-    const currentMode = actNow ? "act" : chatMode;
+    const currentMode = modeOverride === "debug" ? "debug" : actNow ? "act" : chatMode;
     const requestId = existingRequestId || uuidv4();
 
     let activeChatId = existingChatId || currentChatId;
-    // Block only if THIS chat already has an in-flight generation; other chats
-    // are free to generate concurrently.
-    if (activeChatId && generatingRef.current[activeChatId]) return;
 
     const expertMode = modeOverride || activeMode || settings.chatMode || "agent";
 
     // Setters bound to the originating chat. `activeChatId` is a `let` that may be
     // assigned below (new chat); these closures always read its latest value, so
     // generation state lands in the chat it started in regardless of navigation.
-    const setPending = (updater) => setPendingForChat(activeChatId, updater);
-    const setStage = (value) => setStageForChat(activeChatId, value);
-    const setBusy = (value) => setGeneratingForChat(activeChatId, value);
+    const runStreamKey = (chatId) => `${chatId}:${requestId}`;
+    const setPending = (updater) => setPendingForChat(activeChatId, updater, requestId);
+    const setStage = (value) => setStageForChat(activeChatId, value, requestId);
+    const setBusy = (value) => setGeneratingForChat(activeChatId, value, requestId);
 
     const publishGenerationStage = (chatId, label, { id, status, extraPending } = {}) => {
       if (!label || !chatId) return;
-      streamStatesRef.current[chatId] = applyStreamActivity(
-        streamStatesRef.current[chatId] || createPendingStreamState(),
+      const streamKey = runStreamKey(chatId);
+      streamStatesRef.current[streamKey] = applyStreamActivity(
+        streamStatesRef.current[streamKey] || createPendingStreamState(),
         {
           id: id || `stage-${stageSlug(label)}`,
           type: "stage",
@@ -608,8 +711,8 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
           text: label,
         }
       );
-      const snapshot = getPendingStreamSnapshot(streamStatesRef.current[chatId]);
-      setStageForChat(chatId, label);
+      const snapshot = getPendingStreamSnapshot(streamStatesRef.current[streamKey]);
+      setStageForChat(chatId, label, requestId);
       setPendingForChat(chatId, (prev) => {
         if (!prev) return prev;
         return {
@@ -619,17 +722,17 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
           streamStatus: null,
           ...(extraPending || {}),
         };
-      });
+      }, requestId);
     };
 
     const beginGenerationState = (chatId) => {
-      setGeneratingForChat(chatId, true);
+      setGeneratingForChat(chatId, true, requestId);
       const initialState = applyStreamActivity(createPendingStreamState(), {
         type: "stage",
         text: "Analyzing Request...",
         status: "Analyzing Request...",
       });
-      streamStatesRef.current[chatId] = initialState;
+      streamStatesRef.current[runStreamKey(chatId)] = initialState;
       setPendingForChat(chatId, {
         role: "assistant",
         content: "",
@@ -639,8 +742,8 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
         requestId,
         stage: "Analyzing Request...",
         streamState: getPendingStreamSnapshot(initialState),
-      });
-      setStageForChat(chatId, "Analyzing Request...");
+      }, requestId);
+      setStageForChat(chatId, "Analyzing Request...", requestId);
     };
 
     if (activeChatId) beginGenerationState(activeChatId);
@@ -722,7 +825,6 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
       const autoPushPolicy = settings?.studioAutoPushPolicy || "after_validation";
       let studioSessionId = null;
       let studioConnectionType = null;
-      let studioTargetPlaceId = null;
       if (studioEnabled) {
         try {
           const studioStatus = await getStudioStatus();
@@ -732,13 +834,6 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
           studioSessionId = getStudioSessionId(studioSession);
           studioConnectionType = studioSession
             ? getStudioConnectionType(studioSession)
-            : null;
-          const liveStudioSessions = (Array.isArray(studioStatus.sessions) ? studioStatus.sessions : [])
-            .filter((session) => isStudioSessionLive(session));
-          const livePlaceIds = new Set(liveStudioSessions.map(getStudioPlaceId).filter(Boolean));
-          const hasUnknownLivePlace = liveStudioSessions.some((session) => !getStudioPlaceId(session));
-          studioTargetPlaceId = livePlaceIds.size === 1 && !hasUnknownLivePlace
-            ? Array.from(livePlaceIds)[0]
             : null;
         } catch (_) {
           /* non-fatal: codegen still works without Studio */
@@ -778,7 +873,12 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
         }
       }
 
-      const jobRes = await fetch(`${BACKEND_URL}/api/generate/artifact`, {
+      const authoritativeEnvelope = submissionOptions?.authoritativeRun;
+      let jobData;
+      if (authoritativeEnvelope?.run?.runId) {
+        jobData = authoritativeEnvelope.run;
+      } else {
+        const jobRes = await fetch(`${BACKEND_URL}/api/generate/artifact`, {
         method: "POST",
         headers: { 
           "Content-Type": "application/json", 
@@ -802,7 +902,7 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
           studioSessionId,
           studioConnectionType,
           routingMode: "hybrid",
-          targetPlaceId: preferredPlaceId || studioTargetPlaceId,
+          targetPlaceId: preferredPlaceId,
           studioTargetId: preferredTargetId,
           studioTargetConfirmed: Boolean(preferredTargetId),
           autoPushToStudio:
@@ -811,49 +911,57 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
             studioConnectionType === STUDIO_CONNECTION_TYPES.PLUGIN_BRIDGE,
           autoPushPolicy,
           baseArtifact,
+          ...(submissionOptions?.approvedPlan ? {
+            approvedPlan: {
+              planId: submissionOptions.approvedPlan.planId,
+              version: submissionOptions.approvedPlan.version,
+              hash: submissionOptions.approvedPlan.hash,
+            },
+          } : {}),
           ...(FEATURE_FLAGS.newTaskRuntime ? {
             ...(taskProjectId ? { projectId: taskProjectId } : {}),
             ...(activeTaskId ? { activeTaskId } : {}),
             showPlan,
           } : {}),
         }),
-      });
+        });
       
-      if (!jobRes.ok) {
-        let errorMsg = "Failed to create generation job";
-        let errorCode = null;
-        try {
-          const contentType = jobRes.headers.get("content-type");
-          if (contentType && contentType.includes("application/json")) {
-            const errData = await jobRes.json();
-            const billingFailure = parseApiErrorPayload(errData);
-            if (billingFailure) {
-              notify(insufficientTokensToast(planKey));
-              setBusy(false);
-              setPending(null);
-              setStage("");
-              if (activeChatId) delete streamStatesRef.current[activeChatId];
-              return;
+        if (!jobRes.ok) {
+          let errorMsg = "Failed to create generation job";
+          let errorCode = null;
+          try {
+            const contentType = jobRes.headers.get("content-type");
+            if (contentType && contentType.includes("application/json")) {
+              const errData = await jobRes.json();
+              const billingFailure = parseApiErrorPayload(errData);
+              if (billingFailure) {
+                notify(insufficientTokensToast(planKey));
+                setBusy(false);
+                setPending(null);
+                setStage("");
+                if (activeChatId) delete streamStatesRef.current[runStreamKey(activeChatId)];
+                return;
+              }
+              errorMsg = formatUserFacingError(errData.message || errData.error || errorMsg);
+              errorCode = errData.code || null;
+            } else {
+              const text = await jobRes.text();
+              console.error("Server returned non-JSON error:", text);
+              errorMsg = `Server Error (${jobRes.status})`;
             }
-            errorMsg = formatUserFacingError(errData.message || errData.error || errorMsg);
-            errorCode = errData.code || null;
-          } else {
-            const text = await jobRes.text();
-            console.error("Server returned non-JSON error:", text);
-            errorMsg = `Server Error (${jobRes.status})`;
+          } catch (e) {
+            console.error("Error parsing error response:", e);
           }
-        } catch (e) {
-          console.error("Error parsing error response:", e);
+          const err = new Error(errorMsg);
+          if (errorCode) err.code = errorCode;
+          throw err;
         }
-        const err = new Error(errorMsg);
-        if (errorCode) err.code = errorCode;
-        throw err;
+        jobData = await jobRes.json();
       }
-      
-      const jobData = await jobRes.json();
-      const jobId = typeof jobData.jobId === "string" ? jobData.jobId.trim() : "";
+      let jobId = typeof jobData.jobId === "string" ? jobData.jobId.trim() : "";
       const acceptedTaskId = typeof jobData.taskId === "string" ? jobData.taskId.trim() : "";
-      const runtimeTaskAccepted = FEATURE_FLAGS.newTaskRuntime
+      const runtimeTaskAccepted = !authoritativeEnvelope
+        && FEATURE_FLAGS.newTaskRuntime
         && Boolean(acceptedTaskId)
         && (
           jobData.accepted === false
@@ -870,6 +978,58 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
         } catch (error) {
           console.warn("Could not bind accepted task to the workspace runtime.", error);
         }
+      }
+
+      const queuedAuthoritativeRun = Boolean(
+        authoritativeEnvelope
+        && !jobId
+        && (
+          authoritativeEnvelope.executionDisposition === "queued"
+          || jobData.executionDisposition === "queued"
+          || jobData.status === "queued"
+        )
+      );
+      if (queuedAuthoritativeRun) {
+        const queuedStage = Number.isFinite(Number(jobData.queuePosition))
+          ? `Queued (position ${Number(jobData.queuePosition)})`
+          : "Queued";
+        const queuedAssistantRef = doc(
+          db,
+          "users",
+          user.uid,
+          "chats",
+          activeChatId,
+          "messages",
+          `${requestId}-assistant`,
+        );
+        publishGenerationStage(activeChatId, queuedStage, {
+          extraPending: {
+            runId: jobData.runId,
+            taskId: acceptedTaskId || null,
+            queuePosition: jobData.queuePosition || null,
+          },
+        });
+        await setDoc(queuedAssistantRef, {
+          role: "assistant",
+          content: "",
+          stage: queuedStage,
+          pending: true,
+          requestId,
+          runId: jobData.runId,
+          ...(acceptedTaskId ? { taskId: acceptedTaskId } : {}),
+          ...(jobData.queuePosition ? { queuePosition: jobData.queuePosition } : {}),
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+          metadata: { mode: currentMode, type: null },
+        }, { merge: true });
+        jobData = await waitForAuthoritativeRunJob({
+          agentId: jobData.agentId,
+          runId: jobData.runId,
+          onStatus: (nextStage) => publishGenerationStage(activeChatId, nextStage, {
+            extraPending: { runId: jobData.runId, taskId: acceptedTaskId || null },
+          }),
+        });
+        jobId = String(jobData.jobId || "").trim();
       }
 
       if (!jobId) {
@@ -906,7 +1066,7 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
           setBusy(false);
           setPending(null);
           setStage("");
-          if (activeChatId) delete streamStatesRef.current[activeChatId];
+          if (activeChatId) delete streamStatesRef.current[runStreamKey(activeChatId)];
           return;
         }
         throw new Error("Failed to create generation job");
@@ -994,8 +1154,8 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
         const flushPendingStreamState = () => {
           streamFlushTimer = null;
           lastStreamFlushAt = Date.now();
-          const snapshot = getPendingStreamSnapshot(streamStatesRef.current[activeChatId]);
-          const pendingContent = formatPendingStreamContent(streamStatesRef.current[activeChatId]);
+          const snapshot = getPendingStreamSnapshot(streamStatesRef.current[runStreamKey(activeChatId)]);
+          const pendingContent = formatPendingStreamContent(streamStatesRef.current[runStreamKey(activeChatId)]);
           setPending((prev) => {
             if (!prev) return prev;
             return {
@@ -1023,8 +1183,8 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
         };
 
         const recordStreamActivity = (entry, immediate = true) => {
-          streamStatesRef.current[activeChatId] = applyStreamActivity(
-            streamStatesRef.current[activeChatId],
+          streamStatesRef.current[runStreamKey(activeChatId)] = applyStreamActivity(
+            streamStatesRef.current[runStreamKey(activeChatId)],
             entry
           );
           idlePulse?.notifyActivity();
@@ -1106,7 +1266,7 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
           clearWallTimer();
           setPending(null);
           setStage("");
-          delete streamStatesRef.current[activeChatId];
+          delete streamStatesRef.current[runStreamKey(activeChatId)];
           const publicError = new Error(friendlyMessage);
           publicError.code = err?.code || "GENERATION_FAILED";
           reject(publicError);
@@ -1142,7 +1302,7 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
           clearWallTimer();
           setPending(null);
           setStage("");
-          delete streamStatesRef.current[activeChatId];
+          delete streamStatesRef.current[runStreamKey(activeChatId)];
           resolve();
         };
 
@@ -1200,7 +1360,7 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
           clearWallTimer();
           setPending(null);
           setStage("");
-          delete streamStatesRef.current[activeChatId];
+          delete streamStatesRef.current[runStreamKey(activeChatId)];
           resolve();
         };
 
@@ -1247,7 +1407,7 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
           if (streamFlushTimer) clearTimeout(streamFlushTimer);
           setPending(null);
           setStage("");
-          delete streamStatesRef.current[activeChatId];
+          delete streamStatesRef.current[runStreamKey(activeChatId)];
         };
 
         const recoverFromStreamFailure = async (rawError = null) => {
@@ -1367,8 +1527,8 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
             try {
               const data = JSON.parse(e.data);
               updateStreamPosition(data);
-              streamStatesRef.current[activeChatId] = applyReasoningDelta(
-                streamStatesRef.current[activeChatId],
+              streamStatesRef.current[runStreamKey(activeChatId)] = applyReasoningDelta(
+                streamStatesRef.current[runStreamKey(activeChatId)],
                 data
               );
               idlePulse?.notifyActivity();
@@ -1384,8 +1544,8 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
             try {
               const data = JSON.parse(e.data);
               updateStreamPosition(data);
-              streamStatesRef.current[activeChatId] = applyStreamDelta(
-                streamStatesRef.current[activeChatId],
+              streamStatesRef.current[runStreamKey(activeChatId)] = applyStreamDelta(
+                streamStatesRef.current[runStreamKey(activeChatId)],
                 data
               );
               idlePulse?.notifyActivity();
@@ -1518,7 +1678,7 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
             onPulse: (message) => {
               publishStage(message, { id: "idle-pulse", status: "Working" });
             },
-            getActivitySeq: () => streamStatesRef.current[activeChatId]?.activitySeq || 0,
+            getActivitySeq: () => streamStatesRef.current[runStreamKey(activeChatId)]?.activitySeq || 0,
             getContext: () => ({ studioConnected: Boolean(studioSessionId) }),
           });
           idlePulse.start();
@@ -1542,7 +1702,7 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
       setBusy(false);
       setPending(null);
       setStage("");
-      if (activeChatId) delete streamStatesRef.current[activeChatId];
+      if (activeChatId) delete streamStatesRef.current[runStreamKey(activeChatId)];
     }
   };
 
@@ -1551,8 +1711,12 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
     try {
       await deleteDoc(doc(db, "users", user.uid, "chats", chatId));
       // Drop any in-flight generation state tied to the deleted chat.
-      delete generatingRef.current[chatId];
-      delete streamStatesRef.current[chatId];
+      Object.keys(generatingRef.current).forEach((key) => {
+        if (key.startsWith(`${chatId}:`)) delete generatingRef.current[key];
+      });
+      Object.keys(streamStatesRef.current).forEach((key) => {
+        if (key.startsWith(`${chatId}:`)) delete streamStatesRef.current[key];
+      });
       const dropKey = (obj) => {
         if (!(chatId in obj)) return obj;
         const next = { ...obj };
@@ -1591,15 +1755,60 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
     }
   };
 
-  const startNewChat = useCallback(() => {
+  const startNewChat = useCallback(async ({ projectId = null, studioTargetPreference = null } = {}) => {
+    if (!authReady || !user?.uid || auth.currentUser?.uid !== user.uid) return null;
+    let selectedProjectId = String(projectId || "").trim();
+    if (!selectedProjectId) {
+      try {
+        selectedProjectId = String(localStorage.getItem("nexusrbx.selectedWorkspaceProjectId") || "").trim();
+      } catch (_) {
+        selectedProjectId = "";
+      }
+    }
+    const chatId = uuidv4();
+    const draftId = uuidv4();
+    let agentId = null;
+    let agentRuntimeError = null;
+    try {
+      const created = await createAgentV2({
+        chatId,
+        projectId: selectedProjectId || null,
+        idempotencyKey: `agent-${chatId}`,
+      });
+      agentId = normalizeAgentProjection(created)?.agentId || null;
+      if (!agentId) throw new Error("Agent runtime did not return an agent id");
+    } catch (error) {
+      // Chat creation stays available during runtime rollout/outages. The
+      // idempotent agent reservation will be retried by the submission path.
+      console.warn("Could not reserve the v2 agent before creating the chat.", error);
+      agentRuntimeError = String(error?.message || "Agent runtime unavailable");
+    }
+    const payload = {
+      title: "New chat",
+      activeMode: "agent",
+      lifecycle: "draft",
+      draftId,
+      chatId,
+      ...(agentId ? { agentId, agentRuntimeStatus: "ready" } : {
+        agentRuntimeStatus: "unavailable",
+        agentRuntimeError,
+      }),
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    };
+    if (selectedProjectId) payload.projectId = selectedProjectId;
+    if (studioTargetPreference) payload.studioTargetPreference = studioTargetPreference;
+    await setDoc(doc(db, "users", user.uid, "chats", chatId), payload);
     closeChatSubscriptions();
-    setCurrentChatId(null);
-    setCurrentChatMeta(null);
+    setCurrentChatId(chatId);
+    setCurrentChatMeta({ id: chatId, ...payload });
     setMessages([]);
     setActiveMode("agent");
     setTasks([]);
     setCurrentTaskId(null);
-  }, [closeChatSubscriptions]);
+    openChatById(chatId);
+    return chatId;
+  }, [authReady, user?.uid, closeChatSubscriptions, openChatById]);
 
   const updateChatMode = useCallback(async (chatId, mode) => {
     const uid = user?.uid;
@@ -1634,6 +1843,9 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
     isGenerating,
     pendingMessage,
     generationStage,
+    pendingMessages: pendingMessagesForCurrentChat,
+    pendingMessagesByChat: pendingMessages,
+    generatingRunsByChat: generatingChats,
     generatingChatIds,
     setPendingForChat,
     setStageForChat,

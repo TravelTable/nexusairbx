@@ -67,6 +67,9 @@ local BRIDGE_STATES = {
 	live = { label = "LIVE", color = COLORS.live, pulse = false },
 	working = { label = "WORKING", color = COLORS.accent, pulse = true },
 	degraded = { label = "RECONNECTING", color = COLORS.warning, pulse = true },
+	reconciling = { label = "CONFIRMING", color = COLORS.warning, pulse = true },
+	target_changed = { label = "WRONG PLACE", color = COLORS.error, pulse = false },
+	target_stale = { label = "TARGET STALE", color = COLORS.error, pulse = false },
 	error = { label = "ACTION NEEDED", color = COLORS.error, pulse = false },
 }
 
@@ -589,6 +592,11 @@ undoBatchButton = makeButton(safetySection, "UndoBatchButton", "Undo Last Batch"
 local settingsSection = makeSection("Settings")
 makeText(settingsSection, "SettingsTitle", "Settings", 18, 13, true)
 approvalToggleButton = makeButton(settingsSection, "ApprovalToggle", "Review before apply: OFF", themeColor(Enum.StudioStyleGuideColor.Button))
+makeText(settingsSection, "StudioTargetTitle", "Studio target", 17, 12, true)
+studioTargetLabel = makeText(settingsSection, "StudioTargetStatus", "Checking the open place...", nil, 11, false, themeColor(Enum.StudioStyleGuideColor.DimmedText), true)
+studioTargetLabel.TextWrapped = true
+studioFreshnessLabel = makeText(settingsSection, "StudioFreshness", "Heartbeat -- · Commands -- · Place --", nil, 10, false, themeColor(Enum.StudioStyleGuideColor.DimmedText), true)
+studioFreshnessLabel.TextWrapped = true
 -- Informational only: this does not pair, start, stop, or otherwise control
 -- the desktop MCP companion.
 do
@@ -806,7 +814,13 @@ end
 -- call sites keep working without ever mislabeling the connection.
 local function stateFromLegacy(text)
 	local lowered = string.lower(tostring(text or ""))
-	if string.find(lowered, "expired") then
+	if string.find(lowered, "wrong place") or string.find(lowered, "target changed") then
+		return "target_changed"
+	elseif string.find(lowered, "target stale") then
+		return "target_stale"
+	elseif string.find(lowered, "confirming") or string.find(lowered, "reconcil") then
+		return "reconciling"
+	elseif string.find(lowered, "expired") then
 		return "error"
 	elseif string.find(lowered, "unsupported") or string.find(lowered, "pair failed") then
 		return "error"
@@ -994,7 +1008,7 @@ function setBridgeState(state, detail)
 	statusPill.Text = def.label
 	resizeStatusPill(def.label)
 	TweenService:Create(statusPill, TweenInfo.new(0.16, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { BackgroundColor3 = def.color }):Play()
-	if detail ~= nil and tostring(detail) ~= "" and (key == "working" or key == "degraded") then
+	if detail ~= nil and tostring(detail) ~= "" and (key == "working" or key == "degraded" or key == "reconciling" or key == "target_changed" or key == "target_stale") then
 		activeLabel.Text = "Active tool: " .. tostring(detail)
 	end
 	refreshControls()
@@ -1015,6 +1029,46 @@ function setHealth(syncedAt, latencyMs)
 		healthLabel.Text = "Not synced yet"
 	else
 		healthLabel.Text = ("Synced %ds ago%s"):format(ago, latencyText)
+	end
+end
+
+function setConnectionDiagnostics(summary)
+	if type(summary) ~= "table" then return end
+	local target = type(summary.target) == "table" and summary.target or {}
+	local freshness = type(summary.freshness) == "table" and summary.freshness or {}
+	local function freshnessText(channel)
+		local entry = freshness[channel]
+		if type(entry) ~= "table" or entry.at == nil then return "--" end
+		local age = math.max(0, os.time() - (tonumber(entry.at) or os.time()))
+		local latency = entry.latencyMs and ("/" .. tostring(math.floor(entry.latencyMs)) .. "ms") or ""
+		if entry.ok ~= true then return "failed " .. tostring(age) .. "s" end
+		return tostring(age) .. "s" .. latency
+	end
+	if studioFreshnessLabel then
+		studioFreshnessLabel.Text = ("Heartbeat %s · Commands %s · Place %s"):format(
+			freshnessText("heartbeat"), freshnessText("poll"), freshnessText("attestation")
+		)
+	end
+	if studioTargetLabel then
+		local identity = ("%s · place %s · universe %s · gen %s"):format(
+			tostring(target.placeName or "Unnamed place"),
+			tostring(target.placeId or "--"),
+			tostring(target.universeId or "--"),
+			tostring(target.targetGeneration or "--")
+		)
+		if target.targetBound and target.targetReady == false then
+			studioTargetLabel.Text = "Blocked · " .. identity
+			studioTargetLabel.TextColor3 = COLORS.error
+		elseif target.targetBound then
+			studioTargetLabel.Text = "Ready · " .. identity
+			studioTargetLabel.TextColor3 = COLORS.success
+		else
+			studioTargetLabel.Text = "Open · " .. identity .. " · awaiting website target"
+			studioTargetLabel.TextColor3 = COLORS.muted
+		end
+	end
+	if target.targetBound and target.targetReady == false and currentBridgeState ~= "working" then
+		setBridgeState("target_changed", target.detail or "Website target does not match this open place")
 	end
 end
 

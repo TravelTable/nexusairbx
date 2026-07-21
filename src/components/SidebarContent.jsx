@@ -34,7 +34,6 @@ import { AI_EVENTS, emitAiEvent } from "../lib/aiEvents";
 import {
   getFirestore,
   doc,
-  deleteDoc,
   updateDoc,
   serverTimestamp,
 } from "firebase/firestore";
@@ -76,6 +75,7 @@ export default function SidebarContent({
   onOpenGameContext = () => {},
   gameProfile = null,
   generatingChatIds = [],
+  activeAgentStatusByChat = {},
   user = null,
   authReady = true,
   notify = () => {},
@@ -283,13 +283,22 @@ export default function SidebarContent({
   );
 
   const handleDeleteChatConfirm = useCallback(async () => {
-    if (!user || !deleteChatId) return;
+    if (!deleteChatId) return;
+    if (activeAgentStatusByChat[deleteChatId]) {
+      notify({
+        message: "Cancel this chat's active runs before deleting it.",
+        type: "info",
+      });
+      return;
+    }
     setChatDeleteLoading(true);
-    const db = getFirestore();
-    await deleteDoc(doc(db, "users", user.uid, "chats", deleteChatId));
-    setChatDeleteLoading(false);
-    setDeleteChatId(null);
-  }, [user, deleteChatId]);
+    try {
+      await onDeleteChat(deleteChatId);
+      setDeleteChatId(null);
+    } finally {
+      setChatDeleteLoading(false);
+    }
+  }, [activeAgentStatusByChat, deleteChatId, notify, onDeleteChat]);
 
   const handleOpenChat = useCallback(
     (chatId) => {
@@ -708,6 +717,7 @@ export default function SidebarContent({
                             chat={c}
                             currentChatId={currentChatId}
                             isGenerating={generatingChatIds?.includes(c.id)}
+                            agentStatus={activeAgentStatusByChat[c.id] || null}
                             onOpenChat={handleOpenChat}
                             renamingChatId={renamingChatId}
                             renameChatTitle={renameChatTitle}
@@ -762,19 +772,22 @@ export default function SidebarContent({
               }}
               onRenameCancel={() => setRenamingChatId(null)}
               onDeleteClick={setDeleteChatId}
+              activeAgentStatusByChat={activeAgentStatusByChat}
             />
 
             {/* Delete Chat Modal */}
             {deleteChatId && (
               <Modal onClose={() => setDeleteChatId(null)} title="Delete Chat">
                 <div className="mb-4 text-gray-200">
-                  Are you sure you want to delete this chat? This cannot be undone.
+                  {activeAgentStatusByChat[deleteChatId]
+                    ? "This chat still has an active agent. Cancel its runs before deleting the chat."
+                    : "Are you sure you want to delete this chat? This cannot be undone."}
                 </div>
                 <div className="flex gap-2">
                   <button
                     className="flex-1 py-2 rounded bg-red-600 text-white font-bold disabled:opacity-60"
                     onClick={handleDeleteChatConfirm}
-                    disabled={chatDeleteLoading}
+                    disabled={chatDeleteLoading || Boolean(activeAgentStatusByChat[deleteChatId])}
                   >
                     {chatDeleteLoading ? "Deleting..." : "Delete"}
                   </button>

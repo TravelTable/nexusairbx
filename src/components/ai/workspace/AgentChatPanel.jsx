@@ -13,6 +13,7 @@ export default function AgentChatPanel({
   // chat
   messages,
   pendingMessage,
+  pendingMessages,
   generationStage,
   user,
   profile,
@@ -141,6 +142,7 @@ export default function AgentChatPanel({
             <ChatView
               messages={messages}
               pendingMessage={pendingMessage}
+              pendingMessages={pendingMessages}
               generationStage={generationStage}
               user={user}
               profile={profile}
