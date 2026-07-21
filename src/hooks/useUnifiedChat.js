@@ -280,11 +280,24 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
   ) => {
     try {
       const projectId = submitOptions.projectId || null;
-      const created = await createAgentV2({
-        chatId: activeChatId,
-        projectId,
-        idempotencyKey: `agent-${activeChatId}`,
-      });
+      let created;
+      try {
+        created = await createAgentV2({
+          chatId: activeChatId,
+          projectId,
+          idempotencyKey: `agent-${activeChatId}`,
+        });
+      } catch (error) {
+        // A chat can outlive its retention project. If the UI repairs that
+        // binding, the original idempotency key is still tied to the old
+        // project, so create a new project-scoped projection for this chat.
+        if (error?.payload?.code !== "IDEMPOTENCY_CONFLICT" || !projectId) throw error;
+        created = await createAgentV2({
+          chatId: activeChatId,
+          projectId,
+          idempotencyKey: `agent-${activeChatId}-${projectId}`,
+        });
+      }
       const agent = normalizeAgentProjection(created);
       if (!agent?.agentId) throw new Error("Agent runtime did not return an agent id");
       await setDoc(

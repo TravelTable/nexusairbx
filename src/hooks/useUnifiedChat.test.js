@@ -396,6 +396,52 @@ describe("useUnifiedChat", () => {
     expect(orchestrate).not.toHaveBeenCalled();
   });
 
+  test("creates a project-scoped agent after a repaired chat binding conflicts with the old projection", async () => {
+    useAiChat.mockReturnValue({
+      activeMode: "agent",
+      currentChatId: "chat-1",
+      generatingChatIds: [],
+      generationStage: "",
+      handleSubmit: chatHandleSubmit,
+      isGenerating: false,
+      messages: [],
+      openChatById: jest.fn(),
+      pendingMessage: null,
+      setPendingForChat: jest.fn(),
+    });
+    createAgentV2
+      .mockRejectedValueOnce(Object.assign(new Error("Idempotency conflict"), {
+        payload: { code: "IDEMPOTENCY_CONFLICT" },
+      }))
+      .mockResolvedValueOnce({ agent: { agentId: "agent-2", projectId: "project_2" } });
+    const user = { uid: "user-1", getIdToken: jest.fn().mockResolvedValue("token") };
+
+    const { result } = renderHook(() =>
+      useUnifiedChat(user, {}, jest.fn(), jest.fn())
+    );
+
+    await act(async () => {
+      await result.current.handleSubmit("Build a lobby system", [], null, {
+        projectId: "project_2",
+      });
+    });
+
+    expect(createAgentV2).toHaveBeenNthCalledWith(1, {
+      chatId: "chat-1",
+      projectId: "project_2",
+      idempotencyKey: "agent-chat-1",
+    });
+    expect(createAgentV2).toHaveBeenNthCalledWith(2, {
+      chatId: "chat-1",
+      projectId: "project_2",
+      idempotencyKey: "agent-chat-1-project_2",
+    });
+    expect(createAgentRunV2).toHaveBeenCalledWith(expect.objectContaining({
+      agentId: "agent-2",
+      projectId: "project_2",
+    }));
+  });
+
   test("sends the complete server-owned execution input for an authoritative Studio run", async () => {
     getStudioEnabledPreference.mockReturnValue(true);
     getStudioApplyMode.mockReturnValue("manual_review");

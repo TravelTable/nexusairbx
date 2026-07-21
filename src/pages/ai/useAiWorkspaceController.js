@@ -63,6 +63,7 @@ import {
 import {
   createProjectBinding,
   findOrCreateProjectBinding,
+  getProjectBinding,
 } from "../../lib/projectBindingsApi";
 import {
   isFirestorePermissionDenied,
@@ -907,6 +908,24 @@ export function useAiWorkspaceController() {
     const agentMode = ["agent", "debug"].includes(
       String(settings?.chatMode || chat.activeMode || "agent").toLowerCase()
     );
+    if (runtimeProjectId && agentMode) {
+      try {
+        await getProjectBinding(runtimeProjectId);
+      } catch (error) {
+        if (error?.status !== 404) {
+          notify({
+            message: error?.message || "Could not verify this workspace project.",
+            type: "error",
+          });
+          return;
+        }
+
+        // Chats are durable, while empty retention projects can be removed.
+        // Treat an unavailable saved binding as stale and provision a fresh
+        // export project below instead of sending a guaranteed runtime 404.
+        runtimeProjectId = null;
+      }
+    }
     if (!runtimeProjectId && agentMode) {
       try {
         const binding = await ensureExportProjectBinding(promptToSend);
