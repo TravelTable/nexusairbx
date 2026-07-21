@@ -60,7 +60,10 @@ import {
   readChatStudioPreference,
   targetingOptionsFromStatus,
 } from "../../lib/studioPlaceBinding";
-import { findOrCreateProjectBinding } from "../../lib/projectBindingsApi";
+import {
+  createProjectBinding,
+  findOrCreateProjectBinding,
+} from "../../lib/projectBindingsApi";
 import {
   isFirestorePermissionDenied,
   resolveAwaitingStudioTargetRunId,
@@ -619,14 +622,7 @@ export function useAiWorkspaceController() {
   useEffect(() => {
     const unbindStartDraft = onAiEvent(AI_EVENTS.START_DRAFT, (event) => {
       const projectId = String(event?.detail?.projectId || "").trim();
-      if (projectId) {
-        try {
-          localStorage.setItem("nexusrbx.selectedWorkspaceProjectId", projectId);
-        } catch (_) {
-          /* ignore */
-        }
-      }
-      chat.startNewChat();
+      void chat.startNewChat({ projectId: projectId || null });
       setActiveTab("chat");
     });
 
@@ -782,10 +778,17 @@ export function useAiWorkspaceController() {
     const project = result?.project || null;
     const projectId = String(project?.projectId || result?.projectId || "").trim();
     if (!projectId) throw new Error("The selected Studio place could not be linked to a workspace project.");
-    try {
-      localStorage.setItem("nexusrbx.selectedWorkspaceProjectId", projectId);
-    } catch (_) {
-      // Firestore chat metadata still carries the authoritative project id.
+    return { project, projectId };
+  }, []);
+
+  const ensureExportProjectBinding = useCallback(async (title) => {
+    const result = await createProjectBinding({
+      title: String(title || "Untitled game").trim().slice(0, 120) || "Untitled game",
+    });
+    const project = result?.project || null;
+    const projectId = String(project?.projectId || result?.projectId || "").trim();
+    if (!projectId) {
+      throw new Error("An export project could not be created. Please try again.");
     }
     return { project, projectId };
   }, []);
@@ -860,7 +863,9 @@ export function useAiWorkspaceController() {
       return;
     }
 
-    let runtimeProjectId = String(submissionOptions?.projectId || "").trim() || null;
+    let runtimeProjectId = String(
+      submissionOptions?.projectId || chat.currentChatMeta?.projectId || ""
+    ).trim() || null;
     let studioTargetPreference = submissionOptions?.studioTargetPreference || effectiveStudioPlacePreference;
     if (
       studioEnabled &&
@@ -899,6 +904,28 @@ export function useAiWorkspaceController() {
       }
     }
 
+    const agentMode = ["agent", "debug"].includes(
+      String(settings?.chatMode || chat.activeMode || "agent").toLowerCase()
+    );
+    if (!runtimeProjectId && agentMode) {
+      try {
+        const binding = await ensureExportProjectBinding(promptToSend);
+        runtimeProjectId = binding.projectId;
+        if (chat.currentChatId) {
+          await updateDoc(doc(db, "users", user.uid, "chats", chat.currentChatId), {
+            projectId: runtimeProjectId,
+            updatedAt: serverTimestamp(),
+          });
+        }
+      } catch (error) {
+        notify({
+          message: error?.message || "Could not prepare this project for export.",
+          type: "error",
+        });
+        return;
+      }
+    }
+
     setPrompt("");
     setAttachments([]);
     setStudioPlacePickerOpen(false);
@@ -930,14 +957,7 @@ export function useAiWorkspaceController() {
       {
         ...submissionOptions,
         ...(studioTargetPreference ? { studioTargetPreference } : {}),
-        ...(runtimeProjectId ? { projectId: runtimeProjectId } : (() => {
-          try {
-            const projectId = String(localStorage.getItem("nexusrbx.selectedWorkspaceProjectId") || "").trim();
-            return projectId ? { projectId } : {};
-          } catch (_) {
-            return {};
-          }
-        })()),
+        ...(runtimeProjectId ? { projectId: runtimeProjectId } : {}),
       }
     );
   }, [
@@ -960,7 +980,10 @@ export function useAiWorkspaceController() {
     studioPlaceOptions,
     effectiveStudioPlacePreference,
     bindChatStudioPlace,
+    ensureExportProjectBinding,
     chat.activeMode,
+    chat.currentChatId,
+    chat.currentChatMeta?.projectId,
     notify,
   ]);
 

@@ -750,14 +750,7 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
 
     try {
       if (!activeChatId) {
-        let selectedProjectId = String(submissionOptions?.projectId || "").trim();
-        if (!selectedProjectId) {
-          try {
-            selectedProjectId = String(localStorage.getItem("nexusrbx.selectedWorkspaceProjectId") || "").trim();
-          } catch (_) {
-            selectedProjectId = "";
-          }
-        }
+        const selectedProjectId = String(submissionOptions?.projectId || "").trim();
         const newChatPayload = {
           title: displayContent.slice(0, 30) + (displayContent.length > 30 ? "..." : ""),
           activeMode: expertMode,
@@ -1757,14 +1750,7 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
 
   const startNewChat = useCallback(async ({ projectId = null, studioTargetPreference = null } = {}) => {
     if (!authReady || !user?.uid || auth.currentUser?.uid !== user.uid) return null;
-    let selectedProjectId = String(projectId || "").trim();
-    if (!selectedProjectId) {
-      try {
-        selectedProjectId = String(localStorage.getItem("nexusrbx.selectedWorkspaceProjectId") || "").trim();
-      } catch (_) {
-        selectedProjectId = "";
-      }
-    }
+    const selectedProjectId = String(projectId || "").trim();
     const chatId = uuidv4();
     const draftId = uuidv4();
     let agentId = null;
