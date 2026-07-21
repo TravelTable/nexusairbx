@@ -957,7 +957,6 @@ export function useAiWorkspaceController() {
     setGeneratorMode,
     studioEnabled,
     studioConnection.connected,
-    studioConnection.pluginConnected,
     studioPlaceOptions,
     effectiveStudioPlacePreference,
     bindChatStudioPlace,
