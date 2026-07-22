@@ -54,6 +54,28 @@ function validateObjectResponse(payload, operation) {
 const planPath = (planId, suffix = "") =>
   `/api/ai/plans/${encodeURIComponent(planId)}${suffix}`;
 
+function legacyPlanPath(planId, suffix = "") {
+  return `/api/ai/plan/${encodeURIComponent(planId)}${suffix}`;
+}
+
+function getPlanPathCandidates(planId, suffix = "") {
+  return [planPath(planId, suffix), legacyPlanPath(planId, suffix)];
+}
+
+async function workflowRequestWithFallback(paths, options) {
+  const pathList = Array.isArray(paths) ? paths : [paths];
+  let lastError;
+  for (const path of pathList) {
+    try {
+      return await workflowRequest(path, options);
+    } catch (error) {
+      if (!(error instanceof WorkflowApiError) || error.status !== 404) throw error;
+      lastError = error;
+    }
+  }
+  throw lastError;
+}
+
 export async function orchestrate({
   prompt,
   answers = null,
@@ -96,24 +118,24 @@ export async function orchestrate({
 }
 
 export async function approveWorkflowPlan(planId, { version, hash } = {}) {
-  const res = await authedFetch(`/api/ai/plan/${planId}/approve`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ version, hash }),
-  });
-  if (!res.ok) throw new Error("Failed to approve plan");
-  return res.json();
+  return validateObjectResponse(await workflowRequestWithFallback(
+    getPlanPathCandidates(planId, "/approve"),
+    {
+      method: "POST",
+      body: { version, hash },
+    },
+  ), "plan approval");
 }
 
 /** Fetch the latest structured, versioned plan. */
 export function getWorkflowPlan(planId, { signal } = {}) {
-  return workflowRequest(planPath(planId), { signal })
+  return workflowRequestWithFallback(getPlanPathCandidates(planId), { signal })
     .then((payload) => validateObjectResponse(payload, "plan"));
 }
 
 /** Apply concurrency-fenced plan editor operations. */
 export function updateWorkflowPlan(planId, { version, hash, operations }, { signal } = {}) {
-  return workflowRequest(planPath(planId), {
+  return workflowRequestWithFallback(getPlanPathCandidates(planId), {
     method: "PATCH",
     signal,
     body: { version, hash, operations },
@@ -122,10 +144,13 @@ export function updateWorkflowPlan(planId, { version, hash, operations }, { sign
 
 /** Regenerate one unlocked section without changing the rest of the plan. */
 export function regenerateWorkflowPlanSection(planId, sectionId, { version, hash, instruction = "" } = {}) {
-  return workflowRequest(planPath(planId, `/sections/${encodeURIComponent(sectionId)}/regenerate`), {
+  return workflowRequestWithFallback(
+    getPlanPathCandidates(planId, `/sections/${encodeURIComponent(sectionId)}/regenerate`),
+    {
     method: "POST",
     body: { version, hash, instruction },
-  }).then((payload) => validateObjectResponse(payload, "section regeneration"));
+    },
+  ).then((payload) => validateObjectResponse(payload, "section regeneration"));
 }
 
 /** Run server-owned targeting, capability, permission, and specificity checks. */
@@ -137,7 +162,7 @@ export function checkWorkflowPlanReadiness(planId, {
   studioTarget,
   targeting,
 } = {}) {
-  return workflowRequest(planPath(planId, "/readiness"), {
+  return workflowRequestWithFallback(getPlanPathCandidates(planId, "/readiness"), {
     method: "POST",
     body: {
       version,
@@ -155,7 +180,7 @@ export function checkWorkflowPlanReadiness(planId, {
 }
 
 export function getWorkflowPlanVersions(planId, { signal } = {}) {
-  return workflowRequest(planPath(planId, "/versions"), { signal }).then((payload) => {
+  return workflowRequestWithFallback(getPlanPathCandidates(planId, "/versions"), { signal }).then((payload) => {
     if (Array.isArray(payload)) return payload;
     return validateObjectResponse(payload, "plan history");
   });
@@ -165,7 +190,7 @@ export function restoreWorkflowPlanVersion(
   planId,
   { version, hash, sourceVersion, sourceHash } = {},
 ) {
-  return workflowRequest(planPath(planId, "/restore"), {
+  return workflowRequestWithFallback(getPlanPathCandidates(planId, "/restore"), {
     method: "POST",
     body: {
       version,
@@ -178,7 +203,7 @@ export function restoreWorkflowPlanVersion(
 
 /** Ask about the plan. Proposed operations are explicit and never auto-applied. */
 export function askWorkflowPlan(planId, { version, hash, question, projectId } = {}) {
-  return workflowRequest(planPath(planId, "/ask"), {
+  return workflowRequestWithFallback(getPlanPathCandidates(planId, "/ask"), {
     method: "POST",
     body: { version, hash, question, projectId: projectId || null },
   }).then((payload) => validateObjectResponse(payload, "plan answer"));
@@ -186,7 +211,7 @@ export function askWorkflowPlan(planId, { version, hash, question, projectId } =
 
 /** Compile and start execution from this exact trusted plan version. */
 export function executeWorkflowPlan(planId, { version, hash } = {}) {
-  return workflowRequest(planPath(planId, "/execute"), {
+  return workflowRequestWithFallback(getPlanPathCandidates(planId, "/execute"), {
     method: "POST",
     // The server reloads targeting and all execution context from this
     // concurrency-fenced plan. Browser copies are never execution authority.

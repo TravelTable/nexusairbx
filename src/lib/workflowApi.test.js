@@ -3,6 +3,13 @@ import {
   checkWorkflowPlanReadiness,
   orchestrate,
   restoreWorkflowPlanVersion,
+  approveWorkflowPlan,
+  getWorkflowPlan,
+  updateWorkflowPlan,
+  regenerateWorkflowPlanSection,
+  getWorkflowPlanVersions,
+  askWorkflowPlan,
+  executeWorkflowPlan,
 } from "./workflowApi";
 
 jest.mock("./billing", () => ({
@@ -86,5 +93,59 @@ describe("workflowApi planning contracts", () => {
       code: "PLAN_NOT_READY",
       status: 409,
     });
+  });
+
+  it("falls back to singular plan approval endpoint when plural is unavailable", async () => {
+    authedFetch
+      .mockResolvedValueOnce({ ok: false, status: 404, json: jest.fn().mockResolvedValue({}) })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: jest.fn().mockResolvedValue({
+          ok: true,
+          approvedPlan: { planId: "plan-1", version: 2, hash: "hash-2" },
+        }),
+      });
+
+    await approveWorkflowPlan("plan-1", { version: 2, hash: "hash-2" });
+
+    expect(authedFetch).toHaveBeenNthCalledWith(1, "/api/ai/plans/plan-1/approve", expect.objectContaining({
+      method: "POST",
+      body: JSON.stringify({ version: 2, hash: "hash-2" }),
+    }));
+    expect(authedFetch).toHaveBeenNthCalledWith(2, "/api/ai/plan/plan-1/approve", expect.objectContaining({
+      method: "POST",
+      body: JSON.stringify({ version: 2, hash: "hash-2" }),
+    }));
+  });
+
+  const fallbackTests = [
+    ["getWorkflowPlan", () => getWorkflowPlan("plan-1"), "/api/ai/plans/plan-1", "/api/ai/plan/plan-1", {}],
+    ["updateWorkflowPlan", () => updateWorkflowPlan("plan-1", { version: 1, hash: "hash-1", operations: [{ type: "noop" }] }), "/api/ai/plans/plan-1", "/api/ai/plan/plan-1", { method: "PATCH", body: JSON.stringify({ version: 1, hash: "hash-1", operations: [{ type: "noop" }] }) }],
+    ["restoreWorkflowPlanVersion", () => restoreWorkflowPlanVersion("plan-1", { version: 1, hash: "hash-1", sourceVersion: 1, sourceHash: "hash-1" }), "/api/ai/plans/plan-1/restore", "/api/ai/plan/plan-1/restore", { method: "POST", body: JSON.stringify({ version: 1, hash: "hash-1", sourceVersion: 1, sourceHash: "hash-1" }) }],
+    ["askWorkflowPlan", () => askWorkflowPlan("plan-1", { version: 1, hash: "hash-1", question: "What changed?" }), "/api/ai/plans/plan-1/ask", "/api/ai/plan/plan-1/ask", { method: "POST", body: JSON.stringify({ version: 1, hash: "hash-1", question: "What changed?", projectId: null }) }],
+    ["checkWorkflowPlanReadiness", () => checkWorkflowPlanReadiness("plan-1", { version: 1, hash: "hash-1" }), "/api/ai/plans/plan-1/readiness", "/api/ai/plan/plan-1/readiness", { method: "POST", body: JSON.stringify({ version: 1, hash: "hash-1", projectId: null, studioConnected: false, studioTarget: null, targeting: { projectId: null, studioConnected: false, studioTarget: null } }) }],
+    ["getWorkflowPlanVersions", () => getWorkflowPlanVersions("plan-1"), "/api/ai/plans/plan-1/versions", "/api/ai/plan/plan-1/versions", {}],
+    ["executeWorkflowPlan", () => executeWorkflowPlan("plan-1", { version: 1, hash: "hash-1" }), "/api/ai/plans/plan-1/execute", "/api/ai/plan/plan-1/execute", { method: "POST", body: JSON.stringify({ version: 1, hash: "hash-1" }) }],
+    ["regenerateWorkflowPlanSection", () => regenerateWorkflowPlanSection("plan-1", "scope", { version: 1, hash: "hash-1", instruction: "tighten" }), "/api/ai/plans/plan-1/sections/scope/regenerate", "/api/ai/plan/plan-1/sections/scope/regenerate", { method: "POST", body: JSON.stringify({ version: 1, hash: "hash-1", instruction: "tighten" }) }],
+  ];
+
+  it.each(fallbackTests)(`falls back to singular endpoint when plural is unavailable: %s`, async (_, command, primaryPath, legacyPath, expectedBody) => {
+    authedFetch
+      .mockResolvedValueOnce({ ok: false, status: 404, json: jest.fn().mockResolvedValue({ error: "not found" }) })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: jest.fn().mockResolvedValue({ ok: true }),
+      });
+
+    await command();
+
+    expect(authedFetch).toHaveBeenNthCalledWith(1, primaryPath, expect.objectContaining({
+      method: expectedBody.method || "GET",
+      ...(expectedBody.body ? { body: expectedBody.body } : {}),
+    }));
+    expect(authedFetch).toHaveBeenNthCalledWith(2, legacyPath, expect.objectContaining({
+      method: expectedBody.method || "GET",
+      ...(expectedBody.body ? { body: expectedBody.body } : {}),
+    }));
   });
 });
