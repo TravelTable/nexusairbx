@@ -35,6 +35,7 @@ import { PENDING_AUTH_ACTIONS } from "../../lib/pendingAuthAction";
 import { getStudioSessionId } from "../../lib/studioConnection";
 import TutorialOverlay from "../../components/onboarding/TutorialOverlay";
 import { useTutorial } from "../../components/onboarding/useTutorial";
+import useAiPageZoom, { AI_PAGE_ZOOM_OPTIONS, DEFAULT_AI_PAGE_ZOOM } from "../../hooks/useAiPageZoom";
 
 const MOBILE_TABS = [
   { id: "chat", label: "Chat", icon: MessageSquare },
@@ -101,6 +102,7 @@ export default function AgentWorkspaceLayout({ controller }) {
   const studioCapabilities = getActiveStudioCapabilities(studio);
   const studioManifestSupported = selectedStudioSupportsCommand(studio, "get_project_manifest");
   const studioAutoPushAuthorized = isCurrentPluginAutoPushAuthorized(studio);
+  const currentProjectId = chat.currentChatMeta?.projectId || roblox?.selectedAssetProjectId || "";
 
   const {
     setSidebarOpen,
@@ -152,6 +154,8 @@ export default function AgentWorkspaceLayout({ controller }) {
 
   const [leftView, setLeftView] = useState("files");
   const tutorial = useTutorial();
+  const aiPageRef = useRef(null);
+  const { zoom: aiPageZoom, setZoom: setAiPageZoom } = useAiPageZoom(aiPageRef, DEFAULT_AI_PAGE_ZOOM);
 
   useEffect(() => {
     const { documentElement, body } = document;
@@ -187,7 +191,7 @@ export default function AgentWorkspaceLayout({ controller }) {
   const manifestRecoveryAttemptedRef = useRef(new Set());
   const taskRuntime = useTaskRuntime({
     user,
-    projectId: roblox?.selectedAssetProjectId || "",
+    projectId: currentProjectId,
     chatId: chat.currentChatId || "",
     enabled: generatorMode === "agent_build" && Boolean(user),
   });
@@ -679,26 +683,43 @@ export default function AgentWorkspaceLayout({ controller }) {
   };
 
   const taskSubmissionOptions = useMemo(() => ({
-    projectId: roblox?.selectedAssetProjectId || "",
+    projectId: currentProjectId,
+    studioConnected: Boolean(studio?.connected),
+    studioTarget: studio?.placePreference || null,
+    studioTargetPreference: studio?.placePreference || null,
+    targeting: {
+      projectId: currentProjectId || null,
+      studioConnected: Boolean(studio?.connected),
+      studioTarget: studio?.placePreference || null,
+    },
     activeTaskId: taskRuntime.taskId || "",
     showPlan: chat.activeMode === "plan",
     onTaskAccepted: taskRuntime.selectTask,
   }), [
     chat.activeMode,
-    roblox?.selectedAssetProjectId,
+    currentProjectId,
+    studio?.connected,
+    studio?.placePreference,
     taskRuntime.selectTask,
     taskRuntime.taskId,
   ]);
 
-  const handleAgentPromptSubmit = useCallback((event) => {
-    if (!taskRuntime.enabled) return handlePromptSubmit(event);
-    return handlePromptSubmit(event, null, taskSubmissionOptions);
-  }, [handlePromptSubmit, taskRuntime.enabled, taskSubmissionOptions]);
+  const handleAgentPromptSubmit = useCallback((event, planSubmissionOptions = {}) => {
+    return handlePromptSubmit(event, null, {
+      ...taskSubmissionOptions,
+      ...(planSubmissionOptions && typeof planSubmissionOptions === "object"
+        ? planSubmissionOptions
+        : {}),
+    });
+  }, [handlePromptSubmit, taskSubmissionOptions]);
 
   const handleAgentApprovePlan = useCallback((message) => {
-    if (!taskRuntime.enabled) return onApprovePlan(message);
     return onApprovePlan(message, taskSubmissionOptions);
-  }, [onApprovePlan, taskRuntime.enabled, taskSubmissionOptions]);
+  }, [onApprovePlan, taskSubmissionOptions]);
+
+  const handleAgentClarifySubmit = useCallback((message, answers) => {
+    return onClarifySubmit(message, answers, taskSubmissionOptions);
+  }, [onClarifySubmit, taskSubmissionOptions]);
 
   const agentChat = (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -728,6 +749,7 @@ export default function AgentWorkspaceLayout({ controller }) {
       <div className="flex min-h-0 flex-1 flex-col">
         <AgentChatPanel
           currentChatId={chat.currentChatId}
+          projectId={currentProjectId}
           messages={chat.messages}
           pendingMessage={unified.pendingMessage}
           pendingMessages={unified.pendingMessages}
@@ -737,7 +759,8 @@ export default function AgentWorkspaceLayout({ controller }) {
           activeMode={chat.activeMode}
           isBusy={unified.isGenerating}
           onApprovePlan={handleAgentApprovePlan}
-          onClarifySubmit={onClarifySubmit}
+          onPlanTaskAccepted={taskRuntime.selectTask}
+          onClarifySubmit={handleAgentClarifySubmit}
           onEditPlan={handleEditPlan}
           onRefine={onRefine}
           onOpenArtifact={handleOpenArtifact}
@@ -925,20 +948,19 @@ export default function AgentWorkspaceLayout({ controller }) {
 
   return (
     <div className="fixed inset-0 overflow-hidden" role="application" aria-label="Nexus AI Workspace">
-      <div className="h-full w-full overflow-hidden">
-        <div className="ai-page relative flex flex-col overflow-hidden font-sans">
+      <div ref={aiPageRef} className="ai-page relative flex flex-col overflow-hidden font-sans">
       <div
-        className="fixed top-[-10%] left-[-10%] w-[40%] h-[40%] blur-[120px] rounded-full pointer-events-none transition-colors duration-1000"
+        className="pointer-events-none absolute top-[-10%] left-[-10%] h-[40%] w-[40%] rounded-full blur-[120px] transition-colors duration-1000"
         style={{ backgroundColor: `${currentTheme.primary}14` }}
         aria-hidden="true"
       />
       <div
-        className="fixed bottom-[-15%] right-[-10%] w-[45%] h-[45%] blur-[140px] rounded-full pointer-events-none transition-colors duration-1000"
+        className="pointer-events-none absolute bottom-[-15%] right-[-10%] h-[45%] w-[45%] rounded-full blur-[140px] transition-colors duration-1000"
         style={{ backgroundColor: `${currentTheme.secondary}10` }}
         aria-hidden="true"
       />
 
-      <div className="flex flex-1 min-h-0 overflow-hidden">
+      <div className="flex min-h-0 flex-1 overflow-hidden">
         {/* LEFT: project / artifacts / file tree / history */}
         {generatorMode === "agent_build" && (
         <aside
@@ -1052,6 +1074,22 @@ export default function AgentWorkspaceLayout({ controller }) {
                     <div className="h-4 w-px bg-white/10 hidden sm:block" aria-hidden="true" />
                   </>
                 )}
+                <label className="hidden items-center gap-1.5 sm:inline-flex" title="Workspace zoom">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-gray-500">Zoom</span>
+                  <select
+                    value={String(aiPageZoom)}
+                    onChange={(event) => setAiPageZoom(Number(event.target.value))}
+                    className="h-8 rounded-lg border border-white/10 bg-white/5 px-2 text-[11px] font-semibold text-gray-200 outline-none focus-ring"
+                    aria-label="Workspace zoom"
+                  >
+                    {AI_PAGE_ZOOM_OPTIONS.map((value) => (
+                      <option key={value} value={String(value)}>
+                        {Math.round(value * 100)}%
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <div className="h-4 w-px bg-white/10 hidden sm:block" aria-hidden="true" />
                 <div data-tour="studio-pair">
                   <StudioPairControl
                     connection={studio}
@@ -1255,7 +1293,6 @@ export default function AgentWorkspaceLayout({ controller }) {
         </div>
       )}
 
-        </div>
       </div>
     </div>
   );
