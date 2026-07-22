@@ -1,10 +1,6 @@
 import { act, renderHook } from "@testing-library/react";
 
-import useAiPageZoom, {
-  AI_PAGE_ZOOM_KEY,
-  AI_PAGE_ZOOM_VERSION_KEY,
-  DEFAULT_AI_PAGE_ZOOM,
-} from "./useAiPageZoom";
+import useAiPageZoom, { AI_PAGE_ZOOM } from "./useAiPageZoom";
 
 const originalCssDescriptor = Object.getOwnPropertyDescriptor(window, "CSS");
 const originalVisualViewportDescriptor = Object.getOwnPropertyDescriptor(window, "visualViewport");
@@ -37,11 +33,11 @@ function installVisualViewport(width = 960, height = 720) {
   return viewport;
 }
 
-function renderZoomHook(initialZoom) {
+function renderZoomHook() {
   const page = document.createElement("div");
   document.body.appendChild(page);
   const pageRef = { current: page };
-  const hook = renderHook(() => useAiPageZoom(pageRef, initialZoom));
+  const hook = renderHook(() => useAiPageZoom(pageRef));
   return {
     ...hook,
     page,
@@ -53,7 +49,6 @@ function renderZoomHook(initialZoom) {
 }
 
 beforeEach(() => {
-  window.localStorage.clear();
   installCssZoomSupport(true);
   installVisualViewport();
 });
@@ -72,17 +67,14 @@ afterEach(() => {
   document.body.innerHTML = "";
 });
 
-test("defaults to 75% and fills the viewport with reciprocal native-zoom sizing", () => {
+test("uses the fixed 80% density and fills the viewport with reciprocal native-zoom sizing", () => {
   const hook = renderZoomHook();
 
-  expect(DEFAULT_AI_PAGE_ZOOM).toBe(0.75);
-  expect(hook.result.current.zoom).toBe(0.75);
-  expect(hook.page.style.width).toBe("1280px");
-  expect(hook.page.style.height).toBe("960px");
-  expect(hook.page.style.zoom).toBe("0.75");
+  expect(AI_PAGE_ZOOM).toBe(0.8);
+  expect(hook.page.style.width).toBe("1200px");
+  expect(hook.page.style.height).toBe("900px");
+  expect(hook.page.style.zoom).toBe("0.8");
   expect(hook.page.style.transform).toBe("");
-  expect(window.localStorage.getItem(AI_PAGE_ZOOM_KEY)).toBe("0.75");
-  expect(window.localStorage.getItem(AI_PAGE_ZOOM_VERSION_KEY)).toBe("2");
 
   hook.dispose();
 });
@@ -91,10 +83,10 @@ test("uses the same reciprocal sizing with a transform fallback", () => {
   installCssZoomSupport(false);
   const hook = renderZoomHook();
 
-  expect(hook.page.style.width).toBe("1280px");
-  expect(hook.page.style.height).toBe("960px");
+  expect(hook.page.style.width).toBe("1200px");
+  expect(hook.page.style.height).toBe("900px");
   expect(hook.page.style.zoom).toBe("1");
-  expect(hook.page.style.transform).toBe("scale(0.75)");
+  expect(hook.page.style.transform).toBe("scale(0.8)");
   expect(hook.page.style.transformOrigin).toBe("top left");
 
   hook.dispose();
@@ -108,34 +100,8 @@ test("recalculates dimensions when the visual viewport changes", () => {
   viewport.height = 900;
   act(() => viewport.dispatch("resize"));
 
-  expect(hook.page.style.width).toBe("1600px");
-  expect(hook.page.style.height).toBe("1200px");
-
-  hook.dispose();
-});
-
-test("migrates a legacy automatic 85% value once and then preserves an explicit 85% choice", () => {
-  window.localStorage.setItem(AI_PAGE_ZOOM_KEY, "0.85");
-  const first = renderZoomHook();
-
-  expect(first.result.current.zoom).toBe(0.75);
-  expect(window.localStorage.getItem(AI_PAGE_ZOOM_KEY)).toBe("0.75");
-
-  act(() => first.result.current.setZoom(0.85));
-  expect(window.localStorage.getItem(AI_PAGE_ZOOM_KEY)).toBe("0.85");
-  first.dispose();
-
-  const second = renderZoomHook();
-  expect(second.result.current.zoom).toBe(0.85);
-  second.dispose();
-});
-
-test.each([0.75, 1])("preserves a legacy saved %p choice", (savedZoom) => {
-  window.localStorage.setItem(AI_PAGE_ZOOM_KEY, String(savedZoom));
-  const hook = renderZoomHook();
-
-  expect(hook.result.current.zoom).toBe(savedZoom);
-  expect(window.localStorage.getItem(AI_PAGE_ZOOM_KEY)).toBe(String(savedZoom));
+  expect(hook.page.style.width).toBe("1500px");
+  expect(hook.page.style.height).toBe("1125px");
 
   hook.dispose();
 });

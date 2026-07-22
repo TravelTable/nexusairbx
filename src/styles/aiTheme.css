@@ -3,7 +3,7 @@
    This file provides convenience classes for AI-specific surfaces. */
 
 .ai-page {
-  --ai-zoom: 0.75;
+  --ai-zoom: 0.8;
   background-color: var(--ai-bg);
   color: var(--ai-text);
   /* Baseline before the hook runs. AgentWorkspaceLayout replaces these with

@@ -35,7 +35,7 @@ import { PENDING_AUTH_ACTIONS } from "../../lib/pendingAuthAction";
 import { getStudioSessionId } from "../../lib/studioConnection";
 import TutorialOverlay from "../../components/onboarding/TutorialOverlay";
 import { useTutorial } from "../../components/onboarding/useTutorial";
-import useAiPageZoom, { AI_PAGE_ZOOM_OPTIONS, DEFAULT_AI_PAGE_ZOOM } from "../../hooks/useAiPageZoom";
+import useAiPageZoom from "../../hooks/useAiPageZoom";
 
 const MOBILE_TABS = [
   { id: "chat", label: "Chat", icon: MessageSquare },
@@ -155,7 +155,7 @@ export default function AgentWorkspaceLayout({ controller }) {
   const [leftView, setLeftView] = useState("files");
   const tutorial = useTutorial();
   const aiPageRef = useRef(null);
-  const { zoom: aiPageZoom, setZoom: setAiPageZoom } = useAiPageZoom(aiPageRef, DEFAULT_AI_PAGE_ZOOM);
+  useAiPageZoom(aiPageRef);
 
   useEffect(() => {
     const { documentElement, body } = document;
@@ -1076,22 +1076,6 @@ export default function AgentWorkspaceLayout({ controller }) {
                     <div className="hidden h-4 w-px bg-white/10 xl:block" aria-hidden="true" />
                   </>
                 )}
-                <label className="hidden shrink-0 items-center gap-1.5 sm:inline-flex" title="Workspace zoom">
-                  <span className="hidden text-[10px] font-black uppercase tracking-widest text-gray-500 2xl:inline">Zoom</span>
-                  <select
-                    value={String(aiPageZoom)}
-                    onChange={(event) => setAiPageZoom(Number(event.target.value))}
-                    className="h-8 rounded-lg border border-white/10 bg-white/5 px-2 text-[11px] font-semibold text-gray-200 outline-none focus-ring"
-                    aria-label="Workspace zoom"
-                  >
-                    {AI_PAGE_ZOOM_OPTIONS.map((value) => (
-                      <option key={value} value={String(value)}>
-                        {Math.round(value * 100)}%
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <div className="hidden h-4 w-px bg-white/10 xl:block" aria-hidden="true" />
                 <div data-tour="studio-pair" className="shrink-0">
                   <StudioPairControl
                     connection={studio}
