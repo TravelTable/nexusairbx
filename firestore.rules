@@ -20,8 +20,7 @@ service cloud.firestore {
 
     function isBoundedList(max) {
       return request.query.limit != null
-        && request.query.limit <= max
-        && request.query.offset == null;
+        && request.query.limit <= max;
     }
 
     function onlyChanges(allowed) {
@@ -33,6 +32,10 @@ service cloud.firestore {
 
     function isShortString(value, max) {
       return value is string && value.size() <= max;
+    }
+
+    function isNullableShortString(value, max) {
+      return value == null || isShortString(value, max);
     }
 
     function isTimestamp(value) {
@@ -47,8 +50,19 @@ service cloud.firestore {
         'updatedAt',
         'lastMessage',
         'projectId',
-        'studioTargetPreference'
+        'studioTargetPreference',
+        'lifecycle',
+        'draftId',
+        'chatId'
       ]);
+    }
+
+    function validChatMode(value) {
+      return value in ['ask', 'chat', 'plan', 'agent', 'debug'];
+    }
+
+    function validChatLifecycle(value) {
+      return value in ['draft', 'active', 'archived'];
     }
 
     function validStudioTargetPreference(value) {
@@ -68,7 +82,80 @@ service cloud.firestore {
           !value.keys().hasAny(['label'])
           || value.label == null
           || isShortString(value.label, 160)
+        )
+        && (
+          !value.keys().hasAny(['updatedAt'])
+          || value.updatedAt == null
+          || isTimestamp(value.updatedAt)
         );
+    }
+
+    function validWorkflowTargeting(value) {
+      return value is map
+        && value.keys().hasOnly([
+          'projectId',
+          'projectName',
+          'studioConnected',
+          'studioTarget',
+          'studioRequired',
+          'studioSessionId',
+          'placeId',
+          'universeId'
+        ])
+        && (!value.keys().hasAny(['projectId']) || isNullableShortString(value.projectId, 180))
+        && (!value.keys().hasAny(['projectName']) || isNullableShortString(value.projectName, 240))
+        && (!value.keys().hasAny(['studioConnected']) || value.studioConnected is bool)
+        && (!value.keys().hasAny(['studioTarget']) || value.studioTarget == null || validStudioTargetPreference(value.studioTarget))
+        && (!value.keys().hasAny(['studioRequired']) || value.studioRequired is bool)
+        && (!value.keys().hasAny(['studioSessionId']) || isNullableShortString(value.studioSessionId, 180))
+        && (!value.keys().hasAny(['placeId']) || isNullableShortString(value.placeId, 80))
+        && (!value.keys().hasAny(['universeId']) || isNullableShortString(value.universeId, 80));
+    }
+
+    function validClarificationAnswers(value) {
+      return value == null || (value is map && value.keys().size() <= 50);
+    }
+
+    function validStructuredPlan(value) {
+      return value == null || (
+        value is map
+        && value.keys().hasOnly([
+          'schemaVersion',
+          'sections',
+          'implementationSteps',
+          'verificationSteps',
+          'lockedSectionIds',
+          'targeting',
+          'constraints',
+          'assets',
+          'capabilities',
+          'assumptions',
+          'templateId',
+          'clarificationAnswers',
+          'stagedExecution'
+        ])
+        && value.keys().hasAll(['schemaVersion', 'sections', 'targeting'])
+        && value.schemaVersion == 'nexusrbx-workflow-plan-v3'
+        && value.sections is list
+        && value.sections.size() == 9
+        && (!value.keys().hasAny(['implementationSteps']) || (value.implementationSteps is list && value.implementationSteps.size() <= 100))
+        && (!value.keys().hasAny(['verificationSteps']) || (value.verificationSteps is list && value.verificationSteps.size() <= 100))
+        && (!value.keys().hasAny(['lockedSectionIds']) || (value.lockedSectionIds is list && value.lockedSectionIds.size() <= 20))
+        && validWorkflowTargeting(value.targeting)
+        && (!value.keys().hasAny(['constraints']) || (value.constraints is list && value.constraints.size() <= 100))
+        && (!value.keys().hasAny(['assets']) || (value.assets is list && value.assets.size() <= 100))
+        && (!value.keys().hasAny(['capabilities']) || (value.capabilities is list && value.capabilities.size() <= 100))
+        && (!value.keys().hasAny(['assumptions']) || (value.assumptions is list && value.assumptions.size() <= 100))
+        && (!value.keys().hasAny(['templateId']) || isNullableShortString(value.templateId, 80))
+        && (!value.keys().hasAny(['clarificationAnswers']) || validClarificationAnswers(value.clarificationAnswers))
+        && (!value.keys().hasAny(['stagedExecution']) || (
+          value.stagedExecution is map
+          && value.stagedExecution.keys().hasOnly(['recommended', 'reason', 'stages'])
+          && (!value.stagedExecution.keys().hasAny(['recommended']) || value.stagedExecution.recommended is bool)
+          && (!value.stagedExecution.keys().hasAny(['reason']) || isShortString(value.stagedExecution.reason, 1000))
+          && (!value.stagedExecution.keys().hasAny(['stages']) || (value.stagedExecution.stages is list && value.stagedExecution.stages.size() <= 100))
+        ))
+      );
     }
 
     function validChatCreate() {
@@ -83,7 +170,7 @@ service cloud.firestore {
         && isTimestamp(request.resource.data.updatedAt)
         && (
           !request.resource.data.keys().hasAny(['activeMode'])
-          || isShortString(request.resource.data.activeMode, 80)
+          || validChatMode(request.resource.data.activeMode)
         )
         && (
           !request.resource.data.keys().hasAny(['lastMessage'])
@@ -91,11 +178,23 @@ service cloud.firestore {
         )
         && (
           !request.resource.data.keys().hasAny(['projectId'])
-          || isShortString(request.resource.data.projectId, 120)
+          || isNullableShortString(request.resource.data.projectId, 120)
         )
         && (
           !request.resource.data.keys().hasAny(['studioTargetPreference'])
           || validStudioTargetPreference(request.resource.data.studioTargetPreference)
+        )
+        && (
+          !request.resource.data.keys().hasAny(['lifecycle'])
+          || validChatLifecycle(request.resource.data.lifecycle)
+        )
+        && (
+          !request.resource.data.keys().hasAny(['draftId'])
+          || isShortString(request.resource.data.draftId, 120)
+        )
+        && (
+          !request.resource.data.keys().hasAny(['chatId'])
+          || isShortString(request.resource.data.chatId, 120)
         );
     }
 
@@ -106,7 +205,8 @@ service cloud.firestore {
         'updatedAt',
         'lastMessage',
         'projectId',
-        'studioTargetPreference'
+        'studioTargetPreference',
+        'lifecycle'
       ])
         && (
           !request.resource.data
@@ -120,7 +220,7 @@ service cloud.firestore {
             .diff(resource.data)
             .affectedKeys()
             .hasAny(['activeMode'])
-          || isShortString(request.resource.data.activeMode, 80)
+          || validChatMode(request.resource.data.activeMode)
         )
         && (
           !request.resource.data
@@ -134,7 +234,7 @@ service cloud.firestore {
             .diff(resource.data)
             .affectedKeys()
             .hasAny(['projectId'])
-          || isShortString(request.resource.data.projectId, 120)
+          || isNullableShortString(request.resource.data.projectId, 120)
         )
         && (
           !request.resource.data
@@ -142,6 +242,13 @@ service cloud.firestore {
             .affectedKeys()
             .hasAny(['studioTargetPreference'])
           || validStudioTargetPreference(request.resource.data.studioTargetPreference)
+        )
+        && (
+          !request.resource.data
+            .diff(resource.data)
+            .affectedKeys()
+            .hasAny(['lifecycle'])
+          || validChatLifecycle(request.resource.data.lifecycle)
         )
         && (
           !request.resource.data
@@ -196,8 +303,105 @@ service cloud.firestore {
         'setupSteps',
         'testingSteps',
         'securityNotes',
-        'warnings'
+        'warnings',
+        'studioConnected',
+        'studioTarget',
+        'targeting',
+        'requestMode',
+        'templateId',
+        'planVersion',
+        'planHash',
+        'structuredPlan',
+        'capabilities',
+        'clarificationAnswers',
+        'taskId',
+        'queuePosition'
       ]);
+    }
+
+    function hasOnlyPlanMessageFields() {
+      return request.resource.data.keys().hasOnly([
+        'role',
+        'stage',
+        'planId',
+        'planVersion',
+        'planHash',
+        'classification',
+        'aiSummary',
+        'aiSteps',
+        'aiAssumptions',
+        'planMarkdown',
+        'planSteps',
+        'structuredPlan',
+        'capabilities',
+        'clarificationAnswers',
+        'templateId',
+        'projectId',
+        'studioConnected',
+        'studioTarget',
+        'targeting',
+        'originPrompt',
+        'attachments',
+        'createdAt',
+        'updatedAt',
+        'requestId'
+      ]);
+    }
+
+    function validPlanMessagePayload() {
+      return hasOnlyPlanMessageFields()
+        && request.resource.data.keys().hasAll([
+          'role', 'stage', 'planId', 'planVersion', 'planHash', 'classification',
+          'aiSummary', 'aiSteps', 'aiAssumptions', 'planMarkdown', 'planSteps',
+          'structuredPlan', 'capabilities', 'clarificationAnswers', 'templateId',
+          'projectId', 'studioConnected', 'studioTarget', 'targeting', 'originPrompt',
+          'attachments', 'createdAt', 'requestId'
+        ])
+        && request.resource.data.role == 'assistant'
+        && request.resource.data.stage == 'plan'
+        && isTimestamp(request.resource.data.createdAt)
+        && (!request.resource.data.keys().hasAny(['updatedAt']) || isTimestamp(request.resource.data.updatedAt))
+        && request.resource.data.structuredPlan is map
+          && request.resource.data.structuredPlan.keys().hasOnly([
+            'schemaVersion', 'sections', 'implementationSteps', 'verificationSteps',
+            'lockedSectionIds', 'targeting', 'constraints', 'assets', 'capabilities',
+            'assumptions', 'templateId', 'clarificationAnswers', 'stagedExecution'
+          ])
+          && request.resource.data.structuredPlan.schemaVersion == 'nexusrbx-workflow-plan-v3'
+          && request.resource.data.structuredPlan.sections is list
+          && request.resource.data.structuredPlan.sections.size() == 9
+        && request.resource.data.capabilities is list && request.resource.data.capabilities.size() <= 100
+        && validWorkflowTargeting(request.resource.data.targeting)
+        && isNullableShortString(request.resource.data.planId, 180)
+        && request.resource.data.planVersion is int && request.resource.data.planVersion >= 1 && request.resource.data.planVersion <= 10000
+        && isShortString(request.resource.data.planHash, 256)
+        && isShortString(request.resource.data.classification, 80)
+        && isShortString(request.resource.data.aiSummary, 30000)
+        && request.resource.data.aiSteps is list && request.resource.data.aiSteps.size() <= 100
+        && request.resource.data.aiAssumptions is list && request.resource.data.aiAssumptions.size() <= 100
+        && isShortString(request.resource.data.planMarkdown, 60000)
+        && request.resource.data.planSteps is list && request.resource.data.planSteps.size() <= 100
+        && validClarificationAnswers(request.resource.data.clarificationAnswers)
+        && isNullableShortString(request.resource.data.templateId, 80)
+        && isNullableShortString(request.resource.data.projectId, 180)
+        && request.resource.data.studioConnected is bool
+        && (request.resource.data.studioTarget == null || validStudioTargetPreference(request.resource.data.studioTarget))
+        && isShortString(request.resource.data.originPrompt, 30000)
+        && request.resource.data.attachments is list && request.resource.data.attachments.size() <= 5
+        && isShortString(request.resource.data.requestId, 180);
+    }
+
+    function isPlanMessage() {
+      return request.resource.data.keys().hasAny(['stage'])
+        && request.resource.data.stage == 'plan';
+    }
+
+    function validMessageCreate() {
+      return isPlanMessage()
+        ? (request.resource.data.keys().hasAny(['structuredPlan'])
+            ? validPlanMessagePayload()
+            : validMessagePayload())
+        : validMessagePayload();
     }
 
     function validMessagePayload() {
@@ -241,7 +445,27 @@ service cloud.firestore {
             request.resource.data.attachments is list
             && request.resource.data.attachments.size() <= 5
           )
-        );
+        )
+        && (!request.resource.data.keys().hasAny(['projectId']) || isNullableShortString(request.resource.data.projectId, 180))
+        && (!request.resource.data.keys().hasAny(['studioConnected']) || request.resource.data.studioConnected is bool)
+        && (!request.resource.data.keys().hasAny(['studioTarget']) || request.resource.data.studioTarget == null || validStudioTargetPreference(request.resource.data.studioTarget))
+        && (!request.resource.data.keys().hasAny(['targeting']) || validWorkflowTargeting(request.resource.data.targeting))
+        && (!request.resource.data.keys().hasAny(['requestMode']) || validChatMode(request.resource.data.requestMode))
+        && (!request.resource.data.keys().hasAny(['templateId']) || isNullableShortString(request.resource.data.templateId, 80))
+        && (!request.resource.data.keys().hasAny(['planVersion']) || (request.resource.data.planVersion is int && request.resource.data.planVersion >= 1 && request.resource.data.planVersion <= 10000))
+        && (!request.resource.data.keys().hasAny(['planHash']) || isShortString(request.resource.data.planHash, 256))
+        && (!request.resource.data.keys().hasAny(['structuredPlan']) || validStructuredPlan(request.resource.data.structuredPlan))
+        && (!request.resource.data.keys().hasAny(['capabilities']) || (request.resource.data.capabilities is list && request.resource.data.capabilities.size() <= 100))
+        && (!request.resource.data.keys().hasAny(['clarificationAnswers']) || validClarificationAnswers(request.resource.data.clarificationAnswers))
+        && (!request.resource.data.keys().hasAny(['questions']) || (request.resource.data.questions is list && request.resource.data.questions.size() <= 3))
+        && (!request.resource.data.keys().hasAny(['aiSteps']) || (request.resource.data.aiSteps is list && request.resource.data.aiSteps.size() <= 100))
+        && (!request.resource.data.keys().hasAny(['aiAssumptions']) || (request.resource.data.aiAssumptions is list && request.resource.data.aiAssumptions.size() <= 100))
+        && (!request.resource.data.keys().hasAny(['planSteps']) || (request.resource.data.planSteps is list && request.resource.data.planSteps.size() <= 100))
+        && (!request.resource.data.keys().hasAny(['stage']) || isShortString(request.resource.data.stage, 80))
+        && (!request.resource.data.keys().hasAny(['requestId']) || isShortString(request.resource.data.requestId, 180))
+        && (!request.resource.data.keys().hasAny(['planId']) || isNullableShortString(request.resource.data.planId, 180))
+        && (!request.resource.data.keys().hasAny(['taskId']) || isNullableShortString(request.resource.data.taskId, 180))
+        && (!request.resource.data.keys().hasAny(['queuePosition']) || request.resource.data.queuePosition == null || (request.resource.data.queuePosition is int && request.resource.data.queuePosition >= 1 && request.resource.data.queuePosition <= 100000));
     }
 
     function validMessageUpdate() {
@@ -285,9 +509,21 @@ service cloud.firestore {
         'setupSteps',
         'testingSteps',
         'securityNotes',
-        'warnings'
+        'warnings',
+        'studioConnected',
+        'studioTarget',
+        'targeting',
+        'requestMode',
+        'templateId',
+        'planVersion',
+        'planHash',
+        'structuredPlan',
+        'capabilities',
+        'clarificationAnswers',
+        'taskId',
+        'queuePosition'
       ])
-        && validMessagePayload();
+        && validMessageCreate();
     }
 
     function hasOnlyScriptFields() {
@@ -414,7 +650,7 @@ service cloud.firestore {
             && isBoundedList(300);
 
           allow create: if isVerifiedUser(uid)
-            && validMessagePayload();
+            && validMessageCreate();
 
           allow update: if isVerifiedUser(uid)
             && validMessageUpdate();

@@ -9,6 +9,7 @@ import { getStudioApplyMode, getStudioEnabledPreference } from "../lib/agentStep
 import { getStudioStatus } from "../lib/studioBridgeApi";
 import { resolveGameSpecForPrompt } from "../lib/gameProfile";
 import { orchestrate } from "../lib/workflowApi";
+import { getProjectBinding } from "../lib/projectBindingsApi";
 import { classifyUserIntent, isImplementationIntent } from "../lib/intentClassifier";
 import {
   createAgentRunV2,
@@ -38,6 +39,10 @@ jest.mock("./useAiChat", () => ({
 jest.mock("../lib/workflowApi", () => ({
   approveWorkflowPlan: jest.fn(),
   orchestrate: jest.fn(),
+}));
+
+jest.mock("../lib/projectBindingsApi", () => ({
+  getProjectBinding: jest.fn(),
 }));
 
 jest.mock("../lib/planApproval", () => ({
@@ -111,6 +116,10 @@ describe("useUnifiedChat", () => {
     resolveGameSpecForPrompt.mockImplementation((value) => value || null);
     classifyUserIntent.mockReturnValue("IMPLEMENTATION");
     isImplementationIntent.mockReturnValue(true);
+    getProjectBinding.mockResolvedValue({
+      state: "ready",
+      project: { projectId: "project-1" },
+    });
     getRuntimeCapabilitiesV2.mockResolvedValue({
       executionOwner: "canonical_task_runtime",
       canonicalAgentRuns: { enabled: true, requiresProject: true },

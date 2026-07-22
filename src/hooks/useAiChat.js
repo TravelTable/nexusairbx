@@ -16,14 +16,9 @@ import {
 } from "firebase/firestore";
 import { v4 as uuidv4 } from "uuid";
 import {
-  AgentRuntimeUnavailableError,
   extractAgentEvents,
   getAgentEventsV2,
   getAgentV2,
-  getRuntimeCapabilitiesV2,
-  normalizeAgentProjection,
-  resolveChatAgentProjectionV2,
-  selectAgentRuntimeRoute,
 } from "../lib/agentRuntimeV2Api";
 import { auth, db, firebaseConfig } from "../firebase";
 import { BACKEND_URL } from "../config";
@@ -411,7 +406,7 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
   // Streaming buffers keyed by originating chat id.
   const streamStatesRef = useRef({}); // chatId -> pendingStreamState
 
-  // Auth and App Check must both be ready before these owner-scoped reads run.
+  // Auth must be ready before these owner-scoped reads run. App Check is telemetry-only here.
   useEffect(() => {
     const uid = user?.uid;
     if (!authReady || !uid || auth.currentUser?.uid !== uid) {
@@ -1778,42 +1773,12 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
     const selectedProjectId = String(projectId || "").trim();
     const chatId = uuidv4();
     const draftId = uuidv4();
-    let agentId = null;
-    let agentRuntimeError = null;
-    let agentRuntimeStatus = "unavailable";
-    try {
-      let capabilities = null;
-      try {
-        capabilities = await getRuntimeCapabilitiesV2();
-      } catch (error) {
-        if (!(error instanceof AgentRuntimeUnavailableError)) throw error;
-      }
-      if (selectAgentRuntimeRoute(capabilities, { projectId: selectedProjectId }) !== "legacy") {
-        const resolved = await resolveChatAgentProjectionV2({
-          chatId,
-          projectId: selectedProjectId || null,
-          allowLegacyCreate: capabilities == null,
-        });
-        agentId = normalizeAgentProjection(resolved)?.agentId || null;
-        if (!agentId) throw new Error("Agent runtime did not return an agent id");
-        agentRuntimeStatus = "ready";
-      } else agentRuntimeStatus = "legacy";
-    } catch (error) {
-      // Chat creation stays available during runtime rollout/outages. The
-      // idempotent agent reservation will be retried by the submission path.
-      console.warn("Could not reserve the v2 agent before creating the chat.", error);
-      agentRuntimeError = String(error?.message || "Agent runtime unavailable");
-    }
     const payload = {
       title: "New chat",
       activeMode: "agent",
       lifecycle: "draft",
       draftId,
       chatId,
-      ...(agentId ? { agentId, agentRuntimeStatus } : {
-        agentRuntimeStatus,
-        agentRuntimeError,
-      }),
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
       projectId: selectedProjectId || null,

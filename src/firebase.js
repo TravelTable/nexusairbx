@@ -75,9 +75,9 @@ export function initializeFirebaseAppCheck(
 export const appCheck = initializeFirebaseAppCheck(app);
 
 /**
- * Resolve an initial App Check token before starting Firestore reads.  Automatic
- * refresh remains enabled above; this only closes the startup race when App
- * Check enforcement is enabled in Firebase.
+ * Probe App Check without making it a workspace startup dependency. App Check
+ * remains useful telemetry while enforcement is in monitor mode, but auth and
+ * Firestore must still start when the provider or token is unavailable.
  */
 export function waitForFirebaseAppCheck(
   appCheckInstance,
@@ -87,7 +87,7 @@ export function waitForFirebaseAppCheck(
   } = {}
 ) {
   if (environment === "test") {
-    return Promise.resolve({ ready: true, skipped: true });
+    return Promise.resolve({ ready: true, available: false, skipped: true });
   }
 
   if (!appCheckInstance) {
@@ -98,7 +98,7 @@ export function waitForFirebaseAppCheck(
         message: error.message,
       });
     }
-    return Promise.resolve({ ready: false, error });
+    return Promise.resolve({ ready: true, available: false, error });
   }
 
   return getTokenFn(appCheckInstance)
@@ -111,14 +111,14 @@ export function waitForFirebaseAppCheck(
           projectId: firebaseConfig.projectId,
         });
       }
-      return { ready: true };
+      return { ready: true, available: true };
     })
     .catch((error) => {
       console.error("Firebase App Check token unavailable", {
         projectId: firebaseConfig.projectId,
         message: error?.message || "Unknown App Check error",
       });
-      return { ready: false, error };
+      return { ready: true, available: false, error };
     });
 }
 

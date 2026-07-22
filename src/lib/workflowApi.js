@@ -1,4 +1,5 @@
 import { authedFetch } from "./billing";
+import { readJsonResponse } from "./apiErrors";
 
 export class WorkflowApiError extends Error {
   constructor(message, { status = 0, code = "workflow_request_failed", payload = null } = {}) {
@@ -222,11 +223,7 @@ export async function approveAgentStep(runId, stepId) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ stepId }),
   });
-  if (!res.ok) {
-    const text = await res.text().catch(() => "");
-    throw new Error(text || "Failed to approve agent step");
-  }
-  return res.json();
+  return readJsonResponse(res, "Failed to approve agent step");
 }
 
 /** Bind a paused unified agent run to an explicitly confirmed Studio target choice. */

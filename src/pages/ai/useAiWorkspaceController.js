@@ -63,6 +63,7 @@ import {
 import {
   findOrCreateProjectBinding,
   getProjectBinding,
+  projectBindingRecoveryMessage,
 } from "../../lib/projectBindingsApi";
 import {
   isFirestorePermissionDenied,
@@ -195,7 +196,6 @@ export function useAiWorkspaceController() {
 
   const [user, setUser] = useState(null);
   const [authReady, setAuthReady] = useState(false);
-  const [isAppCheckReady, setIsAppCheckReady] = useState(false);
   const [appCheckError, setAppCheckError] = useState(null);
   const [scripts, setScripts] = useState([]);
   const [scriptsLimit] = useState(50);
@@ -294,7 +294,7 @@ export function useAiWorkspaceController() {
   const planKey = plan?.toLowerCase() || "free";
 
   const unified = useUnifiedChat(user, settings, refreshBilling, notify, {
-    authReady: authReady && isAppCheckReady,
+    authReady,
     onSignInNudge: () => {
       createPendingAuthAction({
         action: PENDING_AUTH_ACTIONS.CHAT_SUBMIT,
@@ -429,21 +429,14 @@ export function useAiWorkspaceController() {
 
   useEffect(() => {
     let cancelled = false;
-    firebaseAppCheckReady.then(({ ready, error }) => {
+    firebaseAppCheckReady.then(({ available, error }) => {
       if (cancelled) return;
-      setIsAppCheckReady(Boolean(ready));
-      setAppCheckError(ready ? null : (error || new Error("Firebase App Check is unavailable.")));
-      if (!ready) {
-        notify({
-          message: "Workspace security verification failed. Refresh the page or sign in again.",
-          type: "error",
-        });
-      }
+      setAppCheckError(available ? null : (error || new Error("Firebase App Check is unavailable.")));
     });
     return () => {
       cancelled = true;
     };
-  }, [notify]);
+  }, []);
 
   useEffect(() => {
     let disposed = false;
@@ -499,7 +492,7 @@ export function useAiWorkspaceController() {
   }, [refreshRobloxStatus]);
 
   useEffect(() => {
-    if (!authReady || !isAppCheckReady || !user) {
+    if (!authReady || !user) {
       setScripts([]);
       return;
     }
@@ -529,10 +522,10 @@ export function useAiWorkspaceController() {
     return () => {
       cancelled = true;
     };
-  }, [authReady, isAppCheckReady, user, scriptsLimit, notify, scriptManager.libraryRevision]);
+  }, [authReady, user, scriptsLimit, notify, scriptManager.libraryRevision]);
 
   useEffect(() => {
-    if (!authReady || !isAppCheckReady || !user || !chat.currentChatId) {
+    if (!authReady || !user || !chat.currentChatId) {
       setChatProjectSnapshot(null);
       return undefined;
     }
@@ -547,7 +540,7 @@ export function useAiWorkspaceController() {
         setChatProjectSnapshot(null);
       }
     );
-  }, [authReady, isAppCheckReady, user, chat.currentChatId]);
+  }, [authReady, user, chat.currentChatId]);
 
   useEffect(() => {
     if (!location?.state || typeof location.state !== "object") return;
@@ -892,24 +885,19 @@ export function useAiWorkspaceController() {
       }
     }
 
-    const agentMode = ["agent", "debug"].includes(
-      String(settings?.chatMode || chat.activeMode || "agent").toLowerCase()
-    );
-    if (runtimeProjectId && agentMode) {
+    if (runtimeProjectId) {
       try {
-        await getProjectBinding(runtimeProjectId);
-      } catch (error) {
-        if (error?.status !== 404) {
-          notify({
-            message: error?.message || "Could not verify this workspace project.",
-            type: "error",
-          });
-          return;
+        const resolution = await getProjectBinding(runtimeProjectId);
+        const recoveryMessage = projectBindingRecoveryMessage(resolution);
+        if (recoveryMessage) {
+          notify({ message: recoveryMessage, type: "info" });
         }
-
-        // Chats are durable, while game bindings can be removed. Treat an
-        // unavailable binding as General instead of recreating a prompt project.
-        runtimeProjectId = null;
+      } catch (error) {
+        notify({
+          message: error?.message || "This workspace project is not available.",
+          type: "error",
+        });
+        return;
       }
     }
 
@@ -1534,6 +1522,17 @@ export function useAiWorkspaceController() {
       if (!runId || !step?.id || !user) return;
       setApprovingStepId(step.id);
       try {
+        const projectId = String(
+          unified.pendingMessage?.projectId || workspace.agentRun?.projectId || chat.currentChatMeta?.projectId || ""
+        ).trim();
+        if (projectId) {
+          const resolution = await getProjectBinding(projectId);
+          const recoveryMessage = projectBindingRecoveryMessage(resolution);
+          if (recoveryMessage) {
+            setStudioPlacePickerOpen(true);
+            throw new Error(recoveryMessage);
+          }
+        }
         const result = await approveAgentStep(runId, step.id);
         const updated = result?.step;
         if (updated && unified.setPendingMessage) {
@@ -1550,7 +1549,7 @@ export function useAiWorkspaceController() {
         setApprovingStepId(null);
       }
     },
-    [unified, workspace.agentRun?.runId, user, syncAgentRunSteps, notify]
+    [unified, workspace.agentRun?.runId, workspace.agentRun?.projectId, chat.currentChatMeta?.projectId, user, syncAgentRunSteps, notify]
   );
 
   const handleRestoreRun = useCallback(
@@ -1997,7 +1996,7 @@ export function useAiWorkspaceController() {
     },
     uiState: {
       user,
-      authReady: authReady && isAppCheckReady,
+      authReady,
       appCheckError: appCheckError?.message || null,
       isMobile,
       sidebarOpen,

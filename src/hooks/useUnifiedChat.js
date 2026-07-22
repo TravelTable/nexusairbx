@@ -43,12 +43,19 @@ import {
   selectAgentRuntimeRoute,
 } from "../lib/agentRuntimeV2Api";
 import { reconcileAssistantTurns } from "../lib/assistantTurnIdentity";
+import { getProjectBinding } from "../lib/projectBindingsApi";
 
 export function reconcileUnifiedPendingMessages(generationPending = [], orchestrationPending = []) {
   return reconcileAssistantTurns([
     ...(generationPending || []).map((turn) => ({ turn, source: "generation" })),
     ...(orchestrationPending || []).map((turn) => ({ turn, source: "orchestration" })),
   ]);
+}
+
+async function validateOwnedProject(projectId) {
+  const normalizedProjectId = String(projectId || "").trim();
+  if (!normalizedProjectId) return null;
+  return getProjectBinding(normalizedProjectId);
 }
 
 function seedOrchestrationStream(stage = "Understanding your task...") {
@@ -331,15 +338,6 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
         if (!(error instanceof AgentRuntimeUnavailableError)) throw error;
       }
       if (selectAgentRuntimeRoute(capabilities, { projectId }) === "legacy") {
-        await setDoc(
-          doc(db, "users", user.uid, "chats", activeChatId),
-          {
-            agentRuntimeStatus: "legacy",
-            agentRuntimeError: null,
-            updatedAt: serverTimestamp(),
-          },
-          { merge: true }
-        );
         return null;
       }
       const storedAgentId = chat.currentChatId === activeChatId
@@ -353,38 +351,13 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
       });
       const agent = normalizeAgentProjection(resolved);
       if (!agent?.agentId) throw new Error("Agent runtime did not return an agent id");
-      await setDoc(
-        doc(db, "users", user.uid, "chats", activeChatId),
-        {
-          agentId: agent.agentId,
-          agentRuntimeStatus: "ready",
-          agentRuntimeError: null,
-          projectId: agent.projectId || projectId || null,
-          lifecycle: "active",
-          updatedAt: serverTimestamp(),
-        },
-        { merge: true }
-      );
       return agent;
     } catch (error) {
       console.warn("Could not refresh the v2 agent projection.", error);
-      try {
-        await setDoc(
-          doc(db, "users", user.uid, "chats", activeChatId),
-          {
-            agentRuntimeStatus: "unavailable",
-            agentRuntimeError: String(error?.message || "Agent runtime unavailable"),
-            updatedAt: serverTimestamp(),
-          },
-          { merge: true }
-        );
-      } catch (_) {
-        // Projection metadata is diagnostic and must not break Ask/Plan flows.
-      }
       if (required) throw error;
       return null;
     }
-  }, [chat.currentChatId, chat.currentChatMeta?.agentId, user]);
+  }, [chat.currentChatId, chat.currentChatMeta?.agentId]);
 
   const launchAuthoritativeRun = useCallback(async ({
     activeChatId,
@@ -628,6 +601,10 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
       const activeChatId = chat.currentChatId;
       if (!activeChatId) return;
 
+      await validateOwnedProject(
+        submissionOptions.projectId || message.projectId || message.targeting?.projectId
+      );
+
       const approval = await approveWorkflowPlan(message.planId, {
         version: message.planVersion || 1,
         hash: message.planHash || undefined,
@@ -798,6 +775,13 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
       if (submitLocksRef.current[submitLockKey]) return;
       submitLocksRef.current[submitLockKey] = true;
       try {
+        try {
+          await validateOwnedProject(options?.projectId);
+        } catch (err) {
+          console.error("Project validation error:", err);
+          notify?.({ message: err?.message || "This project is not available.", type: "error" });
+          return;
+        }
         const titleSeed = prompt || describeChatAttachments(currentAttachments) || "New chat";
         const pendingPlan = [...(chat.messages || [])]
           .reverse()
@@ -958,6 +942,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
       }, message.targeting);
       setFlowBusyForChat(activeChatId, requestId, true);
       try {
+        await validateOwnedProject(workflowTargeting.projectId);
 
         const answerText = Object.entries(answers || {})
           .filter(([, value]) => (
@@ -1039,6 +1024,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
       if (!activeChatId) return;
 
       try {
+        await validateOwnedProject(submissionOptions.projectId || message?.projectId);
         const existingFiles = Array.isArray(workspaceArtifact?.files) && workspaceArtifact.files.length
           ? workspaceArtifact.files
           : Array.isArray(message?.files) && message.files.length

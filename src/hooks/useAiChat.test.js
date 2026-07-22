@@ -195,11 +195,11 @@ describe("useAiChat", () => {
     expect(creationCall).toBeTruthy();
     expect(creationCall[1]).toEqual(expect.objectContaining({
       chatId,
-      agentRuntimeStatus: "legacy",
-      agentRuntimeError: null,
       projectId: null,
     }));
     expect(creationCall[1]).not.toHaveProperty("agentId");
+    expect(creationCall[1]).not.toHaveProperty("agentRuntimeStatus");
+    expect(creationCall[1]).not.toHaveProperty("agentRuntimeError");
     expect(resolveChatAgentProjectionV2).not.toHaveBeenCalled();
   });
 

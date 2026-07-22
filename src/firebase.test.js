@@ -140,11 +140,12 @@ describe("initializeFirebaseAppCheck", () => {
 });
 
 describe("waitForFirebaseAppCheck", () => {
-  it("does not mark Firestore ready when App Check was not initialized", async () => {
+  it("keeps Firestore ready when App Check was not initialized", async () => {
     const log = jest.spyOn(console, "error").mockImplementation(() => {});
     const result = await waitForFirebaseAppCheck(null, { environment: "production" });
 
-    expect(result.ready).toBe(false);
+    expect(result.ready).toBe(true);
+    expect(result.available).toBe(false);
     expect(result.error).toBeInstanceOf(Error);
     log.mockRestore();
   });
@@ -156,6 +157,18 @@ describe("waitForFirebaseAppCheck", () => {
       getTokenFn: jest.fn().mockResolvedValue({ token: "test-app-check-token" }),
     });
 
-    expect(result).toEqual({ ready: true });
+    expect(result).toEqual({ ready: true, available: true });
+  });
+
+  it("keeps Firestore ready when the App Check token probe fails", async () => {
+    const log = jest.spyOn(console, "error").mockImplementation(() => {});
+    const error = new Error("captcha blocked");
+    const result = await waitForFirebaseAppCheck({}, {
+      environment: "production",
+      getTokenFn: jest.fn().mockRejectedValue(error),
+    });
+
+    expect(result).toEqual({ ready: true, available: false, error });
+    log.mockRestore();
   });
 });
