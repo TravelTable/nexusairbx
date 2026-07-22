@@ -6,7 +6,10 @@ import {
   persistentLocalCache,
   persistentMultipleTabManager,
 } from "firebase/firestore";
-import { getFirestoreTransportOptions } from "./lib/firestoreTransport";
+import {
+  getFirestoreTransportOptions,
+  shouldUsePersistentFirestoreCache,
+} from "./lib/firestoreTransport";
 
 // Keep Firebase SDK transport retries off the browser console; failures are
 // reported server-side via deferredClientLog when they persist.
@@ -129,12 +132,11 @@ export const auth = getAuth(app);
 const firestoreOptions = getFirestoreTransportOptions();
 
 // Keep previously-read documents in IndexedDB and coordinate that cache across
-// tabs. Firestore can then resume listeners without re-reading their full query
-// result after ordinary refreshes and reconnects.
+// tabs where the browser supports it reliably. Safari uses Firestore's default
+// memory cache because persistent multi-tab IndexedDB can stall SDK startup.
 if (
   process.env.NODE_ENV !== "test" &&
-  typeof window !== "undefined" &&
-  typeof window.indexedDB !== "undefined"
+  shouldUsePersistentFirestoreCache()
 ) {
   firestoreOptions.localCache = persistentLocalCache({
     tabManager: persistentMultipleTabManager(),
