@@ -9,6 +9,10 @@ jest.mock("../../hooks/useTaskRuntime", () => ({
   __esModule: true,
   default: (...args) => mockUseTaskRuntime(...args),
 }));
+jest.mock("../../hooks/useActiveAgents", () => ({
+  __esModule: true,
+  default: () => ({ agents: [], cancelRun: jest.fn() }),
+}));
 
 jest.mock("../../components/ai/workspace/TaskProgressPanel", () => ({
   __esModule: true,
@@ -75,6 +79,17 @@ jest.mock("../../components/ai/workspace/AgentChatPanel", () => ({
       ),
       ReactModule.createElement(
         "button",
+        {
+          type: "button",
+          onClick: () => props.onSubmit(
+            { preventDefault: jest.fn() },
+            { templateId: "fix_bug" },
+          ),
+        },
+        "submit template prompt",
+      ),
+      ReactModule.createElement(
+        "button",
         { type: "button", onClick: () => props.onApprovePlan({ planId: "plan_1" }) },
         "approve plan",
       ),
@@ -118,7 +133,13 @@ import AgentWorkspaceLayout from "./AgentWorkspaceLayout";
 
 const noop = jest.fn();
 
-function makeController({ activeMode = "build", handlers = {} } = {}) {
+function makeController({
+  activeMode = "build",
+  handlers = {},
+  currentChatMeta = { projectId: "project_1" },
+  selectedAssetProjectId = "project_1",
+  studio = { connected: false },
+} = {}) {
   return {
     billing: {},
     uiState: {
@@ -150,6 +171,7 @@ function makeController({ activeMode = "build", handlers = {} } = {}) {
     modules: {
       chat: {
         currentChatId: "chat_1",
+        currentChatMeta,
         messages: [],
         generatingChatIds: [],
         activeMode,
@@ -170,8 +192,8 @@ function makeController({ activeMode = "build", handlers = {} } = {}) {
       { notify: noop, dismissToast: noop, ...handlers },
       { get: (target, key) => target[key] || noop },
     ),
-    studio: { connected: false },
-    roblox: { connected: false, selectedAssetProjectId: "project_1" },
+    studio,
+    roblox: { connected: false, selectedAssetProjectId },
     starterPromo: {},
   };
 }
@@ -250,6 +272,10 @@ describe("AgentWorkspaceLayout task-runtime wiring", () => {
     render(<AgentWorkspaceLayout controller={makeController({
       activeMode: "plan",
       handlers: { handlePromptSubmit, onApprovePlan },
+      studio: {
+        connected: true,
+        placePreference: { placeId: "place_22", universeId: "universe_8" },
+      },
     })} />);
 
     fireEvent.click(screen.getByRole("button", { name: "submit prompt" }));
@@ -259,6 +285,14 @@ describe("AgentWorkspaceLayout task-runtime wiring", () => {
     expect(submitCall[1]).toBeNull();
     expect(submitCall[2]).toEqual({
       projectId: "project_1",
+      studioConnected: true,
+      studioTarget: { placeId: "place_22", universeId: "universe_8" },
+      studioTargetPreference: { placeId: "place_22", universeId: "universe_8" },
+      targeting: {
+        projectId: "project_1",
+        studioConnected: true,
+        studioTarget: { placeId: "place_22", universeId: "universe_8" },
+      },
       activeTaskId: "task_active",
       showPlan: true,
       onTaskAccepted: selectTask,
@@ -279,7 +313,7 @@ describe("AgentWorkspaceLayout task-runtime wiring", () => {
     expect(startTask).not.toHaveBeenCalled();
   });
 
-  test("preserves the legacy handler signatures when the task runtime is disabled", () => {
+  test("preserves project and Studio context when the task runtime is disabled", () => {
     const handlePromptSubmit = jest.fn();
     const onApprovePlan = jest.fn();
     const selectTask = jest.fn();
@@ -304,10 +338,77 @@ describe("AgentWorkspaceLayout task-runtime wiring", () => {
     fireEvent.click(screen.getByRole("button", { name: "approve plan" }));
 
     expect(handlePromptSubmit).toHaveBeenCalledTimes(1);
-    expect(handlePromptSubmit.mock.calls[0]).toHaveLength(1);
+    expect(handlePromptSubmit).toHaveBeenCalledWith(
+      expect.objectContaining({ preventDefault: expect.any(Function) }),
+      null,
+      expect.objectContaining({
+        projectId: "project_1",
+        activeTaskId: "",
+        showPlan: false,
+      }),
+    );
     expect(onApprovePlan).toHaveBeenCalledTimes(1);
-    expect(onApprovePlan.mock.calls[0]).toHaveLength(1);
+    expect(onApprovePlan).toHaveBeenCalledWith(
+      { planId: "plan_1" },
+      expect.objectContaining({ projectId: "project_1" }),
+    );
     expect(selectTask).not.toHaveBeenCalled();
     expect(startTask).not.toHaveBeenCalled();
+  });
+
+  test("preserves the selected planning template through task-context submission", () => {
+    const handlePromptSubmit = jest.fn();
+    mockUseTaskRuntime.mockReturnValue({
+      enabled: true,
+      taskId: "",
+      task: null,
+      events: [],
+      connectionState: "idle",
+      error: null,
+      busyAction: "",
+      selectTask: jest.fn(),
+    });
+
+    render(<AgentWorkspaceLayout controller={makeController({
+      activeMode: "plan",
+      handlers: { handlePromptSubmit },
+    })} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "submit template prompt" }));
+
+    expect(handlePromptSubmit).toHaveBeenCalledWith(
+      expect.objectContaining({ preventDefault: expect.any(Function) }),
+      null,
+      expect.objectContaining({
+        templateId: "fix_bug",
+        projectId: "project_1",
+        showPlan: true,
+      }),
+    );
+  });
+
+  test("uses the selected project when an older chat has no bound project", () => {
+    mockUseTaskRuntime.mockReturnValue({
+      enabled: true,
+      taskId: "",
+      task: null,
+      events: [],
+      connectionState: "idle",
+      error: null,
+      busyAction: "",
+      selectTask: jest.fn(),
+    });
+
+    render(<AgentWorkspaceLayout controller={makeController({
+      currentChatMeta: null,
+      selectedAssetProjectId: "project_selected",
+    })} />);
+
+    expect(mockUseTaskRuntime).toHaveBeenCalledWith(expect.objectContaining({
+      projectId: "project_selected",
+    }));
+    expect(mockAgentChatPanel.mock.calls.at(-1)[0]).toEqual(expect.objectContaining({
+      projectId: "project_selected",
+    }));
   });
 });

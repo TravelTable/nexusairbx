@@ -12,7 +12,7 @@ export const FEATURE_FLAGS = Object.freeze({
   /** Server-snapshotted capability availability. */
   dynamicCapabilityLoading: process.env.REACT_APP_DYNAMIC_CAPABILITY_LOADING === "true",
   /** Explicit, revisable task-plan surface. */
-  newPlanningMode: process.env.REACT_APP_NEW_PLANNING_MODE === "true",
+  newPlanningMode: process.env.REACT_APP_NEW_PLANNING_MODE !== "false",
   /** Conversational projection of durable task events. */
   conversationalTaskFeed: process.env.REACT_APP_CONVERSATIONAL_TASK_FEED === "true",
   /** Resume/retry controls backed by checkpoints. */

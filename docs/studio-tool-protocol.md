@@ -1,8 +1,8 @@
 # Studio Tool Protocol
 
-Active protocol version: `2026-07-17-target-integrity`
+Active protocol version: `2026-07-22-asset-references`
 
-This protocol integrates Creator Store import, native model construction/refinement, trusted Roblox Open Cloud Model upload, uploaded-model Studio insertion, and the Phase 9 Studio validation quality gate. Uploaded models and validation targets must come from backend-held receipts; the browser never submits a Roblox asset ID, Studio root path, inserted root path, model revision, insertion identity, or validation status for trusted commands.
+This protocol integrates Creator Store import, native model construction/refinement, trusted Roblox Open Cloud upload, server-owned asset-reference application, uploaded-model Studio insertion, and the Phase 9 Studio validation quality gate. Uploaded assets, uploaded models, and validation targets must come from backend-held receipts; the browser never submits a trusted Roblox asset ID, Studio root path, inserted root path, model revision, insertion identity, or validation status for trusted commands.
 
 The backend validates every Studio command in `backend/src/lib/studioToolProtocol.js` before it is queued. The plugin acknowledges each command with a structured result containing:
 
@@ -89,6 +89,7 @@ the heartbeat endpoint.
 - Native model tools: `build_native_model` constructs one validated editable Roblox-native model from a declarative `NativeModelSpec`; `inspect_native_model` and `apply_native_model_patch` support transactional refinement of managed native models.
 - Creator Store import: `insert_creator_store_asset` imports a server-verified Creator Store `Model` or `Mesh` through Studio asset loading, sanitizes executable/networking descendants while unparented, then places it under an allowed Studio destination.
 - Uploaded Roblox model import: `insert_uploaded_roblox_model` imports a backend-verified uploaded Roblox `Model` asset. The command can only be queued by the backend insertion review flow. The payload is generated from the trusted upload receipt and contains `uploadId`, `insertionId`, `assetId`, `assetName`, `assetType`, `targetParentPath`, `requestedName`, `placement`, `anchoredPolicy`, `collisionPolicy`, `sanitizationMode`, `trustedSource`, and `idempotencyKey`.
+- Asset references: `apply_asset_reference` applies one exact, server-trusted Roblox asset ID to one inspected Studio instance. Its backend-only payload is `{ path, className, property, robloxAssetId, assetRecordId }`. Allowed targets are `ImageLabel.Image`, `ImageButton.Image`, `Decal.Texture`, `Texture.Texture`, `MeshPart.MeshId`, `MeshPart.TextureID`, `SpecialMesh.MeshId`, `SpecialMesh.TextureId`, `Sound.SoundId`, and `Animation.AnimationId`. The plugin snapshots before mutation, writes `rbxassetid://<id>`, reads the property back, and returns the previous/current value, changed instance, and snapshot receipt. Generic property/create commands cannot bypass this server-owned path, and browser-supplied asset IDs are never authoritative.
 - Coordination: `batch_operations` runs deterministic sub-operations and rolls back snapshots when `atomic` is true.
 
 Writes should include `expectedSourceHash` when the caller previously read a script. The plugin rejects stale writes with `code: "source_conflict"`. Source verification accepts both the bridge's deployed 8-hex source hash and SHA-256 manifest hashes. For direct source writes, the backend derives the expected post-state hash from the command source; a plugin-claimed resulting hash cannot replace that comparison.
@@ -152,6 +153,8 @@ profiles or check IDs fail closed.
 14. Repeat an identical heartbeat and confirm no attestation write occurs; remove one advertised command and confirm the session becomes `degraded` while another supported write still succeeds.
 15. Queue the missing command and confirm claim-time validation returns `studio_tool_unavailable`; attest an unaccepted build identity and confirm no queued command reaches Studio.
 16. On an MCP session, run one successful and one timed-out named playtest and confirm both return to Edit mode.
+17. Apply a published image record to a known `ImageLabel.Image` with `apply_asset_reference`; confirm the acknowledgement contains a snapshot ID and an exact `rbxassetid://<id>` read-back, then confirm unrelated properties are unchanged.
+18. Attempt `apply_asset_reference` with an unsupported class/property pair and attempt the same asset property through `update_properties`; confirm both fail before Studio mutation.
 
 ## Firestore Notes
 

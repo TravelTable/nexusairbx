@@ -16,6 +16,7 @@ export const DEFAULT_SETTINGS = Object.freeze({
   studioAutoPushPolicy: "after_validation",
   lastAuthorizedStudioSessionId: null,
   robloxAssetUploadsEnabled: false,
+  assetPublishingPreference: "auto_explicit_request",
   allowPlaceholderAssets: false,
   useExamples: false,
   selectedExampleIds: Object.freeze([]),
@@ -35,6 +36,12 @@ const ENUMS = {
   theme: new Set(["dark", "system"]),
   chatMode: new Set(["agent", "plan", "debug", "ask"]),
   studioAutoPushPolicy: new Set(["after_validation", "manual_review", "off"]),
+  assetPublishingPreference: new Set([
+    "review_every_asset",
+    "auto_explicit_request",
+    "always_project_creator",
+    "generate_only",
+  ]),
 };
 const WRITE_POLICIES = new Set(["allowed_after_toggle", "approval_required", "disabled"]);
 const ROBLOX_WRITE_POLICY_KEYS = new Set(Object.keys(DEFAULT_SETTINGS.robloxWritePolicy));

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import AssetGenerationForm, { DEFAULT_ASSET_GENERATION_FORM } from "./AssetGenerationForm";
 
 function ControlledAssetGenerationForm(props) {
@@ -47,6 +47,26 @@ describe("AssetGenerationForm", () => {
       "background_enabled",
       "not_applicable",
     ]);
+  });
+
+  test("uses a saved NexusRBX asset as the optional style reference", () => {
+    render(<ControlledAssetGenerationForm assets={[{ assetId: "asset_one", name: "Sword" }]} />);
+
+    const reference = screen.getByRole("combobox", { name: /Style reference asset/i });
+    expect(Array.from(reference.options).map((option) => option.value)).toEqual(["", "asset_one"]);
+    expect(screen.queryByRole("button", { name: /Add a visual reference/i })).toBeNull();
+  });
+
+  test("limits variation requests to the backend-supported maximum", () => {
+    render(<ControlledAssetGenerationForm assets={[{ assetId: "asset_one", name: "Sword" }]} />);
+
+    fireEvent.click(screen.getByRole("radio", { name: /^Similar\b/i }));
+    const count = screen.getByRole("spinbutton", { name: /Variation count/i });
+    expect(count.value).toBe("3");
+    expect(count.getAttribute("max")).toBe("3");
+
+    fireEvent.change(count, { target: { value: "9" } });
+    expect(count.value).toBe("3");
   });
 
   test("fails closed when Prompt 2 writes are unavailable", () => {

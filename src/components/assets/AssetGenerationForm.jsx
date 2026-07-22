@@ -1,5 +1,5 @@
-import React, { useId, useRef, useState } from "react";
-import { ImagePlus, Layers, Package, RefreshCw, Sparkles, Upload, WandSparkles, X } from "../../lib/icons";
+import React, { useId } from "react";
+import { ImagePlus, Layers, Package, RefreshCw, Sparkles, WandSparkles } from "../../lib/icons";
 import { Button, Toggle } from "../ui";
 
 export const ASSET_GENERATION_MODES = [
@@ -26,11 +26,12 @@ export const DEFAULT_ASSET_GENERATION_FORM = {
   autoExtractConcepts: true,
   packId: "",
   sourceAssetId: "",
+  variationCount: 3,
   styleProfileId: "",
   artworkMode: "transparent_game_ui_icon",
   backgroundMode: "transparent",
   transparencyRequired: true,
-  referenceImage: null,
+  referenceAssetId: "",
 };
 
 export default function AssetGenerationForm({
@@ -47,26 +48,10 @@ export default function AssetGenerationForm({
 }) {
   const form = { ...DEFAULT_ASSET_GENERATION_FORM, ...value };
   const fieldId = useId();
-  const fileRef = useRef(null);
-  const [fileError, setFileError] = useState("");
 
   const patch = (next) => onChange?.({ ...form, ...next });
   const selectedMode = ASSET_GENERATION_MODES.find((mode) => mode.id === form.mode) || ASSET_GENERATION_MODES[0];
   const unsupported = unsupportedModes.includes(form.mode);
-
-  const handleReference = (event) => {
-    const file = event.target.files?.[0];
-    setFileError("");
-    if (!file) return;
-    if (!file.type.startsWith("image/")) {
-      setFileError("Choose a PNG, JPG, or WebP image.");
-      return;
-    }
-    const reader = new FileReader();
-    reader.onload = () => patch({ referenceImage: { name: file.name, type: file.type, size: file.size, dataUrl: reader.result } });
-    reader.onerror = () => setFileError("The reference image could not be read.");
-    reader.readAsDataURL(file);
-  };
 
   const handleModeChange = (mode) => {
     if (unsupportedModes.includes(mode)) return;
@@ -107,22 +92,16 @@ export default function AssetGenerationForm({
           />
         </label>
 
-        <div className="asset-reference-input">
-          <span className="nexus-field-label">Reference image <small>optional</small></span>
-          {form.referenceImage ? (
-            <div className="asset-reference-input__selected">
-              <img src={form.referenceImage.dataUrl} alt="Selected style reference" />
-              <span><strong>{form.referenceImage.name}</strong><small>Used as visual context, not copied as a result.</small></span>
-              <Button variant="subtle" size="sm" icon={X} aria-label="Remove reference image" disabled={disabled} onClick={() => { patch({ referenceImage: null }); if (fileRef.current) fileRef.current.value = ""; }} />
-            </div>
-          ) : (
-            <button className="asset-reference-input__button" type="button" disabled={disabled} onClick={() => fileRef.current?.click()}>
-              <Upload aria-hidden="true" /><span><strong>Add a visual reference</strong><small>PNG, JPG, or WebP</small></span>
-            </button>
-          )}
-          <input ref={fileRef} className="sr-only" type="file" accept="image/png,image/jpeg,image/webp" disabled={disabled} onChange={handleReference} />
-          {fileError ? <span className="asset-field-error" role="alert">{fileError}</span> : null}
-        </div>
+        <label className="asset-reference-input">
+          <span className="nexus-field-label">Style reference asset <small>optional</small></span>
+          <select className="nexus-input" value={form.referenceAssetId} disabled={disabled} onChange={(event) => patch({ referenceAssetId: event.target.value })}>
+            <option value="">Use project style context</option>
+            {assets.filter((asset) => assetId(asset)).map((asset) => (
+              <option key={assetId(asset)} value={assetId(asset)}>{asset.name || assetId(asset)}</option>
+            ))}
+          </select>
+          <small className="asset-field-help">Uses a saved NexusRBX asset as visual context.</small>
+        </label>
       </div>
 
       {(form.mode === "pack" || form.mode === "extend") ? (
@@ -153,14 +132,30 @@ export default function AssetGenerationForm({
       ) : null}
 
       {(form.mode === "similar" || form.mode === "replacement") ? (
-        <label>
-          <span className="nexus-field-label">Source asset</span>
-          <select className="nexus-input" required value={form.sourceAssetId} disabled={disabled} onChange={(event) => patch({ sourceAssetId: event.target.value })}>
-            <option value="">Select an existing asset</option>
-            {assets.map((asset) => <option key={assetId(asset)} value={assetId(asset)}>{asset.name || assetId(asset)}</option>)}
-          </select>
-          <small className="asset-field-help">{form.mode === "replacement" ? "The new record will retain the superseded asset relationship." : "The source is used as a style anchor; it is not overwritten."}</small>
-        </label>
+        <div className="asset-generation-form__row">
+          <label>
+            <span className="nexus-field-label">Source asset</span>
+            <select className="nexus-input" required value={form.sourceAssetId} disabled={disabled} onChange={(event) => patch({ sourceAssetId: event.target.value })}>
+              <option value="">Select an existing asset</option>
+              {assets.map((asset) => <option key={assetId(asset)} value={assetId(asset)}>{asset.name || assetId(asset)}</option>)}
+            </select>
+            <small className="asset-field-help">{form.mode === "replacement" ? "A new variation keeps the source lineage; the existing asset is not overwritten." : "The source is used as a style anchor; it is not overwritten."}</small>
+          </label>
+          <label>
+            <span className="nexus-field-label">Variation count</span>
+            <input
+              className="nexus-input"
+              type="number"
+              min="1"
+              max="3"
+              step="1"
+              value={form.variationCount}
+              disabled={disabled}
+              onChange={(event) => patch({ variationCount: Math.min(3, Math.max(1, Number(event.target.value) || 1)) })}
+            />
+            <small className="asset-field-help">Create up to three variations from the saved source.</small>
+          </label>
+        </div>
       ) : null}
 
       <details className="asset-generation-form__advanced">

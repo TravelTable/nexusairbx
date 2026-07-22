@@ -203,7 +203,12 @@ export function useTaskRuntime({
   storage: suppliedStorage = null,
 } = {}) {
   const userId = firstString(suppliedUserId, user?.uid);
-  const runtimeEnabled = FEATURE_FLAGS.newTaskRuntime && enabled !== false;
+  // Plan execution is backed by the durable runtime. Enabling the Plan Mode
+  // surface therefore enables its progress/recovery client as one coherent
+  // workflow, even while the standalone runtime flag remains staged off.
+  const runtimeEnabled = (
+    FEATURE_FLAGS.newTaskRuntime || FEATURE_FLAGS.newPlanningMode
+  ) && enabled !== false;
   const storage = useMemo(() => safeStorage(suppliedStorage), [suppliedStorage]);
   const storageKey = useMemo(() => getTaskRuntimeStorageKey({ userId, projectId, chatId }), [
     userId,

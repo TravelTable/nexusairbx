@@ -1,16 +1,20 @@
-import React, { useEffect, useState } from "react";
-import { FileArchive, Search, X } from "lib/icons";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ClipboardList, FileArchive, ListChecks, MessageSquare, Search, X } from "lib/icons";
 import ChatView from "../ChatView";
 import ChatComposer from "../chat/ChatComposer";
 import BuildDetailsPanel from "./BuildDetailsPanel";
+import PlanWorkspace from "./PlanWorkspace";
 import RobloxAssetTray from "./RobloxAssetTray";
 import CreatorStoreSearch from "../../assets/CreatorStoreSearch";
 import ModelFilePipelinePanel from "../../assets/ModelFilePipelinePanel";
 import { useMotionPresence } from "../../../hooks/useMotionPresence";
+import FEATURE_FLAGS from "../../../lib/featureFlags";
 // Primary Studio agent surface. Chat drives the
 // workflow; build progress + setup/testing/security live in the Details view.
 export default function AgentChatPanel({
   // chat
+  currentChatId,
+  projectId = "",
   messages,
   pendingMessage,
   pendingMessages,
@@ -103,6 +107,7 @@ export default function AgentChatPanel({
   themePrimary,
   themeSecondary,
   onModeChange,
+  onPlanTaskAccepted,
   // details
   artifact,
   agentRun,
@@ -110,8 +115,49 @@ export default function AgentChatPanel({
   const [view, setView] = useState("chat");
   const [creatorStoreOpen, setCreatorStoreOpen] = useState(false);
   const [glbPanelOpen, setGlbPanelOpen] = useState(false);
+  const [selectedTemplateId, setSelectedTemplateId] = useState("");
+  const openPlanWorkspace = useCallback(() => setView("plan"), []);
   const creatorStorePresence = useMotionPresence(creatorStoreOpen, 220);
   const glbPanelPresence = useMotionPresence(glbPanelOpen, 220);
+  const viewOptions = useMemo(() => FEATURE_FLAGS.newPlanningMode ? [
+    { id: "chat", label: "Chat", icon: MessageSquare },
+    { id: "plan", label: "Plan", icon: ListChecks },
+    { id: "details", label: "Details", icon: ClipboardList },
+  ] : undefined, []);
+  const latestPlanMessageId = useMemo(() => {
+    const message = [...(messages || [])]
+      .reverse()
+      .find((entry) => entry?.planId || ["plan", "plan_approved"].includes(entry?.stage));
+    return message
+      ? String(message.id || `${message.planId || "plan"}:${message.planVersion || message.version || 1}`)
+      : "";
+  }, [messages]);
+  const previousPlanMessageIdRef = useRef("");
+
+  useEffect(() => {
+    if (!FEATURE_FLAGS.newPlanningMode) return;
+    if (latestPlanMessageId && latestPlanMessageId !== previousPlanMessageIdRef.current) {
+      setView("plan");
+    }
+    previousPlanMessageIdRef.current = latestPlanMessageId;
+  }, [latestPlanMessageId]);
+
+  const handlePlanExecute = useCallback(async ({ result }) => {
+    const task = result?.task || result?.execution?.task || result?.run || null;
+    const taskId = task?.taskId || task?.id || result?.taskId || result?.execution?.taskId || result?.runId || "";
+    if (!taskId) throw new Error("NexusRBX did not return an execution task.");
+    onPlanTaskAccepted?.(task || taskId);
+    setView("chat");
+  }, [onPlanTaskAccepted]);
+
+  const handleComposerSubmit = useCallback((event) => {
+    const submission = onSubmit?.(
+      event,
+      selectedTemplateId ? { templateId: selectedTemplateId } : undefined,
+    );
+    setSelectedTemplateId("");
+    return submission;
+  }, [onSubmit, selectedTemplateId]);
 
   useEffect(() => {
     if (!creatorStoreOpen && !glbPanelOpen) return undefined;
@@ -141,6 +187,26 @@ export default function AgentChatPanel({
               notify={notify}
             />
           </div>
+        ) : view === "plan" && FEATURE_FLAGS.newPlanningMode ? (
+          <div className="min-h-0 flex-1 overflow-y-auto scrollbar-subtle">
+            <PlanWorkspace
+              enabled
+              messages={messages}
+              userId={user?.uid || "guest"}
+              chatId={currentChatId || "chat"}
+              projectId={projectId}
+              studioConnected={Boolean(studioConnected)}
+              studioTarget={studioPlacePreference}
+              onExecute={handlePlanExecute}
+              notify={notify}
+              onUseTemplate={(starterPrompt, templateId) => {
+                setPrompt(starterPrompt);
+                setSelectedTemplateId(String(templateId || ""));
+                onModeChange?.("plan");
+                setView("chat");
+              }}
+            />
+          </div>
         ) : (
           <div className="relative flex min-h-0 flex-1 flex-col">
             <ChatView
@@ -152,9 +218,9 @@ export default function AgentChatPanel({
               profile={profile}
               activeMode={activeMode}
               isBusy={isBusy}
-              onApprovePlan={onApprovePlan}
+              onApprovePlan={FEATURE_FLAGS.newPlanningMode ? undefined : onApprovePlan}
               onClarifySubmit={onClarifySubmit}
-              onEditPlan={onEditPlan}
+              onEditPlan={FEATURE_FLAGS.newPlanningMode ? openPlanWorkspace : onEditPlan}
               onViewUi={onOpenArtifact}
               onRefine={onRefine}
               onQuickStart={onQuickStart}
@@ -168,7 +234,7 @@ export default function AgentChatPanel({
         )}
       </div>
 
-      <div className="shrink-0 border-t border-white/10 bg-[#080a12] px-3 py-2">
+      {view !== "plan" && <div className="shrink-0 border-t border-white/10 bg-[#080a12] px-3 py-2">
         <div className="flex gap-2">
           <button
             type="button"
@@ -208,7 +274,7 @@ export default function AgentChatPanel({
             <span className="shrink-0 text-[10px] font-black uppercase tracking-widest text-cyan-300">Open</span>
           </button>
         </div>
-      </div>
+      </div>}
 
       {creatorStorePresence.present && (
         <div
@@ -318,7 +384,7 @@ export default function AgentChatPanel({
         setAttachments={setAttachments}
         robloxImageUploading={robloxImageUploading}
         robloxImageUploads={robloxImageUploads}
-        onSubmit={onSubmit}
+        onSubmit={handleComposerSubmit}
         isGenerating={isBusy}
         generationStage={generationStage}
         placeholder={refineTarget ? "Describe the Studio change you want..." : "Ask the Studio agent to build, inspect, wire, or fix..."}
@@ -346,6 +412,7 @@ export default function AgentChatPanel({
         onModeChange={onModeChange}
         view={view}
         onViewChange={setView}
+        viewOptions={viewOptions}
         studioConnected={studioConnected}
         studioConnectionType={studioConnectionType}
         studioConnectionState={studioConnectionState}

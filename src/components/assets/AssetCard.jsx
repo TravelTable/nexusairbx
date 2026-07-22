@@ -1,10 +1,19 @@
-import React from "react";
-import { ArrowRight, ImageIcon, RefreshCw, RotateCcw, Sparkles } from "../../lib/icons";
+import React, { useState } from "react";
+import { ArrowRight, Copy, RefreshCw, RotateCcw, Sparkles } from "../../lib/icons";
 import { Button } from "../ui";
 import AssetLifecycleBadge from "./AssetLifecycleBadge";
+import CanonicalAssetPreview from "./CanonicalAssetPreview";
 
 const RETRY_UPLOAD_STATES = new Set(["upload_failed"]);
-const POLL_STATES = new Set(["uploading", "submitted", "moderation_pending"]);
+const POLL_STATES = new Set([
+  "upload_pending",
+  "publishing",
+  "uploading",
+  "submitted",
+  "roblox_processing",
+  "under_moderation",
+  "moderation_pending",
+]);
 const POLL_MODERATION_STATES = new Set(["pending", "moderation_pending"]);
 
 function shortId(value) {
@@ -23,20 +32,26 @@ export default function AssetCard({
   onSimilar,
   onReplace,
 }) {
+  const [copyStatus, setCopyStatus] = useState("");
   const lifecycle = String(asset?.lifecycle || "draft").toLowerCase();
   const moderation = String(asset?.moderation?.state || "").toLowerCase();
+  const copyRobloxId = async () => {
+    if (!asset?.robloxAssetId || typeof navigator === "undefined" || !navigator.clipboard?.writeText) {
+      setCopyStatus("Copy is unavailable. Select the Roblox ID in asset details to copy it manually.");
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(String(asset.robloxAssetId));
+      setCopyStatus("Roblox asset ID copied.");
+    } catch {
+      setCopyStatus("Copy failed. Select the Roblox ID in asset details to copy it manually.");
+    }
+  };
 
   return (
-    <article className="asset-card">
+    <article className="asset-card" aria-busy={Boolean(busyAction)}>
       <div className="asset-card__preview">
-        {asset?.previewUrl ? (
-          <img src={asset.previewUrl} alt={`${asset.name || "Asset"} preview`} loading="lazy" />
-        ) : (
-          <div className="asset-card__placeholder" aria-label="Preview is not available yet">
-            <ImageIcon aria-hidden="true" />
-            <span>Preview pending</span>
-          </div>
-        )}
+        <CanonicalAssetPreview asset={asset} />
         <div className="asset-card__status"><AssetLifecycleBadge status={lifecycle} /></div>
       </div>
       <div className="asset-card__body">
@@ -54,6 +69,11 @@ export default function AssetCard({
         </dl>
 
         <div className="asset-card__actions">
+          {asset?.robloxAssetId ? (
+            <Button size="sm" variant="ghost" icon={Copy} onClick={copyRobloxId} aria-label={`Copy Roblox asset ID ${asset.robloxAssetId}`}>
+              Copy Roblox ID
+            </Button>
+          ) : null}
           {RETRY_UPLOAD_STATES.has(lifecycle) && onRetryUpload ? (
             <Button size="sm" variant="secondary" icon={RotateCcw} disabled={Boolean(busyAction)} onClick={() => onRetryUpload(asset)}>
               {busyAction === "retry" ? "Retrying…" : "Retry upload"}
@@ -68,6 +88,7 @@ export default function AssetCard({
           {onReplace ? <Button size="sm" variant="subtle" icon={RotateCcw} disabled={Boolean(busyAction)} onClick={() => onReplace(asset)}>Replace</Button> : null}
           {onOpen ? <Button size="sm" variant="ghost" iconRight={ArrowRight} onClick={() => onOpen(asset)}>Details</Button> : null}
         </div>
+        <span className="sr-only" role="status" aria-live="polite">{copyStatus}</span>
       </div>
     </article>
   );

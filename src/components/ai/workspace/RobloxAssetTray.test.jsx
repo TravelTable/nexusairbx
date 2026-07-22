@@ -1,96 +1,44 @@
 import React from "react";
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import RobloxAssetTray from "./RobloxAssetTray";
 
-jest.mock("../../../firebase", () => ({
-  auth: {
-    currentUser: {
-      getIdToken: jest.fn().mockResolvedValue("token_1"),
-    },
-  },
+jest.mock("../../../lib/assetPlatformApi", () => ({
+  formatAssetPlatformError: jest.fn((error, fallback) => error?.summary || error?.message || fallback),
+  getRobloxUploadStatus: jest.fn(),
+  listAssets: jest.fn(),
+  publishAssetToRoblox: jest.fn(),
 }));
 
-jest.mock("../../../lib/uiBuilderApi", () => ({
-  approveProjectAssets: jest.fn(),
-  getUiProjectState: jest.fn(),
-  listUiProjectAssets: jest.fn(),
-  refreshProjectAssetUploads: jest.fn(),
-  uploadProjectAssetsToRoblox: jest.fn(),
-}));
+jest.mock("../../assets/CanonicalAssetPreview", () => function CanonicalAssetPreview({ asset, alt }) {
+  return <div aria-label={alt}>{asset.assetId}</div>;
+});
 
 const {
-  getUiProjectState,
-  listUiProjectAssets,
-} = require("../../../lib/uiBuilderApi");
+  getRobloxUploadStatus,
+  listAssets,
+  publishAssetToRoblox,
+} = require("../../../lib/assetPlatformApi");
 
 describe("RobloxAssetTray", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    getUiProjectState.mockResolvedValue({ state: { revision: 3 } });
   });
 
-  test("auto upload mode hides approve and shows retry/pending states", async () => {
-    listUiProjectAssets.mockResolvedValue({
+  test("loads canonical project assets and keeps Roblox writes disabled without consent", async () => {
+    listAssets.mockResolvedValue({
       assets: [
         {
-          logicalAssetId: "coin_icon",
-          asset_id: "coin_icon",
-          generationId: "gen_1",
-          generationStatus: "ready",
-          storageUrl: "https://storage.example/coin.png",
-          assetKind: "icon",
-          latestUpload: {
-            uploadStatus: "failed",
-            lastError: "Upload quota reached",
-          },
+          assetId: "asset_coin",
+          name: "Coin icon",
+          kind: "icon",
+          lifecycle: "ready_to_publish",
         },
         {
-          logicalAssetId: "shop_banner",
-          asset_id: "shop_banner",
-          generationId: "gen_2",
-          generationStatus: "ready",
-          storageUrl: "https://storage.example/banner.png",
-          assetKind: "banner",
-          latestUpload: {
-            uploadStatus: "operation_pending",
-          },
-        },
-      ],
-    });
-
-    render(
-      <RobloxAssetTray
-        projectId="project_1"
-        robloxConnected
-        uploadAvailable
-        assetUploadsEnabled
-        selectedCreator={{ type: "User", id: "123" }}
-        notify={jest.fn()}
-      />
-    );
-
-    await waitFor(() => expect(screen.getByText("Upload quota reached")).toBeTruthy());
-
-    expect(getUiProjectState).toHaveBeenCalledWith(expect.objectContaining({ projectId: "project_1", optional: true }));
-    expect(screen.getByText("Retry Upload")).toBeTruthy();
-    expect(screen.queryByText("Approve")).toBeNull();
-    expect(screen.getByText("Poll")).toBeTruthy();
-    expect(screen.getByText("upload failed; local kept")).toBeTruthy();
-    expect(screen.getByText("pending")).toBeTruthy();
-  });
-
-  test("local-only mode keeps approve visible and hides retry upload", async () => {
-    listUiProjectAssets.mockResolvedValue({
-      assets: [
-        {
-          logicalAssetId: "coin_icon",
-          asset_id: "coin_icon",
-          generationId: "gen_1",
-          generationStatus: "ready",
-          storageUrl: "https://storage.example/coin.png",
-          assetKind: "icon",
-          approved: false,
-          uploadStatus: "not_requested",
+          assetId: "asset_banner",
+          name: "Shop banner",
+          kind: "banner",
+          lifecycle: "roblox_processing",
+          robloxOperationId: "op_1",
         },
       ],
     });
@@ -106,10 +54,80 @@ describe("RobloxAssetTray", () => {
       />
     );
 
-    await waitFor(() => expect(screen.getByText("coin icon")).toBeTruthy());
+    await waitFor(() => expect(screen.getByText("Coin icon")).toBeTruthy());
 
-    expect(screen.getByText("Approve")).toBeTruthy();
-    expect(screen.queryByText("Retry Upload")).toBeNull();
-    expect(screen.getByText("local only")).toBeTruthy();
+    expect(listAssets).toHaveBeenCalledWith({
+      scope: "project",
+      projectId: "project_1",
+      sort: "updated_desc",
+      limit: 8,
+    });
+    expect(screen.getByRole("button", { name: "Retry Upload" }).disabled).toBe(true);
+    expect(screen.getByText("Auto Upload Assets is off. Assets stay in NexusRBX until you enable it.")).toBeTruthy();
+    expect(screen.getByText("Ready to publish")).toBeTruthy();
+    expect(screen.getByText("Roblox processing")).toBeTruthy();
+    expect(screen.queryByText("Approve")).toBeNull();
+  });
+
+  test("publishes an eligible canonical asset to the normalized selected creator", async () => {
+    const notify = jest.fn();
+    listAssets.mockResolvedValue({
+      assets: [{
+        assetId: "asset_coin",
+        name: "Coin icon",
+        lifecycle: "ready_to_publish",
+      }],
+    });
+    publishAssetToRoblox.mockResolvedValue({ assetId: "asset_coin", lifecycle: "publishing" });
+
+    render(
+      <RobloxAssetTray
+        projectId="project_1"
+        robloxConnected
+        uploadAvailable
+        assetUploadsEnabled
+        selectedCreator={{ type: "group", id: "42" }}
+        notify={notify}
+      />
+    );
+
+    const publishButton = await screen.findByRole("button", { name: "Retry Upload" });
+    await waitFor(() => expect(publishButton.disabled).toBe(false));
+    fireEvent.click(publishButton);
+
+    await waitFor(() => expect(publishAssetToRoblox).toHaveBeenCalledWith("asset_coin", {
+      projectId: "project_1",
+      creatorTarget: { type: "Group", id: "42" },
+    }));
+    expect(notify).toHaveBeenCalledWith({ type: "success", message: "Roblox publishing started" });
+  });
+
+  test("polls a pending canonical Roblox operation without requiring write consent", async () => {
+    listAssets.mockResolvedValue({
+      assets: [{
+        assetId: "asset_banner",
+        name: "Shop banner",
+        lifecycle: "under_moderation",
+        robloxOperationId: "op_1",
+      }],
+    });
+    getRobloxUploadStatus.mockResolvedValue({ assetId: "asset_banner", lifecycle: "under_moderation" });
+
+    render(
+      <RobloxAssetTray
+        projectId="project_1"
+        assetUploadsEnabled={false}
+        notify={jest.fn()}
+      />
+    );
+
+    const pollButton = await screen.findByRole("button", { name: "Poll" });
+    await waitFor(() => expect(pollButton.disabled).toBe(false));
+    fireEvent.click(pollButton);
+
+    await waitFor(() => expect(getRobloxUploadStatus).toHaveBeenCalledWith("asset_banner", {
+      projectId: "project_1",
+      operationId: "op_1",
+    }));
   });
 });

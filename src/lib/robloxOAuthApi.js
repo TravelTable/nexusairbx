@@ -4,10 +4,171 @@ import { formatRobloxErrorMessage } from "./robloxAuthorizationMessages";
 
 const readJsonOrThrow = readJsonResponse;
 
+const SENSITIVE_CONNECTION_KEYS = new Set([
+  "accessToken",
+  "refreshToken",
+  "clientSecret",
+  "idToken",
+  "codeVerifier",
+  "encryptedAccessToken",
+  "encryptedRefreshToken",
+]);
+
+function asArray(value) {
+  return Array.isArray(value) ? value : [];
+}
+
+function firstString(...values) {
+  const value = values.find((entry) => (
+    (typeof entry === "string" && entry.trim())
+    || (typeof entry === "number" && Number.isFinite(entry))
+  ));
+  return value === undefined || value === null ? "" : String(value);
+}
+
+function normalizeCreator(rawCreator) {
+  if (!rawCreator || typeof rawCreator !== "object") return null;
+  const typeValue = firstString(rawCreator.type, rawCreator.creatorType).toLowerCase();
+  const type = typeValue === "group" ? "Group" : typeValue === "user" ? "User" : "";
+  const id = firstString(rawCreator.id, rawCreator.creatorId, rawCreator.userId, rawCreator.groupId);
+  if (!type || !id) return null;
+  return {
+    type,
+    id,
+    name: firstString(rawCreator.name, rawCreator.displayName, rawCreator.label) || `${type} ${id}`,
+    authorized: rawCreator.authorized !== false,
+    permissions: asArray(rawCreator.permissions).map(String),
+    missingPermissions: asArray(rawCreator.missingPermissions).map(String),
+  };
+}
+
+function normalizeUniverse(rawUniverse) {
+  if (!rawUniverse || typeof rawUniverse !== "object") return null;
+  const id = firstString(rawUniverse.id, rawUniverse.universeId, rawUniverse.resourceId);
+  if (!id) return null;
+  return {
+    id,
+    name: firstString(rawUniverse.name, rawUniverse.displayName) || `Universe ${id}`,
+    creator: normalizeCreator(rawUniverse.creator),
+    permissions: asArray(rawUniverse.permissions).map(String),
+    missingPermissions: asArray(rawUniverse.missingPermissions).map(String),
+  };
+}
+
+function sanitizeProfile(rawProfile, fallbackUserId) {
+  const profile = rawProfile && typeof rawProfile === "object" ? rawProfile : {};
+  const userId = firstString(profile.sub, profile.id, profile.userId, fallbackUserId);
+  if (!userId && !Object.keys(profile).length) return null;
+  return {
+    sub: userId,
+    id: userId,
+    preferred_username: firstString(profile.preferred_username, profile.username, profile.name),
+    username: firstString(profile.username, profile.preferred_username, profile.name),
+    name: firstString(profile.name, profile.displayName, profile.nickname, profile.preferred_username),
+    displayName: firstString(profile.displayName, profile.name, profile.nickname, profile.preferred_username),
+    nickname: firstString(profile.nickname),
+    picture: firstString(profile.picture, profile.avatarUrl),
+  };
+}
+
+/**
+ * Reduces the OAuth status response to the creator and health metadata the UI
+ * needs. This is a defence-in-depth boundary: credential-shaped properties are
+ * never retained even if a future server response accidentally includes them.
+ */
+export function normalizeRobloxConnectionStatus(rawStatus = {}) {
+  const status = rawStatus && typeof rawStatus === "object" ? rawStatus : {};
+  const rawConnection = status.connection && typeof status.connection === "object"
+    ? status.connection
+    : {};
+  const sensitiveKeysPresent = [...SENSITIVE_CONNECTION_KEYS].some((key) => (
+    Object.prototype.hasOwnProperty.call(status, key)
+    || Object.prototype.hasOwnProperty.call(rawConnection, key)
+  ));
+  const profile = sanitizeProfile(
+    rawConnection.profile || status.profile || status.user,
+    firstString(rawConnection.robloxUserId, status.robloxUserId)
+  );
+  const creatorCandidates = asArray(
+    status.authorizedCreators?.length ? status.authorizedCreators : rawConnection.creators
+  );
+  const creators = creatorCandidates.map(normalizeCreator).filter(Boolean);
+  const selectedCreator = normalizeCreator(rawConnection.selectedCreator || status.selectedCreator);
+  const personalCreator = creators.find((creator) => creator.type === "User")
+    || (profile?.id ? normalizeCreator({ type: "User", id: profile.id, name: profile.displayName || profile.username }) : null);
+  const groups = creators.filter((creator) => creator.type === "Group");
+  const universes = asArray(
+    status.accessibleUniverses?.length
+      ? status.accessibleUniverses
+      : rawConnection.universes || status.universes
+  ).map(normalizeUniverse).filter(Boolean);
+  const grantedScopes = asArray(status.grantedScopes?.length ? status.grantedScopes : rawConnection.scopes).map(String);
+  const missingScopes = asArray(status.missingScopes).map(String);
+  const tokenHealthRaw = status.tokenHealth && typeof status.tokenHealth === "object" ? status.tokenHealth : {};
+  const tokenHealth = {
+    status: firstString(tokenHealthRaw.status) || (status.connected ? "unknown" : "not_connected"),
+    accessTokenExpiresAt: tokenHealthRaw.accessTokenExpiresAt || null,
+    lastRefreshAt: tokenHealthRaw.lastRefreshAt || null,
+    hasRefreshToken: tokenHealthRaw.hasRefreshToken === true,
+  };
+  const lastSuccessfulOperation = status.lastSuccessfulOperation && typeof status.lastSuccessfulOperation === "object"
+    ? {
+      type: firstString(status.lastSuccessfulOperation.type, status.lastSuccessfulOperation.operationType),
+      occurredAt: status.lastSuccessfulOperation.occurredAt || status.lastSuccessfulOperation.completedAt || status.lastSuccessfulOperation.createdAt || null,
+      creator: normalizeCreator(status.lastSuccessfulOperation.creator),
+    }
+    : null;
+  const missingPermissions = Array.from(new Set([
+    ...creators.flatMap((creator) => creator.missingPermissions),
+    ...universes.flatMap((universe) => universe.missingPermissions),
+  ]));
+
+  return {
+    connected: status.connected === true,
+    upgradeRequired: status.upgradeRequired === true,
+    capabilities: status.capabilities && typeof status.capabilities === "object" ? status.capabilities : {},
+    grantedScopes,
+    missingScopes,
+    missingCapabilities: asArray(status.missingCapabilities).map(String),
+    authorizedCreators: creators,
+    accessibleUniverses: universes,
+    permissions: status.permissions && typeof status.permissions === "object" ? {
+      resourceValidationStatus: firstString(status.permissions.resourceValidationStatus) || "unknown",
+      resourcesValidatedAt: status.permissions.resourcesValidatedAt || null,
+    } : { resourceValidationStatus: "unknown", resourcesValidatedAt: null },
+    policy: status.policy && typeof status.policy === "object" ? status.policy : {},
+    tokenHealth,
+    lastSuccessfulOperation,
+    connection: Object.keys(rawConnection).length || status.connected ? {
+      status: firstString(rawConnection.status) || (status.connected ? "connected" : "disconnected"),
+      profile,
+      identity: profile ? {
+        userId: profile.id,
+        username: profile.username,
+        displayName: profile.displayName,
+        picture: profile.picture,
+      } : null,
+      selectedCreator,
+      creators,
+      personalCreator,
+      groups,
+      universes,
+      grantedScopes,
+      missingScopes,
+      missingPermissions,
+      tokenHealth,
+      lastSuccessfulOperation,
+    } : null,
+    // Kept private to tests/telemetry callers; never includes the values.
+    credentialFieldsDiscarded: sensitiveKeysPresent,
+  };
+}
+
 export async function getRobloxOAuthStatus() {
   return withApiRetryCooldown("roblox-oauth:status", "Failed to load Roblox connection", async () => {
     const res = await authedFetch("/api/roblox/oauth/status", { method: "GET", noCache: true });
-    return readJsonOrThrow(res, "Failed to load Roblox connection");
+    const status = await readJsonOrThrow(res, "Failed to load Roblox connection");
+    return normalizeRobloxConnectionStatus(status);
   });
 }
 
@@ -124,6 +285,13 @@ export async function disconnectRobloxOAuth() {
   return withApiRetryCooldown("roblox-oauth:disconnect", "Failed to disconnect Roblox", async () => {
     const res = await authedFetch("/api/roblox/oauth/disconnect", { method: "POST" });
     return readJsonOrThrow(res, "Failed to disconnect Roblox");
+  });
+}
+
+export async function revokeRobloxOAuth() {
+  return withApiRetryCooldown("roblox-oauth:revoke", "Failed to revoke Roblox access", async () => {
+    const res = await authedFetch("/api/roblox/oauth/revoke", { method: "POST" });
+    return readJsonOrThrow(res, "Failed to revoke Roblox access");
   });
 }
 

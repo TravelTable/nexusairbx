@@ -179,6 +179,70 @@ local function updateProperties(payload)
 	return { path = fullPath(inst), properties = propertiesOf(inst), errors = errors, snapshots = snapshots, ok = #errors == 0 }
 end
 
+local function applyAssetReference(payload)
+	local requestedPath = tostring(payload.path or "")
+	local inst = resolvePath(requestedPath)
+	if not inst then
+		return {
+			ok = false,
+			code = "STUDIO_ASSET_IMPLEMENTATION_FAILED",
+			error = "Target instance not found",
+			path = requestedPath,
+		}
+	end
+
+	-- Inspect the exact target and current value before taking a snapshot or
+	-- mutating anything. The server has already validated this tuple, but the
+	-- live Studio class must still agree.
+	local targetPath = fullPath(inst)
+	local expectedClassName = tostring(payload.className or "")
+	local property = tostring(payload.property or "")
+	local previousValue = safePropertyValue(inst, property)
+	if inst.ClassName ~= expectedClassName then
+		return {
+			ok = false,
+			code = "STUDIO_ASSET_IMPLEMENTATION_FAILED",
+			error = "Target class changed before the asset could be applied",
+			path = targetPath,
+			className = inst.ClassName,
+			expectedClassName = expectedClassName,
+			property = property,
+		}
+	end
+
+	local robloxAssetId = tostring(payload.robloxAssetId or "")
+	local assetReference = "rbxassetid://" .. robloxAssetId
+	local snapshot = snapshotInstance(targetPath)
+	local ok, err = safeSetAssetReference(inst, property, assetReference, expectedClassName)
+	local currentValue = safePropertyValue(inst, property)
+	local exact = ok and currentValue == assetReference
+	local changed = {
+		path = targetPath,
+		className = inst.ClassName,
+		property = property,
+		previousValue = previousValue,
+		currentValue = currentValue,
+	}
+
+	return {
+		ok = exact,
+		code = exact and nil or "STUDIO_ASSET_IMPLEMENTATION_FAILED",
+		error = exact and nil or (err or "Studio did not retain the exact Roblox asset reference"),
+		path = targetPath,
+		className = inst.ClassName,
+		property = property,
+		robloxAssetId = robloxAssetId,
+		assetRecordId = tostring(payload.assetRecordId or ""),
+		assetReference = assetReference,
+		previousValue = previousValue,
+		currentValue = currentValue,
+		changedInstances = { changed },
+		snapshots = { snapshot },
+		snapshotIds = { snapshot.id },
+		affectedPaths = { targetPath },
+	}
+end
+
 local function updateAttributes(payload)
 	local inst = resolvePath(payload.path)
 	if not inst then
@@ -955,4 +1019,3 @@ local function applyArtifact(payload)
 		snapshots = snapshots,
 	}
 end
-

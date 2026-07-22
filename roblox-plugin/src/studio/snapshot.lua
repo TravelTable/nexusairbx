@@ -114,7 +114,10 @@ local function createOrReplaceInstance(path, className, properties, createParent
 	local inst = Instance.new(resolvedClass)
 	inst.Name = name
 	for key, value in pairs(properties or {}) do
-		local ok, err = safeSetProperty(inst, key, value)
+		local handled, ok, err = safeRestoreAssetReference(inst, key, value)
+		if not handled then
+			ok, err = safeSetProperty(inst, key, value)
+		end
 		if not ok then
 			error(err)
 		end

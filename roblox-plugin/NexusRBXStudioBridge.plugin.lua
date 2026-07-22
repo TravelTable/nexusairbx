@@ -7,14 +7,14 @@
 
 local BACKEND_URL = "https://api.nexusrbx.com"
 local BACKEND_HOST = "api.nexusrbx.com"
-local PLUGIN_VERSION = "0.10.3-session-attestation"
-local STUDIO_PROTOCOL_VERSION = "2026-07-17-target-integrity"
+local PLUGIN_VERSION = "0.11.0-asset-references"
+local STUDIO_PROTOCOL_VERSION = "2026-07-22-asset-references"
 
 -- This identifies the exact release artifact, independently of the user-facing
 -- version. Keep it in lockstep with the generated bundle and backend allowlist.
 -- A plugin session must attest its build and actual command handlers at pairing
 -- time; version strings alone are not evidence that a command exists.
-local PLUGIN_BUILD_ID = "nexusrbx-studio-0.10.3-session-attestation.2"
+local PLUGIN_BUILD_ID = "nexusrbx-studio-0.11.0-asset-references.1"
 
 -- These are deliberately capability-level (rather than UI-level) claims. The
 -- pairing payload also includes the exact sorted command list derived from the
@@ -350,7 +350,7 @@ end
 -- END src/net/httpClient.lua
 
 -- BEGIN src/studio/serialization.lua
-local SCRIPT_CLASSES, stableHash, nowMs, readManagedId, attributesOf, propertyHash, scriptHash, propertiesOf, structuredUnsupported, lastBatchSnapshots, AGENT_ARTIFACT_ID_ATTRIBUTE, AGENT_FILE_ID_ATTRIBUTE, CREATABLE_CLASSES, NATIVE_MODEL_LIMITS, escapePattern, escapeReplacement
+local SCRIPT_CLASSES, stableHash, nowMs, readManagedId, attributesOf, propertyHash, scriptHash, propertiesOf, safePropertyValue, structuredUnsupported, lastBatchSnapshots, AGENT_ARTIFACT_ID_ATTRIBUTE, AGENT_FILE_ID_ATTRIBUTE, CREATABLE_CLASSES, NATIVE_MODEL_LIMITS, escapePattern, escapeReplacement
 do
 NATIVE_MODEL_LIMITS = {
 	maxInstances = 750,
@@ -506,6 +506,12 @@ CREATABLE_CLASSES = {
 	TextBox = true,
 	ImageLabel = true,
 	ImageButton = true,
+	Decal = true,
+	Texture = true,
+	MeshPart = true,
+	SpecialMesh = true,
+	Sound = true,
+	Animation = true,
 	ScrollingFrame = true,
 	UIListLayout = true,
 	UIGridLayout = true,
@@ -572,7 +578,7 @@ attributesOf = function(inst)
 	return ok and attrs or {}
 end
 
-local function safePropertyValue(inst, key)
+safePropertyValue = function(inst, key)
 	local ok, value = pcall(function()
 		return inst[key]
 	end)
@@ -622,6 +628,13 @@ propertiesOf = function(inst)
 		"BackgroundTransparency",
 		"TextTransparency",
 		"ImageTransparency",
+		"Image",
+		"Texture",
+		"MeshId",
+		"TextureID",
+		"TextureId",
+		"SoundId",
+		"AnimationId",
 		"ZIndex",
 		"LayoutOrder",
 		"SortOrder",
@@ -680,7 +693,7 @@ end
 -- END src/studio/serialization.lua
 
 -- BEGIN src/studio/path.lua
-local fullPath, resolvePath, readScriptSource, writeScriptSource, getStarterPlayerScripts, splitPath, ensureParent, safeSetProperty
+local fullPath, resolvePath, readScriptSource, writeScriptSource, getStarterPlayerScripts, splitPath, ensureParent, safeSetProperty, ASSET_REFERENCE_TARGETS, safeSetAssetReference, safeRestoreAssetReference
 do
 -- Studio manifests and tool payloads use slash-delimited paths. Older agent
 -- runs occasionally produced a dotted Starter Player path, e.g.
@@ -868,6 +881,62 @@ safeSetProperty = function(inst, key, value)
 	return ok, ok and nil or tostring(err)
 end
 
+-- Asset-bearing properties stay out of safeSetProperty so general agent
+-- property writes cannot smuggle an arbitrary Roblox asset reference. Only the
+-- server-owned apply_asset_reference command reaches this exact class/property
+-- allowlist.
+ASSET_REFERENCE_TARGETS = {
+	ImageLabel = { Image = true },
+	ImageButton = { Image = true },
+	Decal = { Texture = true },
+	Texture = { Texture = true },
+	MeshPart = { MeshId = true, TextureID = true },
+	SpecialMesh = { MeshId = true, TextureId = true },
+	Sound = { SoundId = true },
+	Animation = { AnimationId = true },
+}
+
+local function assetReferencePropertyAllowed(inst, key, expectedClassName)
+	if not inst or inst.ClassName ~= tostring(expectedClassName or "") then
+		return false
+	end
+	local properties = ASSET_REFERENCE_TARGETS[inst.ClassName]
+	return properties ~= nil and properties[tostring(key or "")] == true
+end
+
+safeSetAssetReference = function(inst, key, value, expectedClassName)
+	local property = tostring(key or "")
+	local reference = tostring(value or "")
+	if not assetReferencePropertyAllowed(inst, property, expectedClassName) then
+		return false, "Unsupported asset reference target: " .. tostring(expectedClassName) .. "." .. property
+	end
+	if reference:match("^rbxassetid://[1-9]%d*$") == nil then
+		return false, "Invalid Roblox asset reference"
+	end
+	local ok, err = pcall(function()
+		inst[property] = reference
+	end)
+	return ok, ok and nil or tostring(err)
+end
+
+-- Snapshot restore may write the empty pre-existing value as well as a
+-- canonical Roblox asset reference. It reports whether the property belongs to
+-- this narrow asset-reference boundary so callers can fall back safely.
+safeRestoreAssetReference = function(inst, key, value)
+	local property = tostring(key or "")
+	if not assetReferencePropertyAllowed(inst, property, inst and inst.ClassName or "") then
+		return false, nil, nil
+	end
+	local reference = tostring(value or "")
+	if reference ~= "" and reference:match("^rbxassetid://[1-9]%d*$") == nil then
+		return true, false, "Invalid snapshot asset reference"
+	end
+	local ok, err = pcall(function()
+		inst[property] = reference
+	end)
+	return true, ok, ok and nil or tostring(err)
+end
+
 readScriptSource = function(inst)
 	if not inst or not SCRIPT_CLASSES[inst.ClassName] then
 		return false, ""
@@ -1028,7 +1097,10 @@ createOrReplaceInstance = function(path, className, properties, createParents)
 	local inst = Instance.new(resolvedClass)
 	inst.Name = name
 	for key, value in pairs(properties or {}) do
-		local ok, err = safeSetProperty(inst, key, value)
+		local handled, ok, err = safeRestoreAssetReference(inst, key, value)
+		if not handled then
+			ok, err = safeSetProperty(inst, key, value)
+		end
 		if not ok then
 			error(err)
 		end
@@ -1106,8 +1178,8 @@ do
 
 local TweenService = game:GetService("TweenService")
 
-local displayPluginVersion = PLUGIN_VERSION or "0.10.3-session-attestation"
-local displayProtocolVersion = STUDIO_PROTOCOL_VERSION or "2026-07-17-target-integrity"
+local displayPluginVersion = PLUGIN_VERSION or "0.11.0-asset-references"
+local displayProtocolVersion = STUDIO_PROTOCOL_VERSION or "2026-07-22-asset-references"
 local MAX_ACTIVITY_ENTRIES = 25
 
 local toolbar = plugin:CreateToolbar("NexusRBX")
@@ -3985,7 +4057,7 @@ end
 -- END src/commands/validation.lua
 
 -- BEGIN src/commands/writeTools.lua
-local applyArtifact, getStudioContext, patchScript, renameInstanceTool, moveInstanceTool, duplicateInstanceTool, createScript, deleteScript, updateProperties, updateAttributes, updateTags, replaceInFiles, createSnapshotTool, parseLuau, runSmokeCheck, ensureCleanFolder, validateLuauSource, classNameForKind
+local applyArtifact, getStudioContext, patchScript, renameInstanceTool, moveInstanceTool, duplicateInstanceTool, createScript, deleteScript, updateProperties, applyAssetReference, updateAttributes, updateTags, replaceInFiles, createSnapshotTool, parseLuau, runSmokeCheck, ensureCleanFolder, validateLuauSource, classNameForKind
 do
 getStudioContext = function()
 	local roots = {}
@@ -4166,6 +4238,70 @@ updateProperties = function(payload)
 		end
 	end
 	return { path = fullPath(inst), properties = propertiesOf(inst), errors = errors, snapshots = snapshots, ok = #errors == 0 }
+end
+
+applyAssetReference = function(payload)
+	local requestedPath = tostring(payload.path or "")
+	local inst = resolvePath(requestedPath)
+	if not inst then
+		return {
+			ok = false,
+			code = "STUDIO_ASSET_IMPLEMENTATION_FAILED",
+			error = "Target instance not found",
+			path = requestedPath,
+		}
+	end
+
+	-- Inspect the exact target and current value before taking a snapshot or
+	-- mutating anything. The server has already validated this tuple, but the
+	-- live Studio class must still agree.
+	local targetPath = fullPath(inst)
+	local expectedClassName = tostring(payload.className or "")
+	local property = tostring(payload.property or "")
+	local previousValue = safePropertyValue(inst, property)
+	if inst.ClassName ~= expectedClassName then
+		return {
+			ok = false,
+			code = "STUDIO_ASSET_IMPLEMENTATION_FAILED",
+			error = "Target class changed before the asset could be applied",
+			path = targetPath,
+			className = inst.ClassName,
+			expectedClassName = expectedClassName,
+			property = property,
+		}
+	end
+
+	local robloxAssetId = tostring(payload.robloxAssetId or "")
+	local assetReference = "rbxassetid://" .. robloxAssetId
+	local snapshot = snapshotInstance(targetPath)
+	local ok, err = safeSetAssetReference(inst, property, assetReference, expectedClassName)
+	local currentValue = safePropertyValue(inst, property)
+	local exact = ok and currentValue == assetReference
+	local changed = {
+		path = targetPath,
+		className = inst.ClassName,
+		property = property,
+		previousValue = previousValue,
+		currentValue = currentValue,
+	}
+
+	return {
+		ok = exact,
+		code = exact and nil or "STUDIO_ASSET_IMPLEMENTATION_FAILED",
+		error = exact and nil or (err or "Studio did not retain the exact Roblox asset reference"),
+		path = targetPath,
+		className = inst.ClassName,
+		property = property,
+		robloxAssetId = robloxAssetId,
+		assetRecordId = tostring(payload.assetRecordId or ""),
+		assetReference = assetReference,
+		previousValue = previousValue,
+		currentValue = currentValue,
+		changedInstances = { changed },
+		snapshots = { snapshot },
+		snapshotIds = { snapshot.id },
+		affectedPaths = { targetPath },
+	}
 end
 
 updateAttributes = function(payload)
@@ -6401,6 +6537,7 @@ local MUTATING_COMMANDS = {
 	replace_in_files = true,
 	create_instance = true,
 	update_properties = true,
+	apply_asset_reference = true,
 	update_attributes = true,
 	update_tags = true,
 	rename_instance = true,
@@ -6461,6 +6598,7 @@ TOOL_HANDLERS = {
 	replace_in_files = replaceInFiles,
 	create_instance = createInstanceTool,
 	update_properties = updateProperties,
+	apply_asset_reference = applyAssetReference,
 	update_attributes = updateAttributes,
 	update_tags = updateTags,
 	rename_instance = renameInstanceTool,
@@ -6525,7 +6663,7 @@ local function batchOperations(payload)
 	local ok, err = pcall(function()
 		for index, op in ipairs(payload.operations or {}) do
 			local opType = tostring(op.type or "")
-			if opType == "apply_artifact" or opType == "batch_operations" then
+			if opType == "apply_artifact" or opType == "apply_asset_reference" or opType == "batch_operations" then
 				error("Nested or artifact batch operation is not supported")
 			end
 			local handler = TOOL_HANDLERS[opType]
@@ -6879,6 +7017,32 @@ local function verifyCommandOutcome(command, payload, result)
 		evidence.currentSourceHash = currentHash
 		evidence.baselineSourceHash = result.previousHash or payload.expectedSourceHash
 		evidence.previousSourceHash = result.previousHash or payload.expectedSourceHash
+	elseif commandType == "apply_asset_reference" then
+		local target = result.path or payload.path
+		local inst = resolvePath(target)
+		local property = tostring(payload.property or "")
+		local expectedClassName = tostring(payload.className or "")
+		local robloxAssetId = tostring(payload.robloxAssetId or "")
+		local expected = "rbxassetid://" .. robloxAssetId
+		local actual = inst and safePropertyValue(inst, property) or nil
+		local exact = inst ~= nil and inst.ClassName == expectedClassName and actual == expected
+		addCheck("asset_reference", target, exact, {
+			key = property,
+			property = property,
+			className = inst and inst.ClassName or nil,
+			expected = expected,
+			actual = actual,
+			robloxAssetId = robloxAssetId,
+			reason = inst == nil and "missing" or (not exact and "asset_reference_mismatch" or nil),
+		})
+		evidence.assetReference = {
+			path = target,
+			className = inst and inst.ClassName or nil,
+			property = property,
+			robloxAssetId = robloxAssetId,
+			expected = expected,
+			actual = actual,
+		}
 	elseif commandType == "update_properties" then
 		local target = result.path or payload.path
 		local inst = resolvePath(target)

@@ -21,6 +21,7 @@ export default function AssetContextBar({
   credits,
   autoUpload,
   autoUploadBusy,
+  autoUploadDisabled = false,
   onAutoUploadChange,
   costEstimate,
   controlsDisabled = false,
@@ -65,7 +66,7 @@ export default function AssetContextBar({
       <div className="asset-context-toggle">
         <span className="asset-context-toggle__icon"><CloudUpload aria-hidden="true" /></span>
         <span><strong>Auto upload assets</strong><small>{autoUpload ? "Generated assets upload with your Roblox connection" : "No Roblox writes; Nexus assets are still saved"}</small></span>
-        <Toggle checked={autoUpload} disabled={controlsDisabled || autoUploadBusy} onChange={onAutoUploadChange} aria-label="Automatically upload generated assets to Roblox" />
+        <Toggle checked={autoUpload} disabled={controlsDisabled || autoUploadDisabled || autoUploadBusy} onChange={onAutoUploadChange} aria-label="Automatically upload generated assets to Roblox" />
       </div>
 
       <div className="asset-context-chip asset-context-chip--scope">

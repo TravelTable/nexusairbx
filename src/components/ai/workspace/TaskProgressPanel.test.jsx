@@ -147,4 +147,76 @@ describe("TaskProgressPanel", () => {
     expect(screen.getByText("3 verification records")).toBeTruthy();
     expect(screen.queryByText(/live updates paused/i)).toBeNull();
   });
+
+  test("maps the original plan to a live checklist and explains failed-step recovery", () => {
+    render(
+      <TaskProgressPanel
+        task={task({
+          status: "failed",
+          currentStepId: "step_2",
+          allowedActions: ["retry"],
+          steps: [
+            {
+              stepId: "step_1",
+              planStepId: "plan-inspect",
+              planTitle: "Inspect the existing inventory UI",
+              status: "succeeded",
+            },
+            {
+              stepId: "step_2",
+              planStepId: "plan-create",
+              input: { planTitle: "Create the replacement inventory UI" },
+              status: "failed",
+              error: {
+                safeMessage: "Studio rejected the write because the script changed.",
+                retryable: true,
+                recovery: { label: "Reconnect Studio, inspect the latest script, then retry." },
+              },
+            },
+            {
+              stepId: "step_3",
+              planStepId: "plan-verify",
+              description: "Verify the inventory interaction",
+              status: "pending",
+            },
+          ],
+        })}
+        onRetry={jest.fn()}
+      />
+    );
+
+    expect(screen.getByRole("list", { name: /plan checklist/i })).toBeTruthy();
+    expect(screen.getByText("Inspect the existing inventory UI")).toBeTruthy();
+    expect(screen.getByText("Completed")).toBeTruthy();
+    expect(screen.getAllByText("Failed").length).toBeGreaterThan(0);
+    expect(screen.getByText("Pending")).toBeTruthy();
+    expect(screen.getByLabelText(/failed plan step/i).textContent).toMatch(/create the replacement inventory ui/i);
+    expect(screen.getByLabelText(/failed plan step/i).textContent).toMatch(/1 of 3 plan steps/i);
+    expect(screen.getByLabelText(/failed plan step/i).textContent).toMatch(/safe retry is available/i);
+    expect(screen.getByLabelText(/failed plan step/i).textContent).toMatch(/reconnect studio/i);
+  });
+
+  test("distinguishes Studio waits and user-input waits in the checklist", () => {
+    const { rerender } = render(
+      <TaskProgressPanel
+        task={task({
+          status: "blocked_studio",
+          currentStepId: "step_2",
+          steps: [{ stepId: "step_2", description: "Update the selected place", status: "waiting" }],
+        })}
+      />
+    );
+    expect(screen.getByText("Waiting for Studio")).toBeTruthy();
+
+    rerender(
+      <TaskProgressPanel
+        task={task({
+          status: "waiting_user",
+          currentStepId: "step_2",
+          steps: [{ stepId: "step_2", description: "Choose the save behavior", status: "waiting" }],
+        })}
+      />
+    );
+    expect(screen.getByText("Needs user input")).toBeTruthy();
+  });
 });

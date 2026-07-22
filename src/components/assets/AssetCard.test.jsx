@@ -1,6 +1,8 @@
 import React from "react";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import AssetCard from "./AssetCard";
+
+jest.mock("./CanonicalAssetPreview", () => ({ asset }) => <div data-testid="private-preview">{asset.assetId}</div>);
 
 const nexusAssetId = "nexus-asset-stable-0123456789";
 const robloxAssetId = "98765432109876543210";
@@ -45,5 +47,19 @@ describe("AssetCard", () => {
 
     expect(screen.getByRole("button", { name: "Refresh status" })).not.toBeNull();
     expect(screen.queryByRole("link")).toBeNull();
+  });
+
+  test("announces successful Roblox ID copying", async () => {
+    const writeText = jest.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: { writeText },
+    });
+
+    render(<AssetCard asset={{ assetId: nexusAssetId, robloxAssetId, lifecycle: "ready" }} />);
+    fireEvent.click(screen.getByRole("button", { name: `Copy Roblox asset ID ${robloxAssetId}` }));
+
+    await waitFor(() => expect(writeText).toHaveBeenCalledWith(robloxAssetId));
+    await waitFor(() => expect(screen.queryByText("Roblox asset ID copied.")).not.toBeNull());
   });
 });

@@ -6,13 +6,15 @@ import AssetCard from "../components/assets/AssetCard";
 import AssetLifecycleBadge from "../components/assets/AssetLifecycleBadge";
 import { AssetEmptyState, AssetErrorState, AssetGridSkeleton } from "../components/assets/AssetCollectionState";
 import {
-  ASSET_PLATFORM_WRITES_ENABLED,
+  canAssetPlatformAction,
   formatAssetPlatformError,
+  getAssetPlatformCapabilities,
   getAssetPlatformContext,
+  getRobloxUploadStatus,
+  listAuthorizedCreators,
   listAssetPacks,
   listAssets,
   normalizeAsset,
-  pollAssetStatus,
   retryAssetUpload,
 } from "../lib/assetPlatformApi";
 import { useBilling } from "../context/BillingContext";
@@ -49,6 +51,51 @@ function generatorUrl(mode, field, value) {
   return `/tools/icon-generator?${params.toString()}`;
 }
 
+function normalizeCreator(value = {}) {
+  const creator = value?.creator && typeof value.creator === "object" ? value.creator : value;
+  const rawType = String(creator?.type || creator?.creatorType || "").trim().toLowerCase();
+  const type = rawType === "user" ? "User" : rawType === "group" ? "Group" : "";
+  const id = String(creator?.id || creator?.creatorId || "").trim();
+  if (!type || !id) return null;
+  return {
+    ...creator,
+    type,
+    id,
+    name: String(creator?.name || creator?.displayName || creator?.username || "").trim(),
+  };
+}
+
+function creatorKey(creator = {}) {
+  const normalized = normalizeCreator(creator);
+  return normalized ? `${normalized.type}:${normalized.id}` : "";
+}
+
+function creatorLabel(creator = {}) {
+  const name = creator.name || creator.displayName || creator.username;
+  const type = creator.type || creator.creatorType;
+  const id = creator.id || creator.creatorId;
+  return name || `${type || "Creator"} ${id || ""}`.trim();
+}
+
+function creatorsFromResponse(response) {
+  const output = response?.output || response?.result || response || {};
+  const data = output?.data && typeof output.data === "object" ? output.data : {};
+  return asArray(data.creators || output.creators || response?.data?.creators || response?.creators)
+    .map(normalizeCreator)
+    .filter(Boolean);
+}
+
+function responseAsset(response) {
+  const candidate = response?.asset
+    || response?.output?.asset
+    || response?.result?.asset
+    || response?.output
+    || response?.result;
+  if (!candidate || typeof candidate !== "object") return null;
+  const asset = normalizeAsset(candidate);
+  return asset.assetId ? asset : null;
+}
+
 export default function AssetLibraryPage() {
   const navigate = useNavigate();
   const { user, authReady } = useBilling();
@@ -57,6 +104,7 @@ export default function AssetLibraryPage() {
   const [contextReady, setContextReady] = useState(false);
   const [assets, setAssets] = useState([]);
   const [packs, setPacks] = useState([]);
+  const [creators, setCreators] = useState([]);
   const [assetTotal, setAssetTotal] = useState(null);
   const [packTotal, setPackTotal] = useState(null);
   const [tab, setTab] = useState("assets");
@@ -65,7 +113,9 @@ export default function AssetLibraryPage() {
   const [selectedUniverseId, setSelectedUniverseId] = useState("");
   const [search, setSearch] = useState("");
   const [kind, setKind] = useState("all");
+  const [creator, setCreator] = useState("all");
   const [moderation, setModeration] = useState("all");
+  const [lifecycle, setLifecycle] = useState("all");
   const [usage, setUsage] = useState("all");
   const [visibility, setVisibility] = useState("all");
   const [loading, setLoading] = useState(true);
@@ -102,6 +152,26 @@ export default function AssetLibraryPage() {
     if (user) loadContext();
   }, [user, loadContext]);
 
+  useEffect(() => {
+    if (!user || !contextReady) return undefined;
+    const capabilities = getAssetPlatformCapabilities(context);
+    if (!canAssetPlatformAction(capabilities, "list_authorized_creators")) {
+      setCreators([]);
+      return undefined;
+    }
+    let active = true;
+    listAuthorizedCreators({
+      projectId: selectedProjectId || undefined,
+      universeId: selectedUniverseId || undefined,
+    }).then((response) => {
+      if (!active) return;
+      setCreators(creatorsFromResponse(response));
+    }).catch(() => {
+      if (active) setCreators([]);
+    });
+    return () => { active = false; };
+  }, [user, contextReady, context, selectedProjectId, selectedUniverseId]);
+
   const loadRecords = useCallback(async () => {
     if (!user || !contextReady) return;
     setLoading(true);
@@ -111,7 +181,7 @@ export default function AssetLibraryPage() {
       projectId: scope === "project" ? selectedProjectId : "",
       universeId: scope === "universe" ? selectedUniverseId : "",
       search: search.trim(),
-      limit: 100,
+      limit: 200,
       sort: "updated_desc",
     };
     const [assetResult, packResult] = await Promise.allSettled([
@@ -119,6 +189,7 @@ export default function AssetLibraryPage() {
         ...baseQuery,
         kind: kind === "all" ? "" : kind,
         moderation: moderation === "all" ? "" : moderation,
+        lifecycle: lifecycle === "all" ? "" : lifecycle,
         usage: usage === "all" ? "" : usage,
         visibility: visibility === "all" ? "" : visibility,
       }),
@@ -147,7 +218,7 @@ export default function AssetLibraryPage() {
       setError(formatAssetPlatformError(packResult.reason, "Asset packs could not be loaded."));
     }
     setLoading(false);
-  }, [user, contextReady, scope, selectedProjectId, selectedUniverseId, search, kind, moderation, usage, visibility, tab]);
+  }, [user, contextReady, scope, selectedProjectId, selectedUniverseId, search, kind, moderation, lifecycle, usage, visibility, tab]);
 
   useEffect(() => {
     if (!contextReady) return undefined;
@@ -157,28 +228,50 @@ export default function AssetLibraryPage() {
 
   const projects = useMemo(() => projectOptions(context), [context]);
   const universes = useMemo(() => universeOptions(context, selectedProjectId), [context, selectedProjectId]);
+  const capabilities = useMemo(() => getAssetPlatformCapabilities(context), [context]);
+  const canGenerateAsset = canAssetPlatformAction(capabilities, "generate_asset");
+  const canGeneratePack = canAssetPlatformAction(capabilities, "generate_asset_pack");
+  const canGenerateVariation = canAssetPlatformAction(capabilities, "generate_asset_variation");
+  const canPublishAsset = canAssetPlatformAction(capabilities, "publish_asset_to_roblox");
+  const canGetUploadStatus = canAssetPlatformAction(capabilities, "get_roblox_upload_status");
+  const canGenerate = canGenerateAsset || canGeneratePack;
+  const creatorOptions = useMemo(() => {
+    const byKey = new Map();
+    [...creators, ...assets.map((entry) => entry.creator)].forEach((entry) => {
+      const normalized = normalizeCreator(entry);
+      const key = creatorKey(normalized || {});
+      if (normalized && key && !byKey.has(key)) byKey.set(key, normalized);
+    });
+    return [...byKey.values()];
+  }, [creators, assets]);
+  const visibleAssets = useMemo(
+    () => creator === "all" ? assets : assets.filter((entry) => creatorKey(entry.creator) === creator),
+    [assets, creator]
+  );
 
-  const updateOneAsset = async (asset, action, request) => {
+  const updateOneAsset = async (asset, actionName, busyAction, request, { requiresUploadConsent = false } = {}) => {
     if (!asset?.assetId) return;
-    if (!ASSET_PLATFORM_WRITES_ENABLED) {
-      setError("Asset mutations remain unavailable while the Prompt 2 catalog is in read-only rollout.");
+    if (!canAssetPlatformAction(capabilities, actionName)) {
+      setError("This asset action is not authorized for the current project and Roblox connection.");
       return;
     }
-    if (action === "retry" && !settings.robloxAssetUploadsEnabled) {
+    if (requiresUploadConsent && !settings.robloxAssetUploadsEnabled) {
       setError("Auto Upload Assets is off. Enable it in Roblox settings before retrying a write. The Nexus asset remains saved.");
       return;
     }
-    setBusyByAsset((current) => ({ ...current, [asset.assetId]: action }));
+    setBusyByAsset((current) => ({ ...current, [asset.assetId]: busyAction }));
     setError("");
     try {
       const response = await request(asset.assetId);
-      const nextAsset = normalizeAsset(response?.asset || response);
-      if (nextAsset.assetId) {
+      const nextAsset = responseAsset(response);
+      if (nextAsset) {
         setAssets((current) => current.map((entry) => entry.assetId === nextAsset.assetId ? nextAsset : entry));
+      } else {
+        await loadRecords();
       }
-      setNotice(action === "retry" ? "Roblox upload retry queued. The Nexus asset is still available." : "Asset status refreshed.");
+      setNotice(busyAction === "retry" ? "Roblox upload retry queued. The Nexus asset is still available." : "Asset status refreshed.");
     } catch (actionError) {
-      setError(formatAssetPlatformError(actionError, action === "retry" ? "Roblox upload could not be retried." : "Asset status could not be refreshed."));
+      setError(formatAssetPlatformError(actionError, busyAction === "retry" ? "Roblox upload could not be retried." : "Asset status could not be refreshed."));
     } finally {
       setBusyByAsset((current) => ({ ...current, [asset.assetId]: "" }));
     }
@@ -205,17 +298,17 @@ export default function AssetLibraryPage() {
             <p>Browse durable Nexus records across projects and universes. Roblox IDs appear only after upload succeeds.</p>
           </div>
           <div className="asset-platform-header__actions">
-            {ASSET_PLATFORM_WRITES_ENABLED ? <Button icon={Sparkles} onClick={() => navigate("/tools/icon-generator")}>Generate assets</Button> : null}
+            {canGenerate ? <Button icon={Sparkles} onClick={() => navigate("/tools/icon-generator")}>Generate assets</Button> : null}
           </div>
         </header>
 
-        {!ASSET_PLATFORM_WRITES_ENABLED ? <div className="asset-inline-notice" role="status">The canonical catalog is available in read-only mode. Generation, retries, polling writes, and pack changes remain disabled.</div> : null}
+        {!canGenerate && !canPublishAsset ? <div className="asset-inline-notice" role="status">Your canonical asset library is available. Creation and publishing controls will appear when this server authorizes those asset actions.</div> : null}
         {error ? <div className="asset-inline-notice asset-inline-notice--error" role="alert">{error}</div> : null}
         {notice ? <div className="asset-inline-notice asset-inline-notice--success" role="status">{notice}</div> : null}
 
         <section className="asset-library-panel" style={{ marginTop: error || notice ? 14 : 0 }}>
           <div className="asset-library-tabs" role="tablist" aria-label="Library record type">
-            <button type="button" role="tab" aria-selected={tab === "assets"} className={`asset-library-tab ${tab === "assets" ? "asset-library-tab--active" : ""}`} onClick={() => setTab("assets")}>Assets {assetTotal === null ? "" : `(${assetTotal})`}</button>
+            <button type="button" role="tab" aria-selected={tab === "assets"} className={`asset-library-tab ${tab === "assets" ? "asset-library-tab--active" : ""}`} onClick={() => setTab("assets")}>Assets {assetTotal === null ? "" : `(${creator === "all" ? assetTotal : visibleAssets.length})`}</button>
             <button type="button" role="tab" aria-selected={tab === "packs"} className={`asset-library-tab ${tab === "packs" ? "asset-library-tab--active" : ""}`} onClick={() => setTab("packs")}>Packs {packTotal === null ? "" : `(${packTotal})`}</button>
           </div>
 
@@ -242,6 +335,8 @@ export default function AssetLibraryPage() {
                 <option value="icon">Icons</option>
                 <option value="image">Images</option>
                 <option value="decal">Decals</option>
+                <option value="texture">Textures</option>
+                <option value="experience_marketing_image">Marketing images</option>
                 <option value="model">Models</option>
                 <option value="audio">Audio</option>
                 <option value="badge_artwork">Badge artwork</option>
@@ -251,6 +346,15 @@ export default function AssetLibraryPage() {
                 <option value="developer_product">Developer products</option>
               </select>
             ) : <span />}
+            {tab === "assets" && creatorOptions.length ? (
+              <select className="nexus-input" aria-label="Roblox creator" value={creator} onChange={(event) => setCreator(event.target.value)}>
+                <option value="all">All creators</option>
+                {creatorOptions.map((entry) => {
+                  const key = creatorKey(entry);
+                  return <option key={key} value={key}>{creatorLabel(entry)}</option>;
+                })}
+              </select>
+            ) : null}
             {tab === "assets" ? (
               <select className="nexus-input" aria-label="Moderation status" value={moderation} onChange={(event) => setModeration(event.target.value)}>
                 <option value="all">Any moderation</option>
@@ -262,12 +366,26 @@ export default function AssetLibraryPage() {
               </select>
             ) : null}
             {tab === "assets" ? (
+              <select className="nexus-input" aria-label="Lifecycle status" value={lifecycle} onChange={(event) => setLifecycle(event.target.value)}>
+                <option value="all">Any lifecycle</option>
+                <option value="generating">Generating</option>
+                <option value="validation_failed">Validation failed</option>
+                <option value="ready_to_publish">Ready to publish</option>
+                <option value="publishing">Publishing</option>
+                <option value="roblox_processing">Roblox processing</option>
+                <option value="under_moderation">Under moderation</option>
+                <option value="ready">Ready</option>
+                <option value="implemented">Implemented</option>
+                <option value="failed">Failed</option>
+                <option value="archived">Archived</option>
+                <option value="replaced">Replaced</option>
+              </select>
+            ) : null}
+            {tab === "assets" ? (
               <select className="nexus-input" aria-label="Usage state" value={usage} onChange={(event) => setUsage(event.target.value)}>
                 <option value="all">Any usage</option>
                 <option value="unused">Unused</option>
-                <option value="referenced">Referenced</option>
-                <option value="active">In use</option>
-                <option value="replaced">Replaced</option>
+                <option value="used">In use</option>
               </select>
             ) : null}
             {tab === "assets" ? (
@@ -288,22 +406,22 @@ export default function AssetLibraryPage() {
           {loading ? <AssetGridSkeleton count={8} label={`Loading ${tab}`} /> : error ? (
             <AssetErrorState message={error} onRetry={loadRecords} />
           ) : tab === "assets" ? (
-            assets.length ? (
+            visibleAssets.length ? (
               <div className="asset-grid">
-                {assets.map((asset) => (
+                {visibleAssets.map((asset) => (
                   <AssetCard
                     key={asset.assetId}
                     asset={asset}
                     busyAction={busyByAsset[asset.assetId]}
                     onOpen={() => navigate(`/assets/${encodeURIComponent(asset.assetId)}`)}
-                    onRetryUpload={ASSET_PLATFORM_WRITES_ENABLED ? (entry) => updateOneAsset(entry, "retry", retryAssetUpload) : undefined}
-                    onPoll={ASSET_PLATFORM_WRITES_ENABLED ? (entry) => updateOneAsset(entry, "poll", pollAssetStatus) : undefined}
-                    onSimilar={ASSET_PLATFORM_WRITES_ENABLED ? (entry) => navigate(generatorUrl("similar", "assetId", entry.assetId)) : undefined}
-                    onReplace={ASSET_PLATFORM_WRITES_ENABLED ? (entry) => navigate(generatorUrl("replacement", "assetId", entry.assetId)) : undefined}
+                    onRetryUpload={canPublishAsset ? (entry) => updateOneAsset(entry, "publish_asset_to_roblox", "retry", retryAssetUpload, { requiresUploadConsent: true }) : undefined}
+                    onPoll={canGetUploadStatus ? (entry) => updateOneAsset(entry, "get_roblox_upload_status", "poll", (assetId) => getRobloxUploadStatus(assetId, { operationId: entry.robloxOperationId || undefined })) : undefined}
+                    onSimilar={canGenerateVariation ? (entry) => navigate(generatorUrl("similar", "assetId", entry.assetId)) : undefined}
+                    onReplace={canGenerateVariation ? (entry) => navigate(generatorUrl("replacement", "assetId", entry.assetId)) : undefined}
                   />
                 ))}
               </div>
-            ) : <AssetEmptyState title="No matching assets" description="No canonical asset records match these filters." action={ASSET_PLATFORM_WRITES_ENABLED ? <Button icon={Sparkles} onClick={() => navigate("/tools/icon-generator")}>Generate assets</Button> : null} />
+            ) : <AssetEmptyState title="No matching assets" description="No canonical asset records match these filters." action={canGenerate ? <Button icon={Sparkles} onClick={() => navigate("/tools/icon-generator")}>Generate assets</Button> : null} />
           ) : packs.length ? (
             <div className="asset-pack-list">
               {packs.map((pack) => (
@@ -314,11 +432,11 @@ export default function AssetLibraryPage() {
                     <div><dt>Assets</dt><dd>{pack.assets.length || pack.iconAssetIds.length || pack.requestedCount || 0}</dd></div>
                     <div><dt>Status</dt><dd><AssetLifecycleBadge status={pack.lifecycle} /></dd></div>
                   </dl>
-                  {ASSET_PLATFORM_WRITES_ENABLED ? <Button size="sm" variant="ghost" icon={Package} iconRight={ArrowRight} onClick={() => navigate(generatorUrl("extend", "packId", pack.packId))}>Extend pack</Button> : null}
+                  {canGeneratePack ? <Button size="sm" variant="ghost" icon={Package} iconRight={ArrowRight} onClick={() => navigate(generatorUrl("extend", "packId", pack.packId))}>Extend pack</Button> : null}
                 </article>
               ))}
             </div>
-          ) : <AssetEmptyState title="No matching packs" description="No pack records match these filters." action={ASSET_PLATFORM_WRITES_ENABLED ? <Button icon={Package} onClick={() => navigate("/tools/icon-generator?mode=pack")}>Create a pack</Button> : null} />}
+          ) : <AssetEmptyState title="No matching packs" description="No pack records match these filters." action={canGeneratePack ? <Button icon={Package} onClick={() => navigate("/tools/icon-generator?mode=pack")}>Create a pack</Button> : null} />}
         </section>
       </div>
     </main>

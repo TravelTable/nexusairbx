@@ -201,6 +201,7 @@ export async function authedFetch(path, init = {}) {
     ...init,
     method: init.method || "GET",
     mode: "cors",
+    credentials: "include",
     cache: "no-store",
     headers: authenticatedHeaders(init.headers, token, appCheckHeaders, requestId),
   });
@@ -213,6 +214,7 @@ export async function authedFetch(path, init = {}) {
       ...init,
       method: init.method || "GET",
       mode: "cors",
+      credentials: "include",
       cache: "no-store",
       headers: authenticatedHeaders(init.headers, token, appCheckHeaders, requestId),
     });

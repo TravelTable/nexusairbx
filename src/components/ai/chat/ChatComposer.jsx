@@ -263,6 +263,7 @@ export default function ChatComposer({
   onModeChange,
   view,
   onViewChange,
+  viewOptions,
   studioConnected,
   studioConnectionType,
   studioConnectionState,
@@ -551,7 +552,7 @@ export default function ChatComposer({
                 {onViewChange && (
                   <Segmented
                     size="sm"
-                    options={[
+                    options={viewOptions || [
                       { id: "chat", label: "Chat", icon: MessageSquare },
                       { id: "details", label: "Details", icon: ClipboardList },
                     ]}

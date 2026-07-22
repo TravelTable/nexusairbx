@@ -71,6 +71,8 @@ describe("authedFetch authentication recovery", () => {
     expect(global.fetch).toHaveBeenCalledTimes(2);
     const firstHeaders = global.fetch.mock.calls[0][1].headers;
     const retryHeaders = global.fetch.mock.calls[1][1].headers;
+    expect(global.fetch.mock.calls[0][1].credentials).toBe("include");
+    expect(global.fetch.mock.calls[1][1].credentials).toBe("include");
     expect(firstHeaders.Authorization).toBe("Bearer cached-token");
     expect(retryHeaders.Authorization).toBe("Bearer refreshed-token");
     expect(firstHeaders["X-Request-ID"]).toBe("request-stable");
@@ -108,6 +110,7 @@ describe("authedFetch authentication recovery", () => {
     expect(init.headers.Authorization).toBeUndefined();
     expect(init.headers["X-Firebase-AppCheck"]).toBeUndefined();
     expect(init.headers["X-Nexus-Client-Deployment"]).toBeUndefined();
+    expect(init.credentials).toBeUndefined();
   });
 
   test("matches the configured Nexus API origin exactly", () => {

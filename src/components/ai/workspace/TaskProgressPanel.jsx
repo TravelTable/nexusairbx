@@ -2,6 +2,7 @@ import React, { useMemo, useState } from "react";
 import {
   AlertTriangle,
   CheckCircle2,
+  Circle,
   Clock,
   ListChecks,
   Loader2,
@@ -9,12 +10,23 @@ import {
   RefreshCcw,
   StopCircle,
   Terminal,
+  XCircle,
 } from "lib/icons";
 import { formatTaskRuntimeError } from "../../../lib/taskRuntimeApi";
 import { getAuthorizedTaskActions, isTaskTerminal } from "../../../hooks/useTaskRuntime";
 
 const COMPLETE_STEP_STATUSES = new Set(["succeeded", "skipped"]);
 const ACTIVE_STEP_STATUSES = new Set(["running", "waiting", "verifying"]);
+
+const CHECKLIST_PRESENTATION = Object.freeze({
+  pending: { label: "Pending", icon: Circle, className: "text-gray-400", iconClassName: "text-gray-500" },
+  in_progress: { label: "In progress", icon: Loader2, className: "text-[#b8fff3]", iconClassName: "animate-spin text-[#00f5d4]" },
+  waiting_studio: { label: "Waiting for Studio", icon: Clock, className: "text-amber-100", iconClassName: "text-amber-300" },
+  completed: { label: "Completed", icon: CheckCircle2, className: "text-emerald-100", iconClassName: "text-emerald-300" },
+  skipped: { label: "Skipped", icon: StopCircle, className: "text-gray-400", iconClassName: "text-gray-500" },
+  failed: { label: "Failed", icon: XCircle, className: "text-red-100", iconClassName: "text-red-300" },
+  needs_input: { label: "Needs user input", icon: AlertTriangle, className: "text-amber-100", iconClassName: "text-amber-300" },
+});
 
 const STATUS_COPY = Object.freeze({
   queued: {
@@ -120,6 +132,68 @@ function safeDisplayText(...values) {
 
 function normalizedStatus(value) {
   return String(value || "").trim().toLowerCase();
+}
+
+function checklistStatus(step, task) {
+  const status = normalizedStatus(step?.status);
+  const taskStatus = normalizedStatus(task?.status);
+  const stepId = firstString(step?.stepId, step?.id);
+  const currentStepId = firstString(task?.currentStepId, task?.currentStep?.stepId, task?.currentStep?.id);
+  const isCurrent = Boolean(stepId && currentStepId && stepId === currentStepId);
+  const waitingHint = JSON.stringify({
+    statusReason: task?.statusReason,
+    waitingReason: task?.waitingReason,
+    stepWaitingReason: step?.waitingReason,
+    blocker: task?.unresolvedBlocker || task?.blocker,
+  }).toLowerCase();
+
+  if (status === "succeeded") return "completed";
+  if (status === "skipped" || status === "cancelled") return "skipped";
+  if (status === "failed") return "failed";
+  if ((status === "waiting" || isCurrent) && (taskStatus === "blocked_studio" || waitingHint.includes("studio"))) {
+    return "waiting_studio";
+  }
+  if ((status === "waiting" || isCurrent) && (taskStatus === "waiting_user" || /user|clarif|confirm|approval/.test(waitingHint))) {
+    return "needs_input";
+  }
+  if (["running", "verifying", "waiting"].includes(status)) return "in_progress";
+  return "pending";
+}
+
+function checklistTitle(step, index) {
+  return safeDisplayText(
+    step?.planTitle,
+    step?.input?.planTitle,
+    step?.input?.title,
+    step?.description,
+    step?.summary,
+    step?.title
+  ) || `Plan step ${index + 1}`;
+}
+
+function failedStepSummary(task, steps, actions) {
+  const failedStep = steps.find((step) => normalizedStatus(step?.status) === "failed")
+    || (normalizedStatus(task?.status) === "failed" ? currentStepFor(task, steps) : null);
+  if (!failedStep && normalizedStatus(task?.status) !== "failed") return null;
+  const error = failedStep?.error || failedStep?.output?.error || task?.finalError || task?.error || null;
+  const reason = safeDisplayText(error?.safeMessage, error?.message, task?.statusReason)
+    || "The runtime stopped before this step could be verified.";
+  const recovery = safeDisplayText(
+    error?.recovery?.label,
+    error?.recovery?.action,
+    error?.resolution?.label,
+    error?.resolution,
+    task?.recoveryAction
+  );
+  const automaticRetry = normalizedStatus(task?.status) === "retry_scheduled";
+  const retryable = Boolean(error?.retryable || actions.retry || automaticRetry);
+  return {
+    title: checklistTitle(failedStep || {}, Math.max(0, steps.indexOf(failedStep))),
+    reason,
+    recovery,
+    automaticRetry,
+    retryable,
+  };
 }
 
 function currentStepFor(task, steps) {
@@ -310,6 +384,7 @@ export default function TaskProgressPanel({
   const recentMessages = useMemo(() => meaningfulEventMessages(events), [events]);
   const details = useMemo(() => technicalProjection(task, steps, events), [task, steps, events]);
   const actions = useMemo(() => getAuthorizedTaskActions(task), [task]);
+  const failedSummary = useMemo(() => failedStepSummary(task, steps, actions), [task, steps, actions]);
   const showPriceField = useMemo(() => needsPriceClarification(task), [task]);
 
   if (!task?.taskId) return null;
@@ -385,7 +460,7 @@ export default function TaskProgressPanel({
       )}
 
       {steps.length > 0 && (
-        <div className="space-y-2" aria-label="Step progress">
+        <div className="space-y-3" aria-label="Step progress">
           <div className="flex items-center justify-between text-[11px] text-gray-400">
             <span>{completedCount} of {steps.length} steps complete</span>
             <span>{progressPercent}%</span>
@@ -399,6 +474,27 @@ export default function TaskProgressPanel({
           >
             <div className="h-full rounded-full bg-[#00f5d4] transition-[width]" style={{ width: `${progressPercent}%` }} />
           </div>
+          <ol className="space-y-1.5" aria-label="Plan checklist">
+            {steps.map((step, index) => {
+              const state = checklistStatus(step, task);
+              const itemPresentation = CHECKLIST_PRESENTATION[state];
+              const StepIcon = itemPresentation.icon;
+              const detail = safeDisplayText(step?.input?.details, step?.details);
+              return (
+                <li
+                  key={firstString(step?.planStepId, step?.stepId, step?.id) || `step-${index + 1}`}
+                  className="flex min-w-0 items-start gap-2.5 rounded-lg border border-white/[0.06] bg-black/10 px-2.5 py-2"
+                >
+                  <StepIcon className={`mt-0.5 h-3.5 w-3.5 shrink-0 ${itemPresentation.iconClassName}`} aria-hidden="true" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-medium leading-snug text-gray-200">{checklistTitle(step, index)}</p>
+                    {detail && <p className="mt-0.5 text-[11px] leading-relaxed text-gray-500">{detail}</p>}
+                  </div>
+                  <span className={`shrink-0 text-[10px] font-bold ${itemPresentation.className}`}>{itemPresentation.label}</span>
+                </li>
+              );
+            })}
+          </ol>
         </div>
       )}
 
@@ -414,6 +510,19 @@ export default function TaskProgressPanel({
       {displayedError && (
         <div role="alert" className="rounded-xl border border-red-400/20 bg-red-400/10 px-3 py-2 text-xs text-red-100">
           {formatTaskRuntimeError(displayedError, "The task stopped at a recoverable error.")}
+        </div>
+      )}
+
+      {failedSummary && (
+        <div className="rounded-xl border border-red-400/20 bg-red-400/[0.07] px-3 py-2.5" aria-label="Failed plan step">
+          <div className="text-[10px] font-black uppercase tracking-widest text-red-300">Failed step</div>
+          <p className="mt-1 text-xs font-semibold text-red-50">{failedSummary.title}</p>
+          <p className="mt-1 text-[11px] leading-relaxed text-red-100/80">{failedSummary.reason}</p>
+          <dl className="mt-2 space-y-1 text-[11px] text-red-100/75">
+            <div className="flex gap-1"><dt className="font-semibold">Completed:</dt><dd>{completedCount} of {steps.length} plan steps</dd></div>
+            <div className="flex gap-1"><dt className="font-semibold">Retry:</dt><dd>{failedSummary.automaticRetry ? "NexusRBX scheduled an automatic retry." : failedSummary.retryable ? "A safe retry is available." : "NexusRBX cannot retry this automatically."}</dd></div>
+            {failedSummary.recovery && <div className="flex gap-1"><dt className="font-semibold">Next action:</dt><dd>{failedSummary.recovery}</dd></div>}
+          </dl>
         </div>
       )}
 

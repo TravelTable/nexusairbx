@@ -11,6 +11,7 @@ local MUTATING_COMMANDS = {
 	replace_in_files = true,
 	create_instance = true,
 	update_properties = true,
+	apply_asset_reference = true,
 	update_attributes = true,
 	update_tags = true,
 	rename_instance = true,
@@ -71,6 +72,7 @@ local TOOL_HANDLERS = {
 	replace_in_files = replaceInFiles,
 	create_instance = createInstanceTool,
 	update_properties = updateProperties,
+	apply_asset_reference = applyAssetReference,
 	update_attributes = updateAttributes,
 	update_tags = updateTags,
 	rename_instance = renameInstanceTool,
@@ -135,7 +137,7 @@ local function batchOperations(payload)
 	local ok, err = pcall(function()
 		for index, op in ipairs(payload.operations or {}) do
 			local opType = tostring(op.type or "")
-			if opType == "apply_artifact" or opType == "batch_operations" then
+			if opType == "apply_artifact" or opType == "apply_asset_reference" or opType == "batch_operations" then
 				error("Nested or artifact batch operation is not supported")
 			end
 			local handler = TOOL_HANDLERS[opType]
@@ -489,6 +491,32 @@ local function verifyCommandOutcome(command, payload, result)
 		evidence.currentSourceHash = currentHash
 		evidence.baselineSourceHash = result.previousHash or payload.expectedSourceHash
 		evidence.previousSourceHash = result.previousHash or payload.expectedSourceHash
+	elseif commandType == "apply_asset_reference" then
+		local target = result.path or payload.path
+		local inst = resolvePath(target)
+		local property = tostring(payload.property or "")
+		local expectedClassName = tostring(payload.className or "")
+		local robloxAssetId = tostring(payload.robloxAssetId or "")
+		local expected = "rbxassetid://" .. robloxAssetId
+		local actual = inst and safePropertyValue(inst, property) or nil
+		local exact = inst ~= nil and inst.ClassName == expectedClassName and actual == expected
+		addCheck("asset_reference", target, exact, {
+			key = property,
+			property = property,
+			className = inst and inst.ClassName or nil,
+			expected = expected,
+			actual = actual,
+			robloxAssetId = robloxAssetId,
+			reason = inst == nil and "missing" or (not exact and "asset_reference_mismatch" or nil),
+		})
+		evidence.assetReference = {
+			path = target,
+			className = inst and inst.ClassName or nil,
+			property = property,
+			robloxAssetId = robloxAssetId,
+			expected = expected,
+			actual = actual,
+		}
 	elseif commandType == "update_properties" then
 		local target = result.path or payload.path
 		local inst = resolvePath(target)

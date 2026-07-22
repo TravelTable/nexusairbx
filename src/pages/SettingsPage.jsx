@@ -41,12 +41,12 @@ import { isRetryableApiError, readJsonResponse, withApiRetryCooldown } from "../
 import {
   beginRobloxOAuth,
   beginRobloxReauthorization,
-  disconnectRobloxOAuth,
   ensureRobloxCapabilities,
   getRobloxOAuthStatus,
   getRobloxOperations,
   needsRobloxUpgrade,
   ROBLOX_PRODUCT_DEFAULT_CAPABILITIES,
+  revokeRobloxOAuth,
   setRobloxTargetCreator,
 } from "../lib/robloxOAuthApi";
 import RobloxAuthorizationRequired from "../components/roblox/RobloxAuthorizationRequired";
@@ -117,6 +117,28 @@ const VERBOSITY_OPTIONS = [
   { value: "concise", label: "Concise" },
   { value: "balanced", label: "Balanced" },
   { value: "detailed", label: "Detailed" },
+];
+const ASSET_PUBLISHING_OPTIONS = [
+  {
+    value: "auto_explicit_request",
+    label: "Publish explicit requests",
+    description: "Recommended. Publish when your request clearly asks NexusRBX to create and use an asset and the creator is unambiguous.",
+  },
+  {
+    value: "review_every_asset",
+    label: "Review every asset",
+    description: "Keep each generated asset ready for review until you approve publishing.",
+  },
+  {
+    value: "always_project_creator",
+    label: "Use the project's creator",
+    description: "Publish routine approved assets to the creator saved on the active project.",
+  },
+  {
+    value: "generate_only",
+    label: "Generate only",
+    description: "Create and save assets in NexusRBX without publishing them to Roblox.",
+  },
 ];
 const STUDIO_POLICY_OPTIONS = [
   { value: "after_validation", label: "Push after validation" },
@@ -401,9 +423,27 @@ export default function SettingsPage() {
   const robloxStatus = robloxState.statusData;
   const robloxConnected = Boolean(robloxStatus?.connected);
   const robloxUpgradeRequired = needsRobloxUpgrade(robloxStatus);
-  const selectedCreator = robloxStatus?.connection?.selectedCreator || null;
-  const creators = Array.isArray(robloxStatus?.connection?.creators) ? robloxStatus.connection.creators : [];
+  const robloxConnection = robloxStatus?.connection || null;
+  const robloxIdentity = robloxConnection?.identity || robloxConnection?.profile || null;
+  const selectedCreator = robloxConnection?.selectedCreator || null;
+  const creators = (Array.isArray(robloxStatus?.authorizedCreators)
+    ? robloxStatus.authorizedCreators
+    : Array.isArray(robloxConnection?.creators) ? robloxConnection.creators : [])
+    .filter((creator) => creator?.authorized !== false);
+  const accessibleUniverses = Array.isArray(robloxStatus?.accessibleUniverses)
+    ? robloxStatus.accessibleUniverses
+    : Array.isArray(robloxConnection?.universes) ? robloxConnection.universes : [];
+  const grantedScopes = Array.isArray(robloxStatus?.grantedScopes)
+    ? robloxStatus.grantedScopes
+    : Array.isArray(robloxConnection?.grantedScopes) ? robloxConnection.grantedScopes : [];
+  const missingScopes = Array.isArray(robloxStatus?.missingScopes) ? robloxStatus.missingScopes : [];
+  const missingPermissions = Array.isArray(robloxConnection?.missingPermissions) ? robloxConnection.missingPermissions : [];
+  const tokenHealth = robloxStatus?.tokenHealth || robloxConnection?.tokenHealth || null;
+  const lastRobloxOperation = robloxStatus?.lastSuccessfulOperation || robloxConnection?.lastSuccessfulOperation || null;
   const selectedCreatorKey = selectedCreator ? `${selectedCreator.type}:${selectedCreator.id}` : "none";
+  const publishingPreference = settings.assetPublishingPreference || "auto_explicit_request";
+  const publishingPreferenceDetails = ASSET_PUBLISHING_OPTIONS.find((option) => option.value === publishingPreference)
+    || ASSET_PUBLISHING_OPTIONS[0];
   const longFormDirty =
     longForm.codingStandards !== (settings.codingStandards || "") ||
     longForm.gameSpec !== (settings.gameSpec || "");
@@ -844,16 +884,16 @@ export default function SettingsPage() {
     <div className="space-y-6">
       <Panel
         title="Roblox write consent"
-        description="This is the master switch for generated asset uploads. Off means NexusRBX will not write Roblox assets automatically."
+        description="Auto Upload Assets is the master consent for every Roblox asset write. Your local NexusRBX assets remain available either way."
       >
-        <div className="rounded-lg border border-border bg-muted/20 p-4">
+        <div className="space-y-4 rounded-lg border border-border bg-muted/20 p-4">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <h3 className="text-base font-semibold">Auto Upload Assets</h3>
               <p className="mt-1 text-sm text-muted-foreground">
                 {settings.robloxAssetUploadsEnabled
                   ? "Generated assets may upload immediately through your connected Roblox OAuth account."
-                  : "Generated assets stay local until you explicitly upload them."}
+                  : "No Roblox asset writes are allowed. Generation can continue and assets stay saved in NexusRBX."}
               </p>
             </div>
             <Switch
@@ -862,12 +902,37 @@ export default function SettingsPage() {
               aria-label="Auto Upload Assets"
             />
           </div>
+          <Separator />
+          <div className="grid gap-2 lg:grid-cols-[minmax(0,18rem)_minmax(0,1fr)] lg:items-start">
+            <div className="space-y-2">
+              <Label htmlFor="asset-publishing-preference">Publishing preference</Label>
+              <Select
+                value={publishingPreference}
+                onValueChange={(assetPublishingPreference) => updateSetting({ assetPublishingPreference })}
+                disabled={!settings.robloxAssetUploadsEnabled}
+              >
+                <SelectTrigger id="asset-publishing-preference" aria-describedby="asset-publishing-preference-help">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {ASSET_PUBLISHING_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <p id="asset-publishing-preference-help" className="text-sm leading-6 text-muted-foreground">
+              {settings.robloxAssetUploadsEnabled
+                ? publishingPreferenceDetails.description
+                : "Turn on Auto Upload Assets to configure publishing. NexusRBX will not publish while the master switch is off."}
+            </p>
+          </div>
         </div>
       </Panel>
 
       <Panel
         title="Roblox OAuth"
-        description="Connect Roblox for Creator Store and Open Cloud workflows."
+        description="Your Roblox identity, authorized creator targets, scopes, and token health. OAuth credentials never appear here."
         actions={
           <Button type="button" variant="outline" size="sm" onClick={loadRoblox}>
             <RefreshCcw className="h-4 w-4" />
@@ -903,7 +968,9 @@ export default function SettingsPage() {
                   {selectedCreator && <Badge variant="outline">{selectedCreator.type} {selectedCreator.id}</Badge>}
                 </div>
                 <p className="mt-2 text-sm text-muted-foreground">
-                  {robloxConnected ? "OAuth is ready for scoped Roblox operations." : "Connect Roblox to enable publishing and creator targeting."}
+                  {robloxConnected
+                    ? `${robloxIdentity?.displayName || robloxIdentity?.name || robloxIdentity?.username || "Roblox account"}${robloxIdentity?.username ? ` (@${robloxIdentity.username})` : ""}${robloxIdentity?.userId || robloxIdentity?.id || robloxIdentity?.sub ? ` · User ${robloxIdentity.userId || robloxIdentity.id || robloxIdentity.sub}` : ""}`
+                    : "Connect Roblox to enable publishing and creator targeting."}
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">
@@ -947,19 +1014,19 @@ export default function SettingsPage() {
                       type="button"
                       variant="destructive"
                       onClick={async () => {
-                        setRobloxAction("disconnect");
+                        setRobloxAction("revoke");
                         try {
-                          await disconnectRobloxOAuth();
+                          await revokeRobloxOAuth();
                           await loadRoblox();
                         } catch (error) {
-                          setRobloxActionError(error, "Could not disconnect Roblox.");
+                          setRobloxActionError(error, "Could not revoke Roblox access.");
                         } finally {
                           setRobloxAction("");
                         }
                       }}
-                      disabled={robloxAction === "disconnect"}
+                      disabled={robloxAction === "revoke"}
                     >
-                      Disconnect
+                      Revoke access
                     </Button>
                   </>
                 )}
@@ -967,8 +1034,18 @@ export default function SettingsPage() {
             </div>
 
             {robloxConnected && (
-              <div className="grid gap-4 lg:grid-cols-2">
-                <div className="space-y-2">
+              <div className="space-y-4">
+                {(missingScopes.length > 0 || missingPermissions.length > 0) && (
+                  <Alert variant="destructive">
+                    <AlertTriangle className="h-4 w-4" />
+                    <AlertTitle>Roblox permission required</AlertTitle>
+                    <AlertDescription>
+                      Reauthorize Roblox to restore: {[...missingScopes, ...missingPermissions].join(", ")}.
+                    </AlertDescription>
+                  </Alert>
+                )}
+                <div className="grid gap-4 lg:grid-cols-2">
+                  <div className="space-y-2">
                   <Label>Creator target</Label>
                   <Select
                     value={selectedCreatorKey}
@@ -993,14 +1070,95 @@ export default function SettingsPage() {
                       ))}
                     </SelectContent>
                   </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Granted scopes</Label>
+                    <div className="flex min-h-10 flex-wrap gap-2 rounded-md border border-border bg-muted/20 p-2">
+                      {grantedScopes.length > 0 ? (
+                        grantedScopes.slice(0, 10).map((scope) => (
+                          <Badge key={scope} variant="outline">
+                            {scope}
+                          </Badge>
+                        ))
+                      ) : (
+                        <span className="text-sm text-muted-foreground">No OAuth scopes reported.</span>
+                      )}
+                    </div>
+                  </div>
                 </div>
+
+                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                  <HealthTile
+                    icon={Shield}
+                    label="Token health"
+                    value={tokenHealth?.status || "Unknown"}
+                    detail={tokenHealth?.accessTokenExpiresAt ? `Access expires ${formatDate(tokenHealth.accessTokenExpiresAt)}` : "Refresh is handled securely by the server."}
+                    state={tokenHealth?.status === "healthy" || tokenHealth?.status === "valid" ? "good" : "neutral"}
+                  />
+                  <HealthTile
+                    icon={Users}
+                    label="Creator targets"
+                    value={formatNumber(creators.length)}
+                    detail={`${formatNumber(creators.filter((creator) => creator.type === "Group").length)} authorized groups`}
+                    state={creators.length ? "good" : "warn"}
+                  />
+                  <HealthTile
+                    icon={Sparkles}
+                    label="Universes"
+                    value={formatNumber(accessibleUniverses.length)}
+                    detail="Accessible resources reported by Roblox"
+                    state="neutral"
+                  />
+                  <HealthTile
+                    icon={Activity}
+                    label="Last operation"
+                    value={lastRobloxOperation?.type || "None recorded"}
+                    detail={lastRobloxOperation?.occurredAt ? formatDate(lastRobloxOperation.occurredAt) : "No successful operation reported yet"}
+                    state={lastRobloxOperation ? "good" : "neutral"}
+                  />
+                </div>
+
+                <details className="rounded-lg border border-border bg-muted/20 p-4">
+                  <summary className="cursor-pointer text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+                    Authorized creators and universes
+                  </summary>
+                  <div className="mt-4 grid gap-5 lg:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label>Creator targets</Label>
+                      {creators.length ? (
+                        <ul className="space-y-2 text-sm text-muted-foreground">
+                          {creators.map((creator) => (
+                            <li key={`${creator.type}:${creator.id}`} className="rounded-md border border-border bg-background/40 p-3">
+                              <span className="font-medium text-foreground">{creator.name || `${creator.type} ${creator.id}`}</span>
+                              <span className="ml-2">{creator.type} {creator.id}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      ) : <p className="text-sm text-muted-foreground">No authorized creators reported.</p>}
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Accessible universes</Label>
+                      {accessibleUniverses.length ? (
+                        <ul className="space-y-2 text-sm text-muted-foreground">
+                          {accessibleUniverses.map((universe) => (
+                            <li key={universe.id} className="rounded-md border border-border bg-background/40 p-3">
+                              <span className="font-medium text-foreground">{universe.name || `Universe ${universe.id}`}</span>
+                              <span className="ml-2">{universe.id}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      ) : <p className="text-sm text-muted-foreground">No accessible universes were reported.</p>}
+                    </div>
+                  </div>
+                </details>
+
                 <div className="space-y-2">
                   <Label>Granted capabilities</Label>
                   <div className="flex min-h-10 flex-wrap gap-2 rounded-md border border-border bg-muted/20 p-2">
                     {(robloxStatus?.capabilities?.granted || []).length > 0 ? (
                       robloxStatus.capabilities.granted.slice(0, 8).map((capability) => (
-                        <Badge key={capability.id || capability.label} variant="outline">
-                          {capability.label || capability.id}
+                        <Badge key={capability.id || capability.label || capability} variant="outline">
+                          {capability.label || capability.id || capability}
                         </Badge>
                       ))
                     ) : (

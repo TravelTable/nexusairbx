@@ -7,8 +7,10 @@ import {
   isCreatorStoreReadAuthorized,
   isRobloxReauthorizationError,
   needsRobloxUpgrade,
+  normalizeRobloxConnectionStatus,
   readPendingRobloxAction,
   ROBLOX_PRODUCT_DEFAULT_CAPABILITIES,
+  revokeRobloxOAuth,
 } from "./robloxOAuthApi";
 import { clearApiRetryCooldown } from "./apiErrors";
 
@@ -23,6 +25,7 @@ describe("robloxOAuthApi capability helpers", () => {
     jest.clearAllMocks();
     clearApiRetryCooldown("roblox-oauth:ensure");
     clearApiRetryCooldown("roblox-oauth:status");
+    clearApiRetryCooldown("roblox-oauth:revoke");
     window.sessionStorage.clear();
     delete window.location;
     window.location = { assign: jest.fn() };
@@ -133,6 +136,16 @@ describe("robloxOAuthApi capability helpers", () => {
     expect(window.location.assign).not.toHaveBeenCalled();
   });
 
+  test("revokeRobloxOAuth calls the explicit server-owned revocation endpoint", async () => {
+    authedFetch.mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify({ revoked: true }),
+    });
+
+    await expect(revokeRobloxOAuth()).resolves.toEqual({ revoked: true });
+    expect(authedFetch).toHaveBeenCalledWith("/api/roblox/oauth/revoke", { method: "POST" });
+  });
+
   test("ensureRobloxCapabilities can request multiple capabilities in one call", async () => {
     authedFetch.mockResolvedValue({
       ok: true,
@@ -183,5 +196,48 @@ describe("robloxOAuthApi capability helpers", () => {
       connected: true,
       capabilities: { roblox_search_creator_store: { authorized: false, missingScopes: ["creator-store-product:read"] } },
     })).toBe(false);
+  });
+
+  test("normalizes creator connection metadata and discards OAuth credentials", () => {
+    const status = normalizeRobloxConnectionStatus({
+      connected: true,
+      accessToken: "root-access-secret",
+      refreshToken: "root-refresh-secret",
+      connection: {
+        status: "connected",
+        robloxUserId: "101",
+        accessToken: "connection-access-secret",
+        profile: { username: "BuilderOne", displayName: "Builder One" },
+        selectedCreator: { type: "Group", id: "202", name: "Build Group" },
+      },
+      authorizedCreators: [
+        { type: "User", id: "101", name: "Builder One" },
+        { type: "Group", id: "202", name: "Build Group", permissions: ["asset:write"] },
+      ],
+      accessibleUniverses: [
+        { universeId: "303", name: "Simulator", creator: { type: "Group", id: "202", name: "Build Group" } },
+      ],
+      grantedScopes: ["openid", "asset:write"],
+      tokenHealth: { status: "healthy", hasRefreshToken: true, accessTokenExpiresAt: "2026-07-22T03:00:00Z" },
+      lastSuccessfulOperation: { type: "asset_publish", completedAt: "2026-07-22T02:30:00Z" },
+    });
+
+    expect(status).toMatchObject({
+      connected: true,
+      credentialFieldsDiscarded: true,
+      grantedScopes: ["openid", "asset:write"],
+      tokenHealth: { status: "healthy", hasRefreshToken: true },
+      connection: {
+        identity: { userId: "101", username: "BuilderOne", displayName: "Builder One" },
+        selectedCreator: { type: "Group", id: "202", name: "Build Group" },
+      },
+      accessibleUniverses: [{ id: "303", name: "Simulator" }],
+    });
+    const serialized = JSON.stringify(status);
+    expect(serialized).not.toContain("root-access-secret");
+    expect(serialized).not.toContain("root-refresh-secret");
+    expect(serialized).not.toContain("connection-access-secret");
+    expect(status.connection.personalCreator).toMatchObject({ type: "User", id: "101" });
+    expect(status.connection.groups).toEqual([expect.objectContaining({ type: "Group", id: "202" })]);
   });
 });

@@ -1,6 +1,71 @@
 import { authedFetch } from "./billing";
 
-export async function orchestrate({ prompt, answers = null, history = [], attachments = [], mode = "agent", gameSpec = "" }) {
+export class WorkflowApiError extends Error {
+  constructor(message, { status = 0, code = "workflow_request_failed", payload = null } = {}) {
+    super(message);
+    this.name = "WorkflowApiError";
+    this.status = status;
+    this.code = code;
+    this.payload = payload;
+  }
+}
+
+async function workflowRequest(path, { method = "GET", body, signal } = {}) {
+  const res = await authedFetch(path, {
+    method,
+    signal,
+    ...(body === undefined ? {} : {
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    }),
+  });
+  const payload = await res.json().catch(async () => ({ message: await res.text().catch(() => "") }));
+  if (!res.ok) {
+    const nestedError = payload?.error;
+    const message = typeof payload?.message === "string" && payload.message.trim()
+      ? payload.message
+      : typeof nestedError === "string" && nestedError.trim()
+        ? nestedError
+        : typeof nestedError?.message === "string" && nestedError.message.trim()
+          ? nestedError.message
+          : "The plan could not be updated.";
+    const code = payload?.code
+      || (nestedError && typeof nestedError === "object" ? nestedError.code : null)
+      || "workflow_request_failed";
+    throw new WorkflowApiError(
+      message,
+      { status: res.status, code, payload }
+    );
+  }
+  return payload;
+}
+
+function validateObjectResponse(payload, operation) {
+  if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
+    throw new WorkflowApiError(`The ${operation} response was not valid.`, {
+      code: "invalid_workflow_response",
+      payload,
+    });
+  }
+  return payload;
+}
+
+const planPath = (planId, suffix = "") =>
+  `/api/ai/plans/${encodeURIComponent(planId)}${suffix}`;
+
+export async function orchestrate({
+  prompt,
+  answers = null,
+  history = [],
+  attachments = [],
+  mode = "agent",
+  gameSpec = "",
+  projectId = null,
+  studioConnected = false,
+  studioTarget = null,
+  targeting = null,
+  templateId = null,
+}) {
   const res = await authedFetch("/api/ai/orchestrate", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -10,6 +75,15 @@ export async function orchestrate({ prompt, answers = null, history = [], attach
       history,
       mode,
       gameSpec,
+      projectId,
+      studioConnected: Boolean(studioConnected),
+      studioTarget,
+      templateId,
+      targeting: targeting || {
+        projectId,
+        studioTarget,
+        studioConnected: Boolean(studioConnected),
+      },
       attachments: (attachments || []).map((a) => ({ name: a.name, type: a.type })),
     }),
   });
@@ -28,6 +102,95 @@ export async function approveWorkflowPlan(planId, { version, hash } = {}) {
   });
   if (!res.ok) throw new Error("Failed to approve plan");
   return res.json();
+}
+
+/** Fetch the latest structured, versioned plan. */
+export function getWorkflowPlan(planId, { signal } = {}) {
+  return workflowRequest(planPath(planId), { signal })
+    .then((payload) => validateObjectResponse(payload, "plan"));
+}
+
+/** Apply concurrency-fenced plan editor operations. */
+export function updateWorkflowPlan(planId, { version, hash, operations }, { signal } = {}) {
+  return workflowRequest(planPath(planId), {
+    method: "PATCH",
+    signal,
+    body: { version, hash, operations },
+  }).then((payload) => validateObjectResponse(payload, "plan update"));
+}
+
+/** Regenerate one unlocked section without changing the rest of the plan. */
+export function regenerateWorkflowPlanSection(planId, sectionId, { version, hash, instruction = "" } = {}) {
+  return workflowRequest(planPath(planId, `/sections/${encodeURIComponent(sectionId)}/regenerate`), {
+    method: "POST",
+    body: { version, hash, instruction },
+  }).then((payload) => validateObjectResponse(payload, "section regeneration"));
+}
+
+/** Run server-owned targeting, capability, permission, and specificity checks. */
+export function checkWorkflowPlanReadiness(planId, {
+  version,
+  hash,
+  projectId,
+  studioConnected,
+  studioTarget,
+  targeting,
+} = {}) {
+  return workflowRequest(planPath(planId, "/readiness"), {
+    method: "POST",
+    body: {
+      version,
+      hash,
+      projectId: projectId || null,
+      studioConnected: Boolean(studioConnected),
+      studioTarget: studioTarget || null,
+      targeting: targeting || {
+        projectId: projectId || null,
+        studioConnected: Boolean(studioConnected),
+        studioTarget: studioTarget || null,
+      },
+    },
+  }).then((payload) => validateObjectResponse(payload, "readiness"));
+}
+
+export function getWorkflowPlanVersions(planId, { signal } = {}) {
+  return workflowRequest(planPath(planId, "/versions"), { signal }).then((payload) => {
+    if (Array.isArray(payload)) return payload;
+    return validateObjectResponse(payload, "plan history");
+  });
+}
+
+export function restoreWorkflowPlanVersion(
+  planId,
+  { version, hash, sourceVersion, sourceHash } = {},
+) {
+  return workflowRequest(planPath(planId, "/restore"), {
+    method: "POST",
+    body: {
+      version,
+      hash,
+      sourceVersion,
+      sourceHash,
+    },
+  }).then((payload) => validateObjectResponse(payload, "plan restore"));
+}
+
+/** Ask about the plan. Proposed operations are explicit and never auto-applied. */
+export function askWorkflowPlan(planId, { version, hash, question, projectId } = {}) {
+  return workflowRequest(planPath(planId, "/ask"), {
+    method: "POST",
+    body: { version, hash, question, projectId: projectId || null },
+  }).then((payload) => validateObjectResponse(payload, "plan answer"));
+}
+
+/** Compile and start execution from this exact trusted plan version. */
+export function executeWorkflowPlan(planId, { version, hash } = {}) {
+  return workflowRequest(planPath(planId, "/execute"), {
+    method: "POST",
+    // The server reloads targeting and all execution context from this
+    // concurrency-fenced plan. Browser copies are never execution authority.
+    body: { version, hash },
+  }).then((payload) => validateObjectResponse(payload, "plan execution"));
 }
 
 export async function verifyRobloxReadiness({ lua, manifest }) {

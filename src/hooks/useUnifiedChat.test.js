@@ -297,6 +297,46 @@ describe("useUnifiedChat", () => {
     expect(createAgentRunV2).not.toHaveBeenCalled();
   });
 
+  test("preserves the selected template through Plan Mode orchestration and clarification storage", async () => {
+    const setPendingForChat = jest.fn();
+    useAiChat.mockReturnValue({
+      activeMode: "plan",
+      currentChatId: "chat-1",
+      generatingChatIds: [],
+      generationStage: "",
+      handleSubmit: chatHandleSubmit,
+      isGenerating: false,
+      messages: [],
+      openChatById: jest.fn(),
+      pendingMessage: null,
+      setPendingForChat,
+    });
+    orchestrate.mockResolvedValue({
+      status: "needs_clarification",
+      questions: [{ id: "scope", question: "Keep the current UI?", options: ["Yes", "No"] }],
+    });
+    const user = { uid: "user-1", getIdToken: jest.fn().mockResolvedValue("token") };
+    const { result } = renderHook(() => useUnifiedChat(user, {}, jest.fn(), jest.fn()));
+
+    await act(async () => {
+      await result.current.handleSubmit("Fix the inventory bug", [], null, {
+        mode: "plan",
+        projectId: "project-1",
+        templateId: "fix_bug",
+      });
+    });
+
+    expect(orchestrate).toHaveBeenCalledWith(expect.objectContaining({
+      prompt: "Fix the inventory bug",
+      mode: "plan",
+      projectId: "project-1",
+      templateId: "fix_bug",
+    }));
+    expect(setDoc.mock.calls.some(([, payload]) => (
+      payload?.stage === "clarify" && payload?.templateId === "fix_bug"
+    ))).toBe(true);
+  });
+
   test("keeps Ask available when the optional runtime projection is disconnected", async () => {
     FEATURE_FLAGS.unifiedAgent = true;
     resolveChatAgentProjectionV2.mockRejectedValueOnce(new Error("runtime disconnected"));

@@ -102,6 +102,33 @@ function normalizeApprovedPlanReference(value) {
   return { planId, version, hash };
 }
 
+function buildWorkflowTargeting(submissionOptions = {}, fallbackTargeting = {}) {
+  const supplied = submissionOptions?.targeting && typeof submissionOptions.targeting === "object"
+    ? submissionOptions.targeting
+    : {};
+  const fallback = fallbackTargeting && typeof fallbackTargeting === "object"
+    ? fallbackTargeting
+    : {};
+  const projectId = submissionOptions?.projectId
+    ?? supplied.projectId
+    ?? fallback.projectId
+    ?? null;
+  const studioTarget = submissionOptions?.studioTarget
+    ?? submissionOptions?.studioTargetPreference
+    ?? supplied.studioTarget
+    ?? fallback.studioTarget
+    ?? null;
+  const studioConnected = submissionOptions?.studioConnected
+    ?? supplied.studioConnected
+    ?? fallback.studioConnected
+    ?? false;
+  return {
+    projectId: projectId == null || projectId === "" ? null : String(projectId),
+    studioConnected: Boolean(studioConnected),
+    studioTarget,
+  };
+}
+
 function runtimeAutoPushPolicy(settings = {}) {
   const policy = String(settings?.studioAutoPushPolicy || "").trim();
   return policy === "after_validation" || policy === "after_playtest"
@@ -455,8 +482,30 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
   }, [chat, effectiveGameSpec, ensureRuntimeAgentProjection, settings]);
 
   const writeOrchestrationResult = useCallback(
-    async (activeChatId, requestId, decision, originPrompt, attachments) => {
+    async (activeChatId, requestId, decision, originPrompt, attachments, submissionContext = {}) => {
       const attMeta = normalizeChatAttachments(attachments);
+      const structuredPlanCandidate = decision?.structuredPlan
+        || decision?.plan?.structuredPlan
+        || decision?.plan
+        || null;
+      const structuredPlan = structuredPlanCandidate && typeof structuredPlanCandidate === "object"
+        && !Array.isArray(structuredPlanCandidate)
+        ? structuredPlanCandidate
+        : null;
+      const planTargeting = structuredPlan?.targeting && typeof structuredPlan.targeting === "object"
+        ? structuredPlan.targeting
+        : {};
+      const targeting = buildWorkflowTargeting({
+        targeting: decision?.targeting || planTargeting,
+        projectId: decision?.projectId ?? planTargeting.projectId ?? submissionContext.projectId,
+        studioConnected: decision?.studioConnected
+          ?? planTargeting.studioConnected
+          ?? submissionContext.studioConnected,
+        studioTarget: decision?.studioTarget
+          ?? planTargeting.studioTarget
+          ?? submissionContext.studioTarget
+          ?? submissionContext.studioTargetPreference,
+      }, buildWorkflowTargeting(submissionContext));
 
       if (decision.status === "conversation") {
         const text = decision.message || "";
@@ -490,6 +539,12 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
             questions: decision.questions || [],
             originPrompt,
             attachments: attMeta,
+            projectId: targeting.projectId,
+            studioConnected: targeting.studioConnected,
+            studioTarget: targeting.studioTarget,
+            targeting,
+            requestMode: submissionContext.mode || "plan",
+            templateId: decision.templateId || submissionContext.templateId || null,
             createdAt: serverTimestamp(),
             requestId,
           }
@@ -512,6 +567,20 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
           aiAssumptions: Array.isArray(decision.aiAssumptions) ? decision.aiAssumptions : [],
           planMarkdown: decision.planMarkdown || "",
           planSteps: Array.isArray(decision.planSteps) ? decision.planSteps : [],
+          structuredPlan,
+          capabilities: Array.isArray(decision.capabilities)
+            ? decision.capabilities
+            : Array.isArray(structuredPlan?.capabilities)
+              ? structuredPlan.capabilities
+              : [],
+          clarificationAnswers: decision.clarificationAnswers
+            || structuredPlan?.clarificationAnswers
+            || null,
+          templateId: decision.templateId || structuredPlan?.templateId || submissionContext.templateId || null,
+          projectId: targeting.projectId,
+          studioConnected: targeting.studioConnected,
+          studioTarget: targeting.studioTarget,
+          targeting,
           originPrompt,
           attachments: attMeta,
           createdAt: serverTimestamp(),
@@ -809,12 +878,18 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
           }
 
           publishOrchestrationStage(activeChatId, requestId, "Analyzing request...");
+          const workflowTargeting = buildWorkflowTargeting(options);
           const decision = await orchestrate({
             prompt,
             history: chat.messages,
             attachments: currentAttachments,
             mode,
             gameSpec: effectiveGameSpec,
+            projectId: workflowTargeting.projectId,
+            studioConnected: workflowTargeting.studioConnected,
+            studioTarget: workflowTargeting.studioTarget,
+            targeting: workflowTargeting,
+            templateId: options.templateId || null,
           });
 
           publishOrchestrationStage(activeChatId, requestId, "Preparing response...");
@@ -823,7 +898,8 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
             requestId,
             decision,
             prompt,
-            currentAttachments
+            currentAttachments,
+            { ...options, mode, targeting: workflowTargeting }
           );
 
         } catch (err) {
@@ -859,19 +935,37 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
 
   // Stage 2 (clarify): user answers the questions; re-orchestrate (now produces a plan).
   const submitClarifyAnswers = useCallback(
-    async (message, answers) => {
+    async (message, answers, submissionOptions = {}) => {
       if (!user || !message) return;
       const prompt = message.originPrompt || "";
       const attachments = message.attachments || [];
       const requestId = uuidv4();
       const activeChatId = chat.currentChatId;
       if (!activeChatId) return;
+      const workflowTargeting = buildWorkflowTargeting({
+        ...submissionOptions,
+        projectId: submissionOptions.projectId ?? message.projectId,
+        studioConnected: submissionOptions.studioConnected ?? message.studioConnected,
+        studioTarget: submissionOptions.studioTarget
+          ?? submissionOptions.studioTargetPreference
+          ?? message.studioTarget,
+        targeting: {
+          ...(message.targeting && typeof message.targeting === "object" ? message.targeting : {}),
+          ...(submissionOptions.targeting && typeof submissionOptions.targeting === "object"
+            ? submissionOptions.targeting
+            : {}),
+        },
+      }, message.targeting);
       setFlowBusyForChat(activeChatId, requestId, true);
       try {
 
         const answerText = Object.entries(answers || {})
-          .filter(([, v]) => v != null && String(v).trim() !== "")
-          .map(([k, v]) => `${k}: ${v}`)
+          .filter(([, value]) => (
+            Array.isArray(value)
+              ? value.some((entry) => String(entry || "").trim() !== "")
+              : value != null && String(value).trim() !== ""
+          ))
+          .map(([key, value]) => `${key}: ${Array.isArray(value) ? value.join(", ") : value}`)
           .join("\n");
         beginOrchestrationPending(activeChatId, requestId, answerText);
         if (answerText) await writeUserMessage(activeChatId, requestId, answerText);
@@ -887,11 +981,30 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
           answers,
           history: chat.messages,
           attachments,
+          mode: message.requestMode || "plan",
           gameSpec: effectiveGameSpec,
+          projectId: workflowTargeting.projectId,
+          studioConnected: workflowTargeting.studioConnected,
+          studioTarget: workflowTargeting.studioTarget,
+          targeting: workflowTargeting,
+          templateId: message.templateId || submissionOptions.templateId || null,
         });
 
         publishOrchestrationStage(activeChatId, requestId, "Preparing response...");
-        await writeOrchestrationResult(activeChatId, requestId, decision, prompt, attachments);
+        await writeOrchestrationResult(
+          activeChatId,
+          requestId,
+          decision,
+          prompt,
+          attachments,
+          {
+            ...submissionOptions,
+            mode: message.requestMode || "plan",
+            templateId: message.templateId || submissionOptions.templateId || null,
+            targeting: workflowTargeting,
+            ...workflowTargeting,
+          }
+        );
       } catch (err) {
         console.error("Clarify error:", err);
         notify?.({ message: err?.message || "Could not continue", type: "error" });

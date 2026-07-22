@@ -184,6 +184,62 @@ local function safeSetProperty(inst, key, value)
 	return ok, ok and nil or tostring(err)
 end
 
+-- Asset-bearing properties stay out of safeSetProperty so general agent
+-- property writes cannot smuggle an arbitrary Roblox asset reference. Only the
+-- server-owned apply_asset_reference command reaches this exact class/property
+-- allowlist.
+local ASSET_REFERENCE_TARGETS = {
+	ImageLabel = { Image = true },
+	ImageButton = { Image = true },
+	Decal = { Texture = true },
+	Texture = { Texture = true },
+	MeshPart = { MeshId = true, TextureID = true },
+	SpecialMesh = { MeshId = true, TextureId = true },
+	Sound = { SoundId = true },
+	Animation = { AnimationId = true },
+}
+
+local function assetReferencePropertyAllowed(inst, key, expectedClassName)
+	if not inst or inst.ClassName ~= tostring(expectedClassName or "") then
+		return false
+	end
+	local properties = ASSET_REFERENCE_TARGETS[inst.ClassName]
+	return properties ~= nil and properties[tostring(key or "")] == true
+end
+
+local function safeSetAssetReference(inst, key, value, expectedClassName)
+	local property = tostring(key or "")
+	local reference = tostring(value or "")
+	if not assetReferencePropertyAllowed(inst, property, expectedClassName) then
+		return false, "Unsupported asset reference target: " .. tostring(expectedClassName) .. "." .. property
+	end
+	if reference:match("^rbxassetid://[1-9]%d*$") == nil then
+		return false, "Invalid Roblox asset reference"
+	end
+	local ok, err = pcall(function()
+		inst[property] = reference
+	end)
+	return ok, ok and nil or tostring(err)
+end
+
+-- Snapshot restore may write the empty pre-existing value as well as a
+-- canonical Roblox asset reference. It reports whether the property belongs to
+-- this narrow asset-reference boundary so callers can fall back safely.
+local function safeRestoreAssetReference(inst, key, value)
+	local property = tostring(key or "")
+	if not assetReferencePropertyAllowed(inst, property, inst and inst.ClassName or "") then
+		return false, nil, nil
+	end
+	local reference = tostring(value or "")
+	if reference ~= "" and reference:match("^rbxassetid://[1-9]%d*$") == nil then
+		return true, false, "Invalid snapshot asset reference"
+	end
+	local ok, err = pcall(function()
+		inst[property] = reference
+	end)
+	return true, ok, ok and nil or tostring(err)
+end
+
 function readScriptSource(inst)
 	if not inst or not SCRIPT_CLASSES[inst.ClassName] then
 		return false, ""

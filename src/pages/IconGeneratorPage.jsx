@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Clock, Library, RefreshCw, Settings, Sparkles } from "../lib/icons";
+import { Clock, Library, Settings, Sparkles } from "../lib/icons";
 import { Button } from "../components/ui";
 import AssetContextBar from "../components/assets/AssetContextBar";
 import AssetGenerationForm, { DEFAULT_ASSET_GENERATION_FORM } from "../components/assets/AssetGenerationForm";
@@ -8,30 +8,28 @@ import AssetPackGrid from "../components/assets/AssetPackGrid";
 import AssetStyleSummary from "../components/assets/AssetStyleSummary";
 import { AssetErrorState, AssetGridSkeleton } from "../components/assets/AssetCollectionState";
 import {
-  ASSET_PLATFORM_WRITES_ENABLED,
+  canAssetPlatformAction,
   createAssetOperationKey,
-  extendAssetPack,
   formatAssetPlatformError,
-  generateAssets,
-  generateSimilarAsset,
-  getAssetOperation,
+  generateAsset,
+  generateAssetPack,
+  generateAssetVariation,
+  getAsset,
+  getAssetPlatformCapabilities,
   getAssetPlatformContext,
+  getRobloxUploadStatus,
   listAssetPacks,
   listAssets,
   listStyleProfiles,
   normalizeAsset,
   normalizePack,
-  pollAssetStatus,
-  replaceAsset,
-  retryAssetUpload,
+  publishAssetToRoblox,
 } from "../lib/assetPlatformApi";
 import { getRobloxOAuthStatus } from "../lib/robloxOAuthApi";
 import { useBilling } from "../context/BillingContext";
 import { useSettings } from "../context/SettingsContext";
 import "../components/assets/assetPlatform.css";
 
-const ACTIVE_OPERATION_STATES = new Set(["accepted", "queued", "pending", "running", "in_progress", "processing", "generating", "validating", "uploading", "submitted", "moderation_pending"]);
-const TERMINAL_OPERATION_STATES = new Set(["completed", "complete", "succeeded", "ready", "partially_ready", "partial_success", "failed", "cancelled"]);
 const GENERATION_MODES = new Set(["single", "pack", "extend", "similar", "replacement"]);
 
 function asArray(value) {
@@ -62,17 +60,46 @@ function getUniverses(context, selectedProjectId) {
   return projectUniverses.length ? projectUniverses : asArray(context?.universes);
 }
 
+function responseOutput(response) {
+  const output = response?.output || response?.result || response || {};
+  const data = output?.data;
+  return data && typeof data === "object" && !Array.isArray(data)
+    ? { ...output, ...data }
+    : output;
+}
+
 function operationState(response) {
-  return String(response?.operation?.lifecycle || response?.operation?.status || response?.lifecycle || response?.status || "queued").toLowerCase();
+  const output = responseOutput(response);
+  return String(output?.operationState || output?.operation?.lifecycle || output?.operation?.status || output?.lifecycle || output?.status || "succeeded").toLowerCase();
 }
 
 function responseAssets(response) {
-  return asArray(response?.assets || response?.operation?.assets || response?.items).map(normalizeAsset);
+  const output = responseOutput(response);
+  const collection = output?.assets || output?.operation?.assets || output?.items;
+  if (Array.isArray(collection)) return collection.map(normalizeAsset);
+  const single = output?.asset || response?.asset;
+  return single ? [normalizeAsset(single)] : [];
 }
 
 function responsePack(response) {
-  const pack = response?.pack || response?.operation?.pack;
+  const output = responseOutput(response);
+  const pack = output?.pack || output?.operation?.pack;
   return pack ? normalizePack(pack) : null;
+}
+
+function generationActionForMode(mode) {
+  if (mode === "pack" || mode === "extend") return "generate_asset_pack";
+  if (mode === "similar" || mode === "replacement") return "generate_asset_variation";
+  return "generate_asset";
+}
+
+function generationStyle(form) {
+  return {
+    ...(form.styleProfileId ? { styleProfileId: form.styleProfileId } : {}),
+    artworkMode: form.artworkMode,
+    backgroundMode: form.backgroundMode,
+    transparencyRequired: Boolean(form.transparencyRequired),
+  };
 }
 
 function mergeAssets(current, incoming) {
@@ -192,33 +219,21 @@ export default function IconGeneratorPage() {
     }));
   }, [searchParams]);
 
-  useEffect(() => {
-    if (!ASSET_PLATFORM_WRITES_ENABLED) return undefined;
-    const operationId = operation?.operationId;
-    const state = operation?.state || "";
-    if (!operationId || TERMINAL_OPERATION_STATES.has(state) || !ACTIVE_OPERATION_STATES.has(state)) return undefined;
-    const timer = window.setTimeout(async () => {
-      try {
-        const next = await getAssetOperation(operationId);
-        const nextAssets = responseAssets(next);
-        const nextPack = responsePack(next);
-        setResultAssets((current) => mergeAssets(current, nextAssets));
-        setAssets((current) => mergeAssets(current, nextAssets));
-        if (nextPack) setCurrentPack(nextPack);
-        const nextState = operationState(next);
-        setOperation({ operationId, state: nextState });
-        if (TERMINAL_OPERATION_STATES.has(nextState)) refreshBilling?.();
-      } catch (pollError) {
-        setError(formatAssetPlatformError(pollError, "Generation progress could not be refreshed."));
-        setOperation((current) => current ? { ...current, state: "paused" } : current);
-      }
-    }, 2500);
-    return () => window.clearTimeout(timer);
-  }, [operation, refreshBilling]);
-
   const projects = useMemo(() => getProjects(context), [context]);
   const universes = useMemo(() => getUniverses(context, selectedProjectId), [context, selectedProjectId]);
-  const unsupportedModes = useMemo(() => unsupportedModesFromContext(context), [context]);
+  const capabilities = useMemo(() => getAssetPlatformCapabilities(context), [context]);
+  const canGenerateAsset = canAssetPlatformAction(capabilities, "generate_asset");
+  const canGeneratePack = canAssetPlatformAction(capabilities, "generate_asset_pack");
+  const canGenerateVariation = canAssetPlatformAction(capabilities, "generate_asset_variation");
+  const canPublishAsset = canAssetPlatformAction(capabilities, "publish_asset_to_roblox");
+  const canGetUploadStatus = canAssetPlatformAction(capabilities, "get_roblox_upload_status");
+  const canGenerateAny = canGenerateAsset || canGeneratePack || canGenerateVariation;
+  const unsupportedModes = useMemo(() => Array.from(new Set([
+    ...unsupportedModesFromContext(context),
+    ...(!canGenerateAsset ? ["single"] : []),
+    ...(!canGeneratePack ? ["pack", "extend"] : []),
+    ...(!canGenerateVariation ? ["similar", "replacement"] : []),
+  ])), [context, canGenerateAsset, canGeneratePack, canGenerateVariation]);
   const selectedStyleProfile = styleProfiles.find((profile) => profile.styleProfileId === form.styleProfileId)
     || styleProfiles.find((profile) => profile.styleProfileId === currentPack?.styleProfileId)
     || null;
@@ -234,7 +249,7 @@ export default function IconGeneratorPage() {
   };
 
   const changeAutoUpload = async (checked) => {
-    if (!ASSET_PLATFORM_WRITES_ENABLED) return;
+    if (!canPublishAsset) return;
     setAutoUploadBusy(true);
     setError("");
     const result = await updateSettings({ robloxAssetUploadsEnabled: checked });
@@ -243,9 +258,10 @@ export default function IconGeneratorPage() {
   };
 
   const applyOperationResponse = (response, submittedMode) => {
+    const output = responseOutput(response);
     const nextAssets = responseAssets(response);
     const nextPack = responsePack(response);
-    const operationId = String(response?.operationId || response?.operation?.operationId || response?.operation?.id || "");
+    const operationId = String(output?.operationId || output?.operation?.operationId || output?.operation?.id || "");
     const state = operationState(response);
     setResultAssets(nextAssets);
     setAssets((current) => mergeAssets(current, nextAssets));
@@ -255,20 +271,22 @@ export default function IconGeneratorPage() {
         const others = current.filter((pack) => pack.packId !== nextPack.packId);
         return [nextPack, ...others];
       });
-    } else if (response?.packId) {
-      setCurrentPack(packs.find((pack) => pack.packId === response.packId) || null);
+    } else if (output?.packId) {
+      setCurrentPack(packs.find((pack) => pack.packId === output.packId) || null);
     } else if (submittedMode === "single" || submittedMode === "similar" || submittedMode === "replacement") {
       setCurrentPack(null);
     }
     setOperation(operationId ? { operationId, state } : null);
-    setNotice(operationId
-      ? "Generation accepted. Asset cards update independently as work completes."
-      : "The asset request was accepted. Refresh the library if the result is not returned inline.");
+    setNotice(nextAssets.length
+      ? `Generated ${nextAssets.length} asset${nextAssets.length === 1 ? "" : "s"} and saved ${nextAssets.length === 1 ? "it" : "them"} to NexusRBX.`
+      : output?.summary || "Generation completed.");
+    return nextAssets;
   };
 
   const submitGeneration = async (submittedForm) => {
-    if (!ASSET_PLATFORM_WRITES_ENABLED) {
-      setError("Asset generation and Roblox writes are not enabled for this environment.");
+    const actionName = generationActionForMode(submittedForm.mode);
+    if (!canAssetPlatformAction(capabilities, actionName)) {
+      setError("This generation mode is not enabled for the current project and connection.");
       return;
     }
     setSubmitting(true);
@@ -278,36 +296,61 @@ export default function IconGeneratorPage() {
       .split(/\r?\n|,/)
       .map((name) => name.trim())
       .filter(Boolean);
-    const payload = {
+    const referenceAssetIds = submittedForm.referenceAssetId ? [submittedForm.referenceAssetId] : [];
+    const commonPayload = {
       idempotencyKey: createAssetOperationKey(),
-      mode: submittedForm.mode,
       projectId: selectedProjectId,
-      universeId: selectedUniverseId || null,
       prompt: submittedForm.prompt.trim(),
-      requestedCount: submittedForm.mode === "pack" || submittedForm.mode === "extend" ? Number(submittedForm.requestedCount || 1) : 1,
-      conceptNames,
-      autoExtractConcepts: Boolean(submittedForm.autoExtractConcepts),
-      styleProfileId: submittedForm.styleProfileId || null,
-      artworkMode: submittedForm.artworkMode,
-      backgroundMode: submittedForm.backgroundMode,
-      transparencyRequired: Boolean(submittedForm.transparencyRequired),
-      referenceImage: submittedForm.referenceImage || null,
-      autoUpload: Boolean(settings.robloxAssetUploadsEnabled),
+      style: generationStyle(submittedForm),
+      ...(referenceAssetIds.length ? { referenceAssetIds } : {}),
     };
 
     try {
       let response;
-      if (submittedForm.mode === "extend") {
-        response = await extendAssetPack(submittedForm.packId, payload);
-      } else if (submittedForm.mode === "similar") {
-        response = await generateSimilarAsset(submittedForm.sourceAssetId, payload);
-      } else if (submittedForm.mode === "replacement") {
-        response = await replaceAsset(submittedForm.sourceAssetId, payload);
+      if (submittedForm.mode === "pack" || submittedForm.mode === "extend") {
+        response = await generateAssetPack({
+          ...commonPayload,
+          ...(submittedForm.mode === "extend" ? { packId: submittedForm.packId } : {}),
+          ...(conceptNames.length
+            ? { concepts: conceptNames }
+            : { count: Number(submittedForm.requestedCount || 1) }),
+        });
+      } else if (submittedForm.mode === "similar" || submittedForm.mode === "replacement") {
+        response = await generateAssetVariation({
+          idempotencyKey: commonPayload.idempotencyKey,
+          assetId: submittedForm.sourceAssetId,
+          projectId: selectedProjectId,
+          prompt: submittedForm.prompt.trim(),
+          variationCount: Number(submittedForm.variationCount || 1),
+        });
       } else {
-        response = await generateAssets(payload);
+        response = await generateAsset({ ...commonPayload, assetType: "icon" });
       }
-      applyOperationResponse(response, submittedForm.mode);
+      const generatedAssets = applyOperationResponse(response, submittedForm.mode);
       refreshBilling?.();
+
+      const publishCandidates = generatedAssets.filter((asset) => asset.assetId);
+      if (settings.robloxAssetUploadsEnabled && canPublishAsset && publishCandidates.length) {
+        const publishResults = await Promise.allSettled(publishCandidates.map((asset) => publishAssetToRoblox(asset.assetId, {
+          idempotencyKey: createAssetOperationKey(),
+          projectId: selectedProjectId,
+          ...(selectedUniverseId ? { universeId: selectedUniverseId } : {}),
+        })));
+        const publishedAssets = publishResults
+          .filter((result) => result.status === "fulfilled")
+          .flatMap((result) => responseAssets(result.value));
+        if (publishedAssets.length) {
+          setResultAssets((current) => mergeAssets(current, publishedAssets));
+          setAssets((current) => mergeAssets(current, publishedAssets));
+        }
+        const failed = publishResults.filter((result) => result.status === "rejected");
+        if (failed.length) {
+          setError(`${formatAssetPlatformError(failed[0].reason, "Roblox publishing could not be started.")} ${generatedAssets.length === 1 ? "The generated asset remains" : "All generated assets remain"} saved in NexusRBX.`);
+          setNotice(`${publishResults.length - failed.length} of ${publishResults.length} Roblox publish request${publishResults.length === 1 ? "" : "s"} started.`);
+        } else {
+          setNotice(`${publishResults.length} Roblox publish request${publishResults.length === 1 ? "" : "s"} started. Generated assets remain available while Roblox processes them.`);
+        }
+      }
     } catch (generationError) {
       setError(formatAssetPlatformError(generationError, "Asset generation could not be started."));
     } finally {
@@ -315,24 +358,38 @@ export default function IconGeneratorPage() {
     }
   };
 
-  const updateOneAsset = async (asset, action, request) => {
+  const updateOneAsset = async (asset, actionName, busyKey, request, {
+    requiresUploadConsent = false,
+    successMessage = "Asset updated.",
+    failureMessage = "The asset action could not be completed.",
+  } = {}) => {
     if (!asset?.assetId) return;
-    if (action === "retry" && !settings.robloxAssetUploadsEnabled) {
+    if (!canAssetPlatformAction(capabilities, actionName)) {
+      setError("This asset action is not enabled for the current project and connection.");
+      return;
+    }
+    if (requiresUploadConsent && !settings.robloxAssetUploadsEnabled) {
       setError("Auto Upload Assets is off. Enable it before retrying a Roblox write; the Nexus asset remains saved.");
       return;
     }
-    setBusyByAsset((current) => ({ ...current, [asset.assetId]: action }));
+    setBusyByAsset((current) => ({ ...current, [asset.assetId]: busyKey }));
     setError("");
+    setNotice("");
     try {
-      const response = await request(asset.assetId);
-      const nextAsset = normalizeAsset(response?.asset || response);
-      if (nextAsset.assetId) {
-        setResultAssets((current) => current.map((entry) => entry.assetId === nextAsset.assetId ? nextAsset : entry));
-        setAssets((current) => current.map((entry) => entry.assetId === nextAsset.assetId ? nextAsset : entry));
+      const response = await request();
+      const returnedAssets = responseAssets(response);
+      let nextAsset = returnedAssets.find((entry) => entry.assetId === asset.assetId) || returnedAssets[0];
+      if (!nextAsset) {
+        const refreshed = await getAsset(asset.assetId);
+        nextAsset = refreshed.asset;
       }
-      setNotice(action === "retry" ? "Roblox upload retry queued. The Nexus asset remains available while it runs." : "Asset status refreshed.");
+      if (nextAsset?.assetId) {
+        setResultAssets((current) => mergeAssets(current, [nextAsset]));
+        setAssets((current) => mergeAssets(current, [nextAsset]));
+      }
+      setNotice(successMessage);
     } catch (actionError) {
-      setError(formatAssetPlatformError(actionError, action === "retry" ? "Roblox upload could not be retried." : "Asset status could not be refreshed."));
+      setError(formatAssetPlatformError(actionError, failureMessage));
     } finally {
       setBusyByAsset((current) => ({ ...current, [asset.assetId]: "" }));
     }
@@ -386,12 +443,14 @@ export default function IconGeneratorPage() {
           credits={totalRemaining}
           autoUpload={Boolean(settings.robloxAssetUploadsEnabled)}
           autoUploadBusy={settingsLoading || autoUploadBusy}
-          onAutoUploadChange={ASSET_PLATFORM_WRITES_ENABLED ? changeAutoUpload : undefined}
+          autoUploadDisabled={!canPublishAsset}
+          onAutoUploadChange={canPublishAsset ? changeAutoUpload : undefined}
           costEstimate={costEstimate}
-          controlsDisabled={!ASSET_PLATFORM_WRITES_ENABLED}
+          controlsDisabled={!capabilities.reads}
         />
 
-        {!ASSET_PLATFORM_WRITES_ENABLED ? <div className="asset-inline-notice" role="status">Read-only preview: generation, upload, replacement, visibility, and settings writes remain disabled until the Prompt 3 operation ledger is in place.</div> : null}
+        {!canGenerateAny ? <div className="asset-inline-notice" role="status">Your existing assets remain available. Generation controls will appear when this server grants an exact asset-generation capability.</div> : null}
+        {canGenerateAny && settings.robloxAssetUploadsEnabled && !canPublishAsset ? <div className="asset-inline-notice" role="status">Assets can be generated and saved in NexusRBX, but Roblox publishing is unavailable for this connection.</div> : null}
         {error ? <div className="asset-inline-notice asset-inline-notice--error" role="alert">{error}</div> : null}
         {notice ? <div className="asset-inline-notice asset-inline-notice--success" role="status">{notice}</div> : null}
 
@@ -405,7 +464,7 @@ export default function IconGeneratorPage() {
               onChange={setForm}
               onSubmit={submitGeneration}
               submitting={submitting}
-              disabled={!ASSET_PLATFORM_WRITES_ENABLED}
+              disabled={!canGenerateAny}
               packs={packs}
               assets={assets}
               styleProfiles={styleProfiles}
@@ -420,7 +479,6 @@ export default function IconGeneratorPage() {
               <div className="asset-operation-banner">
                 <Clock aria-hidden="true" />
                 <span><strong>Operation {operation.state}</strong> · {operation.operationId}</span>
-                {operation.state === "paused" ? <Button size="sm" variant="ghost" icon={RefreshCw} onClick={() => setOperation((current) => current ? { ...current, state: "running" } : current)}>Resume updates</Button> : null}
               </div>
             ) : null}
             {error && !resultAssets.length && !currentPack && !loading ? (
@@ -431,12 +489,38 @@ export default function IconGeneratorPage() {
                 assets={resultAssets}
                 loading={submitting && !resultAssets.length}
                 busyByAsset={busyByAsset}
-                onExtend={ASSET_PLATFORM_WRITES_ENABLED ? (pack) => prepareMode("extend", pack) : undefined}
+                onExtend={canGeneratePack ? (pack) => prepareMode("extend", pack) : undefined}
                 onOpenAsset={(asset) => navigate(`/assets/${encodeURIComponent(asset.assetId)}`)}
-                onRetryUpload={ASSET_PLATFORM_WRITES_ENABLED ? (asset) => updateOneAsset(asset, "retry", retryAssetUpload) : undefined}
-                onPoll={ASSET_PLATFORM_WRITES_ENABLED ? (asset) => updateOneAsset(asset, "poll", pollAssetStatus) : undefined}
-                onSimilar={ASSET_PLATFORM_WRITES_ENABLED ? (asset) => prepareMode("similar", asset) : undefined}
-                onReplace={ASSET_PLATFORM_WRITES_ENABLED ? (asset) => prepareMode("replacement", asset) : undefined}
+                onRetryUpload={canPublishAsset ? (asset) => updateOneAsset(
+                  asset,
+                  "publish_asset_to_roblox",
+                  "retry",
+                  () => publishAssetToRoblox(asset.assetId, {
+                    idempotencyKey: createAssetOperationKey(),
+                    projectId: selectedProjectId,
+                    ...(selectedUniverseId ? { universeId: selectedUniverseId } : {}),
+                  }),
+                  {
+                    requiresUploadConsent: true,
+                    successMessage: "Roblox publishing queued. The Nexus asset remains available while it runs.",
+                    failureMessage: "Roblox publishing could not be started.",
+                  },
+                ) : undefined}
+                onPoll={canGetUploadStatus ? (asset) => updateOneAsset(
+                  asset,
+                  "get_roblox_upload_status",
+                  "poll",
+                  () => getRobloxUploadStatus(asset.assetId, {
+                    ...(asset.robloxOperationId ? { operationId: asset.robloxOperationId } : {}),
+                    projectId: selectedProjectId,
+                  }),
+                  {
+                    successMessage: "Roblox processing status refreshed.",
+                    failureMessage: "Roblox processing status could not be refreshed.",
+                  },
+                ) : undefined}
+                onSimilar={canGenerateVariation ? (asset) => prepareMode("similar", asset) : undefined}
+                onReplace={canGenerateVariation ? (asset) => prepareMode("replacement", asset) : undefined}
               />
             )}
           </section>

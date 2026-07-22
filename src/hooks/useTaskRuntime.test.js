@@ -7,6 +7,7 @@ import {
   retryTask,
   streamTaskEvents,
 } from "../lib/taskRuntimeApi";
+import { FEATURE_FLAGS } from "../lib/featureFlags";
 import useTaskRuntime, {
   getAuthorizedTaskActions,
   getTaskRuntimeStorageKey,
@@ -105,6 +106,8 @@ describe("useTaskRuntime helpers", () => {
 describe("useTaskRuntime", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    FEATURE_FLAGS.newTaskRuntime = true;
+    FEATURE_FLAGS.newPlanningMode = false;
     listTasks.mockResolvedValue({ tasks: [] });
     getTask.mockResolvedValue({ task: runningTask() });
     getTaskEvents.mockResolvedValue({
@@ -113,6 +116,17 @@ describe("useTaskRuntime", () => {
     });
     retryTask.mockResolvedValue({ task: runningTask({ allowedActions: ["retry"] }) });
     keepStreamOpen();
+  });
+
+  test("keeps Plan Mode execution observable when the standalone runtime flag is staged off", async () => {
+    FEATURE_FLAGS.newTaskRuntime = false;
+    FEATURE_FLAGS.newPlanningMode = true;
+
+    const { result } = renderHook(() => useTaskRuntime({ taskId: "task_1" }));
+
+    await waitFor(() => expect(result.current.enabled).toBe(true));
+    await waitFor(() => expect(result.current.connectionState).toBe("live"));
+    expect(getTask).toHaveBeenCalledWith("task_1");
   });
 
   test("restores the durable task pointer before opening a resumed event stream", async () => {

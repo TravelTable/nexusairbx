@@ -3,14 +3,14 @@
 
 local BACKEND_URL = "https://api.nexusrbx.com"
 local BACKEND_HOST = "api.nexusrbx.com"
-local PLUGIN_VERSION = "0.10.3-session-attestation"
-local STUDIO_PROTOCOL_VERSION = "2026-07-17-target-integrity"
+local PLUGIN_VERSION = "0.11.0-asset-references"
+local STUDIO_PROTOCOL_VERSION = "2026-07-22-asset-references"
 
 -- This identifies the exact release artifact, independently of the user-facing
 -- version. Keep it in lockstep with the generated bundle and backend allowlist.
 -- A plugin session must attest its build and actual command handlers at pairing
 -- time; version strings alone are not evidence that a command exists.
-local PLUGIN_BUILD_ID = "nexusrbx-studio-0.10.3-session-attestation.2"
+local PLUGIN_BUILD_ID = "nexusrbx-studio-0.11.0-asset-references.1"
 
 -- These are deliberately capability-level (rather than UI-level) claims. The
 -- pairing payload also includes the exact sorted command list derived from the
