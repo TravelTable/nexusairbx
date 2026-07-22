@@ -1,39 +1,42 @@
 import { useLayoutEffect, useState } from "react";
 
 export const AI_PAGE_ZOOM_KEY = "nexus.ai.pageZoom";
-export const DEFAULT_AI_PAGE_ZOOM = 0.85;
+export const AI_PAGE_ZOOM_VERSION_KEY = "nexus.ai.pageZoomVersion";
+export const DEFAULT_AI_PAGE_ZOOM = 0.75;
 export const AI_PAGE_ZOOM_OPTIONS = [0.75, 0.85, 1];
+const AI_PAGE_ZOOM_STORAGE_VERSION = "2";
 
-function readStoredZoom() {
-  if (typeof window === "undefined") return DEFAULT_AI_PAGE_ZOOM;
+function readStoredZoom(initialZoom) {
+  if (typeof window === "undefined") return initialZoom;
   try {
     const raw = Number(window.localStorage.getItem(AI_PAGE_ZOOM_KEY));
-    if (Number.isFinite(raw) && raw >= 0.7 && raw <= 1.25) return raw;
+    if (Number.isFinite(raw) && raw >= 0.7 && raw <= 1.25) {
+      const version = window.localStorage.getItem(AI_PAGE_ZOOM_VERSION_KEY);
+      // 85% was the previous automatic default. Move that legacy value once,
+      // while keeping an 85% choice made after this migration.
+      if (version !== AI_PAGE_ZOOM_STORAGE_VERSION && raw === 0.85) {
+        return DEFAULT_AI_PAGE_ZOOM;
+      }
+      return raw;
+    }
   } catch {
     /* ignore */
   }
-  return DEFAULT_AI_PAGE_ZOOM;
+  return initialZoom;
 }
 
-function cssZoomAffectsLayout() {
-  if (typeof document === "undefined" || !document.body) return false;
-  const test = document.createElement("div");
-  test.style.cssText = "width:100px;height:100px;zoom:0.5;position:absolute;left:-9999px;top:0;visibility:hidden;";
-  document.body.appendChild(test);
-  const layoutWidth = test.offsetWidth;
-  document.body.removeChild(test);
-  // Chrome/Edge: zoom shrinks layout size. If it doesn't, oversized height gets clipped.
-  return layoutWidth > 0 && layoutWidth < 90;
+function supportsCssZoom() {
+  return Boolean(window.CSS?.supports?.("zoom", "1"));
 }
 
 /**
- * Fits `.ai-page` to the visual viewport while keeping CSS zoom (default 0.85).
- * When zoom affects layout, size is viewport/zoom so the zoomed page fills the screen.
- * When it does not, layout stays viewport-sized so overflow:hidden cannot hide the prompt.
+ * Fits `.ai-page` to the visual viewport at the selected density. The layout
+ * always uses reciprocal viewport dimensions; browsers without native CSS
+ * zoom receive the same result through a top-left transform fallback.
  */
 export default function useAiPageZoom(pageRef, initialZoom = DEFAULT_AI_PAGE_ZOOM) {
   const [zoom, setZoom] = useState(() => {
-    const stored = readStoredZoom();
+    const stored = readStoredZoom(initialZoom);
     return Number.isFinite(stored) ? stored : initialZoom;
   });
 
@@ -41,7 +44,7 @@ export default function useAiPageZoom(pageRef, initialZoom = DEFAULT_AI_PAGE_ZOO
     const el = pageRef?.current;
     if (!el || typeof window === "undefined") return undefined;
 
-    const zoomWorks = cssZoomAffectsLayout();
+    const nativeZoomSupported = supportsCssZoom();
 
     const apply = () => {
       const vv = window.visualViewport;
@@ -50,23 +53,23 @@ export default function useAiPageZoom(pageRef, initialZoom = DEFAULT_AI_PAGE_ZOO
       const nextZoom = Number(zoom) || DEFAULT_AI_PAGE_ZOOM;
 
       el.style.setProperty("--ai-zoom", String(nextZoom));
-      el.style.zoom = String(nextZoom);
-      el.style.transform = "";
       el.style.transformOrigin = "top left";
+      el.style.width = `${width / nextZoom}px`;
+      el.style.height = `${height / nextZoom}px`;
 
-      if (zoomWorks) {
-        el.style.width = `${width / nextZoom}px`;
-        el.style.height = `${height / nextZoom}px`;
+      if (nativeZoomSupported) {
+        el.style.zoom = String(nextZoom);
+        el.style.transform = "";
       } else {
-        // Keep layout inside the shell; zoom is visual-only so the prompt stays on-screen.
-        el.style.width = `${width}px`;
-        el.style.height = `${height}px`;
+        el.style.zoom = "1";
+        el.style.transform = `scale(${nextZoom})`;
       }
     };
 
     apply();
     try {
       window.localStorage.setItem(AI_PAGE_ZOOM_KEY, String(zoom));
+      window.localStorage.setItem(AI_PAGE_ZOOM_VERSION_KEY, AI_PAGE_ZOOM_STORAGE_VERSION);
     } catch {
       /* ignore */
     }

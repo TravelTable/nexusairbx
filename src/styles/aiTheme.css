@@ -3,11 +3,11 @@
    This file provides convenience classes for AI-specific surfaces. */
 
 .ai-page {
-  --ai-zoom: 0.85;
+  --ai-zoom: 0.75;
   background-color: var(--ai-bg);
   color: var(--ai-text);
-  /* Default zoom; AgentWorkspaceLayout also sets zoom/width/height in px from
-     the visual viewport so parent overflow:hidden cannot clip the prompt. */
+  /* Baseline before the hook runs. AgentWorkspaceLayout replaces these with
+     reciprocal visual-viewport dimensions and the selected scale. */
   zoom: var(--ai-zoom);
   width: calc(100% / var(--ai-zoom));
   height: calc(100% / var(--ai-zoom));

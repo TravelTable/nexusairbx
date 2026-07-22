@@ -1035,14 +1035,14 @@ export default function AgentWorkspaceLayout({ controller }) {
                 <button
                   type="button"
                   onClick={() => setSidebarOpen(!sidebarOpen)}
-                  className={`p-2 rounded-xl transition-all ${sidebarOpen ? "bg-[#00f5d4]/10 text-[#00f5d4]" : "bg-white/5 text-gray-400 hover:text-white"}`}
+                  className={`shrink-0 p-2 rounded-xl transition-all ${sidebarOpen ? "bg-[#00f5d4]/10 text-[#00f5d4]" : "bg-white/5 text-gray-400 hover:text-white"}`}
                   title="Toggle sidebar"
                   aria-label="Toggle sidebar"
                 >
                   <Menu className="h-5 w-5" />
                 </button>
-                <div className="h-4 w-px bg-white/10 hidden sm:block" aria-hidden="true" />
-                <div data-tour="mode-switcher" className="hidden md:inline-flex">
+                <div className="hidden h-4 w-px bg-white/10 xl:block" aria-hidden="true" />
+                <div data-tour="mode-switcher" className="hidden shrink-0 md:inline-flex">
                   <Segmented
                     size="sm"
                     options={[
@@ -1053,29 +1053,31 @@ export default function AgentWorkspaceLayout({ controller }) {
                     onChange={(mode) => setGeneratorMode(mode, "mode_control")}
                   />
                 </div>
-                <div className="h-4 w-px bg-white/10 hidden md:block" aria-hidden="true" />
+                <div className="hidden h-4 w-px bg-white/10 xl:block" aria-hidden="true" />
                 {generatorMode === "agent_build" && (
                   <>
-                    <ModelSwitcher
-                      value={settings.modelVersion}
-                      isPremium={isPremium}
-                      isStarterOrAbove={isStarterOrAbove}
-                      onChange={(id) => updateSettings({ modelVersion: id })}
-                      onProNudge={(reason) => {
-                        if (!requireUser()) return;
-                        setProNudgeReason(reason || "Premium AI Models");
-                        setShowProNudge(true);
-                      }}
-                      onStarterNudge={(reason) => {
-                        if (!requireUser()) return;
-                        starterPromo?.notifyStarterGate(reason || "Model Selection");
-                      }}
-                    />
-                    <div className="h-4 w-px bg-white/10 hidden sm:block" aria-hidden="true" />
+                    <div className="shrink-0">
+                      <ModelSwitcher
+                        value={settings.modelVersion}
+                        isPremium={isPremium}
+                        isStarterOrAbove={isStarterOrAbove}
+                        onChange={(id) => updateSettings({ modelVersion: id })}
+                        onProNudge={(reason) => {
+                          if (!requireUser()) return;
+                          setProNudgeReason(reason || "Premium AI Models");
+                          setShowProNudge(true);
+                        }}
+                        onStarterNudge={(reason) => {
+                          if (!requireUser()) return;
+                          starterPromo?.notifyStarterGate(reason || "Model Selection");
+                        }}
+                      />
+                    </div>
+                    <div className="hidden h-4 w-px bg-white/10 xl:block" aria-hidden="true" />
                   </>
                 )}
-                <label className="hidden items-center gap-1.5 sm:inline-flex" title="Workspace zoom">
-                  <span className="text-[10px] font-black uppercase tracking-widest text-gray-500">Zoom</span>
+                <label className="hidden shrink-0 items-center gap-1.5 sm:inline-flex" title="Workspace zoom">
+                  <span className="hidden text-[10px] font-black uppercase tracking-widest text-gray-500 2xl:inline">Zoom</span>
                   <select
                     value={String(aiPageZoom)}
                     onChange={(event) => setAiPageZoom(Number(event.target.value))}
@@ -1089,8 +1091,8 @@ export default function AgentWorkspaceLayout({ controller }) {
                     ))}
                   </select>
                 </label>
-                <div className="h-4 w-px bg-white/10 hidden sm:block" aria-hidden="true" />
-                <div data-tour="studio-pair">
+                <div className="hidden h-4 w-px bg-white/10 xl:block" aria-hidden="true" />
+                <div data-tour="studio-pair" className="shrink-0">
                   <StudioPairControl
                     connection={studio}
                     connected={studio?.connected}
@@ -1116,16 +1118,18 @@ export default function AgentWorkspaceLayout({ controller }) {
                       onAuthRequired={handleAuthRequired}
                       notify={notify}
                     />
-                    <div className="h-4 w-px bg-white/10 hidden sm:block" aria-hidden="true" />
-                    <ProjectContextStatus
-                      context={projectContext}
-                      plan={planKey}
-                      studioConnected={Boolean(studio?.connected)}
-                      studioConnectionType={studio?.connectionType || null}
-                      studioManifestCount={studioScriptCount}
-                      studioManifestSupported={studioManifestSupported}
-                      onViewStructure={() => setArchitecturePanelOpen(true)}
-                    />
+                    <div className="hidden h-4 w-px bg-white/10 xl:block" aria-hidden="true" />
+                    <div className="hidden shrink-0 opacity-75 transition-opacity hover:opacity-100 2xl:block">
+                      <ProjectContextStatus
+                        context={projectContext}
+                        plan={planKey}
+                        studioConnected={Boolean(studio?.connected)}
+                        studioConnectionType={studio?.connectionType || null}
+                        studioManifestCount={studioScriptCount}
+                        studioManifestSupported={studioManifestSupported}
+                        onViewStructure={() => setArchitecturePanelOpen(true)}
+                      />
+                    </div>
                   </>
                 ) : (
                   <div className="hidden text-right text-[11px] font-semibold text-gray-500 sm:block">

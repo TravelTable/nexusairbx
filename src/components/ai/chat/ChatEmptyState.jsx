@@ -24,9 +24,9 @@ const EXAMPLES = [
 
 export default function ChatEmptyState({ onQuickStart, onOpenTemplates }) {
   return (
-    <div className="flex min-h-0 flex-col items-center justify-center space-y-8 py-8 text-center motion-safe:animate-fade-in-up sm:space-y-10 sm:py-10">
+    <div className="flex min-h-0 flex-col items-center justify-center space-y-8 py-8 text-center motion-safe:animate-fade-in-up sm:space-y-10 sm:py-10 [@media(max-height:850px)]:space-y-5 [@media(max-height:850px)]:py-4">
       <div className="space-y-4 max-w-xl">
-        <div className="mx-auto w-14 h-14 rounded-2xl bg-nexus-cyan/10 border border-nexus-cyan/20 flex items-center justify-center shadow-[0_0_40px_-8px_rgba(0,245,212,0.4)]">
+        <div className="mx-auto w-14 h-14 rounded-2xl bg-nexus-cyan/10 border border-nexus-cyan/20 flex items-center justify-center shadow-[0_0_40px_-8px_rgba(0,245,212,0.4)] [@media(max-height:850px)]:hidden">
           <img src="/logo.png" alt="" className="w-9 h-9 object-contain" />
         </div>
         <h1 className="font-display text-3xl md:text-4xl font-extrabold tracking-tight">
@@ -37,13 +37,13 @@ export default function ChatEmptyState({ onQuickStart, onOpenTemplates }) {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full max-w-3xl">
+      <div className="scrollbar-subtle flex w-full max-w-3xl snap-x snap-mandatory gap-3 overflow-x-auto px-1 pb-2">
         {EXAMPLES.map((ex, index) => (
           <button
             key={ex.title}
             type="button"
             onClick={() => onQuickStart?.(ex.prompt)}
-            className="group relative p-5 rounded-2xl bg-white/[0.03] border border-white/10 hover:border-white/25 hover:bg-white/[0.05] hover:-translate-y-0.5 text-left transition-[border-color,background-color,transform,box-shadow] duration-200 ease-out motion-safe:animate-fade-in-scale focus-ring"
+            className="group relative min-h-36 min-w-[15rem] flex-1 snap-start rounded-2xl border border-white/10 bg-white/[0.03] p-5 text-left transition-[border-color,background-color,transform,box-shadow] duration-200 ease-out hover:-translate-y-0.5 hover:border-white/25 hover:bg-white/[0.05] motion-safe:animate-fade-in-scale focus-ring"
             style={{ animationDelay: `${index * 45}ms` }}
           >
             <div className="flex items-center justify-between">
@@ -56,7 +56,7 @@ export default function ChatEmptyState({ onQuickStart, onOpenTemplates }) {
               <ArrowRight className="w-4 h-4 text-gray-600 opacity-0 -translate-x-1 transition-all group-hover:opacity-100 group-hover:translate-x-0" />
             </div>
             <div className="font-display font-bold text-white text-sm mb-1">{ex.title}</div>
-            <div className="text-[11px] text-gray-500 leading-relaxed">{ex.prompt}</div>
+            <div className="line-clamp-3 text-[11px] leading-relaxed text-gray-500">{ex.prompt}</div>
           </button>
         ))}
       </div>
