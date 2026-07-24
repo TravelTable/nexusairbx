@@ -1,4 +1,12 @@
-import { summarizeEntitlements, isPremiumPlan, isStarterPlan, isStarterOrAbove, resolveUsagePercent, dollarsFromMicros } from "./billing";
+import {
+  assertSafeNexusApiRequestUrl,
+  dollarsFromMicros,
+  isPremiumPlan,
+  isStarterOrAbove,
+  isStarterPlan,
+  resolveUsagePercent,
+  summarizeEntitlements,
+} from "./billing";
 
 describe("summarizeEntitlements", () => {
   test("preserves dev override flags", () => {
@@ -84,5 +92,29 @@ describe("dollarsFromMicros", () => {
     expect(dollarsFromMicros(18_420_000)).toBe("$18.42");
     expect(dollarsFromMicros(0)).toBe("$0.00");
     expect(dollarsFromMicros(null)).toBe("$0.00");
+  });
+});
+
+describe("API URL validation", () => {
+  test("rejects malformed noFilter API paths without adding a fake route", () => {
+    expect(() =>
+      assertSafeNexusApiRequestUrl("https://api.nexusrbx.com/api/noFilter/status")
+    ).toThrow(expect.objectContaining({
+      name: "NexusApiError",
+      code: "MALFORMED_API_PATH",
+      retryable: false,
+    }));
+    expect(() =>
+      assertSafeNexusApiRequestUrl("/api/%6EoFiLtEr/status")
+    ).toThrow(expect.objectContaining({ code: "MALFORMED_API_PATH" }));
+  });
+
+  test("accepts legitimate API paths and unrelated query values", () => {
+    expect(
+      assertSafeNexusApiRequestUrl("https://api.nexusrbx.com/api/studio/status")
+    ).toBeInstanceOf(URL);
+    expect(
+      assertSafeNexusApiRequestUrl("https://api.nexusrbx.com/api/search?q=noFilter")
+    ).toBeInstanceOf(URL);
   });
 });

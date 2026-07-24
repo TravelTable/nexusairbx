@@ -1,3 +1,31 @@
+import { authedFetch as sharedAuthedFetch } from "./billing";
+import {
+  getRetryDelayMs,
+  isRetryableApiError,
+  NexusApiError,
+  parseRetryAfterMs,
+  readJsonResponse,
+} from "./apiErrors";
+import {
+  jitterDelay,
+  PollingLimitError,
+  waitForPollingDelay,
+} from "./boundedPolling";
+
+const activeGenerationPolls = new Map();
+const activeGenerationPollOwners = new Map();
+const TERMINAL_GENERATION_STATUSES = new Set([
+  "succeeded",
+  "completed",
+  "done",
+  "failed",
+  "cancelled",
+  "canceled",
+  "blocked",
+  "iteration_limit",
+  "timed_out",
+]);
+
 export function getGravatarUrl(email, size = 40) {
   if (!email) return null;
   function fallbackMd5(str) {
@@ -46,44 +74,105 @@ export function getExplanationBlocks(explanation = "") {
     });
 }
 
-export async function authedFetch(user, url, init = {}, retry = true) {
-  let idToken = await user.getIdToken();
-  let res = await fetch(url, {
-    ...init,
-    headers: { ...(init.headers || {}), Authorization: `Bearer ${idToken}` },
-    signal: init.signal,
-  });
-  if (res.status === 401 && retry) {
-    await user.getIdToken(true);
-    idToken = await user.getIdToken();
-    res = await fetch(url, {
-      ...init,
-      headers: { ...(init.headers || {}), Authorization: `Bearer ${idToken}` },
-      signal: init.signal,
+export async function authedFetch(user, url, init = {}) {
+  if (!user) {
+    throw new NexusApiError("Not signed in", {
+      status: 401,
+      code: "AUTH_REQUIRED",
+      kind: "authentication",
+      retryable: false,
     });
   }
-  return res;
+  // Preserve the legacy call signature while routing generation requests
+  // through the canonical ID-token + App Check + request-ID implementation.
+  return sharedAuthedFetch(url, init);
 }
 
-export async function pollJob(user, jobId, onTick, { signal, backendUrl }) {
+async function runJobPoll(
+  user,
+  jobId,
+  onTick,
+  {
+    signal,
+    backendUrl,
+    maxAttempts = 100,
+    maxDurationMs = 5 * 60 * 1000,
+    random = Math.random,
+  }
+) {
   let delay = 1200;
-  while (true) {
-    if (signal?.aborted) throw new Error("Aborted");
+  let attempts = 0;
+  const startedAt = Date.now();
+
+  while (attempts < maxAttempts && Date.now() - startedAt < maxDurationMs) {
+    attempts += 1;
     const res = await authedFetch(user, `${backendUrl}/api/jobs/${jobId}`, { method: "GET", signal });
-    if (res.status === 429) {
-      const ra = Number(res.headers.get("Retry-After")) || 2;
-      await new Promise((r) => setTimeout(r, ra * 1000));
+    if (!res.ok) {
+      let error;
+      try {
+        await readJsonResponse(res, "Failed to load generation job");
+      } catch (caught) {
+        error = caught;
+      }
+      if (!isRetryableApiError(error)) throw error;
+      const retryAfterMs =
+        parseRetryAfterMs(res.headers?.get?.("Retry-After")) ??
+        getRetryDelayMs(error, delay);
+      await waitForPollingDelay(jitterDelay(retryAfterMs, random), { signal });
+      delay = Math.min(Math.round(delay * 1.8), 30000);
       continue;
     }
-    const data = await res.json();
+
+    const data = await readJsonResponse(res, "Failed to load generation job");
     onTick?.(data);
-    if (data.status === "succeeded" || data.status === "failed") return data;
-    
-    // Use a local variable to avoid no-loop-func warning
-    const currentDelay = delay;
-    await new Promise((r) => setTimeout(r, currentDelay));
-    delay = Math.min(delay + 300, 3000);
+    if (TERMINAL_GENERATION_STATUSES.has(data.status)) return data;
+
+    await waitForPollingDelay(jitterDelay(delay, random), { signal });
+    delay = Math.min(Math.round(delay * 1.25), 3000);
   }
+
+  throw new PollingLimitError(
+    `Generation status polling stopped after ${attempts} attempts.`
+  );
+}
+
+export function pollJob(user, jobId, onTick, options = {}) {
+  const ownerKey = `${user?.uid || "anonymous"}:${options.backendUrl || ""}`;
+  const pollKey = `${ownerKey}:${jobId}`;
+  const activePoll = activeGenerationPolls.get(pollKey);
+  if (activePoll) return activePoll;
+
+  const priorOwnerPoll = activeGenerationPollOwners.get(ownerKey);
+  if (priorOwnerPoll && priorOwnerPoll.pollKey !== pollKey) {
+    priorOwnerPoll.controller.abort();
+  }
+
+  const controller = new AbortController();
+  const forwardAbort = () => controller.abort();
+  if (options.signal?.aborted) {
+    controller.abort();
+  } else {
+    options.signal?.addEventListener("abort", forwardAbort, { once: true });
+  }
+
+  const pollPromise = runJobPoll(user, jobId, onTick, {
+    ...options,
+    signal: controller.signal,
+  }).finally(() => {
+    options.signal?.removeEventListener("abort", forwardAbort);
+    if (activeGenerationPolls.get(pollKey) === pollPromise) {
+      activeGenerationPolls.delete(pollKey);
+    }
+    if (activeGenerationPollOwners.get(ownerKey)?.pollKey === pollKey) {
+      activeGenerationPollOwners.delete(ownerKey);
+    }
+  });
+  activeGenerationPolls.set(pollKey, pollPromise);
+  activeGenerationPollOwners.set(ownerKey, {
+    pollKey,
+    controller,
+  });
+  return pollPromise;
 }
 
 export function safeGet(key, fallback = null) {

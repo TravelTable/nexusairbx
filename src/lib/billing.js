@@ -1,7 +1,13 @@
 // src/lib/billing.js
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { BACKEND_URL } from "../config";
-import { getRetryDelayMs, isRetryableApiError, readJsonResponse, withApiRetryCooldown } from "./apiErrors";
+import {
+  getRetryDelayMs,
+  isRetryableApiError,
+  NexusApiError,
+  readJsonResponse,
+  withApiRetryCooldown,
+} from "./apiErrors";
 import { getProductAnalyticsHeaders } from "./productAnalytics";
 import { getFirebaseAppCheckHeaders } from "./appCheck";
 
@@ -57,7 +63,14 @@ function forceRefreshIdToken(user) {
 
 async function getIdToken({ force = false } = {}) {
   const user = getAuth().currentUser || (await waitForAuthInit());
-  if (!user) throw new Error("Not signed in");
+  if (!user) {
+    throw new NexusApiError("Sign in is required.", {
+      status: 401,
+      code: "AUTH_REQUIRED",
+      kind: "authentication",
+      retryable: false,
+    });
+  }
   if (force || tokenNeedsRefresh(user)) return forceRefreshIdToken(user);
   return user.getIdToken(false);
 }
@@ -138,6 +151,32 @@ export function isNexusApiUrl(url, apiOrigin = API_ORIGIN) {
   }
 }
 
+export function assertSafeNexusApiRequestUrl(url, apiOrigin = API_ORIGIN) {
+  const target = new URL(url, apiOrigin);
+  const pathSegments = target.pathname.split("/").map((segment) => {
+    try {
+      return decodeURIComponent(segment).toLowerCase();
+    } catch (_) {
+      return segment.toLowerCase();
+    }
+  });
+  if (
+    isNexusApiUrl(target, apiOrigin) &&
+    pathSegments.includes("nofilter")
+  ) {
+    throw new NexusApiError(
+      `Blocked malformed first-party API path: ${target.pathname}`,
+      {
+        status: 400,
+        code: "MALFORMED_API_PATH",
+        kind: "client_configuration",
+        retryable: false,
+      }
+    );
+  }
+  return target;
+}
+
 function billingRequestKey(scope, body) {
   const fingerprint = `${scope}:${JSON.stringify(body || {})}`;
   const now = Date.now();
@@ -178,8 +217,8 @@ function timezoneStorageKey(uid, timezone, suffix) {
 
 // Core authed fetch. Adds Bearer token, disables caches, retries once on 401.
 export async function authedFetch(path, init = {}) {
-  const noCache = init.noCache === true;
-  const url = new URL(path, API_ORIGIN);
+  const { noCache = false, ...requestInit } = init;
+  const url = assertSafeNexusApiRequestUrl(path);
   if (noCache) url.searchParams.set("t", String(Date.now()));
 
   // Absolute and protocol-relative URLs can escape the configured API origin.
@@ -187,23 +226,23 @@ export async function authedFetch(path, init = {}) {
   // headers so a future caller cannot leak Nexus credentials to a third party.
   if (!isNexusApiUrl(url)) {
     return fetch(url.toString(), {
-      ...init,
-      method: init.method || "GET",
-      headers: init.headers,
+      ...requestInit,
+      method: requestInit.method || "GET",
+      headers: requestInit.headers,
     });
   }
 
   let token = await getIdToken({ force: false });
   let appCheckHeaders = await getFirebaseAppCheckHeaders();
-  const requestId = headerValue(init.headers, "X-Request-ID") || randomRequestId();
+  const requestId = headerValue(requestInit.headers, "X-Request-ID") || randomRequestId();
 
   let res = await fetch(url.toString(), {
-    ...init,
-    method: init.method || "GET",
+    ...requestInit,
+    method: requestInit.method || "GET",
     mode: "cors",
     credentials: "include",
     cache: "no-store",
-    headers: authenticatedHeaders(init.headers, token, appCheckHeaders, requestId),
+    headers: authenticatedHeaders(requestInit.headers, token, appCheckHeaders, requestId),
   });
 
   // Retry once if token expired
@@ -211,12 +250,12 @@ export async function authedFetch(path, init = {}) {
     token = await getIdToken({ force: true });
     appCheckHeaders = await getFirebaseAppCheckHeaders();
     res = await fetch(url.toString(), {
-      ...init,
-      method: init.method || "GET",
+      ...requestInit,
+      method: requestInit.method || "GET",
       mode: "cors",
       credentials: "include",
       cache: "no-store",
-      headers: authenticatedHeaders(init.headers, token, appCheckHeaders, requestId),
+      headers: authenticatedHeaders(requestInit.headers, token, appCheckHeaders, requestId),
     });
   }
 

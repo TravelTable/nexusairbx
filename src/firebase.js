@@ -6,25 +6,27 @@ import {
   persistentLocalCache,
   persistentMultipleTabManager,
 } from "firebase/firestore";
+import { getFunctions } from "firebase/functions";
+import { getStorage } from "firebase/storage";
 import {
   getFirestoreTransportOptions,
   shouldUsePersistentFirestoreCache,
 } from "./lib/firestoreTransport";
+import {
+  isLocalAppCheckDebugAllowed,
+  readFirebaseConfig,
+  validateFirebaseAppCheckSiteKey,
+  validateFirebaseConfig,
+} from "./lib/firebaseEnvironment";
 
 // Keep Firebase SDK transport retries off the browser console; failures are
 // reported server-side via deferredClientLog when they persist.
 setLogLevel("silent");
 
-// Your web app's Firebase configuration
-export const firebaseConfig = {
-  apiKey: "AIzaSyCT6UZdUWmWdaJgKYhCSAzmr0pM-UU6-Tg",
-  authDomain: "nexusrbx.firebaseapp.com",
-  projectId: "nexusrbx",
-  storageBucket: "nexusrbx.appspot.com",
-  messagingSenderId: "834738385750",
-  appId: "1:834738385750:web:7f877b6dd0228c11fa1cf7",
-  measurementId: "G-4V4T613MJ7",
-};
+export const firebaseConfig = validateFirebaseConfig(readFirebaseConfig());
+export const firebaseAppCheckSiteKey = validateFirebaseAppCheckSiteKey(
+  process.env.REACT_APP_RECAPTCHA_SITE_KEY
+);
 
 // Prevent double-init during HMR
 const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
@@ -37,7 +39,7 @@ export function initializeFirebaseAppCheck(
     windowObject = typeof window !== "undefined" ? window : undefined,
     documentObject = typeof document !== "undefined" ? document : undefined,
     environment = process.env.NODE_ENV,
-    siteKey = process.env.REACT_APP_RECAPTCHA_SITE_KEY,
+    siteKey = firebaseAppCheckSiteKey,
     debugToken = process.env.REACT_APP_APP_CHECK_DEBUG_TOKEN,
   } = {}
 ) {
@@ -50,6 +52,9 @@ export function initializeFirebaseAppCheck(
   }
 
   if (!siteKey) {
+    if (environment === "production") {
+      return validateFirebaseAppCheckSiteKey(siteKey, { required: true });
+    }
     if (environment === "development") {
       console.warn(
         "Firebase App Check is disabled: set REACT_APP_RECAPTCHA_SITE_KEY to enable reCAPTCHA v3."
@@ -62,8 +67,15 @@ export function initializeFirebaseAppCheck(
     return windowObject[APP_CHECK_INSTANCE_KEY];
   }
 
-  if (environment === "development" && debugToken) {
-    windowObject.FIREBASE_APPCHECK_DEBUG_TOKEN = debugToken;
+  if (
+    isLocalAppCheckDebugAllowed({
+      environment,
+      hostname: windowObject.location?.hostname,
+    })
+  ) {
+    // `true` asks the SDK to generate a local debug token for registration.
+    // An explicitly supplied token supports stable local automation.
+    windowObject.FIREBASE_APPCHECK_DEBUG_TOKEN = debugToken || true;
   }
 
   const appCheck = initializeAppCheck(firebaseApp, {
@@ -77,11 +89,25 @@ export function initializeFirebaseAppCheck(
 
 export const appCheck = initializeFirebaseAppCheck(app);
 
-/**
- * Probe App Check without making it a workspace startup dependency. App Check
- * remains useful telemetry while enforcement is in monitor mode, but auth and
- * Firestore must still start when the provider or token is unavailable.
- */
+const APP_CHECK_THROTTLE_RE =
+  /exchangeRecaptchaV3Token|too many requests|throttl|resource.exhausted|status of 403/i;
+
+export function classifyFirebaseAppCheckError(error, now = Date.now()) {
+  const message = String(error?.message || "Firebase App Check token unavailable");
+  const throttled =
+    APP_CHECK_THROTTLE_RE.test(message) ||
+    error?.status === 429 ||
+    error?.code === "appCheck/throttled";
+  return {
+    status: throttled ? "throttled" : "failed",
+    ready: false,
+    available: false,
+    retryable: throttled,
+    retryAt: throttled ? now + 24 * 60 * 60 * 1000 : null,
+    error,
+  };
+}
+
 export function waitForFirebaseAppCheck(
   appCheckInstance,
   {
@@ -90,18 +116,29 @@ export function waitForFirebaseAppCheck(
   } = {}
 ) {
   if (environment === "test") {
-    return Promise.resolve({ ready: true, available: false, skipped: true });
+    return Promise.resolve({
+      status: "unavailable",
+      ready: false,
+      available: false,
+      skipped: true,
+    });
   }
 
   if (!appCheckInstance) {
     const error = new Error("Firebase App Check is not initialized.");
-    if (environment === "production") {
+    if (environment === "production" && typeof window !== "undefined") {
       console.error("Firebase App Check is unavailable", {
         projectId: firebaseConfig.projectId,
         message: error.message,
       });
     }
-    return Promise.resolve({ ready: true, available: false, error });
+    return Promise.resolve({
+      status: "unavailable",
+      ready: false,
+      available: false,
+      retryable: false,
+      error,
+    });
   }
 
   return getTokenFn(appCheckInstance)
@@ -114,20 +151,27 @@ export function waitForFirebaseAppCheck(
           projectId: firebaseConfig.projectId,
         });
       }
-      return { ready: true, available: true };
+      return {
+        status: "ready",
+        ready: true,
+        available: true,
+        retryable: false,
+        retryAt: null,
+      };
     })
     .catch((error) => {
       console.error("Firebase App Check token unavailable", {
         projectId: firebaseConfig.projectId,
         message: error?.message || "Unknown App Check error",
       });
-      return { ready: true, available: false, error };
+      return classifyFirebaseAppCheckError(error);
     });
 }
 
 export const appCheckReady = waitForFirebaseAppCheck(appCheck);
 
-// Core SDKs
+// App Check is initialized before any Firebase service that can make network
+// requests. Every consumer imports these shared singleton service instances.
 export const auth = getAuth(app);
 const firestoreOptions = getFirestoreTransportOptions();
 
@@ -144,6 +188,8 @@ if (
 }
 
 export const db = initializeFirestore(app, firestoreOptions);
+export const functions = getFunctions(app);
+export const storage = getStorage(app);
 
 // Safe, optional Analytics loader
 export async function initAnalytics() {

@@ -8,14 +8,14 @@ export async function startStudioPairing() {
   return readJsonOrThrow(res, "Failed to start Studio pairing");
 }
 
-export async function getStudioStatus() {
+export async function getStudioStatus({ signal } = {}) {
   return withApiRetryCooldown("studio:status", "Failed to load Studio status", async () => {
-    try {
-      const res = await authedFetch("/api/studio/status", { method: "GET", noCache: true });
-      return readJsonOrThrow(res, "Failed to load Studio status");
-    } catch (err) {
-      throw err;
-    }
+    const res = await authedFetch("/api/studio/status", {
+      method: "GET",
+      noCache: true,
+      signal,
+    });
+    return readJsonOrThrow(res, "Failed to load Studio status");
   });
 }
 
@@ -24,14 +24,14 @@ export async function startStudioMcpPairing() {
   return readJsonOrThrow(res, "Failed to start Studio MCP pairing");
 }
 
-export async function getStudioMcpStatus() {
+export async function getStudioMcpStatus({ signal } = {}) {
   return withApiRetryCooldown("studio:mcp:status", "Failed to load Studio MCP status", async () => {
-    try {
-      const res = await authedFetch("/api/studio/mcp/status", { method: "GET", noCache: true });
-      return readJsonOrThrow(res, "Failed to load Studio MCP status");
-    } catch (err) {
-      throw err;
-    }
+    const res = await authedFetch("/api/studio/mcp/status", {
+      method: "GET",
+      noCache: true,
+      signal,
+    });
+    return readJsonOrThrow(res, "Failed to load Studio MCP status");
   });
 }
 

@@ -41,10 +41,17 @@ export function useStudioConnection() {
   const retryAfterMsRef = useRef(0);
   const retryUntilRef = useRef(0);
   const inFlightRef = useRef(null);
+  const abortControllerRef = useRef(null);
+  const terminalFailureRef = useRef(false);
   const refreshRef = useRef(null);
   const mountedRef = useRef(true);
 
-  const refresh = useCallback(async ({ force = true } = {}) => {
+  const refresh = useCallback(async ({
+    force = true,
+    restartTerminal = force,
+  } = {}) => {
+    if (restartTerminal) terminalFailureRef.current = false;
+    if (terminalFailureRef.current && !restartTerminal) return null;
     const retryRemainingMs = retryUntilRef.current - Date.now();
     if (!force && retryRemainingMs > 0) {
       retryAfterMsRef.current = retryRemainingMs;
@@ -52,9 +59,15 @@ export function useStudioConnection() {
     }
     if (inFlightRef.current) return inFlightRef.current;
 
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
     const refreshTask = (async () => {
-      const results = await Promise.allSettled([getStudioStatus(), getStudioMcpStatus()]);
+      const results = await Promise.allSettled([
+        getStudioStatus({ signal: controller.signal }),
+        getStudioMcpStatus({ signal: controller.signal }),
+      ]);
       let retryAfterMs = 0;
+      let terminalFailure = false;
 
       const applyResult = (result, statusRef) => {
         if (result.status === "fulfilled") {
@@ -65,6 +78,8 @@ export function useStudioConnection() {
         // CORS/network blip must not flash the UI as disconnected mid-selection.
         if (isRetryableApiError(result.reason)) {
           retryAfterMs = Math.max(retryAfterMs, getRetryDelayMs(result.reason, 30000));
+        } else if (result.reason?.name !== "AbortError") {
+          terminalFailure = true;
         }
       };
 
@@ -73,6 +88,7 @@ export function useStudioConnection() {
 
       retryAfterMsRef.current = retryAfterMs;
       retryUntilRef.current = retryAfterMs > 0 ? Date.now() + retryAfterMs : 0;
+      terminalFailureRef.current = terminalFailure;
       const nextSnapshot = normalizeStudioConnectionSnapshot({
         pluginStatus: pluginStatusRef.current,
         mcpStatus: mcpStatusRef.current,
@@ -91,6 +107,7 @@ export function useStudioConnection() {
       return await refreshTask;
     } finally {
       if (inFlightRef.current === refreshTask) inFlightRef.current = null;
+      if (abortControllerRef.current === controller) abortControllerRef.current = null;
     }
   }, []);
 
@@ -98,6 +115,7 @@ export function useStudioConnection() {
     mountedRef.current = true;
     return () => {
       mountedRef.current = false;
+      abortControllerRef.current?.abort();
     };
   }, []);
 
@@ -117,7 +135,7 @@ export function useStudioConnection() {
     };
 
     const scheduleNext = () => {
-      if (cancelled) return;
+      if (cancelled || terminalFailureRef.current) return;
       const hidden = typeof document !== "undefined" ? document.hidden : false;
       const delay = getStudioStatusPollDelay({
         connected: connectedRef.current,
@@ -133,7 +151,9 @@ export function useStudioConnection() {
     const handleVisibilityChange = () => {
       clearTimer();
       if (typeof document !== "undefined" && !document.hidden) {
-        Promise.resolve(refreshRef.current?.({ force: true })).finally(scheduleNext);
+        Promise.resolve(
+          refreshRef.current?.({ force: true, restartTerminal: false })
+        ).finally(scheduleNext);
         return;
       }
       scheduleNext();

@@ -1,16 +1,52 @@
 import { getToken } from "firebase/app-check";
-import { appCheck } from "../firebase";
+import { appCheck, appCheckReady } from "../firebase";
 import { BACKEND_URL } from "../config";
+import { NexusApiError } from "./apiErrors";
 
-// App Check is deliberately optional while the backend is in monitor mode.
-// Never surface or log the token: it is added only to the outgoing request.
-export async function getFirebaseAppCheckHeaders() {
-  if (typeof window === "undefined" || !appCheck) return {};
+function appCheckUnavailableError(state, cause) {
+  const throttled = state?.status === "throttled";
+  const retryAfterMs = state?.retryAt
+    ? Math.max(0, Number(state.retryAt) - Date.now())
+    : null;
+  return new NexusApiError(
+    throttled
+      ? "Browser integrity verification is temporarily throttled."
+      : "Browser integrity verification is unavailable.",
+    {
+      status: 403,
+      code: throttled ? "APP_CHECK_THROTTLED" : "APP_CHECK_UNAVAILABLE",
+      kind: "app_check",
+      retryable: throttled,
+      retryAfterMs,
+      retryAfter:
+        retryAfterMs == null ? null : String(Math.ceil(retryAfterMs / 1000)),
+      cause,
+    }
+  );
+}
+
+// Never surface or log the token: it is added only to outgoing backend requests.
+export async function getFirebaseAppCheckHeaders({
+  required = process.env.NODE_ENV === "production",
+} = {}) {
+  if (typeof window === "undefined" || !appCheck) {
+    if (required) throw appCheckUnavailableError({ status: "unavailable" });
+    return {};
+  }
 
   try {
+    const readiness = appCheckReady ? await appCheckReady : null;
+    if (readiness && readiness.status !== "ready") {
+      if (required) throw appCheckUnavailableError(readiness, readiness.error);
+      return {};
+    }
     const result = await getToken(appCheck);
-    return result?.token ? { "X-Firebase-AppCheck": result.token } : {};
-  } catch (_) {
+    if (result?.token) return { "X-Firebase-AppCheck": result.token };
+    if (required) throw appCheckUnavailableError({ status: "failed" });
+    return {};
+  } catch (error) {
+    if (error instanceof NexusApiError) throw error;
+    if (required) throw appCheckUnavailableError({ status: "failed" }, error);
     return {};
   }
 }

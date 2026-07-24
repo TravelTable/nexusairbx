@@ -2,6 +2,35 @@ const MAX_RETRY_AFTER_MS = 30 * 60 * 1000;
 const API_RETRY_COOLDOWN_STORAGE_PREFIX = "nexusrbx:apiRetryCooldown:";
 const apiRetryCooldowns = new Map();
 
+export class NexusApiError extends Error {
+  constructor(
+    message,
+    {
+      status = 0,
+      code = "API_REQUEST_FAILED",
+      kind = "api",
+      retryable = false,
+      retryAfter = null,
+      retryAfterMs = null,
+      requestId = null,
+      payload = null,
+      cause,
+    } = {}
+  ) {
+    super(message || "Request failed");
+    this.name = "NexusApiError";
+    this.status = status;
+    this.code = code;
+    this.kind = kind;
+    this.retryable = retryable;
+    this.retryAfter = retryAfter;
+    this.retryAfterMs = retryAfterMs;
+    this.requestId = requestId;
+    this.payload = payload;
+    if (cause !== undefined) this.cause = cause;
+  }
+}
+
 export function parseRetryAfterMs(value, now = Date.now()) {
   if (!value) return null;
 
@@ -107,12 +136,17 @@ export function clearApiRetryCooldown(key) {
 
 export function createApiRetryCooldownError(key, fallbackMessage, retryAfterMs) {
   const delayMs = Math.min(Math.max(0, Number(retryAfterMs) || 0), MAX_RETRY_AFTER_MS);
-  const error = new Error(fallbackMessage || "Request temporarily unavailable. Please retry shortly.");
-  error.status = 503;
-  error.code = "API_RETRY_COOLDOWN";
-  error.retryable = true;
-  error.retryAfter = String(Math.ceil(delayMs / 1000));
-  error.retryAfterMs = delayMs;
+  const error = new NexusApiError(
+    fallbackMessage || "Request temporarily unavailable. Please retry shortly.",
+    {
+      status: 503,
+      code: "API_RETRY_COOLDOWN",
+      kind: "cooldown",
+      retryable: true,
+      retryAfter: String(Math.ceil(delayMs / 1000)),
+      retryAfterMs: delayMs,
+    }
+  );
   error.localCooldown = true;
   error.cooldownKey = key;
   return error;
@@ -155,24 +189,43 @@ export async function withApiRetryCooldown(
 }
 
 export async function readJsonResponse(res, fallbackMessage = "Request failed") {
-  const text = await res.text().catch(() => "");
   let data = null;
-  try {
-    data = text ? JSON.parse(text) : null;
-  } catch (_) {
-    data = null;
+  let text = "";
+  if (typeof res?.text === "function") {
+    text = await res.text().catch(() => "");
+    try {
+      data = text ? JSON.parse(text) : null;
+    } catch (_) {
+      data = null;
+    }
+  } else if (typeof res?.json === "function") {
+    data = await res.json().catch(() => null);
+    try {
+      text = data == null ? "" : JSON.stringify(data);
+    } catch (_) {
+      text = "";
+    }
   }
 
   if (!res.ok) {
     const retryAfter = res.headers?.get?.("Retry-After") || data?.retryAfter || null;
-    const error = new Error(data?.message || data?.error || text || fallbackMessage);
-    error.status = res.status;
-    error.code = data?.code || data?.errorCode || null;
-    error.retryable = data?.retryable === true || res.status === 429 || res.status === 503;
-    error.retryAfter = retryAfter;
-    error.retryAfterMs = parseRetryAfterMs(retryAfter);
-    error.payload = data;
-    throw error;
+    const requestId =
+      res.headers?.get?.("X-Request-ID") ||
+      res.headers?.get?.("x-request-id") ||
+      data?.requestId ||
+      null;
+    throw new NexusApiError(
+      data?.message || data?.error || text || fallbackMessage,
+      {
+        status: res.status,
+        code: data?.code || data?.errorCode || "API_REQUEST_FAILED",
+        retryable: data?.retryable === true || res.status === 429 || res.status === 503,
+        retryAfter,
+        retryAfterMs: parseRetryAfterMs(retryAfter),
+        requestId,
+        payload: data,
+      }
+    );
   }
 
   return data || {};

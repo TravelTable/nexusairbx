@@ -1,5 +1,8 @@
 import { getToken } from "firebase/app-check";
-import { installAppCheckFetchInterceptor } from "./appCheck";
+import {
+  getFirebaseAppCheckHeaders,
+  installAppCheckFetchInterceptor,
+} from "./appCheck";
 
 jest.mock("firebase/app-check", () => ({
   getToken: jest.fn(),
@@ -7,6 +10,11 @@ jest.mock("firebase/app-check", () => ({
 
 jest.mock("../firebase", () => ({
   appCheck: { app: "test" },
+  appCheckReady: Promise.resolve({
+    status: "ready",
+    ready: true,
+    available: true,
+  }),
 }));
 
 jest.mock("../config", () => ({
@@ -51,5 +59,19 @@ describe("installAppCheckFetchInterceptor", () => {
       firestoreInit
     );
     expect(getToken).toHaveBeenCalledTimes(1);
+  });
+
+  test("fails closed with a typed error when a required token cannot be acquired", async () => {
+    getToken.mockRejectedValue(new Error("exchangeRecaptchaV3Token failed"));
+
+    await expect(
+      getFirebaseAppCheckHeaders({ required: true })
+    ).rejects.toMatchObject({
+      name: "NexusApiError",
+      status: 403,
+      code: "APP_CHECK_UNAVAILABLE",
+      kind: "app_check",
+      retryable: false,
+    });
   });
 });

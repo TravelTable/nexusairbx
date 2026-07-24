@@ -20,6 +20,14 @@ jest.mock("firebase/firestore", () => ({
   initializeFirestore: jest.fn(),
 }));
 
+jest.mock("firebase/functions", () => ({
+  getFunctions: jest.fn(),
+}));
+
+jest.mock("firebase/storage", () => ({
+  getStorage: jest.fn(),
+}));
+
 import { initializeAppCheck, ReCaptchaV3Provider } from "firebase/app-check";
 import { initializeFirebaseAppCheck, waitForFirebaseAppCheck } from "./firebase";
 
@@ -108,7 +116,7 @@ describe("initializeFirebaseAppCheck", () => {
   });
 
   test("enables a debug token only in development", () => {
-    const developmentWindow = {};
+    const developmentWindow = { location: { hostname: "localhost" } };
     const productionWindow = {};
 
     initializeFirebaseAppCheck(
@@ -137,14 +145,47 @@ describe("initializeFirebaseAppCheck", () => {
     );
     expect(productionWindow.FIREBASE_APPCHECK_DEBUG_TOKEN).toBeUndefined();
   });
+
+  test("asks the SDK to generate a debug token for local development", () => {
+    const developmentWindow = { location: { hostname: "127.0.0.1" } };
+
+    initializeFirebaseAppCheck(
+      { name: "development-client-generated-token" },
+      {
+        environment: "development",
+        siteKey: "public-site-key",
+        windowObject: developmentWindow,
+        documentObject: {},
+      }
+    );
+
+    expect(developmentWindow.FIREBASE_APPCHECK_DEBUG_TOKEN).toBe(true);
+  });
+
+  test("fails closed when production initialization has no site key", () => {
+    expect(() =>
+      initializeFirebaseAppCheck(
+        { name: "production-client" },
+        {
+          environment: "production",
+          siteKey: "",
+          windowObject: {},
+          documentObject: {},
+        }
+      )
+    ).toThrow(expect.objectContaining({
+      code: "FIREBASE_APP_CHECK_CONFIG_INVALID",
+    }));
+  });
 });
 
 describe("waitForFirebaseAppCheck", () => {
-  it("keeps Firestore ready when App Check was not initialized", async () => {
+  it("reports App Check as unavailable when it was not initialized", async () => {
     const log = jest.spyOn(console, "error").mockImplementation(() => {});
     const result = await waitForFirebaseAppCheck(null, { environment: "production" });
 
-    expect(result.ready).toBe(true);
+    expect(result.status).toBe("unavailable");
+    expect(result.ready).toBe(false);
     expect(result.available).toBe(false);
     expect(result.error).toBeInstanceOf(Error);
     log.mockRestore();
@@ -157,10 +198,16 @@ describe("waitForFirebaseAppCheck", () => {
       getTokenFn: jest.fn().mockResolvedValue({ token: "test-app-check-token" }),
     });
 
-    expect(result).toEqual({ ready: true, available: true });
+    expect(result).toEqual({
+      status: "ready",
+      ready: true,
+      available: true,
+      retryable: false,
+      retryAt: null,
+    });
   });
 
-  it("keeps Firestore ready when the App Check token probe fails", async () => {
+  it("reports App Check failure when the token probe fails", async () => {
     const log = jest.spyOn(console, "error").mockImplementation(() => {});
     const error = new Error("captcha blocked");
     const result = await waitForFirebaseAppCheck({}, {
@@ -168,7 +215,14 @@ describe("waitForFirebaseAppCheck", () => {
       getTokenFn: jest.fn().mockRejectedValue(error),
     });
 
-    expect(result).toEqual({ ready: true, available: false, error });
+    expect(result).toEqual({
+      status: "failed",
+      ready: false,
+      available: false,
+      retryable: false,
+      retryAt: null,
+      error,
+    });
     log.mockRestore();
   });
 });

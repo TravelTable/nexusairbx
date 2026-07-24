@@ -45,17 +45,19 @@ the verification metrics below are healthy.
   parties.
 - The Express middleware verifies `X-Firebase-AppCheck` through Firebase Admin.
   `APP_CHECK_MODE=monitor` records missing/invalid tokens without blocking; setting
-  `APP_CHECK_MODE=enforce` returns `401` for a missing token and `403` for an invalid
-  token. The Stripe webhook is deliberately exempt because Stripe signature
+  `APP_CHECK_MODE=enforce` returns `403` for a missing or invalid token. The Stripe
+  webhook is deliberately exempt because Stripe signature
   verification is its authentication mechanism. Paired Studio-plugin protocol
   endpoints are exempt because they use their own pairing-session credential rather
   than a browser Firebase App Check token. The two SSE endpoints are also exempt
   because browser `EventSource` cannot send a custom header; each requires a
   short-lived server-minted stream session that is issued only after App Check and
   Firebase ID-token verification.
-- A debug token can only be set by the browser client when `NODE_ENV=development` and
-  `REACT_APP_APP_CHECK_DEBUG_TOKEN` is explicitly supplied. It is not enabled in
-  production.
+- App Check debug mode can only be enabled by the browser client on localhost with
+  `NODE_ENV=development`. If `REACT_APP_APP_CHECK_DEBUG_TOKEN` is omitted, the SDK
+  generates a token that must be copied from the browser console and registered in
+  Firebase Console; an explicit token supports stable local automation. Debug mode is
+  never enabled in production or on preview hosts.
 
 There are no `onCall` Firebase Functions in this repository to configure with
 `enforceAppCheck`. Any separately deployed callable Functions require their own
@@ -158,10 +160,13 @@ Storage upload rule in this repository.
 1. **Deploy the browser client first.** Set the public
    `REACT_APP_RECAPTCHA_SITE_KEY` in the frontend deployment environment. It is a
    reCAPTCHA v3 *site key*, not a secret. Do not add a reCAPTCHA secret, Firebase
-   service account, or Stripe credential to the browser build.
+   service account, or Stripe credential to the browser build. Production builds now
+   fail when this variable or a required Firebase public variable is missing.
 2. **Configure Firebase App Check.** Register the web app's reCAPTCHA v3 provider in
    Firebase Console, keep API enforcement off initially, and add only approved local
-   development debug tokens. Observe valid and invalid requests. Then enable
+   development debug tokens. Add each approved preview hostname to the reCAPTCHA/App
+   Check configuration and let previews use real App Check tokens; do not ship a
+   debug token in preview builds. Observe valid and invalid requests. Then enable
    enforcement separately for Firebase Authentication, Firestore, and Storage where
    supported; no console enforcement is changed by this code.
 3. **Deploy the API in monitor mode.** Set a unique production

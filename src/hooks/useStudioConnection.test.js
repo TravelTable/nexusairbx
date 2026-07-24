@@ -239,6 +239,20 @@ describe("useStudioConnection", () => {
     });
     await waitFor(() => expect(getStudioStatus).toHaveBeenCalledTimes(2));
     expect(hook.result.current.connected).toBe(true);
+
+    await act(async () => {
+      jest.advanceTimersByTime(60000);
+      await Promise.resolve();
+    });
+    expect(getStudioStatus).toHaveBeenCalledTimes(2);
+
+    getStudioStatus.mockResolvedValue({
+      sessions: [{ sessionId: "studio_1", status: "connected", live: true }],
+    });
+    await act(async () => {
+      await hook.result.current.refresh();
+    });
+    expect(getStudioStatus).toHaveBeenCalledTimes(3);
   });
 
   test("reports a connector-only MCP session as degraded, not connected", async () => {
