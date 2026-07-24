@@ -39,9 +39,11 @@ export function useAiLibrary(user, { retentionDays = null, authReady = true } = 
     // Subscribe to chats
     const chatsRef = collection(db, "users", uid, "chats");
     const qChats = query(chatsRef, orderBy("updatedAt", "desc"), limit(100));
+    let cancelled = false;
     const unsubChats = onSnapshot(
       qChats,
       (snap) => {
+        if (cancelled || auth.currentUser?.uid !== uid) return;
         cancelDeferredClientLog("firestore:chat-library");
         const arr = snap.docs.map((d) => ({
           id: d.id,
@@ -53,6 +55,7 @@ export function useAiLibrary(user, { retentionDays = null, authReady = true } = 
         setLoading(false);
       },
       (error) => {
+        if (cancelled || auth.currentUser?.uid !== uid) return;
         setLoading(false);
         const failureKey = [error?.code || "unknown", uid].join(":");
         if (reportedFailuresRef.current.has(failureKey)) return;
@@ -76,6 +79,7 @@ export function useAiLibrary(user, { retentionDays = null, authReady = true } = 
     );
 
     return () => {
+      cancelled = true;
       unsubChats();
     };
   }, [authReady, user?.uid]);

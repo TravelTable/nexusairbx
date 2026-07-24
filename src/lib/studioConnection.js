@@ -1,3 +1,5 @@
+import { normalizeRobloxPlaceId } from "./robloxPlaceId";
+
 export const STUDIO_CONNECTION_TYPES = Object.freeze({
   PLUGIN_BRIDGE: "plugin_bridge",
   MCP_LOCAL: "mcp_local",
@@ -32,7 +34,7 @@ export function getStudioSessionId(session) {
 
 export function getStudioPlaceId(session) {
   const placeId = session?.placeId || session?.studioPlaceId || session?.studio?.placeId;
-  return placeId == null ? null : String(placeId).trim() || null;
+  return normalizeRobloxPlaceId(placeId);
 }
 
 export function getStudioConnectionType(session) {

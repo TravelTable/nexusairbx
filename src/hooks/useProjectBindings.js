@@ -8,6 +8,7 @@ import {
   buildProjectBindingPayloadFromIdentity,
   findProjectByPlaceId,
 } from "../lib/studioPlaceBinding";
+import { normalizeRobloxPlaceId } from "../lib/robloxPlaceId";
 
 export function useProjectBindings(user, { authReady = true } = {}) {
   const [projects, setProjects] = useState([]);
@@ -77,9 +78,9 @@ export function useProjectBindings(user, { authReady = true } = {}) {
    */
   const openGameProject = useCallback(async (identity = {}) => {
     const payload = buildProjectBindingPayloadFromIdentity(identity);
-    const placeId = payload.placeId || payload.defaultPlaceId || null;
+    const placeId = normalizeRobloxPlaceId(payload.placeId || payload.defaultPlaceId);
     const universeId = payload.universeId || null;
-    if (!/^\d+$/.test(String(placeId || "")) || String(placeId) === "0"
+    if (!/^\d+$/.test(String(placeId || ""))
       || !/^\d+$/.test(String(universeId || "")) || String(universeId) === "0") {
       throw new Error("A published Studio place and universe are required to create a game project.");
     }

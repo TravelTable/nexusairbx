@@ -3,15 +3,14 @@
  * Canonical chat field: studioTargetPreference { targetId, placeId, label, updatedAt }.
  * Target IDs are opaque backend-emitted studio_target_* values — never invent session: IDs here.
  */
+import { normalizeRobloxPlaceId } from "./robloxPlaceId";
 
 export function normalizeStudioTargetOption(option = {}) {
   const id = String(
     option.id || option.studioTargetId || option.targetId || ""
   ).trim();
   const placeIdRaw = option.placeId ?? option.targetPlaceId;
-  const placeId = placeIdRaw == null || placeIdRaw === ""
-    ? null
-    : String(placeIdRaw).trim();
+  const placeId = normalizeRobloxPlaceId(placeIdRaw);
   const label = String(
     option.label ||
     option.displayName ||
@@ -25,14 +24,14 @@ export function normalizeStudioTargetOption(option = {}) {
   return {
     id,
     studioTargetId: String(option.studioTargetId || id).trim(),
-    placeId: placeId === "" ? null : placeId,
+    placeId,
     label,
     experienceName: String(option.experienceName || "").trim() || null,
     placeName: String(option.placeName || "").trim() || null,
     universeId: option.universeId == null || option.universeId === ""
       ? null
       : String(option.universeId).trim(),
-    isUntitled: option.isUntitled === true || placeId === "0" || !placeId,
+    isUntitled: option.isUntitled === true || !placeId,
     pluginSessionId: option.pluginSessionId || null,
     source: option.source || null,
     connectionType: option.connectionType || null,
@@ -71,9 +70,7 @@ export function resolveGameTitleFromTarget(option = {}, oauthFallback = null) {
  */
 export function buildProjectBindingPayloadFromIdentity(identity = {}) {
   const title = String(identity.title || "").trim() || "Untitled game";
-  const placeId = identity.placeId == null || identity.placeId === ""
-    ? null
-    : String(identity.placeId).trim();
+  const placeId = normalizeRobloxPlaceId(identity.placeId);
   const universeId = identity.universeId == null || identity.universeId === ""
     ? null
     : String(identity.universeId).trim();
@@ -83,7 +80,7 @@ export function buildProjectBindingPayloadFromIdentity(identity = {}) {
   ).trim() || title;
   return {
     title,
-    ...(placeId && placeId !== "0" ? { defaultPlaceId: placeId, placeId } : {}),
+    ...(placeId ? { defaultPlaceId: placeId, placeId } : {}),
     ...(universeId ? { universeId } : {}),
     ...(studioTargetId ? { studioTargetId } : {}),
     studioTargetLabel,
@@ -91,8 +88,8 @@ export function buildProjectBindingPayloadFromIdentity(identity = {}) {
 }
 
 export function findProjectByPlaceId(projects = [], placeId) {
-  const wanted = String(placeId || "").trim();
-  if (!wanted || wanted === "0") return null;
+  const wanted = normalizeRobloxPlaceId(placeId);
+  if (!wanted) return null;
   const list = Array.isArray(projects) ? projects : [];
   return list.find((project) => {
     const projectPlace = String(
@@ -127,7 +124,9 @@ export function resolveGameIdentityFromStudioStatus(statusOrSnapshot = {}, {
     const sessions = Array.isArray(statusOrSnapshot?.sessions) ? statusOrSnapshot.sessions : [];
     const match = sessions.find((session) => {
       const opaqueId = String(session?.studioTargetId || session?.targetingTargetId || "").trim();
-      const sessionPlace = String(session?.studio?.placeId || session?.placeId || "").trim();
+      const sessionPlace = normalizeRobloxPlaceId(
+        session?.studio?.placeId ?? session?.placeId
+      );
       return (opaqueId && (opaqueId === option.id || opaqueId === option.studioTargetId))
         || (sessionPlace && option.placeId && sessionPlace === option.placeId);
     });
@@ -162,7 +161,7 @@ export function resolveGameIdentityFromStudioStatus(statusOrSnapshot = {}, {
   });
 
   const prefTargetId = String(selectedTargetId || "").trim();
-  const prefPlaceId = String(selectedPlaceId || "").trim();
+  const prefPlaceId = normalizeRobloxPlaceId(selectedPlaceId);
   // An opaque target id is authoritative when present. Falling back to a
   // matching place id after that target disappeared can silently move a write
   // to another Studio session that happens to have the same place open.
@@ -176,7 +175,7 @@ export function resolveGameIdentityFromStudioStatus(statusOrSnapshot = {}, {
     return {
       status: "ready",
       title,
-      placeId: matched.placeId && matched.placeId !== "0" ? matched.placeId : null,
+      placeId: normalizeRobloxPlaceId(matched.placeId),
       universeId: matched.universeId || oauthFallback?.universeId || null,
       studioTargetId: matched.studioTargetId || matched.id,
       studioTargetLabel: matched.label || title,
@@ -204,7 +203,7 @@ export function resolveGameIdentityFromStudioStatus(statusOrSnapshot = {}, {
     return {
       status: "oauth",
       title: oauthTitle,
-      placeId: oauthFallback.placeId ? String(oauthFallback.placeId).trim() : null,
+      placeId: normalizeRobloxPlaceId(oauthFallback.placeId),
       universeId: oauthFallback.universeId ? String(oauthFallback.universeId).trim() : null,
       studioTargetId: null,
       studioTargetLabel: oauthTitle,
@@ -242,7 +241,8 @@ export function targetingOptionsFromStatus(statusOrSnapshot = {}) {
     const opaqueId = String(session?.studioTargetId || session?.targetingTargetId || "").trim();
     if (!opaqueId || seen.has(opaqueId)) continue;
     seen.add(opaqueId);
-    const placeId = String(session?.studio?.placeId || session?.placeId || "").trim();
+    const rawPlaceId = session?.studio?.placeId ?? session?.placeId;
+    const placeId = normalizeRobloxPlaceId(rawPlaceId);
     const experienceName = String(
       session?.studio?.experienceName || session?.experienceName || ""
     ).trim();
@@ -252,12 +252,12 @@ export function targetingOptionsFromStatus(statusOrSnapshot = {}) {
     options.push(normalizeStudioTargetOption({
       id: opaqueId,
       studioTargetId: opaqueId,
-      placeId: placeId || "0",
+      placeId,
       experienceName: experienceName || null,
       placeName: placeName || null,
       universeId: session?.studio?.universeId ?? session?.universeId ?? null,
       label: experienceName || placeName || "Untitled Studio project",
-      isUntitled: !placeId || placeId === "0",
+      isUntitled: !placeId,
       pluginSessionId: session?.connectionType === "plugin_bridge" ? session.id : null,
       connectionType: session?.connectionType || null,
       source: session?.connectionType === "plugin_bridge" ? "plugin" : "mcp",
@@ -270,10 +270,7 @@ export function readChatStudioPreference(chatMeta = null) {
   const preference = chatMeta?.studioTargetPreference;
   if (!preference || typeof preference !== "object") return null;
   const targetId = String(preference.targetId || preference.studioTargetId || "").trim();
-  const placeIdRaw = preference.placeId;
-  const placeId = placeIdRaw == null || placeIdRaw === ""
-    ? null
-    : String(placeIdRaw).trim();
+  const placeId = normalizeRobloxPlaceId(preference.placeId);
   const label = String(preference.label || "").trim() || "Untitled Studio project";
   if (!targetId && !placeId) return null;
   return { targetId: targetId || null, placeId, label };
@@ -316,7 +313,7 @@ export function evaluateStudioPlaceGate({
 
   const pref = preference && typeof preference === "object" ? preference : null;
   const prefTargetId = String(pref?.targetId || pref?.studioTargetId || "").trim();
-  const prefPlaceId = String(pref?.placeId || "").trim();
+  const prefPlaceId = normalizeRobloxPlaceId(pref?.placeId);
   const matched = liveOptions.find((option) => prefTargetId
     ? option.id === prefTargetId || option.studioTargetId === prefTargetId
     : prefPlaceId && option.placeId && option.placeId === prefPlaceId

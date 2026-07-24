@@ -92,38 +92,50 @@ export default function BillingPage() {
   }, []);
 
   async function refresh() {
-    if (!user) return;
+    const uid = user?.uid;
+    if (!authReady || !uid || getAuth().currentUser?.uid !== uid) {
+      setEntitlements(null);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     setError("");
     try {
       if (process.env.NODE_ENV === "test" && typeof window !== "undefined" && window.__NEXUSRBX_TEST_ENTITLEMENTS) {
-        setEntitlements(window.__NEXUSRBX_TEST_ENTITLEMENTS);
+        if (getAuth().currentUser?.uid === uid) {
+          setEntitlements(window.__NEXUSRBX_TEST_ENTITLEMENTS);
+        }
         return;
       }
-      setEntitlements(await getEntitlements({ noCache: true }));
+      const value = await getEntitlements({ noCache: true });
+      if (getAuth().currentUser?.uid === uid) setEntitlements(value);
     } catch (err) {
-      setError(err?.message || "Could not load billing info.");
+      if (getAuth().currentUser?.uid === uid) {
+        setError(err?.message || "Could not load billing info.");
+      }
     } finally {
-      setLoading(false);
+      if (getAuth().currentUser?.uid === uid) setLoading(false);
     }
   }
 
   useEffect(() => {
-    if (!authReady) return;
-    if (!user) {
+    if (!authReady || !user?.uid || getAuth().currentUser?.uid !== user.uid) {
+      setEntitlements(null);
       setLoading(false);
       return;
     }
     refresh();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [authReady, user]);
+  }, [authReady, user?.uid]);
 
   useEffect(() => () => {
     unsubRef.current.forEach((unsub) => unsub?.());
     unsubRef.current = [];
-  }, []);
+  }, [user?.uid]);
 
   async function handlePortal() {
+    const uid = user?.uid;
+    if (!authReady || !uid || getAuth().currentUser?.uid !== uid) return;
     setBusy("portal");
     setError("");
     try {
@@ -134,6 +146,7 @@ export default function BillingPage() {
       }
       if (result?.portalDocPath) {
         subscribeUntilTerminal(unsubRef, doc(getFirestore(), result.portalDocPath), (data) => {
+          if (getAuth().currentUser?.uid !== uid) return true;
           if (data?.url) {
             window.location.href = data.url;
             return true;
@@ -153,6 +166,8 @@ export default function BillingPage() {
   }
 
   async function handlePlanCheckout(plan) {
+    const uid = user?.uid;
+    if (!authReady || !uid || getAuth().currentUser?.uid !== uid) return;
     setBusy(plan);
     setError("");
     try {
@@ -168,6 +183,7 @@ export default function BillingPage() {
       if (result?.sessionDocPath) {
         setNote("Preparing your checkout session...");
         subscribeUntilTerminal(unsubRef, doc(getFirestore(), result.sessionDocPath), (data) => {
+          if (getAuth().currentUser?.uid !== uid) return true;
           if (data?.url) {
             window.location.href = data.url;
             return true;
@@ -191,6 +207,8 @@ export default function BillingPage() {
   }
 
   async function handleTopUp(packageKey) {
+    const uid = user?.uid;
+    if (!authReady || !uid || getAuth().currentUser?.uid !== uid) return;
     setBusy(packageKey);
     setError("");
     try {
@@ -205,6 +223,7 @@ export default function BillingPage() {
       if (result?.sessionDocPath) {
         setNote("Preparing your Premium Balance checkout session...");
         subscribeUntilTerminal(unsubRef, doc(getFirestore(), result.sessionDocPath), (data) => {
+          if (getAuth().currentUser?.uid !== uid) return true;
           if (data?.url) {
             window.location.href = data.url;
             return true;

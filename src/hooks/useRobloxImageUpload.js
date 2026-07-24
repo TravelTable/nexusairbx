@@ -1,8 +1,10 @@
 import { useCallback, useState } from "react";
 import { addDoc, collection, serverTimestamp } from "firebase/firestore";
-import { db } from "../firebase";
+import { auth, db } from "../firebase";
+import { sanitizeChatWritePayload } from "../lib/firestorePayloads";
 import { uploadRobloxDecalBatch } from "../lib/robloxDecalUploadApi";
 import { ensureRobloxCapabilities, ROBLOX_UPLOAD_ASSET_CAPABILITIES } from "../lib/robloxOAuthApi";
+import { requireVerifiedFirestoreUser } from "../lib/verifiedFirestoreUser";
 
 const ACCEPTED_EXTENSIONS = new Set([".png", ".jpg", ".jpeg", ".bmp", ".tga"]);
 export const ROBLOX_DECAL_ACCEPT = ".png,.jpg,.jpeg,.bmp,.tga,image/png,image/jpeg,image/bmp,image/x-tga,image/tga";
@@ -76,13 +78,14 @@ export function useRobloxImageUpload({
   const [activeUploads, setActiveUploads] = useState([]);
 
   const ensureChatForUpload = useCallback(async () => {
-    if (currentChatId) return currentChatId;
     if (!user) throw new Error("Sign in required");
-    const newChatRef = await addDoc(collection(db, "users", user.uid, "chats"), {
+    await requireVerifiedFirestoreUser(user, auth.currentUser);
+    if (currentChatId) return currentChatId;
+    const newChatRef = await addDoc(collection(db, "users", user.uid, "chats"), sanitizeChatWritePayload({
       title: "Asset upload",
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
-    });
+    }));
     openChatById?.(newChatRef.id);
     return newChatRef.id;
   }, [currentChatId, openChatById, user]);

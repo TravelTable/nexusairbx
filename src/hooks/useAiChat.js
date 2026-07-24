@@ -78,6 +78,13 @@ import {
   finishChatWriteMetrics,
   recordChatMessageWrite,
 } from "../lib/clientFirestoreWriteMetrics";
+import {
+  sanitizeChatWritePayload,
+  sanitizeStudioTargetPreference,
+  sanitizeTranscriptMessagePayload,
+} from "../lib/firestorePayloads";
+import { normalizeRobloxPlaceId } from "../lib/robloxPlaceId";
+import { requireVerifiedFirestoreUser } from "../lib/verifiedFirestoreUser";
 
 const STREAM_MAX_RETRIES = 3;
 const RESULT_MAX_POLLS = 45;
@@ -248,6 +255,10 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
   // Synchronous mirror of active run identities. A chat may own more than one
   // request at once; requestId (not chatId) is the concurrency boundary.
   const generatingRef = useRef({});
+  const assertCanWrite = useCallback(
+    () => requireVerifiedFirestoreUser(user, auth.currentUser),
+    [user]
+  );
 
   // Live values for the currently open chat (what the UI renders).
   const pendingMessagesForCurrentChat = useMemo(
@@ -376,12 +387,13 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
       if (!authReady || !uid || auth.currentUser?.uid !== uid || !currentChatId || !messageId) return;
 
       try {
+        await assertCanWrite();
         const msgRef = doc(db, "users", uid, "chats", currentChatId, "messages", messageId);
-        await updateDoc(msgRef, {
+        await updateDoc(msgRef, sanitizeTranscriptMessagePayload({
           code: code,
           updatedAt: serverTimestamp(),
           patchApplied: true
-        });
+        }));
         recordChatMessageWrite({ reason: "assistant_code_patch" });
         notify?.({ message: "Optimization applied successfully!", type: "success" });
       } catch (err) {
@@ -391,7 +403,7 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
     };
     const unbind = onAiEvent(AI_EVENTS.APPLY_CODE_PATCH, handleApplyPatch);
     return () => unbind();
-  }, [authReady, user?.uid, currentChatId, notify]);
+  }, [authReady, user?.uid, currentChatId, notify, assertCanWrite]);
 
   const messagesUnsubRef = useRef(null);
   const chatUnsubRef = useRef(null);
@@ -571,13 +583,13 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
 
         const billingFailure = parseApiErrorPayload(body);
         if (billingFailure || res.status === 402) {
-          const persisted = await updateDoc(pendingRef, {
+          const persisted = await updateDoc(pendingRef, sanitizeTranscriptMessagePayload({
             pending: false,
             stage: "failed",
             errorCode: "INSUFFICIENT_TOKENS",
             error: billingFailure?.message || body?.message || "You're out of tokens.",
             updatedAt: serverTimestamp(),
-          }).then(() => true).catch(() => false);
+          })).then(() => true).catch(() => false);
           if (persisted) {
             recordChatMessageWrite({ jobId: currentPending.jobId, reason: "assistant_recovery_failure" });
             finishChatWriteMetrics(currentPending.jobId, "error");
@@ -589,13 +601,13 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
         try {
           data = parseCompletedGenerateResult(body);
         } catch (err) {
-          const persisted = await updateDoc(pendingRef, {
+          const persisted = await updateDoc(pendingRef, sanitizeTranscriptMessagePayload({
             pending: false,
             stage: "failed",
             errorCode: err?.code || null,
             error: err?.message || `Generation failed (${res.status})`,
             updatedAt: serverTimestamp(),
-          }).then(() => true).catch(() => false);
+          })).then(() => true).catch(() => false);
           if (persisted) {
             recordChatMessageWrite({ jobId: currentPending.jobId, reason: "assistant_recovery_failure" });
             finishChatWriteMetrics(currentPending.jobId, "error");
@@ -604,13 +616,13 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
         }
         if (!data) {
           if (!res.ok) {
-            const persisted = await updateDoc(pendingRef, {
+            const persisted = await updateDoc(pendingRef, sanitizeTranscriptMessagePayload({
               pending: false,
               stage: "failed",
               errorCode: body?.code || null,
               error: body?.message || body?.error || `Generation failed (${res.status})`,
               updatedAt: serverTimestamp(),
-            }).then(() => true).catch(() => false);
+            })).then(() => true).catch(() => false);
             if (persisted) {
               recordChatMessageWrite({ jobId: currentPending.jobId, reason: "assistant_recovery_failure" });
               finishChatWriteMetrics(currentPending.jobId, "error");
@@ -628,13 +640,13 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
           isAutoExecuting: Boolean(currentPending.isAutoExecuting || currentMode === "act"),
         });
         if (data?.runId || currentPending.runId) msgPayload.runId = data?.runId || currentPending.runId;
-        await updateDoc(pendingRef, msgPayload);
+        await updateDoc(pendingRef, sanitizeTranscriptMessagePayload(msgPayload));
         recordChatMessageWrite({ jobId: currentPending.jobId, reason: "assistant_recovery_success" });
         finishChatWriteMetrics(currentPending.jobId, "done");
-        await updateDoc(chatRef, {
+        await updateDoc(chatRef, sanitizeChatWritePayload({
           updatedAt: serverTimestamp(),
           lastMessage: (currentPending.prompt || data?.title || "Studio agent run").slice(0, 50),
-        }).catch(() => {});
+        })).catch(() => {});
         refreshBilling?.();
         emitAiEvent("JOB_COMPLETE", { jobId: currentPending.jobId });
       } catch (err) {
@@ -676,6 +688,12 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
     const requestPrompt = content || "Please use the attached file(s) for this request.";
     if (!content && normalizedAttachments.length === 0) return;
     if (!authReady || !user?.uid || auth.currentUser?.uid !== user.uid) return;
+    try {
+      await assertCanWrite();
+    } catch (error) {
+      notify?.({ message: error?.message, type: "error" });
+      return;
+    }
 
     if (!unlimitedTokens && totalRemaining <= 0) {
       notify(insufficientTokensToast(planKey));
@@ -774,7 +792,10 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
             /* non-fatal */
           }
         }
-        const newChatRef = await addDoc(collection(db, "users", user.uid, "chats"), newChatPayload);
+        const newChatRef = await addDoc(
+          collection(db, "users", user.uid, "chats"),
+          sanitizeChatWritePayload(newChatPayload)
+        );
         activeChatId = newChatRef.id;
         openChatById(activeChatId);
         beginGenerationState(activeChatId);
@@ -782,13 +803,13 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
 
       if (!existingRequestId) {
         const userMsgRef = doc(db, "users", user.uid, "chats", activeChatId, "messages", `${requestId}-user`);
-        await setDoc(userMsgRef, {
+        await setDoc(userMsgRef, sanitizeTranscriptMessagePayload({
           role: "user",
           content: displayContent,
           ...(normalizedAttachments.length ? { attachments: normalizedAttachments } : {}),
           createdAt: serverTimestamp(),
           requestId,
-        });
+        }));
         recordChatMessageWrite({ reason: "user_message" });
       }
 
@@ -838,19 +859,22 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
         || currentChatMeta?.studioTargetPreference
         || null;
       const preferredTargetId = String(preferredTarget?.targetId || "").trim() || null;
-      const preferredPlaceId = String(preferredTarget?.placeId || "").trim() || null;
+      const preferredPlaceId = normalizeRobloxPlaceId(preferredTarget?.placeId);
       const preferredLabel = String(preferredTarget?.label || "").trim() || null;
       if (preferredTargetId || preferredPlaceId) {
         try {
-          await updateDoc(doc(db, "users", user.uid, "chats", activeChatId), {
-            studioTargetPreference: {
-              targetId: preferredTargetId,
-              placeId: preferredPlaceId,
-              label: preferredLabel || "Untitled Studio project",
+          await updateDoc(
+            doc(db, "users", user.uid, "chats", activeChatId),
+            sanitizeChatWritePayload({
+              studioTargetPreference: sanitizeStudioTargetPreference({
+                targetId: preferredTargetId,
+                placeId: preferredPlaceId,
+                label: preferredLabel || "Untitled Studio project",
+                updatedAt: serverTimestamp(),
+              }),
               updatedAt: serverTimestamp(),
-            },
-            updatedAt: serverTimestamp(),
-          });
+            })
+          );
           setCurrentChatMeta((prev) => ({
             ...(prev || {}),
             studioTargetPreference: {
@@ -1000,7 +1024,7 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
             queuePosition: jobData.queuePosition || null,
           },
         });
-        await setDoc(queuedAssistantRef, {
+        await setDoc(queuedAssistantRef, sanitizeTranscriptMessagePayload({
           role: "assistant",
           content: "",
           stage: queuedStage,
@@ -1012,7 +1036,7 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
           metadata: { mode: currentMode, type: null },
-        }, { merge: true });
+        }), { merge: true });
         jobData = await waitForAuthoritativeRunJob({
           agentId: jobData.agentId,
           runId: jobData.runId,
@@ -1044,7 +1068,7 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
                 : jobData.requiresAction === "approve"
                   ? "The active task is ready to continue. Approve it from the task panel when you want execution to resume."
                   : "The durable task runtime accepted this request and is waiting for the next authorized action.";
-          await setDoc(assistantMsgRef, {
+          await setDoc(assistantMsgRef, sanitizeTranscriptMessagePayload({
             role: "assistant",
             content: waitingCopy,
             stage: jobData.waitingUser ? "Awaiting confirmation" : "Task update",
@@ -1053,7 +1077,7 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
             ...(acceptedTaskId ? { taskId: acceptedTaskId } : {}),
             createdAt: serverTimestamp(),
             updatedAt: serverTimestamp(),
-          }, { merge: true });
+          }), { merge: true });
           setBusy(false);
           setPending(null);
           setStage("");
@@ -1070,7 +1094,7 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
       const assistantMsgRef = doc(db, "users", user.uid, "chats", activeChatId, "messages", `${requestId}-assistant`);
 
       publishGenerationStage(activeChatId, "Generating...", { extraPending: { steps: [], runId: agentRunId } });
-      await setDoc(assistantMsgRef, {
+      await setDoc(assistantMsgRef, sanitizeTranscriptMessagePayload({
         role: "assistant",
         content: "",
         stage: "Generating...",
@@ -1087,7 +1111,7 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
           type: null,
         },
         steps: [],
-      }, { merge: true });
+      }), { merge: true });
       recordChatMessageWrite({ jobId, reason: "assistant_initial" });
 
       publishGenerationStage(activeChatId, "Connecting...");
@@ -1119,10 +1143,10 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
         const progressPersistence = createChatProgressPersistence({
           key: `${user.uid}/${activeChatId}/${requestId}-assistant`,
           persist: async (progress) => {
-            await updateDoc(assistantMsgRef, {
+            await updateDoc(assistantMsgRef, sanitizeTranscriptMessagePayload({
               ...progress,
               updatedAt: serverTimestamp(),
-            });
+            }));
             recordChatMessageWrite({ jobId, reason: "assistant_progress_checkpoint" });
           },
           onError: (error) => console.warn("Failed to persist assistant progress checkpoint", error),
@@ -1241,13 +1265,13 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
             retries: retryCount,
           });
           progressPersistence.cancel();
-          updateDoc(assistantMsgRef, {
+          updateDoc(assistantMsgRef, sanitizeTranscriptMessagePayload({
             pending: false,
             stage: "failed",
             errorCode: err?.code || null,
             error: friendlyMessage,
             updatedAt: serverTimestamp(),
-          })
+          }))
             .then(() => recordChatMessageWrite({ jobId, reason: "assistant_terminal_failure" }))
             .catch(() => {})
             .finally(() => finishChatWriteMetrics(jobId, "error"));
@@ -1272,14 +1296,14 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
           });
           eventSource?.close?.();
           progressPersistence.cancel();
-          updateDoc(assistantMsgRef, {
+          updateDoc(assistantMsgRef, sanitizeTranscriptMessagePayload({
             pending: true,
             stage: "Still working in background...",
             jobId,
             requestId,
             ...(agentRunId ? { runId: agentRunId } : {}),
             updatedAt: serverTimestamp(),
-          })
+          }))
             .then(() => recordChatMessageWrite({ jobId, reason: "assistant_background_handoff" }))
             .catch(() => {});
           notify?.({
@@ -1326,7 +1350,7 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
             retries: retryCount,
           });
 
-          const failurePersisted = await setDoc(assistantMsgRef, {
+          const failurePersisted = await setDoc(assistantMsgRef, sanitizeTranscriptMessagePayload({
             role: "assistant",
             content: "",
             pending: false,
@@ -1337,7 +1361,7 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
             jobId,
             ...(agentRunId ? { runId: agentRunId } : {}),
             updatedAt: serverTimestamp(),
-          }, { merge: true }).then(() => true).catch(() => false);
+          }), { merge: true }).then(() => true).catch(() => false);
           if (failurePersisted) {
             recordChatMessageWrite({ jobId, reason: "assistant_terminal_failure" });
           }
@@ -1373,13 +1397,13 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
           msgPayload.createdAt = serverTimestamp();
           if (data?.runId || agentRunId) msgPayload.runId = data?.runId || agentRunId;
 
-          await setDoc(assistantMsgRef, msgPayload);
+          await setDoc(assistantMsgRef, sanitizeTranscriptMessagePayload(msgPayload));
           recordChatMessageWrite({ jobId, reason: "assistant_terminal_success" });
 
-          await updateDoc(doc(db, "users", user.uid, "chats", activeChatId), {
+          await updateDoc(doc(db, "users", user.uid, "chats", activeChatId), sanitizeChatWritePayload({
             updatedAt: serverTimestamp(),
             lastMessage: displayContent.slice(0, 50),
-          });
+          }));
 
           emitStreamMetric("complete", {
             jobId,
@@ -1737,22 +1761,24 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
     const nextTitle = String(title || "").trim();
     if (!authReady || !user?.uid || auth.currentUser?.uid !== user.uid || !chatId || !nextTitle) return;
     try {
-      await updateDoc(doc(db, "users", user.uid, "chats", chatId), {
+      await assertCanWrite();
+      await updateDoc(doc(db, "users", user.uid, "chats", chatId), sanitizeChatWritePayload({
         title: nextTitle,
         updatedAt: serverTimestamp(),
-      });
+      }));
       if (currentChatId === chatId) {
         setCurrentChatMeta((current) => current ? { ...current, title: nextTitle } : current);
       }
       notify({ message: "Chat renamed", type: "success" });
     } catch (err) {
-      notify({ message: "Failed to rename chat", type: "error" });
+      notify({ message: err?.message || "Failed to rename chat", type: "error" });
     }
   };
 
   const handleClearChat = async () => {
     if (!authReady || !user?.uid || auth.currentUser?.uid !== user.uid || !currentChatId) return;
     try {
+      await assertCanWrite();
       const msgsSnap = await getDocs(query(
         collection(db, "users", user.uid, "chats", currentChatId, "messages"),
         orderBy("createdAt", "asc"),
@@ -1770,6 +1796,7 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
 
   const startNewChat = useCallback(async ({ projectId = null, studioTargetPreference = null } = {}) => {
     if (!authReady || !user?.uid || auth.currentUser?.uid !== user.uid) return null;
+    await assertCanWrite();
     const selectedProjectId = String(projectId || "").trim();
     const chatId = uuidv4();
     const draftId = uuidv4();
@@ -1783,18 +1810,21 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
       updatedAt: serverTimestamp(),
       projectId: selectedProjectId || null,
     };
-    if (studioTargetPreference) payload.studioTargetPreference = studioTargetPreference;
-    await setDoc(doc(db, "users", user.uid, "chats", chatId), payload);
+    if (studioTargetPreference) {
+      payload.studioTargetPreference = sanitizeStudioTargetPreference(studioTargetPreference);
+    }
+    const persistedPayload = sanitizeChatWritePayload(payload);
+    await setDoc(doc(db, "users", user.uid, "chats", chatId), persistedPayload);
     closeChatSubscriptions();
     setCurrentChatId(chatId);
-    setCurrentChatMeta({ id: chatId, ...payload });
+    setCurrentChatMeta({ id: chatId, ...persistedPayload });
     setMessages([]);
     setActiveMode("agent");
     setTasks([]);
     setCurrentTaskId(null);
     openChatById(chatId);
     return chatId;
-  }, [authReady, user?.uid, closeChatSubscriptions, openChatById]);
+  }, [authReady, user?.uid, assertCanWrite, closeChatSubscriptions, openChatById]);
 
   const updateChatMode = useCallback(async (chatId, mode) => {
     const uid = user?.uid;
@@ -1811,16 +1841,17 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
 
     if (chatId) {
       try {
-        await updateDoc(doc(db, "users", uid, "chats", chatId), {
+        await assertCanWrite();
+        await updateDoc(doc(db, "users", uid, "chats", chatId), sanitizeChatWritePayload({
           activeMode: mode,
           updatedAt: serverTimestamp(),
-        });
+        }));
       } catch (err) {
         console.error("Failed to update chat mode in Firestore:", err);
-        notify?.({ message: "Failed to persist chat mode", type: "error" });
+        notify?.({ message: err?.message || "Failed to persist chat mode", type: "error" });
       }
     }
-  }, [authReady, user?.uid, notify]);
+  }, [authReady, user?.uid, assertCanWrite, notify]);
 
   return {
     messages,
@@ -1836,6 +1867,7 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
     setPendingForChat,
     setStageForChat,
     setGeneratingForChat,
+    assertCanWrite,
     openChatById,
     handleSubmit,
     handleDeleteChat,

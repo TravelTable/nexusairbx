@@ -12,11 +12,13 @@ import {
   deleteDoc, 
   serverTimestamp 
 } from "firebase/firestore";
-import { db } from "../firebase";
+import { auth, db } from "../firebase";
+import { sanitizeFirestoreValue } from "../lib/firestorePayloads";
+import { requireVerifiedFirestoreUser } from "../lib/verifiedFirestoreUser";
 
 const SCRIPT_VERSION_HISTORY_LIMIT = 50;
 
-export function useAiScripts(user, notify) {
+export function useAiScripts(user, notify, { authReady = true } = {}) {
   const [currentScriptId, setCurrentScriptId] = useState(null);
   const [currentScript, setCurrentScript] = useState(null);
   const [versionHistory, setVersionHistory] = useState([]);
@@ -24,22 +26,29 @@ export function useAiScripts(user, notify) {
   const [libraryRevision, setLibraryRevision] = useState(0);
 
   useEffect(() => {
-    if (!user || !currentScriptId) {
+    const uid = user?.uid;
+    if (!authReady || !uid || auth.currentUser?.uid !== uid || !currentScriptId) {
       setCurrentScript(null);
       setVersionHistory([]);
+      setSelectedVersionId(null);
       return;
     }
 
-    const scriptRef = doc(db, "users", user.uid, "scripts", currentScriptId);
+    const scriptRef = doc(db, "users", uid, "scripts", currentScriptId);
+    let cancelled = false;
 
     const unsubScript = onSnapshot(
       scriptRef,
       (snap) => {
+        if (cancelled || auth.currentUser?.uid !== uid) return;
         if (snap.exists()) {
           setCurrentScript({ id: snap.id, ...snap.data() });
+        } else {
+          setCurrentScript(null);
         }
       },
       (err) => {
+        if (cancelled || auth.currentUser?.uid !== uid) return;
         console.error("Firestore script subscription error:", err);
         notify?.({ message: "Failed to sync script details", type: "error" });
       }
@@ -48,23 +57,22 @@ export function useAiScripts(user, notify) {
     const versionsRef = collection(
       db,
       "users",
-      user.uid,
+      uid,
       "scripts",
       currentScriptId,
       "versions"
     );
     const qVersions = query(versionsRef, orderBy("versionNumber", "desc"), limit(SCRIPT_VERSION_HISTORY_LIMIT));
 
-    let cancelled = false;
     getDocs(qVersions)
       .then((snap) => {
-        if (cancelled) return;
+        if (cancelled || auth.currentUser?.uid !== uid) return;
         const arr = [];
         snap.forEach((d) => arr.push({ id: d.id, ...d.data() }));
         setVersionHistory(arr);
       })
       .catch((err) => {
-        if (cancelled) return;
+        if (cancelled || auth.currentUser?.uid !== uid) return;
         console.error("Firestore versions load error:", err);
         notify?.({ message: "Failed to load version history", type: "error" });
       });
@@ -73,41 +81,43 @@ export function useAiScripts(user, notify) {
       cancelled = true;
       unsubScript();
     };
-  }, [user, currentScriptId, notify]);
+  }, [authReady, user?.uid, currentScriptId, notify]);
 
   const handleRenameScript = useCallback(async (id, title) => {
     if (!user || !id) return;
     try {
-      await updateDoc(doc(db, "users", user.uid, "scripts", id), {
+      await requireVerifiedFirestoreUser(user, auth.currentUser);
+      await updateDoc(doc(db, "users", user.uid, "scripts", id), sanitizeFirestoreValue({
         title,
         updatedAt: serverTimestamp(),
-      });
+      }));
       setLibraryRevision((revision) => revision + 1);
       notify({ message: "Script renamed", type: "success" });
     } catch (err) {
-      notify({ message: "Failed to rename script", type: "error" });
+      notify({ message: err?.message || "Failed to rename script", type: "error" });
     }
   }, [user, notify]);
 
   const handleCreateScript = useCallback(async (title, code = "", type = "chat", chatId = null, workspaceProjectId = null) => {
     if (!user) return;
     try {
-      const docRef = await addDoc(collection(db, "users", user.uid, "scripts"), {
+      await requireVerifiedFirestoreUser(user, auth.currentUser);
+      const docRef = await addDoc(collection(db, "users", user.uid, "scripts"), sanitizeFirestoreValue({
         title: title || "New Script",
         chatId: chatId || null,
         workspaceProjectId: workspaceProjectId || null,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
         type: type,
-      });
+      }));
 
       if (code) {
-        await addDoc(collection(db, "users", user.uid, "scripts", docRef.id, "versions"), {
+        await addDoc(collection(db, "users", user.uid, "scripts", docRef.id, "versions"), sanitizeFirestoreValue({
           versionNumber: 1,
           code,
           explanation: "Initial generation",
           createdAt: serverTimestamp(),
-        });
+        }));
       }
 
       setCurrentScriptId(docRef.id);
@@ -116,13 +126,14 @@ export function useAiScripts(user, notify) {
       return docRef.id;
     } catch (err) {
       console.error("Error creating script:", err);
-      notify({ message: "Failed to create script", type: "error" });
+      notify({ message: err?.message || "Failed to create script", type: "error" });
     }
   }, [user, notify]);
 
   const handleDeleteScript = useCallback(async (id) => {
     if (!user || !id) return;
     try {
+      await requireVerifiedFirestoreUser(user, auth.currentUser);
       await deleteDoc(doc(db, "users", user.uid, "scripts", id));
       if (currentScriptId === id) {
         setCurrentScriptId(null);
@@ -130,7 +141,7 @@ export function useAiScripts(user, notify) {
       setLibraryRevision((revision) => revision + 1);
       notify({ message: "Script deleted", type: "success" });
     } catch (err) {
-      notify({ message: "Failed to delete script", type: "error" });
+      notify({ message: err?.message || "Failed to delete script", type: "error" });
     }
   }, [user, currentScriptId, notify]);
 

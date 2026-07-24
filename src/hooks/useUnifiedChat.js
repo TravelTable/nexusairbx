@@ -44,6 +44,12 @@ import {
 } from "../lib/agentRuntimeV2Api";
 import { reconcileAssistantTurns } from "../lib/assistantTurnIdentity";
 import { getProjectBinding } from "../lib/projectBindingsApi";
+import {
+  sanitizeChatWritePayload,
+  sanitizeFirestoreValue,
+  sanitizeTranscriptMessagePayload,
+} from "../lib/firestorePayloads";
+import { normalizeRobloxPlaceId } from "../lib/robloxPlaceId";
 
 export function reconcileUnifiedPendingMessages(generationPending = [], orchestrationPending = []) {
   return reconcileAssistantTurns([
@@ -132,7 +138,12 @@ function buildWorkflowTargeting(submissionOptions = {}, fallbackTargeting = {}) 
   return {
     projectId: projectId == null || projectId === "" ? null : String(projectId),
     studioConnected: Boolean(studioConnected),
-    studioTarget,
+    studioTarget: studioTarget && typeof studioTarget === "object"
+      ? {
+          ...studioTarget,
+          placeId: normalizeRobloxPlaceId(studioTarget.placeId ?? studioTarget.targetPlaceId),
+        }
+      : studioTarget,
   };
 }
 
@@ -279,11 +290,11 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
         activeChatId = await chat.startNewChat({ projectId, studioTargetPreference });
         const seed = String(titleSeed || "New chat");
         if (activeChatId && seed !== "New chat") {
-          await updateDoc(doc(db, "users", user.uid, "chats", activeChatId), {
+          await updateDoc(doc(db, "users", user.uid, "chats", activeChatId), sanitizeChatWritePayload({
             title: seed.slice(0, 30) + (seed.length > 30 ? "..." : ""),
             lifecycle: "active",
             updatedAt: serverTimestamp(),
-          });
+          }));
         }
       }
       return activeChatId;
@@ -294,10 +305,10 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
   const touchChat = useCallback(
     async (activeChatId, lastMessage) => {
       try {
-        await updateDoc(doc(db, "users", user.uid, "chats", activeChatId), {
+        await updateDoc(doc(db, "users", user.uid, "chats", activeChatId), sanitizeChatWritePayload({
           lastMessage: String(lastMessage || "").slice(0, 140),
           updatedAt: serverTimestamp(),
-        });
+        }));
       } catch (_) {
         // non-fatal: the message itself is already written
       }
@@ -311,13 +322,13 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
       const displayContent = content || describeChatAttachments(normalizedAttachments) || "Attached file(s)";
       await setDoc(
         doc(db, "users", user.uid, "chats", activeChatId, "messages", `${requestId}-user`),
-        {
+        sanitizeTranscriptMessagePayload({
           role: "user",
           content: displayContent,
           ...(normalizedAttachments.length ? { attachments: normalizedAttachments } : {}),
           createdAt: serverTimestamp(),
           requestId,
-        }
+        })
       );
       await touchChat(activeChatId, displayContent);
     },
@@ -484,7 +495,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
         const text = decision.message || "";
         await setDoc(
           doc(db, "users", user.uid, "chats", activeChatId, "messages", `${requestId}-assistant`),
-          {
+          sanitizeTranscriptMessagePayload({
             role: "assistant",
             stage: "conversation",
             intent: decision.intent || null,
@@ -492,7 +503,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
             explanation: text,
             createdAt: serverTimestamp(),
             requestId,
-          }
+          })
         );
         await touchChat(activeChatId, text || "Conversation");
         return;
@@ -506,7 +517,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
         }, { dedupeKey: `clarify:${activeChatId}:${requestId}` });
         await setDoc(
           doc(db, "users", user.uid, "chats", activeChatId, "messages", `${requestId}-clarify`),
-          {
+          sanitizeTranscriptMessagePayload({
             role: "assistant",
             stage: "clarify",
             questions: decision.questions || [],
@@ -520,7 +531,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
             templateId: decision.templateId || submissionContext.templateId || null,
             createdAt: serverTimestamp(),
             requestId,
-          }
+          })
         );
         await touchChat(activeChatId, "Needs a few details…");
         return;
@@ -528,7 +539,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
 
       await setDoc(
         doc(db, "users", user.uid, "chats", activeChatId, "messages", `${requestId}-plan`),
-        {
+        sanitizeTranscriptMessagePayload({
           role: "assistant",
           stage: "plan",
           planId: decision.planId,
@@ -558,7 +569,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
           attachments: attMeta,
           createdAt: serverTimestamp(),
           requestId,
-        }
+        })
       );
       void trackProductEvent("plan_displayed", {
         generator_mode: chat.activeMode || "agent",
@@ -600,6 +611,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
       if (!user || !message?.planId) return;
       const activeChatId = chat.currentChatId;
       if (!activeChatId) return;
+      await chat.assertCanWrite();
 
       await validateOwnedProject(
         submissionOptions.projectId || message.projectId || message.targeting?.projectId
@@ -620,7 +632,10 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
       try {
         await updateDoc(
           doc(db, "users", user.uid, "chats", activeChatId, "messages", message.id),
-          { stage: "plan_approved", updatedAt: serverTimestamp() }
+          sanitizeTranscriptMessagePayload({
+            stage: "plan_approved",
+            updatedAt: serverTimestamp(),
+          })
         );
       } catch (error) {
         console.warn("Could not persist approved-plan marker; continuing with generation.", error);
@@ -641,7 +656,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
         }
       );
     },
-    [user, chat.currentChatId, chat.activeMode, runGeneration]
+    [user, chat, runGeneration]
   );
 
   // ASK mode: read-only conversational streaming. No orchestrate, no plan, no job.
@@ -733,7 +748,13 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
       const text = full.trim();
       await setDoc(
         doc(db, "users", user.uid, "chats", activeChatId, "messages", `${requestId}-assistant`),
-        { role: "assistant", content: text, explanation: text, createdAt: serverTimestamp(), requestId }
+        sanitizeTranscriptMessagePayload({
+          role: "assistant",
+          content: text,
+          explanation: text,
+          createdAt: serverTimestamp(),
+          requestId,
+        })
       );
       await touchChat(activeChatId, text);
       refreshBilling?.();
@@ -773,6 +794,12 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
       const requestId = options?.clientMessageId || uuidv4();
       const submitLockKey = requestId;
       if (submitLocksRef.current[submitLockKey]) return;
+      try {
+        await chat.assertCanWrite();
+      } catch (error) {
+        notify?.({ message: error?.message, type: "error" });
+        return;
+      }
       submitLocksRef.current[submitLockKey] = true;
       try {
         try {
@@ -942,6 +969,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
       }, message.targeting);
       setFlowBusyForChat(activeChatId, requestId, true);
       try {
+        await chat.assertCanWrite();
         await validateOwnedProject(workflowTargeting.projectId);
 
         const answerText = Object.entries(answers || {})
@@ -957,7 +985,11 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
 
         await updateDoc(
           doc(db, "users", user.uid, "chats", activeChatId, "messages", message.id),
-          { stage: "clarify_answered", answers: answers || {}, updatedAt: serverTimestamp() }
+          sanitizeTranscriptMessagePayload({
+            stage: "clarify_answered",
+            answers: sanitizeFirestoreValue(answers || {}),
+            updatedAt: serverTimestamp(),
+          })
         );
 
         publishOrchestrationStage(activeChatId, requestId, "Analyzing request...");
@@ -998,7 +1030,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
         clearOrchestrationPending(activeChatId, requestId);
       }
     },
-    [user, chat.currentChatId, chat.messages, effectiveGameSpec, writeUserMessage, writeOrchestrationResult, setFlowBusyForChat, beginOrchestrationPending, publishOrchestrationStage, clearOrchestrationPending, notify]
+    [user, chat, effectiveGameSpec, writeUserMessage, writeOrchestrationResult, setFlowBusyForChat, beginOrchestrationPending, publishOrchestrationStage, clearOrchestrationPending, notify]
   );
 
   // Stage 3 (plan): user approves the plan -> generate.

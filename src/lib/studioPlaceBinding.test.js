@@ -123,15 +123,15 @@ describe("studioPlaceBinding", () => {
     expect(gate.status).toBe("needs_selection");
   });
 
-  test("normalizeStudioTargetOption accepts studioTargetId and Untitled placeId 0", () => {
+  test("normalizeStudioTargetOption preserves Untitled target identity but removes placeId 0", () => {
     expect(normalizeStudioTargetOption({
       studioTargetId: "studio_target_u",
-      placeId: "0",
+      placeId: null,
       label: "Untitled Experience",
       isUntitled: true,
     })).toMatchObject({
       id: "studio_target_u",
-      placeId: "0",
+      placeId: null,
       isUntitled: true,
     });
   });
@@ -144,7 +144,7 @@ describe("studioPlaceBinding", () => {
     }).status).toBe("needs_connect");
   });
 
-  test("targetingOptionsFromStatus keeps Untitled placeId 0 from backend targeting", () => {
+  test("targetingOptionsFromStatus normalizes Untitled placeId 0 from backend targeting", () => {
     expect(targetingOptionsFromStatus({
       targeting: {
         targets: [{
@@ -158,7 +158,7 @@ describe("studioPlaceBinding", () => {
     })).toEqual([{
       id: "studio_target_untitled",
       studioTargetId: "studio_target_untitled",
-      placeId: "0",
+      placeId: null,
       label: "Untitled Experience",
       experienceName: null,
       placeName: null,
@@ -179,7 +179,7 @@ describe("studioPlaceBinding", () => {
       preference: null,
       options: [{
         id: "studio_target_u",
-        placeId: "0",
+        placeId: null,
         label: "Untitled Experience",
         isUntitled: true,
       }],

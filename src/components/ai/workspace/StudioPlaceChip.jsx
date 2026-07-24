@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { MapPin, ChevronDown } from "lib/icons";
+import { normalizeRobloxPlaceId } from "lib/robloxPlaceId";
 import StudioTargetPicker from "./StudioTargetPicker";
 
 export default function StudioPlaceChip({
@@ -27,11 +28,12 @@ export default function StudioPlaceChip({
   const hasOptions = Array.isArray(options) && options.length > 0;
   const canOpen = connected && hasOptions;
   const selectedTargetId = String(preference?.targetId || preference?.studioTargetId || "").trim();
-  const selectedPlaceId = String(preference?.placeId || "").trim();
+  const selectedPlaceId = normalizeRobloxPlaceId(preference?.placeId);
   const selectedTargetIsLive = Boolean(preference && options.some((option) => {
     const optionTargetId = String(option?.id || option?.targetId || option?.studioTargetId || "").trim();
     if (selectedTargetId) return optionTargetId === selectedTargetId;
-    return selectedPlaceId && String(option?.placeId || "").trim() === selectedPlaceId;
+    return selectedPlaceId
+      && normalizeRobloxPlaceId(option?.placeId) === selectedPlaceId;
   }));
   const displayLabel = !connected
     ? label

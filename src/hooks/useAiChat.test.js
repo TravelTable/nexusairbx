@@ -23,6 +23,10 @@ jest.mock("../firebase", () => ({
   db: {},
 }));
 
+jest.mock("../lib/verifiedFirestoreUser", () => ({
+  requireVerifiedFirestoreUser: jest.fn((user) => Promise.resolve(user)),
+}));
+
 jest.mock("firebase/firestore", () => ({
   addDoc: jest.fn(),
   collection: jest.fn((...segments) => ({ segments })),

@@ -104,24 +104,32 @@ export default function SubscribePage() {
   }, [authReady, intent, location, navigate, user]);
 
   useEffect(() => {
-    if (!authReady || !user) return undefined;
+    const uid = user?.uid;
+    if (!authReady || !uid || getAuth().currentUser?.uid !== uid) {
+      setEntitlements(null);
+      setEntitlementsLoading(false);
+      setEntitlementsError("");
+      return undefined;
+    }
     let active = true;
     setEntitlementsLoading(true);
     setEntitlementsError("");
     getEntitlements({ noCache: true })
       .then((value) => {
-        if (active) setEntitlements(value);
+        if (active && getAuth().currentUser?.uid === uid) setEntitlements(value);
       })
       .catch(() => {
-        if (active) setEntitlementsError("We could not verify your billing status. Please refresh and try again.");
+        if (active && getAuth().currentUser?.uid === uid) {
+          setEntitlementsError("We could not verify your billing status. Please refresh and try again.");
+        }
       })
       .finally(() => {
-        if (active) setEntitlementsLoading(false);
+        if (active && getAuth().currentUser?.uid === uid) setEntitlementsLoading(false);
       });
     return () => {
       active = false;
     };
-  }, [authReady, user]);
+  }, [authReady, user?.uid]);
 
   useEffect(() => {
     void trackProductEvent("subscription_viewed", {
@@ -142,7 +150,7 @@ export default function SubscribePage() {
   useEffect(() => () => {
     sessionUnsubscribers.current.forEach((unsubscribe) => unsubscribe?.());
     sessionUnsubscribers.current = [];
-  }, []);
+  }, [user?.uid]);
 
   const isSubscriber = isSubscriberPlan(entitlements?.plan, entitlements?.entitlements);
   const seatCount = intent?.plan === PLAN.TEAM ? intent.seatCount : 1;
@@ -153,11 +161,14 @@ export default function SubscribePage() {
     : null;
 
   function watchCheckoutDocument(documentPath) {
+    const uid = user?.uid;
+    if (!authReady || !uid || getAuth().currentUser?.uid !== uid) return;
     setStatus("Preparing your secure checkout session…");
     subscribeUntilTerminal(
       sessionUnsubscribers,
       doc(getFirestore(), documentPath),
       (data) => {
+        if (getAuth().currentUser?.uid !== uid) return true;
         if (data?.url) {
           setStatus("Opening Stripe checkout…");
           window.location.assign(data.url);
@@ -213,11 +224,14 @@ export default function SubscribePage() {
   }
 
   function watchPortalDocument(documentPath) {
+    const uid = user?.uid;
+    if (!authReady || !uid || getAuth().currentUser?.uid !== uid) return;
     setStatus("Preparing your billing portal…");
     subscribeUntilTerminal(
       sessionUnsubscribers,
       doc(getFirestore(), documentPath),
       (data) => {
+        if (getAuth().currentUser?.uid !== uid) return true;
         if (data?.url) {
           setStatus("Opening billing settings…");
           window.location.assign(data.url);

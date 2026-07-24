@@ -116,6 +116,11 @@ import {
   readPendingAuthAction,
 } from "../../lib/pendingAuthAction";
 import { normalizeChatAttachments } from "../../lib/chatAttachments";
+import {
+  sanitizeChatWritePayload,
+  sanitizeTranscriptMessagePayload,
+} from "../../lib/firestorePayloads";
+import { normalizeRobloxPlaceId } from "../../lib/robloxPlaceId";
 
 const MODE_COLORS = {
   general: { primary: "#9b5de5", secondary: "#00f5d4" },
@@ -329,7 +334,7 @@ export function useAiWorkspaceController() {
   });
 
   const chat = unified;
-  const scriptManager = useAiScripts(user, notify);
+  const scriptManager = useAiScripts(user, notify, { authReady });
   const selectedAssetProjectId = chat.currentChatId || null;
   const projectAssets = useProjectAssets(selectedAssetProjectId, {
     enabled: Boolean(user && selectedAssetProjectId),
@@ -525,22 +530,29 @@ export function useAiWorkspaceController() {
   }, [authReady, user, scriptsLimit, notify, scriptManager.libraryRevision]);
 
   useEffect(() => {
-    if (!authReady || !user || !chat.currentChatId) {
+    if (!authReady || !user?.uid || auth.currentUser?.uid !== user.uid || !chat.currentChatId) {
       setChatProjectSnapshot(null);
       return undefined;
     }
 
     const ref = doc(db, "users", user.uid, "chats", chat.currentChatId, "project", "current");
-    return onSnapshot(
+    let cancelled = false;
+    const unsubscribe = onSnapshot(
       ref,
       (snap) => {
+        if (cancelled || auth.currentUser?.uid !== user.uid) return;
         setChatProjectSnapshot(snap.exists() ? { id: snap.id, ...snap.data() } : null);
       },
       () => {
+        if (cancelled) return;
         setChatProjectSnapshot(null);
       }
     );
-  }, [authReady, user, chat.currentChatId]);
+    return () => {
+      cancelled = true;
+      unsubscribe();
+    };
+  }, [authReady, user?.uid, chat.currentChatId]);
 
   useEffect(() => {
     if (!location?.state || typeof location.state !== "object") return;
@@ -646,9 +658,16 @@ export function useAiWorkspaceController() {
   }, [chat, isStarterOrAbove, notify, scriptManager, track, starterPromo]);
 
   useEffect(() => {
-    if (!user) return;
+    if (!authReady || !user?.uid || auth.currentUser?.uid !== user.uid) {
+      setProjectContext(null);
+      setTeams([]);
+      return undefined;
+    }
 
-    const unsubUser = onSnapshot(doc(db, "users", user.uid), (snap) => {
+    const uid = user.uid;
+    let cancelled = false;
+    const unsubUser = onSnapshot(doc(db, "users", uid), (snap) => {
+      if (cancelled || auth.currentUser?.uid !== uid) return;
       if (snap.exists()) {
         setProjectContext(snap.data().projectContext || null);
       }
@@ -660,15 +679,18 @@ export function useAiWorkspaceController() {
           const res = await authedFetch("/api/user/teams", { noCache: true });
           return readJsonResponse(res, "Failed to load teams.");
         });
-        setTeams(data.teams || []);
+        if (!cancelled && auth.currentUser?.uid === uid) setTeams(data.teams || []);
       } catch (e) {
         // best-effort
       }
     };
 
     fetchTeams();
-    return () => unsubUser();
-  }, [user]);
+    return () => {
+      cancelled = true;
+      unsubUser();
+    };
+  }, [authReady, user?.uid]);
 
   useEffect(() => {
     const pluginSessionId = getStudioSessionId(studioConnection.pluginSession);
@@ -756,9 +778,9 @@ export function useAiWorkspaceController() {
 
   const ensureStudioProjectBinding = useCallback(async (option) => {
     const target = normalizeStudioTargetOption(option) || option;
-    const placeId = String(target?.placeId || target?.targetPlaceId || "").trim();
+    const placeId = normalizeRobloxPlaceId(target?.placeId || target?.targetPlaceId);
     const universeId = String(target?.universeId || "").trim();
-    if (!placeId || placeId === "0" || !universeId) {
+    if (!placeId || !universeId) {
       throw new Error("Save or publish this Studio place before selecting it for agent edits.");
     }
     const result = await findOrCreateProjectBinding(buildProjectBindingPayloadFromIdentity({
@@ -780,14 +802,15 @@ export function useAiWorkspaceController() {
     try {
       const binding = await ensureStudioProjectBinding(option);
       if (chat.currentChatId) {
-        await updateDoc(doc(db, "users", user.uid, "chats", chat.currentChatId), {
+        await chat.assertCanWrite();
+        await updateDoc(doc(db, "users", user.uid, "chats", chat.currentChatId), sanitizeChatWritePayload({
           studioTargetPreference: {
             ...preference,
             updatedAt: serverTimestamp(),
           },
           projectId: binding.projectId,
           updatedAt: serverTimestamp(),
-        });
+        }));
       }
       setOptimisticStudioPlacePreference(preference);
       return { ...preference, projectId: binding.projectId };
@@ -796,7 +819,7 @@ export function useAiWorkspaceController() {
       setStudioPlacePickerOpen(true);
       return null;
     }
-  }, [chat.currentChatId, ensureStudioProjectBinding, notify, user]);
+  }, [chat, ensureStudioProjectBinding, notify, user]);
 
   const handlePromptSubmit = useCallback(async (e, overridePrompt = null, submissionOptions = {}) => {
     if (e && typeof e.preventDefault === "function") e.preventDefault();
@@ -1421,7 +1444,8 @@ export function useAiWorkspaceController() {
         .reverse()
         .find((m) => m.role === "assistant" && m.runId === runId);
       if (targetMessage?.id && chat.currentChatId) {
-        await updateDoc(doc(db, "users", user.uid, "chats", chat.currentChatId, "messages", targetMessage.id), {
+        await chat.assertCanWrite();
+        await updateDoc(doc(db, "users", user.uid, "chats", chat.currentChatId, "messages", targetMessage.id), sanitizeTranscriptMessagePayload({
           steps,
           runId,
           ...(run ? {
@@ -1432,10 +1456,10 @@ export function useAiWorkspaceController() {
             errorDetails: run.errorDetails || run.blocker?.details || run.error?.details || null,
             recovery: run.recovery || run.blocker?.recovery || run.error?.recovery || null,
           } : {}),
-        }).catch(() => {});
+        })).catch(() => {});
       }
     },
-    [chat.currentChatId, chat.messages, unified, user]
+    [chat, unified, user]
   );
 
   const handleSelectStudioTarget = useCallback(

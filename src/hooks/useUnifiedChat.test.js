@@ -150,6 +150,7 @@ describe("useUnifiedChat", () => {
     global.TextDecoder = NodeTextDecoder;
     useAiChat.mockReturnValue({
       activeMode: "agent",
+      assertCanWrite: jest.fn(() => Promise.resolve()),
       currentChatId: null,
       generatingChatIds: [],
       generationStage: "",
@@ -261,6 +262,7 @@ describe("useUnifiedChat", () => {
     const setPendingForChat = jest.fn();
     useAiChat.mockReturnValue({
       activeMode: "ask",
+      assertCanWrite: jest.fn(() => Promise.resolve()),
       currentChatId: "chat-1",
       generatingChatIds: [],
       generationStage: "",
@@ -310,6 +312,7 @@ describe("useUnifiedChat", () => {
     const setPendingForChat = jest.fn();
     useAiChat.mockReturnValue({
       activeMode: "plan",
+      assertCanWrite: jest.fn(() => Promise.resolve()),
       currentChatId: "chat-1",
       generatingChatIds: [],
       generationStage: "",
@@ -352,6 +355,7 @@ describe("useUnifiedChat", () => {
     const setPendingForChat = jest.fn();
     useAiChat.mockReturnValue({
       activeMode: "ask",
+      assertCanWrite: jest.fn(() => Promise.resolve()),
       currentChatId: "chat-1",
       generatingChatIds: [],
       generationStage: "",
@@ -412,6 +416,7 @@ describe("useUnifiedChat", () => {
     const setPendingForChat = jest.fn();
     useAiChat.mockReturnValue({
       activeMode: "agent",
+      assertCanWrite: jest.fn(() => Promise.resolve()),
       currentChatId: "chat-1",
       generatingChatIds: [],
       generationStage: "",
@@ -468,6 +473,7 @@ describe("useUnifiedChat", () => {
     };
     useAiChat.mockReturnValue({
       activeMode: "agent",
+      assertCanWrite: jest.fn(() => Promise.resolve()),
       currentChatId: "chat-1",
       generatingChatIds: [],
       generationStage: "",
@@ -520,6 +526,7 @@ describe("useUnifiedChat", () => {
   test("uses legacy execution when canonical intake reports the legacy runtime owner", async () => {
     useAiChat.mockReturnValue({
       activeMode: "agent",
+      assertCanWrite: jest.fn(() => Promise.resolve()),
       currentChatId: "chat-1",
       generatingChatIds: [],
       generationStage: "",
@@ -572,6 +579,7 @@ describe("useUnifiedChat", () => {
     const notify = jest.fn();
     useAiChat.mockReturnValue({
       activeMode: "agent",
+      assertCanWrite: jest.fn(() => Promise.resolve()),
       currentChatId: "chat-1",
       generatingChatIds: [],
       generationStage: "",
@@ -611,6 +619,7 @@ describe("useUnifiedChat", () => {
   test("uses the natural-identity resolver once when a chat changes project binding", async () => {
     useAiChat.mockReturnValue({
       activeMode: "agent",
+      assertCanWrite: jest.fn(() => Promise.resolve()),
       currentChatId: "chat-1",
       generatingChatIds: [],
       generationStage: "",
@@ -658,6 +667,7 @@ describe("useUnifiedChat", () => {
     });
     useAiChat.mockReturnValue({
       activeMode: "agent",
+      assertCanWrite: jest.fn(() => Promise.resolve()),
       currentChatId: "chat-1",
       generatingChatIds: [],
       generationStage: "",
@@ -698,6 +708,7 @@ describe("useUnifiedChat", () => {
     const baseArtifact = { artifactId: "artifact-1", files: [{ path: "src/Main.lua" }] };
     useAiChat.mockReturnValue({
       activeMode: "agent",
+      assertCanWrite: jest.fn(() => Promise.resolve()),
       currentChatId: "chat-1",
       generatingChatIds: [],
       generationStage: "",
@@ -777,6 +788,7 @@ describe("useUnifiedChat", () => {
     });
     useAiChat.mockReturnValue({
       activeMode: "agent",
+      assertCanWrite: jest.fn(() => Promise.resolve()),
       currentChatId: "chat-1",
       generatingChatIds: [],
       generationStage: "",
