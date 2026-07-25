@@ -18,7 +18,7 @@ export const MCP_CAPABILITY_LABELS = Object.freeze({
   snapshots: "Create snapshots",
 });
 
-export const EXPECTED_STUDIO_PLUGIN_VERSION = "0.10.3-session-attestation";
+export const EXPECTED_STUDIO_PLUGIN_VERSION = "0.11.0-asset-references";
 export const EXPECTED_STUDIO_PROTOCOL_VERSION = "2026-07-17-target-integrity";
 
 const LIVE_IDLE_MS = 45000;

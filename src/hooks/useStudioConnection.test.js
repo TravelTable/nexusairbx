@@ -105,7 +105,7 @@ describe("useStudioConnection", () => {
     await waitFor(() => expect(getStudioStatus).toHaveBeenCalledTimes(1));
   });
 
-  test("reconnecting Studio polling stays at 5 seconds and refresh is immediate", async () => {
+  test("disconnected Studio polling backs off to 30 seconds and refresh is immediate", async () => {
     getStudioStatus.mockResolvedValue({ sessions: [] });
 
     const { result } = renderHook(() => useStudioConnection());
@@ -121,7 +121,7 @@ describe("useStudioConnection", () => {
 
     getStudioStatus.mockClear();
     act(() => {
-      jest.advanceTimersByTime(4999);
+      jest.advanceTimersByTime(29999);
     });
     expect(getStudioStatus).not.toHaveBeenCalled();
 
@@ -132,15 +132,15 @@ describe("useStudioConnection", () => {
     await waitFor(() => expect(getStudioStatus).toHaveBeenCalledTimes(1));
   });
 
-  test("poll delay helper enforces a hidden minimum", () => {
+  test("poll delay helper backs off disconnected states and enforces a hidden minimum", () => {
     expect(getStudioStatusPollDelay({ connected: true, hidden: false })).toBe(15000);
-    expect(getStudioStatusPollDelay({ connected: false, hidden: false })).toBe(5000);
-    expect(getStudioStatusPollDelay({ connected: true, updateRequired: true, hidden: false })).toBe(5000);
+    expect(getStudioStatusPollDelay({ connected: false, hidden: false })).toBe(30000);
+    expect(getStudioStatusPollDelay({ connected: true, updateRequired: true, hidden: false })).toBe(30000);
     expect(getStudioStatusPollDelay({ connected: false, hidden: true })).toBe(60000);
     expect(getStudioStatusPollDelay({ connected: true, hidden: false, retryAfterMs: 30000 })).toBe(30000);
   });
 
-  test("checks an outdated plugin session every five seconds until it refreshes", async () => {
+  test("checks an outdated plugin session every 30 seconds until it refreshes", async () => {
     getStudioStatus.mockResolvedValue({
       compatibility: {
         status: "update_required",
@@ -165,7 +165,7 @@ describe("useStudioConnection", () => {
     getStudioStatus.mockClear();
 
     act(() => {
-      jest.advanceTimersByTime(4999);
+      jest.advanceTimersByTime(29999);
     });
     expect(getStudioStatus).not.toHaveBeenCalled();
 
@@ -173,6 +173,22 @@ describe("useStudioConnection", () => {
       jest.advanceTimersByTime(1);
       await Promise.resolve();
     });
+    await waitFor(() => expect(getStudioStatus).toHaveBeenCalledTimes(1));
+  });
+
+  test("focusing the window force-refreshes Studio status immediately", async () => {
+    getStudioStatus.mockResolvedValue({ sessions: [] });
+
+    const hook = renderHook(() => useStudioConnection());
+
+    await waitFor(() => expect(hook.result.current.loading).toBe(false));
+    getStudioStatus.mockClear();
+
+    await act(async () => {
+      window.dispatchEvent(new Event("focus"));
+      await Promise.resolve();
+    });
+
     await waitFor(() => expect(getStudioStatus).toHaveBeenCalledTimes(1));
   });
 

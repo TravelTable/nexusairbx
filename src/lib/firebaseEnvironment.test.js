@@ -80,23 +80,14 @@ describe("Firebase environment validation", () => {
     }));
   });
 
-  test("requires explicit Firebase variables for production builds", () => {
-    const config = readFirebaseConfig(
-      { NODE_ENV: "production" },
-      { requireEnvironment: true }
+  test("uses the checked-in public Firebase config during production prerendering", () => {
+    const config = validateFirebaseConfig(
+      readFirebaseConfig({ NODE_ENV: "production" })
     );
 
-    expect(() => validateFirebaseConfig(config)).toThrow(
-      expect.objectContaining({
-        code: "FIREBASE_CONFIG_INVALID",
-        missing: expect.arrayContaining([
-          FIREBASE_CONFIG_ENV_KEYS.apiKey,
-          FIREBASE_CONFIG_ENV_KEYS.authDomain,
-          FIREBASE_CONFIG_ENV_KEYS.storageBucket,
-          FIREBASE_CONFIG_ENV_KEYS.messagingSenderId,
-        ]),
-      })
-    );
+    expect(config.projectId).toBe(EXPECTED_FIREBASE_PROJECT_ID);
+    expect(config.appId).toBe(EXPECTED_FIREBASE_APP_ID);
+    expect(config.apiKey).toBe(EXPECTED_FIREBASE_API_KEY);
   });
 
   test("requires the App Check site key for production builds", () => {

@@ -4,8 +4,8 @@ import { getStudioMcpStatus, getStudioStatus } from "../lib/studioBridgeApi";
 import { normalizeStudioConnectionSnapshot } from "../lib/studioConnection";
 
 const CONNECTED_IDLE_POLL_MS = 15000;
-const RECOVERING_POLL_MS = 5000;
-const UPDATE_RECOVERY_POLL_MS = 5000;
+const RECOVERING_POLL_MS = 30000;
+const UPDATE_RECOVERY_POLL_MS = 30000;
 const HIDDEN_MIN_POLL_MS = 60000;
 
 export { isStudioSessionLive } from "../lib/studioConnection";
@@ -159,10 +159,20 @@ export function useStudioConnection() {
       scheduleNext();
     };
 
+    const handleFocus = () => {
+      clearTimer();
+      Promise.resolve(
+        refreshRef.current?.({ force: true, restartTerminal: false })
+      ).finally(scheduleNext);
+    };
+
     Promise.resolve(refreshRef.current?.({ force: false })).finally(scheduleNext);
 
     if (typeof document !== "undefined") {
       document.addEventListener("visibilitychange", handleVisibilityChange);
+    }
+    if (typeof window !== "undefined") {
+      window.addEventListener("focus", handleFocus);
     }
 
     return () => {
@@ -170,6 +180,9 @@ export function useStudioConnection() {
       clearTimer();
       if (typeof document !== "undefined") {
         document.removeEventListener("visibilitychange", handleVisibilityChange);
+      }
+      if (typeof window !== "undefined") {
+        window.removeEventListener("focus", handleFocus);
       }
     };
   }, []);

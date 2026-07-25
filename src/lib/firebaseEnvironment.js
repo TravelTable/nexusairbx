@@ -44,17 +44,12 @@ function assertCleanEnvironmentValue(value, envKey, code) {
   return raw.trim();
 }
 
-export function readFirebaseConfig(
-  environment = process.env,
-  {
-    requireEnvironment = environment?.NODE_ENV === "production",
-  } = {}
-) {
+export function readFirebaseConfig(environment = process.env) {
   return Object.fromEntries(
     Object.entries(FIREBASE_CONFIG_ENV_KEYS).map(([key, envKey]) => {
       const value =
         environment?.[envKey]
-        || (!requireEnvironment ? checkedInPublicConfig[key] : "")
+        || checkedInPublicConfig[key]
         || "";
       return [
         key,

@@ -12,7 +12,7 @@ describe("Firebase initialization contract", () => {
 
   test("initializes App Check before network-capable Firebase services", () => {
     const appCheckIndex = source.indexOf(
-      "export const appCheck = initializeFirebaseAppCheck(app)"
+      "export const appCheck = initializeFirebaseAppCheck(app, {"
     );
     const serviceInitializers = [
       "export const auth = getAuth(app)",
