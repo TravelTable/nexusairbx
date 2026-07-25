@@ -43,7 +43,11 @@ import {
   selectAgentRuntimeRoute,
 } from "../lib/agentRuntimeV2Api";
 import { reconcileAssistantTurns } from "../lib/assistantTurnIdentity";
-import { getProjectBinding } from "../lib/projectBindingsApi";
+import {
+  getProjectBinding,
+  PROJECT_RESOLUTION_STATES,
+  projectBindingRecoveryMessage,
+} from "../lib/projectBindingsApi";
 import {
   sanitizeChatWritePayload,
   sanitizeFirestoreValue,
@@ -58,10 +62,30 @@ export function reconcileUnifiedPendingMessages(generationPending = [], orchestr
   ]);
 }
 
-async function validateOwnedProject(projectId) {
+/**
+ * Resolve a chat/message project id for planning and generation.
+ * Stale or deleted bindings soft-miss to null so orchestrate can continue
+ * without a project instead of hard-failing OWNERSHIP_MISMATCH.
+ */
+async function resolveOwnedProjectId(projectId) {
   const normalizedProjectId = String(projectId || "").trim();
-  if (!normalizedProjectId) return null;
-  return getProjectBinding(normalizedProjectId);
+  if (!normalizedProjectId) {
+    return { projectId: null, resolution: null, recoveryMessage: null };
+  }
+  const resolution = await getProjectBinding(normalizedProjectId);
+  if (resolution?.state === PROJECT_RESOLUTION_STATES.MISSING) {
+    return {
+      projectId: null,
+      resolution,
+      recoveryMessage: null,
+      clearedStaleProjectId: normalizedProjectId,
+    };
+  }
+  return {
+    projectId: normalizedProjectId,
+    resolution,
+    recoveryMessage: projectBindingRecoveryMessage(resolution),
+  };
 }
 
 function seedOrchestrationStream(stage = "Understanding your task...") {
@@ -613,9 +637,16 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
       if (!activeChatId) return;
       await chat.assertCanWrite();
 
-      await validateOwnedProject(
+      const ownedProject = await resolveOwnedProjectId(
         submissionOptions.projectId || message.projectId || message.targeting?.projectId
       );
+      if (ownedProject.recoveryMessage) {
+        notify?.({ message: ownedProject.recoveryMessage, type: "info" });
+      }
+      const effectiveSubmissionOptions = {
+        ...submissionOptions,
+        projectId: ownedProject.projectId,
+      };
 
       const approval = await approveWorkflowPlan(message.planId, {
         version: message.planVersion || 1,
@@ -647,7 +678,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
         message.attachments || [],
         baseArtifact,
         {
-          ...submissionOptions,
+          ...effectiveSubmissionOptions,
           approvedPlan: approval.approvedPlan || {
             planId: message.planId,
             version: message.planVersion || 1,
@@ -656,7 +687,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
         }
       );
     },
-    [user, chat, runGeneration]
+    [user, chat, runGeneration, notify]
   );
 
   // ASK mode: read-only conversational streaming. No orchestrate, no plan, no job.
@@ -802,20 +833,28 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
       }
       submitLocksRef.current[submitLockKey] = true;
       try {
+        let ownedProject;
         try {
-          await validateOwnedProject(options?.projectId);
+          ownedProject = await resolveOwnedProjectId(options?.projectId);
         } catch (err) {
           console.error("Project validation error:", err);
           notify?.({ message: err?.message || "This project is not available.", type: "error" });
           return;
         }
+        if (ownedProject.recoveryMessage) {
+          notify?.({ message: ownedProject.recoveryMessage, type: "info" });
+        }
+        const effectiveOptions = {
+          ...options,
+          projectId: ownedProject.projectId,
+        };
         const titleSeed = prompt || describeChatAttachments(currentAttachments) || "New chat";
         const pendingPlan = [...(chat.messages || [])]
           .reverse()
           .find((m) => m?.stage === "plan" && m.planId);
         if (pendingPlan && isExplicitPlanApproval(prompt)) {
           try {
-            await approvePlanInternal(pendingPlan, baseArtifact, options);
+            await approvePlanInternal(pendingPlan, baseArtifact, effectiveOptions);
           } catch (err) {
             console.error("Approve/generate error:", err);
             notify?.({ message: err?.message || "Build failed. You can try again.", type: "error" });
@@ -842,10 +881,10 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
 
           if (prompt && conversationalOnly) {
             try {
-              activeChatId = await ensureChat(titleSeed, options);
+              activeChatId = await ensureChat(titleSeed, effectiveOptions);
               setFlowBusyForChat(activeChatId, requestId, true);
               await writeUserMessage(activeChatId, requestId, prompt, currentAttachments);
-              await ensureRuntimeAgentProjection(activeChatId, options);
+              await ensureRuntimeAgentProjection(activeChatId, effectiveOptions);
               await handleAskSubmit(prompt, currentAttachments, activeChatId, requestId);
             } catch (err) {
               console.error("Conversation error:", err);
@@ -857,7 +896,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
           }
 
           try {
-            activeChatId = await ensureChat(titleSeed, options);
+            activeChatId = await ensureChat(titleSeed, effectiveOptions);
             await writeUserMessage(activeChatId, requestId, prompt, currentAttachments);
             await launchAuthoritativeRun({
               activeChatId,
@@ -866,7 +905,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
               mode: mode === "debug" ? "debug" : "act",
               attachments: currentAttachments,
               baseArtifact,
-              submissionOptions: options,
+              submissionOptions: effectiveOptions,
             });
           } catch (err) {
             console.error("Generation error:", err);
@@ -877,11 +916,11 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
 
         // Plan & Ask: keep the orchestrate -> (clarify/plan/conversation) flow.
         try {
-          activeChatId = await ensureChat(titleSeed, options);
+          activeChatId = await ensureChat(titleSeed, effectiveOptions);
           setFlowBusyForChat(activeChatId, requestId, true);
           beginOrchestrationPending(activeChatId, requestId, prompt);
           await writeUserMessage(activeChatId, requestId, prompt, currentAttachments);
-          await ensureRuntimeAgentProjection(activeChatId, options);
+          await ensureRuntimeAgentProjection(activeChatId, effectiveOptions);
 
           if (mode === "ask") {
             await handleAskSubmit(prompt, currentAttachments, activeChatId, requestId);
@@ -889,7 +928,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
           }
 
           publishOrchestrationStage(activeChatId, requestId, "Analyzing request...");
-          const workflowTargeting = buildWorkflowTargeting(options);
+          const workflowTargeting = buildWorkflowTargeting(effectiveOptions);
           const decision = await orchestrate({
             prompt,
             history: chat.messages,
@@ -900,7 +939,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
             studioConnected: workflowTargeting.studioConnected,
             studioTarget: workflowTargeting.studioTarget,
             targeting: workflowTargeting,
-            templateId: options.templateId || null,
+            templateId: effectiveOptions.templateId || null,
           });
 
           publishOrchestrationStage(activeChatId, requestId, "Preparing response...");
@@ -910,7 +949,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
             decision,
             prompt,
             currentAttachments,
-            { ...options, mode, targeting: workflowTargeting }
+            { ...effectiveOptions, mode, targeting: workflowTargeting }
           );
 
         } catch (err) {
@@ -970,7 +1009,14 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
       setFlowBusyForChat(activeChatId, requestId, true);
       try {
         await chat.assertCanWrite();
-        await validateOwnedProject(workflowTargeting.projectId);
+        const ownedProject = await resolveOwnedProjectId(workflowTargeting.projectId);
+        if (ownedProject.recoveryMessage) {
+          notify?.({ message: ownedProject.recoveryMessage, type: "info" });
+        }
+        const effectiveTargeting = {
+          ...workflowTargeting,
+          projectId: ownedProject.projectId,
+        };
 
         const answerText = Object.entries(answers || {})
           .filter(([, value]) => (
@@ -1000,10 +1046,10 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
           attachments,
           mode: message.requestMode || "plan",
           gameSpec: effectiveGameSpec,
-          projectId: workflowTargeting.projectId,
-          studioConnected: workflowTargeting.studioConnected,
-          studioTarget: workflowTargeting.studioTarget,
-          targeting: workflowTargeting,
+          projectId: effectiveTargeting.projectId,
+          studioConnected: effectiveTargeting.studioConnected,
+          studioTarget: effectiveTargeting.studioTarget,
+          targeting: effectiveTargeting,
           templateId: message.templateId || submissionOptions.templateId || null,
         });
 
@@ -1018,8 +1064,8 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
             ...submissionOptions,
             mode: message.requestMode || "plan",
             templateId: message.templateId || submissionOptions.templateId || null,
-            targeting: workflowTargeting,
-            ...workflowTargeting,
+            targeting: effectiveTargeting,
+            ...effectiveTargeting,
           }
         );
       } catch (err) {
@@ -1056,7 +1102,16 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
       if (!activeChatId) return;
 
       try {
-        await validateOwnedProject(submissionOptions.projectId || message?.projectId);
+        const ownedProject = await resolveOwnedProjectId(
+          submissionOptions.projectId || message?.projectId
+        );
+        if (ownedProject.recoveryMessage) {
+          notify?.({ message: ownedProject.recoveryMessage, type: "info" });
+        }
+        const effectiveSubmissionOptions = {
+          ...submissionOptions,
+          projectId: ownedProject.projectId,
+        };
         const existingFiles = Array.isArray(workspaceArtifact?.files) && workspaceArtifact.files.length
           ? workspaceArtifact.files
           : Array.isArray(message?.files) && message.files.length
@@ -1082,7 +1137,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
           augmentedPrompt,
           fileAttachments,
           workspaceArtifact,
-          submissionOptions
+          effectiveSubmissionOptions
         );
       } catch (err) {
         console.error("Refine error:", err);

@@ -43,6 +43,31 @@ describe("workflowApi planning contracts", () => {
     }));
   });
 
+  it("maps ownership mismatch into a readable orchestration error", async () => {
+    authedFetch.mockResolvedValue({
+      ok: false,
+      status: 404,
+      json: jest.fn().mockResolvedValue({
+        ok: false,
+        code: "OWNERSHIP_MISMATCH",
+        error: "The requested resource is not available.",
+        details: { resourceType: "project" },
+      }),
+      text: jest.fn().mockResolvedValue(""),
+    });
+
+    await expect(orchestrate({
+      prompt: "Continue the plan",
+      mode: "plan",
+      projectId: "stale-project",
+    })).rejects.toMatchObject({
+      name: "WorkflowApiError",
+      code: "OWNERSHIP_MISMATCH",
+      status: 404,
+      message: expect.stringMatching(/workspace project is no longer available/i),
+    });
+  });
+
   it("sends both current and source version/hash fences when restoring history", async () => {
     authedFetch.mockResolvedValue(okResponse({
       planId: "plan-1",

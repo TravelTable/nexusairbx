@@ -76,6 +76,17 @@ async function workflowRequestWithFallback(paths, options) {
   throw lastError;
 }
 
+function ownershipMismatchMessage(payload) {
+  const resourceType = String(payload?.details?.resourceType || "").trim();
+  if (resourceType === "project") {
+    return "This workspace project is no longer available. Reselect the Studio project, or continue without a project binding.";
+  }
+  if (payload?.code === "OWNERSHIP_MISMATCH") {
+    return "The requested resource is no longer available.";
+  }
+  return null;
+}
+
 export async function orchestrate({
   prompt,
   answers = null,
@@ -89,32 +100,41 @@ export async function orchestrate({
   targeting = null,
   templateId = null,
 }) {
-  const res = await authedFetch("/api/ai/orchestrate", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      prompt,
-      answers,
-      history,
-      mode,
-      gameSpec,
-      projectId,
-      studioConnected: Boolean(studioConnected),
-      studioTarget,
-      templateId,
-      targeting: targeting || {
+  try {
+    return await workflowRequest("/api/ai/orchestrate", {
+      method: "POST",
+      body: {
+        prompt,
+        answers,
+        history,
+        mode,
+        gameSpec,
         projectId,
-        studioTarget,
         studioConnected: Boolean(studioConnected),
+        studioTarget,
+        templateId,
+        targeting: targeting || {
+          projectId,
+          studioTarget,
+          studioConnected: Boolean(studioConnected),
+        },
+        attachments: (attachments || []).map((a) => ({ name: a.name, type: a.type })),
       },
-      attachments: (attachments || []).map((a) => ({ name: a.name, type: a.type })),
-    }),
-  });
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(text || "Failed to orchestrate task");
+    });
+  } catch (error) {
+    if (error instanceof WorkflowApiError) {
+      const friendly = ownershipMismatchMessage(error.payload)
+        || ownershipMismatchMessage({ code: error.code, details: error.payload?.details });
+      if (friendly) {
+        throw new WorkflowApiError(friendly, {
+          status: error.status,
+          code: error.code || "OWNERSHIP_MISMATCH",
+          payload: error.payload,
+        });
+      }
+    }
+    throw error;
   }
-  return res.json();
 }
 
 export async function approveWorkflowPlan(planId, { version, hash } = {}) {

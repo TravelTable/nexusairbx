@@ -42,7 +42,14 @@ jest.mock("../lib/workflowApi", () => ({
 }));
 
 jest.mock("../lib/projectBindingsApi", () => ({
+  PROJECT_RESOLUTION_STATES: Object.freeze({
+    READY: "ready",
+    OWNED_INCOMPLETE: "owned_incomplete",
+    LEGACY_OWNED: "legacy_owned",
+    MISSING: "missing",
+  }),
   getProjectBinding: jest.fn(),
+  projectBindingRecoveryMessage: jest.fn(() => null),
 }));
 
 jest.mock("../lib/planApproval", () => ({
@@ -347,6 +354,61 @@ describe("useUnifiedChat", () => {
     expect(setDoc.mock.calls.some(([, payload]) => (
       payload?.stage === "clarify" && payload?.templateId === "fix_bug"
     ))).toBe(true);
+  });
+
+  test("clears a stale project id before clarify re-orchestration", async () => {
+    getProjectBinding.mockResolvedValue({
+      ok: true,
+      state: "missing",
+      project: null,
+      recoveryAction: null,
+      projectId: "stale-project",
+    });
+    useAiChat.mockReturnValue({
+      activeMode: "plan",
+      assertCanWrite: jest.fn(() => Promise.resolve()),
+      currentChatId: "chat-1",
+      generatingChatIds: [],
+      generationStage: "",
+      handleSubmit: chatHandleSubmit,
+      isGenerating: false,
+      messages: [],
+      openChatById: jest.fn(),
+      pendingMessage: null,
+      setPendingForChat: jest.fn(),
+    });
+    orchestrate.mockResolvedValue({
+      status: "awaiting_approval",
+      planId: "plan-1",
+      planVersion: 1,
+      planHash: "hash-1",
+      classification: "script",
+      aiSummary: "Ready",
+      aiSteps: ["Step 1"],
+      aiAssumptions: [],
+    });
+    const user = { uid: "user-1", getIdToken: jest.fn().mockResolvedValue("token") };
+    const { result } = renderHook(() => useUnifiedChat(user, {}, jest.fn(), jest.fn()));
+
+    await act(async () => {
+      await result.current.submitClarifyAnswers(
+        {
+          id: "msg-1",
+          originPrompt: "Build a shop",
+          projectId: "stale-project",
+          requestMode: "plan",
+          targeting: { projectId: "stale-project" },
+        },
+        { implementation_intent: "Implement it" },
+      );
+    });
+
+    expect(getProjectBinding).toHaveBeenCalledWith("stale-project");
+    expect(orchestrate).toHaveBeenCalledWith(expect.objectContaining({
+      prompt: "Build a shop",
+      projectId: null,
+      targeting: expect.objectContaining({ projectId: null }),
+    }));
   });
 
   test("keeps Ask available when the optional runtime projection is disconnected", async () => {
