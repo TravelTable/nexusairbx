@@ -12,11 +12,6 @@ import {
   signInWithOAuthProvider,
   writeAuthPersistencePreference,
 } from "../lib/firebaseAuth";
-import {
-  DEBUG_AUTH_BUILD_MARKER,
-  debugAuthLog,
-  readDebugAuthLogs,
-} from "../lib/debugAuthLog";
 import { getPendingAuthReturnPath, readPendingAuthAction } from "../lib/pendingAuthAction";
 import {
   AuthCheckbox,
@@ -74,7 +69,6 @@ export default function NexusRBXSignInPageContainer() {
   });
   const [rememberMe, setRememberMe] = useState(() => readAuthPersistencePreference());
   const [agreeToTerms, setAgreeToTerms] = useState(false);
-  const [debugLogs, setDebugLogs] = useState(() => readDebugAuthLogs());
 
   const finishSignInRedirect = async () => {
     navigate(authReturnPath || "/", { replace: true });
@@ -90,13 +84,6 @@ export default function NexusRBXSignInPageContainer() {
       message: redirectError,
     });
   }, [location.state]);
-
-  useEffect(() => {
-    const sync = () => setDebugLogs(readDebugAuthLogs());
-    sync();
-    const timer = window.setInterval(sync, 750);
-    return () => window.clearInterval(timer);
-  }, [formStatus.status]);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -135,17 +122,6 @@ export default function NexusRBXSignInPageContainer() {
 
     // Validate form
     if (!formData.email || !formData.password) {
-      // #region agent log
-      debugAuthLog({
-        hypothesisId: "E",
-        location: "src/pages/SignInPage.jsx:handleSubmit:validation",
-        message: "Email sign-in blocked by missing fields",
-        data: {
-          hasEmail: Boolean(formData.email),
-          hasPassword: Boolean(formData.password),
-        },
-      });
-      // #endregion
       setFormStatus({
         status: "error",
         message: "Please fill out all required fields."
@@ -154,14 +130,6 @@ export default function NexusRBXSignInPageContainer() {
     }
 
     if (!agreeToTerms) {
-      // #region agent log
-      debugAuthLog({
-        hypothesisId: "E",
-        location: "src/pages/SignInPage.jsx:handleSubmit:terms",
-        message: "Email sign-in blocked by terms checkbox",
-        data: { agreeToTerms: false },
-      });
-      // #endregion
       setFormStatus({
         status: "error",
         message: "You must agree to the Terms of Service and Privacy Policy."
@@ -178,14 +146,6 @@ export default function NexusRBXSignInPageContainer() {
       writeAuthPersistencePreference(rememberMe);
       const credential = await signInWithEmailAndPassword(auth, formData.email, formData.password);
       await credential.user.getIdToken();
-      // #region agent log
-      debugAuthLog({
-        hypothesisId: "E",
-        location: "src/pages/SignInPage.jsx:handleSubmit:success",
-        message: "Email sign-in succeeded",
-        data: { uidPresent: Boolean(credential?.user?.uid) },
-      });
-      // #endregion
       setFormStatus({
         status: "success",
         message: "Sign in successful! Redirecting..."
@@ -194,17 +154,6 @@ export default function NexusRBXSignInPageContainer() {
         void finishSignInRedirect();
       }, 600);
     } catch (error) {
-      // #region agent log
-      debugAuthLog({
-        hypothesisId: "E",
-        location: "src/pages/SignInPage.jsx:handleSubmit:error",
-        message: "Email sign-in failed",
-        data: {
-          code: error?.code || null,
-          errorMessage: String(error?.message || "").slice(0, 300),
-        },
-      });
-      // #endregion
       setFormStatus({
         status: "error",
         message: getFriendlyAuthErrorMessage(error)
@@ -224,19 +173,6 @@ export default function NexusRBXSignInPageContainer() {
       const credential = await signInWithGoogleIdentityServices(auth, {
         rememberMe,
       });
-      // #region agent log
-      debugAuthLog({
-        hypothesisId: "C",
-        location: "src/pages/SignInPage.jsx:handleGoogleSignIn:after",
-        message: "Google GIS sign-in returned credential",
-        data: {
-          hasCredential: Boolean(credential),
-          uidPresent: Boolean(credential?.user?.uid),
-          authDomain: auth?.config?.authDomain || null,
-        },
-        runId: "post-fix",
-      });
-      // #endregion
       await credential.user.getIdToken();
       setFormStatus({
         status: "success",
@@ -246,18 +182,6 @@ export default function NexusRBXSignInPageContainer() {
         void finishSignInRedirect();
       }, 600);
     } catch (error) {
-      // #region agent log
-      debugAuthLog({
-        hypothesisId: "F",
-        location: "src/pages/SignInPage.jsx:handleGoogleSignIn:error",
-        message: "Google GIS sign-in threw",
-        data: {
-          code: error?.code || null,
-          errorMessage: String(error?.message || "").slice(0, 300),
-        },
-        runId: "post-fix",
-      });
-      // #endregion
       setFormStatus({
         status: "error",
         message: getFriendlyAuthErrorMessage(error)
@@ -310,7 +234,6 @@ export default function NexusRBXSignInPageContainer() {
       handleGoogleSignIn={handleGoogleSignIn}
       handleGithubSignIn={handleGithubSignIn}
       navigate={navigate}
-      debugLogs={debugLogs}
     />
   );
 }
@@ -331,10 +254,8 @@ function NexusRBXSignInPage({
   handleGoogleSignIn,
   handleGithubSignIn,
   navigate,
-  debugLogs = [],
 }) {
   const isLocked = formStatus.status === "submitting" || formStatus.status === "success";
-  const debugDump = JSON.stringify(debugLogs, null, 2);
 
   return (
     <NexusAuthShell
@@ -342,24 +263,6 @@ function NexusRBXSignInPage({
       description="Sign in to your NexusRBX account."
     >
       <div className="grid gap-6">
-        <div className="rounded-md border border-amber-500/40 bg-amber-500/10 p-3 text-left text-xs text-amber-100">
-          <div className="mb-2 flex items-center justify-between gap-2">
-            <strong>Debug auth ({DEBUG_AUTH_BUILD_MARKER})</strong>
-            <button
-              type="button"
-              className="rounded border border-amber-400/50 px-2 py-1 text-[11px] font-semibold"
-              onClick={() => {
-                void navigator.clipboard?.writeText(debugDump);
-              }}
-            >
-              Copy logs
-            </button>
-          </div>
-          <pre className="max-h-56 overflow-auto whitespace-pre-wrap break-words font-mono text-[11px] leading-4">
-            {debugDump || "[]"}
-          </pre>
-        </div>
-
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <AuthProviderButton icon={GoogleIcon} onClick={handleGoogleSignIn} disabled={isLocked}>
             Google

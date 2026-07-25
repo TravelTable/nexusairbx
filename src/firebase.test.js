@@ -7,7 +7,9 @@ jest.mock("firebase/app", () => ({
 jest.mock("firebase/app-check", () => ({
   getToken: jest.fn(),
   initializeAppCheck: jest.fn(() => ({ token: "app-check" })),
-  ReCaptchaV3Provider: jest.fn(function ReCaptchaV3Provider(siteKey) {
+  ReCaptchaEnterpriseProvider: jest.fn(function ReCaptchaEnterpriseProvider(
+    siteKey
+  ) {
     this.siteKey = siteKey;
   }),
 }));
@@ -28,7 +30,10 @@ jest.mock("firebase/storage", () => ({
   getStorage: jest.fn(),
 }));
 
-import { initializeAppCheck, ReCaptchaV3Provider } from "firebase/app-check";
+import {
+  initializeAppCheck,
+  ReCaptchaEnterpriseProvider,
+} from "firebase/app-check";
 import { initializeFirebaseAppCheck, waitForFirebaseAppCheck } from "./firebase";
 
 describe("initializeFirebaseAppCheck", () => {
@@ -102,10 +107,10 @@ describe("initializeFirebaseAppCheck", () => {
     });
 
     expect(second).toBe(first);
-    expect(ReCaptchaV3Provider).toHaveBeenCalledWith("public-site-key");
+    expect(ReCaptchaEnterpriseProvider).toHaveBeenCalledWith("public-site-key");
     expect(initializeAppCheck).toHaveBeenCalledTimes(1);
     expect(initializeAppCheck).toHaveBeenCalledWith(firebaseApp, {
-      provider: expect.any(ReCaptchaV3Provider),
+      provider: expect.any(ReCaptchaEnterpriseProvider),
       isTokenAutoRefreshEnabled: true,
     });
   });

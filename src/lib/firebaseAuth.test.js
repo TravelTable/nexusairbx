@@ -11,6 +11,11 @@ jest.mock("firebase/auth", () => ({
   signInWithRedirect: jest.fn(() => Promise.resolve()),
 }));
 
+jest.mock("../firebase", () => ({
+  firebaseAppCheckEnabled: false,
+  appCheckReady: Promise.resolve({ status: "disabled" }),
+}));
+
 import { signInWithPopup, signInWithRedirect } from "firebase/auth";
 import {
   AUTH_PERSISTENCE_PREFERENCE_KEY,

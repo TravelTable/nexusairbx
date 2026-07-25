@@ -7,7 +7,6 @@ import {
   readRedirectContext,
   storeAuthRedirectError,
 } from "../lib/firebaseAuth";
-import { debugAuthLog } from "../lib/debugAuthLog";
 import { scheduleDeferredClientLog } from "../lib/deferredClientLog";
 import { getPendingAuthReturnPath, readPendingAuthAction } from "../lib/pendingAuthAction";
 
@@ -54,24 +53,6 @@ export default function AuthRedirectHandler() {
 
       const pendingRedirect = readRedirectContext();
 
-      // #region agent log
-      debugAuthLog({
-        hypothesisId: "A",
-        location: "src/components/AuthRedirectHandler.jsx:result",
-        message: "AuthRedirectHandler consumed redirect result",
-        data: {
-          pathname: location.pathname,
-          hasResult: Boolean(result),
-          hasError: Boolean(result?.error),
-          hasUser: Boolean(result?.user),
-          errorCode: result?.error?.code || null,
-          pendingRedirectMethod: pendingRedirect.method || null,
-          authDomain: auth?.config?.authDomain || null,
-        },
-        runId: "post-fix",
-      });
-      // #endregion
-
       if (result?.error) {
         handledRef.current = true;
         const message = storeAuthRedirectError(result.error);
@@ -96,18 +77,6 @@ export default function AuthRedirectHandler() {
           );
           emptyRedirectError.code = "auth/redirect-empty-result";
           const message = storeAuthRedirectError(emptyRedirectError);
-          // #region agent log
-          debugAuthLog({
-            hypothesisId: "A",
-            location: "src/components/AuthRedirectHandler.jsx:empty-redirect",
-            message: "Redirect context present but getRedirectResult was empty",
-            data: {
-              pendingRedirectMethod: pendingRedirect.method,
-              authDomain: auth?.config?.authDomain || null,
-            },
-            runId: "post-fix",
-          });
-          // #endregion
           navigateToSignInWithError(navigate, location, message);
         }
         return;
