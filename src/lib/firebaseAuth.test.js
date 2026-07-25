@@ -78,6 +78,29 @@ describe("firebaseAuth", () => {
     expect(signInWithPopup).toHaveBeenCalledWith({}, expect.any(GoogleProvider));
   });
 
+  test("uses a same-page redirect for Google on the production auth domain", async () => {
+    const setCustomParameters = jest.fn();
+    class GoogleProvider {
+      setCustomParameters = setCustomParameters;
+    }
+    const auth = { config: { authDomain: window.location.hostname } };
+
+    await expect(
+      signInWithOAuthProvider(auth, GoogleProvider, {
+        method: "google",
+        returnPath: "/ai",
+      })
+    ).resolves.toBeNull();
+
+    expect(setCustomParameters).toHaveBeenCalledWith({ prompt: "select_account" });
+    expect(signInWithPopup).not.toHaveBeenCalled();
+    expect(signInWithRedirect).toHaveBeenCalledWith(
+      auth,
+      expect.any(GoogleProvider)
+    );
+    expect(sessionStorage.getItem("nexusrbx:authRedirectReturn")).toBe("/ai");
+  });
+
   test("reuses the configured Google provider for redirect fallback", async () => {
     const setCustomParameters = jest.fn();
     class GoogleProvider {

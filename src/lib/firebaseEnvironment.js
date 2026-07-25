@@ -2,6 +2,7 @@ export const EXPECTED_FIREBASE_PROJECT_ID = "nexusrbx";
 export const EXPECTED_FIREBASE_APP_ID =
   "1:834738385750:web:7f877b6dd0228c11fa1cf7";
 export const EXPECTED_FIREBASE_AUTH_DOMAIN = "nexusrbx.firebaseapp.com";
+export const PRODUCTION_FIREBASE_AUTH_DOMAIN = "www.nexusrbx.com";
 export const EXPECTED_FIREBASE_STORAGE_BUCKET = "nexusrbx.appspot.com";
 export const EXPECTED_FIREBASE_MESSAGING_SENDER_ID = "834738385750";
 export const EXPECTED_FIREBASE_API_KEY =
@@ -126,6 +127,23 @@ export function validateFirebaseConfig(
   }
 
   return Object.freeze({ ...config });
+}
+
+export function resolveFirebaseAuthDomain(
+  config,
+  {
+    hostname =
+      typeof window !== "undefined" ? window.location?.hostname : "",
+  } = {}
+) {
+  const normalizedHostname = String(hostname || "").trim().toLowerCase();
+  if (["nexusrbx.com", PRODUCTION_FIREBASE_AUTH_DOMAIN].includes(normalizedHostname)) {
+    return Object.freeze({
+      ...config,
+      authDomain: PRODUCTION_FIREBASE_AUTH_DOMAIN,
+    });
+  }
+  return config;
 }
 
 export function validateFirebaseAppCheckSiteKey(

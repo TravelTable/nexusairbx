@@ -256,7 +256,7 @@
     },
     {
       "source": "/__/auth/:path*",
-      "destination": "/api/render?path=/__/auth/:path*"
+      "destination": "https://nexusrbx.firebaseapp.com/__/auth/:path*"
     },
     {
       "source": "/auth/:path*",

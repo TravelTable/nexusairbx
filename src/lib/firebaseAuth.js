@@ -79,6 +79,13 @@ function storeRedirectContext(returnPath, method) {
   }
 }
 
+function shouldUseSamePageRedirect(auth, method) {
+  if (method !== "google" || typeof window === "undefined") return false;
+  const authDomain = String(auth?.config?.authDomain || "").toLowerCase();
+  const currentHostname = String(window.location?.hostname || "").toLowerCase();
+  return Boolean(authDomain && authDomain === currentHostname);
+}
+
 export function readRedirectContext() {
   try {
     return {
@@ -106,6 +113,12 @@ export async function signInWithOAuthProvider(
   const provider = new ProviderClass();
   if (method === "google" && typeof provider.setCustomParameters === "function") {
     provider.setCustomParameters({ prompt: "select_account" });
+  }
+
+  if (shouldUseSamePageRedirect(auth, method)) {
+    storeRedirectContext(returnPath, method);
+    await signInWithRedirect(auth, provider);
+    return null;
   }
 
   try {

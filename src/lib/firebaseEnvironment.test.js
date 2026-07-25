@@ -4,9 +4,11 @@ import {
   EXPECTED_FIREBASE_PROJECT_ID,
   EXPECTED_RECAPTCHA_SITE_KEY,
   FIREBASE_CONFIG_ENV_KEYS,
+  PRODUCTION_FIREBASE_AUTH_DOMAIN,
   isFirebaseAppCheckEnabled,
   isLocalAppCheckDebugAllowed,
   readFirebaseConfig,
+  resolveFirebaseAuthDomain,
   validateFirebaseAppCheckSiteKey,
   validateFirebaseConfig,
 } from "./firebaseEnvironment";
@@ -88,6 +90,34 @@ describe("Firebase environment validation", () => {
     expect(config.projectId).toBe(EXPECTED_FIREBASE_PROJECT_ID);
     expect(config.appId).toBe(EXPECTED_FIREBASE_APP_ID);
     expect(config.apiKey).toBe(EXPECTED_FIREBASE_API_KEY);
+  });
+
+  test("uses the same-origin auth helper on the production domain", () => {
+    const checkedConfig = validateFirebaseConfig(readFirebaseConfig({}));
+
+    expect(
+      resolveFirebaseAuthDomain(checkedConfig, {
+        hostname: "www.nexusrbx.com",
+      }).authDomain
+    ).toBe(PRODUCTION_FIREBASE_AUTH_DOMAIN);
+    expect(
+      resolveFirebaseAuthDomain(checkedConfig, {
+        hostname: "nexusrbx.com",
+      }).authDomain
+    ).toBe(PRODUCTION_FIREBASE_AUTH_DOMAIN);
+  });
+
+  test("keeps the Firebase helper domain for local and preview hosts", () => {
+    const checkedConfig = validateFirebaseConfig(readFirebaseConfig({}));
+
+    expect(
+      resolveFirebaseAuthDomain(checkedConfig, { hostname: "localhost" })
+    ).toBe(checkedConfig);
+    expect(
+      resolveFirebaseAuthDomain(checkedConfig, {
+        hostname: "nexusrbx-preview.vercel.app",
+      })
+    ).toBe(checkedConfig);
   });
 
   test("requires the App Check site key for production builds", () => {

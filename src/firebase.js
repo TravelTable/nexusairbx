@@ -16,6 +16,7 @@ import {
   isFirebaseAppCheckEnabled,
   isLocalAppCheckDebugAllowed,
   readFirebaseConfig,
+  resolveFirebaseAuthDomain,
   validateFirebaseAppCheckSiteKey,
   validateFirebaseConfig,
 } from "./lib/firebaseEnvironment";
@@ -24,7 +25,9 @@ import {
 // reported server-side via deferredClientLog when they persist.
 setLogLevel("silent");
 
-export const firebaseConfig = validateFirebaseConfig(readFirebaseConfig());
+export const firebaseConfig = resolveFirebaseAuthDomain(
+  validateFirebaseConfig(readFirebaseConfig())
+);
 export const firebaseAppCheckEnabled = isFirebaseAppCheckEnabled();
 export const firebaseAppCheckSiteKey = firebaseAppCheckEnabled
   ? validateFirebaseAppCheckSiteKey(
