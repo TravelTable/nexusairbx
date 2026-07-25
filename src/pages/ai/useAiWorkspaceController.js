@@ -1017,6 +1017,7 @@ export function useAiWorkspaceController() {
     studioPlaceOptions,
     effectiveStudioPlacePreference,
     bindChatStudioPlace,
+    chat,
     chat.activeMode,
     chat.currentChatMeta?.projectId,
     notify,
@@ -1634,7 +1635,7 @@ export function useAiWorkspaceController() {
         setApprovingStepId(null);
       }
     },
-    [unified, workspace.agentRun?.runId, workspace.agentRun?.projectId, chat.currentChatMeta?.projectId, user, syncAgentRunSteps, notify]
+    [unified, workspace.agentRun?.runId, workspace.agentRun?.projectId, chat, chat.currentChatMeta?.projectId, user, syncAgentRunSteps, notify]
   );
 
   const handleRestoreRun = useCallback(
