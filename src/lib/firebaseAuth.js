@@ -2,7 +2,9 @@ import {
   browserLocalPersistence,
   browserSessionPersistence,
   getRedirectResult,
+  GoogleAuthProvider,
   setPersistence,
+  signInWithCredential,
   signInWithPopup,
   signInWithRedirect,
 } from "firebase/auth";
@@ -12,6 +14,10 @@ export const AUTH_REDIRECT_RETURN_KEY = "nexusrbx:authRedirectReturn";
 export const AUTH_REDIRECT_METHOD_KEY = "nexusrbx:authRedirectMethod";
 export const AUTH_REDIRECT_ERROR_KEY = "nexusrbx:authRedirectError";
 export const AUTH_PERSISTENCE_PREFERENCE_KEY = "nexusrbx:authPersistencePreference";
+
+// Public OAuth web client used by Firebase Google provider config.
+export const GOOGLE_OAUTH_CLIENT_ID =
+  "834738385750-hoc2k5s3j6dfuu9pa9qhtrr6qrm1kmps.apps.googleusercontent.com";
 
 const AUTH_PERSISTENCE_LOCAL = "local";
 const AUTH_PERSISTENCE_SESSION = "session";
@@ -23,10 +29,124 @@ const POPUP_REDIRECT_FALLBACK_CODES = new Set([
   "auth/popup-blocked",
   "auth/operation-not-supported-in-this-environment",
   "auth/cancelled-popup-request",
-  // Some browsers surface a blocked or failed popup handshake as the generic
-  // internal error after leaving signInWithPopup pending for several seconds.
-  "auth/internal-error",
 ]);
+
+let googleIdentityScriptPromise = null;
+
+function loadGoogleIdentityServices() {
+  if (typeof window === "undefined") {
+    return Promise.reject(new Error("Google Identity Services requires a browser."));
+  }
+  if (window.google?.accounts?.oauth2) {
+    return Promise.resolve(window.google.accounts.oauth2);
+  }
+  if (!googleIdentityScriptPromise) {
+    googleIdentityScriptPromise = new Promise((resolve, reject) => {
+      const existing = document.querySelector('script[data-nexus-gis="true"]');
+      if (existing) {
+        existing.addEventListener("load", () => {
+          if (window.google?.accounts?.oauth2) resolve(window.google.accounts.oauth2);
+          else reject(new Error("Google Identity Services failed to initialize."));
+        });
+        existing.addEventListener("error", () =>
+          reject(new Error("Failed to load Google Identity Services."))
+        );
+        return;
+      }
+      const script = document.createElement("script");
+      script.src = "https://accounts.google.com/gsi/client";
+      script.async = true;
+      script.defer = true;
+      script.dataset.nexusGis = "true";
+      script.onload = () => {
+        if (window.google?.accounts?.oauth2) resolve(window.google.accounts.oauth2);
+        else reject(new Error("Google Identity Services failed to initialize."));
+      };
+      script.onerror = () => {
+        googleIdentityScriptPromise = null;
+        reject(new Error("Failed to load Google Identity Services."));
+      };
+      document.head.appendChild(script);
+    });
+  }
+  return googleIdentityScriptPromise;
+}
+
+/**
+ * Google sign-in via GIS token client + Firebase credential exchange.
+ * Avoids Firebase /__/auth helper popups/redirects that currently fail with
+ * auth/internal-error on production Safari/WebKit.
+ */
+export async function signInWithGoogleIdentityServices(auth, { rememberMe = true } = {}) {
+  // #region agent log
+  debugAuthLog({
+    hypothesisId: "F",
+    location: "src/lib/firebaseAuth.js:signInWithGoogleIdentityServices:entry",
+    message: "Google Identity Services sign-in started",
+    data: {
+      authDomain: auth?.config?.authDomain || null,
+      hostname:
+        typeof window !== "undefined" ? window.location?.hostname || null : null,
+    },
+    runId: "post-fix",
+  });
+  // #endregion
+
+  await applyAuthPersistence(auth, rememberMe);
+  const oauth2 = await loadGoogleIdentityServices();
+
+  const accessToken = await new Promise((resolve, reject) => {
+    try {
+      const client = oauth2.initTokenClient({
+        client_id: GOOGLE_OAUTH_CLIENT_ID,
+        scope: "openid email profile",
+        prompt: "select_account",
+        callback: (response) => {
+          if (response?.error) {
+            const error = new Error(response.error_description || response.error);
+            error.code = response.error;
+            reject(error);
+            return;
+          }
+          if (!response?.access_token) {
+            reject(new Error("Google sign-in returned no access token."));
+            return;
+          }
+          resolve(response.access_token);
+        },
+        error_callback: (error) => {
+          const err = new Error(error?.message || "Google sign-in was cancelled.");
+          err.code =
+            error?.type === "popup_closed"
+              ? "auth/popup-closed-by-user"
+              : error?.type || "auth/internal-error";
+          reject(err);
+        },
+      });
+      client.requestAccessToken();
+    } catch (error) {
+      reject(error);
+    }
+  });
+
+  const credential = GoogleAuthProvider.credential(null, accessToken);
+  const result = await signInWithCredential(auth, credential);
+
+  // #region agent log
+  debugAuthLog({
+    hypothesisId: "C",
+    location: "src/lib/firebaseAuth.js:signInWithGoogleIdentityServices:success",
+    message: "Google Identity Services sign-in succeeded",
+    data: {
+      uidPresent: Boolean(result?.user?.uid),
+      authDomain: auth?.config?.authDomain || null,
+    },
+    runId: "post-fix",
+  });
+  // #endregion
+
+  return result;
+}
 
 export function isMissingRedirectStateError(error) {
   const message = String(error?.message || error?.code || "");

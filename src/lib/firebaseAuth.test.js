@@ -2,7 +2,11 @@ jest.mock("firebase/auth", () => ({
   browserLocalPersistence: { type: "LOCAL" },
   browserSessionPersistence: { type: "SESSION" },
   getRedirectResult: jest.fn(),
+  GoogleAuthProvider: {
+    credential: jest.fn((idToken, accessToken) => ({ idToken, accessToken })),
+  },
   setPersistence: jest.fn(() => Promise.resolve()),
+  signInWithCredential: jest.fn(),
   signInWithPopup: jest.fn(),
   signInWithRedirect: jest.fn(() => Promise.resolve()),
 }));
@@ -110,7 +114,7 @@ describe("firebaseAuth", () => {
     expect(signInWithRedirect).toHaveBeenCalledWith({}, popupProvider);
   });
 
-  test("falls back to redirect when a browser reports a generic popup handshake failure", async () => {
+  test("does not fall back to redirect on auth/internal-error", async () => {
     class GoogleProvider {
       setCustomParameters = jest.fn();
     }
@@ -121,11 +125,9 @@ describe("firebaseAuth", () => {
         method: "google",
         returnPath: "/account",
       })
-    ).resolves.toBeNull();
+    ).rejects.toEqual({ code: "auth/internal-error" });
 
-    expect(signInWithRedirect).toHaveBeenCalledWith({}, expect.any(GoogleProvider));
-    expect(sessionStorage.getItem("nexusrbx:authRedirectReturn")).toBe("/account");
-    expect(sessionStorage.getItem("nexusrbx:authRedirectMethod")).toBe("google");
+    expect(signInWithRedirect).not.toHaveBeenCalled();
   });
 
   test("does not apply Google account parameters to other providers", async () => {

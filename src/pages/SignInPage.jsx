@@ -2,12 +2,13 @@ import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Github, Mail } from "lib/icons";
 import { auth } from "../firebase";
-import { signInWithEmailAndPassword, GoogleAuthProvider, GithubAuthProvider, onAuthStateChanged } from "firebase/auth";
+import { signInWithEmailAndPassword, GithubAuthProvider, onAuthStateChanged } from "firebase/auth";
 import {
   applyAuthPersistence,
   consumeAuthRedirectError,
   getFriendlyAuthErrorMessage,
   readAuthPersistencePreference,
+  signInWithGoogleIdentityServices,
   signInWithOAuthProvider,
   writeAuthPersistencePreference,
 } from "../lib/firebaseAuth";
@@ -218,26 +219,24 @@ export default function NexusRBXSignInPageContainer() {
     });
     try {
       writeAuthPersistencePreference(rememberMe);
-      const credential = await signInWithOAuthProvider(auth, GoogleAuthProvider, {
+      // Prefer GIS credential exchange so we do not depend on Firebase's
+      // /__/auth helper popup/redirect path (failing with auth/internal-error).
+      const credential = await signInWithGoogleIdentityServices(auth, {
         rememberMe,
-        returnPath: authReturnPath || "/",
-        method: "google",
       });
       // #region agent log
       debugAuthLog({
-        hypothesisId: credential ? "C" : "A",
+        hypothesisId: "C",
         location: "src/pages/SignInPage.jsx:handleGoogleSignIn:after",
-        message: credential
-          ? "Google sign-in returned credential"
-          : "Google sign-in returned null (redirect path)",
+        message: "Google GIS sign-in returned credential",
         data: {
           hasCredential: Boolean(credential),
           uidPresent: Boolean(credential?.user?.uid),
           authDomain: auth?.config?.authDomain || null,
         },
+        runId: "post-fix",
       });
       // #endregion
-      if (!credential) return;
       await credential.user.getIdToken();
       setFormStatus({
         status: "success",
@@ -249,13 +248,14 @@ export default function NexusRBXSignInPageContainer() {
     } catch (error) {
       // #region agent log
       debugAuthLog({
-        hypothesisId: "B",
+        hypothesisId: "F",
         location: "src/pages/SignInPage.jsx:handleGoogleSignIn:error",
-        message: "Google sign-in threw",
+        message: "Google GIS sign-in threw",
         data: {
           code: error?.code || null,
           errorMessage: String(error?.message || "").slice(0, 300),
         },
+        runId: "post-fix",
       });
       // #endregion
       setFormStatus({

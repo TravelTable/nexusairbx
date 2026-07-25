@@ -4,7 +4,6 @@ import { Github, Mail, User } from "lib/icons";
 import { auth } from "../firebase";
 import {
   createUserWithEmailAndPassword,
-  GoogleAuthProvider,
   GithubAuthProvider,
   onAuthStateChanged,
   sendEmailVerification,
@@ -14,6 +13,7 @@ import {
   consumeAuthRedirectError,
   getFriendlyAuthErrorMessage,
   readAuthPersistencePreference,
+  signInWithGoogleIdentityServices,
   signInWithOAuthProvider,
   writeAuthPersistencePreference,
 } from "../lib/firebaseAuth";
@@ -254,12 +254,9 @@ export default function NexusRBXSignUpPageContainer() {
 
     try {
       writeAuthPersistencePreference(rememberMe);
-      const credential = await signInWithOAuthProvider(auth, GoogleAuthProvider, {
+      const credential = await signInWithGoogleIdentityServices(auth, {
         rememberMe,
-        returnPath: authReturnPath || "/ai",
-        method: "google",
       });
-      if (!credential) return;
       await credential.user.getIdToken();
       if (!credential.user.emailVerified) await sendEmailVerification(credential.user);
       setFormStatus({
