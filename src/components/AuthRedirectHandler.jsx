@@ -1,10 +1,11 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { auth } from "../firebase";
 import {
   clearRedirectContext,
   consumeAuthRedirectResult,
   readRedirectContext,
+  storeAuthRedirectError,
 } from "../lib/firebaseAuth";
 import { scheduleDeferredClientLog } from "../lib/deferredClientLog";
 import { getPendingAuthReturnPath, readPendingAuthAction } from "../lib/pendingAuthAction";
@@ -20,19 +21,55 @@ function safeReturnPath(value, fallback = "") {
   return `${pathname}${search}${hash}`;
 }
 
+function navigateToSignInWithError(navigate, location, message) {
+  if (
+    location.pathname === "/signin"
+    && location.state?.authError === message
+  ) {
+    return;
+  }
+  navigate("/signin", {
+    replace: true,
+    state: {
+      authError: message,
+      ...(location.state?.from ? { from: location.state.from } : {}),
+    },
+  });
+}
+
 export default function AuthRedirectHandler() {
   const navigate = useNavigate();
   const location = useLocation();
+  const handledRef = useRef(false);
 
   useEffect(() => {
     let cancelled = false;
 
     (async () => {
+      if (handledRef.current) return;
+
       const result = await consumeAuthRedirectResult(auth);
-      if (cancelled || !result || result.error) return;
+      if (cancelled || handledRef.current) return;
+
+      if (result?.error) {
+        handledRef.current = true;
+        const message = storeAuthRedirectError(result.error);
+        scheduleDeferredClientLog({
+          key: "auth:redirect",
+          source: "firebase-auth",
+          message: result.error?.message || "Auth redirect handling failed",
+          metadata: { code: result.error?.code || null },
+        });
+        navigateToSignInWithError(navigate, location, message);
+        return;
+      }
+
+      if (!result) return;
 
       const user = result.user;
       if (!user) return;
+
+      handledRef.current = true;
 
       try {
         await user.getIdToken();
@@ -51,19 +88,22 @@ export default function AuthRedirectHandler() {
         : storedReturnPath || fromState || "/";
       navigate(destination, { replace: true });
     })().catch((error) => {
-      if (cancelled) return;
+      if (cancelled || handledRef.current) return;
+      handledRef.current = true;
+      const message = storeAuthRedirectError(error);
       scheduleDeferredClientLog({
         key: "auth:redirect",
         source: "firebase-auth",
         message: error?.message || "Auth redirect handling failed",
         metadata: { code: error?.code || null },
       });
+      navigateToSignInWithError(navigate, location, message);
     });
 
     return () => {
       cancelled = true;
     };
-  }, [location.state, navigate]);
+  }, [location, navigate]);
 
   return null;
 }

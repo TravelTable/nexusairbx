@@ -5,6 +5,7 @@ import { auth } from "../firebase";
 import { signInWithEmailAndPassword, GoogleAuthProvider, GithubAuthProvider, onAuthStateChanged } from "firebase/auth";
 import {
   applyAuthPersistence,
+  consumeAuthRedirectError,
   getFriendlyAuthErrorMessage,
   readAuthPersistencePreference,
   signInWithOAuthProvider,
@@ -71,6 +72,17 @@ export default function NexusRBXSignInPageContainer() {
   const finishSignInRedirect = async () => {
     navigate(authReturnPath || "/", { replace: true });
   };
+
+  useEffect(() => {
+    const redirectError =
+      (typeof location.state?.authError === "string" && location.state.authError)
+      || consumeAuthRedirectError();
+    if (!redirectError) return;
+    setFormStatus({
+      status: "error",
+      message: redirectError,
+    });
+  }, [location.state]);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {

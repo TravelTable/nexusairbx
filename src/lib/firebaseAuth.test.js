@@ -10,10 +10,13 @@ jest.mock("firebase/auth", () => ({
 import { signInWithPopup, signInWithRedirect } from "firebase/auth";
 import {
   AUTH_PERSISTENCE_PREFERENCE_KEY,
+  AUTH_REDIRECT_ERROR_KEY,
+  consumeAuthRedirectError,
   getFriendlyAuthErrorMessage,
   isMissingRedirectStateError,
   readAuthPersistencePreference,
   signInWithOAuthProvider,
+  storeAuthRedirectError,
   writeAuthPersistencePreference,
 } from "./firebaseAuth";
 
@@ -78,27 +81,14 @@ describe("firebaseAuth", () => {
     expect(signInWithPopup).toHaveBeenCalledWith({}, expect.any(GoogleProvider));
   });
 
-  test("uses a same-page redirect for Google on the production auth domain", async () => {
-    const setCustomParameters = jest.fn();
-    class GoogleProvider {
-      setCustomParameters = setCustomParameters;
-    }
-    const auth = { config: { authDomain: window.location.hostname } };
-
-    await expect(
-      signInWithOAuthProvider(auth, GoogleProvider, {
-        method: "google",
-        returnPath: "/ai",
-      })
-    ).resolves.toBeNull();
-
-    expect(setCustomParameters).toHaveBeenCalledWith({ prompt: "select_account" });
-    expect(signInWithPopup).not.toHaveBeenCalled();
-    expect(signInWithRedirect).toHaveBeenCalledWith(
-      auth,
-      expect.any(GoogleProvider)
-    );
-    expect(sessionStorage.getItem("nexusrbx:authRedirectReturn")).toBe("/ai");
+  test("stores and consumes friendly redirect errors", () => {
+    expect(
+      storeAuthRedirectError({ code: "auth/popup-blocked", message: "raw" })
+    ).toContain("popup was blocked");
+    expect(sessionStorage.getItem(AUTH_REDIRECT_ERROR_KEY)).toContain("popup was blocked");
+    expect(consumeAuthRedirectError()).toContain("popup was blocked");
+    expect(sessionStorage.getItem(AUTH_REDIRECT_ERROR_KEY)).toBeNull();
+    expect(consumeAuthRedirectError()).toBeNull();
   });
 
   test("reuses the configured Google provider for redirect fallback", async () => {

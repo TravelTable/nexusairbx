@@ -16,7 +16,6 @@ import {
   isFirebaseAppCheckEnabled,
   isLocalAppCheckDebugAllowed,
   readFirebaseConfig,
-  resolveFirebaseAuthDomain,
   validateFirebaseAppCheckSiteKey,
   validateFirebaseConfig,
 } from "./lib/firebaseEnvironment";
@@ -25,9 +24,11 @@ import {
 // reported server-side via deferredClientLog when they persist.
 setLogLevel("silent");
 
-export const firebaseConfig = resolveFirebaseAuthDomain(
-  validateFirebaseConfig(readFirebaseConfig())
-);
+// Keep authDomain on the Firebase helper host (nexusrbx.firebaseapp.com).
+// Switching it to www.nexusrbx.com requires the Google OAuth client to allow
+// https://www.nexusrbx.com/__/auth/handler; without that, sign-in fails after
+// sign-out. The /__/auth Vercel proxy remains for redirect fallback helpers.
+export const firebaseConfig = validateFirebaseConfig(readFirebaseConfig());
 export const firebaseAppCheckEnabled = isFirebaseAppCheckEnabled();
 export const firebaseAppCheckSiteKey = firebaseAppCheckEnabled
   ? validateFirebaseAppCheckSiteKey(

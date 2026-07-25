@@ -9,6 +9,7 @@ import {
 
 export const AUTH_REDIRECT_RETURN_KEY = "nexusrbx:authRedirectReturn";
 export const AUTH_REDIRECT_METHOD_KEY = "nexusrbx:authRedirectMethod";
+export const AUTH_REDIRECT_ERROR_KEY = "nexusrbx:authRedirectError";
 export const AUTH_PERSISTENCE_PREFERENCE_KEY = "nexusrbx:authPersistencePreference";
 
 const AUTH_PERSISTENCE_LOCAL = "local";
@@ -79,13 +80,6 @@ function storeRedirectContext(returnPath, method) {
   }
 }
 
-function shouldUseSamePageRedirect(auth, method) {
-  if (method !== "google" || typeof window === "undefined") return false;
-  const authDomain = String(auth?.config?.authDomain || "").toLowerCase();
-  const currentHostname = String(window.location?.hostname || "").toLowerCase();
-  return Boolean(authDomain && authDomain === currentHostname);
-}
-
 export function readRedirectContext() {
   try {
     return {
@@ -104,6 +98,26 @@ export function clearRedirectContext() {
   } catch (_) {}
 }
 
+export function storeAuthRedirectError(error) {
+  const message = getFriendlyAuthErrorMessage(error);
+  try {
+    sessionStorage.setItem(AUTH_REDIRECT_ERROR_KEY, message);
+  } catch (_) {
+    // Ignore storage failures; the caller still returns the message.
+  }
+  return message;
+}
+
+export function consumeAuthRedirectError() {
+  try {
+    const message = sessionStorage.getItem(AUTH_REDIRECT_ERROR_KEY);
+    if (message) sessionStorage.removeItem(AUTH_REDIRECT_ERROR_KEY);
+    return message;
+  } catch (_) {
+    return null;
+  }
+}
+
 export async function signInWithOAuthProvider(
   auth,
   ProviderClass,
@@ -113,12 +127,6 @@ export async function signInWithOAuthProvider(
   const provider = new ProviderClass();
   if (method === "google" && typeof provider.setCustomParameters === "function") {
     provider.setCustomParameters({ prompt: "select_account" });
-  }
-
-  if (shouldUseSamePageRedirect(auth, method)) {
-    storeRedirectContext(returnPath, method);
-    await signInWithRedirect(auth, provider);
-    return null;
   }
 
   try {

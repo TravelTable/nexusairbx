@@ -7,6 +7,7 @@ import AuthRedirectHandler from "./AuthRedirectHandler";
 const mockClearRedirectContext = jest.fn();
 const mockConsumeAuthRedirectResult = jest.fn();
 const mockReadRedirectContext = jest.fn();
+const mockStoreAuthRedirectError = jest.fn();
 
 jest.mock("../firebase", () => ({ auth: {} }));
 
@@ -14,6 +15,7 @@ jest.mock("../lib/firebaseAuth", () => ({
   clearRedirectContext: () => mockClearRedirectContext(),
   consumeAuthRedirectResult: (...args) => mockConsumeAuthRedirectResult(...args),
   readRedirectContext: () => mockReadRedirectContext(),
+  storeAuthRedirectError: (...args) => mockStoreAuthRedirectError(...args),
 }));
 
 jest.mock("../lib/deferredClientLog", () => ({
@@ -74,4 +76,23 @@ test("keeps search and hash from router state when redirect storage is unavailab
   await waitFor(() => expect(screen.getByTestId("location")).toHaveTextContent(
     "/subscribe?plan=TEAM&interval=month&seats=4#review"
   ));
+});
+
+test("surfaces redirect failures instead of leaving the user signed out silently", async () => {
+  const redirectError = new Error("Unable to process request due to missing initial state.");
+  mockConsumeAuthRedirectResult.mockReset();
+  mockConsumeAuthRedirectResult.mockResolvedValue({ error: redirectError });
+  mockStoreAuthRedirectError.mockReturnValue("Sign-in was interrupted because browser storage was cleared or blocked.");
+
+  render(
+    <MemoryRouter initialEntries={[{ pathname: "/" }]}>
+      <AuthRedirectHandler />
+      <Routes>
+        <Route path="*" element={<LocationProbe />} />
+      </Routes>
+    </MemoryRouter>
+  );
+
+  await waitFor(() => expect(mockStoreAuthRedirectError).toHaveBeenCalledWith(redirectError));
+  await waitFor(() => expect(screen.getByTestId("location")).toHaveTextContent("/signin"));
 });
