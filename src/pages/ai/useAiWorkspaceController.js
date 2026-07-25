@@ -919,7 +919,17 @@ export function useAiWorkspaceController() {
         if (resolution?.state === PROJECT_RESOLUTION_STATES.MISSING) {
           const staleProjectId = runtimeProjectId;
           runtimeProjectId = null;
-          if (user && chat.currentChatId && chat.currentChatMeta?.projectId === staleProjectId) {
+          const shouldClearChatProject =
+            Boolean(chat.currentChatId)
+            && chat.currentChatMeta?.projectId === staleProjectId;
+          if (typeof chat.setCurrentChatMeta === "function" && shouldClearChatProject) {
+            chat.setCurrentChatMeta((prev) => (
+              prev && prev.projectId === staleProjectId
+                ? { ...prev, projectId: null }
+                : prev
+            ));
+          }
+          if (user && shouldClearChatProject) {
             try {
               await chat.assertCanWrite();
               await updateDoc(
@@ -1575,10 +1585,37 @@ export function useAiWorkspaceController() {
         ).trim();
         if (projectId) {
           const resolution = await getProjectBinding(projectId);
-          const recoveryMessage = projectBindingRecoveryMessage(resolution);
-          if (recoveryMessage) {
-            setStudioPlacePickerOpen(true);
-            throw new Error(recoveryMessage);
+          if (resolution?.state === PROJECT_RESOLUTION_STATES.MISSING) {
+            const shouldClearChatProject =
+              Boolean(chat.currentChatId)
+              && chat.currentChatMeta?.projectId === projectId;
+            if (typeof chat.setCurrentChatMeta === "function" && shouldClearChatProject) {
+              chat.setCurrentChatMeta((prev) => (
+                prev && prev.projectId === projectId
+                  ? { ...prev, projectId: null }
+                  : prev
+              ));
+            }
+            if (shouldClearChatProject) {
+              try {
+                await chat.assertCanWrite();
+                await updateDoc(
+                  doc(db, "users", user.uid, "chats", chat.currentChatId),
+                  sanitizeChatWritePayload({
+                    projectId: null,
+                    updatedAt: serverTimestamp(),
+                  })
+                );
+              } catch (_) {
+                /* non-fatal */
+              }
+            }
+          } else {
+            const recoveryMessage = projectBindingRecoveryMessage(resolution);
+            if (recoveryMessage) {
+              setStudioPlacePickerOpen(true);
+              throw new Error(recoveryMessage);
+            }
           }
         }
         const result = await approveAgentStep(runId, step.id);

@@ -1877,6 +1877,7 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
     startNewChat,
     setPendingMessage,
     setCurrentChatId,
+    setCurrentChatMeta,
     activeMode,
     setActiveMode,
     updateChatMode,
