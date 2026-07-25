@@ -49,10 +49,36 @@ export async function findOrCreateProjectBinding(payload = {}) {
 }
 
 export async function getProjectBinding(projectId) {
-  const res = await authedFetch(`/api/project-bindings/${encodeURIComponent(projectId)}`, {
-    method: "GET",
-    noCache: true,
-  });
+  const normalizedProjectId = String(projectId || "").trim();
+  if (!normalizedProjectId) {
+    return {
+      ok: true,
+      state: PROJECT_RESOLUTION_STATES.MISSING,
+      project: null,
+      recoveryAction: null,
+    };
+  }
+
+  const res = await authedFetch(
+    `/api/project-bindings/${encodeURIComponent(normalizedProjectId)}`,
+    {
+      method: "GET",
+      noCache: true,
+    }
+  );
+
+  // Stale chat/project ids are common after deletes or legacy sessions. Treat
+  // missing bindings as a soft miss so plan/agent can continue without a binding.
+  if (res.status === 404) {
+    return {
+      ok: true,
+      state: PROJECT_RESOLUTION_STATES.MISSING,
+      project: null,
+      recoveryAction: null,
+      projectId: normalizedProjectId,
+    };
+  }
+
   return readJsonResponse(res, "Failed to load project");
 }
 
