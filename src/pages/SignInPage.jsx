@@ -11,7 +11,11 @@ import {
   signInWithOAuthProvider,
   writeAuthPersistencePreference,
 } from "../lib/firebaseAuth";
-import { debugAuthLog } from "../lib/debugAuthLog";
+import {
+  DEBUG_AUTH_BUILD_MARKER,
+  debugAuthLog,
+  readDebugAuthLogs,
+} from "../lib/debugAuthLog";
 import { getPendingAuthReturnPath, readPendingAuthAction } from "../lib/pendingAuthAction";
 import {
   AuthCheckbox,
@@ -69,6 +73,7 @@ export default function NexusRBXSignInPageContainer() {
   });
   const [rememberMe, setRememberMe] = useState(() => readAuthPersistencePreference());
   const [agreeToTerms, setAgreeToTerms] = useState(false);
+  const [debugLogs, setDebugLogs] = useState(() => readDebugAuthLogs());
 
   const finishSignInRedirect = async () => {
     navigate(authReturnPath || "/", { replace: true });
@@ -84,6 +89,13 @@ export default function NexusRBXSignInPageContainer() {
       message: redirectError,
     });
   }, [location.state]);
+
+  useEffect(() => {
+    const sync = () => setDebugLogs(readDebugAuthLogs());
+    sync();
+    const timer = window.setInterval(sync, 750);
+    return () => window.clearInterval(timer);
+  }, [formStatus.status]);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -298,6 +310,7 @@ export default function NexusRBXSignInPageContainer() {
       handleGoogleSignIn={handleGoogleSignIn}
       handleGithubSignIn={handleGithubSignIn}
       navigate={navigate}
+      debugLogs={debugLogs}
     />
   );
 }
@@ -317,9 +330,11 @@ function NexusRBXSignInPage({
   handleSubmit,
   handleGoogleSignIn,
   handleGithubSignIn,
-  navigate
+  navigate,
+  debugLogs = [],
 }) {
   const isLocked = formStatus.status === "submitting" || formStatus.status === "success";
+  const debugDump = JSON.stringify(debugLogs, null, 2);
 
   return (
     <NexusAuthShell
@@ -327,6 +342,24 @@ function NexusRBXSignInPage({
       description="Sign in to your NexusRBX account."
     >
       <div className="grid gap-6">
+        <div className="rounded-md border border-amber-500/40 bg-amber-500/10 p-3 text-left text-xs text-amber-100">
+          <div className="mb-2 flex items-center justify-between gap-2">
+            <strong>Debug auth ({DEBUG_AUTH_BUILD_MARKER})</strong>
+            <button
+              type="button"
+              className="rounded border border-amber-400/50 px-2 py-1 text-[11px] font-semibold"
+              onClick={() => {
+                void navigator.clipboard?.writeText(debugDump);
+              }}
+            >
+              Copy logs
+            </button>
+          </div>
+          <pre className="max-h-56 overflow-auto whitespace-pre-wrap break-words font-mono text-[11px] leading-4">
+            {debugDump || "[]"}
+          </pre>
+        </div>
+
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <AuthProviderButton icon={GoogleIcon} onClick={handleGoogleSignIn} disabled={isLocked}>
             Google

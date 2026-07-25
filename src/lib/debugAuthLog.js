@@ -1,19 +1,39 @@
 const INGEST_URL =
   "http://127.0.0.1:7578/ingest/57d6d18f-d552-454d-9136-c39042e05f2e";
-const STORAGE_KEY = "nexusrbx:debugAuthLogs";
+export const DEBUG_AUTH_STORAGE_KEY = "nexusrbx:debugAuthLogs";
 const MAX_STORED = 40;
+export const DEBUG_AUTH_BUILD_MARKER = "debug-60f10e-v3";
+
+function isLocalHost() {
+  if (typeof window === "undefined") return false;
+  const host = String(window.location?.hostname || "").toLowerCase();
+  return host === "localhost" || host === "127.0.0.1" || host === "::1";
+}
 
 function pushStored(entry) {
   try {
-    const existing = JSON.parse(sessionStorage.getItem(STORAGE_KEY) || "[]");
+    const existing = JSON.parse(
+      sessionStorage.getItem(DEBUG_AUTH_STORAGE_KEY) || "[]"
+    );
     const next = Array.isArray(existing) ? existing : [];
     next.push(entry);
     sessionStorage.setItem(
-      STORAGE_KEY,
+      DEBUG_AUTH_STORAGE_KEY,
       JSON.stringify(next.slice(-MAX_STORED))
     );
   } catch (_) {
     // Ignore storage failures.
+  }
+}
+
+export function readDebugAuthLogs() {
+  try {
+    const existing = JSON.parse(
+      sessionStorage.getItem(DEBUG_AUTH_STORAGE_KEY) || "[]"
+    );
+    return Array.isArray(existing) ? existing : [];
+  } catch (_) {
+    return [];
   }
 }
 
@@ -32,7 +52,7 @@ export function debugAuthLog({
     location,
     message,
     data: {
-      buildMarker: "debug-60f10e-v2",
+      buildMarker: DEBUG_AUTH_BUILD_MARKER,
       ...data,
     },
     timestamp: Date.now(),
@@ -44,23 +64,24 @@ export function debugAuthLog({
     // eslint-disable-next-line no-console
     console.info("[nexus-debug-auth]", message, payload.data);
     if (typeof window !== "undefined") {
-      window.__NEXUS_DEBUG_AUTH_LOGS = JSON.parse(
-        sessionStorage.getItem(STORAGE_KEY) || "[]"
-      );
+      window.__NEXUS_DEBUG_AUTH_LOGS = readDebugAuthLogs();
     }
   } catch (_) {}
 
+  // Local ingest only works from http://localhost (HTTPS prod blocks it).
   // #region agent log
-  fetch(INGEST_URL, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "X-Debug-Session-Id": "60f10e",
-    },
-    body: JSON.stringify(payload),
-    mode: "cors",
-    keepalive: true,
-  }).catch(() => {});
+  if (isLocalHost()) {
+    fetch(INGEST_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Debug-Session-Id": "60f10e",
+      },
+      body: JSON.stringify(payload),
+      mode: "cors",
+      keepalive: true,
+    }).catch(() => {});
+  }
   // #endregion
 
   try {
