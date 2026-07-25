@@ -10,6 +10,11 @@ import { getStudioEnabledPreference } from "../lib/agentSteps";
 import { getStudioStatus } from "../lib/studioBridgeApi";
 import { doc, getDocs, onSnapshot, serverTimestamp, setDoc, updateDoc } from "firebase/firestore";
 import {
+  applyStreamActivity,
+  createPendingStreamState,
+  getPendingStreamSnapshot,
+} from "../lib/streaming";
+import {
   extractAgentEvents,
   getRuntimeCapabilitiesV2,
   resolveChatAgentProjectionV2,
@@ -99,12 +104,12 @@ jest.mock("../lib/agentRuntimeV2Api", () => ({
 }));
 
 jest.mock("../lib/streaming", () => ({
-  applyReasoningDelta: jest.fn((state) => state),
-  applyStreamActivity: jest.fn((state) => state),
-  applyStreamDelta: jest.fn((state) => state),
-  createPendingStreamState: jest.fn(() => ({ activitySeq: 0 })),
+  applyReasoningDelta: jest.fn((state) => state || { activitySeq: 0 }),
+  applyStreamActivity: jest.fn((state) => state || { activitySeq: 0 }),
+  applyStreamDelta: jest.fn((state) => state || { activitySeq: 0 }),
+  createPendingStreamState: jest.fn(() => ({ activitySeq: 0, files: [] })),
   formatPendingStreamContent: jest.fn(() => ""),
-  getPendingStreamSnapshot: jest.fn((state) => state || {}),
+  getPendingStreamSnapshot: jest.fn((state) => ({ files: [], ...(state || {}) })),
 }));
 
 jest.mock("../lib/streamMetrics", () => ({
@@ -176,6 +181,9 @@ describe("useAiChat", () => {
     setDoc.mockImplementation(() => Promise.resolve());
     updateDoc.mockImplementation(() => Promise.resolve());
     onAiEvent.mockImplementation(() => jest.fn());
+    createPendingStreamState.mockImplementation(() => ({ activitySeq: 0, files: [] }));
+    applyStreamActivity.mockImplementation((state) => state || { activitySeq: 0, files: [] });
+    getPendingStreamSnapshot.mockImplementation((state) => ({ files: [], ...(state || {}) }));
     ensureStreamSession.mockResolvedValue({ token: null });
     parseCompletedGenerateResult.mockReturnValue(null);
     FEATURE_FLAGS.unifiedAgent = false;
@@ -225,6 +233,77 @@ describe("useAiChat", () => {
     expect(creationCall[1]).not.toHaveProperty("agentRuntimeStatus");
     expect(creationCall[1]).not.toHaveProperty("agentRuntimeError");
     expect(resolveChatAgentProjectionV2).not.toHaveBeenCalled();
+  });
+
+  test("finalizes a completed assistant message without rewriting createdAt", async () => {
+    const user = {
+      uid: "user_1",
+      getIdToken: jest.fn().mockResolvedValue("token_1"),
+    };
+    auth.currentUser = user;
+    const notify = jest.fn();
+    const completed = {
+      title: "Fly GUI",
+      explanation: "Generated a fly GUI",
+      files: [{ path: "ReplicatedStorage/FlyConfig", content: "return {}" }],
+      runId: "run_1",
+    };
+    parseCompletedGenerateResult.mockReturnValue(completed);
+    global.fetch = jest
+      .fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        headers: { get: () => "application/json" },
+        json: async () => ({
+          jobId: "job_1",
+          resultUrl: "/api/generate/result?jobId=job_1",
+          runId: "run_1",
+        }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        headers: { get: () => "application/json" },
+        json: async () => ({ status: "done", result: completed }),
+      });
+
+    const { result } = renderHook(() => useAiChat(user, { chatMode: "agent" }, jest.fn(), notify));
+
+    await act(async () => {
+      await result.current.handleSubmit(
+        "hi make a fly gui",
+        "chat_1",
+        "req_finalize",
+        "agent",
+        true
+      );
+    });
+
+    const terminalWrites = [
+      ...setDoc.mock.calls.map((args) => ({ fn: "setDoc", args })),
+      ...updateDoc.mock.calls.map((args) => ({ fn: "updateDoc", args })),
+    ].filter(({ args: [ref, payload] }) => (
+      Array.isArray(ref?.segments)
+      && ref.segments.includes("req_finalize-assistant")
+      && payload?.pending === false
+      && payload?.title === "Fly GUI"
+    ));
+
+    expect(terminalWrites).toHaveLength(1);
+    const [{ fn, args }] = terminalWrites;
+    const [, payload, options] = args;
+    expect(payload).not.toHaveProperty("createdAt");
+    expect(payload).toEqual(expect.objectContaining({
+      pending: false,
+      title: "Fly GUI",
+      jobId: "job_1",
+      runId: "run_1",
+      requestId: "req_finalize",
+    }));
+    if (fn === "setDoc") {
+      expect(options).toEqual({ merge: true });
+    } else {
+      expect(fn).toBe("updateDoc");
+    }
   });
 
   test("persists an assistant failure when result recovery fails without a run id", async () => {

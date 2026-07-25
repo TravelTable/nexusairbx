@@ -1394,10 +1394,11 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
             currentMode,
             isAutoExecuting,
           });
-          msgPayload.createdAt = serverTimestamp();
+          // Do not rewrite createdAt: validMessageUpdate forbids changing it, and
+          // a full setDoc overwrite would also delete it — both yield permission-denied.
           if (data?.runId || agentRunId) msgPayload.runId = data?.runId || agentRunId;
 
-          await setDoc(assistantMsgRef, sanitizeTranscriptMessagePayload(msgPayload));
+          await updateDoc(assistantMsgRef, sanitizeTranscriptMessagePayload(msgPayload));
           recordChatMessageWrite({ jobId, reason: "assistant_terminal_success" });
 
           await updateDoc(doc(db, "users", user.uid, "chats", activeChatId), sanitizeChatWritePayload({

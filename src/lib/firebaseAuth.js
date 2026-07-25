@@ -8,7 +8,7 @@ import {
   signInWithPopup,
   signInWithRedirect,
 } from "firebase/auth";
-import { debugAuthLog } from "./debugAuthLog";
+import { appCheckReady, firebaseAppCheckEnabled } from "../firebase";
 
 export const AUTH_REDIRECT_RETURN_KEY = "nexusrbx:authRedirectReturn";
 export const AUTH_REDIRECT_METHOD_KEY = "nexusrbx:authRedirectMethod";
@@ -78,20 +78,6 @@ function loadGoogleIdentityServices() {
  * auth/internal-error on production Safari/WebKit.
  */
 export async function signInWithGoogleIdentityServices(auth, { rememberMe = true } = {}) {
-  // #region agent log
-  debugAuthLog({
-    hypothesisId: "F",
-    location: "src/lib/firebaseAuth.js:signInWithGoogleIdentityServices:entry",
-    message: "Google Identity Services sign-in started",
-    data: {
-      authDomain: auth?.config?.authDomain || null,
-      hostname:
-        typeof window !== "undefined" ? window.location?.hostname || null : null,
-    },
-    runId: "post-fix",
-  });
-  // #endregion
-
   await applyAuthPersistence(auth, rememberMe);
   const oauth2 = await loadGoogleIdentityServices();
 
@@ -129,23 +115,12 @@ export async function signInWithGoogleIdentityServices(auth, { rememberMe = true
     }
   });
 
+  if (firebaseAppCheckEnabled && appCheckReady) {
+    await appCheckReady;
+  }
+
   const credential = GoogleAuthProvider.credential(null, accessToken);
-  const result = await signInWithCredential(auth, credential);
-
-  // #region agent log
-  debugAuthLog({
-    hypothesisId: "C",
-    location: "src/lib/firebaseAuth.js:signInWithGoogleIdentityServices:success",
-    message: "Google Identity Services sign-in succeeded",
-    data: {
-      uidPresent: Boolean(result?.user?.uid),
-      authDomain: auth?.config?.authDomain || null,
-    },
-    runId: "post-fix",
-  });
-  // #endregion
-
-  return result;
+  return signInWithCredential(auth, credential);
 }
 
 export function isMissingRedirectStateError(error) {
@@ -168,6 +143,13 @@ export function getFriendlyAuthErrorMessage(error) {
   }
   if (error?.code === "auth/internal-error") {
     return "Google sign-in could not complete in this browser session. Please try again, allow popups, or use email sign-in.";
+  }
+  if (
+    error?.code === "auth/firebase-app-check-token-is-invalid" ||
+    error?.code === "auth/firebase-app-check-token-is-invalid." ||
+    String(error?.message || "").includes("app-check-token-is-invalid")
+  ) {
+    return "Sign-in was blocked by Firebase App Check. Refresh the page and try again; if it keeps failing, App Check may be misconfigured for this site.";
   }
   return error?.message || "Sign-in failed. Please try again.";
 }
@@ -250,23 +232,6 @@ export async function signInWithOAuthProvider(
   ProviderClass,
   { rememberMe = false, returnPath = "/", method = "oauth" } = {}
 ) {
-  // #region agent log
-  debugAuthLog({
-    hypothesisId: "A",
-    location: "src/lib/firebaseAuth.js:signInWithOAuthProvider:entry",
-    message: "OAuth sign-in started",
-    data: {
-      method,
-      rememberMe: Boolean(rememberMe),
-      returnPath,
-      authDomain: auth?.config?.authDomain || null,
-      hostname:
-        typeof window !== "undefined" ? window.location?.hostname || null : null,
-    },
-    runId: "post-fix",
-  });
-  // #endregion
-
   await applyAuthPersistence(auth, rememberMe);
   const provider = new ProviderClass();
   if (method === "google" && typeof provider.setCustomParameters === "function") {
@@ -274,54 +239,14 @@ export async function signInWithOAuthProvider(
   }
 
   try {
-    const credential = await signInWithPopup(auth, provider);
-    // #region agent log
-    debugAuthLog({
-      hypothesisId: "C",
-      location: "src/lib/firebaseAuth.js:signInWithOAuthProvider:popup-success",
-      message: "Popup sign-in succeeded",
-      data: {
-        method,
-        hasUser: Boolean(credential?.user),
-        uidPresent: Boolean(credential?.user?.uid),
-        authDomain: auth?.config?.authDomain || null,
-      },
-      runId: "post-fix",
-    });
-    // #endregion
-    return credential;
+    return await signInWithPopup(auth, provider);
   } catch (error) {
     const shouldFallbackToRedirect = POPUP_REDIRECT_FALLBACK_CODES.has(error?.code);
-
-    // #region agent log
-    debugAuthLog({
-      hypothesisId: shouldFallbackToRedirect ? "A" : "B",
-      location: "src/lib/firebaseAuth.js:signInWithOAuthProvider:popup-error",
-      message: "Popup sign-in failed",
-      data: {
-        method,
-        code: error?.code || null,
-        errorMessage: String(error?.message || "").slice(0, 300),
-        willFallbackToRedirect: shouldFallbackToRedirect,
-        authDomain: auth?.config?.authDomain || null,
-      },
-      runId: "post-fix",
-    });
-    // #endregion
-
     if (!shouldFallbackToRedirect) {
       throw error;
     }
 
     storeRedirectContext(returnPath, method);
-    // #region agent log
-    debugAuthLog({
-      hypothesisId: "A",
-      location: "src/lib/firebaseAuth.js:signInWithOAuthProvider:redirect-fallback",
-      message: "Falling back to signInWithRedirect",
-      data: { method, returnPath, authDomain: auth?.config?.authDomain || null },
-    });
-    // #endregion
     await signInWithRedirect(auth, provider);
     return null;
   }
@@ -329,33 +254,8 @@ export async function signInWithOAuthProvider(
 
 export async function consumeAuthRedirectResult(auth) {
   try {
-    const result = await getRedirectResult(auth);
-    // #region agent log
-    debugAuthLog({
-      hypothesisId: "A",
-      location: "src/lib/firebaseAuth.js:consumeAuthRedirectResult",
-      message: "getRedirectResult resolved",
-      data: {
-        hasResult: Boolean(result),
-        hasUser: Boolean(result?.user),
-        authDomain: auth?.config?.authDomain || null,
-      },
-    });
-    // #endregion
-    return result;
+    return await getRedirectResult(auth);
   } catch (error) {
-    // #region agent log
-    debugAuthLog({
-      hypothesisId: "A",
-      location: "src/lib/firebaseAuth.js:consumeAuthRedirectResult:error",
-      message: "getRedirectResult failed",
-      data: {
-        code: error?.code || null,
-        errorMessage: String(error?.message || "").slice(0, 300),
-        missingState: isMissingRedirectStateError(error),
-      },
-    });
-    // #endregion
     if (isMissingRedirectStateError(error)) {
       clearRedirectContext();
       return { error };

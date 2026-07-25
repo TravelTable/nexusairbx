@@ -1,5 +1,9 @@
 import { initializeApp, getApps, setLogLevel } from "firebase/app";
-import { getToken, initializeAppCheck, ReCaptchaV3Provider } from "firebase/app-check";
+import {
+  getToken,
+  initializeAppCheck,
+  ReCaptchaEnterpriseProvider,
+} from "firebase/app-check";
 import { getAuth } from "firebase/auth";
 import {
   initializeFirestore,
@@ -20,7 +24,6 @@ import {
   validateFirebaseAppCheckSiteKey,
   validateFirebaseConfig,
 } from "./lib/firebaseEnvironment";
-import { debugAuthLog } from "./lib/debugAuthLog";
 
 // Keep Firebase SDK transport retries off the browser console; failures are
 // reported server-side via deferredClientLog when they persist.
@@ -40,25 +43,6 @@ export const firebaseAppCheckSiteKey = firebaseAppCheckEnabled
       { required: true }
     )
   : "";
-
-// #region agent log
-if (typeof window !== "undefined") {
-  debugAuthLog({
-    hypothesisId: "D",
-    location: "src/firebase.js:init",
-    message: "Firebase client config at boot",
-    data: {
-      hostname: window.location?.hostname || null,
-      href: window.location?.href || null,
-      authDomain: firebaseConfig.authDomain,
-      projectId: firebaseConfig.projectId,
-      appCheckEnabled: firebaseAppCheckEnabled,
-      runIdTag: "post-fix",
-    },
-    runId: "post-fix",
-  });
-}
-// #endregion
 
 // Prevent double-init during HMR
 const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
@@ -115,8 +99,9 @@ export function initializeFirebaseAppCheck(
     windowObject.FIREBASE_APPCHECK_DEBUG_TOKEN = debugToken || true;
   }
 
+  // Site key is reCAPTCHA Enterprise (Firebase App Check enterprise provider).
   const appCheck = initializeAppCheck(firebaseApp, {
-    provider: new ReCaptchaV3Provider(siteKey),
+    provider: new ReCaptchaEnterpriseProvider(siteKey),
     isTokenAutoRefreshEnabled: true,
   });
 
