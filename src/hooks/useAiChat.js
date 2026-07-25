@@ -186,10 +186,10 @@ function mergeChatMessages(...messageSets) {
   ));
 }
 
-function resolveResultUrl(jobId, resultUrl) {
+export function resolveResultUrl(jobId, resultUrl) {
   if (resultUrl && /^https?:\/\//i.test(resultUrl)) return resultUrl;
   if (resultUrl && resultUrl.startsWith("/")) return `${BACKEND_URL}${resultUrl}`;
-  if (resultUrl) return `${BACKEND_URL}/${resultUrl.replace(/^\/+/, "")}`;
+  if (resultUrl && /^api\//i.test(resultUrl)) return `${BACKEND_URL}/${resultUrl}`;
   return `${BACKEND_URL}/api/generate/result?jobId=${encodeURIComponent(jobId)}`;
 }
 

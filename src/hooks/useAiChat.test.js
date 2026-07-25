@@ -1,5 +1,5 @@
 import { act, renderHook } from "@testing-library/react";
-import { useAiChat, waitForAuthoritativeRunJob } from "./useAiChat";
+import { resolveResultUrl, useAiChat, waitForAuthoritativeRunJob } from "./useAiChat";
 import { auth } from "../firebase";
 import { useBilling } from "../context/BillingContext";
 import { ensureStreamSession } from "../lib/streamSession";
@@ -140,6 +140,26 @@ jest.mock("../lib/billingErrors", () => ({
   })),
   isInsufficientTokensError: jest.fn(() => false),
 }));
+
+describe("resolveResultUrl", () => {
+  test("does not treat an opaque job UUID as a fetch path", () => {
+    const jobId = "cd289c08-978a-4d5a-bd8d-993be4302929";
+
+    expect(resolveResultUrl(jobId, jobId)).toContain(
+      `/api/generate/result?jobId=${encodeURIComponent(jobId)}`
+    );
+    expect(resolveResultUrl(jobId, jobId)).not.toMatch(new RegExp(`/${jobId}$`));
+  });
+
+  test("preserves supported absolute and API result URLs", () => {
+    expect(resolveResultUrl("job_1", "https://results.example.test/job_1"))
+      .toBe("https://results.example.test/job_1");
+    expect(resolveResultUrl("job_1", "/api/generate/result?jobId=job_1"))
+      .toContain("/api/generate/result?jobId=job_1");
+    expect(resolveResultUrl("job_1", "api/generate/result?jobId=job_1"))
+      .toContain("/api/generate/result?jobId=job_1");
+  });
+});
 
 describe("useAiChat", () => {
   beforeEach(() => {
