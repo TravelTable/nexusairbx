@@ -131,7 +131,7 @@ describe("initializeFirebaseAppCheck", () => {
     expect(result).toBeNull();
     expect(initializeAppCheck).not.toHaveBeenCalled();
     expect(warn).toHaveBeenCalledWith(
-      "Firebase App Check is disabled: set REACT_APP_RECAPTCHA_SITE_KEY to enable reCAPTCHA v3."
+      "Firebase App Check is disabled: set REACT_APP_RECAPTCHA_SITE_KEY to enable reCAPTCHA Enterprise."
     );
     warn.mockRestore();
   });

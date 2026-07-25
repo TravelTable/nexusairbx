@@ -64,6 +64,7 @@ import {
   findOrCreateProjectBinding,
   getProjectBinding,
   projectBindingRecoveryMessage,
+  PROJECT_RESOLUTION_STATES,
 } from "../../lib/projectBindingsApi";
 import {
   isFirestorePermissionDenied,
@@ -915,9 +916,13 @@ export function useAiWorkspaceController() {
     if (runtimeProjectId) {
       try {
         const resolution = await getProjectBinding(runtimeProjectId);
-        const recoveryMessage = projectBindingRecoveryMessage(resolution);
-        if (recoveryMessage) {
-          notify({ message: recoveryMessage, type: "info" });
+        if (resolution?.state === PROJECT_RESOLUTION_STATES.MISSING) {
+          runtimeProjectId = null;
+        } else {
+          const recoveryMessage = projectBindingRecoveryMessage(resolution);
+          if (recoveryMessage) {
+            notify({ message: recoveryMessage, type: "info" });
+          }
         }
       } catch (error) {
         notify({

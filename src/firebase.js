@@ -78,7 +78,7 @@ export function initializeFirebaseAppCheck(
     }
     if (environment === "development") {
       console.warn(
-        "Firebase App Check is disabled: set REACT_APP_RECAPTCHA_SITE_KEY to enable reCAPTCHA v3."
+        "Firebase App Check is disabled: set REACT_APP_RECAPTCHA_SITE_KEY to enable reCAPTCHA Enterprise."
       );
     }
     return null;
