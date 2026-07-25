@@ -97,6 +97,24 @@ describe("firebaseAuth", () => {
     expect(signInWithRedirect).toHaveBeenCalledWith({}, popupProvider);
   });
 
+  test("falls back to redirect when a browser reports a generic popup handshake failure", async () => {
+    class GoogleProvider {
+      setCustomParameters = jest.fn();
+    }
+    signInWithPopup.mockRejectedValue({ code: "auth/internal-error" });
+
+    await expect(
+      signInWithOAuthProvider({}, GoogleProvider, {
+        method: "google",
+        returnPath: "/account",
+      })
+    ).resolves.toBeNull();
+
+    expect(signInWithRedirect).toHaveBeenCalledWith({}, expect.any(GoogleProvider));
+    expect(sessionStorage.getItem("nexusrbx:authRedirectReturn")).toBe("/account");
+    expect(sessionStorage.getItem("nexusrbx:authRedirectMethod")).toBe("google");
+  });
+
   test("does not apply Google account parameters to other providers", async () => {
     const setCustomParameters = jest.fn();
     class GithubProvider {

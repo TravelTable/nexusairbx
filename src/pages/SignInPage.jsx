@@ -75,10 +75,10 @@ export default function NexusRBXSignInPageContainer() {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       if (!currentUser || formStatus.status === "submitting") return;
-      if (pendingAction) navigate(authReturnPath || "/", { replace: true });
+      navigate(authReturnPath || "/", { replace: true });
     });
     return () => unsubscribe();
-  }, [authReturnPath, formStatus.status, navigate, pendingAction]);
+  }, [authReturnPath, formStatus.status, navigate]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;

@@ -17,6 +17,15 @@ const AUTH_PERSISTENCE_SESSION = "session";
 const MISSING_REDIRECT_STATE_RE =
   /missing initial state|sessionStorage is inaccessible|sessionStorage is unavailable/i;
 
+const POPUP_REDIRECT_FALLBACK_CODES = new Set([
+  "auth/popup-blocked",
+  "auth/operation-not-supported-in-this-environment",
+  "auth/cancelled-popup-request",
+  // Some browsers surface a blocked or failed popup handshake as the generic
+  // internal error after leaving signInWithPopup pending for several seconds.
+  "auth/internal-error",
+]);
+
 export function isMissingRedirectStateError(error) {
   const message = String(error?.message || error?.code || "");
   return MISSING_REDIRECT_STATE_RE.test(message);
@@ -102,10 +111,7 @@ export async function signInWithOAuthProvider(
   try {
     return await signInWithPopup(auth, provider);
   } catch (error) {
-    const shouldFallbackToRedirect =
-      error?.code === "auth/popup-blocked" ||
-      error?.code === "auth/operation-not-supported-in-this-environment" ||
-      error?.code === "auth/cancelled-popup-request";
+    const shouldFallbackToRedirect = POPUP_REDIRECT_FALLBACK_CODES.has(error?.code);
 
     if (!shouldFallbackToRedirect) {
       throw error;
