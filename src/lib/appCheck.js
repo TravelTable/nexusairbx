@@ -27,7 +27,7 @@ function appCheckUnavailableError(state, cause) {
 
 // Never surface or log the token: it is added only to outgoing backend requests.
 export async function getFirebaseAppCheckHeaders({
-  required = process.env.NODE_ENV === "production",
+  required = false,
 } = {}) {
   if (typeof window === "undefined" || !appCheck) {
     if (required) throw appCheckUnavailableError({ status: "unavailable" });

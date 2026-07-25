@@ -37,9 +37,11 @@ the verification metrics below are healthy.
 
 ### App Check
 
-- `src/firebase.js` creates one Firebase App Check instance only in an actual browser,
-  never in tests or Node.js. It uses the public
-  `REACT_APP_RECAPTCHA_SITE_KEY` and automatic token refresh.
+- `src/firebase.js` creates one Firebase App Check instance only when
+  `REACT_APP_APP_CHECK_ENABLED=true` in an actual browser, never in tests or
+  Node.js. It uses the public `REACT_APP_RECAPTCHA_SITE_KEY` and automatic token
+  refresh. App Check is disabled by default while the backend remains in monitor
+  mode so a reCAPTCHA provider outage cannot block the application.
 - `src/lib/appCheck.js` attaches the token only to requests to the configured NexusRBX
   backend. It does not send the token to Stripe, Roblox, Firebase, or arbitrary third
   parties.
@@ -157,11 +159,14 @@ Storage upload rule in this repository.
 
 ## Required manual rollout
 
-1. **Deploy the browser client first.** Set the public
-   `REACT_APP_RECAPTCHA_SITE_KEY` in the frontend deployment environment. It is a
-   reCAPTCHA v3 *site key*, not a secret. Do not add a reCAPTCHA secret, Firebase
-   service account, or Stripe credential to the browser build. Production builds now
-   fail when this variable or a required Firebase public variable is missing.
+1. **Deploy the browser client first.** Leave
+   `REACT_APP_APP_CHECK_ENABLED=false` while the backend is in monitor mode. After
+   successful token exchange has been verified in production, set the public
+   `REACT_APP_RECAPTCHA_SITE_KEY` and change
+   `REACT_APP_APP_CHECK_ENABLED=true`. The site key is not a secret. Do not add a
+   reCAPTCHA secret, Firebase service account, or Stripe credential to the browser
+   build. Production builds require the App Check site key only when App Check is
+   enabled; the required Firebase public variables remain mandatory.
 2. **Configure Firebase App Check.** Register the web app's reCAPTCHA v3 provider in
    Firebase Console, keep API enforcement off initially, and add only approved local
    development debug tokens. Add each approved preview hostname to the reCAPTCHA/App
@@ -237,8 +242,11 @@ hard spend caps.
 
 ## Rollback and remaining risks
 
-Rollback backend App Check enforcement by setting `APP_CHECK_MODE=monitor`; do not
-remove the client token. Roll back a temporary block through the admin endpoint.
+Rollback backend App Check enforcement by setting `APP_CHECK_MODE=monitor`. If
+the token provider itself is failing or throttled, rebuild the browser client with
+`REACT_APP_APP_CHECK_ENABLED=false`; this prevents token exchange entirely while
+monitor mode continues accepting tokenless requests. Roll back a temporary block
+through the admin endpoint.
 Individual rate limits can be raised through their server environment variables, but
 first inspect the structured `security.rate_limited` event and confirm it is legitimate
 traffic. Preserve the webhook idempotency records during rollback.

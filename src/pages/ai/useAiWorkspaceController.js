@@ -434,9 +434,13 @@ export function useAiWorkspaceController() {
 
   useEffect(() => {
     let cancelled = false;
-    firebaseAppCheckReady.then(({ available, error }) => {
+    firebaseAppCheckReady.then(({ available, disabled, error }) => {
       if (cancelled) return;
-      setAppCheckError(available ? null : (error || new Error("Firebase App Check is unavailable.")));
+      setAppCheckError(
+        available || disabled
+          ? null
+          : (error || new Error("Firebase App Check is unavailable."))
+      );
     });
     return () => {
       cancelled = true;

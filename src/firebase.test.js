@@ -67,6 +67,22 @@ describe("initializeFirebaseAppCheck", () => {
     expect(initializeAppCheck).not.toHaveBeenCalled();
   });
 
+  test("does not initialize when App Check is explicitly disabled", () => {
+    const result = initializeFirebaseAppCheck(
+      { name: "client" },
+      {
+        environment: "production",
+        enabled: false,
+        siteKey: "public-site-key",
+        windowObject: {},
+        documentObject: {},
+      }
+    );
+
+    expect(result).toBeNull();
+    expect(initializeAppCheck).not.toHaveBeenCalled();
+  });
+
   test("initializes once in the browser with automatic token refresh", () => {
     const windowObject = {};
     const documentObject = {};
@@ -180,6 +196,25 @@ describe("initializeFirebaseAppCheck", () => {
 });
 
 describe("waitForFirebaseAppCheck", () => {
+  it("reports a healthy disabled state without requesting a token", async () => {
+    const getTokenFn = jest.fn();
+    const result = await waitForFirebaseAppCheck(null, {
+      environment: "production",
+      enabled: false,
+      getTokenFn,
+    });
+
+    expect(result).toEqual({
+      status: "disabled",
+      ready: true,
+      available: false,
+      disabled: true,
+      retryable: false,
+      retryAt: null,
+    });
+    expect(getTokenFn).not.toHaveBeenCalled();
+  });
+
   it("reports App Check as unavailable when it was not initialized", async () => {
     const log = jest.spyOn(console, "error").mockImplementation(() => {});
     const result = await waitForFirebaseAppCheck(null, { environment: "production" });

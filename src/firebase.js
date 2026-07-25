@@ -13,6 +13,7 @@ import {
   shouldUsePersistentFirestoreCache,
 } from "./lib/firestoreTransport";
 import {
+  isFirebaseAppCheckEnabled,
   isLocalAppCheckDebugAllowed,
   readFirebaseConfig,
   validateFirebaseAppCheckSiteKey,
@@ -24,9 +25,13 @@ import {
 setLogLevel("silent");
 
 export const firebaseConfig = validateFirebaseConfig(readFirebaseConfig());
-export const firebaseAppCheckSiteKey = validateFirebaseAppCheckSiteKey(
-  process.env.REACT_APP_RECAPTCHA_SITE_KEY
-);
+export const firebaseAppCheckEnabled = isFirebaseAppCheckEnabled();
+export const firebaseAppCheckSiteKey = firebaseAppCheckEnabled
+  ? validateFirebaseAppCheckSiteKey(
+      process.env.REACT_APP_RECAPTCHA_SITE_KEY,
+      { required: true }
+    )
+  : "";
 
 // Prevent double-init during HMR
 const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
@@ -39,6 +44,7 @@ export function initializeFirebaseAppCheck(
     windowObject = typeof window !== "undefined" ? window : undefined,
     documentObject = typeof document !== "undefined" ? document : undefined,
     environment = process.env.NODE_ENV,
+    enabled = true,
     siteKey = firebaseAppCheckSiteKey,
     debugToken = process.env.REACT_APP_APP_CHECK_DEBUG_TOKEN,
   } = {}
@@ -48,6 +54,10 @@ export function initializeFirebaseAppCheck(
     !windowObject ||
     !documentObject
   ) {
+    return null;
+  }
+
+  if (!enabled) {
     return null;
   }
 
@@ -87,7 +97,9 @@ export function initializeFirebaseAppCheck(
   return appCheck;
 }
 
-export const appCheck = initializeFirebaseAppCheck(app);
+export const appCheck = initializeFirebaseAppCheck(app, {
+  enabled: firebaseAppCheckEnabled,
+});
 
 const APP_CHECK_THROTTLE_RE =
   /exchangeRecaptchaV3Token|too many requests|throttl|resource.exhausted|status of 403/i;
@@ -112,9 +124,21 @@ export function waitForFirebaseAppCheck(
   appCheckInstance,
   {
     environment = process.env.NODE_ENV,
+    enabled = true,
     getTokenFn = getToken,
   } = {}
 ) {
+  if (!enabled) {
+    return Promise.resolve({
+      status: "disabled",
+      ready: true,
+      available: false,
+      disabled: true,
+      retryable: false,
+      retryAt: null,
+    });
+  }
+
   if (environment === "test") {
     return Promise.resolve({
       status: "unavailable",
@@ -168,7 +192,9 @@ export function waitForFirebaseAppCheck(
     });
 }
 
-export const appCheckReady = waitForFirebaseAppCheck(appCheck);
+export const appCheckReady = waitForFirebaseAppCheck(appCheck, {
+  enabled: firebaseAppCheckEnabled,
+});
 
 // App Check is initialized before any Firebase service that can make network
 // requests. Every consumer imports these shared singleton service instances.

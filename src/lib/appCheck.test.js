@@ -74,4 +74,10 @@ describe("installAppCheckFetchInterceptor", () => {
       retryable: false,
     });
   });
+
+  test("continues without a token when App Check is in monitor mode", async () => {
+    getToken.mockRejectedValue(new Error("exchangeRecaptchaV3Token failed"));
+
+    await expect(getFirebaseAppCheckHeaders()).resolves.toEqual({});
+  });
 });

@@ -9,6 +9,7 @@ export const EXPECTED_FIREBASE_API_KEY =
 export const EXPECTED_RECAPTCHA_SITE_KEY =
   "6Ld2jU4tAAAAAJxnNADHP1rJW-TvG98gE1YRKIFU";
 export const APP_CHECK_SITE_KEY_ENV = "REACT_APP_RECAPTCHA_SITE_KEY";
+export const APP_CHECK_ENABLED_ENV = "REACT_APP_APP_CHECK_ENABLED";
 
 const checkedInPublicConfig = {
   apiKey: EXPECTED_FIREBASE_API_KEY,
@@ -163,6 +164,14 @@ export function validateFirebaseAppCheckSiteKey(
     throw error;
   }
   return normalized;
+}
+
+export function isFirebaseAppCheckEnabled(environment = process.env) {
+  return (
+    String(environment?.[APP_CHECK_ENABLED_ENV] || "")
+      .trim()
+      .toLowerCase() === "true"
+  );
 }
 
 export function isLocalAppCheckDebugAllowed({

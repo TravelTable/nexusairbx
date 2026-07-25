@@ -4,6 +4,7 @@ import {
   EXPECTED_FIREBASE_PROJECT_ID,
   EXPECTED_RECAPTCHA_SITE_KEY,
   FIREBASE_CONFIG_ENV_KEYS,
+  isFirebaseAppCheckEnabled,
   isLocalAppCheckDebugAllowed,
   readFirebaseConfig,
   validateFirebaseAppCheckSiteKey,
@@ -130,6 +131,16 @@ describe("Firebase environment validation", () => {
       code: "FIREBASE_APP_CHECK_CONFIG_INVALID",
       invalid: ["REACT_APP_RECAPTCHA_SITE_KEY"],
     }));
+  });
+
+  test("keeps App Check off unless it is explicitly enabled", () => {
+    expect(isFirebaseAppCheckEnabled({})).toBe(false);
+    expect(
+      isFirebaseAppCheckEnabled({ REACT_APP_APP_CHECK_ENABLED: "false" })
+    ).toBe(false);
+    expect(
+      isFirebaseAppCheckEnabled({ REACT_APP_APP_CHECK_ENABLED: " TRUE " })
+    ).toBe(true);
   });
 
   test("allows App Check debug tokens only for a local development host", () => {
