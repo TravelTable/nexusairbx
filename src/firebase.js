@@ -37,6 +37,34 @@ export const firebaseAppCheckSiteKey = firebaseAppCheckEnabled
     )
   : "";
 
+// #region agent log
+if (typeof window !== "undefined") {
+  fetch("http://127.0.0.1:7578/ingest/57d6d18f-d552-454d-9136-c39042e05f2e", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Debug-Session-Id": "60f10e",
+    },
+    body: JSON.stringify({
+      sessionId: "60f10e",
+      runId: "pre-fix",
+      hypothesisId: "D",
+      location: "src/firebase.js:init",
+      message: "Firebase client config at boot",
+      data: {
+        buildMarker: "debug-60f10e-v1",
+        hostname: window.location?.hostname || null,
+        href: window.location?.href || null,
+        authDomain: firebaseConfig.authDomain,
+        projectId: firebaseConfig.projectId,
+        appCheckEnabled: firebaseAppCheckEnabled,
+      },
+      timestamp: Date.now(),
+    }),
+  }).catch(() => {});
+}
+// #endregion
+
 // Prevent double-init during HMR
 const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 
