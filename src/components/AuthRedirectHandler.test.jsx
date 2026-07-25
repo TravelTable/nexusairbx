@@ -83,6 +83,7 @@ test("surfaces redirect failures instead of leaving the user signed out silently
   mockConsumeAuthRedirectResult.mockReset();
   mockConsumeAuthRedirectResult.mockResolvedValue({ error: redirectError });
   mockStoreAuthRedirectError.mockReturnValue("Sign-in was interrupted because browser storage was cleared or blocked.");
+  mockReadRedirectContext.mockReturnValue({ method: null, returnPath: "/" });
 
   render(
     <MemoryRouter initialEntries={[{ pathname: "/" }]}>
@@ -95,4 +96,29 @@ test("surfaces redirect failures instead of leaving the user signed out silently
 
   await waitFor(() => expect(mockStoreAuthRedirectError).toHaveBeenCalledWith(redirectError));
   await waitFor(() => expect(screen.getByTestId("location")).toHaveTextContent("/signin"));
+});
+
+test("surfaces an empty redirect result when redirect context is still pending", async () => {
+  mockConsumeAuthRedirectResult.mockReset();
+  mockConsumeAuthRedirectResult.mockResolvedValue(null);
+  mockReadRedirectContext.mockReturnValue({ method: "google", returnPath: "/ai" });
+  mockStoreAuthRedirectError.mockReturnValue(
+    "Sign-in redirect finished without a session. Please try Google sign-in again."
+  );
+
+  render(
+    <MemoryRouter initialEntries={[{ pathname: "/signin" }]}>
+      <AuthRedirectHandler />
+      <Routes>
+        <Route path="*" element={<LocationProbe />} />
+      </Routes>
+    </MemoryRouter>
+  );
+
+  await waitFor(() =>
+    expect(mockStoreAuthRedirectError).toHaveBeenCalledWith(
+      expect.objectContaining({ code: "auth/redirect-empty-result" })
+    )
+  );
+  expect(mockClearRedirectContext).toHaveBeenCalled();
 });

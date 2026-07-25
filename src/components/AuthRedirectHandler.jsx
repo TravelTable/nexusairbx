@@ -52,6 +52,8 @@ export default function AuthRedirectHandler() {
       const result = await consumeAuthRedirectResult(auth);
       if (cancelled || handledRef.current) return;
 
+      const pendingRedirect = readRedirectContext();
+
       // #region agent log
       debugAuthLog({
         hypothesisId: "A",
@@ -63,7 +65,10 @@ export default function AuthRedirectHandler() {
           hasError: Boolean(result?.error),
           hasUser: Boolean(result?.user),
           errorCode: result?.error?.code || null,
+          pendingRedirectMethod: pendingRedirect.method || null,
+          authDomain: auth?.config?.authDomain || null,
         },
+        runId: "post-fix",
       });
       // #endregion
 
@@ -80,7 +85,33 @@ export default function AuthRedirectHandler() {
         return;
       }
 
-      if (!result) return;
+      if (!result) {
+        // Popup failed, redirect ran, but Firebase returned no credential.
+        // That is the storage-partition failure mode on cross-origin authDomain.
+        if (pendingRedirect.method) {
+          handledRef.current = true;
+          clearRedirectContext();
+          const emptyRedirectError = new Error(
+            "Sign-in redirect finished without a session. Please try Google sign-in again."
+          );
+          emptyRedirectError.code = "auth/redirect-empty-result";
+          const message = storeAuthRedirectError(emptyRedirectError);
+          // #region agent log
+          debugAuthLog({
+            hypothesisId: "A",
+            location: "src/components/AuthRedirectHandler.jsx:empty-redirect",
+            message: "Redirect context present but getRedirectResult was empty",
+            data: {
+              pendingRedirectMethod: pendingRedirect.method,
+              authDomain: auth?.config?.authDomain || null,
+            },
+            runId: "post-fix",
+          });
+          // #endregion
+          navigateToSignInWithError(navigate, location, message);
+        }
+        return;
+      }
 
       const user = result.user;
       if (!user) return;

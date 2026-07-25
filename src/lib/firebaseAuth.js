@@ -37,11 +37,17 @@ export function getFriendlyAuthErrorMessage(error) {
   if (isMissingRedirectStateError(error)) {
     return "Sign-in was interrupted because browser storage was cleared or blocked. Please try again in the same tab, without private browsing extensions that block storage.";
   }
+  if (error?.code === "auth/redirect-empty-result") {
+    return "Sign-in redirect finished without a session. Please try Google sign-in again.";
+  }
   if (error?.code === "auth/popup-blocked") {
     return "The sign-in popup was blocked. Allow popups for this site or try again to use a full-page redirect.";
   }
   if (error?.code === "auth/popup-closed-by-user") {
     return "Sign-in was cancelled before it finished.";
+  }
+  if (error?.code === "auth/internal-error") {
+    return "Google sign-in could not complete in this browser session. Please try again, allow popups, or use email sign-in.";
   }
   return error?.message || "Sign-in failed. Please try again.";
 }
@@ -137,6 +143,7 @@ export async function signInWithOAuthProvider(
       hostname:
         typeof window !== "undefined" ? window.location?.hostname || null : null,
     },
+    runId: "post-fix",
   });
   // #endregion
 
@@ -157,7 +164,9 @@ export async function signInWithOAuthProvider(
         method,
         hasUser: Boolean(credential?.user),
         uidPresent: Boolean(credential?.user?.uid),
+        authDomain: auth?.config?.authDomain || null,
       },
+      runId: "post-fix",
     });
     // #endregion
     return credential;
@@ -174,7 +183,9 @@ export async function signInWithOAuthProvider(
         code: error?.code || null,
         errorMessage: String(error?.message || "").slice(0, 300),
         willFallbackToRedirect: shouldFallbackToRedirect,
+        authDomain: auth?.config?.authDomain || null,
       },
+      runId: "post-fix",
     });
     // #endregion
 

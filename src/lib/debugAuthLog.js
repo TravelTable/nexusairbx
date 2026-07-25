@@ -2,7 +2,7 @@ const INGEST_URL =
   "http://127.0.0.1:7578/ingest/57d6d18f-d552-454d-9136-c39042e05f2e";
 export const DEBUG_AUTH_STORAGE_KEY = "nexusrbx:debugAuthLogs";
 const MAX_STORED = 40;
-export const DEBUG_AUTH_BUILD_MARKER = "debug-60f10e-v3";
+export const DEBUG_AUTH_BUILD_MARKER = "debug-60f10e-v4";
 
 function isLocalHost() {
   if (typeof window === "undefined") return false;
