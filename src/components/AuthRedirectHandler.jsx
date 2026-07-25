@@ -7,6 +7,7 @@ import {
   readRedirectContext,
   storeAuthRedirectError,
 } from "../lib/firebaseAuth";
+import { debugAuthLog } from "../lib/debugAuthLog";
 import { scheduleDeferredClientLog } from "../lib/deferredClientLog";
 import { getPendingAuthReturnPath, readPendingAuthAction } from "../lib/pendingAuthAction";
 
@@ -50,6 +51,21 @@ export default function AuthRedirectHandler() {
 
       const result = await consumeAuthRedirectResult(auth);
       if (cancelled || handledRef.current) return;
+
+      // #region agent log
+      debugAuthLog({
+        hypothesisId: "A",
+        location: "src/components/AuthRedirectHandler.jsx:result",
+        message: "AuthRedirectHandler consumed redirect result",
+        data: {
+          pathname: location.pathname,
+          hasResult: Boolean(result),
+          hasError: Boolean(result?.error),
+          hasUser: Boolean(result?.user),
+          errorCode: result?.error?.code || null,
+        },
+      });
+      // #endregion
 
       if (result?.error) {
         handledRef.current = true;

@@ -6,6 +6,7 @@ import {
   signInWithPopup,
   signInWithRedirect,
 } from "firebase/auth";
+import { debugAuthLog } from "./debugAuthLog";
 
 export const AUTH_REDIRECT_RETURN_KEY = "nexusrbx:authRedirectReturn";
 export const AUTH_REDIRECT_METHOD_KEY = "nexusrbx:authRedirectMethod";
@@ -124,29 +125,19 @@ export async function signInWithOAuthProvider(
   { rememberMe = false, returnPath = "/", method = "oauth" } = {}
 ) {
   // #region agent log
-  fetch("http://127.0.0.1:7578/ingest/57d6d18f-d552-454d-9136-c39042e05f2e", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "X-Debug-Session-Id": "60f10e",
+  debugAuthLog({
+    hypothesisId: "A",
+    location: "src/lib/firebaseAuth.js:signInWithOAuthProvider:entry",
+    message: "OAuth sign-in started",
+    data: {
+      method,
+      rememberMe: Boolean(rememberMe),
+      returnPath,
+      authDomain: auth?.config?.authDomain || null,
+      hostname:
+        typeof window !== "undefined" ? window.location?.hostname || null : null,
     },
-    body: JSON.stringify({
-      sessionId: "60f10e",
-      runId: "pre-fix",
-      hypothesisId: "A",
-      location: "src/lib/firebaseAuth.js:signInWithOAuthProvider:entry",
-      message: "OAuth sign-in started",
-      data: {
-        method,
-        rememberMe: Boolean(rememberMe),
-        returnPath,
-        authDomain: auth?.config?.authDomain || null,
-        hostname:
-          typeof window !== "undefined" ? window.location?.hostname || null : null,
-      },
-      timestamp: Date.now(),
-    }),
-  }).catch(() => {});
+  });
   // #endregion
 
   await applyAuthPersistence(auth, rememberMe);
@@ -158,53 +149,33 @@ export async function signInWithOAuthProvider(
   try {
     const credential = await signInWithPopup(auth, provider);
     // #region agent log
-    fetch("http://127.0.0.1:7578/ingest/57d6d18f-d552-454d-9136-c39042e05f2e", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Debug-Session-Id": "60f10e",
+    debugAuthLog({
+      hypothesisId: "C",
+      location: "src/lib/firebaseAuth.js:signInWithOAuthProvider:popup-success",
+      message: "Popup sign-in succeeded",
+      data: {
+        method,
+        hasUser: Boolean(credential?.user),
+        uidPresent: Boolean(credential?.user?.uid),
       },
-      body: JSON.stringify({
-        sessionId: "60f10e",
-        runId: "pre-fix",
-        hypothesisId: "C",
-        location: "src/lib/firebaseAuth.js:signInWithOAuthProvider:popup-success",
-        message: "Popup sign-in succeeded",
-        data: {
-          method,
-          hasUser: Boolean(credential?.user),
-          uidPresent: Boolean(credential?.user?.uid),
-        },
-        timestamp: Date.now(),
-      }),
-    }).catch(() => {});
+    });
     // #endregion
     return credential;
   } catch (error) {
     const shouldFallbackToRedirect = POPUP_REDIRECT_FALLBACK_CODES.has(error?.code);
 
     // #region agent log
-    fetch("http://127.0.0.1:7578/ingest/57d6d18f-d552-454d-9136-c39042e05f2e", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Debug-Session-Id": "60f10e",
+    debugAuthLog({
+      hypothesisId: shouldFallbackToRedirect ? "A" : "B",
+      location: "src/lib/firebaseAuth.js:signInWithOAuthProvider:popup-error",
+      message: "Popup sign-in failed",
+      data: {
+        method,
+        code: error?.code || null,
+        errorMessage: String(error?.message || "").slice(0, 300),
+        willFallbackToRedirect: shouldFallbackToRedirect,
       },
-      body: JSON.stringify({
-        sessionId: "60f10e",
-        runId: "pre-fix",
-        hypothesisId: shouldFallbackToRedirect ? "A" : "B",
-        location: "src/lib/firebaseAuth.js:signInWithOAuthProvider:popup-error",
-        message: "Popup sign-in failed",
-        data: {
-          method,
-          code: error?.code || null,
-          errorMessage: String(error?.message || "").slice(0, 300),
-          willFallbackToRedirect: shouldFallbackToRedirect,
-        },
-        timestamp: Date.now(),
-      }),
-    }).catch(() => {});
+    });
     // #endregion
 
     if (!shouldFallbackToRedirect) {
@@ -213,22 +184,12 @@ export async function signInWithOAuthProvider(
 
     storeRedirectContext(returnPath, method);
     // #region agent log
-    fetch("http://127.0.0.1:7578/ingest/57d6d18f-d552-454d-9136-c39042e05f2e", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Debug-Session-Id": "60f10e",
-      },
-      body: JSON.stringify({
-        sessionId: "60f10e",
-        runId: "pre-fix",
-        hypothesisId: "A",
-        location: "src/lib/firebaseAuth.js:signInWithOAuthProvider:redirect-fallback",
-        message: "Falling back to signInWithRedirect",
-        data: { method, returnPath, authDomain: auth?.config?.authDomain || null },
-        timestamp: Date.now(),
-      }),
-    }).catch(() => {});
+    debugAuthLog({
+      hypothesisId: "A",
+      location: "src/lib/firebaseAuth.js:signInWithOAuthProvider:redirect-fallback",
+      message: "Falling back to signInWithRedirect",
+      data: { method, returnPath, authDomain: auth?.config?.authDomain || null },
+    });
     // #endregion
     await signInWithRedirect(auth, provider);
     return null;
@@ -239,50 +200,30 @@ export async function consumeAuthRedirectResult(auth) {
   try {
     const result = await getRedirectResult(auth);
     // #region agent log
-    fetch("http://127.0.0.1:7578/ingest/57d6d18f-d552-454d-9136-c39042e05f2e", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Debug-Session-Id": "60f10e",
+    debugAuthLog({
+      hypothesisId: "A",
+      location: "src/lib/firebaseAuth.js:consumeAuthRedirectResult",
+      message: "getRedirectResult resolved",
+      data: {
+        hasResult: Boolean(result),
+        hasUser: Boolean(result?.user),
+        authDomain: auth?.config?.authDomain || null,
       },
-      body: JSON.stringify({
-        sessionId: "60f10e",
-        runId: "pre-fix",
-        hypothesisId: "A",
-        location: "src/lib/firebaseAuth.js:consumeAuthRedirectResult",
-        message: "getRedirectResult resolved",
-        data: {
-          hasResult: Boolean(result),
-          hasUser: Boolean(result?.user),
-          authDomain: auth?.config?.authDomain || null,
-        },
-        timestamp: Date.now(),
-      }),
-    }).catch(() => {});
+    });
     // #endregion
     return result;
   } catch (error) {
     // #region agent log
-    fetch("http://127.0.0.1:7578/ingest/57d6d18f-d552-454d-9136-c39042e05f2e", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Debug-Session-Id": "60f10e",
+    debugAuthLog({
+      hypothesisId: "A",
+      location: "src/lib/firebaseAuth.js:consumeAuthRedirectResult:error",
+      message: "getRedirectResult failed",
+      data: {
+        code: error?.code || null,
+        errorMessage: String(error?.message || "").slice(0, 300),
+        missingState: isMissingRedirectStateError(error),
       },
-      body: JSON.stringify({
-        sessionId: "60f10e",
-        runId: "pre-fix",
-        hypothesisId: "A",
-        location: "src/lib/firebaseAuth.js:consumeAuthRedirectResult:error",
-        message: "getRedirectResult failed",
-        data: {
-          code: error?.code || null,
-          errorMessage: String(error?.message || "").slice(0, 300),
-          missingState: isMissingRedirectStateError(error),
-        },
-        timestamp: Date.now(),
-      }),
-    }).catch(() => {});
+    });
     // #endregion
     if (isMissingRedirectStateError(error)) {
       clearRedirectContext();

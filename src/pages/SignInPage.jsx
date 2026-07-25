@@ -11,6 +11,7 @@ import {
   signInWithOAuthProvider,
   writeAuthPersistencePreference,
 } from "../lib/firebaseAuth";
+import { debugAuthLog } from "../lib/debugAuthLog";
 import { getPendingAuthReturnPath, readPendingAuthAction } from "../lib/pendingAuthAction";
 import {
   AuthCheckbox,
@@ -122,25 +123,15 @@ export default function NexusRBXSignInPageContainer() {
     // Validate form
     if (!formData.email || !formData.password) {
       // #region agent log
-      fetch("http://127.0.0.1:7578/ingest/57d6d18f-d552-454d-9136-c39042e05f2e", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Debug-Session-Id": "60f10e",
+      debugAuthLog({
+        hypothesisId: "E",
+        location: "src/pages/SignInPage.jsx:handleSubmit:validation",
+        message: "Email sign-in blocked by missing fields",
+        data: {
+          hasEmail: Boolean(formData.email),
+          hasPassword: Boolean(formData.password),
         },
-        body: JSON.stringify({
-          sessionId: "60f10e",
-          runId: "pre-fix",
-          hypothesisId: "E",
-          location: "src/pages/SignInPage.jsx:handleSubmit:validation",
-          message: "Email sign-in blocked by missing fields",
-          data: {
-            hasEmail: Boolean(formData.email),
-            hasPassword: Boolean(formData.password),
-          },
-          timestamp: Date.now(),
-        }),
-      }).catch(() => {});
+      });
       // #endregion
       setFormStatus({
         status: "error",
@@ -151,22 +142,12 @@ export default function NexusRBXSignInPageContainer() {
 
     if (!agreeToTerms) {
       // #region agent log
-      fetch("http://127.0.0.1:7578/ingest/57d6d18f-d552-454d-9136-c39042e05f2e", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Debug-Session-Id": "60f10e",
-        },
-        body: JSON.stringify({
-          sessionId: "60f10e",
-          runId: "pre-fix",
-          hypothesisId: "E",
-          location: "src/pages/SignInPage.jsx:handleSubmit:terms",
-          message: "Email sign-in blocked by terms checkbox",
-          data: { agreeToTerms: false },
-          timestamp: Date.now(),
-        }),
-      }).catch(() => {});
+      debugAuthLog({
+        hypothesisId: "E",
+        location: "src/pages/SignInPage.jsx:handleSubmit:terms",
+        message: "Email sign-in blocked by terms checkbox",
+        data: { agreeToTerms: false },
+      });
       // #endregion
       setFormStatus({
         status: "error",
@@ -185,22 +166,12 @@ export default function NexusRBXSignInPageContainer() {
       const credential = await signInWithEmailAndPassword(auth, formData.email, formData.password);
       await credential.user.getIdToken();
       // #region agent log
-      fetch("http://127.0.0.1:7578/ingest/57d6d18f-d552-454d-9136-c39042e05f2e", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Debug-Session-Id": "60f10e",
-        },
-        body: JSON.stringify({
-          sessionId: "60f10e",
-          runId: "pre-fix",
-          hypothesisId: "E",
-          location: "src/pages/SignInPage.jsx:handleSubmit:success",
-          message: "Email sign-in succeeded",
-          data: { uidPresent: Boolean(credential?.user?.uid) },
-          timestamp: Date.now(),
-        }),
-      }).catch(() => {});
+      debugAuthLog({
+        hypothesisId: "E",
+        location: "src/pages/SignInPage.jsx:handleSubmit:success",
+        message: "Email sign-in succeeded",
+        data: { uidPresent: Boolean(credential?.user?.uid) },
+      });
       // #endregion
       setFormStatus({
         status: "success",
@@ -211,25 +182,15 @@ export default function NexusRBXSignInPageContainer() {
       }, 600);
     } catch (error) {
       // #region agent log
-      fetch("http://127.0.0.1:7578/ingest/57d6d18f-d552-454d-9136-c39042e05f2e", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Debug-Session-Id": "60f10e",
+      debugAuthLog({
+        hypothesisId: "E",
+        location: "src/pages/SignInPage.jsx:handleSubmit:error",
+        message: "Email sign-in failed",
+        data: {
+          code: error?.code || null,
+          errorMessage: String(error?.message || "").slice(0, 300),
         },
-        body: JSON.stringify({
-          sessionId: "60f10e",
-          runId: "pre-fix",
-          hypothesisId: "E",
-          location: "src/pages/SignInPage.jsx:handleSubmit:error",
-          message: "Email sign-in failed",
-          data: {
-            code: error?.code || null,
-            errorMessage: String(error?.message || "").slice(0, 300),
-          },
-          timestamp: Date.now(),
-        }),
-      }).catch(() => {});
+      });
       // #endregion
       setFormStatus({
         status: "error",
@@ -251,28 +212,18 @@ export default function NexusRBXSignInPageContainer() {
         method: "google",
       });
       // #region agent log
-      fetch("http://127.0.0.1:7578/ingest/57d6d18f-d552-454d-9136-c39042e05f2e", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Debug-Session-Id": "60f10e",
+      debugAuthLog({
+        hypothesisId: credential ? "C" : "A",
+        location: "src/pages/SignInPage.jsx:handleGoogleSignIn:after",
+        message: credential
+          ? "Google sign-in returned credential"
+          : "Google sign-in returned null (redirect path)",
+        data: {
+          hasCredential: Boolean(credential),
+          uidPresent: Boolean(credential?.user?.uid),
+          authDomain: auth?.config?.authDomain || null,
         },
-        body: JSON.stringify({
-          sessionId: "60f10e",
-          runId: "pre-fix",
-          hypothesisId: credential ? "C" : "A",
-          location: "src/pages/SignInPage.jsx:handleGoogleSignIn:after",
-          message: credential
-            ? "Google sign-in returned credential"
-            : "Google sign-in returned null (redirect path)",
-          data: {
-            hasCredential: Boolean(credential),
-            uidPresent: Boolean(credential?.user?.uid),
-            authDomain: auth?.config?.authDomain || null,
-          },
-          timestamp: Date.now(),
-        }),
-      }).catch(() => {});
+      });
       // #endregion
       if (!credential) return;
       await credential.user.getIdToken();
@@ -285,25 +236,15 @@ export default function NexusRBXSignInPageContainer() {
       }, 600);
     } catch (error) {
       // #region agent log
-      fetch("http://127.0.0.1:7578/ingest/57d6d18f-d552-454d-9136-c39042e05f2e", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Debug-Session-Id": "60f10e",
+      debugAuthLog({
+        hypothesisId: "B",
+        location: "src/pages/SignInPage.jsx:handleGoogleSignIn:error",
+        message: "Google sign-in threw",
+        data: {
+          code: error?.code || null,
+          errorMessage: String(error?.message || "").slice(0, 300),
         },
-        body: JSON.stringify({
-          sessionId: "60f10e",
-          runId: "pre-fix",
-          hypothesisId: "B",
-          location: "src/pages/SignInPage.jsx:handleGoogleSignIn:error",
-          message: "Google sign-in threw",
-          data: {
-            code: error?.code || null,
-            errorMessage: String(error?.message || "").slice(0, 300),
-          },
-          timestamp: Date.now(),
-        }),
-      }).catch(() => {});
+      });
       // #endregion
       setFormStatus({
         status: "error",
