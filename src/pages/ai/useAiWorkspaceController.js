@@ -917,7 +917,22 @@ export function useAiWorkspaceController() {
       try {
         const resolution = await getProjectBinding(runtimeProjectId);
         if (resolution?.state === PROJECT_RESOLUTION_STATES.MISSING) {
+          const staleProjectId = runtimeProjectId;
           runtimeProjectId = null;
+          if (user && chat.currentChatId && chat.currentChatMeta?.projectId === staleProjectId) {
+            try {
+              await chat.assertCanWrite();
+              await updateDoc(
+                doc(db, "users", user.uid, "chats", chat.currentChatId),
+                sanitizeChatWritePayload({
+                  projectId: null,
+                  updatedAt: serverTimestamp(),
+                })
+              );
+            } catch (_) {
+              /* non-fatal: submit can continue without the binding */
+            }
+          }
         } else {
           const recoveryMessage = projectBindingRecoveryMessage(resolution);
           if (recoveryMessage) {
