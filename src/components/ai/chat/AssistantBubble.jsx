@@ -71,6 +71,7 @@ export default function AssistantBubble({
   activeMode,
   grouped = false,
   retryPrompt = "",
+  retrySourceMessage = null,
   onViewUi, // mapped to "open artifact in editor"
   onRefine,
   onApprovePlan,
@@ -247,7 +248,7 @@ export default function AssistantBubble({
                   >
                     <FolderOpen className="w-3.5 h-3.5" /> Open in editor
                   </Button>
-                  {onRefine ? (
+                  {onRefine && hasArtifact ? (
                     <Button type="button" size="sm" variant="outline" onClick={() => onRefine(m)}>
                       Refine
                     </Button>
@@ -264,8 +265,9 @@ export default function AssistantBubble({
           text={m.summary || m.content || m.explanation}
           message={m}
           retryPrompt={retryPrompt}
+          retrySourceMessage={retrySourceMessage}
           onRetry={onRetryMessage}
-          onRefine={onRefine}
+          onRefine={hasArtifact ? onRefine : undefined}
           onOpenFiles={hasArtifact ? onViewUi : undefined}
         />
       </div>

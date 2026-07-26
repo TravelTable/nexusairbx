@@ -206,36 +206,8 @@ export default function WorkspaceShell({
         />
       ) : null}
 
-      <nav className="workspace-tool-rail" aria-label="Workspace tools">
-        <div className="workspace-tool-rail__group">
-          {WORKSPACE_DOCK_PANELS.map((tool) => (
-            <ToolButton
-              key={tool.id}
-              tool={tool}
-              active={tool.id === activePanel}
-              badge={panelBadges[tool.id]}
-              onSelect={selectPanel}
-            />
-          ))}
-        </div>
-        <button
-          type="button"
-          className="workspace-tool-rail__button workspace-tool-rail__collapse focus-ring"
-          disabled={!activePanel}
-          aria-label="Collapse workspace drawer"
-          onClick={() => onPanelChange(null)}
-        >
-          <ChevronRight className="h-[18px] w-[18px]" aria-hidden="true" />
-          <span className="workspace-tool-rail__tooltip" role="tooltip">Collapse</span>
-        </button>
-      </nav>
-
-      {presence.present ? (
-        <aside
-          id="workspace-context-drawer"
-          className={`workspace-context-drawer ${presence.entering ? "is-entered" : ""}`}
-          aria-label={selectedTool?.label || "Workspace drawer"}
-        >
+      <div className="workspace-shell__dock">
+        {presence.present ? (
           <div
             className="workspace-context-drawer__resizer"
             role="separator"
@@ -249,35 +221,68 @@ export default function WorkspaceShell({
             onKeyDown={resizeWithKeyboard}
             onDoubleClick={() => onDrawerWidthChange?.(WORKSPACE_DRAWER_DEFAULT_WIDTH)}
           />
-          <header className="workspace-context-drawer__header">
-            <button
-              type="button"
-              className="workspace-context-drawer__back focus-ring"
-              onClick={() => onPanelChange(null)}
-              aria-label="Back to chat"
-            >
-              <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-              <span>Back</span>
-            </button>
-            <div className="min-w-0">
-              <h2 className="truncate text-sm font-black text-white">{selectedTool?.label}</h2>
-              <p className="truncate text-[11px] text-gray-500">{selectedTool?.description}</p>
-            </div>
-            <button
-              type="button"
-              className="workspace-context-drawer__close focus-ring"
-              onClick={() => onPanelChange(null)}
-              aria-label="Close workspace drawer"
-              title="Close drawer"
-            >
-              <ChevronRight className="h-4 w-4" aria-hidden="true" />
-            </button>
-          </header>
-          <div className="workspace-context-drawer__body">
-            {selectedTool ? renderPanel?.(selectedTool.id) : null}
+        ) : null}
+
+        <nav className="workspace-tool-rail" aria-label="Workspace tools">
+          <div className="workspace-tool-rail__group">
+            {WORKSPACE_DOCK_PANELS.map((tool) => (
+              <ToolButton
+                key={tool.id}
+                tool={tool}
+                active={tool.id === activePanel}
+                badge={panelBadges[tool.id]}
+                onSelect={selectPanel}
+              />
+            ))}
           </div>
-        </aside>
-      ) : null}
+          <button
+            type="button"
+            className="workspace-tool-rail__button workspace-tool-rail__collapse focus-ring"
+            disabled={!activePanel}
+            aria-label="Collapse workspace drawer"
+            onClick={() => onPanelChange(null)}
+          >
+            <ChevronRight className="h-[18px] w-[18px]" aria-hidden="true" />
+            <span className="workspace-tool-rail__tooltip" role="tooltip">Collapse</span>
+          </button>
+        </nav>
+
+        {presence.present ? (
+          <aside
+            id="workspace-context-drawer"
+            className={`workspace-context-drawer ${presence.entering ? "is-entered" : ""}`}
+            aria-label={selectedTool?.label || "Workspace drawer"}
+          >
+            <header className="workspace-context-drawer__header">
+              <button
+                type="button"
+                className="workspace-context-drawer__back focus-ring"
+                onClick={() => onPanelChange(null)}
+                aria-label="Back to chat"
+              >
+                <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+                <span>Back</span>
+              </button>
+              <div className="min-w-0">
+                <h2 className="truncate text-sm font-black text-white">{selectedTool?.label}</h2>
+                <p className="truncate text-[11px] text-gray-500">{selectedTool?.description}</p>
+              </div>
+              <button
+                type="button"
+                className="workspace-context-drawer__close focus-ring"
+                onClick={() => onPanelChange(null)}
+                aria-label="Close workspace drawer"
+                title="Close drawer"
+              >
+                <ChevronRight className="h-4 w-4" aria-hidden="true" />
+              </button>
+            </header>
+            <div className="workspace-context-drawer__body">
+              {selectedTool ? renderPanel?.(selectedTool.id) : null}
+            </div>
+          </aside>
+        ) : null}
+      </div>
     </section>
   );
 }

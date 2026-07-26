@@ -35,6 +35,10 @@ import {
   normalizeChatAttachments,
 } from "../lib/chatAttachments";
 import {
+  normalizeRewindMode,
+  shouldWriteUserMessageAfterRewind,
+} from "../lib/chatTranscriptRewind";
+import {
   AgentRuntimeUnavailableError,
   createAgentRunV2,
   getRuntimeCapabilitiesV2,
@@ -436,6 +440,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
     attachments = [],
     baseArtifact = null,
     submissionOptions = {},
+    conversationMessages = null,
   }) => {
     let capabilities = null;
     try {
@@ -485,8 +490,18 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
         projectId: submissionOptions.projectId || agent.projectId,
         attachments: normalizeChatAttachments(attachments),
         settings: buildRuntimeSettings(settings, effectiveGameSpec),
-        conversation: (chat.messages || []).slice(-10).map(messageToConversationEntry).filter(Boolean),
+        conversation: (conversationMessages || chat.messages || [])
+          .slice(-10)
+          .map(messageToConversationEntry)
+          .filter(Boolean),
         baseArtifact: baseArtifact || null,
+        ...(submissionOptions.isRefinement ? { isRefinement: true } : {}),
+        ...(submissionOptions.baseArtifactRef
+          ? { baseArtifactRef: submissionOptions.baseArtifactRef }
+          : {}),
+        ...(submissionOptions.parentJobId
+          ? { parentJobId: submissionOptions.parentJobId }
+          : {}),
         generatorMode: "agent_build",
         studioEnabled,
         applyMode: getStudioApplyMode(),
@@ -763,7 +778,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
 
   // ASK mode: read-only conversational streaming. No orchestrate, no plan, no job.
   const handleAskSubmit = useCallback(
-    async (prompt, attachments, activeChatId, requestId, signal) => {
+    async (prompt, attachments, activeChatId, requestId, signal, conversationMessages = null) => {
       const token = await user.getIdToken();
       const normalizedAttachments = normalizeChatAttachments(attachments);
       const requestPrompt =
@@ -802,6 +817,9 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
         }
       }
 
+      const conversationSource = Array.isArray(conversationMessages)
+        ? conversationMessages
+        : (chat.messages || []);
       let full = "";
       try {
         const res = await fetch(`${BACKEND_URL}/api/ai/chat`, {
@@ -813,7 +831,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
             attachments: normalizedAttachments,
             modelVersion: settings?.modelVersion || "",
             gameSpec: effectiveGameSpec,
-            conversation: chat.messages.slice(-10).map(messageToConversationEntry).filter(Boolean),
+            conversation: conversationSource.slice(-10).map(messageToConversationEntry).filter(Boolean),
             studioEnabled: studioEnabled && Boolean(studioSessionId),
             studioSessionId,
             studioConnectionType,
@@ -935,6 +953,39 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
         }
 
         let activeChatId = chat.currentChatId;
+        let historyForRun = chat.messages || [];
+        let writeUserTurn = true;
+        const rewindFromMessageId = String(options?.rewindFromMessageId || "").trim();
+        if (rewindFromMessageId) {
+          if (typeof chat.rewindTranscript !== "function") {
+            notify?.({ message: "Cannot rewind this chat right now.", type: "error" });
+            return;
+          }
+          try {
+            cancelCurrentFlow();
+            const rewindMode = normalizeRewindMode(options?.rewindMode);
+            const rewindResult = await chat.rewindTranscript(rewindFromMessageId, rewindMode);
+            historyForRun = Array.isArray(rewindResult?.kept) ? rewindResult.kept : [];
+            writeUserTurn = shouldWriteUserMessageAfterRewind(
+              rewindResult?.mode || rewindMode,
+              rewindResult?.pivot?.role
+            );
+          } catch (err) {
+            console.error("Rewind error:", err);
+            notify?.({ message: err?.message || "Could not rewind the chat.", type: "error" });
+            return;
+          }
+        }
+        // When regenerating without writing a new user doc, the tip user turn is
+        // already in historyForRun. Strip it from conversation so it matches the
+        // normal submit shape (prior turns + current prompt).
+        let conversationMessages = historyForRun;
+        if (!writeUserTurn) {
+          const lastKept = historyForRun[historyForRun.length - 1];
+          if (lastKept?.role === "user") {
+            conversationMessages = historyForRun.slice(0, -1);
+          }
+        }
 
         // Agent & Debug: Cursor-style. No orchestration, no plan card, no canned
         // stage labels — hand straight to the streaming generation, which emits the
@@ -957,14 +1008,17 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
               activeChatId = await ensureChat(titleSeed, effectiveOptions);
               flowController = createFlowAbortController(activeChatId, requestId);
               setFlowBusyForChat(activeChatId, requestId, true);
-              await writeUserMessage(activeChatId, requestId, prompt, currentAttachments);
+              if (writeUserTurn) {
+                await writeUserMessage(activeChatId, requestId, prompt, currentAttachments);
+              }
               await ensureRuntimeAgentProjection(activeChatId, effectiveOptions);
               await handleAskSubmit(
                 prompt,
                 currentAttachments,
                 activeChatId,
                 requestId,
-                flowController.signal
+                flowController.signal,
+                conversationMessages
               );
             } catch (err) {
               if (!isAbortError(err)) {
@@ -980,7 +1034,9 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
 
           try {
             activeChatId = await ensureChat(titleSeed, effectiveOptions);
-            await writeUserMessage(activeChatId, requestId, prompt, currentAttachments);
+            if (writeUserTurn) {
+              await writeUserMessage(activeChatId, requestId, prompt, currentAttachments);
+            }
             await launchAuthoritativeRun({
               activeChatId,
               requestId,
@@ -989,6 +1045,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
               attachments: currentAttachments,
               baseArtifact,
               submissionOptions: effectiveOptions,
+              conversationMessages,
             });
           } catch (err) {
             console.error("Generation error:", err);
@@ -1004,7 +1061,9 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
           flowController = createFlowAbortController(activeChatId, requestId);
           setFlowBusyForChat(activeChatId, requestId, true);
           beginOrchestrationPending(activeChatId, requestId, prompt);
-          await writeUserMessage(activeChatId, requestId, prompt, currentAttachments);
+          if (writeUserTurn) {
+            await writeUserMessage(activeChatId, requestId, prompt, currentAttachments);
+          }
           await ensureRuntimeAgentProjection(activeChatId, effectiveOptions);
 
           if (mode === "ask") {
@@ -1013,7 +1072,8 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
               currentAttachments,
               activeChatId,
               requestId,
-              flowController.signal
+              flowController.signal,
+              conversationMessages
             );
             return;
           }
@@ -1022,7 +1082,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
           const workflowTargeting = buildWorkflowTargeting(effectiveOptions);
           const decision = await orchestrate({
             prompt,
-            history: chat.messages,
+            history: conversationMessages,
             attachments: currentAttachments,
             mode,
             gameSpec: effectiveGameSpec,
@@ -1068,6 +1128,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
       clearOrchestrationPending,
       createFlowAbortController,
       releaseFlowAbortController,
+      cancelCurrentFlow,
       chat,
       approvePlanInternal,
       writeUserMessage,
@@ -1194,14 +1255,14 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
     [approvePlanInternal, notify]
   );
 
-  // Stage 5 (refine): re-run generation with a refinement instruction, passing
-  // the existing generated files as context so the agent EDITS rather than
-  // regenerates everything from scratch.
+  // Stage 5 (refine): re-run generation with a refinement instruction against the
+  // server-owned workspace revision (isRefinement + baseArtifactRef). Do not
+  // duplicate project files as Lua attachments — the backend loads the base.
   const refineArtifact = useCallback(
     async (message, refinePrompt, workspaceArtifact = null, submissionOptions = {}) => {
-      if (!user || !refinePrompt) return;
+      if (!user || !refinePrompt) return false;
       const activeChatId = chat.currentChatId;
-      if (!activeChatId) return;
+      if (!activeChatId) return false;
 
       try {
         const ownedProject = await resolveOwnedProjectId(
@@ -1210,10 +1271,6 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
         if (ownedProject.recoveryMessage) {
           notify?.({ message: ownedProject.recoveryMessage, type: "info" });
         }
-        const effectiveSubmissionOptions = {
-          ...submissionOptions,
-          projectId: ownedProject.projectId,
-        };
         const existingFiles = Array.isArray(workspaceArtifact?.files) && workspaceArtifact.files.length
           ? workspaceArtifact.files
           : Array.isArray(message?.files) && message.files.length
@@ -1222,28 +1279,70 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
               ? [{ name: message.title || "Script", content: message.code }]
             : [];
 
-        const fileAttachments = existingFiles.map((f) => ({
-          name: `${f.name || "file"}${/\.lua$/i.test(f.name || "") ? "" : ".lua"}`,
-          type: "text/x-lua",
-          data: String(f.content || ""),
-          isImage: false,
-        }));
+        const artifactId =
+          workspaceArtifact?.artifactId ||
+          workspaceArtifact?.id ||
+          message?.artifactId ||
+          message?.projectId ||
+          null;
+        const revision = workspaceArtifact?.revision || message?.revision || null;
 
-        const augmentedPrompt = existingFiles.length
-          ? `You are refining an existing multi-file Roblox project (its current files are attached). Apply this change:\n\n${refinePrompt}\n\nReturn the full updated set of files. Modify only what's necessary and keep unaffected files intact, preserving their structure and placement.`
+        if (!artifactId && existingFiles.length === 0) {
+          notify?.({
+            message: "Nothing to refine yet. Generate a project first, then refine it.",
+            type: "error",
+          });
+          return false;
+        }
+
+        const baseArtifactRef = {
+          ...(artifactId ? { artifactId: String(artifactId) } : {}),
+          ...(revision ? { revision: String(revision) } : {}),
+          chatId: activeChatId,
+          ...(message?.jobId ? { parentJobId: String(message.jobId) } : {}),
+        };
+
+        const augmentedPrompt = existingFiles.length || artifactId
+          ? `You are refining an existing multi-file Roblox project. Apply this change:\n\n${refinePrompt}\n\nPrefer surgical edits to existing files when possible. Return workspace file operations (<patch> when enabled, otherwise <file> upserts) rather than dumping Luau as chat markdown. Modify only what's necessary and keep unaffected files intact, preserving their structure and placement.`
           : refinePrompt;
 
+        const effectiveSubmissionOptions = {
+          ...submissionOptions,
+          projectId: ownedProject.projectId,
+          isRefinement: true,
+          baseArtifactRef,
+          parentJobId: message?.jobId || submissionOptions.parentJobId || null,
+          refineMode: submissionOptions.refineMode || null,
+        };
+
+        // Pass workspace snapshot as a hint only; server resolves the sealed base.
         await runGeneration(
           activeChatId,
           message?.classification || "project",
           augmentedPrompt,
-          fileAttachments,
-          workspaceArtifact,
+          [],
+          workspaceArtifact || (existingFiles.length
+            ? {
+                artifactId: artifactId || undefined,
+                revision: revision || undefined,
+                title: message?.title || workspaceArtifact?.title || "Project",
+                files: existingFiles,
+              }
+            : null),
           effectiveSubmissionOptions
         );
+        return true;
       } catch (err) {
         console.error("Refine error:", err);
-        notify?.({ message: err?.message || "Refine failed. You can try again.", type: "error" });
+        const refineCode = err?.details?.refineCode || err?.code || null;
+        const messageText =
+          refineCode === "REFINE_BASE_REQUIRED"
+            ? "Refine needs a saved workspace project. Generate or open a project first."
+            : refineCode === "REFINE_BASE_REVISION_MISMATCH" || refineCode === "REFINE_NEEDS_REBASE"
+              ? "The project changed. Reload and refine against the latest revision."
+              : err?.message || "Refine failed. You can try again.";
+        notify?.({ message: messageText, type: "error" });
+        return false;
       }
     },
     [user, chat.currentChatId, runGeneration, notify]

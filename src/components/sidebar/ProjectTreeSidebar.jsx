@@ -35,6 +35,7 @@ import "./ProjectTreeSidebar.css";
 
 const PROJECTS_ROOT_ID = "__projects__";
 const GENERAL_ROOT_ID = "__general__";
+const GENERAL_CHATS_PAGE_SIZE = 10;
 
 function readStoredState(key, fallback) {
   if (typeof window === "undefined") return fallback;
@@ -44,6 +45,25 @@ function readStoredState(key, fallback) {
   } catch {
     return fallback;
   }
+}
+
+function readExpandedIds(storagePrefix) {
+  const fallback = [GENERAL_ROOT_ID, PROJECTS_ROOT_ID];
+  const stored = readStoredState(`${storagePrefix}:expanded`, null);
+  if (stored == null) return new Set(fallback);
+  const next = new Set(Array.isArray(stored) ? stored.map(String) : fallback);
+  // General was always open before it became a folder. Keep it expanded once
+  // for existing sidebars, then honor the user's collapse preference after that.
+  try {
+    const migratedKey = `${storagePrefix}:general-folder`;
+    if (!window.localStorage.getItem(migratedKey)) {
+      next.add(GENERAL_ROOT_ID);
+      window.localStorage.setItem(migratedKey, "1");
+    }
+  } catch {
+    next.add(GENERAL_ROOT_ID);
+  }
+  return next;
 }
 
 function RunBadge({ status, generating = false }) {
@@ -133,9 +153,7 @@ export default function ProjectTreeSidebar({
   onCollapse = () => {},
 }) {
   const storagePrefix = `nexusrbx:sidebar:${userKey || "guest"}`;
-  const [expandedIds, setExpandedIds] = useState(() => new Set(
-    readStoredState(`${storagePrefix}:expanded`, [PROJECTS_ROOT_ID])
-  ));
+  const [expandedIds, setExpandedIds] = useState(() => readExpandedIds(storagePrefix));
   const [pinnedProjectIds, setPinnedProjectIds] = useState(() => new Set(
     readStoredState(`${storagePrefix}:pinned-projects`, [])
   ));
@@ -148,6 +166,7 @@ export default function ProjectTreeSidebar({
   const [renaming, setRenaming] = useState(null);
   const [focusedId, setFocusedId] = useState(GENERAL_ROOT_ID);
   const [scrollEdges, setScrollEdges] = useState({ top: false, bottom: false });
+  const [generalChatsLimit, setGeneralChatsLimit] = useState(GENERAL_CHATS_PAGE_SIZE);
   const searchRef = useRef(null);
   const scrollRef = useRef(null);
   const knownChatIdsRef = useRef(new Set(chats.map((chat) => String(chat?.id || "")).filter(Boolean)));
@@ -155,9 +174,10 @@ export default function ProjectTreeSidebar({
   const generatingSet = useMemo(() => new Set(generatingChatIds), [generatingChatIds]);
 
   useEffect(() => {
-    setExpandedIds(new Set(readStoredState(`${storagePrefix}:expanded`, [PROJECTS_ROOT_ID])));
+    setExpandedIds(readExpandedIds(storagePrefix));
     setPinnedProjectIds(new Set(readStoredState(`${storagePrefix}:pinned-projects`, [])));
     setPinnedChatIds(new Set(readStoredState(`${storagePrefix}:pinned-chats`, [])));
+    setGeneralChatsLimit(GENERAL_CHATS_PAGE_SIZE);
   }, [storagePrefix]);
 
   useEffect(() => {
@@ -226,15 +246,35 @@ export default function ProjectTreeSidebar({
     [deferredQuery, scripts, tree]
   );
   const searching = Boolean(query.trim());
+  const visibleGeneralChats = useMemo(
+    () => tree.generalChats.slice(0, generalChatsLimit),
+    [generalChatsLimit, tree.generalChats]
+  );
+  const hasMoreGeneralChats = tree.generalChats.length > generalChatsLimit;
 
   useEffect(() => {
     const selectedProjectId = String(currentProjectId || "");
-    if (!selectedProjectId) return;
+    if (selectedProjectId) {
+      setExpandedIds((current) => {
+        if (current.has(selectedProjectId) && current.has(PROJECTS_ROOT_ID)) return current;
+        return new Set([...current, PROJECTS_ROOT_ID, selectedProjectId]);
+      });
+      return;
+    }
+    if (!currentChatId) return;
     setExpandedIds((current) => {
-      if (current.has(selectedProjectId) && current.has(PROJECTS_ROOT_ID)) return current;
-      return new Set([...current, PROJECTS_ROOT_ID, selectedProjectId]);
+      if (current.has(GENERAL_ROOT_ID)) return current;
+      return new Set([...current, GENERAL_ROOT_ID]);
     });
   }, [currentChatId, currentProjectId]);
+
+  useEffect(() => {
+    if (!currentChatId) return;
+    const index = tree.generalChats.findIndex((chat) => chat.id === currentChatId);
+    if (index < 0) return;
+    const minimum = Math.ceil((index + 1) / GENERAL_CHATS_PAGE_SIZE) * GENERAL_CHATS_PAGE_SIZE;
+    setGeneralChatsLimit((current) => Math.max(current, minimum));
+  }, [currentChatId, tree.generalChats]);
 
   const toggleExpanded = useCallback((id, force) => {
     setExpandedIds((current) => {
@@ -375,7 +415,7 @@ export default function ProjectTreeSidebar({
 
   useEffect(() => {
     updateScrollEdges();
-  }, [expandedIds, projects.length, chats.length, searching, updateScrollEdges]);
+  }, [expandedIds, generalChatsLimit, projects.length, chats.length, searching, updateScrollEdges]);
 
   const handleTreeKeyDown = useCallback((event) => {
     if (event.target?.tagName === "INPUT") return;
@@ -638,14 +678,47 @@ export default function ProjectTreeSidebar({
               <section aria-label="General chats">
                 <div
                   {...treeItemProps(GENERAL_ROOT_ID)}
-                  className="flex h-[30px] items-center px-2 text-[10px] font-semibold uppercase tracking-[.16em] text-gray-600"
+                  aria-expanded={expandedIds.has(GENERAL_ROOT_ID)}
+                  className="nexus-tree-row h-[34px] px-2 text-xs font-medium"
                 >
-                  <MessageSquare className="mr-2 h-3.5 w-3.5" />
-                  <span className="flex-1">General</span>
-                  <span className="font-normal tracking-normal">{tree.generalChats.length}</span>
+                  <button
+                    type="button"
+                    data-tree-activate="true"
+                    data-tree-toggle="true"
+                    onClick={() => toggleExpanded(GENERAL_ROOT_ID)}
+                    className="flex min-w-0 flex-1 items-center self-stretch text-left"
+                  >
+                    <ChevronRight
+                      className="nexus-tree-chevron mr-1.5 h-3.5 w-3.5 text-gray-600"
+                      data-expanded={expandedIds.has(GENERAL_ROOT_ID)}
+                    />
+                    <MessageSquare className="mr-2 h-3.5 w-3.5 text-gray-500" />
+                    <span className="flex-1">General</span>
+                    <span className="text-[10px] font-normal text-gray-600">{tree.generalChats.length}</span>
+                  </button>
                 </div>
-                {tree.generalChats.map((chat) => renderChat(chat))}
-                {!tree.generalChats.length && <EmptyChats onNewChat={() => onNewChat(null)} />}
+                <div
+                  className="nexus-tree-children"
+                  data-expanded={expandedIds.has(GENERAL_ROOT_ID)}
+                  aria-hidden={!expandedIds.has(GENERAL_ROOT_ID)}
+                >
+                  <div className="min-h-0 overflow-hidden">
+                    {visibleGeneralChats.map((chat) => renderChat(chat))}
+                    {hasMoreGeneralChats && (
+                      <button
+                        type="button"
+                        onClick={() => setGeneralChatsLimit((current) => current + GENERAL_CHATS_PAGE_SIZE)}
+                        className="ml-7 flex h-8 w-[calc(100%-1.75rem)] items-center rounded-md px-2 text-[11px] text-gray-600 transition hover:bg-white/[.035] hover:text-gray-300"
+                      >
+                        Load more
+                        <span className="ml-auto text-[10px] text-gray-700">
+                          {tree.generalChats.length - generalChatsLimit} more
+                        </span>
+                      </button>
+                    )}
+                    {!tree.generalChats.length && <EmptyChats onNewChat={() => onNewChat(null)} />}
+                  </div>
+                </div>
               </section>
 
               <div className="my-3 h-px bg-white/[.055]" />

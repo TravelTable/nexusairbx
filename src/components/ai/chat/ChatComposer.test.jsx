@@ -67,7 +67,47 @@ describe("ChatComposer compact interactions", () => {
     expect(screen.getByTitle("Open advanced Studio and Roblox settings").getAttribute("aria-expanded")).toBe("false");
   });
 
-  test("opens advanced settings in a drawer and closes on Escape or outside click", async () => {
+  test("shows continuing-from-earlier-message chip while rewind target is set", () => {
+    const onCancelRewind = jest.fn();
+    renderComposer({
+      rewindTarget: { messageId: "u1", mode: "replace" },
+      onCancelRewind,
+    });
+
+    expect(screen.getByText("Continuing from earlier message")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Cancel edit from earlier message" }));
+    expect(onCancelRewind).toHaveBeenCalledTimes(1);
+  });
+
+  test("shows refine mode chip, quick suggestions, and cancels on Escape", () => {
+    const onCancelRefine = jest.fn();
+    const onSubmit = jest.fn();
+    renderComposer({
+      refineTarget: {
+        title: "Lobby System",
+        revision: "abcdef12",
+        files: [{ path: "ServerScriptService/Main", content: "print(1)" }],
+      },
+      onCancelRefine,
+      onSubmit,
+      studioConnected: false,
+    });
+
+    expect(screen.getByText(/Refining workspace:/)).toBeTruthy();
+    expect(screen.getByText(/Lobby System/)).toBeTruthy();
+    expect(screen.getByRole("group", { name: "Quick refine suggestions" })).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("button", { name: /Add validation/i }));
+    expect(onSubmit).toHaveBeenCalledWith(
+      null,
+      "Add server-side validation and type checks for remote inputs"
+    );
+
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(onCancelRefine).toHaveBeenCalledTimes(1);
+  });
+
+  test("opens advanced settings in a popover and closes on Escape or outside click", async () => {
     renderComposer();
     const settingsButton = screen.getByTitle("Open advanced Studio and Roblox settings");
 
@@ -75,7 +115,9 @@ describe("ChatComposer compact interactions", () => {
     const panel = await screen.findByRole("dialog", { name: "Studio and Roblox settings" });
     expect(settingsButton.getAttribute("aria-expanded")).toBe("true");
     expect(screen.getByText("Advanced setup")).toBeTruthy();
-    expect(panel.className).toContain("inset-y-0");
+    expect(panel.className).toContain("absolute");
+    expect(panel.className).toContain("bottom-full");
+    expect(panel.className).not.toContain("inset-y-0");
 
     fireEvent.keyDown(document, { key: "Escape" });
     await waitFor(() => expect(screen.queryByRole("dialog", { name: "Studio and Roblox settings" })).toBeNull());
@@ -166,18 +208,18 @@ describe("ChatComposer compact interactions", () => {
     expect(onSubmit).not.toHaveBeenCalled();
   });
 
-  test("textarea grows to 144px and then scrolls internally", () => {
+  test("textarea grows to 120px and then scrolls internally", () => {
     const { rerender } = renderComposer({ prompt: "short" });
     const textarea = screen.getByRole("textbox", { name: "Prompt input" });
     Object.defineProperty(textarea, "scrollHeight", { configurable: true, value: 320 });
 
     rerender(<ChatComposer {...baseProps} prompt="long\ncontent" />);
-    expect(textarea.style.height).toBe("144px");
+    expect(textarea.style.height).toBe("120px");
     expect(textarea.style.overflowY).toBe("auto");
 
     Object.defineProperty(textarea, "scrollHeight", { configurable: true, value: 20 });
     rerender(<ChatComposer {...baseProps} prompt="short again" />);
-    expect(textarea.style.height).toBe("44px");
+    expect(textarea.style.height).toBe("28px");
     expect(textarea.style.overflowY).toBe("hidden");
   });
 });

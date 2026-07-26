@@ -511,6 +511,10 @@ describe("MessageList conversation layout", () => {
     fireEvent.click(screen.getByRole("button", { name: "Retry from here" }));
 
     expect(onEditMessage).toHaveBeenCalledWith(message);
-    expect(onRetryMessage).toHaveBeenCalledWith("Build a round timer.");
+    expect(onRetryMessage).toHaveBeenCalledWith({
+      prompt: "Build a round timer.",
+      message,
+      sourceUserMessage: message,
+    });
   });
 });

@@ -4,6 +4,7 @@ import {
   collection, 
   query, 
   orderBy, 
+  where,
   limit,
   limitToLast, 
   onSnapshot, 
@@ -12,6 +13,7 @@ import {
   setDoc, 
   updateDoc, 
   addDoc,
+  getDoc,
   getDocs
 } from "firebase/firestore";
 import { v4 as uuidv4 } from "uuid";
@@ -85,6 +87,11 @@ import {
 } from "../lib/firestorePayloads";
 import { normalizeRobloxPlaceId } from "../lib/robloxPlaceId";
 import { requireVerifiedFirestoreUser } from "../lib/verifiedFirestoreUser";
+import {
+  mergeMessagesById,
+  normalizeRewindMode,
+  selectMessagesToRemove,
+} from "../lib/chatTranscriptRewind";
 
 const STREAM_MAX_RETRIES = 3;
 const RESULT_MAX_POLLS = 45;
@@ -165,25 +172,8 @@ const GENERATION_WALL_TIMEOUT_MS = Number(
 
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-function messageCreatedAtMillis(message) {
-  const value = message?.createdAt;
-  if (typeof value?.toMillis === "function") return value.toMillis();
-  if (Number.isFinite(value?.seconds)) {
-    return (value.seconds * 1000) + Math.floor(Number(value.nanoseconds || 0) / 1_000_000);
-  }
-  if (value instanceof Date) return value.getTime();
-  if (typeof value === "number") return value;
-  return Number.MAX_SAFE_INTEGER;
-}
-
 function mergeChatMessages(...messageSets) {
-  const byId = new Map();
-  messageSets.flat().forEach((message) => {
-    if (message?.id) byId.set(message.id, message);
-  });
-  return Array.from(byId.values()).sort((a, b) => (
-    messageCreatedAtMillis(a) - messageCreatedAtMillis(b)
-  ));
+  return mergeMessagesById(...messageSets);
 }
 
 export function resolveResultUrl(jobId, resultUrl) {
@@ -926,6 +916,13 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
             studioConnectionType === STUDIO_CONNECTION_TYPES.PLUGIN_BRIDGE,
           autoPushPolicy,
           baseArtifact,
+          ...(submissionOptions?.isRefinement ? { isRefinement: true } : {}),
+          ...(submissionOptions?.baseArtifactRef
+            ? { baseArtifactRef: submissionOptions.baseArtifactRef }
+            : {}),
+          ...(submissionOptions?.parentJobId
+            ? { parentJobId: submissionOptions.parentJobId }
+            : {}),
           ...(submissionOptions?.approvedPlan ? {
             approvedPlan: {
               planId: submissionOptions.approvedPlan.planId,
@@ -1813,6 +1810,86 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
     }
   };
 
+  /**
+   * Truncate the durable transcript at a pivot message (Cursor-style rewind).
+   * mode "after" keeps the pivot; "replace" deletes the pivot and everything after.
+   */
+  const rewindTranscript = useCallback(async (messageId, mode = "after") => {
+    const pivotId = String(messageId || "").trim();
+    const rewindMode = normalizeRewindMode(mode);
+    if (!authReady || !user?.uid || auth.currentUser?.uid !== user.uid || !currentChatId) {
+      throw new Error("Cannot rewind without an active chat.");
+    }
+    if (!pivotId) throw new Error("Cannot rewind without a message id.");
+
+    await assertCanWrite();
+    const messagesRef = collection(db, "users", user.uid, "chats", currentChatId, "messages");
+
+    let pivot = (messages || []).find((message) => message?.id === pivotId) || null;
+    if (!pivot) {
+      const pivotSnap = await getDoc(doc(messagesRef, pivotId));
+      if (!pivotSnap.exists()) {
+        throw new Error("That message is no longer in this chat.");
+      }
+      pivot = { id: pivotSnap.id, ...pivotSnap.data() };
+    }
+
+    let candidateDocs = [];
+    if (pivot.createdAt != null) {
+      const snap = await getDocs(query(
+        messagesRef,
+        orderBy("createdAt", "asc"),
+        where("createdAt", ">=", pivot.createdAt),
+        limit(CLEAR_CHAT_MESSAGE_LIMIT)
+      ));
+      candidateDocs = snap.docs.map((entry) => ({ id: entry.id, ...entry.data() }));
+    } else {
+      const snap = await getDocs(query(
+        messagesRef,
+        orderBy("createdAt", "asc"),
+        limitToLast(CLEAR_CHAT_MESSAGE_LIMIT)
+      ));
+      candidateDocs = snap.docs.map((entry) => ({ id: entry.id, ...entry.data() }));
+    }
+
+    const ordered = mergeChatMessages(messages, candidateDocs, [pivot]);
+    const { kept, removed, pivot: resolvedPivot } = selectMessagesToRemove(
+      ordered,
+      pivotId,
+      rewindMode
+    );
+    if (!resolvedPivot) {
+      throw new Error("That message is no longer in this chat.");
+    }
+
+    const removeIds = removed.map((message) => message.id).filter(Boolean);
+    if (removeIds.length) {
+      setMessages((current) => current.filter((message) => !removeIds.includes(message.id)));
+      for (let offset = 0; offset < removeIds.length; offset += 400) {
+        const chunk = removeIds.slice(offset, offset + 400);
+        const batch = writeBatch(db);
+        chunk.forEach((id) => {
+          batch.delete(doc(messagesRef, id));
+        });
+        await batch.commit();
+      }
+    }
+
+    const keptFromState = (messages || []).filter((message) => !removeIds.includes(message.id));
+    // Prefer the partitioned kept list (includes any Firestore-only prefix docs
+    // that were present in the merge) but fall back to filtered local state.
+    const keptMessages = kept.length || !removeIds.length
+      ? kept
+      : keptFromState;
+
+    return {
+      kept: keptMessages,
+      removed,
+      pivot: resolvedPivot,
+      mode: rewindMode,
+    };
+  }, [assertCanWrite, authReady, currentChatId, messages, user?.uid]);
+
   const startNewChat = useCallback(async ({ projectId = null, studioTargetPreference = null } = {}) => {
     if (!authReady || !user?.uid || auth.currentUser?.uid !== user.uid) return null;
     await assertCanWrite();
@@ -1893,6 +1970,7 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
     handleRenameChat,
     handleMoveChat,
     handleClearChat,
+    rewindTranscript,
     startNewChat,
     setPendingMessage,
     setCurrentChatId,

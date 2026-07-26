@@ -16,6 +16,43 @@ function fallbackId(path, index = 0) {
   return `file_${computeContentHash(`${path}:${index}`)}`;
 }
 
+function normalizeReplacements(raw = []) {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .map((entry) => {
+      if (!entry || typeof entry !== "object") return null;
+      const find = String(entry.find ?? entry.old ?? entry.old_string ?? "");
+      const replace = String(entry.replace ?? entry.new ?? entry.new_string ?? "");
+      if (!find) return null;
+      return {
+        find,
+        replace,
+        all: Boolean(entry.all ?? entry.replaceAll ?? entry.replace_all),
+      };
+    })
+    .filter(Boolean);
+}
+
+function applyContentReplacements(content, replacements = []) {
+  let next = String(content || "");
+  for (const entry of replacements) {
+    const find = String(entry?.find || "");
+    const replace = String(entry?.replace ?? "");
+    if (!find) return { ok: false, content: String(content || "") };
+    if (entry?.all) {
+      if (!next.includes(find)) return { ok: false, content: String(content || "") };
+      next = next.split(find).join(replace);
+      continue;
+    }
+    const first = next.indexOf(find);
+    if (first < 0) return { ok: false, content: String(content || "") };
+    const second = next.indexOf(find, first + find.length);
+    if (second >= 0) return { ok: false, content: String(content || "") };
+    next = `${next.slice(0, first)}${replace}${next.slice(first + find.length)}`;
+  }
+  return { ok: true, content: next };
+}
+
 export function normalizeProjectFile(rawFile = {}, index = 0) {
   const path = normalizePath(
     rawFile.path,
@@ -108,6 +145,20 @@ export function applyProjectOperations(baseArtifact, operations = []) {
       } else {
         files.push(next);
       }
+      continue;
+    }
+
+    if (op.type === "patch") {
+      const existing = findFile(files, op);
+      if (!existing) continue;
+      const expectedHash = String(op.expectedContentHash || "").trim();
+      const currentHash = existing.contentHash || computeContentHash(existing.content);
+      if (!expectedHash || expectedHash !== currentHash) continue;
+      const replaced = applyContentReplacements(existing.content, normalizeReplacements(op.replacements));
+      if (!replaced.ok) continue;
+      existing.content = replaced.content;
+      existing.contentHash = computeContentHash(existing.content);
+      existing.status = op.status || existing.status || "generated";
     }
   }
 

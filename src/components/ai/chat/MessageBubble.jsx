@@ -39,6 +39,7 @@ export default function MessageBubble({
   activeMode,
   grouped = false,
   retryPrompt = "",
+  retrySourceMessage = null,
   onViewUi,
   onRefine,
   onFixUiAudit,
@@ -67,6 +68,7 @@ export default function MessageBubble({
             text={m.content}
             message={m}
             retryPrompt={m.content}
+            retrySourceMessage={m}
             onEdit={onEditMessage}
             onRetry={onRetryMessage}
           />
@@ -81,6 +83,7 @@ export default function MessageBubble({
       activeMode={activeMode}
       grouped={grouped}
       retryPrompt={retryPrompt}
+      retrySourceMessage={retrySourceMessage}
       onViewUi={onViewUi}
       onRefine={onRefine}
       onFixUiAudit={onFixUiAudit}

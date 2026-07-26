@@ -13,9 +13,13 @@ import {
   pickSuggestedModels,
   sortProviderEntries,
 } from "../../lib/modelProviders";
+import {
+  getWorkspaceMenuHost,
+  resolveAnchoredMenuPosition,
+} from "../../lib/workspaceMenuPosition";
 
 const MENU_WIDTH = 304;
-const VIEWPORT_GUTTER = 8;
+const MENU_MAX_HEIGHT = 420;
 
 const SYNTHETIC_FREE_MODEL = {
   id: DEFAULT_FREE_MODEL,
@@ -129,16 +133,11 @@ export default function ModelSwitcher({
   const sortedProviders = useMemo(() => sortProviderEntries(grouped), [grouped]);
 
   const updateMenuPosition = useCallback(() => {
-    const rect = buttonRef.current?.getBoundingClientRect();
-    if (!rect) return;
-
-    const maxLeft = Math.max(VIEWPORT_GUTTER, window.innerWidth - MENU_WIDTH - VIEWPORT_GUTTER);
-
-    setMenuPosition({
-      top: rect.bottom + 8,
-      left: Math.min(Math.max(VIEWPORT_GUTTER, rect.right - MENU_WIDTH), maxLeft),
-      maxHeight: Math.max(160, window.innerHeight - rect.bottom - 24),
-    });
+    setMenuPosition(resolveAnchoredMenuPosition(buttonRef.current, {
+      menuWidth: MENU_WIDTH,
+      menuMaxHeight: MENU_MAX_HEIGHT,
+      minHeight: 160,
+    }));
   }, []);
 
   useEffect(() => {
@@ -202,12 +201,13 @@ export default function ModelSwitcher({
       ? createPortal(
           <div
             ref={menuRef}
-            className="fixed overflow-y-auto rounded-2xl border border-white/10 bg-[#0D0D0D]/95 backdrop-blur-2xl shadow-2xl z-[9999] p-2 scrollbar-subtle"
+            className="z-[9999] overflow-y-auto rounded-2xl border border-white/10 bg-[#0D0D0D]/95 p-2 shadow-2xl backdrop-blur-2xl scrollbar-subtle"
             style={{
-              width: MENU_WIDTH,
+              position: menuPosition?.strategy || "fixed",
+              width: menuPosition?.width ?? MENU_WIDTH,
               top: menuPosition?.top ?? 0,
               left: menuPosition?.left ?? 0,
-              maxHeight: Math.min(menuPosition?.maxHeight ?? window.innerHeight * 0.6, window.innerHeight * 0.6),
+              maxHeight: menuPosition?.maxHeight ?? MENU_MAX_HEIGHT,
               visibility: menuPosition ? "visible" : "hidden",
             }}
             role="listbox"
@@ -283,7 +283,7 @@ export default function ModelSwitcher({
               </p>
             )}
           </div>,
-          document.body
+          getWorkspaceMenuHost() || document.body
         )
       : null;
 

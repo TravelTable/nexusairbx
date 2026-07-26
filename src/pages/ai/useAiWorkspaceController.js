@@ -212,6 +212,7 @@ export function useAiWorkspaceController() {
   const [sidebarOpen, setSidebarOpen] = useState(typeof window !== "undefined" ? window.innerWidth > 1024 : true);
 
   const [prompt, setPrompt] = useState("");
+  const [rewindTarget, setRewindTarget] = useState(null); // { messageId, mode }
   const [generatorMode, setGeneratorModeState] = useState(() => (
     resolveInitialGeneratorMode({ restoredSession: loadQuickScriptSession() })
   ));
@@ -826,11 +827,17 @@ export function useAiWorkspaceController() {
     }
   }, [chat, ensureStudioProjectBinding, notify, user]);
 
+  const cancelRewind = useCallback(() => {
+    setRewindTarget(null);
+  }, []);
+
   const handlePromptSubmit = useCallback(async (e, overridePrompt = null, submissionOptions = {}) => {
     if (e && typeof e.preventDefault === "function") e.preventDefault();
 
     const currentPrompt = (overridePrompt ?? prompt).trim();
-    const currentAttachments = [...attachments];
+    const currentAttachments = Array.isArray(submissionOptions?.attachmentsOverride)
+      ? [...submissionOptions.attachmentsOverride]
+      : [...attachments];
     const hasProjectAssets = projectAssets.assets.length > 0;
 
     if (!currentPrompt && currentAttachments.length === 0 && !hasProjectAssets) return;
@@ -961,25 +968,48 @@ export function useAiWorkspaceController() {
     // Build this once after all project/Studio repair has completed. Refine and
     // first-generation must submit the same effective identity inputs so a
     // retry cannot bind one idempotency key to two different agent payloads.
+    const {
+      attachmentsOverride: _attachmentsOverride,
+      rewindFromMessageId: submissionRewindId,
+      rewindMode: submissionRewindMode,
+      ...restSubmissionOptions
+    } = submissionOptions || {};
+    const activeRewind = submissionRewindId
+      ? {
+          messageId: String(submissionRewindId),
+          mode: submissionRewindMode === "after" ? "after" : "replace",
+        }
+      : rewindTarget;
     const effectiveSubmissionOptions = {
-      ...submissionOptions,
+      ...restSubmissionOptions,
       ...(studioTargetPreference ? { studioTargetPreference } : {}),
       projectId: runtimeProjectId,
+      ...(activeRewind?.messageId
+        ? {
+            rewindFromMessageId: activeRewind.messageId,
+            rewindMode: activeRewind.mode === "after" ? "after" : "replace",
+          }
+        : {}),
     };
 
     setPrompt("");
     setAttachments([]);
+    setRewindTarget(null);
     setStudioPlacePickerOpen(false);
 
     if (refineTarget) {
       const target = refineTarget;
       setRefineTarget(null);
-      await unified.refineArtifact(
+      const ok = await unified.refineArtifact(
         target,
         currentPrompt,
         workspace.projectArtifactSnapshot,
-        effectiveSubmissionOptions
+        {
+          ...effectiveSubmissionOptions,
+          refineMode: studioConnection.pluginConnected ? "studio" : "workspace",
+        }
       );
+      if (!ok) setRefineTarget(target);
       return;
     }
 
@@ -1005,6 +1035,7 @@ export function useAiWorkspaceController() {
     activeTab,
     isMobile,
     refineTarget,
+    rewindTarget,
     unified,
     workspace.projectArtifactSnapshot,
     track,
@@ -1014,6 +1045,7 @@ export function useAiWorkspaceController() {
     setGeneratorMode,
     studioEnabled,
     studioConnection.connected,
+    studioConnection.pluginConnected,
     studioPlaceOptions,
     effectiveStudioPlacePreference,
     bindChatStudioPlace,
@@ -2091,6 +2123,7 @@ export function useAiWorkspaceController() {
       prompt,
       isImproving,
       refineTarget,
+      rewindTarget,
       attachments,
       robloxImageUploading: robloxImageUpload.uploading,
       robloxImageUploads: robloxImageUpload.activeUploads,
@@ -2124,6 +2157,8 @@ export function useAiWorkspaceController() {
       setActiveTab,
       setMobileTab,
       setPrompt,
+      setRewindTarget,
+      cancelRewind,
       setGeneratorMode,
       setAttachments,
       setArchitecturePanelOpen,

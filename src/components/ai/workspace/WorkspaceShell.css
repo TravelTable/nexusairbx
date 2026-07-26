@@ -3,7 +3,7 @@
   container-name: workspace-shell;
   container-type: inline-size;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) var(--workspace-rail-width);
+  grid-template-columns: minmax(0, 1fr) auto;
   min-height: 0;
   min-width: 0;
   flex: 1;
@@ -38,10 +38,22 @@
   opacity: 1;
 }
 
-.workspace-tool-rail {
-  z-index: 32;
-  grid-column: 2;
+.workspace-shell__dock {
+  position: relative;
+  z-index: 30;
   display: flex;
+  grid-column: 2;
+  grid-row: 1;
+  min-height: 0;
+  max-width: 100%;
+  flex-direction: row;
+  align-items: stretch;
+}
+
+.workspace-tool-rail {
+  z-index: 2;
+  display: flex;
+  flex: 0 0 var(--workspace-rail-width);
   min-height: 0;
   width: var(--workspace-rail-width);
   flex-direction: column;
@@ -50,9 +62,10 @@
   border-left: 1px solid rgb(255 255 255 / 7%);
   background: #0b0d14;
   padding: 6px 5px;
-  transition:
-    right var(--motion-panel) var(--ease-product),
-    transform var(--motion-panel) var(--ease-product);
+}
+
+.workspace-shell[data-drawer-open="true"] .workspace-tool-rail {
+  border-right: 1px solid rgb(255 255 255 / 7%);
 }
 
 .workspace-tool-rail__group {
@@ -145,17 +158,15 @@
 }
 
 .workspace-context-drawer {
-  position: absolute;
-  inset-block: 0;
-  right: 0;
-  z-index: 30;
+  position: relative;
+  z-index: 1;
   display: flex;
-  width: min(var(--workspace-drawer-width), calc(100% - var(--workspace-rail-width)));
-  min-width: min(400px, calc(100% - var(--workspace-rail-width)));
+  width: min(var(--workspace-drawer-width), calc(100cqi - var(--workspace-rail-width)));
+  min-width: min(400px, calc(100cqi - var(--workspace-rail-width)));
   max-width: 720px;
+  flex: 0 0 auto;
   flex-direction: column;
   overflow: hidden;
-  border-left: 1px solid rgb(255 255 255 / 8%);
   background: #090b12;
   opacity: 0;
   box-shadow: -24px 0 60px rgb(0 0 0 / 38%);
@@ -240,23 +251,10 @@
 }
 
 @container workspace-shell (min-width: 1500px) {
-  .workspace-shell[data-drawer-open="true"] {
-    grid-template-columns:
-      minmax(0, 1fr)
-      var(--workspace-rail-width)
-      var(--workspace-drawer-width);
-  }
-
-  .workspace-shell[data-drawer-open="true"] .workspace-tool-rail {
-    grid-column: 2;
-  }
-
   .workspace-shell[data-drawer-open="true"] .workspace-context-drawer {
-    position: relative;
-    inset: auto;
-    grid-column: 3;
-    grid-row: 1;
     width: var(--workspace-drawer-width);
+    min-width: var(--workspace-drawer-width);
+    box-shadow: none;
   }
 
   .workspace-shell__backdrop {
@@ -265,10 +263,22 @@
 }
 
 @container workspace-shell (max-width: 1499px) {
-  .workspace-shell[data-drawer-open="true"] .workspace-tool-rail {
+  .workspace-shell[data-drawer-open="true"] .workspace-shell__dock {
     position: absolute;
     inset-block: 0;
-    right: min(var(--workspace-drawer-width), calc(100% - var(--workspace-rail-width)));
+    right: 0;
+    max-width: 100%;
+    border-left: 1px solid rgb(255 255 255 / 8%);
+    background: #0b0d14;
+    box-shadow: -24px 0 60px rgb(0 0 0 / 38%);
+  }
+
+  .workspace-shell[data-drawer-open="true"] .workspace-tool-rail {
+    border-left: 0;
+  }
+
+  .workspace-shell[data-drawer-open="true"] .workspace-context-drawer {
+    box-shadow: none;
   }
 }
 
@@ -277,11 +287,15 @@
     display: none;
   }
 
+  .workspace-shell[data-drawer-open="true"] .workspace-shell__dock {
+    width: 100%;
+    border-left: 0;
+  }
+
   .workspace-context-drawer {
     width: 100%;
     min-width: 0;
     max-width: none;
-    border-left: 0;
   }
 
   .workspace-context-drawer__resizer,
@@ -315,7 +329,6 @@
 
 @media (prefers-reduced-motion: reduce) {
   .workspace-shell__backdrop,
-  .workspace-tool-rail,
   .workspace-context-drawer,
   .workspace-tool-rail__button,
   .workspace-tool-rail__tooltip,

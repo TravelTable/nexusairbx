@@ -137,11 +137,13 @@ function SingleMessageList({
   );
   const messageGroups = useMemo(() => {
     let retryPrompt = "";
+    let retrySourceMessage = null;
     return groupMessagesByRole(visibleMessages).map((group) => {
       if (group.role === "user") {
-        retryPrompt = String(group.messages[group.messages.length - 1]?.content || "").trim();
+        retrySourceMessage = group.messages[group.messages.length - 1] || null;
+        retryPrompt = String(retrySourceMessage?.content || "").trim();
       }
-      return { ...group, retryPrompt };
+      return { ...group, retryPrompt, retrySourceMessage };
     });
   }, [visibleMessages]);
 
@@ -191,6 +193,7 @@ function SingleMessageList({
                 activeMode={activeMode}
                 grouped={group.role === "assistant"}
                 retryPrompt={group.retryPrompt}
+                retrySourceMessage={group.retrySourceMessage}
                 onViewUi={onViewUi}
                 onRefine={onRefine}
                 onFixUiAudit={onFixUiAudit}

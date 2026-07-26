@@ -3,6 +3,7 @@ import {
   materializeProjectFromArtifacts,
   mergeFilesIntoProject,
 } from "./chatProjectState";
+import { computeContentHash } from "./artifactState";
 
 describe("chatProjectState", () => {
   test("accumulates files across separate generations", () => {
@@ -104,5 +105,47 @@ describe("chatProjectState", () => {
       path: "ReplicatedStorage/New.lua",
       name: "New.lua",
     });
+  });
+
+  test("patch applies when expectedContentHash matches and skips mismatches", () => {
+    const content = "return { speed = 50 }";
+    const hash = computeContentHash(content);
+    const base = {
+      id: "project_1",
+      artifactId: "project_1",
+      title: "Project",
+      files: [
+        {
+          id: "fly",
+          path: "ReplicatedStorage/FlyConfig",
+          placement: "ReplicatedStorage",
+          kind: "config",
+          content,
+          contentHash: hash,
+        },
+      ],
+    };
+
+    const patched = applyProjectOperations(base, [
+      {
+        type: "patch",
+        id: "fly",
+        path: "ReplicatedStorage/FlyConfig",
+        expectedContentHash: hash,
+        replacements: [{ find: "speed = 50", replace: "speed = 80" }],
+      },
+    ]);
+    expect(patched.files[0].content).toBe("return { speed = 80 }");
+
+    const skipped = applyProjectOperations(base, [
+      {
+        type: "patch",
+        id: "fly",
+        path: "ReplicatedStorage/FlyConfig",
+        expectedContentHash: "stale-hash",
+        replacements: [{ find: "speed = 50", replace: "speed = 99" }],
+      },
+    ]);
+    expect(skipped.files[0].content).toBe(content);
   });
 });

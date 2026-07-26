@@ -24,6 +24,7 @@ export default function AgentChatPanel({
   onClarifySubmit,
   onEditPlan,
   onRefine,
+  onStartRefine,
   onOpenArtifact,
   onQuickStart,
   onRenameChat,
@@ -79,6 +80,7 @@ export default function AgentChatPanel({
   // composer
   prompt,
   setPrompt,
+  setRewindTarget,
   attachments,
   setAttachments,
   robloxImageUploading = false,
@@ -87,6 +89,8 @@ export default function AgentChatPanel({
   onStop,
   refineTarget,
   onCancelRefine,
+  rewindTarget = null,
+  onCancelRewind,
   onFileUpload,
   onImprovePrompt,
   isImproving,
@@ -120,9 +124,10 @@ export default function AgentChatPanel({
     onPlanTaskAccepted?.(task || taskId);
   }, [onPlanTaskAccepted]);
 
-  const handleComposerSubmit = useCallback((event) => {
+  const handleComposerSubmit = useCallback((event, overridePrompt = null) => {
     const submission = onSubmit?.(
       event,
+      overridePrompt,
       selectedTemplateId ? { templateId: selectedTemplateId } : undefined,
     );
     setSelectedTemplateId("");
@@ -130,9 +135,15 @@ export default function AgentChatPanel({
   }, [onSubmit, selectedTemplateId]);
 
   const handleEditMessage = useCallback((message) => {
+    const messageId = String(message?.id || "").trim();
     setPrompt?.(String(message?.content || ""));
     if (Array.isArray(message?.attachments)) setAttachments?.(message.attachments);
-  }, [setAttachments, setPrompt]);
+    if (messageId) {
+      setRewindTarget?.({ messageId, mode: "replace" });
+    } else {
+      setRewindTarget?.(null);
+    }
+  }, [setAttachments, setPrompt, setRewindTarget]);
 
   return (
     <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-ink-900">
@@ -208,9 +219,12 @@ export default function AgentChatPanel({
         onStop={onStop}
         isGenerating={isBusy}
         generationStage={generationStage}
-        placeholder={refineTarget ? "Describe the Studio change you want..." : "Ask the Studio agent to build, inspect, wire, or fix..."}
+        placeholder={refineTarget ? "Describe the Studio change…" : "Ask the Studio agent…"}
         refineTarget={refineTarget}
         onCancelRefine={onCancelRefine}
+        onStartRefine={onStartRefine}
+        rewindTarget={rewindTarget}
+        onCancelRewind={onCancelRewind}
         tokensLeft={tokensLeft}
         tokensLimit={tokensLimit}
         resetsAt={resetsAt}

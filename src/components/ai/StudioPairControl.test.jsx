@@ -1,6 +1,10 @@
 import React from "react";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import StudioPairControl, { getDesktopConnectorPairingLink, resolvePairingExpiry } from "./StudioPairControl";
+import StudioPairControl, {
+  computeStudioPairMenuPosition,
+  getDesktopConnectorPairingLink,
+  resolvePairingExpiry,
+} from "./StudioPairControl";
 import {
   disconnectStudioMcp,
   startStudioPairing,
@@ -21,6 +25,31 @@ describe("StudioPairControl", () => {
     jest.clearAllMocks();
     testStudioMcp.mockResolvedValue({ ok: true, connected: true });
     disconnectStudioMcp.mockResolvedValue({ ok: true });
+  });
+
+  test("anchors the menu under the trigger and caps its size", () => {
+    const buttonRect = { left: 500, right: 620, top: 12, bottom: 44, width: 120, height: 32 };
+
+    const fixed = computeStudioPairMenuPosition(buttonRect, {
+      viewportWidth: 1280,
+      viewportHeight: 800,
+    });
+    expect(fixed.strategy).toBe("fixed");
+    expect(fixed.width).toBe(400);
+    expect(fixed.left).toBe(220); // right-aligned to button.right
+    expect(fixed.top).toBe(52);
+    expect(fixed.maxHeight).toBeLessThanOrEqual(520);
+
+    const absolute = computeStudioPairMenuPosition(buttonRect, {
+      hostRect: { left: 0, top: 0, right: 1024, bottom: 640 },
+      hostClientWidth: 1280,
+      hostClientHeight: 800,
+      hostScale: 0.8,
+    });
+    expect(absolute.strategy).toBe("absolute");
+    expect(absolute.left).toBeCloseTo((620 / 0.8) - 400, 5);
+    expect(absolute.top).toBeCloseTo((44 / 0.8) + 8, 5);
+    expect(absolute.maxHeight).toBeLessThanOrEqual(520);
   });
 
   test("normalizes absolute and relative pairing expiries", () => {

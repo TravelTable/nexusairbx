@@ -34,15 +34,22 @@ export const COMPOSER_COMMANDS = Object.freeze([
     description: "Expand your prompt into a detailed brief",
     action: "improve_prompt",
   },
+  {
+    id: "refine",
+    label: "@refine",
+    description: "Refine the current workspace project surgically",
+    action: "start_refine",
+  },
 ]);
 
 export const COMPOSER_PLACEHOLDER_HINTS = Object.freeze([
-  "Ask the Studio agent to build, inspect, wire, or fix…",
-  "Type @studio to choose a Studio place",
+  "Ask the Studio agent…",
+  "Type @studio to choose a place",
   "Type @asset to attach Roblox assets",
   "Type @file to upload an image or script",
   "Type @controls for Live Studio settings",
   "Type @improve to expand your prompt",
+  "Type @refine to iterate on the current project",
 ]);
 
 export function filterComposerCommands(query = "", commands = COMPOSER_COMMANDS) {

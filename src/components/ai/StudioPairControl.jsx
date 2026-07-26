@@ -26,9 +26,23 @@ import {
   getStudioSessionId,
   MCP_CAPABILITY_LABELS,
 } from "../../lib/studioConnection";
+import {
+  computeAnchoredMenuPosition,
+  getWorkspaceMenuHost,
+  resolveAnchoredMenuPosition,
+} from "../../lib/workspaceMenuPosition";
 
-const MENU_WIDTH = 460;
-const VIEWPORT_GUTTER = 8;
+const MENU_WIDTH = 400;
+const MENU_MAX_HEIGHT = 520;
+
+/** @deprecated Prefer computeAnchoredMenuPosition — kept for existing Studio pair tests. */
+export function computeStudioPairMenuPosition(buttonRect, options) {
+  return computeAnchoredMenuPosition(buttonRect, {
+    menuWidth: MENU_WIDTH,
+    menuMaxHeight: MENU_MAX_HEIGHT,
+    ...options,
+  });
+}
 
 function formatRemaining(ms) {
   if (!ms || ms <= 0) return "expired";
@@ -178,14 +192,10 @@ export default function StudioPairControl({
   const overallConnected = pluginConnected || mcpConnected;
 
   const updateMenuPosition = useCallback(() => {
-    const rect = buttonRef.current?.getBoundingClientRect();
-    if (!rect) return;
-    const maxLeft = Math.max(VIEWPORT_GUTTER, window.innerWidth - MENU_WIDTH - VIEWPORT_GUTTER);
-    setMenuPosition({
-      top: rect.bottom + 8,
-      left: Math.min(Math.max(VIEWPORT_GUTTER, rect.left), maxLeft),
-      maxHeight: Math.max(240, window.innerHeight - rect.bottom - 24),
-    });
+    setMenuPosition(resolveAnchoredMenuPosition(buttonRef.current, {
+      menuWidth: MENU_WIDTH,
+      menuMaxHeight: MENU_MAX_HEIGHT,
+    }));
   }, []);
 
   useEffect(() => {
@@ -378,11 +388,13 @@ export default function StudioPairControl({
         <div
           id="studio-connection-dialog"
           ref={menuRef}
-          className="fixed z-[9999] w-[min(460px,calc(100vw-16px))] overflow-y-auto rounded-2xl border border-white/10 bg-[#0D0D0D]/95 p-4 shadow-2xl backdrop-blur-2xl scrollbar-subtle"
+          className="z-[9999] overflow-y-auto rounded-2xl border border-white/10 bg-[#0D0D0D]/95 p-4 shadow-2xl backdrop-blur-2xl scrollbar-subtle"
           style={{
+            position: menuPosition?.strategy || "fixed",
             top: menuPosition?.top ?? 0,
             left: menuPosition?.left ?? 0,
-            maxHeight: Math.min(menuPosition?.maxHeight ?? window.innerHeight * 0.75, window.innerHeight * 0.75),
+            width: menuPosition?.width ?? MENU_WIDTH,
+            maxHeight: menuPosition?.maxHeight ?? MENU_MAX_HEIGHT,
             visibility: menuPosition ? "visible" : "hidden",
           }}
           role="dialog"
@@ -692,7 +704,7 @@ export default function StudioPairControl({
             </div>
           )}
         </div>,
-        document.body
+        getWorkspaceMenuHost() || document.body
       )
     : null;
 

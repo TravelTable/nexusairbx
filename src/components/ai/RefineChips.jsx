@@ -1,25 +1,24 @@
 import React from "react";
 import {
   Wand2,
-  Moon,
-  X,
-  Smartphone,
-  Maximize2,
-  Square,
+  Bug,
+  Shield,
+  Zap,
+  Layers,
+  FileCode2,
   Sparkles,
-  Circle,
+  RefreshCw,
 } from "lib/icons";
 
-// One-click refine suggestions. Each chip submits its `text` through the
-// existing refine flow (PreviewTab's onRefine), so iteration is one tap.
+// Studio/script quick refine suggestions. Shown only while refine mode is active.
 const REFINE_CHIPS = [
-  { label: "Make it darker", text: "Make the color scheme darker and moodier", icon: Moon },
-  { label: "Add close button", text: "Add a close button in the top-right corner", icon: X },
-  { label: "Mobile layout", text: "Optimize the layout for mobile / portrait screens", icon: Smartphone },
-  { label: "More spacing", text: "Add more spacing and padding between elements", icon: Maximize2 },
-  { label: "Bigger buttons", text: "Make the buttons bigger with larger tap targets", icon: Square },
-  { label: "Add icons", text: "Add relevant icons to the buttons and labels", icon: Sparkles },
-  { label: "Rounder corners", text: "Increase the corner radius for a rounder, softer look", icon: Circle },
+  { label: "Add validation", text: "Add server-side validation and type checks for remote inputs", icon: Shield },
+  { label: "Fix bugs", text: "Find and fix bugs, edge cases, and unsafe assumptions in the current scripts", icon: Bug },
+  { label: "Optimize", text: "Optimize performance and reduce unnecessary work while keeping behavior the same", icon: Zap },
+  { label: "Split modules", text: "Split oversized scripts into clearer ModuleScripts with single responsibilities", icon: Layers },
+  { label: "Add comments", text: "Add brief comments for non-obvious logic without changing behavior", icon: FileCode2 },
+  { label: "Harden remotes", text: "Harden RemoteEvents/RemoteFunctions with cooldowns, ownership checks, and anti-exploit guards", icon: RefreshCw },
+  { label: "Polish UX", text: "Polish player-facing feedback, messaging, and UI polish without redesigning the whole system", icon: Sparkles },
 ];
 
 export default function RefineChips({ onRefine, isRefining = false, className = "" }) {
@@ -32,7 +31,7 @@ export default function RefineChips({ onRefine, isRefining = false, className = 
       aria-label="Quick refine suggestions"
     >
       <span className="shrink-0 inline-flex items-center gap-1 pr-1 text-[10px] font-bold uppercase tracking-widest text-gray-500">
-        <Wand2 className="w-3 h-3 text-[#9b5de5]" />
+        <Wand2 className="w-3 h-3 text-[#00f5d4]" />
         Quick
       </span>
       {REFINE_CHIPS.map(({ label, text, icon: Icon }) => (

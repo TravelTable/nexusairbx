@@ -13,12 +13,14 @@ describe("composerCommands", () => {
       "file",
       "controls",
       "improve",
+      "refine",
     ]);
   });
 
   test("filters commands by query", () => {
     expect(filterComposerCommands("ass").map((command) => command.id)).toEqual(["asset"]);
     expect(filterComposerCommands("@stu").map((command) => command.id)).toEqual(["studio"]);
+    expect(filterComposerCommands("ref").map((command) => command.id)).toEqual(["refine"]);
   });
 
   test("detects active @ mentions at the caret", () => {

@@ -3,12 +3,13 @@ import { createPortal } from "react-dom";
 import {
   Check,
   ChevronDown,
+  Edit,
   Loader,
   Plus,
-  RefreshCw,
   SendPrompt,
   SlidersHorizontal,
   Square,
+  Wand2,
   X,
 } from "lib/icons";
 import { TokenBar } from "../AiComponents";
@@ -17,6 +18,7 @@ import StudioControls from "../workspace/StudioControls";
 import StudioPlaceChip from "../workspace/StudioPlaceChip";
 import RobloxCloudControls from "../workspace/RobloxCloudControls";
 import AssetLibraryModal from "../workspace/AssetLibraryModal";
+import RefineChips from "../RefineChips";
 import ComposerCommandMenu from "./ComposerCommandMenu";
 import { ROBLOX_DECAL_ACCEPT } from "../../../hooks/useRobloxImageUpload";
 import { useMotionPresence } from "../../../hooks/useMotionPresence";
@@ -26,6 +28,7 @@ import {
   filterComposerCommands,
   getActiveComposerMention,
 } from "../../../lib/composerCommands";
+import { messageHasRefineableFiles } from "../../../lib/chatRefine";
 
 function ModeSelector({ mode, onModeChange, disabled }) {
   const [open, setOpen] = useState(false);
@@ -242,6 +245,9 @@ export default function ChatComposer({
   billingError = null,
   refineTarget,
   onCancelRefine,
+  onStartRefine,
+  rewindTarget = null,
+  onCancelRewind,
   onFileUpload,
   onImprovePrompt,
   disabled,
@@ -332,9 +338,9 @@ export default function ChatComposer({
     const textarea = textareaRef.current;
     if (!textarea) return;
     textarea.style.height = "0px";
-    const nextHeight = Math.min(Math.max(textarea.scrollHeight, 44), 144);
+    const nextHeight = Math.min(Math.max(textarea.scrollHeight, 28), 120);
     textarea.style.height = `${nextHeight}px`;
-    textarea.style.overflowY = textarea.scrollHeight > 144 ? "auto" : "hidden";
+    textarea.style.overflowY = textarea.scrollHeight > 120 ? "auto" : "hidden";
   }, [prompt]);
 
   useEffect(() => {
@@ -403,10 +409,35 @@ export default function ChatComposer({
       case "improve_prompt":
         if (prompt?.trim()) onImprovePrompt?.();
         break;
+      case "start_refine":
+        onStartRefine?.();
+        break;
       default:
         break;
     }
-  }, [onImprovePrompt, onOpenAssetLibrary, onStudioPlacePickerOpenChange, prompt]);
+  }, [onImprovePrompt, onOpenAssetLibrary, onStartRefine, onStudioPlacePickerOpenChange, prompt]);
+
+  useEffect(() => {
+    if (!refineTarget) return undefined;
+    const textarea = textareaRef.current;
+    if (textarea) {
+      textarea.focus();
+    }
+    const onKeyDown = (event) => {
+      if (event.key !== "Escape") return;
+      if (mentionOpen || controlsOpen || contextOpen || usageOpen) return;
+      event.preventDefault();
+      onCancelRefine?.();
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [refineTarget, mentionOpen, controlsOpen, contextOpen, usageOpen, onCancelRefine]);
+
+  const submitQuickRefine = useCallback((text) => {
+    const next = String(text || "").trim();
+    if (!next || isGenerating || disabled) return;
+    onSubmit?.(null, next);
+  }, [disabled, isGenerating, onSubmit]);
 
   const applyMentionCommand = useCallback((command) => {
     if (!command) return;
@@ -530,25 +561,49 @@ export default function ChatComposer({
   );
 
   return (
-    <div className="bg-gradient-to-t from-black via-black/80 to-transparent px-2 pb-2 pt-1.5">
+    <div className="bg-gradient-to-t from-black via-black/80 to-transparent px-2 pb-1.5 pt-1">
       <div className="relative z-20 mx-auto max-w-5xl overflow-visible rounded-xl border border-white/10 bg-ink-800/95 shadow-panel backdrop-blur-xl transition-[border-color,box-shadow] duration-150 focus-within:border-[#00f5d4]/30 focus-within:shadow-[0_0_18px_rgba(0,245,212,0.05)]">
-        {(refineTarget || contextItems.length > 0) && (
-          <div className="flex min-h-9 items-center gap-1.5 overflow-visible border-b border-white/[0.06] px-2 py-1">
+        {(refineTarget || rewindTarget?.messageId || contextItems.length > 0) && (
+          <div className="flex min-h-8 items-center gap-1.5 overflow-visible border-b border-white/[0.06] px-2 py-0.5">
             {refineTarget && (
-              <div className="inline-flex h-7 max-w-[180px] shrink-0 items-center gap-1.5 rounded-md border border-[#00f5d4]/20 bg-[#00f5d4]/10 px-2 text-[10px] font-bold text-[#00f5d4] transition-[border-color,background-color,color,opacity] duration-150 motion-safe:animate-fade-in-up">
-                <RefreshCw className="h-3 w-3 shrink-0" />
-                <span className="truncate">Refining: {refineTarget.title || "current artifact"}</span>
+              <div className="inline-flex h-7 max-w-[280px] shrink-0 items-center gap-1.5 rounded-md border border-[#00f5d4]/20 bg-[#00f5d4]/10 px-2 text-[10px] font-bold text-[#00f5d4] transition-[border-color,background-color,color,opacity] duration-150 motion-safe:animate-fade-in-up">
+                <Wand2 className="h-3 w-3 shrink-0" />
+                <span className="truncate">
+                  {studioConnected ? "Refining in Studio: " : "Refining workspace: "}
+                  {refineTarget.title || "current project"}
+                  {messageHasRefineableFiles(refineTarget)
+                    ? ` · ${Array.isArray(refineTarget.files) && refineTarget.files.length
+                      ? `${refineTarget.files.length} file${refineTarget.files.length === 1 ? "" : "s"}`
+                      : "1 script"}`
+                    : ""}
+                  {refineTarget.revision ? ` · rev ${String(refineTarget.revision).slice(0, 8)}` : ""}
+                </span>
                 <button
                   type="button"
                   onClick={onCancelRefine}
                   className="rounded p-0.5 text-[#00f5d4]/70 hover:bg-white/10 hover:text-white focus-ring"
                   aria-label="Cancel refine"
-                  title="Cancel refine"
+                  title="Cancel refine (Esc)"
                 >
                   <X className="h-3 w-3" />
                 </button>
               </div>
             )}
+            {rewindTarget?.messageId ? (
+              <div className="inline-flex h-7 max-w-[220px] shrink-0 items-center gap-1.5 rounded-md border border-amber-400/20 bg-amber-400/10 px-2 text-[10px] font-bold text-amber-200 transition-[border-color,background-color,color,opacity] duration-150 motion-safe:animate-fade-in-up">
+                <Edit className="h-3 w-3 shrink-0" />
+                <span className="truncate">Continuing from earlier message</span>
+                <button
+                  type="button"
+                  onClick={onCancelRewind}
+                  className="rounded p-0.5 text-amber-200/70 hover:bg-white/10 hover:text-white focus-ring"
+                  aria-label="Cancel edit from earlier message"
+                  title="Cancel edit from earlier message"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </div>
+            ) : null}
             <div className="flex min-w-0 items-center gap-1.5 overflow-hidden" aria-label="Prompt context items">
               {visibleContextItems.map(renderContextItem)}
             </div>
@@ -593,6 +648,12 @@ export default function ChatComposer({
           </div>
         )}
 
+        {refineTarget ? (
+          <div className="border-b border-white/[0.06] px-2 py-1.5">
+            <RefineChips onRefine={submitQuickRefine} isRefining={isGenerating} />
+          </div>
+        ) : null}
+
         <div className="relative">
           {mentionOpen && (
             <ComposerCommandMenu
@@ -603,12 +664,12 @@ export default function ChatComposer({
             />
           )}
 
-          <div className="relative min-h-[44px] px-3 pt-2">
+          <div className="relative min-h-[28px] px-2.5 pt-1">
             <textarea
               ref={textareaRef}
               id="tour-prompt-box"
               data-tour="prompt-input"
-              className="min-h-[44px] w-full resize-none border-none bg-transparent px-0 py-1.5 text-[14px] leading-relaxed text-gray-100 outline-none transition-[height,color,opacity] duration-150 placeholder:text-gray-600 focus:ring-0 disabled:opacity-50 md:text-[15px]"
+              className="min-h-[28px] w-full resize-none border-none bg-transparent px-0 py-1 text-[14px] leading-snug text-gray-100 outline-none transition-[height,color,opacity] duration-150 placeholder:text-gray-600 focus:ring-0 disabled:opacity-50 md:text-[15px]"
               rows={1}
               placeholder={placeholder}
               value={prompt}
@@ -623,7 +684,7 @@ export default function ChatComposer({
             />
           </div>
 
-          <div className="flex items-center justify-between gap-2 px-2 pb-2 pt-1">
+          <div className="flex items-center justify-between gap-2 px-1.5 pb-1.5 pt-0.5">
             <div className="flex min-w-0 items-center gap-1">
               <input
                 ref={fileInputRef}
@@ -692,18 +753,89 @@ export default function ChatComposer({
             </div>
 
             <div className="flex shrink-0 items-center gap-1">
-              <button
-                ref={controlsButtonRef}
-                type="button"
-                onClick={() => setControlsOpen(true)}
-                className="flex h-7 w-7 items-center justify-center rounded-md text-gray-500 transition-[background-color,color,opacity,transform] duration-150 hover:bg-white/10 hover:text-white active:scale-95 focus-ring"
-                aria-expanded={controlsOpen}
-                aria-controls={controlsId}
-                aria-haspopup="dialog"
-                title="Open advanced Studio and Roblox settings"
-              >
-                <SlidersHorizontal className="h-3.5 w-3.5" />
-              </button>
+              <div className="relative">
+                <button
+                  ref={controlsButtonRef}
+                  type="button"
+                  onClick={() => setControlsOpen((value) => !value)}
+                  className={`flex h-7 w-7 items-center justify-center rounded-md transition-[background-color,color,opacity,transform] duration-150 active:scale-95 focus-ring ${
+                    controlsOpen
+                      ? "bg-white/10 text-white"
+                      : "text-gray-500 hover:bg-white/10 hover:text-white"
+                  }`}
+                  aria-expanded={controlsOpen}
+                  aria-controls={controlsId}
+                  aria-haspopup="dialog"
+                  title="Open advanced Studio and Roblox settings"
+                >
+                  <SlidersHorizontal className="h-3.5 w-3.5" />
+                </button>
+                {controlsPresence.present && (
+                  <div
+                    ref={controlsPanelRef}
+                    id={controlsId}
+                    role="dialog"
+                    aria-label="Studio and Roblox settings"
+                    aria-hidden={!controlsOpen}
+                    className={`absolute bottom-full right-0 z-30 mb-2 w-80 max-w-[min(20rem,92vw)] origin-bottom-right rounded-xl border border-white/10 bg-[#0D0D0D] p-3 shadow-2xl transition-[opacity,transform] duration-[180ms] ${
+                      controlsPresence.entering
+                        ? "translate-y-0 scale-100 opacity-100"
+                        : "pointer-events-none translate-y-1 scale-95 opacity-0"
+                    }`}
+                  >
+                    <div className="mb-3">
+                      <h2 className="text-sm font-bold text-white">Advanced setup</h2>
+                      <p className="text-[10px] text-gray-500">Studio and Roblox connections</p>
+                    </div>
+                    <div className="flex max-h-[min(24rem,50vh)] flex-col gap-3 overflow-y-auto scrollbar-subtle">
+                      <StudioControls
+                        connected={studioConnected}
+                        connectionType={studioConnectionType}
+                        connectionState={studioConnectionState}
+                        capabilities={studioCapabilities}
+                        loading={studioLoading}
+                        studioEnabled={studioEnabled}
+                        onStudioEnabledChange={onStudioEnabledChange}
+                        applyMode={studioApplyMode}
+                        onApplyModeChange={onStudioApplyModeChange}
+                        autoPushEnabled={studioAutoPushEnabled}
+                        onAutoPushEnabledChange={onStudioAutoPushEnabledChange}
+                        autoPushPolicy={studioAutoPushPolicy}
+                        onAutoPushPolicyChange={onStudioAutoPushPolicyChange}
+                        autoPushAuthorized={studioAutoPushAuthorized}
+                      />
+                      {studioConnected && Array.isArray(studioCollaborators) && studioCollaborators.length > 0 && (
+                        <span
+                          className="inline-flex w-fit items-center gap-1 rounded-full border border-amber-400/30 bg-amber-400/10 px-2 py-0.5 text-[11px] text-amber-200"
+                          title={studioCollaborators
+                            .map((collaborator) => `${collaborator.label || "collaborator"}${
+                              Array.isArray(collaborator.activePaths) && collaborator.activePaths.length
+                                ? ` — ${collaborator.activePaths.slice(0, 3).join(", ")}`
+                                : ""
+                            }`)
+                            .join("\n")}
+                        >
+                          {studioCollaborators.length} collaborator{studioCollaborators.length === 1 ? "" : "s"} on this place
+                        </span>
+                      )}
+                      <RobloxCloudControls
+                        connected={robloxConnected}
+                        loading={robloxLoading}
+                        selectedCreator={robloxSelectedCreator}
+                        uploadAvailable={robloxUploadAvailable}
+                        uploadState={robloxUploadState}
+                        uploadDisabledReason={robloxUploadDisabledReason}
+                        assetUploadsEnabled={robloxAssetUploadsEnabled}
+                        onAssetUploadsEnabledChange={onRobloxAssetUploadsEnabledChange}
+                        selectedAssetCount={robloxProjectAssets.length}
+                        onOpenAssetLibrary={onOpenAssetLibrary}
+                        assetLibraryAvailable={robloxAssetLibraryAvailable}
+                        assetLibraryDisabledReason={robloxAssetLibraryDisabledReason}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
               <button
                 type="button"
                 id="tour-generate-button"
@@ -726,96 +858,6 @@ export default function ChatComposer({
           </div>
         </div>
       </div>
-
-      {controlsPresence.present && typeof document !== "undefined"
-        ? createPortal(
-            <div
-              className={`fixed inset-0 z-[9998] transition-opacity duration-[180ms] ${
-                controlsPresence.entering ? "opacity-100" : "pointer-events-none opacity-0"
-              }`}
-            >
-              <button
-                type="button"
-                className="absolute inset-0 cursor-default bg-black/55 backdrop-blur-[2px]"
-                onClick={() => setControlsOpen(false)}
-                aria-label="Close advanced settings"
-              />
-              <aside
-                ref={controlsPanelRef}
-                id={controlsId}
-                role="dialog"
-                aria-modal="true"
-                aria-label="Studio and Roblox settings"
-                aria-hidden={!controlsOpen}
-                className={`absolute inset-y-0 right-0 flex w-[min(28rem,92vw)] flex-col border-l border-white/10 bg-[#0D0D0D]/98 shadow-2xl transition-transform duration-[180ms] ${
-                  controlsPresence.entering ? "translate-x-0" : "translate-x-full"
-                }`}
-              >
-                <div className="flex h-12 shrink-0 items-center justify-between border-b border-white/[0.07] px-4">
-                  <div>
-                    <h2 className="text-sm font-bold text-white">Advanced setup</h2>
-                    <p className="text-[10px] text-gray-500">Studio and Roblox connections</p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setControlsOpen(false)}
-                    className="rounded-lg p-2 text-gray-500 hover:bg-white/[0.06] hover:text-white focus-ring"
-                    aria-label="Close advanced settings"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
-                </div>
-                <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-4 scrollbar-subtle">
-                  <StudioControls
-                    connected={studioConnected}
-                    connectionType={studioConnectionType}
-                    connectionState={studioConnectionState}
-                    capabilities={studioCapabilities}
-                    loading={studioLoading}
-                    studioEnabled={studioEnabled}
-                    onStudioEnabledChange={onStudioEnabledChange}
-                    applyMode={studioApplyMode}
-                    onApplyModeChange={onStudioApplyModeChange}
-                    autoPushEnabled={studioAutoPushEnabled}
-                    onAutoPushEnabledChange={onStudioAutoPushEnabledChange}
-                    autoPushPolicy={studioAutoPushPolicy}
-                    onAutoPushPolicyChange={onStudioAutoPushPolicyChange}
-                    autoPushAuthorized={studioAutoPushAuthorized}
-                  />
-                  {studioConnected && Array.isArray(studioCollaborators) && studioCollaborators.length > 0 && (
-                    <span
-                      className="inline-flex w-fit items-center gap-1 rounded-full border border-amber-400/30 bg-amber-400/10 px-2 py-0.5 text-[11px] text-amber-200"
-                      title={studioCollaborators
-                        .map((collaborator) => `${collaborator.label || "collaborator"}${
-                          Array.isArray(collaborator.activePaths) && collaborator.activePaths.length
-                            ? ` — ${collaborator.activePaths.slice(0, 3).join(", ")}`
-                            : ""
-                        }`)
-                        .join("\n")}
-                    >
-                      {studioCollaborators.length} collaborator{studioCollaborators.length === 1 ? "" : "s"} on this place
-                    </span>
-                  )}
-                  <RobloxCloudControls
-                    connected={robloxConnected}
-                    loading={robloxLoading}
-                    selectedCreator={robloxSelectedCreator}
-                    uploadAvailable={robloxUploadAvailable}
-                    uploadState={robloxUploadState}
-                    uploadDisabledReason={robloxUploadDisabledReason}
-                    assetUploadsEnabled={robloxAssetUploadsEnabled}
-                    onAssetUploadsEnabledChange={onRobloxAssetUploadsEnabledChange}
-                    selectedAssetCount={robloxProjectAssets.length}
-                    onOpenAssetLibrary={onOpenAssetLibrary}
-                    assetLibraryAvailable={robloxAssetLibraryAvailable}
-                    assetLibraryDisabledReason={robloxAssetLibraryDisabledReason}
-                  />
-                </div>
-              </aside>
-            </div>,
-            document.body
-          )
-        : null}
 
       <AssetLibraryModal
         open={assetLibraryOpen}

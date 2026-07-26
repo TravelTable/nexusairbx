@@ -1,11 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
 import { ListChecks, Menu, Pencil } from "lib/icons";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "../../shadcn/dropdown-menu";
 
 function cleanTitle(value) {
   return String(value || "").replace(/\s+/g, " ").trim();
@@ -123,24 +117,6 @@ export default function ChatHeader({
           />
           <span className="hidden sm:inline">{connectionLabel}</span>
         </span>
-
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button
-              type="button"
-              className="grid h-8 min-w-8 place-items-center rounded-lg px-2 text-sm tracking-[0.15em] text-gray-500 transition-colors hover:bg-white/[0.06] hover:text-white"
-              aria-label="Chat options"
-            >
-              •••
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="border-white/10 bg-[#111] text-gray-200">
-            <DropdownMenuItem onSelect={() => setEditing(true)}>
-              <Pencil className="h-4 w-4" />
-              Rename chat
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
       </div>
     </header>
   );

@@ -943,4 +943,102 @@ describe("useUnifiedChat", () => {
       }),
     }));
   });
+
+  test("retry rewind truncates after the user turn and does not write a duplicate user message", async () => {
+    const rewindTranscript = jest.fn().mockResolvedValue({
+      kept: [
+        { id: "u1", role: "user", content: "Build a lobby system", createdAt: 1 },
+      ],
+      removed: [
+        { id: "a1", role: "assistant", content: "Done", createdAt: 2 },
+        { id: "u2", role: "user", content: "Also add shops", createdAt: 3 },
+      ],
+      pivot: { id: "u1", role: "user", content: "Build a lobby system", createdAt: 1 },
+      mode: "after",
+    });
+    useAiChat.mockReturnValue({
+      activeMode: "agent",
+      assertCanWrite: jest.fn(() => Promise.resolve()),
+      currentChatId: "chat-1",
+      generatingChatIds: [],
+      generationStage: "",
+      handleSubmit: chatHandleSubmit,
+      isGenerating: false,
+      messages: [
+        { id: "u1", role: "user", content: "Build a lobby system", createdAt: 1 },
+        { id: "a1", role: "assistant", content: "Done", createdAt: 2 },
+        { id: "u2", role: "user", content: "Also add shops", createdAt: 3 },
+      ],
+      openChatById: jest.fn(),
+      pendingMessage: null,
+      setPendingForChat: jest.fn(),
+      rewindTranscript,
+    });
+    const user = { uid: "user-1", getIdToken: jest.fn().mockResolvedValue("token") };
+    const { result } = renderHook(() => useUnifiedChat(user, {}, jest.fn(), jest.fn()));
+
+    await act(async () => {
+      await result.current.handleSubmit("Build a lobby system", [], null, {
+        rewindFromMessageId: "u1",
+        rewindMode: "after",
+        projectId: "project_1",
+      });
+    });
+
+    expect(rewindTranscript).toHaveBeenCalledWith("u1", "after");
+    expect(setDoc.mock.calls.some(([, payload]) => payload?.role === "user")).toBe(false);
+    expect(createAgentRunV2).toHaveBeenCalledWith(expect.objectContaining({
+      prompt: "Build a lobby system",
+      conversation: [],
+    }));
+    expect(chatHandleSubmit).toHaveBeenCalledTimes(1);
+  });
+
+  test("edit rewind replaces the user turn then writes the edited prompt", async () => {
+    const rewindTranscript = jest.fn().mockResolvedValue({
+      kept: [],
+      removed: [
+        { id: "u1", role: "user", content: "Build a lobby system", createdAt: 1 },
+        { id: "a1", role: "assistant", content: "Done", createdAt: 2 },
+      ],
+      pivot: { id: "u1", role: "user", content: "Build a lobby system", createdAt: 1 },
+      mode: "replace",
+    });
+    useAiChat.mockReturnValue({
+      activeMode: "agent",
+      assertCanWrite: jest.fn(() => Promise.resolve()),
+      currentChatId: "chat-1",
+      generatingChatIds: [],
+      generationStage: "",
+      handleSubmit: chatHandleSubmit,
+      isGenerating: false,
+      messages: [
+        { id: "u1", role: "user", content: "Build a lobby system", createdAt: 1 },
+        { id: "a1", role: "assistant", content: "Done", createdAt: 2 },
+      ],
+      openChatById: jest.fn(),
+      pendingMessage: null,
+      setPendingForChat: jest.fn(),
+      rewindTranscript,
+    });
+    const user = { uid: "user-1", getIdToken: jest.fn().mockResolvedValue("token") };
+    const { result } = renderHook(() => useUnifiedChat(user, {}, jest.fn(), jest.fn()));
+
+    await act(async () => {
+      await result.current.handleSubmit("Build a better lobby", [], null, {
+        rewindFromMessageId: "u1",
+        rewindMode: "replace",
+        projectId: "project_1",
+      });
+    });
+
+    expect(rewindTranscript).toHaveBeenCalledWith("u1", "replace");
+    expect(setDoc.mock.calls.some(([, payload]) => (
+      payload?.role === "user" && payload?.content === "Build a better lobby"
+    ))).toBe(true);
+    expect(createAgentRunV2).toHaveBeenCalledWith(expect.objectContaining({
+      prompt: "Build a better lobby",
+      conversation: [],
+    }));
+  });
 });

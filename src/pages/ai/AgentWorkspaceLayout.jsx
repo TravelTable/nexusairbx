@@ -37,6 +37,7 @@ import { getStudioCommand, getStudioManifest, getStudioManifestStatus, queueStud
 import { TERMINAL_AGENT_STATES } from "../../lib/agentRuntimeV2Api";
 import { PENDING_AUTH_ACTIONS } from "../../lib/pendingAuthAction";
 import { getStudioSessionId } from "../../lib/studioConnection";
+import { buildRefineTargetFromWorkspace, messageHasRefineableFiles } from "../../lib/chatRefine";
 import TutorialOverlay from "../../components/onboarding/TutorialOverlay";
 import { useTutorial } from "../../components/onboarding/useTutorial";
 import useAiPageZoom from "../../hooks/useAiPageZoom";
@@ -76,6 +77,7 @@ export default function AgentWorkspaceLayout({ controller }) {
     prompt,
     isImproving,
     refineTarget,
+    rewindTarget,
     attachments,
     robloxImageUploading,
     robloxImageUploads,
@@ -116,6 +118,8 @@ export default function AgentWorkspaceLayout({ controller }) {
     setSidebarOpen,
     setActiveTab,
     setPrompt,
+    setRewindTarget,
+    cancelRewind,
     setGeneratorMode,
     setAttachments,
     setShowSignInNudge,
@@ -742,19 +746,69 @@ export default function AgentWorkspaceLayout({ controller }) {
     taskRuntime.taskId,
   ]);
 
-  const handleAgentPromptSubmit = useCallback((event, planSubmissionOptions = {}) => {
-    return handlePromptSubmit(event, null, {
+  const handleAgentPromptSubmit = useCallback((event, overridePromptOrOptions = null, maybeOptions = {}) => {
+    const overrideIsPrompt = typeof overridePromptOrOptions === "string";
+    const overridePrompt = overrideIsPrompt ? overridePromptOrOptions : null;
+    const planSubmissionOptions = overrideIsPrompt
+      ? (maybeOptions && typeof maybeOptions === "object" ? maybeOptions : {})
+      : (overridePromptOrOptions && typeof overridePromptOrOptions === "object"
+        ? overridePromptOrOptions
+        : {});
+    return handlePromptSubmit(event, overridePrompt, {
       ...taskSubmissionOptions,
-      ...(planSubmissionOptions && typeof planSubmissionOptions === "object"
-        ? planSubmissionOptions
-        : {}),
+      ...planSubmissionOptions,
     });
   }, [handlePromptSubmit, taskSubmissionOptions]);
 
-  const handleRetryMessage = useCallback((retryPrompt) => {
-    const nextPrompt = String(retryPrompt || "").trim();
+  const onStartRefineCommand = useCallback(() => {
+    if (!requireStarterOrAbove("Refinement & Iteration")) return;
+    const latestRefineable = [...(chat.messages || [])]
+      .reverse()
+      .find((message) => message?.role === "assistant" && messageHasRefineableFiles(message));
+    const target = buildRefineTargetFromWorkspace(
+      workspace.projectArtifactSnapshot,
+      latestRefineable || null
+    );
+    if (!target) {
+      notify?.({
+        message: "Nothing to refine yet. Generate a project first, then use @refine.",
+        type: "info",
+      });
+      return;
+    }
+    handleStartRefine(target);
+  }, [
+    chat.messages,
+    handleStartRefine,
+    notify,
+    requireStarterOrAbove,
+    workspace.projectArtifactSnapshot,
+  ]);
+
+  const handleRetryMessage = useCallback((payload) => {
+    const nextPrompt = String(
+      (typeof payload === "string" ? payload : payload?.prompt) || ""
+    ).trim();
     if (!nextPrompt) return undefined;
-    return handlePromptSubmit(null, nextPrompt, taskSubmissionOptions);
+    const message = typeof payload === "object" && payload ? payload.message : null;
+    const sourceUserMessage = typeof payload === "object" && payload
+      ? payload.sourceUserMessage
+      : null;
+    const pivotMessage = message?.id ? message : null;
+    const retryAttachments = pivotMessage?.role === "user"
+      ? (Array.isArray(pivotMessage.attachments) ? pivotMessage.attachments : [])
+      : (Array.isArray(sourceUserMessage?.attachments) ? sourceUserMessage.attachments : []);
+    const rewindMode = pivotMessage?.role === "assistant" ? "replace" : "after";
+    return handlePromptSubmit(null, nextPrompt, {
+      ...taskSubmissionOptions,
+      attachmentsOverride: retryAttachments,
+      ...(pivotMessage?.id
+        ? {
+            rewindFromMessageId: pivotMessage.id,
+            rewindMode,
+          }
+        : {}),
+    });
   }, [handlePromptSubmit, taskSubmissionOptions]);
 
   const handleAgentApprovePlan = useCallback((message) => {
@@ -832,6 +886,7 @@ export default function AgentWorkspaceLayout({ controller }) {
           onClarifySubmit={handleAgentClarifySubmit}
           onEditPlan={handleEditPlan}
           onRefine={onRefine}
+          onStartRefine={onStartRefineCommand}
           onOpenArtifact={handleOpenArtifact}
           onQuickStart={handleQuickStart}
           onRenameChat={(title) => chat.handleRenameChat(chat.currentChatId, title)}
@@ -840,6 +895,7 @@ export default function AgentWorkspaceLayout({ controller }) {
           notify={notify}
           prompt={prompt}
           setPrompt={setPrompt}
+          setRewindTarget={setRewindTarget}
           attachments={attachments}
           setAttachments={setAttachments}
           robloxImageUploading={robloxImageUploading}
@@ -848,6 +904,8 @@ export default function AgentWorkspaceLayout({ controller }) {
           onStop={handleStopActiveWork}
           refineTarget={refineTarget}
           onCancelRefine={cancelRefine}
+          rewindTarget={rewindTarget}
+          onCancelRewind={cancelRewind}
           onFileUpload={handleFileUpload}
           onImprovePrompt={handleImprovePrompt}
           isImproving={isImproving}
