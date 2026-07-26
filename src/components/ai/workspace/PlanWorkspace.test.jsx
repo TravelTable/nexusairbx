@@ -30,7 +30,7 @@ const createController = (overrides = {}) => ({
   editingLocked: false,
   regeneratingSectionId: null,
   askState: { status: "idle", answer: "", proposedOperations: [], error: null },
-  executionState: { status: "idle", result: null, error: null },
+  executionState: { status: "idle", taskId: "", version: null, result: null, error: null },
   replaceSection: jest.fn(),
   updateItem: jest.fn(),
   addItem: jest.fn(),
@@ -85,5 +85,27 @@ describe("PlanWorkspaceView", () => {
     fireEvent.click(screen.getByRole("button", { name: "Retry history" }));
     expect(loadVersions).toHaveBeenCalledTimes(1);
     expect(screen.queryByText("No earlier versions yet.")).toBeNull();
+  });
+
+  it("shows progress instead of another execution action after task acceptance", () => {
+    const onViewProgress = jest.fn();
+    const controller = createController({
+      executionState: {
+        status: "waiting_studio",
+        taskId: "task-1",
+        planId: "plan-1",
+        version: 4,
+        hash: "hash-4",
+        result: { task: { taskId: "task-1" } },
+        error: null,
+      },
+    });
+
+    render(<PlanWorkspaceView controller={controller} onViewProgress={onViewProgress} />);
+    fireEvent.click(screen.getByRole("button", { name: "View progress" }));
+
+    expect(onViewProgress).toHaveBeenCalledWith("task-1");
+    expect(controller.execute).not.toHaveBeenCalled();
+    expect(screen.queryByRole("button", { name: "Execute Plan" })).toBeNull();
   });
 });

@@ -269,11 +269,53 @@ export function setPlanSectionLock(plan, sectionId, locked) {
   return { ...plan, locks: { ...plan.locks, [sectionId]: Boolean(locked) } };
 }
 
+const PLAN_ITEM_CONTENT_ALIASES = Object.freeze([
+  "label",
+  "title",
+  "name",
+  "step",
+  "text",
+  "content",
+  "value",
+  "details",
+  "description",
+  "instructions",
+  "reason",
+  "notes",
+]);
+
+function withoutPlanItemContentAliases(item) {
+  const aliases = new Set(PLAN_ITEM_CONTENT_ALIASES);
+  return Object.fromEntries(
+    Object.entries(item && typeof item === "object" ? item : {})
+      .filter(([key]) => !aliases.has(key))
+  );
+}
+
+function serializePlanSectionItem(item, definition) {
+  const normalized = normalizePlanItem(item);
+  const metadata = withoutPlanItemContentAliases(normalized);
+
+  if (definition?.kind === "steps") {
+    return {
+      ...metadata,
+      title: normalized.title,
+      instructions: normalized.details,
+    };
+  }
+
+  return {
+    ...metadata,
+    label: normalized.title,
+    ...(normalized.details ? { details: normalized.details } : {}),
+  };
+}
+
 export function serializePlanSection(plan, sectionId) {
   const definition = PLAN_SECTION_DEFINITIONS.find((entry) => entry.id === sectionId);
   const value = plan?.sections?.[sectionId];
   if (definition?.kind === "text") return String(value || "");
-  return asArray(value).map((item) => ({ ...item }));
+  return asArray(value).map((item) => serializePlanSectionItem(item, definition));
 }
 
 export function createReplaceSectionOperation(plan, sectionId) {

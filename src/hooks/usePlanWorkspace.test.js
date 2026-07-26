@@ -2,10 +2,10 @@ import { act, renderHook, waitFor } from "@testing-library/react";
 import usePlanWorkspace from "./usePlanWorkspace";
 import {
   checkWorkflowPlanReadiness,
-  executeWorkflowPlan,
   getWorkflowPlan,
   getWorkflowPlanVersions,
   restoreWorkflowPlanVersion,
+  startPlanExecution,
   updateWorkflowPlan,
 } from "../lib/workflowApi";
 import {
@@ -28,11 +28,11 @@ jest.mock("../lib/workflowApi", () => {
     WorkflowApiError,
     askWorkflowPlan: jest.fn(),
     checkWorkflowPlanReadiness: jest.fn(),
-    executeWorkflowPlan: jest.fn(),
     getWorkflowPlan: jest.fn(),
     getWorkflowPlanVersions: jest.fn(),
     regenerateWorkflowPlanSection: jest.fn(),
     restoreWorkflowPlanVersion: jest.fn(),
+    startPlanExecution: jest.fn(),
     updateWorkflowPlan: jest.fn(),
   };
 });
@@ -93,7 +93,7 @@ describe("usePlanWorkspace", () => {
       ), plan.locks),
     }, input.version + 1, `hash-${input.version + 1}`));
     checkWorkflowPlanReadiness.mockResolvedValue({ ready: true, canExecute: true, issues: [] });
-    executeWorkflowPlan.mockResolvedValue({ task: { taskId: "task-1", status: "pending" } });
+    startPlanExecution.mockResolvedValue({ task: { taskId: "task-1", status: "accepted" } });
     getWorkflowPlanVersions.mockResolvedValue({ versions: [] });
     restoreWorkflowPlanVersion.mockImplementation(async (_planId, input) => (
       envelope(plan, input.version + 1, `hash-${input.version + 1}`)
@@ -130,11 +130,8 @@ describe("usePlanWorkspace", () => {
       executionResult = await result.current.execute();
     });
 
-    expect(executeWorkflowPlan).toHaveBeenCalledTimes(1);
-    expect(executeWorkflowPlan).toHaveBeenCalledWith("plan-1", {
-      version: 4,
-      hash: "hash-4",
-    });
+    expect(startPlanExecution).toHaveBeenCalledTimes(1);
+    expect(startPlanExecution).toHaveBeenCalledWith("plan-1", 4, "hash-4");
     expect(checkWorkflowPlanReadiness).toHaveBeenCalledWith("plan-1", expect.objectContaining({
       projectId: "project-current-chat",
       studioTarget,
@@ -179,7 +176,7 @@ describe("usePlanWorkspace", () => {
     });
 
     expect(response).toEqual(expect.objectContaining({ blocked: true }));
-    expect(executeWorkflowPlan).not.toHaveBeenCalled();
+    expect(startPlanExecution).not.toHaveBeenCalled();
     expect(result.current.executionState.status).toBe("blocked");
   });
 
@@ -279,11 +276,69 @@ describe("usePlanWorkspace", () => {
       await executionPromise;
     });
 
-    expect(executeWorkflowPlan).toHaveBeenCalledWith("plan-1", expect.objectContaining({
-      version: checkedFence.version,
-      hash: checkedFence.hash,
-    }));
+    expect(startPlanExecution).toHaveBeenCalledWith(
+      "plan-1",
+      checkedFence.version,
+      checkedFence.hash
+    );
     expect(result.current.editingLocked).toBe(false);
+  });
+
+  it("keeps an accepted task attached and does not start the exact version twice", async () => {
+    const { result } = renderHook(() => usePlanWorkspace({
+      messages: [message],
+      userId: "user-1",
+      chatId: "chat-1",
+      projectId: "project-current-chat",
+      studioConnected: true,
+      studioTarget,
+    }));
+    await waitFor(() => expect(result.current.loadState).toBe("ready"));
+
+    let first;
+    let second;
+    await act(async () => {
+      first = await result.current.execute();
+      second = await result.current.execute();
+    });
+
+    expect(startPlanExecution).toHaveBeenCalledTimes(1);
+    expect(second).toBe(first);
+    expect(result.current.executionState).toEqual(expect.objectContaining({
+      status: "queued",
+      taskId: "task-1",
+      planId: "plan-1",
+      version: 3,
+      hash: "hash-3",
+    }));
+  });
+
+  it("projects a durable task for the exact plan fence back into Review", async () => {
+    const executionTask = {
+      taskId: "task-restored",
+      status: "blocked_studio",
+      sourcePlan: {
+        planId: "plan-1",
+        version: 3,
+        hash: "hash-3",
+      },
+    };
+    const { result } = renderHook(() => usePlanWorkspace({
+      messages: [message],
+      userId: "user-1",
+      chatId: "chat-1",
+      projectId: "project-current-chat",
+      executionTask,
+    }));
+
+    await waitFor(() => expect(result.current.executionState).toEqual(expect.objectContaining({
+      status: "waiting_studio",
+      taskId: "task-restored",
+      planId: "plan-1",
+      version: 3,
+      hash: "hash-3",
+    })));
+    expect(result.current.executionState.result.task).toBe(executionTask);
   });
 
   it("exposes version history failures and clears them after a successful retry", async () => {

@@ -10,6 +10,7 @@ import {
   getWorkflowPlanVersions,
   askWorkflowPlan,
   executeWorkflowPlan,
+  startPlanExecution,
 } from "./workflowApi";
 
 jest.mock("./billing", () => ({
@@ -151,6 +152,7 @@ describe("workflowApi planning contracts", () => {
     ["checkWorkflowPlanReadiness", () => checkWorkflowPlanReadiness("plan-1", { version: 1, hash: "hash-1" }), "/api/ai/plans/plan-1/readiness", "/api/ai/plan/plan-1/readiness", { method: "POST", body: JSON.stringify({ version: 1, hash: "hash-1", projectId: null, studioConnected: false, studioTarget: null, targeting: { projectId: null, studioConnected: false, studioTarget: null } }) }],
     ["getWorkflowPlanVersions", () => getWorkflowPlanVersions("plan-1"), "/api/ai/plans/plan-1/versions", "/api/ai/plan/plan-1/versions", {}],
     ["executeWorkflowPlan", () => executeWorkflowPlan("plan-1", { version: 1, hash: "hash-1" }), "/api/ai/plans/plan-1/execute", "/api/ai/plan/plan-1/execute", { method: "POST", body: JSON.stringify({ version: 1, hash: "hash-1" }) }],
+    ["startPlanExecution", () => startPlanExecution("plan-1", 1, "hash-1"), "/api/ai/plans/plan-1/execute", "/api/ai/plan/plan-1/execute", { method: "POST", body: JSON.stringify({ version: 1, hash: "hash-1" }) }],
     ["regenerateWorkflowPlanSection", () => regenerateWorkflowPlanSection("plan-1", "scope", { version: 1, hash: "hash-1", instruction: "tighten" }), "/api/ai/plans/plan-1/sections/scope/regenerate", "/api/ai/plan/plan-1/sections/scope/regenerate", { method: "POST", body: JSON.stringify({ version: 1, hash: "hash-1", instruction: "tighten" }) }],
   ];
 

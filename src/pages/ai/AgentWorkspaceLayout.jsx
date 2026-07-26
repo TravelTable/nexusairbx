@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Menu, FolderTree, MessageSquare, FileCode2, ClipboardList, Search, RefreshCw, Bot } from "lib/icons";
+import { Activity, Menu, FolderTree, MessageSquare, FileCode2, Search, RefreshCw, Bot } from "lib/icons";
 
 import SidebarContent from "../../components/SidebarContent";
 import CodeDrawer from "../../components/CodeDrawer";
@@ -9,7 +9,6 @@ import StarterPromoModal from "../../components/StarterPromoModal";
 import NotificationToast from "../../components/NotificationToast";
 import ModelSwitcher from "../../components/ai/ModelSwitcher";
 import StudioPairControl from "../../components/ai/StudioPairControl";
-import ProjectArchitecturePanel from "../../components/ai/ProjectArchitecturePanel";
 import { ProjectContextStatus } from "../../components/ai/AiComponents";
 import SiteHeader from "../../components/site/SiteHeader";
 import { AI_EVENTS } from "../../lib/aiEvents";
@@ -25,8 +24,13 @@ import CodeWorkspace from "../../components/ai/workspace/CodeWorkspace";
 import AgentChatPanel from "../../components/ai/workspace/AgentChatPanel";
 import TaskProgressPanel from "../../components/ai/workspace/TaskProgressPanel";
 import ActiveAgentsTray from "../../components/ai/workspace/ActiveAgentsTray";
-import BuildDetailsPanel from "../../components/ai/workspace/BuildDetailsPanel";
-import RobloxDecalUploadDropdown from "../../components/ai/workspace/RobloxDecalUploadDropdown";
+import WorkspaceAssetsPanel from "../../components/ai/workspace/WorkspaceAssetsPanel";
+import WorkspaceDetailsPanel from "../../components/ai/workspace/WorkspaceDetailsPanel";
+import WorkspaceShell, {
+  clampWorkspaceDrawerWidth,
+  WORKSPACE_DRAWER_DEFAULT_WIDTH,
+  WorkspaceEmptyState,
+} from "../../components/ai/workspace/WorkspaceShell";
 import useTaskRuntime from "../../hooks/useTaskRuntime";
 import useActiveAgents from "../../hooks/useActiveAgents";
 import QuickScriptWorkspace from "./QuickScriptWorkspace";
@@ -37,12 +41,19 @@ import TutorialOverlay from "../../components/onboarding/TutorialOverlay";
 import { useTutorial } from "../../components/onboarding/useTutorial";
 import useAiPageZoom from "../../hooks/useAiPageZoom";
 
-const MOBILE_TABS = [
-  { id: "chat", label: "Chat", icon: MessageSquare },
-  { id: "files", label: "Files", icon: FolderTree },
-  { id: "code", label: "Code", icon: FileCode2 },
-  { id: "details", label: "Details", icon: ClipboardList },
-];
+const WORKSPACE_DRAWER_WIDTH_KEY = "nexusrbx:workspace-drawer-width";
+
+function readWorkspaceDrawerWidth() {
+  if (typeof window === "undefined") return WORKSPACE_DRAWER_DEFAULT_WIDTH;
+  try {
+    const storedWidth = window.localStorage.getItem(WORKSPACE_DRAWER_WIDTH_KEY);
+    return storedWidth == null
+      ? WORKSPACE_DRAWER_DEFAULT_WIDTH
+      : clampWorkspaceDrawerWidth(storedWidth);
+  } catch {
+    return WORKSPACE_DRAWER_DEFAULT_WIDTH;
+  }
+}
 
 async function pollStudioCommand(commandId, { timeoutMs = 30000 } = {}) {
   const deadline = Date.now() + timeoutMs;
@@ -59,9 +70,7 @@ export default function AgentWorkspaceLayout({ controller }) {
   const { planKey, totalRemaining, subLimit, resetsAt, isPremium, isStarterOrAbove, unlimitedTokens, devOverride, dailyUsage, includedUsage, premiumBalance, isFreeUsagePlan, billingLoading, billingError } = billing;
   const {
     user,
-    isMobile,
     sidebarOpen,
-    mobileTab,
     generatorMode,
     quickScript,
     prompt,
@@ -72,7 +81,6 @@ export default function AgentWorkspaceLayout({ controller }) {
     robloxImageUploads,
     scripts,
     projectContext,
-    architecturePanelOpen,
     showSignInNudge,
     signInNudgeReason,
     showProNudge,
@@ -106,12 +114,10 @@ export default function AgentWorkspaceLayout({ controller }) {
 
   const {
     setSidebarOpen,
-    setMobileTab,
     setActiveTab,
     setPrompt,
     setGeneratorMode,
     setAttachments,
-    setArchitecturePanelOpen,
     setShowSignInNudge,
     setShowProNudge,
     setProNudgeReason,
@@ -153,9 +159,29 @@ export default function AgentWorkspaceLayout({ controller }) {
   } = handlers;
 
   const [leftView, setLeftView] = useState("files");
+  const [activeDockPanel, setActiveDockPanel] = useState(null);
+  const [drawerWidth, setDrawerWidth] = useState(readWorkspaceDrawerWidth);
+  const [detailsView, setDetailsView] = useState("build");
+  const [hasUnseenArtifact, setHasUnseenArtifact] = useState(false);
+  const previousArtifactFileCountRef = useRef(null);
   const tutorial = useTutorial();
   const aiPageRef = useRef(null);
   useAiPageZoom(aiPageRef);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(WORKSPACE_DRAWER_WIDTH_KEY, String(drawerWidth));
+    } catch {
+      // Storage may be disabled; the drawer remains resizable for this session.
+    }
+  }, [drawerWidth]);
+
+  const handleDockPanelChange = useCallback((panelId) => {
+    setActiveDockPanel(panelId);
+    if (panelId === "files" || panelId === "code") {
+      setHasUnseenArtifact(false);
+    }
+  }, []);
 
   useEffect(() => {
     const { documentElement, body } = document;
@@ -475,6 +501,19 @@ export default function AgentWorkspaceLayout({ controller }) {
     };
   }, [studioFiles, workspace.activeArtifact]);
 
+  const artifactFileCount = studioArtifact?.files?.length || 0;
+  useEffect(() => {
+    if (
+      previousArtifactFileCountRef.current !== null
+      && artifactFileCount > previousArtifactFileCountRef.current
+      && activeDockPanel !== "files"
+      && activeDockPanel !== "code"
+    ) {
+      setHasUnseenArtifact(true);
+    }
+    previousArtifactFileCountRef.current = artifactFileCount;
+  }, [activeDockPanel, artifactFileCount]);
+
   const studioActiveFile = useMemo(() => {
     if (!studioFiles.length) return workspace.activeFile;
     return studioFiles.find((file) => file.id === activeStudioFileId) || studioFiles[0] || null;
@@ -723,31 +762,7 @@ export default function AgentWorkspaceLayout({ controller }) {
 
   const agentChat = (
     <div className="flex min-h-0 flex-1 flex-col">
-      <ActiveAgentsTray
-        agents={activeAgentRuntime.agents}
-        onOpenChat={chat.openChatById}
-        onCancelRun={(runId) => activeAgentRuntime.cancelRun(runId).catch((error) => {
-          notify({ message: error?.message || "Could not cancel that run", type: "error" });
-        })}
-      />
-      {taskRuntime.task && (
-        <div className="shrink-0 border-b border-white/5 p-3">
-          <TaskProgressPanel
-            task={taskRuntime.task}
-            events={taskRuntime.events}
-            connectionState={taskRuntime.connectionState}
-            error={taskRuntime.error}
-            busyAction={taskRuntime.busyAction}
-            onRetry={() => invokeTaskAction(taskRuntime.retry)}
-            onCancel={() => invokeTaskAction(taskRuntime.cancel)}
-            onApprove={(payload) => invokeTaskAction(() => taskRuntime.approve(payload || {}))}
-            onAmend={(instructionOrPayload) => invokeTaskAction(() => taskRuntime.amend(instructionOrPayload))}
-            className="max-h-[42vh] overflow-y-auto scrollbar-subtle"
-          />
-        </div>
-      )}
-      <div className="flex min-h-0 flex-1 flex-col">
-        <AgentChatPanel
+      <AgentChatPanel
           currentChatId={chat.currentChatId}
           projectId={currentProjectId}
           messages={chat.messages}
@@ -760,6 +775,7 @@ export default function AgentWorkspaceLayout({ controller }) {
           isBusy={unified.isGenerating}
           onApprovePlan={handleAgentApprovePlan}
           onPlanTaskAccepted={taskRuntime.selectTask}
+          executionTask={taskRuntime.task}
           onClarifySubmit={handleAgentClarifySubmit}
           onEditPlan={handleEditPlan}
           onRefine={onRefine}
@@ -842,12 +858,11 @@ export default function AgentWorkspaceLayout({ controller }) {
           projectAssetSaving={roblox?.projectAssetSaving}
           selectedAssetProjectId={roblox?.selectedAssetProjectId}
           robloxStatus={roblox?.status}
-        />
-      </div>
+      />
     </div>
   );
 
-  const codeWorkspace = (
+  const codeWorkspace = studioArtifact?.files?.length ? (
     <CodeWorkspace
       artifact={studioArtifact}
       activeFile={studioActiveFile}
@@ -869,6 +884,11 @@ export default function AgentWorkspaceLayout({ controller }) {
       conflict={studioConflict}
       notify={notify}
     />
+  ) : (
+    <WorkspaceEmptyState
+      title="No code to show yet"
+      description="Generated and opened Studio scripts will appear here."
+    />
   );
 
   const fileTree = (
@@ -882,7 +902,7 @@ export default function AgentWorkspaceLayout({ controller }) {
           } else {
             workspace.openFile(workspace.activeArtifact?.id, fileId);
           }
-          if (isMobile) setMobileTab("code");
+          handleDockPanelChange("code");
         }}
       />
       <div className="mt-4 border-t border-white/10 pt-3 space-y-2">
@@ -919,10 +939,10 @@ export default function AgentWorkspaceLayout({ controller }) {
                 onClick={() => {
                   if (!isScript) return;
                   openStudioScript(item);
-                  if (isMobile) setMobileTab("code");
+                  handleDockPanelChange("code");
                 }}
                 disabled={!isScript || studioBusy}
-                className={`w-full text-left px-2 py-1.5 rounded-lg border text-[11px] transition-all ${
+                className={`w-full text-left px-2 py-1.5 rounded-lg border text-[11px] transition-[border-color,background-color,color,opacity] ${
                   studioActiveFile?.path === (item.canonicalPath || item.path)
                     ? "border-[#00f5d4]/40 bg-[#00f5d4]/10 text-[#00f5d4]"
                     : "border-transparent bg-white/[0.03] text-gray-400 hover:text-white hover:bg-white/[0.06]"
@@ -946,6 +966,85 @@ export default function AgentWorkspaceLayout({ controller }) {
     </div>
   );
 
+  const activityPanel = (
+    <div className="flex h-full min-h-0 flex-col overflow-hidden">
+      <ActiveAgentsTray
+        agents={activeAgentRuntime.agents}
+        onOpenChat={chat.openChatById}
+        onCancelRun={(runId) => {
+          Promise.resolve(activeAgentRuntime.cancelRun(runId)).catch((error) => {
+            notify?.({
+              message: error?.message || "The agent run could not be cancelled.",
+              type: "error",
+            });
+          });
+        }}
+      />
+      {taskRuntime.task ? (
+        <div className="min-h-0 flex-1 overflow-y-auto p-3 scrollbar-subtle">
+          <TaskProgressPanel
+            task={taskRuntime.task}
+            events={taskRuntime.events}
+            connectionState={taskRuntime.connectionState}
+            error={taskRuntime.error}
+            busyAction={taskRuntime.busyAction}
+            onRetry={() => invokeTaskAction(taskRuntime.retry)}
+            onCancel={() => invokeTaskAction(taskRuntime.cancel)}
+            onAmend={(payload) => invokeTaskAction(() => taskRuntime.amend(payload))}
+            onApprove={(payload) => invokeTaskAction(() => taskRuntime.approve(payload))}
+          />
+        </div>
+      ) : (
+        <WorkspaceEmptyState
+          icon={Activity}
+          title="No active run"
+          description="Agent runs, task progress, and approvals will appear here."
+        />
+      )}
+    </div>
+  );
+
+  const renderDockPanel = (panelId) => {
+    if (panelId === "files") {
+      return <div className="h-full overflow-y-auto scrollbar-subtle">{fileTree}</div>;
+    }
+    if (panelId === "code") return codeWorkspace;
+    if (panelId === "activity") return activityPanel;
+    if (panelId === "assets") {
+      return (
+        <WorkspaceAssetsPanel
+          user={user}
+          planKey={planKey}
+          devOverride={devOverride}
+          roblox={roblox}
+          projectId={roblox?.selectedAssetProjectId || currentProjectId}
+          onAttached={roblox?.refreshProjectAssets}
+          onAuthRequired={handleAuthRequired}
+          notify={notify}
+        />
+      );
+    }
+    if (panelId === "details") {
+      return (
+        <WorkspaceDetailsPanel
+          view={detailsView}
+          onViewChange={setDetailsView}
+          projectContext={projectContext}
+          artifact={workspace.activeArtifact}
+          agentRun={workspace.agentRun}
+          onApproveStep={handleApproveStep}
+          onSelectStudioTarget={handleSelectStudioTarget}
+          onRestoreRun={handleRestoreRun}
+          approvingStepId={studio?.approvingStepId}
+          selectingStudioTargetId={studio?.selectingStudioTargetId}
+          restoringRun={studio?.restoringRun}
+          notify={notify}
+        />
+      );
+    }
+    return null;
+  };
+
   return (
     <div className="fixed inset-0 overflow-hidden" role="application" aria-label="Nexus AI Workspace">
       <div ref={aiPageRef} className="ai-page relative flex flex-col overflow-hidden font-sans">
@@ -964,7 +1063,7 @@ export default function AgentWorkspaceLayout({ controller }) {
         {/* LEFT: project / artifacts / file tree / history */}
         {generatorMode === "agent_build" && (
         <aside
-          className={`fixed inset-y-0 left-0 z-40 w-80 bg-[#0D0D0D]/95 backdrop-blur-2xl border-r border-white/5 flex flex-col transform transition-all duration-300 ease-in-out ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} lg:relative lg:translate-x-0 ${sidebarOpen ? "lg:w-80" : "lg:w-0 lg:opacity-0 lg:pointer-events-none"}`}
+          className={`fixed inset-y-0 left-0 z-40 flex w-80 flex-col border-r border-white/5 bg-[#0D0D0D]/95 backdrop-blur-2xl transform transition-[width,opacity,transform] duration-300 ease-in-out ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} lg:relative lg:translate-x-0 ${sidebarOpen ? "lg:w-80" : "lg:w-0 lg:opacity-0 lg:pointer-events-none"}`}
           aria-label="Project sidebar"
         >
           <div className="flex items-center px-3 py-2.5 border-b border-white/10">
@@ -1035,7 +1134,7 @@ export default function AgentWorkspaceLayout({ controller }) {
                 <button
                   type="button"
                   onClick={() => setSidebarOpen(!sidebarOpen)}
-                  className={`shrink-0 p-2 rounded-xl transition-all ${sidebarOpen ? "bg-[#00f5d4]/10 text-[#00f5d4]" : "bg-white/5 text-gray-400 hover:text-white"}`}
+                  className={`shrink-0 rounded-xl p-2 transition-[background-color,color] ${sidebarOpen ? "bg-[#00f5d4]/10 text-[#00f5d4]" : "bg-white/5 text-gray-400 hover:text-white"}`}
                   title="Toggle sidebar"
                   aria-label="Toggle sidebar"
                 >
@@ -1091,30 +1190,20 @@ export default function AgentWorkspaceLayout({ controller }) {
             workspaceRight={(
               <>
                 {generatorMode === "agent_build" ? (
-                  <>
-                    <RobloxDecalUploadDropdown
-                      user={user}
-                      planKey={planKey}
-                      devOverride={devOverride}
-                      roblox={roblox}
-                      projectId={roblox?.selectedAssetProjectId}
-                      onAttached={roblox?.refreshProjectAssets}
-                      onAuthRequired={handleAuthRequired}
-                      notify={notify}
+                  <div className="hidden shrink-0 opacity-75 transition-opacity hover:opacity-100 2xl:block">
+                    <ProjectContextStatus
+                      context={projectContext}
+                      plan={planKey}
+                      studioConnected={Boolean(studio?.connected)}
+                      studioConnectionType={studio?.connectionType || null}
+                      studioManifestCount={studioScriptCount}
+                      studioManifestSupported={studioManifestSupported}
+                      onViewStructure={() => {
+                        setDetailsView("architecture");
+                        handleDockPanelChange("details");
+                      }}
                     />
-                    <div className="hidden h-4 w-px bg-white/10 xl:block" aria-hidden="true" />
-                    <div className="hidden shrink-0 opacity-75 transition-opacity hover:opacity-100 2xl:block">
-                      <ProjectContextStatus
-                        context={projectContext}
-                        plan={planKey}
-                        studioConnected={Boolean(studio?.connected)}
-                        studioConnectionType={studio?.connectionType || null}
-                        studioManifestCount={studioScriptCount}
-                        studioManifestSupported={studioManifestSupported}
-                        onViewStructure={() => setArchitecturePanelOpen(true)}
-                      />
-                    </div>
-                  </>
+                  </div>
                 ) : (
                   <div className="hidden text-right text-[11px] font-semibold text-gray-500 sm:block">
                     No plan approval in Quick
@@ -1124,7 +1213,6 @@ export default function AgentWorkspaceLayout({ controller }) {
             )}
           />
 
-          {/* Desktop center + right; mobile single-pane via tabs */}
           {generatorMode === "quick_script" ? (
             <div className="flex-1 min-h-0 flex flex-col">
               <div data-tour="mobile-mode-switcher" className="shrink-0 border-b border-white/5 bg-black/20 px-4 py-2 md:hidden">
@@ -1157,70 +1245,25 @@ export default function AgentWorkspaceLayout({ controller }) {
               />
             </div>
           ) : (
-          <div className="flex-1 min-h-0 flex">
-            <div className={`flex-1 min-h-0 min-w-0 ${isMobile ? (mobileTab === "chat" ? "flex pb-16" : "hidden") : "flex"} flex-col`}>
+            <WorkspaceShell
+              activePanel={activeDockPanel}
+              onPanelChange={handleDockPanelChange}
+              drawerWidth={drawerWidth}
+              onDrawerWidthChange={setDrawerWidth}
+              panelBadges={{
+                files: hasUnseenArtifact,
+                code: hasUnseenArtifact,
+                activity:
+                  activeAgentRuntime.agents.length
+                  || Boolean(taskRuntime.task && !taskRuntime.isTerminal),
+              }}
+              renderPanel={renderDockPanel}
+            >
               {agentChat}
-            </div>
-
-            {/* Mobile-only file tree + details panes */}
-            {isMobile && mobileTab === "files" && (
-              <div className="flex-1 min-w-0 overflow-y-auto bg-[#0a0a0a] scrollbar-subtle">{fileTree}</div>
-            )}
-            {isMobile && mobileTab === "details" && (
-              <div className="flex-1 min-w-0 bg-[#0a0a0a]">
-                <BuildDetailsPanel
-                  artifact={workspace.activeArtifact}
-                  agentRun={workspace.agentRun}
-                  onApproveStep={handleApproveStep}
-                  onSelectStudioTarget={handleSelectStudioTarget}
-                  onRestoreRun={handleRestoreRun}
-                  approvingStepId={studio?.approvingStepId}
-                  selectingStudioTargetId={studio?.selectingStudioTargetId}
-                  restoringRun={studio?.restoringRun}
-                  notify={notify}
-                />
-              </div>
-            )}
-
-            {/* RIGHT: generated code workspace */}
-            <div className={`w-full lg:w-[46%] xl:w-[42%] 2xl:w-[38%] lg:min-w-[420px] lg:max-w-[720px] lg:shrink-0 border-l border-white/5 ${isMobile && mobileTab !== "code" ? "hidden" : "flex"} flex-col min-h-0`}>
-              {codeWorkspace}
-            </div>
-          </div>
+            </WorkspaceShell>
           )}
         </main>
-
-        {architecturePanelOpen && (
-          <div className="fixed inset-y-0 right-0 z-40 w-full max-w-md h-full shadow-2xl">
-            <ProjectArchitecturePanel
-              context={projectContext}
-              onClose={() => setArchitecturePanelOpen(false)}
-            />
-          </div>
-        )}
       </div>
-
-      {/* Mobile tab bar */}
-      {isMobile && generatorMode === "agent_build" && (
-        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 bg-black/80 backdrop-blur-xl border border-white/10 rounded-full p-1.5 flex items-center gap-1 shadow-2xl">
-          {MOBILE_TABS.map((t) => {
-            const Icon = t.icon;
-            const active = mobileTab === t.id;
-            return (
-              <button
-                key={t.id}
-                type="button"
-                onClick={() => setMobileTab(t.id)}
-                className={`px-3.5 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all inline-flex items-center gap-1.5 ${active ? "bg-[#00f5d4] text-black" : "text-gray-400 hover:text-white"}`}
-                aria-pressed={active}
-              >
-                <Icon className="w-3.5 h-3.5" />
-                {t.label}
-              </button>
-            );
-          })}
-        </div>
-      )}
 
       <CodeDrawer
         open={codeDrawerOpen}

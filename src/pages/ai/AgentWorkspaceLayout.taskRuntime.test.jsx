@@ -37,6 +37,10 @@ jest.mock("lib/icons", () => {
   const ReactModule = require("react");
   const Icon = (props) => ReactModule.createElement("span", props);
   return {
+    Activity: Icon,
+    ArrowLeft: Icon,
+    Boxes: Icon,
+    ChevronRight: Icon,
     Menu: Icon,
     FolderTree: Icon,
     History: Icon,
@@ -232,7 +236,8 @@ describe("AgentWorkspaceLayout task-runtime wiring", () => {
       chatId: "chat_1",
       enabled: true,
     });
-    expect(screen.getByTestId("task-progress")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Open Activity" }));
+    expect(await screen.findByTestId("task-progress")).toBeTruthy();
 
     const panelProps = mockTaskProgressPanel.mock.calls.at(-1)[0];
     expect(panelProps.task).toBe(task);

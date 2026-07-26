@@ -9,7 +9,7 @@ import { db } from "../firebase";
 import { BACKEND_URL } from "../config";
 import { v4 as uuidv4 } from "uuid";
 import { useAiChat } from "./useAiChat";
-import { orchestrate, approveWorkflowPlan } from "../lib/workflowApi";
+import { orchestrate, approveWorkflowPlan, startPlanExecution } from "../lib/workflowApi";
 import { isExplicitPlanApproval } from "../lib/planApproval";
 import { classifyUserIntent, isImplementationIntent } from "../lib/intentClassifier";
 import {
@@ -648,9 +648,45 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
         projectId: ownedProject.projectId,
       };
 
+      const version = message.planVersion ?? message.version ?? message.structuredPlan?.version ?? 1;
+      const planHash = message.planHash || message.hash || message.structuredPlan?.hash || undefined;
+
+      if (FEATURE_FLAGS.newPlanningMode) {
+        const execution = await startPlanExecution(message.planId, version, planHash);
+        const task = execution?.task || execution?.execution?.task || execution?.run || null;
+        const taskId = task?.taskId
+          || task?.id
+          || execution?.taskId
+          || execution?.execution?.taskId
+          || execution?.runId
+          || "";
+        if (!taskId) {
+          throw new Error("NexusRBX accepted the plan but did not return an execution task.");
+        }
+        effectiveSubmissionOptions.onTaskAccepted?.(task || taskId);
+        void trackProductEvent("plan_approved", {
+          generator_mode: chat.activeMode || "agent",
+          output_type: message.classification || "script",
+          prompt_category: categorizePrompt(message.originPrompt || ""),
+        }, { dedupeKey: `plan_approved:${message.planId}:${version}:${planHash || ""}` });
+        try {
+          await updateDoc(
+            doc(db, "users", user.uid, "chats", activeChatId, "messages", message.id),
+            sanitizeTranscriptMessagePayload({
+              stage: "plan_approved",
+              taskId,
+              updatedAt: serverTimestamp(),
+            })
+          );
+        } catch (error) {
+          console.warn("Could not persist the structured-plan execution marker.", error);
+        }
+        return execution;
+      }
+
       const approval = await approveWorkflowPlan(message.planId, {
-        version: message.planVersion || 1,
-        hash: message.planHash || undefined,
+        version,
+        hash: planHash,
       });
       void trackProductEvent("plan_approved", {
         generator_mode: chat.activeMode || "agent",
@@ -681,11 +717,12 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
           ...effectiveSubmissionOptions,
           approvedPlan: approval.approvedPlan || {
             planId: message.planId,
-            version: message.planVersion || 1,
-            hash: message.planHash || "",
+            version,
+            hash: planHash || "",
           },
         }
       );
+      return approval;
     },
     [user, chat, runGeneration, notify]
   );

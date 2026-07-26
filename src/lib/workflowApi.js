@@ -153,6 +153,36 @@ export function getWorkflowPlan(planId, { signal } = {}) {
     .then((payload) => validateObjectResponse(payload, "plan"));
 }
 
+/** Fetch one durable run and its append-only event history. */
+export function getWorkflowPlanRun(planId, runId, { signal } = {}) {
+  return workflowRequestWithFallback(
+    getPlanPathCandidates(planId, `/runs/${encodeURIComponent(runId)}`),
+    { signal },
+  ).then((payload) => validateObjectResponse(payload, "plan run"));
+}
+
+function updateWorkflowPlanRun(planId, runId, action, { expectedStatusVersion } = {}) {
+  return workflowRequestWithFallback(
+    getPlanPathCandidates(planId, `/runs/${encodeURIComponent(runId)}/${action}`),
+    {
+      method: "POST",
+      body: { expectedStatusVersion },
+    },
+  ).then((payload) => validateObjectResponse(payload, `plan run ${action}`));
+}
+
+export function pauseWorkflowPlanRun(planId, runId, options) {
+  return updateWorkflowPlanRun(planId, runId, "pause", options);
+}
+
+export function resumeWorkflowPlanRun(planId, runId, options) {
+  return updateWorkflowPlanRun(planId, runId, "resume", options);
+}
+
+export function cancelWorkflowPlanRun(planId, runId, options) {
+  return updateWorkflowPlanRun(planId, runId, "cancel", options);
+}
+
 /** Apply concurrency-fenced plan editor operations. */
 export function updateWorkflowPlan(planId, { version, hash, operations }, { signal } = {}) {
   return workflowRequestWithFallback(getPlanPathCandidates(planId), {
@@ -237,6 +267,14 @@ export function executeWorkflowPlan(planId, { version, hash } = {}) {
     // concurrency-fenced plan. Browser copies are never execution authority.
     body: { version, hash },
   }).then((payload) => validateObjectResponse(payload, "plan execution"));
+}
+
+/**
+ * The single frontend command for starting a structured plan. Keep every
+ * approval entry point on this exact version/hash-fenced execution boundary.
+ */
+export function startPlanExecution(planId, version, hash) {
+  return executeWorkflowPlan(planId, { version, hash });
 }
 
 export async function verifyRobloxReadiness({ lua, manifest }) {

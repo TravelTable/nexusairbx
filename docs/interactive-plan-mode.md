@@ -1,5 +1,8 @@
 # Interactive Plan Mode
 
+The durable approval, run, event, and reload contract is defined in
+[Workflow Plan Lifecycle](./workflow-plan-lifecycle.md).
+
 ## Current flow audit
 
 Before this upgrade, `/ai` planning was split across two systems:

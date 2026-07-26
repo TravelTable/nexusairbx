@@ -12,15 +12,21 @@ import {
   Play,
   Plus,
   RefreshCw,
+  RotateCcw,
   Save,
   Send,
   Sparkles,
+  Square,
   Trash2,
+  XCircle,
 } from "lib/icons";
-import usePlanWorkspace from "../../../hooks/usePlanWorkspace";
+import usePlanWorkspace, { isPlanExecutionActive } from "../../../hooks/usePlanWorkspace";
 import { PLAN_SECTION_DEFINITIONS, PLAN_TEMPLATES } from "../../../lib/workflowPlan";
 
 const cx = (...values) => values.filter(Boolean).join(" ");
+const isEditingDisabled = (controller) => (
+  controller.editingDisabled ?? Boolean(controller.editingLocked)
+);
 
 const ignoreHandledError = (promise) => Promise.resolve(promise).catch(() => {});
 
@@ -137,7 +143,7 @@ function PlanSection({ definition, controller }) {
   const { plan } = controller;
   const value = plan.sections?.[definition.id];
   const locked = Boolean(plan.locks?.[definition.id]);
-  const editingDisabled = locked || controller.editingLocked;
+  const editingDisabled = locked || isEditingDisabled(controller);
   const regenerating = controller.regeneratingSectionId === definition.id;
   const [showRegenerate, setShowRegenerate] = useState(false);
   const [instruction, setInstruction] = useState("");
@@ -160,7 +166,7 @@ function PlanSection({ definition, controller }) {
         {locked && <span className="hidden text-[10px] font-bold uppercase tracking-wider text-amber-200 sm:inline">Locked</span>}
         <button
           type="button"
-          disabled={controller.editingLocked}
+          disabled={isEditingDisabled(controller)}
           onClick={(event) => { event.preventDefault(); controller.setSectionLocked(definition.id, !locked); }}
           className={cx("flex min-h-9 min-w-9 items-center justify-center rounded-md disabled:cursor-not-allowed disabled:opacity-40 focus-ring", locked ? "bg-amber-400/10 text-amber-200" : "text-gray-500 hover:bg-white/10 hover:text-white")}
           aria-label={`${locked ? "Unlock" : "Lock"} ${definition.label}`}
@@ -264,7 +270,7 @@ function ReadinessPanel({ controller }) {
           <h3 id="plan-readiness-title" className="text-sm font-semibold text-gray-100">{title}</h3>
           <p className="text-[11px] text-gray-500">Warnings stay advisory; only predictable failures block execution.</p>
         </div>
-        <button type="button" disabled={controller.readinessLoading || controller.editingLocked} onClick={() => ignoreHandledError(controller.checkReadiness())} className="rounded-md p-2 text-gray-500 hover:bg-white/10 hover:text-white disabled:opacity-50 focus-ring" aria-label="Refresh plan readiness">
+        <button type="button" disabled={controller.readinessLoading || isEditingDisabled(controller)} onClick={() => ignoreHandledError(controller.checkReadiness())} className="rounded-md p-2 text-gray-500 hover:bg-white/10 hover:text-white disabled:opacity-50 focus-ring" aria-label="Refresh plan readiness">
           <RefreshCw className={cx("h-3.5 w-3.5", controller.readinessLoading && "animate-spin")} />
         </button>
       </div>
@@ -311,11 +317,86 @@ function AskPlan({ controller }) {
         <div className="mt-3 rounded-lg border border-[#00f5d4]/15 bg-[#00f5d4]/[0.04] p-3 text-xs leading-relaxed text-gray-200">
           <p>{controller.askState.answer}</p>
           {controller.askState.proposedOperations.length > 0 && (
-            <button type="button" disabled={controller.editingLocked} onClick={() => ignoreHandledError(controller.applyProposedOperations())} className="mt-2 min-h-[34px] rounded-md bg-[#00f5d4] px-3 text-xs font-bold text-black hover:bg-white disabled:cursor-not-allowed disabled:bg-white/10 disabled:text-gray-500 focus-ring">Apply suggested changes</button>
+            <button type="button" disabled={isEditingDisabled(controller)} onClick={() => ignoreHandledError(controller.applyProposedOperations())} className="mt-2 min-h-[34px] rounded-md bg-[#00f5d4] px-3 text-xs font-bold text-black hover:bg-white disabled:cursor-not-allowed disabled:bg-white/10 disabled:text-gray-500 focus-ring">Apply suggested changes</button>
           )}
         </div>
       )}
       {controller.askState.error && <p role="alert" className="mt-2 text-xs text-red-200">{controller.askState.error.message || "The plan question could not be answered."}</p>}
+    </section>
+  );
+}
+
+const RUNNING_PLAN_STATUSES = new Set(["queued", "running", "blocked", "paused"]);
+const PAUSABLE_PLAN_STATUSES = new Set(["queued", "running", "blocked"]);
+
+function planStatusLabel(status) {
+  return String(status || "draft").replaceAll("_", " ");
+}
+
+function PlanLifecycle({ controller }) {
+  const lifecycle = controller.lifecycle;
+  const run = lifecycle?.run;
+  const status = run?.status || lifecycle?.status || controller.plan?.status || "draft";
+  const events = Array.isArray(lifecycle?.events) ? lifecycle.events.slice(-6).reverse() : [];
+  const actionPending = Boolean(controller.lifecycleAction);
+  const canPause = run && PAUSABLE_PLAN_STATUSES.has(run.status);
+  const canResume = run?.status === "paused";
+  const canCancel = run && RUNNING_PLAN_STATUSES.has(run.status);
+  const statusTone = ["completed"].includes(status)
+    ? "border-emerald-400/20 bg-emerald-400/[0.07] text-emerald-200"
+    : ["failed", "cancelled", "blocked"].includes(status)
+      ? "border-red-400/20 bg-red-400/[0.07] text-red-100"
+      : ["queued", "running", "paused"].includes(status)
+        ? "border-[#00f5d4]/20 bg-[#00f5d4]/[0.06] text-[#8fffea]"
+        : "border-white/10 bg-white/[0.04] text-gray-300";
+
+  return (
+    <section aria-labelledby="plan-lifecycle-title" className="rounded-xl border border-white/[0.08] bg-black/15 p-3">
+      <div className="flex items-start gap-2">
+        <div className="min-w-0 flex-1">
+          <h3 id="plan-lifecycle-title" className="text-sm font-semibold text-gray-100">Plan lifecycle</h3>
+          <p className="mt-0.5 text-[11px] text-gray-500">
+            {lifecycle?.revisionId || `v${controller.plan?.version || 1}`}
+            {lifecycle?.approval ? " · approved revision" : " · awaiting approval"}
+          </p>
+        </div>
+        <span className={cx("rounded-full border px-2 py-1 text-[10px] font-bold uppercase tracking-wide", statusTone)}>
+          {planStatusLabel(status)}
+        </span>
+      </div>
+
+      {events.length > 0 && (
+        <ol className="mt-3 space-y-2 border-l border-white/10 pl-3" aria-label="Recent plan run events">
+          {events.map((event) => (
+            <li key={event.eventId || event.sequence} className="relative text-[11px] text-gray-400">
+              <span className="absolute -left-[15px] top-1 h-1.5 w-1.5 rounded-full bg-[#00f5d4]" />
+              <p className="font-medium text-gray-200">{event.message || planStatusLabel(event.type)}</p>
+              {versionDateLabel(event.occurredAt) && <time className="text-[10px] text-gray-600">{versionDateLabel(event.occurredAt)}</time>}
+            </li>
+          ))}
+        </ol>
+      )}
+
+      {run && (
+        <div className="mt-3 flex flex-wrap gap-1.5 border-t border-white/[0.06] pt-3">
+          {canPause && (
+            <button type="button" disabled={actionPending} onClick={() => ignoreHandledError(controller.pauseRun())} className="inline-flex min-h-[34px] items-center gap-1.5 rounded-md bg-white/[0.06] px-2.5 text-xs font-semibold text-gray-200 hover:bg-white/10 disabled:opacity-40 focus-ring">
+              {controller.lifecycleAction === "pause" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Square className="h-3 w-3" />} Pause
+            </button>
+          )}
+          {canResume && (
+            <button type="button" disabled={actionPending} onClick={() => ignoreHandledError(controller.resumeRun())} className="inline-flex min-h-[34px] items-center gap-1.5 rounded-md bg-[#00f5d4]/10 px-2.5 text-xs font-semibold text-[#8fffea] hover:bg-[#00f5d4]/15 disabled:opacity-40 focus-ring">
+              {controller.lifecycleAction === "resume" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RotateCcw className="h-3.5 w-3.5" />} Resume
+            </button>
+          )}
+          {canCancel && (
+            <button type="button" disabled={actionPending} onClick={() => ignoreHandledError(controller.cancelRun())} className="ml-auto inline-flex min-h-[34px] items-center gap-1.5 rounded-md px-2.5 text-xs font-semibold text-red-200 hover:bg-red-400/10 disabled:opacity-40 focus-ring">
+              {controller.lifecycleAction === "cancel" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <XCircle className="h-3.5 w-3.5" />} Cancel
+            </button>
+          )}
+        </div>
+      )}
+      <p className="mt-2 text-[10px] leading-relaxed text-gray-600">Run state and history are saved on the server and restored after reload.</p>
     </section>
   );
 }
@@ -352,7 +433,7 @@ function PlanHistory({ controller }) {
               return (
               <li key={`${version.version}-${version.hash || ""}`} className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-xs text-gray-400 hover:bg-white/[0.04]">
                 <span className="min-w-0 flex-1">Version {version.version}{versionDateLabel(version.createdAt) ? ` · ${versionDateLabel(version.createdAt)}` : ""}</span>
-                <button type="button" disabled={controller.editingLocked || Boolean(controller.restoringVersion)} onClick={() => ignoreHandledError(controller.restoreVersion(version.version, version.hash))} className="inline-flex min-h-[32px] items-center gap-1 rounded-md px-2 text-[#8fffea] hover:bg-[#00f5d4]/10 disabled:cursor-not-allowed disabled:opacity-50 focus-ring">
+                <button type="button" disabled={isEditingDisabled(controller) || Boolean(controller.restoringVersion)} onClick={() => ignoreHandledError(controller.restoreVersion(version.version, version.hash))} className="inline-flex min-h-[32px] items-center gap-1 rounded-md px-2 text-[#8fffea] hover:bg-[#00f5d4]/10 disabled:cursor-not-allowed disabled:opacity-50 focus-ring">
                   {restoring && <Loader2 className="h-3 w-3 animate-spin" />}{restoring ? "Restoring…" : "Restore"}
                 </button>
               </li>
@@ -365,7 +446,7 @@ function PlanHistory({ controller }) {
   );
 }
 
-export function PlanWorkspaceView({ controller, onUseTemplate }) {
+export function PlanWorkspaceView({ controller, onUseTemplate, onViewProgress }) {
   if (controller.loadState === "loading" && !controller.plan) {
     return <div className="flex min-h-full items-center justify-center gap-2 text-sm text-gray-400"><Loader2 className="h-4 w-4 animate-spin" /> Loading saved plan…</div>;
   }
@@ -377,12 +458,35 @@ export function PlanWorkspaceView({ controller, onUseTemplate }) {
   }
 
   const capabilities = controller.plan.capabilities || [];
-  const isExecuting = ["checking", "starting"].includes(controller.executionState.status);
+  const executionStatus = controller.executionState.status;
+  const isExecuting = isPlanExecutionActive(executionStatus);
+  const lifecycleRun = controller.lifecycle?.run;
+  const hasDurableRun = Boolean(lifecycleRun?.runId);
+  const progressTaskId = String(
+    lifecycleRun?.runtime?.taskId || (!hasDurableRun ? controller.executionState.taskId : "") || ""
+  );
+  const hasAcceptedTask = hasDurableRun || Boolean(controller.executionState.taskId);
+  const activeDurableRun = RUNNING_PLAN_STATUSES.has(lifecycleRun?.status);
   const readinessStatus = controller.readiness?.status || "unchecked";
   const isBlocked = readinessStatus === "checked" && (
     !controller.readiness?.canExecute || (controller.readiness?.blockers || []).length > 0
   );
   const needsReadinessCheck = readinessStatus !== "checked";
+  const executionActionLabel = hasDurableRun && !progressTaskId
+    ? `Run ${planStatusLabel(lifecycleRun.status)}`
+    : executionStatus === "checking"
+    ? "Checking readiness…"
+    : executionStatus === "starting"
+      ? "Starting execution…"
+      : hasAcceptedTask && executionStatus === "succeeded"
+        ? "Review result"
+        : hasAcceptedTask && ["failed", "cancelled"].includes(executionStatus)
+          ? "View result"
+          : hasAcceptedTask
+            ? "View progress"
+            : needsReadinessCheck
+              ? "Check & Execute"
+              : "Execute Plan";
 
   return (
     <div className="flex min-h-full flex-col">
@@ -394,6 +498,9 @@ export function PlanWorkspaceView({ controller, onUseTemplate }) {
             <p className="mt-1 hidden text-[11px] text-gray-500 sm:block">Request → Clarify → <span className="text-gray-300">Review Plan</span> → Execute → Verify</p>
           </div>
           <div className="flex shrink-0 flex-col items-end gap-1">
+            <span className="rounded-full border border-white/10 bg-white/[0.04] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-gray-400">
+              {controller.lifecycle?.revisionId || `v${controller.plan.version}`} · {planStatusLabel(lifecycleRun?.status || controller.lifecycle?.status || controller.plan.status)}
+            </span>
             <SaveState status={controller.saveStatus} loadState={controller.loadState} />
             {(controller.saveStatus === "error" || controller.saveStatus === "conflict") && <button type="button" onClick={() => ignoreHandledError(controller.retrySave())} className="text-[11px] font-semibold text-red-200 hover:text-white focus-ring">Retry save</button>}
           </div>
@@ -405,10 +512,12 @@ export function PlanWorkspaceView({ controller, onUseTemplate }) {
           {controller.loadState === "recovered" && <div role="status" className="rounded-lg border border-amber-400/15 bg-amber-400/[0.06] px-3 py-2 text-xs text-amber-100">Recovered your newer local edits. They will sync when the connection is available.</div>}
           {controller.loadState === "reconnecting" && <div role="status" className="rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2 text-xs text-gray-300">Connection interrupted. Your plan is saved locally and will remain editable.</div>}
           {controller.editingLocked && <div role="status" className="rounded-lg border border-[#00f5d4]/15 bg-[#00f5d4]/[0.04] px-3 py-2 text-xs text-gray-200">Plan editing is briefly paused while NexusRBX checks or applies this exact version.</div>}
+          {activeDurableRun && !controller.editingLocked && <div role="status" className="rounded-lg border border-[#00f5d4]/15 bg-[#00f5d4]/[0.04] px-3 py-2 text-xs text-gray-200">This approved revision is locked while its durable run is {planStatusLabel(lifecycleRun.status)}. Pause, resume, or cancel it from the lifecycle card.</div>}
           {PLAN_SECTION_DEFINITIONS.map((definition) => <PlanSection key={definition.id} definition={definition} controller={controller} />)}
         </main>
 
         <aside className="space-y-3 lg:sticky lg:top-[84px] lg:self-start">
+          <PlanLifecycle controller={controller} />
           <ReadinessPanel controller={controller} />
           <AskPlan controller={controller} />
           <details className="rounded-xl border border-white/[0.08] bg-white/[0.02]">
@@ -421,14 +530,23 @@ export function PlanWorkspaceView({ controller, onUseTemplate }) {
           <PlanHistory controller={controller} />
           <button
             type="button"
-            onClick={() => ignoreHandledError(controller.execute())}
-            disabled={isExecuting || isBlocked || controller.saveStatus === "saving" || controller.editingLocked}
+            onClick={() => {
+              if (progressTaskId) onViewProgress?.(progressTaskId);
+              else if (hasDurableRun) return;
+              else ignoreHandledError(controller.execute());
+            }}
+            disabled={(hasDurableRun && !progressTaskId) || (!hasAcceptedTask && (isExecuting || isBlocked || controller.saveStatus === "saving" || isEditingDisabled(controller)))}
             className="inline-flex min-h-[46px] w-full items-center justify-center gap-2 rounded-xl bg-[#00f5d4] px-4 text-sm font-black text-black transition-colors hover:bg-white disabled:cursor-not-allowed disabled:bg-white/10 disabled:text-gray-500 focus-ring"
           >
-            {isExecuting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
-            {controller.executionState.status === "checking" ? "Checking readiness…" : controller.executionState.status === "starting" ? "Starting execution…" : needsReadinessCheck ? "Check & Execute" : "Execute Plan"}
+            {isExecuting && !hasAcceptedTask ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
+            {executionActionLabel}
           </button>
-          {isBlocked && <p className="px-1 text-center text-[11px] text-gray-500">Resolve the blocking readiness issue above to execute safely.</p>}
+          {hasAcceptedTask && (
+            <p className="px-1 text-center text-[11px] text-gray-500">
+              Plan v{lifecycleRun?.version || controller.executionState.version} is {planStatusLabel(lifecycleRun?.status || executionStatus)}. This exact approved revision cannot be started again.
+            </p>
+          )}
+          {!hasAcceptedTask && isBlocked && <p className="px-1 text-center text-[11px] text-gray-500">Resolve the blocking readiness issue above to execute safely.</p>}
           {controller.executionState.error && <p role="alert" className="rounded-lg border border-red-400/15 bg-red-400/[0.06] p-2 text-xs text-red-100">{controller.executionState.error.message || "Execution could not start."}</p>}
         </aside>
       </div>
@@ -438,5 +556,5 @@ export function PlanWorkspaceView({ controller, onUseTemplate }) {
 
 export default function PlanWorkspace(props) {
   const controller = usePlanWorkspace(props);
-  return <PlanWorkspaceView controller={controller} onUseTemplate={props.onUseTemplate} />;
+  return <PlanWorkspaceView controller={controller} onUseTemplate={props.onUseTemplate} onViewProgress={props.onViewProgress} />;
 }

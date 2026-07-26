@@ -8,9 +8,14 @@ import { FEATURE_FLAGS } from "../lib/featureFlags";
 import { getStudioApplyMode, getStudioEnabledPreference } from "../lib/agentSteps";
 import { getStudioStatus } from "../lib/studioBridgeApi";
 import { resolveGameSpecForPrompt } from "../lib/gameProfile";
-import { orchestrate } from "../lib/workflowApi";
+import {
+  approveWorkflowPlan,
+  orchestrate,
+  startPlanExecution,
+} from "../lib/workflowApi";
 import { getProjectBinding } from "../lib/projectBindingsApi";
 import { classifyUserIntent, isImplementationIntent } from "../lib/intentClassifier";
+import { isExplicitPlanApproval } from "../lib/planApproval";
 import {
   createAgentRunV2,
   getRuntimeCapabilitiesV2,
@@ -39,6 +44,7 @@ jest.mock("./useAiChat", () => ({
 jest.mock("../lib/workflowApi", () => ({
   approveWorkflowPlan: jest.fn(),
   orchestrate: jest.fn(),
+  startPlanExecution: jest.fn(),
 }));
 
 jest.mock("../lib/projectBindingsApi", () => ({
@@ -83,6 +89,7 @@ jest.mock("../lib/productAnalytics", () => ({
 jest.mock("../lib/featureFlags", () => ({
   FEATURE_FLAGS: {
     legacyAgentFallback: true,
+    newPlanningMode: false,
     unifiedAgent: false,
   },
 }));
@@ -117,12 +124,14 @@ describe("useUnifiedChat", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     FEATURE_FLAGS.legacyAgentFallback = true;
+    FEATURE_FLAGS.newPlanningMode = false;
     FEATURE_FLAGS.unifiedAgent = false;
     getStudioEnabledPreference.mockReturnValue(false);
     getStudioApplyMode.mockReturnValue("manual_review");
     resolveGameSpecForPrompt.mockImplementation((value) => value || null);
     classifyUserIntent.mockReturnValue("IMPLEMENTATION");
     isImplementationIntent.mockReturnValue(true);
+    isExplicitPlanApproval.mockReturnValue(false);
     getProjectBinding.mockResolvedValue({
       state: "ready",
       project: { projectId: "project-1" },
@@ -354,6 +363,60 @@ describe("useUnifiedChat", () => {
     expect(setDoc.mock.calls.some(([, payload]) => (
       payload?.stage === "clarify" && payload?.templateId === "fix_bug"
     ))).toBe(true);
+  });
+
+  test("routes approval language through the exact structured plan execution command", async () => {
+    FEATURE_FLAGS.newPlanningMode = true;
+    isExplicitPlanApproval.mockReturnValue(true);
+    const assertCanWrite = jest.fn().mockResolvedValue();
+    const onTaskAccepted = jest.fn();
+    useAiChat.mockReturnValue({
+      activeMode: "plan",
+      assertCanWrite,
+      currentChatId: "chat-1",
+      generatingChatIds: [],
+      generationStage: "",
+      handleSubmit: chatHandleSubmit,
+      isGenerating: false,
+      messages: [{
+        id: "plan-message-1",
+        role: "assistant",
+        stage: "plan",
+        planId: "plan-1",
+        planVersion: 4,
+        planHash: "hash-4",
+        projectId: "project-1",
+        classification: "script",
+        originPrompt: "Build inventory",
+      }],
+      openChatById: jest.fn(),
+      pendingMessage: null,
+      setPendingForChat: jest.fn(),
+    });
+    startPlanExecution.mockResolvedValue({
+      status: "queued",
+      execution: {
+        taskId: "task-plan-1",
+        planId: "plan-1",
+        version: 4,
+        hash: "hash-4",
+      },
+    });
+    const user = { uid: "user-1", getIdToken: jest.fn().mockResolvedValue("token") };
+    const { result } = renderHook(() => useUnifiedChat(user, {}, jest.fn(), jest.fn()));
+
+    await act(async () => {
+      await result.current.handleSubmit("start build", [], null, {
+        projectId: "project-1",
+        onTaskAccepted,
+      });
+    });
+
+    expect(assertCanWrite).toHaveBeenCalled();
+    expect(startPlanExecution).toHaveBeenCalledWith("plan-1", 4, "hash-4");
+    expect(approveWorkflowPlan).not.toHaveBeenCalled();
+    expect(chatHandleSubmit).not.toHaveBeenCalled();
+    expect(onTaskAccepted).toHaveBeenCalledWith("task-plan-1");
   });
 
   test("clears a stale project id before clarify re-orchestration", async () => {
