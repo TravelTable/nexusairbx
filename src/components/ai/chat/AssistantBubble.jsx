@@ -26,6 +26,7 @@ import {
 } from "../../ai-elements/artifact";
 import { kindMeta } from "../workspace/workspaceMeta";
 import { cn } from "../../../lib/utils";
+import MessageActions from "./MessageActions";
 
 function fileTypeChips(files) {
   const seen = new Map();
@@ -46,9 +47,17 @@ const RUN_STATE_META = {
   failed: { label: "Failed", className: "border-red-400/30 bg-red-400/10 text-red-300" },
 };
 
-function BubbleShell({ activeMode, children }) {
+function BubbleShell({ activeMode, grouped = false, children }) {
+  if (grouped) {
+    return (
+      <div className="group/message w-full">
+        {children}
+      </div>
+    );
+  }
+
   return (
-    <div className="flex justify-start gap-3.5 group motion-safe:animate-message-in">
+    <div className="group/message flex justify-start gap-3.5">
       <NexusRBXAvatar mode={activeMode} />
       <div className="max-w-[90%] order-2 min-w-0">
         {children}
@@ -60,6 +69,8 @@ function BubbleShell({ activeMode, children }) {
 export default function AssistantBubble({
   message: m,
   activeMode,
+  grouped = false,
+  retryPrompt = "",
   onViewUi, // mapped to "open artifact in editor"
   onRefine,
   onApprovePlan,
@@ -68,11 +79,12 @@ export default function AssistantBubble({
   isBusy,
   onApproveStep,
   approvingStepId,
+  onRetryMessage,
 }) {
   // Stage 2: clarifying questions
   if (m.stage === "clarify" || m.stage === "clarify_answered") {
     return (
-      <BubbleShell activeMode={activeMode}>
+      <BubbleShell activeMode={activeMode} grouped={grouped}>
         <ClarifyCard message={m} onSubmit={onClarifySubmit} disabled={isBusy} />
       </BubbleShell>
     );
@@ -81,7 +93,7 @@ export default function AssistantBubble({
   // Stage 3: approvable plan
   if (m.stage === "plan" || m.stage === "plan_approved") {
     return (
-      <BubbleShell activeMode={activeMode}>
+      <BubbleShell activeMode={activeMode} grouped={grouped}>
         <PlanCard message={m} onApprove={onApprovePlan} onEdit={onEditPlan} disabled={isBusy} />
       </BubbleShell>
     );
@@ -96,45 +108,47 @@ export default function AssistantBubble({
   const structured = m.metadata?.structuredData;
 
   return (
-    <BubbleShell activeMode={activeMode}>
-      {m.thought ? (
-        <div className="mb-3">
-          <ReasoningPanel text={m.thought} isStreaming={false} requireShowThinking />
-        </div>
-      ) : null}
+    <BubbleShell activeMode={activeMode} grouped={grouped}>
+      <div className="w-full max-w-[840px]">
+        {m.thought ? (
+          <div className="mb-3">
+            <ReasoningPanel text={m.thought} isStreaming={false} requireShowThinking />
+          </div>
+        ) : null}
 
-      {FEATURE_FLAGS.unifiedAgent && Array.isArray(m.steps) && m.steps.length > 0 && (
-        <div className="mb-4">
-          <AgentStepList
-            steps={m.steps}
-            maxHeight="max-h-48"
-            onApproveStep={onApproveStep}
-            approvingStepId={approvingStepId}
-          />
-        </div>
-      )}
+        {FEATURE_FLAGS.unifiedAgent && Array.isArray(m.steps) && m.steps.length > 0 && (
+          <div className="mb-4">
+            <AgentStepList
+              steps={m.steps}
+              maxHeight="max-h-48"
+              onApproveStep={onApproveStep}
+              approvingStepId={approvingStepId}
+            />
+          </div>
+        )}
 
-      {m.pending && !m.explanation && !m.content && (
-        <div className="flex items-center gap-2 text-sm text-gray-300">
-          <Loader2 className="w-4 h-4 animate-spin text-[#00f5d4]" />
-          <span>{m.stage || "Studio agent is working..."}</span>
-        </div>
-      )}
+        {m.pending && !m.explanation && !m.content && (
+          <div className="flex items-center gap-2 text-sm text-gray-300">
+            <Loader2 className="w-4 h-4 animate-spin text-[#00f5d4]" />
+            <span>{m.stage || "Studio agent is working..."}</span>
+          </div>
+        )}
 
-      {m.error && (
-        <div className="text-sm text-red-300">
-          {formatUserFacingError(m.error)}
-        </div>
-      )}
+        {m.error && (
+          <div className="text-sm text-red-300">
+            {formatUserFacingError(m.error)}
+          </div>
+        )}
 
-      {m.summary ? (
-        <MarkdownMessage text={stripTags(m.summary)} />
-      ) : m.content && !hasArtifact ? (
-        <MarkdownMessage text={stripTags(m.content)} />
-      ) : null}
+        {m.summary ? (
+          <MarkdownMessage text={stripTags(m.summary)} />
+        ) : m.content && !hasArtifact ? (
+          <MarkdownMessage text={stripTags(m.content)} />
+        ) : null}
+      </div>
 
       {hasArtifact && (
-        <div className="mt-5 space-y-4">
+        <div className="mt-5 w-full max-w-[1080px] space-y-4">
           {qaReport && Number.isFinite(Number(qaReport.score)) && (
             <div className="flex items-center justify-between gap-3 flex-wrap">
               <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Quality &amp; Trust</span>
@@ -244,6 +258,17 @@ export default function AssistantBubble({
           )}
         </div>
       )}
+      <div className="w-full max-w-[840px]">
+        <MessageActions
+          role="assistant"
+          text={m.summary || m.content || m.explanation}
+          message={m}
+          retryPrompt={retryPrompt}
+          onRetry={onRetryMessage}
+          onRefine={onRefine}
+          onOpenFiles={hasArtifact ? onViewUi : undefined}
+        />
+      </div>
     </BubbleShell>
   );
 }

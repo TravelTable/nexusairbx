@@ -47,7 +47,7 @@ export default function NotificationToast({
         clearInterval(intervalRef.current);
         leaveTimeoutRef.current = setTimeout(() => {
           onCloseRef.current?.();
-        }, 350);
+        }, 200);
       }
     }, 30);
 
@@ -63,7 +63,7 @@ export default function NotificationToast({
     clearTimeout(leaveTimeoutRef.current);
     leaveTimeoutRef.current = setTimeout(() => {
       onCloseRef.current?.();
-    }, 350);
+    }, 200);
   };
 
   let color = "#9b5de5";
@@ -72,10 +72,9 @@ export default function NotificationToast({
 
   return (
     <div
-      className={`relative min-w-[260px] max-w-xs px-5 py-4 rounded-lg shadow-xl border-l-4 bg-gray-900 text-white mb-4 transition-all duration-350 ease-in-out
+      className={`nexus-toast relative min-w-[260px] max-w-xs px-5 py-4 rounded-lg shadow-xl border-l-4 bg-gray-900 text-white mb-4 transition-[opacity,transform] duration-[var(--motion-standard)] ease-[var(--ease-product)]
         ${type === "success" ? "border-[#00f5d4]" : type === "error" ? "border-[#ff3860]" : "border-[#9b5de5]"}
-        ${leaving ? "-translate-x-8 opacity-0" : "translate-x-0 opacity-100"}
-        animate-fade-in
+        ${leaving ? "translate-y-1 opacity-0" : "translate-y-0 opacity-100"}
       `}
       style={{
         boxShadow: "0 6px 24px 0 rgba(0,0,0,0.25)",

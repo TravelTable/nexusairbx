@@ -82,6 +82,15 @@ export async function getProjectBinding(projectId) {
   return readJsonResponse(res, "Failed to load project");
 }
 
+export async function renameProjectBinding(projectId, title) {
+  const res = await authedFetch(`/api/project-bindings/${encodeURIComponent(projectId)}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ title }),
+  });
+  return readJsonResponse(res, "Failed to rename game project");
+}
+
 export async function deleteProjectBinding(projectId) {
   const res = await authedFetch(`/api/project-bindings/${encodeURIComponent(projectId)}`, {
     method: "DELETE",

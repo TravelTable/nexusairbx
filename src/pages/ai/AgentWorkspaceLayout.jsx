@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Activity, Menu, FolderTree, MessageSquare, FileCode2, Search, RefreshCw, Bot } from "lib/icons";
+import { Activity, Menu, FileCode2, Search, RefreshCw, Bot } from "lib/icons";
 
 import SidebarContent from "../../components/SidebarContent";
 import CodeDrawer from "../../components/CodeDrawer";
@@ -11,7 +11,6 @@ import ModelSwitcher from "../../components/ai/ModelSwitcher";
 import StudioPairControl from "../../components/ai/StudioPairControl";
 import { ProjectContextStatus } from "../../components/ai/AiComponents";
 import SiteHeader from "../../components/site/SiteHeader";
-import { AI_EVENTS } from "../../lib/aiEvents";
 import { Segmented } from "../../components/ui";
 import {
   getActiveStudioCapabilities,
@@ -35,6 +34,7 @@ import useTaskRuntime from "../../hooks/useTaskRuntime";
 import useActiveAgents from "../../hooks/useActiveAgents";
 import QuickScriptWorkspace from "./QuickScriptWorkspace";
 import { getStudioCommand, getStudioManifest, getStudioManifestStatus, queueStudioTool } from "../../lib/studioBridgeApi";
+import { TERMINAL_AGENT_STATES } from "../../lib/agentRuntimeV2Api";
 import { PENDING_AUTH_ACTIONS } from "../../lib/pendingAuthAction";
 import { getStudioSessionId } from "../../lib/studioConnection";
 import TutorialOverlay from "../../components/onboarding/TutorialOverlay";
@@ -158,7 +158,6 @@ export default function AgentWorkspaceLayout({ controller }) {
     handleRemoveProjectAsset,
   } = handlers;
 
-  const [leftView, setLeftView] = useState("files");
   const [activeDockPanel, setActiveDockPanel] = useState(null);
   const [drawerWidth, setDrawerWidth] = useState(readWorkspaceDrawerWidth);
   const [detailsView, setDetailsView] = useState("build");
@@ -752,6 +751,12 @@ export default function AgentWorkspaceLayout({ controller }) {
     });
   }, [handlePromptSubmit, taskSubmissionOptions]);
 
+  const handleRetryMessage = useCallback((retryPrompt) => {
+    const nextPrompt = String(retryPrompt || "").trim();
+    if (!nextPrompt) return undefined;
+    return handlePromptSubmit(null, nextPrompt, taskSubmissionOptions);
+  }, [handlePromptSubmit, taskSubmissionOptions]);
+
   const handleAgentApprovePlan = useCallback((message) => {
     return onApprovePlan(message, taskSubmissionOptions);
   }, [onApprovePlan, taskSubmissionOptions]);
@@ -760,10 +765,58 @@ export default function AgentWorkspaceLayout({ controller }) {
     return onClarifySubmit(message, answers, taskSubmissionOptions);
   }, [onClarifySubmit, taskSubmissionOptions]);
 
+  const handleStopActiveWork = useCallback(() => {
+    if (unified.cancelCurrentFlow?.()) return;
+
+    const currentAgent = activeAgentRuntime.agents.find(
+      (agent) => agent.chatId === chat.currentChatId
+    );
+    const currentRuns = [
+      ...(currentAgent?.currentRun ? [currentAgent.currentRun] : []),
+      ...(Array.isArray(currentAgent?.runs) ? currentAgent.runs : []),
+    ];
+    const currentRun = [...currentRuns].reverse().find((run) => {
+      const status = String(run?.status || run?.state || "").toLowerCase();
+      return !status || (!TERMINAL_AGENT_STATES.has(status) && status !== "canceled");
+    });
+    const runId =
+      unified.pendingMessage?.runId
+      || currentRun?.runId
+      || currentRun?.id;
+
+    if (!runId) {
+      notify?.({
+        message: "This run is already stopping or has just finished.",
+        type: "info",
+      });
+      return;
+    }
+
+    Promise.resolve(activeAgentRuntime.cancelRun(runId)).catch((error) => {
+      notify?.({
+        message: error?.message || "The agent run could not be stopped.",
+        type: "error",
+      });
+    });
+  }, [
+    activeAgentRuntime,
+    chat.currentChatId,
+    notify,
+    unified,
+  ]);
+
   const agentChat = (
     <div className="flex min-h-0 flex-1 flex-col">
       <AgentChatPanel
           currentChatId={chat.currentChatId}
+          chatTitle={chat.currentChatMeta?.title || "New chat"}
+          projectTitle={
+            projectContext?.name ||
+            projectContext?.title ||
+            studio?.placePreference?.placeName ||
+            studio?.placePreference?.name ||
+            "Workspace"
+          }
           projectId={currentProjectId}
           messages={chat.messages}
           pendingMessage={unified.pendingMessage}
@@ -781,6 +834,9 @@ export default function AgentWorkspaceLayout({ controller }) {
           onRefine={onRefine}
           onOpenArtifact={handleOpenArtifact}
           onQuickStart={handleQuickStart}
+          onRenameChat={(title) => chat.handleRenameChat(chat.currentChatId, title)}
+          onOpenNavigation={() => setSidebarOpen(true)}
+          onRetryMessage={handleRetryMessage}
           notify={notify}
           prompt={prompt}
           setPrompt={setPrompt}
@@ -789,6 +845,7 @@ export default function AgentWorkspaceLayout({ controller }) {
           robloxImageUploading={robloxImageUploading}
           robloxImageUploads={robloxImageUploads}
           onSubmit={handleAgentPromptSubmit}
+          onStop={handleStopActiveWork}
           refineTarget={refineTarget}
           onCancelRefine={cancelRefine}
           onFileUpload={handleFileUpload}
@@ -1060,67 +1117,49 @@ export default function AgentWorkspaceLayout({ controller }) {
       />
 
       <div className="flex min-h-0 flex-1 overflow-hidden">
-        {/* LEFT: project / artifacts / file tree / history */}
+        {/* LEFT: projects and chats */}
         {generatorMode === "agent_build" && (
-        <aside
-          className={`fixed inset-y-0 left-0 z-40 flex w-80 flex-col border-r border-white/5 bg-[#0D0D0D]/95 backdrop-blur-2xl transform transition-[width,opacity,transform] duration-300 ease-in-out ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} lg:relative lg:translate-x-0 ${sidebarOpen ? "lg:w-80" : "lg:w-0 lg:opacity-0 lg:pointer-events-none"}`}
-          aria-label="Project sidebar"
-        >
-          <div className="flex items-center px-3 py-2.5 border-b border-white/10">
-            <Segmented
-              fullWidth
-              options={[
-                { id: "files", label: "Files", icon: FolderTree },
-                { id: "history", label: "Chats", icon: MessageSquare },
-              ]}
-              value={leftView}
-              onChange={setLeftView}
+          <>
+            <button
+              type="button"
+              aria-label="Close project sidebar"
+              className="nexus-project-sidebar-backdrop"
+              data-open={sidebarOpen}
+              tabIndex={sidebarOpen ? 0 : -1}
+              onClick={() => setSidebarOpen(false)}
             />
-          </div>
-
-          <div className="flex-1 min-h-0 overflow-hidden">
-            {leftView === "files" ? (
-              <div className="h-full overflow-y-auto scrollbar-subtle">{fileTree}</div>
-            ) : (
+            <aside
+              className="nexus-project-sidebar z-40 flex min-h-0 shrink-0 flex-col overflow-hidden border-r border-white/[.06] bg-[#0d0d0f]"
+              data-open={sidebarOpen}
+              aria-label="Project sidebar"
+              aria-hidden={!sidebarOpen}
+            >
               <SidebarContent
-                activeTab="chats"
-                setActiveTab={() => setActiveTab("chat")}
                 scripts={scripts}
                 currentChatId={chat.currentChatId}
+                currentProjectId={currentProjectId || null}
+                studioConnected={Boolean(studio?.connected)}
+                studioPlacePreference={studio?.placePreference}
                 generatingChatIds={unified.generatingChatIds}
                 activeAgentStatusByChat={activeAgentStatusByChat}
-                currentScriptId={scriptManager.currentScriptId}
                 setCurrentScriptId={scriptManager.setCurrentScriptId}
-                handleCreateScript={scriptManager.handleCreateScript}
-                handleRenameScript={scriptManager.handleRenameScript}
-                handleDeleteScript={scriptManager.handleDeleteScript}
-                currentScript={scriptManager.currentScript}
-                versionHistory={scriptManager.versionHistory}
-                selectedVersionId={scriptManager.selectedVersionId}
                 onSelectChat={(id) => {
                   chat.openChatById(id);
                   setActiveTab("chat");
-                  if (window.innerWidth < 1024) setSidebarOpen(false);
+                  if (window.innerWidth < 1200) setSidebarOpen(false);
                 }}
                 onDeleteChat={chat.handleDeleteChat}
                 onRenameChat={chat.handleRenameChat}
-                handleClearChat={chat.handleClearChat}
+                onMoveChat={chat.handleMoveChat}
                 user={user}
                 authReady={authReady}
                 notify={notify}
-                onVersionView={(ver) => {
-                  if (!ver.code) return;
-                  controller.handlers.emitAiEvent(AI_EVENTS.OPEN_CODE_DRAWER, {
-                    code: ver.code,
-                    title: ver.title || scriptManager.currentScript?.title || "Script",
-                    explanation: ver.explanation || "",
-                    versionNumber: ver.versionNumber,
-                  });
-                }}
+                isMobile={typeof window !== "undefined" && window.innerWidth < 1200}
+                onSelect={() => setSidebarOpen(false)}
+                onCollapse={() => setSidebarOpen(false)}
               />
-            )}
-          </div>
-        </aside>
+            </aside>
+          </>
         )}
 
         {/* CENTER: Studio agent chat */}

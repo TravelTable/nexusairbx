@@ -15,12 +15,21 @@ export default function TeamShareModal({
   const type = m?.projectId ? "ui" : "script";
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-300">
-      <div className="bg-[#121212] border border-white/10 rounded-3xl w-full max-w-md overflow-hidden flex flex-col shadow-2xl">
+    <div
+      className="nexus-modal-overlay fixed inset-0 z-[100] flex items-center justify-center bg-black/80 p-4"
+      data-state="open"
+      role="presentation"
+    >
+      <div
+        className="nexus-modal-panel flex w-full max-w-md flex-col overflow-hidden rounded-3xl border border-white/10 bg-[#121212] shadow-2xl"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="team-share-title"
+      >
         <div className="p-6 border-b border-white/5 flex justify-between items-center">
           <div className="flex items-center gap-3">
             <Users className="w-5 h-5 text-[#00f5d4]" />
-            <h3 className="text-lg font-black text-white uppercase tracking-tight">
+            <h3 id="team-share-title" className="text-lg font-black text-white uppercase tracking-tight">
               Share with Team
             </h3>
           </div>
@@ -39,7 +48,7 @@ export default function TeamShareModal({
                 onShareWithTeam(artifactId, type, team.id);
                 onClose();
               }}
-              className="w-full p-4 rounded-2xl bg-white/5 border border-white/10 hover:border-[#00f5d4]/50 hover:bg-[#00f5d4]/5 transition-all text-left flex items-center justify-between group"
+              className="group flex w-full items-center justify-between rounded-2xl border border-white/10 bg-white/5 p-4 text-left transition-[border-color,background-color,color] duration-150 hover:border-[#00f5d4]/50 hover:bg-[#00f5d4]/5"
             >
               <span className="font-bold text-white group-hover:text-[#00f5d4] transition-colors">
                 {team.name}

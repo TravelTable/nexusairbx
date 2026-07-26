@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import MessageList from "./MessageList";
 
 jest.mock("../../../lib/featureFlags", () => {
@@ -468,5 +468,49 @@ describe("MessageList pending activity", () => {
     expect(screen.queryByText("Job duplicate stage")).toBeNull();
     expect(screen.getByText("Keyless first stage")).toBeTruthy();
     expect(screen.getByText("Keyless second stage")).toBeTruthy();
+  });
+});
+
+describe("MessageList conversation layout", () => {
+  test("groups consecutive messages by role and shows one Nexus identity per assistant turn", () => {
+    const { container } = render(
+      <MessageList
+        {...baseProps}
+        isBusy={false}
+        messages={[
+          { id: "u1", role: "user", content: "Start with a shop." },
+          { id: "u2", role: "user", content: "Use a dark theme." },
+          { id: "a1", role: "assistant", content: "I’ll map the layout first." },
+          { id: "a2", role: "assistant", content: "Then I’ll build the files." },
+          { id: "u3", role: "user", content: "Go ahead." },
+        ]}
+      />
+    );
+
+    expect(container.querySelectorAll('[data-message-group="user"]')).toHaveLength(2);
+    expect(container.querySelectorAll('[data-message-group="assistant"]')).toHaveLength(1);
+    expect(screen.getAllByTestId("nexusrbx-avatar")).toHaveLength(1);
+  });
+
+  test("wires edit and retry-from-here actions for user messages", () => {
+    const onEditMessage = jest.fn();
+    const onRetryMessage = jest.fn();
+    const message = { id: "u1", role: "user", content: "Build a round timer." };
+
+    render(
+      <MessageList
+        {...baseProps}
+        isBusy={false}
+        messages={[message]}
+        onEditMessage={onEditMessage}
+        onRetryMessage={onRetryMessage}
+      />
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Edit" }));
+    fireEvent.click(screen.getByRole("button", { name: "Retry from here" }));
+
+    expect(onEditMessage).toHaveBeenCalledWith(message);
+    expect(onRetryMessage).toHaveBeenCalledWith("Build a round timer.");
   });
 });

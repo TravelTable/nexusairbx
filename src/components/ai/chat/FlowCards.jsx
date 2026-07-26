@@ -243,7 +243,7 @@ export function ClarifyCard({ message, onSubmit, disabled }) {
         type="button"
         disabled={disabled || !canContinue}
         onClick={() => onSubmit?.(message, answers)}
-        className="w-full py-2.5 rounded-xl bg-[#9b5de5] text-white font-black text-sm flex items-center justify-center gap-2 hover:scale-[1.01] active:scale-[0.99] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+        className="w-full py-2.5 rounded-xl bg-[#9b5de5] text-white font-black text-sm flex items-center justify-center gap-2 hover:scale-[1.01] active:scale-[0.99] transition-[background-color,color,opacity,transform] duration-[var(--motion-fast)] ease-[var(--ease-standard)] disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {disabled ? <Loader className="w-4 h-4" /> : <SendPrompt className="w-4 h-4" />}
         Continue

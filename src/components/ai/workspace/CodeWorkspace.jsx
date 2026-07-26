@@ -118,7 +118,7 @@ export default function CodeWorkspace({
             <button
               type="button"
               onClick={() => onRevertEdits?.(artifact.id)}
-              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/5 border border-white/10 text-[10px] font-bold uppercase tracking-widest text-gray-400 hover:text-white transition-all"
+              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/5 border border-white/10 text-[10px] font-bold uppercase tracking-widest text-gray-400 hover:text-white transition-[background-color,border-color,color,opacity] duration-[var(--motion-fast)] ease-[var(--ease-standard)]"
               title="Revert local edits"
             >
               <RotateCcw className="w-3.5 h-3.5" /> Revert
@@ -128,7 +128,7 @@ export default function CodeWorkspace({
             <button
               type="button"
               onClick={() => onRevertFile(activeFile)}
-              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/5 border border-white/10 text-[10px] font-bold uppercase tracking-widest text-gray-400 hover:text-white transition-all"
+              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/5 border border-white/10 text-[10px] font-bold uppercase tracking-widest text-gray-400 hover:text-white transition-[background-color,border-color,color,opacity] duration-[var(--motion-fast)] ease-[var(--ease-standard)]"
             >
               <RotateCcw className="w-3.5 h-3.5" /> Revert File
             </button>
@@ -137,7 +137,7 @@ export default function CodeWorkspace({
             <button
               type="button"
               onClick={() => onRefreshFile(activeFile)}
-              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/5 border border-white/10 text-[10px] font-bold uppercase tracking-widest text-gray-400 hover:text-white transition-all"
+              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/5 border border-white/10 text-[10px] font-bold uppercase tracking-widest text-gray-400 hover:text-white transition-[background-color,border-color,color,opacity] duration-[var(--motion-fast)] ease-[var(--ease-standard)]"
             >
               <RefreshCw className="w-3.5 h-3.5" /> Refresh
             </button>
@@ -145,7 +145,7 @@ export default function CodeWorkspace({
           <button
             type="button"
             onClick={() => setEditing((v) => !v)}
-            className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-[10px] font-bold uppercase tracking-widest transition-all ${
+            className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-[10px] font-bold uppercase tracking-widest transition-[background-color,border-color,color,opacity] duration-[var(--motion-fast)] ease-[var(--ease-standard)] ${
               editing
                 ? "bg-[#00f5d4]/10 border-[#00f5d4]/40 text-[#00f5d4]"
                 : "bg-white/5 border-white/10 text-gray-400 hover:text-white"
@@ -157,7 +157,7 @@ export default function CodeWorkspace({
           <button
             type="button"
             onClick={handleCopy}
-            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/5 border border-white/10 text-[10px] font-bold uppercase tracking-widest text-gray-400 hover:text-white transition-all"
+            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/5 border border-white/10 text-[10px] font-bold uppercase tracking-widest text-gray-400 hover:text-white transition-[background-color,border-color,color,opacity] duration-[var(--motion-fast)] ease-[var(--ease-standard)]"
           >
             {copied ? <Check className="w-3.5 h-3.5 text-[#00f5d4]" /> : <Copy className="w-3.5 h-3.5" />}
             Copy
@@ -167,7 +167,7 @@ export default function CodeWorkspace({
               type="button"
               onClick={() => onSaveFile(activeFile)}
               disabled={saving || readOnly}
-              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[#00f5d4] text-black border border-[#00f5d4]/70 text-[10px] font-bold uppercase tracking-widest disabled:opacity-40 transition-all"
+              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[#00f5d4] text-black border border-[#00f5d4]/70 text-[10px] font-bold uppercase tracking-widest disabled:opacity-40 transition-[background-color,border-color,color,opacity] duration-[var(--motion-fast)] ease-[var(--ease-standard)]"
               title="Save this file to Studio"
             >
               <Save className="w-3.5 h-3.5" />
@@ -179,7 +179,7 @@ export default function CodeWorkspace({
               type="button"
               onClick={() => onSaveAllFiles(artifact.files)}
               disabled={saving || readOnly}
-              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[#fee440] text-black border border-[#fee440]/70 text-[10px] font-bold uppercase tracking-widest disabled:opacity-40 transition-all"
+              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[#fee440] text-black border border-[#fee440]/70 text-[10px] font-bold uppercase tracking-widest disabled:opacity-40 transition-[background-color,border-color,color,opacity] duration-[var(--motion-fast)] ease-[var(--ease-standard)]"
               title="Save all open files to Studio"
             >
               <Files className="w-3.5 h-3.5" />

@@ -99,10 +99,12 @@ export async function orchestrate({
   studioTarget = null,
   targeting = null,
   templateId = null,
+  signal,
 }) {
   try {
     return await workflowRequest("/api/ai/orchestrate", {
       method: "POST",
+      signal,
       body: {
         prompt,
         answers,

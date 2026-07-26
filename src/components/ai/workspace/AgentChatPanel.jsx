@@ -1,5 +1,4 @@
-import React, { useCallback, useMemo, useState } from "react";
-import { ListChecks, MessageSquare } from "lib/icons";
+import React, { useCallback, useState } from "react";
 import ChatView from "../ChatView";
 import ChatComposer from "../chat/ChatComposer";
 import PlanWorkspace from "./PlanWorkspace";
@@ -10,6 +9,8 @@ import FEATURE_FLAGS from "../../../lib/featureFlags";
 export default function AgentChatPanel({
   // chat
   currentChatId,
+  chatTitle = "New chat",
+  projectTitle = "Workspace",
   projectId = "",
   messages,
   pendingMessage,
@@ -25,6 +26,9 @@ export default function AgentChatPanel({
   onRefine,
   onOpenArtifact,
   onQuickStart,
+  onRenameChat,
+  onOpenNavigation,
+  onRetryMessage,
   notify,
   onApproveStep,
   approvingStepId,
@@ -80,6 +84,7 @@ export default function AgentChatPanel({
   robloxImageUploading = false,
   robloxImageUploads = [],
   onSubmit,
+  onStop,
   refineTarget,
   onCancelRefine,
   onFileUpload,
@@ -107,10 +112,6 @@ export default function AgentChatPanel({
   const [view, setView] = useState("chat");
   const [selectedTemplateId, setSelectedTemplateId] = useState("");
   const openPlanWorkspace = useCallback(() => setView("plan"), []);
-  const viewOptions = useMemo(() => FEATURE_FLAGS.newPlanningMode ? [
-    { id: "chat", label: "Chat", icon: MessageSquare },
-    { id: "plan", label: "Review", icon: ListChecks },
-  ] : undefined, []);
 
   const handlePlanExecute = useCallback(async ({ result }) => {
     const task = result?.task || result?.execution?.task || result?.run || null;
@@ -127,6 +128,11 @@ export default function AgentChatPanel({
     setSelectedTemplateId("");
     return submission;
   }, [onSubmit, selectedTemplateId]);
+
+  const handleEditMessage = useCallback((message) => {
+    setPrompt?.(String(message?.content || ""));
+    if (Array.isArray(message?.attachments)) setAttachments?.(message.attachments);
+  }, [setAttachments, setPrompt]);
 
   return (
     <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-ink-900">
@@ -156,6 +162,9 @@ export default function AgentChatPanel({
         ) : (
           <div className="relative flex min-h-0 flex-1 flex-col">
             <ChatView
+              chatId={currentChatId}
+              chatTitle={chatTitle}
+              projectTitle={projectTitle}
               messages={messages}
               pendingMessage={pendingMessage}
               pendingMessages={pendingMessages}
@@ -175,6 +184,13 @@ export default function AgentChatPanel({
               approvingStepId={approvingStepId}
               onSelectStudioTarget={onSelectStudioTarget}
               selectingStudioTargetId={selectingStudioTargetId}
+              studioConnected={studioConnected}
+              studioConnectionState={studioConnectionState}
+              onRenameChat={onRenameChat}
+              onOpenNavigation={onOpenNavigation}
+              onOpenPlan={FEATURE_FLAGS.newPlanningMode ? openPlanWorkspace : undefined}
+              onEditMessage={handleEditMessage}
+              onRetryMessage={onRetryMessage}
             />
           </div>
         )}
@@ -189,6 +205,7 @@ export default function AgentChatPanel({
         robloxImageUploading={robloxImageUploading}
         robloxImageUploads={robloxImageUploads}
         onSubmit={handleComposerSubmit}
+        onStop={onStop}
         isGenerating={isBusy}
         generationStage={generationStage}
         placeholder={refineTarget ? "Describe the Studio change you want..." : "Ask the Studio agent to build, inspect, wire, or fix..."}
@@ -211,12 +228,9 @@ export default function AgentChatPanel({
         onFileUpload={onFileUpload}
         onImprovePrompt={onImprovePrompt}
         isImproving={isImproving}
-        disabled={isBusy || composerLocked}
+        disabled={composerLocked}
         mode={activeMode}
         onModeChange={onModeChange}
-        view={view}
-        onViewChange={setView}
-        viewOptions={viewOptions}
         studioConnected={studioConnected}
         studioConnectionType={studioConnectionType}
         studioConnectionState={studioConnectionState}

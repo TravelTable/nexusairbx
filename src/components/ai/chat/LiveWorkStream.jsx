@@ -1,5 +1,14 @@
-import React, { useMemo } from "react";
-import { FileCode2, Loader2, RotateCcw, TerminalSquare, Wrench } from "lib/icons";
+import React, { useEffect, useMemo, useRef } from "react";
+import {
+  CheckCircle2,
+  FileCode2,
+  Loader2,
+  RotateCcw,
+  ShieldAlert,
+  TerminalSquare,
+  Wrench,
+  XCircle,
+} from "lib/icons";
 import { BrainIcon } from "lucide-react";
 import { kindMeta } from "../workspace/workspaceMeta";
 import {
@@ -10,6 +19,7 @@ import {
 } from "../../ai-elements/chain-of-thought";
 import StudioTargetPicker from "../workspace/StudioTargetPicker";
 import StudioRunBlockNotice from "../workspace/StudioRunBlockNotice";
+import AnimatedStatusText from "./AnimatedStatusText";
 
 function cleanText(value = "") {
   return String(value || "").replace(/<\/?(thinking|progress)>/gi, "").trim();
@@ -55,7 +65,6 @@ function synthesizeActivity(streamState = {}, pendingMessage = {}) {
 const IN_PROGRESS_STATUSES = new Set([
   "running",
   "writing",
-  "queued",
   "delivered",
   "reconnecting",
   "recovering",
@@ -71,10 +80,22 @@ function isInProgressActivity(item) {
   return false;
 }
 
-function stepIconFor(item) {
-  if (isInProgressActivity(item)) return Loader2;
+function activityMotionStatus(item) {
+  const status = String(item?.status || "").toLowerCase();
+  if (["failed", "error", "cancelled", "timed_out"].includes(status)) return "error";
+  if (["awaiting_approval", "blocked", "waiting", "input_required"].includes(status)) return "waiting";
+  if (isInProgressActivity(item)) return "active";
+  if (["pending", "idle", "not_started", "queued"].includes(status)) return "pending";
+  return "complete";
+}
+
+function stepIconFor(item, motionStatus) {
+  if (motionStatus === "active") return Loader2;
+  if (motionStatus === "error") return XCircle;
+  if (motionStatus === "waiting") return ShieldAlert;
+  if (motionStatus === "pending") return Wrench;
+  if (item.type === "tool_step") return CheckCircle2;
   if (item.type === "thinking" || item.type === "stage") return TerminalSquare;
-  if (item.type === "tool_step") return Wrench;
   if (item.type === "file_chunk" || item.type === "file_ready" || item.type === "file_start") {
     return kindMeta(item.kind).icon || FileCode2;
   }
@@ -106,6 +127,27 @@ export default function LiveWorkStream({
     if (!hideThinkingRows) return raw;
     return raw.filter((item) => item?.type !== "thinking");
   }, [streamState, pendingMessage, hideThinkingRows]);
+  const previousActivityStatusesRef = useRef(new Map());
+  const motionEvents = new Map();
+
+  activity.forEach((item) => {
+    const itemId = String(item?.id || "");
+    const motionStatus = activityMotionStatus(item);
+    const previousStatus = previousActivityStatusesRef.current.get(itemId);
+    if (previousStatus && previousStatus !== motionStatus) {
+      if (motionStatus === "complete") {
+        motionEvents.set(itemId, item.type === "file_ready" ? "file-ready" : "complete");
+      } else if (motionStatus === "error") {
+        motionEvents.set(itemId, "error");
+      }
+    }
+  });
+
+  useEffect(() => {
+    previousActivityStatusesRef.current = new Map(
+      activity.map((item) => [String(item?.id || ""), activityMotionStatus(item)])
+    );
+  }, [activity]);
 
   const reconnecting =
     pendingMessage?.streamStatus === "reconnecting" || pendingMessage?.streamStatus === "recovering";
@@ -131,10 +173,10 @@ export default function LiveWorkStream({
           {reconnecting ? (
             <span className="inline-flex items-center gap-2">
               <RotateCcw className="size-3.5 motion-safe:animate-spin" />
-              {headerLabel}
+              <AnimatedStatusText value={headerLabel} />
             </span>
           ) : pendingMessage?.targetSelection ? null : (
-            headerLabel
+            <AnimatedStatusText value={headerLabel} />
           )}
         </ChainOfThoughtHeader>
         <ChainOfThoughtContent>
@@ -154,7 +196,16 @@ export default function LiveWorkStream({
                   : null;
               const awaiting = step?.status === "awaiting_approval";
               const isCode = item.type === "file_chunk" || item.type === "file_ready";
-              const Icon = stepIconFor(item);
+              const motionStatus = activityMotionStatus(item);
+              const motionEvent = motionEvents.get(String(item?.id || "")) || "";
+              const Icon = stepIconFor(item, motionStatus);
+              const stepKind = /verify|validat|test/i.test(
+                `${item.type || ""} ${item.stepType || ""} ${item.text || ""}`
+              )
+                ? "verification"
+                : item.type === "file_ready"
+                  ? "file"
+                  : "tool";
 
               return (
                 <ChainOfThoughtStep
@@ -162,7 +213,10 @@ export default function LiveWorkStream({
                   icon={Icon}
                   label={cleanText(item.text) || item.status || "Working..."}
                   description={stepDescription(item)}
-                  status={isInProgressActivity(item) ? "active" : "complete"}
+                  status={motionStatus}
+                  motionStatus={motionStatus}
+                  motionEvent={motionEvent}
+                  stepKind={stepKind}
                 >
                   {awaiting && onApproveStep ? (
                     <button
@@ -189,9 +243,10 @@ export default function LiveWorkStream({
             })
           ) : (
             <ChainOfThoughtStep
-              icon={TerminalSquare}
+              icon={Loader2}
               label="Starting work..."
               status="active"
+              motionStatus="active"
             />
           )}
         </ChainOfThoughtContent>

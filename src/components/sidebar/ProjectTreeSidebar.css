@@ -1,0 +1,228 @@
+.nexus-project-tree {
+  --tree-row-hover: rgba(255, 255, 255, 0.045);
+  --tree-row-selected: rgba(255, 255, 255, 0.07);
+}
+
+.nexus-project-tree-scroll {
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(150, 150, 160, 0.26) transparent;
+}
+
+.nexus-project-tree-scroll::-webkit-scrollbar {
+  width: 5px;
+}
+
+.nexus-project-tree-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.nexus-project-tree-scroll::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(150, 150, 160, 0.26);
+}
+
+.nexus-project-tree-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(170, 170, 180, 0.55);
+}
+
+.nexus-tree-row {
+  position: relative;
+  display: flex;
+  width: 100%;
+  align-items: center;
+  border-radius: 6px;
+  color: rgb(161 161 170);
+  transition:
+    color var(--motion-fast) var(--ease-standard),
+    background-color var(--motion-fast) var(--ease-standard);
+}
+
+.nexus-tree-row::before {
+  position: absolute;
+  inset-block: 5px;
+  left: 0;
+  width: 2px;
+  border-radius: 999px;
+  background: #00f5d4;
+  content: "";
+  opacity: 0;
+  transform: scaleY(0.45);
+  transition:
+    opacity 140ms var(--ease-standard),
+    transform 140ms var(--ease-product);
+}
+
+.nexus-tree-row:hover,
+.nexus-tree-row:focus-visible {
+  background: var(--tree-row-hover);
+  color: white;
+  outline: none;
+}
+
+.nexus-tree-row[data-selected="true"] {
+  background: var(--tree-row-selected);
+  color: white;
+}
+
+.nexus-tree-row[data-selected="true"]::before {
+  opacity: 1;
+  transform: scaleY(1);
+}
+
+.nexus-tree-row .nexus-tree-overflow {
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+
+.nexus-tree-row:hover .nexus-tree-overflow,
+.nexus-tree-row:focus-within .nexus-tree-overflow {
+  opacity: 1;
+}
+
+.nexus-tree-children {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transform: translateY(-2px);
+  transition:
+    grid-template-rows var(--motion-standard) var(--ease-product),
+    opacity 140ms var(--ease-standard),
+    transform var(--motion-standard) var(--ease-product);
+}
+
+.nexus-tree-children[data-expanded="true"] {
+  grid-template-rows: 1fr;
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.nexus-tree-chevron {
+  transition: transform 160ms var(--ease-product);
+}
+
+.nexus-tree-chevron[data-expanded="true"] {
+  transform: rotate(90deg);
+}
+
+.nexus-sidebar-scroll-mask {
+  pointer-events: none;
+  position: absolute;
+  z-index: 3;
+  right: 0;
+  left: 0;
+  height: 22px;
+  opacity: 0;
+  transition: opacity 140ms ease;
+}
+
+.nexus-sidebar-scroll-mask[data-visible="true"] {
+  opacity: 1;
+}
+
+.nexus-sidebar-scroll-mask[data-edge="top"] {
+  top: 0;
+  background: linear-gradient(to bottom, #0d0d0f, transparent);
+}
+
+.nexus-sidebar-scroll-mask[data-edge="bottom"] {
+  bottom: 0;
+  background: linear-gradient(to top, #0d0d0f, transparent);
+}
+
+.nexus-project-sidebar {
+  flex-basis: 272px;
+  width: 272px;
+  transition:
+    flex-basis 220ms var(--ease-product),
+    width 220ms var(--ease-product),
+    opacity 100ms var(--ease-standard);
+}
+
+.nexus-project-sidebar[data-open="false"] {
+  flex-basis: 0;
+  width: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.nexus-project-sidebar-backdrop {
+  display: none;
+}
+
+@media (min-width: 1200px) and (max-width: 1499px) {
+  .nexus-project-sidebar {
+    flex-basis: 248px;
+    width: 248px;
+  }
+}
+
+@media (max-width: 1199px) {
+  .nexus-project-sidebar {
+    position: fixed;
+    inset-block: 0;
+    left: 0;
+    z-index: 50;
+    flex-basis: auto;
+    width: 272px;
+    opacity: 1;
+    transform: translateX(0);
+    transition:
+      transform var(--motion-panel) var(--ease-product),
+      opacity var(--motion-panel) var(--ease-standard);
+  }
+
+  .nexus-project-sidebar[data-open="false"] {
+    flex-basis: auto;
+    width: 272px;
+    opacity: 0;
+    transform: translateX(-16px);
+  }
+
+  .nexus-project-sidebar-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 40;
+    display: block;
+    border: 0;
+    background: rgba(0, 0, 0, 0.55);
+    opacity: 1;
+    transition: opacity var(--motion-standard) var(--ease-standard);
+  }
+
+  .nexus-project-sidebar-backdrop[data-open="false"] {
+    opacity: 0;
+    pointer-events: none;
+  }
+}
+
+.nexus-tree-row-in {
+  animation: nexus-tree-row-in var(--motion-standard) var(--ease-product) both;
+}
+
+@keyframes nexus-tree-row-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 599px) {
+  .nexus-project-sidebar,
+  .nexus-project-sidebar[data-open="false"] {
+    width: 100vw;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nexus-project-sidebar,
+  .nexus-tree-children,
+  .nexus-tree-chevron,
+  .nexus-project-sidebar-backdrop {
+    transition-duration: 1ms;
+  }
+}

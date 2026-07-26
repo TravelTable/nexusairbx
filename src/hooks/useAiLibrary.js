@@ -38,7 +38,7 @@ export function useAiLibrary(user, { retentionDays = null, authReady = true } = 
     
     // Subscribe to chats
     const chatsRef = collection(db, "users", uid, "chats");
-    const qChats = query(chatsRef, orderBy("updatedAt", "desc"), limit(100));
+    const qChats = query(chatsRef, orderBy("updatedAt", "desc"), limit(500));
     let cancelled = false;
     const unsubChats = onSnapshot(
       qChats,

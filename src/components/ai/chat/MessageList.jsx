@@ -1,5 +1,5 @@
 import React, { useMemo } from "react";
-import { NexusRBXAvatar, UserAvatar, SkeletonArtifact } from "../AiComponents";
+import { NexusRBXAvatar, SkeletonArtifact } from "../AiComponents";
 import MarkdownMessage from "./MarkdownMessage";
 import { stripTags } from "./stripTags";
 import MessageBubble from "./MessageBubble";
@@ -7,8 +7,32 @@ import LiveWorkStream from "./LiveWorkStream";
 import ReasoningPanel from "./ReasoningPanel";
 import { parsePendingStreamContent } from "../../../lib/streaming";
 import { Separator } from "../../shadcn/separator";
-import { Clock3, Loader2, RotateCcw } from "lib/icons";
+import { RotateCcw } from "lib/icons";
 import { getAssistantTurnIdentity, reconcileAssistantTurns } from "../../../lib/assistantTurnIdentity";
+import AnimatedStatusText from "./AnimatedStatusText";
+import "./ChatMotion.css";
+
+export function groupMessagesByRole(messages = []) {
+  return messages.reduce((groups, message) => {
+    const role = message?.role === "user" ? "user" : "assistant";
+    const lastGroup = groups[groups.length - 1];
+    if (lastGroup?.role === role) {
+      lastGroup.messages.push(message);
+    } else {
+      groups.push({ role, messages: [message] });
+    }
+    return groups;
+  }, []);
+}
+
+function AssistantIdentity({ activeMode, working = false }) {
+  return (
+    <div className="flex h-7 items-center gap-2.5">
+      <NexusRBXAvatar compact isThinking={working} mode={activeMode} />
+      <span className="text-[13px] font-semibold text-gray-300">Nexus</span>
+    </div>
+  );
+}
 
 function resolveActivityStage(pendingMessage, generationStage, parsed) {
   const stage = pendingMessage?.stage || generationStage || "";
@@ -29,34 +53,15 @@ function LiveActivityHeader({ pendingMessage, generationStage, parsed, embedded 
   const isRecovering = String(stage).toLowerCase().includes("recovering");
 
   return (
-    <div
-      className={
-        embedded
-          ? "flex items-center justify-between gap-3 px-4 py-3"
-          : "flex items-center justify-between gap-3 rounded-2xl bg-white/[0.03] border border-white/10 px-4 py-3"
-      }
-    >
-      <div className="flex items-center gap-3 min-h-0 min-w-0">
-        <span className="shrink-0 text-[#00f5d4]">
-          {isRecovering ? (
-            <RotateCcw className="w-4 h-4 animate-spin" />
-          ) : (
-            <Loader2 className="w-4 h-4 animate-spin" />
-          )}
-        </span>
-        <div className="min-w-0">
-          <div className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">
-            Nexus is working
-          </div>
-          <div className="mt-0.5 text-sm md:text-[15px] font-semibold text-white break-words">
-            {stage}
-          </div>
-        </div>
-      </div>
-      <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/5 border border-white/10 text-[10px] font-bold uppercase tracking-widest text-gray-400 shrink-0">
-        <Clock3 className="w-3 h-3" />
-        Live
-      </div>
+    <div className={embedded ? "flex items-center gap-2 px-4 py-2.5" : "flex min-h-7 items-center gap-2"}>
+      <span className="sr-only">Nexus is working</span>
+      <span className="shrink-0 text-sm text-[#00f5d4]" aria-hidden="true">
+        {isRecovering ? <RotateCcw className="h-3.5 w-3.5 animate-spin" /> : "◌"}
+      </span>
+      <AnimatedStatusText
+        value={stage}
+        className="min-w-0 break-words text-sm text-gray-300"
+      />
     </div>
   );
 }
@@ -80,7 +85,10 @@ function SingleMessageList({
   approvingStepId,
   onSelectStudioTarget,
   selectingStudioTargetId,
+  onEditMessage,
+  onRetryMessage,
   hideMessages = false,
+  arrivalMessageId = null,
 }) {
   // Firestore can publish the completed assistant message one render before the
   // orchestration cleanup runs. This remains a local guard for call sites that
@@ -127,6 +135,15 @@ function SingleMessageList({
         : messages,
     [hideMessages, messages, pendingMessage]
   );
+  const messageGroups = useMemo(() => {
+    let retryPrompt = "";
+    return groupMessagesByRole(visibleMessages).map((group) => {
+      if (group.role === "user") {
+        retryPrompt = String(group.messages[group.messages.length - 1]?.content || "").trim();
+      }
+      return { ...group, retryPrompt };
+    });
+  }, [visibleMessages]);
 
   // Generation pending carries `prompt` for instant feedback before Firestore syncs.
   // Once the persisted user message arrives, hide the optimistic bubble to avoid doubles.
@@ -145,51 +162,75 @@ function SingleMessageList({
   }, [messages, pendingMessage?.prompt, pendingMessage?.requestId]);
 
   return (
-    <div className="space-y-6">
-      {visibleMessages.map((m) => (
-        <MessageBubble
-          key={m.id}
-          message={m}
-          user={user}
-          profile={profile}
-          activeMode={activeMode}
-          onViewUi={onViewUi}
-          onRefine={onRefine}
-          onFixUiAudit={onFixUiAudit}
-          onApprovePlan={onApprovePlan}
-          onClarifySubmit={onClarifySubmit}
-          onEditPlan={onEditPlan}
-          notify={notify}
-          isBusy={isBusy}
-          onApproveStep={onApproveStep}
-          approvingStepId={approvingStepId}
-        />
+    <div className="space-y-5">
+      {messageGroups.map((group, groupIndex) => (
+        <div
+          key={`${group.role}-${group.messages[0]?.id || groupIndex}`}
+          className={[
+            group.role === "user"
+              ? "mx-auto w-full max-w-[840px]"
+              : "mx-auto w-full max-w-[1080px]",
+            group.messages.some((message) => String(message?.id || "") === arrivalMessageId)
+              ? "nexus-message-arrival"
+              : "",
+          ].filter(Boolean).join(" ")}
+          data-message-group={group.role}
+        >
+          {group.role === "assistant" ? (
+            <div className="mb-2 w-full max-w-[840px]">
+              <AssistantIdentity activeMode={activeMode} />
+            </div>
+          ) : null}
+          <div className={group.role === "assistant" ? "space-y-1.5 pl-9" : "space-y-1.5"}>
+            {group.messages.map((m) => (
+              <MessageBubble
+                key={m.id}
+                message={m}
+                user={user}
+                profile={profile}
+                activeMode={activeMode}
+                grouped={group.role === "assistant"}
+                retryPrompt={group.retryPrompt}
+                onViewUi={onViewUi}
+                onRefine={onRefine}
+                onFixUiAudit={onFixUiAudit}
+                onApprovePlan={onApprovePlan}
+                onClarifySubmit={onClarifySubmit}
+                onEditPlan={onEditPlan}
+                notify={notify}
+                isBusy={isBusy}
+                onApproveStep={onApproveStep}
+                approvingStepId={approvingStepId}
+                onEditMessage={onEditMessage}
+                onRetryMessage={onRetryMessage}
+              />
+            ))}
+          </div>
+        </div>
       ))}
 
       {pendingMessage && (
         <>
           {showOptimisticUserPrompt ? (
-            <div className="flex justify-end gap-3.5 motion-safe:animate-message-in">
-              <div className="max-w-[70%] md:max-w-[60%] order-1">
-                <div className="px-4 py-3 md:px-5 md:py-4 rounded-2xl2 rounded-tr-md bg-gradient-to-br from-white/[0.09] to-white/[0.03] border border-white/10 backdrop-blur-xl shadow-panel">
-                  <div className="text-[15px] md:text-[16px] whitespace-pre-wrap leading-relaxed text-white font-medium">
-                    {String(pendingMessage.prompt || "").trim()}
-                  </div>
-                </div>
-              </div>
-              <UserAvatar
-                email={user?.email}
-                name={profile?.name || profile?.preferred_username || user?.displayName || ""}
-                photoUrl={profile?.picture || user?.photoURL || ""}
+            <div className="nexus-message-arrival mx-auto w-full max-w-[840px]">
+              <MessageBubble
+                message={{
+                  id: `optimistic-${pendingMessage.requestId || "message"}`,
+                  role: "user",
+                  content: String(pendingMessage.prompt || "").trim(),
+                  attachments: pendingMessage.attachments,
+                }}
+                onEditMessage={onEditMessage}
+                onRetryMessage={onRetryMessage}
               />
             </div>
           ) : null}
 
-          <div className="flex justify-start gap-3.5 motion-safe:animate-message-in">
-            <NexusRBXAvatar isThinking={true} mode={activeMode} />
-            <div className="max-w-[90%] order-2 space-y-4">
+          <div className="nexus-message-arrival mx-auto w-full max-w-[1080px]">
+            <AssistantIdentity activeMode={activeMode} working />
+            <div className="mt-2 space-y-3 pl-9">
               {showLiveWorkStream ? (
-                <div className="rounded-2xl border border-white/10 bg-[#0b0b0b]/90 shadow-2xl overflow-hidden">
+                <div className="w-full max-w-[840px] overflow-hidden rounded-xl border border-white/[0.08] bg-white/[0.025]">
                   <div className="px-4 pt-3">
                     <ReasoningPanel
                       text={streamState?.rawReasoning}
@@ -225,7 +266,7 @@ function SingleMessageList({
               )}
 
               {pendingMessage.content && !showLiveWorkStream ? (
-                <div className="space-y-4">
+                <div className="nexus-streaming-caret w-full max-w-[840px] space-y-4">
                   {pendingParsed.hasStructured ? (
                     <div className="space-y-4">
                       {pendingParsed.code && (
@@ -264,6 +305,10 @@ function SingleMessageList({
 export default function MessageList({ pendingMessage, pendingMessages, messages = [], ...props }) {
   const keylessRenderKeys = React.useRef(new WeakMap());
   const keylessRenderSequence = React.useRef(0);
+  const knownMessageIdsRef = React.useRef(
+    new Set(messages.map((message) => String(message?.id || "")).filter(Boolean))
+  );
+  const [arrivalMessageId, setArrivalMessageId] = React.useState(null);
   const normalizedPendingMessages = useMemo(() => reconcileAssistantTurns([
     ...(Array.isArray(pendingMessages) ? pendingMessages : []),
     ...(pendingMessage ? [pendingMessage] : []),
@@ -291,6 +336,19 @@ export default function MessageList({ pendingMessage, pendingMessages, messages 
     return !key || !completedAssistantTurnKeys.has(key);
   }), [completedAssistantTurnKeys, normalizedPendingMessages]);
 
+  React.useEffect(() => {
+    const currentIds = messages
+      .map((message) => String(message?.id || ""))
+      .filter(Boolean);
+    const additions = currentIds.filter((id) => !knownMessageIdsRef.current.has(id));
+    knownMessageIdsRef.current = new Set(currentIds);
+
+    if (!additions.length) return undefined;
+    setArrivalMessageId(additions[additions.length - 1]);
+    const timer = window.setTimeout(() => setArrivalMessageId(null), 200);
+    return () => window.clearTimeout(timer);
+  }, [messages]);
+
   const pendingRenderKey = (message) => {
     const identity = getAssistantTurnIdentity(message);
     if (identity) return identity;
@@ -302,8 +360,13 @@ export default function MessageList({ pendingMessage, pendingMessages, messages 
   };
 
   return (
-    <div className="space-y-6">
-      <SingleMessageList {...props} messages={visibleMessages} pendingMessage={null} />
+    <div className="space-y-5">
+      <SingleMessageList
+        {...props}
+        messages={visibleMessages}
+        pendingMessage={null}
+        arrivalMessageId={arrivalMessageId}
+      />
       {visiblePendingMessages.map((message) => (
         <SingleMessageList
           {...props}

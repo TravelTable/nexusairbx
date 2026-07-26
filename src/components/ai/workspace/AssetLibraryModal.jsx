@@ -429,13 +429,17 @@ export default function AssetLibraryModal({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/75 p-3 backdrop-blur-md" role="presentation">
+    <div
+      className="nexus-modal-overlay fixed inset-0 z-[100] flex items-center justify-center bg-black/75 p-3"
+      data-state="open"
+      role="presentation"
+    >
       <div
         ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby="asset-library-title"
-        className="flex h-[92vh] w-full max-w-7xl flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#0D0D0D] shadow-2xl"
+        className="nexus-modal-panel flex h-[92vh] w-full max-w-7xl flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#0D0D0D] shadow-2xl"
       >
         <header className="flex shrink-0 items-start justify-between gap-3 border-b border-white/10 p-4">
           <div className="min-w-0">
@@ -462,7 +466,7 @@ export default function AssetLibraryModal({
               type="button"
               onClick={() => setSource(item.id)}
               className={cx(
-                "rounded-lg border px-2.5 py-1 text-[10px] font-black uppercase tracking-widest transition-all",
+                "rounded-lg border px-2.5 py-1 text-[10px] font-black uppercase tracking-widest transition-[border-color,background-color,color] duration-150",
                 source === item.id ? "border-[#00bbf9]/30 bg-[#00bbf9]/15 text-[#00bbf9]" : "border-white/10 bg-white/5 text-gray-500 hover:text-gray-200"
               )}
             >
@@ -527,7 +531,7 @@ export default function AssetLibraryModal({
                     const selected = selection.has(String(asset.assetId));
                     const Icon = typeIcon(asset.assetType);
                     return (
-                      <article key={asset.assetId} className={cx("rounded-lg border bg-white/[0.03] p-2 transition-all", selected ? "border-[#00f5d4]/30" : "border-white/10 hover:border-white/20")}>
+                      <article key={asset.assetId} className={cx("rounded-lg border bg-white/[0.03] p-2 transition-[border-color,background-color] duration-150", selected ? "border-[#00f5d4]/30" : "border-white/10 hover:border-white/20")}>
                         <button type="button" onClick={() => setPreviewAsset(asset)} className="block w-full text-left" aria-label={`Preview ${asset.name}`}>
                           <div className="relative mb-2 aspect-video overflow-hidden rounded-md bg-black/40">
                             {asset.thumbnailUrl ? <img src={asset.thumbnailUrl} alt="" className="h-full w-full object-cover" /> : <Icon className="m-auto h-full w-8 text-gray-600" />}

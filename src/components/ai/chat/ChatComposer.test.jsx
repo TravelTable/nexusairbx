@@ -19,10 +19,6 @@ jest.mock("../workspace/AssetLibraryModal", () => function AssetLibraryModalStub
   return null;
 });
 
-jest.mock("./AnimatedPromptPlaceholder", () => function AnimatedPromptPlaceholderStub() {
-  return null;
-});
-
 jest.mock("./ComposerCommandMenu", () => function ComposerCommandMenuStub() {
   return <div>Command menu</div>;
 });
@@ -40,8 +36,6 @@ const baseProps = {
   onFileUpload: jest.fn(),
   onModeChange: jest.fn(),
   mode: "agent",
-  view: "chat",
-  onViewChange: jest.fn(),
   studioEnabled: true,
   studioPlaceOptions: [],
   robloxImageUploads: [],
@@ -70,17 +64,18 @@ describe("ChatComposer compact interactions", () => {
     expect(document.getElementById("chat-composer-file-upload")).toBeTruthy();
     expect(document.getElementById("tour-generate-button").getAttribute("data-tour")).toBe("generate-btn");
     expect(screen.queryByRole("dialog", { name: "Studio and Roblox settings" })).toBeNull();
-    expect(screen.getByTitle("Show Studio and Roblox controls").getAttribute("aria-expanded")).toBe("false");
+    expect(screen.getByTitle("Open advanced Studio and Roblox settings").getAttribute("aria-expanded")).toBe("false");
   });
 
-  test("opens settings in a bounded panel and closes on Escape or outside click", async () => {
+  test("opens advanced settings in a drawer and closes on Escape or outside click", async () => {
     renderComposer();
-    const settingsButton = screen.getByTitle("Show Studio and Roblox controls");
+    const settingsButton = screen.getByTitle("Open advanced Studio and Roblox settings");
 
     fireEvent.click(settingsButton);
     const panel = await screen.findByRole("dialog", { name: "Studio and Roblox settings" });
     expect(settingsButton.getAttribute("aria-expanded")).toBe("true");
-    expect(panel.style.maxHeight).toBeTruthy();
+    expect(screen.getByText("Advanced setup")).toBeTruthy();
+    expect(panel.className).toContain("inset-y-0");
 
     fireEvent.keyDown(document, { key: "Escape" });
     await waitFor(() => expect(screen.queryByRole("dialog", { name: "Studio and Roblox settings" })).toBeNull());
@@ -90,6 +85,29 @@ describe("ChatComposer compact interactions", () => {
     await screen.findByRole("dialog", { name: "Studio and Roblox settings" });
     fireEvent.mouseDown(document.body);
     await waitFor(() => expect(screen.queryByRole("dialog", { name: "Studio and Roblox settings" })).toBeNull());
+  });
+
+  test("collapses prompt context after three items and opens the context manager", () => {
+    const attachments = Array.from({ length: 5 }, (_, index) => ({
+      name: `Script${index + 1}.lua`,
+    }));
+    renderComposer({ studioEnabled: false, attachments });
+
+    expect(screen.getByRole("button", { name: "Show 2 more context items" })).toBeTruthy();
+    expect(screen.queryByRole("dialog", { name: "All prompt context" })).toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: "Show 2 more context items" }));
+    expect(screen.getByRole("dialog", { name: "All prompt context" })).toBeTruthy();
+    expect(screen.getAllByText("Script5.lua").length).toBeGreaterThan(0);
+  });
+
+  test("reveals usage in a popover instead of the composer row", () => {
+    renderComposer();
+
+    expect(screen.queryByRole("dialog", { name: "Usage details" })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Usage" }));
+    expect(screen.getByRole("dialog", { name: "Usage details" })).toBeTruthy();
+    expect(screen.getByText("Unlimited")).toBeTruthy();
   });
 
   test("forwards file selection and preserves send disablement", () => {
@@ -127,6 +145,25 @@ describe("ChatComposer compact interactions", () => {
 
     fireEvent.keyDown(textarea, { key: "Enter" });
     expect(onSubmit).toHaveBeenCalledTimes(1);
+  });
+
+  test("morphs Send into Stop while work is running", () => {
+    const onSubmit = jest.fn();
+    const onStop = jest.fn();
+    renderComposer({
+      prompt: "Build it",
+      isGenerating: true,
+      onSubmit,
+      onStop,
+    });
+
+    expect(screen.queryByRole("button", { name: "Send prompt" })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Stop generation" }));
+    expect(onStop).toHaveBeenCalledTimes(1);
+    expect(onSubmit).not.toHaveBeenCalled();
+
+    fireEvent.keyDown(screen.getByRole("textbox", { name: "Prompt input" }), { key: "Enter" });
+    expect(onSubmit).not.toHaveBeenCalled();
   });
 
   test("textarea grows to 144px and then scrolls internally", () => {

@@ -16,7 +16,7 @@ export default function CodeEditorTabs({ files = [], activeFileId, onSelectFile,
             key={file.id}
             type="button"
             onClick={() => onSelectFile(file.id)}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-[background-color,border-color,color] duration-[var(--motion-fast)] ease-[var(--ease-standard)] ${
               active ? "bg-gray-800 shadow-lg text-white" : "text-gray-500 hover:text-gray-300"
             }`}
             title={file.path}

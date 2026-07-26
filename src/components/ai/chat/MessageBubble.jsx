@@ -1,12 +1,44 @@
 import React from "react";
-import { UserAvatar } from "../AiComponents";
 import AssistantBubble from "./AssistantBubble";
+import MessageActions from "./MessageActions";
+
+function MessageAttachments({ attachments }) {
+  if (!Array.isArray(attachments) || attachments.length === 0) return null;
+
+  return (
+    <div className="mb-2 flex flex-wrap justify-end gap-1.5">
+      {attachments.map((attachment, index) => {
+        const name = attachment?.name || `Attachment ${index + 1}`;
+        const source = attachment?.data || attachment?.url || "";
+        if (attachment?.isImage && source) {
+          return (
+            <img
+              key={`${name}-${index}`}
+              src={source}
+              alt={name}
+              className="h-20 max-w-40 rounded-lg border border-white/[0.08] object-cover"
+            />
+          );
+        }
+        return (
+          <span
+            key={`${name}-${index}`}
+            className="max-w-52 truncate rounded-md border border-white/[0.08] bg-black/20 px-2 py-1 text-[11px] text-gray-400"
+            title={name}
+          >
+            {name}
+          </span>
+        );
+      })}
+    </div>
+  );
+}
 
 export default function MessageBubble({
   message: m,
-  user,
-  profile,
   activeMode,
+  grouped = false,
+  retryPrompt = "",
   onViewUi,
   onRefine,
   onFixUiAudit,
@@ -17,22 +49,28 @@ export default function MessageBubble({
   isBusy,
   onApproveStep,
   approvingStepId,
+  onEditMessage,
+  onRetryMessage,
 }) {
   if (m.role === "user") {
     return (
-      <div className="flex justify-end gap-3.5 group motion-safe:animate-message-in">
-        <div className="max-w-[70%] md:max-w-[60%] order-1">
-          <div className="px-4 py-3 md:px-5 md:py-4 rounded-2xl2 rounded-tr-md bg-gradient-to-br from-white/[0.09] to-white/[0.03] border border-white/10 backdrop-blur-xl shadow-panel">
-            <div className="text-[15px] md:text-[16px] whitespace-pre-wrap leading-relaxed text-white font-medium">
+      <div className="group/message flex w-full justify-end">
+        <div className="max-w-[88%] sm:max-w-[68%]">
+          <MessageAttachments attachments={m.attachments} />
+          <div className="rounded-[12px_12px_4px_12px] border border-white/[0.07] bg-white/[0.065] px-3.5 py-[11px]">
+            <div className="whitespace-pre-wrap text-[15px] font-normal leading-relaxed text-gray-100">
               {m.content}
             </div>
           </div>
+          <MessageActions
+            role="user"
+            text={m.content}
+            message={m}
+            retryPrompt={m.content}
+            onEdit={onEditMessage}
+            onRetry={onRetryMessage}
+          />
         </div>
-        <UserAvatar
-          email={user?.email}
-          name={profile?.name || profile?.preferred_username || user?.displayName || ""}
-          photoUrl={profile?.picture || user?.photoURL || ""}
-        />
       </div>
     );
   }
@@ -41,7 +79,8 @@ export default function MessageBubble({
     <AssistantBubble
       message={m}
       activeMode={activeMode}
-      user={user}
+      grouped={grouped}
+      retryPrompt={retryPrompt}
       onViewUi={onViewUi}
       onRefine={onRefine}
       onFixUiAudit={onFixUiAudit}
@@ -52,6 +91,7 @@ export default function MessageBubble({
       isBusy={isBusy}
       onApproveStep={onApproveStep}
       approvingStepId={approvingStepId}
+      onRetryMessage={onRetryMessage}
     />
   );
 }

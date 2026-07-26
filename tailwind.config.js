@@ -109,7 +109,7 @@ module.exports = {
       animation: {
         "fade-in-up": "fade-in-up 180ms cubic-bezier(0.16, 1, 0.3, 1) both",
         "fade-in-scale": "fade-in-scale 180ms cubic-bezier(0.16, 1, 0.3, 1) both",
-        "message-in": "fade-in-scale 190ms cubic-bezier(0.16, 1, 0.3, 1) both",
+        "message-in": "fade-in-up 180ms cubic-bezier(0.16, 1, 0.3, 1) both",
         "panel-in": "panel-in 220ms cubic-bezier(0.16, 1, 0.3, 1) both",
         "row-in": "row-in 160ms cubic-bezier(0.16, 1, 0.3, 1) both",
         "drawer-in": "drawer-in 220ms cubic-bezier(0.16, 1, 0.3, 1) both",

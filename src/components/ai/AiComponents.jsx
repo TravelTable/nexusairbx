@@ -186,11 +186,11 @@ export function TokenBar({
           )}
         </div>
         {isLow && plan === "free" ? (
-          <a href="/subscribe" className="flex shrink-0 items-center gap-1 text-[10px] font-black uppercase tracking-widest text-[#00f5d4] transition-all hover:brightness-125 animate-pulse">
+          <a href="/subscribe" className="flex shrink-0 items-center gap-1 text-[10px] font-black uppercase tracking-widest text-[#00f5d4] transition-[filter,color] duration-[var(--motion-fast)] ease-[var(--ease-product)] hover:brightness-125">
             <Zap className="h-3 w-3 fill-current" /> Upgrade to Pro
           </a>
         ) : isLow && plan === "pro" ? (
-          <a href="/subscribe" className="flex shrink-0 items-center gap-1 text-[10px] font-black uppercase tracking-widest text-[#9b5de5] transition-all hover:brightness-125 animate-pulse">
+          <a href="/subscribe" className="flex shrink-0 items-center gap-1 text-[10px] font-black uppercase tracking-widest text-[#9b5de5] transition-[filter,color] duration-[var(--motion-fast)] ease-[var(--ease-product)] hover:brightness-125">
             <Zap className="h-3 w-3 fill-current" /> Explore Team
           </a>
         ) : (
@@ -208,13 +208,13 @@ export function TokenBar({
         aria-valuenow={percentUsed ?? 0}
       >
         <div
-          className={`h-full rounded-full transition-all duration-500 ${
+          className={`h-full rounded-full transition-[width,box-shadow] duration-[var(--motion-large)] ease-[var(--ease-standard)] ${
             plan === "team"
               ? "bg-gradient-to-r from-[#00f5d4] to-[#9b5de5]"
               : plan === "pro"
                 ? "bg-gradient-to-r from-[#9b5de5] to-[#00f5d4]"
                 : "bg-[#00f5d4]"
-          } ${isLow ? "animate-pulse shadow-[0_0_10px_rgba(255,0,0,0.5)]" : ""}`}
+          } ${isLow ? "shadow-[0_0_10px_rgba(255,0,0,0.5)]" : ""}`}
           style={{ width: `${usageLoading || usageUnavailable || percentUsed == null ? 0 : percentUsed}%` }}
         />
       </div>
@@ -247,7 +247,7 @@ export function AssistantCodeBlock({ code }) {
   );
 }
 
-export const NexusRBXAvatar = React.memo(({ isThinking = false, mode = "general" }) => {
+export const NexusRBXAvatar = React.memo(({ isThinking = false, mode = "general", compact = false }) => {
   const modeColors = {
     general: "#00f5d4",
     ui: "#00f5d4",
@@ -263,15 +263,15 @@ export const NexusRBXAvatar = React.memo(({ isThinking = false, mode = "general"
   return (
     <div
       data-testid="nexusrbx-avatar"
-      className={`w-10 h-10 md:w-12 md:h-12 rounded-2xl bg-white/[0.04] flex items-center justify-center shadow-2xl flex-shrink-0 border transition-all duration-500 ${isThinking ? 'animate-pulse scale-110' : 'hover:scale-105'}`}
+      className={`${compact ? "h-7 w-7 rounded-lg" : "w-10 h-10 md:w-12 md:h-12 rounded-2xl"} bg-white/[0.04] flex items-center justify-center flex-shrink-0 border transition-colors duration-200`}
       style={{ 
         borderColor: isThinking ? color : 'rgba(255,255,255,0.1)',
-        boxShadow: isThinking ? `0 0 20px ${color}40` : 'none'
+        boxShadow: isThinking && !compact ? `0 0 20px ${color}40` : 'none'
       }}
     >
       <Brain
         aria-hidden="true"
-        className={`w-5 h-5 md:w-6 md:h-6 ${isThinking ? 'animate-pulse' : ''}`}
+        className={compact ? "h-3.5 w-3.5" : "w-5 h-5 md:w-6 md:h-6"}
         style={{ color }}
       />
     </div>
@@ -336,8 +336,8 @@ export const PlanTracker = ({ plan, isExecuting = false }) => {
       <div className="p-4 space-y-3">
         {steps.map((step, i) => (
           <div key={i} className="flex items-start gap-3 group">
-            <div className={`mt-1 w-4 h-4 rounded-full border flex items-center justify-center transition-all duration-500 ${isExecuting && i === 0 ? 'border-[#00f5d4] bg-[#00f5d4]/20' : 'border-white/20 group-hover:border-[#00f5d4]'}`}>
-              <div className={`w-1.5 h-1.5 rounded-full transition-all duration-500 ${isExecuting && i === 0 ? 'bg-[#00f5d4] scale-125' : 'bg-white/10 group-hover:bg-[#00f5d4]'}`} />
+            <div className={`mt-1 w-4 h-4 rounded-full border flex items-center justify-center transition-[background-color,border-color] duration-[var(--motion-standard)] ease-[var(--ease-standard)] ${isExecuting && i === 0 ? 'border-[#00f5d4] bg-[#00f5d4]/20' : 'border-white/20 group-hover:border-[#00f5d4]'}`}>
+              <div className={`w-1.5 h-1.5 rounded-full transition-[background-color,transform] duration-[var(--motion-standard)] ease-[var(--ease-product)] ${isExecuting && i === 0 ? 'bg-[#00f5d4] scale-125' : 'bg-white/10 group-hover:bg-[#00f5d4]'}`} />
             </div>
             <span className={`text-xs transition-colors leading-relaxed ${isExecuting && i === 0 ? 'text-white font-bold' : 'text-gray-300 group-hover:text-white'}`}>{step}</span>
           </div>
@@ -373,7 +373,7 @@ export const TaskOrchestrator = ({ tasks, currentTaskId, onExecuteTask, plan }) 
           const isDone = task.status === 'done';
 
           return (
-            <div key={task.id} className={`flex items-center gap-4 p-3 rounded-xl border transition-all ${isCurrent ? 'bg-[#9b5de5]/20 border-[#9b5de5]/40 shadow-lg' : isDone ? 'bg-white/5 border-white/10 opacity-60' : 'bg-white/5 border-white/5'}`}>
+            <div key={task.id} className={`flex items-center gap-4 p-3 rounded-xl border transition-[background-color,border-color,box-shadow,opacity] duration-[var(--motion-standard)] ease-[var(--ease-standard)] ${isCurrent ? 'bg-[#9b5de5]/20 border-[#9b5de5]/40 shadow-lg' : isDone ? 'bg-white/5 border-white/10 opacity-60' : 'bg-white/5 border-white/5'}`}>
               <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black ${isDone ? 'bg-[#00f5d4] text-black' : isCurrent ? 'bg-[#9b5de5] text-white animate-pulse' : 'bg-gray-800 text-gray-500'}`}>
                 {isDone ? '✓' : i + 1}
               </div>
@@ -394,7 +394,7 @@ export const TaskOrchestrator = ({ tasks, currentTaskId, onExecuteTask, plan }) 
         {!currentTaskId && tasks.some(t => !t.status) && (
           <button 
             onClick={() => onExecuteTask(tasks.find(t => !t.status))}
-            className="w-full py-3 rounded-xl bg-[#9b5de5] text-white font-black text-sm flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] transition-all shadow-[0_0_20px_rgba(155,93,229,0.4)]"
+            className="w-full py-3 rounded-xl bg-[#9b5de5] text-white font-black text-sm flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] transition-[background-color,color,transform,box-shadow] duration-[var(--motion-fast)] ease-[var(--ease-product)] shadow-[0_0_20px_rgba(155,93,229,0.4)]"
           >
             <Rocket className="w-4 h-4" />
             START AUTOMATED PIPELINE
@@ -512,7 +512,7 @@ export const ProjectContextStatus = ({
         type="button"
         onClick={handleSync}
         disabled={isSyncing}
-        className={`p-1.5 rounded-lg hover:bg-white/10 transition-all ${isSyncing ? 'animate-spin text-[#00f5d4]' : 'text-gray-500 hover:text-white'}`}
+        className={`p-1.5 rounded-lg hover:bg-white/10 transition-[background-color,color] duration-[var(--motion-fast)] ease-[var(--ease-product)] ${isSyncing ? 'animate-spin text-[#00f5d4]' : 'text-gray-500 hover:text-white'}`}
         title="Edit architecture schema (not a Studio place rescan)"
       >
         <RefreshCw className="w-3.5 h-3.5" />
@@ -656,7 +656,7 @@ export const ArtifactCard = ({ title, subtitle, icon: Icon, type = "code", qaRep
             <button
               key={i}
               onClick={action.onClick}
-              className={`p-2 rounded-lg transition-all hover:scale-110 active:scale-95 ${action.primary ? 'bg-[#00f5d4] text-black' : 'bg-white/5 text-gray-400 hover:text-white'}`}
+              className={`p-2 rounded-lg transition-[background-color,color,transform] duration-[var(--motion-fast)] ease-[var(--ease-product)] hover:scale-110 active:scale-95 ${action.primary ? 'bg-[#00f5d4] text-black' : 'bg-white/5 text-gray-400 hover:text-white'}`}
               title={action.label}
             >
               {action.icon}
@@ -734,7 +734,7 @@ export const SecurityReport = ({ report, onFix }) => {
         ))}
         <button 
           onClick={onFix}
-          className="w-full py-2.5 rounded-xl bg-red-500 text-white font-black text-xs flex items-center justify-center gap-2 hover:bg-red-600 transition-all shadow-lg shadow-red-500/20"
+          className="w-full py-2.5 rounded-xl bg-red-500 text-white font-black text-xs flex items-center justify-center gap-2 hover:bg-red-600 transition-[background-color,color,box-shadow] duration-[var(--motion-fast)] ease-[var(--ease-product)] shadow-lg shadow-red-500/20"
         >
           <Zap className="w-3 h-3 fill-current" />
           APPLY SECURITY PATCHES
@@ -795,7 +795,7 @@ export const PerformanceAudit = ({ audit, onOptimize }) => {
 
         <button 
           onClick={onOptimize}
-          className="w-full py-2.5 rounded-xl bg-emerald-500 text-black font-black text-xs flex items-center justify-center gap-2 hover:bg-emerald-400 transition-all shadow-lg shadow-emerald-500/20"
+          className="w-full py-2.5 rounded-xl bg-emerald-500 text-black font-black text-xs flex items-center justify-center gap-2 hover:bg-emerald-400 transition-[background-color,color,box-shadow] duration-[var(--motion-fast)] ease-[var(--ease-product)] shadow-lg shadow-emerald-500/20"
         >
           <Zap className="w-3 h-3 fill-current" />
           APPLY OPTIMIZATIONS
@@ -816,15 +816,24 @@ export const CustomModeModal = ({ isOpen, onClose, onSave, initialData = null })
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-300">
-      <div className="w-full max-w-2xl bg-[#121212] border border-white/10 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+    <div
+      className="nexus-modal-overlay fixed inset-0 z-[100] flex items-center justify-center bg-black/80 p-4"
+      data-state="open"
+      role="presentation"
+    >
+      <div
+        className="nexus-modal-panel flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-3xl border border-white/10 bg-[#121212] shadow-2xl"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="custom-mode-title"
+      >
         <div className="px-6 py-4 border-b border-white/5 flex items-center justify-between bg-white/5">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-xl bg-[#9b5de5]/20 text-[#9b5de5]">
               <Settings2 className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-lg font-black text-white tracking-tight">
+              <h3 id="custom-mode-title" className="text-lg font-black text-white tracking-tight">
                 {initialData ? "Edit Custom Mode" : "Create Custom Mode"}
               </h3>
               <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Define your own AI expert</p>
@@ -845,7 +854,7 @@ export const CustomModeModal = ({ isOpen, onClose, onSave, initialData = null })
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="e.g. UI Specialist"
-                  className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-sm text-white focus:border-[#00f5d4] focus:ring-1 focus:ring-[#00f5d4] transition-all outline-none"
+                  className="w-full rounded-xl border border-white/10 bg-white/5 py-3 pl-10 pr-4 text-sm text-white outline-none transition-[border-color,background-color,color,opacity] duration-150 focus:border-[#00f5d4] focus:ring-1 focus:ring-[#00f5d4]"
                 />
               </div>
             </div>
@@ -872,7 +881,7 @@ export const CustomModeModal = ({ isOpen, onClose, onSave, initialData = null })
               onChange={(e) => setDescription(e.target.value)}
               placeholder="What does this expert specialize in?"
               rows="2"
-              className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-sm text-white focus:border-[#00f5d4] focus:ring-1 focus:ring-[#00f5d4] transition-all outline-none resize-none"
+              className="w-full resize-none rounded-xl border border-white/10 bg-white/5 p-4 text-sm text-white outline-none transition-[border-color,background-color,color,opacity] duration-150 focus:border-[#00f5d4] focus:ring-1 focus:ring-[#00f5d4]"
             />
           </div>
 
@@ -886,7 +895,7 @@ export const CustomModeModal = ({ isOpen, onClose, onSave, initialData = null })
               onChange={(e) => setSystemPrompt(e.target.value)}
               placeholder="You are an expert in... Your goal is to... Always prioritize..."
               rows="6"
-              className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-sm text-white font-mono focus:border-[#00f5d4] focus:ring-1 focus:ring-[#00f5d4] transition-all outline-none resize-none"
+              className="w-full resize-none rounded-xl border border-white/10 bg-white/5 p-4 font-mono text-sm text-white outline-none transition-[border-color,background-color,color,opacity] duration-150 focus:border-[#00f5d4] focus:ring-1 focus:ring-[#00f5d4]"
             />
           </div>
 
@@ -923,9 +932,9 @@ export const CustomModeModal = ({ isOpen, onClose, onSave, initialData = null })
             </div>
             <button 
               onClick={() => setIsPublic(!isPublic)}
-              className={`w-12 h-6 rounded-full transition-all relative ${isPublic ? 'bg-[#00f5d4]' : 'bg-gray-700'}`}
+              className={`relative h-6 w-12 rounded-full transition-colors duration-150 ${isPublic ? 'bg-[#00f5d4]' : 'bg-gray-700'}`}
             >
-              <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${isPublic ? 'left-7' : 'left-1'}`} />
+              <div className={`absolute top-1 h-4 w-4 rounded-full bg-white transition-[left] duration-150 ${isPublic ? 'left-7' : 'left-1'}`} />
             </button>
           </div>
         </div>
@@ -933,14 +942,14 @@ export const CustomModeModal = ({ isOpen, onClose, onSave, initialData = null })
         <div className="p-6 bg-white/5 border-t border-white/5 flex items-center gap-3">
           <button 
             onClick={onClose}
-            className="flex-1 py-3 rounded-xl bg-white/5 border border-white/10 text-white font-black text-xs uppercase tracking-widest hover:bg-white/10 transition-all"
+            className="flex-1 rounded-xl border border-white/10 bg-white/5 py-3 text-xs font-black uppercase tracking-widest text-white transition-[border-color,background-color,color,opacity] duration-150 hover:bg-white/10"
           >
             Cancel
           </button>
           <button 
             onClick={() => onSave({ label: name, description, systemPrompt, temperature, color, isPublic })}
             disabled={!name || !systemPrompt}
-            className="flex-[2] py-3 rounded-xl bg-[#00f5d4] text-black font-black text-xs uppercase tracking-widest hover:bg-[#00f5d4]/80 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-[#00f5d4]/20"
+            className="flex-[2] rounded-xl bg-[#00f5d4] py-3 text-xs font-black uppercase tracking-widest text-black shadow-lg shadow-[#00f5d4]/20 transition-[background-color,color,opacity] duration-150 hover:bg-[#00f5d4]/80 disabled:cursor-not-allowed disabled:opacity-50"
           >
             Save Custom Mode
           </button>

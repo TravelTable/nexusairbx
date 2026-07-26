@@ -28,7 +28,9 @@
   border: 0;
   background: rgb(0 0 0 / 0%);
   opacity: 0;
-  transition: opacity 240ms ease-out, background-color 240ms ease-out;
+  transition:
+    opacity var(--motion-standard) var(--ease-standard),
+    background-color var(--motion-standard) var(--ease-standard);
 }
 
 .workspace-shell__backdrop.is-entered {
@@ -48,7 +50,9 @@
   border-left: 1px solid rgb(255 255 255 / 7%);
   background: #0b0d14;
   padding: 6px 5px;
-  transition: right 240ms ease-out, transform 240ms ease-out;
+  transition:
+    right var(--motion-panel) var(--ease-product),
+    transform var(--motion-panel) var(--ease-product);
 }
 
 .workspace-tool-rail__group {
@@ -69,7 +73,10 @@
   border: 1px solid transparent;
   border-radius: 10px;
   color: #7f8798;
-  transition: color 140ms ease-out, border-color 140ms ease-out, background-color 140ms ease-out;
+  transition:
+    color var(--motion-fast) var(--ease-standard),
+    border-color var(--motion-fast) var(--ease-standard),
+    background-color var(--motion-fast) var(--ease-standard);
 }
 
 .workspace-tool-rail__button:hover,
@@ -126,7 +133,9 @@
   opacity: 0;
   box-shadow: 0 8px 24px rgb(0 0 0 / 35%);
   transform: translateX(3px);
-  transition: opacity 120ms ease-out, transform 120ms ease-out;
+  transition:
+    opacity var(--motion-fast) var(--ease-standard),
+    transform var(--motion-fast) var(--ease-product);
 }
 
 .workspace-tool-rail__button:hover .workspace-tool-rail__tooltip,
@@ -151,7 +160,9 @@
   opacity: 0;
   box-shadow: -24px 0 60px rgb(0 0 0 / 38%);
   transform: translateX(12px);
-  transition: opacity 240ms ease-out, transform 240ms ease-out;
+  transition:
+    opacity var(--motion-panel) var(--ease-standard),
+    transform var(--motion-panel) var(--ease-product);
 }
 
 .workspace-context-drawer.is-entered {
@@ -175,7 +186,7 @@
   width: 1px;
   background: transparent;
   content: "";
-  transition: background-color 120ms ease-out;
+  transition: background-color var(--motion-fast) var(--ease-standard);
 }
 
 .workspace-context-drawer__resizer:hover::after,
@@ -208,7 +219,10 @@
   border: 1px solid rgb(255 255 255 / 8%);
   border-radius: 9px;
   color: #8c94a5;
-  transition: color 140ms ease-out, border-color 140ms ease-out, background-color 140ms ease-out;
+  transition:
+    color var(--motion-fast) var(--ease-standard),
+    border-color var(--motion-fast) var(--ease-standard),
+    background-color var(--motion-fast) var(--ease-standard);
 }
 
 .workspace-context-drawer__close:hover {

@@ -1,0 +1,175 @@
+.nexus-chat-switch {
+  animation: nexus-chat-switch-in var(--motion-standard) var(--ease-product) both;
+}
+
+.nexus-message-arrival {
+  animation: nexus-message-arrival var(--motion-standard) var(--ease-product) both;
+}
+
+.nexus-status-text {
+  display: inline-grid;
+  min-width: 0;
+}
+
+.nexus-status-text > span {
+  grid-area: 1 / 1;
+  min-width: 0;
+}
+
+.nexus-status-text-in {
+  animation: nexus-status-in 140ms var(--ease-product) both;
+}
+
+.nexus-status-text-out {
+  animation: nexus-status-out 140ms var(--ease-standard) both;
+  pointer-events: none;
+}
+
+.nexus-streaming-caret::after {
+  display: inline-block;
+  width: 0.45em;
+  margin-left: 0.12em;
+  color: var(--nexus-cyan);
+  content: "▍";
+  animation: nexus-caret-blink 900ms steps(1, end) infinite;
+}
+
+.nexus-tool-step {
+  transition:
+    color var(--motion-fast) var(--ease-standard),
+    background-color var(--motion-fast) var(--ease-standard);
+}
+
+.nexus-tool-step-icon {
+  transition:
+    color var(--motion-fast) var(--ease-standard),
+    transform var(--motion-standard) var(--ease-product);
+}
+
+.nexus-tool-step[data-motion-status="active"] .nexus-tool-step-icon svg {
+  animation: nexus-tool-spin 850ms linear infinite;
+}
+
+.nexus-tool-step[data-motion-event="complete"] .nexus-tool-step-icon {
+  animation: nexus-tool-complete var(--motion-standard) var(--ease-product) both;
+}
+
+.nexus-tool-step[data-motion-event="file-ready"] {
+  animation: nexus-file-ready var(--motion-standard) var(--ease-product) both;
+}
+
+.nexus-tool-step[data-motion-event="error"] {
+  animation: nexus-tool-error var(--motion-standard) var(--ease-standard) both;
+}
+
+.nexus-tool-step[data-step-kind="verification"][data-motion-event="complete"] {
+  animation: nexus-verification-complete var(--motion-standard) var(--ease-standard) both;
+}
+
+@keyframes nexus-chat-switch-in {
+  from {
+    opacity: 0;
+    transform: translateY(2px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes nexus-message-arrival {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes nexus-status-in {
+  from {
+    opacity: 0;
+    transform: translateY(2px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes nexus-status-out {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-2px);
+  }
+}
+
+@keyframes nexus-caret-blink {
+  0%,
+  48% {
+    opacity: 0.9;
+  }
+  49%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes nexus-tool-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes nexus-tool-complete {
+  from {
+    opacity: 0.6;
+    transform: scale(0.82);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes nexus-file-ready {
+  from {
+    opacity: 0.65;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes nexus-tool-error {
+  0% {
+    background-color: transparent;
+  }
+  45% {
+    background-color: rgb(239 68 68 / 0.12);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+@keyframes nexus-verification-complete {
+  0% {
+    background-color: transparent;
+  }
+  45% {
+    background-color: rgb(0 245 212 / 0.08);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+

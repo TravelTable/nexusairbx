@@ -46,7 +46,7 @@ export const ChainOfThoughtHeader = memo(({ className, children, ...props }) => 
     <Collapsible onOpenChange={setIsOpen} open={isOpen}>
       <CollapsibleTrigger
         className={cn(
-          "flex w-full items-center gap-2 text-muted-foreground text-sm transition-colors hover:text-foreground",
+          "flex w-full items-center gap-2 text-muted-foreground text-sm transition-colors duration-150 ease-out hover:text-foreground",
           className
         )}
         {...props}
@@ -54,7 +54,7 @@ export const ChainOfThoughtHeader = memo(({ className, children, ...props }) => 
         <BrainIcon className="size-4" />
         <span className="flex-1 text-left">{children ?? "Chain of Thought"}</span>
         <ChevronDownIcon
-          className={cn("size-4 transition-transform", isOpen ? "rotate-180" : "rotate-0")}
+          className={cn("size-4 transition-transform duration-150 ease-out", isOpen ? "rotate-180" : "rotate-0")}
         />
       </CollapsibleTrigger>
     </Collapsible>
@@ -65,20 +65,35 @@ const stepStatusStyles = {
   active: "text-foreground",
   complete: "text-muted-foreground",
   pending: "text-muted-foreground/50",
+  waiting: "text-amber-200",
+  error: "text-red-300",
 };
 
 export const ChainOfThoughtStep = memo(
-  ({ className, icon: Icon = DotIcon, label, description, status = "complete", children, ...props }) => (
+  ({
+    className,
+    icon: Icon = DotIcon,
+    label,
+    description,
+    status = "complete",
+    motionStatus = status,
+    motionEvent = "",
+    stepKind = "tool",
+    children,
+    ...props
+  }) => (
     <div
       className={cn(
-        "flex gap-2 text-sm",
+        "nexus-tool-step flex gap-2 rounded-md text-sm",
         stepStatusStyles[status],
-        "fade-in-0 slide-in-from-top-2 animate-in",
         className
       )}
+      data-motion-status={motionStatus}
+      data-motion-event={motionEvent || undefined}
+      data-step-kind={stepKind}
       {...props}
     >
-      <div className="relative mt-0.5">
+      <div className="nexus-tool-step-icon relative mt-0.5">
         <Icon className="size-4" />
         <div className="absolute top-7 bottom-0 left-1/2 -mx-px w-px bg-border" />
       </div>

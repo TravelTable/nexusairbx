@@ -13,7 +13,7 @@ export default function GeneratedFileCard({ file, active, onSelect }) {
     <button
       type="button"
       onClick={onSelect}
-      className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-left transition-all group ${
+      className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-left transition-[background-color,border-color,color,opacity] duration-[var(--motion-fast)] ease-[var(--ease-standard)] group ${
         active ? "bg-white/[0.07] border border-white/10" : "border border-transparent hover:bg-white/[0.04]"
       }`}
       title={file.path}

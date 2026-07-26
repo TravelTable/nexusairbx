@@ -8,11 +8,13 @@ jest.mock("../lib/projectBindingsApi", () => ({
   listProjectBindings: jest.fn(),
   deleteProjectBinding: jest.fn(),
   findOrCreateProjectBinding: jest.fn(),
+  renameProjectBinding: jest.fn(),
 }));
 
 const {
   listProjectBindings,
   findOrCreateProjectBinding,
+  renameProjectBinding,
 } = require("../lib/projectBindingsApi");
 
 describe("useProjectBindings openGameProject", () => {
@@ -118,5 +120,26 @@ describe("useProjectBindings openGameProject", () => {
       universeId: null,
     })).rejects.toThrow("published Studio place and universe");
     expect(findOrCreateProjectBinding).not.toHaveBeenCalled();
+  });
+
+  test("renames a project and updates the local tree immediately", async () => {
+    listProjectBindings.mockResolvedValue({
+      projects: [{ projectId: "proj_existing", title: "Old title", placeId: "4242" }],
+    });
+    renameProjectBinding.mockResolvedValue({
+      project: { projectId: "proj_existing", title: "Sword Simulator", placeId: "4242" },
+    });
+
+    const { result } = renderHook(() =>
+      useProjectBindings({ uid: "user_1" }, { authReady: true })
+    );
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    await act(async () => {
+      await result.current.renameProject("proj_existing", "Sword Simulator");
+    });
+
+    expect(renameProjectBinding).toHaveBeenCalledWith("proj_existing", "Sword Simulator");
+    expect(result.current.projects[0].title).toBe("Sword Simulator");
   });
 });

@@ -1,16 +1,15 @@
 import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
-  Plus,
-  X,
-  SendPrompt,
-  Loader,
-  RefreshCw,
-  ChevronDown,
   Check,
-  MessageSquare,
-  ClipboardList,
+  ChevronDown,
+  Loader,
+  Plus,
+  RefreshCw,
+  SendPrompt,
   SlidersHorizontal,
+  Square,
+  X,
 } from "lib/icons";
 import { TokenBar } from "../AiComponents";
 import { CHAT_MODES } from "../chatConstants";
@@ -18,9 +17,7 @@ import StudioControls from "../workspace/StudioControls";
 import StudioPlaceChip from "../workspace/StudioPlaceChip";
 import RobloxCloudControls from "../workspace/RobloxCloudControls";
 import AssetLibraryModal from "../workspace/AssetLibraryModal";
-import AnimatedPromptPlaceholder from "./AnimatedPromptPlaceholder";
 import ComposerCommandMenu from "./ComposerCommandMenu";
-import { Segmented } from "../../ui";
 import { ROBLOX_DECAL_ACCEPT } from "../../../hooks/useRobloxImageUpload";
 import { useMotionPresence } from "../../../hooks/useMotionPresence";
 import {
@@ -60,8 +57,8 @@ function ModeSelector({ mode, onModeChange, disabled }) {
   }, []);
 
   useEffect(() => {
-    const onClickOutside = (e) => {
-      if (rootRef.current?.contains(e.target) || menuRef.current?.contains(e.target)) return;
+    const onClickOutside = (event) => {
+      if (rootRef.current?.contains(event.target) || menuRef.current?.contains(event.target)) return;
       setOpen(false);
     };
     document.addEventListener("mousedown", onClickOutside);
@@ -80,7 +77,7 @@ function ModeSelector({ mode, onModeChange, disabled }) {
     };
   }, [open, updateMenuPosition]);
 
-  const current = CHAT_MODES.find((m) => m.id === mode) || CHAT_MODES[0];
+  const current = CHAT_MODES.find((item) => item.id === mode) || CHAT_MODES[0];
 
   return (
     <div className="relative" ref={rootRef}>
@@ -88,30 +85,30 @@ function ModeSelector({ mode, onModeChange, disabled }) {
         ref={buttonRef}
         type="button"
         onClick={() => {
-          setOpen((o) => {
-            const next = !o;
-            if (next && typeof window !== "undefined" && typeof window.requestAnimationFrame === "function") {
+          setOpen((value) => {
+            const next = !value;
+            if (next && typeof window.requestAnimationFrame === "function") {
               window.requestAnimationFrame(updateMenuPosition);
             }
             return next;
           });
         }}
         disabled={disabled}
-        className={`inline-flex h-7 items-center gap-1.5 rounded-md border px-2 text-[10px] font-bold uppercase tracking-wider transition-all duration-150 ease-out active:scale-[0.98] focus-ring disabled:cursor-not-allowed disabled:opacity-40 disabled:active:scale-100 ${current.bg} ${current.color} border-white/10 hover:bg-white/10`}
+        className={`inline-flex h-7 items-center gap-1.5 rounded-md border border-white/10 px-2 text-[10px] font-bold uppercase tracking-wider transition-[border-color,background-color,color,opacity,transform] duration-150 ease-out active:scale-[0.98] focus-ring disabled:cursor-not-allowed disabled:opacity-40 ${current.bg} ${current.color} hover:bg-white/10`}
         title="Select mode"
         aria-haspopup="listbox"
         aria-expanded={open}
       >
         {current.icon}
         {current.label}
-        <ChevronDown className={`w-3 h-3 transition-transform duration-150 ease-out ${open ? "rotate-180" : ""}`} />
+        <ChevronDown className={`h-3 w-3 transition-transform duration-150 ${open ? "rotate-180" : ""}`} />
       </button>
 
       {menuPresence.present && menuPosition && typeof document !== "undefined"
         ? createPortal(
             <div
               ref={menuRef}
-              className={`fixed z-[9999] overflow-y-auto rounded-2xl border border-white/10 bg-[#0D0D0D] p-1.5 shadow-2xl backdrop-blur-2xl scrollbar-subtle transition-[opacity,transform] duration-150 ease-out motion-reduce:transition-none ${
+              className={`fixed z-[9999] overflow-y-auto rounded-2xl border border-white/10 bg-[#0D0D0D] p-1.5 shadow-2xl backdrop-blur-2xl scrollbar-subtle transition-[opacity,transform] duration-150 ${
                 menuPresence.entering ? "opacity-100" : "pointer-events-none opacity-0"
               }`}
               style={{
@@ -127,29 +124,33 @@ function ModeSelector({ mode, onModeChange, disabled }) {
               role="listbox"
               aria-hidden={!open}
             >
-              {CHAT_MODES.map((m) => {
-                const selected = m.id === mode;
+              {CHAT_MODES.map((item) => {
+                const selected = item.id === mode;
                 return (
                   <button
-                    key={m.id}
+                    key={item.id}
                     type="button"
                     role="option"
                     aria-selected={selected}
                     onClick={() => {
-                      onModeChange?.(m.id);
+                      onModeChange?.(item.id);
                       setOpen(false);
                     }}
-                    className={`w-full flex items-start gap-2.5 px-2.5 py-2 rounded-xl text-left transition-[background-color,border-color,transform] duration-150 ease-out hover:translate-x-0.5 ${
-                      selected ? "bg-white/[0.07] border border-white/10" : "border border-transparent hover:bg-white/5"
+                    className={`flex w-full items-start gap-2.5 rounded-xl border px-2.5 py-2 text-left transition-[border-color,background-color,color,opacity,transform] duration-150 hover:translate-x-0.5 ${
+                      selected
+                        ? "border-white/10 bg-white/[0.07]"
+                        : "border-transparent hover:bg-white/5"
                     }`}
                   >
-                    <span className={`mt-0.5 ${m.color}`}>{m.icon}</span>
-                    <span className="flex-1 min-w-0">
+                    <span className={`mt-0.5 ${item.color}`}>{item.icon}</span>
+                    <span className="min-w-0 flex-1">
                       <span className="flex items-center gap-1.5">
-                        <span className="text-xs font-bold text-white">{m.label}</span>
-                        {selected && <Check className="w-3 h-3 text-[#00f5d4]" />}
+                        <span className="text-xs font-bold text-white">{item.label}</span>
+                        {selected && <Check className="h-3 w-3 text-[#00f5d4]" />}
                       </span>
-                      <span className="block text-[10px] text-gray-500 leading-snug mt-0.5">{m.description}</span>
+                      <span className="mt-0.5 block text-[10px] leading-snug text-gray-500">
+                        {item.description}
+                      </span>
                     </span>
                   </button>
                 );
@@ -165,8 +166,8 @@ function ModeSelector({ mode, onModeChange, disabled }) {
 function ImageUploadChip({ upload }) {
   const name = upload?.fileName || "Image";
   return (
-    <div className="flex h-10 max-w-[190px] shrink-0 items-center gap-2 rounded-lg border border-amber-400/25 bg-amber-400/10 pl-1.5 pr-2 transition-[border-color,background-color,opacity,transform] duration-150 ease-out motion-safe:animate-fade-in-scale motion-reduce:transition-none">
-      <Loader className="h-4 w-4 shrink-0 animate-spin text-amber-200" />
+    <div className="flex h-7 max-w-[140px] shrink-0 items-center gap-1.5 rounded-md border border-amber-400/25 bg-amber-400/10 px-2 transition-[border-color,background-color,color,opacity] duration-150 motion-safe:animate-fade-in-up">
+      <Loader className="h-3 w-3 shrink-0 animate-spin text-amber-200" />
       <span className="min-w-0 truncate text-[10px] font-bold text-amber-100">Uploading {name}</span>
     </div>
   );
@@ -174,17 +175,13 @@ function ImageUploadChip({ upload }) {
 
 function FileContextChip({ file, index, onRemove }) {
   const name = file?.name || "Attachment";
-
   return (
-    <div className="group/file relative flex h-10 max-w-[190px] shrink-0 items-center gap-2 rounded-lg border border-white/10 bg-white/[0.045] pl-1.5 pr-7 transition-[border-color,background-color,opacity,transform] duration-150 ease-out motion-safe:animate-fade-in-scale motion-reduce:transition-none">
-      <span className="inline-flex h-7 shrink-0 items-center rounded-md border border-white/10 bg-black/35 px-1.5 text-[9px] font-black text-gray-400">
-        FILE
-      </span>
+    <div className="relative flex h-7 max-w-[140px] shrink-0 items-center rounded-md border border-white/10 bg-white/[0.045] pl-2 pr-7 transition-[border-color,background-color,color,opacity] duration-150 motion-safe:animate-fade-in-up">
       <span className="min-w-0 truncate text-[10px] font-bold text-gray-300">{name}</span>
       <button
         type="button"
         onClick={() => onRemove(index)}
-        className="absolute right-1 top-1/2 -translate-y-1/2 rounded-md p-1 text-gray-500 transition-[background-color,color,transform] duration-150 ease-out hover:bg-red-500/10 hover:text-red-300 active:scale-95 focus-ring"
+        className="absolute right-1 top-1/2 -translate-y-1/2 rounded p-1 text-gray-500 transition-[background-color,color,opacity] duration-150 hover:bg-red-500/10 hover:text-red-300 focus-ring"
         aria-label={`Remove ${name}`}
         title={`Remove ${name}`}
       >
@@ -197,26 +194,20 @@ function FileContextChip({ file, index, onRemove }) {
 function RobloxAssetContextChip({ asset, onRemove }) {
   const name = asset?.name || `Asset ${asset?.assetId}`;
   const type = asset?.assetType || "Asset";
-
   return (
-    <div className="group/file relative flex h-10 max-w-[240px] shrink-0 items-center gap-2 rounded-lg border border-[#00f5d4]/20 bg-[#00f5d4]/10 pl-1.5 pr-7 transition-[border-color,background-color,opacity,transform] duration-150 ease-out motion-safe:animate-fade-in-scale motion-reduce:transition-none">
+    <div className="relative flex h-7 max-w-[140px] shrink-0 items-center gap-1.5 rounded-md border border-[#00f5d4]/20 bg-[#00f5d4]/10 pl-1 pr-7 transition-[border-color,background-color,color,opacity] duration-150 motion-safe:animate-fade-in-up">
       {asset?.thumbnailUrl ? (
-        <img src={asset.thumbnailUrl} alt="" className="h-7 w-7 shrink-0 rounded-md object-cover" />
+        <img src={asset.thumbnailUrl} alt="" className="h-5 w-5 shrink-0 rounded object-cover" />
       ) : (
-        <span className="inline-flex h-7 max-w-[54px] shrink-0 items-center truncate rounded-md border border-[#00f5d4]/20 bg-black/30 px-1.5 text-[8px] font-black uppercase text-[#00f5d4]">
+        <span className="inline-flex h-5 max-w-[42px] shrink-0 items-center truncate rounded border border-[#00f5d4]/20 bg-black/30 px-1 text-[7px] font-black uppercase text-[#00f5d4]">
           {type}
         </span>
       )}
-      <span className="min-w-0">
-        <span className="block truncate text-[10px] font-bold text-[#d7fff8]">{name}</span>
-        <span className="block truncate text-[9px] font-semibold text-[#00f5d4]/70">
-          {type} · {asset?.assetId}
-        </span>
-      </span>
+      <span className="min-w-0 truncate text-[10px] font-bold text-[#d7fff8]">{name}</span>
       <button
         type="button"
         onClick={() => onRemove?.(asset?.assetId)}
-        className="absolute right-1 top-1/2 -translate-y-1/2 rounded-md p-1 text-[#00f5d4]/60 transition-[background-color,color,transform] duration-150 ease-out hover:bg-red-500/10 hover:text-red-300 active:scale-95 focus-ring"
+        className="absolute right-1 top-1/2 -translate-y-1/2 rounded p-1 text-[#00f5d4]/60 transition-[background-color,color,opacity] duration-150 hover:bg-red-500/10 hover:text-red-300 focus-ring"
         aria-label={`Remove ${name}`}
         title={`Remove ${name}`}
       >
@@ -226,19 +217,15 @@ function RobloxAssetContextChip({ asset, onRemove }) {
   );
 }
 
-/**
- * Slim composer for the linear flow: token bar, mode selector,
- * attachments, prompt, send. The mode selector picks the Cursor-style operating
- * mode; clarifying questions only appear in Plan and Ask modes.
- */
 export default function ChatComposer({
   prompt,
   setPrompt,
-  attachments,
+  attachments = [],
   setAttachments,
   robloxImageUploading = false,
   robloxImageUploads = [],
   onSubmit,
+  onStop,
   isGenerating,
   placeholder = "What do you want to build?",
   tokensLeft,
@@ -257,13 +244,9 @@ export default function ChatComposer({
   onCancelRefine,
   onFileUpload,
   onImprovePrompt,
-  isImproving,
   disabled,
   mode = "agent",
   onModeChange,
-  view,
-  onViewChange,
-  viewOptions,
   studioConnected,
   studioConnectionType,
   studioConnectionState,
@@ -306,6 +289,8 @@ export default function ChatComposer({
   robloxStatus,
 }) {
   const [controlsOpen, setControlsOpen] = useState(false);
+  const [contextOpen, setContextOpen] = useState(false);
+  const [usageOpen, setUsageOpen] = useState(false);
   const [isComposing, setIsComposing] = useState(false);
   const [mentionOpen, setMentionOpen] = useState(false);
   const [mentionQuery, setMentionQuery] = useState("");
@@ -315,70 +300,67 @@ export default function ChatComposer({
   const fileInputRef = useRef(null);
   const controlsButtonRef = useRef(null);
   const controlsPanelRef = useRef(null);
-  const [controlsPosition, setControlsPosition] = useState(null);
+  const contextButtonRef = useRef(null);
+  const contextPanelRef = useRef(null);
+  const usageButtonRef = useRef(null);
+  const usagePanelRef = useRef(null);
   const controlsPresence = useMotionPresence(controlsOpen, 180);
   const controlsId = "chat-composer-controls";
-  const contextItemCount = attachments.length + robloxProjectAssets.length + robloxImageUploads.length;
   const canSendWithContext =
     Boolean(prompt?.trim()) || attachments.length > 0 || robloxProjectAssets.length > 0;
   const mentionCommands = filterComposerCommands(mentionQuery, COMPOSER_COMMANDS);
-  const showAnimatedPlaceholder = !String(prompt || "").trim();
+  const planFirst = mode === "plan";
+  const contextItems = [
+    ...(studioEnabled ? [{ kind: "studio", key: "studio-target" }] : []),
+    ...robloxImageUploads.map((upload) => ({ kind: "upload", key: `upload-${upload.id}`, upload })),
+    ...attachments.map((file, index) => ({
+      kind: "file",
+      key: `file-${file?.name || "attachment"}-${index}`,
+      file,
+      index,
+    })),
+    ...robloxProjectAssets.map((asset) => ({
+      kind: "asset",
+      key: `asset-${asset.assetId}`,
+      asset,
+    })),
+  ];
+  const visibleContextItems = contextItems.slice(0, 3);
+  const hiddenContextCount = Math.max(0, contextItems.length - visibleContextItems.length);
 
   useLayoutEffect(() => {
     const textarea = textareaRef.current;
     if (!textarea) return;
-
     textarea.style.height = "0px";
     const nextHeight = Math.min(Math.max(textarea.scrollHeight, 44), 144);
     textarea.style.height = `${nextHeight}px`;
     textarea.style.overflowY = textarea.scrollHeight > 144 ? "auto" : "hidden";
   }, [prompt]);
 
-  const updateControlsPosition = useCallback(() => {
-    const rect = controlsButtonRef.current?.getBoundingClientRect();
-    if (!rect || typeof window === "undefined") return;
-
-    const gutter = 8;
-    const width = Math.min(560, Math.max(280, window.innerWidth - gutter * 2));
-    const preferredHeight = 360;
-    const spaceAbove = rect.top - gutter * 2;
-    const spaceBelow = window.innerHeight - rect.bottom - gutter * 2;
-    const openUp = spaceAbove >= preferredHeight || spaceAbove > spaceBelow;
-    const availableHeight = Math.max(180, openUp ? spaceAbove : spaceBelow);
-
-    setControlsPosition({
-      left: Math.min(Math.max(gutter, rect.right - width), window.innerWidth - width - gutter),
-      top: openUp ? rect.top - gutter : rect.bottom + gutter,
-      transform: openUp ? "translateY(-100%)" : "none",
-      transformOrigin: openUp ? "bottom right" : "top right",
-      width,
-      maxHeight: Math.min(preferredHeight, availableHeight),
-    });
-  }, []);
-
   useEffect(() => {
-    if (!controlsOpen) return undefined;
-    updateControlsPosition();
-    const onLayout = () => updateControlsPosition();
-    window.addEventListener("resize", onLayout);
-    window.addEventListener("scroll", onLayout, true);
-    return () => {
-      window.removeEventListener("resize", onLayout);
-      window.removeEventListener("scroll", onLayout, true);
-    };
-  }, [controlsOpen, updateControlsPosition]);
-
-  useEffect(() => {
-    if (!controlsOpen) return undefined;
+    if (!controlsOpen && !contextOpen && !usageOpen) return undefined;
     const onPointerDown = (event) => {
-      if (controlsButtonRef.current?.contains(event.target) || controlsPanelRef.current?.contains(event.target)) return;
+      if (
+        controlsButtonRef.current?.contains(event.target)
+        || controlsPanelRef.current?.contains(event.target)
+        || contextButtonRef.current?.contains(event.target)
+        || contextPanelRef.current?.contains(event.target)
+        || usageButtonRef.current?.contains(event.target)
+        || usagePanelRef.current?.contains(event.target)
+      ) return;
       setControlsOpen(false);
+      setContextOpen(false);
+      setUsageOpen(false);
     };
     const onKeyDown = (event) => {
       if (event.key !== "Escape") return;
       event.preventDefault();
+      if (controlsOpen) controlsButtonRef.current?.focus();
+      else if (contextOpen) contextButtonRef.current?.focus();
+      else usageButtonRef.current?.focus();
       setControlsOpen(false);
-      controlsButtonRef.current?.focus();
+      setContextOpen(false);
+      setUsageOpen(false);
     };
     document.addEventListener("mousedown", onPointerDown);
     document.addEventListener("keydown", onKeyDown);
@@ -386,7 +368,7 @@ export default function ChatComposer({
       document.removeEventListener("mousedown", onPointerDown);
       document.removeEventListener("keydown", onKeyDown);
     };
-  }, [controlsOpen]);
+  }, [contextOpen, controlsOpen, usageOpen]);
 
   const syncMentionState = useCallback((value, caret) => {
     const mention = getActiveComposerMention(value, caret);
@@ -436,303 +418,405 @@ export default function ChatComposer({
     setMentionIndex(0);
     runComposerCommand(command);
     requestAnimationFrame(() => {
-      const el = textareaRef.current;
-      if (!el) return;
-      el.focus();
-      const caret = mentionRange
-        ? mentionRange.start + command.id.length + 2
-        : next.length;
-      el.setSelectionRange(caret, caret);
+      const textarea = textareaRef.current;
+      if (!textarea) return;
+      textarea.focus();
+      const caret = mentionRange ? mentionRange.start + command.id.length + 2 : next.length;
+      textarea.setSelectionRange(caret, caret);
     });
   }, [mentionRange, prompt, runComposerCommand, setPrompt]);
 
   const removeAttachment = (index) => {
-    setAttachments((prev) => prev.filter((_, i) => i !== index));
+    setAttachments((current) => current.filter((_, itemIndex) => itemIndex !== index));
   };
 
-  const handlePromptChange = (e) => {
-    const value = e.target.value;
+  const handlePromptChange = (event) => {
+    const value = event.target.value;
     setPrompt(value);
-    syncMentionState(value, e.target.selectionStart || value.length);
+    syncMentionState(value, event.target.selectionStart || value.length);
   };
 
-  const handlePromptKeyDown = (e) => {
+  const handlePromptKeyDown = (event) => {
     if (mentionOpen && mentionCommands.length) {
-      if (e.key === "ArrowDown") {
-        e.preventDefault();
+      if (event.key === "ArrowDown") {
+        event.preventDefault();
         setMentionIndex((current) => (current + 1) % mentionCommands.length);
         return;
       }
-      if (e.key === "ArrowUp") {
-        e.preventDefault();
+      if (event.key === "ArrowUp") {
+        event.preventDefault();
         setMentionIndex((current) => (current - 1 + mentionCommands.length) % mentionCommands.length);
         return;
       }
-      if (e.key === "Enter" || e.key === "Tab") {
-        e.preventDefault();
+      if (event.key === "Enter" || event.key === "Tab") {
+        event.preventDefault();
         applyMentionCommand(mentionCommands[mentionIndex] || mentionCommands[0]);
         return;
       }
-      if (e.key === "Escape") {
-        e.preventDefault();
+      if (event.key === "Escape") {
+        event.preventDefault();
         setMentionOpen(false);
         return;
       }
     }
 
-    if (e.key === "Enter" && !e.shiftKey && !isComposing && !e.nativeEvent?.isComposing) {
-      e.preventDefault();
-      onSubmit?.();
+    if (
+      event.key === "Enter"
+      && !event.shiftKey
+      && !isComposing
+      && !event.nativeEvent?.isComposing
+    ) {
+      event.preventDefault();
+      if (!isGenerating) onSubmit?.();
     }
   };
 
+  const renderContextItem = (item) => {
+    if (item.kind === "studio") {
+      return (
+        <StudioPlaceChip
+          key={item.key}
+          preference={studioPlacePreference}
+          options={studioPlaceOptions}
+          connected={studioConnected}
+          studioEnabled={studioEnabled}
+          selectingTargetId={selectingStudioTargetId}
+          pickerOpen={studioPlacePickerOpen}
+          onPickerOpenChange={onStudioPlacePickerOpenChange}
+          onSelectPlace={onSelectStudioPlace}
+        />
+      );
+    }
+    if (item.kind === "upload") {
+      return <ImageUploadChip key={item.key} upload={item.upload} />;
+    }
+    if (item.kind === "file") {
+      return (
+        <FileContextChip
+          key={item.key}
+          file={item.file}
+          index={item.index}
+          onRemove={removeAttachment}
+        />
+      );
+    }
+    return (
+      <RobloxAssetContextChip
+        key={item.key}
+        asset={item.asset}
+        onRemove={onRemoveProjectAsset}
+      />
+    );
+  };
+
+  const usage = (
+    <TokenBar
+      tokensLeft={tokensLeft}
+      tokensLimit={tokensLimit}
+      resetsAt={resetsAt}
+      plan={planKey}
+      unlimitedTokens={unlimitedTokens}
+      devOverride={devOverride}
+      dailyUsage={dailyUsage}
+      includedUsage={includedUsage}
+      premiumBalance={premiumBalance}
+      isFreeUsagePlan={isFreeUsagePlan}
+      usageLoading={billingLoading}
+      usageUnavailable={
+        !unlimitedTokens
+        && (Boolean(billingError) || (isFreeUsagePlan && !billingLoading && !dailyUsage))
+      }
+    />
+  );
+
   return (
     <div className="bg-gradient-to-t from-black via-black/80 to-transparent px-2 pb-2 pt-1.5">
-      <div className="mx-auto max-w-5xl space-y-1">
-        {refineTarget && (
-          <div className="px-1">
-            <div className="inline-flex max-w-full items-center gap-2 rounded-lg border border-[#00f5d4]/20 bg-[#00f5d4]/10 px-2.5 py-1 text-[11px] font-bold text-[#00f5d4] transition-[border-color,background-color,opacity,transform] duration-150 ease-out motion-safe:animate-fade-in-scale motion-reduce:transition-none">
-              <RefreshCw className="h-3.5 w-3.5 shrink-0" />
-              <span className="truncate">Refining: {refineTarget.title || "current artifact"}</span>
-              <button
-                type="button"
-                onClick={onCancelRefine}
-                className="ml-0.5 rounded-md p-0.5 text-[#00f5d4]/70 transition-[background-color,color,transform] duration-150 ease-out hover:bg-white/10 hover:text-white active:scale-95 focus-ring"
-                aria-label="Cancel refine"
-                title="Cancel refine"
-              >
-                <X className="h-3.5 w-3.5" />
-              </button>
+      <div className="relative z-20 mx-auto max-w-5xl overflow-visible rounded-xl border border-white/10 bg-ink-800/95 shadow-panel backdrop-blur-xl transition-[border-color,box-shadow] duration-150 focus-within:border-[#00f5d4]/30 focus-within:shadow-[0_0_18px_rgba(0,245,212,0.05)]">
+        {(refineTarget || contextItems.length > 0) && (
+          <div className="flex min-h-9 items-center gap-1.5 overflow-visible border-b border-white/[0.06] px-2 py-1">
+            {refineTarget && (
+              <div className="inline-flex h-7 max-w-[180px] shrink-0 items-center gap-1.5 rounded-md border border-[#00f5d4]/20 bg-[#00f5d4]/10 px-2 text-[10px] font-bold text-[#00f5d4] transition-[border-color,background-color,color,opacity] duration-150 motion-safe:animate-fade-in-up">
+                <RefreshCw className="h-3 w-3 shrink-0" />
+                <span className="truncate">Refining: {refineTarget.title || "current artifact"}</span>
+                <button
+                  type="button"
+                  onClick={onCancelRefine}
+                  className="rounded p-0.5 text-[#00f5d4]/70 hover:bg-white/10 hover:text-white focus-ring"
+                  aria-label="Cancel refine"
+                  title="Cancel refine"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </div>
+            )}
+            <div className="flex min-w-0 items-center gap-1.5 overflow-hidden" aria-label="Prompt context items">
+              {visibleContextItems.map(renderContextItem)}
             </div>
+            {hiddenContextCount > 0 && (
+              <div className="relative shrink-0">
+                <button
+                  ref={contextButtonRef}
+                  type="button"
+                  onClick={() => setContextOpen((value) => !value)}
+                  className="inline-flex h-7 items-center rounded-md border border-white/10 bg-white/[0.05] px-2 text-[10px] font-bold text-gray-300 transition-[border-color,background-color,color,opacity] duration-150 hover:bg-white/10 hover:text-white focus-ring"
+                  aria-expanded={contextOpen}
+                  aria-haspopup="dialog"
+                  aria-label={`Show ${hiddenContextCount} more context items`}
+                >
+                  +{hiddenContextCount}
+                </button>
+                {contextOpen && (
+                  <div
+                    ref={contextPanelRef}
+                    role="dialog"
+                    aria-label="All prompt context"
+                    className="absolute bottom-full right-0 z-30 mb-2 w-[min(24rem,calc(100vw-2rem))] rounded-xl border border-white/10 bg-[#0D0D0D] p-2 shadow-2xl"
+                  >
+                    <div className="mb-2 flex items-center justify-between px-1">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500">Selected context</span>
+                      <button
+                        type="button"
+                        onClick={() => setContextOpen(false)}
+                        className="rounded-md p-1 text-gray-500 hover:bg-white/10 hover:text-white focus-ring"
+                        aria-label="Close context manager"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                    <div className="flex max-h-48 flex-wrap gap-1.5 overflow-y-auto scrollbar-subtle">
+                      {contextItems.map(renderContextItem)}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
 
-        <div className="relative z-20">
-          <div className="relative overflow-visible rounded-xl border border-white/10 bg-ink-800/95 shadow-panel backdrop-blur-xl transition-[border-color] duration-150 focus-within:border-[#00f5d4]/25">
-            <div className="flex flex-wrap items-center gap-1.5 border-b border-white/[0.06] px-2 py-1.5 sm:flex-nowrap">
-              <ModeSelector mode={mode} onModeChange={onModeChange} disabled={disabled} />
-              {studioEnabled && (
-                <div className="min-w-0 flex-1 sm:flex-none">
-                  <StudioPlaceChip
-                    preference={studioPlacePreference}
-                    options={studioPlaceOptions}
-                    connected={studioConnected}
-                    studioEnabled={studioEnabled}
-                    selectingTargetId={selectingStudioTargetId}
-                    pickerOpen={studioPlacePickerOpen}
-                    onPickerOpenChange={onStudioPlacePickerOpenChange}
-                    onSelectPlace={onSelectStudioPlace}
-                  />
-                </div>
-              )}
-              <div className="hidden min-w-0 flex-1 sm:block" />
-              <div className="ml-auto flex shrink-0 items-center gap-1.5">
+        <div className="relative">
+          {mentionOpen && (
+            <ComposerCommandMenu
+              query={mentionQuery}
+              activeIndex={mentionIndex}
+              onHoverIndex={setMentionIndex}
+              onSelect={applyMentionCommand}
+            />
+          )}
+
+          <div className="relative min-h-[44px] px-3 pt-2">
+            <textarea
+              ref={textareaRef}
+              id="tour-prompt-box"
+              data-tour="prompt-input"
+              className="min-h-[44px] w-full resize-none border-none bg-transparent px-0 py-1.5 text-[14px] leading-relaxed text-gray-100 outline-none transition-[height,color,opacity] duration-150 placeholder:text-gray-600 focus:ring-0 disabled:opacity-50 md:text-[15px]"
+              rows={1}
+              placeholder={placeholder}
+              value={prompt}
+              onChange={handlePromptChange}
+              disabled={disabled}
+              aria-label="Prompt input"
+              onCompositionStart={() => setIsComposing(true)}
+              onCompositionEnd={() => setIsComposing(false)}
+              onKeyDown={handlePromptKeyDown}
+              onClick={(event) => syncMentionState(prompt, event.target.selectionStart || 0)}
+              onSelect={(event) => syncMentionState(prompt, event.target.selectionStart || 0)}
+            />
+          </div>
+
+          <div className="flex items-center justify-between gap-2 px-2 pb-2 pt-1">
+            <div className="flex min-w-0 items-center gap-1">
+              <input
+                ref={fileInputRef}
+                type="file"
+                id="chat-composer-file-upload"
+                className="hidden"
+                multiple
+                onChange={onFileUpload}
+                accept={`${ROBLOX_DECAL_ACCEPT},.lua,.txt,.json`}
+                disabled={disabled || robloxImageUploading}
+              />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={disabled || robloxImageUploading}
+                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-gray-500 transition-[background-color,color,opacity,transform] duration-150 hover:bg-white/10 hover:text-white active:scale-95 focus-ring disabled:cursor-not-allowed disabled:opacity-40"
+                title="Upload image to Roblox or attach a code/text file"
+                aria-label="Upload image to Roblox or attach a code/text file"
+              >
+                {robloxImageUploading
+                  ? <Loader className="h-4 w-4 animate-spin" />
+                  : <Plus className="h-4 w-4" />}
+              </button>
+              <ModeSelector mode={mode} onModeChange={onModeChange} disabled={disabled || isGenerating} />
+              <button
+                type="button"
+                onClick={() => onModeChange?.(planFirst ? "agent" : "plan")}
+                disabled={disabled || isGenerating}
+                aria-pressed={planFirst}
+                className={`inline-flex h-7 items-center rounded-md px-2 text-[10px] font-bold transition-[background-color,color,opacity] duration-150 focus-ring disabled:opacity-40 ${
+                  planFirst
+                    ? "bg-violet-400/10 text-violet-200"
+                    : "text-gray-500 hover:bg-white/[0.06] hover:text-gray-300"
+                }`}
+                title="Plan before making changes"
+              >
+                Plan first
+              </button>
+              <div className="relative">
                 <button
-                  ref={controlsButtonRef}
+                  ref={usageButtonRef}
                   type="button"
-                  onClick={() => {
-                    setControlsOpen((open) => !open);
-                    if (!controlsOpen && typeof window.requestAnimationFrame === "function") {
-                      window.requestAnimationFrame(updateControlsPosition);
-                    }
-                  }}
-                  className={`inline-flex h-7 items-center gap-1 rounded-md border px-2 text-[10px] font-bold uppercase tracking-wider transition-[border-color,background-color,color,transform] duration-150 ease-out active:scale-[0.98] focus-ring ${
-                    controlsOpen
-                      ? "border-[#00f5d4]/30 bg-[#00f5d4]/10 text-[#00f5d4]"
-                      : "border-white/10 bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white"
+                  onClick={() => setUsageOpen((value) => !value)}
+                  className={`inline-flex h-7 items-center gap-1 rounded-md px-2 text-[10px] font-bold transition-[background-color,color,opacity] duration-150 focus-ring ${
+                    usageOpen
+                      ? "bg-white/10 text-white"
+                      : "text-gray-500 hover:bg-white/[0.06] hover:text-gray-300"
                   }`}
-                  aria-expanded={controlsOpen}
-                  aria-controls={controlsId}
+                  aria-expanded={usageOpen}
                   aria-haspopup="dialog"
-                  title={controlsOpen ? "Hide Studio and Roblox controls" : "Show Studio and Roblox controls"}
                 >
-                  <SlidersHorizontal className="h-3 w-3" />
-                  <ChevronDown className={`h-3 w-3 transition-transform duration-150 ease-out ${controlsOpen ? "rotate-180" : ""}`} />
+                  Usage
+                  <ChevronDown className={`h-3 w-3 transition-transform duration-150 ${usageOpen ? "rotate-180" : ""}`} />
                 </button>
-                {onViewChange && (
-                  <Segmented
-                    size="sm"
-                    options={viewOptions || [
-                      { id: "chat", label: "Chat", icon: MessageSquare },
-                      { id: "details", label: "Details", icon: ClipboardList },
-                    ]}
-                    value={view}
-                    onChange={onViewChange}
-                    className="h-7 rounded-md"
-                  />
+                {usageOpen && (
+                  <div
+                    ref={usagePanelRef}
+                    role="dialog"
+                    aria-label="Usage details"
+                    className="absolute bottom-full left-0 z-30 mb-2 w-64 rounded-xl border border-white/10 bg-[#0D0D0D] p-3 shadow-2xl"
+                  >
+                    {usage}
+                  </div>
                 )}
               </div>
             </div>
 
-            {contextItemCount > 0 && (
-              <div
-                className="flex gap-1.5 overflow-x-auto border-b border-white/[0.06] px-2 py-1.5 motion-safe:animate-fade-in-up scrollbar-none"
-                aria-label="Prompt context items"
+            <div className="flex shrink-0 items-center gap-1">
+              <button
+                ref={controlsButtonRef}
+                type="button"
+                onClick={() => setControlsOpen(true)}
+                className="flex h-7 w-7 items-center justify-center rounded-md text-gray-500 transition-[background-color,color,opacity,transform] duration-150 hover:bg-white/10 hover:text-white active:scale-95 focus-ring"
+                aria-expanded={controlsOpen}
+                aria-controls={controlsId}
+                aria-haspopup="dialog"
+                title="Open advanced Studio and Roblox settings"
               >
-                {robloxImageUploads.map((upload) => (
-                  <ImageUploadChip key={upload.id} upload={upload} />
-                ))}
-                {attachments.map((file, idx) => (
-                  <FileContextChip key={`${file?.name || "file"}-${idx}`} file={file} index={idx} onRemove={removeAttachment} />
-                ))}
-                {robloxProjectAssets.map((asset) => (
-                  <RobloxAssetContextChip key={asset.assetId} asset={asset} onRemove={onRemoveProjectAsset} />
-                ))}
-              </div>
-            )}
-
-            <div className="relative m-1.5 rounded-lg border border-white/[0.08] bg-black/25 transition-[border-color,box-shadow] duration-150 focus-within:border-[#00f5d4]/30 focus-within:shadow-[0_0_12px_rgba(0,245,212,0.05)]">
-              {mentionOpen && (
-                <ComposerCommandMenu
-                  query={mentionQuery}
-                  activeIndex={mentionIndex}
-                  onHoverIndex={setMentionIndex}
-                  onSelect={applyMentionCommand}
-                />
-              )}
-
-              <div className="relative min-h-[44px] px-2.5 pt-1.5">
-                <AnimatedPromptPlaceholder visible={showAnimatedPlaceholder} />
-                <textarea
-                  ref={textareaRef}
-                  id="tour-prompt-box"
-                  data-tour="prompt-input"
-                  className="min-h-[44px] w-full resize-none border-none bg-transparent px-0 py-1.5 text-[14px] leading-relaxed text-gray-100 outline-none transition-[height,color,opacity] duration-150 ease-out focus:ring-0 disabled:opacity-50 motion-reduce:transition-none md:text-[15px]"
-                  rows={1}
-                  placeholder=""
-                  value={prompt}
-                  onChange={handlePromptChange}
-                  disabled={disabled}
-                  aria-label="Prompt input"
-                  onCompositionStart={() => setIsComposing(true)}
-                  onCompositionEnd={() => setIsComposing(false)}
-                  onKeyDown={handlePromptKeyDown}
-                  onClick={(e) => syncMentionState(prompt, e.target.selectionStart || 0)}
-                  onSelect={(e) => syncMentionState(prompt, e.target.selectionStart || 0)}
-                />
-              </div>
-
-              <div className="flex items-center justify-between gap-2 px-1.5 pb-1.5">
-                <div className="relative">
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    id="chat-composer-file-upload"
-                    className="hidden"
-                    multiple
-                    onChange={onFileUpload}
-                    accept={`${ROBLOX_DECAL_ACCEPT},.lua,.txt,.json`}
-                    disabled={disabled || robloxImageUploading}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={disabled || robloxImageUploading}
-                    className={`flex h-7 w-7 cursor-pointer items-center justify-center rounded-md text-gray-500 transition-[background-color,color,transform] duration-150 ease-out hover:bg-white/10 hover:text-white active:scale-95 focus-ring ${
-                      disabled || robloxImageUploading ? "cursor-not-allowed opacity-50" : ""
-                    }`}
-                    title="Upload image to Roblox or attach a code/text file"
-                    aria-label="Upload image to Roblox or attach a code/text file"
-                  >
-                    {robloxImageUploading ? <Loader className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
-                  </button>
-                </div>
-
-                <button
-                  type="button"
-                  id="tour-generate-button"
-                  data-tour="generate-btn"
-                  onClick={() => onSubmit?.()}
-                  disabled={disabled || !canSendWithContext}
-                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-nexus-cyan text-black transition-[transform,box-shadow,opacity,background-color] duration-150 ease-out hover:shadow-[0_0_16px_rgba(0,245,212,0.35)] active:scale-95 focus-ring disabled:opacity-50 disabled:active:scale-100"
-                  aria-label={isGenerating ? "Generation in progress" : "Send prompt"}
-                  title={isGenerating ? "Generation in progress" : "Send prompt"}
-                >
-                  {isGenerating ? <Loader className="h-4 w-4" /> : <SendPrompt className="h-4 w-4" />}
-                </button>
-              </div>
-            </div>
-
-            <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 border-t border-white/[0.06] px-2 py-1">
-              <TokenBar
-                tokensLeft={tokensLeft}
-                tokensLimit={tokensLimit}
-                resetsAt={resetsAt}
-                plan={planKey}
-                unlimitedTokens={unlimitedTokens}
-                devOverride={devOverride}
-                dailyUsage={dailyUsage}
-                includedUsage={includedUsage}
-                premiumBalance={premiumBalance}
-                isFreeUsagePlan={isFreeUsagePlan}
-                usageLoading={billingLoading}
-                usageUnavailable={!unlimitedTokens && (Boolean(billingError) || (isFreeUsagePlan && !billingLoading && !dailyUsage))}
-                compact
-              />
-              <span className="shrink-0 text-[10px] font-semibold text-gray-600">@ commands · Enter to send · Shift+Enter for newline</span>
+                <SlidersHorizontal className="h-3.5 w-3.5" />
+              </button>
+              <button
+                type="button"
+                id="tour-generate-button"
+                data-tour="generate-btn"
+                onClick={() => (isGenerating ? onStop?.() : onSubmit?.())}
+                disabled={isGenerating ? disabled || !onStop : disabled || !canSendWithContext}
+                className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-[background-color,color,opacity,transform] duration-150 active:scale-95 focus-ring disabled:opacity-40 disabled:active:scale-100 ${
+                  isGenerating
+                    ? "border border-red-300/25 bg-red-400/15 text-red-200 hover:bg-red-400/25"
+                    : "bg-nexus-cyan text-black hover:shadow-[0_0_16px_rgba(0,245,212,0.35)]"
+                }`}
+                aria-label={isGenerating ? "Stop generation" : "Send prompt"}
+                title={isGenerating ? "Stop generation" : "Send prompt"}
+              >
+                {isGenerating
+                  ? <Square className="h-3.5 w-3.5 fill-current" />
+                  : <SendPrompt className="h-4 w-4" />}
+              </button>
             </div>
           </div>
         </div>
       </div>
-      {controlsPresence.present && controlsPosition && typeof document !== "undefined"
+
+      {controlsPresence.present && typeof document !== "undefined"
         ? createPortal(
             <div
-              ref={controlsPanelRef}
-              id={controlsId}
-              role="dialog"
-              aria-label="Studio and Roblox settings"
-              aria-hidden={!controlsOpen}
-              className={`fixed z-[9998] overflow-y-auto overscroll-contain rounded-xl border border-white/10 bg-[#0D0D0D]/98 p-2.5 shadow-2xl backdrop-blur-2xl scrollbar-subtle transition-[opacity,transform] duration-180 ease-out motion-reduce:transition-none ${
+              className={`fixed inset-0 z-[9998] transition-opacity duration-[180ms] ${
                 controlsPresence.entering ? "opacity-100" : "pointer-events-none opacity-0"
               }`}
-              style={controlsPosition}
             >
-              <div className="flex flex-wrap items-center gap-2">
-                <StudioControls
-                  connected={studioConnected}
-                  connectionType={studioConnectionType}
-                  connectionState={studioConnectionState}
-                  capabilities={studioCapabilities}
-                  loading={studioLoading}
-                  studioEnabled={studioEnabled}
-                  onStudioEnabledChange={onStudioEnabledChange}
-                  applyMode={studioApplyMode}
-                  onApplyModeChange={onStudioApplyModeChange}
-                  autoPushEnabled={studioAutoPushEnabled}
-                  onAutoPushEnabledChange={onStudioAutoPushEnabledChange}
-                  autoPushPolicy={studioAutoPushPolicy}
-                  onAutoPushPolicyChange={onStudioAutoPushPolicyChange}
-                  autoPushAuthorized={studioAutoPushAuthorized}
-                />
-                {studioConnected && Array.isArray(studioCollaborators) && studioCollaborators.length > 0 && (
-                  <span
-                    className="inline-flex items-center gap-1 rounded-full border border-amber-400/30 bg-amber-400/10 px-2 py-0.5 text-[11px] text-amber-200"
-                    title={studioCollaborators
-                      .map((c) => `${c.label || "collaborator"}${Array.isArray(c.activePaths) && c.activePaths.length ? ` — ${c.activePaths.slice(0, 3).join(", ")}` : ""}`)
-                      .join("\n")}
+              <button
+                type="button"
+                className="absolute inset-0 cursor-default bg-black/55 backdrop-blur-[2px]"
+                onClick={() => setControlsOpen(false)}
+                aria-label="Close advanced settings"
+              />
+              <aside
+                ref={controlsPanelRef}
+                id={controlsId}
+                role="dialog"
+                aria-modal="true"
+                aria-label="Studio and Roblox settings"
+                aria-hidden={!controlsOpen}
+                className={`absolute inset-y-0 right-0 flex w-[min(28rem,92vw)] flex-col border-l border-white/10 bg-[#0D0D0D]/98 shadow-2xl transition-transform duration-[180ms] ${
+                  controlsPresence.entering ? "translate-x-0" : "translate-x-full"
+                }`}
+              >
+                <div className="flex h-12 shrink-0 items-center justify-between border-b border-white/[0.07] px-4">
+                  <div>
+                    <h2 className="text-sm font-bold text-white">Advanced setup</h2>
+                    <p className="text-[10px] text-gray-500">Studio and Roblox connections</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setControlsOpen(false)}
+                    className="rounded-lg p-2 text-gray-500 hover:bg-white/[0.06] hover:text-white focus-ring"
+                    aria-label="Close advanced settings"
                   >
-                    {studioCollaborators.length} collaborator{studioCollaborators.length === 1 ? "" : "s"} on this place
-                  </span>
-                )}
-                <RobloxCloudControls
-                  connected={robloxConnected}
-                  loading={robloxLoading}
-                  selectedCreator={robloxSelectedCreator}
-                  uploadAvailable={robloxUploadAvailable}
-                  uploadState={robloxUploadState}
-                  uploadDisabledReason={robloxUploadDisabledReason}
-                  assetUploadsEnabled={robloxAssetUploadsEnabled}
-                  onAssetUploadsEnabledChange={onRobloxAssetUploadsEnabledChange}
-                  selectedAssetCount={robloxProjectAssets.length}
-                  onOpenAssetLibrary={onOpenAssetLibrary}
-                  assetLibraryAvailable={robloxAssetLibraryAvailable}
-                  assetLibraryDisabledReason={robloxAssetLibraryDisabledReason}
-                />
-              </div>
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+                <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-4 scrollbar-subtle">
+                  <StudioControls
+                    connected={studioConnected}
+                    connectionType={studioConnectionType}
+                    connectionState={studioConnectionState}
+                    capabilities={studioCapabilities}
+                    loading={studioLoading}
+                    studioEnabled={studioEnabled}
+                    onStudioEnabledChange={onStudioEnabledChange}
+                    applyMode={studioApplyMode}
+                    onApplyModeChange={onStudioApplyModeChange}
+                    autoPushEnabled={studioAutoPushEnabled}
+                    onAutoPushEnabledChange={onStudioAutoPushEnabledChange}
+                    autoPushPolicy={studioAutoPushPolicy}
+                    onAutoPushPolicyChange={onStudioAutoPushPolicyChange}
+                    autoPushAuthorized={studioAutoPushAuthorized}
+                  />
+                  {studioConnected && Array.isArray(studioCollaborators) && studioCollaborators.length > 0 && (
+                    <span
+                      className="inline-flex w-fit items-center gap-1 rounded-full border border-amber-400/30 bg-amber-400/10 px-2 py-0.5 text-[11px] text-amber-200"
+                      title={studioCollaborators
+                        .map((collaborator) => `${collaborator.label || "collaborator"}${
+                          Array.isArray(collaborator.activePaths) && collaborator.activePaths.length
+                            ? ` — ${collaborator.activePaths.slice(0, 3).join(", ")}`
+                            : ""
+                        }`)
+                        .join("\n")}
+                    >
+                      {studioCollaborators.length} collaborator{studioCollaborators.length === 1 ? "" : "s"} on this place
+                    </span>
+                  )}
+                  <RobloxCloudControls
+                    connected={robloxConnected}
+                    loading={robloxLoading}
+                    selectedCreator={robloxSelectedCreator}
+                    uploadAvailable={robloxUploadAvailable}
+                    uploadState={robloxUploadState}
+                    uploadDisabledReason={robloxUploadDisabledReason}
+                    assetUploadsEnabled={robloxAssetUploadsEnabled}
+                    onAssetUploadsEnabledChange={onRobloxAssetUploadsEnabledChange}
+                    selectedAssetCount={robloxProjectAssets.length}
+                    onOpenAssetLibrary={onOpenAssetLibrary}
+                    assetLibraryAvailable={robloxAssetLibraryAvailable}
+                    assetLibraryDisabledReason={robloxAssetLibraryDisabledReason}
+                  />
+                </div>
+              </aside>
             </div>,
             document.body
           )
         : null}
+
       <AssetLibraryModal
         open={assetLibraryOpen}
         onClose={onCloseAssetLibrary}

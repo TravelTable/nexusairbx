@@ -192,7 +192,7 @@ export default function ExportActions({ artifact, activeFile, notify }) {
     }
   };
 
-  const btn = "inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all disabled:opacity-40 disabled:cursor-not-allowed";
+  const btn = "inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-[background-color,border-color,color,opacity] duration-[var(--motion-fast)] ease-[var(--ease-standard)] disabled:opacity-40 disabled:cursor-not-allowed";
 
   return (
     <div className="flex items-center gap-1.5 flex-wrap px-4 py-2.5 border-t border-white/5 bg-black/30">
@@ -242,7 +242,7 @@ export default function ExportActions({ artifact, activeFile, notify }) {
             onClick={handlePushStudio}
             disabled={studioBusy}
             title="Apply this project in Roblox Studio"
-            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-[11px] font-black uppercase tracking-widest transition-all bg-[#00f5d4] text-black hover:bg-[#00f5d4]/90 shadow-lg shadow-[#00f5d4]/20 disabled:cursor-not-allowed"
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-[11px] font-black uppercase tracking-widest transition-[background-color,color,opacity] duration-[var(--motion-fast)] ease-[var(--ease-standard)] bg-[#00f5d4] text-black hover:bg-[#00f5d4]/90 shadow-lg shadow-[#00f5d4]/20 disabled:cursor-not-allowed"
           >
             {studioBusy ? <Loader className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
             Push to Studio

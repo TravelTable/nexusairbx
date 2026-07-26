@@ -3,6 +3,7 @@ import {
   deleteProjectBinding,
   findOrCreateProjectBinding,
   listProjectBindings,
+  renameProjectBinding,
 } from "../lib/projectBindingsApi";
 import {
   buildProjectBindingPayloadFromIdentity,
@@ -24,7 +25,7 @@ export function useProjectBindings(user, { authReady = true } = {}) {
     setLoading(true);
     setError(null);
     try {
-      const result = await listProjectBindings({ limit: 50 });
+      const result = await listProjectBindings({ limit: 100 });
       const next = Array.isArray(result?.projects) ? result.projects : [];
       setProjects(next);
       return next;
@@ -72,6 +73,17 @@ export function useProjectBindings(user, { authReady = true } = {}) {
     return result;
   }, []);
 
+  const renameProject = useCallback(async (projectId, title) => {
+    const result = await renameProjectBinding(projectId, title);
+    const renamed = result?.project;
+    if (renamed?.projectId) {
+      setProjects((prev) => prev.map((project) => (
+        project.projectId === renamed.projectId ? { ...project, ...renamed } : project
+      )));
+    }
+    return renamed;
+  }, []);
+
   /**
    * Open or create a workspace project from a resolved game identity.
    * Dedupes locally first, then asks the server to upsert by placeId.
@@ -105,6 +117,7 @@ export function useProjectBindings(user, { authReady = true } = {}) {
     selectedProject,
     setSelectedProjectId,
     deleteProject,
+    renameProject,
     openGameProject,
     refresh,
   };

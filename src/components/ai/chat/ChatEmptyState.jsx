@@ -43,7 +43,7 @@ export default function ChatEmptyState({ onQuickStart, onOpenTemplates }) {
             key={ex.title}
             type="button"
             onClick={() => onQuickStart?.(ex.prompt)}
-            className="group relative min-h-36 min-w-[15rem] flex-1 snap-start rounded-2xl border border-white/10 bg-white/[0.03] p-5 text-left transition-[border-color,background-color,transform,box-shadow] duration-200 ease-out hover:-translate-y-0.5 hover:border-white/25 hover:bg-white/[0.05] motion-safe:animate-fade-in-scale focus-ring"
+            className="group relative min-h-36 min-w-[15rem] flex-1 snap-start rounded-2xl border border-white/10 bg-white/[0.03] p-5 text-left transition-[border-color,background-color,transform,box-shadow] duration-[var(--motion-standard)] ease-[var(--ease-product)] hover:-translate-y-0.5 hover:border-white/25 hover:bg-white/[0.05] motion-safe:animate-fade-in-up focus-ring"
             style={{ animationDelay: `${index * 45}ms` }}
           >
             <div className="flex items-center justify-between">
@@ -53,7 +53,7 @@ export default function ChatEmptyState({ onQuickStart, onOpenTemplates }) {
               >
                 <ex.icon className="w-4 h-4" />
               </div>
-              <ArrowRight className="w-4 h-4 text-gray-600 opacity-0 -translate-x-1 transition-all group-hover:opacity-100 group-hover:translate-x-0" />
+              <ArrowRight className="w-4 h-4 text-gray-600 opacity-0 -translate-x-1 transition-[opacity,transform] duration-[var(--motion-fast)] ease-[var(--ease-standard)] group-hover:opacity-100 group-hover:translate-x-0" />
             </div>
             <div className="font-display font-bold text-white text-sm mb-1">{ex.title}</div>
             <div className="line-clamp-3 text-[11px] leading-relaxed text-gray-500">{ex.prompt}</div>
@@ -65,7 +65,7 @@ export default function ChatEmptyState({ onQuickStart, onOpenTemplates }) {
         <button
           type="button"
           onClick={onOpenTemplates}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-nexus-cyan/10 border border-nexus-cyan/20 text-nexus-cyan text-xs font-bold uppercase tracking-widest hover:bg-nexus-cyan/20 transition-all focus-ring"
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-nexus-cyan/10 border border-nexus-cyan/20 text-nexus-cyan text-xs font-bold uppercase tracking-widest hover:bg-nexus-cyan/20 transition-[background-color,border-color,color] duration-[var(--motion-fast)] ease-[var(--ease-standard)] focus-ring"
         >
           <LayoutGrid className="w-4 h-4" />
           Browse template gallery

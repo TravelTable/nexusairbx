@@ -40,6 +40,13 @@
     --nexus-radius-md: 0.75rem;
     --nexus-radius-lg: 1rem;
     --nexus-shadow-panel: 0 24px 80px rgba(0, 0, 0, 0.45);
+    --motion-instant: 80ms;
+    --motion-fast: 120ms;
+    --motion-standard: 180ms;
+    --motion-panel: 240ms;
+    --motion-large: 300ms;
+    --ease-product: cubic-bezier(0.16, 1, 0.3, 1);
+    --ease-standard: cubic-bezier(0.2, 0, 0, 1);
     /* AI theme variables (unified from aiTheme.css) */
     --ai-bg: #050505;
     --ai-surface: #121212;
@@ -113,22 +120,22 @@
     @apply block text-[10px] font-black uppercase tracking-widest text-gray-500;
   }
   .nexus-input {
-    @apply w-full rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-white placeholder:text-gray-600 transition-all duration-200 focus-ring focus:border-[#00f5d4]/60 disabled:cursor-not-allowed disabled:opacity-50;
+    @apply w-full rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-white placeholder:text-gray-600 transition-[border-color,background-color,color,opacity] duration-200 focus-ring focus:border-[#00f5d4]/60 disabled:cursor-not-allowed disabled:opacity-50;
   }
   .nexus-textarea {
-    @apply w-full resize-none rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-sm leading-relaxed text-white placeholder:text-gray-600 transition-all duration-200 focus-ring focus:border-[#00f5d4]/60 disabled:cursor-not-allowed disabled:opacity-50;
+    @apply w-full resize-none rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-sm leading-relaxed text-white placeholder:text-gray-600 transition-[border-color,background-color,color,opacity] duration-200 focus-ring focus:border-[#00f5d4]/60 disabled:cursor-not-allowed disabled:opacity-50;
   }
   .nexus-icon-button {
-    @apply inline-flex items-center justify-center rounded-xl border border-white/10 bg-white/5 p-2 text-gray-400 transition-all duration-200 hover:border-white/20 hover:bg-white/10 hover:text-white focus-ring disabled:cursor-not-allowed disabled:opacity-50;
+    @apply inline-flex items-center justify-center rounded-xl border border-white/10 bg-white/5 p-2 text-gray-400 transition-[border-color,background-color,color,opacity,transform] duration-200 hover:border-white/20 hover:bg-white/10 hover:text-white focus-ring disabled:cursor-not-allowed disabled:opacity-50;
   }
   .nexus-menu-surface {
     @apply rounded-2xl border border-white/10 bg-[#0D0D0D]/95 shadow-panel backdrop-blur-2xl;
   }
   .nexus-menu-item {
-    @apply flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm text-gray-300 transition-all duration-200 hover:bg-white/5 hover:text-white focus-ring disabled:cursor-not-allowed disabled:opacity-50;
+    @apply flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm text-gray-300 transition-[background-color,color,opacity] duration-200 hover:bg-white/5 hover:text-white focus-ring disabled:cursor-not-allowed disabled:opacity-50;
   }
   .nexus-select-pill {
-    @apply rounded-lg border border-transparent bg-white/5 px-2 py-2 text-[10px] font-bold text-gray-500 transition-all duration-200 hover:border-white/10 hover:bg-white/10 hover:text-gray-200 focus-ring;
+    @apply rounded-lg border border-transparent bg-white/5 px-2 py-2 text-[10px] font-bold text-gray-500 transition-[border-color,background-color,color,opacity] duration-200 hover:border-white/10 hover:bg-white/10 hover:text-gray-200 focus-ring;
   }
   .nexus-select-pill-active {
     @apply border-[#00f5d4]/40 bg-[#00f5d4]/10 text-[#00f5d4];
@@ -194,6 +201,93 @@ body > .resize-observer-error {
 .ai-message-response [data-streamdown="mermaid"] svg {
   max-width: none !important;
   height: auto;
+}
+
+.nexus-modal-overlay[data-state="open"] {
+  animation: nexus-modal-backdrop-in var(--motion-standard) var(--ease-standard) both;
+}
+
+.nexus-modal-overlay[data-state="closed"] {
+  animation: nexus-modal-backdrop-out var(--motion-standard) var(--ease-standard) both;
+}
+
+.nexus-modal-content[data-state="open"] {
+  animation: nexus-modal-content-in 220ms var(--ease-product) both;
+}
+
+.nexus-modal-content[data-state="closed"] {
+  animation: nexus-modal-content-out 220ms var(--ease-standard) both;
+}
+
+.nexus-modal-panel {
+  animation: nexus-modal-panel-in 220ms var(--ease-product) both;
+}
+
+@keyframes nexus-modal-backdrop-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes nexus-modal-backdrop-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes nexus-modal-content-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, calc(-50% + 4px)) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+@keyframes nexus-modal-content-out {
+  from {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translate(-50%, calc(-50% + 2px)) scale(0.99);
+  }
+}
+
+@keyframes nexus-modal-panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.nexus-toast {
+  animation: nexus-toast-in 200ms var(--ease-product) both;
+}
+
+@keyframes nexus-toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @media (max-width: 640px) {

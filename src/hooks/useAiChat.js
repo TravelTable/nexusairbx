@@ -1776,6 +1776,24 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
     }
   };
 
+  const handleMoveChat = async (chatId, projectId = null) => {
+    if (!authReady || !user?.uid || auth.currentUser?.uid !== user.uid || !chatId) return;
+    const nextProjectId = String(projectId || "").trim() || null;
+    try {
+      await assertCanWrite();
+      await updateDoc(doc(db, "users", user.uid, "chats", chatId), sanitizeChatWritePayload({
+        projectId: nextProjectId,
+        updatedAt: serverTimestamp(),
+      }));
+      if (currentChatId === chatId) {
+        setCurrentChatMeta((current) => current ? { ...current, projectId: nextProjectId } : current);
+      }
+      notify({ message: nextProjectId ? "Chat moved to project" : "Chat moved to General", type: "success" });
+    } catch (err) {
+      notify({ message: err?.message || "Failed to move chat", type: "error" });
+    }
+  };
+
   const handleClearChat = async () => {
     if (!authReady || !user?.uid || auth.currentUser?.uid !== user.uid || !currentChatId) return;
     try {
@@ -1873,6 +1891,7 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
     handleSubmit,
     handleDeleteChat,
     handleRenameChat,
+    handleMoveChat,
     handleClearChat,
     startNewChat,
     setPendingMessage,

@@ -54,7 +54,7 @@ export default function RobloxCloudControls({
       <button
         type="button"
         onClick={assetLibraryAvailable ? onOpenAssetLibrary : handleDisabledAssetClick}
-        className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-lg border text-[10px] font-bold uppercase tracking-widest transition-all ${
+        className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-lg border text-[10px] font-bold uppercase tracking-widest transition-[background-color,border-color,color,opacity] duration-[var(--motion-fast)] ease-[var(--ease-standard)] ${
           selectedAssetCount > 0
             ? "border-[#00f5d4]/25 bg-[#00f5d4]/10 text-[#00f5d4]"
             : "border-white/10 bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white"
