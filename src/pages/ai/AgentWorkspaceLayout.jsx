@@ -689,16 +689,16 @@ export default function AgentWorkspaceLayout({ controller }) {
     setStudioConflict(null);
   }, []);
 
-  const requireUser = (fallback, actionType = PENDING_AUTH_ACTIONS.RESTRICTED_GENERATION, source = "workspace_gate") => {
+  const requireUser = useCallback((fallback, actionType = PENDING_AUTH_ACTIONS.RESTRICTED_GENERATION, source = "workspace_gate") => {
     if (!user) {
       handleAuthRequired?.(actionType, source);
       return false;
     }
     if (typeof fallback === "function") fallback();
     return true;
-  };
+  }, [user, handleAuthRequired]);
 
-  const requireStarterOrAbove = (reason, next) => {
+  const requireStarterOrAbove = useCallback((reason, next) => {
     if (!requireUser()) return false;
     if (!isStarterOrAbove) {
       starterPromo?.notifyStarterGate(reason || "This feature");
@@ -706,7 +706,7 @@ export default function AgentWorkspaceLayout({ controller }) {
     }
     if (typeof next === "function") next();
     return true;
-  };
+  }, [requireUser, isStarterOrAbove, starterPromo]);
 
   const onRefine = (m) => {
     if (!requireStarterOrAbove("Refinement & Iteration")) return;
