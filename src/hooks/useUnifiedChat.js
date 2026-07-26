@@ -66,6 +66,37 @@ export function reconcileUnifiedPendingMessages(generationPending = [], orchestr
   ]);
 }
 
+function chatMessageText(message) {
+  for (const value of [message?.content, message?.prompt, message?.explanation]) {
+    if (typeof value === "string" && value.trim()) return value.trim();
+  }
+  return "";
+}
+
+/**
+ * A short approval such as "just start" is executable only when it can inherit
+ * a concrete earlier request. Keep the terse user turn in the transcript, but
+ * give both runtimes the actual task so they cannot lose it during handoff.
+ */
+export function resolveImplementationPrompt(prompt, messages = []) {
+  const normalizedPrompt = String(prompt || "").trim();
+  if (!normalizedPrompt || !isExplicitPlanApproval(normalizedPrompt)) {
+    return normalizedPrompt;
+  }
+  for (let index = messages.length - 1; index >= 0; index -= 1) {
+    const message = messages[index];
+    if (message?.role !== "user") continue;
+    const candidate = chatMessageText(message);
+    if (!candidate || isExplicitPlanApproval(candidate)) continue;
+    if (!isImplementationIntent(classifyUserIntent(candidate))) continue;
+    return [
+      "Implement the following request now. Infer safe defaults instead of asking optional questions:",
+      candidate,
+    ].join("\n\n");
+  }
+  return normalizedPrompt;
+}
+
 /**
  * Resolve a chat/message project id for planning and generation.
  * Stale or deleted bindings soft-miss to null so orchestrate can continue
@@ -986,6 +1017,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
             conversationMessages = historyForRun.slice(0, -1);
           }
         }
+        const implementationPrompt = resolveImplementationPrompt(prompt, conversationMessages);
 
         // Agent & Debug: Cursor-style. No orchestration, no plan card, no canned
         // stage labels — hand straight to the streaming generation, which emits the
@@ -1040,7 +1072,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
             await launchAuthoritativeRun({
               activeChatId,
               requestId,
-              prompt,
+              prompt: implementationPrompt,
               mode: mode === "debug" ? "debug" : "act",
               attachments: currentAttachments,
               baseArtifact,

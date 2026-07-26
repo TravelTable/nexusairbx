@@ -2,7 +2,6 @@ import { useCallback, useEffect, useState } from "react";
 import {
   attachProjectAssets,
   getGeneratedAssetUploadStatus,
-  getProjectAssetUploadSettings,
   listProjectAssets,
   removeProjectAsset,
   setProjectAssetUploadSettings,
@@ -41,14 +40,10 @@ export function useProjectAssets(projectId, { enabled = true, notify } = {}) {
     setLoading(true);
     setError(null);
     try {
-      const [assetData, settingsData, statusData] = await Promise.all([
-        listProjectAssets(projectId),
-        getProjectAssetUploadSettings(projectId),
-        getGeneratedAssetUploadStatus(projectId),
-      ]);
+      const assetData = await listProjectAssets(projectId);
       setAssets(Array.isArray(assetData.assets) ? assetData.assets : []);
-      setUploadSettings(settingsData || null);
-      setUploadStatus(statusData || EMPTY_UPLOAD_STATUS);
+      setUploadSettings(assetData.uploadSettings || null);
+      setUploadStatus(assetData.uploadStatus || EMPTY_UPLOAD_STATUS);
       setAccessBlockedError(null);
     } catch (err) {
       setError(err);
@@ -75,11 +70,10 @@ export function useProjectAssets(projectId, { enabled = true, notify } = {}) {
     const timer = window.setInterval(() => {
       getGeneratedAssetUploadStatus(projectId)
         .then((statusData) => setUploadStatus(statusData || EMPTY_UPLOAD_STATUS))
-        .catch((err) => {
-          if (isAccessBlockedError(err)) {
-            setAccessBlockedError(err);
-            setError(err);
-          }
+        .catch(() => {
+          // Upload processing metadata is optional. Stop this polling cycle
+          // without hiding an otherwise accessible project asset library.
+          setUploadStatus(EMPTY_UPLOAD_STATUS);
         });
     }, 12000);
     return () => window.clearInterval(timer);

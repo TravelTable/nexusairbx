@@ -7,7 +7,8 @@ import { isExplicitPlanApproval } from "./planApproval";
 const GREETING_RE = /^(hi|hello|hey|yo|good\s+(morning|afternoon|evening)|howdy)[.!?\s]*$/i;
 const ACK_RE = /^(ok|okay|cool|nice|great|sounds good|that sounds good|thanks|thank you|understood|got it)[.!?\s]*$/i;
 const CANCELLATION_RE = /^(cancel|stop|never mind|nevermind|abort|discard|don't build|do not build)\b/i;
-const PLAN_APPROVAL_RE = /^(start build|build it|go ahead|proceed|implement( that| the)? plan|approved|approve|yes,?\s*(build|proceed|go ahead))[\s.!]*$/i;
+const PLAN_APPROVAL_RE = /^(start|just start|start now|get started|start build|build it|just do it|go ahead|proceed|implement( that| the)? plan|approved|approve|yes,?\s*(build|proceed|go ahead))[\s.!]*$/i;
+const CONTINUATION_RE = /^(continue|do it|apply that|apply it|finish it|carry on)[.!\s]*$/i;
 
 const BUILD_VERBS = [
   "add",
@@ -42,6 +43,7 @@ export function classifyUserIntent(prompt) {
 
   if (CANCELLATION_RE.test(text)) return "CANCELLATION";
   if (PLAN_APPROVAL_RE.test(text)) return "PLAN_APPROVAL";
+  if (CONTINUATION_RE.test(text)) return "CONTINUATION";
   if (GREETING_RE.test(text)) return "GREETING";
   if (ACK_RE.test(text)) return "GENERAL_QUESTION";
 
@@ -64,7 +66,7 @@ export function classifyUserIntent(prompt) {
 }
 
 export function isImplementationIntent(intent) {
-  return intent === "BUILD_REQUEST" || intent === "MODIFICATION_REQUEST" || intent === "REFINEMENT";
+  return intent === "BUILD_REQUEST" || intent === "MODIFICATION_REQUEST" || intent === "REFINEMENT" || intent === "CONTINUATION";
 }
 
 export { isExplicitPlanApproval };

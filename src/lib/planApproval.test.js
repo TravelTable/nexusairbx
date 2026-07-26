@@ -3,6 +3,9 @@ import { isExplicitPlanApproval } from "./planApproval";
 describe("isExplicitPlanApproval", () => {
   test("accepts explicit approval phrases", () => {
     expect(isExplicitPlanApproval("Start build")).toBe(true);
+    expect(isExplicitPlanApproval("just start")).toBe(true);
+    expect(isExplicitPlanApproval("start now")).toBe(true);
+    expect(isExplicitPlanApproval("just do it")).toBe(true);
     expect(isExplicitPlanApproval("Go ahead")).toBe(true);
     expect(isExplicitPlanApproval("Implement that plan")).toBe(true);
   });

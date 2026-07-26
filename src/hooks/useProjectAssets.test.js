@@ -2,7 +2,6 @@ import { act, renderHook, waitFor } from "@testing-library/react";
 import { useProjectAssets } from "./useProjectAssets";
 import {
   getGeneratedAssetUploadStatus,
-  getProjectAssetUploadSettings,
   listProjectAssets,
 } from "../lib/robloxAssetLibraryApi";
 
@@ -25,15 +24,13 @@ describe("useProjectAssets", () => {
     jest.useRealTimers();
   });
 
-  test("stops upload-status polling after a permission error", async () => {
+  test("blocks the asset library only when its required listing request is denied", async () => {
     const permissionError = new Error("Asset access denied");
     permissionError.status = 403;
     permissionError.code = "ASSET_ACCESS_DENIED";
     permissionError.requestId = "req_403";
 
-    listProjectAssets.mockResolvedValue({ assets: [] });
-    getProjectAssetUploadSettings.mockResolvedValue({ enabled: false });
-    getGeneratedAssetUploadStatus.mockRejectedValue(permissionError);
+    listProjectAssets.mockRejectedValue(permissionError);
 
     const notify = jest.fn();
     const { result } = renderHook(() => useProjectAssets("project_1", { enabled: true, notify }));
@@ -52,12 +49,33 @@ describe("useProjectAssets", () => {
     expect(getGeneratedAssetUploadStatus).not.toHaveBeenCalled();
   });
 
+  test("uses optional upload metadata bundled with the project asset response", async () => {
+    listProjectAssets.mockResolvedValue({
+      assets: [{ assetId: "asset_1", name: "Sword" }],
+      uploadSettings: null,
+      uploadStatus: { status: "idle", records: [] },
+    });
+
+    const notify = jest.fn();
+    const { result } = renderHook(() => useProjectAssets("project_1", { enabled: true, notify }));
+
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(result.current.assets).toEqual([{ assetId: "asset_1", name: "Sword" }]);
+    expect(result.current.uploadSettings).toBeNull();
+    expect(result.current.uploadStatus).toEqual({ status: "idle", records: [] });
+    expect(result.current.accessBlockedError).toBeNull();
+    expect(result.current.error).toBeNull();
+    expect(notify).not.toHaveBeenCalled();
+    expect(getGeneratedAssetUploadStatus).not.toHaveBeenCalled();
+  });
+
   test("polls upload status only while uploads are active", async () => {
-    listProjectAssets.mockResolvedValue({ assets: [] });
-    getProjectAssetUploadSettings.mockResolvedValue({ enabled: true });
-    getGeneratedAssetUploadStatus
-      .mockResolvedValueOnce({ status: "uploading", records: [] })
-      .mockResolvedValueOnce({ status: "processing", records: [] });
+    listProjectAssets.mockResolvedValue({
+      assets: [],
+      uploadSettings: { enabled: true },
+      uploadStatus: { status: "uploading", records: [] },
+    });
+    getGeneratedAssetUploadStatus.mockResolvedValueOnce({ status: "processing", records: [] });
 
     const { result } = renderHook(() => useProjectAssets("project_1", { enabled: true }));
 
@@ -74,11 +92,12 @@ describe("useProjectAssets", () => {
   });
 
   test("stops upload-status polling on terminal states", async () => {
-    listProjectAssets.mockResolvedValue({ assets: [] });
-    getProjectAssetUploadSettings.mockResolvedValue({ enabled: true });
-    getGeneratedAssetUploadStatus
-      .mockResolvedValueOnce({ status: "uploading", records: [] })
-      .mockResolvedValueOnce({ status: "completed", records: [] });
+    listProjectAssets.mockResolvedValue({
+      assets: [],
+      uploadSettings: { enabled: true },
+      uploadStatus: { status: "uploading", records: [] },
+    });
+    getGeneratedAssetUploadStatus.mockResolvedValueOnce({ status: "completed", records: [] });
 
     const { result } = renderHook(() => useProjectAssets("project_1", { enabled: true }));
 

@@ -324,16 +324,18 @@ export function summarizeStepResult(step) {
   if (type === "get_project_manifest") {
     const payload = step.payload || {};
     const total = Number(result.totalInstances ?? result.count ?? 0);
-    const items = Array.isArray(result.items) ? result.items.length : 0;
+    const hasItems = Array.isArray(result.items);
+    const items = hasItems ? result.items.length : 0;
     const pageSize = Number(result.pageSize || payload.pageSize || 0) || items;
     const cursor = Math.max(0, Number(result.cursor ?? payload.cursor ?? 0) || 0);
-    const pageItems = items || (result.nextCursor || total > 0 ? pageSize : 0);
+    const pageItems = hasItems ? items : (result.nextCursor || total > 0 ? pageSize : 0);
     if (total > 0 || pageItems > 0 || result.nextCursor) {
       const start = pageItems > 0 ? cursor : 0;
       const end = pageItems > 0 ? cursor + Math.max(pageItems, 1) - 1 : cursor;
       const pageNum = pageSize > 0 ? Math.floor(cursor / pageSize) + 1 : 1;
       const more = result.nextCursor ? " (more queued)" : (result.truncated ? " (truncated)" : "");
-      return `page ${pageNum} · ${start}–${end} of ${total || `${pageItems}+`}${more}`;
+      const range = pageItems > 0 ? `${start}–${end}` : "no items returned";
+      return `page ${pageNum} · ${range} of ${total || `${pageItems}+`}${more}`;
     }
     return "0 manifest item(s) indexed";
   }

@@ -20,7 +20,14 @@ describe("classifyUserIntent", () => {
 
   test("classifies explicit plan approval", () => {
     expect(classifyUserIntent("start build")).toBe("PLAN_APPROVAL");
+    expect(classifyUserIntent("just start")).toBe("PLAN_APPROVAL");
+    expect(classifyUserIntent("start now")).toBe("PLAN_APPROVAL");
     expect(classifyUserIntent("go ahead")).toBe("PLAN_APPROVAL");
+  });
+
+  test("classifies short continuation commands as implementation intent", () => {
+    expect(classifyUserIntent("continue")).toBe("CONTINUATION");
+    expect(classifyUserIntent("apply it")).toBe("CONTINUATION");
   });
 
   test("classifies build requests", () => {
@@ -57,10 +64,11 @@ describe("classifyUserIntent", () => {
 });
 
 describe("isImplementationIntent", () => {
-  test("is true only for build/modify/refine", () => {
+  test("is true for build, modification, refinement, and continuation", () => {
     expect(isImplementationIntent("BUILD_REQUEST")).toBe(true);
     expect(isImplementationIntent("MODIFICATION_REQUEST")).toBe(true);
     expect(isImplementationIntent("REFINEMENT")).toBe(true);
+    expect(isImplementationIntent("CONTINUATION")).toBe(true);
   });
 
   test("is false for conversational intents", () => {

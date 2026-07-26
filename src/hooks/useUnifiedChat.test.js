@@ -648,6 +648,64 @@ describe("useUnifiedChat", () => {
     expect(orchestrate).not.toHaveBeenCalled();
   });
 
+  test("binds a terse start approval to the latest concrete build request", async () => {
+    const priorRequest = "Build a fly GUI with a shop and money system";
+    useAiChat.mockReturnValue({
+      activeMode: "agent",
+      assertCanWrite: jest.fn(() => Promise.resolve()),
+      currentChatId: "chat-1",
+      generatingChatIds: [],
+      generationStage: "",
+      handleSubmit: chatHandleSubmit,
+      isGenerating: false,
+      messages: [
+        { role: "user", content: priorRequest },
+        { role: "assistant", content: "Could you clarify the flight controls?" },
+      ],
+      openChatById: jest.fn(),
+      pendingMessage: null,
+      setPendingForChat: jest.fn(),
+    });
+    isExplicitPlanApproval.mockImplementation((value) => String(value).trim() === "just start");
+    classifyUserIntent.mockImplementation((value) => (
+      String(value).includes("Build a fly GUI") ? "BUILD_REQUEST" : "CONTINUATION"
+    ));
+    isImplementationIntent.mockReturnValue(true);
+    const user = { uid: "user-1", getIdToken: jest.fn().mockResolvedValue("token") };
+    const { result } = renderHook(() => useUnifiedChat(user, {}, jest.fn(), jest.fn()));
+
+    await act(async () => {
+      await result.current.handleSubmit("just start", [], null, {
+        clientMessageId: "request-just-start",
+        projectId: "project_1",
+      });
+    });
+
+    const expectedPrompt = [
+      "Implement the following request now. Infer safe defaults instead of asking optional questions:",
+      priorRequest,
+    ].join("\n\n");
+    expect(createAgentRunV2).toHaveBeenCalledWith(expect.objectContaining({
+      prompt: expectedPrompt,
+      conversation: expect.arrayContaining([
+        expect.objectContaining({ role: "user", content: priorRequest }),
+      ]),
+    }));
+    expect(chatHandleSubmit).toHaveBeenCalledWith(
+      expectedPrompt,
+      "chat-1",
+      "request-just-start",
+      "agent",
+      true,
+      [],
+      null,
+      expect.objectContaining({ projectId: "project_1" }),
+    );
+    expect(setDoc.mock.calls.some(([, payload]) => (
+      payload?.role === "user" && payload?.content === "just start"
+    ))).toBe(true);
+  });
+
   test("uses legacy execution when canonical intake reports the legacy runtime owner", async () => {
     useAiChat.mockReturnValue({
       activeMode: "agent",
