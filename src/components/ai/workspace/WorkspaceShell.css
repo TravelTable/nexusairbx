@@ -263,11 +263,14 @@
 }
 
 @container workspace-shell (max-width: 1499px) {
+  /* Size against the shell container, not the collapsed auto grid track.
+     When the dock leaves flow (absolute), column 2 shrinks to 0 and
+     max-width/width: 100% would clamp the overlay to nothing. */
   .workspace-shell[data-drawer-open="true"] .workspace-shell__dock {
     position: absolute;
     inset-block: 0;
     right: 0;
-    max-width: 100%;
+    max-width: 100cqi;
     border-left: 1px solid rgb(255 255 255 / 8%);
     background: #0b0d14;
     box-shadow: -24px 0 60px rgb(0 0 0 / 38%);
@@ -288,7 +291,7 @@
   }
 
   .workspace-shell[data-drawer-open="true"] .workspace-shell__dock {
-    width: 100%;
+    width: 100cqi;
     border-left: 0;
   }
 

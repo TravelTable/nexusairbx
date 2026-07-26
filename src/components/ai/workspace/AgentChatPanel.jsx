@@ -219,7 +219,7 @@ export default function AgentChatPanel({
         onStop={onStop}
         isGenerating={isBusy}
         generationStage={generationStage}
-        placeholder={refineTarget ? "Describe the Studio change…" : "Ask the Studio agent…"}
+        placeholder={refineTarget ? "Describe the Studio change you want..." : "Ask the Studio agent to build, inspect, wire, or fix..."}
         refineTarget={refineTarget}
         onCancelRefine={onCancelRefine}
         onStartRefine={onStartRefine}

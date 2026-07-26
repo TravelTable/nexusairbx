@@ -338,9 +338,9 @@ export default function ChatComposer({
     const textarea = textareaRef.current;
     if (!textarea) return;
     textarea.style.height = "0px";
-    const nextHeight = Math.min(Math.max(textarea.scrollHeight, 28), 120);
+    const nextHeight = Math.min(Math.max(textarea.scrollHeight, 44), 144);
     textarea.style.height = `${nextHeight}px`;
-    textarea.style.overflowY = textarea.scrollHeight > 120 ? "auto" : "hidden";
+    textarea.style.overflowY = textarea.scrollHeight > 144 ? "auto" : "hidden";
   }, [prompt]);
 
   useEffect(() => {
@@ -561,10 +561,10 @@ export default function ChatComposer({
   );
 
   return (
-    <div className="bg-gradient-to-t from-black via-black/80 to-transparent px-2 pb-1.5 pt-1">
-      <div className="relative z-20 mx-auto max-w-5xl overflow-visible rounded-xl border border-white/10 bg-ink-800/95 shadow-panel backdrop-blur-xl transition-[border-color,box-shadow] duration-150 focus-within:border-[#00f5d4]/30 focus-within:shadow-[0_0_18px_rgba(0,245,212,0.05)]">
+    <div className="bg-gradient-to-t from-black via-black/80 to-transparent px-2 pb-2 pt-1.5">
+      <div className="relative z-20 mx-auto max-w-3xl overflow-visible rounded-xl border border-white/10 bg-ink-800/95 shadow-panel backdrop-blur-xl transition-[border-color,box-shadow] duration-150 focus-within:border-[#00f5d4]/30 focus-within:shadow-[0_0_18px_rgba(0,245,212,0.05)]">
         {(refineTarget || rewindTarget?.messageId || contextItems.length > 0) && (
-          <div className="flex min-h-8 items-center gap-1.5 overflow-visible border-b border-white/[0.06] px-2 py-0.5">
+          <div className="flex min-h-9 items-center gap-1.5 overflow-visible border-b border-white/[0.06] px-2 py-1">
             {refineTarget && (
               <div className="inline-flex h-7 max-w-[280px] shrink-0 items-center gap-1.5 rounded-md border border-[#00f5d4]/20 bg-[#00f5d4]/10 px-2 text-[10px] font-bold text-[#00f5d4] transition-[border-color,background-color,color,opacity] duration-150 motion-safe:animate-fade-in-up">
                 <Wand2 className="h-3 w-3 shrink-0" />
@@ -664,12 +664,12 @@ export default function ChatComposer({
             />
           )}
 
-          <div className="relative min-h-[28px] px-2.5 pt-1">
+          <div className="relative min-h-[44px] px-3 pt-2">
             <textarea
               ref={textareaRef}
               id="tour-prompt-box"
               data-tour="prompt-input"
-              className="min-h-[28px] w-full resize-none border-none bg-transparent px-0 py-1 text-[14px] leading-snug text-gray-100 outline-none transition-[height,color,opacity] duration-150 placeholder:text-gray-600 focus:ring-0 disabled:opacity-50 md:text-[15px]"
+              className="min-h-[44px] w-full resize-none border-none bg-transparent px-0 py-1.5 text-[14px] leading-relaxed text-gray-100 outline-none transition-[height,color,opacity] duration-150 placeholder:text-gray-600 focus:ring-0 disabled:opacity-50 md:text-[15px]"
               rows={1}
               placeholder={placeholder}
               value={prompt}
@@ -684,7 +684,7 @@ export default function ChatComposer({
             />
           </div>
 
-          <div className="flex items-center justify-between gap-2 px-1.5 pb-1.5 pt-0.5">
+          <div className="flex items-center justify-between gap-2 px-2 pb-2 pt-1">
             <div className="flex min-w-0 items-center gap-1">
               <input
                 ref={fileInputRef}

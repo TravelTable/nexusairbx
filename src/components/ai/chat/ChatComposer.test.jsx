@@ -208,18 +208,18 @@ describe("ChatComposer compact interactions", () => {
     expect(onSubmit).not.toHaveBeenCalled();
   });
 
-  test("textarea grows to 120px and then scrolls internally", () => {
+  test("textarea grows to 144px and then scrolls internally", () => {
     const { rerender } = renderComposer({ prompt: "short" });
     const textarea = screen.getByRole("textbox", { name: "Prompt input" });
     Object.defineProperty(textarea, "scrollHeight", { configurable: true, value: 320 });
 
     rerender(<ChatComposer {...baseProps} prompt="long\ncontent" />);
-    expect(textarea.style.height).toBe("120px");
+    expect(textarea.style.height).toBe("144px");
     expect(textarea.style.overflowY).toBe("auto");
 
     Object.defineProperty(textarea, "scrollHeight", { configurable: true, value: 20 });
     rerender(<ChatComposer {...baseProps} prompt="short again" />);
-    expect(textarea.style.height).toBe("28px");
+    expect(textarea.style.height).toBe("44px");
     expect(textarea.style.overflowY).toBe("hidden");
   });
 });
