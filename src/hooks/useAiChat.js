@@ -105,6 +105,10 @@ const QUEUED_RUN_POLL_MS = 1500;
 
 const delay = (milliseconds) => new Promise((resolve) => window.setTimeout(resolve, milliseconds));
 
+function isAutoExecutingMode(mode) {
+  return ["agent", "debug", "act"].includes(String(mode || "").trim());
+}
+
 export async function waitForAuthoritativeRunJob({
   agentId,
   runId,
@@ -627,7 +631,7 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
           requestId: currentPending.requestId,
           jobId: currentPending.jobId,
           currentMode,
-          isAutoExecuting: Boolean(currentPending.isAutoExecuting || currentMode === "act"),
+          isAutoExecuting: Boolean(currentPending.isAutoExecuting || isAutoExecutingMode(currentMode)),
         });
         if (data?.runId || currentPending.runId) msgPayload.runId = data?.runId || currentPending.runId;
         await updateDoc(pendingRef, sanitizeTranscriptMessagePayload(msgPayload));
@@ -690,8 +694,13 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
       return;
     }
 
-    const currentMode = modeOverride === "debug" ? "debug" : actNow ? "act" : chatMode;
+    const requestedMode = modeOverride || (actNow ? "agent" : chatMode);
+    const currentMode = requestedMode === "act" ? "agent" : requestedMode;
     const requestId = existingRequestId || uuidv4();
+    const authoritativeEnvelope = submissionOptions?.authoritativeRun;
+    const authoritativeDecision = authoritativeEnvelope?.decision
+      || authoritativeEnvelope?.run?.decision
+      || null;
 
     let activeChatId = existingChatId || currentChatId;
 
@@ -747,6 +756,7 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
         mode: currentMode,
         requestId,
         stage: "Analyzing Request...",
+        ...(authoritativeDecision ? { decision: authoritativeDecision } : {}),
         streamState: getPendingStreamSnapshot(initialState),
       }, requestId);
       setStageForChat(chatId, "Analyzing Request...", requestId);
@@ -878,7 +888,6 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
         }
       }
 
-      const authoritativeEnvelope = submissionOptions?.authoritativeRun;
       let jobData;
       if (authoritativeEnvelope?.run?.runId) {
         jobData = authoritativeEnvelope.run;
@@ -970,6 +979,7 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
         }
         jobData = await jobRes.json();
       }
+      const runtimeDecision = authoritativeDecision || jobData?.decision || null;
       let jobId = typeof jobData.jobId === "string" ? jobData.jobId.trim() : "";
       const acceptedTaskId = typeof jobData.taskId === "string" ? jobData.taskId.trim() : "";
       const runtimeTaskAccepted = !authoritativeEnvelope
@@ -1019,6 +1029,7 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
             runId: jobData.runId,
             taskId: acceptedTaskId || null,
             queuePosition: jobData.queuePosition || null,
+            ...(runtimeDecision ? { decision: runtimeDecision } : {}),
           },
         });
         await setDoc(queuedAssistantRef, sanitizeTranscriptMessagePayload({
@@ -1030,6 +1041,7 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
           runId: jobData.runId,
           ...(acceptedTaskId ? { taskId: acceptedTaskId } : {}),
           ...(jobData.queuePosition ? { queuePosition: jobData.queuePosition } : {}),
+          ...(runtimeDecision ? { decision: runtimeDecision } : {}),
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
           metadata: { mode: currentMode, type: null },
@@ -1072,6 +1084,7 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
             pending: false,
             requestId,
             ...(acceptedTaskId ? { taskId: acceptedTaskId } : {}),
+            ...(runtimeDecision ? { decision: runtimeDecision } : {}),
             createdAt: serverTimestamp(),
             updatedAt: serverTimestamp(),
           }), { merge: true });
@@ -1090,7 +1103,13 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
       const resultUrl = resolveResultUrl(jobId, jobData.resultUrl);
       const assistantMsgRef = doc(db, "users", user.uid, "chats", activeChatId, "messages", `${requestId}-assistant`);
 
-      publishGenerationStage(activeChatId, "Generating...", { extraPending: { steps: [], runId: agentRunId } });
+      publishGenerationStage(activeChatId, "Generating...", {
+        extraPending: {
+          steps: [],
+          runId: agentRunId,
+          ...(runtimeDecision ? { decision: runtimeDecision } : {}),
+        },
+      });
       await setDoc(assistantMsgRef, sanitizeTranscriptMessagePayload({
         role: "assistant",
         content: "",
@@ -1100,7 +1119,8 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
         jobId,
         ...(acceptedTaskId ? { taskId: acceptedTaskId } : {}),
         ...(agentRunId ? { runId: agentRunId } : {}),
-        isAutoExecuting: currentMode === "act",
+        ...(runtimeDecision ? { decision: runtimeDecision } : {}),
+        isAutoExecuting: isAutoExecutingMode(currentMode),
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
         metadata: {
@@ -1125,7 +1145,7 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
         let lastStreamCursor = "0-0";
         let streamSessionToken = initialStreamSession?.token || null;
         let sseSessionUnavailable = !streamSessionToken;
-        const isAutoExecuting = currentMode === "act";
+        const isAutoExecuting = isAutoExecutingMode(currentMode);
         let retryCount = 0;
         let streamFlushTimer = null;
         let lastStreamFlushAt = 0;

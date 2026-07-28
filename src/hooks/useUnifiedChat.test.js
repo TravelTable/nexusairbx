@@ -522,7 +522,7 @@ describe("useUnifiedChat", () => {
     expect(createAgentRunV2).not.toHaveBeenCalled();
   });
 
-  test("routes conversational Agent prompts through grounded Studio chat instead of generic orchestration", async () => {
+  test("sends conversational Agent prompts to the authoritative backend decision service", async () => {
     FEATURE_FLAGS.unifiedAgent = true;
     getStudioEnabledPreference.mockReturnValue(true);
     classifyUserIntent.mockReturnValue("GENERAL_QUESTION");
@@ -552,18 +552,7 @@ describe("useUnifiedChat", () => {
       pendingMessage: null,
       setPendingForChat,
     });
-    const reader = {
-      read: jest.fn()
-        .mockResolvedValueOnce({
-          done: false,
-          value: Uint8Array.from(Array.from("Grounded Studio answer").map((character) => character.charCodeAt(0))),
-        })
-        .mockResolvedValueOnce({ done: true, value: undefined }),
-    };
-    global.fetch = jest.fn().mockResolvedValue({
-      ok: true,
-      body: { getReader: () => reader },
-    });
+    global.fetch = jest.fn();
     const user = { uid: "user-1", getIdToken: jest.fn().mockResolvedValue("token") };
 
     const { result } = renderHook(() =>
@@ -578,15 +567,16 @@ describe("useUnifiedChat", () => {
       });
     });
 
-    const request = JSON.parse(global.fetch.mock.calls[0][1].body);
-    expect(global.fetch.mock.calls[0][0]).toContain("/api/ai/chat");
-    expect(request).toEqual(expect.objectContaining({
+    expect(createAgentRunV2).toHaveBeenCalledWith(expect.objectContaining({
+      mode: "agent",
+      prompt: "What files can you see in Studio?",
       studioEnabled: true,
       studioSessionId: "mcp_agent_exact",
       studioConnectionType: "mcp_local",
     }));
+    expect(global.fetch).not.toHaveBeenCalled();
     expect(orchestrate).not.toHaveBeenCalled();
-    expect(chatHandleSubmit).not.toHaveBeenCalled();
+    expect(chatHandleSubmit).toHaveBeenCalledTimes(1);
   });
 
   test("passes task intake candidates only to direct implementation generation", async () => {
@@ -624,7 +614,7 @@ describe("useUnifiedChat", () => {
       chatId: "chat-1",
       agentId: "agent-1",
       idempotencyKey: expect.stringMatching(/^run-/),
-      mode: "act",
+      mode: "agent",
       projectId: "project_1",
       prompt: "Build a lobby system",
     }));

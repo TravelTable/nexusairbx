@@ -10,6 +10,7 @@ import { Separator } from "../../shadcn/separator";
 import { RotateCcw } from "lib/icons";
 import { getAssistantTurnIdentity, reconcileAssistantTurns } from "../../../lib/assistantTurnIdentity";
 import AnimatedStatusText from "./AnimatedStatusText";
+import RunContextBar from "./RunContextBar";
 import "./ChatMotion.css";
 
 export function groupMessagesByRole(messages = []) {
@@ -185,28 +186,32 @@ function SingleMessageList({
           ) : null}
           <div className={group.role === "assistant" ? "space-y-1.5 pl-9" : "space-y-1.5"}>
             {group.messages.map((m) => (
-              <MessageBubble
-                key={m.id}
-                message={m}
-                user={user}
-                profile={profile}
-                activeMode={activeMode}
-                grouped={group.role === "assistant"}
-                retryPrompt={group.retryPrompt}
-                retrySourceMessage={group.retrySourceMessage}
-                onViewUi={onViewUi}
-                onRefine={onRefine}
-                onFixUiAudit={onFixUiAudit}
-                onApprovePlan={onApprovePlan}
-                onClarifySubmit={onClarifySubmit}
-                onEditPlan={onEditPlan}
-                notify={notify}
-                isBusy={isBusy}
-                onApproveStep={onApproveStep}
-                approvingStepId={approvingStepId}
-                onEditMessage={onEditMessage}
-                onRetryMessage={onRetryMessage}
-              />
+              <React.Fragment key={m.id}>
+                {group.role === "assistant" && m.decision ? (
+                  <RunContextBar decision={m.decision} />
+                ) : null}
+                <MessageBubble
+                  message={m}
+                  user={user}
+                  profile={profile}
+                  activeMode={activeMode}
+                  grouped={group.role === "assistant"}
+                  retryPrompt={group.retryPrompt}
+                  retrySourceMessage={group.retrySourceMessage}
+                  onViewUi={onViewUi}
+                  onRefine={onRefine}
+                  onFixUiAudit={onFixUiAudit}
+                  onApprovePlan={onApprovePlan}
+                  onClarifySubmit={onClarifySubmit}
+                  onEditPlan={onEditPlan}
+                  notify={notify}
+                  isBusy={isBusy}
+                  onApproveStep={onApproveStep}
+                  approvingStepId={approvingStepId}
+                  onEditMessage={onEditMessage}
+                  onRetryMessage={onRetryMessage}
+                />
+              </React.Fragment>
             ))}
           </div>
         </div>
@@ -232,6 +237,9 @@ function SingleMessageList({
           <div className="nexus-message-arrival mx-auto w-full max-w-[1080px]">
             <AssistantIdentity activeMode={activeMode} working />
             <div className="mt-2 space-y-3 pl-9">
+              {pendingMessage.decision ? (
+                <RunContextBar decision={pendingMessage.decision} />
+              ) : null}
               {showLiveWorkStream ? (
                 <div className="w-full max-w-[840px] overflow-hidden rounded-xl border border-white/[0.08] bg-white/[0.025]">
                   <div className="px-4 pt-3">

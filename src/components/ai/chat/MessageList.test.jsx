@@ -472,6 +472,64 @@ describe("MessageList pending activity", () => {
 });
 
 describe("MessageList conversation layout", () => {
+  test("shows an accessible run context with keyboard-reachable confidence details", () => {
+    const decision = {
+      requestedMode: "agent",
+      effectiveMode: "agent",
+      action: "execute",
+      studio: {
+        required: true,
+        connected: true,
+        targetId: "target_1",
+        placeId: "place_1",
+      },
+      manifest: {
+        status: "fresh",
+        source: "fresh_complete",
+      },
+      executionConfidence: 98,
+      confidenceLabel: "high",
+      confidenceFactors: {
+        intentClarity: 25,
+        targetBinding: 20,
+        toolAvailability: 20,
+        contextFreshness: 13,
+        reversibility: 10,
+        verificationCoverage: 10,
+      },
+      nextAction: "Apply and verify the requested Studio changes.",
+    };
+
+    const { container } = render(
+      <MessageList
+        {...baseProps}
+        isBusy={false}
+        messages={[
+          {
+            id: "a-decision",
+            role: "assistant",
+            content: "Starting with the bound Studio target.",
+            decision,
+          },
+        ]}
+      />
+    );
+
+    expect(screen.getByRole("region", { name: "Run context" })).toBeTruthy();
+    expect(screen.getByText("Agent")).toBeTruthy();
+    expect(screen.getByText(/target_1 · connected/)).toBeTruthy();
+    expect(screen.getByText(/98\/100 · High/)).toBeTruthy();
+
+    const summary = screen.getByText("Confidence details");
+    summary.focus();
+    expect(document.activeElement).toBe(summary);
+    fireEvent.click(summary);
+
+    expect(container.querySelector("details")?.open).toBe(true);
+    expect(screen.getByLabelText("Intent clarity: 25")).toBeTruthy();
+    expect(screen.getByLabelText("Verification coverage: 10")).toBeTruthy();
+  });
+
   test("groups consecutive messages by role and shows one Nexus identity per assistant turn", () => {
     const { container } = render(
       <MessageList

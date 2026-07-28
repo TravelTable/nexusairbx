@@ -73,6 +73,51 @@ function chatMessageText(message) {
   return "";
 }
 
+function decisionStage(decision) {
+  switch (String(decision?.action || "").trim()) {
+    case "clarify":
+      return "Needs input";
+    case "recover":
+      return "Recovering";
+    case "block":
+    case "refuse":
+      return "Blocked";
+    case "answer":
+    case "inspect":
+      return "Read-only";
+    case "plan":
+      return "Planning";
+    default:
+      return "Starting";
+  }
+}
+
+function decisionMessage(decision) {
+  const nextAction = String(decision?.nextAction || "").trim();
+  if (nextAction) return nextAction;
+  const reason = Array.isArray(decision?.reasons)
+    ? decision.reasons.find((entry) => typeof entry === "string" && entry.trim())
+    : null;
+  return reason?.trim() || "This request cannot start yet.";
+}
+
+async function resolvePreferredStudioTarget(studioEnabled) {
+  if (!studioEnabled) {
+    return { studioSessionId: null, studioConnectionType: null };
+  }
+  const studioStatus = await getStudioStatus();
+  const sessions = studioStatus.sessions || [];
+  const activeSession =
+    selectMcpStudioSession(sessions, { capability: "readProject" }) ||
+    selectPluginStudioSession(sessions, { compatibleOnly: true });
+  return {
+    studioSessionId: getStudioSessionId(activeSession),
+    studioConnectionType: activeSession
+      ? getStudioConnectionType(activeSession)
+      : null,
+  };
+}
+
 /**
  * A short approval such as "just start" is executable only when it can inherit
  * a concrete earlier request. Keep the terse user turn in the transcript, but
@@ -508,6 +553,12 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
     );
     if (!agent) return launchLegacyGeneration();
     const studioEnabled = getStudioEnabledPreference() === true;
+    let studioTarget = { studioSessionId: null, studioConnectionType: null };
+    try {
+      studioTarget = await resolvePreferredStudioTarget(studioEnabled);
+    } catch (_) {
+      /* The decision service will report the missing Studio binding. */
+    }
     const autoPushToStudio = studioEnabled && settings?.studioAutoPushEnabled === true;
     const approvedPlan = normalizeApprovedPlanReference(submissionOptions.approvedPlan);
     let runtimeEnvelope;
@@ -535,6 +586,8 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
           : {}),
         generatorMode: "agent_build",
         studioEnabled,
+        studioSessionId: studioTarget.studioSessionId,
+        studioConnectionType: studioTarget.studioConnectionType,
         applyMode: getStudioApplyMode(),
         routingMode: studioEnabled ? "hybrid" : "cloud",
         autoPushToStudio,
@@ -553,8 +606,34 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
 
       return launchLegacyGeneration();
     }
-    if (!runtimeEnvelope?.authoritativeExecution || !runtimeEnvelope?.run?.runId) {
-      throw new Error("The durable agent runtime did not accept this executable request.");
+    if (!runtimeEnvelope?.run?.runId) {
+      const decision = runtimeEnvelope?.decision || null;
+      if (!decision) {
+        throw new Error("The durable agent runtime did not return a decision.");
+      }
+      const content = decisionMessage(decision);
+      await setDoc(
+        doc(db, "users", user.uid, "chats", activeChatId, "messages", `${requestId}-assistant`),
+        sanitizeTranscriptMessagePayload({
+          role: "assistant",
+          content,
+          explanation: content,
+          stage: decisionStage(decision),
+          pending: false,
+          requestId,
+          decision,
+          executionDisposition: runtimeEnvelope.executionDisposition || null,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+          metadata: {
+            mode: decision.effectiveMode || mode,
+            type: "decision",
+          },
+        }),
+        { merge: true }
+      );
+      await touchChat(activeChatId, content);
+      return runtimeEnvelope;
     }
     await chat.handleSubmit(
       prompt,
@@ -567,7 +646,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
       { ...submissionOptions, authoritativeRun: runtimeEnvelope }
     );
     return runtimeEnvelope;
-  }, [chat, effectiveGameSpec, ensureRuntimeAgentProjection, settings]);
+  }, [chat, effectiveGameSpec, ensureRuntimeAgentProjection, settings, touchChat, user]);
 
   const writeOrchestrationResult = useCallback(
     async (activeChatId, requestId, decision, originPrompt, attachments, submissionContext = {}) => {
@@ -594,6 +673,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
           ?? submissionContext.studioTarget
           ?? submissionContext.studioTargetPreference,
       }, buildWorkflowTargeting(submissionContext));
+      const decisionEnvelope = decision?.decision || decision?.chatDecision || null;
 
       if (decision.status === "conversation") {
         const text = decision.message || "";
@@ -605,8 +685,10 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
             intent: decision.intent || null,
             content: text,
             explanation: text,
+            ...(decisionEnvelope ? { decision: decisionEnvelope } : {}),
             createdAt: serverTimestamp(),
             requestId,
+            ...(decisionEnvelope ? { decision: decisionEnvelope } : {}),
           })
         );
         await touchChat(activeChatId, text || "Conversation");
@@ -671,6 +753,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
           targeting,
           originPrompt,
           attachments: attMeta,
+          ...(decisionEnvelope ? { decision: decisionEnvelope } : {}),
           createdAt: serverTimestamp(),
           requestId,
         })
@@ -685,8 +768,8 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
     [user, touchChat, chat.activeMode]
   );
 
-  // Dispatch generation for an approved plan. All classifications now run the
-  // artifact job worker in "act" mode to produce a multi-file Roblox artifact.
+  // Dispatch generation for an approved plan. The backend owns the sole
+  // canonical agent -> act mapping at its execution boundary.
   const runGeneration = useCallback(
     async (
       activeChatId,
@@ -701,7 +784,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
         activeChatId,
         requestId,
         prompt,
-        mode: "act",
+        mode: "agent",
         attachments,
         baseArtifact,
         submissionOptions,
@@ -827,15 +910,9 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
       let studioConnectionType = null;
       if (studioEnabled) {
         try {
-          const studioStatus = await getStudioStatus();
-          const sessions = studioStatus.sessions || [];
-          const activeSession =
-            selectMcpStudioSession(sessions, { capability: "readProject" }) ||
-            selectPluginStudioSession(sessions, { compatibleOnly: true });
-          studioSessionId = getStudioSessionId(activeSession);
-          studioConnectionType = activeSession
-            ? getStudioConnectionType(activeSession)
-            : null;
+          const studioTarget = await resolvePreferredStudioTarget(studioEnabled);
+          studioSessionId = studioTarget.studioSessionId;
+          studioConnectionType = studioTarget.studioConnectionType;
           if (studioSessionId) {
             chat.setPendingForChat(
               activeChatId,
@@ -1019,51 +1096,9 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
         }
         const implementationPrompt = resolveImplementationPrompt(prompt, conversationMessages);
 
-        // Agent & Debug: Cursor-style. No orchestration, no plan card, no canned
-        // stage labels — hand straight to the streaming generation, which emits the
-        // model's raw thinking and streams files into the workspace live.
+        // Agent & Debug always go to the authoritative decision service. It may
+        // execute, recover, clarify, or block without the frontend changing mode.
         if (mode === "agent" || mode === "debug") {
-          // Conversational gate: don't build files on greetings, questions, or
-          // vague chit-chat. Use the same read-only Ask path here so Studio-aware
-          // questions retain the exact selected session and transport context.
-          // Clear build requests fall through to the direct-build path.
-          const intent = classifyUserIntent(prompt);
-          const conversationalOnly =
-            mode === "debug"
-              // Debug: keep it narrow so pasted errors / "why is X nil" still fix.
-              ? ["GREETING", "GENERAL_QUESTION", "CANCELLATION"].includes(intent)
-              : !isImplementationIntent(intent) && !isExplicitPlanApproval(prompt);
-
-          if (prompt && conversationalOnly) {
-            let flowController = null;
-            try {
-              activeChatId = await ensureChat(titleSeed, effectiveOptions);
-              flowController = createFlowAbortController(activeChatId, requestId);
-              setFlowBusyForChat(activeChatId, requestId, true);
-              if (writeUserTurn) {
-                await writeUserMessage(activeChatId, requestId, prompt, currentAttachments);
-              }
-              await ensureRuntimeAgentProjection(activeChatId, effectiveOptions);
-              await handleAskSubmit(
-                prompt,
-                currentAttachments,
-                activeChatId,
-                requestId,
-                flowController.signal,
-                conversationMessages
-              );
-            } catch (err) {
-              if (!isAbortError(err)) {
-                console.error("Conversation error:", err);
-                notify?.({ message: err?.message || "Could not respond. You can try again.", type: "error" });
-              }
-            } finally {
-              releaseFlowAbortController(activeChatId, requestId);
-              setFlowBusyForChat(activeChatId, requestId, false);
-            }
-            return;
-          }
-
           try {
             activeChatId = await ensureChat(titleSeed, effectiveOptions);
             if (writeUserTurn) {
@@ -1073,7 +1108,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
               activeChatId,
               requestId,
               prompt: implementationPrompt,
-              mode: mode === "debug" ? "debug" : "act",
+              mode,
               attachments: currentAttachments,
               baseArtifact,
               submissionOptions: effectiveOptions,
