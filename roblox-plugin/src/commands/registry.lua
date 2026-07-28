@@ -579,6 +579,13 @@ local function verifyCommandOutcome(command, payload, result)
 					local inst = resolvePath(p)
 					local expected = file.lastAppliedSourceHash or file.resultingHash or file.sourceHash
 					local currentHash = inst and SCRIPT_CLASSES[inst.ClassName] and scriptHash(inst) or nil
+					for attempt = 2, 6 do
+						if expected == nil or currentHash == expected then
+							break
+						end
+						task.wait(0.05)
+						currentHash = inst and SCRIPT_CLASSES[inst.ClassName] and scriptHash(inst) or nil
+					end
 					addCheck("artifact_file", p, inst ~= nil and expected ~= nil and currentHash == expected, {
 						fileId = file.fileId,
 						expectedHash = expected,

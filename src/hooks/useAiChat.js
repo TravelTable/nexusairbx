@@ -1503,8 +1503,13 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
               handoffRecoveryTimeout();
               return;
             }
-            const errorMsg = rawError?.message || fallbackErr?.message || "Generation failed";
-            failAndReject(new Error(errorMsg), "network");
+            const terminalError =
+              fallbackErr instanceof Error
+                ? fallbackErr
+                : rawError instanceof Error
+                  ? rawError
+                  : new Error("Generation failed");
+            failAndReject(terminalError, terminalError.code || "network");
           } finally {
             recoverInFlight = false;
           }
@@ -1519,9 +1524,13 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
               await failInsufficientTokens(data);
               return true;
             }
-            if (data?.code && data.retryable === false) {
+            const errorMessage = data?.message || data?.error;
+            if (data?.code || errorMessage) {
               eventSource?.close?.();
-              failAndReject(new Error(data.message || "Generation failed"), data.code);
+              const terminalError = new Error(errorMessage || "Generation failed");
+              terminalError.code = data?.code || "GENERATION_FAILED";
+              terminalError.details = data?.details || data?.workspaceConflict || null;
+              failAndReject(terminalError, terminalError.code);
               return true;
             }
           } catch (err) {

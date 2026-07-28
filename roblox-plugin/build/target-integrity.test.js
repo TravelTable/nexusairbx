@@ -51,7 +51,10 @@ test("operation receipts are bounded, durable, and reconciled before redelivery"
 
 test("generated install artifact contains target diagnostics and the current build", () => {
   const artifact = read("NexusRBXStudioBridge.plugin.lua");
-  assert.match(artifact, /nexusrbx-studio-0\.10\.3-session-attestation\.2/);
+  const config = read("src/config.lua");
+  const buildId = config.match(/local PLUGIN_BUILD_ID = "([^"]+)"/);
+  assert.ok(buildId, "plugin config must declare a build identifier");
+  assert.ok(artifact.includes(buildId[1]), "generated artifact must contain the configured build identifier");
   assert.match(artifact, /INVALID_TARGET_ENVELOPE/);
   assert.match(artifact, /OPERATION_OUTCOME_UNCERTAIN/);
   assert.match(artifact, /Heartbeat %s · Commands %s · Place %s/);

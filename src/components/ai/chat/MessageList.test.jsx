@@ -497,6 +497,16 @@ describe("MessageList conversation layout", () => {
         reversibility: 10,
         verificationCoverage: 10,
       },
+      reasons: [
+        "The selected mode and project-specific request authorize work to start.",
+      ],
+      requiredCapabilityIds: [
+        "get_project_manifest",
+        "read_script",
+        "write_script",
+        "run_project_validation",
+      ],
+      unavailableCapabilities: [],
       nextAction: "Apply and verify the requested Studio changes.",
     };
 
@@ -518,9 +528,12 @@ describe("MessageList conversation layout", () => {
     expect(screen.getByRole("region", { name: "Run context" })).toBeTruthy();
     expect(screen.getByText("Agent")).toBeTruthy();
     expect(screen.getByText(/target_1 · connected/)).toBeTruthy();
+    expect(screen.getByText("Studio read/write")).toBeTruthy();
     expect(screen.getByText(/98\/100 · High/)).toBeTruthy();
+    expect(screen.getByText(/98\/100/).closest("span")?.textContent).toContain("98/100");
 
     const summary = screen.getByText("Confidence details");
+    expect(summary.getAttribute("title")).toContain("Intent clarity: 25");
     summary.focus();
     expect(document.activeElement).toBe(summary);
     fireEvent.click(summary);
@@ -528,6 +541,9 @@ describe("MessageList conversation layout", () => {
     expect(container.querySelector("details")?.open).toBe(true);
     expect(screen.getByLabelText("Intent clarity: 25")).toBeTruthy();
     expect(screen.getByLabelText("Verification coverage: 10")).toBeTruthy();
+    expect(screen.getByRole("list", { name: "Decision reasons" }).textContent).toContain(
+      "authorize work to start"
+    );
   });
 
   test("groups consecutive messages by role and shows one Nexus identity per assistant turn", () => {

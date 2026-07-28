@@ -14,7 +14,7 @@ local STUDIO_PROTOCOL_VERSION = "2026-07-22-asset-references"
 -- version. Keep it in lockstep with the generated bundle and backend allowlist.
 -- A plugin session must attest its build and actual command handlers at pairing
 -- time; version strings alone are not evidence that a command exists.
-local PLUGIN_BUILD_ID = "nexusrbx-studio-0.11.0-asset-references.1"
+local PLUGIN_BUILD_ID = "nexusrbx-studio-0.11.0-asset-references.2"
 
 -- These are deliberately capability-level (rather than UI-level) claims. The
 -- pairing payload also includes the exact sorted command list derived from the
@@ -4847,6 +4847,24 @@ local function checkStudioPreconditions(inst, spec, manifestEntry, indexes)
 	return true, nil, currentHash
 end
 
+local function waitForExpectedScriptSource(inst, expectedSource)
+	local expectedHash = stableHash(expectedSource)
+	local lastHash = nil
+	for attempt = 1, 6 do
+		local ok, source = readScriptSource(inst)
+		if ok then
+			lastHash = stableHash(source)
+			if lastHash == expectedHash then
+				return true, expectedHash
+			end
+		end
+		if attempt < 6 then
+			task.wait(0.05)
+		end
+	end
+	return false, lastHash, expectedHash
+end
+
 local function applyManagedUpsert(spec, resolved, indexes, snapshots, seenPaths)
 	local targetPath = tostring(spec.path or "")
 	local expectedClass = resolveScriptClassName(spec.className, spec.kind)
@@ -4886,10 +4904,17 @@ local function applyManagedUpsert(spec, resolved, indexes, snapshots, seenPaths)
 	if not wrote then
 		return nil, writeErr or "Could not update Studio script source"
 	end
-	return inst, nil
+	local readbackOk, appliedHash, expectedHash = waitForExpectedScriptSource(inst, tostring(spec.content or ""))
+	if not readbackOk then
+		return nil, ("Studio source did not settle to the applied content (expected %s, read %s)"):format(
+			tostring(expectedHash or ""),
+			tostring(appliedHash or "unavailable")
+		)
+	end
+	return inst, nil, appliedHash
 end
 
-local function buildManagedFileRecord(inst, spec)
+local function buildManagedFileRecord(inst, spec, knownSourceHash)
 	local ok, source = readScriptSource(inst)
 	local sourceText = ok and source or (spec.content or "")
 	return {
@@ -4898,7 +4923,7 @@ local function buildManagedFileRecord(inst, spec)
 		placement = tostring(spec.placement or ""),
 		kind = tostring(spec.kind or "module"),
 		className = inst.ClassName,
-		lastAppliedSourceHash = stableHash(sourceText),
+		lastAppliedSourceHash = knownSourceHash or stableHash(sourceText),
 		lastResolvedStudioPath = fullPath(inst),
 	}
 end
@@ -5032,12 +5057,12 @@ applyArtifact = function(payload)
 							pushResult({ type = phase, path = tostring(op.path or "") }, false, resolved.message)
 							error(resolved.message)
 						end
-						local inst, applyErr = applyManagedUpsert(spec, resolved, indexes, snapshots, seenPaths)
+						local inst, applyErr, appliedHash = applyManagedUpsert(spec, resolved, indexes, snapshots, seenPaths)
 						if not inst then
 							pushResult({ type = phase, path = tostring(op.path or "") }, false, applyErr)
 							error(applyErr)
 						end
-						managedFiles[tostring(spec.fileId or spec.id or "")] = buildManagedFileRecord(inst, spec)
+						managedFiles[tostring(spec.fileId or spec.id or "")] = buildManagedFileRecord(inst, spec, appliedHash)
 						pushResult({ type = phase, path = tostring(op.path or "") }, true, nil)
 					end
 				end
@@ -5046,8 +5071,9 @@ applyArtifact = function(payload)
 
 		for _, spec in ipairs(finalFiles) do
 			local resolved = resolveManagedTarget(spec, indexes, tostring(spec.path or ""))
-			if resolved.ok and resolved.instance then
-				managedFiles[tostring(spec.fileId or spec.id or "")] = buildManagedFileRecord(resolved.instance, spec)
+			local fileId = tostring(spec.fileId or spec.id or "")
+			if resolved.ok and resolved.instance and managedFiles[fileId] == nil then
+				managedFiles[fileId] = buildManagedFileRecord(resolved.instance, spec)
 			end
 		end
 	end)
@@ -7105,6 +7131,13 @@ local function verifyCommandOutcome(command, payload, result)
 					local inst = resolvePath(p)
 					local expected = file.lastAppliedSourceHash or file.resultingHash or file.sourceHash
 					local currentHash = inst and SCRIPT_CLASSES[inst.ClassName] and scriptHash(inst) or nil
+					for attempt = 2, 6 do
+						if expected == nil or currentHash == expected then
+							break
+						end
+						task.wait(0.05)
+						currentHash = inst and SCRIPT_CLASSES[inst.ClassName] and scriptHash(inst) or nil
+					end
 					addCheck("artifact_file", p, inst ~= nil and expected ~= nil and currentHash == expected, {
 						fileId = file.fileId,
 						expectedHash = expected,

@@ -52,6 +52,17 @@ const INFRASTRUCTURE_ERROR_MESSAGES = {
     "The AI service is temporarily at capacity. Please try again shortly.",
 };
 
+const WORKSPACE_CONFLICT_ERROR_MESSAGES = {
+  REFINE_NEEDS_REBASE:
+    "This project changed while the refinement was running. Reload the latest project, then try again.",
+  REFINE_BASE_REVISION_MISMATCH:
+    "This refinement is based on an older project revision. Reload the latest project, then try again.",
+  REFINE_BASE_REQUIRED:
+    "Save or generate the project first, then try refining it again.",
+  REFINE_CONTENT_HASH_MISMATCH:
+    "This project changed before the refinement started. Reload the latest project, then try again.",
+};
+
 const STUDIO_CONNECTION_MESSAGE =
   "Studio is unavailable right now. Reconnect Studio and try again.";
 
@@ -75,12 +86,18 @@ export function formatUserFacingError(input) {
   if (!input) return "Something went wrong. Please try again.";
   if (looksLikeStudioConnectionError(input)) return STUDIO_CONNECTION_MESSAGE;
   if (typeof input === "string") {
+    if (WORKSPACE_CONFLICT_ERROR_MESSAGES[input]) {
+      return WORKSPACE_CONFLICT_ERROR_MESSAGES[input];
+    }
     if (looksLikeInfrastructureQuotaError({ message: input })) {
       return INFRASTRUCTURE_ERROR_MESSAGES.FIRESTORE_QUOTA_EXCEEDED;
     }
     return input;
   }
   const code = input?.code || input?.errorCode || null;
+  if (WORKSPACE_CONFLICT_ERROR_MESSAGES[code]) {
+    return WORKSPACE_CONFLICT_ERROR_MESSAGES[code];
+  }
   if (INFRASTRUCTURE_ERROR_CODES.has(code)) {
     return INFRASTRUCTURE_ERROR_MESSAGES[code] || INFRASTRUCTURE_ERROR_MESSAGES.FIRESTORE_QUOTA_EXCEEDED;
   }

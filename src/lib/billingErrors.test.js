@@ -50,4 +50,14 @@ describe("billingErrors", () => {
     expect(message).toBe("Studio is unavailable right now. Reconnect Studio and try again.");
     expect(message).not.toMatch(/MCP|place is open/i);
   });
+
+  it("maps refinement conflicts to an actionable message", () => {
+    const message = formatUserFacingError({
+      code: "REFINE_NEEDS_REBASE",
+      message: "REFINE_NEEDS_REBASE",
+    });
+    expect(message).toMatch(/changed while the refinement was running/i);
+    expect(message).toMatch(/reload/i);
+    expect(message).not.toMatch(/REFINE_NEEDS_REBASE/);
+  });
 });
