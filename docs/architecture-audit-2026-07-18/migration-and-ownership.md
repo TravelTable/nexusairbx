@@ -293,14 +293,15 @@ These flags do not exist today. Add them to **backend/.env.example** only when t
 | `TASK_RUNTIME_READ_MODE` | `legacy` default, `compare`, `canonical` | `compare` returns legacy to the user while logging normalized mismatches. |
 | `TASK_OUTBOX_DISPATCH_ENABLED` | `false` | Starts durable dispatch only after index and lease canaries pass. Disable to stop new dispatch; do not delete queued items. |
 | `OPERATION_LEDGER_MODE` | `off` default, `observe`, `enforce` | `observe` computes collisions without blocking. Once external operations use reservations, rollback may stop enforcement but must keep writing/reusing reservations. |
-| `STUDIO_COMMAND_ENVELOPE_V2_ENABLED` | `false` | Emit v2 only to a session advertising support. Disable for new commands; drain/reconcile in-flight v2 commands rather than downgrading them. |
-| `STUDIO_COMMAND_LEASES_ENABLED` | `false` | Enables fenced command delivery after compatible plugin adoption. |
 | `CAPABILITY_SNAPSHOT_MODE` | `live` default, `compare`, `snapshot` | Shadow-compare current assembled context with server snapshots before authoritative use. |
 | `PROJECT_RESOURCE_NAMESPACE_ENABLED` | `false` | Enables owner-checked universe resource discovery; never changes chat isolation. |
 | `ASSET_REGISTRY_WRITE_MODE` | `legacy` default, `dual`, `canonical` | Prompt 2 asset write cutover. Canonical asset creation must already reserve its operation. |
 | `ASSET_REGISTRY_READ_MODE` | `legacy` default, `compare`, `canonical` | Allows immediate UI rollback without deleting canonical records. |
 
 Existing `RUN_JOB_WORKER`, `STUDIO_ITERATIVE_AGENT_ENABLED`, `STREAM_EVENT_PERSISTENCE_ENABLED`, and `STUDIO_PREFLIGHT_FROM_SCRATCH_ENABLED` remain operational controls during migration; they are not substitutes for the new authority/read/write flags.
+
+The durable Studio command envelope and fenced delivery leases have completed
+their rollout and are now mandatory protocol behavior rather than controls.
 
 Shadow mode must never run a second model/provider/Studio side effect. It compares normalized inputs, planned routing, projections, context sources, or read-only verification results.
 

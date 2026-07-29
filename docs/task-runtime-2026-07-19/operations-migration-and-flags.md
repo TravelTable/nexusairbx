@@ -77,8 +77,6 @@ or malformed values fall back safely and emit diagnostics.
 | `ASSET_REGISTRY_READ_MODE` | `legacy`, `compare`, `canonical`; default `legacy` | Prompt 2 registry read migration |
 | `TASK_CANONICAL_LEGACY_ADAPTER_ENABLED` | boolean; default `false` | allow the canonical owner to use exactly one legacy execution adapter |
 | `TASK_OUTBOX_DISPATCH_ENABLED` | boolean; default `false` | allow canonical outbox dispatch |
-| `STUDIO_COMMAND_ENVELOPE_V2_ENABLED` | boolean; default `false` | allow durable Studio envelope v2 |
-| `STUDIO_COMMAND_LEASES_ENABLED` | boolean; default `false` | allow fenced Studio delivery leases |
 | `PROJECT_RESOURCE_NAMESPACE_ENABLED` | boolean; default `false` | enable canonical project-resource namespace |
 | `ASSET_PLATFORM_READS_ENABLED` | boolean; default `false` | expose canonical asset reads |
 | `ASSET_PLATFORM_WRITES_ENABLED` | boolean; default `false` | permit canonical asset writes |
@@ -88,6 +86,10 @@ or malformed values fall back safely and emit diagnostics.
 | `ASSET_PLATFORM_USER_GLOBAL_ENABLED` | boolean; default `false` | enable user-global asset visibility |
 | `ASSET_PLATFORM_ROBLOX_UPLOAD_ENABLED` | boolean; default `false` | permit Roblox asset/badge/pass writes |
 | `ASSET_PLATFORM_STUDIO_APPLY_ENABLED` | boolean; default `false` | permit Studio asset-reference writes |
+
+The durable Studio command envelope and fenced delivery leases are mandatory
+protocol behavior. They are always active and have no rollout environment
+variables.
 
 The frontend gate is `newTaskRuntime`, sourced from
 `REACT_APP_NEW_TASK_RUNTIME=true`, and defaults off. It controls exposure, not

@@ -1300,7 +1300,12 @@ export function useAiWorkspaceController() {
   ]);
 
   useWorkspaceArtifactPersistence(workspace.activeArtifactSnapshot, {
-    enabled: Boolean(user && workspace.activeArtifactSnapshot?.artifactId),
+    // Streamed artifacts are provisional until the Studio run finishes. Persisting
+    // an intermediate stream can make the backend treat the same run as a
+    // competing project edit and abort the refinement with a false conflict.
+    enabled: Boolean(
+      user && !unifiedIsGenerating && workspace.activeArtifactSnapshot?.artifactId,
+    ),
     debounceMs: 400,
     source: "workspace",
   });

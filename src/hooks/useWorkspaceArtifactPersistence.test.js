@@ -116,4 +116,28 @@ describe("useWorkspaceArtifactPersistence", () => {
 
     await waitFor(() => expect(saveArtifact).toHaveBeenCalledTimes(2));
   });
+
+  test("cancels a queued save when persistence is disabled", () => {
+    const saveArtifact = jest.fn().mockResolvedValue({});
+    const { rerender } = renderHook(
+      ({ enabled }) => useWorkspaceArtifactPersistence(buildSnapshot(), {
+        enabled,
+        debounceMs: 400,
+        saveArtifact,
+      }),
+      {
+        initialProps: {
+          enabled: true,
+        },
+      }
+    );
+
+    rerender({ enabled: false });
+
+    act(() => {
+      jest.advanceTimersByTime(400);
+    });
+
+    expect(saveArtifact).not.toHaveBeenCalled();
+  });
 });
