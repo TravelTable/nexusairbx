@@ -207,6 +207,146 @@ test("backend client rejects malformed JSON, malformed commands, and authenticat
   );
 });
 
+test("backend client preserves a complete lifecycle-v2 command and sends outcome_unknown details", async () => {
+  const calls: CapturedRequest[] = [];
+  const expiresAt = Date.now() + 60_000;
+  const rawCommand = {
+    id: "command-v2",
+    commandId: "command-v2",
+    type: "write_script",
+    payload: {
+      path: "game.ServerScriptService.Main",
+      source: "print('new')",
+      expectedSourceHash: "before",
+    },
+    taskId: "task-1",
+    runId: "run-1",
+    stepId: "step-1",
+    lifecycleVersion: 2,
+    semanticInputHash: "A".repeat(64),
+    status: "leased",
+    operationOutcome: "reserved",
+    attempts: { delivery: 2, maximum: 3 },
+    lease: {
+      owner: "mcp_session",
+      fence: 9,
+      targetFence: 4,
+      expiresAt,
+    },
+  };
+  const client = new NexusBackendClient({
+    apiUrl: "https://api.example.test",
+    connectorVersion: "0.1.0",
+    requestTimeoutMs: 1_000,
+    logger: new TestLogger(),
+    fetch: makeFetch([
+      response({
+        token: "nsmcp_session_secret",
+        sessionId: "session",
+        userId: "user",
+        pollIntervalMs: 25,
+        expiresInMs: 60_000,
+      }),
+      response({ command: rawCommand }),
+      response({ ok: true }),
+    ], calls),
+  });
+
+  await client.claimPairing("ABCD");
+  const command = await client.pollNext(1_000);
+  assert.deepEqual(command, {
+    id: "command-v2",
+    commandId: "command-v2",
+    type: "write_script",
+    payload: rawCommand.payload,
+    taskId: "task-1",
+    runId: "run-1",
+    stepId: "step-1",
+    lifecycleVersion: 2,
+    semanticInputHash: "a".repeat(64),
+    status: "leased",
+    operationOutcome: "reserved",
+    attempts: { delivery: 2, maximum: 3 },
+    lease: {
+      owner: "mcp_session",
+      fence: 9,
+      targetFence: 4,
+      expiresAt,
+    },
+  });
+
+  const result = {
+    success: false,
+    verified: false,
+    operationOutcome: "outcome_unknown",
+    error: { code: "MCP_REQUEST_TIMEOUT", message: "Reconcile before retrying." },
+  };
+  await client.acknowledge("command-v2", "outcome_unknown", result);
+  assert.deepEqual(JSON.parse(String(calls[2]?.init.body)), {
+    status: "outcome_unknown",
+    error: result.error,
+    result,
+  });
+});
+
+test("backend client keeps marker-free legacy commands and rejects partial or unsupported lifecycle envelopes", async () => {
+  const client = new NexusBackendClient({
+    apiUrl: "https://api.example.test",
+    connectorVersion: "0.1.0",
+    requestTimeoutMs: 1_000,
+    logger: new TestLogger(),
+    fetch: makeFetch([
+      response({
+        token: "nsmcp_session_secret",
+        sessionId: "session",
+        userId: "user",
+        pollIntervalMs: 25,
+        expiresInMs: 60_000,
+      }),
+      response({
+        command: {
+          id: "legacy-command",
+          type: "read_script",
+          payload: { path: "game.ServerScriptService.Main" },
+        },
+      }),
+      response({
+        command: {
+          id: "partial-v2",
+          type: "read_script",
+          payload: { path: "game.ServerScriptService.Main" },
+          lifecycleVersion: 2,
+        },
+      }),
+      response({
+        command: {
+          id: "future-v3",
+          type: "read_script",
+          payload: { path: "game.ServerScriptService.Main" },
+          lifecycleVersion: 3,
+        },
+      }),
+    ], []),
+  });
+
+  await client.claimPairing("ABCD");
+  assert.deepEqual(await client.pollNext(1_000), {
+    id: "legacy-command",
+    type: "read_script",
+    payload: { path: "game.ServerScriptService.Main" },
+  });
+  await assert.rejects(
+    client.pollNext(1_000),
+    (error: unknown) => error instanceof ConnectorError &&
+      error.code === "CONNECTOR_LIFECYCLE_ENVELOPE_INVALID",
+  );
+  await assert.rejects(
+    client.pollNext(1_000),
+    (error: unknown) => error instanceof ConnectorError &&
+      error.code === "CONNECTOR_LIFECYCLE_UNSUPPORTED",
+  );
+});
+
 test("oversized request bodies fail locally without a network retry", async () => {
   const calls: CapturedRequest[] = [];
   const client = new NexusBackendClient({

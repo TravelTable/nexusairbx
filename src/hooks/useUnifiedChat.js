@@ -268,6 +268,14 @@ function isAbortError(error) {
   return error?.name === "AbortError" || error?.code === "ABORT_ERR";
 }
 
+function throwIfAborted(signal) {
+  if (!signal?.aborted) return;
+  const error = new Error("Generation canceled.");
+  error.name = "AbortError";
+  error.code = "ABORT_ERR";
+  throw error;
+}
+
 /**
  * Linear product loop for the code-first /ai workspace:
  *   Task -> Orchestrate (Clarify OR Plan) -> Approve -> Generate multi-file artifact -> Review -> Refine
@@ -517,13 +525,16 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
     baseArtifact = null,
     submissionOptions = {},
     conversationMessages = null,
+    signal = null,
   }) => {
+    throwIfAborted(signal);
     let capabilities = null;
     try {
       capabilities = await getRuntimeCapabilitiesV2();
     } catch (error) {
       if (!(error instanceof AgentRuntimeUnavailableError)) throw error;
     }
+    throwIfAborted(signal);
     const runtimeRoute = selectAgentRuntimeRoute(capabilities, {
       projectId: submissionOptions.projectId,
     });
@@ -533,6 +544,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
       }
       const legacySubmissionOptions = { ...submissionOptions };
       delete legacySubmissionOptions.authoritativeRun;
+      delete legacySubmissionOptions.authoritativeSignal;
       return chat.handleSubmit(
         prompt,
         activeChatId,
@@ -551,22 +563,19 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
       submissionOptions,
       { required: true }
     );
+    throwIfAborted(signal);
     if (!agent) return launchLegacyGeneration();
     const studioEnabled = getStudioEnabledPreference() === true;
-    let studioTarget = { studioSessionId: null, studioConnectionType: null };
-    try {
-      studioTarget = await resolvePreferredStudioTarget(studioEnabled);
-    } catch (_) {
-      /* The decision service will report the missing Studio binding. */
-    }
     const autoPushToStudio = studioEnabled && settings?.studioAutoPushEnabled === true;
     const approvedPlan = normalizeApprovedPlanReference(submissionOptions.approvedPlan);
     let runtimeEnvelope;
     try {
+      throwIfAborted(signal);
       runtimeEnvelope = await createAgentRunV2({
         chatId: activeChatId,
         agentId: agent.agentId,
         idempotencyKey: `run-${requestId}`,
+        signal,
         prompt,
         mode,
         projectId: submissionOptions.projectId || agent.projectId,
@@ -586,8 +595,6 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
           : {}),
         generatorMode: "agent_build",
         studioEnabled,
-        studioSessionId: studioTarget.studioSessionId,
-        studioConnectionType: studioTarget.studioConnectionType,
         applyMode: getStudioApplyMode(),
         routingMode: studioEnabled ? "hybrid" : "cloud",
         autoPushToStudio,
@@ -599,6 +606,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
           : [],
         showPlan: submissionOptions.showPlan === true,
       });
+      throwIfAborted(signal);
     } catch (error) {
       if (!FEATURE_FLAGS.legacyAgentFallback || !isLegacyRuntimeOwnershipError(error)) {
         throw error;
@@ -643,7 +651,11 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
       true,
       attachments,
       baseArtifact,
-      { ...submissionOptions, authoritativeRun: runtimeEnvelope }
+      {
+        ...submissionOptions,
+        authoritativeRun: runtimeEnvelope,
+        authoritativeSignal: signal,
+      }
     );
     return runtimeEnvelope;
   }, [chat, effectiveGameSpec, ensureRuntimeAgentProjection, settings, touchChat, user]);
@@ -780,17 +792,23 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
       submissionOptions = {}
     ) => {
       const requestId = uuidv4();
-      await launchAuthoritativeRun({
-        activeChatId,
-        requestId,
-        prompt,
-        mode: "agent",
-        attachments,
-        baseArtifact,
-        submissionOptions,
-      });
+      const flowController = createFlowAbortController(activeChatId, requestId);
+      try {
+        await launchAuthoritativeRun({
+          activeChatId,
+          requestId,
+          prompt,
+          mode: "agent",
+          attachments,
+          baseArtifact,
+          submissionOptions,
+          signal: flowController.signal,
+        });
+      } finally {
+        releaseFlowAbortController(activeChatId, requestId);
+      }
     },
-    [launchAuthoritativeRun]
+    [createFlowAbortController, launchAuthoritativeRun, releaseFlowAbortController]
   );
 
   const approvePlanInternal = useCallback(
@@ -1099,8 +1117,10 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
         // Agent & Debug always go to the authoritative decision service. It may
         // execute, recover, clarify, or block without the frontend changing mode.
         if (mode === "agent" || mode === "debug") {
+          let flowController = null;
           try {
             activeChatId = await ensureChat(titleSeed, effectiveOptions);
+            flowController = createFlowAbortController(activeChatId, requestId);
             if (writeUserTurn) {
               await writeUserMessage(activeChatId, requestId, prompt, currentAttachments);
             }
@@ -1113,10 +1133,15 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
               baseArtifact,
               submissionOptions: effectiveOptions,
               conversationMessages,
+              signal: flowController.signal,
             });
           } catch (err) {
-            console.error("Generation error:", err);
-            notify?.({ message: err?.message || "Build failed. You can try again.", type: "error" });
+            if (!isAbortError(err)) {
+              console.error("Generation error:", err);
+              notify?.({ message: err?.message || "Build failed. You can try again.", type: "error" });
+            }
+          } finally {
+            releaseFlowAbortController(activeChatId, requestId);
           }
           return;
         }

@@ -1,6 +1,7 @@
 import {
   AgentRuntimeUnavailableError,
   cancelAgentRunV2,
+  createAgentRunV2,
   createAgentV2,
   extractAgentEvents,
   extractAgentList,
@@ -128,6 +129,41 @@ describe("agentRuntimeV2Api projections", () => {
         body: JSON.stringify({ chatId: "chat-1", projectId: "project-1" }),
       })
     );
+  });
+
+  test("omits browser-owned Studio routing fields from canonical run requests", async () => {
+    authedFetch.mockResolvedValue({
+      ok: true,
+      status: 201,
+      text: jest.fn().mockResolvedValue(JSON.stringify({ run: { runId: "run-1" } })),
+    });
+
+    const controller = new AbortController();
+    await createAgentRunV2({
+      chatId: "chat-1",
+      agentId: "agent-1",
+      idempotencyKey: "run-chat-1-request-1",
+      signal: controller.signal,
+      prompt: "Build a checkpoint",
+      mode: "agent",
+      studioEnabled: true,
+      studioSessionId: null,
+      studioConnectionType: "mcp_local",
+      autoPushToStudio: true,
+    });
+
+    const [, requestInit] = authedFetch.mock.calls[0];
+    const serializedBody = JSON.parse(requestInit.body);
+
+    expect(requestInit.signal).toBe(controller.signal);
+    expect(serializedBody).toEqual({
+      prompt: "Build a checkpoint",
+      mode: "agent",
+      studioEnabled: true,
+      autoPushToStudio: true,
+    });
+    expect(serializedBody).not.toHaveProperty("studioSessionId");
+    expect(serializedBody).not.toHaveProperty("studioConnectionType");
   });
 
   test("preserves a typed 404 instead of treating it as a missing v2 runtime", async () => {

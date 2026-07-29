@@ -16,7 +16,11 @@ export interface CompanionPreferences {
   automaticUpdates: boolean;
 }
 
-export interface LastCommandSummary { name: string; status: "succeeded" | "failed"; at: number; }
+export interface LastCommandSummary {
+  name: string;
+  status: "succeeded" | "failed" | "outcome_unknown";
+  at: number;
+}
 
 export interface CompanionSnapshot {
   state: CompanionState;

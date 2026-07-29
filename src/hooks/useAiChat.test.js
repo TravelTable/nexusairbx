@@ -1,4 +1,4 @@
-import { act, renderHook } from "@testing-library/react";
+import { act, renderHook, waitFor } from "@testing-library/react";
 import { resolveResultUrl, useAiChat, waitForAuthoritativeRunJob } from "./useAiChat";
 import { auth } from "../firebase";
 import { useBilling } from "../context/BillingContext";
@@ -15,7 +15,10 @@ import {
   getPendingStreamSnapshot,
 } from "../lib/streaming";
 import {
+  cancelAgentRunV2,
   extractAgentEvents,
+  getAgentEventsV2,
+  getAgentV2,
   getRuntimeCapabilitiesV2,
   resolveChatAgentProjectionV2,
   selectAgentRuntimeRoute,
@@ -94,6 +97,7 @@ jest.mock("../lib/workflowApi", () => ({
 
 jest.mock("../lib/agentRuntimeV2Api", () => ({
   AgentRuntimeUnavailableError: class AgentRuntimeUnavailableError extends Error {},
+  cancelAgentRunV2: jest.fn(() => Promise.resolve({ run: { status: "cancelled" } })),
   extractAgentEvents: jest.fn((value) => value?.events || value?.data?.events || []),
   getAgentEventsV2: jest.fn(),
   getAgentV2: jest.fn(),
@@ -146,6 +150,36 @@ jest.mock("../lib/billingErrors", () => ({
   isInsufficientTokensError: jest.fn(() => false),
 }));
 
+function latestMessagesSnapshotCallback() {
+  const calls = [...onSnapshot.mock.calls].reverse();
+  const subscription = calls.find(([target]) => (
+    Array.isArray(target?.segments)
+    && target.segments.some((segment) => (
+      Array.isArray(segment?.segments) && segment.segments.includes("messages")
+    ))
+  ));
+  // The messages listener is installed after the chat metadata listener.
+  // Keep the fallback resilient to Firestore mock shapes that do not retain
+  // the nested collection reference.
+  return subscription?.[1] || calls[0]?.[1] || null;
+}
+
+function openChatWithMessages(result, messages, chatId = "chat_recovery") {
+  act(() => {
+    result.current.openChatById(chatId);
+  });
+  const snapshotCallback = latestMessagesSnapshotCallback();
+  if (!snapshotCallback) throw new Error("Messages subscription was not created.");
+  act(() => {
+    snapshotCallback({
+      docs: messages.map(({ id, ...data }) => ({
+        id,
+        data: () => data,
+      })),
+    });
+  });
+}
+
 describe("resolveResultUrl", () => {
   test("does not treat an opaque job UUID as a fetch path", () => {
     const jobId = "cd289c08-978a-4d5a-bd8d-993be4302929";
@@ -169,6 +203,7 @@ describe("resolveResultUrl", () => {
 describe("useAiChat", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    cancelAgentRunV2.mockResolvedValue({ run: { status: "cancelled" } });
     useBilling.mockReturnValue({
       plan: "FREE",
       totalRemaining: 10,
@@ -207,6 +242,7 @@ describe("useAiChat", () => {
       resolution: "resolved",
     }));
     extractAgentEvents.mockImplementation((value) => value?.events || value?.data?.events || []);
+    getAgentV2.mockReset();
     auth.currentUser = null;
   });
 
@@ -372,7 +408,7 @@ describe("useAiChat", () => {
       }),
       expect.objectContaining({
         error: "Worker crashed",
-        errorCode: null,
+        errorCode: "GENERATION_FAILED",
         pending: false,
         stage: "failed",
       })
@@ -666,6 +702,70 @@ describe("useAiChat", () => {
     expect(waitForPoll).toHaveBeenCalledTimes(1);
   });
 
+  test("finds the backend job from projection when the admitted event was missed", async () => {
+    const getEvents = jest.fn().mockResolvedValue({ events: [] });
+    const getAgent = jest.fn().mockResolvedValue({
+      runs: [{
+        runId: "run-projected",
+        status: "running",
+        jobId: "job-projected",
+      }],
+    });
+    const waitForPoll = jest.fn();
+
+    const run = await waitForAuthoritativeRunJob({
+      agentId: "agent-1",
+      runId: "run-projected",
+      getEvents,
+      getAgent,
+      wait: waitForPoll,
+    });
+
+    expect(run).toEqual(expect.objectContaining({
+      runId: "run-projected",
+      jobId: "job-projected",
+    }));
+    expect(getEvents).toHaveBeenCalledTimes(1);
+    expect(getAgent).toHaveBeenCalledTimes(1);
+    expect(waitForPoll).not.toHaveBeenCalled();
+  });
+
+  test("checks projection after a bounded events request times out", async () => {
+    jest.useFakeTimers();
+    try {
+      const getEvents = jest.fn(() => new Promise(() => {}));
+      const getAgent = jest.fn().mockResolvedValue({
+        runs: [{
+          runId: "run-after-event-timeout",
+          status: "running",
+          jobId: "job-after-event-timeout",
+        }],
+      });
+      const pendingRun = waitForAuthoritativeRunJob({
+        agentId: "agent-1",
+        runId: "run-after-event-timeout",
+        timeoutMs: 30_000,
+        getEvents,
+        getAgent,
+        wait: jest.fn(),
+      });
+
+      await Promise.resolve();
+      jest.advanceTimersByTime(10_000);
+      await Promise.resolve();
+      await Promise.resolve();
+
+      await expect(pendingRun).resolves.toEqual(expect.objectContaining({
+        runId: "run-after-event-timeout",
+        jobId: "job-after-event-timeout",
+      }));
+      expect(getEvents).toHaveBeenCalledTimes(1);
+      expect(getAgent).toHaveBeenCalledTimes(1);
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
   test("keeps a queued run alive across a transient events disconnect", async () => {
     const getEvents = jest.fn()
       .mockRejectedValueOnce(new Error("offline"))
@@ -695,5 +795,337 @@ describe("useAiChat", () => {
 
     expect(onStatus).toHaveBeenCalledWith("Queued — reconnecting...");
     expect(getEvents).toHaveBeenNthCalledWith(2, 0);
+  });
+
+  test("returns a durable failed state when a queued run terminates before job assignment", async () => {
+    const getAgent = jest.fn();
+
+    const run = await waitForAuthoritativeRunJob({
+      agentId: "agent-1",
+      runId: "run-failed",
+      getEvents: jest.fn().mockResolvedValue({
+        events: [{
+          sequence: 1,
+          type: "run.failed",
+          payload: {
+            runId: "run-failed",
+            code: "WORKER_FAILED",
+            error: "Worker failed",
+          },
+        }],
+      }),
+      getAgent,
+      wait: jest.fn(),
+    });
+
+    expect(run).toEqual(expect.objectContaining({
+      agentId: "agent-1",
+      runId: "run-failed",
+      status: "failed",
+      terminal: true,
+      code: "WORKER_FAILED",
+    }));
+    expect(getAgent).not.toHaveBeenCalled();
+  });
+
+  test("hands a queued run to the background at the admission deadline", async () => {
+    let currentTime = 0;
+    const waitForPoll = jest.fn(async (delayMs) => {
+      currentTime += delayMs;
+    });
+
+    const run = await waitForAuthoritativeRunJob({
+      agentId: "agent-1",
+      runId: "run-timeout",
+      timeoutMs: 100,
+      now: () => currentTime,
+      getEvents: jest.fn().mockResolvedValue({ events: [] }),
+      getAgent: jest.fn(),
+      wait: waitForPoll,
+    });
+
+    expect(run).toEqual(expect.objectContaining({
+      agentId: "agent-1",
+      runId: "run-timeout",
+      status: "background",
+      terminal: true,
+      reason: "admission_timeout",
+    }));
+    expect(waitForPoll).toHaveBeenCalled();
+  });
+
+  test("aborts queued admission even when an events request is blocked", async () => {
+    const controller = new AbortController();
+    const pendingRun = waitForAuthoritativeRunJob({
+      agentId: "agent-1",
+      runId: "run-aborted",
+      signal: controller.signal,
+      timeoutMs: 10_000,
+      getEvents: jest.fn(() => new Promise(() => {})),
+      getAgent: jest.fn(),
+      wait: jest.fn(),
+    });
+
+    controller.abort();
+
+    await expect(pendingRun).rejects.toMatchObject({
+      name: "AbortError",
+      code: "ABORT_ERR",
+    });
+  });
+
+  test("bounds a blocked jobless projection and keeps retrying it", async () => {
+    jest.useFakeTimers();
+    let unmount = null;
+    try {
+      const user = {
+        uid: "user_1",
+        getIdToken: jest.fn().mockResolvedValue("token_1"),
+      };
+      auth.currentUser = user;
+      getAgentV2.mockImplementation(() => new Promise(() => {}));
+      const hook = renderHook(() => useAiChat(
+        user,
+        { chatMode: "agent" },
+        jest.fn(),
+        jest.fn(),
+      ));
+      unmount = hook.unmount;
+
+      await openChatWithMessages(hook.result, [{
+        id: "queued-message",
+        role: "assistant",
+        content: "",
+        pending: true,
+        stage: "Queued",
+        requestId: "request-queued",
+        agentId: "agent-queued",
+        runId: "run-queued",
+        metadata: { mode: "agent", runState: "queued" },
+      }]);
+
+      expect(getAgentV2).toHaveBeenCalledTimes(1);
+      act(() => {
+        jest.advanceTimersByTime(10_001);
+      });
+      await Promise.resolve();
+      await Promise.resolve();
+      act(() => {
+        jest.advanceTimersByTime(1_500);
+      });
+      await Promise.resolve();
+      await Promise.resolve();
+
+      expect(getAgentV2.mock.calls.length).toBeGreaterThanOrEqual(2);
+    } finally {
+      unmount?.();
+      jest.useRealTimers();
+    }
+  });
+
+  test("hands a jobless run to the background and continues canonical recovery", async () => {
+    jest.useFakeTimers();
+    let unmount = null;
+    try {
+      const user = {
+        uid: "user_1",
+        getIdToken: jest.fn().mockResolvedValue("token_1"),
+      };
+      auth.currentUser = user;
+      getAgentV2.mockResolvedValue({
+        runs: [{
+          runId: "run-background",
+          status: "queued",
+          jobId: null,
+        }],
+      });
+      const hook = renderHook(() => useAiChat(
+        user,
+        { chatMode: "agent" },
+        jest.fn(),
+        jest.fn(),
+      ));
+      unmount = hook.unmount;
+
+      await openChatWithMessages(hook.result, [{
+        id: "background-message",
+        role: "assistant",
+        content: "",
+        pending: true,
+        stage: "Queued",
+        requestId: "request-background",
+        agentId: "agent-background",
+        runId: "run-background",
+        metadata: { mode: "agent", runState: "queued" },
+      }]);
+
+      await Promise.resolve();
+      await Promise.resolve();
+      await Promise.resolve();
+      act(() => {
+        jest.advanceTimersByTime(12 * 60 * 1_000);
+      });
+      await Promise.resolve();
+      await Promise.resolve();
+      await Promise.resolve();
+      await Promise.resolve();
+      await Promise.resolve();
+      await Promise.resolve();
+      expect(updateDoc).toHaveBeenCalledWith(
+        expect.objectContaining({
+          segments: expect.arrayContaining(["background-message"]),
+        }),
+        expect.objectContaining({
+          pending: false,
+          stage: "background",
+          metadata: expect.objectContaining({ runState: "background" }),
+        }),
+      );
+
+      const callsAtHandoff = getAgentV2.mock.calls.length;
+      act(() => {
+        jest.advanceTimersByTime(30_000);
+      });
+      await Promise.resolve();
+      await Promise.resolve();
+      await Promise.resolve();
+      await Promise.resolve();
+      expect(getAgentV2.mock.calls.length).toBeGreaterThan(callsAtHandoff);
+    } finally {
+      unmount?.();
+      jest.useRealTimers();
+    }
+  });
+
+  test("persists canonical terminal output when a jobless run completes", async () => {
+    const user = {
+      uid: "user_1",
+      getIdToken: jest.fn().mockResolvedValue("token_1"),
+    };
+    auth.currentUser = user;
+    getAgentV2.mockResolvedValue({
+      runs: [{
+        runId: "run-terminal",
+        status: "completed",
+        jobId: null,
+        terminalDetails: {
+          assetToolExecution: {
+            message: "The Studio changes were applied.",
+            receipts: [{
+              summary: "Created ServerScriptService/RoundManager.",
+            }],
+          },
+        },
+      }],
+    });
+    const hook = renderHook(() => useAiChat(
+      user,
+      { chatMode: "agent" },
+      jest.fn(),
+      jest.fn(),
+    ));
+
+    await openChatWithMessages(hook.result, [{
+      id: "terminal-message",
+      role: "assistant",
+      content: "",
+      pending: true,
+      stage: "Queued",
+      requestId: "request-terminal",
+      agentId: "agent-terminal",
+      runId: "run-terminal",
+      metadata: { mode: "agent", runState: "queued" },
+    }]);
+
+    await waitFor(() => {
+      expect(updateDoc).toHaveBeenCalledWith(
+        expect.objectContaining({
+          segments: expect.arrayContaining(["terminal-message"]),
+        }),
+        expect.objectContaining({
+          title: "Studio task completed",
+          summary: expect.stringContaining("Created ServerScriptService/RoundManager."),
+          pending: false,
+          stage: "completed",
+          agentId: "agent-terminal",
+          runId: "run-terminal",
+          metadata: expect.objectContaining({ runState: "completed" }),
+        }),
+      );
+    });
+    const terminalWrite = updateDoc.mock.calls.find(([, payload]) => (
+      payload?.title === "Studio task completed"
+    ));
+    expect(terminalWrite[1].summary).toContain("The Studio changes were applied.");
+    hook.unmount();
+  });
+
+  test("cancels the canonical server run when a queued submission is stopped", async () => {
+    const user = {
+      uid: "user_1",
+      getIdToken: jest.fn().mockResolvedValue("token_1"),
+    };
+    auth.currentUser = user;
+    const controller = new AbortController();
+    getAgentEventsV2.mockImplementation(() => {
+      controller.abort();
+      return Promise.resolve({ events: [] });
+    });
+    const { result } = renderHook(() => useAiChat(
+      user,
+      { chatMode: "agent" },
+      jest.fn(),
+      jest.fn(),
+    ));
+
+    let submission;
+    const consoleError = jest.spyOn(console, "error").mockImplementation(() => {});
+    try {
+      act(() => {
+        submission = result.current.handleSubmit(
+          "Build a round system",
+          "chat_1",
+          "req_cancel_canonical",
+          "agent",
+          true,
+          [],
+          null,
+          {
+            authoritativeSignal: controller.signal,
+            authoritativeRun: {
+              authoritativeExecution: true,
+              executionDisposition: "queued",
+              run: {
+                agentId: "agent_1",
+                runId: "run_cancel_me",
+                status: "queued",
+                jobId: null,
+              },
+            },
+          },
+        );
+      });
+      await submission;
+    } finally {
+      consoleError.mockRestore();
+    }
+
+    expect(getAgentEventsV2).toHaveBeenCalled();
+    expect(cancelAgentRunV2).toHaveBeenCalledTimes(1);
+    expect(cancelAgentRunV2).toHaveBeenCalledWith("run_cancel_me", {
+      reason: "user_cancelled",
+    });
+    expect(setDoc).toHaveBeenCalledWith(
+      expect.objectContaining({
+        segments: expect.arrayContaining(["req_cancel_canonical-assistant"]),
+      }),
+      expect.objectContaining({
+        content: "Generation canceled.",
+        pending: false,
+        runId: "run_cancel_me",
+        stage: "canceled",
+      }),
+      { merge: true },
+    );
   });
 });

@@ -1,16 +1,26 @@
+import { randomUUID } from "node:crypto";
 import { asConnectorError, ConnectorError, isAbortError } from "./errors.js";
 import { CommandExecutor } from "./command-executor.js";
+import {
+  PersistentCommandJournal,
+  type CommandJournalEntry,
+  type CommandJournalLike,
+  type TerminalCommandReceiptStatus,
+} from "./command-journal.js";
 import { ToolCatalog } from "./tool-catalog.js";
 import { StudioTargetManager } from "./studio-targeting.js";
 import type { ConnectorConfig } from "./config.js";
 import type { Logger } from "./logger.js";
 import type {
   BackendClientLike,
+  CommandReceiptStatus,
   JsonObject,
   McpClientLike,
   McpConnectionInfo,
   PairClaimResponse,
   StudioCommand,
+  StudioCommandAttempts,
+  StudioCommandLease,
 } from "./types.js";
 import { EMPTY_CAPABILITIES } from "./types.js";
 import { CONNECTOR_PROTOCOL_VERSION } from "./version.js";
@@ -27,6 +37,8 @@ export interface LocalConnectorOptions {
   clearTokenOnShutdown?: boolean;
   /** Allows the desktop preference to pause MCP reconnect attempts without stopping cloud health reporting. */
   shouldAutoReconnect?: () => boolean;
+  /** Injectable for deterministic lifecycle tests. Production uses an atomic per-user disk journal. */
+  commandJournal?: CommandJournalLike;
   onLifecycleState?: (state: ConnectorLifecycleState) => void;
   onTelemetry?: (telemetry: ConnectorTelemetry) => void;
 }
@@ -42,7 +54,7 @@ export interface ConnectorTelemetry {
   experienceName?: string;
   lastHeartbeatAt?: number;
   lastActivityAt?: number;
-  lastCommand?: { name: string; status: "succeeded" | "failed"; at: number };
+  lastCommand?: { name: string; status: TerminalCommandReceiptStatus; at: number };
   degradedReason?: "studio_closed" | "mcp_initialization_failed" | "zero_supported_tools" | "multiple_studio_windows" | "target_place_unavailable" | "cloud_loss";
 }
 
@@ -55,6 +67,7 @@ export class NexusLocalConnector {
   readonly #connectorVersion: string;
   readonly #clearTokenOnShutdown: boolean;
   readonly #shouldAutoReconnect: () => boolean;
+  readonly #commandJournal: CommandJournalLike;
   readonly #onLifecycleState: ((state: ConnectorLifecycleState) => void) | undefined;
   readonly #onTelemetry: ((telemetry: ConnectorTelemetry) => void) | undefined;
   #catalog: ToolCatalog | null = null;
@@ -73,6 +86,7 @@ export class NexusLocalConnector {
     this.#connectorVersion = options.connectorVersion;
     this.#clearTokenOnShutdown = options.clearTokenOnShutdown ?? true;
     this.#shouldAutoReconnect = options.shouldAutoReconnect ?? (() => true);
+    this.#commandJournal = options.commandJournal ?? new PersistentCommandJournal();
     this.#onLifecycleState = options.onLifecycleState;
     this.#onTelemetry = options.onTelemetry;
     this.#mcp.onToolsChanged(() => {
@@ -130,6 +144,18 @@ export class NexusLocalConnector {
   private async commandLoop(claim: PairClaimResponse, signal: AbortSignal): Promise<void> {
     let reconnectDelay = this.#config.reconnectMinMs;
     while (!signal.aborted) {
+      try {
+        await this.flushPendingTerminalReceipts(claim.sessionId, signal);
+      } catch (error) {
+        if (signal.aborted) break;
+        const connectorError = asConnectorError(error, "COMMAND_RECEIPT_REPLAY_FAILED");
+        if (connectorError.code === "CONNECTOR_AUTH_FAILED") throw connectorError;
+        this.#logger.warn("A saved Studio command receipt could not be replayed yet; polling will continue.", {
+          code: connectorError.code,
+        });
+      }
+      if (signal.aborted) break;
+
       if (!this.#mcpConnected) {
         try {
           await this.connectAndDiscover(signal);
@@ -260,6 +286,14 @@ export class NexusLocalConnector {
   }
 
   private async executeAndAcknowledge(command: StudioCommand, signal: AbortSignal): Promise<void> {
+    if (hasLifecycleMarkers(command)) {
+      await this.executeReliableAndAcknowledge(requireReliableCommand(command), signal);
+      return;
+    }
+    await this.executeLegacyAndAcknowledge(command, signal);
+  }
+
+  private async executeLegacyAndAcknowledge(command: StudioCommand, signal: AbortSignal): Promise<void> {
     const executor = this.#executor;
     if (!executor) throw new ConnectorError("MCP_NOT_CONNECTED", "Roblox Studio MCP is not connected.", { retryable: true });
     if (MUTATING_COMMANDS.has(command.type)) await this.#targeting?.ensureMutationTarget(signal);
@@ -274,6 +308,270 @@ export class NexusLocalConnector {
       commandId: command.id,
       operation: command.type,
       ...(success ? {} : { code: errorCode(result) }),
+    });
+  }
+
+  private async executeReliableAndAcknowledge(
+    command: ReliableStudioCommand,
+    signal: AbortSignal,
+  ): Promise<void> {
+    const executor = this.#executor;
+    if (!executor) {
+      throw new ConnectorError("MCP_NOT_CONNECTED", "Roblox Studio MCP is not connected.", { retryable: true });
+    }
+
+    const existing = await this.#commandJournal.get(command.id);
+    if (existing && (
+      existing.commandType !== command.type ||
+      existing.semanticInputHash !== command.semanticInputHash
+    )) {
+      await this.acknowledgeReliableTerminal(
+        command,
+        "outcome_unknown",
+        outcomeUnknownResult(
+          command,
+          undefined,
+          "COMMAND_ID_REUSE_DETECTED",
+          "The command ID was reused with different semantic input; Studio was not changed.",
+        ),
+        signal,
+      );
+      return;
+    }
+
+    if (existing?.stage === "terminal" && existing.terminalStatus && existing.result) {
+      if (existing.receiptId && existing.sessionId) {
+        await this.acknowledgeJournaledTerminal(existing, signal);
+      } else {
+        // Compatibility for lifecycle-v2 journals written before durable receipt
+        // identity was introduced.
+        await this.acknowledgeReliableTerminal(
+          command,
+          existing.terminalStatus,
+          attachReliableMetadata(command, existing.result),
+          signal,
+        );
+      }
+      return;
+    }
+
+    if (existing?.stage === "started") {
+      const result = outcomeUnknownResult(
+        command,
+        undefined,
+        "CONNECTOR_RESTART_AFTER_COMMAND_START",
+        "The connector restarted after command execution began, so the Studio outcome requires reconciliation.",
+      );
+      const terminal = await this.persistReliableTerminal(command, "outcome_unknown", result);
+      await this.acknowledgeJournaledTerminal(terminal, signal);
+      return;
+    }
+
+    await this.#commandJournal.put(journalEntry(command, "received"));
+    const receivedReceipt = reliableReceipt(command, "received");
+    await this.#backend.acknowledge(command.id, "received", receivedReceipt, signal);
+
+    await this.#commandJournal.put(journalEntry(command, "started"));
+    const startedReceipt = reliableReceipt(command, "started");
+    await this.#backend.acknowledge(command.id, "started", startedReceipt, signal);
+
+    const executionAbort = new AbortController();
+    const executionSignal = AbortSignal.any([signal, executionAbort.signal]);
+    const leaseHeartbeat = this.startCommandLeaseHeartbeat(command, startedReceipt, signal, (error) => {
+      executionAbort.abort(error);
+    });
+    const startedAt = Date.now();
+    let result: JsonObject;
+    let terminalStatus: TerminalCommandReceiptStatus;
+    let executorInvoked = false;
+    try {
+      if (MUTATING_COMMANDS.has(command.type)) await this.#targeting?.ensureMutationTarget(executionSignal);
+      executorInvoked = true;
+      result = await executor.execute(command, executionSignal);
+      result.duration = Date.now() - startedAt;
+      if (result.success === true && (!MUTATING_COMMANDS.has(command.type) || result.verified === true)) {
+        terminalStatus = "succeeded";
+      } else if (MUTATING_COMMANDS.has(command.type) && mutationOutcomeMayBeUnknown(result)) {
+        terminalStatus = "outcome_unknown";
+        result = outcomeUnknownResult(
+          command,
+          result,
+          errorCode(result) === "COMMAND_FAILED" ? "MUTATION_OUTCOME_UNVERIFIED" : errorCode(result),
+          errorMessage(result) ?? "The Studio mutation could not be verified and requires reconciliation.",
+        );
+      } else {
+        terminalStatus = "failed";
+      }
+    } catch (error) {
+      const connectorError = asConnectorError(error);
+      terminalStatus = executorInvoked &&
+        MUTATING_COMMANDS.has(command.type) &&
+        !SAFE_PRE_MUTATION_FAILURE_CODES.has(connectorError.code)
+        ? "outcome_unknown"
+        : "failed";
+      result = terminalStatus === "outcome_unknown"
+        ? outcomeUnknownResult(command, undefined, connectorError.code, connectorError.message)
+        : failureResult(command, connectorError);
+      result.duration = Date.now() - startedAt;
+    } finally {
+      await leaseHeartbeat.stop();
+    }
+
+    const leaseFailure = leaseHeartbeat.failure();
+    if (leaseFailure) {
+      if (MUTATING_COMMANDS.has(command.type)) {
+        terminalStatus = "outcome_unknown";
+        result = outcomeUnknownResult(
+          command,
+          result,
+          leaseFailure.code,
+          "The Studio mutation lost its command lease heartbeat and requires reconciliation.",
+        );
+      } else {
+        terminalStatus = "failed";
+        result = failureResult(command, leaseFailure);
+      }
+      result.duration = Date.now() - startedAt;
+    }
+
+    const terminal = await this.persistReliableTerminal(command, terminalStatus, result);
+    await this.acknowledgeJournaledTerminal(terminal, signal);
+  }
+
+  private startCommandLeaseHeartbeat(
+    command: ReliableStudioCommand,
+    receipt: JsonObject,
+    signal: AbortSignal,
+    onFailure: (error: ConnectorError) => void,
+  ): { stop: () => Promise<void>; failure: () => ConnectorError | null } {
+    const stopped = new AbortController();
+    const heartbeatSignal = AbortSignal.any([signal, stopped.signal]);
+    const remainingLeaseMs = Math.max(1, command.lease.expiresAt - Date.now());
+    const intervalMs = Math.max(25, Math.min(5_000, Math.floor(remainingLeaseMs / 3)));
+    let failure: ConnectorError | null = null;
+    const completion = (async () => {
+      while (!heartbeatSignal.aborted) {
+        await delay(intervalMs, heartbeatSignal);
+        await this.#backend.acknowledge(command.id, "started", receipt, heartbeatSignal);
+      }
+    })().catch((error: unknown) => {
+      if (heartbeatSignal.aborted && isAbortLike(error)) return;
+      const connectorError = asConnectorError(error, "COMMAND_LEASE_HEARTBEAT_FAILED");
+      this.#logger.warn("Studio command lease heartbeat failed.", {
+        commandId: command.id,
+        operation: command.type,
+        code: connectorError.code,
+      });
+      failure = connectorError;
+      onFailure(connectorError);
+    });
+    return {
+      stop: async () => {
+        stopped.abort(new DOMException("Command lease heartbeat stopped", "AbortError"));
+        await completion;
+      },
+      failure: () => failure,
+    };
+  }
+
+  private async persistReliableTerminal(
+    command: ReliableStudioCommand,
+    status: TerminalCommandReceiptStatus,
+    result: JsonObject,
+  ): Promise<CommandJournalEntry> {
+    const receiptId = randomUUID();
+    return this.#commandJournal.put({
+      ...journalEntry(command, "terminal"),
+      sessionId: command.lease.owner,
+      receiptId,
+      terminalStatus: status,
+      result: attachReliableMetadata(command, { ...result, receiptId }),
+    });
+  }
+
+  private async flushPendingTerminalReceipts(
+    sessionId: string,
+    signal: AbortSignal,
+  ): Promise<void> {
+    const pending = await this.#commandJournal.listPendingTerminalReceipts(sessionId);
+    for (const entry of pending) {
+      if (signal.aborted) throw abortReason(signal);
+      try {
+        await this.acknowledgeJournaledTerminal(entry, signal);
+      } catch (error) {
+        if (signal.aborted) throw error;
+        const connectorError = asConnectorError(error, "COMMAND_RECEIPT_REPLAY_FAILED");
+        if (connectorError.code === "CONNECTOR_AUTH_FAILED") throw connectorError;
+        this.#logger.warn("A saved Studio command receipt could not be replayed yet.", {
+          commandId: entry.commandId,
+          operation: entry.commandType,
+          code: connectorError.code,
+        });
+      }
+    }
+  }
+
+  private async acknowledgeJournaledTerminal(
+    entry: CommandJournalEntry,
+    signal: AbortSignal,
+  ): Promise<void> {
+    if (
+      entry.stage !== "terminal" ||
+      !entry.terminalStatus ||
+      !entry.result ||
+      !entry.receiptId
+    ) {
+      throw new ConnectorError(
+        "COMMAND_JOURNAL_CORRUPT",
+        "A saved terminal Studio command receipt is incomplete.",
+      );
+    }
+    await this.#backend.acknowledge(
+      entry.commandId,
+      entry.terminalStatus,
+      entry.result,
+      signal,
+    );
+    await this.#commandJournal.markTerminalReceiptAcknowledged(
+      entry.commandId,
+      entry.receiptId,
+    );
+    this.recordReliableTerminalAcknowledged(
+      entry.commandId,
+      entry.commandType,
+      entry.terminalStatus,
+      entry.result,
+    );
+  }
+
+  private async acknowledgeReliableTerminal(
+    command: ReliableStudioCommand,
+    status: TerminalCommandReceiptStatus,
+    result: JsonObject,
+    signal: AbortSignal,
+  ): Promise<void> {
+    const finalResult = attachReliableMetadata(command, result);
+    await this.#backend.acknowledge(command.id, status, finalResult, signal);
+    this.recordReliableTerminalAcknowledged(command.id, command.type, status, finalResult);
+  }
+
+  private recordReliableTerminalAcknowledged(
+    commandId: string,
+    commandType: string,
+    status: TerminalCommandReceiptStatus,
+    result: JsonObject,
+  ): void {
+    const completedAt = Date.now();
+    this.emitTelemetry({
+      lastActivityAt: completedAt,
+      lastCommand: { name: commandType, status, at: completedAt },
+    });
+    this.#logger.info(status === "succeeded" ? "Studio command completed." : "Studio command reached a safe terminal state.", {
+      commandId,
+      operation: commandType,
+      lifecycleVersion: 2,
+      status,
+      ...(status === "succeeded" ? {} : { code: errorCode(result) }),
     });
   }
 
@@ -359,6 +657,215 @@ export class NexusLocalConnector {
     this.#onLifecycleState?.(state);
   }
   private emitTelemetry(telemetry: ConnectorTelemetry): void { this.#onTelemetry?.(telemetry); }
+}
+
+interface ReliableStudioCommand extends StudioCommand {
+  commandId: string;
+  lifecycleVersion: 2;
+  semanticInputHash: string;
+  status: "leased";
+  operationOutcome: "reserved";
+  attempts: StudioCommandAttempts;
+  lease: StudioCommandLease;
+}
+
+const LIFECYCLE_MARKERS = [
+  "lifecycleVersion",
+  "lease",
+  "semanticInputHash",
+  "attempts",
+  "operationOutcome",
+] as const;
+
+const SAFE_PRE_MUTATION_FAILURE_CODES = new Set([
+  "ASSET_ID_INVALID",
+  "ASSET_TYPE_NOT_ALLOWED",
+  "CLASS_NOT_ALLOWED",
+  "COMMAND_PAYLOAD_INVALID",
+  "COMMAND_PAYLOAD_TOO_LARGE",
+  "DESTINATION_NOT_ALLOWED",
+  "EXECUTABLE_INPUT_FORBIDDEN",
+  "EXPECTED_SOURCE_HASH_REQUIRED",
+  "FIELD_NOT_ALLOWED",
+  "MCP_TOOL_UNAVAILABLE",
+  "PATCH_TARGET_MISSING",
+  "PATH_INVALID",
+  "PLAYTEST_CONFIRMATION_REQUIRED",
+  "ROUTINE_UNAVAILABLE",
+  "SCRIPT_ALREADY_EXISTS",
+  "SCRIPT_NOT_FOUND",
+  "SOURCE_CONFLICT",
+  "SOURCE_HASH_MISMATCH",
+  "SOURCE_TOO_LARGE",
+  "STUDIO_TARGET_MISMATCH",
+  "STUDIO_TARGET_SELECTION_REQUIRED",
+  "STUDIO_TARGET_UNAVAILABLE",
+  "TEST_PROFILE_INVALID",
+  "VALUE_NOT_ALLOWED",
+]);
+
+function hasLifecycleMarkers(command: StudioCommand): boolean {
+  return LIFECYCLE_MARKERS.some((key) => Object.hasOwn(command, key));
+}
+
+function requireReliableCommand(command: StudioCommand): ReliableStudioCommand {
+  if (command.lifecycleVersion !== 2) {
+    throw new ConnectorError(
+      "CONNECTOR_LIFECYCLE_UNSUPPORTED",
+      "NexusRBX sent an unsupported Studio command lifecycle envelope.",
+    );
+  }
+  const semanticInputHash = command.semanticInputHash;
+  const attempts = command.attempts;
+  const lease = command.lease;
+  const invalid = (
+    command.commandId !== command.id ||
+    command.status !== "leased" ||
+    command.operationOutcome !== "reserved" ||
+    typeof command.id !== "string" ||
+    command.id.trim().length === 0 ||
+    typeof command.type !== "string" ||
+    command.type.trim().length === 0 ||
+    typeof semanticInputHash !== "string" ||
+    !/^[a-f0-9]{64}$/i.test(semanticInputHash) ||
+    !validAttempts(attempts) ||
+    !validLease(lease) ||
+    lease.expiresAt <= Date.now() ||
+    (MUTATING_COMMANDS.has(command.type) && lease.targetFence < 1)
+  );
+  if (invalid) {
+    throw new ConnectorError(
+      "CONNECTOR_LIFECYCLE_ENVELOPE_INVALID",
+      "NexusRBX sent an incomplete, expired, or inconsistent Studio command lifecycle envelope.",
+    );
+  }
+  const normalizedHash = semanticInputHash as string;
+  const reliableAttempts = attempts as StudioCommandAttempts;
+  const reliableLease = lease as StudioCommandLease;
+  return {
+    ...command,
+    commandId: command.id,
+    lifecycleVersion: 2,
+    semanticInputHash: normalizedHash.toLowerCase(),
+    status: "leased",
+    operationOutcome: "reserved",
+    attempts: reliableAttempts,
+    lease: reliableLease,
+  };
+}
+
+function validAttempts(value: StudioCommandAttempts | undefined): value is StudioCommandAttempts {
+  return value !== undefined &&
+    Number.isSafeInteger(value.delivery) &&
+    value.delivery > 0 &&
+    Number.isSafeInteger(value.maximum) &&
+    value.maximum > 0 &&
+    value.delivery <= value.maximum;
+}
+
+function validLease(value: StudioCommandLease | undefined): value is StudioCommandLease {
+  return value !== undefined &&
+    typeof value.owner === "string" &&
+    value.owner.trim().length > 0 &&
+    Number.isSafeInteger(value.fence) &&
+    value.fence > 0 &&
+    Number.isSafeInteger(value.targetFence) &&
+    value.targetFence >= 0 &&
+    Number.isFinite(value.expiresAt) &&
+    value.expiresAt > 0;
+}
+
+function journalEntry(
+  command: ReliableStudioCommand,
+  stage: CommandJournalEntry["stage"],
+): CommandJournalEntry {
+  return {
+    commandId: command.id,
+    commandType: command.type,
+    semanticInputHash: command.semanticInputHash,
+    stage,
+    updatedAt: Date.now(),
+  };
+}
+
+function reliableReceipt(
+  command: ReliableStudioCommand,
+  status: Extract<CommandReceiptStatus, "received" | "started">,
+): JsonObject {
+  return {
+    commandId: command.id,
+    lifecycleVersion: 2,
+    semanticInputHash: command.semanticInputHash,
+    leaseFence: command.lease.fence,
+    targetFence: command.lease.targetFence,
+    operationOutcome: status,
+  };
+}
+
+function attachReliableMetadata(command: ReliableStudioCommand, result: JsonObject): JsonObject {
+  return {
+    ...result,
+    commandId: command.id,
+    lifecycleVersion: 2,
+    semanticInputHash: command.semanticInputHash,
+    leaseFence: command.lease.fence,
+    targetFence: command.lease.targetFence,
+  };
+}
+
+function failureResult(command: StudioCommand, error: ConnectorError): JsonObject {
+  return {
+    success: false,
+    ok: false,
+    commandId: command.id,
+    operation: command.type,
+    retryable: error.retryable,
+    verified: false,
+    error: {
+      code: error.code,
+      message: error.message.slice(0, 1_024),
+      retryable: error.retryable,
+      ...(error.details === undefined ? {} : { details: error.details }),
+    },
+  };
+}
+
+function outcomeUnknownResult(
+  command: ReliableStudioCommand,
+  base: JsonObject | undefined,
+  code: string,
+  message: string,
+): JsonObject {
+  const priorError = isRecord(base?.error) ? base.error : {};
+  return attachReliableMetadata(command, {
+    ...(base ?? {}),
+    success: false,
+    ok: false,
+    commandId: command.id,
+    operation: command.type,
+    retryable: false,
+    verified: false,
+    operationOutcome: "outcome_unknown",
+    error: {
+      ...priorError,
+      code,
+      message: message.slice(0, 1_024),
+      retryable: false,
+    },
+  });
+}
+
+function mutationOutcomeMayBeUnknown(result: JsonObject): boolean {
+  if (result.success === true && result.verified !== true) return true;
+  return !SAFE_PRE_MUTATION_FAILURE_CODES.has(errorCode(result));
+}
+
+function errorMessage(result: JsonObject): string | null {
+  const error = result.error;
+  if (isRecord(error) && typeof error.message === "string" && error.message.trim()) {
+    return error.message;
+  }
+  return null;
 }
 
 function errorCode(result: JsonObject): string {

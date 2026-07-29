@@ -120,13 +120,24 @@ export function resolveAgentProjectionV2({ chatId, projectId = null }) {
   });
 }
 
-export function createAgentRunV2({ chatId, agentId, idempotencyKey, ...body }) {
+export function createAgentRunV2({
+  chatId,
+  agentId,
+  idempotencyKey,
+  signal = null,
+  ...body
+}) {
+  const serializedBody = { ...body };
+  delete serializedBody.studioSessionId;
+  delete serializedBody.studioConnectionType;
+
   return request(
     `/api/v2/agents/${encodeURIComponent(agentId)}/runs`,
     {
       method: "POST",
       headers: { "Idempotency-Key": idempotencyKey },
-      body: JSON.stringify(body),
+      ...(signal ? { signal } : {}),
+      body: JSON.stringify(serializedBody),
     }
   );
 }

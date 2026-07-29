@@ -31,6 +31,15 @@ local executedCommandCount = 0
 local COMMAND_RECEIPTS_SETTING, COMMAND_RECEIPT_ORDER_SETTING, COMMAND_RECEIPT_LIMIT =
 	"nexusrbxCommandReceiptsV2", "nexusrbxCommandReceiptOrderV2", 50
 
+-- Keep handlers for structured responses to commands queued by a newer server,
+-- but do not advertise operations this plugin cannot actually execute.
+local UNAVAILABLE_COMMANDS = {
+	format_script = true,
+	run_test_service = true,
+	run_play_test = true,
+	stop_play_test = true,
+}
+
 local TOOL_HANDLERS = {
 	apply_artifact = applyArtifact,
 	insert_creator_store_asset = function(payload)
@@ -105,7 +114,7 @@ local TOOL_HANDLERS = {
 local function getPluginAttestation()
 	local supportedCommands = {}
 	for commandType, handler in pairs(TOOL_HANDLERS) do
-		if type(handler) == "function" then
+		if type(handler) == "function" and not UNAVAILABLE_COMMANDS[commandType] then
 			table.insert(supportedCommands, commandType)
 		end
 	end
@@ -132,17 +141,33 @@ end
 local function batchOperations(payload)
 	local snapshots = {}
 	local results = {}
+	local failureCode = nil
 	local previousBatch = lastBatchSnapshots
 	lastBatchSnapshots = snapshots
+	local function rejectUnsupportedBatchOperation(index, opType, message)
+		local result = structuredUnsupported(opType, message)
+		result.code = "STUDIO_TOOL_UNSUPPORTED"
+		result.retryable = false
+		result.error.code = "STUDIO_TOOL_UNSUPPORTED"
+		failureCode = result.code
+		table.insert(results, {
+			index = index,
+			type = opType,
+			ok = false,
+			error = result.error.message,
+			result = result,
+		})
+		error(result.error.message)
+	end
 	local ok, err = pcall(function()
 		for index, op in ipairs(payload.operations or {}) do
 			local opType = tostring(op.type or "")
 			if opType == "apply_artifact" or opType == "apply_asset_reference" or opType == "batch_operations" then
-				error("Nested or artifact batch operation is not supported")
+				rejectUnsupportedBatchOperation(index, opType, "Nested or artifact batch operation is not supported")
 			end
 			local handler = TOOL_HANDLERS[opType]
-			if not handler then
-				error("Unsupported batch operation: " .. opType)
+			if type(handler) ~= "function" or UNAVAILABLE_COMMANDS[opType] then
+				rejectUnsupportedBatchOperation(index, opType, "Unsupported batch operation: " .. opType)
 			end
 			local result = handler(op.payload or {})
 			if type(result) == "table" and result.snapshots then
@@ -151,24 +176,33 @@ local function batchOperations(payload)
 				end
 			end
 			if type(result) == "table" and result.ok == false then
-				table.insert(results, { index = index, type = opType, ok = false, error = result.error or result.message, result = result })
-				error(result.error or "Batch operation failed")
+				local resultError = result.error or result.message or "Batch operation failed"
+				if type(resultError) == "table" then
+					resultError = resultError.message or resultError.code or "Batch operation failed"
+				end
+				table.insert(results, { index = index, type = opType, ok = false, error = tostring(resultError), result = result })
+				error(tostring(resultError))
 			end
 			table.insert(results, { index = index, type = opType, ok = true, result = result })
 		end
 	end)
 	if not ok then
-		if payload.atomic ~= false then
-			restoreSnapshots({ snapshots = snapshots })
+		local atomic = payload.atomic ~= false
+		local rollback = nil
+		if atomic then
+			rollback = restoreSnapshots({ snapshots = snapshots, force = true })
 		end
 		if #snapshots == 0 then
 			lastBatchSnapshots = previousBatch
 		end
-		return {
-			ok = false,
-			error = tostring(err),
-			atomic = payload.atomic ~= false,
-			rolledBack = payload.atomic ~= false,
+			local rolledBack = atomic and type(rollback) == "table" and rollback.ok == true
+			return {
+				ok = false,
+				code = atomic and not rolledBack and "rollback_failed" or failureCode or "batch_operation_failed",
+				error = tostring(err),
+				atomic = atomic,
+			rolledBack = rolledBack,
+			rollback = rollback,
 			results = results,
 			snapshots = snapshots,
 		}
@@ -798,11 +832,18 @@ local function executeCommand(command)
 	local commandType = command.type or "apply_artifact"
 	local handler = TOOL_HANDLERS[commandType]
 	if type(handler) ~= "function" then
-		error(string.format(
+		local unsupportedMessage = string.format(
 			"Unsupported Studio command: %s (plugin %s). Reinstall the latest NexusRBXStudioBridge.plugin.lua via Plugins > Manage Plugins.",
 			tostring(commandType),
 			PLUGIN_VERSION
-		))
+		)
+		handler = function()
+			local result = structuredUnsupported(commandType, unsupportedMessage)
+			result.code = "STUDIO_TOOL_UNSUPPORTED"
+			result.retryable = false
+			result.error.code = "STUDIO_TOOL_UNSUPPORTED"
+			return result
+		end
 	end
 	executedCommandCount = executedCommandCount + 1
 	setProgress({

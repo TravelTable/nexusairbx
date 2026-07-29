@@ -14,7 +14,7 @@ local STUDIO_PROTOCOL_VERSION = "2026-07-22-asset-references"
 -- version. Keep it in lockstep with the generated bundle and backend allowlist.
 -- A plugin session must attest its build and actual command handlers at pairing
 -- time; version strings alone are not evidence that a command exists.
-local PLUGIN_BUILD_ID = "nexusrbx-studio-0.11.0-asset-references.2"
+local PLUGIN_BUILD_ID = "nexusrbx-studio-0.11.0-asset-references.3"
 
 -- These are deliberately capability-level (rather than UI-level) claims. The
 -- pairing payload also includes the exact sorted command list derived from the
@@ -350,7 +350,7 @@ end
 -- END src/net/httpClient.lua
 
 -- BEGIN src/studio/serialization.lua
-local SCRIPT_CLASSES, stableHash, nowMs, readManagedId, attributesOf, propertyHash, scriptHash, propertiesOf, safePropertyValue, structuredUnsupported, lastBatchSnapshots, AGENT_ARTIFACT_ID_ATTRIBUTE, AGENT_FILE_ID_ATTRIBUTE, CREATABLE_CLASSES, NATIVE_MODEL_LIMITS, escapePattern, escapeReplacement
+local SCRIPT_CLASSES, stableHash, nowMs, readManagedId, attributesOf, propertyHash, scriptHash, verifyExpectedScriptHash, propertiesOf, safePropertyValue, structuredUnsupported, lastBatchSnapshots, AGENT_ARTIFACT_ID_ATTRIBUTE, AGENT_FILE_ID_ATTRIBUTE, CREATABLE_CLASSES, NATIVE_MODEL_LIMITS, escapePattern, escapeReplacement
 do
 NATIVE_MODEL_LIMITS = {
 	maxInstances = 750,
@@ -666,6 +666,57 @@ scriptHash = function(inst)
 	return ok and stableHash(source) or nil
 end
 
+-- Every mutation of an existing script must be tied to the exact source the
+-- caller inspected. This avoids silently overwriting Studio edits made between
+-- a read and a queued write.
+verifyExpectedScriptHash = function(inst, expectedSourceHash, requestedPath)
+	if not inst or not SCRIPT_CLASSES[inst.ClassName] then
+		return true, nil
+	end
+
+	local targetPath = tostring(requestedPath or "")
+	if targetPath == "" then
+		targetPath = fullPath(inst)
+	end
+	local currentSourceHash = scriptHash(inst)
+	if currentSourceHash == nil then
+		return false, {
+			ok = false,
+			success = false,
+			code = "source_read_failed",
+			error = "Could not read the current Studio script source",
+			path = targetPath,
+			retryable = false,
+		}
+	end
+
+	local expected = tostring(expectedSourceHash or "")
+	if expected == "" then
+		return false, {
+			ok = false,
+			success = false,
+			code = "expected_source_hash_required",
+			error = "expectedSourceHash is required before mutating an existing script",
+			path = targetPath,
+			currentSourceHash = currentSourceHash,
+			retryable = false,
+		}
+	end
+	if expected ~= currentSourceHash then
+		return false, {
+			ok = false,
+			success = false,
+			code = "source_conflict",
+			error = "Source hash conflict",
+			path = targetPath,
+			expectedSourceHash = expected,
+			currentSourceHash = currentSourceHash,
+			retryable = false,
+		}
+	end
+	return true, currentSourceHash
+end
+
 structuredUnsupported = function(operation, message)
 	return {
 		ok = false,
@@ -693,7 +744,7 @@ end
 -- END src/studio/serialization.lua
 
 -- BEGIN src/studio/path.lua
-local fullPath, resolvePath, readScriptSource, writeScriptSource, getStarterPlayerScripts, splitPath, ensureParent, safeSetProperty, ASSET_REFERENCE_TARGETS, safeSetAssetReference, safeRestoreAssetReference
+local fullPath, resolvePath, readScriptSource, writeScriptSource, getStarterPlayerScripts, splitPath, rootFromParts, ensureParent, safeSetProperty, ASSET_REFERENCE_TARGETS, safeSetAssetReference, safeRestoreAssetReference
 do
 -- Studio manifests and tool payloads use slash-delimited paths. Older agent
 -- runs occasionally produced a dotted Starter Player path, e.g.
@@ -747,7 +798,7 @@ getStarterPlayerScripts = function()
 	return folder
 end
 
-local function rootFromParts(parts)
+rootFromParts = function(parts)
 	local first = parts[1]
 	if first == "StarterPlayerScripts" then
 		return getStarterPlayerScripts(), 2
@@ -979,7 +1030,7 @@ end
 -- END src/studio/path.lua
 
 -- BEGIN src/studio/snapshot.lua
-local snapshotInstance, appendSnapshotTree, beginRecording, finishRecording, restoreSnapshots, snapshotStateHash, createOrReplaceInstance
+local snapshotInstance, appendSnapshotTree, appendMissingPathSnapshots, beginRecording, finishRecording, restoreSnapshots, rollbackMutation, snapshotStateHash, createOrReplaceInstance
 do
 -- Cheap fingerprint of an instance's mutable state, used to tell whether a human
 -- edited an instance after the agent wrote it. Scripts hash their source; other
@@ -995,7 +1046,16 @@ snapshotStateHash = function(inst)
 	return ok and hashValue or nil
 end
 
-snapshotInstance = function(path)
+local function recordStudioSnapshotLocally(snap)
+	if type(localSnapshots) == "table" then
+		table.insert(localSnapshots, snap)
+		if type(updateSnapshotLabel) == "function" then
+			updateSnapshotLabel()
+		end
+	end
+end
+
+snapshotInstance = function(path, deferLocalRecord)
 	local inst = resolvePath(path)
 	if not inst then
 		local parts = splitPath(path)
@@ -1003,7 +1063,7 @@ snapshotInstance = function(path)
 		if #parts > 1 then
 			parentPath = table.concat(parts, "/", 1, #parts - 1)
 		end
-		return {
+		local missingSnap = {
 			id = Services.HttpService:GenerateGUID(false),
 			path = path,
 			parentPath = parentPath,
@@ -1012,6 +1072,10 @@ snapshotInstance = function(path)
 			existed = false,
 			properties = {},
 		}
+		if not deferLocalRecord then
+			recordStudioSnapshotLocally(missingSnap)
+		end
+		return missingSnap
 	end
 
 	local snap = {
@@ -1029,19 +1093,22 @@ snapshotInstance = function(path)
 
 	if SCRIPT_CLASSES[inst.ClassName] then
 		local ok, source = readScriptSource(inst)
-		snap.source = ok and source or ""
+		if not ok then
+			error("Could not snapshot script source at " .. tostring(snap.path) .. "; mutation was not attempted")
+		end
+		snap.source = source
+		-- Hash exactly the bytes captured in the snapshot. A second source read
+		-- could race an editor update and make the snapshot unverifiable.
+		snap.preHash = stableHash(source)
+	else
+		snap.preHash = snapshotStateHash(inst)
 	end
 
 	-- Pre-edit fingerprint: the state the instance had before the agent touched
 	-- it. `postHash` (the state right after the agent's write) is stamped later
 	-- by the command executor so restore can detect human edits made since.
-	snap.preHash = snapshotStateHash(inst)
-
-	if type(localSnapshots) == "table" then
-		table.insert(localSnapshots, snap)
-		if type(updateSnapshotLabel) == "function" then
-			updateSnapshotLabel()
-		end
+	if not deferLocalRecord then
+		recordStudioSnapshotLocally(snap)
 	end
 	return snap
 end
@@ -1050,10 +1117,43 @@ appendSnapshotTree = function(inst, snapshots)
 	if not inst then
 		return
 	end
-	for _, child in ipairs(inst:GetChildren()) do
-		appendSnapshotTree(child, snapshots)
+
+	-- Capture the complete tree before publishing any of its snapshots. If one
+	-- descendant script cannot be read, callers fail before mutation and the
+	-- manual recovery list is not polluted with a partial tree.
+	local pending = {}
+	local function captureTree(current)
+		for _, child in ipairs(current:GetChildren()) do
+			captureTree(child)
+		end
+		table.insert(pending, snapshotInstance(fullPath(current), true))
 	end
-	table.insert(snapshots, snapshotInstance(fullPath(inst)))
+	captureTree(inst)
+	for _, snap in ipairs(pending) do
+		table.insert(snapshots, snap)
+		recordStudioSnapshotLocally(snap)
+	end
+end
+
+-- Snapshot every currently-missing segment before ensureParent can create it.
+-- Restores run in reverse order, so a failed mutation removes the leaf first
+-- and then any empty parent folders that were created for the command.
+appendMissingPathSnapshots = function(path, snapshots, seenPaths)
+	snapshots = snapshots or {}
+	seenPaths = seenPaths or {}
+	local parts = splitPath(path)
+	local rootInst, startIndex = rootFromParts(parts)
+	if not rootInst or #parts < startIndex then
+		return snapshots
+	end
+	for index = startIndex, #parts do
+		local segmentPath = table.concat(parts, "/", 1, index)
+		if not seenPaths[segmentPath] and not resolvePath(segmentPath) then
+			seenPaths[segmentPath] = true
+			table.insert(snapshots, snapshotInstance(segmentPath))
+		end
+	end
+	return snapshots
 end
 
 beginRecording = function(label)
@@ -1115,57 +1215,118 @@ restoreSnapshots = function(payload)
 	-- `kept` counts instances left untouched because the user edited them after
 	-- the agent's write. `force` bypasses that protection for a full revert.
 	local kept = 0
-	local force = payload.force == true
-	local snapshots = payload.snapshots or localSnapshots
+	local errors = {}
+	local force = type(payload) == "table" and payload.force == true
+	local snapshots = (type(payload) == "table" and payload.snapshots) or localSnapshots
+	if type(snapshots) ~= "table" then
+		snapshots = {}
+	end
 	for i = #snapshots, 1, -1 do
 		local snap = snapshots[i]
-		if snap.existed == false then
-			local current = resolvePath(snap.path)
-			if current then
-				-- The agent created this. If the user changed it since the agent
-				-- wrote it, keep their version instead of deleting it.
-				if not force and snap.postHash then
-					local currentHash = snapshotStateHash(current)
-					if currentHash and currentHash ~= snap.postHash then
-						kept = kept + 1
-						continue
-					end
-				end
-				current:Destroy()
-				removed = removed + 1
-			end
-		elseif snap.path and snap.className and snap.className ~= "" then
-			-- The agent overwrote/edited this. If the current state no longer
-			-- matches what the agent produced (and isn't already the pre-edit
-			-- state), a human edited it since -> keep their edits.
-			if not force and snap.postHash then
+		local ok, restoreErr = pcall(function()
+			if snap.existed == false then
 				local current = resolvePath(snap.path)
 				if current then
-					local currentHash = snapshotStateHash(current)
-					if currentHash and currentHash ~= snap.postHash and currentHash ~= snap.preHash then
-						kept = kept + 1
-						continue
+					-- The agent created this. If the user changed it since the agent
+					-- wrote it, keep their version instead of deleting it.
+					if not force and snap.postHash then
+						local currentHash = snapshotStateHash(current)
+						if currentHash and currentHash ~= snap.postHash then
+							kept = kept + 1
+							return
+						end
+					end
+					current:Destroy()
+					if resolvePath(snap.path) then
+						error("Created instance still exists after rollback")
+					end
+					removed = removed + 1
+				end
+			elseif snap.path and snap.className and snap.className ~= "" then
+				-- The agent overwrote/edited this. If the current state no longer
+				-- matches what the agent produced (and isn't already the pre-edit
+				-- state), a human edited it since -> keep their edits.
+				if not force and snap.postHash then
+					local current = resolvePath(snap.path)
+					if current then
+						local currentHash = snapshotStateHash(current)
+						if currentHash and currentHash ~= snap.postHash and currentHash ~= snap.preHash then
+							kept = kept + 1
+							return
+						end
 					end
 				end
+				local inst = createOrReplaceInstance(snap.path, snap.className, snap.properties or {}, true)
+				if SCRIPT_CLASSES[inst.ClassName] and snap.source ~= nil then
+					local wrote, writeErr = writeScriptSource(inst, snap.source)
+					if not wrote then
+						error(writeErr or "Could not restore script source")
+					end
+				end
+				for key, value in pairs(snap.attributes or {}) do
+					local setOk, setErr = pcall(function()
+						inst:SetAttribute(key, value)
+					end)
+					if not setOk then
+						error(setErr or ("Could not restore attribute " .. tostring(key)))
+					end
+				end
+				for _, tag in ipairs(snap.tags or {}) do
+					local tagOk, tagErr = pcall(function()
+						Services.CollectionService:AddTag(inst, tag)
+					end)
+					if not tagOk then
+						error(tagErr or ("Could not restore tag " .. tostring(tag)))
+					end
+				end
+				local restoredHash = snapshotStateHash(inst)
+				if snap.preHash and restoredHash ~= snap.preHash then
+					error(
+						"Restored state hash does not match the pre-mutation snapshot (expected "
+							.. tostring(snap.preHash)
+							.. ", got "
+							.. tostring(restoredHash)
+							.. ")"
+					)
+				end
+				restored = restored + 1
 			end
-			local inst = createOrReplaceInstance(snap.path, snap.className, snap.properties or {}, true)
-			if SCRIPT_CLASSES[inst.ClassName] and snap.source ~= nil then
-				writeScriptSource(inst, snap.source)
-			end
-			for key, value in pairs(snap.attributes or {}) do
-				pcall(function()
-					inst:SetAttribute(key, value)
-				end)
-			end
-			for _, tag in ipairs(snap.tags or {}) do
-				pcall(function()
-					Services.CollectionService:AddTag(inst, tag)
-				end)
-			end
-			restored = restored + 1
+		end)
+		if not ok then
+			table.insert(errors, {
+				snapshotId = snap and snap.id or nil,
+				path = snap and snap.path or "",
+				message = tostring(restoreErr),
+			})
 		end
 	end
-	return { restored = restored, removed = removed, kept = kept }
+	local complete = #errors == 0 and kept == 0
+	return {
+		ok = complete,
+		success = complete,
+		complete = complete,
+		code = complete and nil or "snapshot_restore_incomplete",
+		error = complete and nil or "One or more Studio snapshots could not be fully restored",
+		restored = restored,
+		removed = removed,
+		kept = kept,
+		requested = #snapshots,
+		errors = errors,
+	}
+end
+
+rollbackMutation = function(snapshots, code, message, details)
+	local rollback = restoreSnapshots({ snapshots = snapshots, force = true })
+	local response = type(details) == "table" and details or {}
+	response.ok = false
+	response.success = false
+	response.error = tostring(message or "Studio mutation failed")
+	response.mutationCode = tostring(code or "mutation_failed")
+	response.code = rollback.ok and response.mutationCode or "rollback_failed"
+	response.snapshots = snapshots or {}
+	response.rolledBack = rollback.ok == true
+	response.rollback = rollback
+	return response
 end
 end
 -- END src/studio/snapshot.lua
@@ -3034,20 +3195,6 @@ writeScript = function(payload)
 			retryable = false,
 		}
 	end
-	if existing and SCRIPT_CLASSES[existing.ClassName] and payload.expectedSourceHash and payload.expectedSourceHash ~= "" then
-		local currentHash = scriptHash(existing)
-		if currentHash ~= payload.expectedSourceHash then
-			return {
-				ok = false,
-				code = "source_conflict",
-				error = "Source hash conflict",
-				path = fullPath(existing),
-				expectedSourceHash = payload.expectedSourceHash,
-				currentSourceHash = currentHash,
-				retryable = false,
-			}
-		end
-	end
 	if existing and not payload.allowOverwrite and payload.createOnly == true then
 		return {
 			ok = false,
@@ -3057,36 +3204,48 @@ writeScript = function(payload)
 			retryable = false,
 		}
 	end
-	if payload.snapshot ~= false then
-		if existing then
-			appendSnapshotTree(existing, snapshots)
-		else
-			table.insert(snapshots, snapshotInstance(path))
+	if existing then
+		local hashOk, hashResult = verifyExpectedScriptHash(existing, payload.expectedSourceHash, fullPath(existing))
+		if not hashOk then
+			return hashResult
 		end
 	end
-	local inst = existing
-	if not inst then
-		local parent, name = ensureParent(path, payload.createParents ~= false)
-		if not parent or not name then
-			return { ok = false, error = "Could not resolve parent for " .. tostring(path), path = path }
+
+	if existing then
+		appendSnapshotTree(existing, snapshots)
+	else
+		appendMissingPathSnapshots(path, snapshots, {})
+	end
+	local mutationOk, mutationResult = pcall(function()
+		local inst = existing
+		if not inst then
+			local parent, name = ensureParent(path, payload.createParents ~= false)
+			if not parent or not name then
+				error("Could not resolve parent for " .. tostring(path))
+			end
+			inst = Instance.new(className)
+			inst.Name = name
+			inst.Parent = parent
+		elseif inst.ClassName ~= className and payload.allowClassChange == true then
+			local previous = inst
+			local parent = previous.Parent
+			local name = previous.Name
+			previous:Destroy()
+			inst = Instance.new(className)
+			inst.Name = name
+			inst.Parent = parent
 		end
-		inst = Instance.new(className)
-		inst.Name = name
-		inst.Parent = parent
-	elseif inst.ClassName ~= className and payload.allowClassChange == true then
-		local previous = inst
-		local parent = previous.Parent
-		local name = previous.Name
-		previous:Destroy()
-		inst = Instance.new(className)
-		inst.Name = name
-		inst.Parent = parent
+		ensureManagedId(inst)
+		local wrote, writeErr = writeScriptSource(inst, payload.source or "")
+		if not wrote then
+			error(writeErr or "Could not write script source")
+		end
+		return inst
+	end)
+	if not mutationOk then
+		return rollbackMutation(snapshots, "write_failed", mutationResult, { path = tostring(path) })
 	end
-	ensureManagedId(inst)
-	local ok, err = writeScriptSource(inst, payload.source or "")
-	if not ok then
-		error(err or "Could not write script source")
-	end
+	local inst = mutationResult
 	return {
 		path = fullPath(inst),
 		className = inst.ClassName,
@@ -3100,22 +3259,34 @@ createInstanceTool = function(payload)
 	local path = payload.path
 	local className = payload.className or "Folder"
 	local snapshots = {}
-	if payload.snapshot ~= false then
-		local existing = resolvePath(path)
-		if existing then
-			appendSnapshotTree(existing, snapshots)
-		else
-			table.insert(snapshots, snapshotInstance(path))
+	local existing = resolvePath(path)
+	if existing and SCRIPT_CLASSES[existing.ClassName] then
+		local hashOk, hashResult = verifyExpectedScriptHash(existing, payload.expectedSourceHash, fullPath(existing))
+		if not hashOk then
+			return hashResult
 		end
 	end
-	local inst = createOrReplaceInstance(path, className, payload.properties or {}, payload.createParents ~= false)
-	for key, value in pairs(payload.attributes or {}) do
-		inst:SetAttribute(tostring(key), value)
+
+	if existing then
+		appendSnapshotTree(existing, snapshots)
+	else
+		appendMissingPathSnapshots(path, snapshots, {})
 	end
-	for _, tag in ipairs(payload.tags or {}) do
-		Services.CollectionService:AddTag(inst, tostring(tag))
+	local mutationOk, mutationResult = pcall(function()
+		local inst = createOrReplaceInstance(path, className, payload.properties or {}, payload.createParents ~= false)
+		for key, value in pairs(payload.attributes or {}) do
+			inst:SetAttribute(tostring(key), value)
+		end
+		for _, tag in ipairs(payload.tags or {}) do
+			Services.CollectionService:AddTag(inst, tostring(tag))
+		end
+		ensureManagedId(inst)
+		return inst
+	end)
+	if not mutationOk then
+		return rollbackMutation(snapshots, "create_instance_failed", mutationResult, { path = tostring(path) })
 	end
-	ensureManagedId(inst)
+	local inst = mutationResult
 	return {
 		path = fullPath(inst),
 		className = inst.ClassName,
@@ -3131,12 +3302,21 @@ deleteInstanceTool = function(payload)
 	local inst = resolvePath(path)
 	local snapshots = {}
 	if inst then
+		local hashOk, hashResult = verifyExpectedScriptHash(inst, payload.expectedSourceHash, fullPath(inst))
+		if not hashOk then
+			return hashResult
+		end
 		appendSnapshotTree(inst, snapshots)
 	else
 		table.insert(snapshots, snapshotInstance(path))
 	end
 	if inst then
-		inst:Destroy()
+		local mutationOk, mutationErr = pcall(function()
+			inst:Destroy()
+		end)
+		if not mutationOk then
+			return rollbackMutation(snapshots, "delete_instance_failed", mutationErr, { path = tostring(path) })
+		end
 	end
 	return { path = path, deleted = inst ~= nil, snapshots = snapshots }
 end
@@ -4084,21 +4264,15 @@ patchScript = function(payload)
 	if not inst or not SCRIPT_CLASSES[inst.ClassName] then
 		return { ok = false, error = "Script not found", path = path }
 	end
+	local hashOk, hashResult = verifyExpectedScriptHash(inst, payload.expectedSourceHash, fullPath(inst))
+	if not hashOk then
+		return hashResult
+	end
 	local ok, source = readScriptSource(inst)
 	if not ok then
 		return { ok = false, error = "Could not read script source", path = path }
 	end
 	local currentHash = stableHash(source)
-	if payload.expectedSourceHash and payload.expectedSourceHash ~= "" and payload.expectedSourceHash ~= currentHash then
-		return {
-			ok = false,
-			code = "source_conflict",
-			error = "Source hash conflict",
-			path = fullPath(inst),
-			expectedSourceHash = payload.expectedSourceHash,
-			currentSourceHash = currentHash,
-		}
-	end
 	local nextSource = payload.source and payload.source ~= "" and tostring(payload.source) or source
 	local replacements = 0
 	for _, patch in ipairs(payload.patches or {}) do
@@ -4121,14 +4295,15 @@ patchScript = function(payload)
 		end
 	end
 	local snapshots = {}
-	if payload.snapshot ~= false then
-		table.insert(snapshots, snapshotInstance(fullPath(inst)))
-	end
+	table.insert(snapshots, snapshotInstance(fullPath(inst)))
 	local wrote, writeErr = writeScriptSource(inst, nextSource)
 	if not wrote then
-		return { ok = false, error = writeErr or "Could not write patched source", path = fullPath(inst), snapshots = snapshots }
+		return rollbackMutation(snapshots, "patch_script_failed", writeErr or "Could not write patched source", {
+			path = fullPath(inst),
+		})
 	end
 	return {
+		ok = true,
 		path = fullPath(inst),
 		replacements = replacements,
 		previousHash = currentHash,
@@ -4143,13 +4318,35 @@ renameInstanceTool = function(payload)
 	if not inst then
 		return { ok = false, error = "Instance not found", path = payload.path }
 	end
-	local snapshots = {}
-	if payload.snapshot ~= false then
-		table.insert(snapshots, snapshotInstance(fullPath(inst)))
+	local hashOk, hashResult = verifyExpectedScriptHash(inst, payload.expectedSourceHash, fullPath(inst))
+	if not hashOk then
+		return hashResult
 	end
+	local newName = tostring(payload.newName or payload.name or inst.Name)
+	local existingTarget = inst.Parent and inst.Parent:FindFirstChild(newName) or nil
+	if existingTarget and existingTarget ~= inst then
+		return {
+			ok = false,
+			code = "target_exists",
+			error = "Rename target already exists",
+			path = fullPath(existingTarget),
+			retryable = false,
+		}
+	end
+	local snapshots = {}
 	local oldPath = fullPath(inst)
-	inst.Name = tostring(payload.newName or payload.name or inst.Name)
-	return { previousPath = oldPath, path = fullPath(inst), snapshots = snapshots }
+	appendSnapshotTree(inst, snapshots)
+	local destinationPath = inst.Parent and (fullPath(inst.Parent) .. "/" .. newName) or newName
+	if destinationPath ~= oldPath then
+		table.insert(snapshots, snapshotInstance(destinationPath))
+	end
+	local mutationOk, mutationErr = pcall(function()
+		inst.Name = newName
+	end)
+	if not mutationOk then
+		return rollbackMutation(snapshots, "rename_instance_failed", mutationErr, { path = oldPath })
+	end
+	return { ok = true, previousPath = oldPath, path = fullPath(inst), snapshots = snapshots }
 end
 
 moveInstanceTool = function(payload)
@@ -4157,27 +4354,71 @@ moveInstanceTool = function(payload)
 	if not inst then
 		return { ok = false, error = "Instance not found", path = payload.path }
 	end
+	local hashOk, hashResult = verifyExpectedScriptHash(inst, payload.expectedSourceHash, fullPath(inst))
+	if not hashOk then
+		return hashResult
+	end
 	local targetPath = tostring(payload.newPath or "")
 	local parent = nil
 	local leaf = nil
+	local parentPath = ""
 	if targetPath ~= "" then
-		parent, leaf = ensureParent(targetPath, payload.createParents ~= false)
+		local parts = splitPath(targetPath)
+		leaf = parts[#parts]
+		if #parts > 1 then
+			parentPath = table.concat(parts, "/", 1, #parts - 1)
+			parent = resolvePath(parentPath)
+		end
+		if not leaf or leaf == "" or (not parent and payload.createParents == false) then
+			return { ok = false, error = "Target parent not found", path = payload.path }
+		end
 	else
 		parent = resolvePath(payload.newParentPath)
 	end
-	if not parent then
+	if targetPath == "" and not parent then
 		return { ok = false, error = "Target parent not found", path = payload.path }
 	end
+	local destinationName = leaf and leaf ~= "" and leaf or inst.Name
+	local existingTarget = parent and parent:FindFirstChild(destinationName) or nil
+	if existingTarget and existingTarget ~= inst then
+		return {
+			ok = false,
+			code = "target_exists",
+			error = "Move target already exists",
+			path = fullPath(existingTarget),
+			retryable = false,
+		}
+	end
 	local snapshots = {}
-	if payload.snapshot ~= false then
-		table.insert(snapshots, snapshotInstance(fullPath(inst)))
-	end
 	local oldPath = fullPath(inst)
-	if leaf and leaf ~= "" then
-		inst.Name = leaf
+	appendSnapshotTree(inst, snapshots)
+	local destinationPath = targetPath ~= "" and targetPath or (fullPath(parent) .. "/" .. destinationName)
+	if destinationPath ~= oldPath then
+		appendMissingPathSnapshots(destinationPath, snapshots, {})
 	end
-	inst.Parent = parent
-	return { previousPath = oldPath, path = fullPath(inst), snapshots = snapshots }
+	local mutationOk, mutationResult = pcall(function()
+		local targetParent = parent
+		local targetLeaf = leaf
+		if targetPath ~= "" and not targetParent then
+			targetParent, targetLeaf = ensureParent(targetPath, payload.createParents ~= false)
+		end
+		if not targetParent then
+			error("Target parent not found")
+		end
+		local currentTarget = targetParent:FindFirstChild(destinationName)
+		if currentTarget and currentTarget ~= inst then
+			error("Move target already exists")
+		end
+		if targetLeaf and targetLeaf ~= "" then
+			inst.Name = targetLeaf
+		end
+		inst.Parent = targetParent
+		return inst
+	end)
+	if not mutationOk then
+		return rollbackMutation(snapshots, "move_instance_failed", mutationResult, { path = oldPath })
+	end
+	return { ok = true, previousPath = oldPath, path = fullPath(mutationResult), snapshots = snapshots }
 end
 
 duplicateInstanceTool = function(payload)
@@ -4185,27 +4426,74 @@ duplicateInstanceTool = function(payload)
 	if not inst then
 		return { ok = false, error = "Instance not found", path = payload.path }
 	end
-	local parent, leaf = ensureParent(payload.newPath, payload.createParents ~= false)
-	if not parent or not leaf then
+	local sourceHashOk, sourceHashResult = verifyExpectedScriptHash(inst, payload.expectedSourceHash, fullPath(inst))
+	if not sourceHashOk then
+		return sourceHashResult
+	end
+	local targetPath = tostring(payload.newPath or "")
+	local parts = splitPath(targetPath)
+	local leaf = parts[#parts]
+	local parentPath = #parts > 1 and table.concat(parts, "/", 1, #parts - 1) or ""
+	local parent = parentPath ~= "" and resolvePath(parentPath) or nil
+	if not leaf or leaf == "" or (not parent and payload.createParents == false) then
 		return { ok = false, error = "Could not resolve duplicate target", path = payload.newPath }
 	end
-	local existing = parent:FindFirstChild(leaf)
-	local snapshots = {}
-	if payload.snapshot ~= false then
-		if existing then
-			appendSnapshotTree(existing, snapshots)
-		else
-			table.insert(snapshots, snapshotInstance(payload.newPath))
+	local existing = parent and parent:FindFirstChild(leaf) or nil
+	if existing == inst then
+		return {
+			ok = false,
+			code = "source_target_conflict",
+			error = "Duplicate target must differ from the source",
+			path = fullPath(inst),
+			retryable = false,
+		}
+	end
+	if existing and SCRIPT_CLASSES[existing.ClassName] then
+		local targetHashOk, targetHashResult =
+			verifyExpectedScriptHash(existing, payload.expectedTargetSourceHash, fullPath(existing))
+		if not targetHashOk then
+			return targetHashResult
 		end
 	end
+	local snapshots = {}
 	if existing then
-		existing:Destroy()
+		appendSnapshotTree(existing, snapshots)
+	else
+		appendMissingPathSnapshots(targetPath, snapshots, {})
 	end
-	local clone = inst:Clone()
-	clone.Name = leaf
-	clone.Parent = parent
-	ensureManagedId(clone)
-	return { path = fullPath(clone), sourcePath = fullPath(inst), snapshots = snapshots }
+	local mutationOk, mutationResult = pcall(function()
+		local targetParent = parent
+		local targetLeaf = leaf
+		if not targetParent then
+			targetParent, targetLeaf = ensureParent(targetPath, payload.createParents ~= false)
+		end
+		if not targetParent or not targetLeaf then
+			error("Could not resolve duplicate target")
+		end
+		local currentTarget = targetParent:FindFirstChild(targetLeaf)
+		if currentTarget == inst then
+			error("Duplicate target must differ from the source")
+		end
+		if currentTarget ~= existing then
+			error("Duplicate target changed before mutation")
+		end
+		local clone = inst:Clone()
+		if currentTarget then
+			currentTarget:Destroy()
+		end
+		clone.Name = targetLeaf
+		clone.Parent = targetParent
+		ensureManagedId(clone)
+		return clone
+	end)
+	if not mutationOk then
+		return rollbackMutation(snapshots, "duplicate_instance_failed", mutationResult, {
+			path = tostring(payload.newPath or ""),
+			sourcePath = fullPath(inst),
+		})
+	end
+	local clone = mutationResult
+	return { ok = true, path = fullPath(clone), sourcePath = fullPath(inst), snapshots = snapshots }
 end
 
 createScript = function(payload)
@@ -4226,10 +4514,12 @@ updateProperties = function(payload)
 	if not inst then
 		return { ok = false, error = "Instance not found", path = payload.path }
 	end
-	local snapshots = {}
-	if payload.snapshot ~= false then
-		table.insert(snapshots, snapshotInstance(fullPath(inst)))
+	local hashOk, hashResult = verifyExpectedScriptHash(inst, payload.expectedSourceHash, fullPath(inst))
+	if not hashOk then
+		return hashResult
 	end
+	local snapshots = {}
+	table.insert(snapshots, snapshotInstance(fullPath(inst)))
 	local errors = {}
 	for key, value in pairs(payload.properties or {}) do
 		local ok, err = safeSetProperty(inst, key, value)
@@ -4237,7 +4527,13 @@ updateProperties = function(payload)
 			table.insert(errors, { property = key, message = err })
 		end
 	end
-	return { path = fullPath(inst), properties = propertiesOf(inst), errors = errors, snapshots = snapshots, ok = #errors == 0 }
+	if #errors > 0 then
+		return rollbackMutation(snapshots, "update_properties_failed", "One or more Studio properties could not be updated", {
+			path = fullPath(inst),
+			errors = errors,
+		})
+	end
+	return { path = fullPath(inst), properties = propertiesOf(inst), errors = {}, snapshots = snapshots, ok = true }
 end
 
 applyAssetReference = function(payload)
@@ -4284,11 +4580,7 @@ applyAssetReference = function(payload)
 		previousValue = previousValue,
 		currentValue = currentValue,
 	}
-
-	return {
-		ok = exact,
-		code = exact and nil or "STUDIO_ASSET_IMPLEMENTATION_FAILED",
-		error = exact and nil or (err or "Studio did not retain the exact Roblox asset reference"),
+	local details = {
 		path = targetPath,
 		className = inst.ClassName,
 		property = property,
@@ -4298,10 +4590,22 @@ applyAssetReference = function(payload)
 		previousValue = previousValue,
 		currentValue = currentValue,
 		changedInstances = { changed },
-		snapshots = { snapshot },
 		snapshotIds = { snapshot.id },
 		affectedPaths = { targetPath },
 	}
+
+	if not exact then
+		return rollbackMutation(
+			{ snapshot },
+			"STUDIO_ASSET_IMPLEMENTATION_FAILED",
+			err or "Studio did not retain the exact Roblox asset reference",
+			details
+		)
+	end
+
+	details.ok = true
+	details.snapshots = { snapshot }
+	return details
 end
 
 updateAttributes = function(payload)
@@ -4309,14 +4613,22 @@ updateAttributes = function(payload)
 	if not inst then
 		return { ok = false, error = "Instance not found", path = payload.path }
 	end
-	local snapshots = {}
-	if payload.snapshot ~= false then
-		table.insert(snapshots, snapshotInstance(fullPath(inst)))
+	local hashOk, hashResult = verifyExpectedScriptHash(inst, payload.expectedSourceHash, fullPath(inst))
+	if not hashOk then
+		return hashResult
 	end
-	for key, value in pairs(payload.attributes or payload.values or {}) do
-		inst:SetAttribute(tostring(key), value)
+	local snapshots = { snapshotInstance(fullPath(inst)) }
+	local mutationOk, mutationErr = pcall(function()
+		for key, value in pairs(payload.attributes or payload.values or {}) do
+			inst:SetAttribute(tostring(key), value)
+		end
+	end)
+	if not mutationOk then
+		return rollbackMutation(snapshots, "update_attributes_failed", mutationErr, {
+			path = fullPath(inst),
+		})
 	end
-	return { path = fullPath(inst), attributes = attributesOf(inst), snapshots = snapshots }
+	return { ok = true, path = fullPath(inst), attributes = attributesOf(inst), snapshots = snapshots }
 end
 
 updateTags = function(payload)
@@ -4324,26 +4636,34 @@ updateTags = function(payload)
 	if not inst then
 		return { ok = false, error = "Instance not found", path = payload.path }
 	end
-	local snapshots = {}
-	if payload.snapshot ~= false then
-		table.insert(snapshots, snapshotInstance(fullPath(inst)))
+	local hashOk, hashResult = verifyExpectedScriptHash(inst, payload.expectedSourceHash, fullPath(inst))
+	if not hashOk then
+		return hashResult
 	end
-	if payload.set ~= nil then
-		for _, tag in ipairs(Services.CollectionService:GetTags(inst)) do
-			Services.CollectionService:RemoveTag(inst, tag)
+	local snapshots = { snapshotInstance(fullPath(inst)) }
+	local mutationOk, mutationErr = pcall(function()
+		if payload.set ~= nil then
+			for _, tag in ipairs(Services.CollectionService:GetTags(inst)) do
+				Services.CollectionService:RemoveTag(inst, tag)
+			end
+			for _, tag in ipairs(payload.set or {}) do
+				Services.CollectionService:AddTag(inst, tostring(tag))
+			end
+		else
+			for _, tag in ipairs(payload.remove or {}) do
+				Services.CollectionService:RemoveTag(inst, tostring(tag))
+			end
+			for _, tag in ipairs(payload.add or {}) do
+				Services.CollectionService:AddTag(inst, tostring(tag))
+			end
 		end
-		for _, tag in ipairs(payload.set or {}) do
-			Services.CollectionService:AddTag(inst, tostring(tag))
-		end
-	else
-		for _, tag in ipairs(payload.remove or {}) do
-			Services.CollectionService:RemoveTag(inst, tostring(tag))
-		end
-		for _, tag in ipairs(payload.add or {}) do
-			Services.CollectionService:AddTag(inst, tostring(tag))
-		end
+	end)
+	if not mutationOk then
+		return rollbackMutation(snapshots, "update_tags_failed", mutationErr, {
+			path = fullPath(inst),
+		})
 	end
-	return { path = fullPath(inst), tags = Services.CollectionService:GetTags(inst), snapshots = snapshots }
+	return { ok = true, path = fullPath(inst), tags = Services.CollectionService:GetTags(inst), snapshots = snapshots }
 end
 
 replaceInFiles = function(payload)
@@ -4356,30 +4676,42 @@ replaceInFiles = function(payload)
 		end
 	end
 	local maxFiles = math.clamp(tonumber(payload.maxFiles) or 120, 1, 500)
-	local results = {}
+	local candidates = {}
 	local snapshots = {}
 	local find = tostring(payload.find or "")
 	local replace = tostring(payload.replace or "")
+	local expectedSourceHashes = type(payload.expectedSourceHashes) == "table" and payload.expectedSourceHashes or {}
 	if find == "" then
 		return { ok = false, error = "find is required" }
 	end
 	for _, path in ipairs(paths) do
-		if #results >= maxFiles then
+		if #candidates >= maxFiles then
 			break
 		end
 		local inst = resolvePath(path)
 		if inst and SCRIPT_CLASSES[inst.ClassName] then
-			local ok, source = readScriptSource(inst)
-			if ok then
-				local hay = source
-				local needle = find
-				if payload.caseSensitive == false then
-					hay = string.lower(source)
-					needle = string.lower(find)
-				end
-				if string.find(hay, needle, 1, true) then
-				if payload.snapshot ~= false then
-					table.insert(snapshots, snapshotInstance(fullPath(inst)))
+			local readOk, source = readScriptSource(inst)
+			if not readOk then
+				return {
+					ok = false,
+					code = "source_read_failed",
+					error = "Could not read script source",
+					path = fullPath(inst),
+					retryable = false,
+				}
+			end
+			local hay = source
+			local needle = find
+			if payload.caseSensitive == false then
+				hay = string.lower(source)
+				needle = string.lower(find)
+			end
+			if string.find(hay, needle, 1, true) then
+				local canonicalPath = fullPath(inst)
+				local expectedHash = expectedSourceHashes[canonicalPath] or expectedSourceHashes[tostring(path)]
+				local hashOk, hashResult = verifyExpectedScriptHash(inst, expectedHash, canonicalPath)
+				if not hashOk then
+					return hashResult
 				end
 				local nextSource
 				if payload.caseSensitive == false then
@@ -4392,13 +4724,36 @@ replaceInFiles = function(payload)
 				else
 					nextSource = string.gsub(source, escapePattern(find), escapeReplacement(replace))
 				end
-				writeScriptSource(inst, nextSource)
-				table.insert(results, { path = fullPath(inst), previousHash = stableHash(source), sourceHash = stableHash(nextSource) })
-				end
+				table.insert(candidates, {
+					instance = inst,
+					path = canonicalPath,
+					source = source,
+					nextSource = nextSource,
+				})
 			end
 		end
 	end
-	return { filesChanged = #results, files = results, snapshots = snapshots }
+	for _, candidate in ipairs(candidates) do
+		table.insert(snapshots, snapshotInstance(candidate.path))
+	end
+
+	local results = {}
+	for _, candidate in ipairs(candidates) do
+		local wrote, writeErr = writeScriptSource(candidate.instance, candidate.nextSource)
+		if not wrote then
+			return rollbackMutation(snapshots, "replace_in_files_failed", writeErr or "Could not replace script source", {
+				path = candidate.path,
+				files = results,
+				filesChanged = #results,
+			})
+		end
+		table.insert(results, {
+			path = candidate.path,
+			previousHash = stableHash(candidate.source),
+			sourceHash = stableHash(candidate.nextSource),
+		})
+	end
+	return { ok = true, filesChanged = #results, files = results, snapshots = snapshots }
 end
 
 createSnapshotTool = function(payload)
@@ -4556,56 +4911,69 @@ local function applyArtifactLegacy(payload)
 	local validationFailures = 0
 	local snapshots = {}
 
-	for _, scriptSpec in ipairs(payload.scripts or {}) do
-		local serviceName = scriptSpec.service or "Services.ReplicatedStorage"
-		local serviceRoot = getServiceRoot(serviceName)
-		if not serviceFolders[serviceName] then
-			serviceFolders[serviceName] = ensureCleanFolder(serviceRoot, projectName, snapshots)
-		end
-		local name = scriptSpec.name or (scriptSpec.className or "Script")
-		local valid, issues = validateLuauSource(scriptSpec.source)
-		if not valid then
-			validationFailures = validationFailures + 1
-		end
-		local applyOk, applyErr = pcall(function()
-			local inst = Instance.new(resolveScriptClassName(scriptSpec.className, scriptSpec.kind))
-			inst.Name = name
-			inst.Parent = serviceFolders[serviceName]
-			local ok, err = writeScriptSource(inst, scriptSpec.source or "")
-			if not ok then
-				error(err or "Could not write script source")
+	local executionOk, executionErr = pcall(function()
+		for _, scriptSpec in ipairs(payload.scripts or {}) do
+			local serviceName = scriptSpec.service or "Services.ReplicatedStorage"
+			local serviceRoot = getServiceRoot(serviceName)
+			if not serviceFolders[serviceName] then
+				serviceFolders[serviceName] = ensureCleanFolder(serviceRoot, projectName, snapshots)
 			end
-		end)
-		table.insert(fileResults, {
-			name = name,
-			service = serviceName,
-			ok = applyOk,
-			valid = valid,
-			issues = issues,
-			error = (not applyOk) and tostring(applyErr) or nil,
-		})
-	end
+			local name = scriptSpec.name or (scriptSpec.className or "Script")
+			local valid, issues = validateLuauSource(scriptSpec.source)
+			if not valid then
+				validationFailures = validationFailures + 1
+			end
+			local applyOk, applyErr = pcall(function()
+				local inst = Instance.new(resolveScriptClassName(scriptSpec.className, scriptSpec.kind))
+				inst.Name = name
+				inst.Parent = serviceFolders[serviceName]
+				local ok, err = writeScriptSource(inst, scriptSpec.source or "")
+				if not ok then
+					error(err or "Could not write script source")
+				end
+			end)
+			table.insert(fileResults, {
+				name = name,
+				service = serviceName,
+				ok = applyOk,
+				valid = valid,
+				issues = issues,
+				error = (not applyOk) and tostring(applyErr) or nil,
+			})
+			if not applyOk then
+				error(applyErr or ("Could not apply " .. tostring(name)))
+			end
+		end
 
-	if #(payload.remotes or {}) > 0 then
-		local remoteFolder = serviceFolders["Services.ReplicatedStorage"] or ensureCleanFolder(Services.ReplicatedStorage, projectName, snapshots)
-		for _, remoteSpec in ipairs(payload.remotes or {}) do
-			local remote = Instance.new(remoteSpec.className == "RemoteFunction" and "RemoteFunction" or "RemoteEvent")
-			remote.Name = remoteSpec.name or remote.ClassName
-			remote.Parent = remoteFolder
+		if #(payload.remotes or {}) > 0 then
+			local remoteFolder =
+				serviceFolders["Services.ReplicatedStorage"] or ensureCleanFolder(Services.ReplicatedStorage, projectName, snapshots)
+			for _, remoteSpec in ipairs(payload.remotes or {}) do
+				local remote = Instance.new(remoteSpec.className == "RemoteFunction" and "RemoteFunction" or "RemoteEvent")
+				remote.Name = remoteSpec.name or remote.ClassName
+				remote.Parent = remoteFolder
+			end
 		end
-	end
-	for _, screenSpec in ipairs(payload.screenGuis or {}) do
-		local screenPath = "Services.StarterGui/" .. (screenSpec.name or "NexusRBXScreen")
-		local existing = resolvePath(screenPath)
-		if existing then
-			appendSnapshotTree(existing, snapshots)
-		else
-			table.insert(snapshots, snapshotInstance(screenPath))
+		for _, screenSpec in ipairs(payload.screenGuis or {}) do
+			local screenPath = "Services.StarterGui/" .. (screenSpec.name or "NexusRBXScreen")
+			local existing = resolvePath(screenPath)
+			if existing then
+				appendSnapshotTree(existing, snapshots)
+			else
+				appendMissingPathSnapshots(screenPath, snapshots, {})
+			end
+			createOrReplaceInstance(screenPath, "ScreenGui", {
+				ResetOnSpawn = screenSpec.resetOnSpawn ~= false,
+				IgnoreGuiInset = screenSpec.ignoreGuiInset ~= false,
+			}, true)
 		end
-		createOrReplaceInstance(screenPath, "ScreenGui", {
-			ResetOnSpawn = screenSpec.resetOnSpawn ~= false,
-			IgnoreGuiInset = screenSpec.ignoreGuiInset ~= false,
-		}, true)
+	end)
+
+	if not executionOk then
+		return rollbackMutation(snapshots, "apply_artifact_failed", executionErr, {
+			files = fileResults,
+			validation = { failures = math.max(1, validationFailures), total = #(payload.scripts or {}) },
+		})
 	end
 	return {
 		ok = true,
@@ -4741,11 +5109,17 @@ local function snapshotOnce(target, snapshots, seenPaths)
 	if path == "" or seenPaths[path] then
 		return
 	end
-	seenPaths[path] = true
 	if typeof(target) == "Instance" then
+		seenPaths[path] = true
 		appendSnapshotTree(target, snapshots)
 	else
-		table.insert(snapshots, snapshotInstance(path))
+		local existing = resolvePath(path)
+		if existing then
+			seenPaths[path] = true
+			appendSnapshotTree(existing, snapshots)
+		else
+			appendMissingPathSnapshots(path, snapshots, seenPaths)
+		end
 	end
 end
 
@@ -5079,15 +5453,11 @@ applyArtifact = function(payload)
 	end)
 
 	if not executionOk then
-		restoreSnapshots({ snapshots = snapshots })
-		return {
-			ok = false,
-			error = tostring(executionErr),
+		return rollbackMutation(snapshots, "apply_artifact_failed", tostring(executionErr), {
 			files = fileResults,
 			validation = { failures = 1, total = #operations },
-			snapshots = snapshots,
 			managedFiles = {},
-		}
+		})
 	end
 
 	local managedList = {}
@@ -6583,6 +6953,15 @@ local executedCommandCount = 0
 local COMMAND_RECEIPTS_SETTING, COMMAND_RECEIPT_ORDER_SETTING, COMMAND_RECEIPT_LIMIT =
 	"nexusrbxCommandReceiptsV2", "nexusrbxCommandReceiptOrderV2", 50
 
+-- Keep handlers for structured responses to commands queued by a newer server,
+-- but do not advertise operations this plugin cannot actually execute.
+local UNAVAILABLE_COMMANDS = {
+	format_script = true,
+	run_test_service = true,
+	run_play_test = true,
+	stop_play_test = true,
+}
+
 TOOL_HANDLERS = {
 	apply_artifact = applyArtifact,
 	insert_creator_store_asset = function(payload)
@@ -6657,7 +7036,7 @@ TOOL_HANDLERS = {
 getPluginAttestation = function()
 	local supportedCommands = {}
 	for commandType, handler in pairs(TOOL_HANDLERS) do
-		if type(handler) == "function" then
+		if type(handler) == "function" and not UNAVAILABLE_COMMANDS[commandType] then
 			table.insert(supportedCommands, commandType)
 		end
 	end
@@ -6684,17 +7063,33 @@ end
 local function batchOperations(payload)
 	local snapshots = {}
 	local results = {}
+	local failureCode = nil
 	local previousBatch = lastBatchSnapshots
 	lastBatchSnapshots = snapshots
+	local function rejectUnsupportedBatchOperation(index, opType, message)
+		local result = structuredUnsupported(opType, message)
+		result.code = "STUDIO_TOOL_UNSUPPORTED"
+		result.retryable = false
+		result.error.code = "STUDIO_TOOL_UNSUPPORTED"
+		failureCode = result.code
+		table.insert(results, {
+			index = index,
+			type = opType,
+			ok = false,
+			error = result.error.message,
+			result = result,
+		})
+		error(result.error.message)
+	end
 	local ok, err = pcall(function()
 		for index, op in ipairs(payload.operations or {}) do
 			local opType = tostring(op.type or "")
 			if opType == "apply_artifact" or opType == "apply_asset_reference" or opType == "batch_operations" then
-				error("Nested or artifact batch operation is not supported")
+				rejectUnsupportedBatchOperation(index, opType, "Nested or artifact batch operation is not supported")
 			end
 			local handler = TOOL_HANDLERS[opType]
-			if not handler then
-				error("Unsupported batch operation: " .. opType)
+			if type(handler) ~= "function" or UNAVAILABLE_COMMANDS[opType] then
+				rejectUnsupportedBatchOperation(index, opType, "Unsupported batch operation: " .. opType)
 			end
 			local result = handler(op.payload or {})
 			if type(result) == "table" and result.snapshots then
@@ -6703,24 +7098,33 @@ local function batchOperations(payload)
 				end
 			end
 			if type(result) == "table" and result.ok == false then
-				table.insert(results, { index = index, type = opType, ok = false, error = result.error or result.message, result = result })
-				error(result.error or "Batch operation failed")
+				local resultError = result.error or result.message or "Batch operation failed"
+				if type(resultError) == "table" then
+					resultError = resultError.message or resultError.code or "Batch operation failed"
+				end
+				table.insert(results, { index = index, type = opType, ok = false, error = tostring(resultError), result = result })
+				error(tostring(resultError))
 			end
 			table.insert(results, { index = index, type = opType, ok = true, result = result })
 		end
 	end)
 	if not ok then
-		if payload.atomic ~= false then
-			restoreSnapshots({ snapshots = snapshots })
+		local atomic = payload.atomic ~= false
+		local rollback = nil
+		if atomic then
+			rollback = restoreSnapshots({ snapshots = snapshots, force = true })
 		end
 		if #snapshots == 0 then
 			lastBatchSnapshots = previousBatch
 		end
-		return {
-			ok = false,
-			error = tostring(err),
-			atomic = payload.atomic ~= false,
-			rolledBack = payload.atomic ~= false,
+			local rolledBack = atomic and type(rollback) == "table" and rollback.ok == true
+			return {
+				ok = false,
+				code = atomic and not rolledBack and "rollback_failed" or failureCode or "batch_operation_failed",
+				error = tostring(err),
+				atomic = atomic,
+			rolledBack = rolledBack,
+			rollback = rollback,
 			results = results,
 			snapshots = snapshots,
 		}
@@ -7350,11 +7754,18 @@ executeCommand = function(command)
 	local commandType = command.type or "apply_artifact"
 	local handler = TOOL_HANDLERS[commandType]
 	if type(handler) ~= "function" then
-		error(string.format(
+		local unsupportedMessage = string.format(
 			"Unsupported Studio command: %s (plugin %s). Reinstall the latest NexusRBXStudioBridge.plugin.lua via Plugins > Manage Plugins.",
 			tostring(commandType),
 			PLUGIN_VERSION
-		))
+		)
+		handler = function()
+			local result = structuredUnsupported(commandType, unsupportedMessage)
+			result.code = "STUDIO_TOOL_UNSUPPORTED"
+			result.retryable = false
+			result.error.code = "STUDIO_TOOL_UNSUPPORTED"
+			return result
+		end
 	end
 	executedCommandCount = executedCommandCount + 1
 	setProgress({

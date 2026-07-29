@@ -271,20 +271,6 @@ local function writeScript(payload)
 			retryable = false,
 		}
 	end
-	if existing and SCRIPT_CLASSES[existing.ClassName] and payload.expectedSourceHash and payload.expectedSourceHash ~= "" then
-		local currentHash = scriptHash(existing)
-		if currentHash ~= payload.expectedSourceHash then
-			return {
-				ok = false,
-				code = "source_conflict",
-				error = "Source hash conflict",
-				path = fullPath(existing),
-				expectedSourceHash = payload.expectedSourceHash,
-				currentSourceHash = currentHash,
-				retryable = false,
-			}
-		end
-	end
 	if existing and not payload.allowOverwrite and payload.createOnly == true then
 		return {
 			ok = false,
@@ -294,36 +280,48 @@ local function writeScript(payload)
 			retryable = false,
 		}
 	end
-	if payload.snapshot ~= false then
-		if existing then
-			appendSnapshotTree(existing, snapshots)
-		else
-			table.insert(snapshots, snapshotInstance(path))
+	if existing then
+		local hashOk, hashResult = verifyExpectedScriptHash(existing, payload.expectedSourceHash, fullPath(existing))
+		if not hashOk then
+			return hashResult
 		end
 	end
-	local inst = existing
-	if not inst then
-		local parent, name = ensureParent(path, payload.createParents ~= false)
-		if not parent or not name then
-			return { ok = false, error = "Could not resolve parent for " .. tostring(path), path = path }
+
+	if existing then
+		appendSnapshotTree(existing, snapshots)
+	else
+		appendMissingPathSnapshots(path, snapshots, {})
+	end
+	local mutationOk, mutationResult = pcall(function()
+		local inst = existing
+		if not inst then
+			local parent, name = ensureParent(path, payload.createParents ~= false)
+			if not parent or not name then
+				error("Could not resolve parent for " .. tostring(path))
+			end
+			inst = Instance.new(className)
+			inst.Name = name
+			inst.Parent = parent
+		elseif inst.ClassName ~= className and payload.allowClassChange == true then
+			local previous = inst
+			local parent = previous.Parent
+			local name = previous.Name
+			previous:Destroy()
+			inst = Instance.new(className)
+			inst.Name = name
+			inst.Parent = parent
 		end
-		inst = Instance.new(className)
-		inst.Name = name
-		inst.Parent = parent
-	elseif inst.ClassName ~= className and payload.allowClassChange == true then
-		local previous = inst
-		local parent = previous.Parent
-		local name = previous.Name
-		previous:Destroy()
-		inst = Instance.new(className)
-		inst.Name = name
-		inst.Parent = parent
+		ensureManagedId(inst)
+		local wrote, writeErr = writeScriptSource(inst, payload.source or "")
+		if not wrote then
+			error(writeErr or "Could not write script source")
+		end
+		return inst
+	end)
+	if not mutationOk then
+		return rollbackMutation(snapshots, "write_failed", mutationResult, { path = tostring(path) })
 	end
-	ensureManagedId(inst)
-	local ok, err = writeScriptSource(inst, payload.source or "")
-	if not ok then
-		error(err or "Could not write script source")
-	end
+	local inst = mutationResult
 	return {
 		path = fullPath(inst),
 		className = inst.ClassName,
@@ -337,22 +335,34 @@ local function createInstanceTool(payload)
 	local path = payload.path
 	local className = payload.className or "Folder"
 	local snapshots = {}
-	if payload.snapshot ~= false then
-		local existing = resolvePath(path)
-		if existing then
-			appendSnapshotTree(existing, snapshots)
-		else
-			table.insert(snapshots, snapshotInstance(path))
+	local existing = resolvePath(path)
+	if existing and SCRIPT_CLASSES[existing.ClassName] then
+		local hashOk, hashResult = verifyExpectedScriptHash(existing, payload.expectedSourceHash, fullPath(existing))
+		if not hashOk then
+			return hashResult
 		end
 	end
-	local inst = createOrReplaceInstance(path, className, payload.properties or {}, payload.createParents ~= false)
-	for key, value in pairs(payload.attributes or {}) do
-		inst:SetAttribute(tostring(key), value)
+
+	if existing then
+		appendSnapshotTree(existing, snapshots)
+	else
+		appendMissingPathSnapshots(path, snapshots, {})
 	end
-	for _, tag in ipairs(payload.tags or {}) do
-		CollectionService:AddTag(inst, tostring(tag))
+	local mutationOk, mutationResult = pcall(function()
+		local inst = createOrReplaceInstance(path, className, payload.properties or {}, payload.createParents ~= false)
+		for key, value in pairs(payload.attributes or {}) do
+			inst:SetAttribute(tostring(key), value)
+		end
+		for _, tag in ipairs(payload.tags or {}) do
+			CollectionService:AddTag(inst, tostring(tag))
+		end
+		ensureManagedId(inst)
+		return inst
+	end)
+	if not mutationOk then
+		return rollbackMutation(snapshots, "create_instance_failed", mutationResult, { path = tostring(path) })
 	end
-	ensureManagedId(inst)
+	local inst = mutationResult
 	return {
 		path = fullPath(inst),
 		className = inst.ClassName,
@@ -368,12 +378,21 @@ local function deleteInstanceTool(payload)
 	local inst = resolvePath(path)
 	local snapshots = {}
 	if inst then
+		local hashOk, hashResult = verifyExpectedScriptHash(inst, payload.expectedSourceHash, fullPath(inst))
+		if not hashOk then
+			return hashResult
+		end
 		appendSnapshotTree(inst, snapshots)
 	else
 		table.insert(snapshots, snapshotInstance(path))
 	end
 	if inst then
-		inst:Destroy()
+		local mutationOk, mutationErr = pcall(function()
+			inst:Destroy()
+		end)
+		if not mutationOk then
+			return rollbackMutation(snapshots, "delete_instance_failed", mutationErr, { path = tostring(path) })
+		end
 	end
 	return { path = path, deleted = inst ~= nil, snapshots = snapshots }
 end

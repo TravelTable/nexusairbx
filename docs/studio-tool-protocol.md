@@ -92,7 +92,11 @@ the heartbeat endpoint.
 - Asset references: `apply_asset_reference` applies one exact, server-trusted Roblox asset ID to one inspected Studio instance. Its backend-only payload is `{ path, className, property, robloxAssetId, assetRecordId }`. Allowed targets are `ImageLabel.Image`, `ImageButton.Image`, `Decal.Texture`, `Texture.Texture`, `MeshPart.MeshId`, `MeshPart.TextureID`, `SpecialMesh.MeshId`, `SpecialMesh.TextureId`, `Sound.SoundId`, and `Animation.AnimationId`. The plugin snapshots before mutation, writes `rbxassetid://<id>`, reads the property back, and returns the previous/current value, changed instance, and snapshot receipt. Generic property/create commands cannot bypass this server-owned path, and browser-supplied asset IDs are never authoritative.
 - Coordination: `batch_operations` runs deterministic sub-operations and rolls back snapshots when `atomic` is true.
 
-Writes should include `expectedSourceHash` when the caller previously read a script. The plugin rejects stale writes with `code: "source_conflict"`. Source verification accepts both the bridge's deployed 8-hex source hash and SHA-256 manifest hashes. For direct source writes, the backend derives the expected post-state hash from the command source; a plugin-claimed resulting hash cannot replace that comparison.
+Every mutation of an existing `Script`, `LocalScript`, or `ModuleScript` must include the `expectedSourceHash` returned by the Studio read/manifest that informed the change. Missing preconditions fail with `expected_source_hash_required`; stale preconditions fail with `source_conflict`. Multi-file replacements carry an `expectedSourceHashes` map, and duplication also carries `expectedTargetSourceHash` when it replaces an existing script at the destination.
+
+Mutation snapshots are mandatory; a caller-provided `snapshot: false` is ignored. The plugin snapshots both the target and any missing parent path segments before it mutates Studio. A failed mutation returns a rollback receipt. `rolledBack: true` is emitted only after every snapshot is restored and its pre-mutation state is verified; an incomplete restore fails with `rollback_failed` and includes the per-path restore errors.
+
+Unknown top-level and nested command types fail with `STUDIO_TOOL_UNSUPPORTED`; they are never remapped to `inspect_place`. Plugin attestation advertises only executable handlers. `format_script`, `run_test_service`, `run_play_test`, and `stop_play_test` remain available only as structured compatibility errors for stale queued commands and are omitted from `supportedCommands`.
 
 ## Validation And Recovery
 
@@ -155,6 +159,9 @@ profiles or check IDs fail closed.
 16. On an MCP session, run one successful and one timed-out named playtest and confirm both return to Edit mode.
 17. Apply a published image record to a known `ImageLabel.Image` with `apply_asset_reference`; confirm the acknowledgement contains a snapshot ID and an exact `rbxassetid://<id>` read-back, then confirm unrelated properties are unchanged.
 18. Attempt `apply_asset_reference` with an unsupported class/property pair and attempt the same asset property through `update_properties`; confirm both fail before Studio mutation.
+19. Attempt a known-script mutation without `expectedSourceHash`; confirm `expected_source_hash_required` and no Studio change.
+20. Attempt to submit an unknown top-level command and an unknown nested batch command; confirm both return `STUDIO_TOOL_UNSUPPORTED` and neither triggers `inspect_place`.
+21. Confirm plugin attestation omits `format_script`, `run_test_service`, `run_play_test`, and `stop_play_test`. Force an atomic batch failure after a successful mutation and confirm either a verified rollback receipt with `rolledBack: true`, or `rollback_failed` with restore errors; confirm auto-created parent folders are also removed.
 
 ## Firestore Notes
 

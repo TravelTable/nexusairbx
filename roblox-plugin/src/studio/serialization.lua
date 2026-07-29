@@ -312,6 +312,57 @@ local function scriptHash(inst)
 	return ok and stableHash(source) or nil
 end
 
+-- Every mutation of an existing script must be tied to the exact source the
+-- caller inspected. This avoids silently overwriting Studio edits made between
+-- a read and a queued write.
+local function verifyExpectedScriptHash(inst, expectedSourceHash, requestedPath)
+	if not inst or not SCRIPT_CLASSES[inst.ClassName] then
+		return true, nil
+	end
+
+	local targetPath = tostring(requestedPath or "")
+	if targetPath == "" then
+		targetPath = fullPath(inst)
+	end
+	local currentSourceHash = scriptHash(inst)
+	if currentSourceHash == nil then
+		return false, {
+			ok = false,
+			success = false,
+			code = "source_read_failed",
+			error = "Could not read the current Studio script source",
+			path = targetPath,
+			retryable = false,
+		}
+	end
+
+	local expected = tostring(expectedSourceHash or "")
+	if expected == "" then
+		return false, {
+			ok = false,
+			success = false,
+			code = "expected_source_hash_required",
+			error = "expectedSourceHash is required before mutating an existing script",
+			path = targetPath,
+			currentSourceHash = currentSourceHash,
+			retryable = false,
+		}
+	end
+	if expected ~= currentSourceHash then
+		return false, {
+			ok = false,
+			success = false,
+			code = "source_conflict",
+			error = "Source hash conflict",
+			path = targetPath,
+			expectedSourceHash = expected,
+			currentSourceHash = currentSourceHash,
+			retryable = false,
+		}
+	end
+	return true, currentSourceHash
+end
+
 local function structuredUnsupported(operation, message)
 	return {
 		ok = false,

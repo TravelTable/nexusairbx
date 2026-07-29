@@ -3,6 +3,7 @@ import type { Logger } from "./logger.js";
 import type {
   BackendClientLike,
   CapabilityDetails,
+  CommandReceiptStatus,
   JsonObject,
   PairClaimResponse,
   StudioCapabilities,
@@ -119,31 +120,20 @@ export class NexusBackendClient implements BackendClientLike {
     if (Object.keys(response).length === 0) return null;
     const raw = response.command;
     if (!isRecord(raw)) throw new ConnectorError("BACKEND_RESPONSE_INVALID", "Command response is malformed.");
-    const payload = raw.payload;
-    if (!isJsonObject(payload)) throw new ConnectorError("BACKEND_RESPONSE_INVALID", "Command payload is malformed.");
-    const command: StudioCommand = {
-      id: requireString(raw, "id"),
-      type: requireString(raw, "type"),
-      payload,
-    };
-    copyOptionalString(raw, command, "runId");
-    copyOptionalString(raw, command, "stepId");
-    copyOptionalString(raw, command, "label");
-    copyOptionalString(raw, command, "applyMode");
-    if (typeof raw.createdAt === "number" && Number.isFinite(raw.createdAt)) command.createdAt = raw.createdAt;
-    return command;
+    return parseStudioCommand(raw);
   }
 
   acknowledge(
     commandId: string,
-    status: "succeeded" | "failed",
+    status: CommandReceiptStatus,
     result: JsonObject,
     signal?: AbortSignal,
   ): Promise<JsonObject> {
+    const terminalError = status === "failed" || status === "outcome_unknown";
     return this.request(
       "POST",
       `/api/studio/mcp/commands/${encodeURIComponent(commandId)}/ack`,
-      status === "succeeded" ? { status, result } : { status, error: result.error ?? result, result },
+      terminalError ? { status, error: result.error ?? result, result } : { status, result },
       { authenticated: true, retry: true, ...(signal === undefined ? {} : { signal }) },
     );
   }
@@ -285,7 +275,8 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 function isJsonValue(value: unknown): boolean {
-  if (value === null || ["string", "number", "boolean"].includes(typeof value)) return true;
+  if (value === null || typeof value === "string" || typeof value === "boolean") return true;
+  if (typeof value === "number") return Number.isFinite(value);
   if (Array.isArray(value)) return value.every(isJsonValue);
   return isRecord(value) && Object.values(value).every(isJsonValue);
 }
@@ -310,9 +301,206 @@ function requirePositiveInteger(record: Record<string, unknown> | JsonObject, ke
   return value;
 }
 
-function copyOptionalString(source: Record<string, unknown>, target: StudioCommand, key: "runId" | "stepId" | "label" | "applyMode"): void {
+function parseStudioCommand(raw: Record<string, unknown>): StudioCommand {
+  const payload = raw.payload;
+  if (!isJsonObject(payload)) throw new ConnectorError("BACKEND_RESPONSE_INVALID", "Command payload is malformed.");
+  const command: StudioCommand = {
+    id: requireString(raw, "id"),
+    type: requireString(raw, "type"),
+    payload,
+  };
+
+  copyOptionalNullableString(raw, command, "taskId");
+  copyOptionalNullableString(raw, command, "runId");
+  copyOptionalNullableString(raw, command, "stepId");
+  copyOptionalNullableString(raw, command, "projectId");
+  copyOptionalNullableString(raw, command, "universeId");
+  copyOptionalNullableString(raw, command, "placeId");
+  copyOptionalNullableString(raw, command, "targetId");
+  copyOptionalNullableString(raw, command, "sessionId");
+  copyOptionalNullableString(raw, command, "expectedPlaceId");
+  copyOptionalNullableString(raw, command, "expectedUniverseId");
+  copyOptionalNullableString(raw, command, "expectedPlaceSignature");
+  copyOptionalNullableString(raw, command, "capability");
+  copyOptionalString(raw, command, "commandId");
+  copyOptionalString(raw, command, "operationId");
+  copyOptionalString(raw, command, "idempotencyKey");
+  copyOptionalString(raw, command, "userId");
+  copyOptionalString(raw, command, "connectionType");
+  copyOptionalString(raw, command, "label");
+  copyOptionalString(raw, command, "applyMode");
+  copyOptionalString(raw, command, "semanticInputHash");
+  copyOptionalString(raw, command, "status");
+  copyOptionalString(raw, command, "operationOutcome");
+  copyOptionalFiniteNumber(raw, command, "targetGeneration");
+  copyOptionalFiniteNumber(raw, command, "lifecycleVersion");
+  copyOptionalFiniteNumber(raw, command, "createdAt");
+  copyOptionalFiniteNumber(raw, command, "expiresAt");
+  copyOptionalFiniteNumber(raw, command, "deliveredAt");
+  copyOptionalNullableObject(raw, command, "studioTarget");
+  copyOptionalObject(raw, command, "preconditions");
+
+  const hasLifecycleMarker = [
+    "lifecycleVersion",
+    "lease",
+    "semanticInputHash",
+    "attempts",
+    "operationOutcome",
+  ].some((key) => Object.hasOwn(raw, key));
+  if (!hasLifecycleMarker) return command;
+  if (raw.lifecycleVersion !== 2) {
+    throw new ConnectorError(
+      "CONNECTOR_LIFECYCLE_UNSUPPORTED",
+      "NexusRBX sent an unsupported Studio command lifecycle envelope.",
+    );
+  }
+  if (raw.commandId !== command.id) {
+    throw new ConnectorError(
+      "CONNECTOR_LIFECYCLE_ENVELOPE_INVALID",
+      "The Studio command lifecycle identity is inconsistent.",
+    );
+  }
+  if (raw.status !== "leased" || raw.operationOutcome !== "reserved") {
+    throw new ConnectorError(
+      "CONNECTOR_LIFECYCLE_ENVELOPE_INVALID",
+      "The Studio command is not in a dispatchable lifecycle state.",
+    );
+  }
+  if (typeof raw.semanticInputHash !== "string" || !/^[a-f0-9]{64}$/i.test(raw.semanticInputHash)) {
+    throw new ConnectorError(
+      "CONNECTOR_LIFECYCLE_ENVELOPE_INVALID",
+      "The Studio command lifecycle hash is missing or invalid.",
+    );
+  }
+  command.semanticInputHash = raw.semanticInputHash.toLowerCase();
+
+  if (!isRecord(raw.attempts)) {
+    throw new ConnectorError(
+      "CONNECTOR_LIFECYCLE_ENVELOPE_INVALID",
+      "The Studio command lifecycle attempts are missing.",
+    );
+  }
+  const delivery = requireSafePositiveInteger(raw.attempts, "delivery");
+  const maximum = requireSafePositiveInteger(raw.attempts, "maximum");
+  if (delivery > maximum) {
+    throw new ConnectorError(
+      "CONNECTOR_LIFECYCLE_ENVELOPE_INVALID",
+      "The Studio command lifecycle attempt is outside its allowed range.",
+    );
+  }
+  command.attempts = { delivery, maximum };
+
+  if (!isRecord(raw.lease)) {
+    throw new ConnectorError(
+      "CONNECTOR_LIFECYCLE_ENVELOPE_INVALID",
+      "The Studio command lifecycle lease is missing.",
+    );
+  }
+  const owner = requireNonEmptyString(raw.lease, "owner");
+  const fence = requireSafePositiveInteger(raw.lease, "fence");
+  const targetFence = requireSafeNonNegativeInteger(raw.lease, "targetFence");
+  const expiresAt = requirePositiveFiniteNumber(raw.lease, "expiresAt");
+  command.lease = { owner, fence, targetFence, expiresAt };
+  return command;
+}
+
+function copyOptionalString(
+  source: Record<string, unknown>,
+  target: StudioCommand,
+  key:
+    | "commandId"
+    | "operationId"
+    | "idempotencyKey"
+    | "userId"
+    | "connectionType"
+    | "label"
+    | "applyMode"
+    | "semanticInputHash"
+    | "status"
+    | "operationOutcome",
+): void {
   const value = source[key];
   if (typeof value === "string") target[key] = value;
+}
+
+function copyOptionalNullableString(
+  source: Record<string, unknown>,
+  target: StudioCommand,
+  key:
+    | "taskId"
+    | "runId"
+    | "stepId"
+    | "projectId"
+    | "universeId"
+    | "placeId"
+    | "targetId"
+    | "sessionId"
+    | "expectedPlaceId"
+    | "expectedUniverseId"
+    | "expectedPlaceSignature"
+    | "capability",
+): void {
+  const value = source[key];
+  if (typeof value === "string" || value === null) target[key] = value;
+}
+
+function copyOptionalFiniteNumber(
+  source: Record<string, unknown>,
+  target: StudioCommand,
+  key: "targetGeneration" | "lifecycleVersion" | "createdAt" | "expiresAt" | "deliveredAt",
+): void {
+  const value = source[key];
+  if (typeof value === "number" && Number.isFinite(value)) target[key] = value;
+}
+
+function copyOptionalObject(
+  source: Record<string, unknown>,
+  target: StudioCommand,
+  key: "preconditions",
+): void {
+  const value = source[key];
+  if (isJsonObject(value)) target[key] = value;
+}
+
+function copyOptionalNullableObject(
+  source: Record<string, unknown>,
+  target: StudioCommand,
+  key: "studioTarget",
+): void {
+  const value = source[key];
+  if (isJsonObject(value) || value === null) target[key] = value;
+}
+
+function requireNonEmptyString(record: Record<string, unknown>, key: string): string {
+  const value = record[key];
+  if (typeof value !== "string" || value.length === 0) {
+    throw new ConnectorError("CONNECTOR_LIFECYCLE_ENVELOPE_INVALID", `Studio command lifecycle ${key} is invalid.`);
+  }
+  return value;
+}
+
+function requireSafePositiveInteger(record: Record<string, unknown>, key: string): number {
+  const value = record[key];
+  if (typeof value !== "number" || !Number.isSafeInteger(value) || value <= 0) {
+    throw new ConnectorError("CONNECTOR_LIFECYCLE_ENVELOPE_INVALID", `Studio command lifecycle ${key} is invalid.`);
+  }
+  return value;
+}
+
+function requireSafeNonNegativeInteger(record: Record<string, unknown>, key: string): number {
+  const value = record[key];
+  if (typeof value !== "number" || !Number.isSafeInteger(value) || value < 0) {
+    throw new ConnectorError("CONNECTOR_LIFECYCLE_ENVELOPE_INVALID", `Studio command lifecycle ${key} is invalid.`);
+  }
+  return value;
+}
+
+function requirePositiveFiniteNumber(record: Record<string, unknown>, key: string): number {
+  const value = record[key];
+  if (typeof value !== "number" || !Number.isFinite(value) || value <= 0) {
+    throw new ConnectorError("CONNECTOR_LIFECYCLE_ENVELOPE_INVALID", `Studio command lifecycle ${key} is invalid.`);
+  }
+  return value;
 }
 
 function abortableDelay(milliseconds: number, signal?: AbortSignal): Promise<void> {

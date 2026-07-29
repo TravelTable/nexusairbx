@@ -14,16 +14,61 @@ export interface StudioCommand {
   id: string;
   type: string;
   payload: JsonObject;
-  runId?: string;
-  stepId?: string;
+  commandId?: string;
+  operationId?: string;
+  idempotencyKey?: string;
+  taskId?: string | null;
+  runId?: string | null;
+  stepId?: string | null;
+  userId?: string;
+  projectId?: string | null;
+  universeId?: string | null;
+  placeId?: string | null;
+  targetId?: string | null;
+  sessionId?: string | null;
+  expectedPlaceId?: string | null;
+  expectedUniverseId?: string | null;
+  expectedPlaceSignature?: string | null;
+  targetGeneration?: number;
+  studioTarget?: JsonObject | null;
+  capability?: string | null;
+  connectionType?: string;
   label?: string;
   applyMode?: string;
+  preconditions?: JsonObject;
+  lifecycleVersion?: number;
+  semanticInputHash?: string;
+  status?: string;
+  operationOutcome?: string;
+  attempts?: StudioCommandAttempts;
+  lease?: StudioCommandLease;
   createdAt?: number;
+  expiresAt?: number;
+  deliveredAt?: number;
 }
 
 export interface CommandEnvelope {
   command: StudioCommand;
 }
+
+export interface StudioCommandAttempts extends JsonObject {
+  delivery: number;
+  maximum: number;
+}
+
+export interface StudioCommandLease extends JsonObject {
+  owner: string;
+  fence: number;
+  targetFence: number;
+  expiresAt: number;
+}
+
+export type CommandReceiptStatus =
+  | "received"
+  | "started"
+  | "succeeded"
+  | "failed"
+  | "outcome_unknown";
 
 export interface StudioCapabilities {
   readProject: boolean;
@@ -123,7 +168,7 @@ export interface BackendClientLike {
   pollNext(waitMs: number, signal?: AbortSignal): Promise<StudioCommand | null>;
   acknowledge(
     commandId: string,
-    status: "succeeded" | "failed",
+    status: CommandReceiptStatus,
     result: JsonObject,
     signal?: AbortSignal,
   ): Promise<JsonObject>;

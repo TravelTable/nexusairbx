@@ -12,7 +12,16 @@ local function snapshotStateHash(inst)
 	return ok and hashValue or nil
 end
 
-local function snapshotInstance(path)
+local function recordStudioSnapshotLocally(snap)
+	if type(localSnapshots) == "table" then
+		table.insert(localSnapshots, snap)
+		if type(updateSnapshotLabel) == "function" then
+			updateSnapshotLabel()
+		end
+	end
+end
+
+local function snapshotInstance(path, deferLocalRecord)
 	local inst = resolvePath(path)
 	if not inst then
 		local parts = splitPath(path)
@@ -20,7 +29,7 @@ local function snapshotInstance(path)
 		if #parts > 1 then
 			parentPath = table.concat(parts, "/", 1, #parts - 1)
 		end
-		return {
+		local missingSnap = {
 			id = HttpService:GenerateGUID(false),
 			path = path,
 			parentPath = parentPath,
@@ -29,6 +38,10 @@ local function snapshotInstance(path)
 			existed = false,
 			properties = {},
 		}
+		if not deferLocalRecord then
+			recordStudioSnapshotLocally(missingSnap)
+		end
+		return missingSnap
 	end
 
 	local snap = {
@@ -46,19 +59,22 @@ local function snapshotInstance(path)
 
 	if SCRIPT_CLASSES[inst.ClassName] then
 		local ok, source = readScriptSource(inst)
-		snap.source = ok and source or ""
+		if not ok then
+			error("Could not snapshot script source at " .. tostring(snap.path) .. "; mutation was not attempted")
+		end
+		snap.source = source
+		-- Hash exactly the bytes captured in the snapshot. A second source read
+		-- could race an editor update and make the snapshot unverifiable.
+		snap.preHash = stableHash(source)
+	else
+		snap.preHash = snapshotStateHash(inst)
 	end
 
 	-- Pre-edit fingerprint: the state the instance had before the agent touched
 	-- it. `postHash` (the state right after the agent's write) is stamped later
 	-- by the command executor so restore can detect human edits made since.
-	snap.preHash = snapshotStateHash(inst)
-
-	if type(localSnapshots) == "table" then
-		table.insert(localSnapshots, snap)
-		if type(updateSnapshotLabel) == "function" then
-			updateSnapshotLabel()
-		end
+	if not deferLocalRecord then
+		recordStudioSnapshotLocally(snap)
 	end
 	return snap
 end
@@ -67,10 +83,43 @@ local function appendSnapshotTree(inst, snapshots)
 	if not inst then
 		return
 	end
-	for _, child in ipairs(inst:GetChildren()) do
-		appendSnapshotTree(child, snapshots)
+
+	-- Capture the complete tree before publishing any of its snapshots. If one
+	-- descendant script cannot be read, callers fail before mutation and the
+	-- manual recovery list is not polluted with a partial tree.
+	local pending = {}
+	local function captureTree(current)
+		for _, child in ipairs(current:GetChildren()) do
+			captureTree(child)
+		end
+		table.insert(pending, snapshotInstance(fullPath(current), true))
 	end
-	table.insert(snapshots, snapshotInstance(fullPath(inst)))
+	captureTree(inst)
+	for _, snap in ipairs(pending) do
+		table.insert(snapshots, snap)
+		recordStudioSnapshotLocally(snap)
+	end
+end
+
+-- Snapshot every currently-missing segment before ensureParent can create it.
+-- Restores run in reverse order, so a failed mutation removes the leaf first
+-- and then any empty parent folders that were created for the command.
+local function appendMissingPathSnapshots(path, snapshots, seenPaths)
+	snapshots = snapshots or {}
+	seenPaths = seenPaths or {}
+	local parts = splitPath(path)
+	local rootInst, startIndex = rootFromParts(parts)
+	if not rootInst or #parts < startIndex then
+		return snapshots
+	end
+	for index = startIndex, #parts do
+		local segmentPath = table.concat(parts, "/", 1, index)
+		if not seenPaths[segmentPath] and not resolvePath(segmentPath) then
+			seenPaths[segmentPath] = true
+			table.insert(snapshots, snapshotInstance(segmentPath))
+		end
+	end
+	return snapshots
 end
 
 local function beginRecording(label)
@@ -132,55 +181,116 @@ local function restoreSnapshots(payload)
 	-- `kept` counts instances left untouched because the user edited them after
 	-- the agent's write. `force` bypasses that protection for a full revert.
 	local kept = 0
-	local force = payload.force == true
-	local snapshots = payload.snapshots or localSnapshots
+	local errors = {}
+	local force = type(payload) == "table" and payload.force == true
+	local snapshots = (type(payload) == "table" and payload.snapshots) or localSnapshots
+	if type(snapshots) ~= "table" then
+		snapshots = {}
+	end
 	for i = #snapshots, 1, -1 do
 		local snap = snapshots[i]
-		if snap.existed == false then
-			local current = resolvePath(snap.path)
-			if current then
-				-- The agent created this. If the user changed it since the agent
-				-- wrote it, keep their version instead of deleting it.
-				if not force and snap.postHash then
-					local currentHash = snapshotStateHash(current)
-					if currentHash and currentHash ~= snap.postHash then
-						kept = kept + 1
-						continue
-					end
-				end
-				current:Destroy()
-				removed = removed + 1
-			end
-		elseif snap.path and snap.className and snap.className ~= "" then
-			-- The agent overwrote/edited this. If the current state no longer
-			-- matches what the agent produced (and isn't already the pre-edit
-			-- state), a human edited it since -> keep their edits.
-			if not force and snap.postHash then
+		local ok, restoreErr = pcall(function()
+			if snap.existed == false then
 				local current = resolvePath(snap.path)
 				if current then
-					local currentHash = snapshotStateHash(current)
-					if currentHash and currentHash ~= snap.postHash and currentHash ~= snap.preHash then
-						kept = kept + 1
-						continue
+					-- The agent created this. If the user changed it since the agent
+					-- wrote it, keep their version instead of deleting it.
+					if not force and snap.postHash then
+						local currentHash = snapshotStateHash(current)
+						if currentHash and currentHash ~= snap.postHash then
+							kept = kept + 1
+							return
+						end
+					end
+					current:Destroy()
+					if resolvePath(snap.path) then
+						error("Created instance still exists after rollback")
+					end
+					removed = removed + 1
+				end
+			elseif snap.path and snap.className and snap.className ~= "" then
+				-- The agent overwrote/edited this. If the current state no longer
+				-- matches what the agent produced (and isn't already the pre-edit
+				-- state), a human edited it since -> keep their edits.
+				if not force and snap.postHash then
+					local current = resolvePath(snap.path)
+					if current then
+						local currentHash = snapshotStateHash(current)
+						if currentHash and currentHash ~= snap.postHash and currentHash ~= snap.preHash then
+							kept = kept + 1
+							return
+						end
 					end
 				end
+				local inst = createOrReplaceInstance(snap.path, snap.className, snap.properties or {}, true)
+				if SCRIPT_CLASSES[inst.ClassName] and snap.source ~= nil then
+					local wrote, writeErr = writeScriptSource(inst, snap.source)
+					if not wrote then
+						error(writeErr or "Could not restore script source")
+					end
+				end
+				for key, value in pairs(snap.attributes or {}) do
+					local setOk, setErr = pcall(function()
+						inst:SetAttribute(key, value)
+					end)
+					if not setOk then
+						error(setErr or ("Could not restore attribute " .. tostring(key)))
+					end
+				end
+				for _, tag in ipairs(snap.tags or {}) do
+					local tagOk, tagErr = pcall(function()
+						CollectionService:AddTag(inst, tag)
+					end)
+					if not tagOk then
+						error(tagErr or ("Could not restore tag " .. tostring(tag)))
+					end
+				end
+				local restoredHash = snapshotStateHash(inst)
+				if snap.preHash and restoredHash ~= snap.preHash then
+					error(
+						"Restored state hash does not match the pre-mutation snapshot (expected "
+							.. tostring(snap.preHash)
+							.. ", got "
+							.. tostring(restoredHash)
+							.. ")"
+					)
+				end
+				restored = restored + 1
 			end
-			local inst = createOrReplaceInstance(snap.path, snap.className, snap.properties or {}, true)
-			if SCRIPT_CLASSES[inst.ClassName] and snap.source ~= nil then
-				writeScriptSource(inst, snap.source)
-			end
-			for key, value in pairs(snap.attributes or {}) do
-				pcall(function()
-					inst:SetAttribute(key, value)
-				end)
-			end
-			for _, tag in ipairs(snap.tags or {}) do
-				pcall(function()
-					CollectionService:AddTag(inst, tag)
-				end)
-			end
-			restored = restored + 1
+		end)
+		if not ok then
+			table.insert(errors, {
+				snapshotId = snap and snap.id or nil,
+				path = snap and snap.path or "",
+				message = tostring(restoreErr),
+			})
 		end
 	end
-	return { restored = restored, removed = removed, kept = kept }
+	local complete = #errors == 0 and kept == 0
+	return {
+		ok = complete,
+		success = complete,
+		complete = complete,
+		code = complete and nil or "snapshot_restore_incomplete",
+		error = complete and nil or "One or more Studio snapshots could not be fully restored",
+		restored = restored,
+		removed = removed,
+		kept = kept,
+		requested = #snapshots,
+		errors = errors,
+	}
+end
+
+local function rollbackMutation(snapshots, code, message, details)
+	local rollback = restoreSnapshots({ snapshots = snapshots, force = true })
+	local response = type(details) == "table" and details or {}
+	response.ok = false
+	response.success = false
+	response.error = tostring(message or "Studio mutation failed")
+	response.mutationCode = tostring(code or "mutation_failed")
+	response.code = rollback.ok and response.mutationCode or "rollback_failed"
+	response.snapshots = snapshots or {}
+	response.rolledBack = rollback.ok == true
+	response.rollback = rollback
+	return response
 end

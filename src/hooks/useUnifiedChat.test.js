@@ -571,9 +571,12 @@ describe("useUnifiedChat", () => {
       mode: "agent",
       prompt: "What files can you see in Studio?",
       studioEnabled: true,
-      studioSessionId: "mcp_agent_exact",
-      studioConnectionType: "mcp_local",
     }));
+    const canonicalRunInput = createAgentRunV2.mock.calls[0][0];
+    expect(canonicalRunInput).not.toHaveProperty("studioSessionId");
+    expect(canonicalRunInput).not.toHaveProperty("studioConnectionType");
+    expect(canonicalRunInput.signal).toBeInstanceOf(AbortSignal);
+    expect(getStudioStatus).not.toHaveBeenCalled();
     expect(global.fetch).not.toHaveBeenCalled();
     expect(orchestrate).not.toHaveBeenCalled();
     expect(chatHandleSubmit).toHaveBeenCalledTimes(1);
@@ -945,6 +948,9 @@ describe("useUnifiedChat", () => {
       approvedPlan: { planId: "plan-1", version: 2, hash: "plan-hash" },
       selectedExampleIds: ["example-1"],
     }));
+    const canonicalRunInput = createAgentRunV2.mock.calls[0][0];
+    expect(canonicalRunInput).not.toHaveProperty("studioSessionId");
+    expect(canonicalRunInput).not.toHaveProperty("studioConnectionType");
   });
 
   test("passes a queued authoritative run through without launching a second run", async () => {

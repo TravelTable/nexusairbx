@@ -10,7 +10,7 @@ local STUDIO_PROTOCOL_VERSION = "2026-07-22-asset-references"
 -- version. Keep it in lockstep with the generated bundle and backend allowlist.
 -- A plugin session must attest its build and actual command handlers at pairing
 -- time; version strings alone are not evidence that a command exists.
-local PLUGIN_BUILD_ID = "nexusrbx-studio-0.11.0-asset-references.2"
+local PLUGIN_BUILD_ID = "nexusrbx-studio-0.11.0-asset-references.3"
 
 -- These are deliberately capability-level (rather than UI-level) claims. The
 -- pairing payload also includes the exact sorted command list derived from the

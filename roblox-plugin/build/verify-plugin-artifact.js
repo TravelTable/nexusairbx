@@ -55,6 +55,33 @@ try {
   if (!artifact.includes("buildId = attestation.buildId")) {
     fail("bundle pairing payload does not include buildId");
   }
+  if (!artifact.includes("not UNAVAILABLE_COMMANDS[commandType]")) {
+    fail("bundle attestation does not filter unavailable command handlers");
+  }
+
+  for (const command of ["format_script", "run_test_service", "run_play_test", "stop_play_test"]) {
+    const unavailablePattern = new RegExp(`\\b${escapeRegExp(command)}\\s*=\\s*true`);
+    if (!unavailablePattern.test(registry)) {
+      fail(`registry must mark ${command} unavailable for capability attestation`);
+    }
+    if (!unavailablePattern.test(artifact)) {
+      fail(`bundle must mark ${command} unavailable for capability attestation`);
+    }
+  }
+
+  for (const marker of [
+    "expected_source_hash_required",
+    "appendMissingPathSnapshots = function",
+    "rollbackMutation = function",
+    "rollback_failed",
+    "Could not snapshot script source",
+    "Restored state hash does not match the pre-mutation snapshot",
+    "STUDIO_TOOL_UNSUPPORTED",
+  ]) {
+    if (!artifact.includes(marker)) {
+      fail(`bundle is missing Studio safety invariant: ${marker}`);
+    }
+  }
 
   for (const command of handlers) {
     const commandPattern = new RegExp(
