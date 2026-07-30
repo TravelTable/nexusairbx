@@ -71,9 +71,9 @@ async function fetchAllMarketplaceIcons() {
   });
 }
 
-function writeGeneratedIconData(qualifiedIcons) {
+function writeGeneratedIconData(publishedIcons) {
   fs.mkdirSync(path.dirname(GENERATED_ICON_DATA), { recursive: true });
-  fs.writeFileSync(GENERATED_ICON_DATA, `${JSON.stringify(qualifiedIcons, null, 2)}\n`);
+  fs.writeFileSync(GENERATED_ICON_DATA, `${JSON.stringify(publishedIcons, null, 2)}\n`);
 }
 
 async function generate() {
@@ -84,13 +84,21 @@ async function generate() {
     outputDir: OUTPUT_DIR,
     documents: result.documents,
   });
-  writeGeneratedIconData(result.report.qualified);
+  writeGeneratedIconData(result.report.published);
 
   console.log("[sitemap] generated sitemap index and child sitemaps");
-  console.log(`[sitemap] included core=${result.counts.core}, docs=${result.counts.docs}, examples=${result.counts.examples}, icons=${result.counts.icons}`);
+  console.log(`[sitemap] included core=${result.counts.core}, docs=${result.counts.docs}, examples=${result.counts.examples}, icons=${result.counts.publishedIcons}`);
+  console.log(`[sitemap] qualified icons=${result.counts.qualifiedIcons}, published icons=${result.counts.publishedIcons}, unpublished qualified icons=${result.counts.unpublishedQualifiedIcons}`);
   console.log(`[sitemap] excluded icons=${result.counts.excludedIcons}`);
   console.log(`[sitemap] exclusion reasons=${JSON.stringify(result.report.exclusionCounts)}`);
   console.log(`[sitemap] indexable categories=${result.counts.indexableCategories}, excluded categories=${result.counts.excludedCategories}`);
+  if (result.report.unpublishedQualified.length) {
+    console.log(
+      `[sitemap] unpublished qualified samples=${JSON.stringify(
+        result.report.unpublishedQualified.slice(0, 20).map((icon) => icon.id),
+      )}`,
+    );
+  }
   if (result.report.excluded.length) {
     console.log(`[sitemap] exclusion samples=${JSON.stringify(result.report.excluded.slice(0, 20))}`);
   }

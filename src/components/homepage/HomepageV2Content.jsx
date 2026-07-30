@@ -6,7 +6,7 @@ import { trackProductEvent } from "../../lib/productAnalytics";
 import { submitHomepagePrompt, trackHomepagePromptStarted } from "../../lib/homepageActivation";
 import HomepageFeatures from "./HomepageFeatures";
 import HomepageWorkflow from "./HomepageWorkflow";
-import HomepageTestimonial from "./HomepageTestimonial";
+import HomepageIntentEvidence from "./HomepageIntentEvidence";
 import HomepageFooter from "./HomepageFooter";
 import RobloxTrustStrip from "./RobloxTrustStrip";
 import CompanionDownloadSection from "./CompanionDownloadSection";
@@ -67,16 +67,17 @@ export default function HomepageV2Content({
           />
         </div>
 
-        <h1 className="mb-4 bg-gradient-to-r from-[#00f5d4] to-[#9b5de5] bg-clip-text text-4xl font-black tracking-tight text-transparent">
+        <p className="mb-4 bg-gradient-to-r from-[#00f5d4] to-[#9b5de5] bg-clip-text text-lg font-black uppercase tracking-[0.18em] text-transparent">
           NexusRBX
-        </h1>
-
-        <p className="mb-3 text-center text-[clamp(2rem,5vw,3.5rem)] font-black leading-[1.1] tracking-tight text-white">
-          Your Intelligent Roblox Studio Code Agent
         </p>
 
+        <h1 className="mb-3 text-center text-[clamp(2rem,5vw,3.5rem)] font-black leading-[1.1] tracking-tight text-white">
+          AI Roblox Script Generator for Studio
+        </h1>
+
         <p className="mb-8 max-w-2xl text-center text-lg text-zinc-400">
-          Describe what you want to build. NexusRBX generates production-ready Luau code.
+          Generate a focused Luau script from one prompt, or use the Studio agent to plan
+          coordinated changes across multiple files and Roblox services.
         </p>
 
         <div className="w-full max-w-2xl rounded-2xl border border-white/10 bg-white/[0.04] p-3 shadow-2xl shadow-black/25 backdrop-blur-xl">
@@ -128,7 +129,7 @@ export default function HomepageV2Content({
       <CompanionDownloadSection />
       <HomepageFeatures />
       <HomepageWorkflow />
-      <HomepageTestimonial />
+      <HomepageIntentEvidence />
       <HomepageFooter />
     </div>
   );

@@ -4,6 +4,7 @@ const path = require("node:path");
 const test = require("node:test");
 const { buildSitemapDocuments } = require("./sitemapBuilder");
 const { marketplaceFilterIndexability } = require("./iconIndexability");
+const { DEFAULT_PRERENDER_ICON_LIMIT } = require("./prerenderIcons");
 const { collectPaginatedMarketplaceIcons } = require("../scripts/generate-sitemap");
 const generatedIcons = require("../public-frontend/data/generated/qualified-icons.json");
 
@@ -73,6 +74,7 @@ const landingPages = [
     h1: "Roblox script generator for focused Luau code.",
     description: "Generate focused Roblox Luau scripts with placement notes, setup steps, test guidance, warnings, and copy-ready output.",
     mode: "quick_script",
+    evidenceId: "script-generator-round-timer",
     required: [/Round Timer/, /ServerScriptService Script/, /Common mistakes/, /Safety and responsible use/],
   },
   {
@@ -81,6 +83,7 @@ const landingPages = [
     h1: "Roblox AI scripter for iterative building and debugging.",
     description: "Use NexusRBX as a Roblox AI scripter for iterative debugging, script edits, explanations, and multi-step Studio workflows.",
     mode: "agent",
+    evidenceId: "ai-scripter-respawn-debug",
     required: [/Debug After Respawn/, /conversational scripting/i, /Agent Build/, /Error explanation/],
   },
   {
@@ -89,6 +92,7 @@ const landingPages = [
     h1: "Roblox Lua script generator that speaks Luau.",
     description: "Generate Roblox Luau scripts with syntax notes, Script vs LocalScript placement, setup guidance, and common Lua-to-Luau differences.",
     mode: "quick_script",
+    evidenceId: "lua-generator-strict-module",
     required: [/Typed Module/, /Luau/, /CollectionService/, /ModuleScript/],
   },
   {
@@ -97,6 +101,7 @@ const landingPages = [
     h1: "Roblox Studio script generator for correct placement and workflow.",
     description: "Plan Roblox Studio scripts with clear Script, LocalScript, and ModuleScript placement plus plugin-aware workflow guidance.",
     mode: "agent",
+    evidenceId: "studio-generator-multifile-round-system",
     required: [/Script placement maps/, /LocalScript/, /ModuleScript/, /Studio connection guide/],
   },
   {
@@ -105,6 +110,7 @@ const landingPages = [
     h1: "Roblox GUI maker for interactive UI behavior.",
     description: "Create Roblox GUI behavior scripts with responsive layout guidance, LocalScript placement, examples, and a path to Agent Build for larger interfaces.",
     mode: "quick_script",
+    evidenceId: "gui-maker-responsive-hud",
     required: [/Shop GUI/, /responsive layout/i, /StarterGui LocalScript/, /Icon marketplace/],
   },
 ];
@@ -145,11 +151,14 @@ const legalRoutes = [
 
 test("homepage raw HTML is meaningful before client JavaScript", () => {
   const html = readHtml("/");
-  assert.match(html, /<title>NexusRBX — AI Roblox Studio Code Agent<\/title>/);
-  assert.match(html, /<meta name="description" content="Describe what you want to build\. NexusRBX generates production-ready Luau code for Roblox Studio — powered by AI\./);
-  assert.match(html, /<h1[^>]*>NexusRBX<\/h1>/);
-  assert.match(html, /Your Intelligent Roblox Studio Code Agent/);
-  assert.match(html, /Describe what you want to build\. NexusRBX generates production-ready Luau code\./);
+  assert.equal(extractTitle(html), "Roblox AI Script Generator &amp; Studio Code Agent | NexusRBX");
+  assert.equal(extractH1(html), "AI Roblox Script Generator for Studio");
+  assert.equal(
+    extractMetaContent(html, "description"),
+    "Generate focused Luau scripts from a prompt or use the NexusRBX Studio agent to plan coordinated changes across multiple Roblox files and services.",
+  );
+  assert.equal(extractCanonical(html), "https://www.nexusrbx.com/");
+  assert.match(html, /Generate a focused Luau script from one prompt, or use the Studio agent to plan coordinated changes across multiple files and Roblox services\./);
   assert.match(html, />Generate</);
   assert.match(html, /AI-Powered Code Generation/);
   assert.match(html, /Real-time Debugging &amp; Optimization/);
@@ -161,8 +170,16 @@ test("homepage raw HTML is meaningful before client JavaScript", () => {
   assert.match(html, /src="\/generated-files\.png"/);
   assert.match(html, /Describe Your Need/);
   assert.match(html, /Review &amp; Insert/);
-  assert.match(html, /Trusted by Top Roblox Developers/);
-  assert.match(html, /NexusRBX is a game-changer! It saves me hours of coding every day\./);
+  assert.match(html, /data-evidence-example="homepage-round-timer"/);
+  assert.match(html, /Manual Studio verification required/);
+  assert.match(html, /Prompt/);
+  assert.match(html, /File and class/);
+  assert.match(html, /Studio location/);
+  assert.match(html, /Setup/);
+  assert.match(html, /Verification checklist/);
+  assert.match(html, /Expected result/);
+  assert.match(html, /Limitations/);
+  assert.doesNotMatch(html, /Trusted by Top Roblox Developers|Alex, Studio Lead|game-changer/);
   assert.match(html, /src="\/logo\.png"/);
   assert.doesNotMatch(html, /src="\/imageeeeAI\.png"/);
   assert.match(html, /data-generation-intent-form="homepage"/);
@@ -173,7 +190,13 @@ test("homepage raw HTML is meaningful before client JavaScript", () => {
   assert.match(html, /Connect NexusRBX to Roblox Studio/);
   assert.match(html, /href="\/downloads"/);
   assert.equal(countCanonical(html), 1);
-  assert.match(html, /href="https:\/\/www\.nexusrbx\.com\/"/);
+  [
+    "/roblox-script-generator",
+    "/roblox-ai-scripter",
+    "/roblox-studio-script-generator",
+    "/roblox-lua-script-generator",
+    "/roblox-gui-maker",
+  ].forEach((route) => assert.match(html, new RegExp(`href="${route}"`)));
   assert.doesNotMatch(html, /\/ai-preview\.png/);
   assert.doesNotMatch(html, /Monaco|AgentWorkspaceLayout|CodeEditorTabs/);
 });
@@ -236,6 +259,15 @@ test("search landing pages have unique raw metadata and meaningful server HTML",
     assert.equal(countCanonical(html), 1);
     assert.match(html, new RegExp(`data-generation-intent-form="${page.route.slice(1)}"`));
     assert.match(html, new RegExp(`data-generation-mode="${page.mode}"`));
+    assert.match(html, new RegExp(`data-evidence-example="${page.evidenceId}"`));
+    assert.match(html, /Manual Studio verification required/);
+    assert.match(html, /Prompt/);
+    assert.match(html, /Filename/);
+    assert.match(html, /Class/);
+    assert.match(html, /Studio location/);
+    assert.match(html, /Setup/);
+    assert.match(html, /Verification checklist/);
+    assert.match(html, /Expected result/);
     assert.match(html, /Example prompts and outputs/);
     assert.match(html, /Supported request types/);
     assert.match(html, /Roblox Studio installation guidance/);
@@ -361,7 +393,7 @@ test("public header keeps Firebase auth in a small lazy client island", () => {
   assert.match(accountState, /import\("firebase\/auth"\)/);
 });
 
-test("icon sitemap includes qualified icons and excludes thin private and deleted icons", () => {
+test("icon sitemap publishes only the deterministic capped qualified set", () => {
   const qualifiedA = fixtureIcon({ id: "alpha0001", name: "Inventory Alpha Badge" });
   const qualifiedB = fixtureIcon({ id: "bravo0002", name: "Inventory Bravo Badge" });
   const qualifiedC = fixtureIcon({ id: "charlie003", name: "Inventory Charlie Badge" });
@@ -369,19 +401,41 @@ test("icon sitemap includes qualified icons and excludes thin private and delete
   const privateIcon = fixtureIcon({ id: "private05", name: "Private Inventory Badge", isPublic: false });
   const deletedIcon = fixtureIcon({ id: "deleted06", name: "Deleted Inventory Badge", deletedAt: "2026-06-15T00:00:00.000Z" });
 
-  const result = buildSitemapDocuments({ icons: [thin, privateIcon, deletedIcon, qualifiedC, qualifiedA, qualifiedB] });
+  const result = buildSitemapDocuments({
+    icons: [thin, privateIcon, deletedIcon, qualifiedC, qualifiedA, qualifiedB],
+    publishedIconLimit: 2,
+  });
   const iconsXml = result.documents["sitemaps/icons.xml"];
 
   assert.match(iconsXml, /xmlns:image="http:\/\/www\.google\.com\/schemas\/sitemap-image\/1\.1"/);
   assert.match(iconsXml, /<loc>https:\/\/www\.nexusrbx\.com\/icons\/alpha0001<\/loc>/);
+  assert.match(iconsXml, /<loc>https:\/\/www\.nexusrbx\.com\/icons\/bravo0002<\/loc>/);
   assert.match(iconsXml, /<image:loc>https:\/\/cdn\.nexusrbx\.com\/icons\/alpha0001\.png<\/image:loc>/);
-  assert.doesNotMatch(iconsXml, /thin00004|private05|deleted06/);
+  assert.doesNotMatch(iconsXml, /charlie003|thin00004|private05|deleted06/);
   assert.doesNotMatch(iconsXml, /<priority>/);
-  assert.equal(result.counts.icons, 3);
+  assert.equal(result.counts.icons, 2);
+  assert.equal(result.counts.qualifiedIcons, 3);
+  assert.equal(result.counts.publishedIcons, 2);
+  assert.equal(result.counts.unpublishedQualifiedIcons, 1);
   assert.equal(result.counts.excludedIcons, 3);
+  assert.deepEqual(result.report.published.map((icon) => icon.id), ["alpha0001", "bravo0002"]);
+  assert.deepEqual(result.report.unpublishedQualified.map((icon) => icon.id), ["charlie003"]);
   assert.equal(result.report.exclusionCounts.thin_or_duplicate_name, 1);
   assert.equal(result.report.exclusionCounts.not_public, 1);
   assert.equal(result.report.exclusionCounts.deleted_or_restricted, 1);
+});
+
+test("checked-in icon sitemap exactly matches the capped published manifest", () => {
+  const iconsXml = fs.readFileSync(path.join(__dirname, "..", "public", "sitemaps", "icons.xml"), "utf8");
+  const sitemapIds = [...iconsXml.matchAll(/<loc>https:\/\/www\.nexusrbx\.com\/icons\/([^<]+)<\/loc>/g)]
+    .map((match) => decodeURIComponent(match[1]));
+  const manifestIds = generatedIcons.map((icon) => String(icon.id));
+
+  assert.ok(manifestIds.length > 0, "Expected a non-empty published icon manifest.");
+  assert.ok(manifestIds.length <= DEFAULT_PRERENDER_ICON_LIMIT);
+  assert.equal(new Set(manifestIds).size, manifestIds.length);
+  assert.deepEqual(manifestIds, [...manifestIds].sort((a, b) => a.localeCompare(b)));
+  assert.deepEqual(sitemapIds, manifestIds);
 });
 
 test("sitemap output uses preferred host and does not generate filter crawl traps", () => {

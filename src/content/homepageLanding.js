@@ -1,15 +1,15 @@
 export const homepageMetadata = {
-  title: "NexusRBX: Intelligent Roblox Studio Code Agent",
+  title: "Roblox AI Script Generator & Studio Code Agent | NexusRBX",
   description:
-    "Boost productivity, generate scripts, and debug faster with AI integrated directly into your Roblox Studio workflow.",
+    "Generate focused Luau scripts from a prompt or use the NexusRBX Studio agent to plan coordinated changes across multiple Roblox files and services.",
 };
 
 export const homepageHero = {
-  eyebrow: "Roblox Studio AI Agent",
-  title: "NexusRBX: Your Intelligent Roblox Studio Code Agent",
-  titleLines: ["NexusRBX: Your", "Intelligent Roblox", "Studio Code Agent"],
+  eyebrow: "NexusRBX",
+  title: "AI Roblox Script Generator for Studio",
+  titleLines: ["AI Roblox Script", "Generator for Studio"],
   description:
-    "Boost productivity, generate scripts, and debug faster with powerful AI integrated directly into your workflow.",
+    "Generate a focused Luau script from one prompt, or use the Studio agent to plan coordinated changes across multiple files and Roblox services.",
   primaryCta: {
     label: "Start Building",
     href: "/ai",
@@ -65,7 +65,7 @@ export const homepageWorkflow = [
     description: "Add the NexusRBX plugin to Roblox Studio in minutes.",
     image: {
       src: "/luginimageeeeeeeee.png",
-      alt: "NexusRBX plugin connecting to Roblox Studio",
+      alt: "Illustration of NexusRBX connecting with Roblox Studio",
     },
   },
   {
@@ -73,7 +73,7 @@ export const homepageWorkflow = [
     description: "Use the integrated console or chat to describe what you want to build.",
     image: {
       src: "/promptbox.png",
-      alt: "NexusRBX prompt box for describing what to build",
+      alt: "Illustration of a Roblox scripting prompt",
     },
   },
   {
@@ -81,16 +81,10 @@ export const homepageWorkflow = [
     description: "NexusRBX provides the code, ready to be reviewed, edited, and inserted directly into your game.",
     image: {
       src: "/generated-files.png",
-      alt: "Generated Luau script files ready to review and insert into Roblox Studio",
+      alt: "Illustration of multiple Luau files ready for review",
     },
   },
 ];
-
-export const homepageTestimonial = {
-  heading: "Trusted by Top Roblox Developers",
-  quote: "NexusRBX is a game-changer! It saves me hours of coding every day.",
-  author: "Alex, Studio Lead",
-};
 
 export const homepageFooterLinks = [
   { label: "Features", href: "#features" },

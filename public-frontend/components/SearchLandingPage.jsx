@@ -1,5 +1,6 @@
 import LandingPrompt from "./LandingPrompt";
 import LandingAnalyticsLink from "./LandingAnalyticsLink";
+import LandingEvidence from "./LandingEvidence";
 import ExamplePromptButton from "./ExamplePromptButton";
 import StructuredData from "./StructuredData";
 import { canonicalUrl, SITE_NAME } from "../../src/lib/seo";
@@ -91,6 +92,8 @@ export default function SearchLandingPage({ page, allPages }) {
                   ))}
                 </div>
               </section>
+
+              <LandingEvidence slug={page.slug} />
 
               <SectionList title="Supported request types" items={page.supported} />
               <SectionList title="Roblox Studio installation guidance" items={page.studio} />

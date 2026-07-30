@@ -8,7 +8,17 @@ function prerenderIconLimit() {
 
 function selectPrerenderIcons(icons = [], limit = prerenderIconLimit()) {
   if (!Array.isArray(icons) || limit <= 0) return [];
-  return icons.slice(0, limit);
+
+  const uniqueIcons = new Map();
+  for (const icon of icons) {
+    const id = String(icon?.id || "").trim();
+    if (!id || uniqueIcons.has(id)) continue;
+    uniqueIcons.set(id, { ...icon, id });
+  }
+
+  return [...uniqueIcons.values()]
+    .sort((a, b) => a.id.localeCompare(b.id))
+    .slice(0, Math.floor(limit));
 }
 
 function isPrerenderedIconId(id, icons = [], limit = prerenderIconLimit()) {

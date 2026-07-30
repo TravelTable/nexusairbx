@@ -159,6 +159,15 @@ async function classifyRoute(pathname, { iconExists, iconStatus } = {}) {
           routeType: "removed-icon",
         };
       }
+      if (status === "unpublished") {
+        return {
+          status: 404,
+          indexable: false,
+          canonicalPath: null,
+          frontend: "none",
+          routeType: "unpublished-icon",
+        };
+      }
       return {
         status: 404,
         indexable: false,

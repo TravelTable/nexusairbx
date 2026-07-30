@@ -1063,6 +1063,144 @@ button:disabled {
   padding-left: 10px;
 }
 
+.evidence-section {
+  display: grid;
+  gap: 20px;
+}
+
+.evidence-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.evidence-heading h2 {
+  margin: 12px 0 8px;
+}
+
+.evidence-heading p {
+  max-width: 760px;
+  margin: 0;
+  color: #d4d4d8;
+  line-height: 1.65;
+}
+
+.evidence-status {
+  flex: 0 0 auto;
+  border: 1px solid rgba(250, 204, 21, 0.22);
+  border-radius: 999px;
+  background: rgba(250, 204, 21, 0.08);
+  padding: 8px 12px;
+  color: #fef08a;
+  font-size: 11px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.evidence-prompt {
+  border-left: 3px solid rgba(0, 245, 212, 0.5);
+  background: rgba(0, 0, 0, 0.18);
+  padding: 14px 16px;
+}
+
+.evidence-prompt p {
+  margin: 6px 0 0;
+  color: #e4e4e7;
+  line-height: 1.65;
+}
+
+.evidence-files {
+  display: grid;
+  gap: 14px;
+}
+
+.evidence-file {
+  overflow: hidden;
+  border: 1px solid var(--nexus-border);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.evidence-file > h3 {
+  margin: 0;
+  border-bottom: 1px solid var(--nexus-border);
+  padding: 14px 16px;
+  font-size: 16px;
+}
+
+.evidence-file-meta {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0;
+  padding: 14px 16px;
+}
+
+.evidence-file-meta div {
+  min-width: 0;
+}
+
+.evidence-file-meta dt {
+  color: #a1a1aa;
+  font-size: 11px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.evidence-file-meta dd {
+  overflow-wrap: anywhere;
+  margin: 5px 0 0;
+  color: #f4f4f5;
+}
+
+.evidence-file pre {
+  overflow-x: auto;
+  margin: 0;
+  border-top: 1px solid var(--nexus-border);
+  background: rgba(0, 0, 0, 0.34);
+  padding: 16px;
+  color: #e4e4e7;
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+.evidence-checks {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.evidence-checks > div {
+  border: 1px solid var(--nexus-border);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.18);
+  padding: 16px;
+}
+
+.evidence-checks h3 {
+  margin: 0 0 10px;
+  font-size: 16px;
+}
+
+.evidence-checks ol {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.evidence-checks li,
+.evidence-checks p {
+  margin: 0;
+  color: #d4d4d8;
+  line-height: 1.65;
+}
+
+.evidence-checks li + li {
+  margin-top: 8px;
+}
+
 .link-list {
   display: grid;
   gap: 10px;
@@ -1325,6 +1463,16 @@ button:disabled {
   .related-grid,
   .tool-grid,
   .related-icon-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .evidence-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .evidence-file-meta,
+  .evidence-checks {
     grid-template-columns: 1fr;
   }
 

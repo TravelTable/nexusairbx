@@ -5,6 +5,10 @@ const {
   buildMarketplaceCategoryReport,
   PREFERRED_ORIGIN,
 } = require("./iconIndexability");
+const {
+  prerenderIconLimit,
+  selectPrerenderIcons,
+} = require("./prerenderIcons");
 
 const CORE_ROUTES = [
   { path: "/", lastmod: null },
@@ -146,9 +150,15 @@ function iconRoutesFromQualifiedIcons(icons = []) {
   })));
 }
 
-function buildSitemapDocuments({ icons = [] } = {}) {
+function buildSitemapDocuments({
+  icons = [],
+  publishedIconLimit = prerenderIconLimit(),
+} = {}) {
   const report = buildIconQualityReport(icons);
-  const iconRoutes = iconRoutesFromQualifiedIcons(report.qualified);
+  const published = selectPrerenderIcons(report.qualified, publishedIconLimit);
+  const publishedIds = new Set(published.map((icon) => icon.id));
+  const unpublishedQualified = report.qualified.filter((icon) => !publishedIds.has(icon.id));
+  const iconRoutes = iconRoutesFromQualifiedIcons(published);
   const categoryReport = buildMarketplaceCategoryReport(report.qualified);
   const docs = {
     "sitemaps/core.xml": urlSet(sortRoutes(CORE_ROUTES)),
@@ -170,6 +180,8 @@ function buildSitemapDocuments({ icons = [] } = {}) {
     documents: docs,
     report: {
       ...report,
+      published,
+      unpublishedQualified,
       categoryReport,
     },
     counts: {
@@ -177,6 +189,9 @@ function buildSitemapDocuments({ icons = [] } = {}) {
       docs: DOC_ROUTES.length,
       examples: EXAMPLE_ROUTES.length,
       icons: iconRoutes.length,
+      qualifiedIcons: report.qualified.length,
+      publishedIcons: published.length,
+      unpublishedQualifiedIcons: unpublishedQualified.length,
       legal: LEGAL_ROUTES.length,
       excludedIcons: report.excluded.length,
       indexableCategories: categoryReport.indexable.length,

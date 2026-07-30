@@ -1,5 +1,5 @@
 export const homepageV2Metadata = {
-  title: "NexusRBX — AI Roblox Studio Code Agent",
+  title: "Roblox AI Script Generator & Studio Code Agent | NexusRBX",
   description:
-    "Describe what you want to build. NexusRBX generates production-ready Luau code for Roblox Studio — powered by AI.",
+    "Generate focused Luau scripts from a prompt or use the NexusRBX Studio agent to plan coordinated changes across multiple Roblox files and services.",
 };

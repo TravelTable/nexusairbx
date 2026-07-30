@@ -6,10 +6,8 @@ const {
   renderAppRoute,
 } = require("../server/productionRouting");
 const {
-  evaluateIconIndexability,
   isDeletedOrRestricted,
 } = require("../server/iconIndexability");
-const { isPrerenderedIconId } = require("../server/prerenderIcons");
 
 const ROOT_DIR = path.join(__dirname, "..");
 const BACKEND_URL = (process.env.REACT_APP_BACKEND_URL || "https://api.nexusrbx.com").replace(/\/+$/, "");
@@ -19,7 +17,7 @@ const PUBLIC_OUT_DIR = resolveProjectPath("public-frontend", "out");
 const ICON_CACHE_TTL_MS = 5 * 60 * 1000;
 const iconCache = new Map();
 let generatedIconIds = null;
-let qualifiedIcons = null;
+let publishedIcons = null;
 
 const CONTENT_TYPES = {
   ".css": "text/css; charset=utf-8",
@@ -40,21 +38,21 @@ const CONTENT_TYPES = {
   ".xml": "application/xml; charset=utf-8",
 };
 
-function loadQualifiedIcons() {
-  if (qualifiedIcons) return qualifiedIcons;
+function loadPublishedIcons() {
+  if (publishedIcons) return publishedIcons;
   try {
-    qualifiedIcons = require("../public-frontend/data/generated/qualified-icons.json");
-    if (!Array.isArray(qualifiedIcons)) qualifiedIcons = [];
+    publishedIcons = require("../public-frontend/data/generated/qualified-icons.json");
+    if (!Array.isArray(publishedIcons)) publishedIcons = [];
   } catch {
-    qualifiedIcons = [];
+    publishedIcons = [];
   }
-  return qualifiedIcons;
+  return publishedIcons;
 }
 
 function loadGeneratedIconIds() {
   if (generatedIconIds) return generatedIconIds;
   generatedIconIds = new Set(
-    loadQualifiedIcons()
+    loadPublishedIcons()
       .map((icon) => String(icon?.id || "").trim())
       .filter(Boolean),
   );
@@ -256,8 +254,7 @@ async function iconStatus(id) {
   if (icon === null) return "missing";
   if (icon === undefined) return "missing";
   if (isDeletedOrRestricted(icon)) return "gone";
-  const evaluation = evaluateIconIndexability(icon, [icon]);
-  return evaluation.indexable ? "indexable" : "noindex";
+  return "unpublished";
 }
 
 function sendUnavailableShell(res) {
@@ -281,7 +278,7 @@ module.exports = async function render(req, res) {
     const iconMatch = pathname.match(/^\/icons\/([^/]+)$/);
     if (iconMatch) {
       const id = decodeURIComponent(iconMatch[1]);
-      if (isPrerenderedIconId(id, loadQualifiedIcons())) {
+      if (loadGeneratedIconIds().has(id)) {
         const served = serveStaticFile(res, [
           path.join(PUBLIC_EXPORT_DIR, "icons", id, "index.html"),
           path.join(PUBLIC_EXPORT_DIR, "icons", `${id}.html`),

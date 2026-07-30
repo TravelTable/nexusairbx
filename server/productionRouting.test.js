@@ -55,6 +55,7 @@ function iconExists(id) {
 function iconStatus(id) {
   if (id === validIconId) return Promise.resolve("indexable");
   if (id === "thin-icon-id") return Promise.resolve("noindex");
+  if (id === "unpublished-icon-id") return Promise.resolve("unpublished");
   if (id === "removed-icon-id") return Promise.resolve("gone");
   return Promise.resolve("missing");
 }
@@ -167,6 +168,15 @@ test("thin icon route returns 200 noindex instead of canonicalising to marketpla
   assert.equal(route.frontend, "next");
   assert.equal(route.indexable, false);
   assert.equal(route.canonicalPath, null);
+});
+
+test("public but unpublished icon route returns 404 noindex", async () => {
+  const route = await classifyRoute("/icons/unpublished-icon-id", { iconExists, iconStatus });
+  assert.equal(route.status, 404);
+  assert.equal(route.frontend, "none");
+  assert.equal(route.indexable, false);
+  assert.equal(route.canonicalPath, null);
+  assert.equal(route.routeType, "unpublished-icon");
 });
 
 test("reliably removed icon route returns 410 noindex", async () => {

@@ -1,7 +1,7 @@
 import HomepageFeatures from "./HomepageFeatures";
 import HomepageFooter from "./HomepageFooter";
 import HomepageHero from "./HomepageHero";
-import HomepageTestimonial from "./HomepageTestimonial";
+import HomepageIntentEvidence from "./HomepageIntentEvidence";
 import HomepageWorkflow from "./HomepageWorkflow";
 
 export default function HomepageLanding({
@@ -16,7 +16,7 @@ export default function HomepageLanding({
         <HomepageHero surface={surface} navigateToAi={navigateToAi} />
         <HomepageFeatures />
         <HomepageWorkflow />
-        <HomepageTestimonial />
+        <HomepageIntentEvidence />
       </main>
       <HomepageFooter />
     </div>
