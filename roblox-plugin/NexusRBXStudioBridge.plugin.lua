@@ -99,6 +99,36 @@ local function jsonDecode(value)
 	return Services.HttpService:JSONDecode(value)
 end
 
+-- RequestAsync error bodies are decoded when they contain JSON. Keep that
+-- structured data internally, but never let Roblox's `table: 0x...` rendering
+-- escape into the UI.
+local function requestErrorMessage(value, depth)
+	if type(value) == "string" and value ~= "" then
+		return value
+	end
+	if type(value) ~= "table" then
+		return tostring(value or "Request failed")
+	end
+
+	depth = tonumber(depth) or 0
+	if depth < 2 then
+		for _, key in ipairs({ "message", "error", "detail", "code" }) do
+			local candidate = value[key]
+			if type(candidate) == "string" and candidate ~= "" then
+				return candidate
+			end
+			if type(candidate) == "table" then
+				local nested = requestErrorMessage(candidate, depth + 1)
+				if nested ~= "Request failed" then
+					return nested
+				end
+			end
+		end
+	end
+
+	return "Request failed"
+end
+
 local function getBackendUrl()
 	if plugin:GetSetting("nexusrbxDevMode") == true then
 		local override = plugin:GetSetting("nexusrbxBackendUrl")
@@ -307,7 +337,7 @@ request = function(method, path, body, token, opts)
 	if result.ok then
 		return true, result.data, result.status
 	end
-	return false, result.data, result.status
+	return false, requestErrorMessage(result.data), result.status
 end
 
 getLastLatencyMs = function()
@@ -1846,11 +1876,9 @@ do
 			})
 			showToast("Agent run started - watch the activity feed", "success")
 		else
-			local message = tostring(dataOrError)
-			local parsed = string.match(message, '"error"%s*:%s*"([^"]+)"')
-				or string.match(message, '"message"%s*:%s*"([^"]+)"')
-			setLast("agent prompt failed: " .. (parsed or message))
-			showToast(parsed or "Prompt failed", "error")
+			local message = tostring(dataOrError or "Prompt failed")
+			setLast("agent prompt failed: " .. message)
+			showToast(message, "error")
 		end
 	end
 
@@ -8915,12 +8943,7 @@ local function pairStudio()
 
 	setBusy(false)
 	if not ok then
-		local message = tostring(dataOrError)
-		local parsed = string.match(message, '"error"%s*:%s*"([^"]+)"')
-			or string.match(message, '"message"%s*:%s*"([^"]+)"')
-		if parsed then
-			message = parsed
-		end
+		local message = tostring(dataOrError or "Pairing failed")
 		setStatus("pair failed")
 		setLast(message)
 		showToast(message, "error")

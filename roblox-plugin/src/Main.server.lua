@@ -144,12 +144,7 @@ local function pairStudio()
 
 	setBusy(false)
 	if not ok then
-		local message = tostring(dataOrError)
-		local parsed = string.match(message, '"error"%s*:%s*"([^"]+)"')
-			or string.match(message, '"message"%s*:%s*"([^"]+)"')
-		if parsed then
-			message = parsed
-		end
+		local message = tostring(dataOrError or "Pairing failed")
 		setStatus("pair failed")
 		setLast(message)
 		showToast(message, "error")

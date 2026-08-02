@@ -9,6 +9,36 @@ local function jsonDecode(value)
 	return HttpService:JSONDecode(value)
 end
 
+-- RequestAsync error bodies are decoded when they contain JSON. Keep that
+-- structured data internally, but never let Roblox's `table: 0x...` rendering
+-- escape into the UI.
+local function requestErrorMessage(value, depth)
+	if type(value) == "string" and value ~= "" then
+		return value
+	end
+	if type(value) ~= "table" then
+		return tostring(value or "Request failed")
+	end
+
+	depth = tonumber(depth) or 0
+	if depth < 2 then
+		for _, key in ipairs({ "message", "error", "detail", "code" }) do
+			local candidate = value[key]
+			if type(candidate) == "string" and candidate ~= "" then
+				return candidate
+			end
+			if type(candidate) == "table" then
+				local nested = requestErrorMessage(candidate, depth + 1)
+				if nested ~= "Request failed" then
+					return nested
+				end
+			end
+		end
+	end
+
+	return "Request failed"
+end
+
 local function getBackendUrl()
 	if plugin:GetSetting("nexusrbxDevMode") == true then
 		local override = plugin:GetSetting("nexusrbxBackendUrl")
@@ -217,7 +247,7 @@ local function request(method, path, body, token, opts)
 	if result.ok then
 		return true, result.data, result.status
 	end
-	return false, result.data, result.status
+	return false, requestErrorMessage(result.data), result.status
 end
 
 function getLastLatencyMs()

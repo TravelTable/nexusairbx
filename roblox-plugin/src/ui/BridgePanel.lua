@@ -510,11 +510,9 @@ do
 			})
 			showToast("Agent run started - watch the activity feed", "success")
 		else
-			local message = tostring(dataOrError)
-			local parsed = string.match(message, '"error"%s*:%s*"([^"]+)"')
-				or string.match(message, '"message"%s*:%s*"([^"]+)"')
-			setLast("agent prompt failed: " .. (parsed or message))
-			showToast(parsed or "Prompt failed", "error")
+			local message = tostring(dataOrError or "Prompt failed")
+			setLast("agent prompt failed: " .. message)
+			showToast(message, "error")
 		end
 	end
 
