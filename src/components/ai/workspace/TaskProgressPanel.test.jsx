@@ -135,17 +135,105 @@ describe("TaskProgressPanel", () => {
           status: "succeeded",
           currentStepId: "",
           steps: task().steps.map((step) => ({ ...step, status: "succeeded" })),
-          finalSummary: "The lobby spawn was created and verified in Studio.",
           finalEvidence: [{ type: "manifest" }, { type: "studio_ack" }],
+          taskResult: {
+            schemaVersion: "nexusrbx-task-result-v2",
+            status: "fixed_verified",
+            intent: "build",
+            acceptanceChecks: [
+              {
+                id: "spawn_created",
+                description: "The lobby spawn exists in the requested location.",
+                result: "passed",
+              },
+            ],
+            verification: {
+              automated: [{ checkId: "spawn_created", result: "passed" }],
+              manualRequired: [],
+            },
+            sources: [],
+            knowledgeVersion: "creator-docs-abc123",
+          },
         })}
         connectionState="settled"
       />
     );
 
     expect(screen.getByText(/task completed and verified/i)).toBeTruthy();
-    expect(screen.getByText(/lobby spawn was created and verified in studio/i)).toBeTruthy();
-    expect(screen.getByText("3 verification records")).toBeTruthy();
+    expect(screen.getByText(/lobby spawn exists in the requested location/i)).toBeTruthy();
     expect(screen.queryByText(/live updates paused/i)).toBeNull();
+  });
+
+  test("restores a source-grounded result without claiming an unperformed playtest", async () => {
+    render(
+      <TaskProgressPanel
+        task={task({
+          status: "succeeded",
+          currentStepId: "",
+          steps: task().steps.map((step) => ({ ...step, status: "succeeded" })),
+          result: {
+            taskResult: {
+              schemaVersion: "nexusrbx-task-result-v2",
+              status: "manual_verification_required",
+              intent: "build",
+              acceptanceChecks: [
+                {
+                  id: "static_validation",
+                  description: "Run static Roblox validation.",
+                  result: "passed",
+                },
+                {
+                  id: "behavior_verified",
+                  description: "Test the requested behavior in Play mode.",
+                  result: "manual_required",
+                },
+              ],
+              findings: [{
+                code: "SCRIPT_CLASS_REQUIRED",
+                explanation: "Player input must run from a client script.",
+              }],
+              changes: [{
+                type: "create_script",
+                summary: "Created the input controller",
+                paths: ["StarterPlayer/StarterPlayerScripts/InputController"],
+              }],
+              verification: {
+                manualRequired: [{
+                  checkId: "behavior_verified",
+                  description: "Playtest the input controller.",
+                  steps: [
+                    "Press Play in Roblox Studio.",
+                    "Use the control and inspect Output for errors.",
+                  ],
+                }],
+              },
+              sources: [{
+                documentId: "engine-user-input-service",
+                sectionId: "overview",
+                title: "UserInputService",
+                heading: "UserInputService",
+                publicUrl: "https://create.roblox.com/docs/reference/engine/classes/UserInputService",
+                sourceTier: "official",
+              }],
+              knowledgeVersion: "creator-docs-abc123",
+            },
+          },
+        })}
+        connectionState="settled"
+      />
+    );
+
+    expect(screen.getByText(/changes saved; test the behavior in studio/i)).toBeTruthy();
+    expect(screen.getByText(/player input must run from a client script/i)).toBeTruthy();
+    expect(screen.getByText(/created the input controller/i)).toBeTruthy();
+    expect(screen.getByText(/press play in roblox studio/i)).toBeTruthy();
+    expect(screen.getByRole("link", { name: "UserInputService" }).getAttribute("href"))
+      .toBe("https://create.roblox.com/docs/reference/engine/classes/UserInputService");
+    expect(screen.queryByText(/task completed and verified/i)).toBeNull();
+
+    await userEvent.click(screen.getByText(/technical details/i));
+    expect(screen.getByText("creator-docs-abc123")).toBeTruthy();
+    expect(screen.getByText("nexusrbx-task-result-v2")).toBeTruthy();
   });
 
   test("maps the original plan to a live checklist and explains failed-step recovery", () => {

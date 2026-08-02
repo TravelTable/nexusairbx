@@ -98,6 +98,10 @@ export default function QuickScriptWorkspace({
   const [copied, setCopied] = useState(false);
   const result = quickScript?.result || null;
   const status = quickScript?.status || "idle";
+  const scriptValidation = result?.validation || null;
+  const studioPushBlocked = scriptValidation?.status === "blocked"
+    || !["Script", "LocalScript", "ModuleScript"].includes(result?.scriptType)
+    || !String(result?.studioLocation || "").trim();
   const [mobilePane, setMobilePane] = useState(result ? "result" : "prompt");
   const isGenerating = status === "generating";
   const canSubmit = Boolean(String(prompt || "").trim()) && !isGenerating;
@@ -366,10 +370,10 @@ export default function QuickScriptWorkspace({
                 <div className="font-display text-sm font-bold text-white truncate">{result.title || "Quick"}</div>
                 <div className="mt-1 flex items-center gap-1.5">
                   <span className="rounded bg-[#00f5d4]/10 border border-[#00f5d4]/20 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-widest text-[#00f5d4]">
-                    {result.scriptType || "Script"}
+                    {result.scriptType || "Class required"}
                   </span>
                   <span className="rounded bg-white/5 border border-white/10 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-widest text-gray-300">
-                    {result.studioLocation || "ServerScriptService"}
+                    {result.studioLocation || "Location required"}
                   </span>
                 </div>
               </div>
@@ -386,7 +390,7 @@ export default function QuickScriptWorkspace({
                   <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/5 bg-black/20 px-3 py-2 shrink-0 sm:px-4">
                     <div className="flex min-w-0 items-center gap-2 text-[10px] text-gray-500 font-mono">
                       <TerminalSquare className="h-3.5 w-3.5 text-[#00f5d4]" />
-                      <span className="truncate">{result.studioLocation || "ServerScriptService"}</span>
+                      <span className="truncate">{result.studioLocation || "Studio location required"}</span>
                     </div>
                     <div className="flex flex-wrap items-center justify-end gap-1" data-tour="code-actions">
                       <Button variant="ghost" size="sm" icon={copied ? Check : Clipboard} onClick={handleCopyClick} className="h-7 py-0 px-2 text-[10px] hover:bg-white/5">
@@ -394,9 +398,42 @@ export default function QuickScriptWorkspace({
                       </Button>
                       <Button variant="ghost" size="sm" icon={Save} onClick={onSave} className="h-7 py-0 px-2 text-[10px] hover:bg-white/5">Save</Button>
                       <Button variant="ghost" size="sm" icon={Download} onClick={onExport} className="h-7 py-0 px-2 text-[10px] hover:bg-white/5">Export</Button>
-                      <Button variant="secondary" size="sm" icon={TerminalSquare} onClick={onStudioPush} className="h-7 py-0 px-2.5 text-[10px] bg-white/10 text-white hover:bg-white/15">Studio</Button>
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        icon={TerminalSquare}
+                        onClick={onStudioPush}
+                        disabled={studioPushBlocked}
+                        title={studioPushBlocked ? "Studio push is blocked until script context validation passes" : "Push to Studio"}
+                        className="h-7 py-0 px-2.5 text-[10px] bg-white/10 text-white hover:bg-white/15"
+                      >
+                        Studio
+                      </Button>
                     </div>
                   </div>
+                  {scriptValidation && (
+                    <div
+                      role={scriptValidation.status === "blocked" ? "alert" : "status"}
+                      className={cx(
+                        "flex items-start gap-2 border-b px-4 py-2 text-xs",
+                        scriptValidation.status === "blocked"
+                          ? "border-rose-500/20 bg-rose-500/10 text-rose-200"
+                          : scriptValidation.status === "adjusted"
+                            ? "border-amber-500/20 bg-amber-500/10 text-amber-100"
+                            : "border-[#00f5d4]/15 bg-[#00f5d4]/5 text-[#9fffe9]"
+                      )}
+                    >
+                      {scriptValidation.status === "blocked"
+                        ? <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                        : <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" />}
+                      <span>
+                        {scriptValidation.message
+                          || scriptValidation.adjustments?.[0]?.message
+                          || scriptValidation.findings?.[0]?.explanation
+                          || "Script context validation passed."}
+                      </span>
+                    </div>
+                  )}
                   <div
                     className="flex-1 min-h-0 overflow-y-auto overscroll-contain quick-script-code-scroll bg-black/20 scrollbar-subtle"
                     tabIndex={0}

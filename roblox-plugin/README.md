@@ -19,9 +19,10 @@ Rebuild the installable plugin after editing source:
 npm run plugin:build
 ```
 
-This build also verifies that the bundled artifact contains its build attestation
-and every registered Studio command. To check an already-generated artifact,
-run `npm run plugin:verify`.
+This build also runs the script-context safety regressions and verifies that the
+bundled artifact contains its build attestation and every registered Studio
+command. To run only the context regressions, use `npm run plugin:test`. To check
+an already-generated artifact, run `npm run plugin:verify`.
 
 Install directly into Roblox Studio's local plugins folder:
 
@@ -61,10 +62,12 @@ If the website queues tools like `get_project_manifest` and the plugin reports *
 5. Confirm the dock shows the expected plugin version under the title.
 
 Pairing attests the exact plugin build, protocol version, capabilities, and live
-command registry. A target mismatch means the installed artifact is stale: run
-`npm run plugin:install` and restart Studio. The current bundle repairs a retained
-session automatically; re-pair only after an expired or disconnected session. Editing files under
-`roblox-plugin/src/` does not update the installed plugin on its own.
+command registry. A target mismatch means the installed artifact is stale: it
+may inspect the project, but AI mutations stay disabled until you run
+`npm run plugin:install` and restart Studio. The current bundle repairs a
+retained session automatically; re-pair only after an expired or disconnected
+session. Editing files under `roblox-plugin/src/` does not update the installed
+plugin on its own.
 
 ## Publishing to Roblox (cloud plugin)
 

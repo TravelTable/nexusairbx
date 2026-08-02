@@ -138,13 +138,20 @@ function quickScriptKind(scriptType = "") {
   const type = String(scriptType || "").toLowerCase();
   if (type.includes("local")) return "client";
   if (type.includes("module")) return "module";
-  return "server";
+  if (type === "script" || type.includes("server")) return "server";
+  return null;
 }
 
 function quickScriptArtifact(result) {
-  if (!result?.code) return null;
+  if (
+    !result?.code
+    || result?.validation?.status === "blocked"
+    || !["Script", "LocalScript", "ModuleScript"].includes(result?.scriptType)
+    || !String(result?.studioLocation || "").trim()
+  ) return null;
   const title = result.title || "Quick";
   const name = `${title.replace(/[^a-z0-9_-]+/gi, "_").replace(/^_+|_+$/g, "") || "QuickScript"}.lua`;
+  const kind = quickScriptKind(result.scriptType);
   return {
     artifactId: `quick-script:${Date.now()}`,
     title,
@@ -153,9 +160,10 @@ function quickScriptArtifact(result) {
       {
         id: "quick-script-file",
         name,
-        path: `${result.studioLocation || "ServerScriptService"}/${name}`,
-        placement: result.studioLocation || "ServerScriptService",
-        kind: quickScriptKind(result.scriptType),
+        path: `${result.studioLocation}/${name}`,
+        placement: result.studioLocation,
+        className: result.scriptType,
+        kind,
         language: "luau",
         content: result.code || "",
       },
@@ -1140,7 +1148,9 @@ export function useAiWorkspaceController() {
       const next = {
         prompt: currentPrompt,
         status: "succeeded",
-        stage: response?.anonymous ? "Anonymous result ready" : "Result ready",
+        stage: response?.result?.validation?.status === "adjusted"
+          ? "Result ready · script context adjusted"
+          : response?.anonymous ? "Anonymous result ready" : "Result ready",
         result: response?.result
           ? normalizeQuickScriptResult(response.result, currentPrompt)
           : null,
@@ -1775,13 +1785,24 @@ export function useAiWorkspaceController() {
   const handleQuickScriptStudioPush = useCallback(async () => {
     const result = quickScript.result;
     if (!result?.code || !gateQuickScriptAction(PENDING_AUTH_ACTIONS.PUSH_TO_STUDIO)) return;
+    if (
+      result?.validation?.status === "blocked"
+      || !["Script", "LocalScript", "ModuleScript"].includes(result?.scriptType)
+      || !String(result?.studioLocation || "").trim()
+    ) {
+      notify({ message: "This script is blocked until its class and Studio location pass validation", type: "error" });
+      return;
+    }
     const pluginSessionId = getStudioSessionId(studioConnection.pluginSession);
     if (!studioConnection.pluginConnected || !pluginSessionId) {
       notify({ message: "Connect the NexusRBX Studio Plugin before pushing this script", type: "info" });
       return;
     }
     const artifact = quickScriptArtifact(result);
-    if (!artifact) return;
+    if (!artifact) {
+      notify({ message: "This script cannot be pushed because its Studio context is incomplete", type: "error" });
+      return;
+    }
     try {
       const queued = await applyArtifactToStudio({
         artifact: buildBaseArtifactSnapshot(artifact),

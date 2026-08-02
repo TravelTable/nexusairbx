@@ -18,8 +18,8 @@ export const MCP_CAPABILITY_LABELS = Object.freeze({
   snapshots: "Create snapshots",
 });
 
-export const EXPECTED_STUDIO_PLUGIN_VERSION = "0.11.0-asset-references";
-export const EXPECTED_STUDIO_PROTOCOL_VERSION = "2026-07-17-target-integrity";
+export const EXPECTED_STUDIO_PLUGIN_VERSION = "0.12.0-script-context";
+export const EXPECTED_STUDIO_PROTOCOL_VERSION = "2026-07-30-script-context";
 
 const LIVE_IDLE_MS = 45000;
 const RUNNABLE_PLUGIN_COMPATIBILITY_STATES = new Set(["compatible", "degraded"]);

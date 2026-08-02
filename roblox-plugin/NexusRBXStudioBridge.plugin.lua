@@ -7,14 +7,14 @@
 
 local BACKEND_URL = "https://api.nexusrbx.com"
 local BACKEND_HOST = "api.nexusrbx.com"
-local PLUGIN_VERSION = "0.11.0-asset-references"
-local STUDIO_PROTOCOL_VERSION = "2026-07-22-asset-references"
+local PLUGIN_VERSION = "0.12.0-script-context"
+local STUDIO_PROTOCOL_VERSION = "2026-07-30-script-context"
 
 -- This identifies the exact release artifact, independently of the user-facing
 -- version. Keep it in lockstep with the generated bundle and backend allowlist.
 -- A plugin session must attest its build and actual command handlers at pairing
 -- time; version strings alone are not evidence that a command exists.
-local PLUGIN_BUILD_ID = "nexusrbx-studio-0.11.0-asset-references.3"
+local PLUGIN_BUILD_ID = "nexusrbx-studio-0.12.0-script-context.1"
 
 -- These are deliberately capability-level (rather than UI-level) claims. The
 -- pairing payload also includes the exact sorted command list derived from the
@@ -1339,8 +1339,8 @@ do
 
 local TweenService = game:GetService("TweenService")
 
-local displayPluginVersion = PLUGIN_VERSION or "0.11.0-asset-references"
-local displayProtocolVersion = STUDIO_PROTOCOL_VERSION or "2026-07-22-asset-references"
+local displayPluginVersion = PLUGIN_VERSION or "0.12.0-script-context"
+local displayProtocolVersion = STUDIO_PROTOCOL_VERSION or "2026-07-30-script-context"
 local MAX_ACTIVITY_ENTRIES = 25
 
 local toolbar = plugin:CreateToolbar("NexusRBX")
@@ -2920,7 +2920,7 @@ end
 -- END src/ui/BridgePanel.lua
 
 -- BEGIN src/commands/readTools.lua
-local getInspectionRoots, inspectPlace, listChildren, inspectInstances, searchProject, searchSource, readScript, writeScript, readInstance, readProperties, getSelectionTool, computePlaceSignature, serializeFlat, createInstanceTool, deleteInstanceTool
+local getInspectionRoots, inspectPlace, listChildren, inspectInstances, searchProject, searchSource, readScript, writeScript, readInstance, readProperties, getSelectionTool, computePlaceSignature, serializeFlat, ScriptContextGuard, createInstanceTool, deleteInstanceTool
 do
 local function serializeInstance(inst, path, depth, maxDepth, state, includeSource, sourceMaxChars, parentPath)
 	state.count = state.count + 1
@@ -3162,14 +3162,288 @@ readScript = function(payload)
 	return { scripts = out }
 end
 
+-- Last-line execution-context guard. The backend performs the same checks and
+-- may disclose a safe adjustment before a command is queued; the plugin never
+-- guesses or adjusts. It rejects the full mutation before snapshots or writes.
+ScriptContextGuard = {}
+
+function ScriptContextGuard.resolveScriptClassName(value)
+	local className = tostring(value or "")
+	return SCRIPT_CLASSES[className] and className or ""
+end
+
+function ScriptContextGuard.stripCommentsAndStrings(source)
+	local input = tostring(source or "")
+	local output = {}
+	local length = #input
+
+	local function blankSegment(segment)
+		return (segment:gsub("[^\r\n]", " "))
+	end
+
+	local function longBracketAt(index)
+		if input:sub(index, index) ~= "[" then
+			return nil, nil
+		end
+		local cursor = index + 1
+		while input:sub(cursor, cursor) == "=" do
+			cursor = cursor + 1
+		end
+		if input:sub(cursor, cursor) ~= "[" then
+			return nil, nil
+		end
+		local equals = cursor - index - 1
+		return cursor + 1, "]" .. string.rep("=", equals) .. "]"
+	end
+
+	local index = 1
+	while index <= length do
+		local current = input:sub(index, index)
+		local nextChar = input:sub(index + 1, index + 1)
+		if current == "-" and nextChar == "-" then
+			local contentStart, closing = longBracketAt(index + 2)
+			local finish
+			if contentStart then
+				local closeStart = string.find(input, closing, contentStart, true)
+				finish = closeStart and (closeStart + #closing - 1) or length
+			else
+				local newline = string.find(input, "\n", index + 2, true)
+				finish = newline and (newline - 1) or length
+			end
+			table.insert(output, blankSegment(input:sub(index, finish)))
+			index = finish + 1
+		elseif current == "'" or current == '"' then
+			local quote = current
+			local cursor = index + 1
+			local prefix = input:sub(math.max(1, index - 120), index - 1)
+			local isGetServiceArgument = prefix:match("GetService%s*%(%s*$") ~= nil
+			while cursor <= length do
+				local value = input:sub(cursor, cursor)
+				if value == "\\" then
+					cursor = cursor + 2
+				elseif value == quote then
+					cursor = cursor + 1
+					break
+				else
+					cursor = cursor + 1
+				end
+			end
+			local segment = input:sub(index, cursor - 1)
+			table.insert(output, isGetServiceArgument and segment or blankSegment(segment))
+			index = cursor
+		elseif current == "[" then
+			local contentStart, closing = longBracketAt(index)
+			if contentStart then
+				local closeStart = string.find(input, closing, contentStart, true)
+				local finish = closeStart and (closeStart + #closing - 1) or length
+				table.insert(output, blankSegment(input:sub(index, finish)))
+				index = finish + 1
+			else
+				table.insert(output, current)
+				index = index + 1
+			end
+		else
+			table.insert(output, current)
+			index = index + 1
+		end
+	end
+	return table.concat(output)
+end
+
+function ScriptContextGuard.placementContext(path)
+	local normalized = tostring(path or "")
+		:gsub("\\", "/")
+		:gsub("^game[./]", "")
+		:gsub("/+", "/")
+		:gsub("^/", "")
+		:gsub("/$", "")
+	local parts = splitPath(normalized)
+	local root = parts[1] or ""
+	local second = parts[2] or ""
+	if root == "Services.StarterPlayer" and (second == "StarterPlayerScripts" or second == "StarterCharacterScripts") then
+		return "client"
+	end
+	if root == "Services.StarterGui" or root == "StarterPack" or root == "ReplicatedFirst"
+		or root == "StarterPlayerScripts" or root == "StarterCharacterScripts" then
+		return "client"
+	end
+	if root == "Services.ServerScriptService" or root == "Services.Workspace" then
+		return "server"
+	end
+	if root == "Services.ServerStorage" then
+		return "non_executing"
+	end
+	if root == "Services.ReplicatedStorage" then
+		return "shared"
+	end
+	return "unknown"
+end
+
+function ScriptContextGuard.validate(descriptor)
+	local source = ScriptContextGuard.stripCommentsAndStrings(descriptor.source or descriptor.content or "")
+	local className = tostring(descriptor.className or "")
+	local path = tostring(descriptor.path or descriptor.placement or "")
+	local placement = ScriptContextGuard.placementContext(path)
+	local findings = {}
+	local clientFeatures = {
+		{ name = "Players.LocalPlayer", token = "LocalPlayer" },
+		{ name = "UserInputService", token = "UserInputService" },
+		{ name = "workspace.CurrentCamera", token = "CurrentCamera" },
+		{ name = "RunService.RenderStepped", token = "RenderStepped" },
+		{ name = "RunService:BindToRenderStep", token = "BindToRenderStep" },
+		{ name = "Services.StarterGui", token = "Services.StarterGui" },
+	}
+	local serverFeatures = {
+		{ name = "DataStoreService", token = "DataStoreService" },
+		{ name = "MemoryStoreService", token = "MemoryStoreService" },
+		{ name = "MessagingService", token = "MessagingService" },
+		{ name = "Services.ServerStorage", token = "Services.ServerStorage" },
+		{ name = "Services.ServerScriptService", token = "Services.ServerScriptService" },
+	}
+	local clientMatch = nil
+	local serverMatch = nil
+	local function findIdentifier(token)
+		local searchFrom = 1
+		while true do
+			local startIndex, endIndex = string.find(source, token, searchFrom, true)
+			if not startIndex then
+				return nil
+			end
+			local before = startIndex > 1 and source:sub(startIndex - 1, startIndex - 1) or ""
+			local after = endIndex < #source and source:sub(endIndex + 1, endIndex + 1) or ""
+			if not before:match("[%w_]") and not after:match("[%w_]") then
+				return startIndex
+			end
+			searchFrom = endIndex + 1
+		end
+	end
+	for _, feature in ipairs(clientFeatures) do
+		if findIdentifier(feature.token) then
+			clientMatch = feature
+			break
+		end
+	end
+	for _, feature in ipairs(serverFeatures) do
+		if findIdentifier(feature.token) then
+			serverMatch = feature
+			break
+		end
+	end
+
+	local function sourceLine(token)
+		local startIndex = token and findIdentifier(token) or nil
+		if not startIndex then
+			return nil
+		end
+		local prefix = source:sub(1, startIndex - 1)
+		local _, count = prefix:gsub("\n", "\n")
+		return count + 1
+	end
+
+	local function addFinding(code, explanation, token)
+		local finding = {
+			ruleCode = code,
+			code = code,
+			severity = "blocking",
+			explanation = explanation,
+			message = explanation,
+			path = path ~= "" and path or "Unknown",
+		}
+		local line = sourceLine(token)
+		if line then
+			finding.line = line
+		end
+		table.insert(findings, finding)
+	end
+
+	local requiredContext = "unknown"
+	if clientMatch and serverMatch then
+		requiredContext = "mixed"
+	elseif className == "ModuleScript" then
+		requiredContext = "module"
+	elseif clientMatch then
+		requiredContext = "client"
+	elseif serverMatch then
+		requiredContext = "server"
+	elseif placement == "client" or placement == "server" then
+		requiredContext = placement
+	elseif className == "LocalScript" then
+		requiredContext = "client"
+	elseif className == "Script" then
+		requiredContext = "server"
+	end
+
+	if not SCRIPT_CLASSES[className] then
+		addFinding("SCRIPT_CLASS_REQUIRED", "Every Studio script must declare Script, LocalScript, or ModuleScript explicitly.")
+	end
+	if placement == "unknown" then
+		addFinding("SCRIPT_LOCATION_MISMATCH", "Every Studio script must declare a supported, explicit Studio location.")
+	end
+	if requiredContext == "mixed" then
+		addFinding(
+			"MIXED_RUNTIME_CONTEXT",
+			"This source combines client-only and server-only behavior. Split it into client and server scripts connected by remotes.",
+			clientMatch and clientMatch.token
+		)
+	end
+	if className ~= "ModuleScript" then
+		if clientMatch and className == "Script" then
+			addFinding("CLIENT_API_ON_SERVER", clientMatch.name .. " requires client execution, but this is a server Script.", clientMatch.token)
+		end
+		if serverMatch and className == "LocalScript" then
+			addFinding("SERVER_API_ON_CLIENT", serverMatch.name .. " requires trusted server execution, but this is a LocalScript.", serverMatch.token)
+		end
+		if className == "LocalScript" and placement ~= "client" then
+			addFinding("SCRIPT_LOCATION_MISMATCH", "LocalScript must be placed in a supported client container.")
+		end
+		if className == "Script" and placement ~= "server" and placement ~= "non_executing" then
+			addFinding("SCRIPT_LOCATION_MISMATCH", "Script must be placed in Services.ServerScriptService or Services.Workspace.")
+		end
+		if placement == "non_executing" then
+			addFinding("SCRIPT_LOCATION_MISMATCH", "Runnable scripts do not execute from Services.ServerStorage.")
+		end
+	end
+
+	return {
+		ok = #findings == 0,
+		status = #findings == 0 and "valid" or "blocked",
+		requiredContext = requiredContext,
+		findings = findings,
+		adjustments = {},
+	}
+end
+
+function ScriptContextGuard.failure(validation)
+	return {
+		ok = false,
+		success = false,
+		code = "SCRIPT_CONTEXT_MISMATCH",
+		error = validation.findings[1] and validation.findings[1].message or "Script execution context is invalid",
+		status = validation.status,
+		requiredContext = validation.requiredContext,
+		findings = validation.findings,
+		adjustments = validation.adjustments,
+		validation = validation,
+		retryable = false,
+	}
+end
+
 writeScript = function(payload)
 	local path = payload.path
 	local className = payload.className
 	if type(className) ~= "string" or className == "" then
-		className = "ModuleScript"
+		return ScriptContextGuard.failure(ScriptContextGuard.validate({
+			className = className,
+			path = path,
+			source = payload.source,
+		}))
 	end
 	if not SCRIPT_CLASSES[className] then
-		error("write_script requires Script, LocalScript, or ModuleScript")
+		return ScriptContextGuard.failure(ScriptContextGuard.validate({
+			className = className,
+			path = path,
+			source = payload.source,
+		}))
 	end
 	local snapshots = {}
 	local existing = resolvePath(path)
@@ -3184,16 +3458,26 @@ writeScript = function(payload)
 			retryable = false,
 		}
 	end
-	if existing and existing.ClassName ~= className and payload.allowClassChange ~= true then
-		return {
-			ok = false,
-			code = "class_conflict",
-			error = "Refusing to change script class without allowClassChange",
-			path = fullPath(existing),
-			currentClassName = existing.ClassName,
-			expectedClassName = className,
-			retryable = false,
-		}
+	if existing and existing.ClassName ~= className then
+		local hasConversionAuthorization = payload.allowClassChange == true
+			and tostring(payload.inspectedClassName or "") == existing.ClassName
+			and tostring(payload.expectedSourceHash or "") ~= ""
+		if not hasConversionAuthorization then
+			return ScriptContextGuard.failure({
+				ok = false,
+				status = "blocked",
+				requiredContext = "unknown",
+				findings = {
+					{
+						ruleCode = "SCRIPT_LOCATION_MISMATCH",
+						code = "SCRIPT_LOCATION_MISMATCH",
+						severity = "blocking",
+						message = "Changing an existing script class requires allowClassChange, the inspected class, and the inspected source hash.",
+					},
+				},
+				adjustments = {},
+			})
+		end
 	end
 	if existing and not payload.allowOverwrite and payload.createOnly == true then
 		return {
@@ -3209,6 +3493,14 @@ writeScript = function(payload)
 		if not hashOk then
 			return hashResult
 		end
+	end
+	local contextValidation = ScriptContextGuard.validate({
+		className = className,
+		path = existing and fullPath(existing) or path,
+		source = payload.source,
+	})
+	if not contextValidation.ok then
+		return ScriptContextGuard.failure(contextValidation)
 	end
 
 	if existing then
@@ -3230,9 +3522,13 @@ writeScript = function(payload)
 			local previous = inst
 			local parent = previous.Parent
 			local name = previous.Name
+			local attributes = previous:GetAttributes()
 			previous:Destroy()
 			inst = Instance.new(className)
 			inst.Name = name
+			for attributeName, attributeValue in pairs(attributes) do
+				inst:SetAttribute(attributeName, attributeValue)
+			end
 			inst.Parent = parent
 		end
 		ensureManagedId(inst)
@@ -3960,6 +4256,38 @@ runProjectValidation = function(payload)
 		end
 		if SCRIPT_CLASSES[inst.ClassName] then
 			counts.scripts = counts.scripts + 1
+			local sourceOk, source = readScriptSource(inst)
+			if sourceOk then
+				local contextValidation = ScriptContextGuard.validate({
+					className = inst.ClassName,
+					path = fullPath(inst),
+					source = source,
+				})
+				for _, finding in ipairs(contextValidation.findings or {}) do
+					table.insert(issues, {
+						severity = finding.severity == "blocking" and "error" or tostring(finding.severity or "error"),
+						code = finding.ruleCode,
+						ruleCode = finding.ruleCode,
+						targetPath = fullPath(inst),
+						message = finding.message or finding.explanation or finding.ruleCode,
+						explanation = finding.explanation,
+						line = finding.line,
+						requiredContext = contextValidation.requiredContext,
+						recommendation = finding.ruleCode == "MIXED_RUNTIME_CONTEXT"
+							and "Split the behavior into client and server scripts connected by remotes."
+							or "Correct the script class or location before running the project.",
+					})
+				end
+			else
+				addValidationIssue(
+					issues,
+					"warning",
+					"SCRIPT_SOURCE_UNREADABLE",
+					inst,
+					"Could not read this script while checking its execution context.",
+					"Open the script in Studio and run validation again."
+				)
+			end
 			if visualOnly then
 				addValidationIssue(issues, "critical", "UNEXPECTED_EXECUTABLE_CONTENT", inst, "Visual-only validation target contains executable Luau.", "Remove the script or validate it as part of an explicit project-level review.")
 			end
@@ -4293,6 +4621,14 @@ patchScript = function(payload)
 				end
 			end
 		end
+	end
+	local contextValidation = ScriptContextGuard.validate({
+		className = inst.ClassName,
+		path = fullPath(inst),
+		source = nextSource,
+	})
+	if not contextValidation.ok then
+		return ScriptContextGuard.failure(contextValidation)
 	end
 	local snapshots = {}
 	table.insert(snapshots, snapshotInstance(fullPath(inst)))
@@ -4734,6 +5070,16 @@ replaceInFiles = function(payload)
 		end
 	end
 	for _, candidate in ipairs(candidates) do
+		local contextValidation = ScriptContextGuard.validate({
+			className = candidate.instance.ClassName,
+			path = candidate.path,
+			source = candidate.nextSource,
+		})
+		if not contextValidation.ok then
+			return ScriptContextGuard.failure(contextValidation)
+		end
+	end
+	for _, candidate in ipairs(candidates) do
 		table.insert(snapshots, snapshotInstance(candidate.path))
 	end
 
@@ -4783,14 +5129,27 @@ runSmokeCheck = function(payload)
 			if not ok then
 				table.insert(issues, { path = fullPath(inst), message = "Could not read source" })
 			elseif payload.includeSourceScan ~= false then
+				local contextValidation = ScriptContextGuard.validate({
+					className = inst.ClassName,
+					path = fullPath(inst),
+					source = source,
+				})
+				for _, finding in ipairs(contextValidation.findings or {}) do
+					table.insert(issues, {
+						path = fullPath(inst),
+						code = finding.ruleCode,
+						ruleCode = finding.ruleCode,
+						severity = finding.severity,
+						message = finding.message,
+						explanation = finding.explanation,
+						line = finding.line,
+					})
+				end
 				if source:find("TODO", 1, true) then
 					table.insert(issues, { path = fullPath(inst), message = "Contains TODO marker" })
 				end
 				if source:find("while true do", 1, true) and not source:find("task.wait", 1, true) then
 					table.insert(issues, { path = fullPath(inst), message = "Possible unthrottled while true loop" })
-				end
-				if inst.ClassName == "LocalScript" and source:find("DataStoreService", 1, true) then
-					table.insert(issues, { path = fullPath(inst), message = "LocalScript references DataStoreService" })
 				end
 			end
 		end
@@ -4886,22 +5245,39 @@ validateLuauSource = function(source)
 	return #issues == 0, issues
 end
 
-classNameForKind = function(kind)
-	local normalized = string.lower(tostring(kind or "module"))
-	if normalized == "server" then
-		return "Script"
-	elseif normalized == "client" then
-		return "LocalScript"
-	end
-	return "ModuleScript"
+function ScriptContextGuard.resolveScriptClassName(className)
+	return tostring(className or "")
 end
 
-local function resolveScriptClassName(className, kind)
-	local normalized = tostring(className or "")
-	if normalized == "" then
-		return classNameForKind(kind)
+function ScriptContextGuard.validateScriptDescriptors(descriptors)
+	local findings = {}
+	local contexts = {}
+	for _, descriptor in ipairs(descriptors or {}) do
+		local validation = ScriptContextGuard.validate(descriptor)
+		contexts[validation.requiredContext or "unknown"] = true
+		for _, finding in ipairs(validation.findings or {}) do
+			table.insert(findings, finding)
+		end
 	end
-	return normalized
+	local requiredContext = "unknown"
+	if contexts.mixed then
+		requiredContext = "mixed"
+	elseif contexts.client and contexts.server then
+		requiredContext = "unknown"
+	elseif contexts.client then
+		requiredContext = "client"
+	elseif contexts.server then
+		requiredContext = "server"
+	elseif contexts.module then
+		requiredContext = "module"
+	end
+	return {
+		ok = #findings == 0,
+		status = #findings == 0 and "valid" or "blocked",
+		requiredContext = requiredContext,
+		findings = findings,
+		adjustments = {},
+	}
 end
 
 local function applyArtifactLegacy(payload)
@@ -4910,21 +5286,36 @@ local function applyArtifactLegacy(payload)
 	local fileResults = {}
 	local validationFailures = 0
 	local snapshots = {}
+	local contextDescriptors = {}
+	for _, scriptSpec in ipairs(payload.scripts or {}) do
+		local serviceName = tostring(scriptSpec.service or "")
+		local className = ScriptContextGuard.resolveScriptClassName(scriptSpec.className)
+		local name = tostring(scriptSpec.name or className)
+		table.insert(contextDescriptors, {
+			className = className,
+			path = serviceName ~= "" and (serviceName .. "/" .. projectName .. "/" .. name) or "",
+			source = scriptSpec.source,
+		})
+	end
+	local contextValidation = ScriptContextGuard.validateScriptDescriptors(contextDescriptors)
+	if not contextValidation.ok then
+		return ScriptContextGuard.failure(contextValidation)
+	end
 
 	local executionOk, executionErr = pcall(function()
 		for _, scriptSpec in ipairs(payload.scripts or {}) do
-			local serviceName = scriptSpec.service or "Services.ReplicatedStorage"
+			local serviceName = tostring(scriptSpec.service)
 			local serviceRoot = getServiceRoot(serviceName)
 			if not serviceFolders[serviceName] then
 				serviceFolders[serviceName] = ensureCleanFolder(serviceRoot, projectName, snapshots)
 			end
-			local name = scriptSpec.name or (scriptSpec.className or "Script")
+			local name = scriptSpec.name or scriptSpec.className
 			local valid, issues = validateLuauSource(scriptSpec.source)
 			if not valid then
 				validationFailures = validationFailures + 1
 			end
 			local applyOk, applyErr = pcall(function()
-				local inst = Instance.new(resolveScriptClassName(scriptSpec.className, scriptSpec.kind))
+				local inst = Instance.new(ScriptContextGuard.resolveScriptClassName(scriptSpec.className))
 				inst.Name = name
 				inst.Parent = serviceFolders[serviceName]
 				local ok, err = writeScriptSource(inst, scriptSpec.source or "")
@@ -5009,8 +5400,11 @@ local function buildManagedIndexes(payload)
 			placement = file.placement,
 			kind = file.kind,
 			content = file.content or "",
-			className = resolveScriptClassName(file.className, file.kind),
+			className = ScriptContextGuard.resolveScriptClassName(file.className),
 			name = file.name or leafNameFromPath(path),
+			allowClassChange = file.allowClassChange == true,
+			inspectedClassName = ScriptContextGuard.resolveScriptClassName(file.inspectedClassName),
+			expectedSourceHash = tostring(file.expectedSourceHash or ""),
 		}
 		if fileId ~= "" then
 			fileById[fileId] = entry
@@ -5050,6 +5444,40 @@ local function buildManagedIndexes(payload)
 		preconditionsByFileId = preconditionsByFileId,
 		preconditionsByPath = preconditionsByPath,
 	}
+end
+
+function ScriptContextGuard.validateManagedScriptContexts(payload, indexes)
+	local descriptors = {}
+	for _, file in ipairs(payload.files or {}) do
+		table.insert(descriptors, {
+			className = ScriptContextGuard.resolveScriptClassName(file.className),
+			path = tostring(file.path or file.placement or ""),
+			source = file.content,
+		})
+	end
+	for _, op in ipairs(payload.operations or {}) do
+		local opType = tostring(op.type or "")
+		if opType == "upsert" then
+			local spec = indexes.fileById[tostring(op.id or "")] or indexes.fileByPath[tostring(op.path or "")]
+			table.insert(descriptors, {
+				className = spec and spec.className or "",
+				path = tostring(op.path or (spec and spec.path) or ""),
+				source = spec and spec.content or "",
+			})
+		elseif opType == "rename" then
+			local spec = indexes.fileById[tostring(op.id or "")] or indexes.fileByPath[tostring(op.toPath or "")]
+			local manifestEntry = indexes.manifestById[tostring(op.id or "")]
+				or indexes.manifestByPath[tostring(op.fromPath or "")]
+			table.insert(descriptors, {
+				className = ScriptContextGuard.resolveScriptClassName(
+					(spec and spec.className) or (manifestEntry and manifestEntry.className)
+				),
+				path = tostring(op.toPath or ""),
+				source = spec and spec.content or "",
+			})
+		end
+	end
+	return ScriptContextGuard.validateScriptDescriptors(descriptors)
 end
 
 local function validateManagedOperations(operations)
@@ -5129,7 +5557,8 @@ local function findManagedInstanceByFileId(fileId, expectedClass)
 	end
 	local matches = {}
 	for _, inst in ipairs(game:GetDescendants()) do
-		if inst:GetAttribute(AGENT_FILE_ID_ATTRIBUTE) == fileId and inst.ClassName == expectedClass then
+		if inst:GetAttribute(AGENT_FILE_ID_ATTRIBUTE) == fileId
+			and (not expectedClass or inst.ClassName == expectedClass) then
 			table.insert(matches, inst)
 		end
 	end
@@ -5140,6 +5569,35 @@ local function findManagedInstanceByFileId(fileId, expectedClass)
 		return nil, "ambiguous"
 	end
 	return nil, nil
+end
+
+function ScriptContextGuard.managedClassChangeCredentials(spec, indexes)
+	local fileId = tostring(spec.fileId or spec.id or "")
+	local precondition = indexes.preconditionsByFileId[fileId]
+		or indexes.preconditionsByPath[tostring(spec.path or "")]
+	local inspectedClassName = tostring(spec.inspectedClassName or "")
+	if inspectedClassName == "" and precondition then
+		inspectedClassName = tostring(precondition.className or "")
+	end
+	local expectedSourceHash = tostring(spec.expectedSourceHash or "")
+	if expectedSourceHash == "" and precondition then
+		expectedSourceHash = tostring(precondition.sourceHash or "")
+	end
+	return {
+		allowed = spec.allowClassChange == true,
+		inspectedClassName = ScriptContextGuard.resolveScriptClassName(inspectedClassName),
+		expectedSourceHash = expectedSourceHash,
+	}
+end
+
+function ScriptContextGuard.canChangeManagedClass(spec, indexes, inst, expectedClass)
+	if not inst or inst.ClassName == expectedClass then
+		return true
+	end
+	local credentials = ScriptContextGuard.managedClassChangeCredentials(spec, indexes)
+	return credentials.allowed
+		and credentials.inspectedClassName == inst.ClassName
+		and credentials.expectedSourceHash ~= ""
 end
 
 local function findUniqueLeafMatch(path, expectedClass)
@@ -5164,23 +5622,44 @@ end
 
 local function resolveManagedTarget(spec, indexes, currentPathOverride)
 	local fileId = tostring(spec.fileId or spec.id or "")
-	local expectedClass = resolveScriptClassName(spec.className, spec.kind)
+	local expectedClass = ScriptContextGuard.resolveScriptClassName(spec.className)
 	local canonicalPath = tostring(currentPathOverride or spec.path or "")
-	local attrMatch, attrError = findManagedInstanceByFileId(fileId, expectedClass)
+	if not SCRIPT_CLASSES[expectedClass] then
+		return {
+			ok = false,
+			code = "SCRIPT_CONTEXT_MISMATCH",
+			message = "Managed script is missing an explicit className",
+		}
+	end
+	local attrMatch, attrError = findManagedInstanceByFileId(fileId, nil)
 	if attrError == "ambiguous" then
 		return { ok = false, code = "ambiguous", message = "Multiple Studio instances share the same AgentFileId" }
 	end
 	if attrMatch then
+		if not ScriptContextGuard.canChangeManagedClass(spec, indexes, attrMatch, expectedClass) then
+			return {
+				ok = false,
+				code = "SCRIPT_CONTEXT_MISMATCH",
+				message = "Changing an existing managed script class requires allowClassChange, the inspected class, and the inspected source hash.",
+			}
+		end
 		return { ok = true, instance = attrMatch, expectedClass = expectedClass, matchType = "file_id" }
 	end
 
 	local exact = canonicalPath ~= "" and resolvePath(canonicalPath) or nil
 	if exact then
-		if exact.ClassName ~= expectedClass then
+		if not SCRIPT_CLASSES[exact.ClassName] then
 			return {
 				ok = false,
 				code = "class_mismatch",
 				message = ("Expected %s at %s but found %s"):format(expectedClass, canonicalPath, exact.ClassName),
+			}
+		end
+		if not ScriptContextGuard.canChangeManagedClass(spec, indexes, exact, expectedClass) then
+			return {
+				ok = false,
+				code = "SCRIPT_CONTEXT_MISMATCH",
+				message = "Changing an existing managed script class requires allowClassChange, the inspected class, and the inspected source hash.",
 			}
 		end
 		return { ok = true, instance = exact, expectedClass = expectedClass, matchType = "canonical_path" }
@@ -5212,6 +5691,10 @@ local function checkStudioPreconditions(inst, spec, manifestEntry, indexes)
 	local currentHash = stableHash(source)
 	local fileId = tostring(spec.fileId or spec.id or "")
 	local precondition = indexes.preconditionsByFileId[fileId] or indexes.preconditionsByPath[tostring(spec.path or "")]
+	local credentials = ScriptContextGuard.managedClassChangeCredentials(spec, indexes)
+	if credentials.expectedSourceHash ~= "" and credentials.expectedSourceHash ~= currentHash then
+		return false, "Studio source hash no longer matches the inspected target", currentHash
+	end
 	if precondition and tostring(precondition.sourceHash or "") ~= "" and tostring(precondition.sourceHash) ~= currentHash then
 		return false, "Studio source precondition hash mismatch", currentHash
 	end
@@ -5241,10 +5724,34 @@ end
 
 local function applyManagedUpsert(spec, resolved, indexes, snapshots, seenPaths)
 	local targetPath = tostring(spec.path or "")
-	local expectedClass = resolveScriptClassName(spec.className, spec.kind)
+	local expectedClass = ScriptContextGuard.resolveScriptClassName(spec.className)
+	if not SCRIPT_CLASSES[expectedClass] then
+		return nil, "Managed upsert is missing an explicit className"
+	end
 	local inst = resolved.instance
+	local manifestEntry = indexes.manifestById[tostring(spec.fileId or spec.id or "")] or indexes.manifestByPath[targetPath]
 	if inst then
+		local ok, preconditionError = checkStudioPreconditions(inst, spec, manifestEntry, indexes)
+		if not ok then
+			return nil, preconditionError
+		end
 		snapshotOnce(inst, snapshots, seenPaths)
+		if inst.ClassName ~= expectedClass then
+			if not ScriptContextGuard.canChangeManagedClass(spec, indexes, inst, expectedClass) then
+				return nil, "Managed script class conversion is not authorized"
+			end
+			local previous = inst
+			local previousParent = previous.Parent
+			local previousName = previous.Name
+			local previousAttributes = previous:GetAttributes()
+			previous:Destroy()
+			inst = Instance.new(expectedClass)
+			inst.Name = previousName
+			for attributeName, attributeValue in pairs(previousAttributes) do
+				inst:SetAttribute(attributeName, attributeValue)
+			end
+			inst.Parent = previousParent
+		end
 	else
 		snapshotOnce(targetPath, snapshots, seenPaths)
 		local parent, leaf = ensureParent(targetPath, true)
@@ -5258,12 +5765,6 @@ local function applyManagedUpsert(spec, resolved, indexes, snapshots, seenPaths)
 
 	if inst.ClassName ~= expectedClass then
 		return nil, ("Expected %s but found %s"):format(expectedClass, inst.ClassName)
-	end
-
-	local manifestEntry = indexes.manifestById[tostring(spec.fileId or spec.id or "")] or indexes.manifestByPath[targetPath]
-	local ok, preconditionError = checkStudioPreconditions(inst, spec, manifestEntry, indexes)
-	if not ok then
-		return nil, preconditionError
 	end
 
 	inst:SetAttribute(AGENT_ARTIFACT_ID_ATTRIBUTE, tostring(spec.artifactId or ""))
@@ -5313,11 +5814,15 @@ applyArtifact = function(payload)
 	local fileResults = {}
 	local indexes = buildManagedIndexes(payload)
 	local validationErrors = validateManagedOperations(operations)
+	local contextValidation = ScriptContextGuard.validateManagedScriptContexts(payload, indexes)
 	local managedFiles = {}
 	local finalFiles = {}
 
 	for _, spec in pairs(indexes.fileById) do
 		table.insert(finalFiles, spec)
+	end
+	if not contextValidation.ok then
+		return ScriptContextGuard.failure(contextValidation)
 	end
 	if #validationErrors > 0 then
 		return {
@@ -5349,9 +5854,9 @@ applyArtifact = function(payload)
 							fileId = tostring(op.id or ""),
 							id = tostring(op.id or ""),
 							path = tostring(op.toPath or ""),
-							kind = manifestEntry and manifestEntry.kind or "module",
+							kind = manifestEntry and manifestEntry.kind,
 							placement = manifestEntry and manifestEntry.placement or splitPath(op.toPath)[1],
-							className = resolveScriptClassName(manifestEntry and manifestEntry.className, manifestEntry and manifestEntry.kind or "module"),
+							className = ScriptContextGuard.resolveScriptClassName(manifestEntry and manifestEntry.className),
 						}
 						spec.artifactId = payload.artifactId
 						local resolved = resolveManagedTarget(spec, indexes, tostring(op.fromPath or ""))
@@ -5388,14 +5893,14 @@ applyArtifact = function(payload)
 							path = tostring(manifestEntry.canonicalPath or op.path or ""),
 							kind = manifestEntry.kind,
 							placement = manifestEntry.placement,
-							className = resolveScriptClassName(manifestEntry.className, manifestEntry.kind),
+							className = ScriptContextGuard.resolveScriptClassName(manifestEntry.className),
 						} or {
 							fileId = tostring(op.id or ""),
 							id = tostring(op.id or ""),
 							path = tostring(op.path or ""),
-							kind = "module",
+							kind = nil,
 							placement = splitPath(op.path)[1],
-							className = classNameForKind("module"),
+							className = "",
 						}
 						local resolved = resolveManagedTarget(spec, indexes, tostring(op.path or ""))
 						if not resolved.ok then
@@ -5416,15 +5921,17 @@ applyArtifact = function(payload)
 						pushResult({ type = phase, path = tostring(op.path or "") }, true, nil)
 					else
 						local spec = indexes.fileById[tostring(op.id or "")] or indexes.fileByPath[tostring(op.path or "")]
-						spec = spec or {
-							fileId = tostring(op.id or ""),
-							id = tostring(op.id or ""),
-							path = tostring(op.path or ""),
-							placement = tostring(op.placement or splitPath(op.path)[1] or "Services.ReplicatedStorage"),
-							kind = tostring(op.kind or "module"),
-							content = tostring(op.content or ""),
-							className = classNameForKind(op.kind),
-						}
+						if not spec then
+							pushResult({ type = phase, path = tostring(op.path or "") }, false, "Upsert is missing an explicit file descriptor")
+							error("Upsert is missing an explicit file descriptor")
+						end
+						spec.allowClassChange = op.allowClassChange == true or spec.allowClassChange == true
+						if tostring(op.inspectedClassName or "") ~= "" then
+							spec.inspectedClassName = op.inspectedClassName
+						end
+						if tostring(op.expectedSourceHash or "") ~= "" then
+							spec.expectedSourceHash = op.expectedSourceHash
+						end
 						spec.artifactId = payload.artifactId
 						local resolved = resolveManagedTarget(spec, indexes, tostring(op.path or spec.path or ""))
 						if not resolved.ok then

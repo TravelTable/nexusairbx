@@ -167,6 +167,7 @@ const MODULE_EXPORTS = {
     "getSelectionTool",
     "computePlaceSignature",
     "serializeFlat",
+    "ScriptContextGuard",
     // Defined in readTools but required by registry.lua TOOL_HANDLERS.
     // Exporting them from writeTools left the handlers nil and dropped
     // create_instance / delete_instance from plugin attestation.

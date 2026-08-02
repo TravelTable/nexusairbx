@@ -1,4 +1,5 @@
 import { Gamepad2 } from "lib/icons";
+import { shouldUseLocalDevelopmentAuth } from "lib/localDevelopmentAuth";
 import { Button } from "../shadcn/button";
 import { homepageFooterLinks, homepageHero } from "../../content/homepageLanding";
 
@@ -9,6 +10,7 @@ export default function HomepageHeader({
   robloxStatus,
   onConnectRoblox,
 }) {
+  const localDevelopmentAuth = shouldUseLocalDevelopmentAuth();
   const primaryLinks = homepageFooterLinks.filter((link) => link.label !== "Support");
 
   return (
@@ -49,8 +51,8 @@ export default function HomepageHeader({
                   Connect Roblox
                 </button>
               ) : (
-                <a className="hidden text-sm font-semibold text-zinc-300 transition hover:text-white sm:inline-flex" href="/signin">
-                  Sign in
+                <a className="hidden text-sm font-semibold text-zinc-300 transition hover:text-white sm:inline-flex" href={localDevelopmentAuth ? "/ai" : "/signin"}>
+                  {localDevelopmentAuth ? "Open workspace" : "Sign in"}
                 </a>
               ))}
             <Button asChild className="hidden bg-[#3855f6] hover:bg-[#5068ff] sm:inline-flex">

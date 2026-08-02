@@ -209,8 +209,8 @@ describe("studio connection selection", () => {
       status: "unknown",
       installedPluginVersion: "0.10.0-verified-decoupled",
       installedProtocolVersion: "2026-06-20-creator-store",
-      expectedPluginVersion: "0.11.0-asset-references",
-      expectedProtocolVersion: "2026-07-17-target-integrity",
+      expectedPluginVersion: "0.12.0-script-context",
+      expectedProtocolVersion: "2026-07-30-script-context",
     }));
   });
 

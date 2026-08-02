@@ -1,8 +1,9 @@
 import React, { Suspense, lazy } from 'react';
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router, Navigate, Routes, Route } from "react-router-dom";
 import AuthRedirectHandler from "./components/AuthRedirectHandler";
 import SiteShell from "./components/site/SiteShell";
 import { ASSET_PLATFORM_READS_ENABLED } from "./lib/assetPlatformApi";
+import { shouldUseLocalDevelopmentAuth } from "./lib/localDevelopmentAuth";
 
 // Suppress a known Monaco/Chrome ResizeObserver loop error.
 
@@ -46,10 +47,11 @@ function withSiteShell(element, variant) {
 }
 
 function App() {
+  const localDevelopmentAuth = shouldUseLocalDevelopmentAuth();
   return (
     <Router>
       <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-white bg-black">Loading...</div>}>
-        <AuthRedirectHandler />
+        {localDevelopmentAuth ? null : <AuthRedirectHandler />}
         <Routes>
           <Route path="/" element={withSiteShell(<NexusRBXHomepageV2 />, "marketing")} />
           <Route path="/downloads" element={withSiteShell(<NexusRBXDownloadsPage />, "marketing")} />
@@ -70,7 +72,12 @@ function App() {
           />
           <Route path="/privacy" element={withSiteShell(<NexusRBXPrivacyPageContainer />, "legal")} />
           <Route path="/subscribe" element={withSiteShell(<NexusRBXSubscribePageContainer />, "checkout")} />
-          <Route path="/signin" element={withSiteShell(<NexusRBXSignInPageContainer />, "auth")} />
+          <Route
+            path="/signin"
+            element={localDevelopmentAuth
+              ? <Navigate to="/ai" replace />
+              : withSiteShell(<NexusRBXSignInPageContainer />, "auth")}
+          />
           <Route path="/signup" element={withSiteShell(<NexusRBXSignUpPageContainer />, "auth")} />
           <Route path="/verify-email" element={withSiteShell(<NexusRBXVerifyEmailPage />, "auth")} />
           <Route path="/terms" element={withSiteShell(<NexusRBXTermsPageContainer />, "legal")} />

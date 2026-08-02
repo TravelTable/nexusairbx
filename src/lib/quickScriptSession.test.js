@@ -86,4 +86,30 @@ describe("quickScriptSession", () => {
     expect(normalized.title).toBe("Touch Damage");
     expect(normalized.code).toBe('print("damage")');
   });
+
+  test("preserves backend validation without inventing a Script class or location", () => {
+    const normalized = normalizeQuickScriptResult({
+      title: "Unsafe legacy result",
+      code: 'local player = game:GetService("Players").LocalPlayer',
+      validation: {
+        status: "blocked",
+        requiredContext: "client",
+        findings: [{
+          code: "SCRIPT_CLASS_REQUIRED",
+          severity: "error",
+          explanation: "An explicit script class is required.",
+          line: 1,
+        }],
+        adjustments: [],
+      },
+    });
+
+    expect(normalized.scriptType).toBe("");
+    expect(normalized.studioLocation).toBe("");
+    expect(normalized.validation).toMatchObject({
+      status: "blocked",
+      requiredContext: "client",
+      findings: [{ code: "SCRIPT_CLASS_REQUIRED", line: 1 }],
+    });
+  });
 });

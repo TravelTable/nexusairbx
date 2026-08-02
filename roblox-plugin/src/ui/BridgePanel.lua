@@ -3,8 +3,8 @@
 
 local TweenService = game:GetService("TweenService")
 
-local displayPluginVersion = PLUGIN_VERSION or "0.11.0-asset-references"
-local displayProtocolVersion = STUDIO_PROTOCOL_VERSION or "2026-07-22-asset-references"
+local displayPluginVersion = PLUGIN_VERSION or "0.12.0-script-context"
+local displayProtocolVersion = STUDIO_PROTOCOL_VERSION or "2026-07-30-script-context"
 local MAX_ACTIVITY_ENTRIES = 25
 
 local toolbar = plugin:CreateToolbar("NexusRBX")

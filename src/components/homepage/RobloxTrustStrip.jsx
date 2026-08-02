@@ -1,4 +1,5 @@
 import { Gamepad2, Code } from "lib/icons";
+import { shouldUseLocalDevelopmentAuth } from "lib/localDevelopmentAuth";
 
 import PluginCallout from "./PluginCallout";
 
@@ -26,6 +27,7 @@ function GoogleIcon({ className = "" }) {
 }
 
 export default function RobloxTrustStrip() {
+  const localDevelopmentAuth = shouldUseLocalDevelopmentAuth();
   const pillClass =
     "inline-flex items-center gap-2 bg-white/[0.06] border border-white/10 rounded-full px-4 py-2 text-xs font-semibold text-zinc-400";
 
@@ -37,10 +39,17 @@ export default function RobloxTrustStrip() {
           Roblox OAuth Verified
         </span>
 
-        <a href="/signin" className={pillClass + " transition hover:text-zinc-300 hover:border-white/20"}>
-          <GoogleIcon />
-          Sign in with Google
-        </a>
+        {localDevelopmentAuth ? (
+          <a href="/ai" className={pillClass + " transition hover:text-zinc-300 hover:border-white/20"}>
+            <Code className="h-3.5 w-3.5" />
+            Local developer session
+          </a>
+        ) : (
+          <a href="/signin" className={pillClass + " transition hover:text-zinc-300 hover:border-white/20"}>
+            <GoogleIcon />
+            Sign in with Google
+          </a>
+        )}
 
         <div className="relative inline-flex">
           <a

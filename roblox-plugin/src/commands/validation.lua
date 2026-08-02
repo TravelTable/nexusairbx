@@ -224,6 +224,38 @@ local function runProjectValidation(payload)
 		end
 		if SCRIPT_CLASSES[inst.ClassName] then
 			counts.scripts = counts.scripts + 1
+			local sourceOk, source = readScriptSource(inst)
+			if sourceOk then
+				local contextValidation = ScriptContextGuard.validate({
+					className = inst.ClassName,
+					path = fullPath(inst),
+					source = source,
+				})
+				for _, finding in ipairs(contextValidation.findings or {}) do
+					table.insert(issues, {
+						severity = finding.severity == "blocking" and "error" or tostring(finding.severity or "error"),
+						code = finding.ruleCode,
+						ruleCode = finding.ruleCode,
+						targetPath = fullPath(inst),
+						message = finding.message or finding.explanation or finding.ruleCode,
+						explanation = finding.explanation,
+						line = finding.line,
+						requiredContext = contextValidation.requiredContext,
+						recommendation = finding.ruleCode == "MIXED_RUNTIME_CONTEXT"
+							and "Split the behavior into client and server scripts connected by remotes."
+							or "Correct the script class or location before running the project.",
+					})
+				end
+			else
+				addValidationIssue(
+					issues,
+					"warning",
+					"SCRIPT_SOURCE_UNREADABLE",
+					inst,
+					"Could not read this script while checking its execution context.",
+					"Open the script in Studio and run validation again."
+				)
+			end
 			if visualOnly then
 				addValidationIssue(issues, "critical", "UNEXPECTED_EXECUTABLE_CONTENT", inst, "Visual-only validation target contains executable Luau.", "Remove the script or validate it as part of an explicit project-level review.")
 			end

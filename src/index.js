@@ -9,9 +9,15 @@ import { auth } from "./firebase";
 import { applyAuthPersistence, readAuthPersistencePreference } from "./lib/firebaseAuth";
 import { installAppCheckFetchInterceptor } from "./lib/appCheck";
 import { initProductAnalytics } from "./lib/productAnalytics";
+import {
+  ensureLocalDevelopmentAuth,
+  shouldUseLocalDevelopmentAuth,
+  startLocalDevelopmentAuthRecovery,
+} from "./lib/localDevelopmentAuth";
 
+let authPersistencePromise = Promise.resolve();
 if (typeof window !== "undefined") {
-  void applyAuthPersistence(auth, readAuthPersistencePreference());
+  authPersistencePromise = applyAuthPersistence(auth, readAuthPersistencePreference());
   installAppCheckFetchInterceptor();
 }
 
@@ -39,17 +45,34 @@ if (typeof window !== "undefined") {
 }
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
-root.render(
-  <React.StrictMode>
-    <HelmetProvider>
-      <BillingProvider>
-        <SettingsProvider>
-          <App />
-        </SettingsProvider>
-      </BillingProvider>
-    </HelmetProvider>
-  </React.StrictMode>
-);
+
+function renderApp() {
+  root.render(
+    <React.StrictMode>
+      <HelmetProvider>
+        <BillingProvider>
+          <SettingsProvider>
+            <App />
+          </SettingsProvider>
+        </BillingProvider>
+      </HelmetProvider>
+    </React.StrictMode>
+  );
+}
+
+if (shouldUseLocalDevelopmentAuth()) {
+  void authPersistencePromise
+    .then(() => ensureLocalDevelopmentAuth(auth))
+    .catch((error) => {
+      console.error("Automatic local developer sign-in failed:", error?.message || error);
+    })
+    .finally(() => {
+      renderApp();
+      startLocalDevelopmentAuthRecovery(auth);
+    });
+} else {
+  renderApp();
+}
 
 // Fire-and-forget analytics AFTER mount. The product analytics module handles
 // provider loading, anonymous identity, consent/opt-out, and local debug mode.

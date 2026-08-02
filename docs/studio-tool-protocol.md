@@ -1,8 +1,8 @@
 # Studio Tool Protocol
 
-Active protocol version: `2026-07-22-asset-references`
+Active protocol version: `2026-07-30-script-context`
 
-This protocol integrates Creator Store import, native model construction/refinement, trusted Roblox Open Cloud upload, server-owned asset-reference application, uploaded-model Studio insertion, and the Phase 9 Studio validation quality gate. Uploaded assets, uploaded models, and validation targets must come from backend-held receipts; the browser never submits a trusted Roblox asset ID, Studio root path, inserted root path, model revision, insertion identity, or validation status for trusted commands.
+This protocol integrates Creator Store import, native model construction/refinement, trusted Roblox Open Cloud upload, server-owned asset-reference application, uploaded-model Studio insertion, the script execution-context quality gate, and the Phase 9 Studio validation quality gate. Uploaded assets, uploaded models, and validation targets must come from backend-held receipts; the browser never submits a trusted Roblox asset ID, Studio root path, inserted root path, model revision, insertion identity, or validation status for trusted commands.
 
 The backend validates every Studio command in `backend/src/lib/studioToolProtocol.js` before it is queued. The plugin acknowledges each command with a structured result containing:
 
@@ -42,7 +42,9 @@ Only `compatible` and `degraded` sessions may poll commands.
   command fails with `studio_tool_unavailable` and includes the command and its
   required capability.
 - `update_required` is reserved for a release, protocol, or build identity that
-  the server release catalog does not accept. Only this state shows reinstall
+  the server release catalog does not accept. An older plugin session may
+  continue to inspect its project, but AI mutations remain disabled until the
+  current script-context release is installed. Only this state shows reinstall
   instructions.
 - Network errors and missing compatibility data are never interpreted as an
   outdated plugin. Repeated identical attestations do not write to Firestore.
@@ -97,6 +99,57 @@ Every mutation of an existing `Script`, `LocalScript`, or `ModuleScript` must in
 Mutation snapshots are mandatory; a caller-provided `snapshot: false` is ignored. The plugin snapshots both the target and any missing parent path segments before it mutates Studio. A failed mutation returns a rollback receipt. `rolledBack: true` is emitted only after every snapshot is restored and its pre-mutation state is verified; an incomplete restore fails with `rollback_failed` and includes the per-path restore errors.
 
 Unknown top-level and nested command types fail with `STUDIO_TOOL_UNSUPPORTED`; they are never remapped to `inspect_place`. Plugin attestation advertises only executable handlers. `format_script`, `run_test_service`, `run_play_test`, and `stop_play_test` remain available only as structured compatibility errors for stale queued commands and are omitted from `supportedCommands`.
+
+## Script Execution Context Gate
+
+Every generated or mutated script is validated from its complete descriptor:
+`{ className, path, placement, kind, source }`. Quick Script, Agent Build,
+generated artifacts, `/apply-artifact`, the Studio protocol, and the Roblox
+plugin all use the same execution-context contract:
+
+| Behavior | Required class | Executing container |
+| --- | --- | --- |
+| Player input, `LocalPlayer`, camera, GUI, render-step work | `LocalScript` | A supported client container |
+| Data stores, server storage, messaging, trusted server services | `Script` | A supported server container |
+| Reusable library | `ModuleScript` | Any supported module location; runtime is inherited from its requiring script |
+
+API names found only inside comments or string literals do not affect the
+result. Runnable scripts in `ServerStorage` are rejected because that container
+does not execute them. `Script.RunContext = Client` is intentionally unsupported
+in this release; client code is represented by `LocalScript`.
+
+`create_script.className` is required. The backend may adjust only an
+unambiguous class mismatch for a new script that can remain in its requested
+location—for example, `Script` to `LocalScript` under
+`StarterPlayerScripts` when the source uses input and `RenderStepped`. The result
+must disclose the adjustment. The plugin never guesses a class, moves a script,
+splits source, or repairs architecture.
+
+Mixed client/server source is blocked and must be redesigned as separate client
+and server scripts communicating through remotes. Ambiguous generated results
+receive at most one AI repair attempt. A second invalid result is blocked before
+any Studio command is queued.
+
+Existing scripts preserve their class by default. An explicit conversion
+requires all of:
+
+- `allowClassChange: true`
+- an inspected target with `inspectedClassName`
+- the normal `expectedSourceHash` precondition
+- a pre-mutation snapshot
+
+Invalid commands return `SCRIPT_CONTEXT_MISMATCH` with validation metadata:
+`status` (`valid`, `adjusted`, or `blocked`), `requiredContext` (`client`,
+`server`, `module`, `mixed`, or `unknown`), `findings`, and `adjustments`.
+Findings use stable codes including `SCRIPT_CLASS_REQUIRED`,
+`CLIENT_API_ON_SERVER`, `SERVER_API_ON_CLIENT`,
+`SCRIPT_LOCATION_MISMATCH`, and `MIXED_RUNTIME_CONTEXT`. Each finding includes a
+severity, explanation, and an optional source line.
+
+`run_project_validation` and `run_smoke_check` report context mistakes already
+present in Studio. Privacy-safe telemetry records aggregate rule triggers,
+automatic corrections, repair outcomes, and blocked results; it does not record
+script source.
 
 ## Validation And Recovery
 
@@ -162,6 +215,12 @@ profiles or check IDs fail closed.
 19. Attempt a known-script mutation without `expectedSourceHash`; confirm `expected_source_hash_required` and no Studio change.
 20. Attempt to submit an unknown top-level command and an unknown nested batch command; confirm both return `STUDIO_TOOL_UNSUPPORTED` and neither triggers `inspect_place`.
 21. Confirm plugin attestation omits `format_script`, `run_test_service`, `run_play_test`, and `stop_play_test`. Force an atomic batch failure after a successful mutation and confirm either a verified rollback receipt with `rolledBack: true`, or `rollback_failed` with restore errors; confirm auto-created parent folders are also removed.
+22. Generate the Fly GUI as a `Script` under `StarterPlayer/StarterPlayerScripts` with `LocalPlayer`, `UserInputService`, and `RenderStepped`; confirm NexusRBX discloses an adjustment to `LocalScript`, keeps Push Studio enabled, and queues the adjusted class.
+23. Press Play and confirm the Fly GUI appears. Verify its toggle, speed input, WASD, Space, and Ctrl controls.
+24. Submit mixed client/server source and confirm one repair attempt is allowed, the second invalid result is blocked, and no Studio instance or source changes.
+25. Put client API names only in comments and ordinary strings and confirm they do not change the inferred context. Then use `game:GetService("DataStoreService")` in executable code and confirm server context is detected.
+26. Attempt to change an existing script class without `allowClassChange`, an inspected class, a source hash, or a snapshot; confirm each incomplete request fails before mutation. Confirm the fully explicit conversion succeeds only after inspection.
+27. Connect an older plugin build and confirm project inspection remains available while AI mutations require the current plugin upgrade.
 
 ## Firestore Notes
 

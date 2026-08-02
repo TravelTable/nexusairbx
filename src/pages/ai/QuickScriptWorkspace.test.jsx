@@ -139,4 +139,55 @@ describe("QuickScriptWorkspace", () => {
     await waitFor(() => expect(screen.getByTestId("quick-prompt-pane")).toHaveClass("flex"));
     expect(screen.getByRole("textbox", { name: "Quick Script prompt" })).toHaveValue("Make a damage part");
   });
+
+  test("discloses safe class adjustments and blocks invalid Studio pushes", () => {
+    const adjusted = {
+      ...result,
+      scriptType: "LocalScript",
+      studioLocation: "StarterPlayer/StarterPlayerScripts",
+      validation: {
+        status: "adjusted",
+        requiredContext: "client",
+        findings: [],
+        adjustments: [{
+          field: "className",
+          oldValue: "Script",
+          newValue: "LocalScript",
+          ruleCode: "CLIENT_API_ON_SERVER",
+          message: "Adjusted Script → LocalScript because this code uses player input.",
+        }],
+      },
+    };
+    const rendered = renderWorkspace({
+      quickScript: { status: "success", result: adjusted },
+    });
+
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Adjusted Script → LocalScript because this code uses player input."
+    );
+    expect(screen.getByRole("button", { name: "Studio" })).toBeEnabled();
+
+    rendered.rerender(<QuickScriptWorkspace
+      {...rendered.props}
+      quickScript={{
+        status: "success",
+        result: {
+          ...adjusted,
+          validation: {
+            status: "blocked",
+            requiredContext: "mixed",
+            findings: [{
+              code: "MIXED_RUNTIME_CONTEXT",
+              severity: "error",
+              explanation: "Client and server behavior must be split.",
+            }],
+            adjustments: [],
+          },
+        },
+      }}
+    />);
+
+    expect(screen.getByRole("alert")).toHaveTextContent("Client and server behavior must be split.");
+    expect(screen.getByRole("button", { name: "Studio" })).toBeDisabled();
+  });
 });

@@ -90,9 +90,9 @@ const STATUS_COPY = Object.freeze({
     tone: "waiting",
   },
   succeeded: {
-    eyebrow: "Verified completion",
-    title: "Task completed and verified",
-    body: "The requested work reached a terminal state with recorded verification evidence.",
+    eyebrow: "Task finished",
+    title: "The task reached a terminal state",
+    body: "Review the recorded checks below to see what was verified and what may still need testing.",
     tone: "success",
   },
   failed: {
@@ -117,6 +117,45 @@ const TONE_CLASSES = Object.freeze({
   neutral: "border-white/10 bg-white/[0.04] text-gray-200",
 });
 
+const STRUCTURED_STATUS_COPY = Object.freeze({
+  completed: {
+    eyebrow: "Completed",
+    title: "Task completed with required checks",
+    body: "The recorded automated acceptance checks passed.",
+    tone: "success",
+  },
+  diagnosed: {
+    eyebrow: "Diagnosis complete",
+    title: "The issue was diagnosed",
+    body: "The evidence and likely cause are recorded below; no unverified fix is being claimed.",
+    tone: "success",
+  },
+  fixed_verified: {
+    eyebrow: "Verified completion",
+    title: "Task completed and verified",
+    body: "The fix passed the required recorded verification.",
+    tone: "success",
+  },
+  partial: {
+    eyebrow: "Partially completed",
+    title: "Some required checks are still incomplete",
+    body: "Review the failed or unperformed checks before treating the task as complete.",
+    tone: "waiting",
+  },
+  blocked: {
+    eyebrow: "Blocked safely",
+    title: "The task stopped at a safety gate",
+    body: "The unresolved problem is recorded below. Unsafe Studio changes were not queued.",
+    tone: "danger",
+  },
+  manual_verification_required: {
+    eyebrow: "Manual check required",
+    title: "Changes saved; test the behavior in Studio",
+    body: "Automated checks passed, but the requested behavior still needs the recorded Studio playtest.",
+    tone: "waiting",
+  },
+});
+
 function firstString(...values) {
   const value = values.find((entry) => typeof entry === "string" && entry.trim());
   return value ? value.trim() : "";
@@ -132,6 +171,25 @@ function safeDisplayText(...values) {
 
 function normalizedStatus(value) {
   return String(value || "").trim().toLowerCase();
+}
+
+function structuredResultFor(task) {
+  const candidates = [
+    task?.taskResult,
+    task?.result?.taskResult,
+    task?.pendingResult?.taskResult,
+    task?.result,
+  ];
+  return candidates.find((candidate) => (
+    candidate
+    && typeof candidate === "object"
+    && STRUCTURED_STATUS_COPY[normalizedStatus(candidate.status)]
+    && (
+      candidate.schemaVersion
+      || Array.isArray(candidate.acceptanceChecks)
+      || candidate.verification
+    )
+  )) || null;
 }
 
 function checklistStatus(step, task) {
@@ -204,8 +262,10 @@ function currentStepFor(task, steps) {
     || null;
 }
 
-function statusPresentation(task, currentStep) {
+function statusPresentation(task, currentStep, structuredResult) {
   const status = normalizedStatus(task?.status) || "accepted";
+  const structuredCopy = STRUCTURED_STATUS_COPY[normalizedStatus(structuredResult?.status)];
+  if (structuredCopy && isTaskTerminal(task)) return structuredCopy;
   const base = STATUS_COPY[status] || STATUS_COPY.accepted;
   const currentDescription = safeDisplayText(
     currentStep?.description,
@@ -285,6 +345,23 @@ function numericValue(...values) {
 
 function uniqueDetails(values) {
   return [...new Set(values.map((value) => safeDisplayText(String(value || ""))).filter(Boolean))].slice(0, 12);
+}
+
+function findingLabel(finding) {
+  if (typeof finding === "string") return safeDisplayText(finding);
+  return safeDisplayText(
+    finding?.explanation,
+    finding?.message,
+    finding?.remediation,
+    finding?.code
+  );
+}
+
+function changeLabel(change) {
+  if (typeof change === "string") return safeDisplayText(change);
+  const summary = safeDisplayText(change?.summary, change?.type);
+  const paths = uniqueDetails(Array.isArray(change?.paths) ? change.paths : [change?.path]);
+  return [summary, paths.length ? paths.join(", ") : ""].filter(Boolean).join(" — ");
 }
 
 function technicalProjection(task, steps, events) {
@@ -380,7 +457,11 @@ export default function TaskProgressPanel({
   const [priceRobux, setPriceRobux] = useState("");
   const steps = useMemo(() => (Array.isArray(task?.steps) ? task.steps : []), [task?.steps]);
   const currentStep = useMemo(() => currentStepFor(task, steps), [task, steps]);
-  const presentation = useMemo(() => statusPresentation(task, currentStep), [task, currentStep]);
+  const structuredResult = useMemo(() => structuredResultFor(task), [task]);
+  const presentation = useMemo(
+    () => statusPresentation(task, currentStep, structuredResult),
+    [task, currentStep, structuredResult]
+  );
   const recentMessages = useMemo(() => meaningfulEventMessages(events), [events]);
   const details = useMemo(() => technicalProjection(task, steps, events), [task, steps, events]);
   const actions = useMemo(() => getAuthorizedTaskActions(task), [task]);
@@ -526,11 +607,109 @@ export default function TaskProgressPanel({
         </div>
       )}
 
-      {normalizedStatus(task.status) === "succeeded" && (
+      {terminal && structuredResult && (
+        <div
+          className="space-y-3 rounded-xl border border-white/10 bg-black/10 px-3 py-3"
+          aria-label="Task outcome"
+        >
+          <div>
+            <div className="text-[10px] font-black uppercase tracking-widest text-gray-500">Understanding</div>
+            <p className="mt-1 text-xs text-gray-200">
+              Intent: {safeDisplayText(structuredResult.intent) || "Roblox development task"}
+            </p>
+          </div>
+
+          {Array.isArray(structuredResult.acceptanceChecks) && structuredResult.acceptanceChecks.length > 0 && (
+            <div>
+              <div className="text-[10px] font-black uppercase tracking-widest text-gray-500">Verification results</div>
+              <ul className="mt-1.5 space-y-1">
+                {structuredResult.acceptanceChecks.slice(0, 8).map((check, index) => (
+                  <li key={check?.id || `check-${index}`} className="flex items-start justify-between gap-3 text-[11px]">
+                    <span className="text-gray-300">{safeDisplayText(check?.description, check?.id) || `Check ${index + 1}`}</span>
+                    <span className={`shrink-0 font-bold ${
+                      ["passed", "not_applicable"].includes(normalizedStatus(check?.result))
+                        ? "text-emerald-300"
+                        : normalizedStatus(check?.result) === "manual_required"
+                          ? "text-amber-300"
+                          : "text-red-300"
+                    }`}>
+                      {normalizedStatus(check?.result).replaceAll("_", " ") || "pending"}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {Array.isArray(structuredResult.findings) && structuredResult.findings.some(findingLabel) && (
+            <div>
+              <div className="text-[10px] font-black uppercase tracking-widest text-gray-500">Problems found</div>
+              <ul className="mt-1.5 list-disc space-y-1 pl-4 text-[11px] text-gray-300">
+                {structuredResult.findings.map(findingLabel).filter(Boolean).slice(0, 6).map((finding) => (
+                  <li key={finding}>{finding}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {Array.isArray(structuredResult.changes) && structuredResult.changes.some(changeLabel) && (
+            <div>
+              <div className="text-[10px] font-black uppercase tracking-widest text-gray-500">Changes made</div>
+              <ul className="mt-1.5 list-disc space-y-1 pl-4 text-[11px] text-gray-300">
+                {structuredResult.changes.map(changeLabel).filter(Boolean).slice(0, 8).map((change) => (
+                  <li key={change}>{change}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {Array.isArray(structuredResult.sources) && structuredResult.sources.length > 0 && (
+            <div>
+              <div className="text-[10px] font-black uppercase tracking-widest text-gray-500">Sources used</div>
+              <ul className="mt-1.5 space-y-1 text-[11px]">
+                {structuredResult.sources.slice(0, 8).map((source, index) => (
+                  <li key={`${source?.documentId || "source"}-${source?.sectionId || index}`}>
+                    <a
+                      href={source?.publicUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-[#8fffea] underline decoration-[#00f5d4]/30 underline-offset-2"
+                    >
+                      {safeDisplayText(source?.heading, source?.title) || `Roblox source ${index + 1}`}
+                    </a>
+                    {source?.sourceTier === "supplemental" && (
+                      <span className="ml-1 text-amber-300">(supplemental)</span>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {Array.isArray(structuredResult.verification?.manualRequired)
+            && structuredResult.verification.manualRequired.length > 0 && (
+              <div>
+                <div className="text-[10px] font-black uppercase tracking-widest text-amber-300">Remaining manual steps</div>
+                {structuredResult.verification.manualRequired.slice(0, 3).map((check, index) => (
+                  <div key={check?.checkId || `manual-${index}`} className="mt-1.5">
+                    <p className="text-[11px] text-amber-100">{safeDisplayText(check?.description)}</p>
+                    <ol className="mt-1 list-decimal space-y-1 pl-4 text-[11px] text-amber-100/75">
+                      {(Array.isArray(check?.steps) ? check.steps : []).slice(0, 10).map((step) => (
+                        <li key={step}>{safeDisplayText(step)}</li>
+                      ))}
+                    </ol>
+                  </div>
+                ))}
+              </div>
+            )}
+        </div>
+      )}
+
+      {normalizedStatus(task.status) === "succeeded" && !structuredResult && (
         <div className="rounded-xl border border-emerald-400/20 bg-emerald-400/[0.07] px-3 py-2.5">
-          <div className="text-[10px] font-black uppercase tracking-widest text-emerald-300">Verified summary</div>
+          <div className="text-[10px] font-black uppercase tracking-widest text-emerald-300">Task summary</div>
           <p className="mt-1 text-xs leading-relaxed text-emerald-50">
-            {finalSummary || "The requested steps completed and the runtime recorded verification evidence."}
+            {finalSummary || "The task stopped successfully. Review the recorded evidence before treating behavior as verified."}
           </p>
           <p className="mt-1.5 text-[11px] text-emerald-200/70">
             {details.verificationCount} verification record{details.verificationCount === 1 ? "" : "s"}
@@ -659,6 +838,8 @@ export default function TaskProgressPanel({
           <DetailRow label="Command states">{details.commandStates.join(", ")}</DetailRow>
           <DetailRow label="Manifest versions">{details.manifestVersions.join(", ")}</DetailRow>
           <DetailRow label="Verification records">{details.verificationCount}</DetailRow>
+          <DetailRow label="Knowledge version">{safeDisplayText(structuredResult?.knowledgeVersion)}</DetailRow>
+          <DetailRow label="Result schema">{safeDisplayText(structuredResult?.schemaVersion)}</DetailRow>
           <DetailRow label="Error code">{details.errorCode}</DetailRow>
           <DetailRow label="Error category">{details.errorCategory}</DetailRow>
           <DetailRow label="Recovery">{details.recovery}</DetailRow>

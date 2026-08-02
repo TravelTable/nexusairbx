@@ -238,14 +238,288 @@ local function readScript(payload)
 	return { scripts = out }
 end
 
+-- Last-line execution-context guard. The backend performs the same checks and
+-- may disclose a safe adjustment before a command is queued; the plugin never
+-- guesses or adjusts. It rejects the full mutation before snapshots or writes.
+local ScriptContextGuard = {}
+
+function ScriptContextGuard.resolveScriptClassName(value)
+	local className = tostring(value or "")
+	return SCRIPT_CLASSES[className] and className or ""
+end
+
+function ScriptContextGuard.stripCommentsAndStrings(source)
+	local input = tostring(source or "")
+	local output = {}
+	local length = #input
+
+	local function blankSegment(segment)
+		return (segment:gsub("[^\r\n]", " "))
+	end
+
+	local function longBracketAt(index)
+		if input:sub(index, index) ~= "[" then
+			return nil, nil
+		end
+		local cursor = index + 1
+		while input:sub(cursor, cursor) == "=" do
+			cursor = cursor + 1
+		end
+		if input:sub(cursor, cursor) ~= "[" then
+			return nil, nil
+		end
+		local equals = cursor - index - 1
+		return cursor + 1, "]" .. string.rep("=", equals) .. "]"
+	end
+
+	local index = 1
+	while index <= length do
+		local current = input:sub(index, index)
+		local nextChar = input:sub(index + 1, index + 1)
+		if current == "-" and nextChar == "-" then
+			local contentStart, closing = longBracketAt(index + 2)
+			local finish
+			if contentStart then
+				local closeStart = string.find(input, closing, contentStart, true)
+				finish = closeStart and (closeStart + #closing - 1) or length
+			else
+				local newline = string.find(input, "\n", index + 2, true)
+				finish = newline and (newline - 1) or length
+			end
+			table.insert(output, blankSegment(input:sub(index, finish)))
+			index = finish + 1
+		elseif current == "'" or current == '"' then
+			local quote = current
+			local cursor = index + 1
+			local prefix = input:sub(math.max(1, index - 120), index - 1)
+			local isGetServiceArgument = prefix:match("GetService%s*%(%s*$") ~= nil
+			while cursor <= length do
+				local value = input:sub(cursor, cursor)
+				if value == "\\" then
+					cursor = cursor + 2
+				elseif value == quote then
+					cursor = cursor + 1
+					break
+				else
+					cursor = cursor + 1
+				end
+			end
+			local segment = input:sub(index, cursor - 1)
+			table.insert(output, isGetServiceArgument and segment or blankSegment(segment))
+			index = cursor
+		elseif current == "[" then
+			local contentStart, closing = longBracketAt(index)
+			if contentStart then
+				local closeStart = string.find(input, closing, contentStart, true)
+				local finish = closeStart and (closeStart + #closing - 1) or length
+				table.insert(output, blankSegment(input:sub(index, finish)))
+				index = finish + 1
+			else
+				table.insert(output, current)
+				index = index + 1
+			end
+		else
+			table.insert(output, current)
+			index = index + 1
+		end
+	end
+	return table.concat(output)
+end
+
+function ScriptContextGuard.placementContext(path)
+	local normalized = tostring(path or "")
+		:gsub("\\", "/")
+		:gsub("^game[./]", "")
+		:gsub("/+", "/")
+		:gsub("^/", "")
+		:gsub("/$", "")
+	local parts = splitPath(normalized)
+	local root = parts[1] or ""
+	local second = parts[2] or ""
+	if root == "StarterPlayer" and (second == "StarterPlayerScripts" or second == "StarterCharacterScripts") then
+		return "client"
+	end
+	if root == "StarterGui" or root == "StarterPack" or root == "ReplicatedFirst"
+		or root == "StarterPlayerScripts" or root == "StarterCharacterScripts" then
+		return "client"
+	end
+	if root == "ServerScriptService" or root == "Workspace" then
+		return "server"
+	end
+	if root == "ServerStorage" then
+		return "non_executing"
+	end
+	if root == "ReplicatedStorage" then
+		return "shared"
+	end
+	return "unknown"
+end
+
+function ScriptContextGuard.validate(descriptor)
+	local source = ScriptContextGuard.stripCommentsAndStrings(descriptor.source or descriptor.content or "")
+	local className = tostring(descriptor.className or "")
+	local path = tostring(descriptor.path or descriptor.placement or "")
+	local placement = ScriptContextGuard.placementContext(path)
+	local findings = {}
+	local clientFeatures = {
+		{ name = "Players.LocalPlayer", token = "LocalPlayer" },
+		{ name = "UserInputService", token = "UserInputService" },
+		{ name = "workspace.CurrentCamera", token = "CurrentCamera" },
+		{ name = "RunService.RenderStepped", token = "RenderStepped" },
+		{ name = "RunService:BindToRenderStep", token = "BindToRenderStep" },
+		{ name = "StarterGui", token = "StarterGui" },
+	}
+	local serverFeatures = {
+		{ name = "DataStoreService", token = "DataStoreService" },
+		{ name = "MemoryStoreService", token = "MemoryStoreService" },
+		{ name = "MessagingService", token = "MessagingService" },
+		{ name = "ServerStorage", token = "ServerStorage" },
+		{ name = "ServerScriptService", token = "ServerScriptService" },
+	}
+	local clientMatch = nil
+	local serverMatch = nil
+	local function findIdentifier(token)
+		local searchFrom = 1
+		while true do
+			local startIndex, endIndex = string.find(source, token, searchFrom, true)
+			if not startIndex then
+				return nil
+			end
+			local before = startIndex > 1 and source:sub(startIndex - 1, startIndex - 1) or ""
+			local after = endIndex < #source and source:sub(endIndex + 1, endIndex + 1) or ""
+			if not before:match("[%w_]") and not after:match("[%w_]") then
+				return startIndex
+			end
+			searchFrom = endIndex + 1
+		end
+	end
+	for _, feature in ipairs(clientFeatures) do
+		if findIdentifier(feature.token) then
+			clientMatch = feature
+			break
+		end
+	end
+	for _, feature in ipairs(serverFeatures) do
+		if findIdentifier(feature.token) then
+			serverMatch = feature
+			break
+		end
+	end
+
+	local function sourceLine(token)
+		local startIndex = token and findIdentifier(token) or nil
+		if not startIndex then
+			return nil
+		end
+		local prefix = source:sub(1, startIndex - 1)
+		local _, count = prefix:gsub("\n", "\n")
+		return count + 1
+	end
+
+	local function addFinding(code, explanation, token)
+		local finding = {
+			ruleCode = code,
+			code = code,
+			severity = "blocking",
+			explanation = explanation,
+			message = explanation,
+			path = path ~= "" and path or "Unknown",
+		}
+		local line = sourceLine(token)
+		if line then
+			finding.line = line
+		end
+		table.insert(findings, finding)
+	end
+
+	local requiredContext = "unknown"
+	if clientMatch and serverMatch then
+		requiredContext = "mixed"
+	elseif className == "ModuleScript" then
+		requiredContext = "module"
+	elseif clientMatch then
+		requiredContext = "client"
+	elseif serverMatch then
+		requiredContext = "server"
+	elseif placement == "client" or placement == "server" then
+		requiredContext = placement
+	elseif className == "LocalScript" then
+		requiredContext = "client"
+	elseif className == "Script" then
+		requiredContext = "server"
+	end
+
+	if not SCRIPT_CLASSES[className] then
+		addFinding("SCRIPT_CLASS_REQUIRED", "Every Studio script must declare Script, LocalScript, or ModuleScript explicitly.")
+	end
+	if placement == "unknown" then
+		addFinding("SCRIPT_LOCATION_MISMATCH", "Every Studio script must declare a supported, explicit Studio location.")
+	end
+	if requiredContext == "mixed" then
+		addFinding(
+			"MIXED_RUNTIME_CONTEXT",
+			"This source combines client-only and server-only behavior. Split it into client and server scripts connected by remotes.",
+			clientMatch and clientMatch.token
+		)
+	end
+	if className ~= "ModuleScript" then
+		if clientMatch and className == "Script" then
+			addFinding("CLIENT_API_ON_SERVER", clientMatch.name .. " requires client execution, but this is a server Script.", clientMatch.token)
+		end
+		if serverMatch and className == "LocalScript" then
+			addFinding("SERVER_API_ON_CLIENT", serverMatch.name .. " requires trusted server execution, but this is a LocalScript.", serverMatch.token)
+		end
+		if className == "LocalScript" and placement ~= "client" then
+			addFinding("SCRIPT_LOCATION_MISMATCH", "LocalScript must be placed in a supported client container.")
+		end
+		if className == "Script" and placement ~= "server" and placement ~= "non_executing" then
+			addFinding("SCRIPT_LOCATION_MISMATCH", "Script must be placed in ServerScriptService or Workspace.")
+		end
+		if placement == "non_executing" then
+			addFinding("SCRIPT_LOCATION_MISMATCH", "Runnable scripts do not execute from ServerStorage.")
+		end
+	end
+
+	return {
+		ok = #findings == 0,
+		status = #findings == 0 and "valid" or "blocked",
+		requiredContext = requiredContext,
+		findings = findings,
+		adjustments = {},
+	}
+end
+
+function ScriptContextGuard.failure(validation)
+	return {
+		ok = false,
+		success = false,
+		code = "SCRIPT_CONTEXT_MISMATCH",
+		error = validation.findings[1] and validation.findings[1].message or "Script execution context is invalid",
+		status = validation.status,
+		requiredContext = validation.requiredContext,
+		findings = validation.findings,
+		adjustments = validation.adjustments,
+		validation = validation,
+		retryable = false,
+	}
+end
+
 local function writeScript(payload)
 	local path = payload.path
 	local className = payload.className
 	if type(className) ~= "string" or className == "" then
-		className = "ModuleScript"
+		return ScriptContextGuard.failure(ScriptContextGuard.validate({
+			className = className,
+			path = path,
+			source = payload.source,
+		}))
 	end
 	if not SCRIPT_CLASSES[className] then
-		error("write_script requires Script, LocalScript, or ModuleScript")
+		return ScriptContextGuard.failure(ScriptContextGuard.validate({
+			className = className,
+			path = path,
+			source = payload.source,
+		}))
 	end
 	local snapshots = {}
 	local existing = resolvePath(path)
@@ -260,16 +534,26 @@ local function writeScript(payload)
 			retryable = false,
 		}
 	end
-	if existing and existing.ClassName ~= className and payload.allowClassChange ~= true then
-		return {
-			ok = false,
-			code = "class_conflict",
-			error = "Refusing to change script class without allowClassChange",
-			path = fullPath(existing),
-			currentClassName = existing.ClassName,
-			expectedClassName = className,
-			retryable = false,
-		}
+	if existing and existing.ClassName ~= className then
+		local hasConversionAuthorization = payload.allowClassChange == true
+			and tostring(payload.inspectedClassName or "") == existing.ClassName
+			and tostring(payload.expectedSourceHash or "") ~= ""
+		if not hasConversionAuthorization then
+			return ScriptContextGuard.failure({
+				ok = false,
+				status = "blocked",
+				requiredContext = "unknown",
+				findings = {
+					{
+						ruleCode = "SCRIPT_LOCATION_MISMATCH",
+						code = "SCRIPT_LOCATION_MISMATCH",
+						severity = "blocking",
+						message = "Changing an existing script class requires allowClassChange, the inspected class, and the inspected source hash.",
+					},
+				},
+				adjustments = {},
+			})
+		end
 	end
 	if existing and not payload.allowOverwrite and payload.createOnly == true then
 		return {
@@ -285,6 +569,14 @@ local function writeScript(payload)
 		if not hashOk then
 			return hashResult
 		end
+	end
+	local contextValidation = ScriptContextGuard.validate({
+		className = className,
+		path = existing and fullPath(existing) or path,
+		source = payload.source,
+	})
+	if not contextValidation.ok then
+		return ScriptContextGuard.failure(contextValidation)
 	end
 
 	if existing then
@@ -306,9 +598,13 @@ local function writeScript(payload)
 			local previous = inst
 			local parent = previous.Parent
 			local name = previous.Name
+			local attributes = previous:GetAttributes()
 			previous:Destroy()
 			inst = Instance.new(className)
 			inst.Name = name
+			for attributeName, attributeValue in pairs(attributes) do
+				inst:SetAttribute(attributeName, attributeValue)
+			end
 			inst.Parent = parent
 		end
 		ensureManagedId(inst)

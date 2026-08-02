@@ -11,6 +11,7 @@ const buildRbxmxPath = path.join(pluginRoot, "build", "NexusRBXStudioBridge.rbxm
 const pluginsDir = path.join(os.homedir(), "Documents", "Roblox", "Plugins");
 const installedPath = path.join(pluginsDir, "NexusRBXStudioBridge.rbxmx");
 const buildOnly = process.argv.includes("--build-only");
+const fromBundle = process.argv.includes("--from-bundle");
 const legacyPaths = [
   path.join(pluginsDir, "Plugin.rbxmx"),
   path.join(pluginsDir, "NexusRBXStudioBridge.plugin.rbxmx"),
@@ -50,8 +51,10 @@ function buildRbxmx(source) {
   ].join("\n");
 }
 
-require("./bundle-plugin.js");
-require("./verify-plugin-artifact.js");
+if (!fromBundle) {
+  require("./bundle-plugin.js");
+  require("./verify-plugin-artifact.js");
+}
 
 if (!fs.existsSync(bundledPath)) {
   throw new Error(`Missing bundled plugin: ${bundledPath}`);

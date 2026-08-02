@@ -104,37 +104,54 @@ function extractQuickScriptCode(parsed = {}, raw = "") {
 export function normalizeQuickScriptResult(raw, prompt = "") {
   const parsed = coerceQuickScriptRaw(raw);
   const code = extractQuickScriptCode(parsed, raw);
-  const inferScriptType = (text = "", fallback = "Script") => {
-    const value = String(text || "").toLowerCase();
-    if (value.includes("localscript") || value.includes("client")) return "LocalScript";
-    if (value.includes("modulescript") || value.includes("module")) return "ModuleScript";
-    if (value.includes("server") || value.includes("serverscriptservice")) return "Script";
-    return fallback;
-  };
-  const defaultLocationForScriptType = (scriptType) => {
-    if (scriptType === "LocalScript") return "StarterPlayer/StarterPlayerScripts";
-    if (scriptType === "ModuleScript") return "ReplicatedStorage";
-    return "ServerScriptService";
-  };
   const cleanList = (value, maxItems = 8) => {
     const list = Array.isArray(value) ? value : String(value || "").split(/\n+/);
     return list.map((item) => String(item || "").replace(/\s+/g, " ").trim()).filter(Boolean).slice(0, maxItems);
   };
-  const scriptType = String(parsed.scriptType || parsed.script_type || inferScriptType(`${prompt}\n${code}`)).trim() || "Script";
+  const cleanValidation = (value) => {
+    if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+    return {
+      status: ["valid", "adjusted", "blocked"].includes(value.status) ? value.status : "blocked",
+      requiredContext: ["client", "server", "module", "mixed", "unknown"].includes(value.requiredContext)
+        ? value.requiredContext
+        : "unknown",
+      findings: Array.isArray(value.findings)
+        ? value.findings.map((finding) => ({
+          code: String(finding?.code || "SCRIPT_CONTEXT_MISMATCH"),
+          severity: String(finding?.severity || "error"),
+          explanation: String(finding?.explanation || finding?.message || "The script context is invalid."),
+          ...(Number.isFinite(Number(finding?.line)) ? { line: Number(finding.line) } : {}),
+        }))
+        : [],
+      adjustments: Array.isArray(value.adjustments)
+        ? value.adjustments.map((adjustment) => ({
+          field: String(adjustment?.field || ""),
+          oldValue: adjustment?.oldValue == null ? null : String(adjustment.oldValue),
+          newValue: adjustment?.newValue == null ? null : String(adjustment.newValue),
+          ruleCode: String(adjustment?.ruleCode || ""),
+          ...(adjustment?.message ? { message: String(adjustment.message) } : {}),
+        }))
+        : [],
+      ...(value.message ? { message: String(value.message) } : {}),
+    };
+  };
+  const scriptType = String(parsed.scriptType || parsed.script_type || "").trim();
+  const studioLocation = String(
+    parsed.studioLocation || parsed.recommendedLocation || parsed.location || ""
+  ).replace(/\s+/g, " ").trim().slice(0, 180);
 
   return {
     title: String(parsed.title || "Quick").replace(/\s+/g, " ").trim().slice(0, 100) || "Quick",
     code,
     language: "luau",
     scriptType,
-    studioLocation: String(
-      parsed.studioLocation || parsed.recommendedLocation || parsed.location || defaultLocationForScriptType(scriptType)
-    ).replace(/\s+/g, " ").trim().slice(0, 180) || defaultLocationForScriptType(scriptType),
+    studioLocation,
     setup: cleanList(parsed.setup || parsed.setupInstructions || ["Create the script at the recommended location and paste the code."]),
     requiredObjects: cleanList(parsed.requiredObjects || parsed.dependencies || []),
     testing: cleanList(parsed.testing || parsed.testingInstructions || ["Run Play in Studio and verify the behavior described in the prompt."]),
     limitations: cleanList(parsed.limitations || []),
     assumptions: cleanList(parsed.assumptions || []),
+    validation: cleanValidation(parsed.validation),
   };
 }
 
@@ -153,8 +170,8 @@ export function quickScriptResultToAgentPrompt(prompt, result) {
     "",
     "Quick result:",
     `Title: ${normalized.title || "Quick"}`,
-    `Script type: ${normalized.scriptType || "Script"}`,
-    `Studio placement: ${normalized.studioLocation || "ServerScriptService"}`,
+    `Script type: ${normalized.scriptType || "Not provided (must be repaired before Studio use)"}`,
+    `Studio placement: ${normalized.studioLocation || "Not provided (must be repaired before Studio use)"}`,
     requiredObjects.length ? `Required objects:\n${requiredObjects.map((item) => `- ${item}`).join("\n")}` : "",
     setup.length ? `Setup:\n${setup.map((item) => `- ${item}`).join("\n")}` : "",
     testing.length ? `Testing:\n${testing.map((item) => `- ${item}`).join("\n")}` : "",
