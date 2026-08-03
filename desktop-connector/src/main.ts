@@ -15,6 +15,7 @@ import { EncryptedTokenStore, type EncryptedStorage, type StoredConnectorSession
 import { ConnectorUpdater } from "./updater.js";
 import { ConnectionAttemptCoordinator } from "./connection-attempt.js";
 import { completedConnectionPatch } from "./connection-state.js";
+import { isTerminalSessionError, resetLocalSession } from "./session-lifecycle.js";
 
 // electron-updater is published as CommonJS. Reading autoUpdater from its default
 // namespace keeps the packaged ESM main process compatible with Node's CJS bridge.
@@ -64,6 +65,7 @@ class DesktopController {
   #window: BrowserWindow | null = null;
   #attempts = new ConnectionAttemptCoordinator();
   #startupWatchdog: ReturnType<typeof setTimeout> | null = null;
+  #reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   #backend: NexusBackendClient | null = null;
   #snapshot: CompanionSnapshot;
   #store: EncryptedTokenStore;
@@ -102,6 +104,7 @@ class DesktopController {
   }
 
   async start(): Promise<CompanionSnapshot> {
+    this.clearReconnectTimer();
     if (this.#attempts.active) return this.state;
     const saved = await this.#store.load();
     if (!saved) { this.setPairingState(); return this.state; }
@@ -130,6 +133,7 @@ class DesktopController {
 
   async stop(publish = true): Promise<CompanionSnapshot> {
     this.clearStartupWatchdog();
+    this.clearReconnectTimer();
     await this.#attempts.stop();
     this.#backend = null;
     if (publish) this.patchSnapshot({ state: "stopped", message: "Connector paused. Your encrypted pairing is retained.", cloudHealth: "disconnected", runtimeHealth: "disconnected", mcpHealth: "disconnected", connectionStage: null });
@@ -137,13 +141,28 @@ class DesktopController {
   }
 
   async revokeSession(): Promise<CompanionSnapshot> {
-    if (!this.#backend) {
+    let backend = this.#backend;
+    if (!backend) {
       const saved = await this.#store.load();
-      if (saved) { const config = this.config(); const logger = new ConsoleLogger(config.verbose); this.#backend = new NexusBackendClient({ apiUrl: config.apiUrl, connectorVersion: CONNECTOR_VERSION, requestTimeoutMs: config.requestTimeoutMs, logger }); this.#backend.restoreToken(saved.token); }
+      if (saved) {
+        const config = this.config();
+        const logger = new ConsoleLogger(config.verbose);
+        backend = new NexusBackendClient({ apiUrl: config.apiUrl, connectorVersion: CONNECTOR_VERSION, requestTimeoutMs: config.requestTimeoutMs, logger });
+        backend.restoreToken(saved.token);
+      }
     }
-    if (this.#backend) await this.#backend.revokeCurrentSession(AbortSignal.timeout(10_000));
-    await this.stop(false);
-    await this.#store.clear();
+    const remoteError = await resetLocalSession({
+      revokeRemote: backend ? async () => { await backend.revokeCurrentSession(AbortSignal.timeout(10_000)); } : undefined,
+      stopLocal: () => this.stop(false).then(() => undefined),
+      clearLocal: () => this.#store.clear(),
+    });
+    backend?.clearToken();
+    if (remoteError) {
+      const config = this.config();
+      new ConsoleLogger(config.verbose).warn("Remote session revocation failed; local pairing was still cleared.", {
+        error: remoteError instanceof Error ? remoteError.message : "unknown",
+      });
+    }
     this.setPairingState();
     return this.state;
   }
@@ -204,7 +223,7 @@ class DesktopController {
     this.#discoveryComplete = false;
     const diagnostics = await this.diagnostics();
     this.#studioInstalled = diagnostics.studioInstalled;
-    this.patchSnapshot({ state: this.#studioInstalled ? "connecting" : "studio_not_installed", message: this.#studioInstalled ? "Starting the local connector…" : "Roblox Studio MCP was not found.", cloudHealth: "connected", runtimeHealth: "connecting", mcpHealth: "disconnected", connectionStage: "runtime", degradedReason: null, pairingError: null, experienceName: null, supportedToolCount: 0, supportedTools: [] });
+    this.patchSnapshot({ state: this.#studioInstalled ? "connecting" : "studio_not_installed", message: this.#studioInstalled ? "Starting the local connector…" : "Roblox Studio MCP was not found.", cloudHealth: "connected", runtimeHealth: "connecting", mcpHealth: "disconnected", connectionStage: "runtime", degradedReason: null, pairingError: null, experienceName: null, supportedToolCount: 0, supportedTools: [], lastActivityAt: null, lastHeartbeatAt: null, mcpServerVersion: null, lastCommand: null });
     const mcp = new RobloxStudioMcpClient({ command: config.mcpCommand, args: config.mcpArgs, connectorVersion: CONNECTOR_VERSION, requestTimeoutMs: config.requestTimeoutMs, logger });
     const attempt = this.#attempts.start(async ({ id, signal }) => {
       const connector = new NexusLocalConnector({
@@ -221,13 +240,45 @@ class DesktopController {
       await connector.runClaimed(session, signal);
     });
     this.armStartupWatchdog(attempt.id);
-    void attempt.completion.catch((error: unknown) => {
-      if (attempt.signal.aborted) return;
-      if (this.#preferences.autoReconnect) {
-        this.patchSnapshot({ state: "degraded", degradedReason: "runtime_failure", message: "The connector stopped unexpectedly.", runtimeHealth: "warning", connectionStage: null });
-      } else this.patchSnapshot({ state: "connector_offline", message: "The connector is offline.", cloudHealth: "disconnected", runtimeHealth: "disconnected", mcpHealth: "disconnected", connectionStage: null });
-      logger.warn("Desktop connector session ended.", { error: error instanceof Error ? error.message : "unknown" });
+    void attempt.completion
+      .catch((error: unknown) => this.handleUnexpectedSessionEnd(attempt.id, attempt.signal, backend, logger, error))
+      .catch((error: unknown) => logger.warn("Connector recovery failed.", { error: error instanceof Error ? error.message : "unknown" }));
+  }
+
+  private async handleUnexpectedSessionEnd(attemptId: number, signal: AbortSignal, backend: NexusBackendClient, logger: ConsoleLogger, error: unknown): Promise<void> {
+    if (signal.aborted) return;
+    const active = this.#attempts.active;
+    if (active && active.id !== attemptId) return;
+    this.clearStartupWatchdog();
+    if (this.#backend === backend) this.#backend = null;
+    backend.clearToken();
+
+    if (isTerminalSessionError(error)) {
+      await this.#store.clear();
+      this.setPairingState(null, "This pairing was disconnected. Generate a new code on NexusRBX to reconnect.");
+      logger.warn("Stored connector pairing was rejected and has been cleared.", { error: error instanceof Error ? error.message : "unknown" });
+      return;
+    }
+
+    const willRetry = this.#preferences.autoReconnect;
+    this.patchSnapshot({
+      state: willRetry ? "degraded" : "connector_offline",
+      degradedReason: willRetry ? "runtime_failure" : null,
+      message: willRetry ? "The connector stopped unexpectedly. Reconnecting automatically…" : "The connector is offline.",
+      cloudHealth: "disconnected",
+      runtimeHealth: "disconnected",
+      mcpHealth: "disconnected",
+      connectionStage: null,
+      experienceName: null,
+      supportedToolCount: 0,
+      supportedTools: [],
+      lastActivityAt: null,
+      lastHeartbeatAt: null,
+      mcpServerVersion: null,
+      lastCommand: null,
     });
+    logger.warn("Desktop connector session ended.", { error: error instanceof Error ? error.message : "unknown" });
+    if (willRetry) this.scheduleReconnect();
   }
 
   private onConnectorState(attemptId: number, state: ConnectorLifecycleState): void {
@@ -275,6 +326,19 @@ class DesktopController {
     this.#startupWatchdog = null;
   }
 
+  private clearReconnectTimer(): void {
+    if (this.#reconnectTimer) clearTimeout(this.#reconnectTimer);
+    this.#reconnectTimer = null;
+  }
+
+  private scheduleReconnect(): void {
+    this.clearReconnectTimer();
+    this.#reconnectTimer = setTimeout(() => {
+      this.#reconnectTimer = null;
+      void this.start().catch(() => undefined);
+    }, this.#preferences.reconnectDelayMs);
+  }
+
   private async recoverStalledStartup(attemptId: number): Promise<void> {
     if (!this.#attempts.isCurrent(attemptId) || this.#snapshot.state !== "connecting") return;
     this.patchSnapshot({
@@ -292,7 +356,7 @@ class DesktopController {
   private makeSnapshot(state: CompanionState, message: string): CompanionSnapshot {
     return { state, message, updatedAt: Date.now(), autoStart: getAutoStart(app), updateState: "idle", preferences: { ...this.#preferences }, cloudHealth: "disconnected", runtimeHealth: "disconnected", mcpHealth: "disconnected", connectionStage: null, degradedReason: null, pairingError: null, experienceName: null, supportedToolCount: 0, supportedTools: [], lastActivityAt: null, lastHeartbeatAt: null, connectorVersion: CONNECTOR_VERSION, mcpServerVersion: null, lastCommand: null };
   }
-  private setPairingState(pairingError: PairingError = null): void { this.patchSnapshot({ state: "awaiting_pairing", message: pairingError ? "The pairing code could not be used." : "Enter the six-character code shown on NexusRBX.", cloudHealth: "disconnected", runtimeHealth: "disconnected", mcpHealth: "disconnected", connectionStage: null, degradedReason: null, pairingError, experienceName: null, supportedToolCount: 0, supportedTools: [], lastActivityAt: null, lastHeartbeatAt: null, mcpServerVersion: null, lastCommand: null }); }
+  private setPairingState(pairingError: PairingError = null, message?: string): void { this.patchSnapshot({ state: "awaiting_pairing", message: message ?? (pairingError ? "The pairing code could not be used." : "Enter the six-character code shown on NexusRBX."), cloudHealth: "disconnected", runtimeHealth: "disconnected", mcpHealth: "disconnected", connectionStage: null, degradedReason: null, pairingError, experienceName: null, supportedToolCount: 0, supportedTools: [], lastActivityAt: null, lastHeartbeatAt: null, mcpServerVersion: null, lastCommand: null }); }
   private patchSnapshot(patch: Partial<CompanionSnapshot>): void {
     const previous = this.#snapshot.state;
     // The renderer uses updatedAt to order pushed events and state reads. Keep

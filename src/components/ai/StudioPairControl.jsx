@@ -85,6 +85,18 @@ export function getDesktopConnectorPairingLink(code, search = "") {
   return `nexusrbx://connector/pair?code=${encodeURIComponent(code)}`;
 }
 
+const ALREADY_DISCONNECTED_MCP_CODES = new Set([
+  "STUDIO_SESSION_NOT_FOUND",
+  "STUDIO_SESSION_MISSING",
+  "STUDIO_SESSION_DISCONNECTED",
+]);
+
+export function isStudioMcpAlreadyDisconnected(error) {
+  return Number(error?.status || 0) === 404
+    || Number(error?.status || 0) === 410
+    || ALREADY_DISCONNECTED_MCP_CODES.has(String(error?.code || ""));
+}
+
 function PairingCode({ code, expiresAt, now, copied, onCopy, onRegenerate, busy }) {
   const remainingMs = expiresAt ? expiresAt - now : 0;
   const expiryKnown = expiresAt > 0;
@@ -301,20 +313,32 @@ export default function StudioPairControl({
 
   const disconnect = async (method) => {
     setDisconnectingMethod(method);
+    let disconnectError = null;
     try {
       const sessionId = method === "mcp"
         ? getStudioSessionId(latestMcpSession)
         : getStudioSessionId(pluginSession);
       if (method === "mcp") await disconnectStudioMcp({ sessionId });
       else await disconnectStudio({ sessionId });
+    } catch (error) {
+      if (method !== "mcp" || !isStudioMcpAlreadyDisconnected(error)) disconnectError = error;
+    }
+
+    if (!disconnectError) {
       setPairing((current) => ({ ...current, [method]: null }));
       notify?.({
         message: method === "mcp" ? "Roblox Studio MCP disconnected" : "Studio plugin disconnected",
         type: "success",
       });
+    } else {
+      notify?.({ message: disconnectError?.message || "Failed to disconnect Studio", type: "error" });
+    }
+
+    try {
       await refresh?.();
-    } catch (error) {
-      notify?.({ message: error?.message || "Failed to disconnect Studio", type: "error" });
+    } catch (_) {
+      // The disconnect result is authoritative. The next status poll will retry
+      // without turning a successful disconnect into a misleading UI error.
     } finally {
       setDisconnectingMethod("");
     }

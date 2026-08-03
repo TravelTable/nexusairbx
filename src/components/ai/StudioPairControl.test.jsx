@@ -3,6 +3,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import StudioPairControl, {
   computeStudioPairMenuPosition,
   getDesktopConnectorPairingLink,
+  isStudioMcpAlreadyDisconnected,
   resolvePairingExpiry,
 } from "./StudioPairControl";
 import {
@@ -25,6 +26,11 @@ describe("StudioPairControl", () => {
     jest.clearAllMocks();
     testStudioMcp.mockResolvedValue({ ok: true, connected: true });
     disconnectStudioMcp.mockResolvedValue({ ok: true });
+  });
+
+  test("treats a missing MCP session as already disconnected", () => {
+    expect(isStudioMcpAlreadyDisconnected({ status: 404, code: "STUDIO_SESSION_NOT_FOUND" })).toBe(true);
+    expect(isStudioMcpAlreadyDisconnected({ status: 500, code: "INTERNAL_ERROR" })).toBe(false);
   });
 
   test("anchors the menu under the trigger and caps its size", () => {
@@ -145,6 +151,43 @@ describe("StudioPairControl", () => {
     await waitFor(() => {
       expect(disconnectStudioMcp).toHaveBeenCalledWith({ sessionId: "mcp_degraded_1" });
     });
+  });
+
+  test("clears stale MCP UI state when the server session is already gone", async () => {
+    disconnectStudioMcp.mockRejectedValue({
+      status: 404,
+      code: "STUDIO_SESSION_NOT_FOUND",
+      message: "The selected MCP session was not found.",
+    });
+    const refresh = jest.fn().mockRejectedValue(new Error("status refresh failed"));
+    const notify = jest.fn();
+    const connection = normalizeStudioConnectionSnapshot({
+      mcpStatus: {
+        sessions: [{
+          id: "mcp_stale_1",
+          connectionType: "mcp_local",
+          status: "connected",
+          live: true,
+          connectorLive: true,
+          mcpServerAvailable: true,
+          lastSeenAt: Date.now(),
+        }],
+      },
+    });
+
+    render(<StudioPairControl connection={connection} refresh={refresh} notify={notify} />);
+    fireEvent.click(screen.getByRole("button", { name: /Studio · MCP/i }));
+    fireEvent.click(screen.getByRole("tab", { name: /Roblox Studio MCP/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Disconnect MCP/i }));
+
+    await waitFor(() => {
+      expect(refresh).toHaveBeenCalledTimes(1);
+      expect(notify).toHaveBeenCalledWith({
+        message: "Roblox Studio MCP disconnected",
+        type: "success",
+      });
+    });
+    expect(notify).not.toHaveBeenCalledWith(expect.objectContaining({ type: "error" }));
   });
 
   test("shows reinstall instructions only when the backend rejects the release", () => {
