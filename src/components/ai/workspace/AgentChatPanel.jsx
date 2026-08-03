@@ -20,6 +20,7 @@ export default function AgentChatPanel({
   profile,
   activeMode,
   isBusy,
+  operationState,
   onApprovePlan,
   onClarifySubmit,
   onEditPlan,
@@ -30,6 +31,7 @@ export default function AgentChatPanel({
   onRenameChat,
   onOpenNavigation,
   onRetryMessage,
+  onRestoreRun,
   notify,
   onApproveStep,
   approvingStepId,
@@ -87,6 +89,9 @@ export default function AgentChatPanel({
   robloxImageUploads = [],
   onSubmit,
   onStop,
+  onResumeQueue,
+  onSendNext,
+  onRemoveQueued,
   refineTarget,
   onCancelRefine,
   rewindTarget = null,
@@ -124,11 +129,14 @@ export default function AgentChatPanel({
     onPlanTaskAccepted?.(task || taskId);
   }, [onPlanTaskAccepted]);
 
-  const handleComposerSubmit = useCallback((event, overridePrompt = null) => {
+  const handleComposerSubmit = useCallback((event, overridePrompt = null, composerOptions = {}) => {
     const submission = onSubmit?.(
       event,
       overridePrompt,
-      selectedTemplateId ? { templateId: selectedTemplateId } : undefined,
+      {
+        ...composerOptions,
+        ...(selectedTemplateId ? { templateId: selectedTemplateId } : {}),
+      },
     );
     setSelectedTemplateId("");
     return submission;
@@ -202,6 +210,7 @@ export default function AgentChatPanel({
               onOpenPlan={FEATURE_FLAGS.newPlanningMode ? openPlanWorkspace : undefined}
               onEditMessage={handleEditMessage}
               onRetryMessage={onRetryMessage}
+              onRestoreRun={onRestoreRun}
             />
           </div>
         )}
@@ -217,6 +226,10 @@ export default function AgentChatPanel({
         robloxImageUploads={robloxImageUploads}
         onSubmit={handleComposerSubmit}
         onStop={onStop}
+        operationState={operationState}
+        onResumeQueue={onResumeQueue}
+        onSendNext={onSendNext}
+        onRemoveQueued={onRemoveQueued}
         isGenerating={isBusy}
         generationStage={generationStage}
         placeholder={refineTarget ? "Describe the Studio change you want..." : "Ask the Studio agent to build, inspect, wire, or fix..."}

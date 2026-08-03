@@ -1113,6 +1113,8 @@ describe("useAiChat", () => {
     expect(getAgentEventsV2).toHaveBeenCalled();
     expect(cancelAgentRunV2).toHaveBeenCalledTimes(1);
     expect(cancelAgentRunV2).toHaveBeenCalledWith("run_cancel_me", {
+      chatId: "chat_1",
+      idempotencyKey: "req_cancel_canonical:cancel",
       reason: "user_cancelled",
     });
     expect(setDoc).toHaveBeenCalledWith(

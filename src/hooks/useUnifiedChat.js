@@ -9,7 +9,12 @@ import { db } from "../firebase";
 import { BACKEND_URL } from "../config";
 import { v4 as uuidv4 } from "uuid";
 import { useAiChat } from "./useAiChat";
-import { orchestrate, approveWorkflowPlan, startPlanExecution } from "../lib/workflowApi";
+import {
+  orchestrate,
+  approveWorkflowPlan,
+  getChatOperationStatus,
+  startPlanExecution,
+} from "../lib/workflowApi";
 import { isExplicitPlanApproval } from "../lib/planApproval";
 import { classifyUserIntent, isImplementationIntent } from "../lib/intentClassifier";
 import {
@@ -374,17 +379,24 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
     });
   }, []);
 
-  const createFlowAbortController = useCallback((chatId, requestId) => {
+  const createFlowAbortController = useCallback((chatId, requestId, externalSignal = null) => {
     const controller = new AbortController();
+    const abortFromExternal = () => controller.abort();
+    if (externalSignal?.aborted) controller.abort();
+    else externalSignal?.addEventListener?.("abort", abortFromExternal, { once: true });
     flowAbortControllersRef.current[`${chatId}:${requestId}`] = {
       chatId,
       requestId,
       controller,
+      externalSignal,
+      abortFromExternal,
     };
     return controller;
   }, []);
 
   const releaseFlowAbortController = useCallback((chatId, requestId) => {
+    const flow = flowAbortControllersRef.current[`${chatId}:${requestId}`];
+    flow?.externalSignal?.removeEventListener?.("abort", flow.abortFromExternal);
     delete flowAbortControllersRef.current[`${chatId}:${requestId}`];
   }, []);
 
@@ -526,6 +538,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
     submissionOptions = {},
     conversationMessages = null,
     signal = null,
+    onRunId = null,
   }) => {
     throwIfAborted(signal);
     let capabilities = null;
@@ -574,7 +587,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
       runtimeEnvelope = await createAgentRunV2({
         chatId: activeChatId,
         agentId: agent.agentId,
-        idempotencyKey: `run-${requestId}`,
+        idempotencyKey: `${submissionOptions.idempotencyKey || requestId}:agent`,
         signal,
         prompt,
         mode,
@@ -643,6 +656,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
       await touchChat(activeChatId, content);
       return runtimeEnvelope;
     }
+    onRunId?.(runtimeEnvelope.run.runId);
     await chat.handleSubmit(
       prompt,
       activeChatId,
@@ -910,8 +924,18 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
 
   // ASK mode: read-only conversational streaming. No orchestrate, no plan, no job.
   const handleAskSubmit = useCallback(
-    async (prompt, attachments, activeChatId, requestId, signal, conversationMessages = null) => {
+    async (
+      prompt,
+      attachments,
+      activeChatId,
+      requestId,
+      signal,
+      conversationMessages = null,
+      idempotencyKey = requestId
+    ) => {
+      throwIfAborted(signal);
       const token = await user.getIdToken();
+      throwIfAborted(signal);
       const normalizedAttachments = normalizeChatAttachments(attachments);
       const requestPrompt =
         prompt || describeChatAttachments(normalizedAttachments) || "Please review the attached file(s).";
@@ -951,8 +975,13 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
         const res = await fetch(`${BACKEND_URL}/api/ai/chat`, {
           method: "POST",
           signal,
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+            "Idempotency-Key": String(idempotencyKey),
+          },
           body: JSON.stringify({
+            chatId: activeChatId,
             prompt: requestPrompt,
             attachments: normalizedAttachments,
             modelVersion: settings?.modelVersion || "",
@@ -967,22 +996,47 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
           const text = await res.text().catch(() => "");
           throw new Error(text || "Ask request failed");
         }
-        const reader = res.body.getReader();
-        const decoder = new TextDecoder();
-        let streaming = true;
-        while (streaming) {
-          const { done, value } = await reader.read();
-          if (done) {
-            streaming = false;
-            break;
+        if (res.status === 202) {
+          await res.json().catch(() => ({}));
+          let operation = null;
+          while (!operation || operation.status === "in_progress") {
+            throwIfAborted(signal);
+            await new Promise((resolve, reject) => {
+              const timer = window.setTimeout(resolve, 250);
+              signal?.addEventListener("abort", () => {
+                window.clearTimeout(timer);
+                reject(new DOMException("The operation was stopped.", "AbortError"));
+              }, { once: true });
+            });
+            operation = (await getChatOperationStatus(idempotencyKey, { signal }))?.operation || null;
           }
-          full += decoder.decode(value, { stream: true });
-          const snapshot = full;
+          if (operation.status !== "completed") {
+            throw new Error(operation.error?.message || "Ask request failed");
+          }
+          full = String(operation.result?.body || "");
           chat.setPendingForChat(
             activeChatId,
-            (prev) => (prev ? { ...prev, content: snapshot, stage: "" } : prev),
+            (prev) => (prev ? { ...prev, content: full, stage: "" } : prev),
             requestId
           );
+        } else {
+          const reader = res.body.getReader();
+          const decoder = new TextDecoder();
+          let streaming = true;
+          while (streaming) {
+            const { done, value } = await reader.read();
+            if (done) {
+              streaming = false;
+              break;
+            }
+            full += decoder.decode(value, { stream: true });
+            const snapshot = full;
+            chat.setPendingForChat(
+              activeChatId,
+              (prev) => (prev ? { ...prev, content: snapshot, stage: "" } : prev),
+              requestId
+            );
+          }
         }
       } catch (err) {
         throw err instanceof Error ? err : new Error(String(err || "Ask request failed"));
@@ -1041,28 +1095,66 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
       const requestId = options?.clientMessageId || uuidv4();
       const submitLockKey = requestId;
       if (submitLocksRef.current[submitLockKey]) return;
-      try {
-        await chat.assertCanWrite();
-      } catch (error) {
-        notify?.({ message: error?.message, type: "error" });
-        return;
-      }
+      const propagateOperationError = Boolean(
+        options?.operationId || options?.operationSignal || options?.propagateErrors
+      );
+      // This lock and AbortController are intentionally allocated before the
+      // first await. Rapid keyboard/mouse events cannot both enter preflight,
+      // and Stop can cancel auth/project/Studio preparation immediately.
       submitLocksRef.current[submitLockKey] = true;
+      let flowChatId = chat.currentChatId || "__draft__";
+      const flowController = createFlowAbortController(
+        flowChatId,
+        requestId,
+        options?.operationSignal || null
+      );
+      const bindFlowToChat = (nextChatId) => {
+        if (!nextChatId || nextChatId === flowChatId) return;
+        const previousKey = `${flowChatId}:${requestId}`;
+        const entry = flowAbortControllersRef.current[previousKey];
+        delete flowAbortControllersRef.current[previousKey];
+        flowChatId = nextChatId;
+        if (entry) {
+          entry.chatId = nextChatId;
+          flowAbortControllersRef.current[`${flowChatId}:${requestId}`] = entry;
+        }
+      };
       try {
+        throwIfAborted(flowController.signal);
+        try {
+          await chat.assertCanWrite();
+          throwIfAborted(flowController.signal);
+        } catch (error) {
+          if (!isAbortError(error)) notify?.({ message: error?.message, type: "error" });
+          if (propagateOperationError) throw error;
+          return;
+        }
         let ownedProject;
         try {
           ownedProject = await resolveOwnedProjectId(options?.projectId);
+          throwIfAborted(flowController.signal);
         } catch (err) {
-          console.error("Project validation error:", err);
-          notify?.({ message: err?.message || "This project is not available.", type: "error" });
+          if (!isAbortError(err)) {
+            console.error("Project validation error:", err);
+            notify?.({ message: err?.message || "This project is not available.", type: "error" });
+          }
+          if (propagateOperationError) throw err;
           return;
         }
         if (ownedProject.recoveryMessage) {
           notify?.({ message: ownedProject.recoveryMessage, type: "info" });
         }
+        const {
+          operationSignal: _operationSignal,
+          onChatReady,
+          onRunId,
+          onOperationStatus,
+          ...transportOptions
+        } = options || {};
         const effectiveOptions = {
-          ...options,
+          ...transportOptions,
           projectId: ownedProject.projectId,
+          idempotencyKey: options?.idempotencyKey || `run-${requestId}`,
         };
         const titleSeed = prompt || describeChatAttachments(currentAttachments) || "New chat";
         const pendingPlan = [...(chat.messages || [])]
@@ -1074,6 +1166,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
           } catch (err) {
             console.error("Approve/generate error:", err);
             notify?.({ message: err?.message || "Build failed. You can try again.", type: "error" });
+            if (propagateOperationError) throw err;
           }
           return;
         }
@@ -1084,13 +1177,16 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
         const rewindFromMessageId = String(options?.rewindFromMessageId || "").trim();
         if (rewindFromMessageId) {
           if (typeof chat.rewindTranscript !== "function") {
-            notify?.({ message: "Cannot rewind this chat right now.", type: "error" });
+            const error = new Error("Cannot rewind this chat right now.");
+            notify?.({ message: error.message, type: "error" });
+            if (propagateOperationError) throw error;
             return;
           }
           try {
-            cancelCurrentFlow();
+            throwIfAborted(flowController.signal);
             const rewindMode = normalizeRewindMode(options?.rewindMode);
             const rewindResult = await chat.rewindTranscript(rewindFromMessageId, rewindMode);
+            throwIfAborted(flowController.signal);
             historyForRun = Array.isArray(rewindResult?.kept) ? rewindResult.kept : [];
             writeUserTurn = shouldWriteUserMessageAfterRewind(
               rewindResult?.mode || rewindMode,
@@ -1099,6 +1195,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
           } catch (err) {
             console.error("Rewind error:", err);
             notify?.({ message: err?.message || "Could not rewind the chat.", type: "error" });
+            if (propagateOperationError) throw err;
             return;
           }
         }
@@ -1117,13 +1214,16 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
         // Agent & Debug always go to the authoritative decision service. It may
         // execute, recover, clarify, or block without the frontend changing mode.
         if (mode === "agent" || mode === "debug") {
-          let flowController = null;
           try {
             activeChatId = await ensureChat(titleSeed, effectiveOptions);
-            flowController = createFlowAbortController(activeChatId, requestId);
+            bindFlowToChat(activeChatId);
+            onChatReady?.(activeChatId);
+            throwIfAborted(flowController.signal);
             if (writeUserTurn) {
               await writeUserMessage(activeChatId, requestId, prompt, currentAttachments);
+              throwIfAborted(flowController.signal);
             }
+            onOperationStatus?.("Running");
             await launchAuthoritativeRun({
               activeChatId,
               requestId,
@@ -1134,29 +1234,33 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
               submissionOptions: effectiveOptions,
               conversationMessages,
               signal: flowController.signal,
+              onRunId,
             });
           } catch (err) {
             if (!isAbortError(err)) {
               console.error("Generation error:", err);
               notify?.({ message: err?.message || "Build failed. You can try again.", type: "error" });
             }
-          } finally {
-            releaseFlowAbortController(activeChatId, requestId);
+            if (propagateOperationError) throw err;
           }
           return;
         }
 
         // Plan & Ask: keep the orchestrate -> (clarify/plan/conversation) flow.
-        let flowController = null;
         try {
           activeChatId = await ensureChat(titleSeed, effectiveOptions);
-          flowController = createFlowAbortController(activeChatId, requestId);
+          bindFlowToChat(activeChatId);
+          onChatReady?.(activeChatId);
+          throwIfAborted(flowController.signal);
           setFlowBusyForChat(activeChatId, requestId, true);
           beginOrchestrationPending(activeChatId, requestId, prompt);
           if (writeUserTurn) {
             await writeUserMessage(activeChatId, requestId, prompt, currentAttachments);
+            throwIfAborted(flowController.signal);
           }
           await ensureRuntimeAgentProjection(activeChatId, effectiveOptions);
+          throwIfAborted(flowController.signal);
+          onOperationStatus?.("Running");
 
           if (mode === "ask") {
             await handleAskSubmit(
@@ -1165,7 +1269,8 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
               activeChatId,
               requestId,
               flowController.signal,
-              conversationMessages
+              conversationMessages,
+              effectiveOptions.idempotencyKey
             );
             return;
           }
@@ -1173,6 +1278,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
           publishOrchestrationStage(activeChatId, requestId, "Analyzing request...");
           const workflowTargeting = buildWorkflowTargeting(effectiveOptions);
           const decision = await orchestrate({
+            chatId: activeChatId,
             prompt,
             history: conversationMessages,
             attachments: currentAttachments,
@@ -1183,6 +1289,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
             studioTarget: workflowTargeting.studioTarget,
             targeting: workflowTargeting,
             templateId: effectiveOptions.templateId || null,
+            idempotencyKey: effectiveOptions.idempotencyKey,
             signal: flowController.signal,
           });
 
@@ -1201,12 +1308,13 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
             console.error("Orchestration error:", err);
             notify?.({ message: err?.message || "Could not start the build", type: "error" });
           }
+          if (propagateOperationError) throw err;
         } finally {
-          releaseFlowAbortController(activeChatId, requestId);
           setFlowBusyForChat(activeChatId, requestId, false);
           clearOrchestrationPending(activeChatId, requestId);
         }
       } finally {
+        releaseFlowAbortController(flowChatId, requestId);
         delete submitLocksRef.current[submitLockKey];
       }
     },
@@ -1220,7 +1328,6 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
       clearOrchestrationPending,
       createFlowAbortController,
       releaseFlowAbortController,
-      cancelCurrentFlow,
       chat,
       approvePlanInternal,
       writeUserMessage,
@@ -1239,10 +1346,17 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
       if (!user || !message) return;
       const prompt = message.originPrompt || "";
       const attachments = message.attachments || [];
-      const requestId = uuidv4();
       const activeChatId = chat.currentChatId;
       if (!activeChatId) return;
-      const flowController = createFlowAbortController(activeChatId, requestId);
+      const submitLockKey = `clarify:${activeChatId}:${message.id}`;
+      if (submitLocksRef.current[submitLockKey]) return;
+      const requestId = submissionOptions.operationId || uuidv4();
+      submitLocksRef.current[submitLockKey] = true;
+      const flowController = createFlowAbortController(
+        activeChatId,
+        requestId,
+        submissionOptions.operationSignal || null
+      );
       const workflowTargeting = buildWorkflowTargeting({
         ...submissionOptions,
         projectId: submissionOptions.projectId ?? message.projectId,
@@ -1259,8 +1373,11 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
       }, message.targeting);
       setFlowBusyForChat(activeChatId, requestId, true);
       try {
+        throwIfAborted(flowController.signal);
         await chat.assertCanWrite();
+        throwIfAborted(flowController.signal);
         const ownedProject = await resolveOwnedProjectId(workflowTargeting.projectId);
+        throwIfAborted(flowController.signal);
         if (ownedProject.recoveryMessage) {
           notify?.({ message: ownedProject.recoveryMessage, type: "info" });
         }
@@ -1291,6 +1408,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
 
         publishOrchestrationStage(activeChatId, requestId, "Analyzing request...");
         const decision = await orchestrate({
+          chatId: activeChatId,
           prompt,
           answers,
           history: chat.messages,
@@ -1302,6 +1420,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
           studioTarget: effectiveTargeting.studioTarget,
           targeting: effectiveTargeting,
           templateId: message.templateId || submissionOptions.templateId || null,
+          idempotencyKey: submissionOptions.idempotencyKey || requestId,
           signal: flowController.signal,
         });
 
@@ -1329,6 +1448,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
         releaseFlowAbortController(activeChatId, requestId);
         setFlowBusyForChat(activeChatId, requestId, false);
         clearOrchestrationPending(activeChatId, requestId);
+        delete submitLocksRef.current[submitLockKey];
       }
     },
     [user, chat, effectiveGameSpec, writeUserMessage, writeOrchestrationResult, setFlowBusyForChat, beginOrchestrationPending, publishOrchestrationStage, clearOrchestrationPending, createFlowAbortController, releaseFlowAbortController, notify]

@@ -100,7 +100,8 @@ describe("ChatComposer compact interactions", () => {
     fireEvent.click(screen.getByRole("button", { name: /Add validation/i }));
     expect(onSubmit).toHaveBeenCalledWith(
       null,
-      "Add server-side validation and type checks for remote inputs"
+      "Add server-side validation and type checks for remote inputs",
+      expect.objectContaining({ draftRevision: expect.stringContaining("quick-refine:") })
     );
 
     fireEvent.keyDown(document, { key: "Escape" });
@@ -189,7 +190,7 @@ describe("ChatComposer compact interactions", () => {
     expect(onSubmit).toHaveBeenCalledTimes(1);
   });
 
-  test("morphs Send into Stop while work is running", () => {
+  test("morphs Send into Stop while ordinary Enter queues and Cmd/Ctrl+Enter interrupts", () => {
     const onSubmit = jest.fn();
     const onStop = jest.fn();
     renderComposer({
@@ -205,7 +206,21 @@ describe("ChatComposer compact interactions", () => {
     expect(onSubmit).not.toHaveBeenCalled();
 
     fireEvent.keyDown(screen.getByRole("textbox", { name: "Prompt input" }), { key: "Enter" });
-    expect(onSubmit).not.toHaveBeenCalled();
+    expect(onSubmit).toHaveBeenLastCalledWith(
+      expect.anything(),
+      null,
+      expect.objectContaining({ interrupt: false })
+    );
+
+    fireEvent.keyDown(screen.getByRole("textbox", { name: "Prompt input" }), {
+      key: "Enter",
+      metaKey: true,
+    });
+    expect(onSubmit).toHaveBeenLastCalledWith(
+      expect.anything(),
+      null,
+      expect.objectContaining({ interrupt: true })
+    );
   });
 
   test("textarea grows to 144px and then scrolls internally", () => {

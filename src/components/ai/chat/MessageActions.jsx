@@ -63,6 +63,7 @@ export default function MessageActions({
   message,
   retryPrompt = "",
   retrySourceMessage = null,
+  retryRunId = null,
   onEdit,
   onRetry,
   onRefine,
@@ -131,6 +132,7 @@ export default function MessageActions({
       prompt: retryPrompt,
       message,
       sourceUserMessage: role === "assistant" ? retrySourceMessage : message,
+      ...(retryRunId ? { targetRunId: retryRunId } : {}),
     });
   };
 

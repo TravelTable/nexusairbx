@@ -113,6 +113,33 @@ describe("authedFetch authentication recovery", () => {
     expect(init.credentials).toBeUndefined();
   });
 
+  test("does not dispatch first-party requests while the browser is offline", async () => {
+    const originalOnline = Object.getOwnPropertyDescriptor(window.navigator, "onLine");
+    Object.defineProperty(window.navigator, "onLine", {
+      configurable: true,
+      value: false,
+    });
+    getAuth.mockReturnValue({ currentUser: null });
+    global.fetch = jest.fn();
+
+    try {
+      await expect(authedFetch("/api/v2/events")).rejects.toMatchObject({
+        code: "NETWORK_OFFLINE",
+        kind: "network",
+        retryable: true,
+        retryAfterMs: 30000,
+      });
+      expect(getAuth).not.toHaveBeenCalled();
+      expect(global.fetch).not.toHaveBeenCalled();
+    } finally {
+      if (originalOnline) {
+        Object.defineProperty(window.navigator, "onLine", originalOnline);
+      } else {
+        delete window.navigator.onLine;
+      }
+    }
+  });
+
   test("matches the configured Nexus API origin exactly", () => {
     expect(isNexusApiUrl("/api/v2/events")).toBe(true);
     expect(isNexusApiUrl("https://api.test/api/v2/events")).toBe(true);

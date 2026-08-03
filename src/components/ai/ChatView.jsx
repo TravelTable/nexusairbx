@@ -44,6 +44,7 @@ export default function ChatView({
   onOpenPlan,
   onEditMessage,
   onRetryMessage,
+  onRestoreRun,
 }) {
   const showEmpty = messages.length === 0 && !pendingMessage;
   const rootRef = useRef(null);
@@ -95,6 +96,7 @@ export default function ChatView({
                 selectingStudioTargetId={selectingStudioTargetId}
                 onEditMessage={onEditMessage}
                 onRetryMessage={onRetryMessage}
+                onRestoreRun={onRestoreRun}
               />
             )}
           </ConversationContent>

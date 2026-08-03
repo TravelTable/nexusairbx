@@ -232,6 +232,21 @@ export async function authedFetch(path, init = {}) {
     });
   }
 
+  // Avoid dispatching first-party requests that the browser already knows
+  // cannot succeed. Besides returning a clearer typed error to callers, this
+  // prevents high-frequency polling from flooding Safari's console while the
+  // device is offline. Pollers can retry normally after the `online` event or
+  // their next scheduled tick.
+  if (typeof navigator !== "undefined" && navigator.onLine === false) {
+    throw new NexusApiError("The internet connection appears to be offline.", {
+      status: 0,
+      code: "NETWORK_OFFLINE",
+      kind: "network",
+      retryable: true,
+      retryAfterMs: 30_000,
+    });
+  }
+
   let token = await getIdToken({ force: false });
   let appCheckHeaders = await getFirebaseAppCheckHeaders();
   const requestId = headerValue(requestInit.headers, "X-Request-ID") || randomRequestId();

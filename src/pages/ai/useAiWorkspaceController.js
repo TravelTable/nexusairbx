@@ -6,6 +6,7 @@ import {
   useCallback,
 } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { v4 as uuidv4 } from "uuid";
 import { onAuthStateChanged } from "firebase/auth";
 import {
   collection,
@@ -33,10 +34,21 @@ import { isRetryableApiError, readJsonResponse, withApiRetryCooldown } from "../
 import { FEATURE_FLAGS } from "../../lib/featureFlags";
 import {
   approveAgentStep,
+  cancelAgentRun,
   getAgentRun,
   restoreAgentRun,
+  restoreChatCheckpoint,
   selectAgentStudioTarget,
 } from "../../lib/workflowApi";
+import {
+  CHAT_OPERATION_STATUS,
+  ChatOperationCoordinator,
+} from "../../lib/chatOperationCoordinator";
+import {
+  AgentRuntimeUnavailableError,
+  cancelAgentRunV2,
+  getAgentRunV2,
+} from "../../lib/agentRuntimeV2Api";
 import {
   getStudioApplyMode,
   getStudioEnabledPreference,
@@ -133,6 +145,64 @@ const MODE_COLORS = {
   performance: { primary: "#00f5d4", secondary: "#00bbf9" },
   security: { primary: "#ff006e", secondary: "#8338ec" },
 };
+
+const TERMINAL_CHAT_RUN_STATUSES = new Set([
+  "succeeded",
+  "completed",
+  "failed",
+  "cancelled",
+  "canceled",
+  "blocked",
+  "iteration_limit",
+  "timed_out",
+]);
+
+function isTerminalChatRunStatus(status) {
+  return TERMINAL_CHAT_RUN_STATUSES.has(String(status || "").toLowerCase());
+}
+
+async function waitForAgentRunTerminal(runId, { attempts = 20, readRun = getAgentRun } = {}) {
+  let latest = null;
+  for (let attempt = 0; attempt < attempts; attempt += 1) {
+    try {
+      latest = await readRun(runId);
+      if (isTerminalChatRunStatus(latest?.run?.status)) return latest;
+    } catch (error) {
+      // Cancellation is already idempotently registered. A transient status
+      // read must not let the stopped operation regain transcript ownership.
+    }
+    await new Promise((resolve) => {
+      setTimeout(resolve, Math.min(300 + (attempt * 100), 1200));
+    });
+  }
+  return latest;
+}
+
+async function cancelCoordinatedAgentRun(operation, chatId = null) {
+  const runId = String(operation?.runId || "").trim();
+  if (!runId) return null;
+  const operationId = String(operation?.id || `run:${runId}`);
+  try {
+    const result = await cancelAgentRunV2(runId, {
+      reason: "user_cancelled",
+      idempotencyKey: `${operationId}:cancel`,
+      chatId: chatId || operation?.chatId || null,
+    });
+    await waitForAgentRunTerminal(runId, { readRun: getAgentRunV2 });
+    return result;
+  } catch (error) {
+    const isUnavailable = error instanceof AgentRuntimeUnavailableError;
+    const isMissingRun = error?.status === 404;
+    if (!isUnavailable && !isMissingRun) throw error;
+  }
+
+  const result = await cancelAgentRun(runId, {
+    idempotencyKey: `${operationId}:cancel:legacy`,
+    chatId: chatId || operation?.chatId || null,
+  });
+  await waitForAgentRunTerminal(runId);
+  return result;
+}
 
 function quickScriptKind(scriptType = "") {
   const type = String(scriptType || "").toLowerCase();
@@ -294,6 +364,17 @@ export function useAiWorkspaceController() {
   const pendingAuthResumeRef = useRef(null);
   const pendingRobloxResumeRef = useRef(false);
   const runQuickScriptRef = useRef(null);
+  const chatOperationCoordinatorRef = useRef(null);
+  if (!chatOperationCoordinatorRef.current) {
+    chatOperationCoordinatorRef.current = new ChatOperationCoordinator();
+  }
+  const [, setChatOperationRevision] = useState(0);
+
+  useEffect(() => (
+    chatOperationCoordinatorRef.current.subscribe(() => {
+      setChatOperationRevision((revision) => revision + 1);
+    })
+  ), []);
 
   const {
     notify: queueNotify,
@@ -344,6 +425,8 @@ export function useAiWorkspaceController() {
   });
 
   const chat = unified;
+  const chatOperationKey = chat.currentChatId || "draft";
+  const chatOperationState = chatOperationCoordinatorRef.current.snapshot(chatOperationKey);
   const scriptManager = useAiScripts(user, notify, { authReady });
   const selectedAssetProjectId = chat.currentChatId || null;
   const projectAssets = useProjectAssets(selectedAssetProjectId, {
@@ -367,6 +450,41 @@ export function useAiWorkspaceController() {
     pendingMessage: unified.pendingMessage,
     projectSnapshot: chatProjectSnapshot,
   });
+
+  useEffect(() => {
+    const pendingRun = unified.pendingMessage || workspace.agentRun || null;
+    const runId = String(pendingRun?.runId || pendingRun?.id || "").trim();
+    const status = String(pendingRun?.runStatus || pendingRun?.status || "").toLowerCase();
+    const chatId = chat.currentChatId;
+    if (!chatId || !runId) return;
+
+    const coordinator = chatOperationCoordinatorRef.current;
+    if (isTerminalChatRunStatus(status)) {
+      coordinator.reconcile(chatId, { runId, status });
+      return;
+    }
+    if (!unified.isGenerating && !status) return;
+    if (coordinator.snapshot(chatId).active) return;
+
+    coordinator.hydrate({
+      id: pendingRun?.operationId || pendingRun?.requestId || `hydrated:${runId}`,
+      chatId,
+      type: "submit",
+      status: CHAT_OPERATION_STATUS.RUNNING,
+      prompt: pendingRun?.prompt || "",
+      runId,
+      onCancel: async (operation) => {
+        unified.cancelCurrentFlow?.();
+        await cancelCoordinatedAgentRun(operation, chatId);
+      },
+    });
+  }, [
+    chat.currentChatId,
+    unified,
+    unified.isGenerating,
+    unified.pendingMessage,
+    workspace.agentRun,
+  ]);
   const {
     isGenerating: unifiedIsGenerating,
     handleSubmit: submitUnifiedPrompt,
@@ -839,8 +957,17 @@ export function useAiWorkspaceController() {
     setRewindTarget(null);
   }, []);
 
-  const handlePromptSubmit = useCallback(async (e, overridePrompt = null, submissionOptions = {}) => {
+  const executePromptOperation = useCallback(async (e, overridePrompt = null, submissionOptions = {}) => {
     if (e && typeof e.preventDefault === "function") e.preventDefault();
+
+    const operationSignal = submissionOptions?.operationSignal || null;
+    const assertOperationActive = () => {
+      if (!operationSignal?.aborted) return;
+      throw operationSignal.reason instanceof Error
+        ? operationSignal.reason
+        : new DOMException("The operation was stopped.", "AbortError");
+    };
+    assertOperationActive();
 
     const currentPrompt = (overridePrompt ?? prompt).trim();
     const currentAttachments = Array.isArray(submissionOptions?.attachmentsOverride)
@@ -900,8 +1027,10 @@ export function useAiWorkspaceController() {
       if (!options.length) {
         try {
           const status = await getStudioStatus();
+          assertOperationActive();
           options = targetingOptionsFromStatus(status);
-        } catch (_) {
+        } catch (error) {
+          if (operationSignal?.aborted) throw error;
           options = [];
         }
       }
@@ -918,12 +1047,13 @@ export function useAiWorkspaceController() {
           type: "error",
         });
         setStudioPlacePickerOpen(true);
-        return;
+        throw new Error("Choose which Studio place this chat should edit before sending.");
       }
       if (gate.status === "ready") {
         studioTargetPreference = buildStudioTargetPreference(gate.target) || studioTargetPreference;
         const binding = await bindChatStudioPlace(gate.target);
-        if (!binding?.projectId) return;
+        assertOperationActive();
+        if (!binding?.projectId) throw new Error("The selected Studio place could not be linked.");
         runtimeProjectId = binding.projectId;
       }
     }
@@ -931,6 +1061,7 @@ export function useAiWorkspaceController() {
     if (runtimeProjectId) {
       try {
         const resolution = await getProjectBinding(runtimeProjectId);
+        assertOperationActive();
         if (resolution?.state === PROJECT_RESOLUTION_STATES.MISSING) {
           const staleProjectId = runtimeProjectId;
           runtimeProjectId = null;
@@ -969,7 +1100,7 @@ export function useAiWorkspaceController() {
           message: error?.message || "This workspace project is not available.",
           type: "error",
         });
-        return;
+        throw error;
       }
     }
 
@@ -999,11 +1130,6 @@ export function useAiWorkspaceController() {
           }
         : {}),
     };
-
-    setPrompt("");
-    setAttachments([]);
-    setRewindTarget(null);
-    setStudioPlacePickerOpen(false);
 
     if (refineTarget) {
       const target = refineTarget;
@@ -1059,6 +1185,115 @@ export function useAiWorkspaceController() {
     bindChatStudioPlace,
     chat,
     notify,
+  ]);
+
+  const handlePromptSubmit = useCallback((e, overridePrompt = null, submissionOptions = {}) => {
+    if (e && typeof e.preventDefault === "function") e.preventDefault();
+
+    const currentPrompt = String(overridePrompt ?? prompt ?? "").trim();
+    const currentAttachments = Array.isArray(submissionOptions?.attachmentsOverride)
+      ? [...submissionOptions.attachmentsOverride]
+      : [...attachments];
+    const hasProjectAssets = projectAssets.assets.length > 0;
+    if (!currentPrompt && currentAttachments.length === 0 && !hasProjectAssets) return undefined;
+
+    // Quick Script and the sign-in gate do not create a chat operation. Their
+    // existing local lifecycle remains independent from Agent chat queues.
+    const canUseQuickScript = !refineTarget && currentAttachments.length === 0 && !hasProjectAssets;
+    if (!user || (canUseQuickScript && generatorMode === "quick_script")) {
+      return executePromptOperation(e, overridePrompt, submissionOptions);
+    }
+
+    const coordinator = chatOperationCoordinatorRef.current;
+    const operationId = String(submissionOptions?.operationId || uuidv4());
+    const operationType = String(submissionOptions?.operationType || "submit");
+    const draftRevision = String(
+      submissionOptions?.draftRevision
+      || `${operationType}:${operationId}`
+    );
+    const sourceChatKey = chat.currentChatId || "draft";
+    const promptToSend = currentPrompt
+      || (hasProjectAssets ? "Use the attached Roblox assets in this project." : "");
+    const checkpointMetadata = submissionOptions?.checkpointMetadata || null;
+
+    const admission = coordinator.admit({
+      id: operationId,
+      chatId: sourceChatKey,
+      type: operationType,
+      prompt: promptToSend,
+      attachments: currentAttachments,
+      draftRevision,
+      checkpointMetadata,
+      interrupt: submissionOptions?.interrupt === true,
+      retainOnFailure: operationType === "retry",
+      onCancel: async (operation) => {
+        unified.cancelCurrentFlow?.();
+        if (!operation?.runId) return;
+        try {
+          await cancelCoordinatedAgentRun(
+            operation,
+            operation.chatId || chat.currentChatId || null,
+          );
+        } catch (error) {
+          // A local abort has already fenced the transcript. Reconciliation can
+          // recover the server terminal state after a transient cancel failure.
+          const message = String(error?.message || "").toLowerCase();
+          if (!message.includes("already") && !message.includes("not found")) throw error;
+        }
+      },
+    }, async (operation) => {
+      const effectiveOptions = {
+        ...submissionOptions,
+        attachmentsOverride: currentAttachments,
+        operationId,
+        operationSignal: operation.signal,
+        clientMessageId: operationId,
+        idempotencyKey: operationId,
+        onChatReady: (nextChatId) => operation.rekey(nextChatId),
+        onRunId: (runId) => {
+          operation.setRunId(runId);
+          operation.update({ status: CHAT_OPERATION_STATUS.RUNNING });
+        },
+        onOperationStatus: (status) => operation.update({ status }),
+      };
+
+      if (operationType === "retry" && checkpointMetadata?.targetRunId) {
+        operation.update({ status: CHAT_OPERATION_STATUS.RESTORING });
+        await restoreChatCheckpoint({
+          chatId: chat.currentChatId,
+          targetRunId: checkpointMetadata.targetRunId,
+          transcriptPivot: checkpointMetadata.transcriptPivot || null,
+          signal: operation.signal,
+          idempotencyKey: `${operationId}:restore`,
+        });
+        if (operation.signal.aborted) {
+          throw new DOMException("The operation was stopped.", "AbortError");
+        }
+        operation.update({ status: CHAT_OPERATION_STATUS.PREPARING });
+        delete effectiveOptions.rewindFromMessageId;
+        delete effectiveOptions.rewindMode;
+      }
+
+      return executePromptOperation(null, promptToSend, effectiveOptions);
+    });
+
+    if (!admission.duplicate && overridePrompt == null) {
+      setPrompt("");
+      setAttachments([]);
+      setRewindTarget(null);
+      setStudioPlacePickerOpen(false);
+    }
+    return admission.promise;
+  }, [
+    attachments,
+    chat.currentChatId,
+    executePromptOperation,
+    generatorMode,
+    projectAssets.assets.length,
+    prompt,
+    refineTarget,
+    unified,
+    user,
   ]);
 
   const recordPendingAuthGate = useCallback((actionType, source = "quick_script_gate") => {
@@ -1684,21 +1919,76 @@ export function useAiWorkspaceController() {
   );
 
   const handleRestoreRun = useCallback(
-    async (runId) => {
-      if (!runId || !user || restoringRun) return;
-      setRestoringRun(true);
-      try {
-        const result = await restoreAgentRun(runId);
-        await syncAgentRunSteps(runId, result?.step || null);
-        notify({ message: "Queued Studio snapshot restore", type: "success" });
-      } catch (err) {
-        notify({ message: err?.message || "Could not restore snapshots", type: "error" });
-      } finally {
-        setRestoringRun(false);
-      }
+    (runId, transcriptPivot = null) => {
+      if (!runId || !user) return undefined;
+      const coordinator = chatOperationCoordinatorRef.current;
+      const chatId = chat.currentChatId || "draft";
+      const pivotKey = String(transcriptPivot?.messageId || transcriptPivot?.id || "run");
+      const operationId = uuidv4();
+      const restoreRevision = `restore:${runId}:${pivotKey}`;
+      const admission = coordinator.admit({
+        id: operationId,
+        chatId,
+        type: "restore",
+        draftRevision: restoreRevision,
+        checkpointMetadata: { targetRunId: runId, transcriptPivot },
+        interrupt: true,
+        onCancel: async (operation) => {
+          unified.cancelCurrentFlow?.();
+          if (operation?.runId) {
+            await cancelCoordinatedAgentRun(
+              operation,
+              operation.chatId || chat.currentChatId || null,
+            );
+          }
+        },
+      }, async ({ signal }) => {
+        setRestoringRun(true);
+        try {
+          const result = chat.currentChatId
+            ? await restoreChatCheckpoint({
+                chatId: chat.currentChatId,
+                targetRunId: runId,
+                transcriptPivot,
+                signal,
+                idempotencyKey: operationId,
+              })
+            : await restoreAgentRun(runId, {
+                signal,
+                idempotencyKey: operationId,
+                chatId: chat.currentChatId || null,
+              });
+          await syncAgentRunSteps(runId, result?.step || null);
+          coordinator.pause(chat.currentChatId || chatId, CHAT_OPERATION_STATUS.STOPPED);
+          notify({ message: "Checkpoint restored", type: "success" });
+          return result;
+        } catch (err) {
+          notify({ message: err?.message || "Could not restore snapshots", type: "error" });
+          throw err;
+        } finally {
+          setRestoringRun(false);
+        }
+      });
+      return admission.promise;
     },
-    [user, restoringRun, syncAgentRunSteps, notify]
+    [chat.currentChatId, user, unified, syncAgentRunSteps, notify]
   );
+
+  const stopChatOperation = useCallback(() => (
+    chatOperationCoordinatorRef.current.stop(chat.currentChatId || "draft")
+  ), [chat.currentChatId]);
+
+  const resumeChatQueue = useCallback(() => (
+    chatOperationCoordinatorRef.current.resume(chat.currentChatId || "draft")
+  ), [chat.currentChatId]);
+
+  const sendNextChatOperation = useCallback(() => (
+    chatOperationCoordinatorRef.current.sendNext(chat.currentChatId || "draft")
+  ), [chat.currentChatId]);
+
+  const removeQueuedChatOperation = useCallback((operationId) => (
+    chatOperationCoordinatorRef.current.removeQueued(chat.currentChatId || "draft", operationId)
+  ), [chat.currentChatId]);
 
   const gateQuickScriptAction = useCallback((action) => {
     if (user) return true;
@@ -2167,6 +2457,7 @@ export function useAiWorkspaceController() {
       activeModeData,
       currentToast,
       toasts,
+      chatOperationState,
     },
     refs: {
       chatEndRef,
@@ -2196,6 +2487,10 @@ export function useAiWorkspaceController() {
       updateSettings,
 
       handlePromptSubmit,
+      stopChatOperation,
+      resumeChatQueue,
+      sendNextChatOperation,
+      removeQueuedChatOperation,
       runQuickScript,
       handleQuickScriptCopy,
       handleQuickScriptSave,

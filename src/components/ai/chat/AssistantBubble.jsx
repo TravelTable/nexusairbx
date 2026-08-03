@@ -72,6 +72,7 @@ export default function AssistantBubble({
   grouped = false,
   retryPrompt = "",
   retrySourceMessage = null,
+  retryRunId = null,
   onViewUi, // mapped to "open artifact in editor"
   onRefine,
   onApprovePlan,
@@ -266,6 +267,7 @@ export default function AssistantBubble({
           message={m}
           retryPrompt={retryPrompt}
           retrySourceMessage={retrySourceMessage}
+          retryRunId={retryRunId}
           onRetry={onRetryMessage}
           onRefine={hasArtifact ? onRefine : undefined}
           onOpenFiles={hasArtifact ? onViewUi : undefined}

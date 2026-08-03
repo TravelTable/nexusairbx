@@ -1,4 +1,9 @@
 import { authedFetch } from "./billing";
+import { withApiRetryCooldown } from "./apiErrors";
+
+const ACTIVE_AGENTS_COOLDOWN_KEY = "agent-runtime-v2:active-agents";
+const AGENT_EVENTS_COOLDOWN_KEY = "agent-runtime-v2:events";
+const AGENT_POLL_RETRY_MS = 30_000;
 
 export const ACTIVE_AGENT_STATES = new Set([
   "active",
@@ -69,6 +74,54 @@ async function request(path, init = {}) {
   return payload;
 }
 
+function abortError() {
+  const error = new Error("The operation was aborted.");
+  error.name = "AbortError";
+  return error;
+}
+
+function waitForPoll(delayMs, signal) {
+  if (signal?.aborted) return Promise.reject(abortError());
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => {
+      signal?.removeEventListener?.("abort", onAbort);
+      resolve();
+    }, delayMs);
+    const onAbort = () => {
+      clearTimeout(timer);
+      reject(abortError());
+    };
+    signal?.addEventListener?.("abort", onAbort, { once: true });
+  });
+}
+
+async function reconcileChatOperation(payload, { signal = null, attempts = 40 } = {}) {
+  const initial = payload?.operation;
+  if (!initial || initial.status !== "in_progress" || !initial.operationId) return payload;
+
+  for (let attempt = 0; attempt < attempts; attempt += 1) {
+    await waitForPoll(Math.min(250 + (attempt * 100), 1_000), signal);
+    const statusPayload = await request(
+      `/api/ai/operations/${encodeURIComponent(initial.operationId)}`,
+      { method: "GET", noCache: true, ...(signal ? { signal } : {}) }
+    );
+    const operation = statusPayload?.operation;
+    if (operation?.status === "completed") {
+      return operation.result?.body ?? operation.result ?? statusPayload;
+    }
+    if (operation?.status === "failed" || operation?.status === "cancelled") {
+      const error = new Error(operation.error?.message || "The operation did not complete.");
+      error.code = operation.error?.code || "OPERATION_FAILED";
+      error.status = operation.httpStatus || null;
+      throw error;
+    }
+  }
+
+  const error = new Error("The operation is still running. Its status can be recovered safely.");
+  error.code = "OPERATION_RECONCILIATION_TIMEOUT";
+  throw error;
+}
+
 let runtimeCapabilitiesCache = null;
 let runtimeCapabilitiesPromise = null;
 const RUNTIME_CAPABILITIES_TTL_MS = 30_000;
@@ -120,18 +173,18 @@ export function resolveAgentProjectionV2({ chatId, projectId = null }) {
   });
 }
 
-export function createAgentRunV2({
+export async function createAgentRunV2({
   chatId,
   agentId,
   idempotencyKey,
   signal = null,
   ...body
 }) {
-  const serializedBody = { ...body };
+  const serializedBody = { ...body, ...(chatId ? { chatId } : {}) };
   delete serializedBody.studioSessionId;
   delete serializedBody.studioConnectionType;
 
-  return request(
+  const payload = await request(
     `/api/v2/agents/${encodeURIComponent(agentId)}/runs`,
     {
       method: "POST",
@@ -140,21 +193,39 @@ export function createAgentRunV2({
       body: JSON.stringify(serializedBody),
     }
   );
+  return reconcileChatOperation(payload, { signal });
 }
 
 export function getActiveAgentsV2() {
-  return request("/api/v2/agents", { method: "GET", noCache: true });
+  return withApiRetryCooldown(
+    ACTIVE_AGENTS_COOLDOWN_KEY,
+    "Agent status is temporarily unavailable.",
+    () => request("/api/v2/agents", { method: "GET", noCache: true }),
+    { fallbackMs: AGENT_POLL_RETRY_MS }
+  );
 }
 
 export function getAgentEventsV2(afterSequence = 0) {
-  return request(`/api/v2/events?afterSequence=${encodeURIComponent(afterSequence)}`, {
+  return withApiRetryCooldown(
+    AGENT_EVENTS_COOLDOWN_KEY,
+    "Agent updates are temporarily unavailable.",
+    () => request(`/api/v2/events?afterSequence=${encodeURIComponent(afterSequence)}`, {
+      method: "GET",
+      noCache: true,
+    }),
+    { fallbackMs: AGENT_POLL_RETRY_MS }
+  );
+}
+
+export function getAgentV2(agentId) {
+  return request(`/api/v2/agents/${encodeURIComponent(agentId)}`, {
     method: "GET",
     noCache: true,
   });
 }
 
-export function getAgentV2(agentId) {
-  return request(`/api/v2/agents/${encodeURIComponent(agentId)}`, {
+export function getAgentRunV2(runId) {
+  return request(`/api/v2/runs/${encodeURIComponent(runId)}`, {
     method: "GET",
     noCache: true,
   });
@@ -196,13 +267,18 @@ export async function resolveChatAgentProjectionV2({
   }
 }
 
-export function cancelAgentRunV2(runId, { reason = "user_cancelled", idempotencyKey } = {}) {
+export async function cancelAgentRunV2(runId, {
+  reason = "user_cancelled",
+  idempotencyKey,
+  chatId = null,
+} = {}) {
   const cancelKey = idempotencyKey || `cancel-${runId}`;
-  return request(`/api/v2/runs/${encodeURIComponent(runId)}/cancel`, {
+  const payload = await request(`/api/v2/runs/${encodeURIComponent(runId)}/cancel`, {
     method: "POST",
     headers: { "Idempotency-Key": cancelKey },
-    body: JSON.stringify({ reason }),
+    body: JSON.stringify({ reason, ...(chatId ? { chatId } : {}) }),
   });
+  return reconcileChatOperation(payload);
 }
 
 function unwrapAgentProjection(value) {

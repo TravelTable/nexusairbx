@@ -5,12 +5,15 @@ import {
   createAgentV2,
   extractAgentEvents,
   extractAgentList,
+  getActiveAgentsV2,
+  getAgentEventsV2,
   mergeAgentEvents,
   normalizeAgentProjection,
   resolveChatAgentProjectionV2,
   selectAgentRuntimeRoute,
 } from "./agentRuntimeV2Api";
 import { authedFetch } from "./billing";
+import { clearApiRetryCooldown } from "./apiErrors";
 
 jest.mock("./billing", () => ({
   authedFetch: jest.fn(),
@@ -19,6 +22,8 @@ jest.mock("./billing", () => ({
 describe("agentRuntimeV2Api projections", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    clearApiRetryCooldown("agent-runtime-v2:active-agents");
+    clearApiRetryCooldown("agent-runtime-v2:events");
   });
 
   test("normalizes nested and snake-case agent projections", () => {
@@ -131,6 +136,30 @@ describe("agentRuntimeV2Api projections", () => {
     );
   });
 
+  test("backs off duplicate active-agent polls after a transport failure", async () => {
+    authedFetch.mockRejectedValue(new TypeError("The network connection was lost."));
+
+    await expect(getActiveAgentsV2()).rejects.toThrow("network connection was lost");
+    await expect(getActiveAgentsV2()).rejects.toMatchObject({
+      code: "API_RETRY_COOLDOWN",
+      retryable: true,
+      localCooldown: true,
+    });
+    expect(authedFetch).toHaveBeenCalledTimes(1);
+  });
+
+  test("backs off duplicate event polls independently after a transport failure", async () => {
+    authedFetch.mockRejectedValue(new TypeError("Load failed"));
+
+    await expect(getAgentEventsV2(5)).rejects.toThrow("Load failed");
+    await expect(getAgentEventsV2(5)).rejects.toMatchObject({
+      code: "API_RETRY_COOLDOWN",
+      retryable: true,
+      localCooldown: true,
+    });
+    expect(authedFetch).toHaveBeenCalledTimes(1);
+  });
+
   test("omits browser-owned Studio routing fields from canonical run requests", async () => {
     authedFetch.mockResolvedValue({
       ok: true,
@@ -157,6 +186,7 @@ describe("agentRuntimeV2Api projections", () => {
 
     expect(requestInit.signal).toBe(controller.signal);
     expect(serializedBody).toEqual({
+      chatId: "chat-1",
       prompt: "Build a checkpoint",
       mode: "agent",
       studioEnabled: true,
@@ -164,6 +194,43 @@ describe("agentRuntimeV2Api projections", () => {
     });
     expect(serializedBody).not.toHaveProperty("studioSessionId");
     expect(serializedBody).not.toHaveProperty("studioConnectionType");
+  });
+
+  test("reconciles a duplicate in-progress run through the shared operation status", async () => {
+    authedFetch
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 202,
+        text: jest.fn().mockResolvedValue(JSON.stringify({
+          duplicate: true,
+          operation: { operationId: "run-operation-1", status: "in_progress" },
+        })),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        text: jest.fn().mockResolvedValue(JSON.stringify({
+          operation: {
+            operationId: "run-operation-1",
+            status: "completed",
+            result: { body: { run: { runId: "run-1" }, replayed: true } },
+          },
+        })),
+      });
+
+    await expect(createAgentRunV2({
+      chatId: "chat-1",
+      agentId: "agent-1",
+      idempotencyKey: "run-operation-1",
+      prompt: "Build it",
+      mode: "agent",
+    })).resolves.toEqual({ run: { runId: "run-1" }, replayed: true });
+
+    expect(authedFetch).toHaveBeenNthCalledWith(
+      2,
+      "/api/ai/operations/run-operation-1",
+      expect.objectContaining({ method: "GET", noCache: true })
+    );
   });
 
   test("preserves a typed 404 instead of treating it as a missing v2 runtime", async () => {

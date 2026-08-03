@@ -11,12 +11,15 @@ export class WorkflowApiError extends Error {
   }
 }
 
-async function workflowRequest(path, { method = "GET", body, signal } = {}) {
+async function workflowRequest(path, { method = "GET", body, signal, idempotencyKey } = {}) {
+  const headers = {};
+  if (body !== undefined) headers["Content-Type"] = "application/json";
+  if (idempotencyKey) headers["Idempotency-Key"] = String(idempotencyKey);
   const res = await authedFetch(path, {
     method,
     signal,
+    ...(Object.keys(headers).length ? { headers } : {}),
     ...(body === undefined ? {} : {
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
     }),
   });
@@ -38,7 +41,57 @@ async function workflowRequest(path, { method = "GET", body, signal } = {}) {
       { status: res.status, code, payload }
     );
   }
+  if (res.status === 202 && idempotencyKey && payload?.operation?.operationId) {
+    return waitForChatOperation(payload.operation.operationId, { signal });
+  }
   return payload;
+}
+
+function abortableDelay(ms, signal) {
+  return new Promise((resolve, reject) => {
+    if (signal?.aborted) {
+      reject(new DOMException("The operation was stopped.", "AbortError"));
+      return;
+    }
+    const onAbort = () => {
+      window.clearTimeout(timer);
+      reject(new DOMException("The operation was stopped.", "AbortError"));
+    };
+    const timer = window.setTimeout(() => {
+      signal?.removeEventListener("abort", onAbort);
+      resolve();
+    }, ms);
+    signal?.addEventListener("abort", onAbort, { once: true });
+  });
+}
+
+async function waitForChatOperation(operationId, { signal } = {}) {
+  const deadline = Date.now() + 180000;
+  while (Date.now() < deadline) {
+    const payload = await workflowRequest(
+      `/api/ai/operations/${encodeURIComponent(operationId)}`,
+      { signal }
+    );
+    const operation = payload?.operation;
+    if (operation?.status === "completed") {
+      return operation.result?.body ?? operation.result ?? {};
+    }
+    if (operation?.status === "failed" || operation?.status === "cancelled") {
+      throw new WorkflowApiError(
+        operation.error?.message || "The operation did not complete.",
+        {
+          status: operation.httpStatus || 500,
+          code: operation.error?.code || "operation_failed",
+          payload,
+        }
+      );
+    }
+    await abortableDelay(250, signal);
+  }
+  throw new WorkflowApiError("The operation is still running. Please try again.", {
+    status: 504,
+    code: "operation_reconcile_timeout",
+  });
 }
 
 function validateObjectResponse(payload, operation) {
@@ -88,6 +141,7 @@ function ownershipMismatchMessage(payload) {
 }
 
 export async function orchestrate({
+  chatId = null,
   prompt,
   answers = null,
   history = [],
@@ -99,13 +153,16 @@ export async function orchestrate({
   studioTarget = null,
   targeting = null,
   templateId = null,
+  idempotencyKey = null,
   signal,
 }) {
   try {
     return await workflowRequest("/api/ai/orchestrate", {
       method: "POST",
       signal,
+      idempotencyKey,
       body: {
+        chatId,
         prompt,
         answers,
         history,
@@ -332,9 +389,16 @@ export async function selectAgentStudioTarget(runId, target) {
 }
 
 /** Queue snapshot restore for all snapshots captured during a unified agent run. */
-export async function restoreAgentRun(runId) {
+export async function restoreAgentRun(runId, { signal, idempotencyKey, chatId = null } = {}) {
+  const body = chatId ? { chatId } : undefined;
   const res = await authedFetch(`/api/ai/agent/${encodeURIComponent(runId)}/restore`, {
     method: "POST",
+    signal,
+    headers: {
+      ...(idempotencyKey ? { "Idempotency-Key": String(idempotencyKey) } : {}),
+      ...(body ? { "Content-Type": "application/json" } : {}),
+    },
+    ...(body ? { body: JSON.stringify(body) } : {}),
   });
   if (!res.ok) {
     const text = await res.text().catch(() => "");
@@ -344,13 +408,45 @@ export async function restoreAgentRun(runId) {
 }
 
 /** Cancel a unified agent run. */
-export async function cancelAgentRun(runId) {
+export async function cancelAgentRun(runId, { signal, idempotencyKey, chatId = null } = {}) {
+  const body = chatId ? { chatId } : undefined;
   const res = await authedFetch(`/api/ai/agent/${encodeURIComponent(runId)}/cancel`, {
     method: "POST",
+    signal,
+    headers: {
+      ...(idempotencyKey ? { "Idempotency-Key": String(idempotencyKey) } : {}),
+      ...(body ? { "Content-Type": "application/json" } : {}),
+    },
+    ...(body ? { body: JSON.stringify(body) } : {}),
   });
   if (!res.ok) {
     const text = await res.text().catch(() => "");
     throw new Error(text || "Failed to cancel agent run");
   }
   return res.json();
+}
+
+/** Restore Studio and rewind a chat only after Studio confirms the rollback. */
+export function restoreChatCheckpoint({
+  chatId,
+  targetRunId,
+  transcriptPivot,
+  signal,
+  idempotencyKey,
+}) {
+  return workflowRequest(
+    `/api/ai/chats/${encodeURIComponent(chatId)}/checkpoints/${encodeURIComponent(targetRunId)}/restore`,
+    {
+      method: "POST",
+      signal,
+      idempotencyKey,
+      body: { transcriptPivot: transcriptPivot || null },
+    }
+  ).then((payload) => validateObjectResponse(payload, "checkpoint restore"));
+}
+
+/** Reconcile an operation after a transport disconnect or refresh. */
+export function getChatOperationStatus(operationId, { signal } = {}) {
+  return workflowRequest(`/api/ai/operations/${encodeURIComponent(operationId)}`, { signal })
+    .then((payload) => validateObjectResponse(payload, "operation status"));
 }

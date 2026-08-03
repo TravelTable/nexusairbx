@@ -1191,6 +1191,8 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
       if (!canonicalCancelRequest) {
         canonicalCancelRequest = Promise.resolve(cancelAgentRunV2(activeGenerationRunId, {
           reason: "user_cancelled",
+          idempotencyKey: `${submissionOptions?.idempotencyKey || requestId}:cancel`,
+          chatId: activeChatId,
         })).catch((error) => {
           console.warn("Could not confirm server-side run cancellation.", error);
           return null;

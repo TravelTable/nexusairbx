@@ -92,6 +92,7 @@ export default function AgentWorkspaceLayout({ controller }) {
     currentTheme,
     currentToast,
     authReady,
+    chatOperationState,
   } = uiState;
 
   const { chat, scriptManager, unified, workspace, settings } = modules;
@@ -129,6 +130,10 @@ export default function AgentWorkspaceLayout({ controller }) {
     dismissToast,
     updateSettings,
     handlePromptSubmit,
+    stopChatOperation,
+    resumeChatQueue,
+    sendNextChatOperation,
+    removeQueuedChatOperation,
     runQuickScript,
     handleQuickScriptCopy,
     handleQuickScriptSave,
@@ -795,17 +800,36 @@ export default function AgentWorkspaceLayout({ controller }) {
       ? payload.sourceUserMessage
       : null;
     const pivotMessage = message?.id ? message : null;
+    const retryPivotMessage = sourceUserMessage?.id ? sourceUserMessage : pivotMessage;
     const retryAttachments = pivotMessage?.role === "user"
       ? (Array.isArray(pivotMessage.attachments) ? pivotMessage.attachments : [])
       : (Array.isArray(sourceUserMessage?.attachments) ? sourceUserMessage.attachments : []);
-    const rewindMode = pivotMessage?.role === "assistant" ? "replace" : "after";
+    const targetRunId =
+      (typeof payload === "object" && payload ? payload.targetRunId : null)
+      ||
+      pivotMessage?.runId
+      || pivotMessage?.agentRunId
+      || sourceUserMessage?.runId
+      || sourceUserMessage?.agentRunId
+      || null;
     return handlePromptSubmit(null, nextPrompt, {
       ...taskSubmissionOptions,
-      attachmentsOverride: retryAttachments,
-      ...(pivotMessage?.id
+      operationType: "retry",
+      interrupt: true,
+      draftRevision: `retry:${pivotMessage?.id || sourceUserMessage?.id || nextPrompt}`,
+      checkpointMetadata: targetRunId
         ? {
-            rewindFromMessageId: pivotMessage.id,
-            rewindMode,
+            targetRunId,
+            transcriptPivot: retryPivotMessage?.id
+              ? { messageId: retryPivotMessage.id, mode: "replace" }
+              : null,
+          }
+        : null,
+      attachmentsOverride: retryAttachments,
+      ...(retryPivotMessage?.id
+        ? {
+            rewindFromMessageId: retryPivotMessage.id,
+            rewindMode: "replace",
           }
         : {}),
     });
@@ -819,7 +843,10 @@ export default function AgentWorkspaceLayout({ controller }) {
     return onClarifySubmit(message, answers, taskSubmissionOptions);
   }, [onClarifySubmit, taskSubmissionOptions]);
 
-  const handleStopActiveWork = useCallback(() => {
+  const handleStopActiveWork = useCallback(async () => {
+    const stoppedCoordinatedOperation = await stopChatOperation?.();
+    if (stoppedCoordinatedOperation !== false) return;
+
     if (unified.cancelCurrentFlow?.()) return;
 
     const currentAgent = activeAgentRuntime.agents.find(
@@ -856,6 +883,7 @@ export default function AgentWorkspaceLayout({ controller }) {
     activeAgentRuntime,
     chat.currentChatId,
     notify,
+    stopChatOperation,
     unified,
   ]);
 
@@ -879,7 +907,8 @@ export default function AgentWorkspaceLayout({ controller }) {
           user={user}
           profile={roblox?.connected ? roblox?.status?.connection?.profile || null : null}
           activeMode={chat.activeMode}
-          isBusy={unified.isGenerating}
+          isBusy={Boolean(chatOperationState?.isBusy || unified.isGenerating)}
+          operationState={chatOperationState}
           onApprovePlan={handleAgentApprovePlan}
           onPlanTaskAccepted={taskRuntime.selectTask}
           executionTask={taskRuntime.task}
@@ -902,6 +931,9 @@ export default function AgentWorkspaceLayout({ controller }) {
           robloxImageUploads={robloxImageUploads}
           onSubmit={handleAgentPromptSubmit}
           onStop={handleStopActiveWork}
+          onResumeQueue={resumeChatQueue}
+          onSendNext={sendNextChatOperation}
+          onRemoveQueued={removeQueuedChatOperation}
           refineTarget={refineTarget}
           onCancelRefine={cancelRefine}
           rewindTarget={rewindTarget}

@@ -230,6 +230,10 @@ export default function ChatComposer({
   onSubmit,
   onStop,
   isGenerating,
+  operationState = null,
+  onResumeQueue,
+  onSendNext,
+  onRemoveQueued,
   placeholder = "What do you want to build?",
   tokensLeft,
   tokensLimit,
@@ -310,10 +314,25 @@ export default function ChatComposer({
   const contextPanelRef = useRef(null);
   const usageButtonRef = useRef(null);
   const usagePanelRef = useRef(null);
+  const draftIdentityRef = useRef({ signature: null, revision: 0 });
   const controlsPresence = useMotionPresence(controlsOpen, 180);
   const controlsId = "chat-composer-controls";
   const canSendWithContext =
     Boolean(prompt?.trim()) || attachments.length > 0 || robloxProjectAssets.length > 0;
+  const draftSignature = JSON.stringify({
+    prompt: String(prompt || ""),
+    attachments: attachments.map((file) => [file?.name || "", file?.size || 0, file?.type || ""]),
+    assets: robloxProjectAssets.map((asset) => asset?.assetId || asset?.id || ""),
+  });
+  if (draftIdentityRef.current.signature !== draftSignature) {
+    draftIdentityRef.current = {
+      signature: draftSignature,
+      revision: draftIdentityRef.current.revision + 1,
+    };
+  }
+  const draftRevision = `draft:${draftIdentityRef.current.revision}`;
+  const activeOperationStatus = operationState?.active?.status || operationState?.lastStatus || null;
+  const queuedOperations = Array.isArray(operationState?.queue) ? operationState.queue : [];
   const mentionCommands = filterComposerCommands(mentionQuery, COMPOSER_COMMANDS);
   const planFirst = mode === "plan";
   const contextItems = [
@@ -435,9 +454,14 @@ export default function ChatComposer({
 
   const submitQuickRefine = useCallback((text) => {
     const next = String(text || "").trim();
-    if (!next || isGenerating || disabled) return;
-    onSubmit?.(null, next);
-  }, [disabled, isGenerating, onSubmit]);
+    if (!next || disabled) return;
+    onSubmit?.(null, next, { draftRevision: `quick-refine:${draftRevision}:${next}` });
+  }, [disabled, draftRevision, onSubmit]);
+
+  const submitDraft = useCallback((event = null, { interrupt = false } = {}) => {
+    if (disabled || !canSendWithContext) return undefined;
+    return onSubmit?.(event, null, { draftRevision, interrupt });
+  }, [canSendWithContext, disabled, draftRevision, onSubmit]);
 
   const applyMentionCommand = useCallback((command) => {
     if (!command) return;
@@ -498,7 +522,7 @@ export default function ChatComposer({
       && !event.nativeEvent?.isComposing
     ) {
       event.preventDefault();
-      if (!isGenerating) onSubmit?.();
+      submitDraft(event, { interrupt: Boolean(event.metaKey || event.ctrlKey) });
     }
   };
 
@@ -563,6 +587,64 @@ export default function ChatComposer({
   return (
     <div className="bg-gradient-to-t from-black via-black/80 to-transparent px-2 pb-2 pt-1.5">
       <div className="relative z-20 mx-auto max-w-3xl overflow-visible rounded-xl border border-white/10 bg-ink-800/95 shadow-panel backdrop-blur-xl transition-[border-color,box-shadow] duration-150 focus-within:border-[#00f5d4]/30 focus-within:shadow-[0_0_18px_rgba(0,245,212,0.05)]">
+        {(activeOperationStatus || queuedOperations.length > 0) && (
+          <div className="border-b border-white/[0.06] px-2 py-1.5" aria-label="Chat operation status">
+            <div className="flex items-center gap-2 text-[10px]">
+              {activeOperationStatus ? (
+                <span className="inline-flex items-center gap-1.5 font-bold text-gray-300">
+                  {(operationState?.isBusy || activeOperationStatus === "Stopping") && (
+                    <Loader className="h-3 w-3 animate-spin text-[#00f5d4]" />
+                  )}
+                  {activeOperationStatus}
+                </span>
+              ) : null}
+              {queuedOperations.length > 0 ? (
+                <span className="text-gray-500">
+                  {queuedOperations.length} queued
+                </span>
+              ) : null}
+              {operationState?.paused && queuedOperations.length > 0 ? (
+                <span className="ml-auto flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={onSendNext}
+                    className="rounded-md border border-white/10 px-2 py-1 font-bold text-gray-300 hover:bg-white/10 hover:text-white focus-ring"
+                  >
+                  {queuedOperations[0]?.status === "Failed" ? "Retry failed" : "Send next"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={onResumeQueue}
+                    className="rounded-md bg-[#00f5d4]/15 px-2 py-1 font-bold text-[#8effec] hover:bg-[#00f5d4]/25 focus-ring"
+                  >
+                    Resume
+                  </button>
+                </span>
+              ) : null}
+            </div>
+            {queuedOperations.length > 0 ? (
+              <div className="mt-1 flex max-h-20 flex-col gap-1 overflow-y-auto scrollbar-subtle">
+                {queuedOperations.map((operation, index) => (
+                  <div
+                    key={operation.id}
+                    className="flex items-center gap-2 rounded-md bg-white/[0.035] px-2 py-1 text-[10px] text-gray-400"
+                  >
+                    <span className="shrink-0 font-bold text-gray-500">{index + 1}</span>
+                    <span className="min-w-0 flex-1 truncate">{operation.prompt || operation.type}</span>
+                    <button
+                      type="button"
+                      onClick={() => onRemoveQueued?.(operation.id)}
+                      className="rounded p-0.5 text-gray-600 hover:bg-red-500/10 hover:text-red-300 focus-ring"
+                      aria-label={`Remove queued prompt ${index + 1}`}
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : null}
+          </div>
+        )}
         {(refineTarget || rewindTarget?.messageId || contextItems.length > 0) && (
           <div className="flex min-h-9 items-center gap-1.5 overflow-visible border-b border-white/[0.06] px-2 py-1">
             {refineTarget && (
@@ -836,11 +918,22 @@ export default function ChatComposer({
                   </div>
                 )}
               </div>
+              {isGenerating && canSendWithContext ? (
+                <button
+                  type="button"
+                  onClick={(event) => submitDraft(event, { interrupt: true })}
+                  disabled={disabled}
+                  className="inline-flex h-8 items-center rounded-lg border border-amber-300/25 bg-amber-300/10 px-2 text-[10px] font-bold text-amber-100 transition-colors hover:bg-amber-300/20 focus-ring disabled:opacity-40"
+                  title="Stop the active operation, then send this prompt (Cmd/Ctrl+Enter)"
+                >
+                  Stop &amp; send
+                </button>
+              ) : null}
               <button
                 type="button"
                 id="tour-generate-button"
                 data-tour="generate-btn"
-                onClick={() => (isGenerating ? onStop?.() : onSubmit?.())}
+                onClick={(event) => (isGenerating ? onStop?.() : submitDraft(event))}
                 disabled={isGenerating ? disabled || !onStop : disabled || !canSendWithContext}
                 className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-[background-color,color,opacity,transform] duration-150 active:scale-95 focus-ring disabled:opacity-40 disabled:active:scale-100 ${
                   isGenerating

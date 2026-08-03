@@ -472,6 +472,50 @@ describe("MessageList pending activity", () => {
 });
 
 describe("MessageList conversation layout", () => {
+  test("shows one restorable checkpoint before an Agent turn with a run ID", () => {
+    const onRestoreRun = jest.fn();
+    const { container } = render(
+      <MessageList
+        {...baseProps}
+        isBusy={false}
+        onRestoreRun={onRestoreRun}
+        messages={[
+          { id: "u-checkpoint", role: "user", content: "Build a round system." },
+          { id: "a-checkpoint", role: "assistant", runId: "run-checkpoint", content: "Done." },
+        ]}
+      />
+    );
+
+    const checkpoint = screen.getByRole("button", {
+      name: "Restore checkpoint before this Agent turn",
+    });
+    const prompt = screen.getByText("Build a round system.");
+    expect(checkpoint.compareDocumentPosition(prompt) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(container.querySelectorAll('[data-chat-checkpoint="run-checkpoint"]')).toHaveLength(1);
+
+    fireEvent.click(checkpoint);
+    expect(onRestoreRun).toHaveBeenCalledWith("run-checkpoint", {
+      messageId: "u-checkpoint",
+      mode: "replace",
+    });
+  });
+
+  test("does not show a checkpoint for chat turns without a run ID", () => {
+    render(
+      <MessageList
+        {...baseProps}
+        isBusy={false}
+        onRestoreRun={jest.fn()}
+        messages={[
+          { id: "u-ask", role: "user", content: "What does this module do?" },
+          { id: "a-ask", role: "assistant", content: "It handles rounds." },
+        ]}
+      />
+    );
+
+    expect(screen.queryByRole("button", { name: /Restore checkpoint/i })).toBeNull();
+  });
+
   test("shows an accessible run context with keyboard-reachable confidence details", () => {
     const decision = {
       requestedMode: "agent",
@@ -589,6 +633,33 @@ describe("MessageList conversation layout", () => {
       prompt: "Build a round timer.",
       message,
       sourceUserMessage: message,
+    });
+  });
+
+  test("associates retry-from-here with the checkpoint for that user turn", () => {
+    const onRetryMessage = jest.fn();
+    const message = { id: "u1", role: "user", content: "Build a round timer." };
+
+    render(
+      <MessageList
+        {...baseProps}
+        isBusy={false}
+        messages={[
+          message,
+          { id: "a1", role: "assistant", runId: "run-1", content: "Done." },
+        ]}
+        onRestoreRun={jest.fn()}
+        onRetryMessage={onRetryMessage}
+      />
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Retry from here" }));
+
+    expect(onRetryMessage).toHaveBeenCalledWith({
+      prompt: "Build a round timer.",
+      message,
+      sourceUserMessage: message,
+      targetRunId: "run-1",
     });
   });
 });

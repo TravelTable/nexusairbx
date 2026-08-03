@@ -67,6 +67,76 @@ function LiveActivityHeader({ pendingMessage, generationStage, parsed, embedded 
   );
 }
 
+function messageRunId(message) {
+  return String(message?.runId || message?.agentRunId || "").trim() || null;
+}
+
+function groupRunId(group) {
+  for (const message of group?.messages || []) {
+    const runId = messageRunId(message);
+    if (runId) return runId;
+  }
+  return null;
+}
+
+export function attachTurnCheckpoints(groups = []) {
+  return groups.map((group, index) => {
+    if (group.role === "user") {
+      const sourceMessage = group.messages[group.messages.length - 1] || null;
+      const nextGroup = groups[index + 1];
+      const runId = groupRunId(group) || (
+        nextGroup?.role === "assistant" ? groupRunId(nextGroup) : null
+      );
+      return runId && sourceMessage?.id
+        ? {
+            ...group,
+            checkpoint: {
+              runId,
+              transcriptPivot: { messageId: sourceMessage.id, mode: "replace" },
+            },
+          }
+        : group;
+    }
+
+    const previousGroup = groups[index - 1];
+    const runId = groupRunId(group);
+    const wasAttachedToPrompt = previousGroup?.role === "user"
+      && Boolean(previousGroup?.messages?.[previousGroup.messages.length - 1]?.id)
+      && Boolean(runId);
+    const firstMessage = group.messages[0] || null;
+    return runId && !wasAttachedToPrompt && firstMessage?.id
+      ? {
+          ...group,
+          checkpoint: {
+            runId,
+            transcriptPivot: { messageId: firstMessage.id, mode: "replace" },
+          },
+        }
+      : group;
+  });
+}
+
+function CheckpointMarker({ checkpoint, onRestoreRun }) {
+  if (!checkpoint?.runId || !onRestoreRun) return null;
+  return (
+    <div className="mb-3 flex items-center gap-2" data-chat-checkpoint={checkpoint.runId}>
+      <div className="h-px flex-1 bg-white/[0.06]" />
+      <button
+        type="button"
+        onClick={() => onRestoreRun(checkpoint.runId, checkpoint.transcriptPivot)}
+        className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.025] px-2.5 py-1 text-[11px] font-medium text-gray-500 transition hover:border-[#00f5d4]/25 hover:bg-[#00f5d4]/[0.05] hover:text-gray-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00f5d4]/50"
+        aria-label="Restore checkpoint before this Agent turn"
+        title="Restore Studio and chat to before this Agent turn"
+      >
+        <RotateCcw className="h-3 w-3" />
+        Checkpoint
+        <span className="hidden text-gray-600 sm:inline">· before this Agent turn</span>
+      </button>
+      <div className="h-px flex-1 bg-white/[0.06]" />
+    </div>
+  );
+}
+
 function SingleMessageList({
   messages,
   pendingMessage: pendingMessageProp,
@@ -88,6 +158,7 @@ function SingleMessageList({
   selectingStudioTargetId,
   onEditMessage,
   onRetryMessage,
+  onRestoreRun,
   hideMessages = false,
   arrivalMessageId = null,
 }) {
@@ -139,13 +210,14 @@ function SingleMessageList({
   const messageGroups = useMemo(() => {
     let retryPrompt = "";
     let retrySourceMessage = null;
-    return groupMessagesByRole(visibleMessages).map((group) => {
+    const groups = groupMessagesByRole(visibleMessages).map((group) => {
       if (group.role === "user") {
         retrySourceMessage = group.messages[group.messages.length - 1] || null;
         retryPrompt = String(retrySourceMessage?.content || "").trim();
       }
       return { ...group, retryPrompt, retrySourceMessage };
     });
+    return attachTurnCheckpoints(groups);
   }, [visibleMessages]);
 
   // Generation pending carries `prompt` for instant feedback before Firestore syncs.
@@ -179,6 +251,7 @@ function SingleMessageList({
           ].filter(Boolean).join(" ")}
           data-message-group={group.role}
         >
+          <CheckpointMarker checkpoint={group.checkpoint} onRestoreRun={onRestoreRun} />
           {group.role === "assistant" ? (
             <div className="mb-2 w-full max-w-[840px]">
               <AssistantIdentity activeMode={activeMode} />
@@ -198,6 +271,12 @@ function SingleMessageList({
                   grouped={group.role === "assistant"}
                   retryPrompt={group.retryPrompt}
                   retrySourceMessage={group.retrySourceMessage}
+                  retryRunId={
+                    group.role === "user"
+                    && group.checkpoint?.transcriptPivot?.messageId === m.id
+                      ? group.checkpoint.runId
+                      : null
+                  }
                   onViewUi={onViewUi}
                   onRefine={onRefine}
                   onFixUiAudit={onFixUiAudit}
