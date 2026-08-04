@@ -69,7 +69,7 @@ import {
   AlertDialogTrigger,
 } from "../components/shadcn/alert-dialog";
 import { Badge } from "../components/shadcn/badge";
-import { Button } from "../components/shadcn/button";
+import { Button as BaseButton } from "../components/shadcn/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/shadcn/card";
 import { Input } from "../components/shadcn/input";
 import { Label } from "../components/shadcn/label";
@@ -104,6 +104,41 @@ const NAV_ITEMS = [
   { id: "account", label: "Account/Data", icon: Database },
   { id: "help", label: "Help", icon: HelpCircle },
 ];
+
+const SECTION_META = {
+  overview: {
+    label: "Overview",
+    description: "Check service readiness, recent usage, and the settings that affect your workspace.",
+  },
+  ai: {
+    label: "AI",
+    description: "Choose the defaults and project context used when a new generation run starts.",
+  },
+  roblox: {
+    label: "Roblox + Studio",
+    description: "Manage publishing consent, Roblox authorization, creator targets, and Studio handoff.",
+  },
+  billing: {
+    label: "Billing",
+    description: "Review your plan and balances, then manage checkout or subscription changes.",
+  },
+  team: {
+    label: "Team",
+    description: "Create and review the workspaces available to your account.",
+  },
+  account: {
+    label: "Account and data",
+    description: "Review your signed-in identity, session, and irreversible account-data actions.",
+  },
+  help: {
+    label: "Help",
+    description: "Restart onboarding or return to the main AI workspace.",
+  },
+  admin: {
+    label: "Admin",
+    description: "Inspect account state and perform restricted developer operations.",
+  },
+};
 
 const ADMIN_ITEM = { id: "admin", label: "Admin", icon: Shield };
 const RETRYABLE_ROBLOX_MESSAGE =
@@ -146,6 +181,20 @@ const STUDIO_POLICY_OPTIONS = [
   { value: "off", label: "Never push automatically" },
 ];
 
+const Button = React.forwardRef(({ className, variant = "default", ...props }, ref) => (
+  <BaseButton
+    ref={ref}
+    variant={variant}
+    className={cn(
+      "min-h-11 focus-visible:ring-accent sm:min-h-0",
+      variant === "default" && "bg-accent text-accent-foreground shadow-none hover:bg-accent/90",
+      className
+    )}
+    {...props}
+  />
+));
+Button.displayName = "SettingsButton";
+
 const readJson = readJsonResponse;
 
 function formatNumber(value) {
@@ -162,49 +211,61 @@ function formatDate(value) {
 }
 
 function statusTone(state) {
-  if (state === "good") return "border-emerald-500/25 bg-emerald-500/10 text-emerald-200";
-  if (state === "warn") return "border-amber-500/25 bg-amber-500/10 text-amber-200";
+  if (state === "good") return "border-emerald-500/25 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300";
+  if (state === "warn") return "border-amber-500/25 bg-amber-500/10 text-amber-700 dark:text-amber-300";
   return "border-border bg-muted/40 text-muted-foreground";
 }
 
 function SaveStatus({ status, error, lastSavedAt, onRetry }) {
   if (status === "saving") {
     return (
-      <Badge variant="outline" className="gap-1.5 border-primary/30 text-primary">
-        <Loader2 className="h-3 w-3 animate-spin" />
-        Saving
-      </Badge>
+      <div role="status" aria-live="polite" aria-atomic="true">
+        <Badge variant="outline" className="gap-1.5 border-accent/35 text-accent">
+          <Loader2 className="h-3 w-3 animate-spin" />
+          Saving changes…
+        </Badge>
+      </div>
     );
   }
   if (status === "error") {
     return (
-      <div className="flex flex-wrap items-center justify-end gap-2">
+      <div className="flex flex-wrap items-center justify-end gap-2" role="alert" aria-live="assertive">
         <Badge variant="destructive" className="gap-1.5">
           <AlertTriangle className="h-3 w-3" />
           Save failed
         </Badge>
-        {error && <span className="max-w-[20rem] truncate text-xs text-muted-foreground">{error}</span>}
+        {error && <span className="max-w-[20rem] text-xs text-muted-foreground">{error}</span>}
         <Button type="button" size="sm" variant="outline" onClick={onRetry}>
           <RefreshCcw className="h-4 w-4" />
-          Reload
+          Reload settings
         </Button>
       </div>
     );
   }
   if (status === "saved") {
     return (
-      <Badge variant="outline" className="gap-1.5 border-emerald-500/30 text-emerald-200">
-        <CheckCircle2 className="h-3 w-3" />
-        {lastSavedAt ? `Saved ${formatDate(lastSavedAt)}` : "Saved"}
-      </Badge>
+      <div role="status" aria-live="polite" aria-atomic="true">
+        <Badge
+          variant="outline"
+          className="gap-1.5 border-emerald-500/30 text-emerald-700 dark:text-emerald-300"
+          title={lastSavedAt ? `Last saved ${formatDate(lastSavedAt)}` : undefined}
+        >
+          <CheckCircle2 className="h-3 w-3" />
+          All changes saved
+        </Badge>
+      </div>
     );
   }
-  return <Badge variant="secondary">Idle</Badge>;
+  return (
+    <div role="status" aria-live="polite" aria-atomic="true">
+      <Badge variant="secondary">Changes save automatically</Badge>
+    </div>
+  );
 }
 
 function NavList({ items, activeTab, onSelect }) {
   return (
-    <nav className="space-y-1" aria-label="Settings sections">
+    <nav className="space-y-1.5" aria-label="Settings sections">
       {items.map((item) => {
         const Icon = item.icon;
         const active = item.id === activeTab;
@@ -214,8 +275,10 @@ function NavList({ items, activeTab, onSelect }) {
             type="button"
             onClick={() => onSelect(item.id)}
             className={cn(
-              "flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm transition-colors",
-              active ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted hover:text-foreground"
+              "flex min-h-11 w-full items-center justify-between rounded-md border border-transparent px-3 py-2 text-left text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+              active
+                ? "border-accent/25 bg-accent/10 text-accent"
+                : "text-muted-foreground hover:border-border hover:bg-muted/60 hover:text-foreground"
             )}
             aria-current={active ? "page" : undefined}
           >
@@ -231,17 +294,22 @@ function NavList({ items, activeTab, onSelect }) {
   );
 }
 
-function Panel({ title, description, actions, children, className }) {
+function Panel({ title, description, actions, children, className, tone = "default" }) {
   return (
-    <Card className={className}>
-      <CardHeader className="gap-3 sm:flex-row sm:items-start sm:justify-between sm:space-y-0">
+    <Card className={cn("overflow-hidden shadow-none", tone === "danger" && "border-destructive/40", className)}>
+      <CardHeader
+        className={cn(
+          "flex gap-3 border-b border-border bg-muted/15 px-5 py-4 sm:flex-row sm:items-start sm:justify-between sm:space-y-0 sm:px-6",
+          tone === "danger" && "border-destructive/25 bg-destructive/5"
+        )}
+      >
         <div className="space-y-1.5">
-          <CardTitle className="text-lg">{title}</CardTitle>
+          <CardTitle className={cn("text-base", tone === "danger" && "text-destructive")}>{title}</CardTitle>
           {description && <CardDescription>{description}</CardDescription>}
         </div>
         {actions && <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div>}
       </CardHeader>
-      <CardContent>{children}</CardContent>
+      <CardContent className="p-5 sm:p-6">{children}</CardContent>
     </Card>
   );
 }
@@ -259,13 +327,13 @@ function EmptyState({ icon: Icon = HelpCircle, title, description, action }) {
 
 function HealthTile({ icon: Icon, label, value, detail, state = "neutral", action }) {
   return (
-    <div className={cn("rounded-lg border p-4", statusTone(state))}>
+    <div className={cn("rounded-md border p-4", statusTone(state))}>
       <div className="flex items-start justify-between gap-3">
         <Icon className="mt-0.5 h-5 w-5 shrink-0" />
         {action}
       </div>
       <div className="mt-3">
-        <div className="text-xs font-medium uppercase text-current/70">{label}</div>
+        <div className="text-xs font-medium text-current/75">{label}</div>
         <div className="mt-1 text-base font-semibold text-foreground">{value}</div>
         {detail && <p className="mt-1 text-sm text-muted-foreground">{detail}</p>}
       </div>
@@ -274,13 +342,15 @@ function HealthTile({ icon: Icon, label, value, detail, state = "neutral", actio
 }
 
 function ToggleRow({ label, description, checked, onCheckedChange, disabled }) {
+  const switchId = React.useId();
+
   return (
-    <div className="flex items-start justify-between gap-4 rounded-lg border border-border bg-muted/20 p-4">
+    <div className="flex min-h-16 items-start justify-between gap-4 rounded-md border border-border bg-muted/15 p-4">
       <div className="space-y-1">
-        <Label className="text-sm font-semibold">{label}</Label>
+        <Label htmlFor={switchId} className="text-sm font-semibold">{label}</Label>
         {description && <p className="text-sm text-muted-foreground">{description}</p>}
       </div>
-      <Switch checked={checked} onCheckedChange={onCheckedChange} disabled={disabled} aria-label={label} />
+      <Switch id={switchId} checked={checked} onCheckedChange={onCheckedChange} disabled={disabled} />
     </div>
   );
 }
@@ -404,6 +474,7 @@ export default function SettingsPage() {
   const billing = useBilling() || {};
   const isAdmin = Boolean(billing.isAdmin || billing.flags?.isAdmin);
   const [activeTab, setActiveTab] = useState("overview");
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [proNudgeReason, setProNudgeReason] = useState("");
   const [usageState, setUsageState] = useState({ status: "idle", logs: [], chartData: [], error: "" });
   const [teamState, setTeamState] = useState({ status: "idle", teams: [], error: "" });
@@ -420,6 +491,7 @@ export default function SettingsPage() {
   });
 
   const navItems = useMemo(() => (isAdmin ? [...NAV_ITEMS, ADMIN_ITEM] : NAV_ITEMS), [isAdmin]);
+  const activeSection = SECTION_META[activeTab] || SECTION_META.overview;
   const robloxStatus = robloxState.statusData;
   const robloxConnected = Boolean(robloxStatus?.connected);
   const robloxUpgradeRequired = needsRobloxUpgrade(robloxStatus);
@@ -480,6 +552,7 @@ export default function SettingsPage() {
 
   const setTab = useCallback((tab) => {
     setActiveTab(tab);
+    setMobileNavOpen(false);
     navigate(`/settings?tab=${tab}`, { replace: true });
   }, [navigate]);
 
@@ -693,14 +766,6 @@ export default function SettingsPage() {
 
     return (
       <div className="space-y-6">
-        {notice && (
-          <Alert>
-            <CheckCircle2 className="h-4 w-4" />
-            <AlertTitle>Status</AlertTitle>
-            <AlertDescription>{notice}</AlertDescription>
-          </Alert>
-        )}
-
         <Panel
           title="Connection health"
           description="A quick read on the services NexusRBX needs for generation, billing, Roblox publishing, and Studio handoff."
@@ -733,7 +798,7 @@ export default function SettingsPage() {
                     <XAxis dataKey="date" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }} />
                     <YAxis tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }} />
                     <ChartTooltip />
-                    <Area type="monotone" dataKey="tokens" stroke="hsl(var(--primary))" fill="hsl(var(--primary) / 0.18)" />
+                    <Area type="monotone" dataKey="tokens" stroke="hsl(var(--accent))" fill="hsl(var(--accent) / 0.16)" />
                   </AreaChart>
                 </ResponsiveContainer>
               </div>
@@ -768,8 +833,8 @@ export default function SettingsPage() {
     <div className="space-y-6">
       <Panel title="AI defaults" description="These defaults are used when new chats and generation runs start.">
         <div className="grid gap-4 lg:grid-cols-2">
-          <div className="space-y-2">
-            <Label>Model</Label>
+          <div className="space-y-2" role="group" aria-labelledby="model-setting-label">
+            <Label id="model-setting-label">Model</Label>
             <ModelSwitcher
               value={settings.modelVersion}
               isPremium={billing.isPremium}
@@ -781,9 +846,9 @@ export default function SettingsPage() {
             />
           </div>
           <div className="space-y-2">
-            <Label>Chat mode</Label>
+            <Label htmlFor="chat-mode">Chat mode</Label>
             <Select value={settings.chatMode} onValueChange={(chatMode) => updateSetting({ chatMode })}>
-              <SelectTrigger><SelectValue placeholder="Select mode" /></SelectTrigger>
+              <SelectTrigger id="chat-mode"><SelectValue placeholder="Select mode" /></SelectTrigger>
               <SelectContent>
                 {CHAT_MODES.map((mode) => (
                   <SelectItem key={mode.id} value={mode.id}>{mode.label}</SelectItem>
@@ -792,18 +857,18 @@ export default function SettingsPage() {
             </Select>
           </div>
           <div className="space-y-2">
-            <Label>Code style</Label>
+            <Label htmlFor="code-style">Code style</Label>
             <Select value={settings.codeStyle} onValueChange={(codeStyle) => updateSetting({ codeStyle })}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectTrigger id="code-style"><SelectValue /></SelectTrigger>
               <SelectContent>
                 {CODE_STYLE_OPTIONS.map((option) => <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
           <div className="space-y-2">
-            <Label>Response detail</Label>
+            <Label htmlFor="response-detail">Response detail</Label>
             <Select value={settings.verbosity} onValueChange={(verbosity) => updateSetting({ verbosity })}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectTrigger id="response-detail"><SelectValue /></SelectTrigger>
               <SelectContent>
                 {VERBOSITY_OPTIONS.map((option) => <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>)}
               </SelectContent>
@@ -843,7 +908,7 @@ export default function SettingsPage() {
         actions={
           <Button type="button" onClick={() => updateSetting(longForm)} disabled={!longFormDirty || saveStatus === "saving"}>
             {saveStatus === "saving" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-            Save context
+            {saveStatus === "saving" ? "Saving context…" : "Save context"}
           </Button>
         }
       >
@@ -956,7 +1021,7 @@ export default function SettingsPage() {
                 setRobloxActionError(error, "Failed to start Roblox authorization.");
               }
             }}
-            className="border-amber-500/25 bg-amber-500/10 text-amber-50"
+            className="border-amber-500/25 bg-amber-500/10 text-amber-900 dark:text-amber-100"
           />
         )}
         {robloxState.status !== "loading" && (
@@ -964,7 +1029,12 @@ export default function SettingsPage() {
             <div className="flex flex-col gap-3 rounded-lg border border-border p-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <div className="flex items-center gap-2">
-                  <Badge variant={robloxConnected ? "default" : "secondary"}>{robloxConnected ? "Connected" : "Disconnected"}</Badge>
+                  <Badge
+                    variant={robloxConnected ? "outline" : "secondary"}
+                    className={robloxConnected ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300" : undefined}
+                  >
+                    {robloxConnected ? "Connected" : "Disconnected"}
+                  </Badge>
                   {selectedCreator && <Badge variant="outline">{selectedCreator.type} {selectedCreator.id}</Badge>}
                 </div>
                 <p className="mt-2 text-sm text-muted-foreground">
@@ -989,7 +1059,9 @@ export default function SettingsPage() {
                   disabled={robloxAction === "connect"}
                 >
                   {robloxAction === "connect" && <Loader2 className="h-4 w-4 animate-spin" />}
-                  {robloxConnected ? "Reconnect" : "Connect"}
+                  {robloxAction === "connect"
+                    ? (robloxConnected ? "Reconnecting…" : "Connecting…")
+                    : (robloxConnected ? "Reconnect" : "Connect")}
                 </Button>
                 {robloxConnected && (
                   <>
@@ -1008,7 +1080,8 @@ export default function SettingsPage() {
                       }}
                       disabled={robloxAction === "reauthorize"}
                     >
-                      Reauthorize
+                      {robloxAction === "reauthorize" && <Loader2 className="h-4 w-4 animate-spin" />}
+                      {robloxAction === "reauthorize" ? "Reauthorizing…" : "Reauthorize"}
                     </Button>
                     <Button
                       type="button"
@@ -1026,7 +1099,8 @@ export default function SettingsPage() {
                       }}
                       disabled={robloxAction === "revoke"}
                     >
-                      Revoke access
+                      {robloxAction === "revoke" && <Loader2 className="h-4 w-4 animate-spin" />}
+                      {robloxAction === "revoke" ? "Revoking…" : "Revoke access"}
                     </Button>
                   </>
                 )}
@@ -1046,7 +1120,7 @@ export default function SettingsPage() {
                 )}
                 <div className="grid gap-4 lg:grid-cols-2">
                   <div className="space-y-2">
-                  <Label>Creator target</Label>
+                  <Label htmlFor="roblox-creator-target">Creator target</Label>
                   <Select
                     value={selectedCreatorKey}
                     onValueChange={async (value) => {
@@ -1060,7 +1134,7 @@ export default function SettingsPage() {
                       }
                     }}
                   >
-                    <SelectTrigger><SelectValue placeholder="Select creator" /></SelectTrigger>
+                    <SelectTrigger id="roblox-creator-target"><SelectValue placeholder="Select creator" /></SelectTrigger>
                     <SelectContent>
                       {creators.length === 0 && <SelectItem value="none" disabled>No creators available</SelectItem>}
                       {creators.map((creator) => (
@@ -1181,9 +1255,9 @@ export default function SettingsPage() {
             onCheckedChange={(studioAutoPushEnabled) => updateSetting({ studioAutoPushEnabled })}
           />
           <div className="space-y-2 rounded-lg border border-border bg-muted/20 p-4">
-            <Label>Push policy</Label>
+            <Label htmlFor="studio-push-policy">Push policy</Label>
             <Select value={settings.studioAutoPushPolicy} onValueChange={(studioAutoPushPolicy) => updateSetting({ studioAutoPushPolicy })}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectTrigger id="studio-push-policy"><SelectValue /></SelectTrigger>
               <SelectContent>
                 {STUDIO_POLICY_OPTIONS.map((option) => <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>)}
               </SelectContent>
@@ -1246,7 +1320,7 @@ export default function SettingsPage() {
             <HealthTile icon={Activity} label="Premium balance" value={formatNumber(billing.paygRemaining)} detail="Pay-as-you-go balance" state="neutral" />
           </div>
         )}
-        <div className="mt-6 flex flex-wrap gap-2">
+        <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
           <Button type="button" onClick={() => redirectFromBilling(() => billing.subscriptionCheckout?.({ plan: "PRO", interval: "month" }))}>
             Upgrade to Pro
           </Button>
@@ -1256,7 +1330,13 @@ export default function SettingsPage() {
           <Button type="button" variant="secondary" onClick={() => redirectFromBilling(() => billing.portal?.())}>
             Manage billing
           </Button>
-          {!billing.isFreeUsagePlan && (
+        </div>
+        {!billing.isFreeUsagePlan && (
+          <div className="mt-6 flex flex-col gap-4 border-t border-destructive/25 pt-5 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h3 className="text-sm font-semibold text-destructive">Cancel subscription</h3>
+              <p className="mt-1 text-sm text-muted-foreground">Stops renewal without deleting your generated data.</p>
+            </div>
             <ConfirmationAction
               trigger={<Button type="button" variant="destructive">Cancel plan</Button>}
               title="Cancel subscription"
@@ -1268,8 +1348,8 @@ export default function SettingsPage() {
                 setNotice("Subscription cancellation requested.");
               }}
             />
-          )}
-        </div>
+          </div>
+        )}
       </Panel>
     </div>
   );
@@ -1284,7 +1364,7 @@ export default function SettingsPage() {
           </div>
           <Button type="submit" className="self-end" disabled={!teamName.trim() || teamState.status === "loading"}>
             {teamState.status === "loading" && <Loader2 className="h-4 w-4 animate-spin" />}
-            Create team
+            {teamState.status === "loading" ? "Creating team…" : "Create team"}
           </Button>
         </form>
         <Separator className="my-6" />
@@ -1318,7 +1398,7 @@ export default function SettingsPage() {
 
   const renderAccount = () => (
     <div className="space-y-6">
-      <Panel title="Account" description="Signed-in identity and session controls.">
+      <Panel title="Profile and session" description="Signed-in identity and session controls.">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <div className="text-sm text-muted-foreground">Signed in as</div>
@@ -1332,9 +1412,13 @@ export default function SettingsPage() {
         </div>
       </Panel>
 
-      <Panel title="Data recovery limits" description="Destructive actions require confirmation and cannot be undone from this interface.">
+      <Panel
+        title="Danger zone"
+        description="These actions permanently remove account data. Each one requires typed confirmation."
+        tone="danger"
+      >
         <div className="grid gap-3 lg:grid-cols-2">
-          <div className="rounded-lg border border-border p-4">
+          <div className="rounded-md border border-destructive/25 bg-destructive/[0.03] p-4">
             <h3 className="font-semibold">Clear chats</h3>
             <p className="mt-1 text-sm text-muted-foreground">Deletes stored chat threads and messages for this account.</p>
             <ConfirmationAction
@@ -1346,7 +1430,7 @@ export default function SettingsPage() {
               onConfirm={() => clearUserData("chats")}
             />
           </div>
-          <div className="rounded-lg border border-border p-4">
+          <div className="rounded-md border border-destructive/25 bg-destructive/[0.03] p-4">
             <h3 className="font-semibold">Clear scripts</h3>
             <p className="mt-1 text-sm text-muted-foreground">Deletes saved scripts and version records for this account.</p>
             <ConfirmationAction
@@ -1415,24 +1499,42 @@ export default function SettingsPage() {
         </Panel>
 
         <Panel title="Token adjustment" description="Apply a manual token adjustment with an audit reason.">
-          <form onSubmit={adjustTokens} className="grid gap-3 lg:grid-cols-[1fr_10rem_1fr_auto]">
-            <Input placeholder="User UID" value={tokenAdjust.uid} onChange={(event) => setTokenAdjust((state) => ({ ...state, uid: event.target.value }))} />
-            <Input placeholder="Amount" value={tokenAdjust.amount} onChange={(event) => setTokenAdjust((state) => ({ ...state, amount: event.target.value }))} />
-            <Input placeholder="Reason" value={tokenAdjust.reason} onChange={(event) => setTokenAdjust((state) => ({ ...state, reason: event.target.value }))} />
-            <Button type="submit">Apply</Button>
+          <form onSubmit={adjustTokens} className="grid gap-3 lg:grid-cols-[1fr_10rem_1fr_auto] lg:items-end">
+            <div className="space-y-2">
+              <Label htmlFor="token-adjustment-uid">User UID</Label>
+              <Input id="token-adjustment-uid" placeholder="User UID" value={tokenAdjust.uid} onChange={(event) => setTokenAdjust((state) => ({ ...state, uid: event.target.value }))} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="token-adjustment-amount">Amount</Label>
+              <Input id="token-adjustment-amount" inputMode="numeric" placeholder="Amount" value={tokenAdjust.amount} onChange={(event) => setTokenAdjust((state) => ({ ...state, amount: event.target.value }))} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="token-adjustment-reason">Reason</Label>
+              <Input id="token-adjustment-reason" placeholder="Reason" value={tokenAdjust.reason} onChange={(event) => setTokenAdjust((state) => ({ ...state, reason: event.target.value }))} />
+            </div>
+            <Button
+              type="submit"
+              disabled={!tokenAdjust.uid.trim() || !tokenAdjust.amount.trim() || !Number.isFinite(Number(tokenAdjust.amount))}
+            >
+              Apply
+            </Button>
           </form>
         </Panel>
 
         <Panel title="User inspector" description="Load account details without exposing this section to non-admin users.">
-          <div className="flex flex-col gap-3 sm:flex-row">
-            <Input
-              placeholder="User UID"
-              value={adminInspector.uid}
-              onChange={(event) => setAdminInspector((state) => ({ ...state, uid: event.target.value }))}
-            />
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+            <div className="flex-1 space-y-2">
+              <Label htmlFor="admin-inspector-uid">User UID</Label>
+              <Input
+                id="admin-inspector-uid"
+                placeholder="User UID"
+                value={adminInspector.uid}
+                onChange={(event) => setAdminInspector((state) => ({ ...state, uid: event.target.value }))}
+              />
+            </div>
             <Button type="button" onClick={inspectUser} disabled={!adminInspector.uid.trim() || adminInspector.status === "loading"}>
               {adminInspector.status === "loading" && <Loader2 className="h-4 w-4 animate-spin" />}
-              Inspect
+              {adminInspector.status === "loading" ? "Inspecting…" : "Inspect"}
             </Button>
           </div>
           {adminInspector.status === "error" && (
@@ -1473,29 +1575,29 @@ export default function SettingsPage() {
 
   return (
     <main className="min-h-screen bg-background text-foreground">
-      <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8">
-        <header className="flex flex-col gap-4 border-b border-border pb-5 lg:flex-row lg:items-center lg:justify-between">
+      <div className="mx-auto flex w-full max-w-[1180px] flex-col gap-6 px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
+        <header className="flex flex-col gap-5 border-b border-border pb-6 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-start gap-3">
-            <div className="rounded-md border border-border bg-muted p-2">
-              <Settings className="h-5 w-5" />
+            <div className="rounded-md border border-accent/25 bg-accent/10 p-2 text-accent">
+              <Settings className="h-5 w-5" aria-hidden="true" />
             </div>
             <div>
-              <h1 className="text-2xl font-semibold tracking-normal sm:text-3xl">Settings</h1>
+              <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">Settings</h1>
               <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
                 Configure AI defaults, Roblox consent, billing, team access, and account data from one place.
               </p>
             </div>
           </div>
-          <div className="flex flex-wrap items-center gap-2 lg:justify-end">
+          <div className="flex flex-wrap items-center justify-between gap-3 lg:justify-end">
             <SaveStatus status={saveStatus} error={saveError} lastSavedAt={lastSavedAt} onRetry={() => reloadSettings()} />
-            <Sheet>
+            <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
               <SheetTrigger asChild>
-                <Button type="button" variant="outline" className="lg:hidden" aria-label="Open settings navigation">
+                <Button type="button" variant="outline" className="lg:hidden" aria-label="Open settings sections">
                   <Menu className="h-4 w-4" />
                   Sections
                 </Button>
               </SheetTrigger>
-              <SheetContent side="left">
+              <SheetContent side="left" className="w-[min(22rem,100vw)]">
                 <SheetHeader>
                   <SheetTitle>Settings</SheetTitle>
                   <SheetDescription>Choose a settings section.</SheetDescription>
@@ -1508,6 +1610,14 @@ export default function SettingsPage() {
           </div>
         </header>
 
+        {notice && (
+          <Alert role="status" aria-live="polite">
+            <Activity className="h-4 w-4" />
+            <AlertTitle>Settings update</AlertTitle>
+            <AlertDescription>{notice}</AlertDescription>
+          </Alert>
+        )}
+
         {!user && !settingsLoading ? (
           <Panel title="Sign in required" description="Settings sync requires an authenticated account.">
             <EmptyState
@@ -1518,13 +1628,20 @@ export default function SettingsPage() {
             />
           </Panel>
         ) : (
-          <div className="grid gap-6 lg:grid-cols-[16rem_minmax(0,1fr)]">
+          <div className="grid gap-8 lg:grid-cols-[14rem_minmax(0,1fr)]">
             <aside className="hidden lg:block">
-              <div className="sticky top-6 rounded-lg border border-border bg-card p-2">
+              <div className="sticky top-6 rounded-lg border border-border bg-card p-2 shadow-none">
                 <NavList items={navItems} activeTab={activeTab} onSelect={setTab} />
               </div>
             </aside>
-            <section className="min-w-0">
+            <section className="min-w-0" aria-labelledby="settings-section-title">
+              <div className="mb-5 border-b border-border pb-4">
+                <p className="text-xs font-semibold text-accent">Account settings</p>
+                <h2 id="settings-section-title" className="mt-1 text-xl font-semibold tracking-tight">
+                  {activeSection.label}
+                </h2>
+                <p className="mt-1 max-w-3xl text-sm leading-6 text-muted-foreground">{activeSection.description}</p>
+              </div>
               {settingsLoading ? (
                 <div className="space-y-4">
                   <Skeleton className="h-32 w-full" />

@@ -408,9 +408,15 @@ export default function IconGeneratorPage() {
 
   if (!authReady || !user || (loading && !projects.length && !assets.length)) {
     return (
-      <main className="asset-platform-page">
+      <main className="asset-platform-page asset-icon-generator-page">
         <div className="asset-platform-shell">
-          <header className="asset-platform-header"><div><p className="asset-eyebrow"><Sparkles /> Nexus asset platform</p><h1>Asset workspace</h1><p>Loading your project, Roblox connection, and canonical asset records.</p></div></header>
+          <header className="asset-platform-header">
+            <div>
+              <p className="asset-eyebrow"><Sparkles aria-hidden="true" /> Asset tools</p>
+              <h1>Icon generator</h1>
+              <p>Loading your project context and asset workspace.</p>
+            </div>
+          </header>
           <AssetGridSkeleton count={6} label="Loading asset workspace" />
         </div>
       </main>
@@ -418,17 +424,17 @@ export default function IconGeneratorPage() {
   }
 
   return (
-    <main className="asset-platform-page">
+    <main className="asset-platform-page asset-icon-generator-page">
       <div className="asset-platform-shell">
         <header className="asset-platform-header">
           <div>
-            <p className="asset-eyebrow"><Sparkles aria-hidden="true" /> Nexus asset platform</p>
-            <h1>Icon Studio</h1>
-            <p>Create a single asset or a coherent pack, preserve its generation lineage, and track every Roblox upload and moderation outcome without leaving Nexus.</p>
+            <p className="asset-eyebrow"><Sparkles aria-hidden="true" /> Asset tools</p>
+            <h1>Icon generator</h1>
+            <p>Generate a single game icon or a coordinated set, then review publishing status from the same workspace.</p>
           </div>
           <div className="asset-platform-header__actions">
-            <Button variant="ghost" icon={Library} onClick={() => navigate("/assets")}>Asset library</Button>
-            <Button variant="ghost" icon={Settings} onClick={() => navigate("/settings?tab=roblox")}>Roblox settings</Button>
+            <Button className="asset-header-action" variant="ghost" icon={Library} onClick={() => navigate("/assets")}>Asset library</Button>
+            <Button className="asset-header-action" variant="ghost" icon={Settings} onClick={() => navigate("/settings?tab=roblox")}>Roblox settings</Button>
           </div>
         </header>
 
@@ -449,15 +455,17 @@ export default function IconGeneratorPage() {
           controlsDisabled={!capabilities.reads}
         />
 
-        {!canGenerateAny ? <div className="asset-inline-notice" role="status">Your existing assets remain available. Generation controls will appear when this server grants an exact asset-generation capability.</div> : null}
-        {canGenerateAny && settings.robloxAssetUploadsEnabled && !canPublishAsset ? <div className="asset-inline-notice" role="status">Assets can be generated and saved in NexusRBX, but Roblox publishing is unavailable for this connection.</div> : null}
-        {error ? <div className="asset-inline-notice asset-inline-notice--error" role="alert">{error}</div> : null}
-        {notice ? <div className="asset-inline-notice asset-inline-notice--success" role="status">{notice}</div> : null}
+        <div className="asset-notice-stack">
+          {!canGenerateAny ? <div className="asset-inline-notice" role="status">Your existing assets remain available. Generation controls will appear when this server grants an exact asset-generation capability.</div> : null}
+          {canGenerateAny && settings.robloxAssetUploadsEnabled && !canPublishAsset ? <div className="asset-inline-notice" role="status">Assets can be generated and saved in NexusRBX, but Roblox publishing is unavailable for this connection.</div> : null}
+          {error ? <div className="asset-inline-notice asset-inline-notice--error" role="alert">{error}</div> : null}
+          {notice ? <div className="asset-inline-notice asset-inline-notice--success" role="status">{notice}</div> : null}
+        </div>
 
-        <div className="asset-generator-layout" style={{ marginTop: error || notice ? 14 : 0 }}>
-          <section className="asset-generator-panel" ref={formPanelRef}>
+        <div className="asset-generator-layout">
+          <section className="asset-generator-panel" ref={formPanelRef} aria-labelledby="asset-generation-title">
             <div className="asset-panel-heading">
-              <div><h2>Generation brief</h2><p>Every request creates durable records before optional Roblox upload.</p></div>
+              <div><h2 id="asset-generation-title">Generation brief</h2><p>Choose a workflow, describe the visual, and keep optional controls tucked away until you need them.</p></div>
             </div>
             <AssetGenerationForm
               value={form}
@@ -471,14 +479,14 @@ export default function IconGeneratorPage() {
               unsupportedModes={unsupportedModes}
               costEstimate={costEstimate}
             />
-            <div style={{ marginTop: 14 }}><AssetStyleSummary profile={selectedStyleProfile} compact /></div>
+            <div className="asset-style-summary-wrap"><AssetStyleSummary profile={selectedStyleProfile} compact /></div>
           </section>
 
-          <section className="asset-results-panel" aria-live="polite">
+          <section className="asset-results-panel" aria-label="Generation output" aria-live="polite" aria-busy={submitting}>
             {operation?.operationId ? (
               <div className="asset-operation-banner">
                 <Clock aria-hidden="true" />
-                <span><strong>Operation {operation.state}</strong> · {operation.operationId}</span>
+                <span><strong>Operation {operation.state}</strong><code>{operation.operationId}</code></span>
               </div>
             ) : null}
             {error && !resultAssets.length && !currentPack && !loading ? (

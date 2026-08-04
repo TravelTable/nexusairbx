@@ -1,3 +1,5 @@
+/* global globalThis */
+
 export const CHAT_OPERATION_STATUS = Object.freeze({
   PREPARING: "Preparing",
   RUNNING: "Running",

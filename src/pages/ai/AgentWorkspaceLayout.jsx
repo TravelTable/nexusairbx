@@ -1195,17 +1195,6 @@ export default function AgentWorkspaceLayout({ controller }) {
   return (
     <div className="fixed inset-0 overflow-hidden" role="application" aria-label="Nexus AI Workspace">
       <div ref={aiPageRef} className="ai-page relative flex flex-col overflow-hidden font-sans">
-      <div
-        className="pointer-events-none absolute top-[-10%] left-[-10%] h-[40%] w-[40%] rounded-full blur-[120px] transition-colors duration-1000"
-        style={{ backgroundColor: `${currentTheme.primary}14` }}
-        aria-hidden="true"
-      />
-      <div
-        className="pointer-events-none absolute bottom-[-15%] right-[-10%] h-[45%] w-[45%] rounded-full blur-[140px] transition-colors duration-1000"
-        style={{ backgroundColor: `${currentTheme.secondary}10` }}
-        aria-hidden="true"
-      />
-
       <div className="flex min-h-0 flex-1 overflow-hidden">
         {/* LEFT: projects and chats */}
         {generatorMode === "agent_build" && (
@@ -1254,20 +1243,20 @@ export default function AgentWorkspaceLayout({ controller }) {
 
         {/* CENTER: Studio agent chat */}
         <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-        <SiteHeader
-          variant="workspace"
-          robloxStatusOverride={roblox?.status ?? null}
-          robloxLoadingOverride={Boolean(roblox?.loading)}
+          <SiteHeader
+            variant="workspace"
+            robloxStatusOverride={roblox?.status ?? null}
+            robloxLoadingOverride={Boolean(roblox?.loading)}
             workspaceLeft={(
               <>
                 <button
                   type="button"
                   onClick={() => setSidebarOpen(!sidebarOpen)}
-                  className={`shrink-0 rounded-xl p-2 transition-[background-color,color] ${sidebarOpen ? "bg-[#00f5d4]/10 text-[#00f5d4]" : "bg-white/5 text-gray-400 hover:text-white"}`}
+                  className={`grid h-8 w-8 shrink-0 place-items-center rounded-md transition-[background-color,color] focus-ring ${sidebarOpen ? "bg-[#00f5d4]/10 text-[#00f5d4]" : "text-gray-400 hover:bg-white/[0.05] hover:text-white"}`}
                   title="Toggle sidebar"
                   aria-label="Toggle sidebar"
                 >
-                  <Menu className="h-5 w-5" />
+                  <Menu className="h-4 w-4" />
                 </button>
                 <div className="hidden h-4 w-px bg-white/10 xl:block" aria-hidden="true" />
                 <div data-tour="mode-switcher" className="hidden shrink-0 md:inline-flex">

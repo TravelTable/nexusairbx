@@ -24,17 +24,17 @@ export default function AssetPackGrid({
     <section className="asset-pack" aria-labelledby="asset-pack-title">
       <header className="asset-pack__header">
         <div>
-          <p className="asset-eyebrow"><Package aria-hidden="true" /> Current pack</p>
+          <p className="asset-eyebrow"><Package aria-hidden="true" /> Generation output</p>
           <div className="asset-pack__title-row">
-            <h2 id="asset-pack-title">{pack?.name || "Generated assets"}</h2>
+            <h2 id="asset-pack-title">{pack?.name || "Latest result"}</h2>
             {pack?.lifecycle ? <AssetLifecycleBadge status={pack.lifecycle} /> : null}
           </div>
           <p>
             {pack?.requestedCount ? `${packAssets.length} of ${pack.requestedCount} assets currently available.` : `${packAssets.length} assets in this result.`}
-            {" "}Each card progresses independently through generation, upload, and moderation.
+            {" "}Each asset updates independently as it moves through generation and publishing.
           </p>
         </div>
-        {onExtend && pack?.packId ? <Button variant="secondary" icon={Plus} onClick={() => onExtend(pack)}>Extend pack</Button> : null}
+        {onExtend && pack?.packId ? <Button className="asset-secondary-action" variant="secondary" icon={Plus} onClick={() => onExtend(pack)}>Extend pack</Button> : null}
       </header>
 
       {packAssets.length ? (

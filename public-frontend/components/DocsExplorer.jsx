@@ -1,7 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import {
+  AlertTriangle,
   ArrowLeft,
   ArrowRight,
   BookOpen,
@@ -14,11 +15,13 @@ import {
   ExternalLink,
   FileText,
   Hash,
+  Info,
   Link as LinkIcon,
   Menu,
   MessageCircle,
   Search,
   Shield,
+  ShieldAlert,
   X,
 } from "../../src/lib/icons";
 import PublicHeader from "./PublicHeader";
@@ -204,6 +207,13 @@ function PageIcon({ mode }) {
   return mode === "legal" ? <Shield aria-hidden="true" size={18} /> : <BookOpen aria-hidden="true" size={18} />;
 }
 
+function CalloutIcon({ tone }) {
+  if (tone === "warning") return <AlertTriangle aria-hidden="true" size={18} />;
+  if (tone === "danger") return <ShieldAlert aria-hidden="true" size={18} />;
+  if (tone === "success") return <Check aria-hidden="true" size={18} />;
+  return <Info aria-hidden="true" size={18} />;
+}
+
 function searchOptionId(result) {
   return `docs-search-option-${result.path.replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "")}`;
 }
@@ -211,14 +221,38 @@ function searchOptionId(result) {
 function Sidebar({ categories, page, pages, mode, isOpen, isCollapsed, onClose, onToggleCollapsed, openCategories, onToggleCategory }) {
   const pageMap = useMemo(() => new Map(pages.map((item) => [item.slug, item])), [pages]);
   const closeButtonRef = useRef(null);
+  const panelRef = useRef(null);
 
   useEffect(() => {
     if (isOpen) closeButtonRef.current?.focus();
   }, [isOpen]);
 
+  const handleKeyDown = (event) => {
+    if (!isOpen || event.key !== "Tab") return;
+    const focusable = [...(panelRef.current?.querySelectorAll(
+      'button:not([disabled]):not([tabindex="-1"]), [href]:not([tabindex="-1"])',
+    ) || [])];
+    if (!focusable.length) return;
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
+  };
+
   return (
-    <aside className={cx("docs-sidebar", isOpen && "docs-sidebar-open", isCollapsed && "docs-sidebar-collapsed")} aria-label={mode === "legal" ? "Legal navigation" : "Documentation navigation"}>
-      <div className="docs-sidebar-panel">
+    <aside
+      aria-label={mode === "legal" ? "Legal navigation" : "Documentation navigation"}
+      aria-modal={isOpen ? "true" : undefined}
+      className={cx("docs-sidebar", isOpen && "docs-sidebar-open", isCollapsed && "docs-sidebar-collapsed")}
+      onKeyDown={handleKeyDown}
+      role={isOpen ? "dialog" : undefined}
+    >
+      <div className="docs-sidebar-panel" ref={panelRef}>
         <div className="docs-sidebar-header">
           <span className="docs-sidebar-label"><PageIcon mode={mode} /> {mode === "legal" ? "Legal" : "Docs"}</span>
           <div className="docs-sidebar-header-actions">
@@ -242,6 +276,7 @@ function Sidebar({ categories, page, pages, mode, isOpen, isCollapsed, onClose, 
           {categories.map((category) => (
             <div className="docs-category" key={category.id}>
               <button
+                aria-controls={`docs-category-${category.id}`}
                 className="docs-category-button"
                 type="button"
                 onClick={() => onToggleCategory(category.id)}
@@ -250,7 +285,7 @@ function Sidebar({ categories, page, pages, mode, isOpen, isCollapsed, onClose, 
                 <span>{category.title}</span>
                 <ChevronDown aria-hidden="true" size={16} />
               </button>
-              <div className="docs-category-pages" hidden={!openCategories[category.id]}>
+              <div className="docs-category-pages" hidden={!openCategories[category.id]} id={`docs-category-${category.id}`}>
                 {category.pages.map((slug) => {
                   const target = pageMap.get(slug);
                   if (!target) return null;
@@ -455,7 +490,7 @@ function CodeBlock({ block }) {
   const copyCode = async () => {
     const success = await writeClipboard(block.code || "");
     setCopyStatus(success ? "success" : "error");
-    window.setTimeout(() => setCopyStatus("idle"), 1800);
+    if (success) window.setTimeout(() => setCopyStatus("idle"), 1800);
   };
 
   return (
@@ -468,6 +503,11 @@ function CodeBlock({ block }) {
           {copyStatus === "success" ? "Copied" : copyStatus === "error" ? "Copy failed" : "Copy"}
         </button>
       </figcaption>
+      {copyStatus === "error" ? (
+        <p className="docs-code-copy-error" role="alert">
+          Clipboard access is unavailable. Select the code and copy it manually.
+        </p>
+      ) : null}
       <pre>
         <code>
           {lines.map((line, index) => (
@@ -484,27 +524,50 @@ function CodeBlock({ block }) {
 
 function TabBlock({ block }) {
   const [activeIndex, setActiveIndex] = useState(0);
+  const tabSetId = useId().replace(/:/g, "");
+  const tabRefs = useRef([]);
   const activeTab = block.tabs?.[activeIndex] || block.tabs?.[0];
 
   if (!block.tabs?.length) return null;
 
+  const selectTab = (index) => {
+    setActiveIndex(index);
+    tabRefs.current[index]?.focus();
+  };
+
+  const handleTabKeyDown = (event, index) => {
+    let nextIndex;
+    if (event.key === "ArrowRight") nextIndex = (index + 1) % block.tabs.length;
+    if (event.key === "ArrowLeft") nextIndex = (index - 1 + block.tabs.length) % block.tabs.length;
+    if (event.key === "Home") nextIndex = 0;
+    if (event.key === "End") nextIndex = block.tabs.length - 1;
+    if (nextIndex === undefined) return;
+    event.preventDefault();
+    selectTab(nextIndex);
+  };
+
   return (
     <div className="docs-tabs">
-      <div className="docs-tab-list" role="tablist" aria-label="Documentation tabs">
+      <div aria-label="Documentation tabs" aria-orientation="horizontal" className="docs-tab-list" role="tablist">
         {block.tabs.map((tab, index) => (
           <button
+            aria-controls={`${tabSetId}-panel`}
             aria-selected={index === activeIndex}
             className={index === activeIndex ? "docs-tab-active" : undefined}
+            id={`${tabSetId}-tab-${index}`}
             key={tab.label}
             onClick={() => setActiveIndex(index)}
+            onKeyDown={(event) => handleTabKeyDown(event, index)}
+            ref={(element) => { tabRefs.current[index] = element; }}
             role="tab"
+            tabIndex={index === activeIndex ? 0 : -1}
             type="button"
           >
             {tab.label}
           </button>
         ))}
       </div>
-      <div className="docs-tab-panel" role="tabpanel">
+      <div aria-labelledby={`${tabSetId}-tab-${activeIndex}`} className="docs-tab-panel" id={`${tabSetId}-panel`} role="tabpanel" tabIndex={0}>
         {activeTab?.blocks?.map((childBlock, index) => renderBlock(childBlock, `${activeTab.label}-${index}`))}
       </div>
     </div>
@@ -531,7 +594,7 @@ function renderBlock(block, key) {
     case "callout":
       return (
         <aside className={cx("docs-callout", `docs-callout-${block.tone || "info"}`)} key={key}>
-          <Shield aria-hidden="true" size={18} />
+          <CalloutIcon tone={block.tone || "info"} />
           <div>
             <strong>{block.title}</strong>
             <p>{block.text}</p>
@@ -713,7 +776,8 @@ export default function DocsExplorer({
     : `/contact?subject=support&source=legal&article=${encodeURIComponent(canonicalArticleUrl)}&message=${encodeURIComponent(supportMessage)}`;
 
   const openSearch = (trigger) => {
-    searchTriggerRef.current = trigger || document.activeElement;
+    searchTriggerRef.current = isSidebarOpen ? sidebarTriggerRef.current : (trigger || document.activeElement);
+    setIsSidebarOpen(false);
     setIsSearchOpen(true);
   };
 
@@ -736,10 +800,20 @@ export default function DocsExplorer({
   }, []);
 
   useEffect(() => {
+    if (!isSidebarOpen) return undefined;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [isSidebarOpen]);
+
+  useEffect(() => {
     const handleKeyDown = (event) => {
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
         event.preventDefault();
-        searchTriggerRef.current = document.activeElement;
+        searchTriggerRef.current = isSidebarOpen ? sidebarTriggerRef.current : document.activeElement;
+        setIsSidebarOpen(false);
         setIsSearchOpen(true);
       }
       if (event.key === "Escape") {
@@ -786,6 +860,7 @@ export default function DocsExplorer({
 
   return (
     <div className={cx("docs-shell", mode === "legal" && "docs-shell-legal")}>
+      <a className="docs-skip-link" href="#content">Skip to documentation</a>
       <div className="docs-public-header">
         <PublicHeader />
       </div>
@@ -808,12 +883,12 @@ export default function DocsExplorer({
             ))}
           </nav>
           <div className="docs-context-actions">
-        <button
-          aria-label="Search documentation and legal pages"
-          className="docs-search-button"
-          type="button"
-          onClick={(event) => openSearch(event.currentTarget)}
-        >
+            <button
+              aria-label="Search documentation and legal pages"
+              className="docs-search-button"
+              type="button"
+              onClick={(event) => openSearch(event.currentTarget)}
+            >
               <Search aria-hidden="true" size={17} />
               <span>Search</span>
               <kbd>⌘K</kbd>
@@ -879,6 +954,22 @@ export default function DocsExplorer({
               </button>
             </div>
           </header>
+
+          {showToc ? (
+            <details className="docs-inline-toc">
+              <summary>
+                <span>On this page</span>
+                <ChevronDown aria-hidden="true" size={17} />
+              </summary>
+              <nav aria-label="On this page">
+                {page.sections.map((section) => (
+                  <a className={cx("docs-inline-toc-link", activeSection === section.id && "docs-inline-toc-link-active")} href={`#${section.id}`} key={section.id}>
+                    {section.title}
+                  </a>
+                ))}
+              </nav>
+            </details>
+          ) : null}
 
           {page.sections.map((section) => (
             <section className="docs-section" aria-labelledby={section.id} key={section.id}>

@@ -56,8 +56,11 @@ function Brand({ compact = false }) {
       aria-label="NexusRBX home"
       className="inline-flex shrink-0 items-center gap-2.5 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00e0c2]"
     >
-      <span className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-md border border-white/10 bg-[#11151d]">
-        <img src="/logo.png" alt="" className="h-7 w-7 object-contain" />
+      <span className={cn(
+        "flex items-center justify-center overflow-hidden rounded-md border border-white/10 bg-[#11151d]",
+        compact ? "h-8 w-8" : "h-9 w-9"
+      )}>
+        <img src="/logo.png" alt="" className={cn("object-contain", compact ? "h-6 w-6" : "h-7 w-7")} />
       </span>
       {!compact && <span className="text-[15px] font-semibold tracking-[-0.01em] text-white">NexusRBX</span>}
     </Link>
@@ -430,12 +433,12 @@ export default function SiteHeader({
   return (
     <header className={cn(
       "z-50 border-b border-white/10 bg-[#07090d]/95 text-white",
-      isWorkspace ? "relative z-30 bg-black/30" : "sticky top-0",
+      isWorkspace ? "relative z-30 bg-[#080a10]" : "sticky top-0",
       className
     )}>
       <div className={cn(
         "flex min-w-0 items-center justify-between gap-2 xl:gap-3",
-        isWorkspace ? "px-3 py-2.5 sm:px-4" : "mx-auto h-16 max-w-[82rem] px-4 sm:px-6 lg:px-8"
+        isWorkspace ? "px-3 py-1.5 sm:px-4" : "mx-auto h-16 max-w-[82rem] px-4 sm:px-6 lg:px-8"
       )}>
         {isWorkspace ? (
           <>

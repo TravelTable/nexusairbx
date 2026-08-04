@@ -44,12 +44,12 @@ export default function ChatHeader({
       : "Studio offline";
 
   return (
-    <header className="relative z-20 flex h-12 shrink-0 items-center justify-between gap-3 border-b border-white/[0.07] bg-ink-900/95 px-3 backdrop-blur-xl sm:px-4">
+    <header className="relative z-20 flex h-11 shrink-0 items-center justify-between gap-3 border-b border-white/[0.07] bg-[#0a0c12] px-3 sm:px-4">
       <div className="flex min-w-0 items-center gap-2">
         <button
           type="button"
           onClick={onOpenNavigation}
-          className="grid h-8 w-8 shrink-0 place-items-center rounded-lg text-gray-400 transition-colors hover:bg-white/[0.06] hover:text-white xl:hidden"
+          className="grid h-8 w-8 shrink-0 place-items-center rounded-md text-gray-400 transition-colors hover:bg-white/[0.06] hover:text-white focus-ring xl:hidden"
           aria-label="Open navigation"
         >
           <Menu className="h-4 w-4" />
@@ -74,14 +74,14 @@ export default function ChatHeader({
               }
             }}
             maxLength={80}
-            className="h-8 min-w-0 max-w-[min(46vw,28rem)] rounded-md border border-white/10 bg-white/[0.05] px-2 text-sm font-semibold text-white outline-none focus:border-[#00f5d4]/40"
+            className="h-8 min-w-0 max-w-[min(46vw,28rem)] rounded-md border border-white/10 bg-white/[0.04] px-2 text-sm font-medium text-white outline-none focus:border-[#00f5d4]/45 focus-ring"
             aria-label="Chat title"
           />
         ) : (
           <button
             type="button"
             onClick={() => setEditing(true)}
-            className="group/title flex min-w-0 items-center gap-1.5 rounded-md px-1 py-1 text-left text-sm font-semibold text-gray-100 transition-colors hover:bg-white/[0.04]"
+            className="group/title flex min-w-0 items-center gap-1.5 rounded-md px-1 py-1 text-left text-sm font-medium text-gray-100 transition-colors hover:bg-white/[0.04] focus-ring"
             title="Rename chat"
           >
             <span className="truncate">{chatTitle}</span>
@@ -95,7 +95,7 @@ export default function ChatHeader({
           <button
             type="button"
             onClick={onOpenPlan}
-            className="inline-flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-xs font-semibold text-gray-400 transition-colors hover:bg-white/[0.06] hover:text-white"
+            className="inline-flex h-8 items-center gap-1.5 rounded-md px-2.5 text-xs font-semibold text-gray-400 transition-colors hover:bg-white/[0.06] hover:text-white focus-ring"
           >
             <ListChecks className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">Review</span>
@@ -110,9 +110,7 @@ export default function ChatHeader({
         >
           <span
             className={`h-1.5 w-1.5 rounded-full ${
-              studioConnected
-                ? "bg-[#00f5d4] shadow-[0_0_7px_rgba(0,245,212,0.45)]"
-                : "bg-gray-600"
+              studioConnected ? "bg-[#00f5d4]" : "bg-gray-600"
             }`}
           />
           <span className="hidden sm:inline">{connectionLabel}</span>

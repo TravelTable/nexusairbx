@@ -59,7 +59,7 @@ export default function AssetGenerationForm({
   };
 
   return (
-    <form className="asset-generation-form" onSubmit={(event) => { event.preventDefault(); if (!disabled) onSubmit?.(form); }}>
+    <form className="asset-generation-form" aria-busy={submitting} onSubmit={(event) => { event.preventDefault(); if (!disabled) onSubmit?.(form); }}>
       <fieldset className="asset-mode-picker" disabled={disabled}>
         <legend>Generation mode</legend>
         <div className="asset-mode-picker__grid">
@@ -68,13 +68,16 @@ export default function AssetGenerationForm({
             const modeDisabled = unsupportedModes.includes(mode.id);
             return (
               <label key={mode.id} className={`asset-mode-option ${form.mode === mode.id ? "asset-mode-option--active" : ""} ${modeDisabled || disabled ? "asset-mode-option--disabled" : ""}`}>
-                <input type="radio" name={`${fieldId}-mode`} value={mode.id} checked={form.mode === mode.id} disabled={disabled || modeDisabled} onChange={() => handleModeChange(mode.id)} />
+                <input type="radio" name={`${fieldId}-mode`} value={mode.id} checked={form.mode === mode.id} disabled={disabled || modeDisabled} aria-describedby={`${fieldId}-mode-description`} onChange={() => handleModeChange(mode.id)} />
                 <Icon aria-hidden="true" />
                 <span><strong>{mode.label}</strong><small>{modeDisabled ? "Unavailable for this context" : mode.description}</small></span>
               </label>
             );
           })}
         </div>
+        <p className="asset-mode-picker__description" id={`${fieldId}-mode-description`}>
+          {unsupported ? `${selectedMode.label} is unavailable for this project.` : selectedMode.description}
+        </p>
       </fieldset>
 
       <div className="asset-generation-form__brief">
@@ -193,7 +196,7 @@ export default function AssetGenerationForm({
 
       <footer className="asset-generation-form__footer">
         <div><span>Estimated cost</span><strong>{costEstimate || "Confirmed by the server before work starts"}</strong></div>
-        <Button type="submit" size="lg" icon={WandSparkles} disabled={disabled || submitting || unsupported || !form.prompt.trim()}>
+        <Button className="asset-primary-action" type="submit" size="lg" icon={WandSparkles} disabled={disabled || submitting || unsupported || !form.prompt.trim()}>
           {disabled ? "Generation unavailable" : submitting ? "Starting generation…" : `Generate ${selectedMode.label.toLowerCase()}`}
         </Button>
       </footer>

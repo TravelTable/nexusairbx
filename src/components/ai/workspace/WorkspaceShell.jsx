@@ -90,10 +90,10 @@ export function WorkspaceEmptyState({ icon: Icon = FileCode2, title, description
   return (
     <div className="flex h-full min-h-[220px] items-center justify-center p-6 text-center">
       <div className="max-w-[260px]">
-        <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] text-gray-500">
+        <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-lg border border-white/10 bg-white/[0.035] text-gray-500">
           <Icon className="h-5 w-5" aria-hidden="true" />
         </div>
-        <h3 className="text-sm font-bold text-gray-200">{title}</h3>
+        <h3 className="text-sm font-semibold text-gray-200">{title}</h3>
         {description ? <p className="mt-1.5 text-xs leading-relaxed text-gray-500">{description}</p> : null}
         {action ? <div className="mt-4">{action}</div> : null}
       </div>
@@ -264,7 +264,7 @@ export default function WorkspaceShell({
                 <span>Back</span>
               </button>
               <div className="min-w-0">
-                <h2 className="truncate text-sm font-black text-white">{selectedTool?.label}</h2>
+                <h2 className="truncate text-sm font-semibold text-white">{selectedTool?.label}</h2>
                 <p className="truncate text-[11px] text-gray-500">{selectedTool?.description}</p>
               </div>
               <button

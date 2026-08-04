@@ -35,7 +35,14 @@ export default function AssetContextBar({
     : `${Number.isFinite(numericCredits) ? numericCredits.toLocaleString() : String(credits)} credits`;
 
   return (
-    <section className="asset-context-bar" aria-label="Asset generation context">
+    <section className="asset-context-bar" aria-labelledby="asset-context-title">
+      <header className="asset-context-bar__header">
+        <div>
+          <h2 id="asset-context-title">Generation context</h2>
+          <p>Project scope, credit estimate, and Roblox publishing preferences apply to the next request.</p>
+        </div>
+      </header>
+
       <div className="asset-context-bar__selectors">
         <label>
           <span>Project</span>
@@ -65,7 +72,7 @@ export default function AssetContextBar({
 
       <div className="asset-context-toggle">
         <span className="asset-context-toggle__icon"><CloudUpload aria-hidden="true" /></span>
-        <span><strong>Auto upload assets</strong><small>{autoUpload ? "Generated assets upload with your Roblox connection" : "No Roblox writes; Nexus assets are still saved"}</small></span>
+        <span><strong>Upload after generation</strong><small>{autoUpload ? "Generated assets upload with your Roblox connection" : "No Roblox writes; Nexus assets are still saved"}</small></span>
         <Toggle checked={autoUpload} disabled={controlsDisabled || autoUploadDisabled || autoUploadBusy} onChange={onAutoUploadChange} aria-label="Automatically upload generated assets to Roblox" />
       </div>
 

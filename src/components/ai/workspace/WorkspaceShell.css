@@ -84,7 +84,7 @@
   align-items: center;
   justify-content: center;
   border: 1px solid transparent;
-  border-radius: 10px;
+  border-radius: 8px;
   color: #7f8798;
   transition:
     color var(--motion-fast) var(--ease-standard),
@@ -228,7 +228,7 @@
   align-items: center;
   justify-content: center;
   border: 1px solid rgb(255 255 255 / 8%);
-  border-radius: 9px;
+  border-radius: 8px;
   color: #8c94a5;
   transition:
     color var(--motion-fast) var(--ease-standard),
@@ -317,7 +317,7 @@
     height: 34px;
     align-items: center;
     gap: 6px;
-    border-radius: 9px;
+    border-radius: 8px;
     padding: 0 8px;
     color: #99a1b2;
     font-size: 11px;
