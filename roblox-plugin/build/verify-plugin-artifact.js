@@ -18,6 +18,7 @@ function escapeRegExp(value) {
 }
 
 function collectHandlerNames(source) {
+  source = source.replace(/\r\n?/g, "\n");
   const tableStart = source.indexOf("local TOOL_HANDLERS = {");
   const tableEnd = source.indexOf("\n}\n\n-- Pairing must", tableStart);
   if (tableStart < 0 || tableEnd < 0) {

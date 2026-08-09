@@ -18,6 +18,7 @@ import { Skeleton } from "../shadcn/skeleton";
 import { cn } from "../../lib/utils";
 import useHeaderIdentity from "./useHeaderIdentity";
 import { getHeaderVariantForPath } from "./siteHeaderIdentity";
+import SkipToMainContent from "./SkipToMainContent";
 
 const PRODUCT_LINKS = [
   { to: "/ai", label: "AI Workspace" },
@@ -34,7 +35,7 @@ const PRIMARY_LINKS = [
 const RESOURCE_LINKS = [
   { to: "/contact", label: "Contact" },
   { to: "/support", label: "Support" },
-  { to: "/terms", label: "Legal" },
+  { to: "/legal", label: "Legal", staticPage: true },
 ];
 
 function isActivePath(pathname, target) {
@@ -345,7 +346,7 @@ function MobileMenu({ identity, pathname, workspace = false, checkout = false })
   return (
     <Sheet>
       <SheetTrigger asChild>
-        <Button type="button" variant="ghost" size="icon" className="text-slate-300 hover:bg-white/[0.06] hover:text-white lg:hidden" aria-label="Open navigation">
+        <Button type="button" variant="ghost" size="icon" className="h-11 w-11 text-slate-300 hover:bg-white/[0.06] hover:text-white lg:hidden" aria-label="Open navigation">
           <Menu className="h-5 w-5" />
         </Button>
       </SheetTrigger>
@@ -436,6 +437,7 @@ export default function SiteHeader({
       isWorkspace ? "relative z-30 bg-[#080a10]" : "sticky top-0",
       className
     )}>
+      {location.pathname === "/" ? <SkipToMainContent /> : null}
       <div className={cn(
         "flex min-w-0 items-center justify-between gap-2 xl:gap-3",
         isWorkspace ? "px-3 py-1.5 sm:px-4" : "mx-auto h-16 max-w-[82rem] px-4 sm:px-6 lg:px-8"

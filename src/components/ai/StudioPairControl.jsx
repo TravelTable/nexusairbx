@@ -34,7 +34,7 @@ import {
 
 const MENU_WIDTH = 400;
 const MENU_MAX_HEIGHT = 520;
-const CURRENT_CONNECTOR_VERSION = "0.2.7";
+const CURRENT_CONNECTOR_VERSION = "0.2.8";
 
 /** @deprecated Prefer computeAnchoredMenuPosition — kept for existing Studio pair tests. */
 export function computeStudioPairMenuPosition(buttonRect, options) {
@@ -758,7 +758,7 @@ export default function StudioPairControl({
           updateMenuPosition();
           setOpen((current) => !current);
         }}
-        className={`inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-bold transition-all ${
+        className={`inline-flex min-h-11 items-center gap-2 rounded-xl border px-3 py-2 text-xs font-bold transition-all sm:min-h-0 ${
           pluginUpdateRequired
             ? "border-amber-400/30 bg-amber-400/10 text-amber-300 hover:bg-amber-400/20"
             : pluginRepairing

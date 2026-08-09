@@ -12,6 +12,7 @@ const {
   renderAppRoute,
   shouldRedirectToPreferredHost,
 } = require("./productionRouting");
+const renderHandler = require("../api/render");
 
 const html = '<!doctype html><html><head><title>NexusRBX</title></head><body><div id="root"></div></body></html>';
 const validIconId = "omFibOqM24B7fVibHfan";
@@ -82,6 +83,22 @@ test("vercel redirect config uses a permanent non-www to www redirect", () => {
   assert.deepEqual(redirect.has, [{ type: "host", value: "nexusrbx.com" }]);
 });
 
+test("legacy legal aliases permanently redirect to the canonical legal routes", () => {
+  const config = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "vercel.json"), "utf8"));
+  const redirects = new Map(config.redirects.map((entry) => [entry.source, entry]));
+
+  assert.deepEqual(redirects.get("/privacy"), {
+    source: "/privacy",
+    destination: "/legal/privacy",
+    permanent: true,
+  });
+  assert.deepEqual(redirects.get("/terms"), {
+    source: "/terms",
+    destination: "/legal/terms",
+    permanent: true,
+  });
+});
+
 test("non-www nested path preserves path and query in redirect target", () => {
   assert.equal(buildPreferredHostLocation("/docs?x=1", "nexusrbx.com"), "https://www.nexusrbx.com/docs?x=1");
 });
@@ -106,6 +123,9 @@ test("route classifier assigns explicit Next public and SPA owners", async () =>
   }
 
   assert.equal(isSpaRoute("/script/example-share"), true);
+  assert.equal(isSpaRoute("/assets/example-asset"), true);
+  assert.equal(isSpaRoute("/icons-market/example-icon"), true);
+  assert.equal(isSpaRoute("/support/example-ticket"), true);
   assert.equal(isSpaRoute("/auth/callback"), true);
   assert.equal(isSpaRoute("/__/auth/handler"), true);
   assert.equal(isNextPublicRoute("/ai"), false);
@@ -201,6 +221,39 @@ test("marketplace filter URLs are noindex application routes", async () => {
   assert.equal(route.frontend, "spa");
 });
 
+test("malformed icon path escapes return 404 noindex instead of throwing", async () => {
+  for (const pathname of ["/icons/%", "/icons/%E0%A4%A"]) {
+    const route = await classifyRoute(pathname, { iconExists, iconStatus });
+    assert.equal(route.status, 404, pathname);
+    assert.equal(route.frontend, "none", pathname);
+    assert.equal(route.indexable, false, pathname);
+    assert.equal(route.canonicalPath, null, pathname);
+
+    const headers = new Map();
+    const response = {
+      statusCode: 0,
+      body: "",
+      setHeader(name, value) { headers.set(String(name).toLowerCase(), value); },
+      end(body = "") { this.body = String(body); },
+    };
+    await renderHandler({ query: { path: pathname }, url: pathname }, response);
+    assert.equal(response.statusCode, 404, pathname);
+    assert.equal(headers.get("x-robots-tag"), "noindex, nofollow", pathname);
+    assert.match(response.body, /name="robots" content="noindex, nofollow"/, pathname);
+  }
+});
+
+test("marketplace detail URLs are SPA-owned without colliding with public icon URLs", async () => {
+  const marketplace = await classifyRoute("/icons-market/live-icon-id", { iconExists, iconStatus });
+  assert.equal(marketplace.status, 200);
+  assert.equal(marketplace.indexable, false);
+  assert.equal(marketplace.frontend, "spa");
+
+  const publicIcon = await classifyRoute("/icons/live-icon-id", { iconExists, iconStatus });
+  assert.equal(publicIcon.status, 404);
+  assert.equal(publicIcon.frontend, "none");
+});
+
 test("route classifier preserves valid app callback routes", async () => {
   const route = await classifyRoute("/__/auth/handler", { iconExists });
   assert.equal(route.status, 200);
@@ -229,15 +282,20 @@ test("vercel rewrites enumerate route owners without a broad fallback", () => {
     "/billing",
     "/signin",
     "/signup",
+    "/forgot-password",
     "/subscribe",
     "/contact",
-    "/privacy",
-    "/terms",
+    "/support",
+    "/support/:ticketId",
+    "/admin/support",
     "/tools/icon-generator",
+    "/assets",
+    "/assets/:assetId",
     "/icons-market",
+    "/icons-market/:id",
     "/script/:id",
     "/debug/entitlements",
-    "/__/auth/:path*",
+    "/verify-email",
     "/auth/:path*",
   ];
 
@@ -246,6 +304,12 @@ test("vercel rewrites enumerate route owners without a broad fallback", () => {
     assert.doesNotMatch(source, /\(\?!|\.\*/);
     assert.notEqual(source, "/:path*");
   });
+
+  const firebaseAuthRewrite = config.rewrites.find((entry) => entry.source === "/__/auth/:path*");
+  assert.ok(firebaseAuthRewrite, "missing Firebase auth helper rewrite");
+  assert.equal(firebaseAuthRewrite.destination, "https://nexusrbx.firebaseapp.com/__/auth/:path*");
+  assert.equal(sources.includes("/privacy"), false);
+  assert.equal(sources.includes("/terms"), false);
 });
 
 test("render function package includes split public export and SPA shell", () => {
@@ -263,6 +327,17 @@ test("sitemap uses only the preferred www host", () => {
   const locs = [...sitemap.matchAll(/<loc>(.*?)<\/loc>/g)].map((match) => match[1]);
   assert.ok(locs.length > 0);
   locs.forEach((loc) => assert.ok(loc.startsWith("https://www.nexusrbx.com"), loc));
+});
+
+test("core sitemap contains only canonical public routes", () => {
+  const sitemap = fs.readFileSync(path.join(__dirname, "..", "public", "sitemaps", "core.xml"), "utf8");
+  const locs = [...sitemap.matchAll(/<loc>https:\/\/www\.nexusrbx\.com(.*?)<\/loc>/g)]
+    .map((match) => match[1] || "/");
+
+  assert.deepEqual(locs, ["/", "/downloads", "/pricing"]);
+  for (const route of ["/contact", "/privacy", "/terms", "/tools/icon-generator"]) {
+    assert.equal(sitemap.includes(`<loc>https://www.nexusrbx.com${route}</loc>`), false, route);
+  }
 });
 
 test("robots.txt points at the preferred sitemap host", () => {

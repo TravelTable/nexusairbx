@@ -28,14 +28,15 @@ const releaseManifest = {
   },
 };
 
-function setPlatform(value) {
+function setPlatform(value, userAgent = value) {
   Object.defineProperty(window.navigator, "platform", { configurable: true, value });
+  Object.defineProperty(window.navigator, "userAgent", { configurable: true, value: userAgent });
 }
 
 describe("DownloadsContent", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    setPlatform("MacIntel");
+    setPlatform("MacIntel", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)");
   });
 
   afterEach(() => {
@@ -79,7 +80,7 @@ describe("DownloadsContent", () => {
 
   test("tracks only the public page and detected platform before a download", async () => {
     global.fetch = jest.fn().mockRejectedValue(new Error("offline"));
-    setPlatform("Win32");
+    setPlatform("Win32", "Mozilla/5.0 (Windows NT 10.0; Win64; x64)");
     render(<DownloadsContent />);
     await screen.findByRole("alert");
 

@@ -275,11 +275,21 @@ export const DOC_PAGES = [
         "title": "Install From Roblox Creator Store",
         "blocks": [
           {
+            "type": "cards",
+            "items": [
+              {
+                "title": "Official NexusRBX AI plugin",
+                "body": "Open the verified NexusRBX AI listing in the Roblox Creator Store.",
+                "href": "https://create.roblox.com/store/asset/83865885181263/NexusRBX-Ai"
+              }
+            ]
+          },
+          {
             "type": "steps",
             "items": [
               {
                 "title": "Open the Roblox Creator Store",
-                "body": "Open the Roblox Creator Store: the official Roblox Creator Store listing when available."
+                "body": "Use the official NexusRBX AI listing linked above."
               },
               {
                 "title": "Search for NexusRBX AI if you are not using a direct link",
@@ -2395,7 +2405,7 @@ export const DOC_PAGES = [
               [
                 "User needs to reinstall or update plugin",
                 "Local install is broken or outdated.",
-                "Remove the plugin from Studio plugin management, reinstall from the official Roblox Creator Store listing when available, then restart Studio."
+                "Remove the plugin from Studio plugin management, reinstall from the official Roblox Creator Store listing, then restart Studio."
               ]
             ]
           }
@@ -3441,7 +3451,7 @@ export const LEGAL_PAGES = [
           {
             type: "paragraph",
             text:
-              "The existing /terms and /privacy application routes remain available for compatibility. The /legal pages are indexable public pages designed for clearer reading, navigation, and printing.",
+              "The legacy /terms and /privacy URLs redirect to these canonical /legal pages. The /legal pages are indexable public pages designed for clearer reading, navigation, and printing.",
           },
         ],
       },

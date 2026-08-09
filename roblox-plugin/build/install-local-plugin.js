@@ -1,14 +1,21 @@
 #!/usr/bin/env node
 
 const fs = require("fs");
-const os = require("os");
 const path = require("path");
 const { randomUUID } = require("crypto");
+const { resolvePluginsDirectory } = require("./plugin-install-path.js");
 
 const pluginRoot = path.resolve(__dirname, "..");
 const bundledPath = path.join(pluginRoot, "NexusRBXStudioBridge.plugin.lua");
 const buildRbxmxPath = path.join(pluginRoot, "build", "NexusRBXStudioBridge.rbxmx");
-const pluginsDir = path.join(os.homedir(), "Documents", "Roblox", "Plugins");
+const pluginsDir = resolvePluginsDirectory({
+  onFallback(error, fallbackPath) {
+    console.warn(
+      `Could not resolve the Windows local app-data folder (${error.message}); ` +
+        `falling back to ${fallbackPath}`,
+    );
+  },
+});
 const installedPath = path.join(pluginsDir, "NexusRBXStudioBridge.rbxmx");
 const buildOnly = process.argv.includes("--build-only");
 const fromBundle = process.argv.includes("--from-bundle");

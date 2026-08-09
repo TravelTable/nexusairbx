@@ -43,6 +43,39 @@ import { useTutorial } from "../../components/onboarding/useTutorial";
 import useAiPageZoom from "../../hooks/useAiPageZoom";
 
 const WORKSPACE_DRAWER_WIDTH_KEY = "nexusrbx:workspace-drawer-width";
+const PROJECT_SIDEBAR_MODAL_QUERY = "(max-width: 1199px)";
+
+function readProjectSidebarModalViewport() {
+  if (typeof window === "undefined") return false;
+  if (typeof window.matchMedia === "function") {
+    return window.matchMedia(PROJECT_SIDEBAR_MODAL_QUERY).matches;
+  }
+  return window.innerWidth < 1200;
+}
+
+function useProjectSidebarModalViewport() {
+  const [matches, setMatches] = useState(readProjectSidebarModalViewport);
+
+  useEffect(() => {
+    if (typeof window.matchMedia === "function") {
+      const media = window.matchMedia(PROJECT_SIDEBAR_MODAL_QUERY);
+      const handleChange = (event) => setMatches(event.matches);
+      setMatches(media.matches);
+      if (typeof media.addEventListener === "function") {
+        media.addEventListener("change", handleChange);
+        return () => media.removeEventListener("change", handleChange);
+      }
+      media.addListener(handleChange);
+      return () => media.removeListener(handleChange);
+    }
+
+    const handleResize = () => setMatches(window.innerWidth < 1200);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  return matches;
+}
 
 function readWorkspaceDrawerWidth() {
   if (typeof window === "undefined") return WORKSPACE_DRAWER_DEFAULT_WIDTH;
@@ -174,7 +207,74 @@ export default function AgentWorkspaceLayout({ controller }) {
   const previousArtifactFileCountRef = useRef(null);
   const tutorial = useTutorial();
   const aiPageRef = useRef(null);
+  const projectSidebarRef = useRef(null);
+  const sidebarToggleRef = useRef(null);
+  const projectSidebarModalViewport = useProjectSidebarModalViewport();
+  const projectSidebarIsModal = generatorMode === "agent_build"
+    && sidebarOpen
+    && projectSidebarModalViewport;
   useAiPageZoom(aiPageRef);
+
+  const closeProjectSidebar = useCallback((restoreFocus = true) => {
+    setSidebarOpen(false);
+    if (!restoreFocus || typeof window === "undefined") return;
+    const focusToggle = () => sidebarToggleRef.current?.focus();
+    if (typeof window.requestAnimationFrame === "function") {
+      window.requestAnimationFrame(focusToggle);
+    } else {
+      window.setTimeout(focusToggle, 0);
+    }
+  }, [setSidebarOpen]);
+
+  useEffect(() => {
+    if (!sidebarOpen) return undefined;
+
+    const handleKeyDown = (event) => {
+      if (event.defaultPrevented) return;
+      if (event.key === "Escape") {
+        event.preventDefault();
+        closeProjectSidebar(true);
+        return;
+      }
+      if (event.key !== "Tab" || !projectSidebarIsModal) return;
+
+      const focusable = Array.from(projectSidebarRef.current?.querySelectorAll(
+        'button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+      ) || []).filter((element) => !element.hasAttribute("hidden") && element.getAttribute("aria-hidden") !== "true");
+      if (!focusable.length) return;
+
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      const focusIsInside = projectSidebarRef.current?.contains(document.activeElement);
+      if (event.shiftKey && (!focusIsInside || document.activeElement === first)) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && (!focusIsInside || document.activeElement === last)) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+
+    let focusFrame = null;
+    if (projectSidebarIsModal) {
+      const focusFirstControl = () => {
+        projectSidebarRef.current
+          ?.querySelector('button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])')
+          ?.focus();
+      };
+      focusFrame = typeof window.requestAnimationFrame === "function"
+        ? window.requestAnimationFrame(focusFirstControl)
+        : window.setTimeout(focusFirstControl, 0);
+    }
+
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      if (focusFrame == null) return;
+      if (typeof window.cancelAnimationFrame === "function") window.cancelAnimationFrame(focusFrame);
+      else window.clearTimeout(focusFrame);
+    };
+  }, [closeProjectSidebar, projectSidebarIsModal, sidebarOpen]);
 
   useEffect(() => {
     try {
@@ -1193,7 +1293,7 @@ export default function AgentWorkspaceLayout({ controller }) {
   };
 
   return (
-    <div className="fixed inset-0 overflow-hidden" role="application" aria-label="Nexus AI Workspace">
+    <div className="fixed inset-0 overflow-hidden">
       <div ref={aiPageRef} className="ai-page relative flex flex-col overflow-hidden font-sans">
       <div className="flex min-h-0 flex-1 overflow-hidden">
         {/* LEFT: projects and chats */}
@@ -1204,14 +1304,20 @@ export default function AgentWorkspaceLayout({ controller }) {
               aria-label="Close project sidebar"
               className="nexus-project-sidebar-backdrop"
               data-open={sidebarOpen}
-              tabIndex={sidebarOpen ? 0 : -1}
-              onClick={() => setSidebarOpen(false)}
+              tabIndex={-1}
+              aria-hidden="true"
+              onClick={() => closeProjectSidebar(true)}
             />
             <aside
+              id="project-sidebar"
+              ref={projectSidebarRef}
               className="nexus-project-sidebar z-40 flex min-h-0 shrink-0 flex-col overflow-hidden border-r border-white/[.06] bg-[#0d0d0f]"
               data-open={sidebarOpen}
               aria-label="Project sidebar"
+              role={projectSidebarIsModal ? "dialog" : undefined}
+              aria-modal={projectSidebarIsModal ? "true" : undefined}
               aria-hidden={!sidebarOpen}
+              inert={sidebarOpen ? undefined : ""}
             >
               <SidebarContent
                 scripts={scripts}
@@ -1225,7 +1331,7 @@ export default function AgentWorkspaceLayout({ controller }) {
                 onSelectChat={(id) => {
                   chat.openChatById(id);
                   setActiveTab("chat");
-                  if (window.innerWidth < 1200) setSidebarOpen(false);
+                  if (projectSidebarModalViewport) closeProjectSidebar(true);
                 }}
                 onDeleteChat={chat.handleDeleteChat}
                 onRenameChat={chat.handleRenameChat}
@@ -1233,32 +1339,43 @@ export default function AgentWorkspaceLayout({ controller }) {
                 user={user}
                 authReady={authReady}
                 notify={notify}
-                isMobile={typeof window !== "undefined" && window.innerWidth < 1200}
-                onSelect={() => setSidebarOpen(false)}
-                onCollapse={() => setSidebarOpen(false)}
+                isMobile={projectSidebarModalViewport}
+                onSelect={() => closeProjectSidebar(true)}
+                onCollapse={() => closeProjectSidebar(true)}
               />
             </aside>
           </>
         )}
 
         {/* CENTER: Studio agent chat */}
-        <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+        <main
+          className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden"
+          aria-hidden={projectSidebarIsModal ? "true" : undefined}
+          inert={projectSidebarIsModal ? "" : undefined}
+        >
           <SiteHeader
             variant="workspace"
             robloxStatusOverride={roblox?.status ?? null}
             robloxLoadingOverride={Boolean(roblox?.loading)}
             workspaceLeft={(
               <>
-                <button
-                  type="button"
-                  onClick={() => setSidebarOpen(!sidebarOpen)}
-                  className={`grid h-8 w-8 shrink-0 place-items-center rounded-md transition-[background-color,color] focus-ring ${sidebarOpen ? "bg-[#00f5d4]/10 text-[#00f5d4]" : "text-gray-400 hover:bg-white/[0.05] hover:text-white"}`}
-                  title="Toggle sidebar"
-                  aria-label="Toggle sidebar"
-                >
-                  <Menu className="h-4 w-4" />
-                </button>
-                <div className="hidden h-4 w-px bg-white/10 xl:block" aria-hidden="true" />
+                {generatorMode === "agent_build" ? (
+                  <>
+                    <button
+                      ref={sidebarToggleRef}
+                      type="button"
+                      onClick={() => (sidebarOpen ? closeProjectSidebar(true) : setSidebarOpen(true))}
+                      className={`grid h-11 w-11 shrink-0 place-items-center rounded-md transition-[background-color,color] focus-ring xl:h-8 xl:w-8 ${sidebarOpen ? "bg-[#00f5d4]/10 text-[#00f5d4]" : "text-gray-400 hover:bg-white/[0.05] hover:text-white"}`}
+                      title="Toggle sidebar"
+                      aria-label="Toggle sidebar"
+                      aria-controls="project-sidebar"
+                      aria-expanded={sidebarOpen}
+                    >
+                      <Menu className="h-4 w-4" />
+                    </button>
+                    <div className="hidden h-4 w-px bg-white/10 xl:block" aria-hidden="true" />
+                  </>
+                ) : null}
                 <div data-tour="mode-switcher" className="hidden shrink-0 md:inline-flex">
                   <Segmented
                     size="sm"

@@ -1,4 +1,9 @@
-import { filterMarketplaceIcons, isMacOsMetadataArtifact, isMarketplaceEligible } from "./iconMarket";
+import {
+  filterMarketplaceIcons,
+  getAuthenticatedIconDetailPath,
+  isMacOsMetadataArtifact,
+  isMarketplaceEligible,
+} from "./iconMarket";
 
 describe("iconMarket", () => {
   it("filters macOS zip metadata artifacts", () => {
@@ -20,5 +25,9 @@ describe("iconMarket", () => {
     expect(filterMarketplaceIcons(icons)).toEqual([icons[1]]);
     expect(isMacOsMetadataArtifact(icons[0])).toBe(true);
     expect(isMarketplaceEligible(icons[1])).toBe(true);
+  });
+
+  it("keeps authenticated icon details under the marketplace namespace", () => {
+    expect(getAuthenticatedIconDetailPath("sword / rare")).toBe("/icons-market/sword%20%2F%20rare");
   });
 });

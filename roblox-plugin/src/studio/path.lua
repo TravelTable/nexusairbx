@@ -12,11 +12,11 @@ local function canonicalizePath(path)
 	raw = raw:gsub("^%s+", ""):gsub("%s+$", "")
 	raw = raw:gsub("\\", "/"):gsub("/+$", "")
 	raw = raw:gsub("^game[/.]", "")
+	raw = raw:gsub("^Services[/.]", "")
 
 	local dottedPrefixes = {
-		["Services." .. starterPlayerService .. ".StarterPlayerScripts"] = starterPlayerServicePath .. "/StarterPlayerScripts",
-		[starterPlayerService .. ".StarterPlayerScripts"] = starterPlayerServicePath .. "/StarterPlayerScripts",
-		["StarterPlayerScripts"] = starterPlayerServicePath .. "/StarterPlayerScripts",
+		[starterPlayerService .. ".StarterPlayerScripts"] = starterPlayerService .. "/StarterPlayerScripts",
+		["StarterPlayerScripts"] = starterPlayerService .. "/StarterPlayerScripts",
 	}
 	for dottedPrefix, canonicalPrefix in pairs(dottedPrefixes) do
 		if raw == dottedPrefix then

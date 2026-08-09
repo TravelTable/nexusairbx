@@ -11,6 +11,10 @@ const MAX_READ_BATCH = 20;
 // backend/server.js accepts JSON request bodies up to 2 MiB. Leave enough room
 // for the acknowledgement envelope and JSON metadata around the command result.
 const MAX_COMMAND_RESULT_BYTES = 1_500_000;
+const SNAPSHOT_BATCH_COMMANDS = new Set([
+  "create_script", "create_instance", "update_properties", "update_attributes", "update_tags",
+  "rename_instance", "move_instance", "duplicate_instance", "delete_instance",
+]);
 
 export class CommandExecutor {
   #catalog: ToolCatalog;
@@ -110,9 +114,9 @@ export class CommandExecutor {
     let actualSource: string;
     try { actualSource = await this.readSource(path, signal); }
     catch (error) {
-      throw new ConnectorError("APPLY_UNVERIFIED", "The script was created but its post-write read failed.", { cause: error });
+      return await this.rollbackRoutineMutation(data, "The script was created but its post-write read failed.", error);
     }
-    if (actualSource !== source) throw new ConnectorError("APPLY_UNVERIFIED", "The created script source did not match after rereading it.");
+    if (actualSource !== source) return await this.rollbackRoutineMutation(data, "The created script source did not match after rereading it.");
     return successBase(command, true, {
       operation: command.type, ...data, affectedPaths: [path], resultingHashes: { [path]: sha256(actualSource) },
       hashAlgorithm: "sha256", verificationChecks: [{ type: "source_exact_match", path, passed: true }],
@@ -124,27 +128,92 @@ export class CommandExecutor {
     if (!Array.isArray(operations) || operations.length < 1 || operations.length > 50) {
       throw new ConnectorError("COMMAND_PAYLOAD_INVALID", "batch_operations requires 1-50 operations.");
     }
+    const nestedCommands: StudioCommand[] = [];
+    const claimedPaths: string[] = [];
+    for (const raw of operations) {
+      if (!isRecord(raw) || typeof raw.type !== "string" || !isRecord(raw.payload) || raw.type === "batch_operations") {
+        throw new ConnectorError("COMMAND_PAYLOAD_INVALID", "A batch operation is malformed.");
+      }
+      if (!SNAPSHOT_BATCH_COMMANDS.has(raw.type) || !this.#catalog.hasCommand(raw.type)) {
+        throw new ConnectorError("MCP_TOOL_UNAVAILABLE", `Batch command unavailable for snapshot-safe execution: ${raw.type}`);
+      }
+      const nested = { id: `${command.id}:${nestedCommands.length}`, type: raw.type, payload: raw.payload as JsonObject };
+      this.#routines.validate(nested.type, nested.payload);
+      for (const path of batchMutationFootprint(nested)) {
+        if (claimedPaths.some((claimed) => pathsOverlap(claimed, path))) {
+          throw new ConnectorError("BATCH_PATH_OVERLAP", `Atomic batch operations overlap at ${path}.`);
+        }
+        claimedPaths.push(path);
+      }
+      nestedCommands.push(nested);
+    }
     const results: JsonValue[] = [];
     const snapshots: JsonValue[] = [];
     try {
-      for (const raw of operations) {
-        if (!isRecord(raw) || typeof raw.type !== "string" || !isRecord(raw.payload) || raw.type === "batch_operations") {
-          throw new ConnectorError("COMMAND_PAYLOAD_INVALID", "A batch operation is malformed.");
-        }
-        const nested = { id: `${command.id}:${results.length}`, type: raw.type, payload: raw.payload as JsonObject };
-        if (!this.#catalog.hasCommand(nested.type)) throw new ConnectorError("MCP_TOOL_UNAVAILABLE", `Batch command unavailable: ${nested.type}`);
+      for (const nested of nestedCommands) {
         const result = await this.executeSupported(nested, signal);
         if (result.success !== true || result.verified !== true) throw new ConnectorError("BATCH_OPERATION_FAILED", `Batch operation failed: ${nested.type}`);
-        if (Array.isArray(result.snapshots)) snapshots.push(...result.snapshots);
+        if (!Array.isArray(result.snapshots) || result.snapshots.length < 1) throw new ConnectorError("ROUTINE_RESULT_INVALID", `Batch operation omitted snapshots: ${nested.type}`);
+        snapshots.push(...result.snapshots);
         results.push(result);
       }
+      await this.#routines.run("record_last_batch", { snapshots: snapshots.slice().reverse() }, signal);
     } catch (error) {
+      const cause = asConnectorError(error);
+      const innerRollbackUnverified = cause.code === "ROLLBACK_FAILED" || cause.code === "BATCH_ROLLBACK_FAILED";
+      const failedOperationSnapshots = Array.isArray(cause.details?.snapshots) ? cause.details.snapshots : [];
       if (command.payload.atomic !== false && snapshots.length > 0) {
-        await this.#routines.run("restore_snapshot", { snapshots: snapshots.reverse() }, signal).catch(() => undefined);
+        let rollback: JsonObject;
+        try {
+          rollback = await this.#routines.run("restore_snapshot", { snapshots: snapshots.slice().reverse() });
+        } catch (rollbackError) {
+          const rollbackCause = asConnectorError(rollbackError);
+          throw new ConnectorError("BATCH_ROLLBACK_FAILED", "The batch failed and its rollback could not be verified.", {
+            details: { causeCode: cause.code, rollbackCode: rollbackCause.code, snapshots, failedOperationSnapshots },
+            cause: rollbackCause,
+          });
+        }
+        if (innerRollbackUnverified) {
+          throw new ConnectorError("BATCH_ROLLBACK_FAILED", "A batch operation failed compensation; prior operations were restored but the current operation remains unverified.", {
+            details: { causeCode: cause.code, snapshots, failedOperationSnapshots, priorRollback: rollback },
+            cause,
+          });
+        }
+        throw new ConnectorError("BATCH_ROLLED_BACK", "The batch failed and every applied mutation was restored.", {
+          details: { causeCode: cause.code, snapshots, rollback },
+          cause,
+        });
       }
-      throw error;
+      if (snapshots.length > 0) {
+        throw new ConnectorError("BATCH_PARTIAL_APPLY", "A non-atomic batch failed after one or more mutations were applied.", {
+          details: { causeCode: cause.code, snapshots, failedOperationSnapshots, completedOperations: results.length },
+          cause,
+        });
+      }
+      if (innerRollbackUnverified) {
+        throw new ConnectorError("BATCH_ROLLBACK_FAILED", "A batch operation failed and its compensation could not be verified.", {
+          details: { causeCode: cause.code, failedOperationSnapshots },
+          cause,
+        });
+      }
+      throw cause;
     }
     return successBase(command, true, { operation: command.type, results, snapshots, verificationChecks: [{ type: "batch_complete", passed: true }] });
+  }
+
+  private async rollbackRoutineMutation(data: JsonObject, message: string, cause?: unknown): Promise<never> {
+    const snapshots = Array.isArray(data.snapshots) ? data.snapshots : [];
+    try {
+      const rollback = await this.#routines.run("restore_snapshot", { snapshots: snapshots.slice().reverse() });
+      throw new ConnectorError("APPLY_ROLLED_BACK", message, { details: { snapshots, rollback }, cause });
+    } catch (rollbackError) {
+      if (rollbackError instanceof ConnectorError && rollbackError.code === "APPLY_ROLLED_BACK") throw rollbackError;
+      const rollbackCause = asConnectorError(rollbackError);
+      throw new ConnectorError("ROLLBACK_FAILED", `${message} Rollback could not be verified.`, {
+        details: { snapshots, rollbackCode: rollbackCause.code },
+        cause: rollbackCause,
+      });
+    }
   }
 
   private async insertCreatorStoreAsset(command: StudioCommand, signal?: AbortSignal): Promise<JsonObject> {
@@ -155,6 +224,9 @@ export class CommandExecutor {
     const targetParentPath = requirePath(command.payload, "targetParentPath");
     if (!/^(?:game\/)?(?:Workspace|ReplicatedStorage|ServerStorage)(?:\/|$)/.test(targetParentPath)) {
       throw new ConnectorError("DESTINATION_NOT_ALLOWED", "Creator Store assets may only be placed in an approved service.");
+    }
+    if (/^(?:game\/)?ServerStorage\/NexusMCP(?:Snapshots|State|Receipts|Quarantine)(?:\/|$)/i.test(targetParentPath)) {
+      throw new ConnectorError("DESTINATION_NOT_ALLOWED", "Connector-owned ServerStorage state cannot be an asset destination.");
     }
     const nonce = sha256(`${command.id}:${assetId}`).slice(0, 24);
     const prepared = await this.#routines.run("prepare_asset_quarantine", { nonce }, signal);
@@ -649,6 +721,32 @@ export function nexusStableHash(source: string): string {
 function matchesSourceHash(source: string, expected: string): boolean {
   const normalized = expected.trim().toLowerCase();
   return normalized === sha256(source) || normalized === nexusStableHash(source);
+}
+
+function batchMutationFootprint(command: StudioCommand): string[] {
+  const source = requirePath(command.payload, "path");
+  if (command.type === "rename_instance") {
+    const name = typeof command.payload.newName === "string"
+      ? command.payload.newName
+      : requireBoundedString(command.payload, "name", 1, 160);
+    const parent = source.replace(/\/[^/]+$/, "");
+    return [source, `${parent}/${name}`];
+  }
+  if (command.type === "move_instance") {
+    if (typeof command.payload.newPath === "string") return [source, requirePath(command.payload, "newPath")];
+    const parent = requirePath(command.payload, "newParentPath").replace(/\/$/, "");
+    const name = source.split("/").at(-1) || "";
+    return [source, `${parent}/${name}`];
+  }
+  if (command.type === "duplicate_instance") return [requirePath(command.payload, "newPath")];
+  return [source];
+}
+
+function pathsOverlap(left: string, right: string): boolean {
+  const normalize = (value: string): string => value.replace(/^game\//i, "").replace(/\/$/, "").toLowerCase();
+  const a = normalize(left);
+  const b = normalize(right);
+  return a === b || a.startsWith(`${b}/`) || b.startsWith(`${a}/`);
 }
 
 function requirePath(record: JsonObject, key: string): string {

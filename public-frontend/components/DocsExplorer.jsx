@@ -745,6 +745,7 @@ export default function DocsExplorer({
   const [sectionCopyState, setSectionCopyState] = useState({ id: "", status: "idle" });
   const [clipboardNotice, setClipboardNotice] = useState("");
   const searchTriggerRef = useRef(null);
+  const restoreSearchFocusRef = useRef(false);
   const sidebarTriggerRef = useRef(null);
   const sectionIds = useMemo(() => page.sections.map((section) => section.id), [page.sections]);
   const sectionKey = sectionIds.join("|");
@@ -781,10 +782,10 @@ export default function DocsExplorer({
     setIsSearchOpen(true);
   };
 
-  const closeSearch = () => {
+  const closeSearch = useCallback(() => {
+    restoreSearchFocusRef.current = true;
     setIsSearchOpen(false);
-    window.requestAnimationFrame(() => searchTriggerRef.current?.focus?.());
-  };
+  }, []);
 
   const closeSidebar = useCallback(() => {
     setIsSidebarOpen(false);
@@ -798,6 +799,16 @@ export default function DocsExplorer({
   useEffect(() => {
     setRecentSearches(readRecentSearches());
   }, []);
+
+  useEffect(() => {
+    if (isSearchOpen || !restoreSearchFocusRef.current) return undefined;
+    restoreSearchFocusRef.current = false;
+    const trigger = searchTriggerRef.current;
+    const frame = window.requestAnimationFrame(() => {
+      if (trigger?.isConnected) trigger.focus();
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [isSearchOpen]);
 
   useEffect(() => {
     if (!isSidebarOpen) return undefined;

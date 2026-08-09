@@ -94,8 +94,10 @@ export class ToolCatalog {
       commands.add("write_script");
       commands.add("patch_script");
     }
-    if (targetToolsReady && this.executeLuau) {
+    if (targetToolsReady && this.executeLuau && this.readScript) {
       commands.add("create_script");
+    }
+    if (targetToolsReady && this.executeLuau) {
       commands.add("get_selection");
       for (const command of INSTANCE_COMMANDS) commands.add(command);
       for (const command of SNAPSHOT_COMMANDS) commands.add(command);

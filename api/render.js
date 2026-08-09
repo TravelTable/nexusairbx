@@ -2,6 +2,7 @@ const fs = require("fs");
 const path = require("path");
 const {
   classifyRoute,
+  decodePathSegment,
   normalizePathname,
   renderAppRoute,
 } = require("../server/productionRouting");
@@ -164,9 +165,10 @@ function publicHtmlCandidates(pathname) {
   const relativePath = normalized === "/" ? "index" : normalized.replace(/^\/+/, "");
   if (!relativePath || relativePath.includes("..")) return [];
 
-  const encodedRelativePath = relativePath
-    .split("/")
-    .map((segment) => encodeURIComponent(decodeURIComponent(segment)))
+  const decodedSegments = relativePath.split("/").map(decodePathSegment);
+  if (decodedSegments.some((segment) => segment === null || segment === "." || segment === "..")) return [];
+  const encodedRelativePath = decodedSegments
+    .map((segment) => encodeURIComponent(segment))
     .join("/");
   const variants = Array.from(new Set([relativePath, encodedRelativePath]));
   const roots = [PUBLIC_EXPORT_DIR, PUBLIC_OUT_DIR];
@@ -277,8 +279,8 @@ module.exports = async function render(req, res) {
 
     const iconMatch = pathname.match(/^\/icons\/([^/]+)$/);
     if (iconMatch) {
-      const id = decodeURIComponent(iconMatch[1]);
-      if (loadGeneratedIconIds().has(id)) {
+      const id = decodePathSegment(iconMatch[1]);
+      if (id !== null && loadGeneratedIconIds().has(id)) {
         const served = serveStaticFile(res, [
           path.join(PUBLIC_EXPORT_DIR, "icons", id, "index.html"),
           path.join(PUBLIC_EXPORT_DIR, "icons", `${id}.html`),

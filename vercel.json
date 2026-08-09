@@ -48,6 +48,16 @@
       ],
       "destination": "https://www.nexusrbx.com/:path*",
       "permanent": true
+    },
+    {
+      "source": "/privacy",
+      "destination": "/legal/privacy",
+      "permanent": true
+    },
+    {
+      "source": "/terms",
+      "destination": "/legal/terms",
+      "permanent": true
     }
   ],
   "rewrites": [
@@ -230,6 +240,10 @@
       "destination": "/api/render?path=/signup"
     },
     {
+      "source": "/forgot-password",
+      "destination": "/api/render?path=/forgot-password"
+    },
+    {
       "source": "/subscribe",
       "destination": "/api/render?path=/subscribe"
     },
@@ -238,20 +252,36 @@
       "destination": "/api/render?path=/contact"
     },
     {
-      "source": "/privacy",
-      "destination": "/api/render?path=/privacy"
+      "source": "/support",
+      "destination": "/api/render?path=/support"
     },
     {
-      "source": "/terms",
-      "destination": "/api/render?path=/terms"
+      "source": "/support/:ticketId",
+      "destination": "/api/render?path=/support/:ticketId"
+    },
+    {
+      "source": "/admin/support",
+      "destination": "/api/render?path=/admin/support"
     },
     {
       "source": "/tools/icon-generator",
       "destination": "/api/render?path=/tools/icon-generator"
     },
     {
+      "source": "/assets",
+      "destination": "/api/render?path=/assets"
+    },
+    {
+      "source": "/assets/:assetId",
+      "destination": "/api/render?path=/assets/:assetId"
+    },
+    {
       "source": "/icons-market",
       "destination": "/api/render?path=/icons-market"
+    },
+    {
+      "source": "/icons-market/:id",
+      "destination": "/api/render?path=/icons-market/:id"
     },
     {
       "source": "/script/:id",
@@ -260,6 +290,10 @@
     {
       "source": "/debug/entitlements",
       "destination": "/api/render?path=/debug/entitlements"
+    },
+    {
+      "source": "/verify-email",
+      "destination": "/api/render?path=/verify-email"
     },
     {
       "source": "/__/auth/:path*",

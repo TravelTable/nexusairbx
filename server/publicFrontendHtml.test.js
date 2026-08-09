@@ -159,7 +159,9 @@ test("homepage raw HTML is meaningful before client JavaScript", () => {
   );
   assert.equal(extractCanonical(html), "https://www.nexusrbx.com/");
   assert.match(html, /Generate a focused Luau script from one prompt, or use the Studio agent to plan coordinated changes across multiple files and Roblox services\./);
-  assert.match(html, />Generate</);
+  assert.match(html, /data-generation-intent-form="homepage" aria-busy="false"/);
+  assert.match(html, /<button[^>]*type="submit"[^>]*disabled=""[^>]*>Generate(?: with AI)?<\/button>/);
+  assert.match(html, /id="homepage-prompt-message"[^>]*>Your prompt is saved locally as a generation intent/);
   assert.match(html, /AI-Powered Code Generation/);
   assert.match(html, /Real-time Debugging &amp; Optimization/);
   assert.match(html, /Roblox API Integration/);
@@ -201,9 +203,19 @@ test("homepage raw HTML is meaningful before client JavaScript", () => {
   assert.doesNotMatch(html, /Monaco|AgentWorkspaceLayout|CodeEditorTabs/);
 });
 
+test("homepage installer trust copy distinguishes signed macOS from unsigned Windows", () => {
+  const html = readHtml("/");
+  assert.match(html, /macOS is signed and notarized; Windows is currently unsigned/);
+  assert.doesNotMatch(html, /Signed installers for macOS and Windows/);
+});
+
 test("downloads raw HTML is meaningful and fails closed before release verification", () => {
   const html = readHtml("/downloads");
   assert.equal(extractTitle(html), "Download NexusRBX Connector for macOS and Windows");
+  assert.equal(
+    extractMetaContent(html, "description"),
+    "Download the NexusRBX Connector for macOS (Developer ID signed and notarized) or Windows 10 and 11 (currently unsigned).",
+  );
   assert.equal(extractH1(html), "Connect NexusRBX to Roblox Studio");
   assert.equal(extractCanonical(html), "https://www.nexusrbx.com/downloads");
   assert.equal(countCanonical(html), 1);
@@ -214,6 +226,8 @@ test("downloads raw HTML is meaningful and fails closed before release verificat
   assert.match(html, /Checking release…/);
   assert.match(html, /href="\/downloads"/);
   assert.match(html, /href="\/docs\/troubleshooting"/);
+  assert.match(html, /href="\/#features"/);
+  assert.doesNotMatch(html, /href="#features"/);
   assert.doesNotMatch(html, /href="[^"]+\.(?:dmg|exe)"/i);
   assert.doesNotMatch(html, /pairing code|connector token|access token/i);
 });
@@ -355,9 +369,11 @@ test("docs and legal pages are present in public sitemaps", () => {
   });
 });
 
-test("downloads page is present in the core sitemap", () => {
+test("core sitemap contains only canonical public pages", () => {
   const coreSitemap = fs.readFileSync(path.join(__dirname, "..", "public", "sitemaps", "core.xml"), "utf8");
   assert.match(coreSitemap, /<loc>https:\/\/www\.nexusrbx\.com\/downloads<\/loc>/);
+  assert.match(coreSitemap, /<loc>https:\/\/www\.nexusrbx\.com\/pricing<\/loc>/);
+  assert.doesNotMatch(coreSitemap, /\/(?:contact|privacy|terms|tools\/icon-generator)<\/loc>/);
 });
 
 test("public frontend CSS includes mobile landing layout rules", () => {
@@ -413,6 +429,7 @@ test("icon sitemap publishes only the deterministic capped qualified set", () =>
   assert.match(iconsXml, /<image:loc>https:\/\/cdn\.nexusrbx\.com\/icons\/alpha0001\.png<\/image:loc>/);
   assert.doesNotMatch(iconsXml, /charlie003|thin00004|private05|deleted06/);
   assert.doesNotMatch(iconsXml, /<priority>/);
+  assert.equal(result.counts.core, 3);
   assert.equal(result.counts.icons, 2);
   assert.equal(result.counts.qualifiedIcons, 3);
   assert.equal(result.counts.publishedIcons, 2);
@@ -420,6 +437,13 @@ test("icon sitemap publishes only the deterministic capped qualified set", () =>
   assert.equal(result.counts.excludedIcons, 3);
   assert.deepEqual(result.report.published.map((icon) => icon.id), ["alpha0001", "bravo0002"]);
   assert.deepEqual(result.report.unpublishedQualified.map((icon) => icon.id), ["charlie003"]);
+  const publishedIds = new Set(result.report.published.map((icon) => icon.id));
+  result.report.published.forEach((icon) => {
+    icon.relatedIcons.forEach((related) => {
+      assert.ok(publishedIds.has(related.id), `${icon.id} links to unpublished icon ${related.id}`);
+      assert.equal(related.path, `/icons/${encodeURIComponent(related.id)}`);
+    });
+  });
   assert.equal(result.report.exclusionCounts.thin_or_duplicate_name, 1);
   assert.equal(result.report.exclusionCounts.not_public, 1);
   assert.equal(result.report.exclusionCounts.deleted_or_restricted, 1);
@@ -473,6 +497,20 @@ test("icon raw HTML contains server-rendered metadata structured data and visibl
   assert.ok(jsonLd.some((entry) => entry["@type"] === "BreadcrumbList"));
   assert.ok(jsonLd.some((entry) => entry["@type"] === "ImageObject"));
   assert.equal(jsonLd.some((entry) => entry["@type"] === "Product"), false);
+});
+
+test("every related icon href targets the published prerender manifest", () => {
+  const publishedPaths = new Set(
+    generatedIcons.map((icon) => `/icons/${encodeURIComponent(String(icon.id))}`),
+  );
+
+  for (const icon of generatedIcons) {
+    const html = readHtml(`/icons/${icon.id}`);
+    const relatedHrefs = [...html.matchAll(/href="(\/icons\/[^"#?]+)"/g)].map((match) => match[1]);
+    relatedHrefs.forEach((href) => {
+      assert.ok(publishedPaths.has(href), `/icons/${icon.id} links to unpublished route ${href}`);
+    });
+  }
 });
 
 test("icon pagination collector retrieves records beyond one thousand icons and keeps page errors recoverable", async () => {

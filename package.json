@@ -2,6 +2,7 @@
   "name": "nexusrbx-react",
   "version": "0.1.0",
   "private": true,
+  "packageManager": "yarn@1.22.22",
   "dependencies": {
     "@hugeicons/core-free-icons": "^4.2.2",
     "@hugeicons/react": "^1.1.9",
@@ -72,7 +73,8 @@
     "postcss": "^8.5.6",
     "rbxm-parser": "^1.1.4",
     "shadcn": "^4.12.0",
-    "tailwindcss": "^3.3.5"
+    "tailwindcss": "^3.3.5",
+    "typescript": "4.9.5"
   },
   "scripts": {
     "postinstall": "node scripts/patch-lobehub-obsidian.js",
@@ -121,6 +123,7 @@
   },
   "jest": {
     "moduleNameMapper": {
+      "^@radix-ui/primitive/is-development$": "<rootDir>/node_modules/@radix-ui/primitive/dist/internal/is-development.true.js",
       "^mermaid$": "<rootDir>/src/testMocks/mermaid.js",
       "^react-markdown$": "<rootDir>/src/testMocks/reactMarkdown.jsx",
       "^remark-gfm$": "<rootDir>/src/testMocks/remarkGfm.js",

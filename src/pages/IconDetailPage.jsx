@@ -13,17 +13,16 @@ import {
   Box,
   Upload
 } from "lib/icons";
-import { motion } from "framer-motion";
-import { Helmet } from "react-helmet-async";
 import { auth } from "../firebase";
 import { onAuthStateChanged } from "firebase/auth";
 import { exportIcon } from "../lib/uiBuilderApi";
 import { useBilling } from "../context/BillingContext";
 import NexusRBXFooter from "../components/NexusRBXFooter";
 import ProNudgeModal from "../components/ProNudgeModal";
+import IconMarketCard from "../components/icons/IconMarketCard";
 import { BACKEND_URL } from "../config";
-import { canonicalUrl } from "../lib/seo";
 import { filterMarketplaceIcons, isMarketplaceEligible } from "../lib/iconMarket";
+import NoIndexMeta from "../components/seo/NoIndexMeta";
 
 const API_BASE = BACKEND_URL.replace(/\/+$/, "");
 
@@ -131,24 +130,23 @@ export default function IconDetailPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#0D0D0D] flex items-center justify-center">
+      <main className="min-h-screen bg-[#0D0D0D] flex items-center justify-center" aria-busy="true">
+        <NoIndexMeta title="Loading Icon | NexusRBX" />
         <Loader2 className="w-12 h-12 text-[#9b5de5] animate-spin" />
-      </div>
+        <span className="sr-only">Loading icon details</span>
+      </main>
     );
   }
 
   if (error || !icon) {
     return (
-      <div className="min-h-screen bg-[#0D0D0D] flex flex-col items-center justify-center text-white p-4">
-        <Helmet>
-          <title>Icon Not Found | NexusRBX</title>
-          <meta name="robots" content="noindex, nofollow" />
-        </Helmet>
+      <main className="min-h-screen bg-[#0D0D0D] flex flex-col items-center justify-center text-white p-4">
+        <NoIndexMeta title="Icon Not Found | NexusRBX" />
         <h1 className="text-4xl font-black mb-4">Icon Not Found</h1>
         <button onClick={() => navigate("/icons-market")} className="flex items-center gap-2 text-[#00f5d4] font-bold">
           <ArrowLeft className="w-5 h-5" /> Back to Market
         </button>
-      </div>
+      </main>
     );
   }
 
@@ -161,15 +159,14 @@ export default function IconDetailPage() {
 
   return (
     <div className="min-h-screen bg-[#0D0D0D] text-white font-sans flex flex-col relative overflow-x-hidden">
-      <Helmet>
-        <title>{`${icon.name} - Roblox Icon | NexusRBX`}</title>
-        <meta name="description" content={`Download the ${icon.name} icon for your Roblox game. Professional ${icon.style} style ${icon.category} asset. One-click export to Studio.`} />
-        <link rel="canonical" href={canonicalUrl(`/icons/${id}`)} />
+      <NoIndexMeta
+        title={`${icon.name} - Roblox Icon | NexusRBX`}
+        description={`Download the ${icon.name} icon for your Roblox game. Professional ${icon.style} style ${icon.category} asset. One-click export to Studio.`}
+      >
         <meta property="og:title" content={`${icon.name} - Professional Roblox Icon`} />
-        <meta property="og:url" content={canonicalUrl(`/icons/${id}`)} />
         <meta property="og:image" content={icon.imageUrl} />
         <meta name="twitter:card" content="summary_large_image" />
-      </Helmet>
+      </NoIndexMeta>
 
       <main className="flex-grow pt-12 pb-20 px-4 md:px-8">
         <div className="max-w-7xl mx-auto">
@@ -318,18 +315,8 @@ export default function IconDetailPage() {
                 <Sparkles className="w-6 h-6 text-[#9b5de5]" /> Related Icons
               </h2>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6">
-                {relatedIcons.map(rel => (
-                  <motion.div
-                    key={rel.id}
-                    whileHover={{ y: -5 }}
-                    onClick={() => navigate(`/icons/${rel.id}`)}
-                    className="bg-white/[0.02] border border-white/10 rounded-2xl p-4 cursor-pointer hover:border-[#9b5de5]/50 transition-all"
-                  >
-                    <div className="aspect-square rounded-xl bg-black/40 mb-3 flex items-center justify-center overflow-hidden">
-                      <img src={rel.imageUrl} alt={rel.name} className="w-full h-full object-contain" />
-                    </div>
-                    <h4 className="text-[10px] font-bold text-gray-400 truncate">{rel.name}</h4>
-                  </motion.div>
+                {relatedIcons.map((rel) => (
+                  <IconMarketCard key={rel.id} icon={rel} isPremium={isPremium} headingLevel={3} />
                 ))}
               </div>
             </section>

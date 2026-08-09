@@ -4,7 +4,7 @@ const path = require("node:path");
 const test = require("node:test");
 
 const pluginRoot = path.resolve(__dirname, "..");
-const read = (relativePath) => fs.readFileSync(path.join(pluginRoot, relativePath), "utf8");
+const read = (relativePath) => fs.readFileSync(path.join(pluginRoot, relativePath), "utf8").replace(/\r\n?/g, "\n");
 
 function section(source, startMarker, endMarker) {
   const start = source.indexOf(startMarker);

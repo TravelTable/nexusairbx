@@ -37,6 +37,12 @@ describe("connector view mapping", () => {
     expect(getMainView({ ...base, state: "awaiting_pairing" })).toBe("pairing");
     expect(getMainView(base)).toBe("connecting");
   });
+
+  it("keeps a retained offline session out of the pairing flow", () => {
+    expect(getMainView({ ...base, state: "connector_offline" })).toBe("offline");
+    expect(getMainView({ ...base, state: "stopped" })).toBe("offline");
+    expect(getMainView({ ...base, state: "error" })).toBe("offline");
+  });
 });
 
 describe("relative activity", () => {

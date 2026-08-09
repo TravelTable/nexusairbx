@@ -66,7 +66,11 @@ describe("QuickScriptWorkspace", () => {
     expect(props.onGenerate).not.toHaveBeenCalled();
 
     fireEvent.keyDown(prompt, { key: "Enter" });
-    fireEvent.click(screen.getByRole("button", { name: "Generate script" }));
+    const generate = screen.getByRole("button", { name: "Generate script" });
+    expect(generate.className).toContain("h-11");
+    expect(generate.className).toContain("w-11");
+    expect(generate.className).toContain("md:h-10");
+    fireEvent.click(generate);
     expect(props.onGenerate).toHaveBeenCalledTimes(2);
   });
 

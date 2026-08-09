@@ -20,7 +20,7 @@ export default function CompanionDownloadSection() {
             </p>
             <p className="mt-3 inline-flex items-center gap-2 text-xs font-medium text-zinc-500">
               <ShieldCheck size={15} className="text-emerald-400" aria-hidden="true" />
-              Signed installers for macOS and Windows
+              macOS is signed and notarized; Windows is currently unsigned
             </p>
           </div>
         </div>

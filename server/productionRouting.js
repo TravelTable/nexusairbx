@@ -42,23 +42,33 @@ const NEXT_PUBLIC_ROUTES = new Set([
 ]);
 
 const SPA_ROUTES = new Set([
+  "/admin/support",
   "/ai",
+  "/assets",
   "/billing",
   "/contact",
   "/debug/entitlements",
+  "/forgot-password",
   "/icons-market",
-  "/privacy",
   "/settings",
   "/signin",
   "/signup",
   "/subscribe",
-  "/terms",
+  "/support",
   "/tools/icon-generator",
+  "/verify-email",
 ]);
 
 const SPA_ROUTE_PREFIXES = [
   "/__/auth/",
   "/auth/",
+];
+
+const SPA_ROUTE_PATTERNS = [
+  /^\/assets\/[^/]+$/,
+  /^\/icons-market\/[^/]+$/,
+  /^\/script\/[^/]+$/,
+  /^\/support\/[^/]+$/,
 ];
 
 const PUBLIC_INDEXABLE_ROUTES = NEXT_PUBLIC_ROUTES;
@@ -96,8 +106,12 @@ function canonicalUrl(pathname) {
   return normalized === "/" ? `${PREFERRED_ORIGIN}/` : `${PREFERRED_ORIGIN}${normalized}`;
 }
 
-function isScriptRoute(pathname) {
-  return /^\/script\/[^/]+$/.test(pathname);
+function decodePathSegment(value) {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return null;
+  }
 }
 
 function isNextPublicRoute(pathname) {
@@ -107,7 +121,7 @@ function isNextPublicRoute(pathname) {
 function isSpaRoute(pathname) {
   const normalized = normalizePathname(pathname);
   if (SPA_ROUTES.has(normalized)) return true;
-  if (isScriptRoute(pathname)) return true;
+  if (SPA_ROUTE_PATTERNS.some((pattern) => pattern.test(normalized))) return true;
   return SPA_ROUTE_PREFIXES.some((prefix) => normalized.startsWith(prefix));
 }
 
@@ -127,7 +141,16 @@ async function classifyRoute(pathname, { iconExists, iconStatus } = {}) {
 
   const iconMatch = normalized.match(/^\/icons\/([^/]+)$/);
   if (iconMatch) {
-    const id = decodeURIComponent(iconMatch[1]);
+    const id = decodePathSegment(iconMatch[1]);
+    if (id === null) {
+      return {
+        status: 404,
+        indexable: false,
+        canonicalPath: null,
+        frontend: "none",
+        routeType: "missing-icon",
+      };
+    }
     if (typeof iconStatus === "function") {
       const status = await iconStatus(id);
       if (status === "indexable") {
@@ -263,6 +286,7 @@ module.exports = {
   buildPreferredHostLocation,
   canonicalUrl,
   classifyRoute,
+  decodePathSegment,
   isNextPublicRoute,
   isSpaRoute,
   normalizePathname,

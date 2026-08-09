@@ -4,8 +4,19 @@ import StructuredData from "../../../components/StructuredData";
 import icons from "../../../data/generated/qualified-icons.json";
 import { buildPublicMetadata, canonicalUrl, SITE_NAME } from "../../../../src/lib/seo";
 
+const publishedIconPaths = new Map(icons.map((icon) => [String(icon.id), `/icons/${encodeURIComponent(icon.id)}`]));
+
 function iconById(id) {
   return icons.find((icon) => icon.id === id) || null;
+}
+
+function publishedRelatedIcons(icon) {
+  return (Array.isArray(icon.relatedIcons) ? icon.relatedIcons : [])
+    .filter((related) => publishedIconPaths.has(String(related?.id || "")))
+    .map((related) => ({
+      ...related,
+      path: publishedIconPaths.get(String(related.id)),
+    }));
 }
 
 export function generateStaticParams() {
@@ -115,7 +126,7 @@ export default async function IconPage({ params }) {
           <div className="section-inner">
             <h2>Related icons</h2>
             <div className="related-icon-grid">
-              {icon.relatedIcons.map((related) => (
+              {publishedRelatedIcons(icon).map((related) => (
                 <a className="related-icon-card" href={related.path} key={related.id}>
                   <img src={related.imageUrl} alt="" aria-hidden="true" />
                   <span>{related.name}</span>

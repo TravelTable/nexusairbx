@@ -18,7 +18,9 @@ test("Quick Script mobile workspace keeps prompt reachable and code contained", 
   assert.match(workspace, /quick-script-code-scroll/);
   assert.match(workspace, /tabIndex=\{0\}/);
   assert.match(workspace, /Generated Luau code\. Scroll to read\./);
-  assert.match(workspace, /className="h-8 px-4 text-xs font-bold bg-\[#00f5d4\]/);
+  assert.match(workspace, /data-tour="generate-btn"/);
+  assert.match(workspace, /className="flex h-11 w-11 shrink-0 items-center justify-center[^\"]*md:h-10 md:w-10"/);
+  assert.match(workspace, /aria-label=\{isGenerating \? "Generation in progress"/);
 });
 
 test("Quick Script code highlighter is isolated behind a lazy client chunk", () => {
@@ -30,11 +32,15 @@ test("Quick Script code highlighter is isolated behind a lazy client chunk", () 
   assert.match(codeBlock, /wrapLongLines=\{false\}/);
 });
 
-test("AI workspace uses mobile viewport units and safe toast placement", () => {
+test("AI workspace is viewport-bound and keeps safe toast placement", () => {
   const layout = read("src/pages/ai/AgentWorkspaceLayout.jsx");
+  const theme = read("src/styles/aiTheme.css");
 
-  assert.match(layout, /h-\[100dvh\]/);
-  assert.match(layout, /min-h-\[100svh\]/);
+  assert.match(layout, /className="fixed inset-0 overflow-hidden"/);
+  assert.match(layout, /className="ai-page relative flex flex-col overflow-hidden font-sans"/);
+  assert.match(theme, /width: 100%/);
+  assert.match(theme, /height: 100%/);
+  assert.doesNotMatch(theme, /--ai-zoom/);
   assert.match(layout, /flex-1 min-h-0 flex flex-col/);
   assert.match(layout, /bottom-\[max\(1rem,env\(safe-area-inset-bottom\)\)\]/);
 });

@@ -12,12 +12,8 @@ const {
 
 const CORE_ROUTES = [
   { path: "/", lastmod: null },
-  { path: "/contact", lastmod: null },
   { path: "/downloads", lastmod: null },
   { path: "/pricing", lastmod: null },
-  { path: "/privacy", lastmod: null },
-  { path: "/terms", lastmod: null },
-  { path: "/tools/icon-generator", lastmod: null },
 ];
 
 const DOC_ROUTES = [
@@ -150,12 +146,31 @@ function iconRoutesFromQualifiedIcons(icons = []) {
   })));
 }
 
+function restrictRelatedIconsToPublished(icons = []) {
+  const publishedPaths = new Map(
+    icons
+      .map((icon) => [String(icon?.id || ""), String(icon?.path || "")])
+      .filter(([id, iconPath]) => id && iconPath),
+  );
+  return icons.map((icon) => ({
+    ...icon,
+    relatedIcons: (Array.isArray(icon.relatedIcons) ? icon.relatedIcons : [])
+      .filter((related) => publishedPaths.has(String(related?.id || "")))
+      .map((related) => ({
+        ...related,
+        path: publishedPaths.get(String(related.id)),
+      })),
+  }));
+}
+
 function buildSitemapDocuments({
   icons = [],
   publishedIconLimit = prerenderIconLimit(),
 } = {}) {
   const report = buildIconQualityReport(icons);
-  const published = selectPrerenderIcons(report.qualified, publishedIconLimit);
+  const published = restrictRelatedIconsToPublished(
+    selectPrerenderIcons(report.qualified, publishedIconLimit),
+  );
   const publishedIds = new Set(published.map((icon) => icon.id));
   const unpublishedQualified = report.qualified.filter((icon) => !publishedIds.has(icon.id));
   const iconRoutes = iconRoutesFromQualifiedIcons(published);
@@ -218,6 +233,7 @@ module.exports = {
   dedupeRoutes,
   escapeXml,
   iconRoutesFromQualifiedIcons,
+  restrictRelatedIconsToPublished,
   sortRoutes,
   sitemapIndex,
   urlSet,

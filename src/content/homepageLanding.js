@@ -87,7 +87,7 @@ export const homepageWorkflow = [
 ];
 
 export const homepageFooterLinks = [
-  { label: "Features", href: "#features" },
+  { label: "Features", href: "/#features" },
   { label: "Downloads", href: "/downloads" },
   { label: "Pricing", href: "/subscribe" },
   { label: "Documentation", href: "/docs" },

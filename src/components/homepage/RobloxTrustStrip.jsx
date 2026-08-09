@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { Gamepad2, Code } from "lib/icons";
 import { shouldUseLocalDevelopmentAuth } from "lib/localDevelopmentAuth";
 
@@ -26,8 +27,46 @@ function GoogleIcon({ className = "" }) {
   );
 }
 
-export default function RobloxTrustStrip() {
+function useHomepageAuthState(providedUser, providedAuthReady) {
+  const [publicAuth, setPublicAuth] = useState({ user: null, authReady: false });
+  const hasProvidedAuth = typeof providedAuthReady === "boolean";
+
+  useEffect(() => {
+    if (hasProvidedAuth) return undefined;
+
+    let cancelled = false;
+    let unsubscribe = () => {};
+
+    async function subscribeToAuth() {
+      try {
+        const [{ auth }, { onAuthStateChanged }] = await Promise.all([
+          import("../../firebase"),
+          import("firebase/auth"),
+        ]);
+        if (cancelled) return;
+        unsubscribe = onAuthStateChanged(auth, (user) => {
+          setPublicAuth({ user, authReady: true });
+        });
+      } catch (_) {
+        if (!cancelled) setPublicAuth({ user: null, authReady: true });
+      }
+    }
+
+    void subscribeToAuth();
+    return () => {
+      cancelled = true;
+      unsubscribe();
+    };
+  }, [hasProvidedAuth]);
+
+  return hasProvidedAuth
+    ? { user: providedUser || null, authReady: providedAuthReady }
+    : publicAuth;
+}
+
+export default function RobloxTrustStrip({ user: providedUser, authReady: providedAuthReady }) {
   const localDevelopmentAuth = shouldUseLocalDevelopmentAuth();
+  const { user, authReady } = useHomepageAuthState(providedUser, providedAuthReady);
   const pillClass =
     "inline-flex items-center gap-2 bg-white/[0.06] border border-white/10 rounded-full px-4 py-2 text-xs font-semibold text-zinc-400";
 
@@ -39,11 +78,15 @@ export default function RobloxTrustStrip() {
           Roblox OAuth Verified
         </span>
 
-        {localDevelopmentAuth ? (
+        {localDevelopmentAuth || (authReady && user) ? (
           <a href="/ai" className={pillClass + " transition hover:text-zinc-300 hover:border-white/20"}>
             <Code className="h-3.5 w-3.5" />
-            Local developer session
+            {localDevelopmentAuth ? "Local developer session" : "Open AI workspace"}
           </a>
+        ) : !authReady ? (
+          <span className={pillClass} role="status">
+            Checking account...
+          </span>
         ) : (
           <a href="/signin" className={pillClass + " transition hover:text-zinc-300 hover:border-white/20"}>
             <GoogleIcon />

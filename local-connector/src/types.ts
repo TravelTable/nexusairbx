@@ -100,6 +100,8 @@ export interface StudioTarget extends JsonObject {
   label: string;
   placeId: string;
   placeName: string;
+  universeId: string;
+  placeSignature: string;
 }
 
 export interface DiscoveredTool {

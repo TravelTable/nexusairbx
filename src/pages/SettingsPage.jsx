@@ -56,6 +56,7 @@ import ModelSwitcher from "../components/ai/ModelSwitcher";
 import BrutalAuditor from "../components/ai/BrutalAuditor";
 import FreeUsageMeter from "../components/FreeUsageMeter";
 import ProNudgeModal from "../components/ProNudgeModal";
+import SettingsSignInAction from "../components/settings/SettingsSignInAction";
 import { Alert, AlertDescription, AlertTitle } from "../components/shadcn/alert";
 import {
   AlertDialog,
@@ -1624,7 +1625,7 @@ export default function SettingsPage() {
               icon={Shield}
               title="Permission denied"
               description="Sign in to edit persisted settings and account data."
-              action={<Button asChild><Link to="/login">Sign in</Link></Button>}
+              action={<SettingsSignInAction />}
             />
           </Panel>
         ) : (

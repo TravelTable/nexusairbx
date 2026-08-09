@@ -10,7 +10,6 @@ import {
   X,
   Info,
   ShieldCheck,
-  ArrowRight,
   Palette,
   Box,
   Plus,
@@ -31,6 +30,7 @@ import ProNudgeModal from "../components/ProNudgeModal";
 import { useBilling } from "../context/BillingContext";
 import { BACKEND_URL } from "../config";
 import { filterMarketplaceIcons } from "../lib/iconMarket";
+import IconMarketCard from "../components/icons/IconMarketCard";
 
 const API_BASE = BACKEND_URL.replace(/\/+$/, "");
 
@@ -182,10 +182,6 @@ export default function IconsMarketPage() {
 
   const handleGenerateVariation = (icon) => {
     navigate("/tools/icon-generator", { state: { referenceImage: icon.imageUrl, subject: icon.name } });
-  };
-
-  const openIconDetail = (iconId) => {
-    window.location.assign(`/icons/${encodeURIComponent(iconId)}`);
   };
 
   const handleCreateCollection = async () => {
@@ -433,8 +429,10 @@ export default function IconsMarketPage() {
               </div>
 
               <div className="relative w-full md:w-96">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500" />
+                <label htmlFor="icon-market-search" className="sr-only">Search icons</label>
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500" aria-hidden="true" />
                 <input 
+                  id="icon-market-search"
                   type="text"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
@@ -446,40 +444,13 @@ export default function IconsMarketPage() {
 
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-6">
               {icons.map((icon, index) => (
-                <motion.div
+                <IconMarketCard
                   key={icon.id}
-                  ref={index === icons.length - 1 ? lastIconElementRef : null}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: (index % 20) * 0.02 }}
-                  onClick={() => openIconDetail(icon.id)}
-                  className="group relative bg-white/[0.02] border border-white/10 rounded-2xl p-4 hover:bg-white/[0.05] hover:border-[#9b5de5]/50 transition-all cursor-pointer overflow-hidden"
-                >
-                  {icon.isPro && !isPremium && (
-                    <div className="absolute top-2 right-2 z-20">
-                      <div className="px-2 py-0.5 rounded bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-white text-[8px] font-black uppercase shadow-lg">
-                        Pro
-                      </div>
-                    </div>
-                  )}
-                  
-                  <div className="aspect-square rounded-xl bg-black/40 border border-white/5 mb-4 flex items-center justify-center relative overflow-hidden">
-                    <img 
-                      src={icon.imageUrl} 
-                      alt={icon.name} 
-                      className="w-full h-full object-contain transition-opacity duration-200 group-hover:opacity-95"
-                      loading="lazy"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-center p-4">
-                      <span className="text-[10px] font-bold text-white flex items-center gap-1">
-                        Quick View <ArrowRight className="h-3 w-3" />
-                      </span>
-                    </div>
-                  </div>
-                  
-                  <h4 className="text-xs font-bold text-gray-300 truncate">{icon.name}</h4>
-                  <p className="text-[10px] text-gray-500 font-medium">{icon.style}</p>
-                </motion.div>
+                  icon={icon}
+                  isPremium={isPremium}
+                  observeRef={index === icons.length - 1 ? lastIconElementRef : undefined}
+                  animationDelay={(index % 20) * 0.02}
+                />
               ))}
             </div>
 

@@ -790,11 +790,11 @@ local function canonicalizePath(path)
 	raw = raw:gsub("^%s+", ""):gsub("%s+$", "")
 	raw = raw:gsub("\\", "/"):gsub("/+$", "")
 	raw = raw:gsub("^game[/.]", "")
+	raw = raw:gsub("^Services[/.]", "")
 
 	local dottedPrefixes = {
-		["Services." .. starterPlayerService .. ".StarterPlayerScripts"] = starterPlayerServicePath .. "/StarterPlayerScripts",
-		[starterPlayerService .. ".StarterPlayerScripts"] = starterPlayerServicePath .. "/StarterPlayerScripts",
-		["StarterPlayerScripts"] = starterPlayerServicePath .. "/StarterPlayerScripts",
+		[starterPlayerService .. ".StarterPlayerScripts"] = starterPlayerService .. "/StarterPlayerScripts",
+		["StarterPlayerScripts"] = starterPlayerService .. "/StarterPlayerScripts",
 	}
 	for dottedPrefix, canonicalPrefix in pairs(dottedPrefixes) do
 		if raw == dottedPrefix then
@@ -4722,7 +4722,7 @@ moveInstanceTool = function(payload)
 	if not hashOk then
 		return hashResult
 	end
-	local targetPath = tostring(payload.newPath or "")
+	local targetPath = payload.newPath and canonicalizePath(payload.newPath) or ""
 	local parent = nil
 	local leaf = nil
 	local parentPath = ""
@@ -4737,12 +4737,25 @@ moveInstanceTool = function(payload)
 			return { ok = false, error = "Target parent not found", path = payload.path }
 		end
 	else
-		parent = resolvePath(payload.newParentPath)
+		parentPath = canonicalizePath(payload.newParentPath)
+		parent = resolvePath(parentPath)
 	end
 	if targetPath == "" and not parent then
 		return { ok = false, error = "Target parent not found", path = payload.path }
 	end
 	local destinationName = leaf and leaf ~= "" and leaf or inst.Name
+	local sourcePath = fullPath(inst)
+	local destinationPath = targetPath ~= "" and targetPath or (fullPath(parent) .. "/" .. destinationName)
+	if (parent and (parent == inst or parent:IsDescendantOf(inst)))
+		or string.sub(destinationPath, 1, #sourcePath + 1) == sourcePath .. "/" then
+		return {
+			ok = false,
+			code = "destination_invalid",
+			error = "An instance cannot be moved into its own descendant tree",
+			path = sourcePath,
+			retryable = false,
+		}
+	end
 	local existingTarget = parent and parent:FindFirstChild(destinationName) or nil
 	if existingTarget and existingTarget ~= inst then
 		return {
@@ -4754,9 +4767,8 @@ moveInstanceTool = function(payload)
 		}
 	end
 	local snapshots = {}
-	local oldPath = fullPath(inst)
+	local oldPath = sourcePath
 	appendSnapshotTree(inst, snapshots)
-	local destinationPath = targetPath ~= "" and targetPath or (fullPath(parent) .. "/" .. destinationName)
 	if destinationPath ~= oldPath then
 		appendMissingPathSnapshots(destinationPath, snapshots, {})
 	end
@@ -4794,13 +4806,24 @@ duplicateInstanceTool = function(payload)
 	if not sourceHashOk then
 		return sourceHashResult
 	end
-	local targetPath = tostring(payload.newPath or "")
+	local targetPath = canonicalizePath(payload.newPath)
 	local parts = splitPath(targetPath)
 	local leaf = parts[#parts]
 	local parentPath = #parts > 1 and table.concat(parts, "/", 1, #parts - 1) or ""
 	local parent = parentPath ~= "" and resolvePath(parentPath) or nil
 	if not leaf or leaf == "" or (not parent and payload.createParents == false) then
 		return { ok = false, error = "Could not resolve duplicate target", path = payload.newPath }
+	end
+	local sourcePath = fullPath(inst)
+	if (parent and (parent == inst or parent:IsDescendantOf(inst)))
+		or string.sub(targetPath, 1, #sourcePath + 1) == sourcePath .. "/" then
+		return {
+			ok = false,
+			code = "destination_invalid",
+			error = "An instance cannot be duplicated into its own descendant tree",
+			path = sourcePath,
+			retryable = false,
+		}
 	end
 	local existing = parent and parent:FindFirstChild(leaf) or nil
 	if existing == inst then
@@ -4853,11 +4876,11 @@ duplicateInstanceTool = function(payload)
 	if not mutationOk then
 		return rollbackMutation(snapshots, "duplicate_instance_failed", mutationResult, {
 			path = tostring(payload.newPath or ""),
-			sourcePath = fullPath(inst),
+			sourcePath = sourcePath,
 		})
 	end
 	local clone = mutationResult
-	return { ok = true, path = fullPath(clone), sourcePath = fullPath(inst), snapshots = snapshots }
+	return { ok = true, path = fullPath(clone), sourcePath = sourcePath, snapshots = snapshots }
 end
 
 createScript = function(payload)

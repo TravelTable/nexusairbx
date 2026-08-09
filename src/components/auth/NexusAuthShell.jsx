@@ -17,6 +17,7 @@ export function NexusAuthShell({
   title,
   description,
   children,
+  headingLevel = 1,
 }) {
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#07090f] text-white">
@@ -38,7 +39,11 @@ export function NexusAuthShell({
 
           <Card className="overflow-hidden border-white/10 bg-[#0b0e14]/95 shadow-[0_24px_80px_rgba(0,0,0,0.42)] backdrop-blur-xl">
             <CardHeader className="space-y-2 border-b border-white/10 px-5 py-6 text-center sm:px-8">
-              <CardTitle className="text-2xl font-bold tracking-tight text-white">{title}</CardTitle>
+              {headingLevel === 1 ? (
+                <h1 className="text-2xl font-bold tracking-tight text-white">{title}</h1>
+              ) : (
+                <CardTitle className="text-2xl font-bold tracking-tight text-white">{title}</CardTitle>
+              )}
               {description ? (
                 <CardDescription className="text-sm leading-6 text-zinc-400">{description}</CardDescription>
               ) : null}
@@ -133,6 +138,7 @@ export function AuthTextField({
   className,
   inputClassName,
   describedBy,
+  invalid,
 }) {
   return (
     <div className={cn("grid gap-2", className)}>
@@ -153,6 +159,7 @@ export function AuthTextField({
           placeholder={placeholder}
           disabled={disabled}
           required={required}
+          aria-invalid={invalid || undefined}
           aria-describedby={describedBy}
           className={cn("nexus-input h-11", Icon ? "pl-10" : "", inputClassName)}
         />

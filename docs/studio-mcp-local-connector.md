@@ -108,12 +108,12 @@ Studio MCP tool and its schema pass discovery:
 | `get_studio_context` | `get_studio_state` | Structured, bounded output |
 | `get_output_logs`, `collect_output` | `get_console_output` | Bounded output |
 | `inspect_instances`, `read_instance`, `read_properties` | `inspect_instance` | Edit datamodel, no children/tags, at most 20 paths |
-| `create_script` | `script_read` + `multi_edit` | Direct source only, conflict check, post-read verification |
+| `create_script` | `script_read` + audited `execute_luau` routine | Destination collision check, snapshot-first creation, exact post-read verification, verified compensation on mismatch |
 | `write_script`, `patch_script` | `script_read` + `multi_edit` | Required source hash, conflict check, post-read verification |
 | `get_selection` | audited `execute_luau` routine | Bounded descriptors; no source or arbitrary code |
-| instance create/edit/delete/batch commands | audited `execute_luau` routines | Input allowlists, pre-snapshot, nonce, state verification |
-| `create_snapshot`, `restore_snapshot`, `undo_last_batch` | audited `execute_luau` routines | Pre/post hashes and intervening-edit conflict checks |
-| `insert_creator_store_asset` | `insert_asset` + audited quarantine routines | Server-owned asset identity, sanitization, placement policy, receipt |
+| instance create/edit/delete/batch commands | audited `execute_luau` routines | Input allowlists, existing-parent policy, pre-snapshot, collision checks, nonce, state verification, rollback receipts |
+| `create_snapshot`, `restore_snapshot`, `undo_last_batch` | audited `execute_luau` routines | Non-empty, non-overlapping path receipts; complete mutable-state hashes; guarded restore; intervening-edit checks; pinned last-batch retention |
+| `insert_creator_store_asset` | `insert_asset` + audited quarantine routines | Server-owned asset identity, sanitization, connector-state exclusion, placement policy, receipt |
 | `run_play_test`, `stop_play_test` | `start_stop_play` + `get_studio_state` | Explicit confirmation, bounded polling, cleanup |
 | `run_test_service` | named audited profile + `start_stop_play` | No request accepts executable source |
 
@@ -127,16 +127,37 @@ For script edits, the connector reads the current source first and checks
 
 ```json
 {
-  "code": "source_conflict",
+  "code": "SOURCE_CONFLICT",
   "message": "The script changed after NexusRBX read it.",
   "retryable": true
 }
 ```
 
-For an allowed mutation, the connector records feasible pre-change state,
-executes once, rereads the affected content, and returns `verified: true` only
-after observing the intended state. A failed reread or mismatch returns
-`apply_unverified`; it is never converted to success.
+For an allowed fixed-routine mutation, the connector records pre-change state
+before its first write, executes once, and returns `verified: true` only after a
+state receipt validates. Partial failure triggers verified compensation; an
+exact `create_script` reread mismatch is also restored. A failed compensation
+returns `ROLLBACK_FAILED`, never success. Direct script edit tools still return
+`APPLY_UNVERIFIED` when their outcome cannot be proved.
+
+Instance creation, movement, and duplication require the destination parent to
+already exist so parent creation cannot escape the snapshot boundary. Atomic
+batches are limited to snapshot-producing operations with disjoint paths. Their
+last-batch snapshot folders remain pinned until a newer batch replaces them or
+`undo_last_batch` restores and consumes the record.
+
+Snapshot and restore path sets may not contain duplicates, ancestors, or
+descendants. Conflict hashes deterministically cover every property accepted by
+the fixed-routine property allowlist, as well as script source, attributes, and
+tags. Missing parents, connector-owned destinations, self-descendant
+destinations, and collisions are checked
+before snapshot creation; a race found before the first write removes only the
+temporary snapshot and does not replace the untouched live instance. Mutation
+and asset destinations may never be `NexusMCPSnapshots`, `NexusMCPState`,
+`NexusMCPReceipts`, or `NexusMCPQuarantine` (or anything below those roots).
+If a nested batch operation cannot verify its own compensation, the batch
+returns `BATCH_ROLLBACK_FAILED` even if all earlier operations restore; the
+current operation remains an unknown outcome and is never labeled rolled back.
 
 Mutation retries are conservative. A network timeout after a mutation means the
 outcome may be unknown, so the connector does not blindly execute the mutation
@@ -188,12 +209,12 @@ The installed Studio MCP tool set or schema does not provide a safe mapping for
 that operation. Use the NexusRBX Studio plugin for the command if the UI suggests
 it. The connector does not guess or silently reroute.
 
-### A write reports `source_conflict`
+### A write reports `SOURCE_CONFLICT`
 
 Studio source changed after NexusRBX read it. Refresh or reread the script,
 review the newer content, and issue a new edit. Do not remove the hash guard.
 
-### A write reports `apply_unverified`
+### A write reports `APPLY_UNVERIFIED`
 
 The requested mutation may have been attempted, but the connector could not
 prove the final state. Inspect the target in Studio before retrying.
@@ -215,10 +236,11 @@ the session on the website is the authoritative way to end its backend access.
   end-to-end behavior; mocked tests cannot do that.
 - Supported mappings are deliberately smaller than the complete Studio MCP tool
   list. The first release advertises only exact, schema-compatible mappings.
-- Multi-window target selection is not advertised. Close unrelated Studio
-  windows before a mutation.
-- Nexus snapshot, restore, artifact, native-model, trusted asset insertion, and
-  undo workflows remain plugin-only.
+- Multi-window target selection, fixed-routine snapshots/restore/undo, and
+  quarantined Creator Store insertion are supported when their complete MCP
+  dependencies validate for the active session.
+- Project-manifest/change-history parity and specialized artifact, uploaded
+  model, and native-model workflows remain plugin-only.
 - If a mutation response is lost, the connector reports an unknown or
   unverified outcome and does not blindly retry it.
 
@@ -238,16 +260,19 @@ completed with mocked MCP responses alone:
 6. Read a disposable script, write it with the returned source hash, and confirm
    the connector reports `verified: true` after rereading it.
 7. Change that script manually, send an edit with the old hash, and confirm a
-   `source_conflict` with no overwrite.
+   `SOURCE_CONFLICT` with no overwrite.
 8. Exercise every advertised mutation only on disposable content and confirm
    affected paths and post-change verification.
-9. Request a plugin-only command on the MCP session and confirm
+9. With two Studio windows open, select an enumerated target and confirm a
+   mismatched place, universe, signature, or connection type is rejected before
+   mutation.
+10. Request a plugin-only command on the MCP session and confirm
    `MCP_TOOL_UNAVAILABLE` with no plugin command silently queued.
-10. Disconnect/restart Studio MCP and confirm degraded status, bounded recovery,
+11. Disconnect/restart Studio MCP and confirm degraded status, bounded recovery,
     rediscovery, and capability re-registration.
-11. Run plugin and MCP sessions together for the same user/place and confirm the
+12. Run plugin and MCP sessions together for the same user/place and confirm the
     plugin stays the default when no transport is selected.
-12. Disconnect MCP from the website and confirm its token immediately stops
+13. Disconnect MCP from the website and confirm its token immediately stops
     authenticating while the plugin continues working.
 
 See [Studio MCP security](./studio-mcp-security.md) before changing authentication

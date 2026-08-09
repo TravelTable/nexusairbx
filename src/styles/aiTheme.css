@@ -3,17 +3,27 @@
    This file provides convenience classes for AI-specific surfaces. */
 
 .ai-page {
-  --ai-zoom: 0.8;
   background-color: var(--ai-bg);
   color: var(--ai-text);
-  /* Baseline before the hook runs. AgentWorkspaceLayout replaces these with
-     reciprocal visual-viewport dimensions and the selected scale. */
-  zoom: var(--ai-zoom);
-  width: calc(100% / var(--ai-zoom));
-  height: calc(100% / var(--ai-zoom));
+  width: 100%;
+  height: 100%;
   min-height: 0;
   overflow: hidden;
   box-sizing: border-box;
+}
+
+/* Workspace utility text must remain legible at the user's browser zoom. */
+.ai-page [class~="text-[7px]"],
+.ai-page [class~="text-[8px]"],
+.ai-page [class~="text-[9px]"],
+.ai-page [class~="text-[10px]"],
+.ai-page [class~="text-[11px]"] {
+  font-size: 0.75rem;
+}
+
+.ai-page [class~="text-gray-500"],
+.ai-page [class~="text-gray-600"] {
+  color: var(--ai-text-muted);
 }
 
 .ai-glow-primary {

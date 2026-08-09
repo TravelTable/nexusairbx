@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Github, Mail } from "lib/icons";
 import { auth } from "../firebase";
 import {
@@ -331,12 +331,12 @@ function NexusRBXSignInPage({
             shown={showPassword}
             onToggle={togglePasswordVisibility}
             action={
-              <a
-                href="/forgot-password"
+              <Link
+                to="/forgot-password"
                 className="focus-ring ml-auto rounded-md px-1 text-xs font-semibold text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
               >
                 Forgot password?
-              </a>
+              </Link>
             }
           />
 
@@ -357,11 +357,11 @@ function NexusRBXSignInPage({
             >
               <span>
                 I agree to the{" "}
-                <a href="/terms" className="font-medium text-foreground underline-offset-4 hover:underline">
+                <a href="/legal/terms" className="font-medium text-foreground underline-offset-4 hover:underline">
                   Terms
                 </a>{" "}
                 and{" "}
-                <a href="/privacy" className="font-medium text-foreground underline-offset-4 hover:underline">
+                <a href="/legal/privacy" className="font-medium text-foreground underline-offset-4 hover:underline">
                   Privacy Policy
                 </a>
                 .

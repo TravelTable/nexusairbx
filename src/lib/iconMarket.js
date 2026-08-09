@@ -20,3 +20,7 @@ export function isMarketplaceEligible(icon = {}) {
 export function filterMarketplaceIcons(icons = []) {
   return icons.filter(isMarketplaceEligible);
 }
+
+export function getAuthenticatedIconDetailPath(iconId) {
+  return `/icons-market/${encodeURIComponent(String(iconId || ""))}`;
+}

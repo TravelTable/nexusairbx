@@ -5,7 +5,7 @@ import PublicHeader from "../../components/PublicHeader";
 
 export const metadata = buildPublicMetadata({
   title: "Download NexusRBX Connector for macOS and Windows",
-  description: "Download the signed NexusRBX Connector for macOS Intel, Apple Silicon, or Windows 10 and 11.",
+  description: "Download the NexusRBX Connector for macOS (Developer ID signed and notarized) or Windows 10 and 11 (currently unsigned).",
   path: "/downloads",
 });
 

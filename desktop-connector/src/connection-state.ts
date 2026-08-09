@@ -1,7 +1,7 @@
 import type { CompanionSnapshot, DegradedReason } from "./contracts.js";
 
 const degradedMessages: Partial<Record<Exclude<DegradedReason, null>, string>> = {
-  multiple_studio_windows: "Close extra Studio windows and keep your target experience open.",
+  multiple_studio_windows: "Select the intended open Studio target in the NexusRBX connection panel.",
   target_place_unavailable: "Open the Studio experience you want NexusRBX to use.",
   zero_supported_tools: "Studio MCP connected, but no supported tools were found.",
   cloud_loss: "The local connector is running, but NexusRBX Cloud is unavailable.",

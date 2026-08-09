@@ -339,7 +339,7 @@ export default function QuickScriptWorkspace({
                   type="submit"
                   disabled={!canSubmit}
                   data-tour="generate-btn"
-                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-nexus-cyan text-black transition-[transform,box-shadow,opacity,background-color] duration-150 hover:shadow-[0_0_24px_rgba(0,245,212,0.45)] active:scale-95 focus-ring disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100 motion-reduce:transition-none"
+                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-nexus-cyan text-black transition-[transform,box-shadow,opacity,background-color] duration-150 hover:shadow-[0_0_24px_rgba(0,245,212,0.45)] active:scale-95 focus-ring disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100 motion-reduce:transition-none md:h-10 md:w-10"
                   aria-label={isGenerating ? "Generation in progress" : result ? "Generate updated script" : "Generate script"}
                   title={isGenerating ? "Generation in progress" : result ? "Generate updated script" : "Generate script"}
                 >

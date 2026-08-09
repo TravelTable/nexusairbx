@@ -85,6 +85,24 @@ test("Docs search exposes an accessible combobox and curated common tasks", () =
   );
 });
 
+test("Docs search restores focus after the dialog has unmounted", () => {
+  assert.match(docsExplorerSource, /restoreSearchFocusRef\.current\s*=\s*true/);
+  assert.match(
+    docsExplorerSource,
+    /useEffect\(\(\)\s*=>\s*\{[\s\S]*?if \(isSearchOpen \|\| !restoreSearchFocusRef\.current\)[\s\S]*?requestAnimationFrame\(\(\)\s*=>\s*\{[\s\S]*?trigger\?\.isConnected[\s\S]*?trigger\.focus\(\)[\s\S]*?cancelAnimationFrame\(frame\)/,
+  );
+});
+
+test("installation docs link directly to the official Creator Store listing", () => {
+  const installation = DOC_PAGES.find((page) => page.slug === "installation");
+  assert.ok(installation);
+  assert.match(
+    JSON.stringify(installation),
+    /https:\/\/create\.roblox\.com\/store\/asset\/83865885181263\/NexusRBX-Ai/,
+  );
+  assert.doesNotMatch(JSON.stringify(installation), /listing when available/i);
+});
+
 test("article feedback routes to support with article context", () => {
   assert.doesNotMatch(docsExplorerSource, /saved\s+for\s+this\s+session/i);
   assert.match(docsExplorerSource, /\/contact\?/);

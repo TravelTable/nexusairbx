@@ -494,11 +494,11 @@ function NexusRBXSignUpPage({
           >
             <span>
               I agree to the{" "}
-              <a href="/terms" className="font-medium text-foreground underline-offset-4 hover:underline">
+              <a href="/legal/terms" className="font-medium text-foreground underline-offset-4 hover:underline">
                 Terms
               </a>{" "}
               and{" "}
-              <a href="/privacy" className="font-medium text-foreground underline-offset-4 hover:underline">
+              <a href="/legal/privacy" className="font-medium text-foreground underline-offset-4 hover:underline">
                 Privacy Policy
               </a>
               .

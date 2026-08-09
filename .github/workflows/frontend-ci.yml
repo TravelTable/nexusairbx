@@ -13,8 +13,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
-      # This repository intentionally does not track the root npm lockfile.
-      - run: npm install --no-package-lock --no-audit --no-fund
-      - run: CI=true npm test -- --watchAll=false
-      - run: npm run build
+          cache: yarn
+          cache-dependency-path: yarn.lock
+      - run: yarn install --frozen-lockfile --non-interactive
+      - run: CI=true yarn test --watchAll=false
+      - run: yarn build

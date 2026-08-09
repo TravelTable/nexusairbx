@@ -5,7 +5,7 @@ import HomepageFooter from "../components/homepage/HomepageFooter";
 import { canonicalUrl } from "../lib/seo";
 
 const title = "Download NexusRBX Connector for macOS and Windows";
-const description = "Download the signed NexusRBX Connector for macOS Intel, Apple Silicon, or Windows 10 and 11.";
+const description = "Download the NexusRBX Connector for macOS (Developer ID signed and notarized) or Windows 10 and 11 (currently unsigned).";
 
 export default function DownloadsPage() {
   return (

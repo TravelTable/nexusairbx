@@ -52,6 +52,18 @@ const mutationTool: DiscoveredTool = {
   },
 };
 
+const executeLuauTool: DiscoveredTool = {
+  name: "execute_luau",
+  inputSchema: {
+    type: "object",
+    properties: {
+      code: { type: "string" },
+      datamodel_type: { type: "string", enum: ["Edit"] },
+    },
+    required: ["code", "datamodel_type"],
+  },
+};
+
 const targetTools: DiscoveredTool[] = [
   { name: "list_roblox_studios", inputSchema: { type: "object", properties: {}, required: [] } },
   { name: "set_active_studio", inputSchema: { type: "object", properties: { studio_id: { type: "string" } }, required: ["studio_id"] } },
@@ -145,6 +157,7 @@ class FakeBackend implements BackendClientLike {
   polls = 0;
   acknowledgements: Array<{ id: string; status: CommandReceiptStatus; result: JsonObject }> = [];
   clearCalls = 0;
+  registrationFailures = 0;
   pollHandler: ((poll: number, signal?: AbortSignal) => Promise<StudioCommand | null>) | null = null;
   acknowledgeHandler: ((
     commandId: string,
@@ -169,6 +182,10 @@ class FakeBackend implements BackendClientLike {
     discoveredTools: Array<{ name: string; description?: string }>,
   ): Promise<JsonObject> {
     this.registrations.push({ capabilities, commands: [...supportedCommands], tools: discoveredTools });
+    if (this.registrationFailures > 0) {
+      this.registrationFailures -= 1;
+      throw new ConnectorError("BACKEND_TEMPORARY", "simulated registration outage", { retryable: true });
+    }
     return { ok: true };
   }
   async pollNext(_waitMs: number, signal?: AbortSignal): Promise<StudioCommand | null> {
@@ -341,6 +358,21 @@ test("connector publishes an empty catalog while MCP is unavailable, then reconn
   assert.deepEqual(backend.registrations[1]?.commands, ["get_studio_context", "read_script", "read_scripts"]);
   assert.equal(backend.pings.some((ping) => ping.mcpServerAvailable === false), true);
   assert.equal(backend.acknowledgements[0]?.status, "succeeded");
+});
+
+test("an unavailable capability publication retries after a transient backend failure", async () => {
+  const controller = new AbortController();
+  const backend = new FakeBackend(controller);
+  const mcp = new FakeMcp();
+  mcp.failConnects = 2;
+  backend.registrationFailures = 1;
+  backend.pollHandler = async () => ({ id: "command-retry", type: "read_script", payload: { path: "game.Script" } });
+
+  await new NexusLocalConnector({ config, connectorVersion: "0.1.0-test", backend, mcp, logger })
+    .run("PAIR-CODE", controller.signal);
+
+  assert.equal(backend.registrations.filter((registration) => registration.commands.length === 0).length, 2);
+  assert.deepEqual(backend.registrations.at(-1)?.commands, ["get_studio_context", "read_script", "read_scripts"]);
 });
 
 test("connector reports multiple Studio windows as a recoverable degraded state", async () => {
@@ -785,6 +817,51 @@ test("an uncertain mutation failure is terminal outcome_unknown and is never bli
     "APPLY_UNVERIFIED",
   );
   assert.equal(journal.entries.get(command.id)?.terminalStatus, "outcome_unknown");
+});
+
+test("MUTATION_NOT_APPLIED is a safe failed receipt, not outcome_unknown", async () => {
+  const controller = new AbortController();
+  const backend = new FakeBackend(controller);
+  const mcp = new FakeMcp();
+  const journal = new MemoryCommandJournal();
+  mcp.toolPages = [[executeLuauTool, ...targetTools]];
+  mcp.callToolHandler = async (name, args) => {
+    if (name !== "execute_luau") return undefined;
+    const match = /__nexus_run\(("(?:\\.|[^"\\])*")\)\s*$/.exec(String(args.code || ""));
+    assert.ok(match?.[1]);
+    const input = JSON.parse(JSON.parse(match[1])) as { nonce: string };
+    return { content: [{ type: "text", text: JSON.stringify({
+      version: 1,
+      nonce: input.nonce,
+      ok: false,
+      code: "MUTATION_NOT_APPLIED",
+      message: "destination changed after snapshot",
+      data: { rolledBack: false },
+    }) }] };
+  };
+  const command = reliableCommand({
+    id: "not-applied-mutation",
+    type: "create_instance",
+    payload: { path: "Workspace/NewPart", className: "Part" },
+    targetFence: 1,
+  });
+  backend.pollHandler = async () => command;
+
+  await new NexusLocalConnector({
+    config,
+    connectorVersion: "0.1.0-test",
+    backend,
+    mcp,
+    logger,
+    commandJournal: journal,
+  }).run("PAIR-CODE", controller.signal);
+
+  assert.deepEqual(backend.acknowledgements.map(({ status }) => status), ["received", "started", "failed"]);
+  assert.equal(
+    (backend.acknowledgements.at(-1)?.result.error as JsonObject | undefined)?.code,
+    "MUTATION_NOT_APPLIED",
+  );
+  assert.equal(journal.entries.get(command.id)?.terminalStatus, "failed");
 });
 
 test("losing the lease heartbeat during a mutation aborts work and forces reconciliation", async () => {

@@ -18,7 +18,7 @@ describe("NexusAuthShell", () => {
       </MemoryRouter>
     );
 
-    expect(screen.getByRole("heading", { name: "Welcome back" })).toBeTruthy();
+    expect(screen.getByRole("heading", { level: 1, name: "Welcome back" })).toBeTruthy();
     expect(screen.getByRole("link", { name: "NexusRBX home" }).getAttribute("href")).toBe("/");
     expect(screen.getByRole("button", { name: "Sign in" })).toBeTruthy();
     expect(screen.queryByText("Marketing headline")).toBeNull();

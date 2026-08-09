@@ -9,6 +9,7 @@ import { Label } from "../shadcn/label";
 import { homepagePrompt } from "../../content/homepageLanding";
 import { getExperimentAnalyticsProperties, getHomepageCtaCopy } from "../../lib/experiments";
 import { submitHomepagePrompt, trackHomepagePromptStarted } from "../../lib/homepageActivation";
+import { cn } from "../../lib/utils";
 
 async function trackHomepageEvent(name, properties) {
   const payload = {
@@ -34,6 +35,7 @@ export default function HomepagePrompt({
   surface = "homepage",
   source = surface,
   navigateToAi,
+  className,
 }) {
   const [prompt, setPrompt] = useState("");
   const [error, setError] = useState("");
@@ -86,9 +88,10 @@ export default function HomepagePrompt({
 
   return (
     <form
-      className="mt-7 rounded-2xl border border-white/10 bg-white/[0.04] p-3 shadow-2xl shadow-black/25 backdrop-blur md:max-w-2xl"
+      className={cn("mt-7 rounded-2xl border border-white/10 bg-white/[0.04] p-3 shadow-2xl shadow-black/25 backdrop-blur md:max-w-2xl", className)}
       onSubmit={handleSubmit}
       data-generation-intent-form="homepage"
+      aria-busy={submitting}
     >
       <Label htmlFor="homepage-prompt" className="sr-only">
         {homepagePrompt.label}
@@ -103,6 +106,8 @@ export default function HomepagePrompt({
           placeholder={homepagePrompt.placeholder}
           autoComplete="off"
           disabled={submitting}
+          aria-invalid={Boolean(error)}
+          aria-describedby="homepage-prompt-message"
           className="h-12 flex-1 border-white/10 bg-black/30 px-4 text-base text-white placeholder:text-zinc-500"
         />
         <Button
@@ -117,11 +122,11 @@ export default function HomepagePrompt({
         </Button>
       </div>
       {error ? (
-        <p className="mt-3 text-sm font-semibold text-rose-300" role="alert">
+        <p id="homepage-prompt-message" className="mt-3 text-sm font-semibold text-rose-300" role="alert">
           {error}
         </p>
       ) : (
-        <p className="mt-3 text-xs font-semibold text-zinc-500">
+        <p id="homepage-prompt-message" className="mt-3 text-xs font-semibold text-zinc-500">
           Your prompt is saved locally as a generation intent before opening the AI workspace.
         </p>
       )}

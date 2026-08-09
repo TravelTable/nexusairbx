@@ -21,16 +21,17 @@ const NexusRBXAIPageContainer = lazy(() => import("./pages/AiPage"));
 const NexusRBXHomepageV2 = lazy(() => import("./pages/HomepageV2"));
 const NexusRBXDownloadsPage = lazy(() => import("./pages/DownloadsPage"));
 const NexusRBXContactPageContainer = lazy(() => import("./pages/ContactPage"));
-const NexusRBXPrivacyPageContainer = lazy(() => import("./pages/PrivacyPage"));
 const NexusRBXSubscribePageContainer = lazy(() => import("./pages/SubscribePage"));
 const NexusRBXSignInPageContainer = lazy(() => import("./pages/SignInPage"));
+const NexusRBXForgotPasswordPage = lazy(() => import("./pages/ForgotPasswordPage"));
 const NexusRBXSignUpPageContainer = lazy(() => import("./pages/SignUpPage"));
 const NexusRBXVerifyEmailPage = lazy(() => import("./pages/VerifyEmailPage"));
-const NexusRBXTermsPageContainer = lazy(() => import("./pages/TermsPage"));
 const NexusRBXSettingsPageContainer = lazy(() => import("./pages/SettingsPage"));
 const NexusRBXIconGeneratorPage = lazy(() => import("./pages/IconGeneratorPage"));
+const NexusRBXIconGeneratorUnavailablePage = lazy(() => import("./pages/IconGeneratorUnavailablePage"));
 const NexusRBXAssetLibraryPage = lazy(() => import("./pages/AssetLibraryPage"));
 const NexusRBXAssetDetailPage = lazy(() => import("./pages/AssetDetailPage"));
+const NexusRBXAssetPlatformUnavailablePage = lazy(() => import("./pages/AssetPlatformUnavailablePage"));
 const NexusRBXIconsMarketPage = lazy(() => import("./pages/IconsMarketPage"));
 const NexusRBXIconDetailPage = lazy(() => import("./pages/IconDetailPage"));
 const NexusRBXNotFoundPage = lazy(() => import("./pages/NotFoundPage"));
@@ -44,6 +45,30 @@ const SupportStaffRoute = lazy(() => import("./components/SupportStaffRoute"));
 
 function withSiteShell(element, variant) {
   return <SiteShell variant={variant}>{element}</SiteShell>;
+}
+
+export const AUTHENTICATED_ICON_DETAIL_ROUTE = "/icons-market/:id";
+
+export function IconGeneratorRouteContent({
+  readsEnabled = ASSET_PLATFORM_READS_ENABLED,
+}) {
+  return readsEnabled ? <NexusRBXIconGeneratorPage /> : <NexusRBXIconGeneratorUnavailablePage />;
+}
+
+export function AssetLibraryRouteContent({
+  readsEnabled = ASSET_PLATFORM_READS_ENABLED,
+}) {
+  return readsEnabled
+    ? <NexusRBXAssetLibraryPage />
+    : <NexusRBXAssetPlatformUnavailablePage view="library" />;
+}
+
+export function AssetDetailRouteContent({
+  readsEnabled = ASSET_PLATFORM_READS_ENABLED,
+}) {
+  return readsEnabled
+    ? <NexusRBXAssetDetailPage />
+    : <NexusRBXAssetPlatformUnavailablePage view="detail" />;
 }
 
 function App() {
@@ -70,7 +95,6 @@ function App() {
               "account"
             )}
           />
-          <Route path="/privacy" element={withSiteShell(<NexusRBXPrivacyPageContainer />, "legal")} />
           <Route path="/subscribe" element={withSiteShell(<NexusRBXSubscribePageContainer />, "checkout")} />
           <Route
             path="/signin"
@@ -79,17 +103,13 @@ function App() {
               : withSiteShell(<NexusRBXSignInPageContainer />, "auth")}
           />
           <Route path="/signup" element={withSiteShell(<NexusRBXSignUpPageContainer />, "auth")} />
+          <Route path="/forgot-password" element={withSiteShell(<NexusRBXForgotPasswordPage />, "auth")} />
           <Route path="/verify-email" element={withSiteShell(<NexusRBXVerifyEmailPage />, "auth")} />
-          <Route path="/terms" element={withSiteShell(<NexusRBXTermsPageContainer />, "legal")} />
-          {ASSET_PLATFORM_READS_ENABLED ? (
-            <>
-              <Route path="/tools/icon-generator" element={withSiteShell(<NexusRBXIconGeneratorPage />, "tools")} />
-              <Route path="/assets" element={withSiteShell(<NexusRBXAssetLibraryPage />, "tools")} />
-              <Route path="/assets/:assetId" element={withSiteShell(<NexusRBXAssetDetailPage />, "tools")} />
-            </>
-          ) : null}
+          <Route path="/tools/icon-generator" element={withSiteShell(<IconGeneratorRouteContent />, "tools")} />
+          <Route path="/assets" element={withSiteShell(<AssetLibraryRouteContent />, "tools")} />
+          <Route path="/assets/:assetId" element={withSiteShell(<AssetDetailRouteContent />, "tools")} />
           <Route path="/icons-market" element={withSiteShell(<NexusRBXIconsMarketPage />, "tools")} />
-          <Route path="/icons/:id" element={withSiteShell(<NexusRBXIconDetailPage />, "tools")} />
+          <Route path={AUTHENTICATED_ICON_DETAIL_ROUTE} element={withSiteShell(<NexusRBXIconDetailPage />, "tools")} />
           <Route path="/script/:id" element={withSiteShell(<NexusRBXScriptPage />, "tools")} />
           {/* NEW: on-screen entitlements debugger */}
           <Route path="/debug/entitlements" element={withSiteShell(<AdminRoute><DebugEntitlementsPage /></AdminRoute>, "account")} />

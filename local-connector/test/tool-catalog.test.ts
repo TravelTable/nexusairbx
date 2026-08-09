@@ -36,6 +36,11 @@ const sourceMutation = tool(
 );
 const listStudios = tool("list_roblox_studios", {}, []);
 const setStudio = tool("set_active_studio", { studio_id: { type: "string" } }, ["studio_id"]);
+const executeLuau = tool(
+  "execute_luau",
+  { code: { type: "string" }, datamodel_type: { type: "string", enum: ["Edit"] } },
+  ["code", "datamodel_type"],
+);
 const targetTools = [listStudios, setStudio, state];
 const targeted = (items: DiscoveredTool[]) => [...targetTools, ...items.filter((item) => item.name !== "get_studio_state")];
 
@@ -193,4 +198,12 @@ test("validated full-file line edits support guarded writes but not creation", (
       edits: [{ start_line: 1, end_line: 2, new_text: "new" }],
     },
   });
+});
+
+test("create_script is advertised only when both its fixed routine and readback dependency validate", () => {
+  const routineOnly = new ToolCatalog(targeted([executeLuau]));
+  assert.equal(routineOnly.hasCommand("create_script"), false);
+
+  const routineWithReadback = new ToolCatalog(targeted([executeLuau, read]));
+  assert.equal(routineWithReadback.hasCommand("create_script"), true);
 });

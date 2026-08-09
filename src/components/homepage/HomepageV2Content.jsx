@@ -1,27 +1,22 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect } from "react";
 
 import { trackProductEvent } from "../../lib/productAnalytics";
-import { submitHomepagePrompt, trackHomepagePromptStarted } from "../../lib/homepageActivation";
 import HomepageFeatures from "./HomepageFeatures";
 import HomepageWorkflow from "./HomepageWorkflow";
 import HomepageIntentEvidence from "./HomepageIntentEvidence";
 import HomepageFooter from "./HomepageFooter";
+import HomepagePrompt from "./HomepagePrompt";
 import RobloxTrustStrip from "./RobloxTrustStrip";
 import CompanionDownloadSection from "./CompanionDownloadSection";
 
 export default function HomepageV2Content({
   surface = "homepage",
   navigate,
+  user,
+  authReady,
 }) {
-  const [prompt, setPrompt] = useState("");
-  const [error, setError] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-
-  const submittingRef = useRef(false);
-  const promptStartedRef = useRef(false);
-
   useEffect(() => {
     void trackProductEvent(
       "landing_page_view",
@@ -29,23 +24,6 @@ export default function HomepageV2Content({
       { dedupeKey: "homepage" },
     );
   }, []);
-
-  function handleSubmit(e) {
-    e.preventDefault();
-    if (!prompt.trim() || submitting) return;
-
-    submitHomepagePrompt({
-      inputValue: prompt,
-      method: "button",
-      surface,
-      source: surface,
-      submittingRef,
-      navigate,
-      setError,
-      setLoading: setSubmitting,
-      clearInput: () => setPrompt(""),
-    });
-  }
 
   return (
     <div className="min-h-screen overflow-x-hidden bg-[#07090f] pt-16 text-white">
@@ -55,81 +33,55 @@ export default function HomepageV2Content({
         <div className="absolute -bottom-40 -right-40 h-[420px] w-[420px] rounded-full bg-[#9b5de5]/10 blur-[120px] animate-pulse" />
       </div>
 
-      <section className="flex min-h-[calc(100vh-4rem)] flex-col items-center justify-center overflow-visible px-4 pt-20 pb-16">
-        <div className="relative mb-6 flex items-center justify-center">
-          <div className="absolute h-24 w-24 rounded-full bg-[#00f5d4]/20 blur-2xl" />
-          <img
-            src="/logo.png"
-            alt="NexusRBX logo"
-            width={64}
-            height={64}
-            className="relative h-16 w-16 rounded-xl object-contain"
-          />
-        </div>
-
-        <p className="mb-4 bg-gradient-to-r from-[#00f5d4] to-[#9b5de5] bg-clip-text text-lg font-black uppercase tracking-[0.18em] text-transparent">
-          NexusRBX
-        </p>
-
-        <h1 className="mb-3 text-center text-[clamp(2rem,5vw,3.5rem)] font-black leading-[1.1] tracking-tight text-white">
-          AI Roblox Script Generator for Studio
-        </h1>
-
-        <p className="mb-8 max-w-2xl text-center text-lg text-zinc-400">
-          Generate a focused Luau script from one prompt, or use the Studio agent to plan
-          coordinated changes across multiple files and Roblox services.
-        </p>
-
-        <div className="w-full max-w-2xl rounded-2xl border border-white/10 bg-white/[0.04] p-3 shadow-2xl shadow-black/25 backdrop-blur-xl">
-          <form
-            onSubmit={handleSubmit}
-            className="flex items-center gap-2"
-            data-generation-intent-form="homepage"
-          >
-            <input
-              type="text"
-              value={prompt}
-              onChange={(e) => {
-                setPrompt(e.target.value);
-                trackHomepagePromptStarted({ value: e.target.value, promptStartedRef, surface });
-              }}
-              placeholder="Make a round timer script with intermission and victory rewards..."
-              className="h-12 flex-1 border-0 bg-transparent px-4 text-base text-white placeholder:text-zinc-500 focus:outline-none"
-              disabled={submitting}
+      <main id="main-content" tabIndex={-1} className="focus:outline-none">
+        <section className="flex min-h-[calc(100vh-4rem)] flex-col items-center justify-center overflow-visible px-4 pt-20 pb-16">
+          <div className="relative mb-6 flex items-center justify-center">
+            <div className="absolute h-24 w-24 rounded-full bg-[#00f5d4]/20 blur-2xl" />
+            <img
+              src="/logo.png"
+              alt="NexusRBX logo"
+              width={64}
+              height={64}
+              className="relative h-16 w-16 rounded-xl object-contain"
             />
-            <button
-              type="submit"
-              disabled={submitting || !prompt.trim()}
-              className="h-12 rounded-xl bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] px-6 text-sm font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
-            >
-              Generate
-            </button>
-          </form>
+          </div>
 
-          {error ? (
-            <p className="mt-2 px-4 text-sm text-rose-300">{error}</p>
-          ) : null}
-
-          <p className="mt-3 text-xs font-semibold text-zinc-500">
-            Your prompt is saved locally as a generation intent before opening the AI workspace.
+          <p className="mb-4 bg-gradient-to-r from-[#00f5d4] to-[#9b5de5] bg-clip-text text-lg font-black uppercase tracking-[0.18em] text-transparent">
+            NexusRBX
           </p>
-        </div>
 
-        <RobloxTrustStrip />
+          <h1 className="mb-3 text-center text-[clamp(2rem,5vw,3.5rem)] font-black leading-[1.1] tracking-tight text-white">
+            AI Roblox Script Generator for Studio
+          </h1>
 
-        <a
-          href="/downloads"
-          className="mt-7 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.035] px-4 py-2 text-xs font-black text-zinc-300 transition hover:border-cyan-300/30 hover:bg-cyan-300/[0.06] hover:text-cyan-100"
-        >
-          Get the Studio companion
-          <span aria-hidden="true">→</span>
-        </a>
-      </section>
+          <p className="mb-8 max-w-2xl text-center text-lg text-zinc-400">
+            Generate a focused Luau script from one prompt, or use the Studio agent to plan
+            coordinated changes across multiple files and Roblox services.
+          </p>
 
-      <CompanionDownloadSection />
-      <HomepageFeatures />
-      <HomepageWorkflow />
-      <HomepageIntentEvidence />
+          <HomepagePrompt
+            surface={surface}
+            source={surface}
+            navigateToAi={navigate}
+            className="w-full max-w-2xl"
+          />
+
+          <RobloxTrustStrip user={user} authReady={authReady} />
+
+          <a
+            href="/downloads"
+            className="mt-7 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.035] px-4 py-2 text-xs font-black text-zinc-300 transition hover:border-cyan-300/30 hover:bg-cyan-300/[0.06] hover:text-cyan-100"
+          >
+            Get the Studio companion
+            <span aria-hidden="true">→</span>
+          </a>
+        </section>
+
+        <CompanionDownloadSection />
+        <HomepageFeatures />
+        <HomepageWorkflow />
+        <HomepageIntentEvidence />
+      </main>
       <HomepageFooter />
     </div>
   );

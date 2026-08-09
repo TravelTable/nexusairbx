@@ -12,7 +12,7 @@ export const metadata = buildPublicMetadata({
 export default function HomePage() {
   return (
     <>
-      <PublicHeader />
+      <PublicHeader showSkipLink />
       <HomepageV2Client />
     </>
   );

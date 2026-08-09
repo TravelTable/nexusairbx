@@ -2,7 +2,7 @@
 
 The NexusRBX Local Connector is an optional bridge between NexusRBX and the official Roblox Studio MCP server. It runs as a separate Node.js process on the same computer as Roblox Studio.
 
-For most creators, the NexusRBX Studio plugin remains the recommended connection method. The connector is the advanced path for users who have enabled Roblox Studio MCP. Installing or running it is not required for the plugin bridge, and it does not replace the plugin's NexusRBX-specific model, validation, snapshot, or recovery workflows.
+For most creators, the NexusRBX Studio plugin remains the recommended connection method. The connector is the advanced path for users who have enabled Roblox Studio MCP. Installing or running it is not required for the plugin bridge, and it does not replace the plugin's NexusRBX-specific project, artifact, native-model, or validation workflows.
 
 ## Requirements
 
@@ -61,10 +61,10 @@ No command in this table is advertised unless every required MCP tool and schema
 | `get_output_logs`, `collect_output` | `get_console_output` | Returns bounded Studio console output. |
 | `inspect_instances`, `read_instance`, `read_properties` | `inspect_instance` | Performs a bounded set of read-only instance inspections when the discovered path/Edit-mode schema validates. Tags, exact child records, and source hashes must be disabled unless Roblox documents compatible output parity. |
 | `write_script`, `patch_script` | `script_read` and safely validated `multi_edit` | Uses current `target_file`, `file_path`, `old_string`, `new_string`, and `replace_all` fields; checks the hash and verifies by reread. |
-| `create_script` | `script_read` and a direct-source `multi_edit` schema | Applies once and verifies the complete source body. |
-| `get_selection` and instance commands | audited `execute_luau` routines | Constant templates, bounded serialized input, nonces, snapshots, and state verification. |
-| `create_snapshot`, `restore_snapshot`, `undo_last_batch` | audited `execute_luau` routines | Uses pre/post hashes and rejects intervening edits unless the existing force policy permits them. |
-| `insert_creator_store_asset` | `insert_asset` plus quarantine routines | Uses server-owned asset metadata, sanitizes in quarantine, applies policy, and returns an idempotent receipt. |
+| `create_script` | `script_read` plus an audited `execute_luau` routine | Rejects collisions, snapshots the absent destination, creates once, rereads the complete source, and restores the snapshot if exact verification fails. |
+| `get_selection` and instance commands | audited `execute_luau` routines | Constant templates, bounded serialized input, nonces, snapshot-first mutation, collision checks, verified rollback, and state receipts. Destination parents must already exist. |
+| `create_snapshot`, `restore_snapshot`, `undo_last_batch` | audited `execute_luau` routines | Requires non-empty, non-overlapping path receipts; hashes every allowlisted mutable property plus source, attributes, and tags; uses guarded restore; and pins the recorded last batch until replacement or successful undo. |
+| `insert_creator_store_asset` | `insert_asset` plus quarantine routines | Uses server-owned asset metadata, sanitizes in quarantine, rejects connector-owned ServerStorage state as a destination, applies policy, and returns an idempotent receipt. |
 | `run_play_test`, `stop_play_test`, `run_test_service` | `start_stop_play`, `get_studio_state`, named routines | Explicit approval, bounded duration, polling, and cleanup; never request-supplied code. |
 
 The connector advertises no command unless its complete direct-tool or fixed-routine dependency set compiles and passes the session self-check. Commands outside that mapping remain unavailable. In particular, the following specialized workflows remain plugin-only:
@@ -86,7 +86,12 @@ Use the NexusRBX Studio plugin for an unavailable command. The connector never s
 
 - Script writes and patches require `expectedSourceHash`. The connector accepts the NexusRBX stable source hash or SHA-256 and rejects stale edits before mutation.
 - A mutation tool call is attempted exactly once. Network errors and timeouts after dispatch have an unknown outcome, so the connector does not retry them.
-- Every advertised mutation verifies its resulting source or instance state. The acknowledgment is successful only when `verified: true`; otherwise it returns `APPLY_UNVERIFIED`.
+- Every advertised mutation verifies its resulting source or instance state. The acknowledgment is successful only when `verified: true`; failures use operation-specific structured codes (`APPLY_UNVERIFIED` for an unprovable direct edit, or the fixed-routine rollback and preflight codes below).
+- Fixed-routine mutations snapshot before their first Studio write. A later failure returns either a verified rollback receipt or `ROLLBACK_FAILED`; it is never reported as a silent success.
+- Deterministic missing-parent, self-descendant, and destination-collision checks run before a snapshot is created. If a post-snapshot race is detected before the first write, the temporary snapshot is removed without replacing the untouched live instance.
+- Instance moves/creation and asset placement cannot target connector-owned `NexusMCP*` state under `ServerStorage`.
+- Atomic batches accept only snapshot-producing fixed mutations, reject overlapping paths before execution, and persist pinned last-batch receipts for `undo_last_batch`.
+- A nested operation whose own compensation fails makes the batch `BATCH_ROLLBACK_FAILED` even when earlier operations restore successfully; it is never mislabeled `BATCH_ROLLED_BACK`.
 - Read and backend requests use bounded timeouts, retries, response sizes, batch sizes, source sizes, and log output.
 - Pairing-code claim is never retried automatically. Transient backend reads can retry within a small bounded policy; authorization failures are terminal.
 - MCP disconnects immediately mark Studio unavailable and trigger bounded exponential reconnection; failed reconnect attempts publish an empty capability set. Commands cannot execute against a stale MCP client.
@@ -110,7 +115,7 @@ The final Studio check requires a running graphical Roblox Studio session and ca
 2. Enable Studio MCP and leave the experience open in edit mode.
 3. Start the connector and claim a fresh pairing code.
 4. Confirm NexusRBX reports MCP connected and shows only the discovered capabilities.
-5. Confirm all ten capability badges are green, then run context, search, script read, selection, instance inspection, and output collection.
+5. Confirm each capability supported by the discovered Studio MCP version is green and every unavailable capability shows a reason, then run only the advertised context, search, script read, selection, instance inspection, and output commands.
 6. Read a disposable script, capture its source hash, then run a guarded write and confirm the acknowledgment has `verified: true`.
 7. Change the script manually and submit the old hash; confirm a structured source-conflict failure and no overwrite.
 8. Create/edit/delete an instance, restore its snapshot, and confirm exact state restoration.

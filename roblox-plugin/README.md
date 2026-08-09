@@ -30,7 +30,12 @@ Install directly into Roblox Studio's local plugins folder:
 npm run plugin:install
 ```
 
-This writes `~/Documents/Roblox/Plugins/NexusRBXStudioBridge.rbxmx` as a **single bundled script** and removes legacy broken installs like `Plugin.rbxmx`.
+On Windows this writes
+`%LOCALAPPDATA%/Roblox/Plugins/NexusRBXStudioBridge.rbxmx`, the local plugin
+folder loaded by Roblox Studio. The installer writes a **single bundled script**
+and removes legacy broken installs like `Plugin.rbxmx`. If Studio uses a
+nonstandard location, set `NEXUSRBX_STUDIO_PLUGINS_DIR` to an absolute path
+ending in `Roblox/Plugins`; unsafe override paths are rejected.
 
 If `npm` is not on your PATH in a minimal shell, run the bundler directly with your Node binary:
 

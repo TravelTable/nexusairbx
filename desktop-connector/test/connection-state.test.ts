@@ -14,7 +14,7 @@ const snapshot = {
 test("completed discovery cannot remain stuck connecting with no runtime tools", () => {
   assert.deepEqual(completedConnectionPatch(snapshot), {
     state: "degraded",
-    message: "Close extra Studio windows and keep your target experience open.",
+    message: "Select the intended open Studio target in the NexusRBX connection panel.",
     degradedReason: "multiple_studio_windows",
     runtimeHealth: "connected",
     connectionStage: null,

@@ -35,6 +35,21 @@ test("target identity is checked before approval and at the final mutation bound
   assert.ok(handlerCall > mutationCheck, "write handler must run after the final target check");
 });
 
+test("move and duplicate refuse source-descendant destinations before snapshot mutation", () => {
+  const writeTools = read("src/commands/writeTools.lua");
+  const pathTools = read("src/studio/path.lua");
+  const guards = writeTools.match(/parent == inst or parent:IsDescendantOf\(inst\)/g) || [];
+  assert.equal(guards.length >= 2, true, "move and duplicate must both guard source descendants");
+  assert.match(pathTools, /raw = raw:gsub\("\^game\[\/.\]", ""\)/);
+  assert.match(pathTools, /raw = raw:gsub\("\^Services\[\/.\]", ""\)/);
+  assert.match(writeTools, /payload\.newPath and canonicalizePath\(payload\.newPath\) or ""/);
+  assert.match(writeTools, /local targetPath = canonicalizePath\(payload\.newPath\)/);
+  assert.match(writeTools, /parentPath = canonicalizePath\(payload\.newParentPath\)/);
+  assert.match(writeTools, /instance cannot be moved into its own descendant tree/);
+  assert.match(writeTools, /instance cannot be duplicated into its own descendant tree/);
+  assert.match(writeTools, /code = "destination_invalid"/);
+});
+
 test("operation receipts are bounded, durable, and reconciled before redelivery", () => {
   const registry = read("src/commands/registry.lua");
   assert.match(registry, /COMMAND_RECEIPT_LIMIT\s*=\s*[\s\S]*50/);
@@ -57,5 +72,7 @@ test("generated install artifact contains target diagnostics and the current bui
   assert.ok(artifact.includes(buildId[1]), "generated artifact must contain the configured build identifier");
   assert.match(artifact, /INVALID_TARGET_ENVELOPE/);
   assert.match(artifact, /OPERATION_OUTCOME_UNCERTAIN/);
+  assert.match(artifact, /cannot be moved into its own descendant tree/);
+  assert.match(artifact, /cannot be duplicated into its own descendant tree/);
   assert.match(artifact, /Heartbeat %s · Commands %s · Place %s/);
 });

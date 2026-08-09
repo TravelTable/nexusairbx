@@ -9,7 +9,7 @@ import {
 } from "nexusrbx-local-connector";
 import type { CompanionPreferences, CompanionSnapshot, CompanionState, CompanionUpdateState, PairingError, RendererDestination, WindowMode } from "./contracts.js";
 import { collectDiagnostics } from "./diagnostics.js";
-import { parsePairingDeepLink } from "./pairing.js";
+import { normalizePairingCode, parsePairingDeepLink } from "./pairing.js";
 import { DEFAULT_PREFERENCES, getAutoStart, PreferenceStore, setAutoStart, validatePreferenceUpdate } from "./preferences.js";
 import { EncryptedTokenStore, type EncryptedStorage, type StoredConnectorSession } from "./token-store.js";
 import { ConnectorUpdater } from "./updater.js";
@@ -47,13 +47,6 @@ if (INSTALLED_SMOKE_MODE) {
   // session. A unique user-data directory also gives the smoke process its own
   // single-instance lock when the normal app is already open.
   app.setPath("userData", join(tmpdir(), `nexusrbx-connector-smoke-${process.pid}`));
-}
-
-export function normalizePairingCode(value: unknown): string {
-  if (typeof value !== "string") throw new TypeError("Pairing code must be text.");
-  const code = value.replace(/[^a-z0-9]/gi, "").toUpperCase();
-  if (!/^[A-Z0-9]{6}$/.test(code)) throw new TypeError("Pairing code must contain six letters or numbers.");
-  return code;
 }
 
 export function validateWindowMode(value: unknown): WindowMode {
@@ -402,6 +395,7 @@ let connectorUpdater: ConnectorUpdater | null = null;
 let isQuitting = false;
 let mainWindow: BrowserWindow | null = null;
 let smokeTimeout: ReturnType<typeof setTimeout> | null = null;
+let pendingPairingCode: string | null = null;
 
 type InstalledSmokeReport = {
   ok: boolean;
@@ -503,7 +497,18 @@ function registerIpc(): void {
   });
 }
 
-function receiveDeepLink(url: string): void { const code = parsePairingDeepLink(url); if (code) void controller.pair(code); }
+function receiveDeepLink(url: string): void {
+  const code = parsePairingDeepLink(url);
+  if (!code) return;
+  if (!controller) {
+    pendingPairingCode = code;
+    return;
+  }
+  // Deep links arrive outside the renderer action boundary. Consume any
+  // unexpected failure here so malformed OS protocol events never become an
+  // unhandled rejection in the Electron main process.
+  void controller.pair(code).catch(() => undefined);
+}
 const singleInstance = app.requestSingleInstanceLock();
 if (!singleInstance) app.quit();
 else {
@@ -513,7 +518,13 @@ else {
   app.on("activate", () => controller?.show());
   app.whenReady().then(async () => {
     if (!INSTALLED_SMOKE_MODE) app.setAsDefaultProtocolClient("nexusrbx");
-    controller = new DesktopController(); await controller.initialize(); registerIpc(); createWindow(); controller.configureTray();
+    const initializedController = new DesktopController();
+    await initializedController.initialize();
+    // Deep links received while preferences/session state load stay queued.
+    // Publish the controller only after initialization is complete so pair()
+    // cannot race the preference load and snapshot initialization.
+    controller = initializedController;
+    registerIpc(); createWindow(); controller.configureTray();
     if (INSTALLED_SMOKE_MODE) {
       smokeTimeout = setTimeout(() => void finishInstalledSmoke({
         ok: false,
@@ -525,7 +536,12 @@ else {
       }).catch(() => app.exit(1)), 20_000);
       return;
     }
-    const launchLink = process.argv.find((value) => value.startsWith("nexusrbx://")); if (launchLink) receiveDeepLink(launchLink); else void controller.start();
+    const launchLink = process.argv.find((value) => value.startsWith("nexusrbx://"));
+    const launchCode = launchLink ? parsePairingDeepLink(launchLink) : null;
+    const startupPairingCode = pendingPairingCode || launchCode;
+    pendingPairingCode = null;
+    if (startupPairingCode) void controller.pair(startupPairingCode).catch(() => undefined);
+    else void controller.start();
     connectorUpdater = new ConnectorUpdater({
       client: autoUpdater,
       isPackaged: app.isPackaged,

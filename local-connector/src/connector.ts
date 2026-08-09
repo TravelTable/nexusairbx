@@ -26,6 +26,7 @@ import { EMPTY_CAPABILITIES } from "./types.js";
 import { CONNECTOR_PROTOCOL_VERSION } from "./version.js";
 
 const MUTATING_COMMANDS = new Set(["create_script", "write_script", "patch_script", "create_instance", "update_properties", "update_attributes", "update_tags", "rename_instance", "move_instance", "duplicate_instance", "delete_instance", "batch_operations", "restore_snapshot", "undo_last_batch", "insert_creator_store_asset", "run_test_service", "run_play_test", "stop_play_test"]);
+const TARGET_BOUND_COMMANDS = new Set([...MUTATING_COMMANDS, "create_snapshot"]);
 
 export interface LocalConnectorOptions {
   config: ConnectorConfig;
@@ -251,7 +252,9 @@ export class NexusLocalConnector {
     }
     const runtime = runtimeCapabilities(catalog, this.#targeting);
     this.emitTelemetry({
-      supportedTools: tools.map((tool) => tool.name).sort(),
+      // The desktop uses this list together with supportedToolCount. Publish
+      // executable NexusRBX commands so the list and count describe one thing.
+      supportedTools: [...runtime.supportedCommands],
       supportedToolCount: runtime.supportedCommands.length,
       mcpConnected: true,
       ...(runtime.supportedCommands.length === 0
@@ -296,9 +299,14 @@ export class NexusLocalConnector {
   private async executeLegacyAndAcknowledge(command: StudioCommand, signal: AbortSignal): Promise<void> {
     const executor = this.#executor;
     if (!executor) throw new ConnectorError("MCP_NOT_CONNECTED", "Roblox Studio MCP is not connected.", { retryable: true });
-    if (MUTATING_COMMANDS.has(command.type)) await this.#targeting?.ensureMutationTarget(signal);
     const startedAt = Date.now();
-    const result = await executor.execute(command, signal);
+    let result: JsonObject;
+    try {
+      if (TARGET_BOUND_COMMANDS.has(command.type)) await this.requireTargeting().ensureMutationTarget(command, signal);
+      result = await executor.execute(command, signal);
+    } catch (error) {
+      result = failureResult(command, asConnectorError(error));
+    }
     result.duration = Date.now() - startedAt;
     const success = result.success === true && (!MUTATING_COMMANDS.has(command.type) || result.verified === true);
     await this.#backend.acknowledge(command.id, success ? "succeeded" : "failed", result, signal);
@@ -385,7 +393,7 @@ export class NexusLocalConnector {
     let terminalStatus: TerminalCommandReceiptStatus;
     let executorInvoked = false;
     try {
-      if (MUTATING_COMMANDS.has(command.type)) await this.#targeting?.ensureMutationTarget(executionSignal);
+      if (TARGET_BOUND_COMMANDS.has(command.type)) await this.requireTargeting().ensureMutationTarget(command, executionSignal);
       executorInvoked = true;
       result = await executor.execute(command, executionSignal);
       result.duration = Date.now() - startedAt;
@@ -609,12 +617,12 @@ export class NexusLocalConnector {
 
   private async announceUnavailable(): Promise<void> {
     if (this.#announcedUnavailable) return;
-    this.#announcedUnavailable = true;
     this.emitLifecycleState("studio_mcp_unavailable");
     this.emitTelemetry({ mcpConnected: false, degradedReason: "mcp_initialization_failed" });
     try {
       await this.#backend.registerCapabilities({ ...EMPTY_CAPABILITIES }, [], [], new ToolCatalog([]).capabilityDetails);
       await this.#backend.ping(this.pingPayload(false));
+      this.#announcedUnavailable = true;
     } catch (error) {
       this.#logger.debug("Could not publish degraded connector state.", { code: asConnectorError(error).code });
     }
@@ -657,6 +665,12 @@ export class NexusLocalConnector {
     this.#onLifecycleState?.(state);
   }
   private emitTelemetry(telemetry: ConnectorTelemetry): void { this.#onTelemetry?.(telemetry); }
+  private requireTargeting(): StudioTargetManager {
+    if (!this.#targeting) {
+      throw new ConnectorError("STUDIO_TARGET_UNAVAILABLE", "No validated Roblox Studio target is available.");
+    }
+    return this.#targeting;
+  }
 }
 
 interface ReliableStudioCommand extends StudioCommand {
@@ -681,15 +695,21 @@ const SAFE_PRE_MUTATION_FAILURE_CODES = new Set([
   "ASSET_ID_INVALID",
   "ASSET_TYPE_NOT_ALLOWED",
   "CLASS_NOT_ALLOWED",
+  "CREATE_PARENTS_UNSUPPORTED",
   "COMMAND_PAYLOAD_INVALID",
   "COMMAND_PAYLOAD_TOO_LARGE",
   "DESTINATION_NOT_ALLOWED",
+  "DESTINATION_INVALID",
   "EXECUTABLE_INPUT_FORBIDDEN",
   "EXPECTED_SOURCE_HASH_REQUIRED",
   "FIELD_NOT_ALLOWED",
+  "INSTANCE_NOT_FOUND",
   "MCP_TOOL_UNAVAILABLE",
+  "MUTATION_NOT_APPLIED",
+  "NO_LAST_BATCH",
   "PATCH_TARGET_MISSING",
   "PATH_INVALID",
+  "PATH_NOT_ALLOWED",
   "PLAYTEST_CONFIRMATION_REQUIRED",
   "ROUTINE_UNAVAILABLE",
   "SCRIPT_ALREADY_EXISTS",
@@ -697,11 +717,28 @@ const SAFE_PRE_MUTATION_FAILURE_CODES = new Set([
   "SOURCE_CONFLICT",
   "SOURCE_HASH_MISMATCH",
   "SOURCE_TOO_LARGE",
+  "SNAPSHOTS_REQUIRED",
+  "SNAPSHOT_CONFLICT",
+  "SNAPSHOT_ID_CONFLICT",
+  "SNAPSHOT_NOT_FOUND",
+  "SNAPSHOT_PATH_OVERLAP",
   "STUDIO_TARGET_MISMATCH",
+  "STUDIO_TARGET_AMBIGUOUS",
+  "STUDIO_TARGET_ATTESTATION_INCOMPLETE",
   "STUDIO_TARGET_SELECTION_REQUIRED",
   "STUDIO_TARGET_UNAVAILABLE",
+  "STUDIO_CONNECTION_TYPE_MISMATCH",
   "TEST_PROFILE_INVALID",
+  "TARGET_EXISTS",
+  "TARGET_PARENT_MISSING",
   "VALUE_NOT_ALLOWED",
+  // These failures include a verified compensation receipt, so retrying them
+  // is safe even though the original mutation reached Studio.
+  "APPLY_ROLLED_BACK",
+  "BATCH_ROLLED_BACK",
+  "MUTATION_ROLLED_BACK",
+  "SNAPSHOT_RESTORE_FAILED",
+  "BATCH_PATH_OVERLAP",
 ]);
 
 function hasLifecycleMarkers(command: StudioCommand): boolean {

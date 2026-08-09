@@ -88,6 +88,8 @@ describe("StudioPairControl", () => {
     render(<StudioPairControl refresh={jest.fn()} />);
 
     const trigger = screen.getByRole("button", { name: /Pair Studio/i });
+    expect(trigger.className).toContain("min-h-11");
+    expect(trigger.className).toContain("sm:min-h-0");
     fireEvent.click(trigger);
 
     const pluginTab = screen.getByRole("tab", { name: /Studio Plugin/i });
@@ -95,7 +97,7 @@ describe("StudioPairControl", () => {
 
     fireEvent.click(screen.getByRole("tab", { name: /Roblox Studio MCP/i }));
     expect(
-      screen.getByRole("link", { name: /Download Connector 0\.2\.7/i }).getAttribute("href")
+      screen.getByRole("link", { name: /Download Connector 0\.2\.8/i }).getAttribute("href")
     ).toBe("/downloads");
 
     fireEvent.keyDown(document, { key: "Escape" });

@@ -82,6 +82,10 @@ class FakeMcp implements McpClientLike {
   consoleText = "log";
   studioPlaying = false;
   applyPlayTransition = true;
+  routineFailurePath = "";
+  routineFailureCode = "ROUTINE_FAILED";
+  routineFailureData: JsonObject | undefined;
+  createdSourceOverride: string | null = null;
   readonly inspections = new Map<string, JsonObject>();
 
   async connect(): Promise<McpConnectionInfo> { return {}; }
@@ -116,6 +120,41 @@ class FakeMcp implements McpClientLike {
       const inspection = this.inspections.get(String(args.path));
       if (!inspection) return { isError: true, content: [{ type: "text", text: "instance not found" }] };
       return { structuredContent: { instance: inspection } };
+    }
+    if (name === "execute_luau") {
+      const code = String(args.code || "");
+      const match = /__nexus_run\(("(?:\\.|[^"\\])*")\)\s*$/.exec(code);
+      assert.ok(match?.[1]);
+      const input = JSON.parse(JSON.parse(match[1])) as { nonce: string; operation: string; payload: JsonObject };
+      const path = String(input.payload.path || "Workspace/Part");
+      if (this.routineFailurePath && path === this.routineFailurePath) {
+        return { content: [{ type: "text", text: JSON.stringify({
+          version: 1,
+          nonce: input.nonce,
+          ok: false,
+          code: this.routineFailureCode,
+          message: "simulated failure",
+          ...(this.routineFailureData ? { data: this.routineFailureData } : {}),
+        }) }] };
+      }
+      const resultingHash = input.operation === "delete_instance" ? "missing" : `hash-${input.nonce}`;
+      const snapshots = [{ snapshotId: input.nonce, path, preHash: input.operation === "create_script" ? "missing" : "before", postHash: resultingHash }];
+      let data: JsonObject;
+      if (input.operation === "restore_snapshot") {
+        const refs = input.payload.snapshots as JsonObject[];
+        for (const ref of refs) if (ref.preHash === "missing") this.sources.delete(String(ref.path));
+        data = { restored: refs.map((ref) => ({ path: ref.path, resultingHash: ref.preHash || "before" })), restoredCount: refs.length };
+      } else if (input.operation === "record_last_batch") {
+        data = { storedCount: (input.payload.snapshots as JsonObject[]).length, pinnedCount: 1 };
+      } else if (input.operation === "create_script") {
+        this.sources.set(path, this.createdSourceOverride ?? String(input.payload.source || ""));
+        data = { instance: { path }, snapshots, resultingHash };
+      } else if (input.operation === "delete_instance") {
+        data = { snapshots, resultingHash, verified: true };
+      } else {
+        data = { instance: { path }, snapshots, resultingHash };
+      }
+      return { content: [{ type: "text", text: JSON.stringify({ version: 1, nonce: input.nonce, ok: true, data }) }] };
     }
     return { isError: true, content: [{ type: "text", text: "unsupported" }] };
   }
@@ -369,4 +408,119 @@ test("multi-script results fail locally when the acknowledgement would exceed th
   assert.equal(result.success, false);
   assert.equal(errorCode(result), "COMMAND_RESULT_TOO_LARGE");
   assert.equal(Buffer.byteLength(JSON.stringify(result), "utf8") < 10_000, true);
+});
+
+test("snapshot-safe batches persist an undo receipt and reject overlapping paths before Studio", async () => {
+  const mcp = new FakeMcp();
+  const executor = new CommandExecutor(mcp, new ToolCatalog(tools));
+
+  const completed = await executor.execute(command("batch_operations", {
+    atomic: true,
+    operations: [
+      { type: "create_instance", payload: { path: "Workspace/One", className: "Part" } },
+      { type: "create_instance", payload: { path: "Workspace/Two", className: "Part" } },
+    ],
+  }));
+  assert.equal(completed.success, true);
+  assert.equal(completed.verified, true);
+  assert.equal((completed.snapshots as JsonObject[]).length, 2);
+  assert.equal(mcp.calls.filter((call) => call.name === "execute_luau").length, 3);
+
+  mcp.calls.length = 0;
+  const overlap = await executor.execute(command("batch_operations", {
+    operations: [
+      { type: "update_properties", payload: { path: "Workspace/Same", properties: { Transparency: 0 } } },
+      { type: "update_properties", payload: { path: "Workspace/Same", properties: { Transparency: 1 } } },
+    ],
+  }));
+  assert.equal(errorCode(overlap), "BATCH_PATH_OVERLAP");
+  assert.equal(mcp.calls.length, 0);
+});
+
+test("an atomic batch failure returns a verified rollback receipt instead of swallowing compensation failure", async () => {
+  const mcp = new FakeMcp();
+  mcp.routineFailurePath = "Workspace/Fail";
+  const executor = new CommandExecutor(mcp, new ToolCatalog(tools));
+
+  const result = await executor.execute(command("batch_operations", {
+    atomic: true,
+    operations: [
+      { type: "create_instance", payload: { path: "Workspace/Good", className: "Part" } },
+      { type: "create_instance", payload: { path: "Workspace/Fail", className: "Part" } },
+    ],
+  }));
+
+  assert.equal(result.success, false);
+  assert.equal(errorCode(result), "BATCH_ROLLED_BACK");
+  assert.equal(mcp.calls.filter((call) => call.name === "execute_luau").length, 3);
+});
+
+test("an inner rollback failure can never be converted into BATCH_ROLLED_BACK", async () => {
+  const mcp = new FakeMcp();
+  mcp.routineFailurePath = "Workspace/Fail";
+  mcp.routineFailureCode = "ROLLBACK_FAILED";
+  mcp.routineFailureData = {
+    snapshots: [{ snapshotId: "failed-operation", path: "Workspace/Fail", preHash: "before", postHash: "uncertain" }],
+    rolledBack: false,
+    rollbackError: "simulated restore failure",
+  };
+  const executor = new CommandExecutor(mcp, new ToolCatalog(tools));
+
+  const result = await executor.execute(command("batch_operations", {
+    atomic: true,
+    operations: [
+      { type: "create_instance", payload: { path: "Workspace/Good", className: "Part" } },
+      { type: "create_instance", payload: { path: "Workspace/Fail", className: "Part" } },
+    ],
+  }));
+
+  assert.equal(result.success, false);
+  assert.equal(errorCode(result), "BATCH_ROLLBACK_FAILED");
+  const details = (result.error as JsonObject).details as JsonObject;
+  assert.equal(details.causeCode, "ROLLBACK_FAILED");
+  assert.equal((details.failedOperationSnapshots as JsonObject[])[0]?.snapshotId, "failed-operation");
+  assert.equal(mcp.calls.filter((call) => call.name === "execute_luau").length, 3);
+});
+
+test("create_script rolls back its snapshot when exact post-read verification fails", async () => {
+  const mcp = new FakeMcp();
+  mcp.createdSourceOverride = "wrong source";
+  const executor = new CommandExecutor(mcp, new ToolCatalog(tools));
+  const path = "ServerScriptService/NewScript";
+
+  const result = await executor.execute(command("create_script", { path, className: "ModuleScript", source: "return true" }));
+
+  assert.equal(result.success, false);
+  assert.equal(errorCode(result), "APPLY_ROLLED_BACK");
+  assert.equal(mcp.sources.has(path), false);
+  assert.deepEqual(mcp.calls.map((call) => call.name), ["script_read", "execute_luau", "script_read", "execute_luau"]);
+});
+
+test("Creator Store insertion rejects connector-owned destinations before any MCP call", async () => {
+  const insertAsset: DiscoveredTool = {
+    name: "insert_asset",
+    inputSchema: {
+      type: "object",
+      properties: { asset_id: { type: "string" }, parent_path: { type: "string" } },
+      required: ["asset_id"],
+    },
+  };
+  const mcp = new FakeMcp();
+  const executor = new CommandExecutor(mcp, new ToolCatalog([...tools, insertAsset]));
+  const destinations = [
+    "ServerStorage/NexusMCPSnapshots",
+    "game/ServerStorage/NexusMCPState/Child",
+    "ServerStorage/NexusMCPReceipts",
+    "ServerStorage/NexusMCPQuarantine",
+    "ServerStorage/NexusMCPQuarantine/nonce",
+  ];
+
+  for (const targetParentPath of destinations) {
+    const result = await executor.execute(command("insert_creator_store_asset", {
+      assetId: "12345",
+      targetParentPath,
+    }));
+    assert.equal(errorCode(result), "DESTINATION_NOT_ALLOWED");
+  }
+  assert.equal(mcp.calls.length, 0);
 });

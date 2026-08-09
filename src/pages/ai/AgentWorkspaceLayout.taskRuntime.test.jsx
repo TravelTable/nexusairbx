@@ -1,5 +1,5 @@
 import React from "react";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 
 const mockUseTaskRuntime = jest.fn();
 const mockTaskProgressPanel = jest.fn();
@@ -54,7 +54,15 @@ jest.mock("lib/icons", () => {
   };
 });
 
-jest.mock("../../components/SidebarContent", () => () => null);
+jest.mock("../../components/SidebarContent", () => () => {
+  const ReactModule = require("react");
+  return ReactModule.createElement(
+    "div",
+    null,
+    ReactModule.createElement("button", { type: "button" }, "First sidebar action"),
+    ReactModule.createElement("button", { type: "button" }, "Last sidebar action"),
+  );
+});
 jest.mock("../../components/CodeDrawer", () => () => null);
 jest.mock("../../components/SignInNudgeModal", () => () => null);
 jest.mock("../../components/ProNudgeModal", () => () => null);
@@ -64,7 +72,10 @@ jest.mock("../../components/ai/ModelSwitcher", () => () => null);
 jest.mock("../../components/ai/StudioPairControl", () => () => null);
 jest.mock("../../components/ai/ProjectArchitecturePanel", () => () => null);
 jest.mock("../../components/ai/AiComponents", () => ({ ProjectContextStatus: () => null }));
-jest.mock("../../components/site/SiteHeader", () => () => null);
+jest.mock("../../components/site/SiteHeader", () => (props) => {
+  const ReactModule = require("react");
+  return ReactModule.createElement("header", null, props.workspaceLeft, props.workspaceRight);
+});
 jest.mock("../../components/ui", () => ({ Segmented: () => null }));
 jest.mock("../../components/ai/workspace/CodeFileTree", () => () => null);
 jest.mock("../../components/ai/workspace/CodeWorkspace", () => () => null);
@@ -143,15 +154,17 @@ function makeController({
   currentChatMeta = { projectId: "project_1" },
   selectedAssetProjectId = "project_1",
   studio = { connected: false },
+  sidebarOpen = false,
+  generatorMode = "agent_build",
 } = {}) {
   return {
     billing: {},
     uiState: {
       user: { uid: "user_1" },
       isMobile: false,
-      sidebarOpen: false,
+      sidebarOpen,
       mobileTab: "chat",
-      generatorMode: "agent_build",
+      generatorMode,
       quickScript: null,
       prompt: "",
       isImproving: false,
@@ -415,5 +428,129 @@ describe("AgentWorkspaceLayout task-runtime wiring", () => {
     expect(mockAgentChatPanel.mock.calls.at(-1)[0]).toEqual(expect.objectContaining({
       projectId: "project_selected",
     }));
+  });
+
+  test("uses document semantics and manages sidebar focus across open, Escape, and close", async () => {
+    mockUseTaskRuntime.mockReturnValue({
+      enabled: false,
+      taskId: "",
+      task: null,
+      events: [],
+      connectionState: "disabled",
+      error: null,
+      busyAction: "",
+      selectTask: jest.fn(),
+    });
+
+    function SidebarHarness() {
+      const [sidebarOpen, setSidebarOpen] = React.useState(false);
+      return (
+        <AgentWorkspaceLayout
+          controller={makeController({ sidebarOpen, handlers: { setSidebarOpen } })}
+        />
+      );
+    }
+
+    render(<SidebarHarness />);
+
+    expect(screen.queryByRole("application")).toBeNull();
+    const workspaceMain = screen.getByRole("main");
+    const sidebar = document.querySelector("#project-sidebar");
+    expect(sidebar).not.toBeNull();
+    expect(sidebar.hasAttribute("inert")).toBe(true);
+    expect(screen.queryByRole("button", { name: "First sidebar action" })).toBeNull();
+
+    const toggle = screen.getByRole("button", { name: "Toggle sidebar" });
+    expect(toggle.getAttribute("aria-controls")).toBe(sidebar.id);
+    expect(toggle.className).toContain("h-11");
+    expect(toggle.className).toContain("w-11");
+    fireEvent.click(toggle);
+
+    await waitFor(() => {
+      expect(sidebar.hasAttribute("inert")).toBe(false);
+      expect(sidebar.getAttribute("role")).toBe("dialog");
+      expect(sidebar.getAttribute("aria-modal")).toBe("true");
+      expect(workspaceMain.hasAttribute("inert")).toBe(true);
+      expect(workspaceMain.getAttribute("aria-hidden")).toBe("true");
+      expect(screen.getByRole("button", { name: "First sidebar action" })).toBe(document.activeElement);
+    });
+
+    fireEvent.keyDown(document, { key: "Tab", shiftKey: true });
+    expect(screen.getByRole("button", { name: "Last sidebar action" })).toBe(document.activeElement);
+    fireEvent.keyDown(document, { key: "Tab" });
+    expect(screen.getByRole("button", { name: "First sidebar action" })).toBe(document.activeElement);
+
+    fireEvent.keyDown(document, { key: "Escape" });
+    await waitFor(() => {
+      expect(sidebar.hasAttribute("inert")).toBe(true);
+      expect(workspaceMain.hasAttribute("inert")).toBe(false);
+      expect(toggle).toBe(document.activeElement);
+    });
+  });
+
+  test("does not expose a no-op project-sidebar control in Quick mode", () => {
+    mockUseTaskRuntime.mockReturnValue({
+      enabled: false,
+      taskId: "",
+      task: null,
+      events: [],
+      connectionState: "disabled",
+      error: null,
+      busyAction: "",
+      selectTask: jest.fn(),
+    });
+
+    render(<AgentWorkspaceLayout controller={makeController({
+      generatorMode: "quick_script",
+      sidebarOpen: true,
+    })} />);
+
+    expect(screen.queryByRole("button", { name: "Toggle sidebar" })).toBeNull();
+    expect(document.querySelector("#project-sidebar")).toBeNull();
+    expect(screen.getByRole("main").hasAttribute("inert")).toBe(false);
+  });
+
+  test("reactively isolates an open sidebar when the viewport crosses into overlay mode", async () => {
+    mockUseTaskRuntime.mockReturnValue({
+      enabled: false,
+      taskId: "",
+      task: null,
+      events: [],
+      connectionState: "disabled",
+      error: null,
+      busyAction: "",
+      selectTask: jest.fn(),
+    });
+
+    const originalMatchMedia = window.matchMedia;
+    let changeListener = null;
+    let mobileMatches = false;
+    window.matchMedia = jest.fn(() => ({
+      matches: mobileMatches,
+      addEventListener: (_event, listener) => { changeListener = listener; },
+      removeEventListener: jest.fn(),
+    }));
+
+    const rendered = render(
+      <AgentWorkspaceLayout controller={makeController({ sidebarOpen: true })} />,
+    );
+    const sidebar = document.querySelector("#project-sidebar");
+    const workspaceMain = screen.getByRole("main");
+    expect(sidebar.getAttribute("role")).toBeNull();
+    expect(workspaceMain.hasAttribute("inert")).toBe(false);
+
+    mobileMatches = true;
+    act(() => changeListener({ matches: true }));
+
+    await waitFor(() => {
+      expect(sidebar.getAttribute("role")).toBe("dialog");
+      expect(sidebar.getAttribute("aria-modal")).toBe("true");
+      expect(workspaceMain.hasAttribute("inert")).toBe(true);
+      expect(workspaceMain.getAttribute("aria-hidden")).toBe("true");
+      expect(screen.getByRole("button", { name: "First sidebar action" })).toBe(document.activeElement);
+    });
+
+    rendered.unmount();
+    window.matchMedia = originalMatchMedia;
   });
 });
