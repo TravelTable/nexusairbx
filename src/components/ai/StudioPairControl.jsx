@@ -34,6 +34,7 @@ import {
 
 const MENU_WIDTH = 400;
 const MENU_MAX_HEIGHT = 520;
+const CURRENT_CONNECTOR_VERSION = "0.2.7";
 
 /** @deprecated Prefer computeAnchoredMenuPosition — kept for existing Studio pair tests. */
 export function computeStudioPairMenuPosition(buttonRect, options) {
@@ -398,7 +399,7 @@ export default function StudioPairControl({
   };
 
   const mcpPlace = latestMcpSession?.studio?.placeName || latestMcpSession?.studio?.placeId || "Not reported";
-  const connectorVersion = latestMcpSession?.connector?.connectorVersion || latestMcpSession?.studio?.connectorVersion || "Not reported";
+  const connectorVersion = latestMcpSession?.connector?.connectorVersion || latestMcpSession?.studio?.connectorVersion || CURRENT_CONNECTOR_VERSION;
   const mcpServerVersion = latestMcpSession?.studio?.mcpServerVersion || "Not reported";
   const studioTargets = Array.isArray(latestMcpSession?.studio?.targets) ? latestMcpSession.studio.targets : [];
   const activeStudioId = latestMcpSession?.studio?.activeStudioId || "";
@@ -720,10 +721,10 @@ export default function StudioPairControl({
               )}
 
               <a
-                href="/docs/studio-plugin"
+                href="/downloads"
                 className="inline-flex items-center gap-1 text-[10px] font-bold text-gray-500 transition-colors hover:text-gray-300"
               >
-                Local connector setup <ExternalLink className="h-3 w-3" />
+                Download Connector {CURRENT_CONNECTOR_VERSION} <ExternalLink className="h-3 w-3" />
               </a>
             </div>
           )}

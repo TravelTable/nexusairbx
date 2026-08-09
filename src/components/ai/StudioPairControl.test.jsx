@@ -95,8 +95,8 @@ describe("StudioPairControl", () => {
 
     fireEvent.click(screen.getByRole("tab", { name: /Roblox Studio MCP/i }));
     expect(
-      screen.getByRole("link", { name: /Local connector setup/i }).getAttribute("href")
-    ).toBe("/docs/studio-plugin");
+      screen.getByRole("link", { name: /Download Connector 0\.2\.7/i }).getAttribute("href")
+    ).toBe("/downloads");
 
     fireEvent.keyDown(document, { key: "Escape" });
     expect(screen.queryByRole("dialog", { name: /Connect Roblox Studio/i })).toBeNull();
