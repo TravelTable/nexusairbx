@@ -68,7 +68,7 @@ export default function RobloxTrustStrip({ user: providedUser, authReady: provid
   const localDevelopmentAuth = shouldUseLocalDevelopmentAuth();
   const { user, authReady } = useHomepageAuthState(providedUser, providedAuthReady);
   const pillClass =
-    "inline-flex items-center gap-2 bg-white/[0.06] border border-white/10 rounded-full px-4 py-2 text-xs font-semibold text-zinc-400";
+    "inline-flex min-h-11 items-center gap-2 rounded-full border border-white/10 bg-white/[0.06] px-4 py-2 text-xs font-semibold text-zinc-400";
 
   return (
     <div className="relative mt-6 w-full max-w-2xl pb-10 lg:pb-11">

@@ -70,7 +70,7 @@ export default function HomepageV2Content({
 
           <a
             href="/downloads"
-            className="mt-7 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.035] px-4 py-2 text-xs font-black text-zinc-300 transition hover:border-cyan-300/30 hover:bg-cyan-300/[0.06] hover:text-cyan-100"
+            className="mt-7 inline-flex min-h-11 items-center gap-2 rounded-full border border-white/10 bg-white/[0.035] px-4 py-2 text-xs font-black text-zinc-300 transition hover:border-cyan-300/30 hover:bg-cyan-300/[0.06] hover:text-cyan-100"
           >
             Get the Studio companion
             <span aria-hidden="true">→</span>

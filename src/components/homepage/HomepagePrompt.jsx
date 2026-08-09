@@ -108,7 +108,7 @@ export default function HomepagePrompt({
           disabled={submitting}
           aria-invalid={Boolean(error)}
           aria-describedby="homepage-prompt-message"
-          className="h-12 flex-1 border-white/10 bg-black/30 px-4 text-base text-white placeholder:text-zinc-500"
+          className="h-12 flex-none border-white/10 bg-black/30 px-4 text-base text-white placeholder:text-zinc-500 sm:flex-1"
         />
         <Button
           type="submit"

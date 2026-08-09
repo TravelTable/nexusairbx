@@ -6,7 +6,7 @@ const navLinkClass =
   "rounded-md px-3 py-2 text-sm font-medium text-zinc-300 transition-colors hover:bg-white/[0.06] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00f5d4]";
 
 const dropdownLinkClass =
-  "block rounded-md px-3 py-2.5 text-sm text-zinc-200 transition-colors hover:bg-white/[0.06] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00f5d4]";
+  "flex min-h-11 items-center rounded-md px-3 text-sm text-zinc-200 transition-colors hover:bg-white/[0.06] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00f5d4]";
 
 function DesktopGroup({ label, children }) {
   return (
@@ -36,7 +36,7 @@ export default function PublicHeader({ showSkipLink = false }) {
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
         <a
           href="/"
-          className="inline-flex min-w-0 items-center gap-2.5 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00f5d4]"
+          className="inline-flex min-h-11 min-w-0 items-center gap-2.5 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00f5d4]"
           aria-label="NexusRBX home"
         >
           <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-md border border-white/10 bg-white/[0.04]">
@@ -68,7 +68,7 @@ export default function PublicHeader({ showSkipLink = false }) {
         </div>
 
         <details className="group relative lg:hidden">
-          <summary className="flex h-10 cursor-pointer list-none items-center rounded-md border border-white/15 bg-white/[0.04] px-3 text-sm font-medium text-zinc-100 transition-colors hover:bg-white/[0.08] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00f5d4] [&::-webkit-details-marker]:hidden">
+          <summary className="flex h-11 cursor-pointer list-none items-center rounded-md border border-white/15 bg-white/[0.04] px-3 text-sm font-medium text-zinc-100 transition-colors hover:bg-white/[0.08] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00f5d4] [&::-webkit-details-marker]:hidden">
             <span className="group-open:hidden">Menu</span>
             <span className="hidden group-open:inline">Close</span>
           </summary>

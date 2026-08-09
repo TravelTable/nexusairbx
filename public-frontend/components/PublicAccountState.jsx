@@ -79,14 +79,16 @@ export default function PublicAccountState({ mobile = false }) {
   }
 
   const wrapperClass = mobile ? "grid gap-2" : "flex items-center gap-2";
-  const primaryClass = `${focusClass} inline-flex h-10 items-center justify-center rounded-md bg-[#00f5d4] px-4 text-sm font-semibold text-[#06100e] transition-colors hover:bg-[#32f7dc]`;
-  const secondaryClass = `${focusClass} inline-flex h-10 items-center justify-center rounded-md border border-white/15 px-3.5 text-sm font-medium text-zinc-200 transition-colors hover:border-white/25 hover:bg-white/[0.06] hover:text-white`;
+  const controlHeightClass = mobile ? "h-11" : "h-10";
+  const primaryClass = `${focusClass} ${controlHeightClass} inline-flex items-center justify-center rounded-md bg-[#00f5d4] px-4 text-sm font-semibold text-[#06100e] transition-colors hover:bg-[#32f7dc]`;
+  const secondaryClass = `${focusClass} ${controlHeightClass} inline-flex items-center justify-center rounded-md border border-white/15 px-3.5 text-sm font-medium text-zinc-200 transition-colors hover:border-white/25 hover:bg-white/[0.06] hover:text-white`;
+  const menuItemClass = `${focusClass} flex min-h-11 items-center rounded-md px-3 text-sm text-zinc-200 hover:bg-white/[0.06] hover:text-white`;
 
   if (!authReady) {
     return (
       <div className={wrapperClass} aria-label="Loading account controls">
-        <span className="h-10 w-20 animate-pulse rounded-md bg-white/[0.06]" aria-hidden="true" />
-        <span className="h-10 w-28 animate-pulse rounded-md bg-white/[0.06]" aria-hidden="true" />
+        <span className={`${controlHeightClass} w-20 animate-pulse rounded-md bg-white/[0.06]`} aria-hidden="true" />
+        <span className={`${controlHeightClass} w-28 animate-pulse rounded-md bg-white/[0.06]`} aria-hidden="true" />
       </div>
     );
   }
@@ -119,16 +121,16 @@ export default function PublicAccountState({ mobile = false }) {
           <p className="truncate border-b border-white/10 px-3 pb-2 pt-1 text-xs text-zinc-500" title={account.email}>
             {account.email}
           </p>
-          <a className={`${focusClass} mt-1 block rounded-md px-3 py-2 text-sm text-zinc-200 hover:bg-white/[0.06] hover:text-white`} href="/settings?tab=roblox">
+          <a className={`${menuItemClass} mt-1`} href="/settings?tab=roblox">
             Roblox + Studio
           </a>
-          <a className={`${focusClass} block rounded-md px-3 py-2 text-sm text-zinc-200 hover:bg-white/[0.06] hover:text-white`} href="/billing">
+          <a className={menuItemClass} href="/billing">
             Billing
           </a>
-          <a className={`${focusClass} block rounded-md px-3 py-2 text-sm text-zinc-200 hover:bg-white/[0.06] hover:text-white`} href="/settings">
+          <a className={menuItemClass} href="/settings">
             Settings
           </a>
-          <a className={`${focusClass} flex items-center justify-between gap-3 rounded-md px-3 py-2 text-sm text-zinc-200 hover:bg-white/[0.06] hover:text-white`} href="/support">
+          <a className={`${menuItemClass} justify-between gap-3`} href="/support">
             <span>Support</span>
             {supportUnreadCount > 0 ? (
               <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-[#00f5d4] px-1.5 text-[11px] font-bold text-[#06100e]">
@@ -137,7 +139,7 @@ export default function PublicAccountState({ mobile = false }) {
             ) : null}
           </a>
           <button
-            className={`${focusClass} block w-full rounded-md px-3 py-2 text-left text-sm text-zinc-200 hover:bg-white/[0.06] hover:text-white disabled:cursor-wait disabled:text-zinc-500`}
+            className={`${menuItemClass} w-full text-left disabled:cursor-wait disabled:text-zinc-500`}
             type="button"
             onClick={handleSignOut}
             disabled={signOutState === "loading"}

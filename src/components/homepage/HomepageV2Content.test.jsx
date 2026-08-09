@@ -40,7 +40,10 @@ describe("HomepageV2Content prompt accessibility", () => {
     expect(main.contains(screen.getByRole("contentinfo"))).toBe(false);
     const input = screen.getByRole("textbox", { name: "Describe the Roblox script or UI you want" });
     expect(input.className).toContain("focus-visible:ring-2");
+    expect(input.className).toContain("flex-none");
+    expect(input.className).toContain("sm:flex-1");
     expect(input.getAttribute("aria-describedby")).toBe("homepage-prompt-message");
+    expect(screen.getByRole("link", { name: /Get the Studio companion/i }).className).toContain("min-h-11");
 
     fireEvent.change(input, { target: { value: "Build a round system" } });
     fireEvent.click(screen.getByRole("button", { name: "Generate" }));
