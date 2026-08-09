@@ -27,9 +27,16 @@ const MISSING_REDIRECT_STATE_RE =
 
 const POPUP_REDIRECT_FALLBACK_CODES = new Set([
   "auth/popup-blocked",
+  "auth/popup-closed-by-user",
   "auth/operation-not-supported-in-this-environment",
   "auth/cancelled-popup-request",
+  "popup_closed",
+  "popup_failed_to_open",
 ]);
+
+export function shouldFallbackToAuthRedirect(error) {
+  return POPUP_REDIRECT_FALLBACK_CODES.has(error?.code);
+}
 
 let googleIdentityScriptPromise = null;
 
@@ -241,7 +248,7 @@ export async function signInWithOAuthProvider(
   try {
     return await signInWithPopup(auth, provider);
   } catch (error) {
-    const shouldFallbackToRedirect = POPUP_REDIRECT_FALLBACK_CODES.has(error?.code);
+    const shouldFallbackToRedirect = shouldFallbackToAuthRedirect(error);
     if (!shouldFallbackToRedirect) {
       throw error;
     }
@@ -250,6 +257,21 @@ export async function signInWithOAuthProvider(
     await signInWithRedirect(auth, provider);
     return null;
   }
+}
+
+export async function redirectSignInWithOAuthProvider(
+  auth,
+  ProviderClass,
+  { rememberMe = false, returnPath = "/", method = "oauth" } = {}
+) {
+  await applyAuthPersistence(auth, rememberMe);
+  const provider = new ProviderClass();
+  if (method === "google" && typeof provider.setCustomParameters === "function") {
+    provider.setCustomParameters({ prompt: "select_account" });
+  }
+  storeRedirectContext(returnPath, method);
+  await signInWithRedirect(auth, provider);
+  return null;
 }
 
 export async function consumeAuthRedirectResult(auth) {

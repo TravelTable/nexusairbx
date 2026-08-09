@@ -24,6 +24,8 @@ import {
   getFriendlyAuthErrorMessage,
   isMissingRedirectStateError,
   readAuthPersistencePreference,
+  redirectSignInWithOAuthProvider,
+  shouldFallbackToAuthRedirect,
   signInWithOAuthProvider,
   storeAuthRedirectError,
   writeAuthPersistencePreference,
@@ -58,6 +60,12 @@ describe("firebaseAuth", () => {
     expect(
       getFriendlyAuthErrorMessage({ code: "auth/popup-blocked", message: "raw" })
     ).toContain("popup was blocked");
+  });
+
+  test("recognizes Google Identity popup failures that need a same-tab redirect", () => {
+    expect(shouldFallbackToAuthRedirect({ code: "auth/popup-closed-by-user" })).toBe(true);
+    expect(shouldFallbackToAuthRedirect({ code: "popup_failed_to_open" })).toBe(true);
+    expect(shouldFallbackToAuthRedirect({ code: "auth/invalid-credential" })).toBe(false);
   });
 
   test("defaults auth persistence preference to local", () => {
@@ -117,6 +125,25 @@ describe("firebaseAuth", () => {
     const popupProvider = signInWithPopup.mock.calls[0][1];
     expect(setCustomParameters).toHaveBeenCalledWith({ prompt: "select_account" });
     expect(signInWithRedirect).toHaveBeenCalledWith({}, popupProvider);
+  });
+
+  test("can start the Google redirect directly after the GIS popup is unavailable", async () => {
+    const setCustomParameters = jest.fn();
+    class GoogleProvider {
+      setCustomParameters = setCustomParameters;
+    }
+
+    await expect(
+      redirectSignInWithOAuthProvider({}, GoogleProvider, {
+        method: "google",
+        rememberMe: true,
+        returnPath: "/ai?project=one",
+      })
+    ).resolves.toBeNull();
+
+    expect(setCustomParameters).toHaveBeenCalledWith({ prompt: "select_account" });
+    expect(signInWithRedirect).toHaveBeenCalledWith({}, expect.any(GoogleProvider));
+    expect(sessionStorage.getItem("nexusrbx:authRedirectReturn")).toBe("/ai?project=one");
   });
 
   test("does not fall back to redirect on auth/internal-error", async () => {

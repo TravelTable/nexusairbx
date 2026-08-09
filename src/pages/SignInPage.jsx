@@ -2,12 +2,19 @@ import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Github, Mail } from "lib/icons";
 import { auth } from "../firebase";
-import { signInWithEmailAndPassword, GithubAuthProvider, onAuthStateChanged } from "firebase/auth";
+import {
+  signInWithEmailAndPassword,
+  GithubAuthProvider,
+  GoogleAuthProvider,
+  onAuthStateChanged,
+} from "firebase/auth";
 import {
   applyAuthPersistence,
   consumeAuthRedirectError,
   getFriendlyAuthErrorMessage,
   readAuthPersistencePreference,
+  redirectSignInWithOAuthProvider,
+  shouldFallbackToAuthRedirect,
   signInWithGoogleIdentityServices,
   signInWithOAuthProvider,
   writeAuthPersistencePreference,
@@ -154,6 +161,26 @@ export default function NexusRBXSignInPageContainer() {
         void finishSignInRedirect();
       }, 600);
     } catch (error) {
+      if (shouldFallbackToAuthRedirect(error)) {
+        setFormStatus({
+          status: "submitting",
+          message: "Continuing sign-in in this tab..."
+        });
+        try {
+          await redirectSignInWithOAuthProvider(auth, GoogleAuthProvider, {
+            rememberMe,
+            returnPath: authReturnPath || "/",
+            method: "google",
+          });
+          return;
+        } catch (redirectError) {
+          setFormStatus({
+            status: "error",
+            message: getFriendlyAuthErrorMessage(redirectError)
+          });
+          return;
+        }
+      }
       setFormStatus({
         status: "error",
         message: getFriendlyAuthErrorMessage(error)
