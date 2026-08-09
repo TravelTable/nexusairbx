@@ -64,7 +64,7 @@ Results:
 
 | Test group | Result | What it establishes |
 | --- | --- | --- |
-| Evaluation-corpus contract | 12/12 pass | Exactly 17 E2E fixtures, 3 additional agent fixtures, all 20 required dimensions, all 9 Prompt 2 tools, durable side-effect identity, trusted verification, fail-closed defaults, and the explicit game-pass deviation. |
+| Evaluation-corpus contract | 10/10 pass | Exactly 17 E2E fixtures, 3 additional agent fixtures, all 20 required dimensions, all 9 Prompt 2 tools, consistent capability declarations, durable side-effect identity, trusted verification, and the explicit game-pass deviation. |
 | Agent/context/capability/tool contracts | 32/32 pass | Identity and trust ordering, bounded context, ownership checks, capability intersection, planning/amendment behavior, canonical Prompt 2 tool publication, write gating, observability vocabulary, and redaction. |
 | Task/Studio/manifest contracts | 51/51 pass | Task and step fencing, checkpoints, idempotent amendment, operation reconciliation, Studio command leases and receipts, protocol sanitization, optimistic concurrency, three-way conflict handling, and trusted verification. |
 | Syntax checks | pass | The migration audit and evaluation test parse under the available Node runtime. |
@@ -118,8 +118,10 @@ coverage; it must not be interpreted as an E2E pass.
 
 `eval-scenarios.json` is the versioned source of evaluation inputs and expected
 structured outcomes. `eval-scenarios.test.js` prevents accidental deletion,
-renaming, or weakening of the corpus. It also imports the runtime flag,
-observability, and Prompt 2 tool exports so documentation drift fails a test.
+renaming, or weakening of the corpus in a standalone root-repository checkout.
+Executable runtime-flag, observability, and Prompt 2 adapter conformance belongs
+to backend-repository CI; the root packaging gate does not infer or duplicate
+backend implementation that is intentionally absent from this repository.
 
 The 20 required dimensions are:
 
@@ -204,9 +206,10 @@ flag, the release owner must produce evidence for all of the following:
 
 ## Observability and operational acceptance
 
-The stable vocabulary is documented in
-`operations-migration-and-flags.md` and locked against executable exports by
-the corpus test: 29 event names and 17 metric keys.
+The stable vocabulary of 29 event names and 17 metric keys is documented in
+`operations-migration-and-flags.md`. Backend-repository CI owns conformance
+between that vocabulary and the executable observability exports; the standalone
+root corpus test does not load the intentionally absent backend implementation.
 
 Before rollout, dashboards and alerts must at minimum expose:
 

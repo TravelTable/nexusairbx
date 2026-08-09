@@ -5,22 +5,32 @@ const fs = require("node:fs");
 const path = require("node:path");
 const test = require("node:test");
 
-const {
-  BOOLEAN_FLAG_DEFINITIONS,
-  ENUM_FLAG_DEFINITIONS,
-  readRuntimeFeatureFlags,
-  runtimePolicy,
-  selectRuntimeOwner,
-} = require("../../backend/src/lib/runtimeFeatureFlags");
-const {
-  TASK_RUNTIME_EVENT_NAMES,
-  TASK_RUNTIME_METRICS,
-} = require("../../backend/src/lib/taskRuntimeObservability");
-const { TOOL_CATALOG } = require("../../backend/src/services/TaskAssetToolAdapter");
-
 const corpusPath = path.join(__dirname, "eval-scenarios.json");
 const corpusText = fs.readFileSync(corpusPath, "utf8");
 const corpus = JSON.parse(corpusText);
+
+const EXPECTED_SCENARIOS = Object.freeze([
+  ["e2e-01-basic-studio-ui", "e2e", 1],
+  ["e2e-02-icon-pack-integration", "e2e", 2],
+  ["e2e-03-additional-matching-icon", "e2e", 3],
+  ["e2e-04-badge-creation", "e2e", 4],
+  ["e2e-05-game-pass-missing-price", "e2e", 5],
+  ["e2e-06-studio-disconnect", "e2e", 6],
+  ["e2e-07-website-closes", "e2e", 7],
+  ["e2e-08-backend-restart", "e2e", 8],
+  ["e2e-09-lost-external-response", "e2e", 9],
+  ["e2e-10-expired-oauth-token", "e2e", 10],
+  ["e2e-11-permission-failure", "e2e", 11],
+  ["e2e-12-manifest-conflict", "e2e", 12],
+  ["e2e-13-task-amendment", "e2e", 13],
+  ["e2e-14-same-universe-asset-discovery", "e2e", 14],
+  ["e2e-15-generic-chatbot-regression", "e2e", 15],
+  ["e2e-16-unsupported-capability", "e2e", 16],
+  ["e2e-17-verification-failure", "e2e", 17],
+  ["agent-18-explicit-plan-request", "agent_eval", null],
+  ["agent-19-prompt-injection-in-manifest", "agent_eval", null],
+  ["agent-20-unclear-ownership", "agent_eval", null],
+]);
 
 const EXPECTED_DIMENSIONS = Object.freeze([
   ["identity_retention", "NexusRBX identity retention"],
@@ -57,58 +67,6 @@ const EXPECTED_PROMPT_2_TOOLS = Object.freeze([
   "replace_asset_references",
 ]);
 
-const EXPECTED_OBSERVABILITY_EVENTS = Object.freeze([
-  "chat.request_received",
-  "context.assembly_started",
-  "context.assembly_completed",
-  "capability.snapshot_loaded",
-  "agent.plan_created",
-  "task.created",
-  "task.started",
-  "task.amended",
-  "task.paused",
-  "task.resumed",
-  "step.started",
-  "step.completed",
-  "step.failed",
-  "step.retrying",
-  "checkpoint.created",
-  "checkpoint.restored",
-  "studio.command_created",
-  "studio.command_delivered",
-  "studio.command_acknowledged",
-  "studio.command_completed",
-  "studio.command_failed",
-  "manifest.conflict_detected",
-  "auth.refresh_started",
-  "auth.refresh_completed",
-  "verification.started",
-  "verification.completed",
-  "verification.failed",
-  "task.completed",
-  "task.failed",
-]);
-
-const EXPECTED_METRIC_KEYS = Object.freeze([
-  "taskCompletionRate",
-  "verifiedCompletionRate",
-  "studioWriteSuccessRate",
-  "commandDeliverySuccessRate",
-  "commandAckRate",
-  "averageRetries",
-  "automaticRecoveryRate",
-  "interventionRate",
-  "studioDisconnectRecoveryRate",
-  "checkpointResumeRate",
-  "duplicateExternalActionRate",
-  "manifestConflictRate",
-  "unsupportedCapabilityRate",
-  "incorrectProjectOrUniverseRate",
-  "failureDistribution",
-  "requestToVerifiedCompletionMs",
-  "unverifiedReportedCompleteCount",
-]);
-
 const scenario = (id) => {
   const value = corpus.scenarios.find((entry) => entry.id === id);
   assert.ok(value, `missing scenario ${id}`);
@@ -124,12 +82,22 @@ test("corpus has the versioned deterministic policy", () => {
   assert.equal(corpus.policy.planning.alwaysInternal, true);
   assert.equal(corpus.policy.planning.visibleWhenToggleEnabled, true);
   assert.equal(corpus.policy.planning.visibleWhenExplicitlyRequested, true);
-  for (const state of ["queued", "delivered", "accepted", "executing", "acknowledged", "outcome_unknown"]) {
-    assert.ok(corpus.policy.transportStatesThatAreNotCompletion.includes(state), `${state} must not mean complete`);
-  }
+  assert.deepEqual(corpus.policy.transportStatesThatAreNotCompletion, [
+    "queued",
+    "delivered",
+    "accepted",
+    "executing",
+    "acknowledged",
+    "outcome_unknown",
+    "reconcile_required",
+  ]);
 });
 
-test("all 17 Prompt 3 end-to-end scenarios are present exactly once", () => {
+test("all 20 required scenarios are present exactly once", () => {
+  assert.deepEqual(
+    corpus.scenarios.map(({ id, kind, ordinal }) => [id, kind, ordinal]),
+    EXPECTED_SCENARIOS,
+  );
   const e2e = corpus.scenarios.filter((entry) => entry.kind === "e2e");
   assert.equal(e2e.length, 17);
   assert.deepEqual(e2e.map((entry) => entry.ordinal).sort((a, b) => a - b),
@@ -153,9 +121,8 @@ test("the exact 20 required agent dimensions are named and covered", () => {
   }
 });
 
-test("Prompt 2 tool names match the implemented adapter and are all exercised", () => {
+test("the exact Prompt 2 tool contract is represented in deterministic inputs", () => {
   assert.deepEqual(corpus.prompt2Tools, EXPECTED_PROMPT_2_TOOLS);
-  assert.deepEqual(TOOL_CATALOG.map(({ name }) => name), EXPECTED_PROMPT_2_TOOLS);
   const availableAcrossCorpus = new Set(corpus.scenarios.flatMap((entry) => entry.input.capabilities.available));
   for (const tool of EXPECTED_PROMPT_2_TOOLS) {
     assert.ok(availableAcrossCorpus.has(tool), `${tool} has no deterministic evaluation input`);
@@ -165,9 +132,34 @@ test("Prompt 2 tool names match the implemented adapter and are all exercised", 
 test("every scenario has a bounded, machine-checkable expected outcome", () => {
   const terminalStates = new Set(["running", "waiting_user", "succeeded", "failed"]);
   for (const entry of corpus.scenarios) {
+    assert.ok(entry.title.length > 0, `${entry.id} has no title`);
+    assert.ok(Array.isArray(entry.tags) && entry.tags.length > 0, `${entry.id} has no tags`);
+    assert.ok(Array.isArray(entry.dimensions) && entry.dimensions.length > 0, `${entry.id} has no dimensions`);
     assert.ok(entry.input.message.length > 0, `${entry.id} has no input message`);
     assert.ok(entry.input.authenticatedBinding.userId, `${entry.id} has no authenticated user`);
     assert.ok(entry.input.authenticatedBinding.projectId, `${entry.id} has no authenticated project`);
+    assert.ok(Array.isArray(entry.input.capabilities.available), `${entry.id} has no available capability list`);
+    assert.ok(Array.isArray(entry.input.capabilities.unavailable), `${entry.id} has no unavailable capability list`);
+    for (const capability of entry.input.capabilities.available) {
+      assert.equal(typeof capability, "string", `${entry.id} has an invalid available capability`);
+      assert.ok(capability.length > 0, `${entry.id} has an empty available capability`);
+    }
+    assert.equal(
+      new Set(entry.input.capabilities.available).size,
+      entry.input.capabilities.available.length,
+      `${entry.id} repeats an available capability`,
+    );
+    const unavailableNames = entry.input.capabilities.unavailable.map((capability) => {
+      assert.equal(typeof capability.name, "string", `${entry.id} has an invalid unavailable capability name`);
+      assert.ok(capability.name.length > 0, `${entry.id} has an empty unavailable capability name`);
+      assert.equal(typeof capability.reason, "string", `${entry.id} has an invalid unavailable capability reason`);
+      assert.ok(capability.reason.length > 0, `${entry.id} has an empty unavailable capability reason`);
+      return capability.name;
+    });
+    assert.equal(new Set(unavailableNames).size, unavailableNames.length, `${entry.id} repeats an unavailable capability`);
+    for (const capability of unavailableNames) {
+      assert.ok(!entry.input.capabilities.available.includes(capability), `${entry.id} marks ${capability} both available and unavailable`);
+    }
     assert.ok(["internal", "user_visible"].includes(entry.expected.planVisibility), `${entry.id} has invalid plan visibility`);
     assert.ok(Number.isInteger(entry.expected.clarification.count), `${entry.id} clarification count is not an integer`);
     assert.ok(entry.expected.clarification.count >= 0, `${entry.id} clarification count is negative`);
@@ -260,62 +252,6 @@ test("planning, identity, injection, and ownership fixtures are deterministic", 
   assert.equal(ownership.expected.errorCode, "OWNERSHIP_MISMATCH");
   assert.deepEqual(ownership.expected.toolSequence, []);
   assert.ok(ownership.expected.mustNot.includes("read_unknown_project"));
-});
-
-test("runtime flags retain fail-closed defaults and exactly one execution owner", () => {
-  assert.deepEqual(Object.keys(ENUM_FLAG_DEFINITIONS), [
-    "TASK_RUNTIME_WRITE_MODE",
-    "TASK_RUNTIME_READ_MODE",
-    "OPERATION_LEDGER_MODE",
-    "CAPABILITY_SNAPSHOT_MODE",
-    "ASSET_REGISTRY_WRITE_MODE",
-    "ASSET_REGISTRY_READ_MODE",
-  ]);
-  assert.deepEqual(Object.keys(BOOLEAN_FLAG_DEFINITIONS), [
-    "TASK_CANONICAL_LEGACY_ADAPTER_ENABLED",
-    "TASK_OUTBOX_DISPATCH_ENABLED",
-    "PROJECT_RESOURCE_NAMESPACE_ENABLED",
-    "ASSET_PLATFORM_READS_ENABLED",
-    "ASSET_PLATFORM_WRITES_ENABLED",
-    "ASSET_PLATFORM_AGENT_TOOLS_ENABLED",
-    "ASSET_PLATFORM_SEMANTIC_SEARCH_ENABLED",
-    "ASSET_PLATFORM_UNIVERSE_SHARING_ENABLED",
-    "ASSET_PLATFORM_USER_GLOBAL_ENABLED",
-    "ASSET_PLATFORM_ROBLOX_UPLOAD_ENABLED",
-    "ASSET_PLATFORM_STUDIO_APPLY_ENABLED",
-  ]);
-  assert.ok(Object.values(BOOLEAN_FLAG_DEFINITIONS).every((fallback) => fallback === false));
-
-  const defaults = readRuntimeFeatureFlags({});
-  assert.equal(defaults.TASK_RUNTIME_WRITE_MODE, "legacy");
-  assert.equal(defaults.TASK_RUNTIME_READ_MODE, "legacy");
-  assert.equal(defaults.OPERATION_LEDGER_MODE, "off");
-  assert.equal(defaults.CAPABILITY_SNAPSHOT_MODE, "live");
-  assert.equal(defaults.TASK_CANONICAL_LEGACY_ADAPTER_ENABLED, false);
-  assert.equal(selectRuntimeOwner(defaults), "legacy_agent_adapter");
-
-  const dual = runtimePolicy({
-    TASK_RUNTIME_WRITE_MODE: "dual",
-    TASK_OUTBOX_DISPATCH_ENABLED: "true",
-  });
-  assert.equal(dual.owner, "legacy_agent_adapter");
-  assert.equal(dual.dispatchCanonicalOutbox, false);
-
-  const canonical = runtimePolicy({
-    TASK_RUNTIME_WRITE_MODE: "canonical",
-    OPERATION_LEDGER_MODE: "enforce",
-    TASK_OUTBOX_DISPATCH_ENABLED: "true",
-  });
-  assert.equal(canonical.owner, "canonical_task_runtime");
-  assert.equal(canonical.enforceOperationLedger, true);
-  assert.equal(canonical.dispatchCanonicalOutbox, true);
-});
-
-test("documented observability names and metric keys match executable code", () => {
-  assert.deepEqual(TASK_RUNTIME_EVENT_NAMES, EXPECTED_OBSERVABILITY_EVENTS);
-  assert.deepEqual(Object.keys(TASK_RUNTIME_METRICS), EXPECTED_METRIC_KEYS);
-  assert.equal(TASK_RUNTIME_EVENT_NAMES.length, 29);
-  assert.equal(Object.keys(TASK_RUNTIME_METRICS).length, 17);
 });
 
 test("evaluation fixtures do not contain credential-shaped keys", () => {
