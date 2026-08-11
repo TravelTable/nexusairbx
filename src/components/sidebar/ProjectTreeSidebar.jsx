@@ -454,9 +454,11 @@ export default function ProjectTreeSidebar({
     }
   }, [toggleExpanded]);
 
-  const treeItemProps = (id, parentId = "") => ({
+  const treeItemProps = (id, { parentId = "", label, level = 1 } = {}) => ({
     role: "treeitem",
     tabIndex: focusedId === id ? 0 : -1,
+    "aria-label": label,
+    "aria-level": level,
     "data-sidebar-treeitem": "true",
     "data-tree-id": id,
     "data-parent-id": parentId,
@@ -477,7 +479,11 @@ export default function ProjectTreeSidebar({
     return (
       <div
         key={chat.id}
-        {...treeItemProps(`chat:${chat.id}`, parentId)}
+        {...treeItemProps(`chat:${chat.id}`, {
+          parentId,
+          label: chat.title || "Untitled chat",
+          level: projectId ? 3 : 2,
+        })}
         data-selected={currentChatId === chat.id}
         className={[
           "nexus-tree-row group h-[31px] pl-7 pr-1 text-xs",
@@ -502,6 +508,7 @@ export default function ProjectTreeSidebar({
           <button
             type="button"
             data-tree-activate="true"
+            aria-label={chat.title || "Untitled chat"}
             onClick={() => onOpenChat(chat.id)}
             className="flex min-w-0 flex-1 items-center gap-2 self-stretch text-left"
             title={chat.title || "Untitled chat"}
@@ -678,7 +685,7 @@ export default function ProjectTreeSidebar({
             <>
               <section aria-label="General chats">
                 <div
-                  {...treeItemProps(GENERAL_ROOT_ID)}
+                  {...treeItemProps(GENERAL_ROOT_ID, { label: "General", level: 1 })}
                   aria-expanded={expandedIds.has(GENERAL_ROOT_ID)}
                   className="nexus-tree-row h-[34px] px-2 text-xs font-medium"
                 >
@@ -686,6 +693,7 @@ export default function ProjectTreeSidebar({
                     type="button"
                     data-tree-activate="true"
                     data-tree-toggle="true"
+                    aria-label="General chats"
                     onClick={() => toggleExpanded(GENERAL_ROOT_ID)}
                     className="flex min-w-0 flex-1 items-center self-stretch text-left"
                   >
@@ -726,7 +734,7 @@ export default function ProjectTreeSidebar({
 
               <section aria-label="Projects">
                 <div
-                  {...treeItemProps(PROJECTS_ROOT_ID)}
+                  {...treeItemProps(PROJECTS_ROOT_ID, { label: "Projects", level: 1 })}
                   aria-expanded={expandedIds.has(PROJECTS_ROOT_ID)}
                   className="nexus-tree-row h-[34px] px-2 text-xs font-medium"
                 >
@@ -734,6 +742,7 @@ export default function ProjectTreeSidebar({
                     type="button"
                     data-tree-activate="true"
                     data-tree-toggle="true"
+                    aria-label="Projects"
                     onClick={() => toggleExpanded(PROJECTS_ROOT_ID)}
                     className="flex min-w-0 flex-1 items-center self-stretch text-left"
                   >
@@ -769,7 +778,11 @@ export default function ProjectTreeSidebar({
                       return (
                         <div key={project.projectId}>
                           <div
-                            {...treeItemProps(project.projectId, PROJECTS_ROOT_ID)}
+                            {...treeItemProps(project.projectId, {
+                              parentId: PROJECTS_ROOT_ID,
+                              label: project.title || "Untitled project",
+                              level: 2,
+                            })}
                             aria-expanded={expanded}
                             data-selected={!currentChatId && String(currentProjectId || "") === project.projectId}
                             className="nexus-tree-row group h-[34px] pl-3 pr-1 text-xs"
@@ -795,6 +808,7 @@ export default function ProjectTreeSidebar({
                                 type="button"
                                 data-tree-activate="true"
                                 data-tree-toggle="true"
+                                aria-label={project.title || "Untitled project"}
                                 onClick={() => toggleExpanded(project.projectId)}
                                 className="flex min-w-0 flex-1 items-center self-stretch text-left"
                               >

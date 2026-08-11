@@ -43,7 +43,9 @@ describe("HomepageV2Content prompt accessibility", () => {
     expect(input.className).toContain("flex-none");
     expect(input.className).toContain("sm:flex-1");
     expect(input.getAttribute("aria-describedby")).toBe("homepage-prompt-message");
-    expect(screen.getByRole("link", { name: /Get the Studio companion/i }).className).toContain("min-h-11");
+    const connectorLink = screen.getByRole("link", { name: /Get the desktop connector/i });
+    expect(connectorLink.getAttribute("href")).toBe("/downloads");
+    expect(connectorLink.className).toContain("min-h-11");
 
     fireEvent.change(input, { target: { value: "Build a round system" } });
     fireEvent.click(screen.getByRole("button", { name: "Generate" }));

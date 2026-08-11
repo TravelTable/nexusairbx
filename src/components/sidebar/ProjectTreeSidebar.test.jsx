@@ -1,5 +1,5 @@
 import React from "react";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import ProjectTreeSidebar from "./ProjectTreeSidebar";
 
 const projects = [
@@ -83,6 +83,25 @@ describe("ProjectTreeSidebar", () => {
         window.localStorage.getItem("nexusrbx:sidebar:user-1:expanded")
       )).toEqual(expect.arrayContaining(["__projects__", "project-a"]));
     });
+  });
+
+  it("names every tree level explicitly for assistive technology", () => {
+    renderSidebar();
+
+    const general = screen.getByRole("treeitem", { name: "General" });
+    const generalChat = screen.getByRole("treeitem", { name: "DataStore question" });
+    const projectsRoot = screen.getByRole("treeitem", { name: "Projects" });
+    const project = screen.getByRole("treeitem", { name: "Sword Simulator" });
+
+    expect(general.getAttribute("aria-level")).toBe("1");
+    expect(generalChat.getAttribute("aria-level")).toBe("2");
+    expect(projectsRoot.getAttribute("aria-level")).toBe("1");
+    expect(project.getAttribute("aria-level")).toBe("2");
+
+    fireEvent.click(within(project).getByRole("button", { name: "Sword Simulator" }));
+    const projectChat = screen.getByRole("treeitem", { name: "Combat refactor" });
+    expect(projectChat.getAttribute("aria-level")).toBe("3");
+    expect(within(projectChat).getByRole("button", { name: "Combat refactor" })).toBeTruthy();
   });
 
   it("searches files without changing expansion state", async () => {
