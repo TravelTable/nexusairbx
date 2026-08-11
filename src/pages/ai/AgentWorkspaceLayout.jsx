@@ -1014,7 +1014,7 @@ export default function AgentWorkspaceLayout({ controller }) {
   ]);
 
   const agentChat = (
-    <div className="flex min-h-0 flex-1 flex-col">
+    <div className="flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col">
       <AgentChatPanel
           currentChatId={chat.currentChatId}
           chatTitle={chat.currentChatMeta?.title || "New chat"}

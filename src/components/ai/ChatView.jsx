@@ -51,10 +51,10 @@ export default function ChatView({
   useChatScrollRestoration(rootRef, chatId);
 
   return (
-    <div ref={rootRef} className="flex h-full min-h-0 w-full flex-1 flex-col">
+    <div ref={rootRef} className="flex h-full min-h-0 min-w-0 w-full max-w-full flex-1 flex-col">
       <div
         key={chatId || "new-chat"}
-        className="nexus-chat-switch flex h-full min-h-0 w-full flex-1 flex-col"
+        className="nexus-chat-switch flex h-full min-h-0 min-w-0 w-full max-w-full flex-1 flex-col"
       >
         <ChatHeader
           chatTitle={chatTitle}
