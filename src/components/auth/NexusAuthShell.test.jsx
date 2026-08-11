@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 
-import { NexusAuthShell } from "./NexusAuthShell";
+import { AuthCheckbox, NexusAuthShell } from "./NexusAuthShell";
 
 describe("NexusAuthShell", () => {
   test("renders a focused auth card without marketing content", () => {
@@ -23,5 +23,21 @@ describe("NexusAuthShell", () => {
     expect(screen.getByRole("button", { name: "Sign in" })).toBeTruthy();
     expect(screen.queryByText("Marketing headline")).toBeNull();
     expect(screen.queryByText("Feature pitch")).toBeNull();
+  });
+
+  test("gives auth checkboxes the visible explanatory text as their accessible name", () => {
+    render(
+      <AuthCheckbox
+        id="signin-shared-device"
+        checked={false}
+        onChange={() => {}}
+      >
+        Sign out when I close this browser (shared device).
+      </AuthCheckbox>
+    );
+
+    expect(screen.getByRole("checkbox", {
+      name: "Sign out when I close this browser (shared device).",
+    })).toBeTruthy();
   });
 });

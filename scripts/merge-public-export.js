@@ -10,6 +10,8 @@ function getMergePaths(projectRoot) {
     outDir,
     buildDir,
     publicExportDir: path.join(buildDir, "__public"),
+    public404Path: path.join(outDir, "404.html"),
+    deployed404Path: path.join(buildDir, "404.html"),
     spaShellPath: path.join(buildDir, "__spa-shell.html"),
     craIndexPath: path.join(buildDir, "index.html"),
   };
@@ -82,8 +84,11 @@ function mergePublicExport({ projectRoot = defaultRoot, log = console.log } = {}
 
   removeHtmlFiles(paths.buildDir, paths);
   copyStaticSidecars(paths.outDir, paths.buildDir);
+  if (fs.existsSync(paths.public404Path)) {
+    fs.copyFileSync(paths.public404Path, paths.deployed404Path);
+  }
 
-  log("Merged public-frontend/out into build/__public and copied public static assets.");
+  log("Merged public-frontend/out into build/__public and copied public static assets and the custom 404 page.");
 }
 
 if (require.main === module) {

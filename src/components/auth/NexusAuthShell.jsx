@@ -260,6 +260,7 @@ export function AuthCheckbox({ id, checked, onChange, disabled, children }) {
         checked={checked}
         onChange={onChange}
         disabled={disabled}
+        aria-labelledby={`${id}-label`}
         className="peer sr-only"
       />
       <label
@@ -268,7 +269,7 @@ export function AuthCheckbox({ id, checked, onChange, disabled, children }) {
       >
         <Check className="h-3.5 w-3.5 stroke-[3px]" />
       </label>
-      <div className="min-w-0 text-sm leading-6 text-muted-foreground">{children}</div>
+      <div id={`${id}-label`} className="min-w-0 text-sm leading-6 text-muted-foreground">{children}</div>
     </div>
   );
 }

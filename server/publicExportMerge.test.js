@@ -22,6 +22,7 @@ test("public export merge keeps Next flight text payloads out of the deployed ro
     writeFile(path.join(projectRoot, "build", "static", "js", "main.js"), "window.__CRA__=true;");
     writeFile(path.join(projectRoot, "build", "robots.txt"), "User-agent: *");
     writeFile(path.join(projectRoot, "public-frontend", "out", "index.html"), "<!doctype html><h1>Home</h1>");
+    writeFile(path.join(projectRoot, "public-frontend", "out", "404.html"), "<!doctype html><h1>NexusRBX page not found</h1>");
     writeFile(path.join(projectRoot, "public-frontend", "out", "index.txt"), "1:\"$React.fragment\"");
     writeFile(path.join(projectRoot, "public-frontend", "out", "__next._index.txt"), "0:{\"b\":\"flight\"}");
     writeFile(path.join(projectRoot, "public-frontend", "out", "docs.txt"), "1:\"$React.fragment\"");
@@ -36,6 +37,8 @@ test("public export merge keeps Next flight text payloads out of the deployed ro
     assert.equal(exists(path.join(projectRoot, "build", "__spa-shell.html")), true);
     assert.equal(exists(path.join(projectRoot, "build", "index.html")), false);
     assert.equal(exists(path.join(projectRoot, "build", "__public", "index.html")), true);
+    assert.equal(exists(path.join(projectRoot, "build", "__public", "404.html")), true);
+    assert.equal(fs.readFileSync(path.join(projectRoot, "build", "404.html"), "utf8"), "<!doctype html><h1>NexusRBX page not found</h1>");
     assert.equal(exists(path.join(projectRoot, "build", "__public", "index.txt")), true);
     assert.equal(exists(path.join(projectRoot, "build", "__public", "docs", "__next.docs.txt")), true);
 
