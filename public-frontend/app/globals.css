@@ -3725,6 +3725,23 @@ a.docs-mini-card:focus-visible strong {
   .docs-context-actions .docs-search-button {
     min-width: 44px;
     width: 44px;
+    min-height: 44px;
+  }
+
+  .docs-context-title,
+  .docs-breadcrumbs a {
+    min-height: 44px;
+  }
+
+  .docs-breadcrumbs a {
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .docs-icon-button,
+  .docs-copy-link {
+    width: 44px;
+    height: 44px;
   }
 
   .docs-search-button span,
