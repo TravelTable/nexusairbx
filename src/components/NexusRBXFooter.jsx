@@ -88,7 +88,7 @@ export default function NexusRBXFooter({
             )
           )}
           <a
-            href="https://github.com/"
+            href="https://github.com/TravelTable/nexusairbx"
             className="focus-ring rounded-lg px-1.5 py-1 text-gray-400 hover:text-white transition-colors duration-200 flex items-center gap-2"
             rel="noopener noreferrer"
             target="_blank"
