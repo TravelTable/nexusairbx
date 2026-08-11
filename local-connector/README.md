@@ -67,7 +67,7 @@ No command in this table is advertised unless every required MCP tool and schema
 | `get_selection` and instance commands | audited `execute_luau` routines | Constant templates, bounded serialized input, nonces, snapshot-first mutation, collision checks, verified rollback, and state receipts. Destination parents must already exist. |
 | `create_snapshot`, `restore_snapshot`, `undo_last_batch` | audited `execute_luau` routines | Requires non-empty, non-overlapping path receipts; hashes every allowlisted mutable property plus source, attributes, and tags; uses guarded restore; and pins the recorded last batch until replacement or successful undo. |
 | `insert_creator_store_asset` | `insert_asset` plus quarantine routines | Uses server-owned asset metadata, sanitizes in quarantine, rejects connector-owned ServerStorage state as a destination, applies policy, and returns an idempotent receipt. |
-| `run_play_test`, `stop_play_test`, `run_test_service` | `start_stop_play`, `get_studio_state`, named routines | Explicit approval, bounded duration, polling, and cleanup; never request-supplied code. |
+| `run_play_test`, `stop_play_test`, `run_test_service` | `start_stop_play`, `get_studio_state`, named routines | Explicit approval, bounded duration, polling, and cleanup; never request-supplied code. If StudioMCP fails its first runtime start/stop request, automated start/stop is suppressed until MCP reconnects while the safe named TestService routine remains available. |
 
 The connector advertises no command unless its complete direct-tool or fixed-routine dependency set compiles and passes the session self-check. Commands outside that mapping remain unavailable. In particular, the following specialized workflows remain plugin-only:
 
@@ -88,6 +88,7 @@ Use the NexusRBX Studio plugin for an unavailable command. The connector never s
 
 - Script writes and patches require `expectedSourceHash`. The connector accepts the NexusRBX stable source hash or SHA-256 and rejects stale edits before mutation.
 - A mutation tool call is attempted exactly once. Network errors and timeouts after dispatch have an unknown outcome, so the connector does not retry them.
+- A failed `start_stop_play` request returns `PLAYTEST_CONTROL_UNAVAILABLE` with the requested and observed Studio modes plus an exact manual action. If Studio is still confirmed in Edit mode after a failed start, the connector does not compound the provider failure with an immediate conflicting stop request.
 - Every advertised mutation verifies its resulting source or instance state. The acknowledgment is successful only when `verified: true`; failures use operation-specific structured codes (`APPLY_UNVERIFIED` for an unprovable direct edit, or the fixed-routine rollback and preflight codes below).
 - Fixed-routine mutations snapshot before their first Studio write. A later failure returns either a verified rollback receipt or `ROLLBACK_FAILED`; it is never reported as a silent success.
 - Deterministic missing-parent, self-descendant, and destination-collision checks run before a snapshot is created. If a post-snapshot race is detected before the first write, the temporary snapshot is removed without replacing the untouched live instance.

@@ -6,6 +6,11 @@ export interface BasicToolAdapter {
   args: JsonObject;
 }
 
+export interface ToolCatalogOptions {
+  disabledCommands?: Iterable<string>;
+  capabilityReasonCodes?: Partial<Record<keyof StudioCapabilities, string>>;
+}
+
 export interface PathToolProfile {
   toolName: "script_read";
   pathKey: string;
@@ -53,7 +58,7 @@ export class ToolCatalog {
   readonly capabilityDetails: CapabilityDetails;
   readonly supportedCommands: string[];
 
-  constructor(readonly tools: DiscoveredTool[]) {
+  constructor(readonly tools: DiscoveredTool[], options: ToolCatalogOptions = {}) {
     this.#byName = new Map();
     const duplicates = new Set<string>();
     for (const tool of tools) {
@@ -106,6 +111,7 @@ export class ToolCatalog {
     if (targetToolsReady && this.executeLuau && this.startStopPlay && compileNoInput(this.#byName.get("get_console_output"))) {
       for (const command of PLAYTEST_COMMANDS) commands.add(command);
     }
+    for (const command of options.disabledCommands ?? []) commands.delete(command);
     this.supportedCommands = [...commands].sort();
     this.capabilities = {
       ...EMPTY_CAPABILITIES,
@@ -131,7 +137,7 @@ export class ToolCatalog {
       creatorStoreInsert: { commands: ["insert_creator_store_asset"], tools: ["execute_luau", "insert_asset", ...TARGET_TOOLS] },
       instanceMutation: { commands: [...INSTANCE_COMMANDS], tools: ["execute_luau", ...TARGET_TOOLS] },
       snapshots: { commands: [...SNAPSHOT_COMMANDS], tools: ["execute_luau", ...TARGET_TOOLS] },
-    }, this.#byName);
+    }, this.#byName, options.capabilityReasonCodes);
   }
 
   hasCommand(command: string): boolean {
@@ -407,6 +413,7 @@ function makeCapabilityDetails(
   capabilities: StudioCapabilities,
   requirements: Record<keyof StudioCapabilities, { commands: string[]; tools: string[] }>,
   tools: Map<string, DiscoveredTool>,
+  capabilityReasonCodes: Partial<Record<keyof StudioCapabilities, string>> = {},
 ): CapabilityDetails {
   const verifiedAt = Date.now();
   return Object.fromEntries(Object.entries(requirements).map(([key, requirement]) => {
@@ -414,7 +421,10 @@ function makeCapabilityDetails(
     const missing = requirement.tools.filter((tool) => !tools.has(tool));
     return [key, {
       status: supported ? "supported" : "unavailable",
-      reasonCode: supported ? "SELF_CHECK_PASSED" : missing.length ? "REQUIRED_TOOL_MISSING" : "SCHEMA_INCOMPATIBLE",
+      reasonCode: supported
+        ? "SELF_CHECK_PASSED"
+        : capabilityReasonCodes[key as keyof StudioCapabilities]
+          ?? (missing.length ? "REQUIRED_TOOL_MISSING" : "SCHEMA_INCOMPATIBLE"),
       requiredCommands: requirement.commands,
       requiredTools: requirement.tools,
       verifiedAt: supported ? verifiedAt : null,

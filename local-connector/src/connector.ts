@@ -81,6 +81,8 @@ export class NexusLocalConnector {
   #mcpInfo: McpConnectionInfo = {};
   #announcedUnavailable = false;
   #targeting: StudioTargetManager | null = null;
+  readonly #runtimeDisabledCommands = new Set<string>();
+  readonly #runtimeCapabilityReasonCodes: Partial<Record<keyof typeof EMPTY_CAPABILITIES, string>> = {};
 
   constructor(options: LocalConnectorOptions) {
     this.#config = options.config;
@@ -216,6 +218,10 @@ export class NexusLocalConnector {
     this.#logger.info("Detecting Roblox Studio MCP…");
     this.emitTelemetry({ stage: "studio_detection" });
     try {
+      // A fresh MCP process gets one clean opportunity to re-establish a
+      // runtime capability that failed in the prior connection.
+      this.#runtimeDisabledCommands.clear();
+      delete this.#runtimeCapabilityReasonCodes.playtest;
       this.emitTelemetry({ stage: "mcp" });
       this.#mcpInfo = await this.#mcp.connect(signal);
       this.#mcpConnected = true;
@@ -241,7 +247,10 @@ export class NexusLocalConnector {
   private async refreshCatalog(signal: AbortSignal, waitForInitialStudio = false): Promise<RuntimeCapabilities> {
     this.#toolsDirty = false;
     const tools = await this.#mcp.listTools(signal);
-    const catalog = new ToolCatalog(tools);
+    const catalog = new ToolCatalog(tools, {
+      disabledCommands: this.#runtimeDisabledCommands,
+      capabilityReasonCodes: this.#runtimeCapabilityReasonCodes,
+    });
     if (this.#executor === null) this.#executor = new CommandExecutor(this.#mcp, catalog);
     else this.#executor.updateCatalog(catalog);
     this.#catalog = catalog;
@@ -330,6 +339,7 @@ export class NexusLocalConnector {
       result = failureResult(command, asConnectorError(error));
     }
     result.duration = Date.now() - startedAt;
+    this.recordRuntimeCapabilityFailure(command, result);
     const success = result.success === true && (!MUTATING_COMMANDS.has(command.type) || result.verified === true);
     await this.#backend.acknowledge(command.id, success ? "succeeded" : "failed", result, signal);
     const completedAt = Date.now();
@@ -423,6 +433,7 @@ export class NexusLocalConnector {
         ? await this.requireTargeting().withMutationTarget(command, execute, executionSignal)
         : await execute();
       result.duration = Date.now() - startedAt;
+      this.recordRuntimeCapabilityFailure(command, result);
       if (result.success === true && (!MUTATING_COMMANDS.has(command.type) || result.verified === true)) {
         terminalStatus = "succeeded";
       } else if (MUTATING_COMMANDS.has(command.type) && mutationOutcomeMayBeUnknown(result)) {
@@ -715,6 +726,21 @@ export class NexusLocalConnector {
     this.#onLifecycleState?.(state);
   }
   private emitTelemetry(telemetry: ConnectorTelemetry): void { this.#onTelemetry?.(telemetry); }
+  private recordRuntimeCapabilityFailure(command: StudioCommand, result: JsonObject): void {
+    if (
+      (command.type !== "run_play_test" && command.type !== "stop_play_test") ||
+      errorCode(result) !== "PLAYTEST_CONTROL_UNAVAILABLE"
+    ) return;
+    const before = this.#runtimeDisabledCommands.size;
+    this.#runtimeDisabledCommands.add("run_play_test");
+    this.#runtimeDisabledCommands.add("stop_play_test");
+    this.#runtimeCapabilityReasonCodes.playtest = "RUNTIME_SELF_CHECK_FAILED";
+    if (this.#runtimeDisabledCommands.size === before) return;
+    this.#toolsDirty = true;
+    this.#logger.warn("Roblox Studio MCP play control failed its runtime check; automated start/stop is suppressed until MCP reconnects.", {
+      code: "PLAYTEST_CONTROL_UNAVAILABLE",
+    });
+  }
   private requireTargeting(): StudioTargetManager {
     if (!this.#targeting) {
       throw new ConnectorError("STUDIO_TARGET_UNAVAILABLE", "No validated Roblox Studio target is available.");

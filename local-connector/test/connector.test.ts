@@ -66,6 +66,15 @@ const executeLuauTool: DiscoveredTool = {
   },
 };
 
+const startStopPlayTool: DiscoveredTool = {
+  name: "start_stop_play",
+  inputSchema: {
+    type: "object",
+    properties: { is_start: { type: "boolean" } },
+    required: ["is_start"],
+  },
+};
+
 const targetTools: DiscoveredTool[] = [
   { name: "list_roblox_studios", inputSchema: { type: "object", properties: {}, required: [] } },
   { name: "set_active_studio", inputSchema: { type: "object", properties: { studio_id: { type: "string" } }, required: ["studio_id"] } },
@@ -164,6 +173,7 @@ class FakeMcp implements McpClientLike {
 
 interface Registration {
   capabilities: StudioCapabilities;
+  capabilityDetails: CapabilityDetails;
   commands: string[];
   tools: Array<{ name: string; description?: string }>;
   identity: StudioIdentityMetadata;
@@ -177,6 +187,7 @@ class FakeBackend implements BackendClientLike {
   acknowledgements: Array<{ id: string; status: CommandReceiptStatus; result: JsonObject }> = [];
   clearCalls = 0;
   registrationFailures = 0;
+  abortOnTerminal = true;
   wireEvents: string[] = [];
   pingHandler: ((body: JsonObject) => Promise<JsonObject> | JsonObject) | null = null;
   pollHandler: ((poll: number, signal?: AbortSignal) => Promise<StudioCommand | null>) | null = null;
@@ -205,10 +216,16 @@ class FakeBackend implements BackendClientLike {
     capabilities: StudioCapabilities,
     supportedCommands: string[],
     discoveredTools: Array<{ name: string; description?: string }>,
-    _capabilityDetails: CapabilityDetails,
+    capabilityDetails: CapabilityDetails,
     studioIdentity: StudioIdentityMetadata,
   ): Promise<JsonObject> {
-    this.registrations.push({ capabilities, commands: [...supportedCommands], tools: discoveredTools, identity: structuredClone(studioIdentity) });
+    this.registrations.push({
+      capabilities,
+      capabilityDetails: structuredClone(capabilityDetails),
+      commands: [...supportedCommands],
+      tools: discoveredTools,
+      identity: structuredClone(studioIdentity),
+    });
     this.wireEvents.push(`register:${String(studioIdentity.studioId ?? "clear")}`);
     if (this.registrationFailures > 0) {
       this.registrationFailures -= 1;
@@ -230,7 +247,7 @@ class FakeBackend implements BackendClientLike {
     this.acknowledgements.push({ id: commandId, status, result });
     this.events?.push(`ack:${status}`);
     await this.acknowledgeHandler?.(commandId, status, result, signal);
-    if (isTerminalStatus(status)) {
+    if (this.abortOnTerminal && isTerminalStatus(status)) {
       this.controller.abort(new DOMException("test complete", "AbortError"));
     }
     return { ok: true };
@@ -293,6 +310,13 @@ class MemoryCommandJournal implements CommandJournalLike {
 
 function isTerminalStatus(status: CommandReceiptStatus): boolean {
   return status === "succeeded" || status === "failed" || status === "outcome_unknown";
+}
+
+function resultErrorCode(result: JsonObject | undefined): string | undefined {
+  const error = result?.error;
+  return typeof error === "object" && error !== null && !Array.isArray(error) && typeof error.code === "string"
+    ? error.code
+    : undefined;
 }
 
 function pickIdentity(value: JsonObject | StudioIdentityMetadata | undefined): JsonObject {
@@ -560,6 +584,46 @@ test("tools/list_changed causes full rediscovery and capability re-registration"
     "read_scripts",
   ]);
   assert.equal(backend.acknowledgements[0]?.status, "succeeded");
+});
+
+test("a failed StudioMCP play-control self-check suppresses automated start and stop until reconnect", async () => {
+  const controller = new AbortController();
+  const backend = new FakeBackend(controller);
+  backend.abortOnTerminal = false;
+  const mcp = new FakeMcp();
+  mcp.toolPages = [[executeLuauTool, outputTool, startStopPlayTool, ...targetTools]];
+  mcp.callToolHandler = (name) => name === "start_stop_play"
+    ? { isError: true, content: [{ type: "text", text: "Start play hasn't finished yet" }] }
+    : undefined;
+  backend.pollHandler = async (poll) => {
+    if (poll === 1) {
+      return {
+        id: "command-play-control-failure",
+        type: "run_play_test",
+        payload: { confirmed: true, maxDurationSeconds: 1 },
+      };
+    }
+    controller.abort(new DOMException("suppressed capability published", "AbortError"));
+    return null;
+  };
+
+  await new NexusLocalConnector({ config, connectorVersion: "0.2.8-test", backend, mcp, logger })
+    .run("PAIR-CODE", controller.signal);
+
+  assert.equal(backend.registrations[0]?.commands.includes("run_play_test"), true);
+  assert.equal(backend.registrations[0]?.commands.includes("stop_play_test"), true);
+  const suppressed = backend.registrations.at(-1);
+  assert.equal(suppressed?.commands.includes("run_test_service"), true);
+  assert.equal(suppressed?.commands.includes("run_play_test"), false);
+  assert.equal(suppressed?.commands.includes("stop_play_test"), false);
+  assert.equal(suppressed?.capabilities.playtest, false);
+  assert.equal(suppressed?.capabilityDetails.playtest.reasonCode, "RUNTIME_SELF_CHECK_FAILED");
+  assert.equal(backend.acknowledgements[0]?.status, "failed");
+  assert.equal(resultErrorCode(backend.acknowledgements[0]?.result), "PLAYTEST_CONTROL_UNAVAILABLE");
+  assert.deepEqual(
+    mcp.callTools.filter((call) => call.name === "start_stop_play").map((call) => call.args.is_start),
+    [true],
+  );
 });
 
 test("heartbeat continues during long polling and shutdown clears the in-memory token", async () => {

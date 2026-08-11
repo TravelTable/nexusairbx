@@ -268,40 +268,106 @@ export class CommandExecutor {
     let targetModeObserved = false;
     let consoleOutput: JsonValue = null;
     let cleanupVerified = false;
+    let controlReturned = false;
+    let primaryFailure: ConnectorError | null = null;
     try {
-      await this.mcp.callTool("start_stop_play", { is_start: starting }, signal).then(assertToolSucceeded);
-      while (Date.now() < deadline) {
-        const playing = await this.isPlaying(signal);
-        if (starting ? playing : !playing) {
-          targetModeObserved = true;
-          enteredPlay = playing;
-          break;
-        }
-        await new Promise((resolve) => setTimeout(resolve, 250));
-      }
-      if (!targetModeObserved) {
-        throw new ConnectorError(
-          "PLAYTEST_TIMEOUT",
+      try {
+        await this.mcp.callTool("start_stop_play", { is_start: starting }, signal).then(assertToolSucceeded);
+        controlReturned = true;
+      } catch (error) {
+        const cause = asConnectorError(error);
+        const observedPlaying = await this.tryPlayingState(signal);
+        primaryFailure = new ConnectorError(
+          "PLAYTEST_CONTROL_UNAVAILABLE",
           starting
-            ? "Studio did not enter play mode before the timeout."
-            : "Studio did not return to Edit mode before the timeout.",
+            ? "Roblox Studio MCP could not start Play mode. Automated play control is disabled for this connector session; use Studio's Play button for this run."
+            : "Roblox Studio MCP could not stop Play mode. Stop the session in Roblox Studio before continuing.",
+          {
+            details: {
+              reasonCode: "STUDIO_MCP_PLAY_CONTROL_FAILED",
+              providerTool: "start_stop_play",
+              providerCode: cause.code,
+              requestedMode: starting ? "Play" : "Edit",
+              observedMode: observedPlaying === null ? "Unknown" : observedPlaying ? "Play" : "Edit",
+              controlRetrySuppressed: true,
+              manualAction: starting ? "start_play_in_studio" : "stop_play_in_studio",
+            },
+            cause,
+          },
         );
       }
-      if (!starting) cleanupVerified = true;
-      consoleOutput = normalizeToolOutput(await this.mcp.callTool("get_console_output", {}, signal));
+      if (primaryFailure === null) {
+        while (Date.now() < deadline) {
+          const playing = await this.isPlaying(signal);
+          if (starting ? playing : !playing) {
+            targetModeObserved = true;
+            enteredPlay = playing;
+            break;
+          }
+          await new Promise((resolve) => setTimeout(resolve, 250));
+        }
+        if (!targetModeObserved) {
+          primaryFailure = new ConnectorError(
+            "PLAYTEST_TIMEOUT",
+            starting
+              ? "Studio did not enter play mode before the timeout."
+              : "Studio did not return to Edit mode before the timeout.",
+          );
+        } else {
+          if (!starting) cleanupVerified = true;
+          consoleOutput = normalizeToolOutput(await this.mcp.callTool("get_console_output", {}, signal));
+        }
+      }
+    } catch (error) {
+      primaryFailure = asConnectorError(error);
     } finally {
       if (starting) {
         const cleanupSignal = AbortSignal.timeout(5_000);
-        await this.mcp.callTool("start_stop_play", { is_start: false }, cleanupSignal).then(assertToolSucceeded).catch(() => undefined);
-        const cleanupDeadline = Date.now() + 5_000;
-        while (Date.now() < cleanupDeadline) {
-          if (!await this.isPlaying(cleanupSignal).catch(() => true)) { cleanupVerified = true; break; }
-          await new Promise((resolve) => setTimeout(resolve, 200));
+        const playingBeforeCleanup = await this.tryPlayingState(cleanupSignal);
+        // A failed start request that is still confirmed in Edit mode must not
+        // be followed by a second control request. The installed StudioMCP can
+        // leave start_stop_play busy after timing out; an immediate stop then
+        // compounds the provider failure without improving safety.
+        const shouldRequestStop = controlReturned || enteredPlay || playingBeforeCleanup === true;
+        if (shouldRequestStop) {
+          await this.mcp.callTool("start_stop_play", { is_start: false }, cleanupSignal).then(assertToolSucceeded).catch(() => undefined);
+          const cleanupDeadline = Date.now() + 5_000;
+          while (Date.now() < cleanupDeadline) {
+            if (!await this.isPlaying(cleanupSignal).catch(() => true)) { cleanupVerified = true; break; }
+            await new Promise((resolve) => setTimeout(resolve, 200));
+          }
+        } else if (playingBeforeCleanup === false) {
+          cleanupVerified = true;
         }
       }
     }
+    if (primaryFailure !== null) {
+      if (starting && !cleanupVerified) {
+        throw new ConnectorError(
+          "PLAYTEST_CLEANUP_FAILED",
+          "Automated play control failed and Studio could not be confirmed back in Edit mode. Stop the session in Roblox Studio before continuing.",
+          {
+            details: {
+              reasonCode: "STUDIO_MCP_PLAY_CLEANUP_UNVERIFIED",
+              causeCode: primaryFailure.code,
+              manualAction: "stop_play_in_studio",
+            },
+            cause: primaryFailure,
+          },
+        );
+      }
+      throw primaryFailure;
+    }
     if (!cleanupVerified) throw new ConnectorError("PLAYTEST_CLEANUP_FAILED", "Studio could not be confirmed back in Edit mode.");
     return successBase(command, true, { operation: command.type, enteredPlayMode: enteredPlay, cleanupVerified, consoleOutput, verificationChecks: [{ type: "studio_mode_transition", passed: true }, { type: "edit_mode_cleanup", passed: cleanupVerified }] });
+  }
+
+  private async tryPlayingState(signal?: AbortSignal): Promise<boolean | null> {
+    try {
+      return await this.isPlaying(signal);
+    } catch {
+      return null;
+    }
   }
 
   private async isPlaying(signal?: AbortSignal): Promise<boolean> {

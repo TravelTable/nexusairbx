@@ -83,6 +83,8 @@ class FakeMcp implements McpClientLike {
   consoleText = "log";
   studioPlaying = false;
   applyPlayTransition = true;
+  playControlError: Error | null = null;
+  playControlToolError = "";
   routineFailurePath = "";
   routineFailureCode = "ROUTINE_FAILED";
   routineFailureData: JsonObject | undefined;
@@ -119,6 +121,8 @@ class FakeMcp implements McpClientLike {
     }
     if (name === "get_console_output") return { content: [{ type: "text", text: this.consoleText }] };
     if (name === "start_stop_play") {
+      if (this.playControlError) throw this.playControlError;
+      if (this.playControlToolError) return { isError: true, content: [{ type: "text", text: this.playControlToolError }] };
       if (this.applyPlayTransition) this.studioPlaying = args.is_start === true;
       return { content: [{ type: "text", text: "transition requested" }] };
     }
@@ -401,6 +405,43 @@ test("stop playtest fails closed when Edit mode is not observed before the deadl
   assert.equal(result.success, false);
   assert.equal(errorCode(result), "PLAYTEST_TIMEOUT");
   assert.equal(mcp.calls.filter((call) => call.name === "start_stop_play").length, 1);
+});
+
+test("a failed StudioMCP start is typed and does not issue a conflicting stop while Studio remains in Edit mode", async () => {
+  const mcp = new FakeMcp();
+  mcp.playControlError = new Error("request timed out");
+  const executor = new CommandExecutor(mcp, new ToolCatalog(tools));
+
+  const result = await executor.execute(command("run_play_test", {
+    confirmed: true,
+    maxDurationSeconds: 1,
+  }));
+
+  assert.equal(result.success, false);
+  assert.equal(errorCode(result), "PLAYTEST_CONTROL_UNAVAILABLE");
+  assert.equal((result.error as JsonObject).retryable, false);
+  assert.deepEqual(
+    mcp.calls.filter((call) => call.name === "start_stop_play").map((call) => call.args.is_start),
+    [true],
+  );
+  const details = (result.error as JsonObject).details as JsonObject;
+  assert.equal(details.reasonCode, "STUDIO_MCP_PLAY_CONTROL_FAILED");
+  assert.equal(details.observedMode, "Edit");
+  assert.equal(details.controlRetrySuppressed, true);
+});
+
+test("a StudioMCP tool error is normalized to actionable play-control failure details", async () => {
+  const mcp = new FakeMcp();
+  mcp.playControlToolError = "Start play hasn't finished yet";
+  const executor = new CommandExecutor(mcp, new ToolCatalog(tools));
+
+  const result = await executor.execute(command("run_play_test", {
+    confirmed: true,
+    maxDurationSeconds: 1,
+  }));
+
+  assert.equal(errorCode(result), "PLAYTEST_CONTROL_UNAVAILABLE");
+  assert.equal(((result.error as JsonObject).details as JsonObject).providerCode, "MCP_TOOL_ERROR");
 });
 
 test("multi-script results fail locally when the acknowledgement would exceed the backend limit", async () => {

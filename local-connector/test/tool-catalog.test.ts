@@ -219,3 +219,17 @@ test("create_script is advertised only when both its fixed routine and readback 
   const routineWithReadback = new ToolCatalog(targeted([executeLuau, read]));
   assert.equal(routineWithReadback.hasCommand("create_script"), true);
 });
+
+test("runtime command suppression preserves safe tools and explains the failed playtest capability", () => {
+  const startStop = tool("start_stop_play", { is_start: { type: "boolean" } }, ["is_start"]);
+  const catalog = new ToolCatalog(targeted([executeLuau, output, startStop]), {
+    disabledCommands: ["run_play_test", "stop_play_test"],
+    capabilityReasonCodes: { playtest: "RUNTIME_SELF_CHECK_FAILED" },
+  });
+
+  assert.equal(catalog.hasCommand("run_test_service"), true);
+  assert.equal(catalog.hasCommand("run_play_test"), false);
+  assert.equal(catalog.hasCommand("stop_play_test"), false);
+  assert.equal(catalog.capabilities.playtest, false);
+  assert.equal(catalog.capabilityDetails.playtest.reasonCode, "RUNTIME_SELF_CHECK_FAILED");
+});
