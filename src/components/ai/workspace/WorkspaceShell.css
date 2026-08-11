@@ -1,5 +1,5 @@
 .workspace-shell {
-  --workspace-rail-width: 48px;
+  --workspace-rail-width: 54px;
   container-name: workspace-shell;
   container-type: inline-size;
   display: grid;
@@ -79,8 +79,8 @@
 .workspace-tool-rail__button {
   position: relative;
   display: inline-flex;
-  height: 38px;
-  width: 38px;
+  height: 44px;
+  width: 44px;
   align-items: center;
   justify-content: center;
   border: 1px solid transparent;
@@ -228,8 +228,8 @@
 
 .workspace-context-drawer__close {
   display: inline-flex;
-  height: 32px;
-  width: 32px;
+  height: 44px;
+  width: 44px;
   align-items: center;
   justify-content: center;
   border: 1px solid var(--ds-border-subtle);

@@ -38,5 +38,6 @@ test("makes the homepage skip link the first keyboard target", () => {
 
   userEvent.tab();
   expect(document.activeElement).toBe(skipLink);
+  expect(screen.getByRole("link", { name: "NexusRBX home" }).className).toContain("min-w-11");
   expect(screen.getByRole("button", { name: "Open navigation" }).className).toContain("h-11");
 });

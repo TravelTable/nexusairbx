@@ -758,7 +758,7 @@ export default function StudioPairControl({
           updateMenuPosition();
           setOpen((current) => !current);
         }}
-        className={`inline-flex min-h-11 items-center gap-2 rounded-xl border px-3 py-2 text-xs font-bold transition-all sm:min-h-0 ${
+        className={`inline-flex min-h-11 items-center gap-2 rounded-xl border px-3 py-2 text-xs font-bold transition-all xl:min-h-0 ${
           pluginUpdateRequired
             ? "border-[color-mix(in_srgb,var(--ds-warning)_35%,transparent)] bg-[color-mix(in_srgb,var(--ds-warning)_12%,transparent)] text-[var(--ds-warning)] hover:bg-[color-mix(in_srgb,var(--ds-warning)_20%,transparent)]"
             : pluginRepairing

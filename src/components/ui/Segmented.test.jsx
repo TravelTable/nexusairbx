@@ -28,7 +28,7 @@ test("uses an honest labeled button group for mutually exclusive modes", () => {
 
   buttons.forEach((button) => {
     expect(button.className).toContain("min-h-11");
-    expect(button.className).toContain("md:min-h-0");
+    expect(button.className).toContain("xl:min-h-0");
   });
 
   fireEvent.click(buttons[1]);

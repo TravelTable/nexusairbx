@@ -55,7 +55,7 @@ function Brand({ compact = false }) {
     <Link
       to="/"
       aria-label="NexusRBX home"
-      className="inline-flex min-h-11 shrink-0 items-center gap-2.5 rounded-lg px-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ds-accent)]"
+      className="inline-flex min-h-11 min-w-11 shrink-0 items-center gap-2.5 rounded-lg px-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ds-accent)]"
     >
       <span className={cn(
         "flex items-center justify-center overflow-hidden rounded-[10px] border border-[var(--ds-border-subtle)] bg-[var(--ds-surface-2)]",

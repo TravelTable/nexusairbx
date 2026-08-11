@@ -155,8 +155,8 @@ export function Segmented({
   ariaLabel = "Choose an option",
 }) {
   const pad = size === "sm"
-    ? "min-h-11 px-2.5 py-1 text-[10px] md:min-h-0"
-    : "min-h-11 px-3 py-1.5 text-[11px] md:min-h-0";
+    ? "min-h-11 px-2.5 py-1 text-[10px] xl:min-h-0"
+    : "min-h-11 px-3 py-1.5 text-[11px] xl:min-h-0";
   return (
     <div
       className={cx(

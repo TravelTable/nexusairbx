@@ -89,7 +89,7 @@ describe("StudioPairControl", () => {
 
     const trigger = screen.getByRole("button", { name: /Pair Studio/i });
     expect(trigger.className).toContain("min-h-11");
-    expect(trigger.className).toContain("sm:min-h-0");
+    expect(trigger.className).toContain("xl:min-h-0");
     fireEvent.click(trigger);
 
     const pluginTab = screen.getByRole("tab", { name: /Studio Plugin/i });
