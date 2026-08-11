@@ -286,8 +286,11 @@ local function ack(commandOrId, status, result, errorMessage)
 		receiptResult.idempotencyKey = receiptResult.idempotencyKey or command.idempotencyKey
 	end
 	local requestOptions = { idempotent = true }
-	if command and command.idempotencyKey then
-		requestOptions.idempotencyKey = tostring(command.idempotencyKey) .. ":studio-ack:" .. tostring(status)
+	if command then
+		-- Semantic operation keys can include long manifest/session coordinates.
+		-- Keep the HTTP header short and transport-safe while remaining stable for
+		-- every retry of this command receipt.
+		requestOptions.idempotencyKey = tostring(commandId) .. ":studio-ack:" .. tostring(status)
 	end
 	if command and tonumber(command.lifecycleVersion) == 2
 		and (status == "succeeded" or status == "failed") then

@@ -14,7 +14,7 @@ local STUDIO_PROTOCOL_VERSION = "2026-07-30-script-context"
 -- version. Keep it in lockstep with the generated bundle and backend allowlist.
 -- A plugin session must attest its build and actual command handlers at pairing
 -- time; version strings alone are not evidence that a command exists.
-local PLUGIN_BUILD_ID = "nexusrbx-studio-0.12.0-script-context.1"
+local PLUGIN_BUILD_ID = "nexusrbx-studio-0.12.0-script-context.2"
 
 -- These are deliberately capability-level (rather than UI-level) claims. The
 -- pairing payload also includes the exact sorted command list derived from the
@@ -7850,8 +7850,11 @@ ack = function(commandOrId, status, result, errorMessage)
 		receiptResult.idempotencyKey = receiptResult.idempotencyKey or command.idempotencyKey
 	end
 	local requestOptions = { idempotent = true }
-	if command and command.idempotencyKey then
-		requestOptions.idempotencyKey = tostring(command.idempotencyKey) .. ":studio-ack:" .. tostring(status)
+	if command then
+		-- Semantic operation keys can include long manifest/session coordinates.
+		-- Keep the HTTP header short and transport-safe while remaining stable for
+		-- every retry of this command receipt.
+		requestOptions.idempotencyKey = tostring(commandId) .. ":studio-ack:" .. tostring(status)
 	end
 	if command and tonumber(command.lifecycleVersion) == 2
 		and (status == "succeeded" or status == "failed") then
