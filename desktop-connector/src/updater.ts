@@ -1,6 +1,6 @@
 import type { CompanionUpdateState } from "./contracts.js";
 
-export const DEFAULT_UPDATE_FEED_URL = "https://downloads.nexusrbx.com/connector";
+export const DEFAULT_UPDATE_FEED_URL = "https://nexusairbx.vercel.app/connector";
 export const INITIAL_UPDATE_CHECK_DELAY_MS = 15_000;
 export const UPDATE_CHECK_INTERVAL_MS = 6 * 60 * 60 * 1_000;
 export const UPDATE_RETRY_DELAY_MS = 15 * 60 * 1_000;
@@ -38,7 +38,7 @@ export function resolveUpdateFeedUrl(requested: string | undefined, allowCustomF
   if (url.protocol !== "https:" || url.username || url.password || url.search || url.hash) {
     throw new TypeError("The connector update feed must be a secure HTTPS URL.");
   }
-  if (!allowCustomFeed && (url.origin !== "https://downloads.nexusrbx.com" || url.pathname.replace(/\/$/, "") !== "/connector")) {
+  if (!allowCustomFeed && (url.origin !== "https://nexusairbx.vercel.app" || url.pathname.replace(/\/$/, "") !== "/connector")) {
     throw new TypeError("Packaged connector updates must use the official NexusRBX release feed.");
   }
   return url.toString().replace(/\/$/, "");

@@ -49,8 +49,8 @@ describe("DownloadsContent", () => {
 
     const macDownload = await screen.findByRole("link", { name: "Download macOS (Universal)" });
     const windowsDownload = screen.getByRole("link", { name: "Download Windows (64-bit)" });
-    expect(macDownload.getAttribute("href")).toBe(releaseManifest.platforms.macos.url);
-    expect(windowsDownload.getAttribute("href")).toBe(releaseManifest.platforms.windows.url);
+    expect(macDownload.getAttribute("href")).toBe("/connector/NexusRBX-Connector-0.1.0-macOS.dmg");
+    expect(windowsDownload.getAttribute("href")).toBe("/connector/NexusRBX-Connector-0.1.0-Windows.exe");
     expect(screen.getByText("Recommended").closest("article")?.textContent).toContain("macOS");
     expect(screen.getByText("Current version: v0.1.0")).toBeTruthy();
     expect(screen.getByText("Apple Silicon (M1 or newer)")).toBeTruthy();
@@ -61,7 +61,7 @@ describe("DownloadsContent", () => {
     expect(screen.getByText(/Unknown publisher/)).toBeTruthy();
     expect(screen.getByText(/downloads updates in the background/)).toBeTruthy();
     expect(global.fetch).toHaveBeenCalledWith(
-      "https://downloads.nexusrbx.com/connector/latest.json",
+      "/connector/latest.json",
       expect.objectContaining({ credentials: "omit", cache: "no-store" })
     );
   });

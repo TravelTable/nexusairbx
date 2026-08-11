@@ -47,10 +47,23 @@ describe("companion downloads", () => {
     expect(formatCompanionFileSize(normalized.platforms.mac.size)).toBe("100 MB");
   });
 
+  test("accepts manifests published with the stable Vercel release origin", () => {
+    const stableManifest = {
+      ...manifest,
+      platforms: {
+        macos: { ...manifest.platforms.macos, url: manifest.platforms.macos.url.replace("downloads.nexusrbx.com", "nexusairbx.vercel.app") },
+        windows: { ...manifest.platforms.windows, url: manifest.platforms.windows.url.replace("downloads.nexusrbx.com", "nexusairbx.vercel.app") },
+      },
+    };
+    expect(normalizeCompanionManifest(stableManifest).platforms.windows.url).toContain("nexusairbx.vercel.app");
+  });
+
   test.each([
     ["a missing platform", { ...manifest, platforms: { macos: manifest.platforms.macos } }],
     ["an off-domain URL", { ...manifest, platforms: { ...manifest.platforms, windows: { ...manifest.platforms.windows, url: "https://example.com/installer.exe" } } }],
     ["a wrong extension", { ...manifest, platforms: { ...manifest.platforms, windows: { ...manifest.platforms.windows, url: "https://downloads.nexusrbx.com/connector/installer.zip" } } }],
+    ["a mismatched release version", { ...manifest, platforms: { ...manifest.platforms, windows: { ...manifest.platforms.windows, url: "https://downloads.nexusrbx.com/connector/NexusRBX-Connector-9.9.9-Windows.exe" } } }],
+    ["a URL with query parameters", { ...manifest, platforms: { ...manifest.platforms, windows: { ...manifest.platforms.windows, url: `${manifest.platforms.windows.url}?source=untrusted` } } }],
     ["an invalid checksum", { ...manifest, platforms: { ...manifest.platforms, macos: { ...manifest.platforms.macos, sha256: "bad" } } }],
     ["an invalid verification claim", { ...manifest, platforms: { ...manifest.platforms, windows: { ...manifest.platforms.windows, verification: "authenticode_signed" } } }],
   ])("rejects %s", (_, candidate) => {
@@ -61,6 +74,8 @@ describe("companion downloads", () => {
     const fetchImpl = jest.fn().mockResolvedValue({ ok: true, json: async () => manifest });
     const result = await fetchCompanionManifest({ fetchImpl });
     expect(result.version).toBe("0.1.0");
+    expect(result.platforms.mac.url).toBe("/connector/NexusRBX-Connector-0.1.0-macOS.dmg");
+    expect(result.platforms.windows.url).toBe("/connector/NexusRBX-Connector-0.1.0-Windows.exe");
     expect(fetchImpl).toHaveBeenCalledWith(COMPANION_MANIFEST_URL, expect.objectContaining({ credentials: "omit", cache: "no-store" }));
   });
 

@@ -5,7 +5,7 @@ import { put as putBlob } from "@vercel/blob";
 
 const [dir] = process.argv.slice(2);
 const uploadBase = process.env.NEXUSRBX_RELEASE_FEED_URL?.replace(/\/$/, "");
-const publicBase = (process.env.NEXUSRBX_PUBLIC_RELEASE_BASE_URL || "https://downloads.nexusrbx.com/connector").replace(/\/$/, "");
+const publicBase = (process.env.NEXUSRBX_PUBLIC_RELEASE_BASE_URL || "https://nexusairbx.vercel.app/connector").replace(/\/$/, "");
 const token = process.env.NEXUSRBX_RELEASE_FEED_TOKEN;
 
 if (!dir || !uploadBase || !token) {

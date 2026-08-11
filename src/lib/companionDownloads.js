@@ -1,5 +1,13 @@
-export const COMPANION_RELEASE_BASE_URL = "https://downloads.nexusrbx.com/connector";
-export const COMPANION_MANIFEST_URL = `${COMPANION_RELEASE_BASE_URL}/latest.json`;
+export const COMPANION_RELEASE_PATH = "/connector";
+export const COMPANION_RELEASE_BASE_URL = "https://nexusairbx.vercel.app/connector";
+export const COMPANION_MANIFEST_URL = `${COMPANION_RELEASE_PATH}/latest.json`;
+
+const TRUSTED_COMPANION_RELEASE_BASE_URLS = Object.freeze([
+  COMPANION_RELEASE_BASE_URL,
+  // Existing signed manifests use the original custom download host. Keep it
+  // trusted while routing the actual file through the working same-origin proxy.
+  "https://downloads.nexusrbx.com/connector",
+]);
 
 export const COMPANION_DOWNLOADS = Object.freeze({
   mac: Object.freeze({
@@ -34,7 +42,11 @@ export function getPreferredCompanionDownload(environment = {}) {
   return platform ? COMPANION_DOWNLOADS[platform] : null;
 }
 
-function normalizePlatform(value, definition) {
+function escapeRegExp(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function normalizePlatform(value, definition, version, downloadBaseUrl) {
   if (!value || typeof value !== "object") throw new Error("missing_platform");
   const url = typeof value.url === "string" ? value.url : "";
   let parsedUrl;
@@ -43,13 +55,17 @@ function normalizePlatform(value, definition) {
   } catch (_) {
     throw new Error("invalid_download_url");
   }
-  const allowedBase = new URL(`${COMPANION_RELEASE_BASE_URL}/`);
-  if (
-    parsedUrl.protocol !== "https:" ||
-    parsedUrl.origin !== allowedBase.origin ||
-    !parsedUrl.pathname.startsWith(allowedBase.pathname) ||
-    !parsedUrl.pathname.toLowerCase().endsWith(definition.extension)
-  ) {
+  const trustedBase = TRUSTED_COMPANION_RELEASE_BASE_URLS.some((baseUrl) => {
+    const allowedBase = new URL(`${baseUrl}/`);
+    return parsedUrl.protocol === "https:"
+      && parsedUrl.origin === allowedBase.origin
+      && parsedUrl.pathname.startsWith(allowedBase.pathname);
+  });
+  const expectedSuffix = definition.platform === "mac" ? "macOS.dmg" : "Windows.exe";
+  const expectedFilename = `NexusRBX-Connector-${version}-${expectedSuffix}`;
+  const actualFilename = parsedUrl.pathname.split("/").pop() || "";
+  const expectedPattern = new RegExp(`^${escapeRegExp(expectedFilename)}$`);
+  if (!trustedBase || !expectedPattern.test(actualFilename) || parsedUrl.search || parsedUrl.hash) {
     throw new Error("invalid_download_url");
   }
 
@@ -68,14 +84,14 @@ function normalizePlatform(value, definition) {
 
   return Object.freeze({
     ...definition,
-    url: parsedUrl.href,
+    url: downloadBaseUrl ? `${downloadBaseUrl.replace(/\/$/, "")}/${actualFilename}` : parsedUrl.href,
     size: value.size,
     sha256: value.sha256.toLowerCase(),
     architectures: Object.freeze([...architectures]),
   });
 }
 
-export function normalizeCompanionManifest(value) {
+export function normalizeCompanionManifest(value, { downloadBaseUrl } = {}) {
   if (!value || typeof value !== "object") throw new Error("invalid_manifest");
   if (typeof value.version !== "string" || !/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(value.version)) {
     throw new Error("invalid_version");
@@ -88,8 +104,8 @@ export function normalizeCompanionManifest(value) {
     version: value.version,
     publishedAt: value.publishedAt,
     platforms: Object.freeze({
-      mac: normalizePlatform(value.platforms?.macos, COMPANION_DOWNLOADS.mac),
-      windows: normalizePlatform(value.platforms?.windows, COMPANION_DOWNLOADS.windows),
+      mac: normalizePlatform(value.platforms?.macos, COMPANION_DOWNLOADS.mac, value.version, downloadBaseUrl),
+      windows: normalizePlatform(value.platforms?.windows, COMPANION_DOWNLOADS.windows, value.version, downloadBaseUrl),
     }),
   });
 }
@@ -104,7 +120,7 @@ export async function fetchCompanionManifest({ fetchImpl, signal } = {}) {
     signal,
   });
   if (!response?.ok) throw new Error("manifest_unavailable");
-  return normalizeCompanionManifest(await response.json());
+  return normalizeCompanionManifest(await response.json(), { downloadBaseUrl: COMPANION_RELEASE_PATH });
 }
 
 export function formatCompanionFileSize(bytes) {

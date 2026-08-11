@@ -308,6 +308,10 @@ test("vercel rewrites enumerate route owners without a broad fallback", () => {
   const firebaseAuthRewrite = config.rewrites.find((entry) => entry.source === "/__/auth/:path*");
   assert.ok(firebaseAuthRewrite, "missing Firebase auth helper rewrite");
   assert.equal(firebaseAuthRewrite.destination, "https://nexusrbx.firebaseapp.com/__/auth/:path*");
+  const connectorRewrite = config.rewrites.find((entry) => entry.source === "/connector/:path*");
+  assert.ok(connectorRewrite, "missing connector release proxy");
+  assert.equal(connectorRewrite.destination, "https://onzdkc69myiiqxmi.public.blob.vercel-storage.com/connector/:path*");
+  assert.equal(connectorRewrite.has, undefined, "connector releases must work on every deployed app hostname");
   assert.equal(sources.includes("/privacy"), false);
   assert.equal(sources.includes("/terms"), false);
 });

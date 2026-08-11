@@ -78,7 +78,7 @@
     "publish": [
       {
         "provider": "generic",
-        "url": "https://downloads.nexusrbx.com/connector"
+        "url": "https://nexusairbx.vercel.app/connector"
       }
     ],
     "afterSign": "scripts/notarize.mjs",

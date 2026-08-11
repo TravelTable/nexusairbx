@@ -47,6 +47,7 @@ function makeUpdater(client: FakeUpdater, overrides: Partial<ConstructorParamete
 }
 
 test("packaged builds are locked to the official HTTPS update feed", () => {
+  assert.equal(DEFAULT_UPDATE_FEED_URL, "https://nexusairbx.vercel.app/connector");
   assert.equal(resolveUpdateFeedUrl("https://example.com/untrusted", false), DEFAULT_UPDATE_FEED_URL);
   assert.equal(resolveUpdateFeedUrl("https://updates.example.com/connector/", true), "https://updates.example.com/connector");
   assert.throws(() => resolveUpdateFeedUrl("http://updates.example.com/connector", true), /secure HTTPS/);
