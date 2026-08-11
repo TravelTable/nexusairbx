@@ -8,33 +8,33 @@ const focusClass =
 
 const comparisonFacts = {
   FREE: {
-    model: "Nexus Auto routing",
-    usage: "1 concurrent job",
+    setup: "Nexus Auto for focused ideas",
+    pace: "1 AI task at a time",
     history: "7-day chat history",
     product: "1 active UI project",
   },
   STARTER: {
-    model: "Included model selection",
-    usage: "2 concurrent jobs",
+    setup: "Included model choice",
+    pace: "2 AI tasks at a time",
     history: "30-day chat history",
     product: "3 active UI projects",
   },
   PRO: {
-    model: "Premium Direct access",
-    usage: "Higher included AI usage",
+    setup: "Included + Premium Direct options",
+    pace: "Higher Included Usage",
     history: "90-day usage history",
-    product: "Icon Generator access",
+    product: "Icon Generator",
   },
   PRO_PLUS: {
-    model: "Premium Direct access",
-    usage: "Higher included usage than Pro",
+    setup: "Included + Premium Direct options",
+    pace: "Higher Included Usage than Pro",
     history: "90-day usage history",
-    product: "Icon Generator access",
+    product: "Icon Generator",
   },
   TEAM: {
-    model: "Premium Direct access",
-    usage: "Pooled included usage per seat",
-    history: "One studio subscription",
+    setup: "Included + Premium Direct options",
+    pace: "Pooled Included Usage per seat",
+    history: "90-day usage history",
     product: "Icon Generator · 2–50 seats",
   },
 };
@@ -287,12 +287,12 @@ export default function PricingCatalog() {
     <main id="main-content">
       <section className="border-b border-[var(--ds-border-subtle)] px-4 py-20 sm:px-6 sm:py-28 lg:px-8">
         <div className="mx-auto max-w-5xl text-center">
-          <p className="text-sm font-semibold uppercase tracking-[0.14em] text-[var(--ds-accent)]">Pricing</p>
+          <p className="text-sm font-semibold uppercase tracking-[0.14em] text-[var(--ds-accent)]">Plans for every build</p>
           <h1 className="mx-auto mt-5 max-w-4xl font-display text-5xl font-normal leading-[0.98] tracking-[-0.045em] text-[var(--ds-text)] sm:text-6xl lg:text-7xl">
-            Plans for individual creators and Roblox studios.
+            Give your Roblox game room to grow.
           </h1>
           <p className="mx-auto mt-6 max-w-2xl text-base leading-7 text-[var(--ds-text-secondary)] sm:text-lg">
-            Compare included product access, choose a billing period, and review the final details before checkout.
+            Start with one focused idea. As the project expands, choose more AI capacity, longer history, model choice, and creator tools without changing how you plan, build, and review.
           </p>
           <div className="mt-10 inline-flex rounded-full border border-[var(--ds-border)] bg-[var(--ds-surface-2)] p-1" aria-label="Billing period">
             <button
@@ -323,8 +323,8 @@ export default function PricingCatalog() {
       <section className="px-4 py-20 sm:px-6 sm:py-24 lg:px-8" aria-labelledby="entry-plans-title">
         <div className="mx-auto max-w-6xl">
           <div className="mb-7 max-w-2xl">
-            <h2 id="entry-plans-title" className="font-display text-4xl font-normal tracking-[-0.035em] text-[var(--ds-text)]">Start with the essentials</h2>
-            <p className="mt-2 text-sm leading-6 text-[var(--ds-text-secondary)]">Free and Starter keep the initial commitment small.</p>
+            <h2 id="entry-plans-title" className="font-display text-4xl font-normal tracking-[-0.035em] text-[var(--ds-text)]">Start the first build</h2>
+            <p className="mt-2 text-sm leading-6 text-[var(--ds-text-secondary)]">Free keeps the first idea focused. Starter adds more room for regular tasks and review.</p>
           </div>
           <div className="grid gap-5 md:grid-cols-2">
             {entryPlans.map((plan) => (
@@ -342,8 +342,8 @@ export default function PricingCatalog() {
       <section className="border-y border-[var(--ds-border-subtle)] bg-[var(--ds-surface-1)] px-4 py-20 sm:px-6 sm:py-24 lg:px-8" aria-labelledby="creator-plans-title">
         <div className="mx-auto max-w-6xl">
           <div className="mb-7 max-w-2xl">
-            <h2 id="creator-plans-title" className="font-display text-4xl font-normal tracking-[-0.035em] text-[var(--ds-text)]">Compare Pro and Pro+</h2>
-            <p className="mt-2 text-sm leading-6 text-[var(--ds-text-secondary)]">Both plans include Premium Direct model access and the Icon Generator.</p>
+            <h2 id="creator-plans-title" className="font-display text-4xl font-normal tracking-[-0.035em] text-[var(--ds-text)]">Stay in the build loop longer</h2>
+            <p className="mt-2 text-sm leading-6 text-[var(--ds-text-secondary)]">Pro and Pro+ add more Included Usage, Premium Direct options, Icon Generator, and 90-day usage history.</p>
           </div>
           <div className="grid gap-5 lg:grid-cols-2">
             {primaryPlans.map((plan) => (
@@ -362,8 +362,8 @@ export default function PricingCatalog() {
         <div className="mx-auto max-w-6xl rounded-[14px] border border-[var(--ds-border)] bg-[var(--ds-surface-1)] p-6 sm:p-8 lg:grid lg:grid-cols-[1fr_0.9fr] lg:gap-12 lg:p-10">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--ds-accent)]">For studios</p>
-            <h2 id="team-plan-title" className="mt-3 font-display text-5xl font-normal tracking-[-0.04em] text-[var(--ds-text)]">Team</h2>
-            <p className="mt-3 max-w-xl text-sm leading-6 text-[var(--ds-text-secondary)]">{team.audience}. Choose between 2 and 50 seats.</p>
+            <h2 id="team-plan-title" className="mt-3 font-display text-5xl font-normal tracking-[-0.04em] text-[var(--ds-text)]">One plan for the studio</h2>
+            <p className="mt-3 max-w-xl text-sm leading-6 text-[var(--ds-text-secondary)]">{team.audience}. Choose between 2 and 50 seats and keep Included Usage pooled across paid seats.</p>
             <div className="mt-7">
               <FeatureList features={team.features} />
             </div>
@@ -420,18 +420,18 @@ export default function PricingCatalog() {
       <section className="border-t border-[var(--ds-border-subtle)] bg-[var(--ds-surface-1)] px-4 py-20 sm:px-6 sm:py-24 lg:px-8" aria-labelledby="comparison-title">
         <div className="mx-auto max-w-6xl">
           <div className="max-w-2xl">
-            <h2 id="comparison-title" className="font-display text-4xl font-normal tracking-[-0.035em] text-[var(--ds-text)]">Plan comparison</h2>
-            <p className="mt-2 text-sm leading-6 text-[var(--ds-text-secondary)]">A concise view of the currently listed product access and limits.</p>
+            <h2 id="comparison-title" className="font-display text-4xl font-normal tracking-[-0.035em] text-[var(--ds-text)]">Compare your creator runway</h2>
+            <p className="mt-2 text-sm leading-6 text-[var(--ds-text-secondary)]">See how each plan changes task capacity, history, and access to creator tools.</p>
           </div>
-          <div className="mt-7 overflow-x-auto rounded-xl border border-[var(--ds-border)]">
+          <div className={`${focusClass} mt-7 overflow-x-auto rounded-xl border border-[var(--ds-border)]`} role="region" aria-label="Plan comparison table" tabIndex="0">
             <table className="min-w-[780px] w-full border-collapse text-left text-sm">
               <thead className="bg-[var(--ds-surface-2)] text-xs uppercase tracking-[0.1em] text-[var(--ds-text-muted)]">
                 <tr>
                   <th className="px-5 py-4 font-semibold" scope="col">Plan</th>
-                  <th className="px-5 py-4 font-semibold" scope="col">Model access</th>
-                  <th className="px-5 py-4 font-semibold" scope="col">Usage</th>
-                  <th className="px-5 py-4 font-semibold" scope="col">History or structure</th>
-                  <th className="px-5 py-4 font-semibold" scope="col">Product access</th>
+                  <th className="px-5 py-4 font-semibold" scope="col">Creation setup</th>
+                  <th className="px-5 py-4 font-semibold" scope="col">Build pace</th>
+                  <th className="px-5 py-4 font-semibold" scope="col">History</th>
+                  <th className="px-5 py-4 font-semibold" scope="col">Creator tools</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[var(--ds-border-subtle)] bg-[var(--ds-surface-1)] text-[var(--ds-text-secondary)]">
@@ -440,8 +440,8 @@ export default function PricingCatalog() {
                   return (
                     <tr key={plan.id}>
                       <th className="whitespace-nowrap px-5 py-4 font-semibold text-[var(--ds-text)]" scope="row">{plan.name}</th>
-                      <td className="px-5 py-4">{facts.model}</td>
-                      <td className="px-5 py-4">{facts.usage}</td>
+                      <td className="px-5 py-4">{facts.setup}</td>
+                      <td className="px-5 py-4">{facts.pace}</td>
                       <td className="px-5 py-4">{facts.history}</td>
                       <td className="px-5 py-4">{facts.product}</td>
                     </tr>

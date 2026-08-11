@@ -47,11 +47,16 @@ test("AI workspace is viewport-bound and keeps safe toast placement", () => {
 
 test("Sign-in nudge remains dismissible and accessible on narrow viewports", () => {
   const modal = read("src/components/SignInNudgeModal.jsx");
+  const sharedModal = read("src/components/Modal.jsx");
 
-  assert.match(modal, /role="dialog"/);
-  assert.match(modal, /aria-modal="true"/);
-  assert.match(modal, /aria-labelledby="signin-nudge-title"/);
-  assert.match(modal, /overflow-y-auto p-3/);
+  assert.match(modal, /import Modal from "\.\/Modal"/);
+  assert.match(modal, /title="Sign in to save and continue your work"/);
+  assert.match(modal, /titleClassName="sr-only"/);
+  assert.match(sharedModal, /role="dialog"/);
+  assert.match(sharedModal, /aria-modal="true"/);
+  assert.match(sharedModal, /aria-labelledby=\{title \? resolvedTitleId : undefined\}/);
+  assert.match(modal, /overlayClassName="[^"]*overflow-y-auto[^"]*"/);
+  assert.match(modal, /overlayClassName="[^"]*\bp-3\b[^"]*"/);
   assert.match(modal, /aria-label="Dismiss sign-in prompt"/);
   assert.match(modal, /Secure workspace handoff/);
 });

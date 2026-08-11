@@ -49,6 +49,7 @@ export async function generateMetadata({ params }) {
     title: page.metaTitle,
     description: page.description,
     path: page.path,
+    noindex: page.status === "Policy draft",
   });
 }
 

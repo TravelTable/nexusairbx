@@ -21,9 +21,9 @@ import {
 } from "../components/site/editorialUi";
 
 const PLAN_CHOICES = [
-  { plan: PLAN.PRO, label: "Pro", month: "$19.99/month", year: "$199/year" },
-  { plan: PLAN.PRO_PLUS, label: "Pro+", month: "$39.99/month", year: "$399/year" },
-  { plan: PLAN.TEAM, label: "Team", month: "$29/user/month", year: "$290/user/year" },
+  { plan: PLAN.PRO, label: "Pro", month: "$19.99/month", year: "$199/year", fit: "More room for regular build-and-review sessions." },
+  { plan: PLAN.PRO_PLUS, label: "Pro+", month: "$39.99/month", year: "$399/year", fit: "Higher Included Usage for larger, more frequent builds." },
+  { plan: PLAN.TEAM, label: "Team", month: "$29/user/month", year: "$290/user/year", fit: "Pooled Included Usage under one studio subscription." },
 ];
 
 function formatDate(value) {
@@ -263,7 +263,7 @@ export default function BillingPage() {
         <AlertTriangle className="h-8 w-8 text-[var(--ds-warning)]" />
         <h1 className={`${editorialDisplayClass} mt-5 text-4xl`}>Sign in to manage billing</h1>
         <button className={`${editorialPrimaryButtonClass} mt-8`} onClick={() => navigate("/signin")}>
-          Login to Continue
+          Sign in to continue
         </button>
       </div>
     );
@@ -285,13 +285,13 @@ export default function BillingPage() {
           onClick={() => window.location.assign("/")}
         >
           <ArrowLeft className="h-4 w-4" />
-          Back to Home
+          Back to home
         </button>
 
         <div className="mt-12 flex flex-col gap-6 md:flex-row md:items-end md:justify-between lg:mt-16">
           <div>
             <h1 className={`${editorialDisplayClass} text-5xl sm:text-6xl`}>Billing</h1>
-            <p className="mt-4 max-w-2xl text-base leading-7 text-[var(--ds-text-muted)]">Manage your NexusRBX subscription, Included Usage, and Premium Balance.</p>
+            <p className="mt-4 max-w-2xl text-base leading-7 text-[var(--ds-text-muted)]">See your active plan, the AI work included in this billing period, and optional prepaid credit for supported models.</p>
           </div>
           <button
             type="button"
@@ -352,6 +352,7 @@ export default function BillingPage() {
 
           <section className={`${editorialPanelClass} p-6 sm:p-7`}>
             <div className="text-lg font-semibold">Included Usage</div>
+            <p className="mt-2 text-sm leading-6 text-[var(--ds-text-muted)]">The AI work included with your plan for the current billing period.</p>
             <div className="mt-5 text-3xl font-semibold tracking-[-0.025em]">{percentUsed}% used</div>
             <div className="mt-1 text-sm text-[var(--ds-text-muted)]">{percentRemaining}% remaining</div>
             <div className="mt-4 h-2 overflow-hidden rounded-full bg-[var(--ds-fill-active)]">
@@ -370,7 +371,7 @@ export default function BillingPage() {
           <section className={`${editorialPanelClass} p-6 sm:p-7`}>
             <div className="text-lg font-semibold">Premium Balance</div>
             <div className="mt-5 text-3xl font-semibold tracking-[-0.025em]">{dollarsFromMicros(premiumBalance.balanceMicros)} available</div>
-            <p className="mt-2 text-sm text-[var(--ds-text-muted)]">Used for supported Premium Direct models.</p>
+            <p className="mt-2 text-sm leading-6 text-[var(--ds-text-muted)]">Optional prepaid credit used only when you choose a supported Premium Direct model.</p>
             <div className="mt-5 grid grid-cols-3 gap-2">
               {[
                 ["Add $10", PREMIUM_BALANCE_PACKAGE.PREMIUM_10],
@@ -398,8 +399,8 @@ export default function BillingPage() {
         <section className={`${editorialPanelClass} mt-8 p-6 sm:p-8`}>
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
-              <h2 className="text-xl font-semibold">Upgrade or change plan</h2>
-              <p className="mt-1 text-sm text-[var(--ds-text-muted)]">Active subscribers should use billing settings for controlled plan changes.</p>
+              <h2 className="text-xl font-semibold">Choose more room for your builds</h2>
+              <p className="mt-1 text-sm text-[var(--ds-text-muted)]">Compare exact prices here. Active subscribers should use billing settings for controlled plan changes.</p>
             </div>
             <div className="inline-flex w-fit rounded-full bg-[var(--ds-fill-subtle)] p-1">
               <button
@@ -423,6 +424,7 @@ export default function BillingPage() {
               <div key={choice.plan} className="rounded-[14px] bg-[var(--ds-surface-2)] p-5">
                 <div className="font-semibold">{choice.label}</div>
                 <div className="mt-1 text-sm text-[var(--ds-text-muted)]">{interval === BILLING_INTERVAL.YEAR ? choice.year : choice.month}</div>
+                <p className="mt-3 text-sm leading-6 text-[var(--ds-text-secondary)]">{choice.fit}</p>
                 {choice.plan === PLAN.TEAM && (
                   <div className="mt-3">
                     <label className="text-xs text-[var(--ds-text-muted)]" htmlFor="billing-team-seats">Seats</label>

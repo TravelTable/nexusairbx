@@ -1,5 +1,5 @@
 export const PUBLIC_SITE_ORIGIN = "https://www.nexusrbx.com";
-export const DEFAULT_OG_IMAGE = `${PUBLIC_SITE_ORIGIN}/logo.png`;
+export const DEFAULT_OG_IMAGE = `${PUBLIC_SITE_ORIGIN}/assets/nexusrbx-og-purple-workshop.png`;
 export const SITE_NAME = "NexusRBX";
 
 export function canonicalUrl(pathname = "/") {
@@ -24,7 +24,7 @@ export function buildPublicMetadata({
   const canonical = canonicalUrl(path);
   const resolvedTitle = title || SITE_NAME;
   const resolvedDescription =
-    description || "NexusRBX helps Roblox creators generate Luau scripts, UI systems, and Studio-ready workflows with AI.";
+    description || "NexusRBX helps Roblox creators plan, build, playtest, and ship complete games with reviewable AI and Studio-connected workflows.";
 
   return {
     title: resolvedTitle,
@@ -54,7 +54,7 @@ export function organizationStructuredData() {
     "@type": "Organization",
     name: SITE_NAME,
     url: PUBLIC_SITE_ORIGIN,
-    logo: absoluteUrl("/logo.png"),
+    logo: absoluteUrl("/nexus-mark.svg"),
     sameAs: ["https://github.com/TravelTable/nexusairbx"],
   };
 }
@@ -66,12 +66,7 @@ export function softwareApplicationStructuredData() {
     name: SITE_NAME,
     applicationCategory: "DeveloperApplication",
     operatingSystem: "Web",
-    description: "AI-powered Roblox script generation, UI building, and Studio workflow tooling.",
-    offers: {
-      "@type": "Offer",
-      price: "14.99",
-      priceCurrency: "USD",
-    },
+    description: "An AI-powered Roblox game-building workspace for planning, reviewable multi-file changes, Studio playtests, and creator-led iteration.",
   };
 }
 

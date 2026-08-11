@@ -10,7 +10,7 @@ const COUNSEL_REVIEW_NOTE =
 export const DOC_CATEGORIES = [
   {
     "id": "start",
-    "title": "Start",
+    "title": "Start with an Idea",
     "pages": [
       "overview",
       "installation",
@@ -19,7 +19,7 @@ export const DOC_CATEGORIES = [
   },
   {
     "id": "studio-workflow",
-    "title": "Studio Workflow",
+    "title": "Plan, Apply & Test",
     "pages": [
       "studio-plugin",
       "basic-workflow",
@@ -29,7 +29,7 @@ export const DOC_CATEGORIES = [
   },
   {
     "id": "creating",
-    "title": "Creating",
+    "title": "Systems, UI & Assets",
     "pages": [
       "generating-your-first-script",
       "prompting-guide",
@@ -58,7 +58,7 @@ export const DOC_CATEGORIES = [
   },
   {
     "id": "reference",
-    "title": "Reference",
+    "title": "Reference & Limits",
     "pages": [
       "script-generation",
       "faq",
@@ -94,9 +94,9 @@ export const DOC_PAGES = [
     "slug": "overview",
     "path": "/docs",
     "navTitle": "Overview",
-    "title": "Build your first Roblox workflow",
+    "title": "Take your Roblox idea to Play mode",
     "metaTitle": "NexusRBX AI Documentation | NexusRBX AI Docs",
-    "description": "Install the Studio bridge, pair your workspace, create a focused Luau starting point, and test every change before it reaches your game.",
+    "description": "Describe your game idea, approve a plan, build systems, UI, and assets, review Studio changes, and verify each result in Play mode.",
     "category": "start",
     "updated": DOC_UPDATED,
     "readingTime": "3 min read",
@@ -111,35 +111,31 @@ export const DOC_PAGES = [
     },
     "sections": [
       {
-        "id": "first-working-session",
-        "title": "Your first working session",
+        "id": "creator-loop",
+        "title": "The creator loop",
         "blocks": [
           {
             "type": "steps",
             "items": [
               {
-                "title": "Install the Studio plugin",
-                "body": "Download the verified plugin artifact, install it in the correct Roblox Studio plugins folder, and confirm that NexusRBX opens."
+                "title": "Describe the idea",
+                "body": "Start with the player goal, core loop, visual direction, audience, and constraints. You can shape the idea before Studio is connected."
               },
               {
-                "title": "Connect Studio",
-                "body": "Sign in at /ai, open the plugin in Studio, and complete the workspace pairing flow for the project you want to change."
+                "title": "Approve a plan",
+                "body": "Break the game or feature into small, reviewable milestones. Confirm what should be built first and what success looks like before changes reach the project."
               },
               {
-                "title": "Generate your first script",
-                "body": "Name the script type, target location, relevant object names, expected behavior, and any constraints."
+                "title": "Build systems, UI, and assets",
+                "body": "Work on one focused system, interface, or asset task at a time. Include the relevant object names, script type, placement, behavior, and style constraints."
               },
               {
-                "title": "Review and apply",
-                "body": "Confirm the target path, read the suggested source, and approve the insertion or edit only when it matches the request."
+                "title": "Review and apply in Studio",
+                "body": "Connect Studio when project context or an applied change is needed. Inspect the target path, proposed objects, and source, then approve only the changes you expect."
               },
               {
-                "title": "Test in Studio",
-                "body": "Run the exact behavior, watch the Output window, and refine the request with any error text."
-              },
-              {
-                "title": "Troubleshoot errors",
-                "body": "Capture the exact Output message, reduce the issue to a small reproduction, and use the troubleshooting guide before publishing."
+                "title": "Verify in Play mode",
+                "body": "Run the exact player flow, watch the Output window, and compare the result with the approved plan. Use the error text and observed behavior to guide the next revision."
               }
             ]
           }
@@ -153,24 +149,34 @@ export const DOC_PAGES = [
             "type": "cards",
             "items": [
               {
-                "title": "Install the plugin",
-                "body": "Use the correct Studio install target and verify that the plugin opens.",
-                "href": "/docs/installation"
+                "title": "Shape the idea",
+                "body": "Turn a rough game concept into a specific request with a clear player goal and constraints.",
+                "href": "/docs/prompting-guide"
               },
               {
-                "title": "Pair with Studio",
-                "body": "Connect the workspace, understand project context, and resolve connection issues.",
-                "href": "/docs/studio-plugin"
+                "title": "Plan a feature",
+                "body": "Move from a focused request to a reviewable Studio workflow with clear checkpoints.",
+                "href": "/docs/basic-workflow"
               },
               {
-                "title": "Generate a first script",
-                "body": "Write a useful prompt, choose the right script type, and review the output.",
-                "href": "/docs/generating-your-first-script"
+                "title": "Build gameplay systems",
+                "body": "Explore practical patterns for rounds, tools, rewards, shops, and other common systems.",
+                "href": "/docs/common-use-cases"
               },
               {
-                "title": "Debug an error",
-                "body": "Use exact Output text and a small reproduction to get a focused diagnosis.",
-                "href": "/docs/debugging-guide"
+                "title": "Create interface work",
+                "body": "Define interface structure, states, placement, and behavior before bringing UI into the game.",
+                "href": "/docs/ui-generation"
+              },
+              {
+                "title": "Plan asset work",
+                "body": "Choose asset types, define requirements, and check ownership and moderation constraints.",
+                "href": "/docs/assets"
+              },
+              {
+                "title": "Review and verify",
+                "body": "Inspect every proposed Studio change, apply it deliberately, and test the result in Play mode.",
+                "href": "/docs/reviewing-and-inserting-generated-code"
               }
             ]
           }
@@ -182,13 +188,13 @@ export const DOC_PAGES = [
         "blocks": [
           {
             "type": "paragraph",
-            "text": "NexusRBX provides starting points and workflow help. It does not know every project constraint and cannot guarantee that generated code is secure, complete, or ready to publish."
+            "text": "NexusRBX helps turn an idea into reviewable plans and project changes. It does not know every game constraint and cannot guarantee that generated code, UI, or asset guidance is secure, complete, or ready to publish."
           },
           {
             "type": "list",
             "items": [
               "Read the source and verify the script type and location.",
-              "Review RemoteEvents, purchases, rewards, player data, admin tools, and economy logic with extra care.",
+              "Review proposed objects, asset rights, RemoteEvents, purchases, rewards, player data, admin tools, and economy logic with extra care.",
               "Test in a safe Studio session before publishing or enabling writes in a live project.",
               "Use the troubleshooting guide when the result behaves differently from the request."
             ]
@@ -196,8 +202,8 @@ export const DOC_PAGES = [
           {
             "type": "callout",
             "tone": "warning",
-            "title": "Beta software",
-            "text": "Workspace labels and generation behavior may change during beta. Keep your own project history and review changes before applying them."
+            "title": "Keep project history",
+            "text": "Workspace labels and generated suggestions can change as the product evolves. Keep your own project history and review each change before applying it."
           }
         ]
       }
@@ -2609,7 +2615,7 @@ export const DOC_PAGES = [
     "navTitle": "FAQ",
     "title": "Frequently Asked Questions",
     "metaTitle": "Frequently Asked Questions | NexusRBX AI Docs",
-    "description": "Answers about beta status, billing, learning Luau, full-game generation, existing projects, script types, debugging, prompts, and support.",
+    "description": "Answers about planning a game, building systems, UI, and assets, reviewing Studio changes, Play-mode testing, billing, safety, and support.",
     "category": "reference",
     "updated": DOC_UPDATED,
     "readingTime": "3 min read",
@@ -2629,7 +2635,7 @@ export const DOC_PAGES = [
         "blocks": [
           {
             "type": "paragraph",
-            "text": "This page answers common questions about NexusRBX AI."
+            "text": "NexusRBX supports a creator-led loop: describe the idea, approve a plan, build focused systems, UI, or asset work, review changes before they reach Studio, and verify the result in Play mode."
           }
         ]
       },
@@ -2639,11 +2645,7 @@ export const DOC_PAGES = [
         "blocks": [
           {
             "type": "paragraph",
-            "text": "Billing details are shown in the NexusRBX account or checkout flow when billing is available."
-          },
-          {
-            "type": "paragraph",
-            "text": "If there is a free beta, trial, subscription, credit limit, or paid plan, explain it here."
+            "text": "Yes. NexusRBX has a Free plan. See /pricing for the current plan limits and paid options; checkout shows the price and billing interval before a purchase."
           }
         ]
       },
@@ -2673,7 +2675,7 @@ export const DOC_PAGES = [
         "blocks": [
           {
             "type": "paragraph",
-            "text": "NexusRBX AI can help plan and generate parts of a Roblox game, such as scripts, UI logic, debugging help, and feature starting points. It does not guarantee a complete, polished, production-ready game automatically."
+            "text": "NexusRBX can support the full creation loop by helping turn an idea into a plan and producing focused, reviewable work for gameplay systems, UI, assets, and debugging. It is not a one-click game publisher: you still choose the direction, review Studio changes, test in Play mode, and decide when the experience is ready."
           }
         ]
       },
@@ -2771,13 +2773,13 @@ export const DOC_PAGES = [
     "slug": "changelog",
     "path": "/docs/changelog",
     "navTitle": "Changelog",
-    "title": "Changelog and Release Notes",
+    "title": "Release notes and compatibility",
     "metaTitle": "Changelog and Release Notes | NexusRBX AI Docs",
-    "description": "A readable release-note format for NexusRBX AI updates, known issues, fixes, and beta changes.",
+    "description": "How NexusRBX documents verified product changes and how creators should re-check Studio-connected work after an update.",
     "category": "reference",
     "updated": DOC_UPDATED,
-    "readingTime": "3 min read",
-    "status": "Release guide",
+    "readingTime": "2 min read",
+    "status": "Release notes",
     "primaryAction": {
       "label": "Open NexusRBX AI",
       "href": "/ai"
@@ -2788,112 +2790,51 @@ export const DOC_PAGES = [
     },
     "sections": [
       {
-        "id": "guide",
-        "title": "Guide",
+        "id": "verified-release-notes",
+        "title": "Verified release notes",
         "blocks": [
           {
             "type": "paragraph",
-            "text": "This page provides a consistent format for NexusRBX AI release notes."
+            "text": "Release notes cover changes that have been verified in the shipped NexusRBX product. Each dated entry identifies the affected workspace or Studio workflow, what changed, and any known limitation that creators need to account for."
           },
           {
+            "type": "callout",
+            "tone": "info",
+            "title": "Trust the version you can verify",
+            "text": "Compare the version shown in NexusRBX or the Studio plugin with the version named in a release note. If they do not match, use the behavior you can reproduce and include both versions in a support request."
+          }
+        ]
+      },
+      {
+        "id": "after-an-update",
+        "title": "After a Studio workflow update",
+        "blocks": [
+          {
+            "type": "steps",
+            "items": [
+              {
+                "title": "Reconnect the intended project",
+                "body": "Confirm that the workspace and Studio plugin are paired to the place you mean to change."
+              },
+              {
+                "title": "Review the target and source",
+                "body": "Check the object path, script type, proposed objects, and source before approving any write."
+              },
+              {
+                "title": "Verify in Play mode",
+                "body": "Run the affected player flow, watch the Output window, and compare the result with the approved plan."
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "report-a-regression",
+        "title": "Report a regression",
+        "blocks": [
+          {
             "type": "paragraph",
-            "text": "Use one entry per release. Keep notes specific, clear, and honest about known issues."
-          }
-        ]
-      },
-      {
-        "id": "added",
-        "title": "Added",
-        "blocks": [
-          {
-            "type": "list",
-            "items": [
-              "[New feature]"
-            ]
-          }
-        ]
-      },
-      {
-        "id": "changed",
-        "title": "Changed",
-        "blocks": [
-          {
-            "type": "list",
-            "items": [
-              "[Updated behavior]"
-            ]
-          }
-        ]
-      },
-      {
-        "id": "fixed",
-        "title": "Fixed",
-        "blocks": [
-          {
-            "type": "list",
-            "items": [
-              "[Bug fix]"
-            ]
-          }
-        ]
-      },
-      {
-        "id": "known-issues",
-        "title": "Known Issues",
-        "blocks": [
-          {
-            "type": "list",
-            "items": [
-              "[Known issue]"
-            ]
-          }
-        ]
-      },
-      {
-        "id": "added-2",
-        "title": "Added",
-        "blocks": [
-          {
-            "type": "list",
-            "items": [
-              "Added [feature name]."
-            ]
-          }
-        ]
-      },
-      {
-        "id": "changed-2",
-        "title": "Changed",
-        "blocks": [
-          {
-            "type": "list",
-            "items": [
-              "Updated [workflow or UI area] to make setup clearer."
-            ]
-          }
-        ]
-      },
-      {
-        "id": "fixed-2",
-        "title": "Fixed",
-        "blocks": [
-          {
-            "type": "list",
-            "items": [
-              "Fixed [bug description]."
-            ]
-          }
-        ]
-      },
-      {
-        "id": "known-issues-2",
-        "title": "Known Issues",
-        "blocks": [
-          {
-            "type": "list",
-            "items": [
-              "[Known issue and workaround]."
-            ]
+            "text": "Use /contact when an update changes a workflow you could previously complete. Include the workspace and plugin versions, exact Studio Output text, the affected object path, expected behavior, actual behavior, and the smallest reliable reproduction."
           }
         ]
       }
@@ -3451,7 +3392,7 @@ export const LEGAL_PAGES = [
           {
             type: "paragraph",
             text:
-              "The legacy /terms and /privacy URLs redirect to these canonical /legal pages. The /legal pages are indexable public pages designed for clearer reading, navigation, and printing.",
+              "The legacy /terms and /privacy URLs redirect to these canonical /legal pages. Terms and Privacy remain public canonical documents; policy drafts stay accessible for review but are excluded from search indexing until they are finalized.",
           },
         ],
       },

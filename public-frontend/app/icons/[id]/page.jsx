@@ -58,7 +58,7 @@ function breadcrumbData(icon) {
       {
         "@type": "ListItem",
         position: 2,
-        name: "Icon Marketplace",
+        name: "Creator Store",
         item: canonicalUrl("/icons-market"),
       },
       {
@@ -99,7 +99,7 @@ export default async function IconPage({ params }) {
               <nav className="breadcrumbs" aria-label="Breadcrumb">
                 <a href="/">Home</a>
                 <span aria-hidden="true">/</span>
-                <a href="/icons-market">Icon Marketplace</a>
+                <a href="/icons-market">Creator Store</a>
                 <span aria-hidden="true">/</span>
                 <span>{icon.name}</span>
               </nav>
@@ -114,7 +114,7 @@ export default async function IconPage({ params }) {
               </div>
               <p className="icon-actions">
                 <a className="button button-primary" href="/tools/icon-generator">Generate related icon</a>
-                <a className="button button-secondary" href="/icons-market">Browse marketplace</a>
+                <a className="button button-secondary" href="/icons-market">Browse Creator Store</a>
               </p>
             </div>
             <div className="icon-preview-panel">

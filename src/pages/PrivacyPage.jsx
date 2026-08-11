@@ -114,7 +114,7 @@ function NexusRBXPrivacyPage({
             </aside>
 
             {/* Main Content */}
-            <div className="min-w-0 flex-grow [&_h1]:font-[Georgia,_Cambria,_'Times_New_Roman',_serif] [&_h1]:font-normal [&_h1]:leading-[1.08] [&_h1]:tracking-[-0.035em] [&_h1]:text-[var(--ds-text)] [&_p]:leading-7">
+            <div className="min-w-0 flex-grow [&_h1]:font-[var(--ds-font-display)] [&_h1]:font-bold [&_h1]:leading-[1.04] [&_h1]:tracking-[-0.035em] [&_h1]:text-[var(--ds-text)] [&_p]:leading-7">
               {activeSection === "introduction" && <IntroductionContent />}
               {activeSection === "collection" && <CollectionContent />}
               {activeSection === "use" && <UseContent />}

@@ -1,5 +1,5 @@
 export const editorialDisplayClass =
-  "font-[Georgia,_Cambria,_'Times_New_Roman',_serif] font-normal leading-[1.06] tracking-[-0.04em]";
+  "font-[var(--ds-font-display)] font-bold leading-[1.02] tracking-[-0.04em]";
 
 export const editorialGutterClass = "px-4 sm:px-8 lg:px-14";
 

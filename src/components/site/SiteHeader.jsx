@@ -16,6 +16,7 @@ import {
 } from "../shadcn/sheet";
 import { Skeleton } from "../shadcn/skeleton";
 import { cn } from "../../lib/utils";
+import { homepageNavigation, homepageResourceNavigation } from "../../content/siteNavigation";
 import useHeaderIdentity from "./useHeaderIdentity";
 import { getHeaderVariantForPath } from "./siteHeaderIdentity";
 import SkipToMainContent from "./SkipToMainContent";
@@ -61,7 +62,7 @@ function Brand({ compact = false }) {
         "flex items-center justify-center overflow-hidden rounded-md border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)]",
         compact ? "h-7 w-7" : "h-8 w-8"
       )}>
-        <img src="/logo.png" alt="" className={cn("object-contain", compact ? "h-5 w-5" : "h-6 w-6")} />
+        <img src="/nexus-mark.svg" alt="" className={cn("object-contain", compact ? "h-5 w-5" : "h-6 w-6")} />
       </span>
       {!compact && <span className="text-[13px] font-semibold tracking-[-0.01em] text-[var(--ds-text)]">NexusRBX</span>}
     </Link>
@@ -193,6 +194,23 @@ function DesktopNavigation({ pathname }) {
   );
 }
 
+function HomepageDesktopNavigation({ pathname }) {
+  return (
+    <nav className="hidden items-center gap-0.5 lg:flex" aria-label="Homepage navigation">
+      {homepageNavigation.map((item) => (
+        <a
+          key={item.href}
+          href={item.href}
+          className="inline-flex h-11 items-center rounded-full px-3 text-[13px] font-semibold text-[var(--ds-text-secondary)] transition-[background-color,color,transform] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ds-focus-ring)] motion-reduce:transform-none"
+        >
+          {item.label}
+        </a>
+      ))}
+      <NavDisclosure label="Resources" items={homepageResourceNavigation} pathname={pathname} />
+    </nav>
+  );
+}
+
 function SupportCount({ count }) {
   if (!count) return null;
   return (
@@ -298,7 +316,7 @@ function AccountMenu({ identity, compact = false }) {
   );
 }
 
-function DesktopIdentityActions({ identity, checkout = false }) {
+function DesktopIdentityActions({ identity, checkout = false, homepage = false }) {
   if (!identity.authReady) {
     return <div className="hidden items-center gap-2 lg:flex"><Skeleton className="h-9 w-20" /><Skeleton className="h-9 w-28" /></div>;
   }
@@ -307,7 +325,7 @@ function DesktopIdentityActions({ identity, checkout = false }) {
       <div className="hidden items-center gap-2 lg:flex">
         {!checkout && (
           <Button asChild size="sm" className="min-h-11 bg-[var(--ds-accent)] text-[var(--ds-accent-foreground)] hover:bg-[var(--ds-accent-hover)] active:scale-[0.985]">
-            <Link to="/ai">Open workspace</Link>
+            {homepage ? <a href="/#product">Start building</a> : <Link to="/ai">Open workspace</Link>}
           </Button>
         )}
         <AccountMenu identity={identity} compact={checkout} />
@@ -321,7 +339,7 @@ function DesktopIdentityActions({ identity, checkout = false }) {
       </Button>
       {!checkout && (
         <Button asChild size="sm" className="min-h-11 bg-[var(--ds-accent)] text-[var(--ds-accent-foreground)] hover:bg-[var(--ds-accent-hover)] active:scale-[0.985]">
-          <Link to="/signup">Start free</Link>
+          {homepage ? <a href="/#product">Start building</a> : <Link to="/signup">Start free</Link>}
         </Button>
       )}
     </div>
@@ -342,11 +360,11 @@ function MobileDestination({ item, pathname }) {
   );
 }
 
-function MobileMenu({ identity, pathname, workspace = false, checkout = false, alwaysVisible = false }) {
+function MobileMenu({ identity, pathname, workspace = false, checkout = false, homepage = false }) {
   return (
     <Sheet>
       <SheetTrigger asChild>
-        <Button type="button" variant="ghost" size="icon" className={cn("h-11 w-11 rounded-full border border-[var(--ds-border-strong)] bg-[var(--ds-fill-subtle)] text-[var(--ds-text-secondary)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)]", !alwaysVisible && "lg:hidden")} aria-label="Open navigation">
+        <Button type="button" variant="ghost" size="icon" className="h-11 w-11 rounded-full border border-[var(--ds-border-strong)] bg-[var(--ds-fill-subtle)] text-[var(--ds-text-secondary)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)] lg:hidden" aria-label="Open navigation">
           <Menu className="h-4 w-4" />
         </Button>
       </SheetTrigger>
@@ -366,13 +384,32 @@ function MobileMenu({ identity, pathname, workspace = false, checkout = false, a
               </div>
             </div>
           ) : identity.authReady ? (
-            <div className="grid grid-cols-2 gap-2">
+            <div className={cn("grid gap-2", homepage ? "grid-cols-1" : "grid-cols-2")}>
               <SheetClose asChild><Button asChild variant="outline" className="min-h-11 border-[var(--ds-border)] bg-transparent text-[var(--ds-text)]"><Link to="/signin">Sign in</Link></Button></SheetClose>
-              <SheetClose asChild><Button asChild className="min-h-11 bg-[var(--ds-accent)] text-[var(--ds-accent-foreground)]"><Link to="/signup">Start free</Link></Button></SheetClose>
+              {!homepage && <SheetClose asChild><Button asChild className="min-h-11 bg-[var(--ds-accent)] text-[var(--ds-accent-foreground)]"><Link to="/signup">Start free</Link></Button></SheetClose>}
             </div>
           ) : <Skeleton className="h-12 w-full" />}
 
-          {!workspace && !checkout && (
+          {homepage ? (
+            <nav className="space-y-1" aria-label="Mobile homepage navigation">
+              {homepageNavigation.map((item) => (
+                <SheetClose asChild key={item.href}>
+                  <a href={item.href} className="flex min-h-11 items-center rounded-lg px-3 text-sm font-semibold text-[var(--ds-text-secondary)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ds-accent)]">
+                    {item.label}
+                  </a>
+                </SheetClose>
+              ))}
+              <div className="mt-3 border-t border-[var(--ds-border-subtle)] pt-3">
+                <div className="px-3 pb-1 text-xs font-semibold uppercase tracking-[0.08em] text-[var(--ds-text-muted)]">Resources</div>
+                {homepageResourceNavigation.map((item) => <MobileDestination key={item.to} item={item} pathname={pathname} />)}
+              </div>
+              <SheetClose asChild>
+                <Button asChild className="mt-3 min-h-11 w-full bg-[var(--ds-accent)] text-[var(--ds-accent-foreground)] hover:bg-[var(--ds-accent-hover)]">
+                  <a href="/#product">Start building</a>
+                </Button>
+              </SheetClose>
+            </nav>
+          ) : !workspace && !checkout && (
             <nav className="space-y-4" aria-label="Mobile navigation">
               <div>
                 <div className="px-3 pb-1 text-xs font-semibold uppercase tracking-[0.08em] text-[var(--ds-text-muted)]">Product</div>
@@ -390,7 +427,7 @@ function MobileMenu({ identity, pathname, workspace = false, checkout = false, a
 
           {identity.user && (
             <div className="border-t border-[var(--ds-border-subtle)] pt-4">
-              {!checkout && <MobileDestination item={{ to: "/ai", label: "Open workspace" }} pathname={pathname} />}
+              {!checkout && !homepage && <MobileDestination item={{ to: "/ai", label: "Open workspace" }} pathname={pathname} />}
               <MobileDestination item={{ to: "/billing", label: "Billing" }} pathname={pathname} />
               <MobileDestination item={{ to: "/settings", label: "Settings" }} pathname={pathname} />
               <SheetClose asChild>
@@ -438,7 +475,7 @@ export default function SiteHeader({
       isWorkspace
         ? "relative z-30 border-b border-[var(--ds-border-subtle)] bg-[var(--ds-bg-workspace)]"
         : isHomepage
-          ? "absolute inset-x-0 top-0 border-transparent bg-transparent"
+          ? "sticky top-0 border-b border-[var(--ds-border-subtle)] bg-[color-mix(in_srgb,var(--ds-surface-overlay)_92%,transparent)] backdrop-blur-xl"
           : "sticky top-0 border-b border-[var(--ds-border-subtle)] bg-[color-mix(in_srgb,var(--ds-surface-overlay)_94%,transparent)] backdrop-blur-xl",
       className
     )} data-overlay={isHomepage ? "true" : undefined}>
@@ -469,11 +506,11 @@ export default function SiteHeader({
           <>
             <div className="flex min-w-0 items-center gap-8">
               <Brand />
-              {!isHomepage && <DesktopNavigation pathname={location.pathname} />}
+              {isHomepage ? <HomepageDesktopNavigation pathname={location.pathname} /> : <DesktopNavigation pathname={location.pathname} />}
             </div>
-            <div className={cn("flex shrink-0 items-center gap-2", isHomepage && "lg:absolute lg:left-1/2 lg:top-1/2 lg:-translate-x-1/2 lg:-translate-y-1/2")}>
-              {!isHomepage && <DesktopIdentityActions identity={identity} />}
-              <MobileMenu identity={identity} pathname={location.pathname} alwaysVisible={isHomepage} />
+            <div className="flex shrink-0 items-center gap-2">
+              <DesktopIdentityActions identity={identity} homepage={isHomepage} />
+              <MobileMenu identity={identity} pathname={location.pathname} homepage={isHomepage} />
             </div>
           </>
         )}

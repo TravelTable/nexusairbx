@@ -1,11 +1,17 @@
 {
   "short_name": "NexusRBX",
-  "name": "NexusRBX - AI-driven platform for Roblox developers",
+  "name": "NexusRBX - Build Roblox games with an AI creator workspace",
   "icons": [
     {
-      "src": "favicon.ico",
-      "sizes": "64x64 32x32 24x24 16x16",
-      "type": "image/x-icon"
+      "src": "nexus-mark.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "nexus-mark-64.png",
+      "sizes": "64x64",
+      "type": "image/png"
     },
     {
       "src": "logo192.png",
@@ -20,6 +26,6 @@
   ],
   "start_url": ".",
   "display": "standalone",
-  "theme_color": "#000000",
-  "background_color": "#ffffff"
+  "theme_color": "#160b24",
+  "background_color": "#fff8e7"
 }

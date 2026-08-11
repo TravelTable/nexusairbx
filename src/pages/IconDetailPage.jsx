@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { 
   ArrowLeft, 
   Download, 
-  ExternalLink, 
+  Copy,
   Loader2, 
   Info, 
   ShieldCheck, 
@@ -29,8 +29,15 @@ import {
   editorialPrimaryButtonClass,
   editorialSecondaryButtonClass,
 } from "../components/site/editorialUi";
+import "../components/assets/assetPlatform.css";
 
 const API_BASE = BACKEND_URL.replace(/\/+$/, "");
+const PREVIEW_BACKGROUNDS = {
+  dark: { label: "Dark", className: "creator-store-preview--dark" },
+  light: { label: "Light", className: "creator-store-preview--light" },
+  transparent: { label: "Transparent", className: "creator-store-preview--transparent" },
+  scene: { label: "Scene", className: "creator-store-preview--scene" },
+};
 
 export default function IconDetailPage() {
   const { id } = useParams();
@@ -136,7 +143,7 @@ export default function IconDetailPage() {
 
   if (loading) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-[var(--ds-bg-canvas)]" aria-busy="true">
+      <main className="creator-store-page flex min-h-screen items-center justify-center bg-[var(--ds-bg-canvas)]" aria-busy="true">
         <NoIndexMeta title="Loading Icon | NexusRBX" />
         <Loader2 className="h-12 w-12 animate-spin text-[var(--ds-accent)]" />
         <span className="sr-only">Loading icon details</span>
@@ -146,28 +153,21 @@ export default function IconDetailPage() {
 
   if (error || !icon) {
     return (
-      <main className="flex min-h-screen flex-col items-center justify-center bg-[var(--ds-bg-canvas)] p-4 text-[var(--ds-text)]">
+      <main className="creator-store-page flex min-h-screen flex-col items-center justify-center bg-[var(--ds-bg-canvas)] p-4 text-[var(--ds-text)]">
         <NoIndexMeta title="Icon Not Found | NexusRBX" />
         <h1 className={`${editorialDisplayClass} mb-5 text-5xl`}>Icon Not Found</h1>
         <button onClick={() => navigate("/icons-market")} className="flex min-h-11 items-center gap-2 rounded-lg px-3 font-semibold text-[var(--ds-accent)] hover:bg-[var(--ds-fill-hover)]">
-          <ArrowLeft className="w-5 h-5" /> Back to Market
+          <ArrowLeft className="w-5 h-5" /> Back to Creator Store
         </button>
       </main>
     );
   }
 
-  const bgClasses = {
-    dark: "bg-[#1A1A1A]",
-    light: "bg-gray-200",
-    transparent: "bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] bg-gray-800",
-    scene: "bg-[url('https://tr.rbxcdn.com/180f60d8652861d4599641327a4396db/420/420/Image/Png')] bg-cover bg-center"
-  };
-
   return (
-    <div className="relative flex min-h-screen flex-col overflow-x-hidden bg-[var(--ds-bg-canvas)] text-[var(--ds-text)]">
+    <div className="creator-store-page relative flex min-h-screen flex-col overflow-x-hidden bg-[var(--ds-bg-canvas)] text-[var(--ds-text)]">
       <NoIndexMeta
         title={`${icon.name} - Roblox Icon | NexusRBX`}
-        description={`Download the ${icon.name} icon for your Roblox game. Professional ${icon.style} style ${icon.category} asset. One-click export to Studio.`}
+        description={`Download the ${icon.name} icon for your Roblox game. Professional ${icon.style} style ${icon.category} asset with an editable Studio snippet.`}
       >
         <meta property="og:title" content={`${icon.name} - Professional Roblox Icon`} />
         <meta property="og:image" content={icon.imageUrl} />
@@ -180,13 +180,13 @@ export default function IconDetailPage() {
             onClick={() => navigate("/icons-market")}
             className="focus-ring mb-10 flex min-h-11 items-center gap-2 rounded-full px-3 text-sm font-semibold text-[var(--ds-text-muted)] transition-colors hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)]"
           >
-            <ArrowLeft className="w-4 h-4" /> Back to Marketplace
+            <ArrowLeft className="w-4 h-4" /> Back to Creator Store
           </button>
 
           <div className="grid grid-cols-1 gap-14 lg:grid-cols-12 lg:gap-20">
             {/* Left: Preview Section */}
             <div className="lg:col-span-7 space-y-8">
-              <div className={`relative flex aspect-square items-center justify-center overflow-hidden rounded-[14px] transition-colors duration-500 ${bgClasses[previewBg]}`}>
+              <div className={`creator-store-preview relative flex aspect-square items-center justify-center overflow-hidden rounded-[14px] transition-colors duration-300 motion-reduce:transition-none ${PREVIEW_BACKGROUNDS[previewBg].className}`}>
                 <img 
                   src={icon.imageUrl} 
                   alt={icon.name} 
@@ -195,14 +195,15 @@ export default function IconDetailPage() {
                 />
                 
                 {/* Preview Controls */}
-                <div className="absolute bottom-6 left-1/2 z-20 flex -translate-x-1/2 items-center gap-1 rounded-xl border border-[var(--ds-border)] bg-[var(--ds-surface-overlay)] p-1.5 shadow-[var(--ds-shadow-overlay)] backdrop-blur-md">
-                  {Object.keys(bgClasses).map(bg => (
+                <div className="absolute bottom-6 left-1/2 z-20 flex -translate-x-1/2 items-center gap-2 rounded-xl border border-[var(--ds-border)] bg-[var(--ds-surface-overlay)] p-1.5 shadow-[var(--ds-shadow-overlay)] backdrop-blur-md">
+                  {Object.entries(PREVIEW_BACKGROUNDS).map(([bg, option]) => (
                     <button
                       key={bg}
                       onClick={() => setPreviewBg(bg)}
-                      className={`min-h-11 rounded-lg px-4 py-2 text-[10px] font-semibold capitalize transition-colors ${previewBg === bg ? 'bg-[var(--ds-fill-selected)] text-[var(--ds-accent)]' : 'text-[var(--ds-text-muted)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)]'}`}
+                      aria-pressed={previewBg === bg}
+                      className={`min-h-11 rounded-lg px-4 py-2 text-xs font-semibold transition-colors ${previewBg === bg ? 'bg-[var(--ds-fill-selected)] text-[var(--ds-accent)]' : 'text-[var(--ds-text-muted)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)]'}`}
                     >
-                      {bg}
+                      {option.label}
                     </button>
                   ))}
                 </div>
@@ -222,7 +223,7 @@ export default function IconDetailPage() {
                       >
                         <img src={icon.imageUrl} alt="" className="w-full h-full object-contain" />
                       </div>
-                      <span className="text-[10px] font-semibold text-[var(--ds-text-muted)]">{size}px</span>
+                      <span className="text-xs font-semibold text-[var(--ds-text-muted)]">{size}px</span>
                     </div>
                   ))}
                 </div>
@@ -235,14 +236,14 @@ export default function IconDetailPage() {
                 <div className="flex items-center gap-3 mb-4">
                   <h1 className={`${editorialDisplayClass} text-5xl sm:text-6xl`}>{icon.name}</h1>
                   {icon.isPro && !isPremium && (
-                    <span className="rounded-full border border-[var(--ds-accent-border)] bg-[var(--ds-accent-soft)] px-3 py-1 text-[10px] font-semibold text-[var(--ds-accent)]">Pro</span>
+                    <span className="rounded-full border border-[var(--ds-accent-border)] bg-[var(--ds-accent-soft)] px-3 py-1 text-xs font-semibold text-[var(--ds-accent)]">Pro</span>
                   )}
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  <span className="flex items-center gap-2 rounded-xl border border-[var(--ds-border)] bg-[var(--ds-fill-subtle)] px-4 py-1.5 text-xs font-semibold text-[var(--ds-text-muted)]">
+                  <span className="flex items-center gap-2 rounded-xl border border-[var(--ds-border)] bg-[var(--ds-fill-subtle)] px-4 py-1.5 text-sm font-semibold text-[var(--ds-text-muted)]">
                     <Palette className="w-3 h-3" /> {icon.style}
                   </span>
-                  <span className="flex items-center gap-2 rounded-xl border border-[var(--ds-border)] bg-[var(--ds-fill-subtle)] px-4 py-1.5 text-xs font-semibold text-[var(--ds-text-muted)]">
+                  <span className="flex items-center gap-2 rounded-xl border border-[var(--ds-border)] bg-[var(--ds-fill-subtle)] px-4 py-1.5 text-sm font-semibold text-[var(--ds-text-muted)]">
                     <Box className="w-3 h-3" /> {icon.category}
                   </span>
                 </div>
@@ -251,7 +252,7 @@ export default function IconDetailPage() {
               <div className="space-y-6 mb-12">
                 <div className="space-y-4 rounded-[14px] bg-[var(--ds-surface-1)] p-6">
                   <div className="flex items-center justify-between">
-                    <h3 className="text-xs font-semibold text-[var(--ds-text-muted)]">ImageColor3 Tint</h3>
+                    <h3 className="text-sm font-semibold text-[var(--ds-text-muted)]">ImageColor3 Tint</h3>
                     <input 
                       type="color" 
                       value={tintColor} 
@@ -259,38 +260,41 @@ export default function IconDetailPage() {
                       className="h-11 w-11 cursor-pointer rounded-lg border border-[var(--ds-border)] bg-transparent"
                     />
                   </div>
-                  <p className="text-[11px] leading-relaxed text-[var(--ds-text-muted)]">
+                  <p className="text-sm leading-relaxed text-[var(--ds-text-muted)]">
                     Simulate how this icon will look when tinted in Roblox Studio using the ImageColor3 property.
                   </p>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="rounded-xl border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] p-5 text-center">
-                    <p className="mb-1 text-[10px] font-semibold text-[var(--ds-text-muted)]">Format</p>
+                    <p className="mb-1 text-xs font-semibold text-[var(--ds-text-muted)]">Format</p>
                     <p className="text-sm font-semibold">PNG</p>
                   </div>
                   <div className="rounded-xl border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] p-5 text-center">
-                    <p className="mb-1 text-[10px] font-semibold text-[var(--ds-text-muted)]">Resolution</p>
+                    <p className="mb-1 text-xs font-semibold text-[var(--ds-text-muted)]">Resolution</p>
                     <p className="text-sm font-semibold">512x512</p>
                   </div>
                 </div>
 
                 <div className="nexus-page-card flex items-start gap-4 border-[color-mix(in_srgb,var(--ds-info)_28%,transparent)] bg-[color-mix(in_srgb,var(--ds-info)_7%,transparent)] p-6">
                   <Info className="mt-0.5 h-5 w-5 shrink-0 text-[var(--ds-info)]" />
-                  <p className="text-xs leading-relaxed text-[var(--ds-text-secondary)]">
+                  <p className="text-sm leading-relaxed text-[var(--ds-text-secondary)]">
                     This asset is licensed for use in Roblox experiences. High-contrast lighting and centered composition ensure visibility across all devices.
                   </p>
                 </div>
               </div>
 
               <div className="mt-auto space-y-4">
+                <p className="text-sm leading-relaxed text-[var(--ds-text-muted)]">
+                  The copied Luau is an editable starting point. Upload the PNG, replace its image URL with your Roblox asset ID, then review the client-side UI code in Studio.
+                </p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <button
                     onClick={handlePostToRoblox}
                     className={`${editorialPrimaryButtonClass} gap-2 py-3`}
                   >
-                    {icon.isPro && !isPremium ? <ShieldCheck className="h-5 w-5" /> : <ExternalLink className="h-5 w-5" />}
-                    {icon.isPro && !isPremium ? "Unlock Pro" : (copied ? "Copied Lua!" : "Post to Roblox")}
+                    {icon.isPro && !isPremium ? <ShieldCheck className="h-5 w-5" /> : <Copy className="h-5 w-5" />}
+                    {icon.isPro && !isPremium ? "Unlock Pro" : (copied ? "Snippet copied" : "Copy Studio snippet")}
                   </button>
                   
                   <button
@@ -305,7 +309,7 @@ export default function IconDetailPage() {
                   href="https://create.roblox.com/dashboard/creations?activeTab=Decal"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex min-h-11 w-full items-center justify-center gap-2 rounded-full border border-[var(--ds-border)] bg-transparent px-5 py-3 text-xs font-semibold text-[var(--ds-text-muted)] transition-colors hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)]"
+                  className="flex min-h-11 w-full items-center justify-center gap-2 rounded-full border border-[var(--ds-border)] bg-transparent px-5 py-3 text-sm font-semibold text-[var(--ds-text-muted)] transition-colors hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)]"
                 >
                   <Upload className="h-4 w-4" /> Upload to Roblox Dashboard
                 </a>

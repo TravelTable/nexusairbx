@@ -4,17 +4,23 @@ import "./globals.css";
 import { buildPublicMetadata, organizationStructuredData } from "../../src/lib/seo";
 import { APPEARANCE_BOOTSTRAP_SCRIPT } from "../../src/lib/appearanceTheme";
 
-export const metadata = buildPublicMetadata({
-  title: "NexusRBX - AI Roblox Script Generator",
-  description: "Generate focused Luau scripts, Roblox UI, and Studio-ready workflows with NexusRBX.",
-  path: "/",
-});
+export const metadata = {
+  ...buildPublicMetadata({
+    title: "NexusRBX — Build, Playtest & Grow Roblox Games",
+    description: "Turn a Roblox game idea into a reviewable plan, Studio changes, verified playtests, and a path to publishing with NexusRBX.",
+    path: "/",
+  }),
+  icons: {
+    icon: "/nexus-mark.svg",
+    shortcut: "/nexus-mark.svg",
+  },
+};
 
 export default function RootLayout({ children }) {
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <meta name="theme-color" content="#181817" />
+        <meta name="theme-color" content="#160b24" />
         <Script id="nexusrbx-appearance" strategy="beforeInteractive">
           {APPEARANCE_BOOTSTRAP_SCRIPT}
         </Script>

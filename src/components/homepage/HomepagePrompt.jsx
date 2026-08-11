@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { track } from "@vercel/analytics";
 
 import { Button } from "../shadcn/button";
@@ -36,6 +36,13 @@ export default function HomepagePrompt({
   source = surface,
   navigateToAi,
   className,
+  promptId = "homepage-prompt",
+  suggestedPrompt = "",
+  suggestionVersion = 0,
+  submitLabel,
+  helperText = "Your idea is saved locally before the AI workspace opens.",
+  showLabel = false,
+  inputRef,
 }) {
   const [prompt, setPrompt] = useState("");
   const [error, setError] = useState("");
@@ -43,7 +50,14 @@ export default function HomepagePrompt({
   const submittingRef = useRef(false);
   const promptStartedRef = useRef(false);
   const methodRef = useRef("button");
-  const ctaText = getHomepageCtaCopy() || homepagePrompt.submitLabel;
+  const ctaText = submitLabel || getHomepageCtaCopy() || homepagePrompt.submitLabel;
+  const messageId = `${promptId}-message`;
+
+  useEffect(() => {
+    if (!suggestedPrompt) return;
+    setPrompt(suggestedPrompt);
+    setError("");
+  }, [suggestedPrompt, suggestionVersion]);
 
   const handleChange = (event) => {
     const next = event.target.value;
@@ -91,14 +105,21 @@ export default function HomepagePrompt({
       className={cn("mt-7 rounded-2xl border border-[var(--ds-border-strong)] bg-[var(--ds-surface-overlay)] p-3 shadow-xl shadow-black/10 backdrop-blur md:max-w-2xl", className)}
       onSubmit={handleSubmit}
       data-generation-intent-form="homepage"
+      data-home-prompt={promptId}
       aria-busy={submitting}
     >
-      <Label htmlFor="homepage-prompt" className="sr-only">
+      <Label
+        htmlFor={promptId}
+        className={showLabel
+          ? "mb-2 block text-sm font-semibold text-[var(--ds-text)]"
+          : "sr-only"}
+      >
         {homepagePrompt.label}
       </Label>
       <div className="flex flex-col gap-3 sm:flex-row">
         <Input
-          id="homepage-prompt"
+          ref={inputRef}
+          id={promptId}
           name="prompt"
           value={prompt}
           onChange={handleChange}
@@ -107,7 +128,7 @@ export default function HomepagePrompt({
           autoComplete="off"
           disabled={submitting}
           aria-invalid={Boolean(error)}
-          aria-describedby="homepage-prompt-message"
+          aria-describedby={messageId}
           className="h-12 flex-none rounded-lg border-[var(--ds-border-strong)] bg-[var(--ds-surface-2)] px-4 text-base text-[var(--ds-text)] placeholder:text-[var(--ds-text-muted)] focus-visible:ring-[var(--ds-accent)] sm:flex-1"
         />
         <Button
@@ -122,12 +143,12 @@ export default function HomepagePrompt({
         </Button>
       </div>
       {error ? (
-        <p id="homepage-prompt-message" className="mt-3 text-sm font-medium text-[var(--ds-danger)]" role="alert">
+        <p id={messageId} className="mt-3 text-sm font-medium text-[var(--ds-danger)]" role="alert">
           {error}
         </p>
       ) : (
-        <p id="homepage-prompt-message" className="mt-3 text-xs text-[var(--ds-text-muted)]">
-          Your prompt is saved locally as a generation intent before opening the AI workspace.
+        <p id={messageId} className="mt-3 text-xs text-[var(--ds-text-muted)]">
+          {helperText}
         </p>
       )}
     </form>

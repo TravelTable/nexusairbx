@@ -3,7 +3,7 @@ import {
   Search, 
   Filter, 
   Download, 
-  ExternalLink, 
+  Copy,
   Loader2, 
   Grid, 
   Info,
@@ -31,6 +31,7 @@ import { filterMarketplaceIcons } from "../lib/iconMarket";
 import IconMarketCard from "../components/icons/IconMarketCard";
 import Modal from "../components/Modal";
 import { editorialDisplayClass } from "../components/site/editorialUi";
+import "../components/assets/assetPlatform.css";
 
 const API_BASE = BACKEND_URL.replace(/\/+$/, "");
 const MARKET_ACCESS_OPTIONS = [
@@ -141,9 +142,9 @@ function MarketCollections({ collections, onCreate, onDownload, onDelete }) {
           >
             <div className="min-w-0 flex-1">
               <span className="block truncate text-sm font-semibold text-[var(--ds-text-secondary)] group-hover:text-[var(--ds-text)]">{collection.name}</span>
-              <span className="text-[10px] font-semibold text-[var(--ds-text-muted)]">{collection.iconIds?.length || 0} items</span>
+              <span className="text-xs font-semibold text-[var(--ds-text-muted)]">{collection.iconIds?.length || 0} items</span>
             </div>
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={() => onDownload(collection)}
@@ -444,9 +445,9 @@ export default function IconsMarketPage() {
   };
 
   return (
-    <div className="relative flex min-h-screen flex-col overflow-hidden bg-[var(--ds-bg-canvas)] text-[var(--ds-text)]">
-      <main className="flex-grow flex relative z-10">
-        <aside className="sticky top-16 hidden h-[calc(100vh-64px)] w-72 overflow-y-auto bg-[var(--ds-bg-sidebar)] p-8 lg:block">
+    <div className="creator-store-page relative flex min-h-screen flex-col bg-[var(--ds-bg-canvas)] text-[var(--ds-text)]">
+      <main className="relative z-10 flex flex-grow items-stretch">
+        <aside className="hidden w-72 shrink-0 bg-[var(--ds-bg-sidebar)] p-8 lg:block">
           <div className="mb-8"><MarketTabs activeTab={activeMarketTab} onChange={setActiveMarketTab} /></div>
 
           <div>
@@ -470,18 +471,18 @@ export default function IconsMarketPage() {
           </div>
         </aside>
 
-        <div className="h-[calc(100vh-64px)] flex-grow overflow-y-auto px-4 py-12 sm:px-8 lg:px-14 lg:py-16">
+        <div className="min-w-0 flex-grow px-4 py-12 sm:px-8 lg:px-14 lg:py-16">
           <div className="max-w-7xl mx-auto">
             <header className="mb-14 flex flex-col justify-between gap-8 md:flex-row md:items-end lg:mb-20">
               <div>
                 <div className="flex items-center gap-3 mb-2">
                   <div className="rounded-full bg-[var(--ds-accent-soft)] p-3">
-                    <Grid className="h-6 w-6 text-[var(--ds-accent)]" />
+                    <Grid className="h-6 w-6 text-[var(--ds-accent)]" aria-hidden="true" />
                   </div>
-                  <h1 className={`${editorialDisplayClass} text-5xl sm:text-6xl`}>Icons Market</h1>
+                  <h1 className={`${editorialDisplayClass} text-5xl sm:text-6xl`}>Creator Store</h1>
                 </div>
                 <p className="max-w-xl text-[var(--ds-text-muted)]">
-                  Browse curated, game-ready icons. One-click export to Roblox Studio.
+                  Browse curated, game-ready icons, upload them to Roblox, and copy an editable Studio snippet.
                 </p>
               </div>
 
@@ -576,7 +577,7 @@ export default function IconsMarketPage() {
           panelClassName="max-w-4xl overflow-hidden p-0"
           bodyClassName="flex flex-col text-[var(--ds-text)] md:flex-row"
           overlayClassName="z-[100] bg-[color-mix(in_srgb,var(--ds-bg-canvas)_78%,transparent)] p-4 backdrop-blur-md md:p-8"
-          closeButtonClassName="right-6 top-6 rounded-full"
+          closeButtonClassName="right-6 top-6 h-11 w-11 rounded-full"
           closeOnBackdrop
         >
               <div className="flex w-full items-center justify-center border-b border-[var(--ds-border-subtle)] bg-[var(--ds-bg-workspace)] p-12 md:w-1/2 md:border-b-0 md:border-r">
@@ -594,12 +595,12 @@ export default function IconsMarketPage() {
                   <div className="flex items-center gap-3 mb-2">
                     <h2 className="text-2xl font-semibold tracking-[-0.02em]">{selectedIcon.name}</h2>
                     {selectedIcon.isPro && !isPremium && (
-                      <span className="rounded-md border border-[var(--ds-accent-border)] bg-[var(--ds-accent-soft)] px-2 py-0.5 text-[10px] font-semibold text-[var(--ds-accent)]">Pro</span>
+                      <span className="rounded-md border border-[var(--ds-accent-border)] bg-[var(--ds-accent-soft)] px-2 py-0.5 text-xs font-semibold text-[var(--ds-accent)]">Pro</span>
                     )}
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    <span className="rounded-full border border-[var(--ds-border)] bg-[var(--ds-fill-subtle)] px-3 py-1 text-[10px] font-semibold text-[var(--ds-text-muted)]">{selectedIcon.style}</span>
-                    <span className="rounded-full border border-[var(--ds-border)] bg-[var(--ds-fill-subtle)] px-3 py-1 text-[10px] font-semibold text-[var(--ds-text-muted)]">{selectedIcon.category}</span>
+                    <span className="rounded-full border border-[var(--ds-border)] bg-[var(--ds-fill-subtle)] px-3 py-1 text-xs font-semibold text-[var(--ds-text-muted)]">{selectedIcon.style}</span>
+                    <span className="rounded-full border border-[var(--ds-border)] bg-[var(--ds-fill-subtle)] px-3 py-1 text-xs font-semibold text-[var(--ds-text-muted)]">{selectedIcon.category}</span>
                   </div>
                 </div>
 
@@ -607,22 +608,22 @@ export default function IconsMarketPage() {
                   <div className="flex items-start gap-3 rounded-[14px] bg-[var(--ds-fill-subtle)] p-5">
                     <Info className="mt-0.5 h-5 w-5 shrink-0 text-[var(--ds-info)]" />
                     <div className="space-y-2">
-                      <p className="text-xs leading-relaxed text-[var(--ds-text-secondary)]">
+                      <p className="text-sm leading-relaxed text-[var(--ds-text-secondary)]">
                         This icon is optimized for Roblox Studio. It features a centered composition and high-contrast lighting for maximum visibility in-game.
                       </p>
-                      <p className="text-[10px] italic text-[var(--ds-text-muted)]">
-                        Click "Post to Roblox" to copy a Luau snippet. Paste it into a LocalScript in Studio to instantly preview the icon.
+                      <p className="text-sm leading-relaxed text-[var(--ds-text-muted)]">
+                        Copy the editable Studio snippet, upload the PNG, then replace its image URL with your Roblox asset ID before reviewing and adding the client-side UI code in Studio.
                       </p>
                     </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
                     <div className="rounded-[1.25rem] bg-[var(--ds-fill-subtle)] p-4 text-center">
-                      <p className="mb-1 text-[10px] font-semibold text-[var(--ds-text-muted)]">Format</p>
+                      <p className="mb-1 text-xs font-semibold text-[var(--ds-text-muted)]">Format</p>
                       <p className="text-sm font-semibold">PNG</p>
                     </div>
                     <div className="rounded-[1.25rem] bg-[var(--ds-fill-subtle)] p-4 text-center">
-                      <p className="mb-1 text-[10px] font-semibold text-[var(--ds-text-muted)]">Resolution</p>
+                      <p className="mb-1 text-xs font-semibold text-[var(--ds-text-muted)]">Resolution</p>
                       <p className="text-sm font-semibold">512x512</p>
                     </div>
                   </div>
@@ -634,8 +635,8 @@ export default function IconsMarketPage() {
                       onClick={() => handlePostToRoblox(selectedIcon)}
                       className="focus-ring flex min-h-11 items-center justify-center gap-2 rounded-full bg-[var(--ds-accent)] px-4 py-3 text-sm font-semibold text-[var(--ds-accent-foreground)] transition-colors hover:bg-[var(--ds-accent-hover)] active:scale-[0.985]"
                     >
-                      {selectedIcon.isPro && !isPremium ? <ShieldCheck className="h-5 w-5" /> : <ExternalLink className="h-5 w-5" />}
-                      {selectedIcon.isPro && !isPremium ? "Unlock" : (copied ? "Copied!" : "Post to Roblox")}
+                      {selectedIcon.isPro && !isPremium ? <ShieldCheck className="h-5 w-5" /> : <Copy className="h-5 w-5" />}
+                      {selectedIcon.isPro && !isPremium ? "Unlock" : (copied ? "Snippet copied" : "Copy Studio snippet")}
                     </button>
                     
                     <button
@@ -675,7 +676,7 @@ export default function IconsMarketPage() {
                               collectionMenuTriggerRef.current?.focus();
                               void handleAddToCollection(c.id, selectedIcon.id);
                             }}
-                            className="nexus-menu-item flex w-full items-center gap-2 text-left"
+                            className="nexus-menu-item flex min-h-11 w-full items-center gap-2 text-left"
                           >
                             <Folder className="h-3 w-3" /> {c.name}
                           </button>

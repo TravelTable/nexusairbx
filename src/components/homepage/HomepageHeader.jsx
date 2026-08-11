@@ -17,7 +17,7 @@ export default function HomepageHeader({
     <header className="sticky top-0 z-40 border-b border-[var(--ds-border-subtle)] bg-[var(--ds-surface-overlay)] backdrop-blur-xl">
       <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-4 py-3.5 sm:px-6">
         <a className="inline-flex min-h-11 min-w-0 items-center gap-2.5 rounded-lg text-[var(--ds-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ds-accent)]" href="/" aria-label="NexusRBX home">
-          <img className="h-8 w-8 flex-none rounded-md object-contain" src="/logo.png" alt="" width="32" height="32" />
+          <img className="h-8 w-8 flex-none object-contain" src="/nexus-mark.svg" alt="" width="32" height="32" />
           <span className="truncate text-lg font-semibold tracking-[-0.02em]">NexusRBX</span>
         </a>
 

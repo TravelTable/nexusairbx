@@ -36,6 +36,54 @@
   border-radius: 999px;
 }
 
+.docsShell :global(.docs-skip-link),
+.docsShell :global(.docs-context-title),
+.docsShell :global(.docs-context-categories a),
+.docsShell :global(.docs-search-button),
+.docsShell :global(.docs-icon-button),
+.docsShell :global(.docs-category-button),
+.docsShell :global(.docs-nav-link),
+.docsShell :global(.docs-breadcrumbs a),
+.docsShell :global(.docs-actions a),
+.docsShell :global(.docs-actions button),
+.docsShell :global(.docs-inline-toc summary),
+.docsShell :global(.docs-inline-toc-link),
+.docsShell :global(.docs-copy-link),
+.docsShell :global(.docs-code-header button),
+.docsShell :global(.docs-tab-list button),
+.docsShell :global(.docs-accordion summary),
+.docsShell :global(.docs-recent-searches button),
+.docsShell :global(.docs-feedback-link),
+.docsShell :global(.docs-toc-link) {
+  min-height: 44px;
+}
+
+.docsShell :global(.docs-context-title),
+.docsShell :global(.docs-context-categories a),
+.docsShell :global(.docs-breadcrumbs a),
+.docsShell :global(.docs-nav-link),
+.docsShell :global(.docs-inline-toc-link),
+.docsShell :global(.docs-feedback-link),
+.docsShell :global(.docs-toc-link) {
+  align-items: center;
+}
+
+.docsShell :global(.docs-context-categories a),
+.docsShell :global(.docs-breadcrumbs a) {
+  display: inline-flex;
+}
+
+.docsShell :global(.docs-breadcrumbs a) {
+  min-width: 44px;
+}
+
+.docsShell :global(.docs-icon-button),
+.docsShell :global(.docs-copy-link) {
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
+}
+
 .docsShell :global(.docs-context-title) {
   font-weight: 600;
 }
@@ -80,10 +128,11 @@
 }
 
 .docsShell :global(.docs-category-button) {
-  min-height: 36px;
+  min-height: 44px;
 }
 
 .docsShell :global(.docs-nav-link) {
+  display: flex;
   border-radius: 0;
   padding-block: 8px;
 }
@@ -188,6 +237,11 @@
 .docsShell :global(.docs-toc) {
   border-left-color: var(--ds-border-subtle);
   padding-left: 20px;
+}
+
+.docsShell :global(.docs-toc-link),
+.docsShell :global(.docs-inline-toc-link) {
+  display: flex;
 }
 
 .docsShell :global(.docs-feedback),

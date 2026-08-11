@@ -14,7 +14,9 @@ import "./WorkspaceShell.css";
 export const WORKSPACE_DRAWER_DEFAULT_WIDTH = 520;
 export const WORKSPACE_DRAWER_MIN_WIDTH = 400;
 export const WORKSPACE_DRAWER_MAX_WIDTH = 720;
-export const WORKSPACE_DRAWER_OVERLAY_BREAKPOINT = 1500;
+// Container width, not viewport width. At 1180px the default 520px drawer
+// still leaves a comfortable 588px conversation column beside the 72px rail.
+export const WORKSPACE_DRAWER_OVERLAY_BREAKPOINT = 1180;
 export const WORKSPACE_DRAWER_MOBILE_BREAKPOINT = 600;
 
 const FOCUSABLE_SELECTOR = [
@@ -56,30 +58,35 @@ export const WORKSPACE_DOCK_PANELS = [
   {
     id: "files",
     label: "Files",
+    shortLabel: "Files",
     description: "Project files and Studio manifest",
     icon: FolderTree,
   },
   {
     id: "code",
     label: "Code",
+    shortLabel: "Code",
     description: "Inspect and edit the selected script",
     icon: FileCode2,
   },
   {
     id: "activity",
     label: "Activity",
+    shortLabel: "Runs",
     description: "Agent runs, tasks, and approvals",
     icon: Activity,
   },
   {
     id: "assets",
     label: "Assets",
+    shortLabel: "Assets",
     description: "Project assets, Creator Store, and GLB files",
     icon: Boxes,
   },
   {
     id: "details",
     label: "Details",
+    shortLabel: "Project",
     description: "Build summary, architecture, and diagnostics",
     icon: ClipboardList,
   },
@@ -100,6 +107,9 @@ function ToolButton({ tool, active, badge, onSelect }) {
       onClick={(event) => onSelect(tool.id, event.currentTarget)}
     >
       <Icon className="h-[18px] w-[18px]" aria-hidden="true" />
+      <span className="workspace-tool-rail__label" aria-hidden="true">
+        {tool.shortLabel || tool.label}
+      </span>
       {badge ? (
         <span
           className="workspace-tool-rail__badge"
@@ -184,12 +194,14 @@ export default function WorkspaceShell({
   }, []);
 
   const closePanel = useCallback(() => {
-    const shouldRestoreFocus = isModalDrawerOpen;
     const opener = openerRef.current;
     onPanelChange(null);
-    if (shouldRestoreFocus && opener?.isConnected) opener.focus();
+    // The collapse control and drawer close button disappear or become
+    // disabled after closing. Always return focus to the tool that opened the
+    // panel so both inline and modal drawers have a predictable escape route.
+    if (opener?.isConnected) opener.focus();
     openerRef.current = null;
-  }, [isModalDrawerOpen, onPanelChange]);
+  }, [onPanelChange]);
 
   useEffect(() => {
     if (!activePanel) return undefined;

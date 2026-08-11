@@ -3,75 +3,75 @@
     "id": "FREE",
     "slug": "free",
     "name": "Free",
-    "audience": "Try the core AI workflow",
+    "audience": "Try the creator workflow on a focused idea",
     "monthly": 0,
     "yearly": null,
     "perSeat": false,
     "featured": false,
     "cta": "Start free",
     "features": [
-      "Nexus Auto model routing",
-      "1 concurrent AI job",
-      "7-day chat history",
-      "1 active UI project"
+      "Shape focused Roblox ideas with Nexus Auto",
+      "Run 1 AI task at a time",
+      "Revisit 7 days of chat history",
+      "Keep 1 active UI project"
     ]
   },
   {
     "id": "STARTER",
     "slug": "starter",
     "name": "Starter",
-    "audience": "More room for regular scripting",
+    "audience": "More room for regular build-and-review sessions",
     "monthly": 2,
     "yearly": null,
     "perSeat": false,
     "featured": false,
     "cta": "Choose Starter",
     "features": [
-      "Model selection for included models",
-      "2 concurrent AI jobs",
-      "30-day chat history",
-      "3 active UI projects"
+      "Choose from included models for each task",
+      "Run 2 AI tasks at a time",
+      "Revisit 30 days of chat history",
+      "Keep 3 active UI projects"
     ]
   },
   {
     "id": "PRO",
     "slug": "pro",
     "name": "Pro",
-    "audience": "For individual Roblox developers",
+    "audience": "Build and review bigger feature ideas more often",
     "monthly": 19.99,
     "yearly": 199,
     "perSeat": false,
     "featured": true,
     "cta": "Choose Pro",
     "features": [
-      "Higher included AI usage",
-      "Premium Direct model access",
-      "Icon Generator access",
-      "90-day usage history"
+      "Higher Included Usage for longer creator sessions",
+      "Choose supported Premium Direct models",
+      "Create game-ready icons with Icon Generator",
+      "Review 90 days of usage history"
     ]
   },
   {
     "id": "PRO_PLUS",
     "slug": "pro-plus",
     "name": "Pro+",
-    "audience": "For larger, more frequent builds",
+    "audience": "More capacity for larger, more frequent builds",
     "monthly": 39.99,
     "yearly": 399,
     "perSeat": false,
     "featured": false,
     "cta": "Choose Pro+",
     "features": [
-      "Higher included AI usage than Pro",
-      "Premium Direct model access",
-      "Icon Generator access",
-      "90-day usage history"
+      "Higher Included Usage than Pro",
+      "Choose supported Premium Direct models",
+      "Create game-ready icons with Icon Generator",
+      "Review 90 days of usage history"
     ]
   },
   {
     "id": "TEAM",
     "slug": "team",
     "name": "Team",
-    "audience": "Per-seat billing for Roblox studios",
+    "audience": "One billing home for Roblox studios",
     "monthly": 29,
     "yearly": 290,
     "perSeat": true,
@@ -80,10 +80,10 @@
     "featured": false,
     "cta": "Choose Team",
     "features": [
-      "Pooled included usage per paid seat",
-      "Premium Direct model access",
-      "Icon Generator access",
-      "One subscription for 2–50 seats"
+      "Pool Included Usage across paid seats",
+      "Choose supported Premium Direct models",
+      "Create game-ready icons with Icon Generator",
+      "Cover 2–50 seats with one subscription"
     ]
   }
 ]

@@ -331,7 +331,7 @@ function NexusRBXHomepage({
             "@type":"Organization",
             "name":"NexusRBX",
             "url": PUBLIC_SITE_ORIGIN,
-            "logo":"/logo.png",
+            "logo":"/nexus-mark.svg",
             "sameAs":[ "https://discord.gg/", "https://github.com/TravelTable/nexusairbx" ]
           })}
         </script>

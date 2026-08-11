@@ -76,7 +76,6 @@ export default function NexusRBXSignUpPageContainer() {
     status: "idle", // idle, submitting, success, error
     message: ""
   });
-  const [agreeToTerms, setAgreeToTerms] = useState(false);
   const [rememberMe, setRememberMe] = useState(() => readAuthPersistencePreference());
   const [passwordStrength, setPasswordStrength] = useState({
     score: 0, // 0-4 where 4 is strongest
@@ -165,10 +164,6 @@ export default function NexusRBXSignUpPageContainer() {
     setShowConfirmPassword(prev => !prev);
   };
 
-  const handleAgreeToTermsChange = () => {
-    setAgreeToTerms(prev => !prev);
-  };
-
   const handleSharedDeviceChange = () => {
     setRememberMe((prev) => {
       const nextRememberMe = !prev;
@@ -193,14 +188,6 @@ export default function NexusRBXSignUpPageContainer() {
       setFormStatus({
         status: "error",
         message: "Passwords do not match."
-      });
-      return;
-    }
-
-    if (!agreeToTerms) {
-      setFormStatus({
-        status: "error",
-        message: "You must agree to the Terms of Service and Privacy Policy."
       });
       return;
     }
@@ -332,14 +319,12 @@ export default function NexusRBXSignUpPageContainer() {
       showPassword={showPassword}
       showConfirmPassword={showConfirmPassword}
       formStatus={formStatus}
-      agreeToTerms={agreeToTerms}
       rememberMe={rememberMe}
       passwordStrength={passwordStrength}
       signInLinkState={signInLinkState}
       handleInputChange={handleInputChange}
       togglePasswordVisibility={togglePasswordVisibility}
       toggleConfirmPasswordVisibility={toggleConfirmPasswordVisibility}
-      handleAgreeToTermsChange={handleAgreeToTermsChange}
       handleSharedDeviceChange={handleSharedDeviceChange}
       handleSubmit={handleSubmit}
       handleGoogleSignUp={handleGoogleSignUp}
@@ -355,14 +340,12 @@ function NexusRBXSignUpPage({
   showPassword,
   showConfirmPassword,
   formStatus,
-  agreeToTerms,
   rememberMe,
   passwordStrength,
   signInLinkState,
   handleInputChange,
   togglePasswordVisibility,
   toggleConfirmPasswordVisibility,
-  handleAgreeToTermsChange,
   handleSharedDeviceChange,
   handleSubmit,
   handleGoogleSignUp,
@@ -488,25 +471,6 @@ function NexusRBXSignUpPage({
             Sign out when I close this browser (shared device).
           </AuthCheckbox>
 
-          <AuthCheckbox
-            id="signup-terms"
-            checked={agreeToTerms}
-            onChange={handleAgreeToTermsChange}
-            disabled={isLocked}
-          >
-            <span>
-              I agree to the{" "}
-              <a href="/legal/terms" className="font-medium text-foreground underline-offset-4 hover:underline">
-                Terms
-              </a>{" "}
-              and{" "}
-              <a href="/legal/privacy" className="font-medium text-foreground underline-offset-4 hover:underline">
-                Privacy Policy
-              </a>
-              .
-            </span>
-          </AuthCheckbox>
-
           <AuthSubmitButton
             status={formStatus.status}
             idleLabel="Create account"
@@ -514,6 +478,18 @@ function NexusRBXSignUpPage({
             successLabel="Account created"
           />
         </form>
+
+        <p className="text-center text-xs leading-5 text-muted-foreground">
+          By creating an account with Google, GitHub, or email, you agree to the{" "}
+          <a href="/legal/terms" className="font-medium text-foreground underline-offset-4 hover:underline">
+            Terms
+          </a>{" "}
+          and{" "}
+          <a href="/legal/privacy" className="font-medium text-foreground underline-offset-4 hover:underline">
+            Privacy Policy
+          </a>
+          .
+        </p>
 
         <p className="text-center text-sm text-muted-foreground">
           Already have an account?{" "}

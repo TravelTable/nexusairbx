@@ -139,6 +139,13 @@ import {
 import { normalizeRobloxPlaceId } from "../../lib/robloxPlaceId";
 import { normalizeAuthoritativeRunStatus } from "../../lib/runCancellation";
 
+export const PROJECT_SIDEBAR_DESKTOP_MIN_WIDTH = 1200;
+
+export function shouldOpenProjectSidebarByDefault(viewportWidth) {
+  const width = Number(viewportWidth);
+  return Number.isFinite(width) && width >= PROJECT_SIDEBAR_DESKTOP_MIN_WIDTH;
+}
+
 const MODE_COLORS = {
   general: { primary: "var(--ds-accent)", secondary: "var(--ds-info)" },
   ui: { primary: "var(--ds-accent)", secondary: "var(--ds-accent)" },
@@ -295,7 +302,11 @@ export function useAiWorkspaceController() {
   // Mobile tabs: chat | files | code | details (no preview).
   const [mobileTab, setMobileTab] = useState("chat");
   const [isMobile, setIsMobile] = useState(typeof window !== "undefined" ? window.innerWidth < 1024 : false);
-  const [sidebarOpen, setSidebarOpen] = useState(typeof window !== "undefined" ? window.innerWidth > 1024 : true);
+  const [sidebarOpen, setSidebarOpen] = useState(() => (
+    typeof window !== "undefined"
+      ? shouldOpenProjectSidebarByDefault(window.innerWidth)
+      : false
+  ));
 
   const [prompt, setPrompt] = useState("");
   const [rewindTarget, setRewindTarget] = useState(null); // { messageId, mode }

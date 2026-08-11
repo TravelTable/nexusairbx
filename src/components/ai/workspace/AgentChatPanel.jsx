@@ -184,6 +184,7 @@ export default function AgentChatPanel({
               chatId={currentChatId}
               chatTitle={chatTitle}
               projectTitle={projectTitle}
+              projectId={projectId}
               messages={messages}
               pendingMessage={pendingMessage}
               pendingMessages={pendingMessages}
@@ -205,6 +206,8 @@ export default function AgentChatPanel({
               selectingStudioTargetId={selectingStudioTargetId}
               studioConnected={studioConnected}
               studioConnectionState={studioConnectionState}
+              studioLoading={studioLoading}
+              studioPlacePreference={studioPlacePreference}
               onRenameChat={onRenameChat}
               onOpenNavigation={onOpenNavigation}
               onOpenPlan={FEATURE_FLAGS.newPlanningMode ? openPlanWorkspace : undefined}

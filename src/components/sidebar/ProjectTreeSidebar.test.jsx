@@ -1,5 +1,6 @@
 import React from "react";
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import "@testing-library/jest-dom";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import ProjectTreeSidebar from "./ProjectTreeSidebar";
 
 const projects = [
@@ -102,6 +103,34 @@ describe("ProjectTreeSidebar", () => {
     const projectChat = screen.getByRole("treeitem", { name: "Combat refactor" });
     expect(projectChat.getAttribute("aria-level")).toBe("3");
     expect(within(projectChat).getByRole("button", { name: "Combat refactor" })).toBeTruthy();
+  });
+
+  it("announces selection and removes collapsed descendants from interaction", () => {
+    renderSidebar({ currentChatId: "general-chat" });
+
+    const general = screen.getByRole("treeitem", { name: "General" });
+    const generalChat = screen.getByRole("treeitem", { name: "DataStore question" });
+    const children = general.nextElementSibling;
+    expect(generalChat.getAttribute("aria-selected")).toBe("true");
+    expect(children.hasAttribute("inert")).toBe(false);
+
+    fireEvent.click(within(general).getByRole("button", { name: "General chats" }));
+    expect(children.hasAttribute("inert")).toBe(true);
+    expect(children.getAttribute("aria-hidden")).toBe("true");
+  });
+
+  it("keeps tree keyboard navigation and touch-action hooks intact", () => {
+    const { container } = renderSidebar();
+    const general = screen.getByRole("treeitem", { name: "General" });
+    const generalChat = screen.getByRole("treeitem", { name: "DataStore question" });
+
+    act(() => general.focus());
+    fireEvent.keyDown(general, { key: "ArrowDown" });
+    expect(generalChat).toHaveFocus();
+
+    expect(screen.getByRole("button", { name: /^New chat/ }))
+      .toHaveClass("nexus-project-tree__new-chat");
+    expect(container.querySelectorAll(".nexus-sidebar-icon-action").length).toBeGreaterThan(2);
   });
 
   it("searches files without changing expansion state", async () => {

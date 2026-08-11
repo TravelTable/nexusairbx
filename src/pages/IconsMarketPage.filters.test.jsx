@@ -47,6 +47,16 @@ describe("IconsMarketPage responsive filters", () => {
     };
   });
 
+  test("uses the Creator Store name and leaves document scrolling to the page", async () => {
+    const { container } = renderPage();
+    await waitFor(() => expect(global.fetch).toHaveBeenCalled());
+
+    expect(screen.getByRole("heading", { level: 1, name: "Creator Store" })).toBeTruthy();
+    expect(container.firstChild.className).toContain("creator-store-page");
+    expect(container.firstChild.className).not.toContain("overflow-hidden");
+    expect(container.innerHTML).not.toContain("100vh-64px");
+  });
+
   test("exposes mobile filters and announces the selected choices", async () => {
     renderPage();
     await waitFor(() => expect(global.fetch).toHaveBeenCalled());

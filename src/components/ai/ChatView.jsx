@@ -16,6 +16,7 @@ export default function ChatView({
   chatId,
   chatTitle,
   projectTitle,
+  projectId,
   messages,
   pendingMessage,
   pendingMessages,
@@ -39,6 +40,8 @@ export default function ChatView({
   selectingStudioTargetId,
   studioConnected,
   studioConnectionState,
+  studioLoading,
+  studioPlacePreference,
   onRenameChat,
   onOpenNavigation,
   onOpenPlan,
@@ -72,7 +75,15 @@ export default function ChatView({
             scrollClassName="nexus-chat-scroll scrollbar-subtle"
           >
             {showEmpty ? (
-              <ChatEmptyState onQuickStart={onQuickStart} onOpenTemplates={onOpenTemplates} user={user} />
+              <ChatEmptyState
+                onQuickStart={onQuickStart}
+                onOpenTemplates={onOpenTemplates}
+                projectTitle={projectTitle}
+                projectId={projectId}
+                studioConnected={studioConnected}
+                studioLoading={studioLoading}
+                studioPlacePreference={studioPlacePreference}
+              />
             ) : (
               <MessageList
                 messages={messages}

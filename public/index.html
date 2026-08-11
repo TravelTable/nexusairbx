@@ -2,9 +2,9 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
+    <link rel="icon" href="%PUBLIC_URL%/nexus-mark.svg" type="image/svg+xml" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#181817" />
+    <meta name="theme-color" content="#160b24" />
     <script>
       (() => {
         const key = "nexusrbx:settings";
@@ -25,7 +25,7 @@
           document.documentElement.dataset.theme = theme;
           document.documentElement.style.colorScheme = theme;
           document.querySelector('meta[name="theme-color"]')
-            ?.setAttribute("content", theme === "dark" ? "#181817" : "#faf8f5");
+            ?.setAttribute("content", theme === "dark" ? "#160b24" : "#fff8e7");
         };
         apply();
         matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change", apply);
@@ -34,7 +34,7 @@
     </script>
     <meta
       name="description"
-      content="NexusRBX is an AI-driven platform designed specifically for Roblox developers and enthusiasts."
+      content="NexusRBX helps Roblox creators plan, build, playtest, and ship complete games through a reviewable Studio-connected workspace."
     />
     <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
     <!--

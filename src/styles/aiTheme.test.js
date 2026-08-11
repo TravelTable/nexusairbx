@@ -43,9 +43,17 @@ test("keeps editorial type opt-in and scales workspace gutters", () => {
 
 test("flattens legacy workspace decoration without remapping status semantics", () => {
   expect(themeCss).toMatch(/\[class\*="bg-gradient-to-"\][\s\S]*?background-image:\s*none/);
-  expect(themeCss).toMatch(/\[class~="shadow-2xl"\][\s\S]*?box-shadow:\s*none/);
+  expect(themeCss).toMatch(/\[class~="shadow-2xl"\][\s\S]*?box-shadow:\s*var\(--ds-shadow-panel\)/);
+  expect(themeCss).toMatch(/\[class\*="shadow-\[0_0"\][\s\S]*?box-shadow:\s*none/);
   expect(themeCss).toContain("--ai-info: var(--ds-info)");
   expect(themeCss).toContain("--ai-danger: var(--ds-danger)");
+});
+
+test("uses softly squared creator-workshop geometry without forcing every control", () => {
+  expect(themeCss).toContain("--pc-radius-panel: 16px");
+  expect(themeCss).toContain("--pc-radius-control: 12px");
+  expect(themeCss).not.toMatch(/\.ai-page button:not\([\s\S]*?border-radius:\s*var\(--pc-radius-control\)/);
+  expect(themeCss).not.toMatch(/\.ai-page textarea\s*\{[\s\S]*?border-radius:\s*var\(--pc-radius-panel\)/);
 });
 
 test("provides non-motion, opaque, and high-contrast fallbacks", () => {

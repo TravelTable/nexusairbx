@@ -77,26 +77,37 @@ const classifyRetiredColor = (rgb) => {
   const { hue, saturation, lightness } = rgbToHsl(rgb);
   const chromaticEnough = saturation >= 0.25 && lightness >= 0.03 && lightness <= 0.97;
   if (chromaticEnough && hue >= 155 && hue <= 200) return "retired turquoise/cyan/teal literal";
-  if (chromaticEnough && hue > 200 && hue < 250) return "retired blue literal; use the semantic accent or information token";
-  if (chromaticEnough && hue >= 250 && hue < 305) return "raw purple literal; use the semantic Plan/AI token";
+  if (chromaticEnough && hue > 200 && hue < 250) return "retired blue literal; use a semantic information token";
+  if (chromaticEnough && hue >= 250 && hue < 305) return "raw purple literal; use a semantic brand, accent, or plan token";
   if (chromaticEnough && hue >= 305 && hue <= 340) return "retired decorative pink literal";
   return null;
 };
 
 const allowedSemanticLiteral = (relativePath, line) => {
   if (/Color3\.fromRGB\s*\(/.test(line)) return true; // Shipped Roblox code example/output.
+  if (
+    relativePath === "src/lib/appearanceTheme.js"
+    && /(?:DARK|LIGHT)_THEME_COLOR\s*=/.test(line)
+  ) return true;
+  if (
+    relativePath === "public-frontend/app/layout.jsx"
+    && /<meta\s+name=["']theme-color["']/.test(line)
+  ) return true;
+  if (
+    relativePath === "public/index.html"
+    && /(?:theme-color|setAttribute\(["']content["'])/.test(line)
+  ) return true;
   const isCanonicalTheme = relativePath === "src/index.css"
     || relativePath === "public-frontend/app/globals.css";
-  if (isCanonicalTheme && /--ds-(?:fill-selected|accent|focus-ring|info|plan)(?:-[a-z]+)?\s*:/.test(line)) return true;
+  if (isCanonicalTheme && /--ds-[a-z0-9-]+\s*:/.test(line)) return true;
 
   // Monaco theme data cannot resolve CSS custom properties. Keep its two
   // adaptive palettes and the AI token bridge as explicit, audited owners.
   if (relativePath === "src/components/ai/workspace/CodeWorkspace.jsx") return true;
   if (
     relativePath === "src/components/ai/AiComponents.jsx"
-    && /initialData\?\.color\s*\|\|\s*["']#20808d["']/i.test(line)
+    && /initialData\?\.color\s*\|\|\s*["']#7c3aed["']/i.test(line)
   ) return true; // Native color inputs require a concrete sRGB value.
-  if (relativePath === "src/components/homepage/RobloxTrustStrip.jsx") return true; // Google brand mark.
   return relativePath === "src/styles/aiTheme.css" && /--ai-[a-z0-9-]+\s*:/.test(line);
 };
 
@@ -170,50 +181,52 @@ const readToken = (block, token) => {
 };
 
 const darkThemeContract = {
-  "--ds-bg-canvas": "#181817",
-  "--ds-bg-workspace": "#11110f",
-  "--ds-bg-sidebar": "#151514",
-  "--ds-surface-1": "#20201e",
-  "--ds-text": "#f5f3ed",
-  "--ds-accent": "#20808d",
-  "--ds-accent-hover": "#2a94a1",
-  "--ds-accent-pressed": "#176f79",
-  "--ds-focus-ring": "#52b7c0",
-  "--ds-info": "#58b6c1",
-  "--ds-info-foreground": "#11110f",
-  "--ds-success": "#30d158",
-  "--ds-success-foreground": "#11110f",
-  "--ds-warning": "#ffd60a",
-  "--ds-warning-foreground": "#1d1d1f",
-  "--ds-danger": "#ff453a",
-  "--ds-danger-foreground": "#ffffff",
-  "--ds-plan": "#bf5af2",
-  "--ds-plan-foreground": "#11110f",
+  "--ds-bg-canvas": "#160b24",
+  "--ds-bg-workspace": "#12081f",
+  "--ds-bg-sidebar": "#1c0f2b",
+  "--ds-surface-1": "#241536",
+  "--ds-text": "#fff8e7",
+  "--ds-text-subtle": "#8f7e9d",
+  "--ds-accent": "#a78bfa",
+  "--ds-accent-hover": "#b9a4ff",
+  "--ds-accent-pressed": "#9676f0",
+  "--ds-focus-ring": "#d9ff57",
+  "--ds-info": "#c4b5fd",
+  "--ds-info-foreground": "#17121b",
+  "--ds-success": "#d9ff57",
+  "--ds-success-foreground": "#17121b",
+  "--ds-warning": "#ffc857",
+  "--ds-warning-foreground": "#17121b",
+  "--ds-danger": "#ff7a70",
+  "--ds-danger-foreground": "#17121b",
+  "--ds-plan": "#ff8a7a",
+  "--ds-plan-foreground": "#17121b",
 };
 
 const lightThemeContract = {
-  "--ds-bg-canvas": "#faf8f5",
-  "--ds-bg-workspace": "#fffdf9",
-  "--ds-bg-sidebar": "#f2efe9",
-  "--ds-surface-1": "#fffdf9",
-  "--ds-text": "#27251e",
-  "--ds-accent": "#20808d",
-  "--ds-accent-hover": "#176f79",
-  "--ds-accent-pressed": "#115d66",
-  "--ds-focus-ring": "#20808d",
-  "--ds-info": "#176f79",
+  "--ds-bg-canvas": "#fff8e7",
+  "--ds-bg-workspace": "#fffcf5",
+  "--ds-bg-sidebar": "#f5edff",
+  "--ds-surface-1": "#fffcf5",
+  "--ds-text": "#17121b",
+  "--ds-text-subtle": "#786a7e",
+  "--ds-accent": "#7c3aed",
+  "--ds-accent-hover": "#6d28d9",
+  "--ds-accent-pressed": "#5b21b6",
+  "--ds-focus-ring": "#7c3aed",
+  "--ds-info": "#6d28d9",
   "--ds-info-foreground": "#ffffff",
-  "--ds-success": "#248a3d",
+  "--ds-success": "#3f7f32",
   "--ds-success-foreground": "#ffffff",
-  "--ds-warning": "#9a6700",
+  "--ds-warning": "#8a5700",
   "--ds-warning-foreground": "#ffffff",
-  "--ds-danger": "#d70015",
+  "--ds-danger": "#d92d20",
   "--ds-danger-foreground": "#ffffff",
-  "--ds-plan": "#8e44ad",
+  "--ds-plan": "#b43b4b",
   "--ds-plan-foreground": "#ffffff",
 };
 
-test("keeps shipped browser UI on the warm-charcoal and semantic-teal design contract", () => {
+test("keeps shipped browser UI on the purple creator-workshop design contract", () => {
   const violations = shippedBrowserSources.flatMap((relativePath) => {
     const source = fs.readFileSync(path.join(projectRoot, relativePath), "utf8");
     return source.split(/\r?\n/).flatMap((line, index) => findLineViolations(relativePath, line, index + 1));
@@ -237,8 +250,8 @@ test("keeps both browser entry points on the canonical dark and light tokens", (
         .toEqual({ file: relativePath, theme: "light", token, value: expected });
     });
 
-    expect(readToken(darkBlock, "--ds-font-sans")).toBe('-apple-system, blinkmacsystemfont, "sf pro text", "segoe ui", system-ui, sans-serif');
-    expect(readToken(darkBlock, "--ds-font-display")).toBe('georgia, "times new roman", serif');
+    expect(readToken(darkBlock, "--ds-font-sans")).toBe('"instrument sans", -apple-system, blinkmacsystemfont, "segoe ui", system-ui, sans-serif');
+    expect(readToken(darkBlock, "--ds-font-display")).toBe('"bricolage grotesque", "instrument sans", system-ui, sans-serif');
   });
 });
 

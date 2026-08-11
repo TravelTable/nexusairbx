@@ -1,5 +1,5 @@
 .workspace-shell {
-  --workspace-rail-width: 56px;
+  --workspace-rail-width: 72px;
   container-name: workspace-shell;
   container-type: inline-size;
   display: grid;
@@ -61,7 +61,7 @@
   justify-content: space-between;
   border-left: 1px solid var(--ds-border-subtle);
   background: var(--ds-bg-sidebar);
-  padding: 8px 6px;
+  padding: 10px 7px;
 }
 
 .workspace-shell[data-drawer-open="true"] .workspace-tool-rail {
@@ -73,18 +73,20 @@
   width: 100%;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
 }
 
 .workspace-tool-rail__button {
   position: relative;
   display: inline-flex;
-  height: 44px;
-  width: 44px;
+  min-height: 54px;
+  width: 58px;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 3px;
   border: 1px solid transparent;
-  border-radius: 999px;
+  border-radius: 14px;
   color: var(--ds-text-muted);
   transition:
     color var(--motion-fast) var(--ease-standard),
@@ -100,9 +102,10 @@
 }
 
 .workspace-tool-rail__button[data-active="true"] {
-  border-color: transparent;
+  border-color: var(--ds-accent-border);
   background: var(--ds-accent-soft);
   color: var(--ds-accent);
+  box-shadow: inset 0 -2px 0 color-mix(in srgb, var(--ds-accent) 32%, transparent);
 }
 
 .workspace-tool-rail__button:not(:disabled):active {
@@ -115,10 +118,23 @@
   opacity: 0.3;
 }
 
+.workspace-tool-rail__label {
+  display: block;
+  max-width: 54px;
+  overflow: hidden;
+  color: currentColor;
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0.01em;
+  line-height: 1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .workspace-tool-rail__badge {
   position: absolute;
-  right: 2px;
-  top: 2px;
+  right: 4px;
+  top: 3px;
   display: inline-flex;
   min-height: 8px;
   min-width: 8px;
@@ -142,7 +158,7 @@
   width: max-content;
   max-width: 160px;
   border: 1px solid var(--ds-border-subtle);
-  border-radius: 999px;
+  border-radius: 10px;
   background: var(--ds-surface-overlay);
   padding: 5px 7px;
   color: var(--ds-text);
@@ -173,7 +189,7 @@
   flex-direction: column;
   overflow: hidden;
   border-left: 1px solid var(--ds-border-subtle);
-  background: var(--ds-bg-workspace);
+  background: var(--ds-surface-1);
   opacity: 0;
   box-shadow: var(--ds-shadow-panel);
   transform: translateX(12px);
@@ -220,7 +236,7 @@
   gap: 16px;
   border-bottom: 1px solid var(--ds-border-subtle);
   padding: 8px 16px;
-  background: var(--ds-bg-workspace);
+  background: color-mix(in srgb, var(--ds-surface-1) 92%, var(--ds-accent-soft));
 }
 
 .workspace-context-drawer__back {
@@ -234,7 +250,7 @@
   align-items: center;
   justify-content: center;
   border: 1px solid transparent;
-  border-radius: 999px;
+  border-radius: 12px;
   color: var(--ds-text-muted);
   transition:
     color var(--motion-fast) var(--ease-standard),
@@ -256,7 +272,7 @@
   overflow: hidden;
 }
 
-@container workspace-shell (min-width: 1500px) {
+@container workspace-shell (min-width: 1180px) {
   .workspace-shell[data-drawer-open="true"] .workspace-context-drawer {
     width: var(--workspace-drawer-width);
     min-width: var(--workspace-drawer-width);
@@ -268,7 +284,7 @@
   }
 }
 
-@container workspace-shell (max-width: 1499px) {
+@container workspace-shell (max-width: 1179px) {
   /* Size against the shell container, not the collapsed auto grid track.
      When the dock leaves flow (absolute), column 2 shrinks to 0 and
      max-width/width: 100% would clamp the overlay to nothing. */
@@ -313,7 +329,7 @@
 
   .workspace-tool-rail {
     width: 100%;
-    min-height: calc(56px + env(safe-area-inset-bottom));
+    min-height: calc(64px + env(safe-area-inset-bottom));
     flex: 0 0 auto;
     flex-direction: row;
     border-top: 1px solid var(--ds-border-subtle);
@@ -328,8 +344,9 @@
   }
 
   .workspace-tool-rail__button {
-    width: 44px;
-    height: 44px;
+    min-height: 52px;
+    width: min(64px, 19vw);
+    flex: 1 1 0;
   }
 
   .workspace-tool-rail__collapse,

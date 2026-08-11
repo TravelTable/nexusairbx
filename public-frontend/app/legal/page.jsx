@@ -21,6 +21,7 @@ export const metadata = buildPublicMetadata({
   title: page.metaTitle,
   description: page.description,
   path: page.path,
+  noindex: true,
 });
 
 function legalStructuredData(page) {

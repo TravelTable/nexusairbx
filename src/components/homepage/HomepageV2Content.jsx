@@ -1,172 +1,224 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
+  AlertTriangle,
   ArrowRight,
-  Blocks,
   Bot,
-  Code,
-  Download,
-  FolderOpen,
+  CheckCircle2,
+  Coins,
+  FileCode2,
+  FolderTree,
   Gamepad2,
-  Library,
-  Lock,
-  SearchCheck,
+  History,
+  ListChecks,
+  Play,
+  RefreshCw,
   ShieldCheck,
-  WandSparkles,
+  Sparkles,
 } from "../../lib/icons";
-import { trackProductEvent } from "../../lib/productAnalytics";
-import { homepageFeatures, homepageWorkflow } from "../../content/homepageLanding";
+import {
+  homepageBuildStages,
+  homepageControlPoints,
+  homepageExampleBuilds,
+  homepageFocusedTools,
+  homepageGenres,
+  homepageGrowthLoop,
+  homepagePreviewPlanIds,
+  homepagePreviewPlanFeatures,
+} from "../../content/homepageV2";
+import publicPlanCatalog from "../../data/publicPlanCatalog.json";
 import HomepageFooter from "./HomepageFooter";
 import HomepagePrompt from "./HomepagePrompt";
 import RobloxTrustStrip from "./RobloxTrustStrip";
 import styles from "./HomepageCinematic.module.css";
 
-const STORY_CARDS = [
-  {
-    eyebrow: "From prompt to plan",
-    title: "Describe the result. NexusRBX maps the build.",
-    description: homepageFeatures[0].description,
-    visual: "prompt",
-  },
-  {
-    eyebrow: "Reviewable by default",
-    title: "See the files, code, and Studio destination before you ship.",
-    description: homepageFeatures[1].description,
-    visual: "review",
-  },
-  {
-    eyebrow: "Studio-aware handoff",
-    title: "Move from a clear plan to coordinated Roblox changes.",
-    description:
-      "The Studio agent keeps scripts, services, and generated assets organized while you stay in control of every write.",
-    visual: "studio",
-  },
-];
+const WORLD_CLASSES = {
+  obby: "worldObby",
+  tycoon: "worldTycoon",
+  horror: "worldHorror",
+  social: "worldSocial",
+  racing: "worldRacing",
+  rpg: "worldRpg",
+};
 
-const CAPABILITIES = [
-  {
-    href: "/roblox-script-generator",
-    title: "AI-Powered Code Generation",
-    description: homepageFeatures[0].description,
-    icon: WandSparkles,
-  },
-  {
-    href: "/roblox-ai-scripter",
-    title: "Debugging and optimization",
-    description: homepageFeatures[1].description,
-    icon: SearchCheck,
-  },
-  {
-    href: "/roblox-studio-script-generator",
-    title: "Roblox API context",
-    description: homepageFeatures[2].description,
-    icon: Blocks,
-  },
-  {
-    href: "/roblox-lua-script-generator",
-    title: "Reusable project memory",
-    description: homepageFeatures[3].description,
-    icon: Library,
-  },
-  {
-    href: "/roblox-gui-maker",
-    title: "Multi-file Studio agent",
-    description:
-      "Plan coordinated changes across scripts, services, UI, and Studio locations without losing the thread.",
-    icon: Bot,
-  },
-  {
-    href: "/downloads",
-    title: "Desktop connector",
-    description:
-      "Use the secure local companion for Studio MCP, automatic reconnects, and clear connection health.",
-    icon: Gamepad2,
-  },
-];
+const STAGE_ICONS = {
+  prompt: Sparkles,
+  plan: ListChecks,
+  build: Bot,
+  playtest: Play,
+};
 
-function StoryVisual({ type }) {
-  if (type === "review") {
-    return (
-      <div className={`${styles.storyVisual} ${styles.reviewVisual}`} aria-hidden="true">
-        <div className={styles.productMock}>
-          <div className={styles.productTopbar}>
-            <span /><span /><span />
-            <small>Round system</small>
-          </div>
-          <div className={styles.productBody}>
-            <div className={styles.productTree}>
-              <strong>Explorer</strong>
-              <span>Workspace</span>
-              <span className={styles.productTreeActive}>ServerScriptService</span>
-              <span>RoundTimer.server.lua</span>
-              <span>ReplicatedStorage</span>
-              <span>StarterGui</span>
-            </div>
-            <div className={styles.productEditor}>
-              <div className={styles.productTabs}>
-                <span>RoundTimer.server.lua</span><em>Review ready</em>
-              </div>
-              <div className={styles.productCode}>
-                <i>01</i><span><b>local</b> Players = game:GetService(<q>"Players"</q>)</span>
-                <i>02</i><span><b>local</b> ROUND_SECONDS = <u>60</u></span>
-                <i>03</i><span><b>local function</b> countdown(phase, duration)</span>
-                <i>04</i><span>&nbsp;&nbsp;<b>for</b> remaining = duration, <u>0</u>, -1 <b>do</b></span>
-                <i>05</i><span>&nbsp;&nbsp;&nbsp;&nbsp;timerEvent:FireAllClients(phase, remaining)</span>
-                <i>06</i><span>&nbsp;&nbsp;&nbsp;&nbsp;task.wait(<u>1</u>)</span>
-                <i>07</i><span>&nbsp;&nbsp;<b>end</b></span>
-                <i>08</i><span><b>end</b></span>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div className={styles.reviewBadge}>
-          <ShieldCheck size={17} />
-          RoundTimer.server.lua reviewed
-        </div>
-      </div>
-    );
+const CONTROL_ICONS = {
+  context: FolderTree,
+  review: FileCode2,
+  proof: Gamepad2,
+  undo: History,
+};
+
+const GROWTH_ICONS = {
+  fun: Sparkles,
+  retain: RefreshCw,
+  monetize: Coins,
+  learn: History,
+};
+
+const previewPlans = homepagePreviewPlanIds
+  .map((id) => publicPlanCatalog.find((plan) => plan.id === id))
+  .filter(Boolean);
+
+async function trackHomepageProductEvent(name, properties, options) {
+  try {
+    const { trackProductEvent } = await import("../../lib/productAnalytics");
+    await trackProductEvent(name, properties, options);
+  } catch (_) {
+    // Homepage navigation and interactions must work without analytics.
   }
+}
 
-  if (type === "studio") {
-    return (
-      <div className={`${styles.storyVisual} ${styles.studioVisual}`} aria-hidden="true">
-        <div className={styles.studioWindow}>
-          <div className={styles.studioTopbar}>
-            <span />
-            <span />
-            <span />
-            <small>Studio plan</small>
-          </div>
-          <div className={styles.studioColumns}>
-            <div className={styles.studioRail}>
-              <span className={styles.studioRailActive}>Plan</span>
-              <span>Files</span>
-              <span>Test</span>
-            </div>
-            <div className={styles.studioSteps}>
-              <div><b>01</b><span>Inspect project manifest</span><em>Done</em></div>
-              <div><b>02</b><span>Create the round service</span><em>Ready</em></div>
-              <div><b>03</b><span>Wire client timer UI</span><em>Ready</em></div>
-              <div><b>04</b><span>Run Studio verification</span><em>Next</em></div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
+function formatPlanPrice(plan) {
+  if (plan.monthly === 0) return "$0";
+  const price = Number(plan.monthly).toLocaleString("en-US", {
+    style: "currency",
+    currency: "USD",
+    minimumFractionDigits: Number(plan.monthly) % 1 === 0 ? 0 : 2,
+    maximumFractionDigits: 2,
+  });
+  return plan.perSeat ? `${price} / creator / month` : `${price} / month`;
+}
 
+function NexusRibbon({ className = "" }) {
   return (
-    <div className={`${styles.storyVisual} ${styles.promptVisual}`} aria-hidden="true">
-      <div className={styles.previewPrompt}>
-        <span className={styles.previewLogo}><img src="/logo.png" alt="" /></span>
-        <span>Build a round system with intermission, rewards, and a responsive HUD.</span>
-        <span className={styles.previewSend}><ArrowRight size={19} /></span>
+    <svg
+      className={`${styles.ribbon} ${className}`}
+      viewBox="0 0 900 220"
+      preserveAspectRatio="none"
+      aria-hidden="true"
+    >
+      <path
+        pathLength="1"
+        d="M18 169 C142 39 250 37 337 121 C420 201 486 202 548 112 C615 16 722 24 882 132"
+      />
+    </svg>
+  );
+}
+
+function MiniWorld({ genreId, compact = false }) {
+  const worldClass = styles[WORLD_CLASSES[genreId]] || styles.worldObby;
+  return (
+    <div
+      className={`${styles.miniWorld} ${worldClass} ${compact ? styles.miniWorldCompact : ""}`}
+      data-mini-world={genreId}
+      aria-hidden="true"
+    >
+      <span className={styles.worldSun} />
+      <span className={styles.worldBack} />
+      <span className={styles.worldGround} />
+      <span className={`${styles.worldPiece} ${styles.worldPieceOne}`} />
+      <span className={`${styles.worldPiece} ${styles.worldPieceTwo}`} />
+      <span className={`${styles.worldPiece} ${styles.worldPieceThree}`} />
+      <span className={styles.worldPlayer} />
+      <span className={styles.worldDetail} />
+    </div>
+  );
+}
+
+function WorkshopIllustration({ genre }) {
+  return (
+    <div
+      className={styles.workshopArt}
+      role="img"
+      aria-label={`A cartoon creator workshop turning an idea into a ${genre.label} game`}
+    >
+      <NexusRibbon className={styles.heroRibbon} />
+      <div className={styles.ideaNote} aria-hidden="true">
+        <span>IDEA</span>
+        <strong>{genre.label}</strong>
+        <i />
+        <i />
+        <i />
       </div>
-      <div className={styles.previewToolbar}>
-        <span><Bot size={16} /> Agent Build</span>
-        <span><FolderOpen size={16} /> 4 files</span>
-        <span><Code size={16} /> Typed Luau</span>
+      <div className={styles.workshopMachine} aria-hidden="true">
+        <div className={styles.machineTop}>
+          <span />
+          <span />
+          <span />
+          <b>NEXUS WORKSHOP</b>
+        </div>
+        <div className={styles.machineBody}>
+          <div className={styles.machinePlan}>
+            <small>Build plan</small>
+            <span><CheckCircle2 size={15} /> Player loop</span>
+            <span><CheckCircle2 size={15} /> Core systems</span>
+            <span><CheckCircle2 size={15} /> Studio test</span>
+          </div>
+          <MiniWorld key={genre.id} genreId={genre.id} />
+        </div>
+        <div className={styles.machineBelt}>
+          <span /><span /><span /><span /><span />
+        </div>
+      </div>
+      <div className={styles.shippedStamp} aria-hidden="true">
+        <CheckCircle2 size={19} /> PLAYTEST READY
+      </div>
+    </div>
+  );
+}
+
+function BuildDemo() {
+  return (
+    <div className={styles.buildDemo} role="group" aria-label="Illustrative NexusRBX workflow example">
+      <div className={styles.demoTopbar}>
+        <span className={styles.demoLights}><i /><i /><i /></span>
+        <strong>Arcade Escape</strong>
+        <span className={styles.demoDisclosure}>Illustrative workflow</span>
+        <span className={styles.connectedPill}><i /> Studio target paired</span>
+      </div>
+      <div className={styles.demoBody}>
+        <div className={styles.demoExplorer}>
+          <small>PROJECT</small>
+          <strong>Arcade Escape</strong>
+          <span>Workspace</span>
+          <span>ServerScriptService</span>
+          <span className={styles.demoActiveFile}>RoundService.lua</span>
+          <span>StarterGui</span>
+        </div>
+        <div className={styles.demoCanvas}>
+          <div className={styles.demoPlanHeader}>
+            <span>Step 2 of 6</span>
+            <strong>Review the proposed build</strong>
+          </div>
+          <div className={styles.demoApproval}>
+            <CheckCircle2 size={18} aria-hidden="true" />
+            <span><strong>Plan approved</strong><small>Round loop, enemy state, and reward destinations confirmed</small></span>
+          </div>
+          <div className={styles.demoChange}>
+            <FileCode2 size={18} aria-hidden="true" />
+            <span><strong>3 files changed</strong><small>Reviewable diff applied after approval</small></span>
+            <b>+84 −12</b>
+          </div>
+          <div className={styles.demoPlaytest}>
+            <div className={styles.demoGameFrame} aria-hidden="true">
+              <span className={styles.demoGameSign}>ROUND 01</span>
+              <span className={styles.demoGameDoor} />
+              <span className={styles.demoGamePlayer} />
+            </div>
+            <div className={styles.demoResultStack} role="group" aria-label="Playtest evidence">
+              <div className={`${styles.demoResult} ${styles.demoResultIssue}`}>
+                <AlertTriangle size={20} aria-hidden="true" />
+                <span><strong>Issue found</strong><small>Door stayed locked after round restart</small></span>
+              </div>
+              <div className={`${styles.demoResult} ${styles.demoResultFix}`}>
+                <RefreshCw size={20} aria-hidden="true" />
+                <span><strong>Fix applied</strong><small>Reset door state before player spawn</small></span>
+              </div>
+              <div className={`${styles.demoResult} ${styles.demoResultPassed}`}>
+              <CheckCircle2 size={21} aria-hidden="true" />
+              <span><strong>Playtest passed</strong><small>Spawn → round → reward verified</small></span>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -175,203 +227,323 @@ function StoryVisual({ type }) {
 export default function HomepageV2Content({
   surface = "homepage",
   navigate,
-  user,
-  authReady,
 }) {
+  const [selectedGenreId, setSelectedGenreId] = useState(null);
+  const [promptSuggestion, setPromptSuggestion] = useState({ value: "", version: 0 });
+  const heroPromptRef = useRef(null);
+  const selectedGenre = useMemo(
+    () => homepageGenres.find((genre) => genre.id === selectedGenreId) || homepageGenres[0],
+    [selectedGenreId],
+  );
+
   useEffect(() => {
-    void trackProductEvent(
-      "landing_page_view",
-      { landing_page: "/", landing_page_category: "homepage" },
-      { dedupeKey: "homepage" },
-    );
+    const trackView = () => {
+      void trackHomepageProductEvent(
+        "landing_page_view",
+        { landing_page: "/", landing_page_category: "homepage" },
+        { dedupeKey: "homepage" },
+      );
+    };
+
+    if (typeof window.requestIdleCallback === "function") {
+      const idleId = window.requestIdleCallback(trackView, { timeout: 2000 });
+      return () => window.cancelIdleCallback?.(idleId);
+    }
+
+    const timeoutId = window.setTimeout(trackView, 500);
+    return () => window.clearTimeout(timeoutId);
   }, []);
 
+  const chooseGenre = (genre) => {
+    setSelectedGenreId(genre.id);
+    setPromptSuggestion((current) => ({
+      value: genre.prompt,
+      version: current.version + 1,
+    }));
+    void trackHomepageProductEvent("homepage_genre_selected", {
+      surface,
+      genre: genre.id,
+    });
+  };
+
+  const continueWithGenre = () => {
+    const input = heroPromptRef.current;
+    if (!input) return;
+    input.focus({ preventScroll: true });
+    const reducedMotion = typeof window !== "undefined"
+      && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    input.scrollIntoView?.({ behavior: reducedMotion ? "auto" : "smooth", block: "center" });
+  };
+
   return (
-    <div className={`nexus-cinematic-home ${styles.page}`}>
+    <div className={`nexus-workshop-home ${styles.page}`}>
       <main id="main-content" tabIndex={-1}>
-        <section className={styles.hero} aria-labelledby="homepage-hero-heading">
-        <picture className={styles.heroMedia}>
-          <source
-            media="(max-width: 767px)"
-            srcSet="/assets/nexus-cinematic-hero-v2-960.webp"
-            type="image/webp"
-          />
-          <img
-            data-home-hero-image
-            src="/assets/nexus-cinematic-hero-v2-1600.webp"
-            alt=""
-            aria-hidden="true"
-            width="1600"
-            height="901"
-            loading="eager"
-            fetchpriority="high"
-            decoding="async"
-          />
-        </picture>
-        <div className={styles.heroShade} aria-hidden="true" />
-        <div className={styles.heroContent}>
-          <p className={styles.heroEyebrow}>NexusRBX for Roblox Studio</p>
-          <h1 id="homepage-hero-heading">AI Roblox Script Generator for Studio</h1>
-          <p className={styles.heroDescription}>
-            Generate a focused Luau script from one prompt, or use the Studio agent to plan
-            coordinated changes across multiple files and Roblox services.
-          </p>
+        <section id="product" className={styles.hero} aria-labelledby="homepage-hero-heading" data-home-hero>
+          <div className={styles.heroTexture} aria-hidden="true" />
+          <div className={styles.heroGrid}>
+            <div className={styles.heroCopy}>
+              <p className={styles.eyebrow}><span /> From idea to a playable Roblox game</p>
+              <h1 id="homepage-hero-heading">
+                Make the Roblox game <span>in your head.</span>
+              </h1>
+              <p className={styles.heroDescription}>
+                Plan the whole project, build it in Studio, playtest every change, and add
+                Roblox-native monetization when the experience is ready.
+              </p>
 
-          <HomepagePrompt
-            surface={surface}
-            source={surface}
-            navigateToAi={navigate}
-            className={styles.heroPrompt}
-          />
+              <HomepagePrompt
+                surface={surface}
+                source={surface}
+                navigateToAi={navigate}
+                className={styles.heroPrompt}
+                promptId="homepage-hero-prompt"
+                suggestedPrompt={promptSuggestion.value}
+                suggestionVersion={promptSuggestion.version}
+                submitLabel="Start building"
+                helperText="No magic black box: you will see the plan before the build begins."
+                showLabel
+                inputRef={heroPromptRef}
+              />
 
-          <div className={styles.heroActions} aria-label="Get started">
-            <a className={styles.primaryPill} href="/ai">
-              Open AI workspace <ArrowRight size={17} aria-hidden="true" />
-            </a>
-            <a className={`${styles.secondaryPill} min-h-11`} href="/downloads">
-              <Download size={16} aria-hidden="true" /> Get the desktop connector
-            </a>
-          </div>
-        </div>
-        </section>
-
-        <section id="features" className={styles.story} aria-labelledby="feature-story-heading">
-        <div className={styles.storyIntro}>
-          <p>One build loop</p>
-          <h2 id="feature-story-heading">From an idea to something you can inspect in Studio.</h2>
-        </div>
-        <div className={styles.storyList}>
-          {STORY_CARDS.map((story) => (
-            <article className={styles.storyCard} key={story.title} data-home-story-card>
-              <div className={styles.storyCopy}>
-                <p>{story.eyebrow}</p>
-                <h3>{story.title}</h3>
-                <span>{story.description}</span>
+              <div className={styles.heroProof} role="list" aria-label="Product principles">
+                <span role="listitem"><ShieldCheck size={16} aria-hidden="true" /> Review every change</span>
+                <span role="listitem"><Gamepad2 size={16} aria-hidden="true" /> Verify it in Studio</span>
+                <span role="listitem"><History size={16} aria-hidden="true" /> Keep snapshots and undo</span>
               </div>
-              <StoryVisual type={story.visual} />
-            </article>
-          ))}
-        </div>
+            </div>
+
+            <WorkshopIllustration genre={selectedGenre} />
+          </div>
         </section>
 
-        <section id="workflow" className={styles.orchestration} aria-labelledby="workflow-heading">
-        <div className={styles.orchestrationHeading}>
-          <p>Model orchestration</p>
-          <h2 id="workflow-heading">One request. The right workflow for every part of the build.</h2>
-          <span>
-            Nexus Auto coordinates planning, code, review, and Studio handoff so you can focus
-            on the game rather than the plumbing.
-          </span>
-        </div>
-        <div className={styles.orchestrationMap}>
-          <div className={styles.orchestrationCore}>
-            <img src="/logo.png" alt="" width="48" height="48" />
-            <strong>Nexus Auto</strong>
-            <small>Routes the work</small>
+        <section id="genres" className={styles.genres} aria-labelledby="genres-heading">
+          <div className={styles.sectionHeading}>
+            <p className={styles.eyebrow}><span /> Any genre, one build loop</p>
+            <h2 id="genres-heading">Start with the game—not the boilerplate.</h2>
+            <p>Choose a direction to load a concrete starting prompt into the workshop.</p>
           </div>
-          <div className={styles.workflowSteps}>
-            {homepageWorkflow.map((step, index) => (
-              <article key={step.title}>
-                <span>{String(index + 1).padStart(2, "0")}</span>
-                <h3>{step.title}</h3>
-                <p>{step.description}</p>
+
+          <div className={styles.genreGrid} role="group" aria-label="Choose a Roblox game genre">
+            {homepageGenres.map((genre) => {
+              const selected = selectedGenreId === genre.id;
+              return (
+                <button
+                  type="button"
+                  key={genre.id}
+                  className={`${styles.genreCard} ${selected ? styles.genreCardSelected : ""}`}
+                  aria-pressed={selected}
+                  aria-controls="homepage-hero-prompt"
+                  data-home-genre={genre.id}
+                  onClick={() => chooseGenre(genre)}
+                >
+                  <MiniWorld genreId={genre.id} compact />
+                  <span className={styles.genreCardCopy}>
+                    <strong>{genre.label}</strong>
+                    <small>{genre.description}</small>
+                  </span>
+                  <ArrowRight size={17} aria-hidden="true" />
+                </button>
+              );
+            })}
+          </div>
+
+          <div className={styles.genreOutcome} aria-live="polite" aria-atomic="true">
+            <span>{selectedGenreId ? `${selectedGenre.label} starting point` : "Choose a genre"}</span>
+            <strong>{selectedGenreId ? selectedGenre.outcome : "Six different worlds, one reviewable build loop."}</strong>
+            <small>{promptSuggestion.value ? "Prompt loaded into the builder above." : "Select a genre to load its prompt."}</small>
+            <button type="button" onClick={continueWithGenre} disabled={!promptSuggestion.value}>
+              Continue with this idea <ArrowRight size={16} aria-hidden="true" />
+            </button>
+          </div>
+        </section>
+
+        <section id="workflow" className={styles.workflow} aria-labelledby="workflow-heading">
+          <NexusRibbon className={styles.workflowRibbon} />
+          <div className={`${styles.sectionHeading} ${styles.sectionHeadingOnDark}`}>
+            <p className={styles.eyebrow}><span /> Build with evidence</p>
+            <h2 id="workflow-heading">Prompt → plan → build → playtest.</h2>
+            <p>A continuous project workflow, not a chat window that drops a code block and disappears.</p>
+          </div>
+
+          <ol className={styles.stageGrid} aria-label="NexusRBX build stages">
+            {homepageBuildStages.map((stage, index) => {
+              const Icon = STAGE_ICONS[stage.id];
+              return (
+                <li key={stage.id}>
+                  <span className={styles.stageNumber}>{String(index + 1).padStart(2, "0")}</span>
+                  <Icon size={22} aria-hidden="true" />
+                  <small>{stage.label}</small>
+                  <h3>{stage.title}</h3>
+                  <p>{stage.description}</p>
+                </li>
+              );
+            })}
+          </ol>
+
+          <BuildDemo />
+        </section>
+
+        <section id="control" className={styles.control} aria-labelledby="control-heading">
+          <div className={styles.controlIntro}>
+            <div className={styles.sectionHeading}>
+              <p className={styles.eyebrow}><span /> Creator control</p>
+              <h2 id="control-heading">Fast does not have to mean careless.</h2>
+              <p>
+                Roblox already has AI assistance. NexusRBX earns its place by making the whole
+                project visible, reviewable, and testable.
+              </p>
+            </div>
+            <div className={styles.controlPromise}>
+              <ShieldCheck size={28} aria-hidden="true" />
+              <strong>Your game stays yours.</strong>
+              <span>Know what is planned, what changed, and what passed before you ship. Roblox credentials stay server-side.</span>
+              <a href="/legal/privacy">How project data is handled <ArrowRight size={15} aria-hidden="true" /></a>
+            </div>
+          </div>
+
+          <div className={styles.controlGrid}>
+            {homepageControlPoints.map((point, index) => {
+              const Icon = CONTROL_ICONS[point.id];
+              return (
+                <article key={point.id} className={styles.controlCard}>
+                  <span className={styles.controlIcon}><Icon size={23} aria-hidden="true" /></span>
+                  <small>0{index + 1}</small>
+                  <h3>{point.title}</h3>
+                  <p>{point.description}</p>
+                </article>
+              );
+            })}
+          </div>
+
+          <div className={styles.trustStrip}>
+            <RobloxTrustStrip />
+          </div>
+        </section>
+
+        <section id="grow" className={styles.growth} aria-labelledby="growth-heading">
+          <NexusRibbon className={styles.growthRibbon} />
+          <div className={styles.growthIntro}>
+            <div className={styles.sectionHeading}>
+              <p className={styles.eyebrow}><span /> Your game. Your upside.</p>
+              <h2 id="growth-heading">Build the fun first. Grow from real signals.</h2>
+            </div>
+            <div className={styles.robuxTruth}>
+              <Coins size={26} aria-hidden="true" />
+              <span><strong>Robux is an outcome, not a button.</strong> NexusRBX helps build and verify the game; Roblox Creator Analytics supplies the growth signals.</span>
+            </div>
+          </div>
+
+          <ol className={styles.growthGrid}>
+            {homepageGrowthLoop.map((step, index) => {
+              const Icon = GROWTH_ICONS[step.id];
+              return (
+                <li key={step.id}>
+                  <span className={styles.growthIcon}><Icon size={22} aria-hidden="true" /></span>
+                  <small>{index + 1}</small>
+                  <h3>{step.title}</h3>
+                  <p>{step.description}</p>
+                </li>
+              );
+            })}
+          </ol>
+
+          <p className={styles.growthFinePrint}>
+            Player demand, retention, discovery, pricing, and update quality all affect results.
+            NexusRBX does not promise earnings.
+          </p>
+        </section>
+
+        <section id="examples" className={styles.examples} aria-labelledby="examples-heading">
+          <div className={styles.examplesIntro}>
+            <div className={styles.sectionHeading}>
+              <p className={styles.eyebrow}><span /> Workshop examples</p>
+              <h2 id="examples-heading">Proof should be earned—not invented.</h2>
+              <p>
+                These are curated build briefs that show the breadth of a NexusRBX project.
+                They are examples, not customer testimonials or claims about player results.
+              </p>
+            </div>
+            <div className={styles.exampleNote}>
+              <CheckCircle2 size={24} aria-hidden="true" />
+              <span><strong>Clear by design</strong> Real creator stories will only appear here with a named project, context, and verifiable result.</span>
+            </div>
+          </div>
+
+          <div className={styles.exampleGrid}>
+            {homepageExampleBuilds.map((example) => (
+              <article className={styles.exampleCard} key={example.id}>
+                <MiniWorld genreId={example.genreId} compact />
+                <div className={styles.exampleCardCopy}>
+                  <small>Curated example build</small>
+                  <h3>{example.title}</h3>
+                  <p>{example.description}</p>
+                  <ul aria-label={`${example.title} example systems`}>
+                    {example.systems.map((system) => <li key={system}>{system}</li>)}
+                  </ul>
+                </div>
               </article>
             ))}
           </div>
-        </div>
         </section>
 
-        <section className={styles.security} aria-labelledby="security-heading">
-        <picture className={styles.securityMedia}>
-          <source
-            media="(max-width: 767px)"
-            srcSet="/assets/nexus-cinematic-vault-v2-960.webp"
-            type="image/webp"
-          />
-          <img
-            data-home-vault-image
-            src="/assets/nexus-cinematic-vault-v2-1600.webp"
-            alt=""
-            aria-hidden="true"
-            width="1600"
-            height="901"
-            loading="lazy"
-            decoding="async"
-          />
-        </picture>
-        <div className={styles.securityShade} aria-hidden="true" />
-        <div className={styles.securityCopy}>
-          <span><Lock size={18} aria-hidden="true" /> Secure by design</span>
-          <h2 id="security-heading">Your game stays yours.</h2>
-          <p>
-            NexusRBX uses scoped authorization, reviewable Studio writes, and a local companion
-            that keeps sensitive actions in your control.
-          </p>
-        </div>
+        <section id="pricing" className={styles.pricingPreview} aria-labelledby="pricing-preview-heading">
+          <div className={styles.pricingIntro}>
+            <div className={styles.sectionHeading}>
+              <p className={styles.eyebrow}><span /> Start small, keep building</p>
+              <h2 id="pricing-preview-heading">Plans described like a creator would use them.</h2>
+              <p>Pick the amount of build capacity, history, creator tools, and team billing you need. Prices below are in USD.</p>
+            </div>
+            <a href="/pricing">Compare every plan <ArrowRight size={17} aria-hidden="true" /></a>
+          </div>
+
+          <div className={styles.planGrid}>
+            {previewPlans.map((plan) => (
+              <article className={`${styles.planCard} ${plan.featured ? styles.planCardFeatured : ""}`} key={plan.id}>
+                <div className={styles.planCardHeading}>
+                  <span>{plan.featured ? "Creator pick" : plan.id === "TEAM" ? "For studios" : "Start here"}</span>
+                  <h3>{plan.name}</h3>
+                  <p>{plan.audience}</p>
+                </div>
+                <strong className={styles.planPrice}>{formatPlanPrice(plan)}</strong>
+                <ul>
+                  {homepagePreviewPlanFeatures[plan.id].map((feature) => <li key={feature}><CheckCircle2 size={16} aria-hidden="true" /> {feature}</li>)}
+                </ul>
+              </article>
+            ))}
+          </div>
+          <p className={styles.planFinePrint}>Usage limits and checkout details are shown before purchase. No plan promises player growth or Robux earnings.</p>
         </section>
 
-        <section id="capabilities" className={styles.capabilities} aria-labelledby="capabilities-heading">
-        <div className={styles.capabilitiesHeading}>
-          <p>Capabilities</p>
-          <h2 id="capabilities-heading">Everything around the Roblox task in front of you.</h2>
-        </div>
-        <div className={styles.capabilityGrid}>
-          {CAPABILITIES.map(({ href, title, description, icon: Icon }) => (
-            <a href={href} key={title} data-home-capability>
-              <Icon size={25} aria-hidden="true" />
-              <h3>{title}</h3>
-              <p>{description}</p>
-              <span>Explore <ArrowRight size={15} aria-hidden="true" /></span>
-            </a>
-          ))}
-        </div>
-        </section>
-
-        <section className={styles.shortcut} aria-labelledby="shortcut-heading">
-        <div className={styles.shortcutGlyph} aria-hidden="true">
-          <span>Prompt</span><ArrowRight size={18} /><span>Studio</span>
-        </div>
-        <h2 id="shortcut-heading">One prompt. Total build context.</h2>
-        <p>Start with a quick script or open Agent Build for a coordinated Roblox project.</p>
-        <div className={styles.shortcutActions}>
-          <a className={styles.primaryPill} href="/ai">Start building <ArrowRight size={17} /></a>
-          <a className={styles.secondaryDarkPill} href="/downloads">Download connector</a>
-        </div>
-        <p className={styles.installerTrust}>
-          macOS is signed and notarized; Windows is currently unsigned
-        </p>
-        <div className={styles.trustStrip}>
-          <RobloxTrustStrip user={user} authReady={authReady} />
-        </div>
+        <section className={styles.focusedTools} aria-labelledby="focused-tools-heading">
+          <div>
+            <p className={styles.eyebrow}><span /> Need something focused?</p>
+            <h2 id="focused-tools-heading">Use the whole workshop—or start with one task.</h2>
+          </div>
+          <nav aria-label="Focused Roblox creation tools">
+            {homepageFocusedTools.map((tool) => (
+              <a href={tool.href} key={tool.href}>
+                {tool.label} <ArrowRight size={15} aria-hidden="true" />
+              </a>
+            ))}
+          </nav>
         </section>
 
         <section id="final-cta" className={styles.finalCta} aria-labelledby="final-cta-heading">
-        <picture className={styles.finalCtaMedia}>
-          <source
-            media="(max-width: 767px)"
-            srcSet="/assets/nexus-cinematic-final-v2-960.webp"
-            type="image/webp"
+          <div className={styles.finalSpark} aria-hidden="true"><Sparkles size={38} /></div>
+          <p className={styles.eyebrow}><span /> Build it. Ship it. Grow it.</p>
+          <h2 id="final-cta-heading">What game are we building?</h2>
+          <p>Bring the idea. Keep the creative decisions. Let NexusRBX coordinate the work.</p>
+          <HomepagePrompt
+            surface={surface}
+            source={`${surface}_final`}
+            navigateToAi={navigate}
+            className={styles.finalPrompt}
+            promptId="homepage-final-prompt"
+            suggestedPrompt={promptSuggestion.value}
+            suggestionVersion={promptSuggestion.version}
+            submitLabel="Start building"
+            helperText="Your prompt stays local until you open the workspace."
           />
-          <img
-            data-home-final-image
-            src="/assets/nexus-cinematic-final-v2-1600.webp"
-            alt=""
-            aria-hidden="true"
-            width="1600"
-            height="901"
-            loading="lazy"
-            decoding="async"
-          />
-        </picture>
-        <div className={styles.finalCtaShade} aria-hidden="true" />
-        <div className={styles.finalCtaContent}>
-          <img src="/logo.png" alt="" width="38" height="38" />
-          <p>NexusRBX for Roblox Studio</p>
-          <h2 id="final-cta-heading">Turn the next Roblox idea into a build you can trust.</h2>
-          <a className={styles.primaryPill} href="/ai">
-            Start building <ArrowRight size={17} aria-hidden="true" />
-          </a>
-        </div>
         </section>
       </main>
 

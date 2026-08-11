@@ -15,13 +15,11 @@ function ensureRingStyles() {
   style.id = RING_STYLE_ID;
   style.textContent = `
     .${TOUR_TARGET_CLASS} {
-      position: relative !important;
-      z-index: 70 !important;
       outline: 2px solid rgba(var(--ds-accent-rgb), 0.95) !important;
       outline-offset: 5px !important;
       box-shadow:
         0 0 0 7px rgba(var(--ds-accent-rgb), 0.14),
-        0 0 30px rgba(var(--ds-accent-rgb), 0.26) !important;
+        0 0 24px rgba(var(--ds-accent-rgb), 0.22) !important;
       border-radius: 12px !important;
       transition:
         outline-color 160ms ease,
@@ -29,36 +27,9 @@ function ensureRingStyles() {
         box-shadow 160ms ease !important;
     }
 
-    .${TOUR_TARGET_CLASS}::after {
-      content: attr(${TOUR_TARGET_LABEL});
-      position: absolute;
-      right: -6px;
-      top: -6px;
-      transform: translateY(-100%);
-      border: 1px solid rgba(var(--ds-accent-rgb), 0.28);
-      border-radius: 999px;
-      background: var(--ds-surface-overlay);
-      color: var(--ds-accent);
-      font-size: 10px;
-      font-weight: 800;
-      letter-spacing: 0.08em;
-      line-height: 1;
-      padding: 5px 7px;
-      text-transform: uppercase;
-      white-space: nowrap;
-      pointer-events: none;
-      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.32);
-    }
-
     @media (max-width: 640px) {
       .${TOUR_TARGET_CLASS} {
         outline-offset: 3px !important;
-      }
-
-      .${TOUR_TARGET_CLASS}::after {
-        right: 0;
-        top: 0;
-        transform: translateY(calc(-100% - 4px));
       }
     }
 
@@ -87,10 +58,7 @@ export default function TutorialOverlay({
   const highlightedRef = useRef(null);
   const previousDescriptionRef = useRef(null);
   const pendingFrameRef = useRef(null);
-  const pendingSkipRef = useRef(null);
-  const [targetState, setTargetState] = useState({
-    hasTarget: false,
-  });
+  const [hasTarget, setHasTarget] = useState(false);
 
   const clearCurrentHighlight = useCallback(() => {
     const element = highlightedRef.current;
@@ -98,7 +66,7 @@ export default function TutorialOverlay({
 
     clearTargetHighlight(element);
     const previousDescription = previousDescriptionRef.current;
-    if (previousDescription?.element === element && previousDescription.value) {
+    if (previousDescription?.element === element && previousDescription.value !== null) {
       element.setAttribute("aria-describedby", previousDescription.value);
     } else {
       element.removeAttribute("aria-describedby");
@@ -110,17 +78,12 @@ export default function TutorialOverlay({
 
   const resolveStepTarget = useCallback(() => {
     const step = TOUR_STEPS[activeStep];
-    if (!step) {
-      clearCurrentHighlight();
-      setTargetState({ hasTarget: false });
-      return null;
-    }
-
     const { element } = resolveTourTarget(step, window.innerWidth);
+
     if (!element) {
       clearCurrentHighlight();
-      setTargetState({ hasTarget: false });
-      return null;
+      setHasTarget((currentValue) => (currentValue ? false : currentValue));
+      return;
     }
 
     if (highlightedRef.current !== element) {
@@ -134,10 +97,17 @@ export default function TutorialOverlay({
 
     ensureRingStyles();
     element.classList.add(TOUR_TARGET_CLASS);
-    element.setAttribute(TOUR_TARGET_LABEL, `Step ${activeStep + 1}`);
-    element.setAttribute("aria-describedby", "tour-content");
-    setTargetState({ hasTarget: true });
-    return element;
+    const targetLabel = `Milestone ${activeStep + 1}`;
+    if (element.getAttribute(TOUR_TARGET_LABEL) !== targetLabel) {
+      element.setAttribute(TOUR_TARGET_LABEL, targetLabel);
+    }
+    const describedBy = [previousDescriptionRef.current?.value, "tour-content"]
+      .filter(Boolean)
+      .join(" ");
+    if (element.getAttribute("aria-describedby") !== describedBy) {
+      element.setAttribute("aria-describedby", describedBy);
+    }
+    setHasTarget((currentValue) => (currentValue ? currentValue : true));
   }, [activeStep, clearCurrentHighlight]);
 
   const scheduleResolve = useCallback(() => {
@@ -151,59 +121,46 @@ export default function TutorialOverlay({
   useEffect(() => {
     if (!isActive) {
       clearCurrentHighlight();
+      setHasTarget(false);
       return undefined;
     }
 
-    const step = TOUR_STEPS[activeStep];
-    const element = resolveStepTarget();
+    resolveStepTarget();
 
-    if (!step) return undefined;
+    const observer =
+      typeof MutationObserver !== "undefined"
+        ? new MutationObserver(scheduleResolve)
+        : null;
 
-    if (!element) {
-      pendingSkipRef.current = window.setTimeout(() => nextStep(TOUR_STEPS.length), 80);
-      return () => window.clearTimeout(pendingSkipRef.current);
-    }
-
-    const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
-    element.scrollIntoView({
-      block: "center",
-      inline: "center",
-      behavior: reduceMotion ? "auto" : "smooth",
+    observer?.observe(document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ["class", "style", "hidden", "aria-hidden"],
     });
-
-    scheduleResolve();
-
-    let observer;
-    if (typeof ResizeObserver !== "undefined") {
-      observer = new ResizeObserver(scheduleResolve);
-      observer.observe(element);
-      observer.observe(document.body);
-    }
-
     window.addEventListener("resize", scheduleResolve);
-    window.addEventListener("scroll", scheduleResolve, { passive: true, capture: true });
 
     return () => {
       if (pendingFrameRef.current) cancelAnimationFrame(pendingFrameRef.current);
-      if (pendingSkipRef.current) window.clearTimeout(pendingSkipRef.current);
-      if (observer) observer.disconnect();
+      observer?.disconnect();
       window.removeEventListener("resize", scheduleResolve);
-      window.removeEventListener("scroll", scheduleResolve, { capture: true });
+      clearCurrentHighlight();
     };
-  }, [activeStep, clearCurrentHighlight, isActive, nextStep, resolveStepTarget, scheduleResolve]);
+  }, [activeStep, clearCurrentHighlight, isActive, resolveStepTarget, scheduleResolve]);
 
   useEffect(() => clearCurrentHighlight, [clearCurrentHighlight]);
 
   if (!isActive) return null;
 
   const currentStep = TOUR_STEPS[activeStep];
-  if (!currentStep || !targetState.hasTarget) return null;
+  if (!currentStep) return null;
 
   return createPortal(
     <TutorialTooltip
       step={currentStep}
       currentStepIndex={activeStep}
       totalSteps={TOUR_STEPS.length}
+      hasTarget={hasTarget}
       onNext={() => nextStep(TOUR_STEPS.length)}
       onPrev={prevStep}
       onSkip={skipTutorial}

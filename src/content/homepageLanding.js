@@ -1,15 +1,15 @@
 export const homepageMetadata = {
-  title: "Roblox AI Script Generator & Studio Code Agent | NexusRBX",
+  title: "AI Roblox Game Builder & Studio Agent | NexusRBX",
   description:
-    "Generate focused Luau scripts from a prompt or use the NexusRBX Studio agent to plan coordinated changes across multiple Roblox files and services.",
+    "Turn a Roblox game idea into a reviewable plan, coordinated Studio changes, verified playtests, and a path to publishing with NexusRBX.",
 };
 
 export const homepageHero = {
   eyebrow: "NexusRBX",
-  title: "AI Roblox Script Generator for Studio",
-  titleLines: ["AI Roblox Script", "Generator for Studio"],
+  title: "Make the Roblox game in your head",
+  titleLines: ["Make the Roblox game", "in your head"],
   description:
-    "Generate a focused Luau script from one prompt, or use the Studio agent to plan coordinated changes across multiple files and Roblox services.",
+    "Plan the whole project, build it in Studio, review every change, and playtest the result before you ship.",
   primaryCta: {
     label: "Start Building",
     href: "/ai",
@@ -20,16 +20,16 @@ export const homepageHero = {
   },
   image: {
     src: "/imageeeeAI.png",
-    alt: "NexusRBX AI agent helping write Roblox Studio code",
+    alt: "NexusRBX coordinating a Roblox game build from idea through Studio playtest",
   },
 };
 
 export const homepagePrompt = {
-  label: "Describe the Roblox script or UI you want",
-  placeholder: "Make a round timer script with intermission and victory rewards...",
-  submitLabel: "Generate",
+  label: "What Roblox game do you want to make?",
+  placeholder: "Describe the game, player loop, or system in your head...",
+  submitLabel: "Start building",
   loadingLabel: "Opening...",
-  errorEmpty: "Describe the Roblox script or UI you want first.",
+  errorEmpty: "Describe the Roblox game or system you want to build first.",
 };
 
 export const homepageFeatures = [
@@ -87,9 +87,16 @@ export const homepageWorkflow = [
 ];
 
 export const homepageFooterLinks = [
-  { label: "Features", href: "/#features" },
+  { label: "Games", href: "/#genres" },
+  { label: "How it works", href: "/#workflow" },
+  { label: "Creator control", href: "/#control" },
+  { label: "Creator upside", href: "/#grow" },
   { label: "Downloads", href: "/downloads" },
   { label: "Pricing", href: "/pricing" },
-  { label: "Documentation", href: "/docs" },
-  { label: "Support", href: "/contact" },
+  { label: "Docs", href: "/docs" },
+  { label: "Support", href: "/support" },
+  { label: "Contact", href: "/contact" },
+  { label: "Legal", href: "/legal" },
+  { label: "Privacy", href: "/legal/privacy" },
+  { label: "Terms", href: "/legal/terms" },
 ];

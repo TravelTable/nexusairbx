@@ -808,7 +808,7 @@ export const CustomModeModal = ({ isOpen, onClose, onSave, initialData = null })
   const [description, setDescription] = useState(initialData?.description || "");
   const [systemPrompt, setSystemPrompt] = useState(initialData?.systemPrompt || "");
   const [temperature, setTemperature] = useState(initialData?.temperature || 0.7);
-  const [color, setColor] = useState(initialData?.color || "#20808D");
+  const [color, setColor] = useState(initialData?.color || "#7C3AED");
   const [isPublic, setIsPublic] = useState(initialData?.isPublic || false);
 
   if (!isOpen) return null;

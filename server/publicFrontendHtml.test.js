@@ -151,44 +151,34 @@ const legalRoutes = [
 
 test("homepage raw HTML is meaningful before client JavaScript", () => {
   const html = readHtml("/");
-  assert.equal(extractTitle(html), "Roblox AI Script Generator &amp; Studio Code Agent | NexusRBX");
-  assert.equal(extractH1(html), "AI Roblox Script Generator for Studio");
+  assert.equal(extractTitle(html), "AI Roblox Game Builder &amp; Studio Agent | NexusRBX");
+  assert.equal(extractH1(html), "Make the Roblox game in your head.");
   assert.equal(
     extractMetaContent(html, "description"),
-    "Generate focused Luau scripts from a prompt or use the NexusRBX Studio agent to plan coordinated changes across multiple Roblox files and services.",
+    "Turn an idea into a Roblox game with project-aware planning, reviewable multi-file builds, Studio playtests, and an honest path from prototype to publish.",
   );
   assert.equal(extractCanonical(html), "https://www.nexusrbx.com/");
-  assert.match(html, /Generate a focused Luau script from one prompt, or use the Studio agent to plan coordinated changes across multiple files and Roblox services\./);
-  assert.match(html, /data-generation-intent-form="homepage" aria-busy="false"/);
-  assert.match(html, /<button[^>]*type="submit"[^>]*disabled=""[^>]*>Generate(?: with AI)?<\/button>/);
-  assert.match(html, /id="homepage-prompt-message"[^>]*>Your prompt is saved locally as a generation intent/);
-  assert.match(html, /AI-Powered Code Generation/);
-  assert.match(html, /Debugging and optimization/);
-  assert.match(html, /Roblox API context/);
-  assert.match(html, /Reusable project memory/);
-  assert.match(html, /data-home-hero-image/);
-  assert.match(html, /src="\/assets\/nexus-cinematic-hero-v2-1600\.webp"/);
-  assert.match(html, /From an idea to something you can inspect in Studio\./);
-  assert.match(html, /Describe the result\. NexusRBX maps the build\./);
-  assert.match(html, /RoundTimer\.server\.lua reviewed/);
-  assert.match(html, /Move from a clear plan to coordinated Roblox changes\./);
-  assert.match(html, /One request\. The right workflow for every part of the build\./);
-  assert.match(html, /Nexus Auto/);
-  assert.match(html, /data-home-vault-image/);
+  assert.match(html, /From idea to a playable Roblox game/);
+  assert.match(html, /Plan the whole project, build it in Studio, playtest every change/);
+  assert.match(html, /aria-busy="false"/);
+  assert.match(html, /<button[^>]*type="submit"[^>]*disabled=""[^>]*>Start building<\/button>/);
+  assert.match(html, /id="homepage-hero-prompt-message"[^>]*>No magic black box: you will see the plan before the build begins\./);
+  assert.match(html, /Start with the game[^<]*not the boilerplate\./);
+  assert.match(html, /Illustrative workflow/);
+  assert.match(html, /Playtest passed/);
   assert.match(html, /Your game stays yours\./);
-  assert.match(html, /One prompt\. Total build context\./);
-  assert.match(html, /data-home-final-image/);
-  assert.match(html, /Turn the next Roblox idea into a build you can trust\./);
+  assert.match(html, /Robux is an outcome, not a button\./);
+  assert.match(html, /Proof should be earned/);
+  assert.match(html, /Plans described like a creator would use them\./);
   assert.doesNotMatch(html, /Trusted by Top Roblox Developers|Alex, Studio Lead|game-changer/);
-  assert.match(html, /src="\/logo\.png"/);
-  assert.doesNotMatch(html, /src="\/imageeeeAI\.png"/);
-  assert.doesNotMatch(html, /src="\/(?:luginimageeeeeeeee|promptbox|generated-files)\.png"/);
+  assert.match(html, /src="\/nexus-mark\.svg"/);
+  assert.match(html, /nexusrbx-og-purple-workshop\.png/);
+  assert.doesNotMatch(html, /src="\/(?:logo|imageeeeAI|luginimageeeeeeeee|promptbox|generated-files)\.png"/);
   assert.match(html, /data-generation-intent-form="homepage"/);
-  assert.match(html, /placeholder="Make a round timer script with intermission and victory rewards\.\.\."/);
+  assert.match(html, /placeholder="Describe the game, player loop, or system in your head\.\.\."/);
   assert.match(html, /property="og:title"/);
   assert.match(html, /name="twitter:card"/);
   assert.match(html, /application\/ld\+json/);
-  assert.match(html, /Download connector/);
   assert.match(html, /href="\/downloads"/);
   assert.equal(countCanonical(html), 1);
   [
@@ -198,14 +188,17 @@ test("homepage raw HTML is meaningful before client JavaScript", () => {
     "/roblox-lua-script-generator",
     "/roblox-gui-maker",
   ].forEach((route) => assert.match(html, new RegExp(`href="${route}"`)));
-  assert.doesNotMatch(html, /\/ai-preview\.png/);
+  assert.doesNotMatch(html, /\/ai-preview\.png|nexus-cinematic-(?:hero|vault|final)/);
   assert.doesNotMatch(html, /Monaco|AgentWorkspaceLayout|CodeEditorTabs/);
 });
 
-test("homepage installer trust copy distinguishes signed macOS from unsigned Windows", () => {
+test("homepage trust copy is specific without implying verification or earnings", () => {
   const html = readHtml("/");
-  assert.match(html, /macOS is signed and notarized; Windows is currently unsigned/);
-  assert.doesNotMatch(html, /Signed installers for macOS and Windows/);
+  assert.match(html, /Review before Studio writes/);
+  assert.match(html, /OAuth credentials stay server-side/);
+  assert.match(html, /Built for Roblox Studio/);
+  assert.match(html, /Earnings are never guaranteed/);
+  assert.doesNotMatch(html, /Roblox OAuth Verified|guaranteed Robux|guaranteed earnings/i);
 });
 
 test("downloads raw HTML is meaningful and fails closed before release verification", () => {
@@ -222,11 +215,10 @@ test("downloads raw HTML is meaningful and fails closed before release verificat
   assert.match(html, /One installer for Apple Silicon and Intel Macs/);
   assert.match(html, /Windows \(64-bit\)/);
   assert.match(html, /For Windows 10 and 11 on Intel or AMD PCs/);
-  assert.match(html, /Checking release…/);
+  assert.match(html, /Checking current version/);
   assert.match(html, /href="\/downloads"/);
   assert.match(html, /href="\/docs\/troubleshooting"/);
-  assert.match(html, /href="\/#features"/);
-  assert.doesNotMatch(html, /href="#features"/);
+  assert.doesNotMatch(html, /href="\/#features"|href="#features"/);
   assert.doesNotMatch(html, /href="[^"]+\.(?:dmg|exe)"/i);
   assert.doesNotMatch(html, /pairing code|connector token|access token/i);
 });
@@ -234,13 +226,15 @@ test("downloads raw HTML is meaningful and fails closed before release verificat
 test("docs raw HTML has route-specific metadata and content", () => {
   const html = readHtml("/docs");
   assert.match(html, /<title>NexusRBX AI Documentation \| NexusRBX AI Docs<\/title>/);
-  assert.match(html, /<h1[^>]*>Build your first Roblox workflow<\/h1>/);
+  assert.match(html, /<h1[^>]*>Take your Roblox idea to Play mode<\/h1>/);
+  assert.match(html, /Describe your game idea, approve a plan, build systems, UI, and assets/);
+  assert.match(html, /The creator loop/);
+  assert.match(html, /Describe the idea/);
+  assert.match(html, /Approve a plan/);
+  assert.match(html, /Build systems, UI, and assets/);
+  assert.match(html, /Verify in Play mode/);
+  assert.match(html, /Open NexusRBX AI/);
   assert.match(html, /Install the Studio plugin/);
-  assert.match(html, /Connect Studio/);
-  assert.match(html, /Generate your first script/);
-  assert.match(html, /Review and apply/);
-  assert.match(html, /Test in Studio/);
-  assert.match(html, /Troubleshoot errors/);
   assert.equal(countCanonical(html), 1);
   assert.match(html, /href="https:\/\/www\.nexusrbx\.com\/docs"/);
   assert.doesNotMatch(html, /Monaco|AgentWorkspaceLayout|CodeEditorTabs/);

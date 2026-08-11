@@ -146,7 +146,7 @@ export default function DownloadsContent() {
     <main className="min-h-[calc(100vh-4rem)] bg-[var(--ds-bg-canvas)] text-[var(--ds-text)]">
       <section className={`${editorialGutterClass} mx-auto w-full max-w-7xl py-16 sm:py-20 lg:py-28`}>
         <div className="mx-auto max-w-2xl text-center">
-          <img src="/logo.png" alt="NexusRBX" width="56" height="56" className="mx-auto h-14 w-14 object-contain" />
+          <img src="/nexus-mark.svg" alt="NexusRBX" width="56" height="56" className="mx-auto h-14 w-14 object-contain" />
           <p className="mt-5 text-xs font-semibold uppercase tracking-[0.12em] text-[var(--ds-accent)]">NexusRBX Connector</p>
           <h1 className={`${editorialDisplayClass} mt-4 text-5xl sm:text-6xl lg:text-7xl`}>Connect NexusRBX to Roblox Studio</h1>
           <p className="mt-6 text-base leading-8 text-[var(--ds-text-secondary)]">

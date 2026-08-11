@@ -12,7 +12,7 @@ test("the public homepage skip link precedes every navigation target", () => {
   const account = read("public-frontend/components/PublicAccountState.jsx");
   const skipLink = read("src/components/site/SkipToMainContent.jsx");
 
-  assert.match(page, /<PublicHeader showSkipLink overlay \/>/);
+  assert.match(page, /<PublicHeader showSkipLink homepage \/>/);
   const skipIndex = header.indexOf("{showSkipLink ? <SkipToMainContent /> : null}");
   const navigationIndex = header.indexOf("data-public-header-inner");
   assert.ok(skipIndex >= 0, "PublicHeader must render the shared skip link");
@@ -22,5 +22,8 @@ test("the public homepage skip link precedes every navigation target", () => {
   assert.match(skipLink, /min-h-11/);
   assert.match(header, /dropdownLinkClass\s*=\s*\r?\n\s*"flex min-h-11 items-center/);
   assert.match(header, /flex h-11 cursor-pointer list-none items-center/);
-  assert.match(account, /const controlHeightClass = mobile \? "h-11" : "h-10"/);
+  assert.match(header, /src="\/nexus-mark\.svg"/);
+  assert.match(header, /homepageNavigation\.map/);
+  assert.match(header, />\s*Start building\s*<\/a>/);
+  assert.match(account, /const controlHeightClass = "h-11"/);
 });

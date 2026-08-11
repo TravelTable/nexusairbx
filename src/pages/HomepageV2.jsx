@@ -4,11 +4,9 @@ import { Helmet } from "react-helmet-async";
 import { canonicalUrl } from "../lib/seo";
 import HomepageV2Content from "../components/homepage/HomepageV2Content";
 import { homepageV2Metadata } from "../content/homepageV2";
-import { useBilling } from "../context/BillingContext";
 
 export default function HomepageV2() {
   const navigate = useNavigate();
-  const { user, authReady } = useBilling();
 
   return (
     <>
@@ -25,8 +23,6 @@ export default function HomepageV2() {
       <HomepageV2Content
         surface="homepage"
         navigate={navigate}
-        user={user}
-        authReady={authReady}
       />
     </>
   );

@@ -96,7 +96,7 @@ export default function PublicAccountState({ mobile = false }) {
   const { account, authReady, signOutState, supportUnreadCount, handleSignOut } = accountState;
 
   const wrapperClass = mobile ? "grid gap-2" : "flex items-center gap-2";
-  const controlHeightClass = mobile ? "h-11" : "h-10";
+  const controlHeightClass = "h-11";
   const primaryClass = `${focusClass} ${controlHeightClass} inline-flex items-center justify-center rounded-full bg-[var(--ds-accent)] px-5 text-[13px] font-semibold text-[var(--ds-accent-foreground)] transition-[background-color,transform] hover:bg-[var(--ds-accent-hover)] active:scale-[0.98] active:bg-[var(--ds-accent-pressed)] motion-reduce:transform-none`;
   const secondaryClass = `${focusClass} ${controlHeightClass} inline-flex items-center justify-center rounded-full border border-[var(--ds-border-strong)] bg-[var(--ds-fill-subtle)] px-4 text-[13px] font-medium text-[var(--ds-text-secondary)] transition-[background-color,border-color,color,transform] hover:border-[var(--ds-accent-border)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)] active:scale-[0.98] motion-reduce:transform-none`;
   const menuItemClass = `${focusClass} flex min-h-11 items-center rounded-lg px-3 text-sm text-[var(--ds-text-secondary)] transition-[background-color,color] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)]`;

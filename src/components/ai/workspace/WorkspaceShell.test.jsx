@@ -7,6 +7,7 @@ import WorkspaceShell, {
   WORKSPACE_DRAWER_DEFAULT_WIDTH,
   WORKSPACE_DRAWER_MAX_WIDTH,
   WORKSPACE_DRAWER_MIN_WIDTH,
+  WORKSPACE_DRAWER_OVERLAY_BREAKPOINT,
 } from "./WorkspaceShell";
 
 function Harness({ panelBadges = {} }) {
@@ -28,6 +29,15 @@ function Harness({ panelBadges = {} }) {
 }
 
 describe("WorkspaceShell", () => {
+  test("keeps five visible, plainly named creator tools in the rail", () => {
+    const { container } = render(<Harness />);
+    const labels = [...container.querySelectorAll(".workspace-tool-rail__label")]
+      .map((element) => element.textContent);
+
+    expect(labels).toEqual(["Files", "Code", "Runs", "Assets", "Project"]);
+    expect(screen.getByRole("navigation", { name: "Workspace tools" })).toBeTruthy();
+  });
+
   test("keeps chat available with the drawer closed, then toggles tools without stealing focus", () => {
     render(<Harness />);
 
@@ -133,6 +143,51 @@ describe("WorkspaceShell", () => {
       global.ResizeObserver = OriginalResizeObserver;
       window.ResizeObserver = OriginalWindowResizeObserver;
     }
+  });
+
+  test("switches from an overlay drawer to an inline drawer at the shell breakpoint", () => {
+    expect(WORKSPACE_DRAWER_OVERLAY_BREAKPOINT).toBe(1180);
+    const OriginalResizeObserver = global.ResizeObserver;
+    const OriginalWindowResizeObserver = window.ResizeObserver;
+    let measuredWidth = WORKSPACE_DRAWER_OVERLAY_BREAKPOINT - 1;
+    class MockResizeObserver {
+      constructor(callback) {
+        this.callback = callback;
+      }
+
+      observe(target) {
+        this.callback([{ target, contentRect: { width: measuredWidth } }]);
+      }
+
+      disconnect() {}
+    }
+    global.ResizeObserver = MockResizeObserver;
+    window.ResizeObserver = MockResizeObserver;
+
+    try {
+      const overlay = render(<Harness />);
+      fireEvent.click(screen.getByRole("button", { name: "Open Files" }));
+      expect(screen.getByRole("dialog", { name: "Files" })).toBeTruthy();
+      overlay.unmount();
+
+      measuredWidth = WORKSPACE_DRAWER_OVERLAY_BREAKPOINT;
+      render(<Harness />);
+      fireEvent.click(screen.getByRole("button", { name: "Open Files" }));
+      expect(screen.queryByRole("dialog", { name: "Files" })).toBeNull();
+      expect(screen.getByRole("complementary", { name: "Files" })).toBeTruthy();
+    } finally {
+      global.ResizeObserver = OriginalResizeObserver;
+      window.ResizeObserver = OriginalWindowResizeObserver;
+    }
+  });
+
+  test("returns focus to the opening tool when the inline collapse control closes", () => {
+    render(<Harness />);
+    const filesButton = screen.getByRole("button", { name: "Open Files" });
+    fireEvent.click(filesButton);
+    fireEvent.click(screen.getByRole("button", { name: "Collapse workspace drawer" }));
+
+    expect(filesButton).toHaveFocus();
   });
 
   test("clamps persisted and dragged widths to the supported range", () => {

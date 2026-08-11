@@ -29,5 +29,8 @@ test("renders a keyboard-reachable semantic card on the authenticated detail rou
   const link = screen.getByRole("link", { name: "View Rare Sword details" });
   expect(link.getAttribute("href")).toBe("/icons-market/sword%20%2F%20rare");
   expect(link.className).toContain("focus-visible:ring-2");
+  expect(link.className).toContain("min-h-11");
   expect(screen.getByRole("img", { name: "Rare Sword" })).not.toBeNull();
+  expect(screen.getByRole("heading", { name: "Rare Sword" }).className).toContain("text-sm");
+  expect(screen.getByText("Flat Vector").className).toContain("text-xs");
 });

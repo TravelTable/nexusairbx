@@ -1,52 +1,66 @@
 export const TOUR_STEPS = [
   {
-    target: '[data-tour="mode-switcher"]',
-    targets: ['[data-tour="mode-switcher"]'],
-    mobileTargets: ['[data-tour="mobile-mode-switcher"]'],
-    title: "Choose Your Mode",
-    content: "Switch between Quick for instant, standalone scripts, or Agent Build for complex multi-file projects.",
-    position: "bottom"
-  },
-  {
-    target: '[data-tour="prompt-input"]',
+    id: "describe-idea",
+    title: "Describe the game in your head",
+    content:
+      "Lead with the player fantasy, then name the core loop, genre, and one must-have mechanic. NexusRBX can turn that into a buildable brief.",
+    action:
+      '“A co-op haunted hotel where players repair rooms before dawn.”',
+    targetLabel: "Idea composer",
     targets: ['[data-tour="prompt-input"]', "#tour-prompt-box"],
-    title: "Describe Your Needs",
-    content: "Type what your script should do. Mention any specific objects, triggers, rewards, or Roblox services you need.",
-    position: "right"
+    missingTargetHint:
+      "Open Quick Script or Agent Build when you are ready. The guide will stay out of your way.",
   },
   {
-    target: '[data-tour="improve-btn"]',
-    targets: ['[data-tour="improve-btn"]'],
-    title: "Polish Your Prompt",
-    content: "Click 'Improve' to let the AI automatically expand your description into a detailed tech brief for better code results.",
-    position: "bottom"
+    id: "connect-studio",
+    title: "Connect Studio when the build needs it",
+    content:
+      "Stay in the browser while you shape the idea. Pair Studio when NexusRBX needs to inspect the place, apply changes, or run checks.",
+    action:
+      "Confirm the connected place name before any change is applied.",
+    targetLabel: "Studio connection",
+    targets: ['[data-tour="studio-pair"]', '[aria-label="Connect Roblox Studio"]'],
+    missingTargetHint:
+      "Studio pairing appears in Agent Build. You can connect later without interrupting planning.",
   },
   {
-    target: '[data-tour="generate-btn"]',
-    targets: ['[data-tour="generate-btn"]', "#tour-generate-button"],
-    title: "Generate Luau Code",
-    content: "Press Enter or click Generate. The AI will immediately start writing optimized code for you.",
-    position: "top"
+    id: "approve-plan",
+    title: "Approve the plan before code moves",
+    content:
+      "For multi-file work, review the scope, destinations, and risks first. Approve only when the plan matches the experience you want.",
+    action:
+      "Check which scripts and services will change, then approve the plan.",
+    targetLabel: "Plan review",
+    targets: ['[aria-label="Review plan"]', '[aria-label="Editable plan sections"]'],
+    missingTargetHint:
+      "Plan review appears after Agent Build has enough context to propose coordinated work.",
   },
   {
-    target: '[data-tour="code-output"]',
-    targets: ['[data-tour="code-output"]'],
-    title: "Your Generated Code",
-    content: "Your final syntax-highlighted Luau code is generated here. You can edit, audit, and analyze it directly.",
-    position: "left"
+    id: "review-change",
+    title: "Review every change before applying",
+    content:
+      "Inspect diffs and generated assets. Keep manual review for structural or economy changes, and apply only the files you intended to change.",
+    action:
+      "Read the diff, confirm the Studio target, then apply or export.",
+    targetLabel: "Change review",
+    targets: [
+      '[data-tour="code-output"]',
+      '[data-tour="code-actions"]',
+      '[title="Apply this project in Roblox Studio"]',
+    ],
+    missingTargetHint:
+      "Review controls appear with the first generated change. Nothing is applied from this guide.",
   },
   {
-    target: '[data-tour="code-actions"]',
-    targets: ['[data-tour="code-actions"]'],
-    title: "Action Controls",
-    content: "Copy the script to your clipboard, save it to your catalog, export as .lua, or push it directly to Roblox Studio.",
-    position: "bottom"
+    id: "verify-playtest",
+    title: "Prove it in a playtest",
+    content:
+      "A successful apply is not a successful game. Run checks, play the core loop, and verify errors, feel, and player feedback before publishing.",
+    action:
+      "Test the loop, capture failures, and send the next fix through the same review cycle.",
+    targetLabel: "Studio verification tools",
+    targets: ['[aria-label="Studio and Roblox settings"]', '[data-tour="studio-pair"]'],
+    missingTargetHint:
+      "Verification tools appear once Studio work is ready. You can finish this guide without connecting.",
   },
-  {
-    target: '[data-tour="studio-pair"]',
-    targets: ['[data-tour="studio-pair"]'],
-    title: "Roblox Studio Bridge",
-    content: "Pair your workspace directly with Roblox Studio using our companion plugin to sync scripts instantly.",
-    position: "bottom"
-  }
 ];

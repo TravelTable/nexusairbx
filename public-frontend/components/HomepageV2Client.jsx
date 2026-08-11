@@ -1,7 +1,6 @@
 "use client";
 
 import HomepageV2Content from "../../src/components/homepage/HomepageV2Content";
-import PublicAccountState from "./PublicAccountState";
 
 export default function HomepageV2Client() {
   const navigate = (to) => {
@@ -9,10 +8,6 @@ export default function HomepageV2Client() {
   };
 
   return (
-    <HomepageV2Content
-      surface="public_next_homepage"
-      navigate={navigate}
-      accountSlot={<PublicAccountState />}
-    />
+    <HomepageV2Content surface="public_next_homepage" navigate={navigate} />
   );
 }

@@ -72,7 +72,6 @@ export default function NexusRBXSignInPageContainer() {
     message: ""
   });
   const [rememberMe, setRememberMe] = useState(() => readAuthPersistencePreference());
-  const [agreeToTerms, setAgreeToTerms] = useState(false);
 
   const finishSignInRedirect = async () => {
     navigate(authReturnPath || "/", { replace: true });
@@ -117,10 +116,6 @@ export default function NexusRBXSignInPageContainer() {
     });
   };
 
-  const handleAgreeToTermsChange = () => {
-    setAgreeToTerms(prev => !prev);
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -129,14 +124,6 @@ export default function NexusRBXSignInPageContainer() {
       setFormStatus({
         status: "error",
         message: "Please fill out all required fields."
-      });
-      return;
-    }
-
-    if (!agreeToTerms) {
-      setFormStatus({
-        status: "error",
-        message: "You must agree to the Terms of Service and Privacy Policy."
       });
       return;
     }
@@ -228,12 +215,10 @@ export default function NexusRBXSignInPageContainer() {
       showPassword={showPassword}
       formStatus={formStatus}
       rememberMe={rememberMe}
-      agreeToTerms={agreeToTerms}
       signUpLinkState={signUpLinkState}
       handleInputChange={handleInputChange}
       togglePasswordVisibility={togglePasswordVisibility}
       handleSharedDeviceChange={handleSharedDeviceChange}
-      handleAgreeToTermsChange={handleAgreeToTermsChange}
       handleSubmit={handleSubmit}
       handleGoogleSignIn={handleGoogleSignIn}
       handleGithubSignIn={handleGithubSignIn}
@@ -248,12 +233,10 @@ function NexusRBXSignInPage({
   showPassword,
   formStatus,
   rememberMe,
-  agreeToTerms,
   signUpLinkState,
   handleInputChange,
   togglePasswordVisibility,
   handleSharedDeviceChange,
-  handleAgreeToTermsChange,
   handleSubmit,
   handleGoogleSignIn,
   handleGithubSignIn,
@@ -310,7 +293,7 @@ function NexusRBXSignInPage({
             action={
               <Link
                 to="/forgot-password"
-                className="focus-ring ml-auto rounded-md px-1 text-xs font-semibold text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+                className="focus-ring ml-auto inline-flex min-h-11 items-center rounded-md px-1 text-xs font-semibold text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
               >
                 Forgot password?
               </Link>
@@ -325,24 +308,6 @@ function NexusRBXSignInPage({
               disabled={isLocked}
             >
               Sign out when I close this browser (shared device).
-            </AuthCheckbox>
-            <AuthCheckbox
-              id="signin-terms"
-              checked={agreeToTerms}
-              onChange={handleAgreeToTermsChange}
-              disabled={isLocked}
-            >
-              <span>
-                I agree to the{" "}
-                <a href="/legal/terms" className="font-medium text-foreground underline-offset-4 hover:underline">
-                  Terms
-                </a>{" "}
-                and{" "}
-                <a href="/legal/privacy" className="font-medium text-foreground underline-offset-4 hover:underline">
-                  Privacy Policy
-                </a>
-                .
-              </span>
             </AuthCheckbox>
           </div>
 

@@ -24,16 +24,6 @@ import {
   Users,
   Wand2,
 } from "lib/icons";
-import {
-  Area,
-  AreaChart,
-  CartesianGrid,
-  ResponsiveContainer,
-  Tooltip as ChartTooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
-
 import { auth } from "../firebase";
 import { useBilling } from "../context/BillingContext";
 import { useSettings } from "../context/SettingsContext";
@@ -219,9 +209,101 @@ function formatDate(value) {
 }
 
 function statusTone(state) {
-  if (state === "good") return "border-emerald-500/25 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300";
-  if (state === "warn") return "border-amber-500/25 bg-amber-500/10 text-amber-700 dark:text-amber-300";
+  if (state === "good") return "border-[var(--ds-success-border)] bg-[var(--ds-success-soft)] text-[var(--ds-success)]";
+  if (state === "warn") return "border-[var(--ds-warning-border)] bg-[var(--ds-warning-soft)] text-[var(--ds-warning)]";
   return "border-border bg-muted/40 text-muted-foreground";
+}
+
+function UsageTrendChart({ data }) {
+  const width = 720;
+  const height = 240;
+  const padding = { top: 18, right: 18, bottom: 34, left: 52 };
+  const plotWidth = width - padding.left - padding.right;
+  const plotHeight = height - padding.top - padding.bottom;
+  const values = data.map((entry) => Math.max(0, Number(entry.tokens) || 0));
+  const maximum = Math.max(1, ...values);
+  const points = values.map((value, index) => {
+    const ratio = values.length === 1 ? 0.5 : index / (values.length - 1);
+    return {
+      x: padding.left + ratio * plotWidth,
+      y: padding.top + plotHeight - (value / maximum) * plotHeight,
+    };
+  });
+  const linePoints = points.map(({ x, y }) => `${x.toFixed(1)},${y.toFixed(1)}`).join(" ");
+  const firstPoint = points[0];
+  const lastPoint = points[points.length - 1];
+  const areaPath = [
+    `M ${firstPoint.x.toFixed(1)} ${(padding.top + plotHeight).toFixed(1)}`,
+    ...points.map(({ x, y }) => `L ${x.toFixed(1)} ${y.toFixed(1)}`),
+    `L ${lastPoint.x.toFixed(1)} ${(padding.top + plotHeight).toFixed(1)} Z`,
+  ].join(" ");
+  const gridValues = [maximum, maximum / 2, 0];
+
+  return (
+    <div className="rounded-xl border border-border bg-muted/20 p-3 sm:p-4">
+      <svg
+        className="h-56 w-full overflow-visible"
+        viewBox={`0 0 ${width} ${height}`}
+        role="img"
+        aria-labelledby="usage-trend-title usage-trend-description"
+      >
+        <title id="usage-trend-title">Recent included usage</title>
+        <desc id="usage-trend-description">
+          Usage ranges from 0 to {formatNumber(maximum)} across {data.length} recorded dates.
+        </desc>
+        {gridValues.map((value, index) => {
+          const y = padding.top + (index / (gridValues.length - 1)) * plotHeight;
+          return (
+            <g key={value}>
+              <line
+                x1={padding.left}
+                x2={width - padding.right}
+                y1={y}
+                y2={y}
+                stroke="var(--ds-border)"
+                strokeDasharray="5 7"
+              />
+              <text
+                x={padding.left - 10}
+                y={y + 4}
+                textAnchor="end"
+                fill="var(--ds-text-muted)"
+                fontSize="12"
+              >
+                {formatNumber(Math.round(value))}
+              </text>
+            </g>
+          );
+        })}
+        <path d={areaPath} fill="var(--ds-accent-soft)" />
+        <polyline
+          points={linePoints}
+          fill="none"
+          stroke="var(--ds-accent)"
+          strokeWidth="4"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          vectorEffect="non-scaling-stroke"
+        />
+        {points.map(({ x, y }, index) => (
+          <circle
+            key={`${data[index]?.date || index}-${values[index]}`}
+            cx={x}
+            cy={y}
+            r="4"
+            fill="var(--ds-surface-1)"
+            stroke="var(--ds-accent)"
+            strokeWidth="3"
+            vectorEffect="non-scaling-stroke"
+          />
+        ))}
+      </svg>
+      <div className="flex justify-between gap-4 px-1 text-xs text-muted-foreground" aria-hidden="true">
+        <span>{data[0]?.date || "First record"}</span>
+        <span>{data[data.length - 1]?.date || "Latest record"}</span>
+      </div>
+    </div>
+  );
 }
 
 function SaveStatus({ status, error, lastSavedAt, onRetry }) {
@@ -255,7 +337,7 @@ function SaveStatus({ status, error, lastSavedAt, onRetry }) {
       <div role="status" aria-live="polite" aria-atomic="true">
         <Badge
           variant="outline"
-          className="gap-1.5 border-emerald-500/30 text-emerald-700 dark:text-emerald-300"
+          className="gap-1.5 border-[var(--ds-success-border)] bg-[var(--ds-success-soft)] text-[var(--ds-success)]"
           title={lastSavedAt ? `Last saved ${formatDate(lastSavedAt)}` : undefined}
         >
           <CheckCircle2 className="h-3 w-3" />
@@ -837,17 +919,7 @@ export default function SettingsPage() {
           >
             <DataStateAlert state={usageState} onRetry={loadUsage} label="Usage" />
             {usageState.status === "ready" && usageState.chartData.length > 0 && (
-              <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={usageState.chartData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                    <XAxis dataKey="date" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }} />
-                    <YAxis tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }} />
-                    <ChartTooltip />
-                    <Area type="monotone" dataKey="tokens" stroke="hsl(var(--accent))" fill="hsl(var(--accent) / 0.16)" />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
+              <UsageTrendChart data={usageState.chartData} />
             )}
             {usageState.status === "ready" && usageState.chartData.length === 0 && (
               <EmptyState
@@ -1088,7 +1160,7 @@ export default function SettingsPage() {
                 setRobloxActionError(error, "Failed to start Roblox authorization.");
               }
             }}
-            className="border-amber-500/25 bg-amber-500/10 text-amber-900 dark:text-amber-100"
+            className="border-[var(--ds-warning-border)] bg-[var(--ds-warning-soft)] text-[var(--ds-warning)]"
           />
         )}
         {robloxState.status !== "loading" && (
@@ -1098,7 +1170,7 @@ export default function SettingsPage() {
                 <div className="flex items-center gap-2">
                   <Badge
                     variant={robloxConnected ? "outline" : "secondary"}
-                    className={robloxConnected ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300" : undefined}
+                    className={robloxConnected ? "border-[var(--ds-success-border)] bg-[var(--ds-success-soft)] text-[var(--ds-success)]" : undefined}
                   >
                     {robloxConnected ? "Connected" : "Disconnected"}
                   </Badge>
@@ -1650,7 +1722,7 @@ export default function SettingsPage() {
               <Settings className="h-5 w-5" aria-hidden="true" />
             </div>
             <div>
-              <h1 className="font-[Georgia,_Cambria,_'Times_New_Roman',_serif] text-4xl font-normal leading-tight tracking-[-0.035em] sm:text-5xl">Settings</h1>
+              <h1 className="font-[var(--ds-font-display)] text-4xl font-bold leading-tight tracking-[-0.035em] sm:text-5xl">Settings</h1>
               <p className="mt-3 max-w-2xl text-base leading-7 text-muted-foreground">
                 Configure AI defaults, Roblox consent, billing, team access, and account data from one place.
               </p>

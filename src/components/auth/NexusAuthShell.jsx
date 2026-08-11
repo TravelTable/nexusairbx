@@ -26,7 +26,7 @@ export function NexusAuthShell({
           <div className="hidden lg:grid lg:gap-10">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--ds-accent)]">Personal build workspace</p>
-              <h2 className="mt-5 max-w-xl font-[Georgia,_Cambria,_'Times_New_Roman',_serif] text-5xl font-normal leading-[1.04] tracking-[-0.04em] text-[var(--ds-text)]">
+              <h2 className="mt-5 max-w-xl font-[var(--ds-font-display)] text-5xl font-bold leading-[1.02] tracking-[-0.04em] text-[var(--ds-text)]">
                 Your work, ready when inspiration arrives.
               </h2>
               <p className="mt-6 max-w-lg text-base leading-7 text-[var(--ds-text-muted)]">
@@ -78,7 +78,7 @@ export function NexusAuthShell({
             className="focus-ring mx-auto mb-8 flex min-h-11 w-fit items-center gap-2.5 rounded-full px-3 py-1.5 lg:mx-0"
           >
             <span className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-[var(--ds-surface-2)]">
-              <img src="/logo.png" alt="" className="h-7 w-7 object-contain" />
+              <img src="/nexus-mark.svg" alt="" className="h-7 w-7 object-contain" />
             </span>
             <span className="text-[15px] font-semibold tracking-[-0.01em] text-[var(--ds-text)]">NexusRBX</span>
           </Link>
@@ -86,9 +86,9 @@ export function NexusAuthShell({
           <Card className="overflow-hidden rounded-[14px] border-0 bg-[var(--ds-surface-1)] shadow-[var(--ds-shadow-panel)]">
             <CardHeader className="space-y-3 px-6 pb-5 pt-9 text-center sm:px-10 sm:pt-11 lg:text-left">
               {headingLevel === 1 ? (
-                <h1 className="font-[Georgia,_Cambria,_'Times_New_Roman',_serif] text-3xl font-normal leading-tight tracking-[-0.035em] text-[var(--ds-text)] sm:text-4xl">{title}</h1>
+                <h1 className="font-[var(--ds-font-display)] text-3xl font-bold leading-tight tracking-[-0.035em] text-[var(--ds-text)] sm:text-4xl">{title}</h1>
               ) : (
-                <CardTitle className="font-[Georgia,_Cambria,_'Times_New_Roman',_serif] text-3xl font-normal leading-tight tracking-[-0.035em] text-[var(--ds-text)] sm:text-4xl">{title}</CardTitle>
+                <CardTitle className="font-[var(--ds-font-display)] text-3xl font-bold leading-tight tracking-[-0.035em] text-[var(--ds-text)] sm:text-4xl">{title}</CardTitle>
               )}
               {description ? (
                 <CardDescription className="text-sm leading-6 text-[var(--ds-text-muted)]">{description}</CardDescription>
@@ -355,7 +355,7 @@ export function AuthInlineLinkButton({ children, onClick, className }) {
       type="button"
       onClick={onClick}
       className={cn(
-        "focus-ring rounded-md px-1 font-semibold text-[var(--ds-accent)] underline-offset-4 hover:text-[var(--ds-accent-hover)] hover:underline",
+        "focus-ring inline-flex min-h-11 items-center rounded-md px-1 font-semibold text-[var(--ds-accent)] underline-offset-4 hover:text-[var(--ds-accent-hover)] hover:underline",
         className
       )}
     >

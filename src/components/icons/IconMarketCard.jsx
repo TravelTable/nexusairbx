@@ -23,10 +23,10 @@ export default function IconMarketCard({
       <Link
         to={getAuthenticatedIconDetailPath(icon.id)}
         aria-label={`View ${icon.name} details`}
-        className="block rounded-[12px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ds-focus-ring)] focus-visible:ring-offset-4 focus-visible:ring-offset-[var(--ds-bg-canvas)]"
+        className="block min-h-11 rounded-[12px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ds-focus-ring)] focus-visible:ring-offset-4 focus-visible:ring-offset-[var(--ds-bg-canvas)]"
       >
         {icon.isPro && !isPremium ? (
-          <span className="absolute right-2 top-2 z-20 rounded-md border border-[var(--ds-accent-border)] bg-[var(--ds-accent-soft)] px-2 py-0.5 text-[10px] font-semibold text-[var(--ds-accent)]">
+          <span className="absolute right-2 top-2 z-20 rounded-md border border-[var(--ds-accent-border)] bg-[var(--ds-accent-soft)] px-2 py-0.5 text-xs font-semibold text-[var(--ds-accent)]">
             Pro
           </span>
         ) : null}
@@ -39,18 +39,18 @@ export default function IconMarketCard({
             loading="lazy"
           />
           <div className="absolute inset-x-2 bottom-2 flex justify-center rounded-lg bg-[var(--ds-surface-overlay)] p-3 opacity-0 shadow-[var(--ds-shadow-overlay)] backdrop-blur-md transition-opacity group-hover:opacity-100 group-focus-within:opacity-100" aria-hidden="true">
-            <span className="flex items-center gap-1 text-xs font-semibold text-[var(--ds-text)]">
+            <span className="flex items-center gap-1 text-sm font-semibold text-[var(--ds-text)]">
               View details <ArrowRight className="h-3 w-3" />
             </span>
           </div>
         </div>
 
         {headingLevel === 3 ? (
-          <h3 className="truncate text-xs font-semibold text-[var(--ds-text-secondary)]">{icon.name}</h3>
+          <h3 className="truncate text-sm font-semibold text-[var(--ds-text-secondary)]">{icon.name}</h3>
         ) : (
-          <h2 className="truncate text-xs font-semibold text-[var(--ds-text-secondary)]">{icon.name}</h2>
+          <h2 className="truncate text-sm font-semibold text-[var(--ds-text-secondary)]">{icon.name}</h2>
         )}
-        <p className="text-[10px] font-medium text-[var(--ds-text-muted)]">{icon.style}</p>
+        <p className="text-xs font-medium text-[var(--ds-text-muted)]">{icon.style}</p>
       </Link>
     </motion.article>
   );

@@ -88,6 +88,11 @@ test("public pricing reads the serializable catalog and preserves exact prices a
   assert.match(pricing, /getEntitlements/);
   assert.match(pricing, /Manage plan/);
   assert.match(pricing, /href="\/billing"/);
+  assert.match(pricing, /Give your Roblox game room to grow/);
+  assert.match(pricing, /plan, build, and review/);
+  assert.match(pricing, /Compare your creator runway/);
+  assert.match(pricing, /aria-label="Plan comparison table"/);
+  assert.doesNotMatch(pricing, /Plans for individual creators|Model access|concurrent jobs?/i);
   assert.doesNotMatch(pricing, /gradient|testimonial|priority processing|collaboration/i);
 });
 
@@ -123,5 +128,7 @@ test("pricing page publishes canonical metadata and restrained buyer copy", () =
   assert.match(page, /PricingCatalog/);
   assert.match(page, /PublicHeader/);
   assert.match(page, /Skip to pricing/);
+  assert.match(page, /Build Your Roblox Game/);
+  assert.match(page, /min-h-11/);
   assert.doesNotMatch(page, /gradient|testimonial|supercharge/i);
 });

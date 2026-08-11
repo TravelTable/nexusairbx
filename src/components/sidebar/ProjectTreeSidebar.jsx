@@ -69,7 +69,7 @@ function readExpandedIds(storagePrefix) {
 function RunBadge({ status, generating = false }) {
   const normalized = String(status || "").toLowerCase();
   if (normalized === "failed" || normalized === "error") {
-    return <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--ds-danger)]" title="Run failed" />;
+    return <span role="img" className="h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--ds-danger)]" title="Run failed" aria-label="Run failed" />;
   }
   if (["completed", "complete", "succeeded", "done"].includes(normalized)) {
     return <Check className="h-3 w-3 shrink-0 text-[var(--ds-success)] " aria-label="Run complete" />;
@@ -78,8 +78,10 @@ function RunBadge({ status, generating = false }) {
     const waiting = normalized.includes("waiting") || normalized.includes("approval") || normalized.includes("input");
     return (
       <span
+        role="img"
         className={`h-1.5 w-1.5 shrink-0 rounded-full ${waiting ? "bg-[var(--ds-warning)]" : "bg-[var(--ds-accent)]"}`}
         title={waiting ? "Waiting" : "Running"}
+        aria-label={waiting ? "Run waiting" : "Run running"}
       />
     );
   }
@@ -119,7 +121,7 @@ function EmptyChats({ onNewChat }) {
     <button
       type="button"
       onClick={onNewChat}
-      className="ml-7 flex h-8 items-center gap-2 rounded-md px-2 text-[11px] text-[var(--ds-text-muted)] transition hover:bg-[var(--ds-fill-subtle)] hover:text-[var(--ds-text-secondary)]"
+      className="nexus-sidebar-row-action ml-7 flex h-8 items-center gap-2 rounded-md px-2 text-[11px] text-[var(--ds-text-muted)] transition hover:bg-[var(--ds-fill-subtle)] hover:text-[var(--ds-text-secondary)]"
     >
       <Plus className="h-3 w-3" />
       Start a chat
@@ -485,6 +487,7 @@ export default function ProjectTreeSidebar({
           level: projectId ? 3 : 2,
         })}
         data-selected={currentChatId === chat.id}
+        aria-selected={currentChatId === chat.id}
         className={[
           "nexus-tree-row group h-[31px] pl-7 pr-1 text-xs",
           insertedChatIds.has(String(chat.id)) ? "nexus-tree-row-in" : "",
@@ -529,7 +532,7 @@ export default function ProjectTreeSidebar({
           type="button"
           aria-label={`Actions for ${chat.title || "chat"}`}
           onClick={(event) => chatMenu(event, chat, projectId)}
-          className="nexus-tree-overflow rounded p-1 text-[var(--ds-text-muted)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)]"
+          className="nexus-sidebar-icon-action nexus-tree-overflow rounded p-1 text-[var(--ds-text-muted)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)]"
         >
           <Menu className="h-3 w-3" />
         </button>
@@ -546,7 +549,7 @@ export default function ProjectTreeSidebar({
             type="button"
             onClick={onCollapse}
             aria-label="Collapse sidebar"
-            className="rounded-md p-1.5 text-[var(--ds-text-muted)] transition hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)]"
+            className="nexus-sidebar-icon-action rounded-md p-1.5 text-[var(--ds-text-muted)] transition hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)]"
           >
             <ChevronLeft className="h-4 w-4" />
           </button>
@@ -554,7 +557,7 @@ export default function ProjectTreeSidebar({
         <button
           type="button"
           onClick={() => onNewChat(currentProjectId || null)}
-          className="mb-2.5 flex h-9 w-full items-center gap-2 rounded-full border border-transparent bg-[var(--ds-accent)] px-3 text-xs font-medium text-[var(--ds-accent-foreground)] transition-colors hover:bg-[var(--ds-accent-hover)]"
+          className="nexus-project-tree__new-chat mb-2.5 flex h-9 w-full items-center gap-2 rounded-xl border border-transparent bg-[var(--ds-accent)] px-3 text-xs font-semibold text-[var(--ds-accent-foreground)] transition-[background-color,box-shadow,transform] hover:bg-[var(--ds-accent-hover)] active:translate-y-px"
         >
           <Plus className="h-3.5 w-3.5" />
           <span className="flex-1 text-left">New chat</span>
@@ -568,7 +571,7 @@ export default function ProjectTreeSidebar({
             onChange={(event) => setQuery(event.target.value)}
             aria-label="Search projects and chats"
             placeholder="Search projects and chats"
-            className="h-9 w-full rounded-full border border-transparent bg-[var(--ds-fill-subtle)] pl-8 pr-14 text-xs text-[var(--ds-text)] outline-none transition placeholder:text-[var(--ds-text-muted)] focus:border-[var(--ds-accent-border)] focus:bg-[var(--ds-fill-hover)]"
+            className="nexus-project-tree__search h-9 w-full rounded-xl border border-transparent bg-[var(--ds-fill-subtle)] pl-8 pr-14 text-xs text-[var(--ds-text)] outline-none transition placeholder:text-[var(--ds-text-muted)] focus:border-[var(--ds-accent-border)] focus:bg-[var(--ds-fill-hover)]"
           />
           {query ? (
             <button
@@ -578,7 +581,7 @@ export default function ProjectTreeSidebar({
                 setQuery("");
                 searchRef.current?.focus();
               }}
-              className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded p-1 text-[var(--ds-text-muted)] hover:text-[var(--ds-text)]"
+              className="nexus-sidebar-icon-action absolute right-1.5 top-1/2 -translate-y-1/2 rounded p-1 text-[var(--ds-text-muted)] hover:text-[var(--ds-text)]"
             >
               <X className="h-3 w-3" />
             </button>
@@ -593,7 +596,7 @@ export default function ProjectTreeSidebar({
                 key={option.id || option.placeId}
                 type="button"
                 onClick={() => onChooseStudioOption(option)}
-                className="block h-7 w-full truncate rounded px-2 text-left text-[11px] text-[var(--ds-text-secondary)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)]"
+                className="nexus-sidebar-row-action block h-7 w-full truncate rounded-lg px-2 text-left text-[11px] text-[var(--ds-text-secondary)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)]"
               >
                 {option.label || option.placeName}
               </button>
@@ -710,6 +713,7 @@ export default function ProjectTreeSidebar({
                   className="nexus-tree-children"
                   data-expanded={expandedIds.has(GENERAL_ROOT_ID)}
                   aria-hidden={!expandedIds.has(GENERAL_ROOT_ID)}
+                  inert={expandedIds.has(GENERAL_ROOT_ID) ? undefined : ""}
                 >
                   <div className="min-h-0 overflow-hidden">
                     {visibleGeneralChats.map((chat) => renderChat(chat))}
@@ -717,7 +721,7 @@ export default function ProjectTreeSidebar({
                       <button
                         type="button"
                         onClick={() => setGeneralChatsLimit((current) => current + GENERAL_CHATS_PAGE_SIZE)}
-                        className="ml-7 flex h-8 w-[calc(100%-1.75rem)] items-center rounded-md px-2 text-[11px] text-[var(--ds-text-muted)] transition hover:bg-[var(--ds-fill-subtle)] hover:text-[var(--ds-text-secondary)]"
+                        className="nexus-sidebar-row-action ml-7 flex h-8 w-[calc(100%-1.75rem)] items-center rounded-md px-2 text-[11px] text-[var(--ds-text-muted)] transition hover:bg-[var(--ds-fill-subtle)] hover:text-[var(--ds-text-secondary)]"
                       >
                         Load more
                         <span className="ml-auto text-[10px] text-[var(--ds-text-muted)]">
@@ -760,7 +764,7 @@ export default function ProjectTreeSidebar({
                     disabled={creatingProject}
                     aria-label="Detect project from Studio"
                     title="Detect from Studio"
-                    className="ml-1 rounded p-1 text-[var(--ds-text-muted)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-accent)] disabled:opacity-40"
+                    className="nexus-sidebar-icon-action ml-1 rounded p-1 text-[var(--ds-text-muted)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-accent)] disabled:opacity-40"
                   >
                     <Link2 className="h-3.5 w-3.5" />
                   </button>
@@ -770,6 +774,7 @@ export default function ProjectTreeSidebar({
                   className="nexus-tree-children"
                   data-expanded={expandedIds.has(PROJECTS_ROOT_ID)}
                   aria-hidden={!expandedIds.has(PROJECTS_ROOT_ID)}
+                  inert={expandedIds.has(PROJECTS_ROOT_ID) ? undefined : ""}
                 >
                   <div className="min-h-0 overflow-hidden">
                     {tree.projects.map((project) => {
@@ -785,6 +790,7 @@ export default function ProjectTreeSidebar({
                             })}
                             aria-expanded={expanded}
                             data-selected={!currentChatId && String(currentProjectId || "") === project.projectId}
+                            aria-selected={!currentChatId && String(currentProjectId || "") === project.projectId}
                             className="nexus-tree-row group h-[34px] pl-3 pr-1 text-xs"
                             onContextMenu={(event) => projectMenu(event, project)}
                           >
@@ -822,8 +828,10 @@ export default function ProjectTreeSidebar({
                               <span className="min-w-0 flex-1 truncate">{project.title || "Untitled project"}</span>
                               {project.isConnected && (
                                 <span
-                                  className="h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--ds-accent)]"
+                                  role="img"
+                                  className="h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--ds-success)]"
                                   title="Connected to Studio"
+                                  aria-label="Connected to Studio"
                                 />
                               )}
                               {project.activeRunCount > 0 && (
@@ -838,7 +846,7 @@ export default function ProjectTreeSidebar({
                               type="button"
                               aria-label={`Actions for ${project.title || "project"}`}
                               onClick={(event) => projectMenu(event, project)}
-                              className="nexus-tree-overflow rounded p-1 text-[var(--ds-text-muted)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)]"
+                              className="nexus-sidebar-icon-action nexus-tree-overflow rounded p-1 text-[var(--ds-text-muted)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)]"
                             >
                               <Menu className="h-3 w-3" />
                             </button>
@@ -847,6 +855,7 @@ export default function ProjectTreeSidebar({
                             className="nexus-tree-children"
                             data-expanded={expanded}
                             aria-hidden={!expanded}
+                            inert={expanded ? undefined : ""}
                           >
                             <div className="min-h-0 overflow-hidden">
                               {project.chats.map((chat) => renderChat(chat, project.projectId, project.projectId))}
@@ -862,7 +871,7 @@ export default function ProjectTreeSidebar({
                       <button
                         type="button"
                         onClick={onDetectProject}
-                        className="ml-3 flex h-9 items-center gap-2 rounded-md px-2 text-[11px] text-[var(--ds-text-muted)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text-secondary)]"
+                        className="nexus-sidebar-row-action ml-3 flex h-9 items-center gap-2 rounded-md px-2 text-[11px] text-[var(--ds-text-muted)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text-secondary)]"
                       >
                         <Link2 className="h-3 w-3" />
                         Detect a published Studio game

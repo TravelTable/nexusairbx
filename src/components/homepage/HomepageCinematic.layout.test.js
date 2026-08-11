@@ -9,7 +9,7 @@ function declarations(rule) {
   return Object.fromEntries(
     rule.nodes
       .filter((node) => node.type === "decl")
-      .map((node) => [node.prop, node.value])
+      .map((node) => [node.prop, node.value]),
   );
 }
 
@@ -19,45 +19,45 @@ function topLevelRule(selector) {
 
 function mediaRule(params, selector) {
   const media = root.nodes.find(
-    (node) => node.type === "atrule" && node.name === "media" && node.params === params
+    (node) => node.type === "atrule" && node.name === "media" && node.params === params,
   );
   return media.nodes.find((node) => node.type === "rule" && node.selector === selector);
 }
 
-test("locks the desktop homepage to the reference proportions", () => {
-  expect(declarations(topLevelRule(".hero"))).toMatchObject({
-    height: "100vh",
-    "min-height": "100vh",
+test("keeps the desktop hero editorial, flexible, and genre-rich", () => {
+  expect(declarations(topLevelRule(".hero"))).not.toHaveProperty("height");
+  expect(declarations(topLevelRule(".heroGrid"))).toMatchObject({
+    "min-height": "min(820px, calc(100dvh - 64px))",
+    "grid-template-columns": "minmax(0, 0.94fr) minmax(0, 1.06fr)",
   });
-  expect(declarations(topLevelRule(".heroContent h1"))).toMatchObject({
-    "font-size": "76px",
-    "line-height": "1",
-  });
-  expect(declarations(topLevelRule(".heroPrompt"))["width"]).toContain("744px");
-  expect(declarations(topLevelRule(".storyList"))).toMatchObject({ gap: "64px", padding: "0 80px" });
-  expect(declarations(topLevelRule(".storyCard"))).toMatchObject({
-    width: "min(1250px, 100%)",
-    height: "630px",
-  });
+  expect(declarations(topLevelRule(".heroCopy h1"))["font-size"]).toBe("clamp(54px, 5.2vw, 80px)");
+  expect(declarations(topLevelRule(".genreGrid"))["grid-template-columns"]).toBe(
+    "repeat(6, minmax(0, 1fr))",
+  );
 });
 
-test("locks the 390px composition to its mobile type and card rhythm", () => {
-  const mobile = "(max-width: 640px)";
-  expect(declarations(mediaRule(mobile, ".heroContent h1"))).toMatchObject({
-    "font-size": "48px",
-    "line-height": "48px",
+test("stacks on tablet and turns genres into a compact phone strip", () => {
+  expect(declarations(mediaRule("(max-width: 1023px)", ".heroGrid"))).toMatchObject({
+    "min-height": "auto",
+    "grid-template-columns": "1fr",
   });
-  expect(declarations(mediaRule(mobile, ".heroPrompt"))["width"]).toContain("343px");
-  expect(declarations(mediaRule(mobile, ".storyList"))).toMatchObject({
-    gap: "54px",
-    padding: "0",
+  expect(declarations(mediaRule("(max-width: 767px)", ".genreGrid"))["grid-template-columns"]).toBe(
+    "repeat(2, minmax(0, 1fr))",
+  );
+  const narrowGridRule = root.nodes
+    .find((node) => node.type === "atrule" && node.params === "(max-width: 520px)")
+    .nodes.find((node) => node.type === "rule" && node.selector.includes(".genreGrid"));
+  expect(declarations(narrowGridRule)).toMatchObject({
+    "grid-template-columns": "none",
+    "grid-auto-flow": "column",
+    "overflow-x": "auto",
+    "scroll-snap-type": "x mandatory",
   });
-  expect(declarations(mediaRule(mobile, ".storyCard"))).toMatchObject({
-    width: "min(343px, calc(100vw - 32px))",
-    height: "431px",
-  });
-  expect(declarations(mediaRule(mobile, ".storyCopy"))).toMatchObject({
-    left: "32px",
-    right: "32px",
-  });
+  expect(declarations(mediaRule("(max-width: 520px)", ".workshopArt"))["display"]).toBe("none");
+});
+
+test("includes calmer fallbacks and no cinematic bitmap dependency", () => {
+  expect(css).toContain("@media (prefers-reduced-motion: reduce)");
+  expect(css).toContain("@media (prefers-reduced-transparency: reduce)");
+  expect(css).not.toContain("nexus-cinematic");
 });

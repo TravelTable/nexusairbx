@@ -77,6 +77,8 @@ test("renders billing dashboard usage percentages, balance, top-ups, and grandfa
   expect(await screen.findByText("46% used")).toBeInTheDocument();
   expect(screen.getByText("54% remaining")).toBeInTheDocument();
   expect(screen.getByText("$18.42 available")).toBeInTheDocument();
+  expect(screen.getByText("The AI work included with your plan for the current billing period.")).toBeInTheDocument();
+  expect(screen.getByText("Optional prepaid credit used only when you choose a supported Premium Direct model.")).toBeInTheDocument();
   expect(screen.getByText("Legacy Pro pricing")).toBeInTheDocument();
   expect(screen.getByRole("button", { name: /Add \$10/i })).toBeInTheDocument();
   expect(screen.getByRole("button", { name: /Add \$25/i })).toBeInTheDocument();

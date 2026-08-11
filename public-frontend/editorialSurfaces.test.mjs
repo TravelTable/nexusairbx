@@ -44,3 +44,18 @@ test("the editorial layout keeps adaptive mobile gutters and single-column fallb
   assert.match(styles, /calc\(100% - 24px\)/);
   assert.match(styles, /grid-template-columns:\s*1fr/);
 });
+
+test("desktop documentation controls keep 44px interaction targets", () => {
+  assert.match(
+    styles,
+    /\.docsShell\s+:global\(\.docs-skip-link\)[\s\S]*?min-height:\s*44px/,
+  );
+  assert.match(
+    styles,
+    /\.docsShell\s+:global\(\.docs-category-button\)\s*\{\s*min-height:\s*44px/,
+  );
+  assert.match(
+    styles,
+    /\.docsShell\s+:global\(\.docs-icon-button\),[\s\S]*?width:\s*44px;[\s\S]*?height:\s*44px/,
+  );
+});

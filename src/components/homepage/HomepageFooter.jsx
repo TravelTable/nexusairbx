@@ -5,10 +5,13 @@ export default function HomepageFooter() {
   return (
     <footer className={styles.footer}>
       <div className={styles.footerMain}>
-        <a className={styles.footerBrand} href="/" aria-label="NexusRBX home">
-          <img src="/logo.png" alt="" width="25" height="25" />
-          <span>NexusRBX</span>
-        </a>
+        <div className={styles.footerIdentity}>
+          <a className={styles.footerBrand} href="/" aria-label="NexusRBX home">
+            <img src="/nexus-mark.svg" alt="" width="28" height="28" />
+            <span>NexusRBX</span>
+          </a>
+          <p>Build the game in your head. Keep the creative decisions and the upside.</p>
+        </div>
         <nav className={styles.footerNav} aria-label="Footer">
           {homepageFooterLinks.map((link) => (
             <a href={link.href} key={link.href}>
@@ -18,7 +21,8 @@ export default function HomepageFooter() {
         </nav>
       </div>
       <p className={styles.footerFinePrint}>
-        NexusRBX.com is an independent developer tool and is not affiliated with Roblox Corporation.
+        NexusRBX is an independent developer tool and is not affiliated with or endorsed by Roblox Corporation.
+        Earnings are never guaranteed.
       </p>
     </footer>
   );

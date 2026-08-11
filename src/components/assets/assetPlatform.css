@@ -42,7 +42,7 @@
 
 .asset-platform-header h1 {
   margin: 4px 0 8px;
-  font-family: var(--font-display, inherit);
+  font-family: var(--ds-font-display, inherit);
   font-size: clamp(2rem, 5vw, 4rem);
   line-height: 0.98;
   letter-spacing: -0.04em;
@@ -115,7 +115,7 @@
 .asset-generation-form .nexus-textarea,
 .asset-library-filters .nexus-input {
   width: 100%;
-  min-height: 42px;
+  min-height: 44px;
   color: var(--asset-text);
   border: 1px solid var(--asset-line);
   border-radius: 11px;
@@ -599,7 +599,7 @@
 .asset-platform-page.asset-icon-generator-page {
   color: var(--asset-text);
   background: var(--asset-canvas);
-  font-family: var(--font-ui, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif);
+  font-family: var(--ds-font-sans, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif);
 }
 
 .asset-icon-generator-page .asset-platform-shell {
@@ -1438,7 +1438,7 @@
   --asset-line-strong: var(--ds-border-strong);
   color: var(--ds-text);
   background: var(--ds-bg-canvas);
-  font-family: var(--font-ui, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif);
+  font-family: var(--ds-font-sans, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif);
 }
 
 .asset-platform-page:not(.asset-icon-generator-page) .asset-platform-shell {
@@ -1702,6 +1702,143 @@
   }
 }
 
+/* Asset readability and Creator Store coherence ------------------------ */
+
+.asset-platform-page,
+.creator-store-page {
+  font-family: var(--ds-font-sans, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif);
+}
+
+/* Persistent metadata and control labels never fall below 12px. */
+.asset-platform-page.asset-platform-page :is(
+  .asset-eyebrow,
+  .asset-context-bar__selectors label > span,
+  .asset-mode-picker legend,
+  .asset-mode-option strong,
+  .asset-generation-form .nexus-field-label,
+  .asset-inline-toggle,
+  .asset-generation-form__advanced summary,
+  .asset-generation-form__footer > div,
+  .asset-generation-form__footer strong,
+  .asset-card__kind,
+  .asset-card__ids dt,
+  .asset-card__ids dd,
+  .asset-card__actions > button,
+  .asset-status,
+  .asset-style-summary__header span,
+  .asset-style-summary dt,
+  .asset-library-tab,
+  .asset-pack-row dt,
+  .asset-pack-row dd,
+  .asset-detail-grid dt,
+  .asset-detail-action-grid label,
+  .asset-detail-action-row label,
+  .asset-studio-receipt dt,
+  .asset-studio-history span,
+  .asset-studio-history time,
+  .asset-visibility-control label,
+  .asset-lifecycle-timeline__stage
+) {
+  font-size: 0.75rem;
+}
+
+/* Explanations, values, notices, and editable content use a 14px floor. */
+.asset-platform-page.asset-platform-page :is(
+  .nexus-input,
+  .nexus-textarea,
+  .asset-context-bar__header h2,
+  .asset-context-bar__header p,
+  .asset-context-chip strong,
+  .asset-context-toggle strong,
+  .asset-panel-heading p,
+  .asset-mode-picker__description,
+  .asset-field-help,
+  .asset-field-error,
+  .asset-reference-input strong,
+  .asset-reference-input small,
+  .asset-capability-warning,
+  .asset-inline-notice,
+  .asset-operation-banner,
+  .asset-pack__header > div > p:last-child,
+  .asset-card__placeholder,
+  .asset-card__heading h3,
+  .asset-style-summary__header strong,
+  .asset-style-summary dd,
+  .asset-style-summary--empty,
+  .asset-empty-state p,
+  .asset-error-state p,
+  .asset-library-summary,
+  .asset-pack-row p,
+  .asset-detail-section > p,
+  .asset-detail-grid dd,
+  .asset-detail-list li,
+  .asset-studio-reference,
+  .asset-studio-receipt dd,
+  .asset-studio-history h3,
+  .asset-studio-history strong
+) {
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.asset-platform-page.asset-platform-page :is(
+  .asset-header-action,
+  .asset-secondary-action,
+  .asset-primary-action
+) {
+  min-height: 44px;
+  font-size: 0.875rem;
+}
+
+.asset-platform-page .asset-copy-button {
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+}
+
+.asset-platform-page .asset-link-button {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+}
+
+.asset-platform-page .asset-detail-disclosure summary {
+  display: flex;
+  min-height: 44px;
+  width: 100%;
+  align-items: center;
+}
+
+.creator-store-preview {
+  background-color: var(--ds-bg-workspace);
+}
+
+.creator-store-preview--dark {
+  background: var(--ds-bg-sidebar);
+}
+
+.creator-store-preview--light {
+  background: var(--ds-surface-2);
+}
+
+.creator-store-preview--transparent {
+  background-color: var(--ds-bg-workspace);
+  background-image:
+    linear-gradient(45deg, color-mix(in srgb, var(--ds-text) 7%, transparent) 25%, transparent 25%),
+    linear-gradient(-45deg, color-mix(in srgb, var(--ds-text) 7%, transparent) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, color-mix(in srgb, var(--ds-text) 7%, transparent) 75%),
+    linear-gradient(-45deg, transparent 75%, color-mix(in srgb, var(--ds-text) 7%, transparent) 75%);
+  background-position: 0 0, 0 12px, 12px -12px, -12px 0;
+  background-size: 24px 24px;
+}
+
+.creator-store-preview--scene {
+  background-color: var(--ds-accent-soft);
+  background-image:
+    radial-gradient(circle at 24% 22%, color-mix(in srgb, var(--ds-accent) 24%, transparent), transparent 34%),
+    linear-gradient(145deg, var(--ds-surface-2), var(--ds-bg-sidebar));
+}
+
 .model-file-pipeline {
   padding: 20px;
   border-top: 0;
@@ -1746,7 +1883,7 @@
 .asset-icon-generator-page .asset-platform-header h1,
 .asset-platform-page:not(.asset-icon-generator-page) .asset-platform-header h1 {
   margin: 6px 0 12px;
-  font-family: Georgia, Cambria, "Times New Roman", serif;
+  font-family: var(--ds-font-display);
   font-size: clamp(2.75rem, 5vw, 4.75rem);
   font-weight: 400;
   line-height: 1.04;
