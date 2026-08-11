@@ -106,7 +106,7 @@ class FakeMcp implements McpClientLike {
         return {
           content: [{
             type: "text",
-            text: source.split("\n").map((line, index) => `${String(index + 1).padStart(6, " ")}→${line}`).join("\n"),
+            text: source.split("\n").map((line, index) => `${String(index + 1).padStart(6, " ")}\u2192${line}`).join("\n"),
           }],
         };
       }
@@ -421,7 +421,7 @@ test("multi-script results fail locally when the acknowledgement would exceed th
 
 test("decodes the numbered source presentation returned by Roblox Studio MCP", async () => {
   const mcp = new FakeMcp();
-  const source = "local value = 1\nprint(\"probe — ready\", value)\n";
+  const source = "local value = 1\nprint(\"probe \u2014 ready\", value)\n";
   mcp.sources.set(READ_PATH, source);
   mcp.numberedRead = true;
   const executor = new CommandExecutor(mcp, new ToolCatalog(tools));

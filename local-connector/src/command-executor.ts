@@ -520,7 +520,9 @@ function decodeNumberedSourceText(text: string): string {
   const lines = text.split("\n");
   const decoded: string[] = [];
   for (let index = 0; index < lines.length; index += 1) {
-    const match = /^\s*(\d+)→(.*)$/.exec(lines[index] ?? "");
+    // StudioMCP uses U+2192 between display-only line numbers and source.
+    // Accept the historical mojibake sequence as well for older server builds.
+    const match = /^\s*(\d+)(?:\u2192|\u00e2\u2020\u2019)(.*)$/.exec(lines[index] ?? "");
     if (!match || Number(match[1]) !== index + 1) return text;
     decoded.push(match[2] ?? "");
   }
